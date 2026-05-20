@@ -60,3 +60,6 @@ build/
 
 # VSCode
 .vscode/
+
+# Temporary file storage
+storage/
