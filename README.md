@@ -51,7 +51,7 @@ Formal model-to-model transformations are defined for:
 - PIM to PSM
 
 These transformations are semi-automated. The transformation process automatically generates the
-target model, while still allowing the developer to review, refine, and complete missing or
+target model while still allowing the developer to review, refine, and complete missing or
 ambiguous parts. This ensures both automation and developer control.
 
 The model transformations are implemented using the Eclipse Epsilon Transformation Language (ETL).
@@ -59,7 +59,7 @@ The model transformations are implemented using the Eclipse Epsilon Transformati
 ### Model-to-Text Transformations
 
 Formal model-to-text transformations are defined to generate final deployable artifacts from the PSM
-level. These generated artifacts target AWS serverless ecosystem and may include configuration
+level. These generated artifacts target the AWS serverless ecosystem and may include configuration
 files, infrastructure definitions (IaC), source code, and other required project files.
 
 The generated artifacts are intended to be reviewed, refined, and deployed by the developer.
@@ -90,7 +90,7 @@ extensible, and modifiable.
 ## AI-Assisted Modeling
 
 The platform includes an AI modeling assistant integrated into the frontend editor and implemented
-in backend.
+in the backend.
 
 The assistant is presented as a chatbot icon on the modeling canvas. When the user clicks the icon,
 a chatbot window appears inside the editor. Through this interface, the user can interact with the
@@ -129,7 +129,7 @@ The editor is organized into three modeling tabs:
 
 Each tab has its own modeling palette according to the formal metamodel defined for that level.
 
-A generation action is available in the editor. When the user clicks the generate button, the
+A generation action is available in the editor. When the user clicks the 'generate' button, the
 platform performs the appropriate transformation depending on the active tab:
 
 - From CIM, it generates the corresponding PIM model.
