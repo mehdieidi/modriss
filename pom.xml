@@ -1,0 +1,22 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <artifactId>modless</artifactId>
+
+  <description>Model-Driven Low-Code Platform for Serverless Software Development.</description>
+  <groupId>io.mehdieidi</groupId>
+  <modelVersion>4.0.0</modelVersion>
+  <modules>
+    <module>apps/backend</module>
+  </modules>
+
+  <name>Modless</name>
+  <packaging>pom</packaging>
+
+  <properties>
+    <java.version>17</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <version>0.0.1-SNAPSHOT</version>
+</project>

@@ -1,0 +1,33 @@
+# Normalize text files
+* text=auto
+
+# Shell scripts must use LF
+*.sh text eol=lf
+mvnw text eol=lf
+
+# Windows scripts must use CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+mvnw.cmd text eol=crlf
+
+# Source files
+*.emf text
+*.emfatic text
+*.evl text
+*.etl text
+*.egl text
+*.egx text
+*.eol text
+*.xmi text
+*.model text
+*.flexmi text
+
+# Binary files
+*.jar binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
