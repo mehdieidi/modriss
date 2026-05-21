@@ -1,0 +1,84 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <artifactId>mde-etl-runner</artifactId>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+        </configuration>
+        <version>${maven.compiler.plugin.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven.surefire.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <artifactId>mde-cli</artifactId>
+      <groupId>io.mehdieidi</groupId>
+      <scope>test</scope>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.epsilon.etl.engine</artifactId>
+      <groupId>org.eclipse.epsilon</groupId>
+      <version>${epsilon.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.epsilon.emc.emf</artifactId>
+      <groupId>org.eclipse.epsilon</groupId>
+      <version>${epsilon.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.emf.common</artifactId>
+      <groupId>org.eclipse.emf</groupId>
+      <version>${emf.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.emf.ecore</artifactId>
+      <groupId>org.eclipse.emf</groupId>
+      <version>${emf.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+      <groupId>org.eclipse.emf</groupId>
+      <version>${emf.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>junit-jupiter</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <scope>test</scope>
+      <version>${junit.version}</version>
+    </dependency>
+  </dependencies>
+  <description>Reusable Java API for executing Eclipse Epsilon ETL transformations with
+    diagnostics.
+  </description>
+  <modelVersion>4.0.0</modelVersion>
+  <name>mde-etl-runner</name>
+
+  <packaging>jar</packaging>
+
+  <parent>
+    <artifactId>modless</artifactId>
+    <groupId>io.mehdieidi</groupId>
+    <relativePath>../../../pom.xml</relativePath>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <properties>
+    <emf.version>2.40.0</emf.version>
+    <epsilon.version>2.8.0</epsilon.version>
+    <junit.version>5.13.1</junit.version>
+    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
+    <maven.compiler.release>${java.version}</maven.compiler.release>
+    <maven.surefire.version>3.5.4</maven.surefire.version>
+  </properties>
+</project>
