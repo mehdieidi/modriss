@@ -1,0 +1,21 @@
+import "naming.eol";
+
+operation KERNEL!TraceableElement manualRegionId(kindText : String) : String {
+  return self.stableKey().toSlug() + "." + kindText.toSlug();
+}
+
+operation AWSPSMCORE!AwsResource manualRegionId(kindText : String) : String {
+  return self.stableKey().toSlug() + "." + kindText.toSlug();
+}
+
+operation Any manualTodo(purposeText : String) : String {
+  return "TODO: implement " + purposeText + ". This section is intentionally developer-owned.";
+}
+
+operation Any markdownRegionStart(regionIdText : String) : String {
+  return "<!-- protected region " + regionIdText + " on begin -->";
+}
+
+operation Any markdownRegionEnd(regionIdText : String) : String {
+  return "<!-- protected region " + regionIdText + " end -->";
+}

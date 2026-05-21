@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+function_logical_id="${1:?Usage: scripts/local-invoke.sh <FunctionLogicalId> <event-json>}"
+event_path="${2:?Usage: scripts/local-invoke.sh <FunctionLogicalId> <event-json>}"
+sam local invoke "$function_logical_id" --event "$event_path"
+
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("local-invoke-customizations"), true)%]
+# Add local environment wiring here.
+[%=out.stopPreserve()%]

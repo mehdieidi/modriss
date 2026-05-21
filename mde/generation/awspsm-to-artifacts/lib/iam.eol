@@ -1,0 +1,104 @@
+import "naming.eol";
+import "values.eol";
+
+operation AWSPSMSECURITY!IamPolicyDocument emitIamPolicyDocumentYaml(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "Version: " + self.version.orElseText("2012-10-17").yamlScalar() + "\n";
+  outText = outText + spaces(indentCount) + "Statement:\n";
+  for (stmtObj in self.statements) {
+    outText = outText + stmtObj.emitIamStatementYaml(indentCount + 2);
+  }
+  return outText;
+}
+
+operation AWSPSMSECURITY!IamStatement emitIamStatementYaml(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "- Effect: " + self.effect.iamEffectText() + "\n";
+  if (self.sid.isPresent()) {
+    outText = outText + spaces(indentCount + 2) + "Sid: " + self.sid.yamlScalar() + "\n";
+  }
+  outText = outText + self.actions.emitIamListYaml("Action", indentCount + 2);
+  outText = outText + self.notActions.emitIamListYaml("NotAction", indentCount + 2);
+  outText = outText + self.resources.emitIamListYaml("Resource", indentCount + 2);
+  outText = outText + self.notResources.emitIamListYaml("NotResource", indentCount + 2);
+  if (self.principals.notEmpty()) {
+    outText = outText + spaces(indentCount + 2) + "Principal:\n";
+    for (principalObj in self.principals) {
+      outText = outText + spaces(indentCount + 4) + principalObj.principalType.orElseText("AWS") + ":\n";
+      for (idText in principalObj.identifiers) {
+        outText = outText + spaces(indentCount + 6) + "- " + idText.yamlScalar() + "\n";
+      }
+    }
+  }
+  if (self.conditions.notEmpty()) {
+    outText = outText + spaces(indentCount + 2) + "Condition:\n";
+    for (condObj in self.conditions) {
+      outText = outText + spaces(indentCount + 4) + condObj.operator.orElseText("StringEquals") + ":\n";
+      outText = outText + spaces(indentCount + 6) + condObj.key.orElseText("aws:PrincipalArn") + ":\n";
+      for (valText in condObj.values) {
+        outText = outText + spaces(indentCount + 8) + "- " + valText.yamlScalar() + "\n";
+      }
+    }
+  }
+  return outText;
+}
+
+operation Collection emitIamListYaml(nameText : String, indentCount : Integer) : String {
+  if (self.isEmpty()) {
+    return "";
+  }
+  if (self.size() = 1) {
+    return spaces(indentCount) + nameText + ": " + self.first().yamlScalar() + "\n";
+  }
+  var outText = spaces(indentCount) + nameText + ":\n";
+  for (itemText in self) {
+    outText = outText + spaces(indentCount + 2) + "- " + itemText.yamlScalar() + "\n";
+  }
+  return outText;
+}
+
+operation AWSPSMSECURITY!IamPolicyDocument emitIamPolicyDocumentJson(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "{\n";
+  outText = outText + spaces(indentCount + 2) + "\"Version\": " + self.version.orElseText("2012-10-17").jsonString() + ",\n";
+  outText = outText + spaces(indentCount + 2) + "\"Statement\": [\n";
+  for (stmtObj in self.statements) {
+    outText = outText + stmtObj.emitIamStatementJson(indentCount + 4);
+    if (stmtObj <> self.statements.last()) {
+      outText = outText + ",";
+    }
+    outText = outText + "\n";
+  }
+  outText = outText + spaces(indentCount + 2) + "]\n";
+  outText = outText + spaces(indentCount) + "}";
+  return outText;
+}
+
+operation AWSPSMSECURITY!IamStatement emitIamStatementJson(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "{\n";
+  outText = outText + spaces(indentCount + 2) + "\"Effect\": " + self.effect.iamEffectText().jsonString();
+  if (self.sid.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Sid\": " + self.sid.jsonString();
+  }
+  if (self.actions.notEmpty()) {
+    outText = outText + ",\n" + self.actions.emitJsonStringArray("Action", indentCount + 2);
+  }
+  if (self.resources.notEmpty()) {
+    outText = outText + ",\n" + self.resources.emitJsonStringArray("Resource", indentCount + 2);
+  }
+  outText = outText + "\n" + spaces(indentCount) + "}";
+  return outText;
+}
+
+operation Collection emitJsonStringArray(nameText : String, indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "\"" + nameText + "\": ";
+  if (self.size() = 1) {
+    return outText + self.first().jsonString();
+  }
+  outText = outText + "[";
+  for (itemText in self) {
+    outText = outText + itemText.jsonString();
+    if (itemText <> self.last()) {
+      outText = outText + ", ";
+    }
+  }
+  outText = outText + "]";
+  return outText;
+}

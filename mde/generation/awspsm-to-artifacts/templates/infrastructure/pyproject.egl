@@ -1,0 +1,16 @@
+[project]
+name = "[%= emitCtx.get("projectSlug") %]"
+version = "1.0.0"
+description = "[%= emitCtx.get("projectName") %]"
+requires-python = ">=3.12"
+dependencies = [
+  "jsonschema>=4.22.0",
+  "aws-lambda-powertools>=2.37.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+  "ruff>=0.5.0",
+  "mypy>=1.10.0"
+]

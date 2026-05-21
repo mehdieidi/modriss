@@ -1,0 +1,27 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+from pathlib import Path
+import json
+
+
+def test_generated_event_samples_parse():
+    for path_obj in Path("events/samples").glob("*.json"):
+        event_obj = json.loads(path_obj.read_text(encoding="utf-8"))
+        assert "detail" in event_obj
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("event-custom-assertions"), true)%]
+    assert True
+[%=out.stopPreserve()%]
+[% } else { %]
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+
+test('generated event samples parse', () => {
+  for (const nameText of readdirSync('events/samples', { withFileTypes: true }).filter(direntObj => direntObj.isFile()).map(direntObj => direntObj.name)) {
+    const eventObj = JSON.parse(readFileSync(`events/samples/${nameText}`, 'utf8'));
+    assert.ok(eventObj.detail);
+  }
+[%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("event-custom-assertions"), true)%]
+  assert.ok(true);
+[%=out.stopPreserve()%]
+});
+[% } %]

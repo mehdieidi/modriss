@@ -1,0 +1,21 @@
+# Security
+
+Generated security posture is model-owned and should be reviewed before production deployment.
+
+## IAM and Secrets
+
+- IAM wildcard usage without justification is reported as a blocking manual action in production mode.
+- Plaintext secret `ValueExpression` instances are blocked by the generation validator.
+- Secret and SSM dynamic references are emitted as CloudFormation dynamic references when modeled.
+
+## Production Gates
+
+[% for (issueObj in emitCtx.get("manualIssueList")) { %]
+[% if (issueObj.get("blocking") = true) { %]
+- `[%= issueObj.get("code") %]`: [%= issueObj.get("message") %]
+[% } %]
+[% } %]
+
+[%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("security-manual-decisions"), true)%]
+Document approved residual risks, threat-model notes, and security exception IDs here.
+[%=out.stopPreserve()%]

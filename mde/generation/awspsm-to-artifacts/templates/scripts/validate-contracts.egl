@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if command -v python3 >/dev/null 2>&1; then
+  python3 - <<'PY'
+import json
+from pathlib import Path
+
+for root in ("schemas", "src/functions", "events/samples", "asl"):
+    root_path = Path(root)
+    if root_path.exists():
+        for path_obj in root_path.rglob("*.json"):
+            json.loads(path_obj.read_text(encoding="utf-8"))
+PY
+else
+  echo "python3 is not installed; skipping JSON contract parsing" >&2
+fi
+
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("validate-contracts-customizations"), true)%]
+# Add OpenAPI schema validation or spectral checks here.
+[%=out.stopPreserve()%]

@@ -1,0 +1,7 @@
+{
+  "stage": "[%= stageNameText.jsonEscape() %]",
+  "environmentClass": "[%= environmentClassText.jsonEscape() %]",
+  "accountId": "",
+  "region": "",
+  "parameters": {}
+}

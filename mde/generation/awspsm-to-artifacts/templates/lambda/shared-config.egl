@@ -1,0 +1,36 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+import os
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class GeneratedConfig:
+    stage: str
+    project_slug: str
+
+
+def load_config() -> GeneratedConfig:
+    return GeneratedConfig(stage=os.environ.get("STAGE", "[%= emitCtx.get("defaultStageName") %]"), project_slug="[%= emitCtx.get("projectSlug") %]")
+[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
+package shared;
+
+public record GeneratedConfig(String stage, String projectSlug) {
+  public static GeneratedConfig loadConfig() {
+    return new GeneratedConfig(System.getenv().getOrDefault("STAGE", "[%= emitCtx.get("defaultStageName") %]"), "[%= emitCtx.get("projectSlug") %]");
+  }
+}
+[% } else { %]
+export interface GeneratedConfig {
+  readonly stage: string;
+  readonly projectSlug: string;
+  readonly eventBusName?: string;
+}
+
+export function loadConfig(envObj: NodeJS.ProcessEnv = process.env): GeneratedConfig {
+  return {
+    stage: envObj.STAGE ?? '[%= emitCtx.get("defaultStageName") %]',
+    projectSlug: '[%= emitCtx.get("projectSlug") %]',
+    eventBusName: envObj.EVENT_BUS_NAME
+  };
+}
+[% } %]

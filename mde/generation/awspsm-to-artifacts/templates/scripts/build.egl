@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+python3 -m compileall src tests
+[% } else { %]
+npm run build
+[% } %]
+
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("build-customizations"), true)%]
+# Add project-specific build steps here.
+[%=out.stopPreserve()%]

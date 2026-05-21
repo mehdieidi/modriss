@@ -1,0 +1,25 @@
+package generated.functions.[%= awsFn.functionSlug().replace("-", "") %];
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import java.util.Map;
+
+public final class Handler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
+
+  [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("custom-types"), true)%]
+  // TODO: add developer-owned types here.
+  [%=out.stopPreserve()%]
+
+  @Override
+  public Map<String, Object> handleRequest(Map<String, Object> lambdaEvt, Context lambdaCtx) {
+    String correlationIdText = lambdaCtx.getAwsRequestId();
+
+    [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("custom-validation"), true)%]
+    // TODO: add developer-owned validation that cannot be derived from JSON Schema.
+    [%=out.stopPreserve()%]
+
+    [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("business-logic"), true)%]
+    throw new IllegalStateException("Business logic has not been implemented yet.");
+    [%=out.stopPreserve()%]
+  }
+}

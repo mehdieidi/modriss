@@ -1,0 +1,9 @@
+{
+  "Comment": "[%= aslDocObj.comment.orElseText(stateMachineObj.stateMachineName.orElseText("Generated workflow")).jsonEscape() %]",
+  "StartAt": "[%= aslDocObj.startAt.jsonEscape() %]",
+  "States": {
+[% for (stateObj in aslDocObj.states.sortBy(stateObj | stateObj.stateName)) { %]
+[%= stateObj.emitAslStateJson(4) %][% if (stateObj <> aslDocObj.states.sortBy(stateObj | stateObj.stateName).last()) { %],[% } %]
+[% } %]
+  }
+}

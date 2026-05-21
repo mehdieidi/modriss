@@ -1,0 +1,17 @@
+# Generation Report
+
+- Project: `[%= emitCtx.get("projectName") %]`
+- Generator version: `[%= emitCtx.get("generatorVersion") %]`
+- Primary language: `[%= emitCtx.primaryLanguage() %]`
+- Planned artifacts: `[%= emitCtx.get("traceRows").size() %]`
+- Manual issues: `[%= emitCtx.get("manualIssueList").size() %]`
+
+## Artifact Kinds
+
+[% for (kindText in emitCtx.get("traceRows").collect(rowMap | rowMap.get("artifactKind")).asSet().sort()) { %]
+- `[%= kindText %]`: [%= emitCtx.get("traceRows").select(rowMap | rowMap.get("artifactKind") = kindText).size() %]
+[% } %]
+
+## Merge Policy
+
+Generated files use EGL protected regions for developer-owned content where the spec permits it. JSON, ASL JSON, and generated reports are overwritten because they must remain machine-valid.

@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { handler } from '../../src/functions/[%= awsFn.functionPathSegment(emitCtx) %]/handler';
+
+const lambdaCtx = { awsRequestId: 'unit-request' } as any;
+
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("unit-custom-fixtures"), true)%]
+const fixtureObj = { id: 'unit-fixture', detail: { sourceStableId: '[%= awsFn.stableKey() %]' } };
+[%=out.stopPreserve()%]
+
+test('[%= awsFn.functionSlug() %] validates and executes generated handler path', async () => {
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("unit-custom-assertions"), true)%]
+  const resultObj = await handler(fixtureObj, lambdaCtx);
+  assert.equal(typeof resultObj.statusCode, 'number');
+[%=out.stopPreserve()%]
+});
+
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("unit-edge-cases"), true)%]
+// Add developer-owned edge case tests here.
+[%=out.stopPreserve()%]

@@ -1,0 +1,132 @@
+import "naming.eol";
+import "trace.eol";
+
+operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence {
+  var issueSeq = new Sequence;
+
+  if (self.stages.isEmpty()) {
+    issueSeq.add(self.issueTuple("PSM_ROOT_NO_STAGES", "BLOCKER", "Root model has no AwsStage instances.", self, true));
+  }
+  if (self.stacks.isEmpty()) {
+    issueSeq.add(self.issueTuple("PSM_ROOT_NO_STACKS", "BLOCKER", "Root model has no SamStack instances.", self, true));
+  }
+
+  for (stackObj in self.stacks) {
+    if (stackObj.resources.isEmpty()) {
+      issueSeq.add(self.issueTuple("PSM_STACK_EMPTY", "BLOCKER", "Stack has no resources: " + stackObj.stackName.orElseText(stackObj.stableKey()), stackObj, true));
+    }
+  }
+
+  for (resObj in self.allModeledResources()) {
+    if (not resObj.logicalId.isPresent() and not resObj.physicalName.isPresent() and not resObj.name.isPresent() and not resObj.traceId.isPresent()) {
+      issueSeq.add(self.issueTuple("AWS_RESOURCE_NO_STABLE_ID", "BLOCKER", "Resource cannot be deterministically named: " + resObj.eClass().getName(), resObj, true));
+    }
+  }
+
+  for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) {
+    if (awsFn.role.isUndefined()) {
+      issueSeq.add(self.issueTuple("LAMBDA_ROLE_MISSING", "BLOCKER", "Lambda function has no IAM role: " + awsFn.stableKey(), awsFn, true));
+    }
+    if (awsFn.logGroup.isUndefined()) {
+      issueSeq.add(self.issueTuple("LAMBDA_LOG_GROUP_MISSING", "ERROR", "Lambda function has no CloudWatch log group: " + awsFn.stableKey(), awsFn, profileMap.get("productionMode") = true));
+    }
+    if (awsFn.code.isUndefined()) {
+      issueSeq.add(self.issueTuple("LAMBDA_CODE_MISSING", "BLOCKER", "Lambda function has no code configuration: " + awsFn.stableKey(), awsFn, true));
+    }
+    else if (awsFn.code.eClass().getName() = "LambdaZipCodeConfig") {
+      if (not awsFn.code.runtimeIdentifier.isPresent()) {
+        issueSeq.add(self.issueTuple("LAMBDA_RUNTIME_MISSING", "BLOCKER", "ZIP Lambda is missing runtimeIdentifier: " + awsFn.stableKey(), awsFn, profileMap.get("productionMode") = true));
+      }
+      if (not awsFn.code.handler.isPresent()) {
+        issueSeq.add(self.issueTuple("LAMBDA_HANDLER_MISSING", "BLOCKER", "ZIP Lambda is missing handler: " + awsFn.stableKey(), awsFn, profileMap.get("productionMode") = true));
+      }
+    }
+    if (profileMap.get("productionMode") = true and awsFn.codeSigningDecision.asString() = "UNDECIDED") {
+      issueSeq.add(self.issueTuple("LAMBDA_CODE_SIGNING_UNDECIDED", "WARNING", "Production Lambda code signing decision is undecided: " + awsFn.stableKey(), awsFn, false));
+    }
+  }
+
+  for (routeObj in AWSPSMAPI!ApiGatewayRoute.all.sortBy(routeObj | routeObj.cfnLogicalId())) {
+    if (routeObj.integration.isUndefined()) {
+      issueSeq.add(self.issueTuple("API_ROUTE_INTEGRATION_MISSING", "BLOCKER", "API route has no integration: " + routeObj.stableKey(), routeObj, true));
+    }
+    if (routeObj.authorizationType.asString() <> "NONE" and routeObj.authorizer.isUndefined()) {
+      issueSeq.add(self.issueTuple("API_ROUTE_AUTHORIZER_MISSING", "BLOCKER", "Protected API route has no authorizer: " + routeObj.stableKey(), routeObj, profileMap.get("productionMode") = true));
+    }
+  }
+
+  for (ruleObj in AWSPSMEVENTS!EventBridgeRule.all.sortBy(ruleObj | ruleObj.cfnLogicalId())) {
+    if (ruleObj.eventPattern.isUndefined() and not ruleObj.eventPatternJson.isPresent() and not ruleObj.scheduleExpression.isPresent()) {
+      issueSeq.add(self.issueTuple("EVENTBRIDGE_RULE_TRIGGER_MISSING", "BLOCKER", "EventBridge rule has neither event pattern nor schedule: " + ruleObj.stableKey(), ruleObj, profileMap.get("productionMode") = true));
+    }
+  }
+
+  for (stateMachineObj in AWSPSMWORKFLOW!StepFunctionStateMachine.all.sortBy(stateMachineObj | stateMachineObj.cfnLogicalId())) {
+    if (stateMachineObj.role.isUndefined()) {
+      issueSeq.add(self.issueTuple("STATE_MACHINE_ROLE_MISSING", "BLOCKER", "State machine has no IAM role: " + stateMachineObj.stableKey(), stateMachineObj, true));
+    }
+    if (stateMachineObj.aslDocument.isUndefined() and not stateMachineObj.definitionUri.isPresent() and not stateMachineObj.definitionString.isPresent()) {
+      issueSeq.add(self.issueTuple("STATE_MACHINE_ASL_MISSING", "BLOCKER", "State machine has no ASL document or definition: " + stateMachineObj.stableKey(), stateMachineObj, profileMap.get("productionMode") = true));
+    }
+    if (stateMachineObj.aslDocument.isDefined() and stateMachineObj.aslDocument.states.select(stateObj | stateObj.stateName = stateMachineObj.aslDocument.startAt).isEmpty()) {
+      issueSeq.add(self.issueTuple("STATE_MACHINE_START_AT_INVALID", "BLOCKER", "ASL StartAt does not reference a modeled state: " + stateMachineObj.stableKey(), stateMachineObj, true));
+    }
+  }
+
+  for (tableObj in AWSPSMSTORAGE!DynamoDbTable.all.sortBy(tableObj | tableObj.cfnLogicalId())) {
+    if (tableObj.keySchema.isEmpty()) {
+      issueSeq.add(self.issueTuple("DDB_KEY_SCHEMA_MISSING", "BLOCKER", "DynamoDB table has no key schema: " + tableObj.stableKey(), tableObj, true));
+    }
+    if (profileMap.get("productionMode") = true and tableObj.pointInTimeRecoveryEnabled.isDefined() and not tableObj.pointInTimeRecoveryEnabled) {
+      if (tableObj.backupPolicy.isUndefined() or tableObj.backupPolicy.pointInTimeRecoveryDecision.asString() <> "NOT_REQUIRED" or not tableObj.backupPolicy.backupRationale.isPresent()) {
+        issueSeq.add(self.issueTuple("DDB_PITR_DISABLED_WITHOUT_RATIONALE", "ERROR", "Production DynamoDB table lacks PITR rationale: " + tableObj.stableKey(), tableObj, true));
+      }
+    }
+  }
+
+  for (bucketObj in AWSPSMSTORAGE!S3Bucket.all.sortBy(bucketObj | bucketObj.cfnLogicalId())) {
+    if (profileMap.get("productionMode") = true and bucketObj.encryption.isUndefined()) {
+      issueSeq.add(self.issueTuple("S3_ENCRYPTION_MISSING", "BLOCKER", "Production S3 bucket lacks encryption: " + bucketObj.stableKey(), bucketObj, true));
+    }
+    if (profileMap.get("productionMode") = true and bucketObj.publicAccessMode.asString() = "DISABLED_NOT_RECOMMENDED") {
+      issueSeq.add(self.issueTuple("S3_PUBLIC_ACCESS_PROD", "BLOCKER", "Production S3 bucket has public access disabled-not-recommended mode: " + bucketObj.stableKey(), bucketObj, true));
+    }
+  }
+
+  for (stmtObj in AWSPSMSECURITY!IamStatement.all) {
+    if ((stmtObj.wildcardAction = true or stmtObj.actions.includes("*") or stmtObj.wildcardResource = true or stmtObj.resources.includes("*")) and not stmtObj.wildcardJustification.isPresent()) {
+      issueSeq.add(self.issueTuple("IAM_WILDCARD_UNJUSTIFIED", "BLOCKER", "IAM wildcard lacks justification: " + stmtObj.stableKey(), stmtObj, profileMap.get("productionMode") = true));
+    }
+  }
+
+  for (valueObj in AWSPSMCORE!ValueExpression.all) {
+    if (valueObj.secret = true and valueObj.sourceKind.asString() = "PLAINTEXT" and valueObj.literal.isPresent()) {
+      issueSeq.add(self.issueTuple("PLAINTEXT_SECRET_VALUE", "BLOCKER", "Secret ValueExpression would emit plaintext: " + valueObj.stableKey(), valueObj, true));
+    }
+  }
+
+  for (stageObj in self.stages) {
+    if (stageObj.environmentClass.asString() = "PROD" and not (stageObj.requiresManualApproval.isDefined() and stageObj.requiresManualApproval)) {
+      issueSeq.add(self.issueTuple("PROD_STAGE_APPROVAL_MISSING", "BLOCKER", "Production stage requires manual approval: " + stageObj.stageName, stageObj, true));
+    }
+  }
+
+  return issueSeq;
+}
+
+operation AWSPSM!AwsPsmModel issueTuple(codeText : String, severityText : String, messageText : String, sourceObj, blockingFlag : Boolean) : Map {
+  var stableText = "";
+  var sourceTypeText = "";
+  if (sourceObj.isDefined()) {
+    stableText = sourceObj.stableKey();
+    sourceTypeText = sourceObj.eClass().getName();
+  }
+  var rowMap = new Map;
+  rowMap.put("code", codeText);
+  rowMap.put("severity", severityText);
+  rowMap.put("message", messageText);
+  rowMap.put("sourceStableId", stableText);
+  rowMap.put("sourceType", sourceTypeText);
+  rowMap.put("blocking", blockingFlag);
+  return rowMap;
+}

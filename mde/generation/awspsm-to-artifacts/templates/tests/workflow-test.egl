@@ -1,0 +1,24 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+import json
+from pathlib import Path
+
+
+def test_[%= stateMachineObj.workflowSlug().replace("-", "_") %]_asl_is_valid_json():
+    asl_obj = json.loads(Path("[%= stateMachineObj.aslPath() %]").read_text(encoding="utf-8"))
+    assert asl_obj["StartAt"]
+[%=out.startPreserve("#", "", stateMachineObj.manualRegionId("workflow-assertions"), true)%]
+    assert "States" in asl_obj
+[%=out.stopPreserve()%]
+[% } else { %]
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+test('[%= stateMachineObj.workflowSlug() %] ASL is valid JSON', () => {
+  const aslObj = JSON.parse(readFileSync('[%= stateMachineObj.aslPath() %]', 'utf8'));
+  assert.ok(aslObj.StartAt);
+[%=out.startPreserve("/*", "*/", stateMachineObj.manualRegionId("workflow-assertions"), true)%]
+  assert.ok(aslObj.States);
+[%=out.stopPreserve()%]
+});
+[% } %]

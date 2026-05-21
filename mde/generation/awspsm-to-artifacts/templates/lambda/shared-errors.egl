@@ -1,0 +1,43 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+from typing import Any
+
+
+class GeneratedHandlerError(Exception):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+def map_known_error(error_obj: Exception, correlation_id_text: str) -> dict[str, Any]:
+    status_num = 400 if isinstance(error_obj, GeneratedHandlerError) and error_obj.code == "VALIDATION_ERROR" else 500
+    return {
+        "statusCode": status_num,
+        "headers": {"content-type": "application/json", "x-correlation-id": correlation_id_text},
+        "body": {"error": getattr(error_obj, "code", "INTERNAL_ERROR"), "correlationId": correlation_id_text},
+    }
+[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
+package shared;
+
+public class GeneratedHandlerError extends RuntimeException {
+  public final String code;
+  public GeneratedHandlerError(String codeText, String messageText) {
+    super(messageText);
+    this.code = codeText;
+  }
+}
+[% } else { %]
+export class GeneratedHandlerError extends Error {
+  constructor(readonly code: string, messageText: string) {
+    super(messageText);
+  }
+}
+
+export function mapKnownError(errorObj: unknown, correlationIdText: string) {
+  const codeText = errorObj instanceof GeneratedHandlerError ? errorObj.code : 'INTERNAL_ERROR';
+  return {
+    statusCode: codeText === 'VALIDATION_ERROR' ? 400 : 500,
+    headers: { 'content-type': 'application/json', 'x-correlation-id': correlationIdText },
+    body: JSON.stringify({ error: codeText, correlationId: correlationIdText })
+  };
+}
+[% } %]

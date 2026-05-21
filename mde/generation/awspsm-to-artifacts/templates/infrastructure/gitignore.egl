@@ -1,0 +1,19 @@
+.aws-sam/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage/
+dist/
+build/
+node_modules/
+__pycache__/
+*.pyc
+*.log
+.env
+env/prod.json
+generated/tmp/
+
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("gitignore"), true)%]
+# Add local project ignores here.
+[%=out.stopPreserve()%]

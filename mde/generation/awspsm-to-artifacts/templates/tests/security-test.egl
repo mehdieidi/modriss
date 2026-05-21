@@ -1,0 +1,23 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+from pathlib import Path
+
+
+def test_template_has_no_plaintext_secret_marker():
+    template_text = Path("template.yaml").read_text(encoding="utf-8")
+    assert "PLAINTEXT_SECRET" not in template_text
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("security-custom-assertions"), true)%]
+    assert "{{resolve:" in template_text or True
+[%=out.stopPreserve()%]
+[% } else { %]
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+test('template does not contain generated plaintext secret markers', () => {
+  const templateText = readFileSync('template.yaml', 'utf8');
+  assert.equal(templateText.includes('PLAINTEXT_SECRET'), false);
+[%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("security-custom-assertions"), true)%]
+  assert.ok(templateText.includes('{{resolve:') || true);
+[%=out.stopPreserve()%]
+});
+[% } %]

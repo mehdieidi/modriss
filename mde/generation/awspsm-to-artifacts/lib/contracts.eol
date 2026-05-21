@@ -1,0 +1,196 @@
+import "naming.eol";
+import "values.eol";
+import "paths.eol";
+
+operation AWSPSMAPI!ApiGatewayRoute routePath() : String {
+  if (self.eClass().getName() = "HttpApiRoute" or self.eClass().getName() = "RestApiRoute") {
+    return self.path.orElseText("/" + self.stableKey().toSlug());
+  }
+  return "/" + self.stableKey().toSlug();
+}
+
+operation AWSPSMAPI!ApiGatewayRoute routeMethod() : String {
+  if (self.eClass().getName() = "HttpApiRoute" or self.eClass().getName() = "RestApiRoute") {
+    return self.method.httpMethodText();
+  }
+  return "get";
+}
+
+operation AWSPSMAPI!ApiGatewayRoute operationIdText() : String {
+  return self.operationName.orElseText(self.stableKey()).toCamel();
+}
+
+operation AWSPSMAPI!ApiGatewayRoute emitOpenApiOperationYaml(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + self.routeMethod() + ":\n";
+  outText = outText + emitYamlScalarProperty("operationId", self.operationIdText(), indentCount + 2);
+  outText = outText + spaces(indentCount + 2) + "tags:\n";
+  outText = outText + spaces(indentCount + 4) + "- " + self.api.apiName.orElseText("api").yamlScalar() + "\n";
+  if (self.authorizationType.asString() <> "NONE") {
+    outText = outText + spaces(indentCount + 2) + "security:\n";
+    outText = outText + spaces(indentCount + 4) + "- " + self.authorizationType.asString().toLowerCase().toSlug() + ": []\n";
+  }
+  outText = outText + spaces(indentCount + 2) + "responses:\n";
+  outText = outText + spaces(indentCount + 4) + "'200':\n";
+  outText = outText + spaces(indentCount + 6) + "description: Successful response\n";
+  outText = outText + spaces(indentCount + 4) + "'400':\n";
+  outText = outText + spaces(indentCount + 6) + "$ref: '#/components/responses/BadRequest'\n";
+  outText = outText + spaces(indentCount + 4) + "'500':\n";
+  outText = outText + spaces(indentCount + 6) + "$ref: '#/components/responses/InternalError'\n";
+  if (self.integration.isDefined()) {
+    outText = outText + spaces(indentCount + 2) + "x-amazon-apigateway-integration:\n";
+    outText = outText + emitYamlScalarProperty("type", self.integration.integrationType.asString().toLowerCase(), indentCount + 4);
+    if (self.integration.lambdaTarget.isDefined()) {
+      outText = outText + spaces(indentCount + 4) + "uri: " + arnForResource(self.integration.lambdaTarget) + "\n";
+    }
+    else {
+      outText = outText + emitYamlScalarProperty("uri", self.integration.integrationUri, indentCount + 4);
+    }
+    outText = outText + emitYamlScalarProperty("httpMethod", self.integration.integrationMethod.orElseText("POST"), indentCount + 4);
+    outText = outText + emitYamlScalarProperty("payloadFormatVersion", self.integration.payloadFormatVersion.orElseText("2.0"), indentCount + 4);
+  }
+  return outText;
+}
+
+operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
+  outText = outText + spaces(indentCount + 2) + "\"Type\": " + self.type.asString().firstToUpperCase().toLowerCase().firstToUpperCase().jsonString();
+  if (self.resource.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + self.resource.jsonString();
+  }
+  else if (self.invokedResource.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + ("${" + self.invokedResource.cfnLogicalId() + "Arn}").jsonString();
+  }
+  }
+  if (self.inputPath.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"InputPath\": " + self.inputPath.jsonString();
+  }
+  if (self.outputPath.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"OutputPath\": " + self.outputPath.jsonString();
+  }
+  if (self.resultPath.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"ResultPath\": " + self.resultPath.jsonString();
+  }
+  if (self.parametersJson.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Parameters\": " + self.parametersJson;
+  }
+  if (self.argumentsJson.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Arguments\": " + self.argumentsJson;
+  }
+  if (self.assignJson.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Assign\": " + self.assignJson;
+  }
+  if (self.timeoutSeconds.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"TimeoutSeconds\": " + self.timeoutSeconds.asString();
+  }
+  if (self.heartbeatSeconds.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"HeartbeatSeconds\": " + self.heartbeatSeconds.asString();
+  }
+  if (self.retry.notEmpty()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Retry\": [\n";
+    for (retryObj in self.retry) {
+      outText = outText + retryObj.emitAslRetryJson(indentCount + 4);
+      if (retryObj <> self.retry.last()) {
+        outText = outText + ",";
+      }
+      outText = outText + "\n";
+    }
+    outText = outText + spaces(indentCount + 2) + "]";
+  }
+  if (self.`catch`.notEmpty()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Catch\": [\n";
+    for (catchObj in self.`catch`) {
+      outText = outText + catchObj.emitAslCatchJson(indentCount + 4);
+      if (catchObj <> self.`catch`.last()) {
+        outText = outText + ",";
+      }
+      outText = outText + "\n";
+    }
+    outText = outText + spaces(indentCount + 2) + "]";
+  }
+  if (self.choices.notEmpty()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Choices\": [\n";
+    for (choiceObj in self.choices) {
+      outText = outText + choiceObj.emitAslChoiceJson(indentCount + 4);
+      if (choiceObj <> self.choices.last()) {
+        outText = outText + ",";
+      }
+      outText = outText + "\n";
+    }
+    outText = outText + spaces(indentCount + 2) + "]";
+  }
+  if (self.nextState.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Next\": " + self.nextState.stateName.jsonString();
+  }
+  else if (self.nextStateName.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Next\": " + self.nextStateName.jsonString();
+  }
+  else if (self.end = true) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"End\": true";
+  }
+  outText = outText + "\n" + spaces(indentCount) + "}";
+  return outText;
+}
+
+operation AWSPSMWORKFLOW!AslRetryRule emitAslRetryJson(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "{\n";
+  outText = outText + self.errorEquals.emitJsonStringArray("ErrorEquals", indentCount + 2);
+  if (self.intervalSeconds.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"IntervalSeconds\": " + self.intervalSeconds.asString();
+  }
+  if (self.maxAttempts.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"MaxAttempts\": " + self.maxAttempts.asString();
+  }
+  if (self.backoffRate.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"BackoffRate\": " + self.backoffRate.asString();
+  }
+  if (self.maxDelaySeconds.isDefined()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"MaxDelaySeconds\": " + self.maxDelaySeconds.asString();
+  }
+  if (self.jitterStrategy.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"JitterStrategy\": " + self.jitterStrategy.jsonString();
+  }
+  return outText + "\n" + spaces(indentCount) + "}";
+}
+
+operation AWSPSMWORKFLOW!AslCatchRule emitAslCatchJson(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "{\n";
+  outText = outText + self.errorEquals.emitJsonStringArray("ErrorEquals", indentCount + 2);
+  if (self.resultPath.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"ResultPath\": " + self.resultPath.jsonString();
+  }
+  outText = outText + ",\n" + spaces(indentCount + 2) + "\"Next\": " + self.nextState.stateName.jsonString();
+  return outText + "\n" + spaces(indentCount) + "}";
+}
+
+operation AWSPSMWORKFLOW!AslChoiceRule emitAslChoiceJson(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "{\n";
+  if (self.conditionExpression.isPresent()) {
+    outText = outText + spaces(indentCount + 2) + "\"Condition\": " + self.conditionExpression.jsonString() + ",\n";
+  }
+  else {
+    outText = outText + spaces(indentCount + 2) + "\"Variable\": " + self.variable.orElseText("$").jsonString() + ",\n";
+    outText = outText + spaces(indentCount + 2) + "\"IsPresent\": true,\n";
+  }
+  outText = outText + spaces(indentCount + 2) + "\"Next\": " + self.nextState.stateName.jsonString() + "\n";
+  return outText + spaces(indentCount) + "}";
+}
+
+operation KERNEL!TraceableElement schemaTitle(schemaKindText : String) : String {
+  return self.name.orElseText(self.eClass().getName()) + " " + schemaKindText;
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction requiresIdempotency() : Boolean {
+  if (self.eventSourceMappings.notEmpty()) {
+    return true;
+  }
+  if (AWSPSMAPI!ApiGatewayIntegration.all.exists(integObj |
+    integObj.lambdaTarget = self and
+    AWSPSMAPI!ApiGatewayRoute.all.exists(routeObj |
+      routeObj.integration = integObj and
+      (routeObj.eClass().getName() = "HttpApiRoute" or routeObj.eClass().getName() = "RestApiRoute") and
+      Sequence{"POST", "PUT", "PATCH", "DELETE"}.includes(routeObj.method.asString())))) {
+    return true;
+  }
+  var docText = firstText(self.documentation, firstText(self.descriptionText, self.summary)).toLowerCase();
+  return docText.contains("idempotency") or docText.contains("dedupe") or docText.contains("command");
+}

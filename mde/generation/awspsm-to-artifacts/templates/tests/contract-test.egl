@@ -1,0 +1,39 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+from pathlib import Path
+import json
+
+
+def test_generated_json_schemas_parse():
+    for path_obj in Path("schemas").glob("**/*.json"):
+        json.loads(path_obj.read_text(encoding="utf-8"))
+    for path_obj in Path("src/functions").glob("*/schema.json"):
+        json.loads(path_obj.read_text(encoding="utf-8"))
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("contract-custom-assertions"), true)%]
+    assert True
+[%=out.stopPreserve()%]
+[% } else { %]
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+function jsonFiles(rootText: string): string[] {
+  try {
+    return readdirSync(rootText).flatMap(nameText => {
+      const pathText = join(rootText, nameText);
+      return statSync(pathText).isDirectory() ? jsonFiles(pathText) : (pathText.endsWith('.json') ? [pathText] : []);
+    });
+  } catch {
+    return [];
+  }
+}
+
+test('generated JSON contracts parse', () => {
+  for (const pathText of [...jsonFiles('schemas'), ...jsonFiles('src/functions')]) {
+    JSON.parse(readFileSync(pathText, 'utf8'));
+  }
+[%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("contract-custom-assertions"), true)%]
+  assert.ok(true);
+[%=out.stopPreserve()%]
+});
+[% } %]

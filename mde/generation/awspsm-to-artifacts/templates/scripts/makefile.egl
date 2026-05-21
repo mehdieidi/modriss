@@ -1,0 +1,31 @@
+SHELL := /usr/bin/env bash
+STAGE ?= [%= emitCtx.get("defaultStageName") %]
+
+.PHONY: validate build test deploy package local-api local-invoke
+
+validate:
+	bash scripts/validate-models.sh
+	bash scripts/validate-template.sh
+	bash scripts/validate-contracts.sh
+
+build:
+	bash scripts/build.sh
+
+test:
+	bash scripts/test.sh
+
+deploy:
+	bash scripts/deploy.sh "$(STAGE)"
+
+package:
+	bash scripts/package.sh "$(STAGE)"
+
+local-api:
+	bash scripts/local-start-api.sh "$(STAGE)"
+
+local-invoke:
+	bash scripts/local-invoke.sh "$(FUNCTION)" "$(EVENT)"
+
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("makefile-customizations"), true)%]
+# Add project-specific make targets here.
+[%=out.stopPreserve()%]

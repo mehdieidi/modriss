@@ -1,0 +1,19 @@
+{
+  "generatorVersion": "[%= emitCtx.get("generatorVersion").jsonEscape() %]",
+  "sourceModelHash": "COMPUTED_BY_EXECUTOR",
+  "artifacts": [
+[% var traceSeq = emitCtx.get("traceRows").sortBy(rowMap | rowMap.get("path")); %]
+[% for (rowMap in traceSeq) { %]
+    {
+      "path": "[%= rowMap.get("path").jsonEscape() %]",
+      "artifactKind": "[%= rowMap.get("artifactKind").jsonEscape() %]",
+      "generatedBy": "[%= rowMap.get("generatedBy").jsonEscape() %]",
+      "generatedChecksum": "[%= rowMap.get("generatedChecksum").jsonEscape() %]",
+      "mergeStrategy": "[%= rowMap.get("mergeStrategy").jsonEscape() %]",
+      "sourceStableIds": [[% for (sourceText in rowMap.get("sourceStableIds")) { %]"[%= sourceText.jsonEscape() %]"[% if (sourceText <> rowMap.get("sourceStableIds").last()) { %], [% } %][% } %]],
+      "sections": [],
+      "protectedRegionIds": [[% for (regionText in rowMap.get("protectedRegionIds")) { %]"[%= regionText.jsonEscape() %]"[% if (regionText <> rowMap.get("protectedRegionIds").last()) { %], [% } %][% } %]]
+    }[% if (rowMap <> traceSeq.last()) { %],[% } %]
+[% } %]
+  ]
+}

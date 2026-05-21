@@ -1,0 +1,10 @@
+[% out.setContentType("YAML"); %]
+AWSTemplateFormatVersion: '2010-09-09'
+[% if (stackObj.useSamTransform.isUndefined() or stackObj.useSamTransform = true) { %]
+Transform: AWS::Serverless-2016-10-31
+[% } %]
+Description: [%= stackObj.templateDescription.orElseText(emitCtx.get("projectName") + " generated serverless stack") %]
+
+[%=stackObj.emitParametersYaml()%][%=stackObj.emitMappingsYaml()%][%=stackObj.emitConditionsYaml()%][%=stackObj.emitGlobalsYaml(awsRoot)%][%=stackObj.emitResourcesYaml(emitCtx)%][%=stackObj.emitOutputsYaml()%][%=out.startPreserve("#", "", stackObj.manualRegionId("yaml-extension"), true)%]
+# Optional developer-owned CloudFormation/SAM additions that cannot yet be represented in the PSM.
+[%=out.stopPreserve()%]

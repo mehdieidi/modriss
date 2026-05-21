@@ -1,0 +1,195 @@
+operation Any isPresent() : Boolean {
+  return self.isDefined() and not self.asString().trim().isEmpty();
+}
+
+operation Any textOrEmpty() : String {
+  if (self.isUndefined()) {
+    return "";
+  }
+  return self.asString();
+}
+
+operation Any orElseText(fallbackText : String) : String {
+  if (self.isPresent()) {
+    return self.asString();
+  }
+  return fallbackText;
+}
+
+operation firstText(primaryValue, fallbackValue) : String {
+  if (primaryValue.isPresent()) {
+    return primaryValue.asString();
+  }
+  if (fallbackValue.isPresent()) {
+    return fallbackValue.asString();
+  }
+  return "";
+}
+
+operation String normalizedToken() : String {
+  var rawText = self.orElseText("unnamed").trim();
+  var resultText = "";
+  var lastWasSeparator = false;
+  for (idx in Sequence{1..rawText.length()}) {
+    var chText = rawText.substring(idx - 1, idx);
+    if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".contains(chText)) {
+      resultText = resultText + chText;
+      lastWasSeparator = false;
+    }
+    else {
+      if (not lastWasSeparator and resultText.length() > 0) {
+        resultText = resultText + "-";
+        lastWasSeparator = true;
+      }
+    }
+  }
+  while (resultText.endsWith("-") and resultText.length() > 1) {
+    resultText = resultText.substring(0, resultText.length() - 1);
+  }
+  if (resultText.trim().isEmpty()) {
+    return "unnamed";
+  }
+  return resultText;
+}
+
+operation Any toSlug() : String {
+  return self.textOrEmpty().normalizedToken().toLowerCase();
+}
+
+operation Any toSnake() : String {
+  return self.toSlug().replace("-", "_");
+}
+
+operation Any toCfnLogicalId() : String {
+  var tokenSeq = self.textOrEmpty().normalizedToken().split("-");
+  var resultText = "";
+  for (tokenText in tokenSeq) {
+    if (tokenText.length() > 0) {
+      resultText = resultText + tokenText.substring(0, 1).toUpperCase() + tokenText.substring(1);
+    }
+  }
+  if (resultText.isEmpty()) {
+    resultText = "GeneratedResource";
+  }
+  if (not "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".contains(resultText.substring(0, 1))) {
+    resultText = "R" + resultText;
+  }
+  return resultText;
+}
+
+operation Any toCamel() : String {
+  var pascalText = self.toCfnLogicalId();
+  return pascalText.substring(0, 1).toLowerCase() + pascalText.substring(1);
+}
+
+operation Any safeFileStem() : String {
+  return self.toSlug();
+}
+
+operation KERNEL!TraceableElement stableKey() : String {
+  if (self.traceId.isPresent()) {
+    return self.traceId;
+  }
+  if (self.externalId.isPresent()) {
+    return self.externalId;
+  }
+  if (self.sourceQualifiedName.isPresent()) {
+    return self.sourceQualifiedName;
+  }
+  if (self.name.isPresent()) {
+    return self.name;
+  }
+  if (self.id.isPresent()) {
+    return self.id;
+  }
+  return self.eClass().getName() + "-" + self.hashCode().asString();
+}
+
+operation AWSPSMCORE!AwsResource stableKey() : String {
+  if (self.traceId.isPresent()) {
+    return self.traceId;
+  }
+  if (self.externalId.isPresent()) {
+    return self.externalId;
+  }
+  if (self.sourceQualifiedName.isPresent()) {
+    return self.sourceQualifiedName;
+  }
+  if (self.logicalId.isPresent()) {
+    return self.logicalId;
+  }
+  if (self.name.isPresent()) {
+    return self.name;
+  }
+  return self.eClass().getName() + "-" + self.hashCode().asString();
+}
+
+operation AWSPSMCORE!AwsResource cfnLogicalId() : String {
+  if (self.logicalId.isPresent()) {
+    return self.logicalId.toCfnLogicalId();
+  }
+  if (self.physicalName.isPresent()) {
+    return self.physicalName.toCfnLogicalId();
+  }
+  return self.stableKey().toCfnLogicalId();
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction functionSlug() : String {
+  return firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
+}
+
+operation AWSPSMAPI!ApiGatewayApi apiSlug() : String {
+  return firstText(self.apiName, firstText(self.logicalId, self.name)).toSlug();
+}
+
+operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowSlug() : String {
+  return firstText(self.stateMachineName, firstText(self.logicalId, self.name)).toSlug();
+}
+
+operation AWSPSMEVENTS!EventBridgeRule eventRuleSlug() : String {
+  return firstText(self.ruleName, firstText(self.logicalId, self.name)).toSlug();
+}
+
+operation AWSPSMMESSAGING!SqsQueue queueSlug() : String {
+  return firstText(self.queueName, firstText(self.logicalId, self.name)).toSlug();
+}
+
+operation AWSPSMMESSAGING!SnsTopic topicSlug() : String {
+  return firstText(self.topicName, firstText(self.logicalId, self.name)).toSlug();
+}
+
+operation AWSPSMSTORAGE!DynamoDbTable tableSlug() : String {
+  return firstText(self.tableName, firstText(self.logicalId, self.name)).toSlug();
+}
+
+operation AWSPSMSTORAGE!S3Bucket bucketSlug() : String {
+  return firstText(self.bucketName, firstText(self.logicalId, self.name)).toSlug();
+}
+
+operation AWSPSMCORE!SamStack stackSlug() : String {
+  return firstText(self.stackName, self.name).toSlug();
+}
+
+operation AWSPSMCORE!AwsStage stageSlug() : String {
+  return firstText(self.stageName, self.name).toSlug();
+}
+
+operation AWSPSMCORE!SamStack stackTemplatePath() : String {
+  if (self.templatePath.isPresent()) {
+    return self.templatePath;
+  }
+  return "template.yaml";
+}
+
+operation Any displayName() : String {
+  if (self.isUndefined()) {
+    return "Unnamed";
+  }
+  if (self.name.isPresent()) {
+    return self.name;
+  }
+  if (self.eClass().getName().isPresent()) {
+    return self.eClass().getName();
+  }
+  return self.asString();
+}

@@ -1,0 +1,17 @@
+# Security Review
+
+## Generated Findings
+
+[% if (emitCtx.get("manualIssueList").isEmpty()) { %]
+No generator-detected security or production-readiness findings.
+[% } %]
+[% for (issueObj in emitCtx.get("manualIssueList")) { %]
+- `[%= issueObj.get("severity") %]` `[%= issueObj.get("code") %]`: [%= issueObj.get("message") %]
+[% } %]
+
+## Required Human Review
+
+- IAM wildcard rationale and least-privilege boundaries.
+- Public API exposure, WAF settings, CORS, and custom domains.
+- Data retention, backup, encryption, and deletion policies.
+- Secrets and runtime configuration sources.

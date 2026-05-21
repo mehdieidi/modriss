@@ -1,0 +1,17 @@
+# Deployment
+
+## Environments
+
+[% for (stageObj in awsRoot.stages.sortBy(stageObj | stageObj.stageName)) { %]
+- `[%= stageObj.stageName %]`: deploy with `./scripts/deploy.sh [%= stageObj.stageSlug() %]`
+[% } %]
+
+## Preconditions
+
+- AWS SAM CLI is installed.
+- AWS credentials are configured for the target stage.
+- Manual actions with `BLOCKER` severity are resolved.
+
+[%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("deployment-account-notes"), true)%]
+Add account IDs, deployment roles, change-management process, and rollback approvals here.
+[%=out.stopPreserve()%]

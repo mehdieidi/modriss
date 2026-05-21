@@ -1,0 +1,37 @@
+name: Deploy Non-Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: SAM config environment
+        required: true
+        default: [%= emitCtx.get("defaultStageName") %]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.stage }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+[% } else { %]
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+[% } %]
+      - uses: aws-actions/setup-sam@v2
+      - run: bash scripts/test.sh
+      - run: bash scripts/deploy.sh "${{ inputs.stage }}"
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("ci-dev-customizations"), true)%]
+      # Configure aws-actions/configure-aws-credentials and account-specific gates here.
+[%=out.stopPreserve()%]

@@ -1,0 +1,77 @@
+import json
+from pathlib import Path
+from typing import Any
+
+from shared.config import load_config
+from shared.errors import GeneratedHandlerError, map_known_error
+from shared.idempotency import create_idempotency_store, derive_idempotency_key
+from shared.logger import create_logger
+from shared.metrics import create_metrics
+from shared.tracer import create_tracer
+from shared.validation import validate_payload
+
+SCHEMA_DOC = json.loads(Path(__file__).with_name("schema.json").read_text(encoding="utf-8"))
+
+[%=out.startPreserve("#", "", awsFn.manualRegionId("custom-imports"), true)%]
+# TODO: add developer-owned imports here.
+[%=out.stopPreserve()%]
+
+[%=out.startPreserve("#", "", awsFn.manualRegionId("custom-types"), true)%]
+# TODO: add developer-owned types here.
+[%=out.stopPreserve()%]
+
+
+def handler(lambda_evt: Any, lambda_ctx: Any) -> dict[str, Any]:
+    correlation_id_text = _extract_correlation_id(lambda_evt, lambda_ctx)
+    config_obj = load_config()
+    log_obj = create_logger(correlation_id=correlation_id_text, function_name="[%= awsFn.functionName.orElseText(awsFn.cfnLogicalId()) %]")
+    trace_obj = create_tracer(correlation_id=correlation_id_text, source_stable_id="[%= awsFn.stableKey() %]")
+    metric_obj = create_metrics(namespace="[%= emitCtx.get("projectSlug") %]")
+    idem_store_obj = create_idempotency_store(config_obj)
+    metric_obj.add_metric("Invocation", 1)
+
+    try:
+        validated_input = validate_payload(lambda_evt, SCHEMA_DOC)
+[% if (awsFn.requiresIdempotency()) { %]
+        idem_key_text = derive_idempotency_key(validated_input)
+        previous_result = idem_store_obj.get(idem_key_text)
+        if previous_result is not None:
+            metric_obj.add_metric("IdempotencyHit", 1)
+            return previous_result
+[% } %]
+
+[%=out.startPreserve("#", "", awsFn.manualRegionId("custom-validation"), true)%]
+        # TODO: add developer-owned validation that cannot be derived from JSON Schema.
+[%=out.stopPreserve()%]
+
+[%=out.startPreserve("#", "", awsFn.manualRegionId("business-logic"), true)%]
+        raise GeneratedHandlerError("NOT_IMPLEMENTED", "Business logic has not been implemented yet.")
+[%=out.stopPreserve()%]
+
+        generated_result = {
+            "statusCode": 200,
+            "headers": {"content-type": "application/json", "x-correlation-id": correlation_id_text},
+            "body": {"ok": True, "correlationId": correlation_id_text},
+        }
+[% if (awsFn.requiresIdempotency()) { %]
+        idem_store_obj.put(idem_key_text, generated_result)
+[% } %]
+        metric_obj.add_metric("Success", 1)
+        return generated_result
+    except Exception as error_obj:
+[%=out.startPreserve("#", "", awsFn.manualRegionId("custom-error-mapping"), true)%]
+        # TODO: map domain-specific errors here before generated mapping runs.
+[%=out.stopPreserve()%]
+        metric_obj.add_metric("Error", 1)
+        log_obj.error("Handler failed", {"error": str(error_obj)})
+        return map_known_error(error_obj, correlation_id_text)
+    finally:
+        trace_obj.flush()
+        metric_obj.flush()
+
+
+def _extract_correlation_id(lambda_evt: Any, lambda_ctx: Any) -> str:
+    if isinstance(lambda_evt, dict):
+        headers = lambda_evt.get("headers") or {}
+        return headers.get("x-correlation-id") or headers.get("X-Correlation-Id") or lambda_evt.get("requestContext", {}).get("requestId") or getattr(lambda_ctx, "aws_request_id", "local")
+    return getattr(lambda_ctx, "aws_request_id", "local")

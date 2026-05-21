@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "[%= schemaIdText.jsonEscape() %]",
+  "title": "[%= schemaTitleText.jsonEscape() %]",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "correlationId": {
+      "type": "string"
+    }
+  }
+}

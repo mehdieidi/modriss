@@ -1,0 +1,12 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "[%= emitCtx.get("projectSlug") %]"
+
+[% for (stackObj in awsRoot.stacks.sortBy(stackObj | stackObj.stackName)) { %]
+[% for (stageObj in awsRoot.stages.select(stageObj | stageObj.deploysStacks.includes(stackObj) or stageObj.deploysStacks.isEmpty()).sortBy(stageObj | stageObj.stageName)) { %]
+[%=stageObj.emitSamConfigEnv(stackObj)%][% } %]
+[% } %]
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("samconfig-local-overrides"), true)%]
+# Local deploy overrides may be added here. Do not commit account secrets.
+[%=out.stopPreserve()%]

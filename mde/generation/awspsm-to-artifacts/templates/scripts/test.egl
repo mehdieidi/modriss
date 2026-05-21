@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bash scripts/validate-contracts.sh
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+python3 -m pytest tests
+[% } else { %]
+npm test
+[% } %]
+
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("test-customizations"), true)%]
+# Add extra test suites here.
+[%=out.stopPreserve()%]

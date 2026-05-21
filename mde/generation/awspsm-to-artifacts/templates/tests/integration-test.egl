@@ -1,0 +1,30 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+import os
+
+
+def test_[%= awsFn.functionSlug().replace("-", "_") %]_integration_contract():
+[%=out.startPreserve("#", "", awsFn.manualRegionId("integration-external-setup"), true)%]
+    assert os.environ.get("AWS_REGION") is not None
+[%=out.stopPreserve()%]
+[%=out.startPreserve("#", "", awsFn.manualRegionId("integration-assertions"), true)%]
+    assert True
+[%=out.stopPreserve()%]
+[%=out.startPreserve("#", "", awsFn.manualRegionId("integration-cleanup"), true)%]
+    # Add cleanup for external resources here.
+[%=out.stopPreserve()%]
+[% } else { %]
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+test('[%= awsFn.functionSlug() %] integration contract', async () => {
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("integration-external-setup"), true)%]
+  assert.ok(process.env.AWS_REGION, 'AWS_REGION is required for integration tests');
+[%=out.stopPreserve()%]
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("integration-assertions"), true)%]
+  assert.ok(true);
+[%=out.stopPreserve()%]
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("integration-cleanup"), true)%]
+  // Add cleanup for external resources here.
+[%=out.stopPreserve()%]
+});
+[% } %]

@@ -1,0 +1,15 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+def test_generated_e2e_placeholder():
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("e2e-business-flow-assertions"), true)%]
+    assert True
+[%=out.stopPreserve()%]
+[% } else { %]
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+test('generated e2e placeholder', async () => {
+[%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("e2e-business-flow-assertions"), true)%]
+  assert.ok(true);
+[%=out.stopPreserve()%]
+});
+[% } %]

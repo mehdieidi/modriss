@@ -1,0 +1,22 @@
+# [%= emitCtx.get("projectName") %]
+
+Generated AWS serverless project from the PSM model.
+
+## Generated Commands
+
+- `make validate` validates generated model reports, contracts, and SAM template.
+- `make build` builds generated source.
+- `make test` runs generated tests.
+- `make deploy STAGE=[%= emitCtx.get("defaultStageName") %]` deploys with `samconfig.toml`.
+
+## Project Layout
+
+- `template.yaml` contains SAM/CloudFormation resources.
+- `src/functions` contains generated Lambda entry points with protected business-logic regions.
+- `src/shared` contains generated runtime support for logging, tracing, metrics, validation, idempotency, config, event publication, and data access.
+- `docs` contains generated architecture, operations, deployment, security, and runbook documentation.
+- `generated` contains traceability and generation reports.
+
+[%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("readme-custom-project-notes"), true)%]
+Add project-specific onboarding notes here.
+[%=out.stopPreserve()%]

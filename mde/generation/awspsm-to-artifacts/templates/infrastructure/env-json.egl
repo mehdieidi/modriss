@@ -1,0 +1,12 @@
+{
+  "stage": "[%= stageObj.stageName %]",
+  "environmentClass": "[%= stageObj.environmentClass.asString() %]",
+  "accountId": "[%= stageObj.accountId.orElseText("") %]",
+  "region": "[%= stageObj.region.orElseText("") %]",
+  "parameters": {
+[% var paramSeq = stageObj.parameterOverrides.sortBy(kvObj | kvObj.key); %]
+[% for (kvObj in paramSeq) { %]
+    "[%= kvObj.key.jsonEscape() %]": "[%= kvObj.value.orElseText("").jsonEscape() %]"[% if (kvObj <> paramSeq.last()) { %],[% } %]
+[% } %]
+  }
+}

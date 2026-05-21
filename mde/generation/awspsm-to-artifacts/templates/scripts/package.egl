@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+stage_text="${1:-[%= emitCtx.get("defaultStageName") %]}"
+sam build
+sam package --config-env "$stage_text"
+
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("package-customizations"), true)%]
+# Add artifact signing or upload hooks here.
+[%=out.stopPreserve()%]

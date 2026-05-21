@@ -1,0 +1,16 @@
+{
+  "regions": [
+[% var regionSeq = emitCtx.get("protectedRegionRows").sortBy(rowMap | rowMap.get("regionId")); %]
+[% for (rowMap in regionSeq) { %]
+    {
+      "regionId": "[%= rowMap.get("regionId").jsonEscape() %]",
+      "artifactPath": "[%= rowMap.get("artifactPath").jsonEscape() %]",
+      "sourceStableId": "[%= rowMap.get("sourceStableId").jsonEscape() %]",
+      "regionKind": "[%= rowMap.get("regionKind").jsonEscape() %]",
+      "requiredForProduction": [%= rowMap.get("requiredForProduction") %],
+      "filled": [%= rowMap.get("filled") %],
+      "ownerHint": "[%= rowMap.get("ownerHint").jsonEscape() %]"
+    }[% if (rowMap <> regionSeq.last()) { %],[% } %]
+[% } %]
+  ]
+}

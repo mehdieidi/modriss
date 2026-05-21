@@ -1,0 +1,294 @@
+import "naming.eol";
+
+operation spaces(indentCount : Integer) : String {
+  var text = "";
+  for (idx in Sequence{1..indentCount}) {
+    text = text + " ";
+  }
+  return text;
+}
+
+operation Any jsonEscape() : String {
+  if (self.isUndefined()) {
+    return "";
+  }
+  return self.asString()
+    .replace("\\", "\\\\")
+    .replace("\"", "\\\"")
+    .replace("\r", "\\r")
+    .replace("\n", "\\n");
+}
+
+operation Any jsonString() : String {
+  return "\"" + self.jsonEscape() + "\"";
+}
+
+operation Any yamlScalar() : String {
+  if (self.isUndefined()) {
+    return "''";
+  }
+  var text = self.asString();
+  if (text = "true" or text = "false") {
+    return text;
+  }
+  if (text.isInteger() or text.isReal()) {
+    return text;
+  }
+  if (text.startsWith("!Ref ") or text.startsWith("!GetAtt ") or text.startsWith("!Sub ") or text.startsWith("!ImportValue ")) {
+    return text;
+  }
+  if (text.startsWith("{") or text.startsWith("[") or text.startsWith("'{{resolve:")) {
+    return text;
+  }
+  return "'" + text.replace("'", "''") + "'";
+}
+
+operation Any yamlPlainScalar() : String {
+  if (self.isUndefined()) {
+    return "''";
+  }
+  return self.asString().yamlScalar();
+}
+
+operation yamlBlock(nameText : String, contentText : String, indentCount : Integer) : String {
+  var lineIndent = spaces(indentCount);
+  var contentIndent = spaces(indentCount + 2);
+  var outText = lineIndent + nameText + ": |\n";
+  for (lineText in contentText.split("\n")) {
+    outText = outText + contentIndent + lineText + "\n";
+  }
+  return outText;
+}
+
+operation emitYamlScalarProperty(nameText : String, valueObj, indentCount : Integer) : String {
+  if (valueObj.isUndefined() or valueObj.asString().trim().isEmpty()) {
+    return "";
+  }
+  return spaces(indentCount) + nameText + ": " + valueObj.yamlScalar() + "\n";
+}
+
+operation emitYamlBooleanProperty(nameText : String, valueObj, indentCount : Integer) : String {
+  if (valueObj.isUndefined()) {
+    return "";
+  }
+  return spaces(indentCount) + nameText + ": " + valueObj.asString().toLowerCase() + "\n";
+}
+
+operation emitYamlIntegerProperty(nameText : String, valueObj, indentCount : Integer) : String {
+  if (valueObj.isUndefined()) {
+    return "";
+  }
+  return spaces(indentCount) + nameText + ": " + valueObj.asString() + "\n";
+}
+
+operation emitYamlStringListProperty(nameText : String, valueSeq, indentCount : Integer) : String {
+  if (valueSeq.isUndefined() or valueSeq.isEmpty()) {
+    return "";
+  }
+  var outText = spaces(indentCount) + nameText + ":\n";
+  for (itemText in valueSeq) {
+    outText = outText + spaces(indentCount + 2) + "- " + itemText.yamlScalar() + "\n";
+  }
+  return outText;
+}
+
+operation Any cfnPolicyName() : String {
+  var text = self.orElseText("").asString();
+  if (text = "RETAIN") {
+    return "Retain";
+  }
+  if (text = "RETAIN_EXCEPT_ON_CREATE") {
+    return "RetainExceptOnCreate";
+  }
+  if (text = "SNAPSHOT") {
+    return "Snapshot";
+  }
+  if (text = "DELETE") {
+    return "Delete";
+  }
+  return text;
+}
+
+operation Any lambdaArchitectureText() : String {
+  var text = self.orElseText("").asString();
+  if (text = "X86_64") {
+    return "x86_64";
+  }
+  if (text = "ARM64") {
+    return "arm64";
+  }
+  return text.toLowerCase();
+}
+
+operation Any lambdaTracingModeText() : String {
+  var text = self.orElseText("").asString();
+  if (text = "ACTIVE") {
+    return "Active";
+  }
+  if (text = "PASS_THROUGH") {
+    return "PassThrough";
+  }
+  return "";
+}
+
+operation Any iamEffectText() : String {
+  var text = self.orElseText("ALLOW").asString();
+  if (text = "ALLOW") {
+    return "Allow";
+  }
+  if (text = "DENY") {
+    return "Deny";
+  }
+  return text;
+}
+
+operation Any httpMethodText() : String {
+  return self.orElseText("GET").asString().toLowerCase();
+}
+
+operation Any snsProtocolText() : String {
+  return self.orElseText("").asString().toLowerCase();
+}
+
+operation refForResource(resObj) : String {
+  if (resObj.isUndefined()) {
+    return "";
+  }
+  return "!Ref " + resObj.cfnLogicalId();
+}
+
+operation arnForResource(resObj) : String {
+  if (resObj.isUndefined()) {
+    return "";
+  }
+  var classText = resObj.eClass().getName();
+  if (classText = "SqsQueue" or classText = "DynamoDbTable" or classText = "AwsLambdaFunction" or
+      classText = "SnsTopic" or classText = "KmsKey" or classText = "CloudWatchLogGroup" or
+      classText = "StepFunctionStateMachine") {
+    return "!GetAtt " + resObj.cfnLogicalId() + ".Arn";
+  }
+  return "!GetAtt " + resObj.cfnLogicalId() + ".Arn";
+}
+
+operation AWSPSMCORE!ValueExpression cfnInlineYaml() : String {
+  var kindText = self.sourceKind.asString();
+  if (kindText = "PLAINTEXT") {
+    return self.literal.yamlScalar();
+  }
+  if (kindText = "CLOUDFORMATION_REF") {
+    if (self.parameter.isDefined()) {
+      return "!Ref " + self.parameter.parameterName;
+    }
+    if (self.resource.isDefined()) {
+      return "!Ref " + self.resource.cfnLogicalId();
+    }
+    return "!Ref " + self.expression.orElseText(self.literal);
+  }
+  if (kindText = "CLOUDFORMATION_GETATT" or kindText = "RESOURCE_ATTRIBUTE") {
+    if (self.resource.isDefined()) {
+      return "!GetAtt " + self.resource.cfnLogicalId() + "." + self.attributeName.orElseText("Arn");
+    }
+    return "!GetAtt " + self.expression.orElseText(self.literal);
+  }
+  if (kindText = "CLOUDFORMATION_SUB") {
+    return "!Sub " + self.expression.orElseText(self.literal).yamlScalar();
+  }
+  if (kindText = "IMPORT_VALUE") {
+    return "!ImportValue " + self.expression.orElseText(self.literal).yamlScalar();
+  }
+  if (kindText = "SSM_PARAMETER_REFERENCE") {
+    return "'{{resolve:ssm:" + self.expression.orElseText(self.literal) + "}}'";
+  }
+  if (kindText = "SSM_SECURE_REFERENCE") {
+    return "'{{resolve:ssm-secure:" + self.expression.orElseText(self.literal) + "}}'";
+  }
+  if (kindText = "SECRETS_MANAGER_REFERENCE") {
+    return "'{{resolve:secretsmanager:" + self.expression.orElseText(self.literal) + "}}'";
+  }
+  if (kindText = "DYNAMIC_REFERENCE") {
+    return "'{{resolve:" + self.expression.orElseText(self.literal) + "}}'";
+  }
+  return firstText(self.expression, self.literal).yamlScalar();
+}
+
+operation AWSPSMCORE!ValueExpression cfnValueYaml(indentCount : Integer) : String {
+  var kindText = self.sourceKind.asString();
+  if (kindText = "LIST") {
+    var outText = "";
+    for (itemVal in self.items) {
+      if (itemVal.sourceKind.asString() = "LIST" or itemVal.sourceKind.asString() = "MAP") {
+        outText = outText + spaces(indentCount) + "-\n" + itemVal.cfnValueYaml(indentCount + 2);
+      }
+      else {
+        outText = outText + spaces(indentCount) + "- " + itemVal.cfnInlineYaml() + "\n";
+      }
+    }
+    return outText;
+  }
+  if (kindText = "MAP") {
+    var outText = "";
+    for (entryVal in self.entries.sortBy(entryVal | entryVal.key)) {
+      var valObj = entryVal.value;
+      if (valObj.sourceKind.asString() = "LIST" or valObj.sourceKind.asString() = "MAP") {
+        outText = outText + spaces(indentCount) + entryVal.key + ":\n" + valObj.cfnValueYaml(indentCount + 2);
+      }
+      else {
+        outText = outText + spaces(indentCount) + entryVal.key + ": " + valObj.cfnInlineYaml() + "\n";
+      }
+    }
+    return outText;
+  }
+  return self.cfnInlineYaml();
+}
+
+operation AWSPSMCORE!ValueExpression emitCfnValueProperty(nameText : String, indentCount : Integer) : String {
+  var kindText = self.sourceKind.asString();
+  if (kindText = "LIST" or kindText = "MAP") {
+    return spaces(indentCount) + nameText + ":\n" + self.cfnValueYaml(indentCount + 2);
+  }
+  return spaces(indentCount) + nameText + ": " + self.cfnInlineYaml() + "\n";
+}
+
+operation AWSPSMCORE!NativeProperty emitNativePropertyYaml(indentCount : Integer) : String {
+  if (self.value.isUndefined()) {
+    return "";
+  }
+  if (self.format.asString() = "JSON" or self.format.asString() = "YAML" or self.format.asString() = "IAM_POLICY_JSON" or self.format.asString() = "ASL_JSON") {
+    var rawText = firstText(self.value.expression, self.value.literal);
+    if (rawText.isPresent()) {
+      return yamlBlock(self.propertyName, rawText, indentCount);
+    }
+  }
+  return self.value.emitCfnValueProperty(self.propertyName, indentCount);
+}
+
+operation Collection emitNativePropertiesYaml(indentCount : Integer) : String {
+  var outText = "";
+  for (propObj in self.sortBy(propObj | propObj.propertyName)) {
+    outText = outText + propObj.emitNativePropertyYaml(indentCount);
+  }
+  return outText;
+}
+
+operation Collection emitTagsYaml(indentCount : Integer) : String {
+  if (self.isEmpty()) {
+    return "";
+  }
+  var outText = spaces(indentCount) + "Tags:\n";
+  for (tagObj in self.sortBy(tagObj | tagObj.key)) {
+    outText = outText + spaces(indentCount + 2) + "- Key: " + tagObj.key.yamlScalar() + "\n";
+    outText = outText + spaces(indentCount + 4) + "Value: " + tagObj.value.orElseText("").yamlScalar() + "\n";
+  }
+  return outText;
+}
+
+operation AWSPSMCORE!CorsConfiguration emitCorsYaml(indentCount : Integer) : String {
+  var outText = "";
+  outText = outText + emitYamlStringListProperty("AllowOrigins", self.allowOrigins, indentCount);
+  outText = outText + emitYamlStringListProperty("AllowMethods", self.allowMethods, indentCount);
+  outText = outText + emitYamlStringListProperty("AllowHeaders", self.allowHeaders, indentCount);
+  outText = outText + emitYamlStringListProperty("ExposeHeaders", self.exposeHeaders, indentCount);
+  outText = outText + emitYamlIntegerProperty("MaxAge", self.maxAgeSeconds, indentCount);
+  outText = outText + emitYamlBooleanProperty("AllowCredentials", self.allowCredentials, indentCount);
+  return outText;
+}

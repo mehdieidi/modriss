@@ -1,0 +1,36 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+from typing import Any
+from jsonschema import validate
+
+from shared.errors import GeneratedHandlerError
+
+
+def validate_payload(payload_obj: Any, schema_obj: dict[str, Any]) -> Any:
+    try:
+        validate(instance=payload_obj, schema=schema_obj)
+        return payload_obj
+    except Exception as error_obj:
+        raise GeneratedHandlerError("VALIDATION_ERROR", str(error_obj)) from error_obj
+[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
+package shared;
+
+public final class Validation {
+  private Validation() {}
+  public static <T> T validatePayload(T payloadObj, Object schemaObj) {
+    return payloadObj;
+  }
+}
+[% } else { %]
+import Ajv from 'ajv';
+import { GeneratedHandlerError } from './errors';
+
+const ajvObj = new Ajv({ allErrors: true, strict: false });
+
+export function validatePayload<T>(payloadObj: unknown, schemaObj: object): T {
+  const validateFn = ajvObj.compile(schemaObj);
+  if (!validateFn(payloadObj)) {
+    throw new GeneratedHandlerError('VALIDATION_ERROR', ajvObj.errorsText(validateFn.errors));
+  }
+  return payloadObj as T;
+}
+[% } %]

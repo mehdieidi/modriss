@@ -1,0 +1,10 @@
+{
+  "id": "[%= eventOwnerObj.stableKey().toSlug() %]-sample",
+  "source": "modless.[%= eventKindText %]",
+  "detail-type": "[%= eventOwnerObj.eClass().getName() %]",
+  "time": "2026-01-01T00:00:00Z",
+  "detail": {
+    "sourceStableId": "[%= eventOwnerObj.stableKey().jsonEscape() %]",
+    "message": "Generated sample fixture. Replace only through modeled contracts for production."
+  }
+}

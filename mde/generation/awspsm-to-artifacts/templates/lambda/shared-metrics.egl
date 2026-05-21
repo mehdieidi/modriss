@@ -1,0 +1,41 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+from typing import Any
+
+
+class GeneratedMetrics:
+    def __init__(self, namespace: str) -> None:
+        self.namespace = namespace
+        self.values: list[tuple[str, float]] = []
+
+    def add_metric(self, name_text: str, value_num: float) -> None:
+        self.values.append((name_text, value_num))
+
+    def flush(self) -> None:
+        return None
+
+
+def create_metrics(namespace: str) -> GeneratedMetrics:
+    return GeneratedMetrics(namespace)
+[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
+package shared;
+
+public final class Metrics {
+  public void addMetric(String nameText, double valueNum) {}
+  public void flush() {}
+}
+[% } else { %]
+export interface Metrics {
+  addMetric(nameText: string, valueNum: number): void;
+  flush(): Promise<void>;
+}
+
+export function createMetrics(_contextObj: Record<string, unknown>): Metrics {
+  const metricSeq: Array<{ nameText: string; valueNum: number }> = [];
+  return {
+    addMetric: (nameText, valueNum) => { metricSeq.push({ nameText, valueNum }); },
+    flush: async () => {
+      if (metricSeq.length > 0) console.info(JSON.stringify({ metrics: metricSeq }));
+    }
+  };
+}
+[% } %]

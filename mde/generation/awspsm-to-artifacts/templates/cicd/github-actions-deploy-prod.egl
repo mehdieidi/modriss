@@ -1,0 +1,39 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Production SAM config environment
+        required: true
+        default: prod
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+[% } else { %]
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+[% } %]
+      - uses: aws-actions/setup-sam@v2
+      - run: bash scripts/validate-models.sh
+      - run: bash scripts/test.sh
+      - run: bash scripts/deploy.sh "${{ inputs.stage }}"
+[%=out.startPreserve("#", "", awsRoot.manualRegionId("ci-prod-customizations"), true)%]
+      # Configure production credentials, approvals, and release evidence uploads here.
+[%=out.stopPreserve()%]

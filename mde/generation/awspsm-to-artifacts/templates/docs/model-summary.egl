@@ -1,0 +1,20 @@
+# Model Summary
+
+- Project: `[%= emitCtx.get("projectName") %]`
+- Generator version: `[%= emitCtx.get("generatorVersion") %]`
+- Production mode: `[%= emitCtx.get("productionMode") %]`
+- Stages: `[%= awsRoot.stages.size() %]`
+- Stacks: `[%= awsRoot.stacks.size() %]`
+- Resources: `[%= awsRoot.allModeledResources().size() %]`
+
+## Stages
+
+[% for (stageObj in awsRoot.stages.sortBy(stageObj | stageObj.stageName)) { %]
+- `[%= stageObj.stageName %]`: `[%= stageObj.environmentClass.asString() %]`, region `[%= stageObj.region.orElseText("not specified") %]`, manual approval `[%= stageObj.requiresManualApproval.orElseText("false") %]`
+[% } %]
+
+## Resources
+
+[% for (resObj in awsRoot.allModeledResources()) { %]
+- `[%= resObj.cfnLogicalId() %]`: `[%= resObj.eClass().getName() %]`, stable ID `[%= resObj.stableKey() %]`
+[% } %]

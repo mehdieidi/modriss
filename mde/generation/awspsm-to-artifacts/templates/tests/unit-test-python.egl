@@ -1,0 +1,31 @@
+import importlib.util
+from pathlib import Path
+
+
+handler_path = Path("src/functions/[%= awsFn.functionPathSegment(emitCtx) %]/handler.py")
+spec_obj = importlib.util.spec_from_file_location("generated_[%= awsFn.functionSlug().replace("-", "_") %]_handler", handler_path)
+module_obj = importlib.util.module_from_spec(spec_obj)
+assert spec_obj is not None and spec_obj.loader is not None
+spec_obj.loader.exec_module(module_obj)
+handler = module_obj.handler
+
+
+class LambdaContext:
+    aws_request_id = "unit-request"
+
+
+[%=out.startPreserve("#", "", awsFn.manualRegionId("unit-custom-fixtures"), true)%]
+fixture_obj = {"id": "unit-fixture", "detail": {"sourceStableId": "[%= awsFn.stableKey() %]"}}
+[%=out.stopPreserve()%]
+
+
+def test_[%= awsFn.functionSlug().replace("-", "_") %]_generated_path():
+[%=out.startPreserve("#", "", awsFn.manualRegionId("unit-custom-assertions"), true)%]
+    result_obj = handler(fixture_obj, LambdaContext())
+    assert "statusCode" in result_obj
+[%=out.stopPreserve()%]
+
+
+[%=out.startPreserve("#", "", awsFn.manualRegionId("unit-edge-cases"), true)%]
+# Add developer-owned edge case tests here.
+[%=out.stopPreserve()%]

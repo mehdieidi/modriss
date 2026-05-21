@@ -1,0 +1,14 @@
+{
+  "projectSlug": "[%= emitCtx.get("projectSlug").jsonEscape() %]",
+  "resources": [
+[% var resSeq = awsRoot.allModeledResources(); %]
+[% for (resObj in resSeq) { %]
+    {
+      "stableId": "[%= resObj.stableKey().jsonEscape() %]",
+      "logicalId": "[%= resObj.cfnLogicalId().jsonEscape() %]",
+      "metaclass": "[%= resObj.eClass().getName().jsonEscape() %]",
+      "stack": "[%= resObj.stack.stackName.jsonEscape() %]"
+    }[% if (resObj <> resSeq.last()) { %],[% } %]
+[% } %]
+  ]
+}

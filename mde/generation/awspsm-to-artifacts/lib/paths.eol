@@ -1,0 +1,146 @@
+import "naming.eol";
+
+operation Any sourceExtension() : String {
+  var langText = self.orElseText("TYPESCRIPT").toUpperCase();
+  if (langText = "TYPESCRIPT") {
+    return "ts";
+  }
+  if (langText = "JAVASCRIPT") {
+    return "js";
+  }
+  if (langText = "PYTHON") {
+    return "py";
+  }
+  if (langText = "JAVA") {
+    return "java";
+  }
+  if (langText = "GO") {
+    return "go";
+  }
+  if (langText = "RUST") {
+    return "rs";
+  }
+  return "ts";
+}
+
+operation Any testExtension() : String {
+  return self.sourceExtension();
+}
+
+operation Map primaryLanguage() : String {
+  return self.get("primaryLanguage").orElseText("TYPESCRIPT").toUpperCase();
+}
+
+operation Map sourceExtension() : String {
+  return self.primaryLanguage().sourceExtension();
+}
+
+operation Map testExtension() : String {
+  return self.primaryLanguage().testExtension();
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction functionPathSegment(profileMap : Map) : String {
+  if (profileMap.primaryLanguage() = "PYTHON") {
+    return self.functionSlug().toSnake();
+  }
+  return self.functionSlug();
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction handlerPath(profileMap : Map) : String {
+  return "src/functions/" + self.functionPathSegment(profileMap) + "/handler." + profileMap.sourceExtension();
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction localSchemaPath(profileMap : Map) : String {
+  return "src/functions/" + self.functionPathSegment(profileMap) + "/schema.json";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction localSchemaPath() : String {
+  return self.localSchemaPath(AWSPSM!AwsPsmModel.all.first().defaultEmitContext());
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction generatedHandlerName(profileMap : Map) : String {
+  return "functions." + self.functionPathSegment(profileMap).replace("/", ".") + ".handler.handler";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction generatedCodeUri(profileMap : Map) : String {
+  if (profileMap.primaryLanguage() = "TYPESCRIPT") {
+    return "dist";
+  }
+  return "src";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction unitTestPath(profileMap : Map) : String {
+  var extText = profileMap.testExtension();
+  if (profileMap.primaryLanguage() = "PYTHON") {
+    return "tests/unit/test_" + self.functionSlug().replace("-", "_") + ".py";
+  }
+  return "tests/unit/" + self.functionSlug() + ".test." + extText;
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction integrationTestPath(profileMap : Map) : String {
+  var extText = profileMap.testExtension();
+  if (profileMap.primaryLanguage() = "PYTHON") {
+    return "tests/integration/test_" + self.functionSlug().replace("-", "_") + "_integration.py";
+  }
+  return "tests/integration/" + self.functionSlug() + ".integration.test." + extText;
+}
+
+operation AWSPSMAPI!ApiGatewayApi openApiPath() : String {
+  return "openapi/" + self.apiSlug() + ".openapi.yaml";
+}
+
+operation AWSPSMWORKFLOW!StepFunctionStateMachine aslPath() : String {
+  return "asl/" + self.workflowSlug() + ".asl.json";
+}
+
+operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestPath(profileMap : Map) : String {
+  var extText = profileMap.testExtension();
+  if (profileMap.primaryLanguage() = "PYTHON") {
+    return "tests/workflows/test_" + self.workflowSlug().replace("-", "_") + ".py";
+  }
+  return "tests/workflows/" + self.workflowSlug() + ".workflow.test." + extText;
+}
+
+operation AWSPSMEVENTS!EventBridgeRule eventFixturePath() : String {
+  return "events/samples/" + self.eventRuleSlug() + ".json";
+}
+
+operation AWSPSMMESSAGING!SqsQueue queueFixturePath() : String {
+  return "events/samples/" + self.queueSlug() + "-sqs-message.json";
+}
+
+operation AWSPSMMESSAGING!SnsTopic topicFixturePath() : String {
+  return "events/samples/" + self.topicSlug() + "-sns-message.json";
+}
+
+operation AWSPSMCORE!AwsStage envPath() : String {
+  if (self.environmentClass.asString() = "PROD") {
+    return "env/prod.example.json";
+  }
+  return "env/" + self.stageSlug() + ".json";
+}
+
+operation Any pathKind(pathText : String) : String {
+  if (pathText.endsWith(".yaml") or pathText.endsWith(".yml")) {
+    return "YAML";
+  }
+  if (pathText.endsWith(".json")) {
+    return "JSON";
+  }
+  if (pathText.endsWith(".md")) {
+    return "MARKDOWN";
+  }
+  if (pathText.endsWith(".sh")) {
+    return "SHELL";
+  }
+  if (pathText.endsWith(".ts")) {
+    return "TYPESCRIPT";
+  }
+  if (pathText.endsWith(".js")) {
+    return "JAVASCRIPT";
+  }
+  if (pathText.endsWith(".py")) {
+    return "PYTHON";
+  }
+  return "TEXT";
+}

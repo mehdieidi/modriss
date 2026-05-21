@@ -1,0 +1,21 @@
+[% out.setContentType("YAML"); %]
+openapi: 3.0.3
+info:
+  title: [%= apiObj.apiName.orElseText(apiObj.cfnLogicalId()).yamlScalar() %]
+  version: '1.0.0'
+  description: [%= apiObj.descriptionText.orElseText("Generated from AWS PSM API model.").yamlScalar() %]
+paths:
+[% for (pathText in routeSeq.collect(routeObj | routeObj.routePath()).asSet().sort()) { %]
+  [%= pathText %]:
+[% for (routeObj in routeSeq.select(routeObj | routeObj.routePath() = pathText).sortBy(routeObj | routeObj.routeMethod())) { %]
+[%= routeObj.emitOpenApiOperationYaml(4) %][% } %]
+[% } %]
+components:
+  responses:
+    BadRequest:
+      description: Invalid request
+    InternalError:
+      description: Internal error
+[%=out.startPreserve("#", "", apiObj.manualRegionId("openapi-extension"), true)%]
+# Add vendor extensions that cannot yet be represented in the PSM here.
+[%=out.stopPreserve()%]

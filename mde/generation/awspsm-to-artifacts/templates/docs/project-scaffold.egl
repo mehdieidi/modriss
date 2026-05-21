@@ -1,0 +1,7 @@
+Project: [%= emitCtx.get("projectName") %]
+Slug: [%= emitCtx.get("projectSlug") %]
+Generator: [%= emitCtx.get("generatorVersion") %]
+Primary language: [%= emitCtx.primaryLanguage() %]
+Stacks: [%= awsRoot.stacks.size() %]
+Stages: [%= awsRoot.stages.size() %]
+Resources: [%= awsRoot.allModeledResources().size() %]

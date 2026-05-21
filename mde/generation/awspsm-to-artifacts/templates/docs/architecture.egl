@@ -1,0 +1,18 @@
+# Architecture
+
+## Stacks
+
+[% for (stackObj in awsRoot.stacks.sortBy(stackObj | stackObj.stackName)) { %]
+## [%= stackObj.stackName %]
+
+Template: `[%= stackObj.stackTemplatePath() %]`
+
+Resources:
+[% for (resObj in stackObj.orderedResources()) { %]
+- `[%= resObj.cfnLogicalId() %]` (`[%= resObj.eClass().getName() %]`)
+[% } %]
+[% } %]
+
+[%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("architecture-custom-diagrams"), true)%]
+Add architecture diagrams or environment-specific topology notes here.
+[%=out.stopPreserve()%]

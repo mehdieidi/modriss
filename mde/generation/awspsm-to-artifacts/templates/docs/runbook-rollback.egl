@@ -1,0 +1,12 @@
+# Rollback Runbook
+
+## Generated Checklist
+
+1. Identify the last known-good artifact and stack version.
+2. Review CloudFormation change set impact.
+3. Redeploy the last known-good package with `sam deploy --config-env <stage>`.
+4. Verify alarms, synthetic checks, and critical user journeys.
+
+[%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("rollback-team-steps"), true)%]
+Add project-specific rollback commands and data recovery notes here.
+[%=out.stopPreserve()%]

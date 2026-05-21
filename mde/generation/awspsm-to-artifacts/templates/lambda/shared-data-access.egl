@@ -1,0 +1,19 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+from typing import Any
+
+
+class GeneratedDataAccess:
+    def __init__(self, config_obj: Any) -> None:
+        self.config_obj = config_obj
+[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
+package shared;
+
+public final class DataAccess {
+}
+[% } else { %]
+import type { GeneratedConfig } from './config';
+
+export class GeneratedDataAccess {
+  constructor(readonly configObj: GeneratedConfig) {}
+}
+[% } %]

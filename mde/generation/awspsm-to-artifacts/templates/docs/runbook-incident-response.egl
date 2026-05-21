@@ -1,0 +1,12 @@
+# Incident Response Runbook
+
+## Generated Checklist
+
+1. Identify impacted stack and stage from `samconfig.toml`.
+2. Check CloudWatch logs, metrics, alarms, and dashboards modeled in `template.yaml`.
+3. Confirm whether any manual actions in `generated/reports/manual-actions.md` were unresolved.
+4. If deployment-related, follow `docs/runbooks/rollback.md`.
+
+[%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("incident-response-team-steps"), true)%]
+Add service-specific triage, escalation, and communication steps here.
+[%=out.stopPreserve()%]

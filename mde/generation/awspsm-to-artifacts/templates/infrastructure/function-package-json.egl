@@ -1,0 +1,7 @@
+{
+  "name": "[%= awsFn.functionSlug() %]",
+  "private": true,
+  "type": "commonjs",
+  "main": "handler.js",
+  "dependencies": {}
+}

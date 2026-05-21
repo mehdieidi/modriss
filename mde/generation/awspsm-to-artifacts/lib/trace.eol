@@ -1,0 +1,122 @@
+import "naming.eol";
+import "paths.eol";
+
+operation AWSPSM!AwsPsmModel defaultEmitContext() : Map {
+  var profileMap = new Map;
+  var rootNameText = firstText(self.name, "Generated AWS Serverless Project");
+  profileMap.put("projectName", rootNameText);
+  profileMap.put("projectSlug", rootNameText.toSlug());
+  profileMap.put("primaryLanguage", "TYPESCRIPT");
+  profileMap.put("packageManager", "npm");
+  profileMap.put("generatorVersion", "1.0-production-ready-generator-spec");
+  profileMap.put("defaultStageName", self.defaultStageName());
+  profileMap.put("productionMode", self.productionMode.isDefined() and self.productionMode);
+  profileMap.put("incrementalMode", true);
+  profileMap.put("zipExportEnabled", true);
+  profileMap.put("enableOpenApi", true);
+  profileMap.put("enableAsl", true);
+  profileMap.put("enableCiCd", true);
+  profileMap.put("enableDocs", true);
+  profileMap.put("enableTests", true);
+  profileMap.put("failOnManualEditOutsideRegion", true);
+  profileMap.put("preserveUnknownFiles", true);
+  profileMap.put("manualIssueList", new Sequence);
+  profileMap.put("traceRows", new Sequence);
+  profileMap.put("protectedRegionRows", new Sequence);
+  profileMap.put("artifactPlanRows", new Sequence);
+  return profileMap;
+}
+
+operation AWSPSM!AwsPsmModel defaultStageName() : String {
+  if (self.stages.notEmpty()) {
+    return self.stages.first().stageName;
+  }
+  return "dev";
+}
+
+operation AWSPSM!AwsPsmModel allModeledResources() : Sequence {
+  var resSeq = new Sequence;
+  for (stackObj in self.stacks) {
+    for (resObj in stackObj.resources) {
+      if (not resSeq.includes(resObj)) {
+        resSeq.add(resObj);
+      }
+    }
+  }
+  for (resObj in self.allResources) {
+    if (not resSeq.includes(resObj)) {
+      resSeq.add(resObj);
+    }
+  }
+  return resSeq.sortBy(resObj | resObj.cfnLogicalId());
+}
+
+operation Map recordArtifact(pathText : String, kindText : String, ruleNameText : String, sourceSeq, mergeStrategyText : String, protectedSeq) {
+  var rowMap = new Map;
+  rowMap.put("path", pathText);
+  rowMap.put("artifactKind", kindText);
+  rowMap.put("generatedBy", ruleNameText);
+  rowMap.put("sourceStableIds", sourceSeq);
+  rowMap.put("sections", Sequence{});
+  rowMap.put("generatedChecksum", "COMPUTED_AFTER_WRITE");
+  rowMap.put("mergeStrategy", mergeStrategyText);
+  rowMap.put("protectedRegionIds", protectedSeq);
+  self.get("traceRows").add(rowMap);
+  for (regionIdText in protectedSeq) {
+    var regionMap = new Map;
+    regionMap.put("regionId", regionIdText);
+    regionMap.put("artifactPath", pathText);
+    if (sourceSeq.isEmpty()) {
+      regionMap.put("sourceStableId", "");
+    }
+    else {
+      regionMap.put("sourceStableId", sourceSeq.first());
+    }
+    regionMap.put("regionKind", regionIdText);
+    regionMap.put("requiredForProduction", mergeStrategyText = "PRESERVE_PROTECTED_REGIONS");
+    regionMap.put("filled", false);
+    regionMap.put("ownerHint", "developer");
+    self.get("protectedRegionRows").add(regionMap);
+  }
+  return rowMap;
+}
+
+operation Map recordProtectedRegion(pathText : String, sourceIdText : String, kindText : String, regionIdText : String, requiredForProduction : Boolean) {
+  var rowMap = new Map;
+  rowMap.put("regionId", regionIdText);
+  rowMap.put("artifactPath", pathText);
+  rowMap.put("sourceStableId", sourceIdText);
+  rowMap.put("regionKind", kindText);
+  rowMap.put("requiredForProduction", requiredForProduction);
+  rowMap.put("filled", false);
+  rowMap.put("ownerHint", "developer");
+  self.get("protectedRegionRows").add(rowMap);
+  return rowMap;
+}
+
+operation Map addManualIssue(codeText : String, severityText : String, messageText : String, sourceObj, blockingFlag : Boolean) {
+  var rowMap = new Map;
+  rowMap.put("code", codeText);
+  rowMap.put("severity", severityText);
+  rowMap.put("message", messageText);
+  rowMap.put("blocking", blockingFlag);
+  if (sourceObj.isDefined()) {
+    rowMap.put("sourceStableId", sourceObj.stableKey());
+    rowMap.put("sourceType", sourceObj.eClass().getName());
+  }
+  else {
+    rowMap.put("sourceStableId", "");
+    rowMap.put("sourceType", "");
+  }
+  self.get("manualIssueList").add(rowMap);
+  return rowMap;
+}
+
+operation Map addArtifactPlan(pathText : String, kindText : String, ruleNameText : String) {
+  var rowMap = new Map;
+  rowMap.put("path", pathText);
+  rowMap.put("artifactKind", kindText);
+  rowMap.put("ruleName", ruleNameText);
+  self.get("artifactPlanRows").add(rowMap);
+  return rowMap;
+}

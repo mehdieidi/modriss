@@ -1,0 +1,46 @@
+[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
+import json
+import logging
+from typing import Any
+
+
+def create_logger(**context: Any):
+    logger_obj = logging.getLogger(context.get("function_name", "generated-handler"))
+    logger_obj.setLevel(logging.INFO)
+
+    def _emit(level_text: str, message_text: str, extra_obj: dict[str, Any] | None = None) -> None:
+        payload_obj = {"message": message_text, "context": context, "extra": extra_obj or {}}
+        logger_obj.log(getattr(logging, level_text), json.dumps(payload_obj, default=str))
+
+    logger_obj.info = lambda message_text, extra_obj=None: _emit("INFO", message_text, extra_obj)  # type: ignore[method-assign]
+    logger_obj.error = lambda message_text, extra_obj=None: _emit("ERROR", message_text, extra_obj)  # type: ignore[method-assign]
+    return logger_obj
+[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
+package shared;
+
+import java.util.Map;
+import java.util.logging.Logger;
+
+public final class LoggerFactory {
+  private LoggerFactory() {}
+
+  public static Logger createLogger(Map<String, String> contextMap) {
+    return Logger.getLogger(contextMap.getOrDefault("functionName", "generated-handler"));
+  }
+}
+[% } else { %]
+export interface Logger {
+  info(messageText: string, extraObj?: unknown): void;
+  error(messageText: string, extraObj?: unknown): void;
+}
+
+export function createLogger(contextObj: Record<string, unknown>): Logger {
+  const emit = (levelText: 'info' | 'error', messageText: string, extraObj?: unknown): void => {
+    console[levelText](JSON.stringify({ level: levelText, message: messageText, contextObj, extraObj }));
+  };
+  return {
+    info: (messageText, extraObj) => emit('info', messageText, extraObj),
+    error: (messageText, extraObj) => emit('error', messageText, extraObj)
+  };
+}
+[% } %]

@@ -1,0 +1,15 @@
+# Operations
+
+## Observability
+
+The generated handlers emit structured logs, generated metric hooks, and tracer hooks. Wire these to your organization observability backend where required.
+
+## Validation
+
+- Run `./scripts/validate-template.sh` before deployment.
+- Run `./scripts/validate-contracts.sh` after contract changes.
+- Review `generated/reports/manual-actions.md` before production export.
+
+[%=out.startPreserve("<!--", "-->", awsRoot.manualRegionId("operations-team-runbook-details"), true)%]
+Add paging policy, dashboard links, SLOs, and service ownership here.
+[%=out.stopPreserve()%]

@@ -1,0 +1,14 @@
+# Manual Actions
+
+[% if (emitCtx.get("manualIssueList").isEmpty()) { %]
+No manual actions were recorded by the generator.
+[% } %]
+[% for (issueObj in emitCtx.get("manualIssueList")) { %]
+## [%= issueObj.get("code") %]
+
+- Severity: `[%= issueObj.get("severity") %]`
+- Blocking: `[%= issueObj.get("blocking") %]`
+- Source: `[%= issueObj.get("sourceType") %]` / `[%= issueObj.get("sourceStableId") %]`
+- Message: [%= issueObj.get("message") %]
+
+[% } %]
