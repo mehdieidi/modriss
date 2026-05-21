@@ -1,0 +1,80 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <artifactId>mde-etl-cli</artifactId>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+        </configuration>
+        <version>${maven.compiler.plugin.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <transformer
+                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>io.mehdieidi.modless.mdeetlcli.MdeEtlCliApplication</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <phase>package</phase>
+          </execution>
+        </executions>
+        <version>${maven.shade.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <artifactId>mde-etl-runner</artifactId>
+      <groupId>io.mehdieidi</groupId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>picocli</artifactId>
+      <groupId>info.picocli</groupId>
+      <version>${picocli.version}</version>
+    </dependency>
+  </dependencies>
+  <description>CLI utility for executing Eclipse Epsilon ETL transformations.</description>
+  <modelVersion>4.0.0</modelVersion>
+  <name>mde-etl-cli</name>
+
+  <packaging>jar</packaging>
+
+  <parent>
+    <artifactId>modless</artifactId>
+    <groupId>io.mehdieidi</groupId>
+    <relativePath>../../pom.xml</relativePath>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <properties>
+    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
+    <maven.compiler.release>${java.version}</maven.compiler.release>
+    <maven.shade.version>3.6.1</maven.shade.version>
+    <picocli.version>4.7.7</picocli.version>
+  </properties>
+</project>
