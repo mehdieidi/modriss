@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import io.mehdieidi.modless.mdecli.service.ConversionRequest;
-import io.mehdieidi.modless.mdecli.service.EmfConversionService;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,7 +48,7 @@ final class CimToPimEtlRegressionTest {
 
     @Test
     void executesCimToPimTransformationForRepresentativeBusinessModel() throws Exception {
-        Path cimMetamodel = compileMetamodel("cim/cim-root.emf", "cim-combined.ecore");
+        Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
         Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
         Path cimModel = tempDir.resolve("order-cim.xmi");
         Path pimModel = tempDir.resolve("order-pim.xmi");
@@ -92,7 +90,7 @@ final class CimToPimEtlRegressionTest {
 
     @Test
     void coversCrossBoundaryRelationshipAndReviewBacklogRules() throws Exception {
-        Path cimMetamodel = compileMetamodel("cim/cim-root.emf", "cim-combined.ecore");
+        Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
         Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
         Path cimModel = tempDir.resolve("coverage-cim.xmi");
         Path pimModel = tempDir.resolve("coverage-pim.xmi");
@@ -191,17 +189,6 @@ final class CimToPimEtlRegressionTest {
         assertTrue(exception.getReport().diagnostics().stream()
                 .anyMatch(d -> d.phase() == ExecutionPhase.VALIDATION
                         || d.phase() == ExecutionPhase.PARSE));
-    }
-
-    private Path compileMetamodel(String rootFile, String outputName) {
-        Path output = tempDir.resolve(outputName);
-        new EmfConversionService().convert(new ConversionRequest(
-                REPOSITORY_ROOT.resolve("mde/metamodels").resolve(rootFile).getParent(),
-                output,
-                REPOSITORY_ROOT.resolve("mde/metamodels").resolve(rootFile),
-                true,
-                false));
-        return output;
     }
 
     private EtlExecutionReport executeOrFail(EtlExecutionRequest request) {

@@ -3,8 +3,35 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>modless</artifactId>
 
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <release>${maven.compiler.release}</release>
+          </configuration>
+          <version>${maven.compiler.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven.surefire.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <artifactId>mde-etl-runner</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <description>Model-Driven Low-Code Platform for Serverless Software Development.</description>
   <groupId>io.mehdieidi</groupId>
+
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>apps/backend</module>
@@ -14,10 +41,14 @@
   </modules>
 
   <name>Modless</name>
+
   <packaging>pom</packaging>
 
   <properties>
     <java.version>17</java.version>
+    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
+    <maven.compiler.release>${java.version}</maven.compiler.release>
+    <maven.surefire.version>3.5.4</maven.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 

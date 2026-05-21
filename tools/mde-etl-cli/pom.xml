@@ -50,7 +50,6 @@
     <dependency>
       <artifactId>mde-etl-runner</artifactId>
       <groupId>io.mehdieidi</groupId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <artifactId>picocli</artifactId>

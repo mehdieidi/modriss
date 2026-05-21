@@ -21,12 +21,6 @@
 
   <dependencies>
     <dependency>
-      <artifactId>mde-cli</artifactId>
-      <groupId>io.mehdieidi</groupId>
-      <scope>test</scope>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <artifactId>org.eclipse.epsilon.etl.engine</artifactId>
       <groupId>org.eclipse.epsilon</groupId>
       <version>${epsilon.version}</version>
@@ -34,6 +28,12 @@
     <dependency>
       <artifactId>org.eclipse.epsilon.emc.emf</artifactId>
       <groupId>org.eclipse.epsilon</groupId>
+      <version>${epsilon.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.epsilon.egl.engine</artifactId>
+      <groupId>org.eclipse.epsilon</groupId>
+      <scope>test</scope>
       <version>${epsilon.version}</version>
     </dependency>
     <dependency>
