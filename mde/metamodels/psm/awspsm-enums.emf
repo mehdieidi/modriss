@@ -1,0 +1,303 @@
+@namespace(uri="https://modless.org/awspsm/enums/2.1", prefix="awspsmenums")
+package awspsmenums;
+
+enum AwsEnvironmentClass {
+  DEV;
+  TEST;
+  STAGING;
+  PROD;
+  SANDBOX;
+  DR;
+}
+
+enum AwsPartition {
+  AWS;
+  AWS_US_GOV;
+  AWS_CN;
+}
+
+enum CloudFormationDeletionPolicy {
+  DELETE;
+  RETAIN;
+  RETAIN_EXCEPT_ON_CREATE;
+  SNAPSHOT;
+}
+
+enum CloudFormationUpdateReplacePolicy {
+  DELETE;
+  RETAIN;
+  SNAPSHOT;
+}
+
+enum Decision {
+  UNDECIDED;
+  REQUIRED;
+  NOT_REQUIRED;
+  ACCEPTED;
+  NEEDS_REVIEW;
+  GENERATOR_OWNED;
+}
+
+enum PackageType {
+  ZIP;
+  IMAGE;
+}
+
+enum LambdaArchitecture {
+  X86_64;
+  ARM64;
+}
+
+enum LambdaTracingMode {
+  ACTIVE;
+  PASS_THROUGH;
+  DISABLED;
+}
+
+enum LambdaRuntimeManagementMode {
+  AUTO;
+  FUNCTION_UPDATE;
+  MANUAL;
+}
+
+enum LambdaSnapStartApplyOn {
+  NONE;
+  PUBLISHED_VERSIONS;
+}
+
+enum LambdaInvokeMode {
+  BUFFERED;
+  RESPONSE_STREAM;
+}
+
+enum LambdaRecursiveLoopMode {
+  ALLOW;
+  TERMINATE;
+  UNSPECIFIED;
+}
+
+enum LambdaEventSourceKind {
+  SQS;
+  DYNAMODB_STREAM;
+  KINESIS_STREAM;
+  MSK;
+  SELF_MANAGED_KAFKA;
+  DOCUMENTDB;
+  MQ;
+  OTHER;
+}
+
+enum StartingPosition {
+  TRIM_HORIZON;
+  LATEST;
+  AT_TIMESTAMP;
+}
+
+enum ApiGatewayKind {
+  HTTP_API;
+  REST_API;
+  WEBSOCKET_API;
+}
+
+enum ApiGatewayEndpointType {
+  REGIONAL;
+  EDGE;
+  PRIVATE;
+}
+
+enum ApiGatewayAuthorizationType {
+  NONE;
+  AWS_IAM;
+  JWT;
+  COGNITO_USER_POOLS;
+  CUSTOM_LAMBDA;
+  API_KEY;
+}
+
+enum ApiGatewayIntegrationType {
+  AWS_PROXY;
+  AWS;
+  HTTP_PROXY;
+  HTTP;
+  MOCK;
+}
+
+enum HttpMethod {
+  GET;
+  POST;
+  PUT;
+  PATCH;
+  DELETE;
+  OPTIONS;
+  HEAD;
+  ANY;
+}
+
+enum AwsHttpMethod {
+  GET;
+  POST;
+  PUT;
+  PATCH;
+  DELETE;
+  HEAD;
+  OPTIONS;
+}
+
+enum EventBridgeTargetKind {
+  LAMBDA;
+  SQS;
+  SNS;
+  STEP_FUNCTIONS;
+  API_DESTINATION;
+  EVENT_BUS;
+  LOG_GROUP;
+  OTHER_AWS_RESOURCE;
+}
+
+enum EventBridgeConnectionAuthorizationType {
+  API_KEY;
+  BASIC;
+  OAUTH_CLIENT_CREDENTIALS;
+}
+
+enum SqsQueueType {
+  STANDARD;
+  FIFO;
+}
+
+enum SnsProtocol {
+  LAMBDA;
+  SQS;
+  HTTP;
+  HTTPS;
+  EMAIL;
+  SMS;
+  FIREHOSE;
+  APPLICATION;
+}
+
+enum SnsFilterPolicyScope {
+  MESSAGE_ATTRIBUTES;
+  MESSAGE_BODY;
+}
+
+enum StepFunctionType {
+  STANDARD;
+  EXPRESS;
+}
+
+enum AslStateType {
+  PASS;
+  TASK;
+  CHOICE;
+  WAIT;
+  SUCCEED;
+  FAIL;
+  PARALLEL;
+  MAP;
+}
+
+enum DynamoDbBillingMode {
+  PAY_PER_REQUEST;
+  PROVISIONED;
+}
+
+enum DynamoDbAttributeType {
+  S;
+  N;
+  B;
+}
+
+enum DynamoDbKeyType {
+  HASH;
+  RANGE;
+}
+
+enum DynamoDbProjectionType {
+  ALL;
+  KEYS_ONLY;
+  INCLUDE;
+}
+
+enum DynamoDbStreamViewType {
+  KEYS_ONLY;
+  NEW_IMAGE;
+  OLD_IMAGE;
+  NEW_AND_OLD_IMAGES;
+}
+
+enum DynamoDbTableClass {
+  STANDARD;
+  STANDARD_INFREQUENT_ACCESS;
+}
+
+enum S3VersioningStatus {
+  ENABLED;
+  SUSPENDED;
+}
+
+enum S3BlockPublicAccessMode {
+  STRICT_BLOCK_ALL;
+  CUSTOM;
+  DISABLED_NOT_RECOMMENDED;
+}
+
+enum CognitoMfaConfiguration {
+  OFF;
+  ON;
+  OPTIONAL;
+}
+
+enum IamEffect {
+  ALLOW;
+  DENY;
+}
+
+enum ParameterType {
+  STRING;
+  STRING_LIST;
+  SECURE_STRING;
+}
+
+enum SsmParameterTier {
+  STANDARD;
+  ADVANCED;
+  INTELLIGENT_TIERING;
+}
+
+enum ValueSourceKind {
+  PLAINTEXT;
+  CLOUDFORMATION_REF;
+  CLOUDFORMATION_GETATT;
+  CLOUDFORMATION_SUB;
+  SSM_PARAMETER_REFERENCE;
+  SSM_SECURE_REFERENCE;
+  SECRETS_MANAGER_REFERENCE;
+  DYNAMIC_REFERENCE;
+  IMPORT_VALUE;
+  RESOURCE_ATTRIBUTE;
+  LIST;
+  MAP;
+}
+
+enum CloudWatchComparisonOperator {
+  GREATER_THAN_OR_EQUAL_TO_THRESHOLD;
+  GREATER_THAN_THRESHOLD;
+  LESS_THAN_THRESHOLD;
+  LESS_THAN_OR_EQUAL_TO_THRESHOLD;
+  LESS_THAN_LOWER_OR_GREATER_THAN_UPPER_THRESHOLD;
+  LESS_THAN_LOWER_THRESHOLD;
+  GREATER_THAN_UPPER_THRESHOLD;
+}
+
+enum LogGroupClass {
+  STANDARD;
+  INFREQUENT_ACCESS;
+  DELIVERY;
+}
+
+enum SamCapability {
+  CAPABILITY_IAM;
+  CAPABILITY_NAMED_IAM;
+  CAPABILITY_AUTO_EXPAND;
+}

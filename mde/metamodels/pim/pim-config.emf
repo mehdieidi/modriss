@@ -1,0 +1,52 @@
+@namespace(uri="https://modless.org/pim/config/1.0", prefix="config")
+package config;
+
+import "../shared/kernel.ecore";
+import "pim-types.ecore";
+
+class ConfigurationSet extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget {
+  attr types.ConfigScope[1] scope;
+  val ConfigParameter[*]#configurationSet parameters;
+  val EnvironmentVariable[*]#configurationSet environmentVariables;
+  ref kernel.EnvironmentTarget[*] environments;
+  ref kernel.PolicyTarget[*] appliesTo;
+}
+
+class ConfigParameter extends kernel.TraceableElement {
+  attr types.ConfigScope scope;
+  attr String valueKind;
+  attr String defaultValue;
+  attr Boolean stageSpecific;
+  attr Boolean secret;
+  attr Boolean required;
+  attr String validationPattern;
+  readonly transient ref ConfigurationSet[1]#parameters configurationSet;
+}
+
+class EnvironmentVariable extends kernel.TraceableElement {
+  attr String[1] variableName;
+  attr String valueSource;
+  attr Boolean secretReference;
+  readonly transient ref ConfigurationSet[1]#environmentVariables configurationSet;
+  ref ConfigParameter[?] parameter;
+  ref Secret[?] secret;
+}
+
+class Secret extends kernel.TraceableElement, kernel.ProtectedResource, kernel.PolicyTarget {
+  attr types.SecretKind[1] secretKind;
+  attr Boolean rotationRequired;
+  attr String rotationFrequency;
+  attr Boolean generatedReferenceOnly;
+  attr Boolean environmentSpecific;
+  attr String ownerTeam;
+  ref CredentialRequirement[*]#secret usedForCredentials;
+}
+
+class CredentialRequirement extends kernel.TraceableElement, kernel.CredentialRequirementLike {
+  attr types.SecretKind[1] secretKind;
+  attr String purpose;
+  attr Boolean rotationRequired;
+  attr String rotationFrequency;
+  attr Boolean sharedAcrossEnvironments;
+  ref Secret[?]#usedForCredentials secret;
+}

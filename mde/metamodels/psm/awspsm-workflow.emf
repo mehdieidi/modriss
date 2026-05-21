@@ -1,0 +1,87 @@
+@namespace(uri="https://modless.org/awspsm/workflow/2.1", prefix="awspsmworkflow")
+package awspsmworkflow;
+
+import "../shared/kernel.ecore";
+import "awspsm-enums.ecore";
+import "awspsm-core.ecore";
+import "awspsm-security.ecore";
+import "awspsm-observability.ecore";
+
+class StepFunctionStateMachine extends awspsmcore.AwsResource {
+  attr String stateMachineName;
+  attr awspsmenums.StepFunctionType[1] stateMachineType;
+  attr String definitionUri;
+  attr String definitionString;
+  attr String definitionSubstitutionsJson;
+  attr Boolean publishAlias;
+  attr String aliasName;
+  ref awspsmsecurity.IamRole[1] role;
+  val StepFunctionLoggingConfig[?] logging;
+  val StepFunctionTracingConfig[?] tracing;
+  val AslDocument[?] aslDocument;
+  val SamStateMachineEvent[*] samEvents;
+}
+
+class AslDocument extends kernel.StructuredDocument {
+  attr String comment;
+  attr String queryLanguage;
+  attr String[1] startAt;
+  val AslState[+] states;
+}
+
+class AslState extends kernel.TraceableElement {
+  attr String[1] stateName;
+  attr awspsmenums.AslStateType[1] type;
+  attr String resource;
+  attr String nextStateName;
+  attr Boolean end;
+  attr String inputPath;
+  attr String outputPath;
+  attr String resultPath;
+  attr String parametersJson;
+  attr String argumentsJson;
+  attr String assignJson;
+  attr Integer timeoutSeconds;
+  attr Integer heartbeatSeconds;
+  val AslRetryRule[*] retry;
+  val AslCatchRule[*] catch;
+  val AslChoiceRule[*] choices;
+  ref AslState[?] nextState;
+  ref awspsmcore.AwsResource[?] invokedResource;
+}
+
+class AslRetryRule extends kernel.TraceableElement {
+  attr String[*] errorEquals;
+  attr Integer intervalSeconds;
+  attr Integer maxAttempts;
+  attr Double backoffRate;
+  attr Integer maxDelaySeconds;
+  attr String jitterStrategy;
+}
+
+class AslCatchRule extends kernel.TraceableElement {
+  attr String[*] errorEquals;
+  attr String resultPath;
+  ref AslState[1] nextState;
+}
+
+class AslChoiceRule extends kernel.TraceableElement {
+  attr String conditionExpression;
+  attr String variable;
+  ref AslState[1] nextState;
+}
+
+class StepFunctionLoggingConfig extends kernel.TraceableElement {
+  attr Boolean includeExecutionData;
+  attr String level;
+  ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
+}
+
+class StepFunctionTracingConfig extends awspsmcore.TracingConfig {
+}
+
+class SamStateMachineEvent extends kernel.TraceableElement {
+  attr String[1] eventName;
+  attr String[1] eventType;
+  val awspsmcore.NativeProperty[*] properties;
+}

@@ -1,0 +1,55 @@
+@namespace(uri="https://modless.org/cim/1.0", prefix="cim")
+package cim;
+
+import "../shared/kernel.ecore";
+import "cim-types.ecore";
+import "cim-organization.ecore";
+import "cim-domain-data.ecore";
+import "cim-behavior.ecore";
+import "cim-process-policy.ecore";
+import "cim-governance.ecore";
+import "cim-transformation.ecore";
+
+class CIMModel extends kernel.TraceableElement {
+  attr String[1] domainName;
+  attr String businessScope;
+  attr String organizationName;
+  attr Date modelingDate;
+  attr String language;
+
+  val cimorg.Requirement[*] requirements;
+  val cimorg.BusinessGoal[+] goals;
+  val cimorg.KPI[*] kpis;
+  val cimorg.Stakeholder[*] stakeholders;
+  val cimorg.Actor[+] actors;
+  val cimorg.Role[*] roles;
+  val cimorg.BusinessCapability[+] capabilities;
+  val cimorg.CapabilityDependency[*] capabilityDependencies;
+  val cimorg.BoundedContextCandidate[*] boundedContexts;
+  val cimorg.UbiquitousLanguageTerm[*] glossary;
+
+  val cimdomain.DomainEntity[*] entities;
+  val cimdomain.ValueObject[*] valueObjects;
+  val cimdomain.DomainRelationship[*] relationships;
+  val cimdomain.AggregateCandidate[*] aggregates;
+  val cimdomain.InformationItem[*] informationItems;
+  val cimdomain.DataClassification[*] classifications;
+
+  val cimbehavior.Command[*] commands;
+  val cimbehavior.Query[*] queries;
+  val cimbehavior.BusinessEvent[*] events;
+  val cimbehavior.BusinessError[*] businessErrors;
+  val cimbehavior.Condition[*] conditions;
+
+  val cimprocess.BusinessProcess[*] processes;
+  val cimprocess.Policy[*] policies;
+  val cimprocess.DecisionTable[*] decisionTables;
+
+  val cimtransform.Risk[*] risks;
+  val cimtransform.Assumption[*] assumptions;
+  val cimtransform.Hotspot[*] hotspots;
+  val cimtransform.TransformationProfile[?] transformationProfile;
+
+  val kernel.TraceModel[?] traceModel;
+  val kernel.ProductionReadinessAssessment[?] readiness;
+}

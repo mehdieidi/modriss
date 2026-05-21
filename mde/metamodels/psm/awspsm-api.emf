@@ -1,0 +1,198 @@
+@namespace(uri="https://modless.org/awspsm/api/2.1", prefix="awspsmapi")
+package awspsmapi;
+
+import "awspsm-enums.ecore";
+import "awspsm-core.ecore";
+import "awspsm-security.ecore";
+import "awspsm-observability.ecore";
+import "awspsm-compute.ecore";
+import "awspsm-workflow.ecore";
+import "awspsm-identity.ecore";
+
+abstract class ApiGatewayApi extends awspsmcore.AwsResource {
+  attr String apiName;
+  attr String descriptionText;
+  attr Boolean accessLogsEnabled;
+  attr Boolean tracingEnabled;
+  attr Boolean metricsEnabled;
+  attr Boolean corsEnabled;
+  attr String definitionUri;
+  attr String definitionBody;
+  attr String openApiVersion;
+  val awspsmcore.CorsConfiguration[?] cors;
+  val ApiGatewayTracingConfig[?] tracingConfig;
+  val awspsmsecurity.IamPolicyDocument[?] apiPolicy;
+  attr String apiPolicyJson;
+  ref awspsmobservability.CloudWatchLogGroup[?] accessLogGroup;
+  ref ApiGatewayRoute[*]#api routes;
+  ref ApiGatewayStage[*]#api stages;
+  ref ApiGatewayAuthorizer[*]#api authorizers;
+  ref ApiGatewayDomainName[?]#api apiDomainName;
+  ref WafWebAclAssociation[?] wafAssociation;
+}
+
+class HttpApi extends ApiGatewayApi {
+  attr String protocolType;
+  attr Boolean disableExecuteApiEndpoint;
+  attr Integer minimumCompressionSize;
+  attr Boolean failOnWarnings;
+}
+
+class RestApi extends ApiGatewayApi {
+  attr awspsmenums.ApiGatewayEndpointType endpointType;
+  attr Integer minimumCompressionSize;
+  attr Boolean failOnWarnings;
+  attr Boolean apiKeyRequiredByDefault;
+}
+
+class WebSocketApi extends ApiGatewayApi {
+  attr String[1] routeSelectionExpression;
+}
+
+abstract class ApiGatewayRoute extends awspsmcore.AwsResource {
+  attr String operationName;
+  attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
+  attr Boolean apiKeyRequired;
+  attr String[*] authorizationScopes;
+  attr String requestParametersJson;
+  attr String requestModelsJson;
+  attr String responseModelsJson;
+  attr String routeSettingsJson;
+  attr Integer timeoutInMillis;
+  ref ApiGatewayApi[1]#routes api;
+  ref ApiGatewayIntegration[1] integration;
+  ref ApiGatewayAuthorizer[?] authorizer;
+}
+
+class HttpApiRoute extends ApiGatewayRoute {
+  attr awspsmenums.HttpMethod[1] method;
+  attr String[1] path;
+  attr String routeKey;
+}
+
+class RestApiRoute extends ApiGatewayRoute {
+  attr awspsmenums.HttpMethod[1] method;
+  attr String[1] path;
+  attr String restApiResourcePath;
+}
+
+class WebSocketRoute extends ApiGatewayRoute {
+  attr String[1] routeKey;
+}
+
+class ApiGatewayIntegration extends awspsmcore.AwsResource {
+  attr awspsmenums.ApiGatewayIntegrationType[1] integrationType;
+  attr String integrationUri;
+  attr String integrationMethod;
+  attr String payloadFormatVersion;
+  attr String credentialsArn;
+  attr Integer timeoutInMillis;
+  attr String passthroughBehavior;
+  attr String requestTemplatesJson;
+  attr String responseParametersJson;
+  ref awspsmcompute.AwsLambdaFunction[?] lambdaTarget;
+  ref awspsmworkflow.StepFunctionStateMachine[?] stateMachineTarget;
+  ref awspsmsecurity.IamRole[?] credentialsRole;
+}
+
+abstract class ApiGatewayStage extends awspsmcore.AwsResource {
+  attr String[1] stageName;
+  attr Boolean autoDeploy;
+  attr Boolean accessLogEnabled;
+  attr String accessLogFormat;
+  attr Boolean metricsEnabled;
+  attr Boolean dataTraceEnabled;
+  attr String loggingLevel;
+  attr Integer throttlingBurstLimit;
+  attr Double throttlingRateLimit;
+  attr String variablesJson;
+  ref ApiGatewayApi[1]#stages api;
+  ref awspsmobservability.CloudWatchLogGroup[?] accessLogGroup;
+}
+
+class HttpApiStage extends ApiGatewayStage {
+}
+
+class RestApiStage extends ApiGatewayStage {
+  ref ApiGatewayDeployment[?] deployment;
+}
+
+class WebSocketStage extends ApiGatewayStage {
+}
+
+abstract class ApiGatewayAuthorizer extends awspsmcore.AwsResource {
+  attr String authorizerName;
+  attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
+  attr String identitySource;
+  attr Integer authorizerResultTtlInSeconds;
+  ref ApiGatewayApi[1]#authorizers api;
+}
+
+class JwtAuthorizer extends ApiGatewayAuthorizer {
+  attr String issuer;
+  attr String[*] audience;
+}
+
+class CognitoAuthorizer extends ApiGatewayAuthorizer {
+  ref awspsmidentity.CognitoUserPool[1] userPool;
+  ref awspsmidentity.CognitoUserPoolClient[*] clients;
+}
+
+class LambdaAuthorizer extends ApiGatewayAuthorizer {
+  attr String authorizerPayloadFormatVersion;
+  attr Boolean enableSimpleResponses;
+  ref awspsmcompute.AwsLambdaFunction[1] function;
+}
+
+class ApiGatewayDomainName extends awspsmcore.AwsResource {
+  attr String[1] domainName;
+  attr String certificateArn;
+  attr awspsmenums.ApiGatewayEndpointType endpointType;
+  attr String securityPolicy;
+  ref ApiGatewayApi[?]#apiDomainName api;
+  readonly transient volatile derived ref ApiGatewayBasePathMapping[*]#domainName mappings;
+}
+
+class ApiGatewayBasePathMapping extends awspsmcore.AwsResource {
+  attr String basePath;
+  ref ApiGatewayDomainName[1]#mappings domainName;
+  ref ApiGatewayApi[1] api;
+  ref ApiGatewayStage[?] stage;
+}
+
+class ApiGatewayApiKey extends awspsmcore.AwsResource {
+  attr String apiKeyName;
+  attr Boolean enabled;
+  attr String value;
+  attr String descriptionText;
+  ref RestApiStage[*] stages;
+}
+
+class ApiGatewayUsagePlan extends awspsmcore.AwsResource {
+  attr String usagePlanName;
+  attr String descriptionText;
+  attr Integer throttleBurstLimit;
+  attr Double throttleRateLimit;
+  attr Integer quotaLimit;
+  attr String quotaPeriod;
+  ref RestApiStage[*] apiStages;
+}
+
+class ApiGatewayUsagePlanKey extends awspsmcore.AwsResource {
+  attr String keyType;
+  ref ApiGatewayApiKey[1] apiKey;
+  ref ApiGatewayUsagePlan[1] usagePlan;
+}
+
+class ApiGatewayDeployment extends awspsmcore.AwsResource {
+  attr String descriptionText;
+  ref RestApi[1] api;
+}
+
+class ApiGatewayTracingConfig extends awspsmcore.TracingConfig {
+}
+
+class WafWebAclAssociation extends awspsmcore.AwsResource {
+  attr String[1] webAclArn;
+  ref awspsmcore.AwsResource[1] protectedResource;
+}

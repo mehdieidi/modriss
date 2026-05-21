@@ -1,0 +1,201 @@
+@namespace(uri="https://modless.org/pim/policy/1.0", prefix="policy")
+package policy;
+
+import "../shared/kernel.ecore";
+import "pim-types.ecore";
+
+abstract class ArchitecturePolicy extends kernel.TraceableElement {
+  attr String policyScope;
+  attr Boolean productionRequired;
+  ref kernel.PolicyTarget[*] attachedTo;
+}
+
+class DataProtectionPolicy extends ArchitecturePolicy {
+  attr String classification;
+  attr Boolean encryptionRequired;
+  attr Boolean maskingRequired;
+  attr Boolean tokenizationRequired;
+  attr Boolean accessAuditRequired;
+  attr Boolean deletionRequired;
+  attr String retentionPeriod;
+  attr String residencyRequirement;
+}
+
+class CompliancePolicy extends ArchitecturePolicy {
+  attr String regulation;
+  attr String controlId;
+  attr String evidenceType;
+  attr Boolean auditReportRequired;
+}
+
+class ResiliencePolicy extends ArchitecturePolicy {
+  attr Boolean retryEnabled;
+  attr Boolean deadLetterRequired;
+  attr Boolean fallbackRequired;
+  attr Boolean circuitBreakerRequired;
+  attr Boolean timeoutRequired;
+  val RetryPolicy[?] retry;
+  val DeadLetterPolicy[?] deadLetter;
+  val TimeoutPolicy[?] timeout;
+}
+
+class RetryPolicy extends kernel.TraceableElement {
+  attr Integer maxAttempts;
+  attr Integer initialDelaySeconds;
+  attr Double backoffRate;
+  attr Integer maxDelaySeconds;
+  attr String[*] retryableErrors;
+  attr String[*] nonRetryableErrors;
+}
+
+class DeadLetterPolicy extends kernel.TraceableElement {
+  attr Boolean required;
+  attr String reason;
+  attr String retentionPeriod;
+  attr Boolean alarmRequired;
+  ref kernel.EventCarrier[?] deadLetterChannel;
+}
+
+class TimeoutPolicy extends ArchitecturePolicy {
+  attr Integer timeoutSeconds;
+  attr Integer clientTimeoutSeconds;
+}
+
+class IdempotencyPolicy extends ArchitecturePolicy {
+  attr String keySource;
+  attr Boolean storeRequired;
+  attr String scope;
+  attr Integer expirationSeconds;
+  attr Boolean appliesToRetries;
+  attr Boolean appliesToDuplicateRequests;
+}
+
+class ConcurrencyPolicy extends ArchitecturePolicy {
+  attr Integer maxConcurrency;
+  attr Integer reservedConcurrencyHint;
+  attr Integer burstAssumption;
+  attr Boolean perSourceLimitRequired;
+  attr String scalingRationale;
+}
+
+class RateLimitPolicy extends ArchitecturePolicy {
+  attr Integer requestsPerSecond;
+  attr Integer burstLimit;
+  attr String keyBy;
+  attr Boolean clientSpecific;
+}
+
+class BatchPolicy extends ArchitecturePolicy {
+  attr Integer batchSize;
+  attr Integer maxBatchingWindowSeconds;
+  attr types.Decision[1] partialFailureHandling;
+  attr types.Decision[1] bisectOnError;
+  attr Integer parallelizationFactor;
+  attr String decisionRationale;
+}
+
+class OrderingPolicy extends ArchitecturePolicy {
+  attr types.OrderingRequirement[1] orderingRequirement;
+  attr String orderingKey;
+  attr Boolean strictOrderingRequired;
+}
+
+class CachePolicy extends ArchitecturePolicy {
+  attr Boolean cacheRequired;
+  attr Integer ttlSeconds;
+  attr String cacheKey;
+  attr Boolean privateCache;
+}
+
+class BackupPolicy extends ArchitecturePolicy {
+  attr Boolean backupRequired;
+  attr String backupFrequency;
+  attr String recoveryPointObjective;
+  attr String recoveryTimeObjective;
+}
+
+class RetentionPolicy extends ArchitecturePolicy {
+  attr String retentionPeriod;
+  attr Boolean deletionAfterRetention;
+  attr Boolean legalHoldPossible;
+}
+
+class CostPolicy extends ArchitecturePolicy {
+  attr String budget;
+  attr String costDriver;
+  attr String optimizationIntent;
+  attr Boolean alarmsRequired;
+}
+
+class ObservabilityConfig extends ArchitecturePolicy {
+  attr Boolean loggingEnabled;
+  attr Boolean metricsEnabled;
+  attr Boolean tracingEnabled;
+  attr Boolean alarmsEnabled;
+  attr Boolean dashboardRequired;
+  attr Boolean correlationIdRequired;
+  attr String correlationIdField;
+  val LoggingPolicy[?] logging;
+  val MetricPolicy[*]#observability metrics;
+  val TracingPolicy[?] tracing;
+  val AlertPolicy[*]#observability alerts;
+  val Slo[*]#observability slos;
+}
+
+class LoggingPolicy extends ArchitecturePolicy {
+  attr String logFormat;
+  attr String logLevel;
+  attr Boolean structuredLogging;
+  attr Boolean includeCorrelationId;
+  attr Boolean maskSensitiveData;
+  attr String retentionPeriod;
+}
+
+class MetricPolicy extends ArchitecturePolicy {
+  attr String metricName;
+  attr String unit;
+  attr String statistic;
+  attr Boolean businessMetric;
+  readonly transient ref ObservabilityConfig[1]#metrics observability;
+  val MetricDimension[*]#metric dimensions;
+}
+
+class MetricDimension extends kernel.TraceableElement {
+  attr String[1] key;
+  attr String valueExpression;
+  readonly transient ref MetricPolicy[1]#dimensions metric;
+}
+
+class TracingPolicy extends ArchitecturePolicy {
+  attr Boolean tracingRequired;
+  attr String samplingPolicy;
+  attr Boolean propagateTraceContext;
+}
+
+class AlertPolicy extends ArchitecturePolicy {
+  attr String metricName;
+  attr String condition;
+  attr String threshold;
+  attr Integer evaluationPeriods;
+  attr String severity;
+  attr String notificationTarget;
+  readonly transient ref ObservabilityConfig[1]#alerts observability;
+}
+
+class Slo extends kernel.TraceableElement {
+  attr String objectiveName;
+  attr String metric;
+  attr String target;
+  attr String measurementWindow;
+  attr String errorBudgetPolicy;
+  readonly transient ref ObservabilityConfig[1]#slos observability;
+}
+
+class CorsPolicy extends ArchitecturePolicy {
+  attr String[*] allowedOrigins;
+  attr String[*] allowedMethods;
+  attr String[*] allowedHeaders;
+  attr String[*] exposedHeaders;
+  attr Boolean credentialsAllowed;
+  attr Integer maxAgeSeconds;
+}

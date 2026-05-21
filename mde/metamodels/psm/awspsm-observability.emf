@@ -1,0 +1,73 @@
+@namespace(uri="https://modless.org/awspsm/observability/2.1", prefix="awspsmobservability")
+package awspsmobservability;
+
+import "../shared/kernel.ecore";
+import "awspsm-enums.ecore";
+import "awspsm-core.ecore";
+import "awspsm-security.ecore";
+
+class CloudWatchLogGroup extends awspsmcore.AwsResource {
+  attr String logGroupName;
+  attr Integer retentionDays;
+  attr awspsmenums.LogGroupClass logGroupClass;
+  attr String dataProtectionPolicyJson;
+  ref awspsmsecurity.KmsKey[?] kmsKey;
+  ref CloudWatchMetricFilter[*]#logGroup metricFilters;
+  ref CloudWatchLogSubscriptionFilter[*]#logGroup subscriptionFilters;
+}
+
+class CloudWatchMetricFilter extends awspsmcore.AwsResource {
+  attr String[1] filterPattern;
+  attr String metricTransformationsJson;
+  ref CloudWatchLogGroup[1]#metricFilters logGroup;
+}
+
+class CloudWatchLogSubscriptionFilter extends awspsmcore.AwsResource {
+  attr String[1] filterPattern;
+  attr String destinationArn;
+  attr String roleArn;
+  ref CloudWatchLogGroup[1]#subscriptionFilters logGroup;
+  ref awspsmcore.AwsResource[?] destinationResource;
+  ref awspsmsecurity.IamRole[?] role;
+}
+
+class CloudWatchAlarm extends awspsmcore.AwsResource {
+  attr String alarmName;
+  attr String alarmDescription;
+  attr String[1] namespace;
+  attr String[1] metricName;
+  attr String statistic;
+  attr String extendedStatistic;
+  attr Integer period;
+  attr Integer evaluationPeriods;
+  attr Integer datapointsToAlarm;
+  attr Double[?] threshold;
+  attr awspsmenums.CloudWatchComparisonOperator comparisonOperator;
+  attr String treatMissingData;
+  val MetricDimension[*] dimensions;
+  attr String[*] alarmActionArns;
+  attr String[*] okActionArns;
+  attr String[*] insufficientDataActionArns;
+  ref awspsmcore.AwsResource[*] alarmActionResources;
+  ref awspsmcore.AwsResource[*] okActionResources;
+  ref awspsmcore.AwsResource[*] insufficientDataActionResources;
+  ref awspsmcore.AwsResource[?] monitoredResource;
+}
+
+class MetricDimension extends kernel.TraceableElement {
+  attr String[1] dimensionName;
+  val awspsmcore.ValueExpression[1] value;
+}
+
+class CloudWatchCompositeAlarm extends awspsmcore.AwsResource {
+  attr String[1] alarmRule;
+  attr String[*] alarmActionArns;
+  attr String[*] okActionArns;
+  ref awspsmcore.AwsResource[*] alarmActionResources;
+  ref awspsmcore.AwsResource[*] okActionResources;
+}
+
+class CloudWatchDashboard extends awspsmcore.AwsResource {
+  attr String[1] dashboardName;
+  attr String[1] dashboardBodyJson;
+}

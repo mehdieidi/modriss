@@ -1,0 +1,70 @@
+@namespace(uri="https://modless.org/cim/governance/1.0", prefix="cimgov")
+package cimgov;
+
+import "../shared/kernel.ecore";
+import "cim-types.ecore";
+import "cim-organization.ecore";
+import "cim-domain-data.ecore";
+import "cim-behavior.ecore";
+
+class NonFunctionalRequirement extends cimorg.Requirement {
+  attr cimtypes.QualityType qualityType;
+  attr String metric;
+  attr String target;
+  attr String measurementMethod;
+  attr String environmentAssumption;
+  ref kernel.ModelElement[+] constrainedElements;
+  val QualityScenario[*] scenarios;
+}
+
+class QualityScenario extends kernel.TraceableElement {
+  attr cimtypes.QualityType qualityType;
+  attr String source;
+  attr String stimulus;
+  attr String environment;
+  attr String artifact;
+  attr String response;
+  attr String responseMeasure;
+}
+
+class SecurityConstraint extends NonFunctionalRequirement {
+  attr String authenticationNeed;
+  attr String authorizationRule;
+  attr Boolean segregationOfDutiesRequired;
+  attr Boolean nonRepudiationRequired;
+  attr Boolean auditAccessRequired;
+  attr String threatRationale;
+  ref cimorg.Actor[*] constrainedActors;
+  ref cimbehavior.Command[*] constrainedCommands;
+  ref cimbehavior.Query[*] constrainedQueries;
+  ref cimdomain.InformationItem[*] constrainedInformation;
+}
+
+class PrivacyConstraint extends NonFunctionalRequirement {
+  attr String law;
+  attr String jurisdiction;
+  attr String dataSubjectType;
+  attr String purpose;
+  attr cimtypes.LegalBasis legalBasis;
+  attr String retentionPeriod;
+  attr Boolean consentRequired;
+  attr Boolean deletionRequired;
+  attr Boolean portabilityRequired;
+  attr Boolean rectificationRequired;
+  attr Boolean dataResidencyRequired;
+  attr String allowedResidencyArea;
+  attr Boolean crossBorderTransferAllowed;
+  attr String minimizationRule;
+  ref cimdomain.InformationItem[+]#privacyConstraints dataItems;
+  ref cimorg.Actor[*] dataSubjects;
+}
+
+class ComplianceConstraint extends NonFunctionalRequirement {
+  attr String regulation;
+  attr String controlId;
+  attr String controlObjective;
+  attr String evidenceRequired;
+  attr String auditFrequency;
+  attr Boolean externalAuditRequired;
+  ref kernel.ModelElement[*] scopedElements;
+}

@@ -1,0 +1,140 @@
+@namespace(uri="https://modless.org/awspsm/events/2.1", prefix="awspsmevents")
+package awspsmevents;
+
+import "../shared/kernel.ecore";
+import "awspsm-enums.ecore";
+import "awspsm-core.ecore";
+import "awspsm-security.ecore";
+import "awspsm-messaging.ecore";
+import "awspsm-compute.ecore";
+
+class EventBridgeBus extends awspsmcore.AwsResource {
+  attr String busName;
+  attr String eventSourceName;
+  ref EventBridgeRule[*]#bus rules;
+  ref EventBridgeArchive[*]#eventSourceBus archives;
+  ref EventBridgeBusPolicy[*]#bus policies;
+}
+
+class EventBridgeBusPolicy extends awspsmcore.AwsResource {
+  attr String statementId;
+  val awspsmsecurity.IamPolicyDocument[?] policyDocument;
+  attr String policyJson;
+  ref EventBridgeBus[1]#policies bus;
+}
+
+class EventBridgeRule extends awspsmcore.AwsResource {
+  attr String ruleName;
+  attr String descriptionText;
+  attr String eventPatternJson;
+  attr String scheduleExpression;
+  attr String state;
+  val EventPattern[?] eventPattern;
+  val EventBridgeTarget[+] targets;
+  ref EventBridgeBus[?]#rules bus;
+}
+
+class EventPattern extends kernel.TraceableElement {
+  attr String[*] sources;
+  attr String[*] detailTypes;
+  attr String account;
+  attr String region;
+  attr String detailJson;
+}
+
+class EventBridgeTarget extends kernel.TraceableElement {
+  attr String[1] targetId;
+  attr awspsmenums.EventBridgeTargetKind[1] targetKind;
+  attr String arnExpression;
+  val awspsmcore.ValueExpression[?] input;
+  attr String inputPath;
+  attr String roleArn;
+  val EventBridgeTargetParameters[?] parameters;
+  ref awspsmcore.AwsResource[?] targetResource;
+  ref awspsmsecurity.IamRole[?] role;
+  val AwsRetryPolicy[?] retryPolicy;
+  ref awspsmmessaging.SqsQueue[?] deadLetterQueue;
+  val EventBridgeInputTransformer[?] inputTransformer;
+}
+
+abstract class EventBridgeTargetParameters extends kernel.TraceableElement {
+}
+
+class EventBridgeSqsTargetParameters extends EventBridgeTargetParameters {
+  attr String messageGroupId;
+}
+
+class EventBridgeHttpTargetParameters extends EventBridgeTargetParameters {
+  val HttpParameter[*] headerParameters;
+  val HttpParameter[*] queryStringParameters;
+  val HttpParameter[*] pathParameterValues;
+}
+
+class HttpParameter extends kernel.TraceableElement {
+  attr String key;
+  attr String value;
+}
+
+class EventBridgeBatchTargetParameters extends EventBridgeTargetParameters {
+  attr String jobDefinition;
+  attr String jobName;
+  attr Integer arraySize;
+  attr Integer jobAttempts;
+}
+
+class EventBridgeInputTransformer extends kernel.TraceableElement {
+  attr String inputPathsMapJson;
+  attr String inputTemplate;
+}
+
+class EventBridgeArchive extends awspsmcore.AwsResource {
+  attr String archiveName;
+  attr String eventPatternJson;
+  attr Integer retentionDays;
+  ref EventBridgeBus[1]#archives eventSourceBus;
+}
+
+class EventBridgeSchedule extends awspsmcore.AwsResource {
+  attr String scheduleName;
+  attr String scheduleExpression;
+  attr String scheduleExpressionTimezone;
+  attr String flexibleTimeWindowJson;
+  attr String state;
+  attr String descriptionText;
+  val EventBridgeTarget[1] target;
+  ref awspsmsecurity.IamRole[1] role;
+}
+
+class EventBridgePipe extends awspsmcore.AwsResource {
+  attr String pipeName;
+  attr String sourceArn;
+  attr String targetArn;
+  attr String filterCriteriaJson;
+  attr String enrichmentArn;
+  attr String sourceParametersJson;
+  attr String targetParametersJson;
+  attr String desiredState;
+  ref awspsmcore.AwsResource[?] sourceResource;
+  ref awspsmcore.AwsResource[?] targetResource;
+  ref awspsmcompute.AwsLambdaFunction[?] enrichmentFunction;
+  ref awspsmsecurity.IamRole[1] role;
+}
+
+class EventBridgeConnection extends awspsmcore.AwsResource {
+  attr String connectionName;
+  attr awspsmenums.EventBridgeConnectionAuthorizationType[1] authorizationType;
+  val awspsmcore.ValueExpression[*] authParameters;
+}
+
+class EventBridgeApiDestination extends awspsmcore.AwsResource {
+  attr String destinationName;
+  attr String invocationEndpoint;
+  attr awspsmenums.AwsHttpMethod[1] httpMethod;
+  attr Integer invocationRateLimitPerSecond;
+  ref EventBridgeConnection[1] connection;
+}
+
+class AwsRetryPolicy extends kernel.TraceableElement {
+  attr Integer maximumRetryAttempts;
+  attr Integer maximumEventAgeInSeconds;
+}

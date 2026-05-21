@@ -1,0 +1,104 @@
+@namespace(uri="https://modless.org/pim/contracts/1.0", prefix="contracts")
+package contracts;
+
+import "../shared/kernel.ecore";
+import "pim-types.ecore";
+
+class Schema extends kernel.TraceableElement, kernel.PolicyTarget {
+  attr types.SchemaKind[1] schemaKind;
+  attr String semanticVersion;
+  attr types.SchemaCompatibility compatibility;
+  attr Boolean additionalPropertiesAllowed;
+  attr Boolean generatedFromCimInformation;
+  attr String externalSchemaUri;
+  val SchemaField[*]#ownerSchema fields;
+  val SchemaConstraint[*]#ownerSchema constraints;
+}
+
+class SchemaField extends kernel.TraceableElement {
+  attr types.FieldType[1] fieldType;
+  attr Boolean required;
+  attr Boolean nullable;
+  attr Boolean array;
+  attr String format;
+  attr String defaultValue;
+  attr String example;
+  attr Integer minLength;
+  attr Integer maxLength;
+  attr String pattern;
+  attr String minimum;
+  attr String maximum;
+  attr Boolean personalData;
+  attr Boolean sensitiveData;
+  attr Boolean secretValue;
+  attr String classification;
+  attr String descriptionForConsumers;
+  readonly transient ref Schema[1]#fields ownerSchema;
+  val SchemaEnumLiteral[*]#field enumValues;
+  ref Schema[?] objectSchema;
+}
+
+class SchemaEnumLiteral extends kernel.TraceableElement {
+  attr String[1] literal;
+  attr String displayName;
+  attr String deprecationReason;
+  readonly transient ref SchemaField[1]#enumValues field;
+}
+
+class SchemaConstraint extends kernel.TraceableElement {
+  attr String expressionLanguage;
+  attr String expression;
+  attr String message;
+  attr kernel.Severity severity;
+  readonly transient ref Schema[1]#constraints ownerSchema;
+}
+
+class FunctionContract extends kernel.TraceableElement {
+  attr String contractVersion;
+  attr Boolean validatesInput;
+  attr Boolean validatesOutput;
+  attr String correlationIdField;
+  attr String causationIdField;
+  attr String idempotencyKeyField;
+  attr Boolean authContextRequired;
+  ref Schema[?] inputSchema;
+  ref Schema[?] outputSchema;
+  ref Schema[*] errorSchemas;
+  ref EventType[*] emittedEvents;
+}
+
+class ApiContract extends kernel.TraceableElement {
+  attr String publicVersion;
+  attr Boolean backwardCompatible;
+  ref Schema[*] requestSchemas;
+  ref Schema[*] responseSchemas;
+  ref Schema[*] errorSchemas;
+}
+
+class EventEnvelope extends kernel.TraceableElement {
+  attr String eventIdField;
+  attr String eventTypeField;
+  attr String sourceField;
+  attr String timeField;
+  attr String versionField;
+  attr String correlationIdField;
+  attr String causationIdField;
+  attr String subjectField;
+  attr Boolean metadataRequired;
+}
+
+class EventType extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget {
+  attr String[1] semanticName;
+  attr String version;
+  attr String sourceDomain;
+  attr String subjectExpression;
+  attr String orderingKey;
+  attr Boolean externalEvent;
+  attr Boolean auditEvent;
+  attr Boolean replayable;
+  attr Boolean containsPersonalData;
+  ref Schema[1] schema;
+  val EventEnvelope[?] envelope;
+  ref kernel.FunctionTarget[*] producedBy;
+  ref kernel.FunctionTarget[*] consumedBy;
+}

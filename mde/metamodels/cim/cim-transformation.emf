@@ -1,0 +1,39 @@
+@namespace(uri="https://modless.org/cim/transformation/1.0", prefix="cimtransform")
+package cimtransform;
+
+import "../shared/kernel.ecore";
+
+class Risk extends kernel.TraceableElement {
+  attr String riskStatement;
+  attr String probability;
+  attr String impact;
+  attr String mitigation;
+  attr Boolean productionBlocking;
+  ref kernel.ModelElement[*] affectedElements;
+}
+
+class Assumption extends kernel.TransformationAssumption {
+  attr String businessArea;
+  ref kernel.ModelElement[*] affectedElements;
+}
+
+class Hotspot extends kernel.TraceableElement {
+  attr String question;
+  attr String impact;
+  attr String owner;
+  attr Date dueDate;
+  attr Boolean blocksTransformation;
+  attr Boolean blocksProduction;
+  ref kernel.ModelElement[*] attachedTo;
+}
+
+class TransformationProfile extends kernel.TraceableElement {
+  attr Boolean preferCapabilityAsServiceBoundary;
+  attr Boolean preferProcessAsWorkflowCandidate;
+  attr Boolean preferEventDrivenCollaboration;
+  attr Boolean requireExplicitActorAuthForCommands;
+  attr Boolean requirePrivacyClassificationForAllInformation;
+  attr Boolean generateReadModelsFromQueries;
+  attr String defaultServiceGranularityRationale;
+  val kernel.ManualDecision[*] requiredDecisions;
+}

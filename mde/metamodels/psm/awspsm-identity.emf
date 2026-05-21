@@ -1,0 +1,66 @@
+@namespace(uri="https://modless.org/awspsm/identity/2.1", prefix="awspsmidentity")
+package awspsmidentity;
+
+import "awspsm-enums.ecore";
+import "awspsm-core.ecore";
+import "awspsm-security.ecore";
+
+@Ecore(constraints="MfaDecisionMadeForProductionCriticalPools")
+class CognitoUserPool extends awspsmcore.AwsResource {
+  attr String userPoolName;
+  attr awspsmenums.CognitoMfaConfiguration mfaConfiguration;
+  attr awspsmenums.Decision mfaDecision;
+  attr String mfaRationale;
+  attr String[*] usernameAttributes;
+  attr String[*] aliasAttributes;
+  attr String[*] autoVerifiedAttributes;
+  attr String accountRecoverySettingJson;
+  attr String adminCreateUserConfigJson;
+  attr String emailConfigurationJson;
+  attr String smsConfigurationJson;
+  attr String lambdaConfigJson;
+  attr String policiesJson;
+  attr String schemaJson;
+  attr Boolean deletionProtection;
+  ref CognitoUserPoolClient[*]#userPool clients;
+  ref CognitoUserPoolGroup[*]#userPool groups;
+  ref CognitoUserPoolDomain[?]#userPool domain;
+}
+
+class CognitoUserPoolClient extends awspsmcore.AwsResource {
+  attr String clientName;
+  attr Boolean generateSecret;
+  attr String[*] explicitAuthFlows;
+  attr String[*] supportedIdentityProviders;
+  attr String[*] callbackUrls;
+  attr String[*] logoutUrls;
+  attr String[*] allowedOAuthFlows;
+  attr String[*] allowedOAuthScopes;
+  attr Boolean allowedOAuthFlowsUserPoolClient;
+  attr Integer accessTokenValidity;
+  attr Integer idTokenValidity;
+  attr Integer refreshTokenValidity;
+  attr String tokenValidityUnitsJson;
+  attr String preventUserExistenceErrors;
+  ref CognitoUserPool[1]#clients userPool;
+}
+
+class CognitoUserPoolGroup extends awspsmcore.AwsResource {
+  attr String groupName;
+  attr String descriptionText;
+  attr Integer precedence;
+  ref CognitoUserPool[1]#groups userPool;
+  ref awspsmsecurity.IamRole[?] role;
+}
+
+class CognitoUserPoolDomain extends awspsmcore.AwsResource {
+  attr String[1] domain;
+  attr String certificateArn;
+  ref CognitoUserPool[1]#domain userPool;
+}
+
+class CognitoIdentityPool extends awspsmcore.AwsResource {
+  attr String identityPoolName;
+  attr Boolean allowUnauthenticatedIdentities;
+  attr String cognitoIdentityProvidersJson;
+}

@@ -1,0 +1,60 @@
+@namespace(uri="https://modless.org/pim/security/1.0", prefix="security")
+package security;
+
+import "../shared/kernel.ecore";
+import "pim-types.ecore";
+import "pim-policy.ecore";
+
+class IdentityProvider extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget, kernel.ProtectedResource {
+  attr types.IdentityKind[1] identityKind;
+  attr Boolean federationRequired;
+  attr Boolean mfaRequired;
+  attr String tokenType;
+  attr String userAttributeRequirements;
+  attr String passwordPolicyDescription;
+  ref Principal[*] principals;
+}
+
+class Principal extends kernel.TraceableElement, kernel.PolicyTarget, kernel.ProtectedResource {
+  attr types.PrincipalKind[1] principalKind;
+  attr String externalRef;
+  attr Boolean privileged;
+  val Permission[*]#principal permissions;
+}
+
+class Permission extends kernel.TraceableElement {
+  attr types.PermissionEffect[1] effect;
+  attr String action;
+  attr String resource;
+  attr String condition;
+  attr Boolean leastPrivilegeConfirmed;
+  readonly transient ref Principal[1]#permissions principal;
+  ref kernel.ProtectedResource[1] targetResource;
+}
+
+class SecurityPolicy extends policy.ArchitecturePolicy {
+  attr Boolean authenticationRequired;
+  attr Boolean authorizationRequired;
+  attr String authStrength;
+  attr Boolean encryptionInTransitRequired;
+  attr Boolean encryptionAtRestRequired;
+  attr Boolean auditRequired;
+  attr Boolean secretsRequired;
+  attr String threatModelNotes;
+}
+
+class AuthPolicy extends SecurityPolicy {
+  attr String authScheme;
+  attr Boolean mfaRequired;
+  attr String tokenValidationRules;
+  attr String scopesRequired;
+  ref IdentityProvider[?] identityProvider;
+}
+
+class AuthorizationPolicy extends SecurityPolicy {
+  attr String ruleExpression;
+  attr String roleOrScopeRequired;
+  attr Boolean resourceLevelAuthorization;
+  ref Principal[*] allowedPrincipals;
+  ref Permission[*] permissions;
+}

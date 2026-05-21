@@ -1,0 +1,92 @@
+@namespace(uri="https://modless.org/cim/behavior/1.0", prefix="cimbehavior")
+package cimbehavior;
+
+import "../shared/kernel.ecore";
+import "cim-types.ecore";
+import "cim-organization.ecore";
+import "cim-domain-data.ecore";
+import "cim-process-policy.ecore";
+
+class Command extends kernel.TraceableElement {
+  attr String intent;
+  attr cimtypes.CommandType commandType;
+  attr Boolean userInitiated;
+  attr kernel.Priority priority;
+  attr cimtypes.InteractionExpectation interactionExpectation;
+  attr String idempotencyBusinessKey;
+  attr Boolean duplicateSubmissionPossible;
+  attr Boolean auditRequired;
+  attr Boolean authorizationRequired;
+  attr String authorizationRule;
+
+  ref cimorg.Actor[*]#issuesCommands issuedBy;
+  ref cimorg.BusinessCapability[?]#containsCommands targetCapability;
+  ref cimdomain.AggregateCandidate[?] targetAggregate;
+  ref cimdomain.InformationItem[*] input;
+  ref Condition[*] preconditions;
+  ref BusinessEvent[+]#expectedByCommands expectedEvents;
+  ref BusinessEvent[*]#rejectedByCommands rejectionEvents;
+  ref BusinessError[*] possibleErrors;
+}
+
+class Query extends kernel.TraceableElement {
+  attr String intent;
+  attr cimtypes.QueryType queryType;
+  attr cimtypes.FreshnessNeed freshnessNeed;
+  attr String confidentiality;
+  attr Boolean authorizationRequired;
+  attr String authorizationRule;
+  attr Boolean auditRequired;
+  attr Boolean containsPersonalData;
+  attr String paginationExpectation;
+  attr String filteringExpectation;
+  attr String sortingExpectation;
+  ref cimorg.Actor[*]#issuesQueries issuedBy;
+  ref cimdomain.InformationItem[*] input;
+  ref cimdomain.InformationItem[+] output;
+  ref cimdomain.DomainEntity[*] reads;
+  ref cimorg.BusinessCapability[?]#containsQueries targetCapability;
+}
+
+class BusinessEvent extends kernel.TraceableElement {
+  attr String semanticName;
+  attr String occurredInPastTenseName;
+  attr cimtypes.EventTimeSemantics eventTimeSemantics;
+  attr String businessMeaning;
+  attr String businessTimestampItemName;
+  attr String correlationBusinessKey;
+  attr String causationBusinessKey;
+  attr String orderingKeyCandidate;
+  attr Boolean externallyVisible;
+  attr Boolean auditRelevant;
+  attr Boolean retentionRelevant;
+  attr String versioningRationale;
+  ref cimdomain.InformationItem[*] payload;
+  ref Command[*]#expectedEvents expectedByCommands;
+  ref Command[*]#rejectionEvents rejectedByCommands;
+  ref cimprocess.Policy[*]#emitsEvents causedByPolicies;
+  ref cimorg.ExternalSystem[*]#producedEvents causedByExternalSystems;
+  ref cimprocess.Policy[*]#triggeredBy consumedByPolicies;
+  ref cimprocess.BusinessProcess[*] consumedByProcesses;
+  ref cimorg.ExternalSystem[*]#consumedEvents consumedByExternalSystems;
+  ref cimdomain.DomainEntity[*] affects;
+}
+
+class BusinessError extends kernel.TraceableElement {
+  attr String errorCode;
+  attr String businessMeaning;
+  attr String userVisibleMessage;
+  attr Boolean recoverable;
+  attr Boolean retryMeaningful;
+  attr Boolean auditRequired;
+  ref BusinessEvent[*] emittedEvents;
+}
+
+class Condition extends kernel.TraceableElement {
+  attr String naturalLanguage;
+  attr String expressionLanguage;
+  attr String expression;
+  attr Boolean mustBeAutomatable;
+  ref cimdomain.InformationItem[*] referencedInformation;
+  ref cimdomain.DomainConcept[*] referencedConcepts;
+}

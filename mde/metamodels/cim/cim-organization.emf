@@ -1,0 +1,145 @@
+@namespace(uri="https://modless.org/cim/organization/1.0", prefix="cimorg")
+package cimorg;
+
+import "../shared/kernel.ecore";
+import "cim-types.ecore";
+import "cim-domain-data.ecore";
+import "cim-behavior.ecore";
+import "cim-process-policy.ecore";
+import "cim-governance.ecore";
+
+class Requirement extends kernel.TraceableElement {
+  attr cimtypes.RequirementType requirementType;
+  attr cimtypes.RequirementSourceType sourceType;
+  attr kernel.Priority priority;
+  attr Boolean mandatory;
+  attr Boolean productionBlocking;
+  attr String fitCriterion;
+  val AcceptanceCriterion[*] acceptanceCriteria;
+  ref BusinessGoal[*] supportsGoals;
+  ref kernel.ModelElement[*] constrains;
+  ref Requirement[*] dependsOn;
+  ref Requirement[*] conflictsWith;
+}
+
+class AcceptanceCriterion extends kernel.TraceableElement {
+  attr String givenContext;
+  attr String whenAction;
+  attr String thenOutcome;
+  attr String measurableTarget;
+  attr Boolean automatableTestCandidate;
+}
+
+class BusinessGoal extends kernel.TraceableElement {
+  attr kernel.Priority priority;
+  attr String successCriterion;
+  attr String timeHorizon;
+  attr String businessValue;
+  attr String failureConsequence;
+  ref KPI[*]#measures measuredBy;
+  ref BusinessCapability[*] refinedBy;
+  ref Stakeholder[*]#ownsGoals owners;
+}
+
+class KPI extends kernel.TraceableElement {
+  attr String metricName;
+  attr String metricDefinition;
+  attr String operator;
+  attr String targetValue;
+  attr String unit;
+  attr String measurementFrequency;
+  attr String dataSource;
+  attr String acceptanceThreshold;
+  ref BusinessGoal[?]#measuredBy measures;
+}
+
+class Stakeholder extends kernel.TraceableElement {
+  attr String stakeholderType;
+  attr String concern;
+  attr String influenceLevel;
+  attr String contactRole;
+  ref BusinessGoal[*]#owners ownsGoals;
+  ref Requirement[*] providesRequirements;
+}
+
+class Actor extends kernel.TraceableElement {
+  attr cimtypes.ActorType actorType;
+  attr cimtypes.TrustLevel trustLevel;
+  attr String organizationBoundary;
+  attr cimtypes.InteractionExpectation interactionExpectation;
+  attr String authenticationExpectation;
+  attr String authorizationExpectation;
+  ref Role[*]#assignedTo playsRoles;
+  ref cimbehavior.Command[*]#issuedBy issuesCommands;
+  ref cimbehavior.Query[*]#issuedBy issuesQueries;
+  ref cimbehavior.BusinessEvent[*] observesEvents;
+}
+
+class Role extends kernel.TraceableElement {
+  attr String responsibility;
+  attr String businessPermissionSummary;
+  attr Boolean privileged;
+  ref Actor[*]#playsRoles assignedTo;
+}
+
+/*
+ * ExternalSystem remains a subtype of Actor and is contained only through
+ * CIMModel.actors. Frontends can expose it through a filtered virtual
+ * "external systems" register without duplicating containment.
+ */
+class ExternalSystem extends Actor {
+  attr String owningOrganization;
+  attr String businessPurpose;
+  attr String trustRationale;
+  attr String contractualSla;
+  attr Boolean storesBusinessData;
+  attr Boolean sendsBusinessEvents;
+  attr Boolean receivesBusinessEvents;
+  ref cimdomain.InformationItem[*] exchangedInformation;
+  ref cimbehavior.BusinessEvent[*]#causedByExternalSystems producedEvents;
+  ref cimbehavior.BusinessEvent[*]#consumedByExternalSystems consumedEvents;
+}
+
+class BusinessCapability extends kernel.TraceableElement {
+  attr cimtypes.CapabilityCriticality criticality;
+  attr String maturity;
+  attr String responsibility;
+  attr String ownerName;
+  ref Actor[?] owner;
+  ref BusinessGoal[+] supports;
+  ref Requirement[*] realizesRequirements;
+  ref cimbehavior.Command[*]#targetCapability containsCommands;
+  ref cimbehavior.Query[*]#targetCapability containsQueries;
+  ref cimbehavior.BusinessEvent[*] containsEvents;
+  ref cimdomain.DomainEntity[*]#owningCapability managesEntities;
+  ref cimprocess.BusinessProcess[*]#owningCapability ownsProcesses;
+  ref cimgov.NonFunctionalRequirement[*] constrainedBy;
+}
+
+class CapabilityDependency extends kernel.SemanticRelationship {
+  attr String dependencyReason;
+  attr Boolean criticalPath;
+  ref BusinessCapability[1] source;
+  ref BusinessCapability[1] target;
+}
+
+class BoundedContextCandidate extends kernel.TraceableElement {
+  attr String languageBoundary;
+  attr String ownershipBoundary;
+  attr Boolean externalIntegrationBoundary;
+  ref BusinessCapability[*] capabilities;
+  ref cimdomain.DomainEntity[*] entities;
+  ref cimbehavior.Command[*] commands;
+  ref cimbehavior.Query[*] queries;
+  ref cimbehavior.BusinessEvent[*] events;
+  ref cimprocess.Policy[*] policies;
+}
+
+class UbiquitousLanguageTerm extends kernel.TraceableElement {
+  attr String[1] term;
+  attr String definition;
+  attr String synonyms;
+  attr String forbiddenSynonyms;
+  attr String exampleUsage;
+  ref BoundedContextCandidate[?] context;
+}

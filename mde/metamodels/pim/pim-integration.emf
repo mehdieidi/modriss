@@ -1,0 +1,120 @@
+@namespace(uri="https://modless.org/pim/integration/1.0", prefix="integration")
+package integration;
+
+import "../shared/kernel.ecore";
+import "pim-types.ecore";
+import "pim-contracts.ecore";
+import "pim-compute.ecore";
+import "pim-workflow.ecore";
+import "pim-external.ecore";
+import "pim-policy.ecore";
+import "pim-api.ecore";
+
+abstract class IntegrationElement extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
+  attr String integrationPurpose;
+}
+
+abstract class EventChannel extends IntegrationElement, kernel.DeployableElement, kernel.InvocationSource, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.EventCarrier {
+  attr types.ChannelKind[1] channelKind;
+  attr types.OrderingRequirement[1] orderingRequirement;
+  attr types.DeliverySemantics[1] deliverySemantics;
+  attr String partitionKeyExpression;
+  attr Boolean encrypted;
+  attr Boolean replayRequired;
+  attr Boolean deadLetterRequired;
+  ref contracts.EventType[*] eventTypes;
+  ref compute.Function[*] producers;
+  ref compute.Function[*] consumers;
+  ref workflow.Workflow[*] workflowConsumers;
+  ref external.ExternalAdapter[*] externalProducers;
+  ref external.ExternalAdapter[*] externalConsumers;
+  ref policy.ResiliencePolicy[?] resilience;
+  ref policy.ObservabilityConfig[?] observability;
+}
+
+class Queue extends EventChannel {
+  attr Boolean fifoRequired;
+  attr Boolean deduplicationRequired;
+  attr Integer maxReceiveAttempts;
+  attr Integer visibilityTimeoutSeconds;
+  attr Integer messageRetentionSeconds;
+  attr Boolean longPollingRequired;
+  ref Queue[?] deadLetterChannel;
+  ref policy.BatchPolicy[?] batchPolicy;
+}
+
+class Topic extends EventChannel {
+  attr String subscriptionMode;
+  attr Boolean filteringRequired;
+  val Subscription[*]#ownerTopic subscriptions;
+}
+
+class EventBus extends EventChannel {
+  attr String routingExpressionLanguage;
+  val EventRoutingRule[*]#eventBus routingRules;
+}
+
+class Schedule extends IntegrationElement, kernel.DeployableElement, kernel.InvocationSource {
+  attr String[1] scheduleExpression;
+  attr Boolean enabled;
+  attr String timeZone;
+}
+
+class Subscription extends kernel.TraceableElement {
+  attr String filterExpression;
+  attr Boolean rawDelivery;
+  attr Boolean deadLetterRequired;
+  readonly transient ref Topic[1]#subscriptions ownerTopic;
+  ref EventChannel[1] channel;
+  ref kernel.SubscriptionTarget[1] target;
+}
+
+class EventRoutingRule extends kernel.TraceableElement, kernel.InvocationSource {
+  attr String eventPattern;
+  attr String scheduleExpression;
+  attr Boolean enabled;
+  attr String inputTransformation;
+  readonly transient ref EventBus[1]#routingRules eventBus;
+  ref contracts.EventType[*] eventTypes;
+  ref kernel.RoutingTarget[+] targets;
+  ref policy.ResiliencePolicy[?] resilience;
+}
+
+abstract class Flow extends kernel.TraceableElement {
+  attr String flowPurpose;
+  attr Boolean criticalPath;
+  attr Boolean containsPersonalData;
+  ref kernel.FlowEndpoint[1] source;
+  ref kernel.FlowEndpoint[1] target;
+  ref policy.ResiliencePolicy[?] resilience;
+  ref policy.ObservabilityConfig[?] observability;
+  ref policy.ArchitecturePolicy[*] policies;
+}
+
+class RequestResponseFlow extends Flow {
+  attr Boolean synchronous;
+  ref api.ApiRoute[1] apiRoute;
+}
+
+class EventFlow extends Flow {
+  ref contracts.EventType[1] eventType;
+  ref EventChannel[1] channel;
+}
+
+class MessageFlow extends Flow {
+  ref contracts.Schema[1] messageSchema;
+  ref Queue[1] queue;
+}
+
+class PubSubFlow extends Flow {
+  ref Topic[1] topic;
+  ref Subscription[*] subscriptions;
+}
+
+class OrchestrationFlow extends Flow {
+  ref workflow.Workflow[1] workflow;
+}
+
+class ExternalIntegrationFlow extends Flow {
+  ref external.ExternalAdapter[1] adapter;
+}

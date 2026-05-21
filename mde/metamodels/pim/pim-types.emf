@@ -1,0 +1,268 @@
+@namespace(uri="https://modless.org/pim/types/1.0", prefix="pimtypes")
+package types;
+
+enum ArchitectureStyle {
+  EVENT_DRIVEN_SERVERLESS;
+  API_FIRST_SERVERLESS;
+  WORKFLOW_ORCHESTRATED_SERVERLESS;
+  HYBRID_SERVERLESS;
+}
+
+enum BoundaryType {
+  CAPABILITY_BASED;
+  BOUNDED_CONTEXT_BASED;
+  PROCESS_BASED;
+  DATA_OWNERSHIP_BASED;
+  TEAM_OWNERSHIP_BASED;
+}
+
+enum DeploymentUnitType {
+  APPLICATION;
+  SERVICE;
+  SHARED_INFRASTRUCTURE;
+  LIBRARY;
+  EDGE_INTERFACE;
+  OBSERVABILITY;
+}
+
+enum FunctionKind {
+  COMMAND_HANDLER;
+  QUERY_HANDLER;
+  EVENT_HANDLER;
+  POLICY_HANDLER;
+  ORCHESTRATION_TASK;
+  EXTERNAL_ADAPTER;
+  SCHEDULED_TASK;
+  STREAM_PROCESSOR;
+  MAINTENANCE_TASK;
+}
+
+enum ComputeProfile {
+  IO_BOUND;
+  CPU_BOUND;
+  MEMORY_INTENSIVE;
+  LATENCY_SENSITIVE;
+  BATCH_ORIENTED;
+  LIGHTWEIGHT;
+  UNKNOWN;
+}
+
+enum ExecutionModel {
+  REQUEST_RESPONSE;
+  ASYNC_EVENT;
+  BATCH_EVENT;
+  STREAM_EVENT;
+  SCHEDULED;
+  WORKFLOW_TASK;
+}
+
+enum ApiStyle {
+  RESOURCE_ORIENTED_HTTP;
+  RPC_HTTP;
+  GRAPHQL;
+  EVENT_API;
+  WEBHOOK;
+}
+
+enum HttpMethod {
+  GET;
+  POST;
+  PUT;
+  PATCH;
+  DELETE;
+  OPTIONS;
+  HEAD;
+  ANY;
+}
+
+enum InvocationMode {
+  SYNCHRONOUS;
+  ASYNCHRONOUS;
+  POLLED;
+  SCHEDULED;
+  ORCHESTRATED;
+}
+
+enum ChannelKind {
+  QUEUE;
+  TOPIC;
+  EVENT_BUS;
+  STREAM;
+  WEBHOOK;
+}
+
+enum DeliverySemantics {
+  AT_MOST_ONCE;
+  AT_LEAST_ONCE;
+  EFFECTIVELY_ONCE_WITH_IDEMPOTENCY;
+  EXACTLY_ONCE_REQUIRED;
+}
+
+enum OrderingRequirement {
+  NONE;
+  PER_KEY;
+  GLOBAL;
+}
+
+enum StoreKind {
+  KEY_VALUE;
+  DOCUMENT;
+  RELATIONAL;
+  GRAPH;
+  SEARCH;
+  TIME_SERIES;
+  CACHE;
+}
+
+enum ConsistencyNeed {
+  EVENTUAL;
+  STRONG;
+  TRANSACTIONAL;
+  READ_YOUR_WRITES;
+}
+
+enum WorkflowKind {
+  ORCHESTRATION;
+  LONG_RUNNING_PROCESS;
+  SAGA;
+  HUMAN_APPROVAL;
+  BATCH_COORDINATION;
+  EVENT_ROUTING_PROCESS;
+}
+
+enum WorkflowStateKind {
+  TASK;
+  CHOICE;
+  PARALLEL;
+  MAP;
+  WAIT;
+  PASS;
+  SUCCESS;
+  FAILURE;
+}
+
+enum IdentityKind {
+  USER_DIRECTORY;
+  FEDERATED_IDENTITY;
+  MACHINE_CLIENT;
+  API_KEY_CLIENT;
+  SERVICE_PRINCIPAL;
+  EXTERNAL_IDENTITY_PROVIDER;
+}
+
+enum PrincipalKind {
+  HUMAN_USER;
+  GROUP;
+  ROLE;
+  SERVICE;
+  EXTERNAL_SYSTEM;
+  ANONYMOUS;
+}
+
+enum PermissionEffect {
+  ALLOW;
+  DENY;
+}
+
+enum SecretKind {
+  API_KEY;
+  PASSWORD;
+  TOKEN;
+  CERTIFICATE;
+  CONNECTION_STRING;
+  PRIVATE_KEY;
+  OTHER;
+}
+
+enum ConfigScope {
+  APPLICATION;
+  SERVICE;
+  FUNCTION;
+  ENVIRONMENT;
+  DEPLOYMENT_UNIT;
+}
+
+enum SchemaKind {
+  REQUEST;
+  RESPONSE;
+  ERROR;
+  EVENT;
+  MESSAGE;
+  ENTITY;
+  VALUE_OBJECT;
+  READ_MODEL;
+  CONFIGURATION;
+}
+
+enum SchemaCompatibility {
+  NONE;
+  BACKWARD;
+  FORWARD;
+  FULL;
+}
+
+enum FieldType {
+  STRING;
+  INTEGER;
+  NUMBER;
+  BOOLEAN;
+  DATE;
+  TIME;
+  DATETIME;
+  OBJECT;
+  ARRAY;
+  ENUM;
+  BINARY;
+  MONEY;
+  UUID;
+  EMAIL;
+  URI;
+}
+
+enum EnvironmentClass {
+  LOCAL;
+  DEV;
+  TEST;
+  STAGING;
+  PROD;
+  SANDBOX;
+}
+
+enum RuntimeLanguage {
+  TYPESCRIPT;
+  JAVASCRIPT;
+  PYTHON;
+  JAVA;
+  CSHARP;
+  GO;
+  RUST;
+  CUSTOM;
+}
+
+enum PackageManager {
+  NPM;
+  PNPM;
+  YARN;
+  PIP;
+  POETRY;
+  MAVEN;
+  GRADLE;
+  DOTNET;
+  GO_MOD;
+  CARGO;
+  NONE;
+}
+
+enum Decision {
+  UNDECIDED;
+  REQUIRED;
+  NOT_REQUIRED;
+}
+
+enum DataAccessMode {
+  READ;
+  WRITE;
+  READ_WRITE;
+  APPEND;
+  DELETE;
+}

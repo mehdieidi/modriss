@@ -1,0 +1,227 @@
+@namespace(uri="https://modless.org/kernel/1.0", prefix="kernel")
+package kernel;
+
+/*
+ * Shared MDA kernel for CIM, PIM, and PSM metamodels.
+ * Keep provider/domain-specific concepts outside this package.
+ */
+
+enum Priority {
+  LOW;
+  MEDIUM;
+  HIGH;
+  CRITICAL;
+}
+
+enum Severity {
+  INFO;
+  WARNING;
+  ERROR;
+  CRITICAL;
+  BLOCKER;
+}
+
+enum ConstraintStrength {
+  ADVISORY;
+  RECOMMENDED;
+  MANDATORY;
+  BLOCKING;
+}
+
+enum LifecycleStatus {
+  DRAFT;
+  INCOMPLETE;
+  REVIEW_REQUIRED;
+  REVIEW_READY;
+  REVIEWABLE;
+  TRANSFORMATION_READY;
+  DEPLOYMENT_READY;
+  PRODUCTION_READY;
+  BLOCKED;
+  DEPRECATED;
+}
+
+enum TraceLinkType {
+  DERIVES_FROM;
+  REFINES;
+  SATISFIES;
+  CONSTRAINS;
+  GENERATED_FROM;
+  VALIDATES;
+  MITIGATES;
+  CONFLICTS_WITH;
+  MAPS_TO;
+  TRANSFORMS_TO;
+  REALIZES;
+  IMPLEMENTS;
+  DEPLOYS_TO;
+  OBSERVES;
+  OTHER;
+}
+
+enum FindingType {
+  MISSING_INFORMATION;
+  INCONSISTENCY;
+  BLOCKING_RISK;
+  BLOCKING_HOTSPOT;
+  VALIDATION_WARNING;
+  VALIDATION_ERROR;
+  TRANSFORMATION_ASSUMPTION;
+  POLICY_VIOLATION;
+  SECURITY_RISK;
+  DEPLOYMENT_RISK;
+  OTHER;
+}
+
+enum StructuredFormat {
+  TEXT;
+  JSON;
+  YAML;
+  TOML;
+  XML;
+  MARKDOWN;
+  ASL_JSON;
+  IAM_POLICY_JSON;
+  CLOUDFORMATION_INTRINSIC;
+  OTHER;
+}
+
+/* PIM/serverless architectural marker interfaces. Other metamodels may ignore them. */
+interface DeployableElement {}
+interface InvocationSource {}
+interface InvocationTarget {}
+interface FunctionTarget {}
+interface WorkflowTarget {}
+interface SubscriptionTarget {}
+interface RoutingTarget {}
+interface FlowEndpoint {}
+interface ProtectedResource {}
+interface PolicyTarget {}
+interface DataAccessTarget {}
+interface ExternalCallTarget {}
+interface EnvironmentTarget {}
+interface CredentialRequirementLike {}
+interface RouteEndpoint {}
+interface EventCarrier {}
+
+class KeyValue {
+  attr String[1] key;
+  attr String value;
+}
+
+class Annotation extends KeyValue {
+  attr String source;
+  readonly transient ref ModelElement[1]#annotations owner;
+}
+
+abstract class ModelElement {
+  id attr String[1] ~id;
+  attr String[1] name;
+  attr String summary;
+  attr String description;
+  attr String documentation;
+  attr String modelTags;
+  attr String externalId;
+  attr LifecycleStatus lifecycleStatus;
+
+  val Annotation[*]#owner annotations;
+  ref TraceLink[*]#target incomingTraces;
+  ref TraceLink[*]#source outgoingTraces;
+}
+
+abstract class TraceableElement extends ModelElement {
+  attr String sourceReference;
+  attr String sourceExcerpt;
+  attr String sourceQualifiedName;
+  attr String sourceUri;
+  attr String sourceLine;
+  attr String traceId;
+  attr String generatedFrom;
+  attr Boolean generatedByTransformation;
+  attr String rationale;
+  attr String reviewStatus;
+  attr String reviewNotes;
+  attr Boolean manuallyMaintained;
+}
+
+abstract class SemanticRelationship extends TraceableElement {
+}
+
+class TraceModel extends TraceableElement {
+  val TraceLink[*]#traceModel links;
+}
+
+@Ecore(constraints="TraceLinkHasReferenceOrExternalId")
+class TraceLink extends TraceableElement {
+  attr TraceLinkType[1] linkType;
+  attr String transformationRule;
+  attr String confidence;
+  attr String sourceElementId;
+  attr String targetElementId;
+
+  readonly transient ref TraceModel[1]#links traceModel;
+  ref ModelElement[?]#outgoingTraces source;
+  ref ModelElement[?]#incomingTraces target;
+}
+
+abstract class TransformationAssumption extends TraceableElement {
+  attr String assumptionStatement;
+  attr String validationApproach;
+  attr Boolean accepted;
+  attr String acceptedBy;
+  attr Date acceptedOn;
+}
+
+class StructuredDocument extends TraceableElement {
+  attr StructuredFormat[1] format;
+  attr String content;
+  attr String externalUri;
+}
+
+class ProductionReadinessAssessment extends TraceableElement {
+  attr LifecycleStatus readinessStatus;
+  attr Date assessedAt;
+  attr String assessedBy;
+  attr Boolean transformationReady;
+  attr Boolean deploymentReady;
+  attr Boolean productionReady;
+
+  val ReadinessFinding[*]#assessment findings;
+  val ReadinessCheck[*]#assessment checks;
+  val ManualDecision[*]#assessment manualDecisions;
+}
+
+class ReadinessFinding extends TraceableElement {
+  attr FindingType findingType;
+  attr Severity[1] severity;
+  attr String ruleId;
+  attr String message;
+  attr String recommendation;
+  attr Boolean blocking;
+
+  readonly transient ref ProductionReadinessAssessment[1]#findings assessment;
+  ref ModelElement[*] affectedElements;
+}
+
+class ReadinessCheck extends TraceableElement {
+  attr String[1] checkId;
+  attr Severity[1] severity;
+  attr Boolean passed;
+  attr String message;
+  attr String remediation;
+
+  readonly transient ref ProductionReadinessAssessment[1]#checks assessment;
+  ref ModelElement[*] affectedElements;
+}
+
+class ManualDecision extends TraceableElement {
+  attr String[1] question;
+  attr String decision;
+  attr String decisionOwner;
+  attr Date dueDate;
+  attr Boolean blocking;
+  attr Severity severity;
+
+  readonly transient ref ProductionReadinessAssessment[?]#manualDecisions assessment;
+  ref ModelElement[*] affectedElements;
+}

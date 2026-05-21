@@ -1,0 +1,64 @@
+@namespace(uri="https://modless.org/pim/deployment/1.0", prefix="deployment")
+package deployment;
+
+import "../shared/kernel.ecore";
+import "pim-types.ecore";
+import "pim-compute.ecore";
+import "pim-api.ecore";
+import "pim-integration.ecore";
+import "pim-data.ecore";
+import "pim-workflow.ecore";
+import "pim-external.ecore";
+import "pim-policy.ecore";
+import "pim-config.ecore";
+
+class ServerlessService extends kernel.TraceableElement, kernel.PolicyTarget {
+  attr types.BoundaryType[1] boundaryType;
+  attr String responsibility;
+  attr String ownerTeam;
+  attr String businessCapabilityRef;
+  attr Boolean externallyExposed;
+  attr Boolean ownsData;
+  ref compute.Function[*] ownsFunctions;
+  ref api.Api[*] ownsApis;
+  ref integration.EventChannel[*] ownsChannels;
+  ref data.StorageElement[*] ownsStores;
+  ref workflow.Workflow[*] ownsWorkflows;
+  ref external.ExternalAdapter[*] ownsAdapters;
+  ref policy.ArchitecturePolicy[*] constrainedBy;
+}
+
+class DeploymentUnit extends kernel.TraceableElement, kernel.PolicyTarget {
+  attr types.DeploymentUnitType[1] unitType;
+  attr String lifecycle;
+  attr Boolean independentlyDeployable;
+  attr String releaseStrategy;
+  attr String versioningStrategy;
+  ref ServerlessService[*] services;
+  ref kernel.DeployableElement[+] contains;
+  ref Environment[+] targetEnvironments;
+}
+
+class Environment extends kernel.TraceableElement, kernel.EnvironmentTarget, kernel.PolicyTarget {
+  attr types.EnvironmentClass[1] environmentClass;
+  attr String nameSuffix;
+  attr Boolean productionLike;
+  attr Boolean requiresApproval;
+  ref config.ConfigurationSet[*] configurationSets;
+  ref config.ConfigParameter[*] parameters;
+  ref config.EnvironmentVariable[*] variables;
+}
+
+class ImplementationProfile extends kernel.TraceableElement {
+  attr types.RuntimeLanguage[1] primaryLanguage;
+  attr String languageVersion;
+  attr types.PackageManager[1] packageManager;
+  attr String sourceLayout;
+  attr String testFramework;
+  attr String lintCommand;
+  attr String formatCommand;
+  attr String buildCommand;
+  attr String dependencyPolicy;
+  attr Boolean generateTypedContracts;
+  attr Boolean generateRuntimeValidation;
+}

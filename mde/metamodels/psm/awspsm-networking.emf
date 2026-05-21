@@ -1,0 +1,62 @@
+@namespace(uri="https://modless.org/awspsm/networking/2.1", prefix="awspsmnetworking")
+package awspsmnetworking;
+
+import "../shared/kernel.ecore";
+import "awspsm-core.ecore";
+
+class VpcAttachmentConfig extends kernel.TraceableElement {
+  attr String vpcId;
+  attr String[*] subnetIds;
+  attr String[*] securityGroupIds;
+  attr Boolean ipv6AllowedForDualStack;
+  attr Boolean privateSubnetsRequireNatOrEndpoints;
+  val VpcEndpointReference[*] requiredEndpoints;
+  ref SecurityGroup[*] securityGroups;
+}
+
+class VpcEndpointReference extends kernel.TraceableElement {
+  attr String[1] serviceName;
+  attr String endpointType;
+  attr Boolean requiredForPrivateAccess;
+}
+
+class Vpc extends awspsmcore.AwsResource {
+  attr String cidrBlock;
+  attr Boolean enableDnsHostnames;
+  attr Boolean enableDnsSupport;
+}
+
+class Subnet extends awspsmcore.AwsResource {
+  attr String subnetName;
+  attr String cidrBlock;
+  attr String availabilityZone;
+  attr Boolean mapPublicIpOnLaunch;
+  ref Vpc[?] vpc;
+}
+
+class VpcEndpoint extends awspsmcore.AwsResource {
+  attr String serviceName;
+  attr String endpointType;
+  attr String policyDocumentJson;
+  ref Vpc[?] vpc;
+  ref Subnet[*] subnets;
+  ref SecurityGroup[*] securityGroups;
+}
+
+class SecurityGroup extends awspsmcore.AwsResource {
+  attr String[1] groupDescription;
+  attr String vpcId;
+  ref Vpc[?] vpc;
+  val SecurityGroupRule[*] ingressRules;
+  val SecurityGroupRule[*] egressRules;
+}
+
+class SecurityGroupRule extends kernel.TraceableElement {
+  attr String ipProtocol;
+  attr Integer fromPort;
+  attr Integer toPort;
+  attr String cidrIp;
+  attr String cidrIpv6;
+  attr String ruleDescription;
+  ref SecurityGroup[?] sourceSecurityGroup;
+}

@@ -1,0 +1,79 @@
+@namespace(uri="https://modless.org/cim/diagram/1.0", prefix="cimdiagram")
+package cimdiagram;
+
+import "../shared/kernel.ecore";
+
+enum DiagramViewType {
+  REQUIREMENTS_GOALS;
+  CAPABILITY_CONTEXT;
+  DOMAIN_MODEL;
+  EVENT_STORMING;
+  BUSINESS_PROCESS;
+  DECISION;
+  INFORMATION_GOVERNANCE;
+  TRANSFORMATION_READINESS;
+  CUSTOM;
+}
+
+enum DiagramNodePresentation {
+  CARD;
+  TABLE_ROW;
+  BOUNDARY;
+  COMPARTMENT;
+  BADGE;
+  LANE;
+  NOTE;
+  SYMBOL;
+}
+
+enum DiagramEdgeKind {
+  SEMANTIC_REFERENCE;
+  SEMANTIC_RELATIONSHIP_OBJECT;
+  CONTAINMENT_VISUALIZATION;
+  VISUAL_ANNOTATION;
+}
+
+class DiagramModel extends kernel.ModelElement {
+  attr String description;
+  val DiagramView[*] views;
+}
+
+class DiagramView extends kernel.ModelElement {
+  attr DiagramViewType viewType;
+  attr String viewpoint;
+  attr String filterExpression;
+  attr Boolean primaryView;
+  val DiagramNode[*] nodes;
+  val DiagramEdge[*] edges;
+}
+
+class DiagramNode extends kernel.ModelElement {
+  ref kernel.ModelElement[1] semanticElement;
+  attr DiagramNodePresentation presentation;
+  attr Double x;
+  attr Double y;
+  attr Double width;
+  attr Double height;
+  attr Integer zIndex;
+  attr Boolean collapsed;
+  attr String expandedCompartments;
+  attr String labelOverride;
+}
+
+class DiagramEdge extends kernel.ModelElement {
+  attr DiagramEdgeKind edgeKind;
+  ref kernel.ModelElement[1] semanticSource;
+  ref kernel.ModelElement[1] semanticTarget;
+
+  /*
+   * For simple refs, store the EReference name such as "issuedBy",
+   * "expectedEvents", or "privacyConstraints". For first-class edge
+   * objects, use relationshipElement instead.
+   */
+  attr String semanticFeature;
+  ref kernel.SemanticRelationship[?] relationshipElement;
+
+  attr String labelOverride;
+  attr String routingPoints;
+  attr Boolean hidden;
+}

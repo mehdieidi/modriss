@@ -1,0 +1,65 @@
+@namespace(uri="https://modless.org/pim/compute/1.0", prefix="compute")
+package compute;
+
+import "../shared/kernel.ecore";
+import "pim-types.ecore";
+import "pim-contracts.ecore";
+import "pim-data.ecore";
+import "pim-external.ecore";
+import "pim-config.ecore";
+import "pim-policy.ecore";
+import "pim-security.ecore";
+
+abstract class ComputeElement extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
+  attr String responsibility;
+  attr types.ComputeProfile computeProfile;
+  attr types.ExecutionModel executionModel;
+  attr Boolean stateless;
+  attr Boolean coldStartSensitive;
+  attr Integer expectedAverageDurationMs;
+  attr Integer expectedP95DurationMs;
+  attr Integer expectedPeakConcurrency;
+}
+
+class Function extends ComputeElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.FunctionTarget, kernel.SubscriptionTarget, kernel.RoutingTarget {
+  attr types.FunctionKind[1] functionKind;
+  attr String handlerResponsibility;
+  attr String sourceNameSuggestion;
+  attr Boolean publicEntryPoint;
+  attr Boolean writesState;
+  attr Boolean readsState;
+  attr Boolean publishesEvents;
+  attr Boolean requiresNetworkAccess;
+  attr Boolean requiresFileSystem;
+  attr Boolean requiresLargeTemporaryStorage;
+  attr Boolean requiresIdempotency;
+  attr String businessOperationRef;
+  val contracts.FunctionContract[1] contract;
+  ref Trigger[*]#invokesFunction triggers;
+  ref data.StorageElement[*] reads;
+  ref data.StorageElement[*] writes;
+  ref contracts.EventType[*] publishes;
+  ref contracts.EventType[*] subscribesTo;
+  ref external.ExternalAdapter[*] callsAdapters;
+  ref config.Secret[*] usesSecrets;
+  ref config.EnvironmentVariable[*] environmentVariables;
+  ref policy.IdempotencyPolicy[?] idempotency;
+  ref policy.TimeoutPolicy[?] timeout;
+  ref policy.ResiliencePolicy[?] resilience;
+  ref policy.ConcurrencyPolicy[?] concurrency;
+  ref policy.ObservabilityConfig[?] observability;
+  ref security.SecurityPolicy[*] securityPolicies;
+}
+
+class Trigger extends kernel.TraceableElement {
+  attr String triggerKind;
+  attr types.InvocationMode[1] invocationMode;
+  attr Boolean enabled;
+  attr String filterExpression;
+  attr Boolean generatedFromFlow;
+  ref kernel.InvocationSource[1] source;
+  ref Function[?]#triggers invokesFunction;
+  ref kernel.WorkflowTarget[?] startsWorkflow;
+  ref policy.ResiliencePolicy[?] resilience;
+  ref policy.BatchPolicy[?] batchPolicy;
+}

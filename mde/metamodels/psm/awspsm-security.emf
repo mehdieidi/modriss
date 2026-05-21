@@ -1,0 +1,128 @@
+@namespace(uri="https://modless.org/awspsm/security/2.1", prefix="awspsmsecurity")
+package awspsmsecurity;
+
+import "../shared/kernel.ecore";
+import "awspsm-enums.ecore";
+import "awspsm-core.ecore";
+
+class IamRole extends awspsmcore.AwsResource {
+  attr String roleName;
+  attr String path;
+  val IamPolicyDocument[1] assumeRolePolicy;
+  attr String permissionsBoundaryArn;
+  attr Integer maxSessionDuration;
+  attr String descriptionText;
+  val IamInlinePolicy[*] inlinePolicies;
+  attr String[*] managedPolicyArns;
+  ref IamManagedPolicy[*] managedPolicies;
+}
+
+class IamInlinePolicy extends kernel.TraceableElement {
+  attr String[1] policyName;
+  val IamPolicyDocument[1] document;
+}
+
+class IamPolicy extends awspsmcore.AwsResource {
+  attr String[1] policyName;
+  val IamPolicyDocument[1] document;
+  attr String rawPolicyJson;
+  ref IamRole[*] roles;
+}
+
+class IamManagedPolicy extends awspsmcore.AwsResource {
+  attr String[1] managedPolicyName;
+  attr String path;
+  val IamPolicyDocument[1] document;
+  attr String rawPolicyJson;
+}
+
+class IamPolicyDocument extends kernel.TraceableElement {
+  attr String version;
+  val IamStatement[+] statements;
+}
+
+class IamStatement extends kernel.TraceableElement {
+  attr String sid;
+  attr awspsmenums.IamEffect[1] effect;
+  attr String[*] actions;
+  attr String[*] notActions;
+  attr String[*] resources;
+  attr String[*] notResources;
+  val IamPrincipal[*] principals;
+  val IamCondition[*] conditions;
+  attr Boolean wildcardAction;
+  attr Boolean wildcardResource;
+  attr String wildcardJustification;
+}
+
+class IamPrincipal extends kernel.TraceableElement {
+  attr String principalType;
+  attr String[*] identifiers;
+}
+
+class IamCondition extends kernel.TraceableElement {
+  attr String operator;
+  attr String key;
+  attr String[*] values;
+}
+
+class KmsKey extends awspsmcore.AwsResource {
+  attr String descriptionText;
+  attr String keyUsage;
+  attr String keySpec;
+  attr Boolean enabled;
+  attr Boolean enableKeyRotation;
+  attr Boolean multiRegion;
+  attr Integer pendingWindowInDays;
+  val IamPolicyDocument[?] keyPolicy;
+  attr String keyPolicyJson;
+  ref KmsAlias[*]#targetKey aliases;
+}
+
+class KmsAlias extends awspsmcore.AwsResource {
+  attr String[1] aliasName;
+  ref KmsKey[1]#aliases targetKey;
+}
+
+class SecretsManagerSecret extends awspsmcore.AwsResource {
+  attr String secretName;
+  attr String descriptionText;
+  val awspsmcore.ValueExpression[?] secretValue;
+  attr String generateSecretStringJson;
+  attr Boolean rotationRequired;
+  attr String replicaRegionsJson;
+  ref KmsKey[?] kmsKey;
+  ref SecretRotationSchedule[?]#secret rotationSchedule;
+  ref SecretsManagerResourcePolicy[?]#secret resourcePolicy;
+}
+
+class SecretRotationSchedule extends awspsmcore.AwsResource {
+  attr String rotationRulesJson;
+  ref SecretsManagerSecret[1]#rotationSchedule secret;
+  ref awspsmcore.AwsResource[?] rotationLambda;
+}
+
+class SecretsManagerResourcePolicy extends awspsmcore.AwsResource {
+  val IamPolicyDocument[?] resourcePolicy;
+  attr String resourcePolicyJson;
+  ref SecretsManagerSecret[1]#resourcePolicy secret;
+}
+
+class SsmParameter extends awspsmcore.AwsResource {
+  attr String[1] parameterName;
+  attr awspsmenums.ParameterType[1] parameterType;
+  attr awspsmenums.SsmParameterTier tier;
+  attr String dataType;
+  attr String allowedPattern;
+  val awspsmcore.ValueExpression[?] value;
+  attr String descriptionText;
+  ref KmsKey[?] kmsKey;
+}
+
+class SsmParameterValueExpression extends awspsmcore.ValueExpression {
+  ref SsmParameter[?] ssmParameter;
+}
+
+class SecretValueExpression extends awspsmcore.ValueExpression {
+  ref SecretsManagerSecret[?] secretRef;
+}

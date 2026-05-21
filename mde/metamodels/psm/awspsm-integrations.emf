@@ -1,0 +1,54 @@
+@namespace(uri="https://modless.org/awspsm/integrations/2.1", prefix="awspsmintegrations")
+package awspsmintegrations;
+
+import "../shared/kernel.ecore";
+import "awspsm-core.ecore";
+import "awspsm-compute.ecore";
+import "awspsm-api.ecore";
+import "awspsm-events.ecore";
+import "awspsm-messaging.ecore";
+import "awspsm-workflow.ecore";
+
+/**
+ * Non-deployable visual relationship objects for editors.
+ * Deployable relationships remain stack-contained resources such as LambdaPermission,
+ * SnsSubscription, QueuePolicy, TopicPolicy, and EventSourceMapping.
+ */
+abstract class AwsRelationshipView extends kernel.TraceableElement {
+  attr Boolean generated;
+  ref awspsmcore.AwsResource[1] source;
+  ref awspsmcore.AwsResource[1] target;
+}
+
+class ApiGatewayLambdaIntegrationView extends AwsRelationshipView {
+  ref awspsmapi.ApiGatewayRoute[1] route;
+  ref awspsmcompute.AwsLambdaFunction[1] function;
+  ref awspsmapi.ApiGatewayIntegration[1] integration;
+  ref awspsmcompute.LambdaPermission[?] permission;
+}
+
+class EventBridgeLambdaTargetView extends AwsRelationshipView {
+  ref awspsmevents.EventBridgeRule[1] rule;
+  ref awspsmevents.EventBridgeTarget[1] targetRow;
+  ref awspsmcompute.AwsLambdaFunction[1] function;
+  ref awspsmcompute.LambdaPermission[?] permission;
+}
+
+class SnsLambdaSubscriptionView extends AwsRelationshipView {
+  ref awspsmmessaging.SnsTopic[1] topic;
+  ref awspsmcompute.AwsLambdaFunction[1] function;
+  ref awspsmmessaging.SnsSubscription[1] subscription;
+  ref awspsmcompute.LambdaPermission[?] permission;
+}
+
+class SqsLambdaEventSourceView extends AwsRelationshipView {
+  ref awspsmmessaging.SqsQueue[1] queue;
+  ref awspsmcompute.AwsLambdaFunction[1] function;
+  ref awspsmcompute.SqsLambdaEventSourceMapping[1] mapping;
+}
+
+class StepFunctionEventBridgeTargetView extends AwsRelationshipView {
+  ref awspsmevents.EventBridgeRule[1] rule;
+  ref awspsmworkflow.StepFunctionStateMachine[1] stateMachine;
+  ref awspsmevents.EventBridgeTarget[1] targetRow;
+}
