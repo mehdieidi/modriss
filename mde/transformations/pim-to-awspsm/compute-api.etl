@@ -1,0 +1,689 @@
+import "lib/common.eol";
+import "lib/aws-builders.eol";
+import "lib/readiness-trace.eol";
+import "lib/resolution.eol";
+
+rule Function2AwsLambdaFunction
+  transform f : COMPUTE!Function
+  to l : AWSPSMCOMPUTE!AwsLambdaFunction {
+
+  copyAwsResource(f, l, "Lambda", "AWS::Serverless::Function");
+  l.id = idFor("lambda", f);
+  l.functionName = l.physicalName;
+  l.descriptionText = firstText(firstText(f.handlerResponsibility, f.responsibility), f.summary);
+  l.code = createLambdaCodeConfig(f, pimRoot().implementationProfile);
+  l.memorySizeMb = inferMemoryMb(f);
+  l.timeoutSeconds = inferTimeoutSeconds(f);
+  l.architecture = AWSPSMENUMS!LambdaArchitecture#ARM64;
+  if (isTrue(f.requiresLargeTemporaryStorage)) {
+    l.ephemeralStorageMb = 10240;
+  }
+  else {
+    l.ephemeralStorageMb = 512;
+  }
+  l.reservedConcurrentExecutions = inferReservedConcurrency(f);
+  l.recursiveLoopMode = AWSPSMENUMS!LambdaRecursiveLoopMode#TERMINATE;
+  l.snapStartApplyOn = AWSPSMENUMS!LambdaSnapStartApplyOn#NONE;
+  l.runtimeManagementMode = AWSPSMENUMS!LambdaRuntimeManagementMode#AUTO;
+  l.publishVersion = isProductionRoot();
+  if (isProductionRoot()) {
+    l.autoPublishAlias = "live";
+    l.codeSigningDecision = AWSPSMENUMS!Decision#NEEDS_REVIEW;
+  }
+  else {
+    l.autoPublishAlias = "";
+    l.codeSigningDecision = AWSPSMENUMS!Decision#UNDECIDED;
+  }
+  l.role = createLambdaRole(f);
+  l.logGroup = createLogGroupFor(f, l.logicalId, "/aws/lambda/" + l.functionName);
+  l.tracing = createLambdaTracing(f);
+  l.logging = createLambdaLogging(l);
+  l.environment.addAll(createLambdaEnvironment(f));
+
+  if (isTrue(f.requiresNetworkAccess)) {
+    l.vpcConfig = createVpcAttachmentDecision(f);
+  }
+  if (isTrue(f.requiresFileSystem)) {
+    manualDecision("LAMBDA_EFS_REQUIRED",
+      "Provide EFS access point ARN and mount path for Lambda " + f.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{f, l},
+      "Model an AWS EFS attachment or remove Function.requiresFileSystem.");
+  }
+  applyIdempotency(f, l);
+  applyFunctionPolicies(f, l);
+  createTrace(f, l, "Function2AwsLambdaFunction", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Api2HttpApi
+  transform api : API!Api
+  to g : AWSPSMAPI!HttpApi {
+
+  guard : (api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or api.apiStyle = PIMTYPES!ApiStyle#RPC_HTTP or api.apiStyle = PIMTYPES!ApiStyle#WEBHOOK) and not requiresRestApi(api)
+
+  copyAwsResource(api, g, "HttpApi", "AWS::Serverless::HttpApi");
+  g.id = idFor("http_api", api);
+  g.apiName = firstText(firstText(api.publicName, api.name), "HttpApi");
+  g.descriptionText = api.summary;
+  g.accessLogsEnabled = true;
+  g.tracingEnabled = true;
+  g.metricsEnabled = true;
+  g.corsEnabled = isTrue(api.corsRequired);
+  g.protocolType = "HTTP";
+  g.disableExecuteApiEndpoint = false;
+  g.minimumCompressionSize = 1024;
+  g.failOnWarnings = true;
+  g.openApiVersion = "3.0.3";
+  if (isTrue(api.corsRequired)) {
+    g.cors = createCors(api.cors);
+  }
+  if (isTrue(api.generatedOpenApiRequired)) {
+    g.definitionBody = generateOpenApi(api);
+  }
+  g.accessLogGroup = createLogGroupFor(api, g.logicalId, "/aws/apigateway/" + g.physicalName);
+  createApiStages(api, g);
+  createApiAuthorizer(api, g);
+  createTrace(api, g, "Api2HttpApi", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Api2RestApi
+  transform api : API!Api
+  to g : AWSPSMAPI!RestApi {
+
+  guard : (api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or api.apiStyle = PIMTYPES!ApiStyle#RPC_HTTP or api.apiStyle = PIMTYPES!ApiStyle#WEBHOOK) and requiresRestApi(api)
+
+  copyAwsResource(api, g, "RestApi", "AWS::Serverless::Api");
+  g.id = idFor("rest_api", api);
+  g.apiName = firstText(firstText(api.publicName, api.name), "RestApi");
+  g.descriptionText = api.summary;
+  g.accessLogsEnabled = true;
+  g.tracingEnabled = true;
+  g.metricsEnabled = true;
+  g.corsEnabled = isTrue(api.corsRequired);
+  g.endpointType = AWSPSMENUMS!ApiGatewayEndpointType#REGIONAL;
+  g.minimumCompressionSize = 1024;
+  g.failOnWarnings = true;
+  g.apiKeyRequiredByDefault = api.routes.exists(r | inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY);
+  g.openApiVersion = "3.0.3";
+  if (isTrue(api.corsRequired)) {
+    g.cors = createCors(api.cors);
+  }
+  g.definitionBody = generateOpenApi(api);
+  g.accessLogGroup = createLogGroupFor(api, g.logicalId, "/aws/apigateway/" + g.physicalName);
+  createApiStages(api, g);
+  createApiAuthorizer(api, g);
+  createApiKeyAndUsagePlan(api, g);
+  createTrace(api, g, "Api2RestApi", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Api2NativeUnsupportedApi
+  transform api : API!Api
+  to n : AWSPSMCORE!AwsNativeResource {
+
+  guard : not (api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or api.apiStyle = PIMTYPES!ApiStyle#RPC_HTTP)
+
+  copyAwsResource(api, n, "UnsupportedApi", "AWS::CloudFormation::CustomResource");
+  n.id = idFor("native_api", api);
+  n.cloudFormationType = "AWS::CloudFormation::CustomResource";
+  n.samType = "UnsupportedApiStyle";
+  n.properties.add(nativeText("PimApiStyle", api.apiStyle.asString(), KERNEL!StructuredFormat#TEXT, true, false));
+  manualDecision("API_STYLE_UNSUPPORTED_DIRECTLY",
+    "Choose an AWS implementation for unsupported API style " + api.apiStyle.asString() + " on " + api.name + ".",
+    KERNEL!Severity#ERROR, true, Sequence{api, n},
+    "Use a supported HTTP API/REST API style or add a first-class PSM service for this API style.");
+  createTrace(api, n, "Api2NativeUnsupportedApi", "LOW", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+rule ApiRoute2HttpApiRoute
+  transform r : API!ApiRoute
+  to gr : AWSPSMAPI!HttpApiRoute {
+
+  guard : r.api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or r.api.apiStyle = PIMTYPES!ApiStyle#RPC_HTTP
+
+  copyAwsResource(r, gr, "Route", "AWS::ApiGatewayV2::Route");
+  gr.id = idFor("http_route", r);
+  gr.method = mapHttpMethod(r.method);
+  gr.path = r.pathTemplate;
+  gr.routeKey = r.method.asString() + " " + r.pathTemplate;
+  gr.operationName = firstText(r.operationId, camelCase(r.name));
+  gr.authorizationType = inferAuthorizationType(r);
+  gr.apiKeyRequired = false;
+  gr.requestModelsJson = schemaRefJson(r.requestSchema);
+  gr.responseModelsJson = schemaRefJson(r.responseSchema);
+  gr.timeoutInMillis = inferRouteTimeoutMillis(r);
+  gr.routeSettingsJson = "{ \"DetailedMetricsEnabled\": true }";
+  gr.api = r.api.equivalent();
+  gr.integration = createApiIntegration(r, gr);
+  if (routeNeedsAuth(r) and gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#NONE) {
+    manualDecision("API_ROUTE_AUTHORIZER_MISSING",
+      "Provide an authorizer for protected route " + r.pathTemplate + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{r, gr},
+      "Model an AuthPolicy/IdentityProvider or mark the route public.");
+  }
+  createTrace(r, gr, "ApiRoute2HttpApiRoute", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule ApiRoute2RestApiRoute
+  transform r : API!ApiRoute
+  to gr : AWSPSMAPI!RestApiRoute {
+
+  guard : r.api.equivalent().isDefined() and r.api.equivalent().eClass().getName() = "RestApi"
+
+  copyAwsResource(r, gr, "Route", "AWS::ApiGateway::Method");
+  gr.id = idFor("rest_route", r);
+  gr.method = mapHttpMethod(r.method);
+  gr.path = r.pathTemplate;
+  gr.restApiResourcePath = r.pathTemplate;
+  gr.operationName = firstText(r.operationId, camelCase(r.name));
+  gr.authorizationType = inferAuthorizationType(r);
+  gr.apiKeyRequired = gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY;
+  gr.requestModelsJson = schemaRefJson(r.requestSchema);
+  gr.responseModelsJson = schemaRefJson(r.responseSchema);
+  gr.timeoutInMillis = inferRouteTimeoutMillis(r);
+  gr.routeSettingsJson = "{ \"DataTraceEnabled\": false, \"MetricsEnabled\": true }";
+  gr.api = r.api.equivalent();
+  gr.integration = createApiIntegration(r, gr);
+  gr.authorizer = findAuthorizerFor(r);
+  if (routeNeedsAuth(r) and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY and gr.authorizer.isUndefined()) {
+    manualDecision("API_ROUTE_AUTHORIZER_MISSING",
+      "Provide an authorizer for protected route " + r.pathTemplate + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{r, gr},
+      "Model an AuthPolicy/IdentityProvider or mark the route public.");
+  }
+  createTrace(r, gr, "ApiRoute2RestApiRoute", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+operation inferMemoryMb(f) {
+  if (f.computeProfile = PIMTYPES!ComputeProfile#MEMORY_INTENSIVE) {
+    return 1024;
+  }
+  if (f.computeProfile = PIMTYPES!ComputeProfile#CPU_BOUND) {
+    return 1024;
+  }
+  if (f.computeProfile = PIMTYPES!ComputeProfile#BATCH_ORIENTED) {
+    return 2048;
+  }
+  if (f.computeProfile = PIMTYPES!ComputeProfile#LATENCY_SENSITIVE) {
+    return 512;
+  }
+  return 256;
+}
+
+operation inferTimeoutSeconds(f) {
+  var t = 30;
+  if (f.timeout.isDefined() and f.timeout.timeoutSeconds.isDefined() and f.timeout.timeoutSeconds > 0) {
+    t = f.timeout.timeoutSeconds;
+  }
+  else {
+    if (f.expectedP95DurationMs.isDefined() and f.expectedP95DurationMs > 0) {
+      t = (f.expectedP95DurationMs / 1000) + 1;
+    }
+  }
+  if (t > 900) {
+    manualDecision("LAMBDA_TIMEOUT_REDESIGN_REQUIRED",
+      "Lambda timeout for " + f.name + " exceeds AWS Lambda maximum.",
+      KERNEL!Severity#BLOCKER, true, Sequence{f},
+      "Redesign the operation or move long-running work into Step Functions.");
+    return 900;
+  }
+  return clamp(t, 1, 900);
+}
+
+operation inferReservedConcurrency(f) {
+  if (f.concurrency.isDefined() and f.concurrency.reservedConcurrencyHint.isDefined()) {
+    return f.concurrency.reservedConcurrencyHint;
+  }
+  return 0;
+}
+
+operation createLambdaTracing(f) {
+  var t = new AWSPSMCOMPUTE!LambdaTracingConfig;
+  t.id = generatedId("lambda_tracing", f, "xray");
+  t.name = f.name + " tracing";
+  t.enabled = true;
+  t.mode = AWSPSMENUMS!LambdaTracingMode#ACTIVE;
+  return t;
+}
+
+operation createLambdaLogging(l) {
+  var cfg = new AWSPSMCOMPUTE!LambdaLoggingConfig;
+  cfg.id = "lambda_logging_" + slug(l.logicalId);
+  cfg.name = l.name + " logging";
+  cfg.applicationLogLevel = "INFO";
+  cfg.systemLogLevel = "INFO";
+  cfg.logFormat = "JSON";
+  cfg.logGroupName = l.logGroup.logGroupName;
+  return cfg;
+}
+
+operation createLambdaEnvironment(f) {
+  var out = Sequence{};
+  for (ev in f.environmentVariables) {
+    var le = new AWSPSMCOMPUTE!LambdaEnvironmentVariable;
+    le.id = generatedId("lambda_env", f, ev.variableName);
+    le.name = ev.variableName;
+    le.variableName = ev.variableName;
+    le.stageSpecific = false;
+    if (ev.secret.isDefined()) {
+      le.value = secretValue(ev.secret.equivalent());
+    }
+    else {
+      if (ev.parameter.isDefined()) {
+        le.value = literalValue("${" + ev.parameter.name + "}", isTrue(ev.secretReference));
+      }
+      else {
+        le.value = literalValue(firstText(ev.valueSource, ""), isTrue(ev.secretReference));
+      }
+    }
+    out.add(le);
+  }
+  for (s in f.usesSecrets) {
+    var se = new AWSPSMCOMPUTE!LambdaEnvironmentVariable;
+    se.id = generatedId("lambda_env_secret", f, s.name);
+    se.name = pascalCase(s.name) + " Secret Arn";
+    se.variableName = slug(s.name).toUpperCase() + "_SECRET_ARN";
+    se.value = getAtt(s.equivalent(), "Arn");
+    se.stageSpecific = false;
+    out.add(se);
+  }
+  for (store in f.reads) {
+    out.add(resourceNameEnv(f, store));
+  }
+  for (store in f.writes) {
+    if (out.none(e | e.variableName = slug(store.name).toUpperCase() + "_NAME")) {
+      out.add(resourceNameEnv(f, store));
+    }
+  }
+  return out;
+}
+
+operation resourceNameEnv(f, store) {
+  var le = new AWSPSMCOMPUTE!LambdaEnvironmentVariable;
+  le.id = generatedId("lambda_env_resource", f, store.name);
+  le.name = store.name + " name";
+  le.variableName = slug(store.name).toUpperCase() + "_NAME";
+  le.value = refValue(store.equivalent());
+  le.stageSpecific = false;
+  return le;
+}
+
+operation createLambdaRole(f) {
+  var role = new AWSPSMSECURITY!IamRole;
+  copyAwsResource(f, role, "LambdaRole", "AWS::IAM::Role");
+  role.id = generatedId("iam_role", f, "lambda");
+  role.roleName = physicalName(f, "lambda-role", defaultStage());
+  role.path = "/";
+  role.maxSessionDuration = 3600;
+  role.descriptionText = "Execution role for " + f.name;
+  role.assumeRolePolicy = serviceAssumeRolePolicy("lambda.amazonaws.com");
+  return role;
+}
+
+operation createVpcAttachmentDecision(f) {
+  var v = new AWSPSMNETWORKING!VpcAttachmentConfig;
+  v.id = generatedId("vpc_attachment", f, "lambda");
+  v.name = f.name + " VPC Attachment";
+  v.privateSubnetsRequireNatOrEndpoints = true;
+  manualDecision("LAMBDA_VPC_DETAILS_REQUIRED",
+    "Provide VPC, subnet, and security group IDs for Lambda " + f.name + ".",
+    KERNEL!Severity#ERROR, isProductionRoot(), Sequence{f},
+    "Add AWS placement hints or model networking resources for private access.");
+  return v;
+}
+
+operation routeNeedsAuth(r) {
+  return isTrue(r.authRequired) or (r.api.isDefined() and isTrue(r.api.authRequired)) or (not isTrue(r.publicRoute));
+}
+
+operation inferAuthorizationType(r) {
+  if (not routeNeedsAuth(r)) {
+    return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
+  }
+  if (r.authorization.isDefined() and hasText(r.authorization.roleOrScopeRequired)) {
+    return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
+  }
+  if (r.api.auth.isDefined()) {
+    if (r.api.auth.identityProvider.isDefined()) {
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
+    }
+    if (r.api.auth.authScheme.toLowerCase().contains("jwt")) {
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
+    }
+    if (r.api.auth.authScheme.toLowerCase().contains("iam")) {
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
+    }
+    if (r.api.auth.authScheme.toLowerCase().contains("key")) {
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY;
+    }
+    if (r.api.auth.authScheme.toLowerCase().contains("lambda") or r.api.auth.authScheme.toLowerCase().contains("custom")) {
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#CUSTOM_LAMBDA;
+    }
+  }
+  manualDecision("AUTH_SCHEME_AMBIGUOUS",
+    "Choose an AWS API authorization scheme for route " + r.pathTemplate + ".",
+    KERNEL!Severity#WARNING, isProductionRoot(), Sequence{r},
+    "Set AuthPolicy.authScheme to JWT/OIDC/OAuth, Cognito, IAM/SigV4, API key, or Lambda/custom.");
+  return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
+}
+
+operation mapHttpMethod(m) {
+  if (m = PIMTYPES!HttpMethod#GET) {
+    return AWSPSMENUMS!HttpMethod#GET;
+  }
+  if (m = PIMTYPES!HttpMethod#POST) {
+    return AWSPSMENUMS!HttpMethod#POST;
+  }
+  if (m = PIMTYPES!HttpMethod#PUT) {
+    return AWSPSMENUMS!HttpMethod#PUT;
+  }
+  if (m = PIMTYPES!HttpMethod#PATCH) {
+    return AWSPSMENUMS!HttpMethod#PATCH;
+  }
+  if (m = PIMTYPES!HttpMethod#DELETE) {
+    return AWSPSMENUMS!HttpMethod#DELETE;
+  }
+  if (m = PIMTYPES!HttpMethod#OPTIONS) {
+    return AWSPSMENUMS!HttpMethod#OPTIONS;
+  }
+  if (m = PIMTYPES!HttpMethod#HEAD) {
+    return AWSPSMENUMS!HttpMethod#HEAD;
+  }
+  return AWSPSMENUMS!HttpMethod#ANY;
+}
+
+operation inferRouteTimeoutMillis(r) {
+  if (r.timeout.isDefined() and r.timeout.clientTimeoutSeconds.isDefined() and r.timeout.clientTimeoutSeconds > 0) {
+    return clamp(r.timeout.clientTimeoutSeconds * 1000, 50, 29000);
+  }
+  return 29000;
+}
+
+operation createApiIntegration(r, gr) {
+  var i = new AWSPSMAPI!ApiGatewayIntegration;
+  copyAwsResource(r, i, "Integration", "AWS::ApiGatewayV2::Integration");
+  i.id = generatedId("api_integration", r, "target");
+  i.integrationType = AWSPSMENUMS!ApiGatewayIntegrationType#AWS_PROXY;
+  i.integrationMethod = "POST";
+  i.payloadFormatVersion = "2.0";
+  i.timeoutInMillis = gr.timeoutInMillis;
+  if (r.functionIntegration.isDefined()) {
+    i.lambdaTarget = r.functionIntegration.equivalent();
+    i.integrationUri = "${" + i.lambdaTarget.logicalId + ".Arn}";
+    createLambdaPermissionFor("ApiGatewayInvoke", r, i.lambdaTarget, "apigateway.amazonaws.com");
+  }
+  else {
+    if (r.workflowIntegration.isDefined()) {
+      i.stateMachineTarget = r.workflowIntegration.equivalent();
+      i.integrationUri = "${" + i.stateMachineTarget.logicalId + ".Arn}";
+    }
+    else {
+      manualDecision("API_ROUTE_TARGET_REQUIRED",
+        "Choose exactly one Lambda or workflow integration for route " + r.pathTemplate + ".",
+        KERNEL!Severity#ERROR, true, Sequence{r, gr},
+        "Set ApiRoute.functionIntegration or ApiRoute.workflowIntegration.");
+    }
+  }
+  return i;
+}
+
+operation requiresRestApi(api) {
+  return api.routes.exists(r | isTrue(r.requestValidationRequired) or isTrue(r.responseValidationRequired) or inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY);
+}
+
+operation createApiStages(api, g) {
+  for (stage in AWSPSMCORE!AwsStage.all) {
+    if (g.eClass().getName() = "RestApi") {
+      var rs = new AWSPSMAPI!RestApiStage;
+      copyAwsResource(api, rs, "Stage" + pascalCase(stage.stageName), "AWS::ApiGateway::Stage");
+      rs.id = generatedId("api_stage", api, stage.stageName);
+      fillApiStage(rs, stage, api, g);
+      var dep = new AWSPSMAPI!ApiGatewayDeployment;
+      copyAwsResource(api, dep, "Deployment" + pascalCase(stage.stageName), "AWS::ApiGateway::Deployment");
+      dep.id = generatedId("api_deployment", api, stage.stageName);
+      dep.descriptionText = "Deployment for " + api.name + " " + stage.stageName;
+      dep.api = g;
+      rs.deployment = dep;
+    }
+    else {
+      var hs = new AWSPSMAPI!HttpApiStage;
+      copyAwsResource(api, hs, "Stage" + pascalCase(stage.stageName), "AWS::ApiGatewayV2::Stage");
+      hs.id = generatedId("http_api_stage", api, stage.stageName);
+      fillApiStage(hs, stage, api, g);
+    }
+  }
+}
+
+operation fillApiStage(apiStage, stage, api, g) {
+  apiStage.stageName = stage.stageName;
+  apiStage.autoDeploy = not isProductionRoot();
+  apiStage.accessLogEnabled = true;
+  apiStage.accessLogFormat = "{ \"requestId\":\"$context.requestId\", \"status\":\"$context.status\" }";
+  apiStage.metricsEnabled = true;
+  apiStage.dataTraceEnabled = false;
+  apiStage.loggingLevel = "INFO";
+  if (api.rateLimit.isDefined()) {
+    apiStage.throttlingBurstLimit = positiveOr(api.rateLimit.burstLimit, 100);
+    if (api.rateLimit.requestsPerSecond.isDefined()) {
+      apiStage.throttlingRateLimit = api.rateLimit.requestsPerSecond.asDouble();
+    }
+    if (isTrue(api.rateLimit.clientSpecific) and g.eClass().getName() = "HttpApi") {
+      manualDecision("HTTP_API_CLIENT_SPECIFIC_RATE_LIMIT",
+        "Client-specific throttling for " + api.name + " needs API keys/usage plan, WAF, or custom authorizer design.",
+        KERNEL!Severity#WARNING, false, Sequence{api, g},
+        "Use RestApi usage plans or implement client-specific throttling externally.");
+    }
+  }
+  apiStage.api = g;
+}
+
+operation createApiAuthorizer(api, g) {
+  if (api.auth.isUndefined() or not isTrue(api.authRequired)) {
+    return null;
+  }
+  if (api.auth.identityProvider.isDefined()) {
+    var pool = api.auth.identityProvider.equivalent();
+    if (pool.isDefined()) {
+      var c = new AWSPSMAPI!CognitoAuthorizer;
+      copyAwsResource(api.auth, c, "Authorizer", "AWS::ApiGateway::Authorizer");
+      c.id = generatedId("cognito_authorizer", api, api.auth.name);
+      c.authorizerName = firstText(api.auth.name, api.name + "Authorizer");
+      c.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
+      c.identitySource = "$request.header.Authorization";
+      c.authorizerResultTtlInSeconds = 300;
+      c.api = g;
+      c.userPool = pool;
+      return c;
+    }
+  }
+  if (api.auth.authScheme.toLowerCase().contains("jwt") or api.auth.authScheme.toLowerCase().contains("oauth") or api.auth.authScheme.toLowerCase().contains("oidc")) {
+    var j = new AWSPSMAPI!JwtAuthorizer;
+    copyAwsResource(api.auth, j, "JwtAuthorizer", "AWS::ApiGatewayV2::Authorizer");
+    j.id = generatedId("jwt_authorizer", api, api.auth.name);
+    j.authorizerName = firstText(api.auth.name, api.name + "JwtAuthorizer");
+    j.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
+    j.identitySource = "$request.header.Authorization";
+    j.authorizerResultTtlInSeconds = 300;
+    j.api = g;
+    j.issuer = api.auth.tokenValidationRules;
+    if (not hasText(j.issuer)) {
+      manualDecision("API_ROUTE_AUTHORIZER_MISSING",
+        "Provide JWT issuer/audience for API " + api.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{api, j},
+        "Set AuthPolicy.tokenValidationRules and scopes/audience details.");
+    }
+    return j;
+  }
+  return null;
+}
+
+operation findAuthorizerFor(r) {
+  if (r.api.equivalent().isUndefined()) {
+    return null;
+  }
+  return AWSPSMAPI!ApiGatewayAuthorizer.all.selectOne(a | a.api = r.api.equivalent());
+}
+
+operation createCors(policy) {
+  var c = new AWSPSMCORE!CorsConfiguration;
+  c.id = "cors_" + slug(rootName());
+  c.name = "CORS";
+  if (policy.isDefined() and policy.allowedOrigins.notEmpty()) {
+    c.allowOrigins.addAll(policy.allowedOrigins);
+  }
+  else {
+    c.allowOrigins.add("*");
+  }
+  if (policy.isDefined() and policy.allowedMethods.notEmpty()) {
+    c.allowMethods.addAll(policy.allowedMethods);
+  }
+  else {
+    c.allowMethods.add("GET"); c.allowMethods.add("POST"); c.allowMethods.add("PUT"); c.allowMethods.add("PATCH"); c.allowMethods.add("DELETE"); c.allowMethods.add("OPTIONS");
+  }
+  if (policy.isDefined() and policy.allowedHeaders.notEmpty()) {
+    c.allowHeaders.addAll(policy.allowedHeaders);
+  }
+  else {
+    c.allowHeaders.add("Content-Type"); c.allowHeaders.add("Authorization"); c.allowHeaders.add("X-Correlation-Id");
+  }
+  if (policy.isDefined()) {
+    c.exposeHeaders.addAll(policy.exposedHeaders);
+    c.allowCredentials = isTrue(policy.credentialsAllowed);
+    c.maxAgeSeconds = positiveOr(policy.maxAgeSeconds, 3600);
+  }
+  else {
+    c.allowCredentials = false;
+    c.maxAgeSeconds = 3600;
+  }
+  return c;
+}
+
+operation schemaRefJson(schema) {
+  if (schema.isUndefined()) {
+    return "";
+  }
+  return "{ \"" + schema.name + "\": \"" + firstText(schema.externalSchemaUri, schema.id) + "\" }";
+}
+
+operation generateOpenApi(api) {
+  var paths = "";
+  for (r in api.routes) {
+    if (hasText(paths)) {
+      paths = paths + ",";
+    }
+    paths = paths + "\"" + escapeJson(r.pathTemplate) + "\": { \"" + r.method.asString().toLowerCase() + "\": { \"operationId\": \"" +
+      escapeJson(firstText(r.operationId, camelCase(r.name))) + "\", \"description\": \"" + escapeJson(r.descriptionForConsumers) +
+      "\", \"requestBody\": " + openApiRequestBody(r) + ", \"responses\": " + openApiResponses(r) +
+      ", \"security\": " + openApiSecurity(r) + " } }";
+  }
+  return "{ \"openapi\": \"3.0.3\", \"info\": { \"title\": \"" + escapeJson(firstText(api.publicName, api.name)) +
+    "\", \"version\": \"" + escapeJson(firstText(api.version, "1.0.0")) + "\" }, \"paths\": { " + paths +
+    " }, \"components\": { \"securitySchemes\": " + openApiSecuritySchemes(api) + " } }";
+}
+
+operation openApiRequestBody(r) {
+  if (r.requestSchema.isUndefined()) {
+    return "null";
+  }
+  return "{ \"required\": " + isTrue(r.requestValidationRequired).asString() +
+    ", \"content\": { \"application/json\": { \"schema\": { \"$ref\": \"#/components/schemas/" +
+    escapeJson(pascalCase(r.requestSchema.name)) + "\" } } } }";
+}
+
+operation openApiResponses(r) {
+  var responses = "\"" + positiveOr(r.expectedSuccessStatus, 200).asString() + "\": { \"description\": \"Success\"";
+  if (r.responseSchema.isDefined()) {
+    responses = responses + ", \"content\": { \"application/json\": { \"schema\": { \"$ref\": \"#/components/schemas/" + escapeJson(pascalCase(r.responseSchema.name)) + "\" } } }";
+  }
+  responses = responses + " }";
+  for (e in r.errorMappings) {
+    responses = responses + ", \"" + statusForError(e) + "\": { \"description\": \"" + escapeJson(firstText(e.responseMessage, e.domainErrorCode)) + "\" }";
+  }
+  return "{ " + responses + " }";
+}
+
+operation statusForError(e) {
+  if (e.abstractStatusClass.toLowerCase().contains("4")) {
+    return "400";
+  }
+  if (e.abstractStatusClass.toLowerCase().contains("5")) {
+    return "500";
+  }
+  return "default";
+}
+
+operation openApiSecurity(r) {
+  if (not routeNeedsAuth(r)) {
+    return "[]";
+  }
+  if (inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY) {
+    return "[ { \"ApiKeyAuth\": [] } ]";
+  }
+  if (inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM) {
+    return "[ { \"AwsIamAuth\": [] } ]";
+  }
+  return "[ { \"DefaultAuthorizer\": " + scopesJson(r) + " } ]";
+}
+
+operation scopesJson(r) {
+  if (r.authorization.isDefined() and hasText(r.authorization.roleOrScopeRequired)) {
+    return "[ \"" + escapeJson(r.authorization.roleOrScopeRequired) + "\" ]";
+  }
+  if (r.api.auth.isDefined() and hasText(r.api.auth.scopesRequired)) {
+    return "[ \"" + escapeJson(r.api.auth.scopesRequired) + "\" ]";
+  }
+  return "[]";
+}
+
+operation openApiSecuritySchemes(api) {
+  if (not isTrue(api.authRequired)) {
+    return "{}";
+  }
+  return "{ \"DefaultAuthorizer\": { \"type\": \"http\", \"scheme\": \"bearer\", \"bearerFormat\": \"JWT\" }, \"ApiKeyAuth\": { \"type\": \"apiKey\", \"in\": \"header\", \"name\": \"x-api-key\" }, \"AwsIamAuth\": { \"type\": \"apiKey\", \"in\": \"header\", \"name\": \"Authorization\" } }";
+}
+
+operation createApiKeyAndUsagePlan(api, g) {
+  if (not api.routes.exists(r | inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY)) {
+    return;
+  }
+  var key = new AWSPSMAPI!ApiGatewayApiKey;
+  copyAwsResource(api, key, "ApiKey", "AWS::ApiGateway::ApiKey");
+  key.id = generatedId("api_key", api, "default");
+  key.apiKeyName = physicalName(api, "api-key", defaultStage());
+  key.enabled = true;
+  key.descriptionText = "Generated API key placeholder for " + api.name;
+  for (s in AWSPSMAPI!RestApiStage.all.select(stage | stage.api = g)) {
+    key.stages.add(s);
+  }
+
+  var plan = new AWSPSMAPI!ApiGatewayUsagePlan;
+  copyAwsResource(api, plan, "UsagePlan", "AWS::ApiGateway::UsagePlan");
+  plan.id = generatedId("usage_plan", api, "default");
+  plan.usagePlanName = physicalName(api, "usage-plan", defaultStage());
+  plan.descriptionText = "Generated usage plan for API-key protected routes.";
+  if (api.rateLimit.isDefined()) {
+    plan.throttleBurstLimit = positiveOr(api.rateLimit.burstLimit, 100);
+    if (api.rateLimit.requestsPerSecond.isDefined()) {
+      plan.throttleRateLimit = api.rateLimit.requestsPerSecond.asDouble();
+    }
+  }
+  plan.quotaPeriod = "MONTH";
+  for (stage in AWSPSMAPI!RestApiStage.all.select(s | s.api = g)) {
+    plan.apiStages.add(stage);
+  }
+
+  var link = new AWSPSMAPI!ApiGatewayUsagePlanKey;
+  copyAwsResource(api, link, "UsagePlanKey", "AWS::ApiGateway::UsagePlanKey");
+  link.id = generatedId("usage_plan_key", api, "default");
+  link.keyType = "API_KEY";
+  link.apiKey = key;
+  link.usagePlan = plan;
+}
+
+operation secretValue(secret) {
+  var v = new AWSPSMSECURITY!SecretValueExpression;
+  v.id = "secret_value_" + slug(secret.logicalId);
+  v.name = "Secret reference " + secret.logicalId;
+  v.sourceKind = AWSPSMENUMS!ValueSourceKind#SECRETS_MANAGER_REFERENCE;
+  v.secret = true;
+  v.secretRef = secret;
+  return v;
+}

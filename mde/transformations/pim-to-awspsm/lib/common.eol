@@ -1,0 +1,242 @@
+operation asText(value) {
+  if (value.isUndefined()) {
+    return "";
+  }
+  return value.asString();
+}
+
+operation hasText(value) {
+  return value.isDefined() and not value.asString().trim().isEmpty();
+}
+
+operation firstText(primary, fallback) {
+  if (hasText(primary)) {
+    return primary.asString();
+  }
+  if (hasText(fallback)) {
+    return fallback.asString();
+  }
+  return "";
+}
+
+operation slug(value) {
+  var s = asText(value).toLowerCase().trim();
+  if (s.isEmpty()) {
+    return "unnamed";
+  }
+  var out = "";
+  for (i in Sequence{1..s.length()}) {
+    var ch = s.substring(i - 1, i);
+    if ("abcdefghijklmnopqrstuvwxyz0123456789".contains(ch)) {
+      out = out + ch;
+    }
+    else {
+      if (not out.endsWith("_")) {
+        out = out + "_";
+      }
+    }
+  }
+  while (out.endsWith("_") and out.length() > 1) {
+    out = out.substring(0, out.length() - 1);
+  }
+  return out;
+}
+
+operation kebab(value) {
+  return slug(value).replace("_", "-");
+}
+
+operation camelCase(value) {
+  var parts = slug(value).split("_");
+  if (parts.isEmpty()) {
+    return "unnamed";
+  }
+  var out = parts.first();
+  for (part in parts.excluding(parts.first())) {
+    if (part.length() > 0) {
+      out = out + part.substring(0, 1).toUpperCase() + part.substring(1);
+    }
+  }
+  return out;
+}
+
+operation pascalCase(value) {
+  var cc = camelCase(value);
+  if (cc.isEmpty()) {
+    return "Unnamed";
+  }
+  return cc.substring(0, 1).toUpperCase() + cc.substring(1);
+}
+
+operation idFor(prefix : String, source) {
+  var seed = source.id;
+  if (not hasText(seed)) {
+    seed = source.name;
+  }
+  if (not hasText(seed)) {
+    seed = prefix;
+  }
+  return prefix + "_" + slug(seed);
+}
+
+operation generatedId(prefix : String, source, suffix : String) {
+  return prefix + "_" + slug(firstText(source.id, source.name) + "_" + suffix);
+}
+
+operation isTrue(value) {
+  return value.isDefined() and value;
+}
+
+operation positiveOr(value, fallback : Integer) {
+  if (value.isDefined() and value > 0) {
+    return value;
+  }
+  return fallback;
+}
+
+operation clamp(value : Integer, minimum : Integer, maximum : Integer) {
+  if (value < minimum) {
+    return minimum;
+  }
+  if (value > maximum) {
+    return maximum;
+  }
+  return value;
+}
+
+operation qualifiedName(element) {
+  if (element.isUndefined()) {
+    return "";
+  }
+  if (hasText(element.sourceQualifiedName)) {
+    return element.sourceQualifiedName;
+  }
+  return element.eClass().getName() + "/" + firstText(element.name, element.id);
+}
+
+operation escapeJson(value) {
+  return asText(value).replace("\"", "\\\"");
+}
+
+operation safeJsonText(value) {
+  return escapeJson(firstText(value, ""));
+}
+
+operation rootName() {
+  return firstText(firstText(pimRoot().domainName, pimRoot().name), "Application");
+}
+
+operation pimRoot() {
+  return PIM!PIMModel.all.first();
+}
+
+operation awsRoot() {
+  return AWSPSM!AwsPsmModel.all.first();
+}
+
+operation copyTraceable(source, target) {
+  var preserved = existingTargetFor(source, target.eClass().getName());
+  if (preserved.isDefined() and isTrue(preserved.manuallyMaintained)) {
+    target.reviewStatus = "SKIPPED_MANUALLY_MAINTAINED_EXISTING_TARGET";
+    target.reviewNotes = "An existing manually maintained target with generatedFrom=" + source.id + " was detected. Review before replacing generated output.";
+  }
+  target.name = firstText(source.name, source.id);
+  target.summary = source.summary;
+  target.description = source.description;
+  target.documentation = source.documentation;
+  target.sourceReference = source.sourceReference;
+  target.sourceQualifiedName = qualifiedName(source);
+  target.traceId = firstText(source.traceId, source.id);
+  target.generatedFrom = source.id;
+  target.generatedByTransformation = true;
+  target.manuallyMaintained = false;
+}
+
+operation existingTargetFor(source, className : String) {
+  if (not hasText(source.id)) {
+    return null;
+  }
+  var existing = AWSPSMCORE!AwsResource.all.selectOne(r | r.generatedFrom = source.id and r.eClass().getName() = className);
+  if (existing.isDefined()) {
+    return existing;
+  }
+  existing = KERNEL!TraceableElement.all.selectOne(e | e.generatedFrom = source.id and e.eClass().getName() = className);
+  if (existing.isDefined()) {
+    return existing;
+  }
+  return null;
+}
+
+operation copyAwsResource(source, target, kind : String, awsType : String) {
+  copyTraceable(source, target);
+  target.logicalId = logicalId(source, kind);
+  target.physicalName = physicalName(source, kind.toLowerCase(), defaultStage());
+  target.awsResourceType = awsType;
+  target.resourceDescription = firstText(source.summary, source.description);
+  if (isProductionRoot()) {
+    target.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#RETAIN;
+    target.updateReplacePolicy = AWSPSMENUMS!CloudFormationUpdateReplacePolicy#RETAIN;
+  }
+  else {
+    target.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#DELETE;
+    target.updateReplacePolicy = AWSPSMENUMS!CloudFormationUpdateReplacePolicy#DELETE;
+  }
+  target.retainInProduction = isProductionRoot();
+  target.productionCritical = isProductionRoot();
+  target.importedResource = false;
+  target.tags.add(tag("GeneratedFromPIM", firstText(source.name, source.id)));
+  target.tags.add(tag("Service", owningServiceName(source)));
+}
+
+operation logicalId(source, awsKind : String) {
+  return pascalCase(firstText(firstText(source.name, source.externalId), source.id)) + awsKind;
+}
+
+operation physicalName(source, awsKind : String, stage) {
+  var prefix = "default";
+  if (stage.isDefined()) {
+    prefix = stage.stageName;
+  }
+  var name = kebab(prefix + "-" + rootName() + "-" + firstText(source.name, source.id) + "-" + awsKind);
+  if (name.length() > 64) {
+    return name.substring(0, 64);
+  }
+  return name;
+}
+
+operation owningServiceName(element) {
+  var svc = pimRoot().services.selectOne(s |
+    s.ownsFunctions.includes(element) or s.ownsApis.includes(element) or
+    s.ownsChannels.includes(element) or s.ownsStores.includes(element) or
+    s.ownsWorkflows.includes(element) or s.ownsAdapters.includes(element));
+  if (svc.isDefined()) {
+    return firstText(svc.name, "Application");
+  }
+  return "Application";
+}
+
+operation isProductionRoot() {
+  return isProductionPim(pimRoot());
+}
+
+operation isProductionPim(p) {
+  return p.environments.exists(e | e.environmentClass = PIMTYPES!EnvironmentClass#PROD or isTrue(e.productionLike));
+}
+
+operation defaultStage() {
+  if (AWSPSMCORE!AwsStage.all.notEmpty()) {
+    return AWSPSMCORE!AwsStage.all.first();
+  }
+  return null;
+}
+
+operation envBoolean(value) {
+  if (value.isUndefined()) {
+    return false;
+  }
+  return value;
+}
+
+operation setFeature(element, featureName : String, value) {
+  element.eSet(element.eClass().getEStructuralFeature(featureName), value);
+}

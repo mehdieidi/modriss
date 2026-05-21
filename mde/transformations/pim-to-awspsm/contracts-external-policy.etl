@@ -1,0 +1,348 @@
+import "lib/common.eol";
+import "lib/aws-builders.eol";
+import "lib/readiness-trace.eol";
+import "lib/resolution.eol";
+
+rule Schema2StructuredDocument
+  transform s : CONTRACTS!Schema
+  to d : KERNEL!StructuredDocument {
+
+  copyTraceable(s, d);
+  d.id = idFor("schema_doc", s);
+  d.name = firstText(s.name, "Schema") + "SchemaDocument";
+  d.format = KERNEL!StructuredFormat#JSON;
+  d.content = renderJsonSchema(s);
+  d.externalUri = s.externalSchemaUri;
+  createTrace(s, d, "Schema2StructuredDocument", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+rule EventType2StructuredDocument
+  transform e : CONTRACTS!EventType
+  to d : KERNEL!StructuredDocument {
+
+  copyTraceable(e, d);
+  d.id = idFor("event_contract", e);
+  d.name = firstText(e.semanticName, e.name) + "EventContract";
+  d.format = KERNEL!StructuredFormat#JSON;
+  d.content = eventContractJson(e);
+  createTrace(e, d, "EventType2StructuredDocument", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+rule ExternalAdapter2PsmMetadata
+  transform a : EXTERNAL!ExternalAdapter
+  to n : AWSPSMCORE!AwsNativeResource {
+
+  copyAwsResource(a, n, "ExternalAdapter", "AWS::CloudFormation::CustomResource");
+  n.id = idFor("external_adapter", a);
+  n.cloudFormationType = "AWS::CloudFormation::CustomResource";
+  n.samType = "ExternalAdapterMetadata";
+  n.properties.add(nativeText("ExternalSystemName", a.externalSystemName, KERNEL!StructuredFormat#TEXT, false, false));
+  n.properties.add(nativeText("ProtocolFamily", a.protocolFamily, KERNEL!StructuredFormat#TEXT, false, false));
+  n.properties.add(nativeText("EndpointDescription", a.endpointDescription, KERNEL!StructuredFormat#TEXT, false, false));
+  if (isTrue(a.credentialsRequired) and a.credentials.isEmpty()) {
+    manualDecision("EXTERNAL_ADAPTER_CREDENTIALS_REQUIRED",
+      "Model credentials for external adapter " + a.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, n},
+      "Add CredentialRequirement/Secret entries or mark credentialsRequired=false.");
+  }
+  if (isTrue(a.privateNetworkRequired)) {
+    manualDecision("EXTERNAL_ADAPTER_NETWORK_REQUIRED",
+      "Define private networking for external adapter " + a.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, n},
+      "Provide VPC/subnet/security group/private endpoint details.");
+  }
+  if (isHttpAdapter(a)) {
+    createEventBridgeConnectionAndApiDestination(a);
+  }
+  createTrace(a, n, "ExternalAdapter2PsmMetadata", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+rule AlertPolicy2CloudWatchAlarm
+  transform a : POLICY!AlertPolicy
+  to alarm : AWSPSMOBSERVABILITY!CloudWatchAlarm {
+
+  copyAwsResource(a, alarm, "Alarm", "AWS::CloudWatch::Alarm");
+  alarm.id = idFor("alarm", a);
+  alarm.alarmName = alarm.physicalName;
+  alarm.alarmDescription = firstText(a.summary, a.condition);
+  alarm.namespace = inferMetricNamespace(a);
+  alarm.metricName = firstText(a.metricName, "Errors");
+  alarm.statistic = "Sum";
+  alarm.period = 60;
+  alarm.evaluationPeriods = positiveOr(a.evaluationPeriods, 1);
+  alarm.datapointsToAlarm = alarm.evaluationPeriods;
+  alarm.threshold = parseThreshold(a.threshold);
+  alarm.comparisonOperator = parseComparison(a.condition);
+  alarm.treatMissingData = "notBreaching";
+  if (not hasText(a.threshold)) {
+    manualDecision("ALARM_THRESHOLD_REQUIRED",
+      "Provide threshold for alert policy " + a.name + ".",
+      KERNEL!Severity#WARNING, false, Sequence{a, alarm},
+      "Set AlertPolicy.threshold to a numeric CloudWatch threshold.");
+  }
+  createTrace(a, alarm, "AlertPolicy2CloudWatchAlarm", "MEDIUM", KERNEL!TraceLinkType#OBSERVES);
+}
+
+operation renderJsonSchema(s) {
+  var required = "";
+  var properties = "";
+  for (f in s.fields) {
+    if (hasText(properties)) {
+      properties = properties + ", ";
+    }
+    properties = properties + "\"" + escapeJson(f.name) + "\": { \"type\": \"" + jsonSchemaType(f) + "\" }";
+    if (isTrue(f.required)) {
+      if (hasText(required)) {
+        required = required + ", ";
+      }
+      required = required + "\"" + escapeJson(f.name) + "\"";
+    }
+  }
+  return "{ \"$schema\": \"https://json-schema.org/draft/2020-12/schema\", \"title\": \"" + escapeJson(s.name) +
+    "\", \"type\": \"object\", \"additionalProperties\": " + isTrue(s.additionalPropertiesAllowed).asString() +
+    ", \"properties\": { " + properties + " }, \"required\": [ " + required + " ] }";
+}
+
+operation jsonSchemaType(f) {
+  if (isTrue(f.array) or f.fieldType = PIMTYPES!FieldType#ARRAY) {
+    return "array";
+  }
+  if (f.fieldType = PIMTYPES!FieldType#INTEGER) {
+    return "integer";
+  }
+  if (f.fieldType = PIMTYPES!FieldType#NUMBER or f.fieldType = PIMTYPES!FieldType#MONEY) {
+    return "number";
+  }
+  if (f.fieldType = PIMTYPES!FieldType#BOOLEAN) {
+    return "boolean";
+  }
+  if (f.fieldType = PIMTYPES!FieldType#OBJECT) {
+    return "object";
+  }
+  return "string";
+}
+
+operation eventContractJson(e) {
+  return "{ \"semanticName\": \"" + escapeJson(e.semanticName) +
+    "\", \"version\": \"" + escapeJson(e.version) +
+    "\", \"sourceDomain\": \"" + escapeJson(e.sourceDomain) +
+    "\", \"subjectExpression\": \"" + escapeJson(e.subjectExpression) +
+    "\", \"orderingKey\": \"" + escapeJson(e.orderingKey) +
+    "\", \"schema\": \"" + escapeJson(e.schema.name) + "\" }";
+}
+
+operation applyFunctionPolicies(f, l) {
+  applyObservability(f, l);
+  applySecurityPolicies(f, l);
+  if (f.observability.isDefined() and isTrue(f.observability.alarmsEnabled)) {
+    createLambdaAlarm(f, l, "Errors", "Errors", 1.0d);
+  }
+  if (f.resilience.isDefined() and isTrue(f.resilience.deadLetterRequired)) {
+    manualDecision("LAMBDA_DLQ_TARGET_REQUIRED",
+      "Choose Lambda dead-letter target for " + f.name + ".",
+      KERNEL!Severity#WARNING, isProductionRoot(), Sequence{f, l},
+      "Connect a PIM dead-letter channel or EventInvokeConfig destination.");
+  }
+}
+
+operation applyIdempotency(f, l) {
+  if (isTrue(f.requiresIdempotency) or isTrue(f.writesState)) {
+    if (f.idempotency.isUndefined() or not hasText(f.idempotency.keySource)) {
+      manualDecision("IDEMPOTENCY_KEY_REQUIRED",
+        "Choose idempotency key source for state-changing function " + f.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{f, l},
+        "Set Function.idempotency.keySource or FunctionContract.idempotencyKeyField.");
+    }
+    else {
+      l.metadata.add(nativeText("Idempotency", "{ \"keySource\": \"" + escapeJson(f.idempotency.keySource) + "\" }", KERNEL!StructuredFormat#JSON, false, false));
+    }
+  }
+}
+
+operation applyDataProtectionPolicies(source, resource) {
+  for (p in source.dataProtectionPolicies) {
+    if (isTrue(p.maskingRequired) or isTrue(p.tokenizationRequired)) {
+      manualDecision("DATA_PROTECTION_RUNTIME_DESIGN",
+        "Define masking/tokenization implementation for " + source.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{source, resource},
+        "AWS resource encryption is generated, but application-level protection needs implementation.");
+    }
+    if (hasText(p.residencyRequirement)) {
+      manualDecision("AWS_REGION_REQUIRED",
+        "Confirm region/account controls for residency requirement " + p.residencyRequirement + " on " + source.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{source, resource},
+        "Select AWS region/account strategy that satisfies the residency requirement.");
+    }
+  }
+}
+
+operation applyObservability(source, resource) {
+  var obs = null;
+  if (source.eClass().getEStructuralFeature("observability").isDefined()) {
+    obs = source.eGet(source.eClass().getEStructuralFeature("observability"));
+  }
+  if (obs.isUndefined()) {
+    return;
+  }
+  if (isTrue(obs.dashboardRequired)) {
+    var dash = new AWSPSMOBSERVABILITY!CloudWatchDashboard;
+    copyAwsResource(source, dash, "Dashboard", "AWS::CloudWatch::Dashboard");
+    dash.id = generatedId("dashboard", source, "observability");
+    dash.dashboardName = physicalName(source, "dashboard", defaultStage());
+    dash.dashboardBodyJson = "{ \"widgets\": [ { \"type\": \"metric\", \"properties\": { \"title\": \"" + escapeJson(source.name) + "\", \"metrics\": [] } } ] }";
+  }
+  for (metric in obs.metrics) {
+    if (resource.eClass().getName() = "CloudWatchLogGroup") {
+      var mf = new AWSPSMOBSERVABILITY!CloudWatchMetricFilter;
+      copyAwsResource(metric, mf, "MetricFilter", "AWS::Logs::MetricFilter");
+      mf.id = generatedId("metric_filter", metric, source.name);
+      mf.filterPattern = "{$.metric = \"" + escapeJson(metric.metricName) + "\"}";
+      mf.metricTransformationsJson = "{ \"MetricName\": \"" + escapeJson(metric.metricName) + "\", \"MetricNamespace\": \"Modless/" + escapeJson(rootName()) + "\", \"MetricValue\": \"1\" }";
+      mf.logGroup = resource;
+    }
+    else {
+      resource.metadata.add(nativeText("Metric:" + metric.metricName, metric.unit + "/" + metric.statistic, KERNEL!StructuredFormat#TEXT, false, false));
+    }
+  }
+  for (alert in obs.alerts) {
+    createPolicyAlarm(source, resource, alert);
+  }
+  for (slo in obs.slos) {
+    resource.metadata.add(nativeText("SLO:" + slo.objectiveName, slo.metric + "=" + slo.target + " over " + slo.measurementWindow, KERNEL!StructuredFormat#TEXT, false, false));
+  }
+}
+
+operation createPolicyAlarm(source, resource, alert) {
+  var alarm = new AWSPSMOBSERVABILITY!CloudWatchAlarm;
+  copyAwsResource(alert, alarm, "Alarm", "AWS::CloudWatch::Alarm");
+  alarm.id = generatedId("alarm", alert, source.name);
+  alarm.alarmName = physicalName(alert, "alarm", defaultStage());
+  alarm.alarmDescription = firstText(alert.summary, alert.condition);
+  alarm.namespace = inferMetricNamespace(alert);
+  alarm.metricName = firstText(alert.metricName, "Errors");
+  alarm.statistic = "Sum";
+  alarm.period = 60;
+  alarm.evaluationPeriods = positiveOr(alert.evaluationPeriods, 1);
+  alarm.datapointsToAlarm = alarm.evaluationPeriods;
+  alarm.threshold = parseThreshold(alert.threshold);
+  alarm.comparisonOperator = parseComparison(alert.condition);
+  alarm.treatMissingData = "notBreaching";
+  alarm.monitoredResource = resource;
+}
+
+operation applySecurityPolicies(source, resource) {
+  for (p in source.securityPolicies) {
+    if (isTrue(p.encryptionAtRestRequired)) {
+      resource.metadata.add(nativeText("EncryptionAtRestRequired", "true", KERNEL!StructuredFormat#TEXT, true, false));
+    }
+    if (isTrue(p.auditRequired)) {
+      resource.metadata.add(nativeText("AuditRequired", "true", KERNEL!StructuredFormat#TEXT, true, false));
+    }
+    if (isTrue(p.authenticationRequired) and resource.eClass().getName() = "AwsLambdaFunction" and not isTrue(source.publicEntryPoint)) {
+      resource.metadata.add(nativeText("AuthenticationRequired", "true", KERNEL!StructuredFormat#TEXT, true, false));
+    }
+  }
+}
+
+operation createLambdaAlarm(f, l, suffix : String, metric : String, threshold : Double) {
+  var a = new AWSPSMOBSERVABILITY!CloudWatchAlarm;
+  copyAwsResource(f, a, "Alarm" + suffix, "AWS::CloudWatch::Alarm");
+  a.id = generatedId("alarm", f, suffix);
+  a.alarmName = l.functionName + "-" + suffix;
+  a.alarmDescription = "Generated alarm for " + f.name + " " + metric;
+  a.namespace = "AWS/Lambda";
+  a.metricName = metric;
+  a.statistic = "Sum";
+  a.period = 60;
+  a.evaluationPeriods = 1;
+  a.datapointsToAlarm = 1;
+  a.threshold = threshold;
+  a.comparisonOperator = AWSPSMENUMS!CloudWatchComparisonOperator#GREATER_THAN_OR_EQUAL_TO_THRESHOLD;
+  a.treatMissingData = "notBreaching";
+  a.monitoredResource = l;
+  return a;
+}
+
+operation isHttpAdapter(a) {
+  return asText(a.protocolFamily).toLowerCase().contains("http") or asText(a.protocolFamily).toLowerCase().contains("rest") or asText(a.endpointDescription).toLowerCase().startsWith("http");
+}
+
+operation createEventBridgeConnectionAndApiDestination(a) {
+  var conn = new AWSPSMEVENTS!EventBridgeConnection;
+  copyAwsResource(a, conn, "Connection", "AWS::Events::Connection");
+  conn.id = generatedId("eventbridge_connection", a, "connection");
+  conn.connectionName = physicalName(a, "connection", defaultStage());
+  conn.authorizationType = inferConnectionAuthType(a);
+  for (cred in a.credentials) {
+    conn.authParameters.add(literalValue(firstText(cred.name, cred.purpose), true));
+  }
+
+  var dest = new AWSPSMEVENTS!EventBridgeApiDestination;
+  copyAwsResource(a, dest, "ApiDestination", "AWS::Events::ApiDestination");
+  dest.id = generatedId("eventbridge_api_destination", a, "destination");
+  dest.destinationName = physicalName(a, "api-destination", defaultStage());
+  dest.invocationEndpoint = endpointFromDescription(a.endpointDescription);
+  dest.httpMethod = AWSPSMENUMS!AwsHttpMethod#POST;
+  if (isTrue(a.rateLimitedByProvider)) {
+    dest.invocationRateLimitPerSecond = 10;
+  }
+  else {
+    dest.invocationRateLimitPerSecond = 300;
+  }
+  dest.connection = conn;
+  if (not hasText(dest.invocationEndpoint)) {
+    manualDecision("API_DESTINATION_ENDPOINT_REQUIRED",
+      "Provide HTTPS endpoint for external adapter " + a.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, dest},
+      "Set ExternalAdapter.endpointDescription to an HTTPS endpoint or model an adapter Lambda.");
+  }
+}
+
+operation inferConnectionAuthType(a) {
+  if (a.credentials.exists(c | c.secretKind = PIMTYPES!SecretKind#PASSWORD)) {
+    return AWSPSMENUMS!EventBridgeConnectionAuthorizationType#BASIC;
+  }
+  if (a.credentials.exists(c | c.secretKind = PIMTYPES!SecretKind#TOKEN)) {
+    return AWSPSMENUMS!EventBridgeConnectionAuthorizationType#OAUTH_CLIENT_CREDENTIALS;
+  }
+  return AWSPSMENUMS!EventBridgeConnectionAuthorizationType#API_KEY;
+}
+
+operation endpointFromDescription(text) {
+  if (not hasText(text)) {
+    return "";
+  }
+  var trimmed = text.trim();
+  if (trimmed.toLowerCase().startsWith("http")) {
+    return trimmed;
+  }
+  return "";
+}
+
+operation inferMetricNamespace(a) {
+  if (asText(a.metricName).toLowerCase().contains("latency") or asText(a.metricName).toLowerCase().contains("4xx") or asText(a.metricName).toLowerCase().contains("5xx")) {
+    return "AWS/ApiGateway";
+  }
+  return "AWS/Lambda";
+}
+
+operation parseComparison(condition) {
+  var c = asText(condition).toLowerCase();
+  if (c.contains("<=")) {
+    return AWSPSMENUMS!CloudWatchComparisonOperator#LESS_THAN_OR_EQUAL_TO_THRESHOLD;
+  }
+  if (c.contains("<")) {
+    return AWSPSMENUMS!CloudWatchComparisonOperator#LESS_THAN_THRESHOLD;
+  }
+  if (c.contains(">=")) {
+    return AWSPSMENUMS!CloudWatchComparisonOperator#GREATER_THAN_OR_EQUAL_TO_THRESHOLD;
+  }
+  return AWSPSMENUMS!CloudWatchComparisonOperator#GREATER_THAN_THRESHOLD;
+}
+
+operation parseThreshold(text) {
+  if (hasText(text)) {
+    return text.asDouble();
+  }
+  return 1.0d;
+}

@@ -1,0 +1,106 @@
+import "lib/common.eol";
+import "lib/aws-builders.eol";
+import "lib/readiness-trace.eol";
+import "lib/resolution.eol";
+
+rule PIMModel2AwsPsmModel
+  transform p : PIM!PIMModel
+  to a : AWSPSM!AwsPsmModel {
+
+  copyTraceable(p, a);
+  a.id = idFor("awspsm", p);
+  a.name = firstText(firstText(p.name, p.domainName), "AwsPsmModel") + "AwsPsm";
+  a.summary = "AWS PSM generated from PIM " + qualifiedName(p);
+  a.partition = AWSPSMENUMS!AwsPartition#AWS;
+  a.accountStrategy = "per-stage";
+  if (p.environments.exists(e | hasText(inferRegion(e)))) {
+    a.regionStrategy = "per-stage";
+  }
+  else {
+    a.regionStrategy = "single-default";
+  }
+  a.defaultRegion = inferDefaultRegion(p);
+  a.namingConvention = "logicalId=PascalCase(source name + AWS kind), physicalName=kebab-case(stage-service-source)";
+  a.taggingStrategy = "Owner/Environment/Service/GeneratedFromPIM/CostAllocation";
+  a.productionMode = isProductionPim(p);
+  a.traceModel = createTraceModel(p);
+  a.readiness = createReadinessAssessment(p);
+  a.namingPolicy = createNamingPolicy(p);
+  a.taggingPolicy = createTaggingPolicy(p);
+  a.securityBaseline = createSecurityBaseline(p);
+  a.samGlobals = createSamGlobals(p);
+
+  a.stages ::= p.environments;
+  if (a.stages.isEmpty()) {
+    a.stages.add(createDefaultStage(p));
+  }
+
+  a.stacks ::= p.deploymentUnits;
+  if (a.stacks.isEmpty()) {
+    a.stacks.add(createDefaultStack(p));
+  }
+
+  createTrace(p, a, "PIMModel2AwsPsmModel", "HIGH", KERNEL!TraceLinkType#TRANSFORMS_TO);
+
+  if (a.productionMode and a.defaultRegion = "us-east-1" and p.environments.forAll(e | not hasText(inferRegion(e)))) {
+    manualDecision("AWS_REGION_REQUIRED",
+      "Confirm AWS region and account strategy for production generation of " + p.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{p},
+      "Set production environment region/account deployment parameters before deployment.");
+  }
+}
+
+rule Environment2AwsStage
+  transform e : DEPLOYMENT!Environment
+  to s : AWSPSMCORE!AwsStage {
+
+  copyTraceable(e, s);
+  s.id = idFor("stage", e);
+  s.name = firstText(firstText(e.name, e.nameSuffix), e.environmentClass.asString().toLowerCase());
+  s.stageName = s.name.toLowerCase();
+  s.environmentClass = mapEnvironmentClass(e.environmentClass);
+  s.region = inferRegion(e);
+  if (not hasText(s.region)) {
+    s.region = inferDefaultRegion(pimRoot());
+  }
+  s.requiresManualApproval = isTrue(e.requiresApproval) or isTrue(e.productionLike) or e.environmentClass = PIMTYPES!EnvironmentClass#PROD;
+  s.confirmChangeset = s.requiresManualApproval;
+  s.failOnEmptyChangeset = false;
+  s.stackNamePrefix = kebab(firstText(pimRoot().domainName, pimRoot().name)) + "-" + kebab(s.stageName);
+  s.stageTags.add(tag("Environment", s.stageName));
+  s.stageTags.add(tag("GeneratedFromPIM", pimRoot().name));
+  createTrace(e, s, "Environment2AwsStage", "HIGH", KERNEL!TraceLinkType#DEPLOYS_TO);
+}
+
+rule DeploymentUnit2SamStack
+  transform d : DEPLOYMENT!DeploymentUnit
+  to s : AWSPSMCORE!SamStack {
+
+  copyTraceable(d, s);
+  s.id = idFor("stack", d);
+  s.name = firstText(d.name, "Application") + " Stack";
+  s.stackName = kebab(firstText(pimRoot().domainName, pimRoot().name)) + "-" + kebab(d.name) + "-stack";
+  s.templatePath = "template-" + kebab(d.name) + ".yaml";
+  s.templateDescription = "Generated AWS SAM stack for PIM deployment unit " + d.name;
+  s.useSamTransform = true;
+  s.packageIndividually = isTrue(d.independentlyDeployable);
+  s.validateWithSam = true;
+  s.validateWithCfnLint = true;
+  s.capabilities.add(AWSPSMENUMS!SamCapability#CAPABILITY_IAM);
+  createTrace(d, s, "DeploymentUnit2SamStack", "HIGH", KERNEL!TraceLinkType#DEPLOYS_TO);
+}
+
+rule ServerlessService2StructuredMetadata
+  transform svc : DEPLOYMENT!ServerlessService
+  to doc : KERNEL!StructuredDocument {
+
+  copyTraceable(svc, doc);
+  doc.id = idFor("service_metadata", svc);
+  doc.name = firstText(svc.name, "Service") + "ServiceMetadata";
+  doc.format = KERNEL!StructuredFormat#JSON;
+  doc.content = "{ \"boundaryType\": \"" + svc.boundaryType.asString() +
+    "\", \"ownerTeam\": \"" + escapeJson(svc.ownerTeam) +
+    "\", \"businessCapabilityRef\": \"" + escapeJson(svc.businessCapabilityRef) +
+    "\", \"responsibility\": \"" + escapeJson(svc.responsibility) + "\" }";
+  createTrace(svc, doc, "ServerlessService2StructuredMetadata", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
+}

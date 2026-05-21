@@ -1,0 +1,136 @@
+import "common.eol";
+
+operation createTraceModel(source) {
+  var tm = new KERNEL!TraceModel;
+  tm.id = generatedId("trace_model", source, "awspsm");
+  tm.name = firstText(source.name, "PIM") + " AWS PSM Trace";
+  tm.generatedByTransformation = true;
+  tm.manuallyMaintained = false;
+  return tm;
+}
+
+operation createReadinessAssessment(source) {
+  var r = new KERNEL!ProductionReadinessAssessment;
+  r.id = generatedId("readiness", source, "awspsm");
+  r.name = firstText(source.name, "PIM") + " AWS PSM Readiness";
+  r.assessedBy = "pim-to-awspsm";
+  r.readinessStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
+  r.transformationReady = false;
+  r.deploymentReady = false;
+  r.productionReady = false;
+  r.generatedByTransformation = true;
+  r.manuallyMaintained = false;
+  return r;
+}
+
+operation traceContainer() {
+  if (awsRoot().traceModel.isDefined()) {
+    return awsRoot().traceModel;
+  }
+  return null;
+}
+
+operation readinessContainer() {
+  if (awsRoot().readiness.isDefined()) {
+    return awsRoot().readiness;
+  }
+  return null;
+}
+
+operation createTrace(source, target, transformName : String, confidence : String, linkType) {
+  var tm = traceContainer();
+  if (tm.isUndefined()) {
+    return;
+  }
+  var link = new KERNEL!TraceLink;
+  link.id = generatedId("trace", source, transformName + "_" + target.id);
+  link.name = transformName + ":" + firstText(source.name, source.id) + "->" + firstText(target.name, target.id);
+  link.linkType = linkType;
+  link.target = target;
+  link.sourceElementId = source.id;
+  link.targetElementId = target.id;
+  link.transformationRule = transformName;
+  link.confidence = confidence;
+  link.generatedByTransformation = true;
+  link.manuallyMaintained = false;
+  tm.links.add(link);
+}
+
+operation manualDecision(decisionId : String, question : String, severity, blocking : Boolean, affected, recommendation : String) {
+  var r = readinessContainer();
+  if (r.isUndefined()) {
+    return;
+  }
+  var d = new KERNEL!ManualDecision;
+  d.id = "decision_" + slug(decisionId + "_" + question);
+  d.name = decisionId;
+  d.question = question;
+  d.severity = severity;
+  d.blocking = blocking;
+  d.reviewNotes = recommendation;
+  d.generatedByTransformation = true;
+  d.manuallyMaintained = false;
+  addTargetAffected(d, affected);
+  r.manualDecisions.add(d);
+
+  var f = new KERNEL!ReadinessFinding;
+  f.id = "finding_" + slug(decisionId + "_" + question);
+  f.name = decisionId + " finding";
+  f.findingType = KERNEL!FindingType#MISSING_INFORMATION;
+  f.severity = severity;
+  f.ruleId = decisionId;
+  f.message = question;
+  f.recommendation = recommendation;
+  f.blocking = blocking;
+  f.generatedByTransformation = true;
+  f.manuallyMaintained = false;
+  addTargetAffected(f, affected);
+  r.findings.add(f);
+}
+
+operation finding(checkId : String, message : String, severity, blocking : Boolean, affected, recommendation : String) {
+  var r = readinessContainer();
+  if (r.isUndefined()) {
+    return;
+  }
+  var f = new KERNEL!ReadinessFinding;
+  f.id = "finding_" + slug(checkId + "_" + message);
+  f.name = checkId;
+  f.findingType = KERNEL!FindingType#VALIDATION_ERROR;
+  f.severity = severity;
+  f.ruleId = checkId;
+  f.message = message;
+  f.recommendation = recommendation;
+  f.blocking = blocking;
+  f.generatedByTransformation = true;
+  f.manuallyMaintained = false;
+  addTargetAffected(f, affected);
+  r.findings.add(f);
+}
+
+operation check(checkId : String, passed : Boolean, message : String, severity, affected, remediation : String) {
+  var r = readinessContainer();
+  if (r.isUndefined()) {
+    return;
+  }
+  var c = new KERNEL!ReadinessCheck;
+  c.id = "check_" + slug(checkId + "_" + message);
+  c.name = checkId;
+  c.checkId = checkId;
+  c.passed = passed;
+  c.message = message;
+  c.severity = severity;
+  c.remediation = remediation;
+  c.generatedByTransformation = true;
+  c.manuallyMaintained = false;
+  addTargetAffected(c, affected);
+  r.checks.add(c);
+}
+
+operation addTargetAffected(container, affected) {
+  for (element in affected) {
+    if (element.isDefined() and element.eClass().getEPackage().getNsURI().contains("awspsm")) {
+      container.affectedElements.add(element);
+    }
+  }
+}

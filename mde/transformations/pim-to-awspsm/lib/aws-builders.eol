@@ -1,0 +1,349 @@
+import "common.eol";
+import "readiness-trace.eol";
+
+operation mapEnvironmentClass(c) {
+  if (c = PIMTYPES!EnvironmentClass#PROD) {
+    return AWSPSMENUMS!AwsEnvironmentClass#PROD;
+  }
+  if (c = PIMTYPES!EnvironmentClass#STAGING) {
+    return AWSPSMENUMS!AwsEnvironmentClass#STAGING;
+  }
+  if (c = PIMTYPES!EnvironmentClass#TEST) {
+    return AWSPSMENUMS!AwsEnvironmentClass#TEST;
+  }
+  if (c = PIMTYPES!EnvironmentClass#SANDBOX) {
+    return AWSPSMENUMS!AwsEnvironmentClass#SANDBOX;
+  }
+  return AWSPSMENUMS!AwsEnvironmentClass#DEV;
+}
+
+operation inferRegion(environment) {
+  if (environment.isUndefined()) {
+    return "";
+  }
+  var p = environment.parameters.selectOne(x | x.name.toLowerCase() = "region" or x.name.toLowerCase() = "awsregion" or x.name.toLowerCase() = "aws_region");
+  if (p.isDefined() and hasText(p.defaultValue)) {
+    return p.defaultValue;
+  }
+  return "";
+}
+
+operation inferDefaultRegion(p) {
+  var e = p.environments.selectOne(x | hasText(inferRegion(x)));
+  if (e.isDefined()) {
+    return inferRegion(e);
+  }
+  return "us-east-1";
+}
+
+operation tag(key : String, value : String) {
+  var t = new AWSPSMCORE!AwsTag;
+  t.id = "tag_" + slug(key + "_" + value);
+  t.name = key;
+  t.key = key;
+  t.value = value;
+  t.propagated = true;
+  t.generatedByTransformation = true;
+  t.manuallyMaintained = false;
+  return t;
+}
+
+operation literalValue(value : String, secret : Boolean) {
+  var v = new AWSPSMCORE!ValueExpression;
+  v.id = "value_" + slug(value);
+  v.name = "Literal value";
+  v.sourceKind = AWSPSMENUMS!ValueSourceKind#PLAINTEXT;
+  v.literal = value;
+  v.secret = secret;
+  return v;
+}
+
+operation refValue(resource) {
+  var v = new AWSPSMCORE!ValueExpression;
+  v.id = "ref_" + slug(resource.logicalId);
+  v.name = "Ref " + resource.logicalId;
+  v.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_REF;
+  v.resource = resource;
+  return v;
+}
+
+operation getAtt(resource, attributeName : String) {
+  var v = new AWSPSMCORE!ValueExpression;
+  v.id = "getatt_" + slug(resource.logicalId + "_" + attributeName);
+  v.name = "GetAtt " + resource.logicalId + "." + attributeName;
+  v.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_GETATT;
+  v.resource = resource;
+  v.attributeName = attributeName;
+  return v;
+}
+
+operation nativeText(name : String, value : String, fmt, required : Boolean, secret : Boolean) {
+  var p = new AWSPSMCORE!NativeProperty;
+  p.id = "native_" + slug(name + "_" + value);
+  p.name = name;
+  p.propertyName = name;
+  p.format = fmt;
+  p.value = literalValue(value, secret);
+  p.required = required;
+  p.secret = secret;
+  p.validationState = AWSPSMENUMS!Decision#GENERATOR_OWNED;
+  return p;
+}
+
+operation createNamingPolicy(source) {
+  var p = new AWSPSMCORE!AwsNamingPolicy;
+  p.id = generatedId("naming", source, "aws");
+  p.name = "AWS Naming Policy";
+  p.logicalIdPattern = "PascalCase(source name + AWS kind)";
+  p.physicalNamePattern = "stage-domain-source-kind";
+  p.includeStageInPhysicalNames = true;
+  p.includeServiceInPhysicalNames = true;
+  p.allowGeneratedPhysicalNames = true;
+  p.generatedByTransformation = true;
+  return p;
+}
+
+operation createTaggingPolicy(source) {
+  var p = new AWSPSMCORE!AwsTaggingPolicy;
+  p.id = generatedId("tagging", source, "aws");
+  p.name = "AWS Tagging Policy";
+  p.requireOwnerTag = true;
+  p.requireEnvironmentTag = true;
+  p.requireCostCenterTag = false;
+  p.propagateStackTags = true;
+  p.requiredTags.add(tag("GeneratedFromPIM", source.name));
+  p.requiredTags.add(tag("Service", "Application"));
+  p.generatedByTransformation = true;
+  return p;
+}
+
+operation createSecurityBaseline(source) {
+  var b = new AWSPSMCORE!AwsSecurityBaseline;
+  b.id = generatedId("security_baseline", source, "aws");
+  b.name = "AWS Security Baseline";
+  b.encryptionAtRestDefault = true;
+  b.publicAccessBlockedDefault = true;
+  b.xrayDefault = true;
+  b.structuredLogsDefault = true;
+  b.leastPrivilegeRequired = true;
+  b.productionDeletionProtectionDefault = isProductionPim(source);
+  b.generatedByTransformation = true;
+  return b;
+}
+
+operation createSamGlobals(source) {
+  var g = new AWSPSMCORE!SamGlobals;
+  g.id = generatedId("sam_globals", source, "aws");
+  g.name = "SAM Globals";
+  g.functionGlobals.add(nativeText("RuntimeManagementConfig", "Auto", KERNEL!StructuredFormat#TEXT, false, false));
+  g.functionGlobals.add(nativeText("Tracing", "Active", KERNEL!StructuredFormat#TEXT, false, false));
+  g.apiGlobals.add(nativeText("EndpointConfiguration", "REGIONAL", KERNEL!StructuredFormat#TEXT, false, false));
+  g.generatedByTransformation = true;
+  return g;
+}
+
+operation createDefaultStage(source) {
+  var s = new AWSPSMCORE!AwsStage;
+  s.id = generatedId("stage", source, "default");
+  s.name = "dev";
+  s.stageName = "dev";
+  s.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#DEV;
+  s.region = inferDefaultRegion(source);
+  s.requiresManualApproval = false;
+  s.confirmChangeset = false;
+  s.failOnEmptyChangeset = false;
+  s.stackNamePrefix = kebab(rootName()) + "-dev";
+  s.stageTags.add(tag("Environment", "dev"));
+  s.stageTags.add(tag("GeneratedFromPIM", source.name));
+  s.generatedByTransformation = true;
+  return s;
+}
+
+operation createDefaultStack(source) {
+  var s = new AWSPSMCORE!SamStack;
+  s.id = generatedId("stack", source, "default");
+  s.name = "Default Application Stack";
+  s.stackName = kebab(rootName()) + "-application-stack";
+  s.templatePath = "template-application.yaml";
+  s.templateDescription = "Generated AWS SAM stack for unassigned PIM deployables.";
+  s.useSamTransform = true;
+  s.packageIndividually = false;
+  s.validateWithSam = true;
+  s.validateWithCfnLint = true;
+  s.capabilities.add(AWSPSMENUMS!SamCapability#CAPABILITY_IAM);
+  s.generatedByTransformation = true;
+  return s;
+}
+
+operation defaultRuntime(profile) {
+  if (profile.isUndefined()) {
+    return "";
+  }
+  if (profile.primaryLanguage = PIMTYPES!RuntimeLanguage#PYTHON) {
+    return "python" + firstText(profile.languageVersion, "3.12");
+  }
+  if (profile.primaryLanguage = PIMTYPES!RuntimeLanguage#JAVA) {
+    return "java" + firstText(profile.languageVersion, "21");
+  }
+  if (profile.primaryLanguage = PIMTYPES!RuntimeLanguage#JAVASCRIPT) {
+    return "nodejs" + firstText(profile.languageVersion, "22.x");
+  }
+  if (profile.primaryLanguage = PIMTYPES!RuntimeLanguage#TYPESCRIPT) {
+    return "nodejs" + firstText(profile.languageVersion, "22.x");
+  }
+  if (profile.primaryLanguage = PIMTYPES!RuntimeLanguage#CSHARP) {
+    return "dotnet8";
+  }
+  if (profile.primaryLanguage = PIMTYPES!RuntimeLanguage#GO) {
+    return "provided.al2023";
+  }
+  if (profile.primaryLanguage = PIMTYPES!RuntimeLanguage#RUST) {
+    return "provided.al2023";
+  }
+  return "";
+}
+
+operation inferHandler(f) {
+  if (hasText(f.sourceNameSuggestion)) {
+    return f.sourceNameSuggestion;
+  }
+  return camelCase(firstText(f.name, f.id)) + ".handler";
+}
+
+operation createLambdaCodeConfig(f, profile) {
+  if (usesImagePackage(f)) {
+    var img = new AWSPSMCOMPUTE!LambdaImageCodeConfig;
+    img.id = generatedId("lambda_code", f, "image");
+    img.name = firstText(f.name, "Function") + " Image Code";
+    img.imageUri = annotationValue(f.modelTags, "lambda.imageUri");
+    if (not hasText(img.imageUri)) {
+      img.imageUri = "REVIEW_REQUIRED_IMAGE_URI";
+      manualDecision("LAMBDA_IMAGE_URI_MISSING",
+        "Provide container image URI for Lambda " + f.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{f},
+        "Set lambda.imageUri metadata or use ZIP packaging.");
+    }
+    img.generatedByTransformation = true;
+    return img;
+  }
+  var zip = new AWSPSMCOMPUTE!LambdaZipCodeConfig;
+  zip.id = generatedId("lambda_code", f, "zip");
+  zip.name = firstText(f.name, "Function") + " Code";
+  zip.codeUri = firstText(profile.sourceLayout, "src/functions/" + kebab(f.name));
+  zip.runtimeIdentifier = defaultRuntime(profile);
+  zip.handler = inferHandler(f);
+  zip.generatedByTransformation = true;
+  if (not hasText(zip.runtimeIdentifier)) {
+    manualDecision("LAMBDA_RUNTIME_MISSING",
+      "Choose a Lambda runtime for " + f.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{f},
+      "Set PIM implementationProfile.primaryLanguage/languageVersion or provide an AWS runtime override.");
+  }
+  if (not hasText(zip.handler)) {
+    manualDecision("LAMBDA_HANDLER_MISSING",
+      "Choose a Lambda handler for " + f.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{f},
+      "Set Function.sourceNameSuggestion or implementation artifact metadata.");
+  }
+  return zip;
+}
+
+operation usesImagePackage(f) {
+  var tags = asText(f.modelTags).toLowerCase();
+  return tags.contains("lambda.packagetype=image") or tags.contains("package=image");
+}
+
+operation annotationValue(text, key : String) {
+  if (not hasText(text)) {
+    return "";
+  }
+  var parts = text.split(";");
+  for (part in parts) {
+    var kv = part.split("=");
+    if (kv.size() >= 2 and kv.first().trim().toLowerCase() = key.toLowerCase()) {
+      return kv.at(1).trim();
+    }
+  }
+  return "";
+}
+
+operation createLogGroupFor(source, logicalSeed : String, logName : String) {
+  var g = new AWSPSMOBSERVABILITY!CloudWatchLogGroup;
+  g.id = generatedId("log_group", source, logicalSeed);
+  g.name = firstText(source.name, logicalSeed) + " Log Group";
+  g.logicalId = pascalCase(logicalSeed) + "LogGroup";
+  g.physicalName = logName;
+  g.awsResourceType = "AWS::Logs::LogGroup";
+  g.logGroupName = logName;
+  if (isProductionRoot()) {
+    g.retentionDays = 90;
+  }
+  else {
+    g.retentionDays = 30;
+  }
+  g.logGroupClass = AWSPSMENUMS!LogGroupClass#STANDARD;
+  g.generatedByTransformation = true;
+  return g;
+}
+
+operation policyDocument() {
+  var doc = new AWSPSMSECURITY!IamPolicyDocument;
+  doc.id = "policy_doc_" + slug("generated");
+  doc.name = "Policy document";
+  doc.version = "2012-10-17";
+  return doc;
+}
+
+operation serviceAssumeRolePolicy(service : String) {
+  var doc = policyDocument();
+  var st = allowStatement("AssumeRole");
+  st.actions.add("sts:AssumeRole");
+  var p = new AWSPSMSECURITY!IamPrincipal;
+  p.id = "principal_" + slug(service);
+  p.name = service;
+  p.principalType = "Service";
+  p.identifiers.add(service);
+  st.principals.add(p);
+  doc.statements.add(st);
+  return doc;
+}
+
+operation allowStatement(sid : String) {
+  var st = new AWSPSMSECURITY!IamStatement;
+  st.id = "stmt_" + slug(sid);
+  st.name = sid;
+  st.sid = sid;
+  st.effect = AWSPSMENUMS!IamEffect#ALLOW;
+  st.wildcardAction = false;
+  st.wildcardResource = false;
+  return st;
+}
+
+operation permissionStatement(perm) {
+  var st = allowStatement(firstText(perm.name, "Permission"));
+  if (perm.effect = PIMTYPES!PermissionEffect#DENY) {
+    st.effect = AWSPSMENUMS!IamEffect#DENY;
+  }
+  st.actions.add(firstText(perm.action, "*"));
+  st.resources.add(firstText(perm.resource, "*"));
+  st.wildcardAction = st.actions.includes("*") or st.actions.exists(a | a.endsWith(":*"));
+  st.wildcardResource = st.resources.includes("*");
+  if (st.wildcardAction or st.wildcardResource or not isTrue(perm.leastPrivilegeConfirmed)) {
+    manualDecision("IAM_WILDCARD_REVIEW",
+      "Review IAM permission " + firstText(perm.name, perm.action) + " for least privilege.",
+      KERNEL!Severity#WARNING, isProductionRoot(), Sequence{perm},
+      "Replace wildcard action/resource with AWS-specific actions and generated resource ARNs.");
+  }
+  return st;
+}
+
+operation createLambdaPermissionFor(prefix : String, origin, fn, principal : String) {
+  var p = new AWSPSMCOMPUTE!LambdaPermission;
+  copyAwsResource(origin, p, prefix + "Permission", "AWS::Lambda::Permission");
+  p.id = generatedId("lambda_permission", origin, prefix + "_" + fn.logicalId);
+  p.action = "lambda:InvokeFunction";
+  p.principal = principal;
+  p.sourceArn = "";
+  setFeature(p, "function", fn);
+  return p;
+}

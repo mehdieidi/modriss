@@ -1,0 +1,578 @@
+import "lib/common.eol";
+import "lib/aws-builders.eol";
+import "lib/readiness-trace.eol";
+import "lib/resolution.eol";
+
+rule DataStore2DynamoDbTable
+  transform ds : DATA!DataStore
+  to t : AWSPSMSTORAGE!DynamoDbTable {
+
+  guard : ds.storeKind = PIMTYPES!StoreKind#KEY_VALUE or ds.storeKind = PIMTYPES!StoreKind#DOCUMENT or ds.storeKind = PIMTYPES!StoreKind#CACHE
+
+  copyAwsResource(ds, t, "Table", "AWS::DynamoDB::Table");
+  t.id = idFor("dynamodb_table", ds);
+  t.tableName = t.physicalName;
+  t.billingMode = AWSPSMENUMS!DynamoDbBillingMode#PAY_PER_REQUEST;
+  t.tableClass = AWSPSMENUMS!DynamoDbTableClass#STANDARD;
+  t.deletionProtectionEnabled = isProductionRoot();
+  t.pointInTimeRecoveryEnabled = isProductionRoot() or isTrue(ds.pointInTimeRecoveryRequired) or (ds.backupPolicy.isDefined() and isTrue(ds.backupPolicy.backupRequired));
+  t.contributorInsightsEnabled = isProductionRoot();
+  t.importSourceSpecificationRequired = false;
+  addDynamoKeys(ds, t);
+  addDynamoIndexes(ds, t);
+  if (isTrue(ds.changeStreamRequired)) {
+    var stream = new AWSPSMSTORAGE!DynamoDbStreamSpecification;
+    stream.id = generatedId("dynamodb_stream", ds, "stream");
+    stream.name = ds.name + " stream";
+    stream.streamViewType = AWSPSMENUMS!DynamoDbStreamViewType#NEW_AND_OLD_IMAGES;
+    t.streamSpecification = stream;
+  }
+  var sse = new AWSPSMSTORAGE!DynamoDbSseSpecification;
+  sse.id = generatedId("dynamodb_sse", ds, "sse");
+  sse.name = ds.name + " SSE";
+  sse.enabled = true;
+  sse.sseType = "SSE-S3";
+  t.sseSpecification = sse;
+  t.resourcePolicy = createStorageResourcePolicy(ds, t);
+  var bp = new AWSPSMSTORAGE!DynamoDbBackupPolicy;
+  bp.id = generatedId("dynamodb_backup", ds, "pitr");
+  bp.name = ds.name + " backup policy";
+  if (t.pointInTimeRecoveryEnabled) {
+    bp.pointInTimeRecoveryDecision = AWSPSMENUMS!Decision#REQUIRED;
+  }
+  else {
+    bp.pointInTimeRecoveryDecision = AWSPSMENUMS!Decision#NOT_REQUIRED;
+  }
+  bp.backupRationale = "Derived from PIM backup/PITR/production settings.";
+  bp.recoveryPointRetentionDays = 35;
+  t.backupPolicy = bp;
+  applyDataProtectionPolicies(ds, t);
+  createTrace(ds, t, "DataStore2DynamoDbTable", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule DataStore2NativeUnsupportedStore
+  transform ds : DATA!DataStore
+  to n : AWSPSMCORE!AwsNativeResource {
+
+  guard : not (ds.storeKind = PIMTYPES!StoreKind#KEY_VALUE or ds.storeKind = PIMTYPES!StoreKind#DOCUMENT or ds.storeKind = PIMTYPES!StoreKind#CACHE)
+
+  copyAwsResource(ds, n, "NativeStore", "AWS::CloudFormation::CustomResource");
+  n.id = idFor("native_store", ds);
+  n.cloudFormationType = "AWS::CloudFormation::CustomResource";
+  n.samType = "UnsupportedDataStore";
+  n.properties.add(nativeText("PimStoreKind", ds.storeKind.asString(), KERNEL!StructuredFormat#TEXT, true, false));
+  manualDecision("DATASTORE_SERVICE_SELECTION_REQUIRED",
+    "Choose AWS storage service for " + ds.storeKind.asString() + " data store " + ds.name + ".",
+    KERNEL!Severity#ERROR, isProductionRoot(), Sequence{ds, n},
+    "Map the store to DynamoDB, Aurora/RDS, OpenSearch, ElastiCache, Timestream, Neptune, or another explicit PSM resource.");
+  createTrace(ds, n, "DataStore2NativeUnsupportedStore", "LOW", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+rule ObjectStore2S3Bucket
+  transform os : DATA!ObjectStore
+  to b : AWSPSMSTORAGE!S3Bucket {
+
+  copyAwsResource(os, b, "Bucket", "AWS::S3::Bucket");
+  b.id = idFor("s3_bucket", os);
+  b.bucketName = b.physicalName;
+  if (isTrue(os.versioningRequired) or isProductionRoot()) {
+    b.versioningStatus = AWSPSMENUMS!S3VersioningStatus#ENABLED;
+  }
+  else {
+    b.versioningStatus = AWSPSMENUMS!S3VersioningStatus#SUSPENDED;
+  }
+  b.objectLockEnabled = false;
+  b.transferAccelerationEnabled = false;
+  b.eventBridgeNotificationEnabled = isTrue(os.eventNotificationRequired);
+  b.publicAccessMode = AWSPSMENUMS!S3BlockPublicAccessMode#STRICT_BLOCK_ALL;
+  b.bucketKeyEnabled = true;
+  b.accessControl = "Private";
+  b.encryption = createS3Encryption(os);
+  b.publicAccessBlock = createStrictPublicAccessBlock(os);
+  b.ownershipControls = createS3Ownership(os);
+  if (isTrue(os.lifecyclePolicyRequired) or os.retentionPolicy.isDefined()) {
+    b.lifecycle = createS3Lifecycle(os);
+  }
+  if (isTrue(os.eventNotificationRequired)) {
+    b.notificationConfiguration = createS3Notification(os);
+  }
+  applyDataProtectionPolicies(os, b);
+  if (isProductionRoot()) {
+    var bp = new AWSPSMSTORAGE!S3BucketPolicy;
+    copyAwsResource(os, bp, "BucketPolicy", "AWS::S3::BucketPolicy");
+    bp.id = generatedId("s3_bucket_policy", os, "default");
+    bp.bucket = b;
+    bp.policyDocument = createDenyInsecureTransportPolicy(b);
+    b.bucketPolicy = bp;
+  }
+  createTrace(os, b, "ObjectStore2S3Bucket", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Queue2SqsQueue
+  transform q : INTEGRATION!Queue
+  to sqs : AWSPSMMESSAGING!SqsQueue {
+
+  copyAwsResource(q, sqs, "Queue", "AWS::SQS::Queue");
+  sqs.id = idFor("sqs_queue", q);
+  if (isTrue(q.fifoRequired) and not sqs.physicalName.endsWith(".fifo")) {
+    sqs.queueName = sqs.physicalName + ".fifo";
+  }
+  else {
+    sqs.queueName = sqs.physicalName;
+  }
+  if (isTrue(q.fifoRequired)) {
+    sqs.queueType = AWSPSMENUMS!SqsQueueType#FIFO;
+  }
+  else {
+    sqs.queueType = AWSPSMENUMS!SqsQueueType#STANDARD;
+  }
+  sqs.contentBasedDeduplication = isTrue(q.deduplicationRequired);
+  sqs.delaySeconds = 0;
+  sqs.maximumMessageSize = 262144;
+  sqs.messageRetentionPeriodSeconds = positiveOr(q.messageRetentionSeconds, 345600);
+  if (isTrue(q.longPollingRequired)) {
+    sqs.receiveMessageWaitTimeSeconds = 20;
+  }
+  else {
+    sqs.receiveMessageWaitTimeSeconds = 0;
+  }
+  sqs.visibilityTimeoutSeconds = positiveOr(q.visibilityTimeoutSeconds, 30);
+  sqs.kmsDataKeyReusePeriodSeconds = 300;
+  sqs.sqsManagedSseEnabled = true;
+  if (isProductionRoot()) {
+    var qp = new AWSPSMMESSAGING!SqsQueuePolicy;
+    copyAwsResource(q, qp, "QueuePolicy", "AWS::SQS::QueuePolicy");
+    qp.id = generatedId("sqs_queue_policy", q, "default");
+    qp.queues.add(sqs);
+    qp.policyDocument = createDenyInsecureTransportPolicy(sqs);
+  }
+  if (q.deadLetterChannel.isDefined()) {
+    var rd = new AWSPSMMESSAGING!SqsRedrivePolicy;
+    rd.id = generatedId("sqs_redrive", q, "dlq");
+    rd.name = q.name + " redrive";
+    rd.maxReceiveCount = positiveOr(q.maxReceiveAttempts, 5);
+    rd.deadLetterQueue = q.deadLetterChannel.equivalent();
+    sqs.redrivePolicy = rd;
+  }
+  else {
+    if (isTrue(q.deadLetterRequired)) {
+      manualDecision("SQS_DLQ_REQUIRED",
+        "Choose a dead-letter queue for " + q.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{q, sqs},
+        "Set Queue.deadLetterChannel or relax deadLetterRequired.");
+    }
+  }
+  if (isTrue(q.fifoRequired) and not hasText(q.partitionKeyExpression) and q.orderingRequirement <> PIMTYPES!OrderingRequirement#NONE) {
+    manualDecision("FIFO_ORDERING_KEY_REQUIRED",
+      "Choose an ordering/message group key for FIFO queue " + q.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{q, sqs},
+      "Set Queue.partitionKeyExpression or an OrderingPolicy.orderingKey.");
+  }
+  createTrace(q, sqs, "Queue2SqsQueue", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Topic2SnsTopic
+  transform t : INTEGRATION!Topic
+  to sns : AWSPSMMESSAGING!SnsTopic {
+
+  copyAwsResource(t, sns, "Topic", "AWS::SNS::Topic");
+  sns.id = idFor("sns_topic", t);
+  if (t.orderingRequirement <> PIMTYPES!OrderingRequirement#NONE and not sns.physicalName.endsWith(".fifo")) {
+    sns.topicName = sns.physicalName + ".fifo";
+  }
+  else {
+    sns.topicName = sns.physicalName;
+  }
+  sns.fifoTopic = t.orderingRequirement <> PIMTYPES!OrderingRequirement#NONE;
+  sns.contentBasedDeduplication = sns.fifoTopic;
+  sns.displayName = firstText(t.name, sns.topicName);
+  if (isProductionRoot()) {
+    var tp = new AWSPSMMESSAGING!SnsTopicPolicy;
+    copyAwsResource(t, tp, "TopicPolicy", "AWS::SNS::TopicPolicy");
+    tp.id = generatedId("sns_topic_policy", t, "default");
+    tp.topics.add(sns);
+    tp.policyDocument = createDenyInsecureTransportPolicy(sns);
+  }
+  createTrace(t, sns, "Topic2SnsTopic", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Subscription2SnsSubscription
+  transform s : INTEGRATION!Subscription
+  to sub : AWSPSMMESSAGING!SnsSubscription {
+
+  copyAwsResource(s, sub, "Subscription", "AWS::SNS::Subscription");
+  sub.id = idFor("sns_subscription", s);
+  sub.topic = s.ownerTopic.equivalent();
+  sub.protocol = subscriptionProtocol(s.target);
+  sub.endpointResource = endpointResource(s.target);
+  if (sub.endpointResource.isDefined()) {
+    sub.endpoint = "${" + sub.endpointResource.logicalId + ".Arn}";
+  }
+  else {
+    sub.endpoint = "";
+  }
+  sub.filterPolicyScope = AWSPSMENUMS!SnsFilterPolicyScope#MESSAGE_BODY;
+  sub.rawMessageDelivery = isTrue(s.rawDelivery);
+  if (hasText(s.filterExpression)) {
+    sub.deliveryPolicyJson = "{ \"filterExpression\": \"" + escapeJson(s.filterExpression) + "\" }";
+  }
+  if (isTrue(s.deadLetterRequired)) {
+    manualDecision("SNS_SUBSCRIPTION_DLQ_REQUIRED",
+      "Choose a dead-letter queue for subscription " + s.name + ".",
+      KERNEL!Severity#WARNING, isProductionRoot(), Sequence{s, sub},
+      "Add an SQS DLQ resource and connect it to this subscription.");
+  }
+  createTrace(s, sub, "Subscription2SnsSubscription", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule EventBus2EventBridgeBus
+  transform b : INTEGRATION!EventBus
+  to eb : AWSPSMEVENTS!EventBridgeBus {
+
+  copyAwsResource(b, eb, "EventBus", "AWS::Events::EventBus");
+  eb.id = idFor("eventbridge_bus", b);
+  eb.busName = eb.physicalName;
+  eb.eventSourceName = kebab(rootName()) + "." + kebab(b.name);
+  createTrace(b, eb, "EventBus2EventBridgeBus", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule EventRoutingRule2EventBridgeRule
+  transform rr : INTEGRATION!EventRoutingRule
+  to er : AWSPSMEVENTS!EventBridgeRule {
+
+  copyAwsResource(rr, er, "EventRule", "AWS::Events::Rule");
+  er.id = idFor("eventbridge_rule", rr);
+  er.ruleName = er.physicalName;
+  er.descriptionText = rr.summary;
+  er.eventPatternJson = firstText(rr.eventPattern, eventTypesPatternJson(rr.eventTypes));
+  er.scheduleExpression = rr.scheduleExpression;
+  if (isTrue(rr.enabled)) {
+    er.state = "ENABLED";
+  }
+  else {
+    er.state = "DISABLED";
+  }
+  er.bus = rr.eventBus.equivalent();
+  for (dest in rr.targets) {
+    er.targets.add(createEventBridgeTarget(rr, dest));
+  }
+  if (not hasText(er.eventPatternJson) and not hasText(er.scheduleExpression)) {
+    manualDecision("EVENT_PATTERN_REQUIRED",
+      "Provide an event pattern or schedule for EventBridge rule " + rr.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{rr, er},
+      "Set EventRoutingRule.eventPattern, eventTypes, or scheduleExpression.");
+  }
+  createTrace(rr, er, "EventRoutingRule2EventBridgeRule", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Schedule2EventBridgeSchedule
+  transform s : INTEGRATION!Schedule
+  to es : AWSPSMEVENTS!EventBridgeSchedule {
+
+  copyAwsResource(s, es, "Schedule", "AWS::Scheduler::Schedule");
+  es.id = idFor("eventbridge_schedule", s);
+  es.scheduleName = es.physicalName;
+  es.scheduleExpression = s.scheduleExpression;
+  es.scheduleExpressionTimezone = firstText(s.timeZone, "UTC");
+  es.flexibleTimeWindowJson = "{ \"Mode\": \"OFF\" }";
+  if (isTrue(s.enabled)) {
+    es.state = "ENABLED";
+  }
+  else {
+    es.state = "DISABLED";
+  }
+  es.descriptionText = s.summary;
+  es.role = createSchedulerRole(s);
+  manualDecision("SCHEDULE_TARGET_REQUIRED",
+    "Choose the target for schedule " + s.name + ".",
+    KERNEL!Severity#ERROR, true, Sequence{s, es},
+    "Create a Trigger or Flow from the schedule to a Lambda/function/workflow target.");
+  createTrace(s, es, "Schedule2EventBridgeSchedule", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
+}
+
+operation addDynamoKeys(ds, t) {
+  var dm = ds.ownedDataModels.first();
+  var hashField = dm.storageFields.selectOne(f | isTrue(f.partitionKeyCandidate));
+  if (hashField.isUndefined()) {
+    hashField = dm.storageFields.selectOne(f | isTrue(f.identifier));
+  }
+  if (hashField.isUndefined() and dm.storageFields.notEmpty()) {
+    hashField = dm.storageFields.first();
+    manualDecision("DYNAMO_KEY_CONFIRMATION_REQUIRED",
+      "Confirm DynamoDB HASH key inferred for " + ds.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{ds, hashField},
+      "Mark a DataField.partitionKeyCandidate or identifier in the PIM model.");
+  }
+  if (hashField.isDefined()) {
+    addDynamoAttribute(t, hashField);
+    t.keySchema.add(dynamoKey(hashField.storageName, AWSPSMENUMS!DynamoDbKeyType#HASH));
+  }
+  var sortField = dm.storageFields.selectOne(f | isTrue(f.sortKeyCandidate));
+  if (sortField.isDefined()) {
+    addDynamoAttribute(t, sortField);
+    t.keySchema.add(dynamoKey(sortField.storageName, AWSPSMENUMS!DynamoDbKeyType#RANGE));
+  }
+}
+
+operation addDynamoAttribute(t, field) {
+  if (t.attributeDefinitions.exists(a | a.attributeName = firstText(field.storageName, field.name))) {
+    return;
+  }
+  var a = new AWSPSMSTORAGE!DynamoDbAttributeDefinition;
+  a.id = "dynamodb_attr_" + slug(t.logicalId + "_" + firstText(field.storageName, field.name));
+  a.name = firstText(field.storageName, field.name);
+  a.attributeName = a.name;
+  a.attributeType = dynamoType(field.fieldType);
+  t.attributeDefinitions.add(a);
+}
+
+operation dynamoKey(name : String, keyType) {
+  var k = new AWSPSMSTORAGE!DynamoDbKeySchemaElement;
+  k.id = "dynamodb_key_" + slug(name + "_" + keyType.asString());
+  k.name = name + " " + keyType.asString();
+  k.attributeName = name;
+  k.keyType = keyType;
+  return k;
+}
+
+operation dynamoType(ft) {
+  if (ft = PIMTYPES!FieldType#INTEGER or ft = PIMTYPES!FieldType#NUMBER or ft = PIMTYPES!FieldType#MONEY) {
+    return AWSPSMENUMS!DynamoDbAttributeType#N;
+  }
+  if (ft = PIMTYPES!FieldType#BINARY) {
+    return AWSPSMENUMS!DynamoDbAttributeType#B;
+  }
+  return AWSPSMENUMS!DynamoDbAttributeType#S;
+}
+
+operation addDynamoIndexes(ds, t) {
+  for (idx in ds.indexCandidates) {
+    var g = new AWSPSMSTORAGE!DynamoDbGlobalSecondaryIndex;
+    g.id = generatedId("dynamodb_gsi", ds, idx.name);
+    g.name = firstText(idx.name, idx.indexPurpose);
+    g.indexName = pascalCase(firstText(idx.name, idx.indexPurpose)) + "Gsi";
+    g.keySchema.add(dynamoKey(idx.partitionKeyField, AWSPSMENUMS!DynamoDbKeyType#HASH));
+    if (hasText(idx.sortKeyField)) {
+      g.keySchema.add(dynamoKey(idx.sortKeyField, AWSPSMENUMS!DynamoDbKeyType#RANGE));
+    }
+    var p = new AWSPSMSTORAGE!DynamoDbProjection;
+    p.id = generatedId("dynamodb_projection", ds, idx.name);
+    p.name = g.indexName + " projection";
+    if (idx.projectionFields.isEmpty()) {
+      p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#ALL;
+    }
+    else {
+      p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#INCLUDE;
+    }
+    p.nonKeyAttributes.addAll(idx.projectionFields);
+    g.projection = p;
+    t.globalSecondaryIndexes.add(g);
+  }
+}
+
+operation createS3Encryption(os) {
+  var e = new AWSPSMSTORAGE!S3BucketEncryption;
+  e.id = generatedId("s3_encryption", os, "default");
+  e.name = os.name + " encryption";
+  e.sseAlgorithm = "AES256";
+  e.bucketKeyEnabled = true;
+  return e;
+}
+
+operation createStrictPublicAccessBlock(os) {
+  var p = new AWSPSMSTORAGE!S3PublicAccessBlockConfiguration;
+  p.id = generatedId("s3_public_block", os, "strict");
+  p.name = os.name + " public access block";
+  p.blockPublicAcls = true;
+  p.blockPublicPolicy = true;
+  p.ignorePublicAcls = true;
+  p.restrictPublicBuckets = true;
+  return p;
+}
+
+operation createS3Ownership(os) {
+  var o = new AWSPSMSTORAGE!S3OwnershipControls;
+  o.id = generatedId("s3_ownership", os, "controls");
+  o.name = os.name + " ownership";
+  var r = new AWSPSMSTORAGE!S3OwnershipRule;
+  r.id = generatedId("s3_ownership_rule", os, "owner");
+  r.name = "Bucket owner enforced";
+  r.objectOwnership = "BucketOwnerEnforced";
+  o.rules.add(r);
+  return o;
+}
+
+operation createS3Lifecycle(os) {
+  var lc = new AWSPSMSTORAGE!S3LifecycleConfiguration;
+  lc.id = generatedId("s3_lifecycle", os, "default");
+  lc.name = os.name + " lifecycle";
+  var lifecycleRule = new AWSPSMSTORAGE!S3LifecycleRule;
+  lifecycleRule.id = generatedId("s3_lifecycle_rule", os, "default");
+  lifecycleRule.name = "Default retention";
+  lifecycleRule.ruleId = "DefaultRetention";
+  lifecycleRule.status = "Enabled";
+  lifecycleRule.expirationInDays = retentionDays(os.retentionPolicy);
+  lc.rules.add(lifecycleRule);
+  if (isProductionRoot() and lifecycleRule.expirationInDays = 0) {
+    manualDecision("S3_RETENTION_DAYS_MISSING",
+      "Confirm retention days for production bucket " + os.name + ".",
+      KERNEL!Severity#WARNING, true, Sequence{os},
+      "Set a parseable RetentionPolicy.retentionPeriod.");
+  }
+  return lc;
+}
+
+operation retentionDays(policy) {
+  if (policy.isUndefined() or not hasText(policy.retentionPeriod)) {
+    return 0;
+  }
+  var text = policy.retentionPeriod.toLowerCase();
+  if (text.contains("year")) {
+    return 365;
+  }
+  if (text.contains("month")) {
+    return 30;
+  }
+  if (text.contains("day")) {
+    return 1;
+  }
+  return 0;
+}
+
+operation createS3Notification(os) {
+  var n = new AWSPSMSTORAGE!S3NotificationConfiguration;
+  n.id = generatedId("s3_notification", os, "events");
+  n.name = os.name + " notifications";
+  n.eventBridgeEnabled = true;
+  if (os.emittedEvents.isEmpty()) {
+    manualDecision("S3_NOTIFICATION_DESTINATION_REQUIRED",
+      "Choose destination for object notifications from " + os.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{os},
+      "Add emitted event types and EventBridge routing, or turn off eventNotificationRequired.");
+  }
+  return n;
+}
+
+operation eventTypesPatternJson(events) {
+  var details = "";
+  for (e in events) {
+    if (hasText(details)) {
+      details = details + ", ";
+    }
+    details = details + "\"" + escapeJson(e.semanticName) + "\"";
+  }
+  if (not hasText(details)) {
+    return "";
+  }
+  return "{ \"detail-type\": [ " + details + " ] }";
+}
+
+operation createEventBridgeTarget(src, endpoint) {
+  var t = new AWSPSMEVENTS!EventBridgeTarget;
+  t.id = generatedId("eventbridge_target", src, firstText(endpoint.name, endpoint.id));
+  t.name = "Target " + firstText(endpoint.name, endpoint.id);
+  t.targetId = pascalCase(firstText(endpoint.name, endpoint.id));
+  t.targetResource = endpointResource(endpoint);
+  if (t.targetResource.isDefined()) {
+    t.arnExpression = "${" + t.targetResource.logicalId + ".Arn}";
+  }
+  t.targetKind = eventBridgeTargetKind(endpoint);
+  return t;
+}
+
+operation endpointResource(endpoint) {
+  if (endpoint.isUndefined()) {
+    return null;
+  }
+  var eq = endpoint.equivalent();
+  if (eq.isDefined()) {
+    return eq;
+  }
+  return null;
+}
+
+operation subscriptionProtocol(endpoint) {
+  var res = endpointResource(endpoint);
+  if (res.isUndefined()) {
+    return AWSPSMENUMS!SnsProtocol#HTTP;
+  }
+  if (res.eClass().getName() = "AwsLambdaFunction") {
+    return AWSPSMENUMS!SnsProtocol#LAMBDA;
+  }
+  if (res.eClass().getName() = "SqsQueue") {
+    return AWSPSMENUMS!SnsProtocol#SQS;
+  }
+  return AWSPSMENUMS!SnsProtocol#HTTP;
+}
+
+operation eventBridgeTargetKind(endpoint) {
+  var res = endpointResource(endpoint);
+  if (res.isUndefined()) {
+    return AWSPSMENUMS!EventBridgeTargetKind#OTHER_AWS_RESOURCE;
+  }
+  if (res.eClass().getName() = "AwsLambdaFunction") {
+    return AWSPSMENUMS!EventBridgeTargetKind#LAMBDA;
+  }
+  if (res.eClass().getName() = "SqsQueue") {
+    return AWSPSMENUMS!EventBridgeTargetKind#SQS;
+  }
+  if (res.eClass().getName() = "SnsTopic") {
+    return AWSPSMENUMS!EventBridgeTargetKind#SNS;
+  }
+  if (res.eClass().getName() = "StepFunctionStateMachine") {
+    return AWSPSMENUMS!EventBridgeTargetKind#STEP_FUNCTIONS;
+  }
+  if (res.eClass().getName() = "EventBridgeBus") {
+    return AWSPSMENUMS!EventBridgeTargetKind#EVENT_BUS;
+  }
+  return AWSPSMENUMS!EventBridgeTargetKind#OTHER_AWS_RESOURCE;
+}
+
+operation createSchedulerRole(s) {
+  var role = new AWSPSMSECURITY!IamRole;
+  copyAwsResource(s, role, "SchedulerRole", "AWS::IAM::Role");
+  role.id = generatedId("iam_role", s, "scheduler");
+  role.roleName = physicalName(s, "scheduler-role", defaultStage());
+  role.path = "/";
+  role.assumeRolePolicy = serviceAssumeRolePolicy("scheduler.amazonaws.com");
+  return role;
+}
+
+operation createStorageResourcePolicy(source, resource) {
+  var doc = policyDocument();
+  var st = allowStatement("DenyInsecureTransport");
+  st.effect = AWSPSMENUMS!IamEffect#DENY;
+  st.actions.add("*");
+  st.resources.add("${" + resource.logicalId + ".Arn}");
+  st.wildcardAction = true;
+  st.wildcardJustification = "Deny statement covers all actions only when aws:SecureTransport is false.";
+  var cond = new AWSPSMSECURITY!IamCondition;
+  cond.id = generatedId("iam_condition", source, "secure_transport");
+  cond.name = "Secure transport";
+  cond.operator = "Bool";
+  cond.key = "aws:SecureTransport";
+  cond.values.add("false");
+  st.conditions.add(cond);
+  doc.statements.add(st);
+  return doc;
+}
+
+operation createDenyInsecureTransportPolicy(resource) {
+  var doc = policyDocument();
+  var st = allowStatement("DenyInsecureTransport");
+  st.effect = AWSPSMENUMS!IamEffect#DENY;
+  st.actions.add("*");
+  st.resources.add("${" + resource.logicalId + ".Arn}");
+  st.resources.add("${" + resource.logicalId + ".Arn}/*");
+  st.wildcardAction = true;
+  st.wildcardJustification = "Deny statement covers all actions only when aws:SecureTransport is false.";
+  var cond = new AWSPSMSECURITY!IamCondition;
+  cond.id = "condition_secure_transport_" + slug(resource.logicalId);
+  cond.name = "Secure transport";
+  cond.operator = "Bool";
+  cond.key = "aws:SecureTransport";
+  cond.values.add("false");
+  st.conditions.add(cond);
+  doc.statements.add(st);
+  return doc;
+}

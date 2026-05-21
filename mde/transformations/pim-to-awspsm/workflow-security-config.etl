@@ -1,0 +1,488 @@
+import "lib/common.eol";
+import "lib/aws-builders.eol";
+import "lib/readiness-trace.eol";
+import "lib/resolution.eol";
+
+rule Workflow2StepFunctionStateMachine
+  transform w : WORKFLOW!Workflow
+  to sm : AWSPSMWORKFLOW!StepFunctionStateMachine {
+
+  copyAwsResource(w, sm, "StateMachine", "AWS::Serverless::StateMachine");
+  sm.id = idFor("state_machine", w);
+  sm.stateMachineName = sm.physicalName;
+  if (isTrue(w.expressLowLatencyRequired)) {
+    sm.stateMachineType = AWSPSMENUMS!StepFunctionType#EXPRESS;
+  }
+  else {
+    sm.stateMachineType = AWSPSMENUMS!StepFunctionType#STANDARD;
+  }
+  sm.publishAlias = isProductionRoot();
+  if (isProductionRoot()) {
+    sm.aliasName = "live";
+  }
+  else {
+    sm.aliasName = "";
+  }
+  sm.role = createStateMachineRole(w);
+  sm.aslDocument = createAslDocument(w);
+  sm.definitionString = renderAsl(sm.aslDocument);
+  sm.logging = createStepFunctionLogging(w, sm);
+  sm.tracing = createStepFunctionTracing(w);
+  if (isTrue(w.humanApprovalRequired)) {
+    manualDecision("WORKFLOW_HUMAN_APPROVAL_DESIGN",
+      "Design human approval callback/tasks for workflow " + w.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, sm},
+      "Model callback task tokens, approval UI, and escalation policy.");
+  }
+  if (isTrue(w.compensationRequired)) {
+    sm.metadata.add(nativeText("CompensationRequired", "true", KERNEL!StructuredFormat#TEXT, true, false));
+  }
+  createTrace(w, sm, "Workflow2StepFunctionStateMachine", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule IdentityProvider2CognitoUserPool
+  transform idp : SECURITY!IdentityProvider
+  to pool : AWSPSMIDENTITY!CognitoUserPool {
+
+  copyAwsResource(idp, pool, "UserPool", "AWS::Cognito::UserPool");
+  pool.id = idFor("cognito_pool", idp);
+  pool.userPoolName = pool.physicalName;
+  if (isTrue(idp.mfaRequired)) {
+    pool.mfaConfiguration = AWSPSMENUMS!CognitoMfaConfiguration#ON;
+    pool.mfaDecision = AWSPSMENUMS!Decision#REQUIRED;
+  }
+  else {
+    pool.mfaConfiguration = AWSPSMENUMS!CognitoMfaConfiguration#OPTIONAL;
+    pool.mfaDecision = AWSPSMENUMS!Decision#NEEDS_REVIEW;
+  }
+  pool.mfaRationale = "Derived from PIM IdentityProvider.mfaRequired.";
+  pool.usernameAttributes.add("email");
+  pool.autoVerifiedAttributes.add("email");
+  pool.policiesJson = "{ \"PasswordPolicy\": { \"MinimumLength\": 12, \"RequireUppercase\": true, \"RequireLowercase\": true, \"RequireNumbers\": true, \"RequireSymbols\": false } }";
+  pool.deletionProtection = isProductionRoot();
+  if (isTrue(idp.federationRequired) and not hasText(idp.tokenValidationRules)) {
+    manualDecision("COGNITO_FEDERATION_DETAILS_REQUIRED",
+      "Provide federation details for identity provider " + idp.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{idp, pool},
+      "Add issuer, client IDs, attribute mapping, callback/logout URLs, and supported IdPs.");
+  }
+  createTrace(idp, pool, "IdentityProvider2CognitoUserPool", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Principal2IamRole
+  transform p : SECURITY!Principal
+  to role : AWSPSMSECURITY!IamRole {
+
+  guard : p.principalKind = PIMTYPES!PrincipalKind#SERVICE or p.principalKind = PIMTYPES!PrincipalKind#ROLE
+
+  copyAwsResource(p, role, "PrincipalRole", "AWS::IAM::Role");
+  role.id = idFor("principal_role", p);
+  role.roleName = physicalName(p, "role", defaultStage());
+  role.path = "/";
+  role.maxSessionDuration = 3600;
+  role.descriptionText = firstText(p.summary, "IAM role generated from PIM principal.");
+  role.assumeRolePolicy = serviceAssumeRolePolicy(firstText(p.externalRef, "lambda.amazonaws.com"));
+  if (p.permissions.notEmpty()) {
+    var pol = new AWSPSMSECURITY!IamInlinePolicy;
+    pol.id = generatedId("inline_policy", p, "permissions");
+    pol.name = p.name + " permissions";
+    pol.policyName = pascalCase(p.name) + "Policy";
+    pol.document = policyDocument();
+    for (perm in p.permissions) {
+      pol.document.statements.add(permissionStatement(perm));
+    }
+    role.inlinePolicies.add(pol);
+  }
+  createTrace(p, role, "Principal2IamRole", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule Secret2SecretsManagerSecret
+  transform s : CONFIG!Secret
+  to sec : AWSPSMSECURITY!SecretsManagerSecret {
+
+  copyAwsResource(s, sec, "Secret", "AWS::SecretsManager::Secret");
+  sec.id = idFor("secret", s);
+  sec.secretName = sec.physicalName;
+  sec.descriptionText = firstText(s.summary, "Secret reference generated from PIM.");
+  if (isTrue(s.generatedReferenceOnly)) {
+    sec.generateSecretStringJson = "";
+  }
+  else {
+    sec.generateSecretStringJson = "{ \"GenerateStringKey\": \"value\", \"PasswordLength\": 32 }";
+  }
+  sec.rotationRequired = isTrue(s.rotationRequired);
+  if (sec.rotationRequired) {
+    var rot = new AWSPSMSECURITY!SecretRotationSchedule;
+    copyAwsResource(s, rot, "SecretRotation", "AWS::SecretsManager::RotationSchedule");
+    rot.id = generatedId("secret_rotation", s, "schedule");
+    rot.rotationRulesJson = "{ \"AutomaticallyAfterDays\": " + rotationDays(s.rotationFrequency).asString() + " }";
+    rot.secret = sec;
+    sec.rotationSchedule = rot;
+    manualDecision("SECRET_ROTATION_LAMBDA_REQUIRED",
+      "Provide rotation Lambda for secret " + s.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{s, sec},
+      "Model or select a Lambda that implements Secrets Manager rotation.");
+  }
+  createTrace(s, sec, "Secret2SecretsManagerSecret", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+rule ConfigurationSet2CfnParameterCarrier
+  transform c : CONFIG!ConfigurationSet
+  to doc : KERNEL!StructuredDocument {
+
+  copyTraceable(c, doc);
+  doc.id = idFor("configuration_doc", c);
+  doc.name = c.name + " Configuration Metadata";
+  doc.format = KERNEL!StructuredFormat#JSON;
+  doc.content = configurationJson(c);
+  createTrace(c, doc, "ConfigurationSet2CfnParameterCarrier", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+rule ConfigParameter2CfnParameter
+  transform p : CONFIG!ConfigParameter
+  to c : AWSPSMCORE!CfnParameter {
+
+  guard : not isTrue(p.secret)
+
+  copyTraceable(p, c);
+  c.id = idFor("cfn_parameter", p);
+  c.name = firstText(p.name, "Parameter");
+  c.parameterName = pascalCase(firstText(p.name, p.id));
+  c.type = firstText(p.valueKind, "String");
+  if (hasText(p.defaultValue)) {
+    c.defaultValue = literalValue(p.defaultValue, false);
+  }
+  c.allowedPattern = p.validationPattern;
+  c.parameterDescription = firstText(p.summary, p.description);
+  c.noEcho = false;
+  createTrace(p, c, "ConfigParameter2CfnParameter", "HIGH", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+rule SecretConfigParameter2SsmParameter
+  transform p : CONFIG!ConfigParameter
+  to s : AWSPSMSECURITY!SsmParameter {
+
+  guard : isTrue(p.secret)
+
+  copyAwsResource(p, s, "Parameter", "AWS::SSM::Parameter");
+  s.id = idFor("ssm_parameter", p);
+  s.parameterName = "/" + kebab(rootName()) + "/" + kebab(firstText(p.name, p.id));
+  s.parameterType = AWSPSMENUMS!ParameterType#SECURE_STRING;
+  s.tier = AWSPSMENUMS!SsmParameterTier#STANDARD;
+  s.dataType = "text";
+  s.allowedPattern = p.validationPattern;
+  s.descriptionText = firstText(p.summary, p.description);
+  s.value = literalValue(firstText(p.defaultValue, ""), true);
+  createTrace(p, s, "SecretConfigParameter2SsmParameter", "HIGH", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+operation createAslDocument(w) {
+  var d = new AWSPSMWORKFLOW!AslDocument;
+  d.id = generatedId("asl", w, "document");
+  d.name = w.name + " ASL";
+  d.format = KERNEL!StructuredFormat#ASL_JSON;
+  d.content = "{}";
+  d.comment = firstText(w.summary, "Generated from PIM workflow " + w.name);
+  d.queryLanguage = "JSONPath";
+  if (w.startState.isDefined()) {
+    d.startAt = w.startState.name;
+  }
+  else {
+    d.startAt = firstText(w.states.first().name, "Start");
+  }
+  for (st in w.states) {
+    d.states.add(createAslState(w, st));
+  }
+  d.content = renderAsl(d);
+  return d;
+}
+
+operation createAslState(w, ws) {
+  var st = new AWSPSMWORKFLOW!AslState;
+  st.id = generatedId("asl_state", ws, "state");
+  st.name = ws.name;
+  st.stateName = firstText(ws.name, "State");
+  st.type = mapAslStateType(ws.stateKind);
+  st.timeoutSeconds = ws.timeoutSeconds;
+  st.inputPath = firstText(ws.inputMapping, "$");
+  st.outputPath = firstText(ws.outputMapping, "$");
+  st.end = isTrue(ws.terminal) or w.endStates.includes(ws);
+  var out = w.transitions.select(x | x.source = ws);
+  if (out.size() = 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
+    st.nextState = out.first().target.equivalent();
+    st.nextStateName = out.first().target.name;
+  }
+  else {
+    if (out.size() <> 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
+      manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
+        "Resolve outgoing transition for workflow state " + ws.name + ".",
+        KERNEL!Severity#ERROR, true, Sequence{w, ws},
+        "Non-choice states need exactly one outgoing transition unless terminal.");
+    }
+  }
+  if (ws.invokesFunction.isDefined()) {
+    st.invokedResource = ws.invokesFunction.equivalent();
+    st.resource = "arn:aws:states:::lambda:invoke";
+  }
+  else {
+    if (ws.nestedWorkflow.isDefined()) {
+      st.invokedResource = ws.nestedWorkflow.equivalent();
+      st.resource = "arn:aws:states:::states:startExecution.sync";
+    }
+  }
+  if (ws.retry.isDefined()) {
+    st.retry.add(createAslRetry(ws.retry));
+  }
+  if (ws.stateKind = PIMTYPES!WorkflowStateKind#CHOICE) {
+    for (tr in w.transitions.select(x | x.source = ws)) {
+      st.choices.add(createAslChoice(tr));
+    }
+  }
+  if (ws.stateKind = PIMTYPES!WorkflowStateKind#PARALLEL) {
+    manualDecision("WORKFLOW_PARALLEL_BRANCH_DESIGN",
+      "Define ASL branch details for parallel state " + ws.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
+      "The PIM identifies a parallel state but does not carry full ASL branch structure.");
+  }
+  if (ws.stateKind = PIMTYPES!WorkflowStateKind#MAP) {
+    manualDecision("WORKFLOW_MAP_PROCESSOR_DESIGN",
+      "Define ASL item processor details for map state " + ws.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
+      "The PIM identifies a map state but does not carry full ASL item processor structure.");
+  }
+  for (h in ws.catchHandlers) {
+    if (h.nextState.isDefined()) {
+      st.catch.add(createAslCatch(h));
+    }
+  }
+  return st;
+}
+
+operation createAslChoice(tr) {
+  var c = new AWSPSMWORKFLOW!AslChoiceRule;
+  c.id = generatedId("asl_choice", tr, "choice");
+  c.name = firstText(tr.name, "Choice");
+  c.conditionExpression = tr.conditionExpression;
+  c.variable = "$";
+  c.nextState = tr.target.equivalent();
+  if (not hasText(c.conditionExpression) and not isTrue(tr.defaultTransition)) {
+    manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
+      "Provide condition expression for choice transition " + tr.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{tr},
+      "Set WorkflowTransition.conditionExpression or mark it as defaultTransition.");
+  }
+  return c;
+}
+
+operation mapAslStateType(kind) {
+  if (kind = PIMTYPES!WorkflowStateKind#TASK) {
+    return AWSPSMENUMS!AslStateType#TASK;
+  }
+  if (kind = PIMTYPES!WorkflowStateKind#CHOICE) {
+    return AWSPSMENUMS!AslStateType#CHOICE;
+  }
+  if (kind = PIMTYPES!WorkflowStateKind#PARALLEL) {
+    return AWSPSMENUMS!AslStateType#PARALLEL;
+  }
+  if (kind = PIMTYPES!WorkflowStateKind#MAP) {
+    return AWSPSMENUMS!AslStateType#MAP;
+  }
+  if (kind = PIMTYPES!WorkflowStateKind#WAIT) {
+    return AWSPSMENUMS!AslStateType#WAIT;
+  }
+  if (kind = PIMTYPES!WorkflowStateKind#SUCCESS) {
+    return AWSPSMENUMS!AslStateType#SUCCEED;
+  }
+  if (kind = PIMTYPES!WorkflowStateKind#FAILURE) {
+    return AWSPSMENUMS!AslStateType#FAIL;
+  }
+  return AWSPSMENUMS!AslStateType#PASS;
+}
+
+operation createAslRetry(p) {
+  var r = new AWSPSMWORKFLOW!AslRetryRule;
+  r.id = "asl_retry_" + slug(p.name);
+  r.name = firstText(p.name, "Retry");
+  r.errorEquals.addAll(p.retryableErrors);
+  if (r.errorEquals.isEmpty()) {
+    r.errorEquals.add("States.ALL");
+  }
+  r.intervalSeconds = positiveOr(p.initialDelaySeconds, 1);
+  r.maxAttempts = positiveOr(p.maxAttempts, 3);
+  if (p.backoffRate.isDefined()) {
+    r.backoffRate = p.backoffRate;
+  }
+  else {
+    r.backoffRate = 2.0d;
+  }
+  r.maxDelaySeconds = positiveOr(p.maxDelaySeconds, 60);
+  r.jitterStrategy = "FULL";
+  return r;
+}
+
+operation createAslCatch(h) {
+  var c = new AWSPSMWORKFLOW!AslCatchRule;
+  c.id = "asl_catch_" + slug(h.name);
+  c.name = firstText(h.name, "Catch");
+  c.errorEquals.add(firstText(h.errorSelector, "States.ALL"));
+  c.resultPath = "$.error";
+  c.nextState = h.nextState.equivalent();
+  return c;
+}
+
+operation createStateMachineRole(w) {
+  var role = new AWSPSMSECURITY!IamRole;
+  copyAwsResource(w, role, "StateMachineRole", "AWS::IAM::Role");
+  role.id = generatedId("iam_role", w, "states");
+  role.roleName = physicalName(w, "states-role", defaultStage());
+  role.path = "/";
+  role.assumeRolePolicy = serviceAssumeRolePolicy("states.amazonaws.com");
+  return role;
+}
+
+operation createStepFunctionLogging(w, sm) {
+  var cfg = new AWSPSMWORKFLOW!StepFunctionLoggingConfig;
+  cfg.id = generatedId("sfn_logging", w, "logging");
+  cfg.name = w.name + " logging";
+  cfg.includeExecutionData = not isProductionRoot();
+  cfg.level = "ALL";
+  cfg.logGroup = createLogGroupFor(w, sm.logicalId, "/aws/vendedlogs/states/" + sm.stateMachineName);
+  return cfg;
+}
+
+operation createStepFunctionTracing(w) {
+  var t = new AWSPSMWORKFLOW!StepFunctionTracingConfig;
+  t.id = generatedId("sfn_tracing", w, "xray");
+  t.name = w.name + " tracing";
+  t.enabled = true;
+  return t;
+}
+
+operation aslSummaryJson(w, doc) {
+  return renderAsl(doc);
+}
+
+operation renderAsl(doc) {
+  var states = "";
+  for (s in doc.states) {
+    if (hasText(states)) {
+      states = states + ", ";
+    }
+    states = states + "\"" + escapeJson(s.stateName) + "\": " + renderAslState(s);
+  }
+  return "{ \"Comment\": \"" + escapeJson(doc.comment) + "\", \"StartAt\": \"" + escapeJson(doc.startAt) + "\", \"States\": { " + states + " } }";
+}
+
+operation renderAslState(s) {
+  var body = "{ \"Type\": \"" + aslTypeName(s.type) + "\"";
+  if (hasText(s.resource)) {
+    body = body + ", \"Resource\": \"" + escapeJson(s.resource) + "\"";
+  }
+  if (hasText(s.inputPath)) {
+    body = body + ", \"InputPath\": \"" + escapeJson(s.inputPath) + "\"";
+  }
+  if (hasText(s.outputPath)) {
+    body = body + ", \"OutputPath\": \"" + escapeJson(s.outputPath) + "\"";
+  }
+  if (s.timeoutSeconds.isDefined() and s.timeoutSeconds > 0) {
+    body = body + ", \"TimeoutSeconds\": " + s.timeoutSeconds.asString();
+  }
+  if (s.retry.notEmpty()) {
+    body = body + ", \"Retry\": " + retryJson(s.retry);
+  }
+  if (s.catch.notEmpty()) {
+    body = body + ", \"Catch\": " + catchJson(s.catch);
+  }
+  if (s.choices.notEmpty()) {
+    body = body + ", \"Choices\": " + choiceJson(s.choices);
+  }
+  if (s.end) {
+    body = body + ", \"End\": true";
+  }
+  else {
+    if (hasText(s.nextStateName)) {
+      body = body + ", \"Next\": \"" + escapeJson(s.nextStateName) + "\"";
+    }
+  }
+  return body + " }";
+}
+
+operation aslTypeName(t) {
+  if (t = AWSPSMENUMS!AslStateType#SUCCEED) {
+    return "Succeed";
+  }
+  if (t = AWSPSMENUMS!AslStateType#FAIL) {
+    return "Fail";
+  }
+  return t.asString().substring(0, 1).toUpperCase() + t.asString().substring(1).toLowerCase();
+}
+
+operation retryJson(items) {
+  var out = "";
+  for (r in items) {
+    if (hasText(out)) {
+      out = out + ", ";
+    }
+    out = out + "{ \"ErrorEquals\": " + stringArrayJson(r.errorEquals) + ", \"IntervalSeconds\": " + r.intervalSeconds.asString() +
+      ", \"MaxAttempts\": " + r.maxAttempts.asString() + ", \"BackoffRate\": " + r.backoffRate.asString() + " }";
+  }
+  return "[ " + out + " ]";
+}
+
+operation catchJson(items) {
+  var out = "";
+  for (c in items) {
+    if (hasText(out)) {
+      out = out + ", ";
+    }
+    out = out + "{ \"ErrorEquals\": " + stringArrayJson(c.errorEquals) + ", \"ResultPath\": \"" + escapeJson(c.resultPath) +
+      "\", \"Next\": \"" + escapeJson(c.nextState.stateName) + "\" }";
+  }
+  return "[ " + out + " ]";
+}
+
+operation choiceJson(items) {
+  var out = "";
+  for (c in items) {
+    if (hasText(out)) {
+      out = out + ", ";
+    }
+    out = out + "{ \"Condition\": \"" + escapeJson(c.conditionExpression) + "\", \"Next\": \"" + escapeJson(c.nextState.stateName) + "\" }";
+  }
+  return "[ " + out + " ]";
+}
+
+operation stringArrayJson(items) {
+  var out = "";
+  for (item in items) {
+    if (hasText(out)) {
+      out = out + ", ";
+    }
+    out = out + "\"" + escapeJson(item) + "\"";
+  }
+  return "[ " + out + " ]";
+}
+
+operation rotationDays(text) {
+  if (not hasText(text)) {
+    return 30;
+  }
+  if (text.toLowerCase().contains("year")) {
+    return 365;
+  }
+  if (text.toLowerCase().contains("week")) {
+    return 7;
+  }
+  return 30;
+}
+
+operation configurationJson(c) {
+  var entries = "";
+  for (p in c.parameters) {
+    if (hasText(entries)) {
+      entries = entries + ", ";
+    }
+    entries = entries + "\"" + escapeJson(p.name) + "\": { \"required\": " + isTrue(p.required).asString() + ", \"secret\": " + isTrue(p.secret).asString() + " }";
+  }
+  return "{ " + entries + " }";
+}
