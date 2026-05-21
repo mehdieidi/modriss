@@ -8,6 +8,9 @@
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>apps/backend</module>
+    <module>packages/java/mde-etl-runner</module>
+    <module>tools/mde-cli</module>
+    <module>tools/mde-etl-cli</module>
   </modules>
 
   <name>Modless</name>
