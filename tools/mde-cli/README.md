@@ -1,13 +1,16 @@
 # mde-cli
 
-`mde-cli` is a Java command-line tool for converting [Emfatic](https://eclipse.dev/emfatic/) metamodels into `.ecore`.
+`mde-cli` is a Java command-line tool for converting [Emfatic](https://eclipse.dev/emfatic/)
+metamodels into `.ecore`.
 
 It supports both:
 
 - single-file conversion for standalone `.emf` or `.emfatic` metamodels
-- modular metamodel conversion for directories that contain multiple Emfatic modules forming one logical metamodel
+- modular metamodel conversion for directories that contain multiple Emfatic modules forming one
+  logical metamodel
 
-The tool is designed for practical metamodel engineering work, with strong diagnostics for parse errors, unresolved imports, type-resolution failures, and other Emfatic or Ecore problems.
+The tool is designed for practical metamodel engineering work, with strong diagnostics for parse
+errors, unresolved imports, type-resolution failures, and other Emfatic or Ecore problems.
 
 ## Features
 
@@ -69,7 +72,8 @@ java -jar tools/mde-cli/target/mde-cli-0.0.1-SNAPSHOT.jar `
   --overwrite
 ```
 
-If the input file imports sibling `.ecore` modules, `mde-cli` automatically performs a modular bootstrap in a temporary workspace and still emits only the requested file’s `.ecore`.
+If the input file imports sibling `.ecore` modules, `mde-cli` automatically performs a modular
+bootstrap in a temporary workspace and still emits only the requested file’s `.ecore`.
 
 ## Convert A Modular Directory
 
@@ -89,19 +93,20 @@ This mode is intended for cases where:
 - modules import local `.ecore` files
 - one root module defines the overall entry package or root aggregation
 
-If `--root` is not supplied, the CLI tries to discover a root file automatically using common conventions such as `root.emf` or a single `*-root.emf`.
+If `--root` is not supplied, the CLI tries to discover a root file automatically using common
+conventions such as `root.emf` or a single `*-root.emf`.
 
 ## Options
 
-| Option | Description |
-|---|---|
-| `-o`, `--output <path>` | Output `.ecore` file path |
-| `--root <path>` | Root Emfatic file for directory conversion |
-| `--overwrite` | Replace an existing output file |
-| `--verbose` | Print step-by-step execution details |
-| `--log-file <path>` | Write a detailed execution report to a file |
-| `-h`, `--help` | Show help |
-| `-V`, `--version` | Show version |
+| Option                  | Description                                 |
+|-------------------------|---------------------------------------------|
+| `-o`, `--output <path>` | Output `.ecore` file path                   |
+| `--root <path>`         | Root Emfatic file for directory conversion  |
+| `--overwrite`           | Replace an existing output file             |
+| `--verbose`             | Print step-by-step execution details        |
+| `--log-file <path>`     | Write a detailed execution report to a file |
+| `-h`, `--help`          | Show help                                   |
+| `-V`, `--version`       | Show version                                |
 
 ## Output Behavior
 
@@ -172,7 +177,8 @@ The report file includes:
 
 - `0`: success
 - `1`: unexpected/internal failure
-- `2`: user-fixable conversion failure such as invalid input, parse errors, unresolved imports, or semantic metamodel problems
+- `2`: user-fixable conversion failure such as invalid input, parse errors, unresolved imports, or
+  semantic metamodel problems
 
 ## Verified Example
 
@@ -204,9 +210,13 @@ mvn -q -pl tools/mde-cli -am test
 ## Limitations
 
 - The tool currently focuses on local filesystem-based Emfatic and `.ecore` imports.
-- If a metamodel relies on external resources outside the working directory structure, those resources must still be accessible to the JVM at conversion time.
-- The combined directory output is intended for modular metamodels that logically belong to one final Ecore model.
+- If a metamodel relies on external resources outside the working directory structure, those
+  resources must still be accessible to the JVM at conversion time.
+- The combined directory output is intended for modular metamodels that logically belong to one
+  final Ecore model.
 
 ## License
 
-This project inherits the repository’s licensing and publication terms. If you plan to publish `mde-cli` independently, make sure the repository-level license and third-party dependency obligations are preserved.
+This project inherits the repository’s licensing and publication terms. If you plan to publish
+`mde-cli` independently, make sure the repository-level license and third-party dependency
+obligations are preserved.

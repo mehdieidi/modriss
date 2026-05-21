@@ -10,31 +10,31 @@ import org.eclipse.emf.ecore.EcorePackage;
 
 public final class EcoreModelNormalizer {
 
-  public void normalize(List<EObject> roots) {
-    for (EObject root : roots) {
-      if (root instanceof EPackage ePackage) {
-        normalizePackage(ePackage);
-      }
-    }
-  }
-
-  private void normalizePackage(EPackage ePackage) {
-    for (EClassifier classifier : ePackage.getEClassifiers()) {
-      if (classifier instanceof EClass eClass) {
-        normalizeClass(eClass);
-      }
+    public void normalize(List<EObject> roots) {
+        for (EObject root : roots) {
+            if (root instanceof EPackage ePackage) {
+                normalizePackage(ePackage);
+            }
+        }
     }
 
-    for (EPackage subpackage : ePackage.getESubpackages()) {
-      normalizePackage(subpackage);
-    }
-  }
+    private void normalizePackage(EPackage ePackage) {
+        for (EClassifier classifier : ePackage.getEClassifiers()) {
+            if (classifier instanceof EClass eClass) {
+                normalizeClass(eClass);
+            }
+        }
 
-  private void normalizeClass(EClass eClass) {
-    eClass.getEStructuralFeatures().stream()
-        .filter(EAttribute.class::isInstance)
-        .map(EAttribute.class::cast)
-        .filter(attribute -> attribute.getEType() == null)
-        .forEach(attribute -> attribute.setEType(EcorePackage.eINSTANCE.getEString()));
-  }
+        for (EPackage subpackage : ePackage.getESubpackages()) {
+            normalizePackage(subpackage);
+        }
+    }
+
+    private void normalizeClass(EClass eClass) {
+        eClass.getEStructuralFeatures().stream()
+                .filter(EAttribute.class::isInstance)
+                .map(EAttribute.class::cast)
+                .filter(attribute -> attribute.getEType() == null)
+                .forEach(attribute -> attribute.setEType(EcorePackage.eINSTANCE.getEString()));
+    }
 }

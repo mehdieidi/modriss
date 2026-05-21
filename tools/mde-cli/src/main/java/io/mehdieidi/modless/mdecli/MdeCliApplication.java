@@ -4,11 +4,11 @@ import picocli.CommandLine;
 
 public final class MdeCliApplication {
 
-  private MdeCliApplication() {
-  }
+    private MdeCliApplication() {
+    }
 
-  public static void main(String[] args) {
-    int exitCode = new CommandLine(new MetamodelCommand()).execute(args);
-    System.exit(exitCode);
-  }
+    public static void main(String[] args) {
+        int exitCode = new CommandLine(new MetamodelCommand()).execute(args);
+        System.exit(exitCode);
+    }
 }

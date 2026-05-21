@@ -1,73 +1,16 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>io.mehdieidi</groupId>
-    <artifactId>modless</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
-  </parent>
-
   <artifactId>mde-cli</artifactId>
-  <name>mde-cli</name>
-  <description>CLI utility for converting Emfatic metamodels into Ecore.</description>
-  <packaging>jar</packaging>
-
-  <properties>
-    <maven.compiler.release>${java.version}</maven.compiler.release>
-    <picocli.version>4.7.7</picocli.version>
-    <junit.version>5.13.1</junit.version>
-    <emfatic.version>1.1.0</emfatic.version>
-    <emf.version>2.40.0</emf.version>
-    <maven.shade.version>3.6.1</maven.shade.version>
-    <maven.surefire.version>3.5.4</maven.surefire.version>
-    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
-  </properties>
-
-  <dependencies>
-    <dependency>
-      <groupId>info.picocli</groupId>
-      <artifactId>picocli</artifactId>
-      <version>${picocli.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.emfatic</groupId>
-      <artifactId>org.eclipse.emfatic.core</artifactId>
-      <version>${emfatic.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.emf</groupId>
-      <artifactId>org.eclipse.emf.common</artifactId>
-      <version>${emf.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.emf</groupId>
-      <artifactId>org.eclipse.emf.ecore</artifactId>
-      <version>${emf.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.emf</groupId>
-      <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
-      <version>${emf.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
 
   <build>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven.compiler.plugin.version}</version>
         <configuration>
           <release>${maven.compiler.release}</release>
         </configuration>
+        <version>${maven.compiler.plugin.version}</version>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -75,13 +18,8 @@
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven.shade.version}</version>
         <executions>
           <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
             <configuration>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <filters>
@@ -95,14 +33,77 @@
                 </filter>
               </filters>
               <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                <transformer
+                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>io.mehdieidi.modless.mdecli.MdeCliApplication</mainClass>
                 </transformer>
               </transformers>
             </configuration>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <phase>package</phase>
           </execution>
         </executions>
+        <version>${maven.shade.version}</version>
       </plugin>
     </plugins>
   </build>
+
+  <dependencies>
+    <dependency>
+      <artifactId>picocli</artifactId>
+      <groupId>info.picocli</groupId>
+      <version>${picocli.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.emfatic.core</artifactId>
+      <groupId>org.eclipse.emfatic</groupId>
+      <version>${emfatic.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.emf.common</artifactId>
+      <groupId>org.eclipse.emf</groupId>
+      <version>${emf.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.emf.ecore</artifactId>
+      <groupId>org.eclipse.emf</groupId>
+      <version>${emf.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+      <groupId>org.eclipse.emf</groupId>
+      <version>${emf.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>junit-jupiter</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <scope>test</scope>
+      <version>${junit.version}</version>
+    </dependency>
+  </dependencies>
+  <description>CLI utility for converting Emfatic metamodels into Ecore.</description>
+  <modelVersion>4.0.0</modelVersion>
+  <name>mde-cli</name>
+
+  <packaging>jar</packaging>
+
+  <parent>
+    <artifactId>modless</artifactId>
+    <groupId>io.mehdieidi</groupId>
+    <relativePath>../../pom.xml</relativePath>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <properties>
+    <emf.version>2.40.0</emf.version>
+    <emfatic.version>1.1.0</emfatic.version>
+    <junit.version>5.13.1</junit.version>
+    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
+    <maven.compiler.release>${java.version}</maven.compiler.release>
+    <maven.shade.version>3.6.1</maven.shade.version>
+    <maven.surefire.version>3.5.4</maven.surefire.version>
+    <picocli.version>4.7.7</picocli.version>
+  </properties>
 </project>

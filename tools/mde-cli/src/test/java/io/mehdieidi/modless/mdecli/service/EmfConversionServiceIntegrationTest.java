@@ -1,8 +1,8 @@
 package io.mehdieidi.modless.mdecli.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.modless.mdecli.diagnostics.ConversionReport;
 import java.nio.file.Files;
@@ -18,68 +18,75 @@ import org.junit.jupiter.api.Test;
 
 class EmfConversionServiceIntegrationTest {
 
-  private final EmfConversionService conversionService = new EmfConversionService();
-  private static final Pattern POSITIONAL_FRAGMENT_PATTERN =
-      Pattern.compile("(eType|eSuperTypes|eOpposite)=\"#/\\d");
+    private static final Pattern POSITIONAL_FRAGMENT_PATTERN =
+            Pattern.compile("(eType|eSuperTypes|eOpposite)=\"#/\\d");
+    private final EmfConversionService conversionService = new EmfConversionService();
 
-  @Test
-  void convertsSingleEmfaticFileIntoEcore() throws Exception {
-    Path tempDirectory = Files.createTempDirectory("mde-cli-test-");
-    Path input = tempDirectory.resolve("simple.emf");
-    Files.writeString(input, """
-        @namespace(uri="https://example.org/test/1.0", prefix="test")
-        package test;
+    @Test
+    void convertsSingleEmfaticFileIntoEcore() throws Exception {
+        Path tempDirectory = Files.createTempDirectory("mde-cli-test-");
+        Path input = tempDirectory.resolve("simple.emf");
+        Files.writeString(input, """
+                @namespace(uri="https://example.org/test/1.0", prefix="test")
+                package test;
+                
+                class Person {
+                  attr String[1] name;
+                }
+                """);
+        Path output = tempDirectory.resolve("simple.ecore");
 
-        class Person {
-          attr String[1] name;
-        }
-        """);
-    Path output = tempDirectory.resolve("simple.ecore");
+        ConversionReport report = conversionService.convert(
+                new ConversionRequest(input, output, null, true, false));
 
-    ConversionReport report = conversionService.convert(new ConversionRequest(input, output, null, true, false));
+        assertEquals(ConversionReport.Status.SUCCESS, report.getStatus());
+        assertTrue(Files.exists(output));
+    }
 
-    assertEquals(ConversionReport.Status.SUCCESS, report.getStatus());
-    assertTrue(Files.exists(output));
-  }
+    @Test
+    void convertsSampleCimDirectoryIntoCombinedEcore() throws Exception {
+        Path projectRoot = Path.of("..", "..").toAbsolutePath().normalize();
+        Path inputDirectory = projectRoot.resolve("mde/metamodels/cim");
+        Path output = Files.createTempDirectory("mde-cli-cim-").resolve("cim-combined.ecore");
 
-  @Test
-  void convertsSampleCimDirectoryIntoCombinedEcore() throws Exception {
-    Path projectRoot = Path.of("..", "..").toAbsolutePath().normalize();
-    Path inputDirectory = projectRoot.resolve("mde/metamodels/cim");
-    Path output = Files.createTempDirectory("mde-cli-cim-").resolve("cim-combined.ecore");
+        ConversionReport report = conversionService.convert(
+                new ConversionRequest(inputDirectory, output,
+                        inputDirectory.resolve("cim-root.emf"), true, false));
 
-    ConversionReport report = conversionService.convert(
-        new ConversionRequest(inputDirectory, output, inputDirectory.resolve("cim-root.emf"), true, false));
+        assertEquals(ConversionReport.Status.SUCCESS, report.getStatus());
+        assertTrue(Files.exists(output));
 
-    assertEquals(ConversionReport.Status.SUCCESS, report.getStatus());
-    assertTrue(Files.exists(output));
+        ResourceSet resourceSet = new ResourceSetImpl();
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
+                .put("ecore", new EcoreResourceFactoryImpl());
+        Resource resource = resourceSet.getResource(URI.createFileURI(output.toString()), true);
+        assertTrue(resource.getContents().stream().anyMatch(EPackage.class::isInstance));
 
-    ResourceSet resourceSet = new ResourceSetImpl();
-    resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("ecore", new EcoreResourceFactoryImpl());
-    Resource resource = resourceSet.getResource(URI.createFileURI(output.toString()), true);
-    assertTrue(resource.getContents().stream().anyMatch(EPackage.class::isInstance));
+        String serialized = Files.readString(output);
+        assertFalse(serialized.contains("name=\"description\"/>"),
+                "Combined output should not leave string attributes without explicit eType.");
+        assertFalse(serialized.contains("<eSubpackages name=\"kernel\""),
+                "Combined output should keep modular packages as top-level packages.");
+    }
 
-    String serialized = Files.readString(output);
-    assertFalse(serialized.contains("name=\"description\"/>"), "Combined output should not leave string attributes without explicit eType.");
-    assertFalse(serialized.contains("<eSubpackages name=\"kernel\""), "Combined output should keep modular packages as top-level packages.");
-  }
+    @Test
+    void convertsModularSingleFileWithoutLeakingTempUris() throws Exception {
+        Path projectRoot = Path.of("..", "..").toAbsolutePath().normalize();
+        Path input = projectRoot.resolve("mde/metamodels/cim/cim-diagram.emf");
+        Path outputDirectory = Files.createTempDirectory("mde-cli-single-cim-");
+        Path output = outputDirectory.resolve("cim-diagram.ecore");
 
-  @Test
-  void convertsModularSingleFileWithoutLeakingTempUris() throws Exception {
-    Path projectRoot = Path.of("..", "..").toAbsolutePath().normalize();
-    Path input = projectRoot.resolve("mde/metamodels/cim/cim-diagram.emf");
-    Path outputDirectory = Files.createTempDirectory("mde-cli-single-cim-");
-    Path output = outputDirectory.resolve("cim-diagram.ecore");
+        ConversionReport report = conversionService.convert(
+                new ConversionRequest(input, output, null, true, false));
 
-    ConversionReport report = conversionService.convert(new ConversionRequest(input, output, null, true, false));
+        assertEquals(ConversionReport.Status.SUCCESS, report.getStatus());
+        assertTrue(Files.exists(output));
+        assertTrue(Files.exists(outputDirectory.resolve("kernel.ecore")));
 
-    assertEquals(ConversionReport.Status.SUCCESS, report.getStatus());
-    assertTrue(Files.exists(output));
-    assertTrue(Files.exists(outputDirectory.resolve("kernel.ecore")));
-
-    String serialized = Files.readString(output);
-    assertFalse(serialized.contains("mde-cli-single-ecore-"), "Single-file modular output should not point to temp workspaces.");
-    assertFalse(POSITIONAL_FRAGMENT_PATTERN.matcher(serialized).find(),
-        "Single-file modular output should not use positional local XMI fragments.");
-  }
+        String serialized = Files.readString(output);
+        assertFalse(serialized.contains("mde-cli-single-ecore-"),
+                "Single-file modular output should not point to temp workspaces.");
+        assertFalse(POSITIONAL_FRAGMENT_PATTERN.matcher(serialized).find(),
+                "Single-file modular output should not use positional local XMI fragments.");
+    }
 }

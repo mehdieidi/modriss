@@ -4,9 +4,10 @@ import java.nio.file.Path;
 import java.util.List;
 
 public record StubMetamodelDefinition(
-    Path sourceFile,
-    String packageName,
-    String namespaceUri,
-    String namespacePrefix,
-    List<StubClassifierDefinition> classifiers) {
+        Path sourceFile,
+        String packageName,
+        String namespaceUri,
+        String namespacePrefix,
+        List<StubClassifierDefinition> classifiers) {
+
 }

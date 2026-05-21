@@ -8,17 +8,19 @@ import org.junit.jupiter.api.Test;
 
 class ModuleDependencyResolverTest {
 
-  private final ModuleDependencyResolver resolver = new ModuleDependencyResolver();
+    private final ModuleDependencyResolver resolver = new ModuleDependencyResolver();
 
-  @Test
-  void sortsModulesSoImportedPackagesComeFirst() {
-    ModuleDescriptor root = new ModuleDescriptor(Path.of("cim-root.emf"), List.of("cim-kernel.ecore", "cim-types.ecore"));
-    ModuleDescriptor kernel = new ModuleDescriptor(Path.of("cim-kernel.emf"), List.of());
-    ModuleDescriptor types = new ModuleDescriptor(Path.of("cim-types.emf"), List.of("cim-kernel.ecore"));
+    @Test
+    void sortsModulesSoImportedPackagesComeFirst() {
+        ModuleDescriptor root = new ModuleDescriptor(Path.of("cim-root.emf"),
+                List.of("cim-kernel.ecore", "cim-types.ecore"));
+        ModuleDescriptor kernel = new ModuleDescriptor(Path.of("cim-kernel.emf"), List.of());
+        ModuleDescriptor types = new ModuleDescriptor(Path.of("cim-types.emf"),
+                List.of("cim-kernel.ecore"));
 
-    List<ModuleDescriptor> sorted = resolver.sort(List.of(root, types, kernel));
+        List<ModuleDescriptor> sorted = resolver.sort(List.of(root, types, kernel));
 
-    assertEquals(kernel, sorted.get(0));
-    assertEquals(3, sorted.size());
-  }
+        assertEquals(kernel, sorted.get(0));
+        assertEquals(3, sorted.size());
+    }
 }
