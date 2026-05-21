@@ -119,6 +119,28 @@ rule DomainRelationship2SchemaReference
   }
 }
 
+post AttachRelationshipDataFields {
+  for (rel in CIMDOMAIN!DomainRelationship.all.select(r | r.source.isKindOf(CIMDOMAIN!DomainEntity))) {
+    var sourceStore = storeForEntity(rel.source);
+    if (sourceStore.isDefined() and sourceStore.ownedDataModels.notEmpty()) {
+      var dataField = new DATA!DataField;
+      dataField.id = idFor("relationship_datafield", rel);
+      dataField.name = camelCase(rel.targetRole.orDefault(rel.target.name));
+      dataField.fieldType = PIMTYPES!FieldType#OBJECT;
+      dataField.identifier = false;
+      dataField.partitionKeyCandidate = false;
+      dataField.sortKeyCandidate = false;
+      dataField.indexedCandidate = rel.navigableFromSource;
+      dataField.required = rel.sourceMultiplicity = "1" or rel.sourceMultiplicity = "1..1";
+      dataField.personalData = false;
+      dataField.sensitiveData = false;
+      dataField.storageName = dataField.name;
+      sourceStore.ownedDataModels.first().storageFields.add(dataField);
+      traceGenerated(rel, dataField, "TR-050", "MEDIUM");
+    }
+  }
+}
+
 rule Aggregate2DataStore
   transform ag : CIMDOMAIN!AggregateCandidate
   to store : DATA!DataStore,

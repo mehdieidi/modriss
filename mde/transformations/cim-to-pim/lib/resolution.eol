@@ -32,6 +32,15 @@ operation serviceFor(source) {
     if (source.isKindOf(CIMBEHAVIOR!Query) and source.targetCapability.isDefined()) {
       return serviceFor(source.targetCapability);
     }
+    if (source.isKindOf(CIMBEHAVIOR!BusinessEvent) and source.expectedByCommands.notEmpty()) {
+      return serviceFor(source.expectedByCommands.first());
+    }
+    if (source.isKindOf(CIMBEHAVIOR!BusinessEvent) and source.affects.notEmpty() and source.affects.first().owningCapability.isDefined()) {
+      return serviceFor(source.affects.first().owningCapability);
+    }
+    if (source.isKindOf(CIMPROCESS!Policy) and source.guards.notEmpty() and source.guards.first().targetCapability.isDefined()) {
+      return serviceFor(source.guards.first().targetCapability);
+    }
     if (source.isKindOf(CIMDOMAIN!DomainEntity) and source.owningCapability.isDefined()) {
       return serviceFor(source.owningCapability);
     }
@@ -90,6 +99,60 @@ operation adapterFor(es : CIMORG!ExternalSystem) {
 
 operation workflowFor(bp : CIMPROCESS!BusinessProcess) {
   return bp.equivalents("BusinessProcess2Workflow").first();
+}
+
+operation policyTargetsFor(source) {
+  var targets = Sequence{};
+  if (source.isUndefined()) {
+    return targets;
+  }
+  if (source.isKindOf(CIMBEHAVIOR!Command)) {
+    if (commandFunction(source).isDefined()) targets.add(commandFunction(source));
+    var route = source.equivalents("UserInitiatedCommand2ApiRoute").first();
+    if (route.isDefined()) targets.add(route);
+  }
+  else if (source.isKindOf(CIMBEHAVIOR!Query)) {
+    if (queryFunction(source).isDefined()) targets.add(queryFunction(source));
+    var qRoute = source.equivalents("Query2ApiRoute").first();
+    if (qRoute.isDefined()) targets.add(qRoute);
+  }
+  else if (source.isKindOf(CIMPROCESS!Policy)) {
+    if (policyFunction(source).isDefined()) targets.add(policyFunction(source));
+  }
+  else if (source.isKindOf(CIMPROCESS!BusinessProcess)) {
+    if (workflowFor(source).isDefined()) targets.add(workflowFor(source));
+  }
+  else if (source.isKindOf(CIMPROCESS!ProcessStep)) {
+    var state = source.equivalents("ProcessStep2WorkflowState").first();
+    if (state.isDefined()) targets.add(state);
+  }
+  else if (source.isKindOf(CIMDOMAIN!AggregateCandidate)) {
+    if (storeForAggregate(source).isDefined()) targets.add(storeForAggregate(source));
+  }
+  else if (source.isKindOf(CIMDOMAIN!DomainEntity)) {
+    if (storeForEntity(source).isDefined()) targets.add(storeForEntity(source));
+    if (schemaForEntity(source).isDefined()) targets.add(schemaForEntity(source));
+  }
+  else if (source.isKindOf(CIMORG!ExternalSystem)) {
+    if (adapterFor(source).isDefined()) targets.add(adapterFor(source));
+  }
+  else if (source.isKindOf(CIMORG!BusinessCapability) or source.isKindOf(CIMORG!BoundedContextCandidate)) {
+    if (serviceFor(source).isDefined()) targets.add(serviceFor(source));
+  }
+  else if (source.isKindOf(CIMBEHAVIOR!BusinessEvent)) {
+    if (eventTypeFor(source).isDefined()) targets.add(eventTypeFor(source));
+  }
+  return targets;
+}
+
+operation policyTargetsForAll(sources) {
+  var targets = Sequence{};
+  for (source in sources) {
+    for (target in policyTargetsFor(source)) {
+      if (not targets.includes(target)) targets.add(target);
+    }
+  }
+  return targets;
 }
 
 operation ensureApiForService(service : DEPLOY!ServerlessService) {

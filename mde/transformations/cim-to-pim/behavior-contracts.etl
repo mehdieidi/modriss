@@ -137,6 +137,10 @@ rule Command2Function
     contract.emittedEvents.add(eventTypeFor(ev));
     fn.publishes.add(eventTypeFor(ev));
   }
+  for (rejection in cmd.rejectionEvents) {
+    contract.emittedEvents.add(eventTypeFor(rejection));
+    fn.publishes.add(eventTypeFor(rejection));
+  }
   for (err in cmd.possibleErrors) {
     contract.errorSchemas.add(err.equivalents("BusinessError2ErrorSchema").first());
   }
@@ -144,6 +148,12 @@ rule Command2Function
 
   if (fn.requiresIdempotency) {
     fn.idempotency = createIdempotencyPolicy(cmd);
+  }
+  if (cmd.possibleErrors.exists(e | e.recoverable or e.retryMeaningful)) {
+    fn.resilience = createDefaultResilience(fn, "TR-070", false);
+    for (errRetry in cmd.possibleErrors.select(e | e.recoverable or e.retryMeaningful)) {
+      fn.resilience.retry.retryableErrors.add(errRetry.errorCode);
+    }
   }
   fn.observability = createDefaultObservability(fn, "TR-070", cmd.auditRequired, cmd.auditRequired);
 
@@ -296,7 +306,26 @@ rule Query2ApiRoute
   route.responseSchema = queryFunction(q).contract.outputSchema;
   route.functionIntegration = queryFunction(q);
 
+  if (route.authRequired) {
+    var authz = new SECURITY!AuthorizationPolicy;
+    authz.id = idFor("authz_query", q);
+    authz.name = q.name + " Authorization";
+    authz.policyScope = "route and query invocation";
+    authz.authenticationRequired = true;
+    authz.authorizationRequired = true;
+    authz.ruleExpression = q.authorizationRule;
+    authz.roleOrScopeRequired = q.authorizationRule;
+    authz.resourceLevelAuthorization = hasText(q.authorizationRule);
+    authz.attachedTo.add(route);
+    authz.attachedTo.add(route.functionIntegration);
+    route.authorization = authz;
+    route.functionIntegration.securityPolicies.add(authz);
+    pimRoot().policies.add(authz);
+    traceGenerated(q, authz, "TR-080", "MEDIUM");
+  }
+
   api.routes.add(route);
+  api.authRequired = api.authRequired or route.authRequired;
   traceGenerated(q, route, "TR-080", "MEDIUM");
 
   var trigger = new COMPUTE!Trigger;
@@ -310,6 +339,10 @@ rule Query2ApiRoute
   trigger.invokesFunction = route.functionIntegration;
   pimRoot().triggers.add(trigger);
   traceGenerated(q, trigger, "TR-080", "MEDIUM");
+
+  if (route.authRequired and not hasText(q.authorizationRule)) {
+    manualDecision("TR-080", "Confirm authorization policy for route generated from query '" + q.name + "'.", KERNEL!Severity#ERROR, true, Sequence{q, route});
+  }
 }
 
 rule Query2AccessPattern

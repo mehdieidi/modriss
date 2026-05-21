@@ -16,6 +16,41 @@ operation workflowStateFor(step : CIMPROCESS!ProcessStep) {
   return step.equivalents("ProcessStep2WorkflowState").first();
 }
 
+operation firstIntegerText(value) {
+  var text = asText(value);
+  var digits = "";
+  var collecting = false;
+  for (i in Sequence{1..text.length()}) {
+    var ch = text.substring(i - 1, i);
+    if ("0123456789".contains(ch)) {
+      digits = digits + ch;
+      collecting = true;
+    }
+    else {
+      if (collecting) {
+        return digits;
+      }
+    }
+  }
+  return digits;
+}
+
+operation secondsFromDurationExpression(value) {
+  if (not hasText(value)) {
+    return 0;
+  }
+  var digits = firstIntegerText(value);
+  if (not hasText(digits)) {
+    return 0;
+  }
+  var amount = digits.asInteger();
+  var text = value.toLowerCase();
+  if (text.contains("day")) return amount * 86400;
+  if (text.contains("hour") or text.contains("hr")) return amount * 3600;
+  if (text.contains("minute") or text.contains("min")) return amount * 60;
+  return amount;
+}
+
 rule Policy2PolicyHandlerFunction
   transform pol : CIMPROCESS!Policy
   to fn : COMPUTE!Function {
@@ -48,6 +83,28 @@ rule Policy2PolicyHandlerFunction
   contract.validatesInput = true;
   contract.validatesOutput = false;
   contract.correlationIdField = "correlationId";
+  var inputSchema = new CONTRACTS!Schema;
+  inputSchema.id = idFor("schema_policy_req", pol);
+  inputSchema.name = pol.name + " Policy Input";
+  inputSchema.schemaKind = PIMTYPES!SchemaKind#REQUEST;
+  inputSchema.semanticVersion = "1.0.0";
+  inputSchema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  inputSchema.additionalPropertiesAllowed = false;
+  inputSchema.generatedFromCimInformation = true;
+  if (hasText(pol.expression) or hasText(pol.naturalLanguageRule)) {
+    var constraint = new CONTRACTS!SchemaConstraint;
+    constraint.id = idFor("constraint_policy", pol);
+    constraint.name = pol.name + " Policy Constraint";
+    constraint.expressionLanguage = pol.expressionLanguage.orDefault("natural-language");
+    constraint.expression = firstText(pol.expression, pol.naturalLanguageRule);
+    constraint.message = pol.naturalLanguageRule;
+    constraint.severity = pol.violationSeverity;
+    inputSchema.constraints.add(constraint);
+    traceGenerated(pol, constraint, "TR-100", "MEDIUM");
+  }
+  pimRoot().schemas.add(inputSchema);
+  traceGenerated(pol, inputSchema, "TR-100", "MEDIUM");
+  contract.inputSchema = inputSchema;
   for (ev in pol.emitsEvents) {
     contract.emittedEvents.add(eventTypeFor(ev));
     fn.publishes.add(eventTypeFor(ev));
@@ -101,6 +158,28 @@ rule DecisionTable2ChoiceLogic
   pimRoot().functions.add(fn);
   traceGenerated(dt, fn, "TR-100", "MEDIUM");
 
+  for (decisionRule in dt.rules) {
+    var outcomeSchema = new CONTRACTS!Schema;
+    outcomeSchema.id = idFor("schema_decision_rule", decisionRule);
+    outcomeSchema.name = decisionRule.name + " Decision Outcome";
+    outcomeSchema.schemaKind = PIMTYPES!SchemaKind#RESPONSE;
+    outcomeSchema.semanticVersion = "1.0.0";
+    outcomeSchema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+    outcomeSchema.additionalPropertiesAllowed = false;
+    outcomeSchema.fields.add(fieldForWithDefault(outcomeSchema.id, "condition", PIMTYPES!FieldType#STRING, true, decisionRule.condition));
+    outcomeSchema.fields.add(fieldForWithDefault(outcomeSchema.id, "outcome", PIMTYPES!FieldType#STRING, true, decisionRule.outcome));
+    pimRoot().schemas.add(outcomeSchema);
+    if (fn.contract.outputSchema.isUndefined()) {
+      fn.contract.outputSchema = outcomeSchema;
+      fn.contract.validatesOutput = true;
+    }
+    traceGenerated(decisionRule, outcomeSchema, "TR-100", "MEDIUM");
+
+    if (decisionRule.resultingCommands.notEmpty() or decisionRule.resultingEvents.notEmpty()) {
+      manualDecision("TR-100", "Confirm routing semantics for decision rule '" + decisionRule.name + "' outcomes.", KERNEL!Severity#WARNING, false, Sequence{decisionRule, fn});
+    }
+  }
+
   if (not dt.complete) {
     manualDecision("TR-100", "Decision table '" + dt.name + "' is incomplete; define missing rules or default outcome.", KERNEL!Severity#ERROR, true, Sequence{dt, fn});
   }
@@ -127,54 +206,11 @@ rule BusinessProcess2Workflow
     wf.resilience = createDefaultResilience(wf, "TR-110", false);
   }
 
-  for (step in bp.steps) {
-    wf.states.add(workflowStateFor(step));
-  }
-  if (wf.states.notEmpty()) {
-    var starts = wf.states.select(s | s.stateKind = PIMTYPES!WorkflowStateKind#PASS);
-    if (starts.notEmpty()) {
-      wf.startState = starts.first();
-    }
-    else {
-      wf.startState = wf.states.sortedBy(s | s.orderIndex).first();
-    }
-    wf.endStates.addAll(wf.states.select(s | s.terminal));
-    if (wf.endStates.isEmpty()) {
-      wf.endStates.add(wf.states.sortedBy(s | s.orderIndex).last());
-    }
-  }
-  for (t in bp.transitions) {
-    wf.transitions.add(t.equivalents("ProcessTransition2WorkflowTransition").first());
-  }
-  if (wf.states.notEmpty()) {
-    for (ex in bp.exceptions) {
-      var handler = ex.equivalents("ExceptionScenario2ErrorHandler").first();
-      if (handler.isDefined()) {
-        wf.startState.catchHandlers.add(handler);
-      }
-      if (ex.compensationRequired) {
-        var comp = new WORKFLOW!CompensationPolicy;
-        comp.id = idFor("compensation", ex);
-        comp.name = ex.name + " Compensation";
-        comp.policyScope = "workflow compensation";
-        comp.productionRequired = true;
-        comp.compensationStrategy = ex.recoveryAction.orDefault("TBD");
-        comp.automatic = hasText(ex.recoveryAction);
-        comp.compensationEvents.addAll(ex.resultingEvents.collect(e | eventTypeFor(e)).select(e | e.isDefined()));
-        wf.startState.compensation = comp;
-        pimRoot().policies.add(comp);
-        traceGenerated(ex, comp, "TR-130", "MEDIUM");
-        if (not hasText(ex.recoveryAction)) {
-          manualDecision("TR-130", "Define compensation strategy for exception scenario '" + ex.name + "'.", KERNEL!Severity#WARNING, false, Sequence{ex, comp});
-        }
-      }
-    }
-  }
-
   pimRoot().workflows.add(wf);
   traceGenerated(bp, wf, "TR-110", "HIGH");
 }
 
+@greedy
 rule ProcessStep2WorkflowState
   transform s : CIMPROCESS!ProcessStep
   to ws : WORKFLOW!WorkflowState {
@@ -234,6 +270,81 @@ rule ProcessTransition2WorkflowTransition
   traceGenerated(t, wt, "TR-130", "HIGH");
 }
 
+post AttachWorkflowDetails {
+  for (bp in CIMPROCESS!BusinessProcess.all) {
+    var wf = workflowFor(bp);
+    if (wf.isUndefined()) {
+      continue;
+    }
+    for (step in bp.steps) {
+      var state = workflowStateFor(step);
+      if (state.isDefined() and not wf.states.includes(state)) {
+        wf.states.add(state);
+      }
+    }
+    if (wf.states.notEmpty()) {
+      var starts = wf.states.select(s | s.stateKind = PIMTYPES!WorkflowStateKind#PASS);
+      if (starts.notEmpty()) {
+        wf.startState = starts.first();
+      }
+      else {
+        wf.startState = wf.states.sortedBy(s | s.orderIndex).first();
+      }
+      wf.endStates.addAll(wf.states.select(s | s.terminal));
+      if (wf.endStates.isEmpty()) {
+        wf.endStates.add(wf.states.sortedBy(s | s.orderIndex).last());
+      }
+    }
+    for (t in bp.transitions) {
+      var transition = t.equivalents("ProcessTransition2WorkflowTransition").first();
+      if (transition.isDefined() and not wf.transitions.includes(transition)) {
+        wf.transitions.add(transition);
+      }
+    }
+    if (wf.states.notEmpty()) {
+      for (ex in bp.exceptions) {
+        var handler = ex.equivalents("ExceptionScenario2ErrorHandler").first();
+        if (handler.isDefined()) {
+          wf.startState.catchHandlers.add(handler);
+        }
+        if (ex.compensationRequired) {
+          var comp = new WORKFLOW!CompensationPolicy;
+          comp.id = idFor("compensation", ex);
+          comp.name = ex.name + " Compensation";
+          comp.policyScope = "workflow compensation";
+          comp.productionRequired = true;
+          comp.compensationStrategy = ex.recoveryAction.orDefault("TBD");
+          comp.automatic = hasText(ex.recoveryAction);
+          comp.compensationEvents.addAll(ex.resultingEvents.collect(e | eventTypeFor(e)).select(e | e.isDefined()));
+          wf.startState.compensation = comp;
+          pimRoot().policies.add(comp);
+          traceGenerated(ex, comp, "TR-130", "MEDIUM");
+          if (not hasText(ex.recoveryAction)) {
+            manualDecision("TR-130", "Define compensation strategy for exception scenario '" + ex.name + "'.", KERNEL!Severity#WARNING, false, Sequence{ex, comp});
+          }
+        }
+      }
+    }
+    for (state in wf.states.select(s | s.invokesAdapter.isDefined())) {
+      if (INTEGRATION!ExternalIntegrationFlow.all.select(f | f.source = state and f.target = state.invokesAdapter).isEmpty()) {
+        var flow = new INTEGRATION!ExternalIntegrationFlow;
+        flow.id = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
+        flow.name = state.name + " calls " + state.invokesAdapter.name;
+        flow.flowPurpose = "External adapter invocation from workflow state.";
+        flow.criticalPath = true;
+        flow.containsPersonalData = false;
+        flow.source = state;
+        flow.target = state.invokesAdapter;
+        flow.adapter = state.invokesAdapter;
+        flow.observability = createDefaultObservability(flow, "TR-140", true, true);
+        flow.resilience = createDefaultResilience(flow, "TR-140", false);
+        pimRoot().flows.add(flow);
+        traceGenerated(state, flow, "TR-140", "MEDIUM");
+      }
+    }
+  }
+}
+
 rule ExceptionScenario2ErrorHandler
   transform ex : CIMPROCESS!ExceptionScenario
   to eh : WORKFLOW!ErrorHandler {
@@ -281,6 +392,35 @@ rule SecurityConstraint2SecurityPolicies
   authz.authorizationRequired = sec.authorizationRequired;
   authz.ruleExpression = sc.authorizationRule;
   authz.resourceLevelAuthorization = sc.constrainedInformation.notEmpty();
+  authz.roleOrScopeRequired = sc.authorizationRule;
+
+  var protectedTargets = policyTargetsForAll(sc.constrainedCommands);
+  protectedTargets.addAll(policyTargetsForAll(sc.constrainedQueries));
+  protectedTargets.addAll(policyTargetsForAll(sc.constrainedElements));
+  sec.attachedTo.addAll(protectedTargets);
+  auth.attachedTo.addAll(protectedTargets);
+  authz.attachedTo.addAll(protectedTargets);
+
+  for (actor in sc.constrainedActors) {
+    var principal = actor.equivalents("Actor2Principal").first();
+    if (principal.isDefined()) {
+      authz.allowedPrincipals.add(principal);
+      for (target in protectedTargets) {
+        var perm = new SECURITY!Permission;
+        perm.id = newId("permission", sc.id + "_" + actor.id + "_" + target.id);
+        perm.name = actor.name + " access to " + target.name;
+        perm.effect = PIMTYPES!PermissionEffect#ALLOW;
+        perm.action = "invoke:review-required";
+        perm.resource = target.id;
+        perm.condition = sc.authorizationRule;
+        perm.leastPrivilegeConfirmed = hasText(sc.authorizationRule);
+        perm.targetResource = target;
+        principal.permissions.add(perm);
+        authz.permissions.add(perm);
+        traceGenerated(sc, perm, "TR-060", "MEDIUM");
+      }
+    }
+  }
 
   pimRoot().policies.add(sec);
   pimRoot().policies.add(auth);
@@ -296,17 +436,50 @@ rule SecurityConstraint2SecurityPolicies
 
 rule TemporalConstraint2TimeoutPolicy
   transform tc : CIMPROCESS!TemporalConstraint
-  to timeout : POLICY!TimeoutPolicy {
+  to timeout : POLICY!TimeoutPolicy,
+     ordering : POLICY!OrderingPolicy {
 
   timeout.id = idFor("timeout", tc);
   timeout.name = nameFor(tc, " Timeout");
   timeout.policyScope = firstText(tc.deadlineExpression, firstText(tc.durationExpression, tc.orderingExpression));
   timeout.productionRequired = tc.violationSeverity.asString() = "ERROR" or tc.violationSeverity.asString() = "CRITICAL" or tc.violationSeverity.asString() = "BLOCKER";
-  timeout.timeoutSeconds = 0;
-  timeout.clientTimeoutSeconds = 0;
-  timeout.attachedTo.addAll(tc.constrainedElements);
+  timeout.timeoutSeconds = secondsFromDurationExpression(firstText(tc.durationExpression, tc.deadlineExpression));
+  timeout.clientTimeoutSeconds = timeout.timeoutSeconds;
+  timeout.attachedTo.addAll(policyTargetsForAll(tc.constrainedElements));
   pimRoot().policies.add(timeout);
   traceGenerated(tc, timeout, "TR-130", "MEDIUM");
+
+  ordering.id = idFor("ordering", tc);
+  ordering.name = nameFor(tc, " Ordering");
+  ordering.policyScope = tc.orderingExpression;
+  ordering.productionRequired = timeout.productionRequired;
+  if (hasText(tc.orderingExpression)) {
+    ordering.orderingRequirement = PIMTYPES!OrderingRequirement#PER_KEY;
+    ordering.orderingKey = tc.orderingExpression;
+    ordering.strictOrderingRequired = tc.violationSeverity.asString() = "ERROR" or tc.violationSeverity.asString() = "CRITICAL" or tc.violationSeverity.asString() = "BLOCKER";
+  }
+  else {
+    ordering.orderingRequirement = PIMTYPES!OrderingRequirement#NONE;
+    ordering.orderingKey = "";
+    ordering.strictOrderingRequired = false;
+  }
+  ordering.attachedTo.addAll(policyTargetsForAll(tc.constrainedElements));
+  if (hasText(tc.orderingExpression)) {
+    pimRoot().policies.add(ordering);
+    traceGenerated(tc, ordering, "TR-130", "MEDIUM");
+  }
+
+  for (target in policyTargetsForAll(tc.constrainedElements)) {
+    if (target.isKindOf(WORKFLOW!Workflow) and timeout.timeoutSeconds > 0) {
+      target.expectedMaxDurationSeconds = timeout.timeoutSeconds;
+      if (target.resilience.isUndefined()) {
+        target.resilience = createDefaultResilience(target, "TR-130", false);
+      }
+    }
+    if (target.isKindOf(WORKFLOW!WorkflowState) and timeout.timeoutSeconds > 0) {
+      target.timeoutSeconds = timeout.timeoutSeconds;
+    }
+  }
 
   if (hasText(tc.deadlineExpression)) {
     var schedule = new INTEGRATION!Schedule;
@@ -322,12 +495,17 @@ rule TemporalConstraint2TimeoutPolicy
 
   if ((hasText(tc.deadlineExpression) or hasText(tc.durationExpression)) and timeout.timeoutSeconds = 0) {
     manualDecision("TR-130", "Translate temporal constraint '" + tc.name + "' into concrete provider-independent timeout and schedule semantics.", KERNEL!Severity#WARNING, timeout.productionRequired, Sequence{tc, timeout});
+    readinessFinding("TR-130", KERNEL!FindingType#VALIDATION_WARNING, tc.violationSeverity, "Temporal constraint '" + tc.name + "' could not be converted to seconds.", "Provide duration/deadline as a parseable provider-independent duration.", timeout.productionRequired, Sequence{tc, timeout});
+  }
+  if (hasText(tc.orderingExpression)) {
+    manualDecision("TR-130", "Confirm ordering semantics and idempotency strategy for temporal constraint '" + tc.name + "'.", KERNEL!Severity#WARNING, ordering.strictOrderingRequired, Sequence{tc, ordering});
   }
 }
 
 rule AvailabilityReliabilityNfr2ResiliencePolicy
   transform nfr : CIMGOV!NonFunctionalRequirement
-  to pol : POLICY!ResiliencePolicy {
+  to pol : POLICY!ResiliencePolicy,
+     backup : POLICY!BackupPolicy {
 
   guard : nfr.qualityType.asString() = "AVAILABILITY" or nfr.qualityType.asString() = "RELIABILITY"
 
@@ -348,14 +526,29 @@ rule AvailabilityReliabilityNfr2ResiliencePolicy
   retry.backoffRate = 2.0d;
   retry.maxDelaySeconds = 60;
   pol.retry = retry;
-  pol.attachedTo.addAll(nfr.constrainedElements);
+  pol.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
   pimRoot().policies.add(pol);
   traceGenerated(nfr, pol, "TR-060", "MEDIUM");
+
+  backup.id = idFor("backup_nfr", nfr);
+  backup.name = nameFor(nfr, " Backup Policy");
+  backup.policyScope = firstText(nfr.metric, nfr.target);
+  backup.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  backup.backupRequired = true;
+  backup.backupFrequency = "TBD";
+  backup.recoveryPointObjective = nfr.target;
+  backup.recoveryTimeObjective = nfr.fitCriterion;
+  backup.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
+  pimRoot().policies.add(backup);
+  traceGenerated(nfr, backup, "TR-060", "MEDIUM");
 }
 
 rule PerformanceNfr2TimeoutPolicy
   transform nfr : CIMGOV!NonFunctionalRequirement
-  to pol : POLICY!TimeoutPolicy {
+  to pol : POLICY!TimeoutPolicy,
+     concurrency : POLICY!ConcurrencyPolicy,
+     cache : POLICY!CachePolicy,
+     rateLimit : POLICY!RateLimitPolicy {
 
   guard : nfr.qualityType.asString() = "PERFORMANCE" or nfr.qualityType.asString() = "LATENCY" or nfr.qualityType.asString() = "SCALABILITY"
 
@@ -363,12 +556,50 @@ rule PerformanceNfr2TimeoutPolicy
   pol.name = nameFor(nfr, " Timeout Policy");
   pol.policyScope = firstText(nfr.metric, nfr.target);
   pol.productionRequired = nfr.mandatory or nfr.productionBlocking;
-  pol.timeoutSeconds = 0;
-  pol.clientTimeoutSeconds = 0;
-  pol.attachedTo.addAll(nfr.constrainedElements);
+  pol.timeoutSeconds = secondsFromDurationExpression(nfr.target);
+  pol.clientTimeoutSeconds = pol.timeoutSeconds;
+  pol.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
   pimRoot().policies.add(pol);
   traceGenerated(nfr, pol, "TR-060", "MEDIUM");
-  manualDecision("TR-060", "Translate performance/scalability NFR '" + nfr.name + "' into timeout, concurrency, cache, and rate-limit values.", KERNEL!Severity#WARNING, nfr.productionBlocking, Sequence{nfr, pol});
+
+  concurrency.id = idFor("concurrency_nfr", nfr);
+  concurrency.name = nameFor(nfr, " Concurrency Policy");
+  concurrency.policyScope = firstText(nfr.metric, nfr.target);
+  concurrency.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  concurrency.maxConcurrency = 0;
+  concurrency.reservedConcurrencyHint = 0;
+  concurrency.burstAssumption = 0;
+  concurrency.perSourceLimitRequired = nfr.qualityType.asString() = "SCALABILITY";
+  concurrency.scalingRationale = nfr.fitCriterion;
+  concurrency.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
+  pimRoot().policies.add(concurrency);
+  traceGenerated(nfr, concurrency, "TR-060", "MEDIUM");
+
+  cache.id = idFor("cache_nfr", nfr);
+  cache.name = nameFor(nfr, " Cache Policy");
+  cache.policyScope = firstText(nfr.metric, nfr.target);
+  cache.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  cache.cacheRequired = nfr.qualityType.asString() = "PERFORMANCE" or nfr.qualityType.asString() = "LATENCY";
+  cache.ttlSeconds = 0;
+  cache.cacheKey = "TBD";
+  cache.privateCache = true;
+  cache.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
+  pimRoot().policies.add(cache);
+  traceGenerated(nfr, cache, "TR-060", "MEDIUM");
+
+  rateLimit.id = idFor("ratelimit_nfr", nfr);
+  rateLimit.name = nameFor(nfr, " Rate Limit Policy");
+  rateLimit.policyScope = firstText(nfr.metric, nfr.target);
+  rateLimit.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  rateLimit.requestsPerSecond = 0;
+  rateLimit.burstLimit = 0;
+  rateLimit.keyBy = "client";
+  rateLimit.clientSpecific = true;
+  rateLimit.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
+  pimRoot().policies.add(rateLimit);
+  traceGenerated(nfr, rateLimit, "TR-060", "MEDIUM");
+
+  manualDecision("TR-060", "Translate performance/scalability NFR '" + nfr.name + "' into concrete timeout, concurrency, cache, and rate-limit values.", KERNEL!Severity#WARNING, nfr.productionBlocking, Sequence{nfr, pol, concurrency, cache, rateLimit});
 }
 
 rule AuditOperabilityNfr2Observability
@@ -388,7 +619,55 @@ rule AuditOperabilityNfr2Observability
   pol.dashboardRequired = nfr.productionBlocking;
   pol.correlationIdRequired = true;
   pol.correlationIdField = "correlationId";
-  pol.attachedTo.addAll(nfr.constrainedElements);
+  pol.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
+  var logging = new POLICY!LoggingPolicy;
+  logging.id = idFor("logging_nfr", nfr);
+  logging.name = nameFor(nfr, " Logging");
+  logging.policyScope = "structured logging";
+  logging.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  logging.logFormat = "structured-json";
+  logging.logLevel = "INFO";
+  logging.structuredLogging = true;
+  logging.includeCorrelationId = true;
+  logging.maskSensitiveData = true;
+  logging.retentionPeriod = "TBD";
+  pol.logging = logging;
+  traceGenerated(nfr, logging, "TR-060", "MEDIUM");
+
+  var tracing = new POLICY!TracingPolicy;
+  tracing.id = idFor("tracing_nfr", nfr);
+  tracing.name = nameFor(nfr, " Tracing");
+  tracing.policyScope = "distributed tracing";
+  tracing.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  tracing.tracingRequired = true;
+  tracing.samplingPolicy = "TBD";
+  tracing.propagateTraceContext = true;
+  pol.tracing = tracing;
+  traceGenerated(nfr, tracing, "TR-060", "MEDIUM");
+
+  var metric = new POLICY!MetricPolicy;
+  metric.id = idFor("metric_nfr", nfr);
+  metric.name = nameFor(nfr, " Metric");
+  metric.policyScope = "operational metric";
+  metric.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  metric.metricName = firstText(nfr.metric, nfr.name);
+  metric.unit = "";
+  metric.statistic = "TBD";
+  metric.businessMetric = nfr.qualityType.asString() = "AUDITABILITY";
+  pol.metrics.add(metric);
+  traceGenerated(nfr, metric, "TR-060", "MEDIUM");
+
+  var slo = new POLICY!Slo;
+  slo.id = idFor("slo_nfr", nfr);
+  slo.name = nameFor(nfr, " SLO");
+  slo.objectiveName = nfr.name;
+  slo.metric = nfr.metric;
+  slo.target = nfr.target;
+  slo.measurementWindow = nfr.measurementMethod;
+  slo.errorBudgetPolicy = "TBD";
+  pol.slos.add(slo);
+  traceGenerated(nfr, slo, "TR-060", "MEDIUM");
+
   pimRoot().policies.add(pol);
   traceGenerated(nfr, pol, "TR-060", "MEDIUM");
 }
@@ -407,7 +686,51 @@ rule CostNfr2CostPolicy
   pol.costDriver = nfr.metric;
   pol.optimizationIntent = nfr.fitCriterion;
   pol.alarmsRequired = nfr.productionBlocking;
-  pol.attachedTo.addAll(nfr.constrainedElements);
+  pol.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
+  pimRoot().policies.add(pol);
+  traceGenerated(nfr, pol, "TR-060", "MEDIUM");
+}
+
+rule DataQualityNfr2SchemaConstraintAndReadiness
+  transform nfr : CIMGOV!NonFunctionalRequirement
+  to pol : POLICY!DataProtectionPolicy {
+
+  guard : nfr.qualityType.asString() = "DATA_QUALITY"
+
+  pol.id = idFor("dataquality_nfr", nfr);
+  pol.name = nameFor(nfr, " Data Quality Policy");
+  pol.policyScope = firstText(nfr.metric, nfr.target);
+  pol.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  pol.classification = "DATA_QUALITY";
+  pol.encryptionRequired = false;
+  pol.maskingRequired = false;
+  pol.tokenizationRequired = false;
+  pol.accessAuditRequired = nfr.productionBlocking;
+  pol.deletionRequired = false;
+  pol.retentionPeriod = "";
+  pol.residencyRequirement = "";
+  pol.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
+  pimRoot().policies.add(pol);
+  traceGenerated(nfr, pol, "TR-060", "MEDIUM");
+  readinessCheck("DATA_QUALITY_NFR_" + nfr.id, KERNEL!Severity#WARNING, hasText(nfr.fitCriterion),
+    "Data quality NFR has a measurable fit criterion.", "Define validation rules or measurable data quality thresholds.", Sequence{nfr, pol});
+}
+
+rule GenericComplianceNfr2CompliancePolicy
+  transform nfr : CIMGOV!NonFunctionalRequirement
+  to pol : POLICY!CompliancePolicy {
+
+  guard : nfr.qualityType.asString() = "COMPLIANCE" and not nfr.isKindOf(CIMGOV!ComplianceConstraint)
+
+  pol.id = idFor("compliance_nfr", nfr);
+  pol.name = nameFor(nfr, " Compliance Policy");
+  pol.policyScope = firstText(nfr.metric, nfr.target);
+  pol.productionRequired = nfr.mandatory or nfr.productionBlocking;
+  pol.regulation = nfr.sourceType.asString();
+  pol.controlId = nfr.id;
+  pol.evidenceType = nfr.fitCriterion;
+  pol.auditReportRequired = nfr.productionBlocking;
+  pol.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
   pimRoot().policies.add(pol);
   traceGenerated(nfr, pol, "TR-060", "MEDIUM");
 }

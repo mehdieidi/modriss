@@ -124,6 +124,26 @@ operation createEventChannelsAndFlows() {
         pimRoot().flows.add(flow);
       }
     }
+    for (rejectedCmd in e.rejectedByCommands) {
+      var rejectionProducer = commandFunction(rejectedCmd);
+      if (rejectionProducer.isDefined()) {
+        rejectionProducer.publishes.add(et);
+        ch.producers.add(rejectionProducer);
+        et.producedBy.add(rejectionProducer);
+        var rejectionFlow = new INTEGRATION!EventFlow;
+        rejectionFlow.id = newId("flow_event", rejectionProducer.id + "_" + et.id + "_rejection");
+        rejectionFlow.name = rejectionProducer.name + " publishes rejection " + et.name;
+        rejectionFlow.source = rejectionProducer;
+        rejectionFlow.target = ch;
+        rejectionFlow.eventType = et;
+        rejectionFlow.channel = ch;
+        rejectionFlow.criticalPath = false;
+        rejectionFlow.containsPersonalData = et.containsPersonalData;
+        rejectionFlow.observability = createDefaultObservability(rejectionFlow, "TR-140", true, false);
+        pimRoot().flows.add(rejectionFlow);
+        traceGenerated(e, rejectionFlow, "TR-140", "MEDIUM");
+      }
+    }
     for (es in e.causedByExternalSystems) {
       var adapterProducer = adapterFor(es);
       if (adapterProducer.isDefined()) {
@@ -292,6 +312,136 @@ operation createPolicyRoutingRules() {
   }
 }
 
+operation createExternalIntegrationFlows() {
+  for (state in WORKFLOW!WorkflowState.all.select(s | s.invokesAdapter.isDefined())) {
+    var flow = new INTEGRATION!ExternalIntegrationFlow;
+    flow.id = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
+    flow.name = state.name + " calls " + state.invokesAdapter.name;
+    flow.flowPurpose = "External adapter invocation from workflow state.";
+    flow.criticalPath = true;
+    flow.containsPersonalData = false;
+    flow.source = state;
+    flow.target = state.invokesAdapter;
+    flow.adapter = state.invokesAdapter;
+    flow.observability = createDefaultObservability(flow, "TR-140", true, true);
+    flow.resilience = createDefaultResilience(flow, "TR-140", false);
+    pimRoot().flows.add(flow);
+    traceGenerated(state.invokesAdapter, flow, "TR-140", "MEDIUM");
+  }
+  for (adapter in EXTERNAL!ExternalAdapter.all) {
+    if (not hasText(adapter.expectedSla) and adapter.resilience.isDefined()) {
+      adapter.resilience.reviewStatus = "review-required";
+      adapter.resilience.lifecycleStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
+    }
+  }
+}
+
+operation firstOwnedFunction(service : DEPLOY!ServerlessService) {
+  if (service.ownsFunctions.notEmpty()) {
+    return service.ownsFunctions.first();
+  }
+  return null;
+}
+
+operation createCapabilityDependencyArtifacts() {
+  for (dep in CIMORG!CapabilityDependency.all) {
+    var sourceService = serviceFor(dep.source);
+    var targetService = serviceFor(dep.target);
+    if (sourceService.isUndefined() or targetService.isUndefined() or sourceService = targetService) {
+      continue;
+    }
+
+    var messageSchema = new CONTRACTS!Schema;
+    messageSchema.id = idFor("schema_capability_dependency", dep);
+    messageSchema.name = dep.source.name + " to " + dep.target.name + " Dependency Message";
+    messageSchema.schemaKind = PIMTYPES!SchemaKind#MESSAGE;
+    messageSchema.semanticVersion = "1.0.0";
+    messageSchema.compatibility = PIMTYPES!SchemaCompatibility#BACKWARD;
+    messageSchema.additionalPropertiesAllowed = false;
+    messageSchema.generatedFromCimInformation = false;
+    messageSchema.fields.add(fieldFor(messageSchema.id, "correlationId", PIMTYPES!FieldType#STRING, true));
+    messageSchema.fields.add(fieldForWithDefault(messageSchema.id, "dependencyReason", PIMTYPES!FieldType#STRING, false, dep.dependencyReason));
+    pimRoot().schemas.add(messageSchema);
+    traceGenerated(dep, messageSchema, "TR-140", "MEDIUM");
+
+    var queue = new INTEGRATION!Queue;
+    queue.id = idFor("queue_capability_dependency", dep);
+    queue.name = dep.source.name + " to " + dep.target.name + " Dependency Queue";
+    queue.integrationPurpose = dep.dependencyReason.orDefault("Asynchronous collaboration between capability services.");
+    queue.channelKind = PIMTYPES!ChannelKind#QUEUE;
+    queue.orderingRequirement = PIMTYPES!OrderingRequirement#NONE;
+    queue.deliverySemantics = PIMTYPES!DeliverySemantics#AT_LEAST_ONCE;
+    queue.encrypted = false;
+    queue.replayRequired = false;
+    queue.deadLetterRequired = true;
+    queue.fifoRequired = false;
+    queue.deduplicationRequired = false;
+    queue.maxReceiveAttempts = 3;
+    queue.visibilityTimeoutSeconds = 60;
+    queue.messageRetentionSeconds = 345600;
+    queue.longPollingRequired = true;
+    queue.observability = createDefaultObservability(queue, "TR-140", true, dep.criticalPath);
+    queue.resilience = createDefaultResilience(queue, "TR-140", true);
+    sourceService.ownsChannels.add(queue);
+    pimRoot().channels.add(queue);
+    traceGenerated(dep, queue, "TR-140", "MEDIUM");
+
+    var sourceFn = firstOwnedFunction(sourceService);
+    if (sourceFn.isDefined()) {
+      var producerFlow = new INTEGRATION!MessageFlow;
+      producerFlow.id = newId("flow_message", dep.id + "_" + sourceFn.id + "_" + queue.id);
+      producerFlow.name = sourceFn.name + " sends " + queue.name;
+      producerFlow.flowPurpose = dep.dependencyReason;
+      producerFlow.criticalPath = dep.criticalPath;
+      producerFlow.containsPersonalData = false;
+      producerFlow.source = sourceFn;
+      producerFlow.target = queue;
+      producerFlow.queue = queue;
+      producerFlow.messageSchema = messageSchema;
+      producerFlow.observability = createDefaultObservability(producerFlow, "TR-140", true, dep.criticalPath);
+      producerFlow.resilience = createDefaultResilience(producerFlow, "TR-140", true);
+      pimRoot().flows.add(producerFlow);
+      traceGenerated(dep, producerFlow, "TR-140", "MEDIUM");
+    }
+
+    var targetFn = firstOwnedFunction(targetService);
+    if (targetFn.isDefined()) {
+      queue.consumers.add(targetFn);
+      var trigger = new COMPUTE!Trigger;
+      trigger.id = newId("trigger_queue", dep.id + "_" + targetFn.id);
+      trigger.name = targetFn.name + " Dependency Queue Trigger";
+      trigger.triggerKind = "QUEUE";
+      trigger.invocationMode = PIMTYPES!InvocationMode#ASYNCHRONOUS;
+      trigger.enabled = true;
+      trigger.generatedFromFlow = true;
+      trigger.source = queue;
+      trigger.invokesFunction = targetFn;
+      trigger.resilience = createDefaultResilience(trigger, "TR-140", true);
+      pimRoot().triggers.add(trigger);
+      traceGenerated(dep, trigger, "TR-140", "MEDIUM");
+
+      var consumerFlow = new INTEGRATION!MessageFlow;
+      consumerFlow.id = newId("flow_message", dep.id + "_" + queue.id + "_" + targetFn.id);
+      consumerFlow.name = queue.name + " invokes " + targetFn.name;
+      consumerFlow.flowPurpose = dep.dependencyReason;
+      consumerFlow.criticalPath = dep.criticalPath;
+      consumerFlow.containsPersonalData = false;
+      consumerFlow.source = queue;
+      consumerFlow.target = targetFn;
+      consumerFlow.queue = queue;
+      consumerFlow.messageSchema = messageSchema;
+      consumerFlow.observability = createDefaultObservability(consumerFlow, "TR-140", true, dep.criticalPath);
+      consumerFlow.resilience = createDefaultResilience(consumerFlow, "TR-140", true);
+      pimRoot().flows.add(consumerFlow);
+      traceGenerated(dep, consumerFlow, "TR-140", "MEDIUM");
+    }
+
+    if (dep.criticalPath) {
+      manualDecision("TR-140", "Confirm integration pattern, SLO, retry, and ownership for critical capability dependency from '" + dep.source.name + "' to '" + dep.target.name + "'.", KERNEL!Severity#ERROR, true, Sequence{dep, queue});
+    }
+  }
+}
+
 operation containsProviderSpecificTerm(text) {
   if (not hasText(text)) {
     return false;
@@ -319,6 +469,25 @@ operation createDataAccesses() {
       commandFunction(cmd).writes.add(storeForAggregate(cmd.targetAggregate));
       pimRoot().dataAccesses.add(da);
     }
+    for (condition in cmd.preconditions) {
+      for (concept in condition.referencedConcepts.select(c | c.isKindOf(CIMDOMAIN!DomainEntity))) {
+        var readStore = storeForEntity(concept);
+        if (readStore.isDefined() and commandFunction(cmd).isDefined()) {
+          var dac = new DATA!DataAccess;
+          dac.id = newId("dataaccess", commandFunction(cmd).id + "_" + readStore.id + "_" + condition.id + "_precondition_read");
+          dac.name = commandFunction(cmd).name + " checks " + readStore.name;
+          dac.mode = PIMTYPES!DataAccessMode#READ;
+          dac.transactional = false;
+          dac.purpose = "Command precondition read";
+          setFeature(dac, "function", commandFunction(cmd));
+          dac.store = readStore;
+          dac.dataModels.addAll(readStore.ownedDataModels);
+          commandFunction(cmd).reads.add(readStore);
+          pimRoot().dataAccesses.add(dac);
+          traceGenerated(condition, dac, "TR-140", "MEDIUM");
+        }
+      }
+    }
   }
   for (q in CIMBEHAVIOR!Query.all) {
     for (entity in q.reads) {
@@ -338,6 +507,87 @@ operation createDataAccesses() {
         pimRoot().dataAccesses.add(daq);
       }
     }
+  }
+  for (pol in CIMPROCESS!Policy.all) {
+    var fn = policyFunction(pol);
+    if (fn.isDefined()) {
+      for (guardCommand in pol.guards.select(g | g.targetAggregate.isDefined())) {
+        var guardedStore = storeForAggregate(guardCommand.targetAggregate);
+        if (guardedStore.isDefined()) {
+          var dap = new DATA!DataAccess;
+          dap.id = newId("dataaccess", fn.id + "_" + guardedStore.id + "_" + guardCommand.id + "_policy_read");
+          dap.name = fn.name + " reads " + guardedStore.name;
+          dap.mode = PIMTYPES!DataAccessMode#READ;
+          dap.transactional = false;
+          dap.purpose = "Policy guard evaluation";
+          setFeature(dap, "function", fn);
+          dap.store = guardedStore;
+          dap.dataModels.addAll(guardedStore.ownedDataModels);
+          fn.reads.add(guardedStore);
+          pimRoot().dataAccesses.add(dap);
+          traceGenerated(pol, dap, "TR-140", "MEDIUM");
+        }
+      }
+    }
+  }
+  for (es in CIMORG!ExternalSystem.all.select(e | e.storesBusinessData)) {
+    manualDecision("TR-140", "Confirm storage ownership and access pattern for external system '" + es.name + "' because it stores business data.", KERNEL!Severity#WARNING, false, Sequence{es, adapterFor(es)});
+  }
+}
+
+operation schemaContainsItem(schema : CONTRACTS!Schema, item : CIMDOMAIN!InformationItem) {
+  return schema.fields.exists(f | f.generatedFrom = item.id);
+}
+
+operation attachDataProtectionPolicies() {
+  for (item in CIMDOMAIN!InformationItem.all.select(i | i.classification.isDefined())) {
+    var policies = POLICY!DataProtectionPolicy.all.select(p | p.generatedFrom = item.classification.id);
+    for (policy in policies) {
+      var schemas = CONTRACTS!Schema.all.select(s | schemaContainsItem(s, item));
+      policy.attachedTo.addAll(schemas);
+
+      for (store in DATA!DataStore.all.select(ds | ds.ownedDataModels.exists(dm | dm.storageFields.exists(df | df.generatedFrom = item.id)))) {
+        if (not policy.attachedTo.includes(store)) policy.attachedTo.add(store);
+        if (not store.dataProtectionPolicies.includes(policy)) store.dataProtectionPolicies.add(policy);
+      }
+
+      for (route in API!ApiRoute.all.select(r |
+          (r.requestSchema.isDefined() and schemaContainsItem(r.requestSchema, item)) or
+          (r.responseSchema.isDefined() and schemaContainsItem(r.responseSchema, item)))) {
+        if (not policy.attachedTo.includes(route)) policy.attachedTo.add(route);
+        if (route.functionIntegration.isDefined() and not policy.attachedTo.includes(route.functionIntegration)) {
+          policy.attachedTo.add(route.functionIntegration);
+        }
+      }
+
+      for (flow in INTEGRATION!Flow.all.select(f | f.containsPersonalData)) {
+        if (not policy.attachedTo.includes(flow)) policy.attachedTo.add(flow);
+      }
+    }
+  }
+}
+
+operation ensureGeneratedOperationalPolicies() {
+  for (fn in COMPUTE!Function.all.select(f | f.observability.isUndefined())) {
+    fn.observability = createDefaultObservability(fn, "TR-150", false, false);
+  }
+  for (api in API!Api.all.select(a | a.observability.isUndefined())) {
+    api.observability = createDefaultObservability(api, "TR-150", true, false);
+  }
+  for (wf in WORKFLOW!Workflow.all.select(w | w.observability.isUndefined())) {
+    wf.observability = createDefaultObservability(wf, "TR-150", true, isTrue(w.expressLowLatencyRequired));
+  }
+  for (adapter in EXTERNAL!ExternalAdapter.all.select(a | a.observability.isUndefined())) {
+    adapter.observability = createDefaultObservability(adapter, "TR-150", true, true);
+  }
+  for (channel in INTEGRATION!EventChannel.all.select(c | c.observability.isUndefined())) {
+    channel.observability = createDefaultObservability(channel, "TR-150", true, isTrue(c.deadLetterRequired));
+  }
+  for (trigger in COMPUTE!Trigger.all.select(t | t.invocationMode = PIMTYPES!InvocationMode#ASYNCHRONOUS and t.resilience.isUndefined())) {
+    trigger.resilience = createDefaultResilience(trigger, "TR-150", true);
+  }
+  for (fnAsync in COMPUTE!Function.all.select(f | f.executionModel = PIMTYPES!ExecutionModel#ASYNC_EVENT and f.resilience.isUndefined())) {
+    fnAsync.resilience = createDefaultResilience(fnAsync, "TR-150", true);
   }
 }
 
@@ -409,7 +659,11 @@ post LinkAndDerive {
   createEventChannelsAndFlows();
   createTopicSubscriptions();
   createPolicyRoutingRules();
+  createExternalIntegrationFlows();
+  createCapabilityDependencyArtifacts();
   createDataAccesses();
+  attachDataProtectionPolicies();
+  ensureGeneratedOperationalPolicies();
 }
 
 post DeploymentAndConfiguration {
@@ -463,6 +717,9 @@ post DeploymentAndConfiguration {
     corr.required = true;
     cfg.parameters.add(corr);
     pimRoot().configurations.add(cfg);
+    traceGenerated(s, cfg, "TR-150", "MEDIUM");
+    traceGenerated(s, logLevel, "TR-150", "MEDIUM");
+    traceGenerated(s, corr, "TR-150", "MEDIUM");
   }
 
   for (adapter in EXTERNAL!ExternalAdapter.all) {
@@ -477,6 +734,7 @@ post DeploymentAndConfiguration {
       sec.environmentSpecific = true;
       cred.secret = sec;
       pimRoot().secrets.add(sec);
+      traceGenerated(adapter, sec, "TR-150", "MEDIUM");
     }
   }
 }
@@ -523,6 +781,9 @@ post ValidationAndReadinessClosure {
   }
   for (store in DATA!DataStore.all.select(s | s.containsPersonalData and not s.encrypted)) {
     readinessFinding("TR-170", KERNEL!FindingType#SECURITY_RISK, KERNEL!Severity#ERROR, "Sensitive store '" + store.name + "' is not encrypted.", "Enable provider-independent encryption requirement.", true, Sequence{store});
+  }
+  for (storeDp in DATA!DataStore.all.select(s | s.containsPersonalData and s.dataProtectionPolicies.isEmpty())) {
+    readinessFinding("TR-170", KERNEL!FindingType#POLICY_VIOLATION, KERNEL!Severity#ERROR, "Personal data store '" + storeDp.name + "' has no data protection policy.", "Attach a DataProtectionPolicy generated from classification or privacy constraints.", true, Sequence{storeDp});
   }
   for (du in DEPLOY!DeploymentUnit.all.select(d | d.contains.isEmpty())) {
     readinessFinding("TR-170", KERNEL!FindingType#DEPLOYMENT_RISK, KERNEL!Severity#WARNING, "Deployment unit '" + du.name + "' has no deployable contents.", "Review service ownership and generated behavior.", false, Sequence{du});

@@ -53,6 +53,43 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem) {
   f.sensitiveData = isSensitive(item);
   f.secretValue = isSecret(item);
   f.descriptionForConsumers = firstText(item.summary, item.description);
+
+  if (item.subItems.notEmpty()) {
+    var objectSchema = new CONTRACTS!Schema;
+    objectSchema.id = idFor("schema_item", item);
+    objectSchema.name = nameFor(item, " Object Schema");
+    objectSchema.schemaKind = PIMTYPES!SchemaKind#VALUE_OBJECT;
+    objectSchema.semanticVersion = "1.0.0";
+    objectSchema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+    objectSchema.additionalPropertiesAllowed = false;
+    objectSchema.generatedFromCimInformation = true;
+    for (subItem in item.subItems) {
+      objectSchema.fields.add(createSchemaField(subItem));
+    }
+    pimRoot().schemas.add(objectSchema);
+    traceGenerated(item, objectSchema, "TR-040", "MEDIUM");
+    f.objectSchema = objectSchema;
+  }
+
+  if (f.fieldType = PIMTYPES!FieldType#ENUM and hasText(item.allowedValues)) {
+    var rawValues = item.allowedValues.replace(";", ",").replace("|", ",").split(",");
+    for (rawValue in rawValues) {
+      if (hasText(rawValue)) {
+        var literal = new CONTRACTS!SchemaEnumLiteral;
+        literal.id = newId("enum_literal", item.id + "_" + rawValue.trim());
+        literal.name = rawValue.trim();
+        literal.literal = rawValue.trim();
+        literal.displayName = rawValue.trim();
+        literal.generatedByTransformation = true;
+        literal.manuallyMaintained = false;
+        f.enumValues.add(literal);
+      }
+    }
+    if (f.enumValues.isEmpty()) {
+      manualDecision("TR-040", "Parse allowed values for enumeration information item '" + item.name + "'.", KERNEL!Severity#WARNING, false, Sequence{item, f});
+    }
+  }
+
   traceGenerated(item, f, "TR-040", "HIGH");
 
   if (item.type.isUndefined()) {
@@ -62,6 +99,21 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem) {
     manualDecision("TR-040", "Classify privacy and sensitivity for information item '" + item.name + "'.", KERNEL!Severity#ERROR, true, Sequence{item, f});
   }
   return f;
+}
+
+operation createConditionConstraint(condition : CIMBEHAVIOR!Condition, ruleId : String) {
+  var c = new CONTRACTS!SchemaConstraint;
+  c.id = idFor("constraint", condition);
+  c.name = nameFor(condition, " Constraint");
+  c.expressionLanguage = condition.expressionLanguage.orDefault("natural-language");
+  c.expression = firstText(condition.expression, condition.naturalLanguage);
+  c.message = condition.naturalLanguage.orDefault("Review business condition.");
+  c.severity = KERNEL!Severity#WARNING;
+  traceGenerated(condition, c, ruleId, "MEDIUM");
+  if (condition.mustBeAutomatable and not hasText(condition.expression)) {
+    manualDecision(ruleId, "Define automatable expression for condition '" + condition.name + "'.", KERNEL!Severity#ERROR, true, Sequence{condition, c});
+  }
+  return c;
 }
 
 operation createDataField(item : CIMDOMAIN!InformationItem, identityItem) {
@@ -134,6 +186,9 @@ operation createCommandRequestSchema(cmd : CIMBEHAVIOR!Command) {
   s.generatedFromCimInformation = true;
   for (item in cmd.input) {
     s.fields.add(createSchemaField(item));
+  }
+  for (condition in cmd.preconditions) {
+    s.constraints.add(createConditionConstraint(condition, "TR-070"));
   }
   addCorrelationFields(s);
   if (hasText(cmd.idempotencyBusinessKey) or cmd.duplicateSubmissionPossible) {
