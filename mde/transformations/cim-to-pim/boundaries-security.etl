@@ -1,0 +1,164 @@
+import "lib/common.eol";
+import "lib/mapping.eol";
+import "lib/trace-readiness.eol";
+import "lib/pim-builders.eol";
+
+operation capabilityInBoundedContext(cap : CIMORG!BusinessCapability) {
+  return CIMORG!BoundedContextCandidate.all.exists(bc | bc.capabilities.includes(cap));
+}
+
+rule BoundedContext2Service
+  transform bc : CIMORG!BoundedContextCandidate
+  to s : DEPLOY!ServerlessService {
+
+  s.id = idFor("svc_ctx", bc);
+  s.name = nameFor(bc, " Service");
+  s.boundaryType = PIMTYPES!BoundaryType#BOUNDED_CONTEXT_BASED;
+  s.responsibility = firstText(bc.languageBoundary, firstText(bc.summary, "Service boundary for " + bc.name));
+  s.ownerTeam = bc.ownershipBoundary;
+  s.businessCapabilityRef = collectionText(bc.capabilities);
+  s.externallyExposed = bc.externalIntegrationBoundary;
+  s.ownsData = bc.entities.notEmpty();
+
+  pimRoot().services.add(s);
+  traceGenerated(bc, s, "TR-010", "HIGH");
+}
+
+rule Capability2Service
+  transform cap : CIMORG!BusinessCapability
+  to s : DEPLOY!ServerlessService {
+
+  guard : not capabilityInBoundedContext(cap)
+
+  s.id = idFor("svc_cap", cap);
+  s.name = nameFor(cap, " Service");
+  s.boundaryType = PIMTYPES!BoundaryType#CAPABILITY_BASED;
+  s.responsibility = cap.responsibility.orDefault("Realizes business capability " + cap.name);
+  s.ownerTeam = cap.ownerName;
+  s.businessCapabilityRef = cap.id;
+  s.externallyExposed = cap.containsCommands.exists(c | c.userInitiated) or cap.containsQueries.exists(q | q.issuedBy.exists(a | isPublicActor(a)));
+  s.ownsData = cap.managesEntities.notEmpty();
+
+  pimRoot().services.add(s);
+  traceGenerated(cap, s, "TR-010", "MEDIUM");
+}
+
+rule Actor2Principal
+  transform a : CIMORG!Actor
+  to p : SECURITY!Principal {
+
+  p.id = idFor("principal", a);
+  p.name = a.name;
+  p.principalKind = mapPrincipalKind(a.actorType);
+  p.externalRef = a.externalId;
+  p.privileged = a.playsRoles.exists(r | r.privileged);
+
+  pimRoot().principals.add(p);
+  traceGenerated(a, p, "TR-020", "MEDIUM");
+
+  if (hasText(a.authenticationExpectation)) {
+    var idp = new SECURITY!IdentityProvider;
+    idp.id = idFor("idp", a);
+    idp.name = a.name + " Identity Provider";
+    if (a.actorType.asString() = "EXTERNAL_SYSTEM") {
+      idp.identityKind = PIMTYPES!IdentityKind#MACHINE_CLIENT;
+    }
+    else {
+      idp.identityKind = PIMTYPES!IdentityKind#USER_DIRECTORY;
+    }
+    idp.federationRequired = a.trustLevel.asString().contains("EXTERNAL");
+    idp.mfaRequired = a.authenticationExpectation.toLowerCase().contains("mfa");
+    idp.tokenType = "TBD";
+    idp.userAttributeRequirements = a.authorizationExpectation;
+    idp.principals.add(p);
+    pimRoot().identityProviders.add(idp);
+    traceGenerated(a, idp, "TR-020", "MEDIUM");
+  }
+  else {
+    if (a.actorType.asString() = "HUMAN" or a.actorType.asString() = "EXTERNAL_SYSTEM" or a.actorType.asString() = "EXTERNAL_ORGANIZATION") {
+      manualDecision("TR-020", "Confirm authentication mechanism for actor '" + a.name + "'.", KERNEL!Severity#WARNING,
+        a.issuesCommands.exists(c | c.authorizationRequired) or a.issuesQueries.exists(q | q.authorizationRequired), Sequence{a, p});
+    }
+  }
+}
+
+rule Role2Principal
+  transform r : CIMORG!Role
+  to p : SECURITY!Principal {
+
+  p.id = idFor("role_principal", r);
+  p.name = r.name;
+  p.principalKind = PIMTYPES!PrincipalKind#ROLE;
+  p.privileged = r.privileged;
+  p.externalRef = r.externalId;
+
+  for (actor in r.assignedTo) {
+    var perm = new SECURITY!Permission;
+    perm.id = newId("permission", r.id + "_" + actor.id);
+    perm.name = r.name + " abstract permission";
+    perm.effect = PIMTYPES!PermissionEffect#ALLOW;
+    perm.action = "invoke:review-required";
+    perm.resource = "review-required";
+    perm.leastPrivilegeConfirmed = false;
+    p.permissions.add(perm);
+  }
+
+  pimRoot().principals.add(p);
+  traceGenerated(r, p, "TR-020", "HIGH");
+}
+
+rule ExternalSystem2Adapter
+  transform es : CIMORG!ExternalSystem
+  to a : EXTERNAL!ExternalAdapter {
+
+  a.id = idFor("adapter", es);
+  a.name = nameFor(es, " Adapter");
+  a.externalSystemName = es.name;
+  a.responsibility = es.businessPurpose.orDefault("Adapter for external system " + es.name);
+  a.protocolFamily = "TBD";
+  a.endpointDescription = firstText(es.summary, es.description);
+  a.expectedSla = es.contractualSla;
+  a.credentialsRequired = es.trustLevel.asString() <> "TRUSTED_INTERNAL";
+  a.rateLimitedByProvider = true;
+  a.privateNetworkRequired = false;
+  a.resilience = createDefaultResilience(a, "TR-030", false);
+  a.observability = createDefaultObservability(a, "TR-030", true, true);
+
+  if (a.credentialsRequired) {
+    var cred = new CONFIG!CredentialRequirement;
+    cred.id = idFor("credential", es);
+    cred.name = es.name + " Credential Requirement";
+    cred.secretKind = PIMTYPES!SecretKind#OTHER;
+    cred.purpose = "Credentials for " + es.name;
+    cred.rotationRequired = true;
+    cred.sharedAcrossEnvironments = false;
+    a.credentials.add(cred);
+  }
+
+  pimRoot().externalAdapters.add(a);
+  traceGenerated(es, a, "TR-030", "MEDIUM");
+
+  if (not hasText(es.contractualSla)) {
+    manualDecision("TR-030", "Confirm SLA and failure handling for external system '" + es.name + "'.", KERNEL!Severity#WARNING, false, Sequence{es, a});
+  }
+  if (a.credentialsRequired and not hasText(es.authenticationExpectation)) {
+    manualDecision("TR-030", "Confirm protocol, endpoint, and credential type for external system '" + es.name + "'.", KERNEL!Severity#WARNING, true, Sequence{es, a});
+  }
+}
+
+post EnsureServiceExists {
+  if (pimRoot().services.isEmpty()) {
+    var c = CIM!CIMModel.all.first();
+    var s = new DEPLOY!ServerlessService;
+    s.id = "svc_default_review_required";
+    s.name = c.domainName + " Service";
+    s.boundaryType = PIMTYPES!BoundaryType#CAPABILITY_BASED;
+    s.responsibility = "Placeholder service boundary because CIM has no bounded context or capability.";
+    s.externallyExposed = true;
+    s.ownsData = c.entities.notEmpty();
+    s.lifecycleStatus = KERNEL!LifecycleStatus#INCOMPLETE;
+    pimRoot().services.add(s);
+    addTrace(c, s, "TR-010", KERNEL!TraceLinkType#DERIVES_FROM, "LOW");
+    manualDecision("TR-010", "Define service boundaries using bounded contexts or business capabilities.", KERNEL!Severity#BLOCKER, true, Sequence{c, s});
+  }
+}

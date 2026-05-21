@@ -1,0 +1,575 @@
+import "lib/common.eol";
+import "lib/mapping.eol";
+import "lib/trace-readiness.eol";
+import "lib/pim-builders.eol";
+import "lib/resolution.eol";
+
+operation attachOwnedElements() {
+  for (cmd in CIMBEHAVIOR!Command.all) {
+    var svc = serviceFor(cmd);
+    if (commandFunction(cmd).isDefined() and not svc.ownsFunctions.includes(commandFunction(cmd))) {
+      svc.ownsFunctions.add(commandFunction(cmd));
+    }
+  }
+  for (q in CIMBEHAVIOR!Query.all) {
+    var svc = serviceFor(q);
+    if (queryFunction(q).isDefined() and not svc.ownsFunctions.includes(queryFunction(q))) {
+      svc.ownsFunctions.add(queryFunction(q));
+    }
+  }
+  for (ag in CIMDOMAIN!AggregateCandidate.all) {
+    var svc = serviceFor(ag);
+    if (storeForAggregate(ag).isDefined() and not svc.ownsStores.includes(storeForAggregate(ag))) {
+      svc.ownsStores.add(storeForAggregate(ag));
+    }
+  }
+  for (bp in CIMPROCESS!BusinessProcess.all) {
+    var svc = serviceFor(bp);
+    if (workflowFor(bp).isDefined() and not svc.ownsWorkflows.includes(workflowFor(bp))) {
+      svc.ownsWorkflows.add(workflowFor(bp));
+    }
+  }
+  for (es in CIMORG!ExternalSystem.all) {
+    var svc = DEPLOY!ServerlessService.all.first();
+    if (adapterFor(es).isDefined() and not svc.ownsAdapters.includes(adapterFor(es))) {
+      svc.ownsAdapters.add(adapterFor(es));
+    }
+  }
+  for (api in API!Api.all) {
+    var owner = DEPLOY!ServerlessService.all.select(s | s.ownsApis.includes(api)).first();
+    if (owner.isUndefined()) {
+      DEPLOY!ServerlessService.all.first().ownsApis.add(api);
+    }
+  }
+}
+
+operation createRequestResponseFlows() {
+  for (route in API!ApiRoute.all) {
+    var flow = new INTEGRATION!RequestResponseFlow;
+    flow.id = "flow_" + route.id;
+    flow.name = route.name + " Request Flow";
+    flow.synchronous = route.functionIntegration.isDefined();
+    flow.apiRoute = route;
+    flow.source = route;
+    if (route.functionIntegration.isDefined()) {
+      flow.target = route.functionIntegration;
+    }
+    else {
+      flow.target = route.workflowIntegration;
+    }
+    flow.containsPersonalData = (route.requestSchema.isDefined() and route.requestSchema.fields.exists(f | isTrue(f.personalData))) or
+      (route.responseSchema.isDefined() and route.responseSchema.fields.exists(f | isTrue(f.personalData)));
+    flow.criticalPath = isTrue(route.publicRoute);
+    flow.observability = createDefaultObservability(flow, "TR-140", true, isTrue(route.publicRoute));
+    pimRoot().flows.add(flow);
+  }
+}
+
+operation createEventChannelsAndFlows() {
+  for (e in CIMBEHAVIOR!BusinessEvent.all) {
+    var service = serviceFor(e);
+    var ch = ensureEventBusForService(service);
+    var et = eventTypeFor(e);
+    if (et.isDefined() and not ch.eventTypes.includes(et)) {
+      ch.eventTypes.add(et);
+    }
+    if (hasText(e.orderingKeyCandidate)) {
+      ch.orderingRequirement = PIMTYPES!OrderingRequirement#PER_KEY;
+      ch.deliverySemantics = PIMTYPES!DeliverySemantics#EFFECTIVELY_ONCE_WITH_IDEMPOTENCY;
+    }
+    ch.partitionKeyExpression = e.orderingKeyCandidate;
+    ch.encrypted = ch.encrypted or e.payload.exists(i | isSensitive(i));
+    ch.replayRequired = ch.replayRequired or e.retentionRelevant or e.auditRelevant;
+    ch.deadLetterRequired = true;
+
+    var topic = null;
+    if (e.externallyVisible or e.consumedByPolicies.size() + e.consumedByProcesses.size() + e.consumedByExternalSystems.size() > 1) {
+      topic = new INTEGRATION!Topic;
+      topic.id = idFor("topic", e);
+      topic.name = e.name + " Topic";
+      topic.integrationPurpose = "Publish/subscribe channel for event " + e.name;
+      topic.channelKind = PIMTYPES!ChannelKind#TOPIC;
+      topic.orderingRequirement = ch.orderingRequirement;
+      topic.deliverySemantics = ch.deliverySemantics;
+      topic.partitionKeyExpression = e.orderingKeyCandidate;
+      topic.encrypted = ch.encrypted;
+      topic.replayRequired = ch.replayRequired;
+      topic.deadLetterRequired = true;
+      topic.subscriptionMode = "filtered";
+      topic.filteringRequired = true;
+      topic.eventTypes.add(et);
+      topic.observability = createDefaultObservability(topic, "TR-140", true, e.externallyVisible);
+      topic.resilience = createDefaultResilience(topic, "TR-140", true);
+      service.ownsChannels.add(topic);
+      pimRoot().channels.add(topic);
+      traceGenerated(e, topic, "TR-140", "MEDIUM");
+    }
+
+    for (cmd in e.expectedByCommands) {
+      var producer = commandFunction(cmd);
+      if (producer.isDefined()) {
+        producer.publishes.add(et);
+        ch.producers.add(producer);
+        et.producedBy.add(producer);
+        var flow = new INTEGRATION!EventFlow;
+        flow.id = newId("flow_event", producer.id + "_" + et.id);
+        flow.name = producer.name + " publishes " + et.name;
+        flow.source = producer;
+        flow.target = ch;
+        flow.eventType = et;
+        flow.channel = ch;
+        flow.criticalPath = false;
+        flow.containsPersonalData = et.containsPersonalData;
+        flow.observability = createDefaultObservability(flow, "TR-140", true, false);
+        pimRoot().flows.add(flow);
+      }
+    }
+    for (es in e.causedByExternalSystems) {
+      var adapterProducer = adapterFor(es);
+      if (adapterProducer.isDefined()) {
+        ch.externalProducers.add(adapterProducer);
+        var extProducedFlow = new INTEGRATION!EventFlow;
+        extProducedFlow.id = newId("flow_event", adapterProducer.id + "_" + et.id);
+        extProducedFlow.name = adapterProducer.name + " publishes " + et.name;
+        extProducedFlow.source = adapterProducer;
+        extProducedFlow.target = ch;
+        extProducedFlow.eventType = et;
+        extProducedFlow.channel = ch;
+        extProducedFlow.criticalPath = false;
+        extProducedFlow.containsPersonalData = et.containsPersonalData;
+        extProducedFlow.observability = createDefaultObservability(extProducedFlow, "TR-140", true, true);
+        pimRoot().flows.add(extProducedFlow);
+      }
+    }
+    for (pol in e.consumedByPolicies) {
+      var consumer = policyFunction(pol);
+      if (consumer.isDefined()) {
+        ch.consumers.add(consumer);
+        et.consumedBy.add(consumer);
+        consumer.subscribesTo.add(et);
+        if (topic.isDefined()) {
+          topic.consumers.add(consumer);
+        }
+        var trigger = new COMPUTE!Trigger;
+        trigger.id = newId("trigger_event", et.id + "_" + consumer.id);
+        trigger.name = consumer.name + " Event Trigger";
+        trigger.triggerKind = "EVENT_CHANNEL";
+        trigger.invocationMode = PIMTYPES!InvocationMode#ASYNCHRONOUS;
+        trigger.enabled = true;
+        trigger.filterExpression = et.semanticName;
+        trigger.generatedFromFlow = true;
+        trigger.source = ch;
+        trigger.invokesFunction = consumer;
+        trigger.resilience = createDefaultResilience(trigger, "TR-140", true);
+        pimRoot().triggers.add(trigger);
+        var consumeFlow = new INTEGRATION!EventFlow;
+        consumeFlow.id = newId("flow_event", ch.id + "_" + consumer.id + "_" + et.id);
+        consumeFlow.name = et.name + " to " + consumer.name;
+        consumeFlow.source = ch;
+        consumeFlow.target = consumer;
+        consumeFlow.eventType = et;
+        consumeFlow.channel = ch;
+        consumeFlow.criticalPath = false;
+        consumeFlow.containsPersonalData = et.containsPersonalData;
+        consumeFlow.observability = createDefaultObservability(consumeFlow, "TR-140", true, false);
+        pimRoot().flows.add(consumeFlow);
+      }
+    }
+    for (bp in e.consumedByProcesses) {
+      var wf = workflowFor(bp);
+      if (wf.isDefined()) {
+        ch.workflowConsumers.add(wf);
+        if (topic.isDefined()) {
+          topic.workflowConsumers.add(wf);
+        }
+        var triggerWf = new COMPUTE!Trigger;
+        triggerWf.id = newId("trigger_event", et.id + "_" + wf.id);
+        triggerWf.name = wf.name + " Event Trigger";
+        triggerWf.triggerKind = "EVENT_CHANNEL";
+        triggerWf.invocationMode = PIMTYPES!InvocationMode#ASYNCHRONOUS;
+        triggerWf.enabled = true;
+        triggerWf.filterExpression = et.semanticName;
+        triggerWf.generatedFromFlow = true;
+        triggerWf.source = ch;
+        triggerWf.startsWorkflow = wf;
+        pimRoot().triggers.add(triggerWf);
+        var wfFlow = new INTEGRATION!EventFlow;
+        wfFlow.id = newId("flow_event", ch.id + "_" + wf.id + "_" + et.id);
+        wfFlow.name = et.name + " to " + wf.name;
+        wfFlow.source = ch;
+        wfFlow.target = wf;
+        wfFlow.eventType = et;
+        wfFlow.channel = ch;
+        wfFlow.criticalPath = false;
+        wfFlow.containsPersonalData = et.containsPersonalData;
+        wfFlow.observability = createDefaultObservability(wfFlow, "TR-140", true, false);
+        pimRoot().flows.add(wfFlow);
+      }
+    }
+    for (esConsumer in e.consumedByExternalSystems) {
+      var adapterConsumer = adapterFor(esConsumer);
+      if (adapterConsumer.isDefined()) {
+        ch.externalConsumers.add(adapterConsumer);
+        if (topic.isDefined()) {
+          topic.externalConsumers.add(adapterConsumer);
+        }
+        var extConsumedFlow = new INTEGRATION!EventFlow;
+        extConsumedFlow.id = newId("flow_event", ch.id + "_" + adapterConsumer.id + "_" + et.id);
+        extConsumedFlow.name = et.name + " to " + adapterConsumer.name;
+        extConsumedFlow.source = ch;
+        extConsumedFlow.target = adapterConsumer;
+        extConsumedFlow.eventType = et;
+        extConsumedFlow.channel = ch;
+        extConsumedFlow.criticalPath = e.externallyVisible;
+        extConsumedFlow.containsPersonalData = et.containsPersonalData;
+        extConsumedFlow.observability = createDefaultObservability(extConsumedFlow, "TR-140", true, true);
+        pimRoot().flows.add(extConsumedFlow);
+      }
+    }
+  }
+}
+
+operation createTopicSubscriptions() {
+  for (topic in INTEGRATION!Topic.all) {
+    for (fn in topic.consumers) {
+      var sub = new INTEGRATION!Subscription;
+      sub.id = newId("subscription", topic.id + "_" + fn.id);
+      sub.name = topic.name + " to " + fn.name;
+      sub.channel = topic;
+      sub.target = fn;
+      sub.filterExpression = joinText(topic.eventTypes.collect(e | e.semanticName), " OR ");
+      sub.deadLetterRequired = true;
+      sub.rawDelivery = false;
+      topic.subscriptions.add(sub);
+    }
+    for (wf in topic.workflowConsumers) {
+      var subWf = new INTEGRATION!Subscription;
+      subWf.id = newId("subscription", topic.id + "_" + wf.id);
+      subWf.name = topic.name + " to " + wf.name;
+      subWf.channel = topic;
+      subWf.target = wf;
+      subWf.filterExpression = joinText(topic.eventTypes.collect(e | e.semanticName), " OR ");
+      subWf.deadLetterRequired = true;
+      subWf.rawDelivery = false;
+      topic.subscriptions.add(subWf);
+    }
+    for (adapter in topic.externalConsumers) {
+      var subAdapter = new INTEGRATION!Subscription;
+      subAdapter.id = newId("subscription", topic.id + "_" + adapter.id);
+      subAdapter.name = topic.name + " to " + adapter.name;
+      subAdapter.channel = topic;
+      subAdapter.target = adapter;
+      subAdapter.filterExpression = joinText(topic.eventTypes.collect(e | e.semanticName), " OR ");
+      subAdapter.deadLetterRequired = true;
+      subAdapter.rawDelivery = false;
+      topic.subscriptions.add(subAdapter);
+    }
+  }
+}
+
+operation createPolicyRoutingRules() {
+  for (pol in CIMPROCESS!Policy.all.select(p | p.triggeredBy.notEmpty() and (p.emitsCommands.notEmpty() or p.emitsEvents.notEmpty()))) {
+    var bus = ensureEventBusForService(serviceFor(pol));
+    var routingRule = new INTEGRATION!EventRoutingRule;
+    routingRule.id = idFor("routing", pol);
+    routingRule.name = pol.name + " Routing Rule";
+    routingRule.eventPattern = joinText(pol.triggeredBy.collect(e | e.semanticName.orDefault(e.name)), " OR ");
+    routingRule.enabled = true;
+    routingRule.inputTransformation = "provider-independent event envelope";
+    routingRule.eventTypes.addAll(pol.triggeredBy.collect(e | eventTypeFor(e)).select(e | e.isDefined()));
+    for (cmd in pol.emitsCommands) {
+      var fn = commandFunction(cmd);
+      if (fn.isDefined()) {
+        routingRule.targets.add(fn);
+      }
+    }
+    for (ev in pol.emitsEvents) {
+      routingRule.targets.add(ensureEventBusForService(serviceFor(ev)));
+    }
+    routingRule.resilience = createDefaultResilience(routingRule, "TR-100", true);
+    bus.routingRules.add(routingRule);
+    traceGenerated(pol, routingRule, "TR-100", "MEDIUM");
+  }
+}
+
+operation containsProviderSpecificTerm(text) {
+  if (not hasText(text)) {
+    return false;
+  }
+  var value = text.toLowerCase();
+  return value.contains("lambda") or value.contains("dynamodb") or value.contains("sqs") or value.contains("sns") or
+    value.contains("eventbridge") or value.contains("api gateway") or value.contains("step functions") or
+    value.contains("cloudwatch") or value.contains("iam") or value.contains("cloudformation") or
+    value.contains("azure functions") or value.contains("google cloud functions");
+}
+
+operation createDataAccesses() {
+  for (cmd in CIMBEHAVIOR!Command.all) {
+    if (cmd.targetAggregate.isDefined() and commandFunction(cmd).isDefined() and storeForAggregate(cmd.targetAggregate).isDefined()) {
+      var da = new DATA!DataAccess;
+      da.id = newId("dataaccess", commandFunction(cmd).id + "_" + storeForAggregate(cmd.targetAggregate).id + "_write");
+      da.name = commandFunction(cmd).name + " writes " + storeForAggregate(cmd.targetAggregate).name;
+      da.mode = PIMTYPES!DataAccessMode#WRITE;
+      da.transactional = storeForAggregate(cmd.targetAggregate).transactional;
+      da.purpose = "Command state change";
+      setFeature(da, "function", commandFunction(cmd));
+      da.store = storeForAggregate(cmd.targetAggregate);
+      da.dataModels.addAll(storeForAggregate(cmd.targetAggregate).ownedDataModels);
+      da.accessPatterns.addAll(storeForAggregate(cmd.targetAggregate).accessPatterns);
+      commandFunction(cmd).writes.add(storeForAggregate(cmd.targetAggregate));
+      pimRoot().dataAccesses.add(da);
+    }
+  }
+  for (q in CIMBEHAVIOR!Query.all) {
+    for (entity in q.reads) {
+      var store = storeForEntity(entity);
+      if (store.isDefined() and queryFunction(q).isDefined()) {
+        var daq = new DATA!DataAccess;
+        daq.id = newId("dataaccess", queryFunction(q).id + "_" + store.id + "_read");
+        daq.name = queryFunction(q).name + " reads " + store.name;
+        daq.mode = PIMTYPES!DataAccessMode#READ;
+        daq.transactional = false;
+        daq.purpose = "Query read access";
+        setFeature(daq, "function", queryFunction(q));
+        daq.store = store;
+        daq.dataModels.addAll(store.ownedDataModels);
+        daq.accessPatterns.addAll(store.accessPatterns.select(ap | ap.usedByFunctions.includes(queryFunction(q))));
+        queryFunction(q).reads.add(store);
+        pimRoot().dataAccesses.add(daq);
+      }
+    }
+  }
+}
+
+rule Risk2ReadinessFinding
+  transform r : CIMTRANSFORM!Risk
+  to f : KERNEL!ReadinessFinding {
+
+  f.id = idFor("risk_finding", r);
+  f.name = "Risk - " + r.name;
+  if (r.productionBlocking) {
+    f.findingType = KERNEL!FindingType#BLOCKING_RISK;
+  }
+  else {
+    f.findingType = KERNEL!FindingType#OTHER;
+  }
+  f.severity = mapRiskSeverity(r.impact, r.probability);
+  f.ruleId = "TR-160";
+  f.message = r.riskStatement;
+  f.recommendation = r.mitigation;
+  f.blocking = r.productionBlocking;
+  f.affectedElements.addAll(r.affectedElements);
+  readinessRoot().findings.add(f);
+}
+
+rule Assumption2ReadinessFinding
+  transform a : CIMTRANSFORM!Assumption
+  to f : KERNEL!ReadinessFinding {
+
+  f.id = idFor("assumption_finding", a);
+  f.name = "Assumption - " + a.name;
+  f.findingType = KERNEL!FindingType#TRANSFORMATION_ASSUMPTION;
+  if (a.accepted) {
+    f.severity = KERNEL!Severity#INFO;
+  }
+  else {
+    f.severity = KERNEL!Severity#WARNING;
+  }
+  f.ruleId = "TR-160";
+  f.message = a.assumptionStatement;
+  f.recommendation = a.validationApproach;
+  f.blocking = not a.accepted;
+  f.affectedElements.addAll(a.affectedElements);
+  readinessRoot().findings.add(f);
+}
+
+rule Hotspot2ManualDecision
+  transform h : CIMTRANSFORM!Hotspot
+  to d : KERNEL!ManualDecision {
+
+  d.id = idFor("hotspot_decision", h);
+  d.name = "Hotspot - " + h.name;
+  d.question = h.question;
+  d.decisionOwner = h.owner;
+  d.dueDate = h.dueDate;
+  d.blocking = h.blocksTransformation or h.blocksProduction;
+  if (h.blocksTransformation) {
+    d.severity = KERNEL!Severity#ERROR;
+  }
+  else {
+    d.severity = KERNEL!Severity#WARNING;
+  }
+  d.affectedElements.addAll(h.attachedTo);
+  readinessRoot().manualDecisions.add(d);
+}
+
+post LinkAndDerive {
+  attachOwnedElements();
+  createRequestResponseFlows();
+  createEventChannelsAndFlows();
+  createTopicSubscriptions();
+  createPolicyRoutingRules();
+  createDataAccesses();
+}
+
+post DeploymentAndConfiguration {
+  for (s in DEPLOY!ServerlessService.all) {
+    var du = new DEPLOY!DeploymentUnit;
+    du.id = idFor("du", s);
+    du.name = s.name + " Deployment Unit";
+    du.unitType = PIMTYPES!DeploymentUnitType#SERVICE;
+    du.lifecycle = "application";
+    du.independentlyDeployable = true;
+    du.releaseStrategy = "independent service release; review required";
+    du.versioningStrategy = "semantic versioning; review required";
+    du.services.add(s);
+    du.targetEnvironments.addAll(pimRoot().environments);
+    du.contains.addAll(s.ownsFunctions);
+    du.contains.addAll(s.ownsApis);
+    du.contains.addAll(s.ownsChannels);
+    du.contains.addAll(s.ownsStores);
+    du.contains.addAll(s.ownsWorkflows);
+    du.contains.addAll(s.ownsAdapters);
+    pimRoot().deploymentUnits.add(du);
+    addTrace(s, du, "TR-150", KERNEL!TraceLinkType#DEPLOYS_TO, "MEDIUM");
+    if (du.contains.isEmpty()) {
+      manualDecision("TR-150", "Service '" + s.name + "' has no deployable contents; confirm service boundary or generated behavior.", KERNEL!Severity#WARNING, false, Sequence{s, du});
+    }
+
+    var cfg = new CONFIG!ConfigurationSet;
+    cfg.id = newId("config", s.id);
+    cfg.name = s.name + " Configuration";
+    cfg.scope = PIMTYPES!ConfigScope#SERVICE;
+    cfg.environments.addAll(pimRoot().environments);
+    cfg.appliesTo.add(s);
+    var logLevel = new CONFIG!ConfigParameter;
+    logLevel.id = newId("config_param", s.id + "_log_level");
+    logLevel.name = "LOG_LEVEL";
+    logLevel.scope = PIMTYPES!ConfigScope#SERVICE;
+    logLevel.valueKind = "STRING";
+    logLevel.defaultValue = "INFO";
+    logLevel.stageSpecific = true;
+    logLevel.secret = false;
+    logLevel.required = true;
+    cfg.parameters.add(logLevel);
+    var corr = new CONFIG!ConfigParameter;
+    corr.id = newId("config_param", s.id + "_correlation_id_name");
+    corr.name = "CORRELATION_ID_NAME";
+    corr.scope = PIMTYPES!ConfigScope#SERVICE;
+    corr.valueKind = "STRING";
+    corr.defaultValue = pimRoot().defaultCorrelationIdName;
+    corr.stageSpecific = false;
+    corr.secret = false;
+    corr.required = true;
+    cfg.parameters.add(corr);
+    pimRoot().configurations.add(cfg);
+  }
+
+  for (adapter in EXTERNAL!ExternalAdapter.all) {
+    for (cred in adapter.credentials) {
+      var sec = new CONFIG!Secret;
+      sec.id = newId("secret", cred.id);
+      sec.name = cred.name + " Secret Reference";
+      sec.secretKind = cred.secretKind;
+      sec.rotationRequired = cred.rotationRequired;
+      sec.rotationFrequency = cred.rotationFrequency;
+      sec.generatedReferenceOnly = true;
+      sec.environmentSpecific = true;
+      cred.secret = sec;
+      pimRoot().secrets.add(sec);
+    }
+  }
+}
+
+post ValidationAndReadinessClosure {
+  if (pimRoot().functions.isEmpty()) {
+    var fn = new COMPUTE!Function;
+    fn.id = "fn_tbd_manual_completion";
+    fn.name = "Manual Completion Required Function";
+    fn.functionKind = PIMTYPES!FunctionKind#MAINTENANCE_TASK;
+    fn.responsibility = "Placeholder because CIM contains no transformable command, query, process, policy, or event consumer.";
+    fn.handlerResponsibility = fn.responsibility;
+    fn.executionModel = PIMTYPES!ExecutionModel#REQUEST_RESPONSE;
+    fn.computeProfile = PIMTYPES!ComputeProfile#UNKNOWN;
+    fn.stateless = true;
+    var contract = new CONTRACTS!FunctionContract;
+    contract.id = "contract_tbd_manual_completion";
+    contract.name = "Manual Completion Required Contract";
+    contract.contractVersion = "1.0.0";
+    contract.validatesInput = false;
+    contract.validatesOutput = false;
+    contract.correlationIdField = "correlationId";
+    fn.contract = contract;
+    fn.lifecycleStatus = KERNEL!LifecycleStatus#INCOMPLETE;
+    pimRoot().functions.add(fn);
+    DEPLOY!ServerlessService.all.first().ownsFunctions.add(fn);
+    manualDecision("TR-170", "Add at least one executable command, query, process, policy, or event consumer to complete the PIM.", KERNEL!Severity#BLOCKER, true, Sequence{fn});
+  }
+
+  for (fn in COMPUTE!Function.all.select(f | f.contract.isUndefined())) {
+    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Function '" + fn.name + "' has no function contract.", "Create input/output/error contract for the function.", true, Sequence{fn});
+  }
+  for (api in API!Api.all.select(a | a.routes.isEmpty())) {
+    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "API '" + api.name + "' has no routes.", "Add routes or remove the API.", true, Sequence{api});
+  }
+  for (route in API!ApiRoute.all.select(r | (r.functionIntegration.isDefined() and r.workflowIntegration.isDefined()) or (r.functionIntegration.isUndefined() and r.workflowIntegration.isUndefined()))) {
+    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Route '" + route.name + "' must integrate exactly one function or workflow.", "Connect the route to exactly one invocation target.", true, Sequence{route});
+  }
+  for (et in CONTRACTS!EventType.all.select(e | e.schema.isUndefined() or e.envelope.isUndefined())) {
+    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Event type '" + et.name + "' lacks schema or envelope.", "Attach a schema and envelope.", true, Sequence{et});
+  }
+  for (store in DATA!DataStore.all.select(s | s.ownedDataModels.isEmpty() or s.accessPatterns.isEmpty())) {
+    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Data store '" + store.name + "' lacks data model or access pattern.", "Add data model and at least one access pattern.", true, Sequence{store});
+  }
+  for (store in DATA!DataStore.all.select(s | s.containsPersonalData and not s.encrypted)) {
+    readinessFinding("TR-170", KERNEL!FindingType#SECURITY_RISK, KERNEL!Severity#ERROR, "Sensitive store '" + store.name + "' is not encrypted.", "Enable provider-independent encryption requirement.", true, Sequence{store});
+  }
+  for (du in DEPLOY!DeploymentUnit.all.select(d | d.contains.isEmpty())) {
+    readinessFinding("TR-170", KERNEL!FindingType#DEPLOYMENT_RISK, KERNEL!Severity#WARNING, "Deployment unit '" + du.name + "' has no deployable contents.", "Review service ownership and generated behavior.", false, Sequence{du});
+  }
+  for (route in API!ApiRoute.all.select(r | isTrue(r.authRequired) and r.authorization.isUndefined())) {
+    readinessFinding("TR-170", KERNEL!FindingType#SECURITY_RISK, KERNEL!Severity#ERROR, "Protected route '" + route.name + "' has no authorization policy.", "Attach an AuthorizationPolicy or mark the route unprotected.", true, Sequence{route});
+  }
+  for (fnSec in COMPUTE!Function.all.select(f | isTrue(f.publicEntryPoint) and f.securityPolicies.isEmpty())) {
+    readinessFinding("TR-170", KERNEL!FindingType#SECURITY_RISK, KERNEL!Severity#WARNING, "Public function '" + fnSec.name + "' has no security policy.", "Attach authentication/authorization policy coverage.", false, Sequence{fnSec});
+  }
+  for (adapter in EXTERNAL!ExternalAdapter.all.select(a | a.observability.isUndefined() or a.resilience.isUndefined() or (isTrue(a.credentialsRequired) and a.credentials.isEmpty()))) {
+    readinessFinding("TR-170", KERNEL!FindingType#DEPLOYMENT_RISK, KERNEL!Severity#ERROR, "External adapter '" + adapter.name + "' lacks credential, resilience, or observability review.", "Confirm protocol, credentials, resilience, and observability.", true, Sequence{adapter});
+  }
+  for (ch in INTEGRATION!EventChannel.all.select(c | c.deliverySemantics.isUndefined() or c.orderingRequirement.isUndefined())) {
+    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Event channel '" + ch.name + "' lacks delivery or ordering semantics.", "Set provider-independent delivery and ordering semantics.", true, Sequence{ch});
+  }
+  for (el in KERNEL!TraceableElement.all.select(e | isTrue(e.generatedByTransformation) and not e.isKindOf(KERNEL!TraceLink) and e.generatedFrom.isUndefined() and e.rationale.isUndefined())) {
+    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_WARNING, KERNEL!Severity#WARNING, "Generated element '" + el.name + "' has no source trace or documented assumption.", "Add trace link or transformation assumption.", false, Sequence{el});
+  }
+  for (el2 in KERNEL!ModelElement.all.select(e | containsProviderSpecificTerm(e.name) or containsProviderSpecificTerm(e.description) or containsProviderSpecificTerm(e.summary))) {
+    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Generated element '" + el2.name + "' contains provider-specific terminology.", "Replace cloud-provider-specific naming with provider-independent terms.", true, Sequence{el2});
+  }
+
+  var readiness = pimRoot().readiness;
+  readiness.transformationReady =
+    readiness.findings.forAll(f | not isTrue(f.blocking) or f.findingType <> KERNEL!FindingType#VALIDATION_ERROR) and
+    pimRoot().functions.notEmpty() and pimRoot().services.notEmpty() and pimRoot().deploymentUnits.notEmpty();
+  readiness.deploymentReady =
+    isTrue(readiness.transformationReady) and pimRoot().implementationProfile.primaryLanguage <> PIMTYPES!RuntimeLanguage#CUSTOM and
+    pimRoot().deploymentUnits.forAll(du | du.contains.notEmpty());
+  readiness.productionReady =
+    isTrue(readiness.deploymentReady) and readiness.manualDecisions.forAll(d | not isTrue(d.blocking) and hasText(d.decision)) and
+    readiness.findings.forAll(f | not isTrue(f.blocking));
+  if (isTrue(readiness.productionReady)) {
+    readiness.readinessStatus = KERNEL!LifecycleStatus#PRODUCTION_READY;
+  }
+  else {
+    if (isTrue(readiness.deploymentReady)) {
+      readiness.readinessStatus = KERNEL!LifecycleStatus#DEPLOYMENT_READY;
+    }
+    else {
+      if (isTrue(readiness.transformationReady)) {
+        readiness.readinessStatus = KERNEL!LifecycleStatus#TRANSFORMATION_READY;
+      }
+      else {
+        readiness.readinessStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
+      }
+    }
+  }
+}

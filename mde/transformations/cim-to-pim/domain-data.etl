@@ -1,0 +1,284 @@
+import "lib/common.eol";
+import "lib/mapping.eol";
+import "lib/trace-readiness.eol";
+import "lib/pim-builders.eol";
+import "lib/resolution.eol";
+
+operation aggregateItems(ag : CIMDOMAIN!AggregateCandidate) {
+  var items = Sequence{};
+  for (entity in ag.members) {
+    if (entity.identityAttribute.isDefined() and not items.includes(entity.identityAttribute)) {
+      items.add(entity.identityAttribute);
+    }
+    for (attribute in entity.attributes) {
+      if (not items.includes(attribute)) {
+        items.add(attribute);
+      }
+    }
+  }
+  return items;
+}
+
+operation aggregateContainsSensitiveData(ag : CIMDOMAIN!AggregateCandidate) {
+  return aggregateItems(ag).exists(i | isSensitive(i) or isSecret(i));
+}
+
+operation aggregateContainsPersonalData(ag : CIMDOMAIN!AggregateCandidate) {
+  return aggregateItems(ag).exists(i | isPersonal(i));
+}
+
+rule Entity2Schema
+  transform e : CIMDOMAIN!DomainEntity
+  to s : CONTRACTS!Schema {
+
+  s.id = idFor("schema_entity", e);
+  s.name = nameFor(e, " Schema");
+  s.schemaKind = PIMTYPES!SchemaKind#ENTITY;
+  s.semanticVersion = "1.0.0";
+  s.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  s.additionalPropertiesAllowed = false;
+  s.generatedFromCimInformation = true;
+
+  if (e.identityAttribute.isDefined()) {
+    s.fields.add(createSchemaField(e.identityAttribute));
+  }
+  for (item in e.attributes.excluding(e.identityAttribute)) {
+    s.fields.add(createSchemaField(item));
+  }
+  for (inv in e.invariants) {
+    var c = new CONTRACTS!SchemaConstraint;
+    c.id = idFor("constraint", inv);
+    c.name = inv.name;
+    c.expressionLanguage = inv.expressionLanguage;
+    c.expression = inv.expression;
+    c.message = inv.naturalLanguageStatement;
+    c.severity = inv.violationSeverity;
+    s.constraints.add(c);
+    traceGenerated(inv, c, "TR-040", "HIGH");
+  }
+
+  pimRoot().schemas.add(s);
+  traceGenerated(e, s, "TR-040", "HIGH");
+}
+
+rule ValueObject2Schema
+  transform v : CIMDOMAIN!ValueObject
+  to s : CONTRACTS!Schema {
+
+  s.id = idFor("schema_value", v);
+  s.name = nameFor(v, " Schema");
+  s.schemaKind = PIMTYPES!SchemaKind#VALUE_OBJECT;
+  s.semanticVersion = "1.0.0";
+  s.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  s.additionalPropertiesAllowed = false;
+  s.generatedFromCimInformation = true;
+  for (item in v.attributes) {
+    s.fields.add(createSchemaField(item));
+  }
+
+  pimRoot().schemas.add(s);
+  traceGenerated(v, s, "TR-040", "HIGH");
+}
+
+rule DomainRelationship2SchemaReference
+  transform rel : CIMDOMAIN!DomainRelationship
+  to field : CONTRACTS!SchemaField,
+     constraint : CONTRACTS!SchemaConstraint {
+
+  field.id = idFor("relationship_field", rel);
+  field.name = camelCase(rel.targetRole.orDefault(rel.target.name));
+  field.fieldType = PIMTYPES!FieldType#OBJECT;
+  field.required = rel.sourceMultiplicity = "1" or rel.sourceMultiplicity = "1..1";
+  field.nullable = not field.required;
+  field.array = hasText(rel.targetMultiplicity) and (rel.targetMultiplicity.contains("*") or rel.targetMultiplicity.contains(".."));
+  field.descriptionForConsumers = "Reference generated from " + rel.relationshipType.asString() + " relationship to " + rel.target.name + ".";
+  if (rel.target.isKindOf(CIMDOMAIN!DomainEntity)) {
+    field.objectSchema = schemaForEntity(rel.target);
+  }
+
+  constraint.id = idFor("relationship_constraint", rel);
+  constraint.name = rel.name + " Relationship Constraint";
+  constraint.expressionLanguage = "natural-language";
+  constraint.expression = rel.sourceRole + " " + rel.relationshipType.asString() + " " + rel.targetRole;
+  constraint.message = "Review relationship storage shape, multiplicity, and navigation strategy.";
+  constraint.severity = KERNEL!Severity#WARNING;
+
+  if (rel.source.isKindOf(CIMDOMAIN!DomainEntity)) {
+    var sourceSchema = schemaForEntity(rel.source);
+    if (sourceSchema.isDefined()) {
+      sourceSchema.fields.add(field);
+      sourceSchema.constraints.add(constraint);
+    }
+  }
+
+  traceGenerated(rel, field, "TR-040", "MEDIUM");
+  traceGenerated(rel, constraint, "TR-040", "MEDIUM");
+
+  if (rel.relationshipType.asString() = "ASSOCIATION" or (hasText(rel.targetMultiplicity) and rel.targetMultiplicity.contains("*")) or (hasText(rel.sourceMultiplicity) and rel.sourceMultiplicity.contains("*"))) {
+    manualDecision("TR-040", "Confirm whether relationship '" + rel.name + "' should be embedded, referenced, joined, or projected into a read model.", KERNEL!Severity#WARNING, false, Sequence{rel, field});
+  }
+}
+
+rule Aggregate2DataStore
+  transform ag : CIMDOMAIN!AggregateCandidate
+  to store : DATA!DataStore,
+     dataModel : DATA!DataModel {
+
+  store.id = idFor("store", ag);
+  store.name = nameFor(ag, " Store");
+  store.persistent = true;
+  store.encrypted = aggregateContainsSensitiveData(ag);
+  store.containsPersonalData = aggregateContainsPersonalData(ag);
+  store.storeKind = inferStoreKind(ag);
+  store.consistencyNeed = inferConsistency(ag);
+  store.transactional = ag.consistencyExpectation.asString() = "MULTI_ENTITY_STRONG_CONSISTENCY";
+  store.readOptimized = false;
+  store.writeOptimized = true;
+  store.appendOnly = false;
+  store.changeStreamRequired = ag.emittedEvents.notEmpty();
+  store.pointInTimeRecoveryRequired = store.containsPersonalData or ag.root.auditRelevant;
+  store.expectedDataVolume = "TBD";
+  store.expectedAccessRate = "TBD";
+
+  dataModel.id = idFor("datamodel", ag);
+  dataModel.name = nameFor(ag, " Data Model");
+  dataModel.dataModelKind = PIMTYPES!SchemaKind#ENTITY;
+  dataModel.aggregateRef = ag.id;
+  if (ag.root.owningCapability.isDefined()) {
+    dataModel.ownershipBoundary = ag.root.owningCapability.name;
+  }
+  else {
+    dataModel.ownershipBoundary = "";
+  }
+  dataModel.sourceOfTruth = true;
+  dataModel.readModel = false;
+  dataModel.auditRequired = ag.root.auditRelevant;
+  dataModel.schema = schemaForEntity(ag.root);
+
+  for (item in aggregateItems(ag)) {
+    dataModel.storageFields.add(createDataField(item, ag.root.identityAttribute));
+  }
+  store.ownedDataModels.add(dataModel);
+
+  var ap = new DATA!AccessPattern;
+  ap.id = idFor("access_identity", ag);
+  ap.name = ag.name + " Identity Access Pattern";
+  ap.patternName = "Get " + ag.root.name + " by identity";
+  setFeature(ap, "operation", "READ");
+  ap.queryBy = ag.root.identityAttribute.name;
+  ap.highCardinality = true;
+  ap.highFrequency = false;
+  ap.stronglyConsistentReadRequired = store.consistencyNeed <> PIMTYPES!ConsistencyNeed#EVENTUAL;
+  ap.transactionalWriteRequired = store.transactional;
+  store.accessPatterns.add(ap);
+
+  var ix = new DATA!IndexCandidate;
+  ix.id = idFor("index_identity", ag);
+  ix.name = ag.name + " Identity Index";
+  ix.indexPurpose = "Identity lookup";
+  ix.partitionKeyField = ag.root.identityAttribute.name;
+  setFeature(ix, "unique", true);
+  ix.requiredForProduction = true;
+  ix.supportsAccessPatterns.add(ap);
+  store.indexCandidates.add(ix);
+
+  pimRoot().dataStores.add(store);
+  traceGenerated(ag, store, "TR-050", "MEDIUM");
+  traceGenerated(ag, dataModel, "TR-050", "HIGH");
+
+  if (isTrue(ag.strongConsistencyRequired) and not hasText(ag.consistencyBoundaryRationale)) {
+    manualDecision("TR-050", "Confirm storage consistency strategy for aggregate '" + ag.name + "' because strong consistency is required without rationale.", KERNEL!Severity#ERROR, true, Sequence{ag, store});
+  }
+}
+
+rule DataClassification2DataProtectionPolicy
+  transform dc : CIMDOMAIN!DataClassification
+  to pol : POLICY!DataProtectionPolicy {
+
+  pol.id = idFor("dataprotection", dc);
+  pol.name = nameFor(dc, " Data Protection");
+  pol.policyScope = dc.kind.asString();
+  pol.productionRequired = isSensitiveClassification(dc);
+  pol.classification = dc.kind.asString() + "/" + dc.identifiability.asString();
+  pol.encryptionRequired = dc.encryptionExpected or isSensitiveClassification(dc);
+  pol.maskingRequired = dc.maskingExpected;
+  pol.tokenizationRequired = dc.kind.asString() = "AUTHENTICATION_SECRET" or dc.kind.asString() = "FINANCIAL" or dc.kind.asString() = "HEALTH";
+  pol.accessAuditRequired = dc.auditAccessRequired;
+  pol.deletionRequired = dc.deletionRightApplies;
+  pol.retentionPeriod = "TBD";
+  pol.residencyRequirement = "TBD";
+
+  pimRoot().policies.add(pol);
+  traceGenerated(dc, pol, "TR-060", "HIGH");
+
+  if ((dc.kind.asString() = "PERSONAL" or dc.kind.asString() = "SENSITIVE_PERSONAL" or dc.kind.asString() = "HEALTH" or dc.kind.asString() = "REGULATED") and not hasText(dc.classificationRationale)) {
+    manualDecision("TR-060", "Confirm data protection rationale, retention period, and residency for classification '" + dc.name + "'.", KERNEL!Severity#ERROR, true, Sequence{dc, pol});
+  }
+}
+
+rule PrivacyConstraint2Policies
+  transform pc : CIMGOV!PrivacyConstraint
+  to dp : POLICY!DataProtectionPolicy,
+     rp : POLICY!RetentionPolicy {
+
+  dp.id = idFor("privacy_dp", pc);
+  dp.name = nameFor(pc, " Privacy Protection");
+  dp.policyScope = pc.purpose;
+  dp.productionRequired = true;
+  dp.classification = pc.law + ":" + pc.jurisdiction;
+  dp.encryptionRequired = true;
+  dp.maskingRequired = true;
+  dp.accessAuditRequired = true;
+  dp.deletionRequired = pc.deletionRequired;
+  dp.retentionPeriod = pc.retentionPeriod;
+  if (pc.dataResidencyRequired) {
+    dp.residencyRequirement = pc.allowedResidencyArea;
+  }
+  else {
+    dp.residencyRequirement = "";
+  }
+
+  rp.id = idFor("retention", pc);
+  rp.name = nameFor(pc, " Retention");
+  rp.retentionPeriod = pc.retentionPeriod;
+  rp.deletionAfterRetention = pc.deletionRequired;
+  rp.legalHoldPossible = true;
+  rp.productionRequired = true;
+
+  for (item in pc.dataItems) {
+    var schemas = CONTRACTS!Schema.all.select(s | s.fields.exists(f | f.generatedFrom = item.id));
+    dp.attachedTo.addAll(schemas);
+    rp.attachedTo.addAll(schemas);
+  }
+
+  pimRoot().policies.add(dp);
+  pimRoot().policies.add(rp);
+  traceGenerated(pc, dp, "TR-060", "HIGH");
+  traceGenerated(pc, rp, "TR-060", "HIGH");
+
+  if (pc.legalBasis.asString() = "UNKNOWN" or not hasText(pc.retentionPeriod)) {
+    manualDecision("TR-060", "Confirm legal basis and retention period for privacy constraint '" + pc.name + "'.", KERNEL!Severity#ERROR, true, Sequence{pc, dp, rp});
+  }
+}
+
+rule ComplianceConstraint2CompliancePolicy
+  transform cc : CIMGOV!ComplianceConstraint
+  to pol : POLICY!CompliancePolicy {
+
+  pol.id = idFor("compliance", cc);
+  pol.name = nameFor(cc, " Compliance");
+  pol.policyScope = cc.controlObjective;
+  pol.productionRequired = cc.mandatory or cc.productionBlocking;
+  pol.regulation = cc.regulation;
+  pol.controlId = cc.controlId;
+  pol.evidenceType = cc.evidenceRequired;
+  pol.auditReportRequired = cc.externalAuditRequired;
+  pol.attachedTo.addAll(cc.scopedElements);
+
+  pimRoot().policies.add(pol);
+  traceGenerated(cc, pol, "TR-060", "HIGH");
+
+  if (not hasText(cc.evidenceRequired)) {
+    manualDecision("TR-060", "Define compliance evidence for control '" + cc.controlId + "'.", KERNEL!Severity#WARNING, cc.productionBlocking, Sequence{cc, pol});
+  }
+}

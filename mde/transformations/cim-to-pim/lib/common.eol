@@ -1,0 +1,148 @@
+operation asText(value) {
+  if (value.isUndefined()) {
+    return "";
+  }
+  return value.asString();
+}
+
+operation Any orDefault(defaultValue : String) {
+  if (self.isUndefined() or self.trim().isEmpty()) {
+    return defaultValue;
+  }
+  return self;
+}
+
+operation hasText(value) {
+  return value.isDefined() and not value.asString().trim().isEmpty();
+}
+
+operation firstText(primary, fallback) {
+  if (hasText(primary)) {
+    return primary.asString();
+  }
+  if (hasText(fallback)) {
+    return fallback.asString();
+  }
+  return "";
+}
+
+operation slug(value) {
+  var s = asText(value).toLowerCase().trim();
+  if (s.isEmpty()) {
+    return "unnamed";
+  }
+  var out = "";
+  for (i in Sequence{1..s.length()}) {
+    var ch = s.substring(i - 1, i);
+    if ("abcdefghijklmnopqrstuvwxyz0123456789".contains(ch)) {
+      out = out + ch;
+    }
+    else {
+      if (not out.endsWith("_")) {
+        out = out + "_";
+      }
+    }
+  }
+  while (out.endsWith("_") and out.length() > 1) {
+    out = out.substring(0, out.length() - 1);
+  }
+  return out;
+}
+
+operation kebab(value) {
+  return slug(value).replace("_", "-");
+}
+
+operation camelCase(value) {
+  var parts = slug(value).split("_");
+  if (parts.isEmpty()) {
+    return "unnamed";
+  }
+  var result = parts.first();
+  for (part in parts.excluding(parts.first())) {
+    if (part.length() > 0) {
+      result = result + part.substring(0, 1).toUpperCase() + part.substring(1);
+    }
+  }
+  return result;
+}
+
+operation pascalCase(value) {
+  var cc = camelCase(value);
+  return cc.substring(0, 1).toUpperCase() + cc.substring(1);
+}
+
+operation removeSuffix(value : String, suffix : String) {
+  if (value.isDefined() and value.endsWith(suffix)) {
+    return value.substring(0, value.length() - suffix.length());
+  }
+  return value;
+}
+
+operation pluralize(value) {
+  var text = asText(value);
+  if (text.isEmpty()) {
+    return "resources";
+  }
+  if (text.toLowerCase().endsWith("s")) {
+    return text;
+  }
+  if (text.toLowerCase().endsWith("y") and text.length() > 1) {
+    return text.substring(0, text.length() - 1) + "ies";
+  }
+  return text + "s";
+}
+
+operation idFor(prefix : String, source) {
+  var seed = source.id;
+  if (not hasText(seed)) {
+    seed = source.name;
+  }
+  return prefix + "_" + slug(seed);
+}
+
+operation nameFor(source, suffix : String) {
+  var baseName = source.name;
+  if (not hasText(baseName)) {
+    baseName = source.id;
+  }
+  return baseName.orDefault("Unnamed") + suffix;
+}
+
+operation newId(prefix : String, seed) {
+  return prefix + "_" + slug(seed);
+}
+
+operation collectionText(items) {
+  return joinText(items.collect(i | i.name), ", ");
+}
+
+operation joinText(items, separator : String) {
+  var result = "";
+  for (item in items) {
+    if (hasText(item)) {
+      if (hasText(result)) {
+        result = result + separator;
+      }
+      result = result + item.asString();
+    }
+  }
+  return result;
+}
+
+operation hasAny(items) {
+  return items.isDefined() and not items.isEmpty();
+}
+
+operation isTrue(value) {
+  return value.isDefined() and value;
+}
+
+operation isPublicActor(actor) {
+  return actor.isDefined() and actor.actorType.isDefined() and
+    actor.actorType.asString() <> "TIME";
+}
+
+operation setFeature(element, featureName : String, value) {
+  element.eSet(element.eClass().getEStructuralFeature(featureName), value);
+}

@@ -1,0 +1,125 @@
+import "lib/common.eol";
+import "lib/mapping.eol";
+import "lib/trace-readiness.eol";
+
+operation inferArchitectureStyle(c : CIM!CIMModel) {
+  if (c.processes.exists(p | p.longRunning or p.humanApprovalPossible or p.compensationExpected)) {
+    return PIMTYPES!ArchitectureStyle#WORKFLOW_ORCHESTRATED_SERVERLESS;
+  }
+  if (c.events.notEmpty() and c.events.size() >= (c.commands.size() + c.queries.size())) {
+    return PIMTYPES!ArchitectureStyle#EVENT_DRIVEN_SERVERLESS;
+  }
+  if (c.queries.notEmpty() or c.commands.exists(cmd | cmd.userInitiated)) {
+    return PIMTYPES!ArchitectureStyle#API_FIRST_SERVERLESS;
+  }
+  return PIMTYPES!ArchitectureStyle#HYBRID_SERVERLESS;
+}
+
+operation buildArchitectureRationale(c : CIM!CIMModel) {
+  return "Generated provider-independent serverless PIM from CIM intent: " +
+    c.commands.size() + " commands, " +
+    c.queries.size() + " queries, " +
+    c.events.size() + " events, " +
+    c.processes.size() + " processes.";
+}
+
+rule CIMModel2PIMModel
+  transform c : CIM!CIMModel
+  to p : PIM!PIMModel {
+
+  p.id = idFor("pim", c);
+  p.name = c.name.orDefault(c.domainName + " PIM");
+  p.domainName = c.domainName;
+  p.providerIndependent = true;
+  p.defaultCorrelationIdName = "correlationId";
+  p.architectureStyle = inferArchitectureStyle(c);
+  p.architectureRationale = buildArchitectureRationale(c);
+
+  p.traceModel = new KERNEL!TraceModel;
+  p.traceModel.id = "trace_" + p.id;
+  p.traceModel.name = "Trace links for " + c.domainName;
+  p.traceModel.generatedByTransformation = true;
+
+  p.readiness = new KERNEL!ProductionReadinessAssessment;
+  p.readiness.id = "readiness_" + p.id;
+  p.readiness.name = "PIM readiness assessment";
+  p.readiness.readinessStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
+  p.readiness.assessedBy = "CIM-to-PIM transformation";
+  p.readiness.transformationReady = false;
+  p.readiness.deploymentReady = false;
+  p.readiness.productionReady = false;
+  p.readiness.generatedByTransformation = true;
+
+  copyCommonTrace(c, p, "TR-001", "HIGH");
+  addTrace(c, p, "TR-001", KERNEL!TraceLinkType#TRANSFORMS_TO, "HIGH");
+}
+
+rule DefaultEnvironmentsAndImplementationProfile
+  transform c : CIM!CIMModel
+  to dev : DEPLOY!Environment,
+     test : DEPLOY!Environment,
+     prod : DEPLOY!Environment,
+     profile : DEPLOY!ImplementationProfile {
+
+  dev.id = "env_dev";
+  dev.name = "dev";
+  dev.environmentClass = PIMTYPES!EnvironmentClass#DEV;
+  dev.nameSuffix = "dev";
+  dev.productionLike = false;
+  dev.requiresApproval = false;
+
+  test.id = "env_test";
+  test.name = "test";
+  test.environmentClass = PIMTYPES!EnvironmentClass#TEST;
+  test.nameSuffix = "test";
+  test.productionLike = false;
+  test.requiresApproval = false;
+
+  prod.id = "env_prod";
+  prod.name = "prod";
+  prod.environmentClass = PIMTYPES!EnvironmentClass#PROD;
+  prod.nameSuffix = "prod";
+  prod.productionLike = true;
+  prod.requiresApproval = true;
+
+  profile.id = "implementation_profile_default";
+  profile.name = "Default implementation profile - review required";
+  profile.primaryLanguage = PIMTYPES!RuntimeLanguage#CUSTOM;
+  profile.packageManager = PIMTYPES!PackageManager#NONE;
+  profile.sourceLayout = "TBD";
+  profile.testFramework = "TBD";
+  profile.lintCommand = "TBD";
+  profile.formatCommand = "TBD";
+  profile.buildCommand = "TBD";
+  profile.dependencyPolicy = "Provider-independent dependency policy; review required.";
+  profile.generateTypedContracts = true;
+  profile.generateRuntimeValidation = true;
+  profile.lifecycleStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
+
+  pimRoot().environments.add(dev);
+  pimRoot().environments.add(test);
+  pimRoot().environments.add(prod);
+  pimRoot().implementationProfile = profile;
+
+  copyCommonTrace(c, dev, "TR-003", "HIGH");
+  copyCommonTrace(c, test, "TR-003", "HIGH");
+  copyCommonTrace(c, prod, "TR-003", "HIGH");
+  traceGenerated(c, profile, "TR-003", "LOW");
+  manualDecision("TR-003", "Choose runtime language, package manager, test framework, source layout, lint, format, and build commands.", KERNEL!Severity#WARNING, false, Sequence{profile});
+}
+
+post InitialReadinessChecks {
+  var c = CIM!CIMModel.all.first();
+  readinessCheck("CIM_HAS_AT_LEAST_ONE_BEHAVIOR", KERNEL!Severity#ERROR,
+    c.commands.notEmpty() or c.queries.notEmpty() or c.processes.notEmpty() or c.policies.notEmpty() or c.events.notEmpty(),
+    "CIM contains transformable behavior.", "Add command, query, event, process, or policy.", Sequence{c});
+  readinessCheck("PIM_HAS_SERVICE_BOUNDARIES", KERNEL!Severity#WARNING,
+    c.boundedContexts.notEmpty() or c.capabilities.notEmpty(),
+    "CIM contains service boundary candidates.", "Add bounded contexts or capabilities.", Sequence{c});
+  var unclassified = c.informationItems.select(i | i.classification.isUndefined() and (i.name.toLowerCase().contains("email") or i.name.toLowerCase().contains("phone") or i.name.toLowerCase().contains("secret") or i.name.toLowerCase().contains("password")));
+  readinessCheck("DATA_CLASSIFICATION_READY", KERNEL!Severity#ERROR, unclassified.isEmpty(),
+    "Privacy/sensitivity classifications are present for obvious sensitive items.", "Classify personal, regulated, financial, health, and secret information.", unclassified);
+  var insecure = c.commands.select(cmd | cmd.userInitiated and not cmd.authorizationRequired);
+  readinessCheck("SECURITY_DECISIONS_READY", KERNEL!Severity#ERROR, insecure.isEmpty(),
+    "External/user entry points declare authorization expectations.", "Confirm auth and authorization for user-facing behavior.", insecure);
+}

@@ -1,0 +1,405 @@
+import "lib/common.eol";
+import "lib/mapping.eol";
+import "lib/trace-readiness.eol";
+import "lib/pim-builders.eol";
+import "lib/resolution.eol";
+
+operation commandPath(cmd : CIMBEHAVIOR!Command) {
+  var resource = cmd.name;
+  if (cmd.targetAggregate.isDefined()) {
+    resource = pluralize(cmd.targetAggregate.root.name);
+  }
+  else {
+    if (cmd.targetCapability.isDefined()) {
+      resource = pluralize(cmd.targetCapability.name);
+    }
+  }
+  var method = inferHttpMethod(cmd);
+  if (method = PIMTYPES!HttpMethod#PATCH or method = PIMTYPES!HttpMethod#PUT or method = PIMTYPES!HttpMethod#DELETE) {
+    var idName = "id";
+    if (cmd.targetAggregate.isDefined() and cmd.targetAggregate.root.identityAttribute.isDefined()) {
+      idName = camelCase(cmd.targetAggregate.root.identityAttribute.name);
+    }
+    return "/" + kebab(resource) + "/{" + idName + "}";
+  }
+  return "/" + kebab(resource);
+}
+
+operation queryPath(q : CIMBEHAVIOR!Query) {
+  if (q.reads.notEmpty()) {
+    var entity = q.reads.first();
+    if (q.queryType.asString() = "LOOKUP" or q.queryType.asString() = "STATUS") {
+      return "/" + kebab(pluralize(entity.name)) + "/{id}";
+    }
+    return "/" + kebab(pluralize(entity.name));
+  }
+  return "/" + kebab(pluralize(q.name));
+}
+
+operation eventSubject(e : CIMBEHAVIOR!BusinessEvent) {
+  if (hasText(e.correlationBusinessKey)) return e.correlationBusinessKey;
+  if (hasText(e.orderingKeyCandidate)) return e.orderingKeyCandidate;
+  if (e.affects.notEmpty()) return e.affects.first().name;
+  return e.name;
+}
+
+rule BusinessError2ErrorSchema
+  transform e : CIMBEHAVIOR!BusinessError
+  to s : CONTRACTS!Schema {
+
+  s.id = idFor("schema_error", e);
+  s.name = nameFor(e, " Error Schema");
+  s.schemaKind = PIMTYPES!SchemaKind#ERROR;
+  s.semanticVersion = "1.0.0";
+  s.compatibility = PIMTYPES!SchemaCompatibility#BACKWARD;
+  s.additionalPropertiesAllowed = false;
+  s.fields.add(fieldForWithDefault(s.id, "code", PIMTYPES!FieldType#STRING, true, e.errorCode));
+  s.fields.add(fieldForWithDefault(s.id, "message", PIMTYPES!FieldType#STRING, true, e.userVisibleMessage));
+  s.fields.add(fieldForWithDefault(s.id, "recoverable", PIMTYPES!FieldType#BOOLEAN, true, e.recoverable.asString()));
+
+  pimRoot().schemas.add(s);
+  traceGenerated(e, s, "TR-130", "HIGH");
+}
+
+rule BusinessEvent2EventType
+  transform e : CIMBEHAVIOR!BusinessEvent
+  to et : CONTRACTS!EventType,
+     schema : CONTRACTS!Schema {
+
+  schema.id = idFor("schema_event", e);
+  schema.name = nameFor(e, " Event Schema");
+  schema.schemaKind = PIMTYPES!SchemaKind#EVENT;
+  schema.semanticVersion = "1.0.0";
+  schema.compatibility = PIMTYPES!SchemaCompatibility#BACKWARD;
+  schema.additionalPropertiesAllowed = false;
+  schema.generatedFromCimInformation = true;
+  for (item in e.payload) {
+    schema.fields.add(createSchemaField(item));
+  }
+  addEventMetadataFields(schema, e);
+
+  et.id = idFor("eventtype", e);
+  et.name = firstText(e.occurredInPastTenseName, firstText(e.semanticName, e.name));
+  et.semanticName = et.name;
+  et.version = "1.0.0";
+  et.sourceDomain = serviceFor(e).name.orDefault(pimRoot().domainName);
+  et.subjectExpression = eventSubject(e);
+  et.orderingKey = e.orderingKeyCandidate;
+  et.externalEvent = e.externallyVisible;
+  et.auditEvent = e.auditRelevant;
+  et.replayable = e.retentionRelevant or e.auditRelevant;
+  et.containsPersonalData = e.payload.exists(i | isPersonal(i));
+  et.schema = schema;
+  et.envelope = defaultEventEnvelope(e.id);
+
+  pimRoot().schemas.add(schema);
+  pimRoot().eventTypes.add(et);
+  traceGenerated(e, schema, "TR-090", "HIGH");
+  traceGenerated(e, et, "TR-090", "HIGH");
+}
+
+rule Command2Function
+  transform cmd : CIMBEHAVIOR!Command
+  to fn : COMPUTE!Function {
+
+  fn.id = idFor("fn_cmd", cmd);
+  fn.name = nameFor(cmd, " Handler");
+  fn.functionKind = PIMTYPES!FunctionKind#COMMAND_HANDLER;
+  fn.responsibility = cmd.intent.orDefault("Handle command " + cmd.name);
+  fn.handlerResponsibility = fn.responsibility;
+  fn.sourceNameSuggestion = pascalCase(cmd.name) + "Handler";
+  fn.publicEntryPoint = cmd.userInitiated;
+  fn.writesState = cmd.targetAggregate.isDefined() or cmd.expectedEvents.notEmpty();
+  fn.readsState = cmd.preconditions.notEmpty();
+  fn.publishesEvents = cmd.expectedEvents.notEmpty();
+  fn.requiresNetworkAccess = false;
+  fn.requiresFileSystem = false;
+  fn.requiresLargeTemporaryStorage = false;
+  fn.requiresIdempotency = cmd.duplicateSubmissionPossible or hasText(cmd.idempotencyBusinessKey);
+  fn.businessOperationRef = cmd.id;
+  fn.computeProfile = inferComputeProfile(cmd);
+  fn.executionModel = inferCommandExecutionModel(cmd);
+  fn.stateless = true;
+
+  var contract = new CONTRACTS!FunctionContract;
+  contract.id = idFor("contract_cmd", cmd);
+  contract.name = cmd.name + " Contract";
+  contract.contractVersion = "1.0.0";
+  contract.validatesInput = true;
+  contract.validatesOutput = true;
+  contract.correlationIdField = "correlationId";
+  contract.causationIdField = "causationId";
+  contract.idempotencyKeyField = cmd.idempotencyBusinessKey.orDefault("idempotencyKey");
+  contract.authContextRequired = cmd.authorizationRequired;
+  contract.inputSchema = createCommandRequestSchema(cmd);
+  contract.outputSchema = createCommandResponseSchema(cmd);
+  for (ev in cmd.expectedEvents) {
+    contract.emittedEvents.add(eventTypeFor(ev));
+    fn.publishes.add(eventTypeFor(ev));
+  }
+  for (err in cmd.possibleErrors) {
+    contract.errorSchemas.add(err.equivalents("BusinessError2ErrorSchema").first());
+  }
+  fn.contract = contract;
+
+  if (fn.requiresIdempotency) {
+    fn.idempotency = createIdempotencyPolicy(cmd);
+  }
+  fn.observability = createDefaultObservability(fn, "TR-070", cmd.auditRequired, cmd.auditRequired);
+
+  pimRoot().functions.add(fn);
+  traceGenerated(cmd, fn, "TR-070", "HIGH");
+}
+
+rule UserInitiatedCommand2ApiRoute
+  transform cmd : CIMBEHAVIOR!Command
+  to route : API!ApiRoute {
+
+  guard : cmd.userInitiated or cmd.interactionExpectation.asString() = "IMMEDIATE_RESPONSE_EXPECTED"
+
+  var api = ensureApiForService(serviceFor(cmd));
+  route.id = idFor("route_cmd", cmd);
+  route.name = cmd.name + " Route";
+  route.method = inferHttpMethod(cmd);
+  route.pathTemplate = commandPath(cmd);
+  route.operationId = camelCase(cmd.name);
+  route.publicRoute = cmd.issuedBy.exists(a | isPublicActor(a));
+  route.authRequired = cmd.authorizationRequired or cmd.issuedBy.exists(a | a.trustLevel.asString() <> "TRUSTED_INTERNAL");
+  if (cmd.interactionExpectation.asString() = "RESPONSE_CAN_BE_DELAYED") {
+    route.expectedSuccessStatus = 202;
+  }
+  else {
+    route.expectedSuccessStatus = 200;
+  }
+  route.descriptionForConsumers = cmd.intent;
+  route.requestValidationRequired = true;
+  route.responseValidationRequired = true;
+  route.requestSchema = commandFunction(cmd).contract.inputSchema;
+  route.responseSchema = commandFunction(cmd).contract.outputSchema;
+  route.functionIntegration = commandFunction(cmd);
+
+  if (route.authRequired) {
+    var authz = new SECURITY!AuthorizationPolicy;
+    authz.id = idFor("authz_cmd", cmd);
+    authz.name = cmd.name + " Authorization";
+    authz.policyScope = "route and command invocation";
+    authz.authenticationRequired = true;
+    authz.authorizationRequired = true;
+    authz.ruleExpression = cmd.authorizationRule;
+    authz.roleOrScopeRequired = cmd.authorizationRule;
+    authz.resourceLevelAuthorization = hasText(cmd.authorizationRule);
+    authz.attachedTo.add(route);
+    authz.attachedTo.add(route.functionIntegration);
+    route.authorization = authz;
+    route.functionIntegration.securityPolicies.add(authz);
+    pimRoot().policies.add(authz);
+    traceGenerated(cmd, authz, "TR-070", "MEDIUM");
+  }
+
+  api.routes.add(route);
+  api.authRequired = api.authRequired or route.authRequired;
+  traceGenerated(cmd, route, "TR-070", "MEDIUM");
+
+  var trigger = new COMPUTE!Trigger;
+  trigger.id = idFor("trigger_route_cmd", cmd);
+  trigger.name = cmd.name + " Route Trigger";
+  trigger.triggerKind = "API_ROUTE";
+  trigger.invocationMode = PIMTYPES!InvocationMode#SYNCHRONOUS;
+  trigger.enabled = true;
+  trigger.generatedFromFlow = false;
+  trigger.source = route;
+  trigger.invokesFunction = route.functionIntegration;
+  pimRoot().triggers.add(trigger);
+  traceGenerated(cmd, trigger, "TR-070", "MEDIUM");
+
+  for (err in cmd.possibleErrors) {
+    var mapping = new API!ErrorMapping;
+    mapping.id = newId("errormap", cmd.id + "_" + err.id);
+    mapping.name = cmd.name + " " + err.name + " Error Mapping";
+    mapping.domainErrorCode = err.errorCode;
+    if (err.recoverable) {
+      mapping.abstractStatusClass = "409_OR_422_RETRYABLE_BUSINESS_CONFLICT";
+    }
+    else {
+      mapping.abstractStatusClass = "400_OR_422_BUSINESS_VALIDATION";
+    }
+    mapping.responseMessage = err.userVisibleMessage;
+    mapping.errorSchema = err.equivalents("BusinessError2ErrorSchema").first();
+    route.errorMappings.add(mapping);
+    traceGenerated(err, mapping, "TR-130", "HIGH");
+  }
+
+  if (route.authRequired and not hasText(cmd.authorizationRule)) {
+    manualDecision("TR-070", "Confirm authorization policy for route generated from command '" + cmd.name + "'.", KERNEL!Severity#ERROR, true, Sequence{cmd, route});
+  }
+}
+
+rule Query2Function
+  transform q : CIMBEHAVIOR!Query
+  to fn : COMPUTE!Function {
+
+  fn.id = idFor("fn_query", q);
+  fn.name = nameFor(q, " Query Handler");
+  fn.functionKind = PIMTYPES!FunctionKind#QUERY_HANDLER;
+  fn.responsibility = q.intent.orDefault("Handle query " + q.name);
+  fn.handlerResponsibility = fn.responsibility;
+  fn.sourceNameSuggestion = pascalCase(q.name) + "QueryHandler";
+  fn.publicEntryPoint = q.issuedBy.exists(a | isPublicActor(a));
+  fn.writesState = false;
+  fn.readsState = q.reads.notEmpty();
+  fn.publishesEvents = false;
+  fn.requiresIdempotency = false;
+  fn.executionModel = PIMTYPES!ExecutionModel#REQUEST_RESPONSE;
+  if (q.queryType.asString() = "REPORT" or q.queryType.asString() = "ANALYTICS" or q.queryType.asString() = "SEARCH") {
+    fn.computeProfile = PIMTYPES!ComputeProfile#IO_BOUND;
+  }
+  else {
+    fn.computeProfile = PIMTYPES!ComputeProfile#LIGHTWEIGHT;
+  }
+  fn.stateless = true;
+
+  var contract = new CONTRACTS!FunctionContract;
+  contract.id = idFor("contract_query", q);
+  contract.name = q.name + " Contract";
+  contract.contractVersion = "1.0.0";
+  contract.validatesInput = q.input.notEmpty();
+  contract.validatesOutput = true;
+  contract.correlationIdField = "correlationId";
+  contract.authContextRequired = q.authorizationRequired or q.containsPersonalData;
+  contract.inputSchema = createQueryRequestSchema(q);
+  contract.outputSchema = createQueryResponseSchema(q);
+  fn.contract = contract;
+  fn.observability = createDefaultObservability(fn, "TR-080", false, false);
+
+  pimRoot().functions.add(fn);
+  traceGenerated(q, fn, "TR-080", "HIGH");
+}
+
+rule Query2ApiRoute
+  transform q : CIMBEHAVIOR!Query
+  to route : API!ApiRoute {
+
+  var api = ensureApiForService(serviceFor(q));
+  route.id = idFor("route_query", q);
+  route.name = q.name + " Route";
+  route.method = PIMTYPES!HttpMethod#GET;
+  route.pathTemplate = queryPath(q);
+  route.operationId = camelCase(q.name);
+  route.publicRoute = q.issuedBy.exists(a | isPublicActor(a));
+  route.authRequired = q.authorizationRequired or q.containsPersonalData;
+  route.descriptionForConsumers = q.intent;
+  route.expectedSuccessStatus = 200;
+  route.paginationStyle = q.paginationExpectation;
+  route.requestValidationRequired = q.input.notEmpty();
+  route.responseValidationRequired = true;
+  route.requestSchema = queryFunction(q).contract.inputSchema;
+  route.responseSchema = queryFunction(q).contract.outputSchema;
+  route.functionIntegration = queryFunction(q);
+
+  api.routes.add(route);
+  traceGenerated(q, route, "TR-080", "MEDIUM");
+
+  var trigger = new COMPUTE!Trigger;
+  trigger.id = idFor("trigger_route_query", q);
+  trigger.name = q.name + " Route Trigger";
+  trigger.triggerKind = "API_ROUTE";
+  trigger.invocationMode = PIMTYPES!InvocationMode#SYNCHRONOUS;
+  trigger.enabled = true;
+  trigger.generatedFromFlow = false;
+  trigger.source = route;
+  trigger.invokesFunction = route.functionIntegration;
+  pimRoot().triggers.add(trigger);
+  traceGenerated(q, trigger, "TR-080", "MEDIUM");
+}
+
+rule Query2AccessPattern
+  transform q : CIMBEHAVIOR!Query
+  to ap : DATA!AccessPattern {
+
+  guard : q.reads.notEmpty()
+
+  var store = storeForEntity(q.reads.first());
+  ap.id = idFor("access", q);
+  ap.name = q.name + " Access Pattern";
+  ap.patternName = q.name;
+  setFeature(ap, "operation", "READ");
+  if (q.input.notEmpty()) {
+    ap.queryBy = joinText(q.input.collect(i | i.name), ", ");
+  }
+  else {
+    ap.queryBy = "TBD";
+  }
+  ap.sortBy = q.sortingExpectation;
+  ap.filterBy = q.filteringExpectation;
+  ap.projection = joinText(q.output.collect(i | i.name), ", ");
+  ap.highCardinality = q.queryType.asString() = "SEARCH" or q.queryType.asString() = "REPORT" or q.queryType.asString() = "ANALYTICS";
+  ap.highFrequency = q.freshnessNeed.asString() = "REAL_TIME" or q.freshnessNeed.asString() = "NEAR_REAL_TIME";
+  ap.stronglyConsistentReadRequired = ap.highFrequency;
+  ap.transactionalWriteRequired = false;
+  if (q.queryType.asString() = "LOOKUP" or q.queryType.asString() = "STATUS") {
+    ap.expectedItemsReturned = 1;
+  }
+  else {
+    ap.expectedItemsReturned = 100;
+  }
+
+  if (store.isDefined()) {
+    store.accessPatterns.add(ap);
+    ap.usedByFunctions.add(queryFunction(q));
+    var route = q.equivalents("Query2ApiRoute").first();
+    if (route.isDefined()) {
+      ap.exposedByRoutes.add(route);
+    }
+  }
+  traceGenerated(q, ap, "TR-080", "MEDIUM");
+
+  if (ap.queryBy = "TBD") {
+    manualDecision("TR-080", "Define query key/filter/index strategy for query '" + q.name + "'.", KERNEL!Severity#WARNING, ap.highCardinality, Sequence{q, ap});
+  }
+
+  var profile = CIM!CIMModel.all.first().transformationProfile;
+  if ((profile.isDefined() and profile.generateReadModelsFromQueries) or q.queryType.asString() = "SEARCH" or q.queryType.asString() = "REPORT" or q.queryType.asString() = "ANALYTICS") {
+    var readStore = new DATA!DataStore;
+    readStore.id = idFor("readstore", q);
+    readStore.name = q.name + " Read Store";
+    readStore.persistent = true;
+    readStore.encrypted = q.output.exists(i | isSensitive(i));
+    readStore.containsPersonalData = q.output.exists(i | isPersonal(i)) or q.containsPersonalData;
+    if (q.queryType.asString() = "SEARCH") {
+      readStore.storeKind = PIMTYPES!StoreKind#SEARCH;
+    }
+    else {
+      readStore.storeKind = PIMTYPES!StoreKind#DOCUMENT;
+    }
+    readStore.consistencyNeed = PIMTYPES!ConsistencyNeed#EVENTUAL;
+    readStore.transactional = false;
+    readStore.readOptimized = true;
+    readStore.writeOptimized = false;
+    readStore.appendOnly = false;
+    readStore.changeStreamRequired = false;
+    readStore.pointInTimeRecoveryRequired = readStore.containsPersonalData;
+    readStore.expectedDataVolume = "TBD";
+    readStore.expectedAccessRate = "TBD";
+
+    var readModel = new DATA!DataModel;
+    readModel.id = idFor("readmodel", q);
+    readModel.name = q.name + " Read Model";
+    readModel.dataModelKind = PIMTYPES!SchemaKind#READ_MODEL;
+    readModel.aggregateRef = "";
+    readModel.ownershipBoundary = serviceFor(q).name;
+    readModel.sourceOfTruth = false;
+    readModel.readModel = true;
+    readModel.auditRequired = q.auditRequired;
+    readModel.schema = queryFunction(q).contract.outputSchema;
+    for (item in q.output) {
+      readModel.storageFields.add(createDataField(item, null));
+    }
+    readStore.ownedDataModels.add(readModel);
+    readStore.accessPatterns.add(ap);
+    pimRoot().dataStores.add(readStore);
+    serviceFor(q).ownsStores.add(readStore);
+    traceGenerated(q, readStore, "TR-080", "MEDIUM");
+    traceGenerated(q, readModel, "TR-080", "MEDIUM");
+    manualDecision("TR-080", "Confirm projection freshness, rebuild strategy, and index keys for read model generated from query '" + q.name + "'.", KERNEL!Severity#WARNING, ap.highCardinality, Sequence{q, readStore, readModel});
+  }
+}

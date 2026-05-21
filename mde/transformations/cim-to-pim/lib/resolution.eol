@@ -1,0 +1,143 @@
+import "common.eol";
+import "trace-readiness.eol";
+import "pim-builders.eol";
+
+operation serviceFor(source) {
+  if (DEPLOY!ServerlessService.all.isEmpty() and PIM!PIMModel.all.notEmpty()) {
+    var c = CIM!CIMModel.all.first();
+    var s = new DEPLOY!ServerlessService;
+    s.id = "svc_default_review_required";
+    s.name = c.domainName + " Service";
+    s.boundaryType = PIMTYPES!BoundaryType#CAPABILITY_BASED;
+    s.responsibility = "Placeholder service boundary because CIM has no bounded context or capability.";
+    s.externallyExposed = true;
+    s.ownsData = c.entities.notEmpty();
+    s.lifecycleStatus = KERNEL!LifecycleStatus#INCOMPLETE;
+    pimRoot().services.add(s);
+    addTrace(c, s, "TR-010", KERNEL!TraceLinkType#DERIVES_FROM, "LOW");
+    manualDecision("TR-010", "Define service boundaries using bounded contexts or business capabilities.", KERNEL!Severity#BLOCKER, true, Sequence{c, s});
+  }
+  if (DEPLOY!ServerlessService.all.notEmpty()) {
+    if (source.isKindOf(CIMORG!BoundedContextCandidate)) {
+      var svc = source.equivalents("BoundedContext2Service").first();
+      if (svc.isDefined()) return svc;
+    }
+    if (source.isKindOf(CIMORG!BusinessCapability)) {
+      var capSvc = source.equivalents("Capability2Service").first();
+      if (capSvc.isDefined()) return capSvc;
+    }
+    if (source.isKindOf(CIMBEHAVIOR!Command) and source.targetCapability.isDefined()) {
+      return serviceFor(source.targetCapability);
+    }
+    if (source.isKindOf(CIMBEHAVIOR!Query) and source.targetCapability.isDefined()) {
+      return serviceFor(source.targetCapability);
+    }
+    if (source.isKindOf(CIMDOMAIN!DomainEntity) and source.owningCapability.isDefined()) {
+      return serviceFor(source.owningCapability);
+    }
+    if (source.isKindOf(CIMDOMAIN!AggregateCandidate) and source.root.owningCapability.isDefined()) {
+      return serviceFor(source.root.owningCapability);
+    }
+    if (source.isKindOf(CIMPROCESS!BusinessProcess) and source.owningCapability.isDefined()) {
+      return serviceFor(source.owningCapability);
+    }
+    for (bc in CIMORG!BoundedContextCandidate.all) {
+      if (bc.commands.includes(source) or bc.queries.includes(source) or bc.events.includes(source) or bc.entities.includes(source) or bc.policies.includes(source)) {
+        return serviceFor(bc);
+      }
+    }
+    return DEPLOY!ServerlessService.all.first();
+  }
+  return null;
+}
+
+operation commandFunction(cmd : CIMBEHAVIOR!Command) {
+  return cmd.equivalents("Command2Function").first();
+}
+
+operation queryFunction(q : CIMBEHAVIOR!Query) {
+  return q.equivalents("Query2Function").first();
+}
+
+operation policyFunction(p : CIMPROCESS!Policy) {
+  return p.equivalents("Policy2PolicyHandlerFunction").first();
+}
+
+operation eventTypeFor(e : CIMBEHAVIOR!BusinessEvent) {
+  return e.equivalents("BusinessEvent2EventType").select(x | x.isKindOf(CONTRACTS!EventType)).first();
+}
+
+operation schemaForEntity(e : CIMDOMAIN!DomainEntity) {
+  return e.equivalents("Entity2Schema").first();
+}
+
+operation storeForAggregate(ag : CIMDOMAIN!AggregateCandidate) {
+  return ag.equivalents("Aggregate2DataStore").select(x | x.isKindOf(DATA!DataStore)).first();
+}
+
+operation storeForEntity(entity : CIMDOMAIN!DomainEntity) {
+  for (ag in CIMDOMAIN!AggregateCandidate.all) {
+    if (ag.root = entity or ag.members.includes(entity)) {
+      return storeForAggregate(ag);
+    }
+  }
+  return null;
+}
+
+operation adapterFor(es : CIMORG!ExternalSystem) {
+  return es.equivalents("ExternalSystem2Adapter").first();
+}
+
+operation workflowFor(bp : CIMPROCESS!BusinessProcess) {
+  return bp.equivalents("BusinessProcess2Workflow").first();
+}
+
+operation ensureApiForService(service : DEPLOY!ServerlessService) {
+  if (service.ownsApis.notEmpty()) {
+    return service.ownsApis.first();
+  }
+  var api = new API!Api;
+  api.id = "api_" + service.id;
+  api.name = service.name + " API";
+  api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP;
+  api.publicName = service.name;
+  api.version = "1.0.0";
+  api.basePath = "/" + kebab(removeSuffix(service.name, " Service"));
+  api.authRequired = false;
+  api.corsRequired = false;
+  api.externalConsumerFacing = service.externallyExposed;
+  api.generatedOpenApiRequired = true;
+  api.observability = createDefaultObservability(api, "TR-070", true, false);
+  api.generatedByTransformation = true;
+  api.manuallyMaintained = false;
+  service.ownsApis.add(api);
+  pimRoot().apis.add(api);
+  addTrace(service, api, "TR-070", KERNEL!TraceLinkType#DERIVES_FROM, "MEDIUM");
+  return api;
+}
+
+operation ensureEventBusForService(service : DEPLOY!ServerlessService) {
+  var existing = service.ownsChannels.select(c | c.isKindOf(INTEGRATION!EventBus)).first();
+  if (existing.isDefined()) {
+    return existing;
+  }
+  var ch = new INTEGRATION!EventBus;
+  ch.id = "eventbus_" + service.id;
+  ch.name = service.name + " Event Bus";
+  ch.channelKind = PIMTYPES!ChannelKind#EVENT_BUS;
+  ch.orderingRequirement = PIMTYPES!OrderingRequirement#NONE;
+  ch.deliverySemantics = PIMTYPES!DeliverySemantics#AT_LEAST_ONCE;
+  ch.encrypted = false;
+  ch.replayRequired = false;
+  ch.deadLetterRequired = true;
+  ch.routingExpressionLanguage = "eventType";
+  ch.integrationPurpose = "Service event publication and routing.";
+  ch.observability = createDefaultObservability(ch, "TR-090", true, true);
+  ch.resilience = createDefaultResilience(ch, "TR-090", true);
+  ch.generatedByTransformation = true;
+  ch.manuallyMaintained = false;
+  service.ownsChannels.add(ch);
+  pimRoot().channels.add(ch);
+  addTrace(service, ch, "TR-090", KERNEL!TraceLinkType#DERIVES_FROM, "MEDIUM");
+  return ch;
+}

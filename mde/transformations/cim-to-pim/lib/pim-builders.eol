@@ -1,0 +1,278 @@
+import "common.eol";
+import "mapping.eol";
+import "trace-readiness.eol";
+
+operation field(name : String, fieldType, required : Boolean) {
+  return fieldFor("generic", name, fieldType, required);
+}
+
+operation fieldFor(ownerSeed : String, name : String, fieldType, required : Boolean) {
+  var f = new CONTRACTS!SchemaField;
+  f.id = newId("field", ownerSeed + "_" + name + "_" + fieldType.asString());
+  f.name = camelCase(name);
+  f.fieldType = fieldType;
+  f.required = required;
+  f.nullable = not required;
+  f.array = fieldType = PIMTYPES!FieldType#ARRAY;
+  f.generatedByTransformation = true;
+  f.manuallyMaintained = false;
+  return f;
+}
+
+operation fieldWithDefault(name : String, fieldType, required : Boolean, defaultValue : String) {
+  var f = fieldFor("generic", name, fieldType, required);
+  f.defaultValue = defaultValue;
+  return f;
+}
+
+operation fieldForWithDefault(ownerSeed : String, name : String, fieldType, required : Boolean, defaultValue : String) {
+  var f = fieldFor(ownerSeed, name, fieldType, required);
+  f.defaultValue = defaultValue;
+  return f;
+}
+
+operation createSchemaField(item : CIMDOMAIN!InformationItem) {
+  var f = new CONTRACTS!SchemaField;
+  f.id = idFor("field", item);
+  f.name = camelCase(firstText(item.businessName, item.name));
+  f.fieldType = mapFieldType(item);
+  f.required = isTrue(item.required);
+  f.nullable = not isTrue(item.required);
+  f.array = isTrue(item.collection) or item.type.asString() = "LIST";
+  f.format = deriveFormat(item);
+  f.example = item.example;
+  f.minLength = item.minLength;
+  f.maxLength = item.maxLength;
+  f.pattern = item.pattern;
+  f.minimum = item.minValue;
+  f.maximum = item.maxValue;
+  if (item.classification.isDefined()) {
+    f.classification = item.classification.kind.asString() + "/" + item.classification.identifiability.asString();
+  }
+  f.personalData = isPersonal(item);
+  f.sensitiveData = isSensitive(item);
+  f.secretValue = isSecret(item);
+  f.descriptionForConsumers = firstText(item.summary, item.description);
+  traceGenerated(item, f, "TR-040", "HIGH");
+
+  if (item.type.isUndefined()) {
+    manualDecision("TR-040", "Choose a primitive business type for information item '" + item.name + "'.", KERNEL!Severity#ERROR, true, Sequence{item, f});
+  }
+  if ((f.personalData or f.sensitiveData or item.name.toLowerCase().contains("secret") or item.name.toLowerCase().contains("password")) and item.classification.isUndefined()) {
+    manualDecision("TR-040", "Classify privacy and sensitivity for information item '" + item.name + "'.", KERNEL!Severity#ERROR, true, Sequence{item, f});
+  }
+  return f;
+}
+
+operation createDataField(item : CIMDOMAIN!InformationItem, identityItem) {
+  var f = new DATA!DataField;
+  f.id = idFor("datafield", item);
+  f.name = camelCase(firstText(item.businessName, item.name));
+  f.fieldType = mapFieldType(item);
+  f.identifier = identityItem.isDefined() and item = identityItem;
+  f.partitionKeyCandidate = f.identifier or item.name.toLowerCase().endsWith("id");
+  f.sortKeyCandidate = false;
+  f.indexedCandidate = isTrue(item.searchRelevant) or isTrue(item.reportingRelevant);
+  f.required = isTrue(item.required);
+  f.personalData = isPersonal(item);
+  f.sensitiveData = isSensitive(item);
+  if (item.classification.isDefined()) {
+    f.classification = item.classification.kind.asString();
+  }
+  f.storageName = camelCase(firstText(item.businessName, item.name));
+  traceGenerated(item, f, "TR-050", "HIGH");
+  return f;
+}
+
+operation addCorrelationFields(schema : CONTRACTS!Schema) {
+  if (schema.fields.select(f | f.name = "correlationId").isEmpty()) {
+    schema.fields.add(fieldFor(schema.id, "correlationId", PIMTYPES!FieldType#STRING, true));
+  }
+  if (schema.fields.select(f | f.name = "causationId").isEmpty()) {
+    schema.fields.add(fieldFor(schema.id, "causationId", PIMTYPES!FieldType#STRING, false));
+  }
+}
+
+operation addEventMetadataFields(schema : CONTRACTS!Schema, event : CIMBEHAVIOR!BusinessEvent) {
+  schema.fields.add(fieldFor(schema.id, "eventId", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "eventType", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "source", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "time", PIMTYPES!FieldType#DATETIME, true));
+  schema.fields.add(fieldFor(schema.id, "version", PIMTYPES!FieldType#STRING, true));
+  addCorrelationFields(schema);
+  if (hasText(event.correlationBusinessKey) or hasText(event.orderingKeyCandidate)) {
+    schema.fields.add(fieldFor(schema.id, "subject", PIMTYPES!FieldType#STRING, false));
+  }
+}
+
+operation defaultEventEnvelope(seed : String) {
+  var env = new CONTRACTS!EventEnvelope;
+  env.id = newId("event_envelope", seed);
+  env.name = "Default Event Envelope";
+  env.eventIdField = "eventId";
+  env.eventTypeField = "eventType";
+  env.sourceField = "source";
+  env.timeField = "time";
+  env.versionField = "version";
+  env.correlationIdField = "correlationId";
+  env.causationIdField = "causationId";
+  env.subjectField = "subject";
+  env.metadataRequired = true;
+  env.generatedByTransformation = true;
+  env.manuallyMaintained = false;
+  return env;
+}
+
+operation createCommandRequestSchema(cmd : CIMBEHAVIOR!Command) {
+  var s = new CONTRACTS!Schema;
+  s.id = idFor("schema_cmd_req", cmd);
+  s.name = cmd.name + " Request";
+  s.schemaKind = PIMTYPES!SchemaKind#REQUEST;
+  s.semanticVersion = "1.0.0";
+  s.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  s.additionalPropertiesAllowed = false;
+  s.generatedFromCimInformation = true;
+  for (item in cmd.input) {
+    s.fields.add(createSchemaField(item));
+  }
+  addCorrelationFields(s);
+  if (hasText(cmd.idempotencyBusinessKey) or cmd.duplicateSubmissionPossible) {
+    s.fields.add(fieldFor(s.id, cmd.idempotencyBusinessKey.orDefault("idempotencyKey"), PIMTYPES!FieldType#STRING, true));
+  }
+  traceGenerated(cmd, s, "TR-070", "HIGH");
+  pimRoot().schemas.add(s);
+  return s;
+}
+
+operation createCommandResponseSchema(cmd : CIMBEHAVIOR!Command) {
+  var s = new CONTRACTS!Schema;
+  s.id = idFor("schema_cmd_res", cmd);
+  s.name = cmd.name + " Response";
+  s.schemaKind = PIMTYPES!SchemaKind#RESPONSE;
+  s.semanticVersion = "1.0.0";
+  s.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  s.additionalPropertiesAllowed = false;
+  s.generatedFromCimInformation = true;
+  s.fields.add(fieldFor(s.id, "accepted", PIMTYPES!FieldType#BOOLEAN, true));
+  s.fields.add(fieldFor(s.id, "correlationId", PIMTYPES!FieldType#STRING, true));
+  if (cmd.expectedEvents.notEmpty()) {
+    s.fields.add(fieldFor(s.id, "emittedEventTypes", PIMTYPES!FieldType#ARRAY, false));
+  }
+  traceGenerated(cmd, s, "TR-070", "HIGH");
+  pimRoot().schemas.add(s);
+  return s;
+}
+
+operation createQueryRequestSchema(q : CIMBEHAVIOR!Query) {
+  var s = new CONTRACTS!Schema;
+  s.id = idFor("schema_query_req", q);
+  s.name = q.name + " Query Parameters";
+  s.schemaKind = PIMTYPES!SchemaKind#REQUEST;
+  s.semanticVersion = "1.0.0";
+  s.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  s.additionalPropertiesAllowed = false;
+  s.generatedFromCimInformation = true;
+  for (item in q.input) {
+    s.fields.add(createSchemaField(item));
+  }
+  if (hasText(q.paginationExpectation)) {
+    s.fields.add(fieldFor(s.id, "pageToken", PIMTYPES!FieldType#STRING, false));
+    s.fields.add(fieldFor(s.id, "pageSize", PIMTYPES!FieldType#INTEGER, false));
+  }
+  traceGenerated(q, s, "TR-080", "HIGH");
+  pimRoot().schemas.add(s);
+  return s;
+}
+
+operation createQueryResponseSchema(q : CIMBEHAVIOR!Query) {
+  var s = new CONTRACTS!Schema;
+  s.id = idFor("schema_query_res", q);
+  s.name = q.name + " Response";
+  s.schemaKind = PIMTYPES!SchemaKind#RESPONSE;
+  s.semanticVersion = "1.0.0";
+  s.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  s.additionalPropertiesAllowed = false;
+  s.generatedFromCimInformation = true;
+  for (item in q.output) {
+    s.fields.add(createSchemaField(item));
+  }
+  if (q.queryType.asString() = "LIST" or q.queryType.asString() = "SEARCH" or q.queryType.asString() = "REPORT" or q.queryType.asString() = "ANALYTICS" or hasText(q.paginationExpectation)) {
+    s.fields.add(fieldFor(s.id, "items", PIMTYPES!FieldType#ARRAY, true));
+    s.fields.add(fieldFor(s.id, "nextPageToken", PIMTYPES!FieldType#STRING, false));
+  }
+  traceGenerated(q, s, "TR-080", "HIGH");
+  pimRoot().schemas.add(s);
+  return s;
+}
+
+operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, alarms : Boolean) {
+  var o = new POLICY!ObservabilityConfig;
+  o.id = newId("observability", seed.id + "_" + ruleId);
+  o.name = seed.name + " Observability";
+  o.policyScope = "operational telemetry";
+  o.productionRequired = true;
+  o.loggingEnabled = true;
+  o.metricsEnabled = true;
+  o.tracingEnabled = tracing;
+  o.alarmsEnabled = alarms;
+  o.dashboardRequired = alarms;
+  o.correlationIdRequired = true;
+  o.correlationIdField = "correlationId";
+  o.generatedByTransformation = true;
+  o.manuallyMaintained = false;
+  o.attachedTo.add(seed);
+  pimRoot().policies.add(o);
+  return o;
+}
+
+operation createDefaultResilience(seed, ruleId : String, deadLetter : Boolean) {
+  var r = new POLICY!ResiliencePolicy;
+  r.id = newId("resilience", seed.id + "_" + ruleId);
+  r.name = seed.name + " Resilience";
+  r.policyScope = "retry and failure handling";
+  r.productionRequired = true;
+  r.retryEnabled = true;
+  r.deadLetterRequired = deadLetter;
+  r.fallbackRequired = false;
+  r.circuitBreakerRequired = false;
+  r.timeoutRequired = true;
+  var retry = new POLICY!RetryPolicy;
+  retry.id = newId("retry", seed.id);
+  retry.name = seed.name + " Retry";
+  retry.maxAttempts = 3;
+  retry.initialDelaySeconds = 1;
+  retry.backoffRate = 2.0d;
+  retry.maxDelaySeconds = 60;
+  r.retry = retry;
+  if (deadLetter) {
+    var dl = new POLICY!DeadLetterPolicy;
+    dl.id = newId("deadletter", seed.id);
+    dl.name = seed.name + " Dead Letter";
+    dl.required = true;
+    dl.reason = "Asynchronous delivery failure isolation.";
+    dl.alarmRequired = true;
+    r.deadLetter = dl;
+  }
+  r.generatedByTransformation = true;
+  r.manuallyMaintained = false;
+  r.attachedTo.add(seed);
+  pimRoot().policies.add(r);
+  return r;
+}
+
+operation createIdempotencyPolicy(cmd : CIMBEHAVIOR!Command) {
+  var p = new POLICY!IdempotencyPolicy;
+  p.id = idFor("idempotency", cmd);
+  p.name = cmd.name + " Idempotency";
+  p.policyScope = "command handling";
+  p.productionRequired = true;
+  p.keySource = cmd.idempotencyBusinessKey.orDefault("idempotencyKey");
+  p.storeRequired = true;
+  p.scope = cmd.name;
+  p.expirationSeconds = 86400;
+  p.appliesToRetries = true;
+  p.appliesToDuplicateRequests = true;
+  traceGenerated(cmd, p, "TR-070", "MEDIUM");
+  pimRoot().policies.add(p);
+  return p;
+}

@@ -1,0 +1,12 @@
+import "root-scaffolding.etl";
+import "boundaries-security.etl";
+import "domain-data.etl";
+import "behavior-contracts.etl";
+import "process-policy.etl";
+import "integration-deployment.etl";
+
+pre ValidateInput {
+  if (CIM!CIMModel.all.isEmpty()) {
+    throw "CIM to PIM requires one CIMModel root.";
+  }
+}
