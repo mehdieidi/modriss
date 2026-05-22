@@ -1,7 +1,7 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <artifactId>mde-etl-runner</artifactId>
+  <artifactId>mde-m2t-runner</artifactId>
 
   <build>
     <plugins>
@@ -21,7 +21,7 @@
 
   <dependencies>
     <dependency>
-      <artifactId>org.eclipse.epsilon.etl.engine</artifactId>
+      <artifactId>org.eclipse.epsilon.egl.engine</artifactId>
       <groupId>org.eclipse.epsilon</groupId>
       <version>${epsilon.version}</version>
     </dependency>
@@ -52,11 +52,11 @@
       <version>${junit.version}</version>
     </dependency>
   </dependencies>
-  <description>Reusable Java API for executing Eclipse Epsilon ETL transformations with
-    diagnostics.
+  <description>Reusable Java API for executing Eclipse Epsilon EGX/EGL model-to-text generations
+    with diagnostics.
   </description>
   <modelVersion>4.0.0</modelVersion>
-  <name>mde-etl-runner</name>
+  <name>mde-m2t-runner</name>
 
   <packaging>jar</packaging>
 

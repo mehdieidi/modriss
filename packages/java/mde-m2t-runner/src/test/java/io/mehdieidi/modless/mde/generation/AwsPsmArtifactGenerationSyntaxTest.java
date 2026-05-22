@@ -1,4 +1,4 @@
-package io.mehdieidi.modless.mde.etl;
+package io.mehdieidi.modless.mde.generation;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
