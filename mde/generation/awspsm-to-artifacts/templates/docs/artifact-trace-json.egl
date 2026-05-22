@@ -11,7 +11,13 @@
       "generatedChecksum": "[%= rowMap.get("generatedChecksum").jsonEscape() %]",
       "mergeStrategy": "[%= rowMap.get("mergeStrategy").jsonEscape() %]",
       "sourceStableIds": [[% for (sourceText in rowMap.get("sourceStableIds")) { %]"[%= sourceText.jsonEscape() %]"[% if (sourceText <> rowMap.get("sourceStableIds").last()) { %], [% } %][% } %]],
-      "sections": [],
+      "sections": [
+        {
+          "name": "file",
+          "sourceStableId": "[% if (rowMap.get("sourceStableIds").notEmpty()) { %][%= rowMap.get("sourceStableIds").first().jsonEscape() %][% } %]",
+          "checksum": "[%= rowMap.get("generatedChecksum").jsonEscape() %]"
+        }
+      ],
       "protectedRegionIds": [[% for (regionText in rowMap.get("protectedRegionIds")) { %]"[%= regionText.jsonEscape() %]"[% if (regionText <> rowMap.get("protectedRegionIds").last()) { %], [% } %][% } %]]
     }[% if (rowMap <> traceSeq.last()) { %],[% } %]
 [% } %]

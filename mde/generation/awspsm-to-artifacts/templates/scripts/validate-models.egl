@@ -10,6 +10,16 @@ if [[ -s generated/reports/manual-actions.md ]] && grep -q "BLOCKER" generated/r
   exit 1
 fi
 
+if grep -R -n \
+  -e "NOT_IMPLEMENTED" \
+  -e "TODO: add developer-owned" \
+  -e "TODO: implement" \
+  src tests docs Makefile scripts 2>/dev/null; then
+  echo "Required protected regions still contain generated default content." >&2
+  echo "Fill the relevant manual regions or waive them outside production export." >&2
+  exit 1
+fi
+
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("validate-models-customizations"), true)%]
 # Add repository-specific model validation commands here.
 [%=out.stopPreserve()%]

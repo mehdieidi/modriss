@@ -12,11 +12,27 @@ operation Any jsonEscape() : String {
   if (self.isUndefined()) {
     return "";
   }
-  return self.asString()
-    .replace("\\", "\\\\")
-    .replace("\"", "\\\"")
-    .replace("\r", "\\r")
-    .replace("\n", "\\n");
+  var rawText = self.asString();
+  var escapedText = "";
+  for (idx in Sequence{1..rawText.length()}) {
+    var chText = rawText.substring(idx - 1, idx);
+    if (chText = "\\") {
+      escapedText = escapedText + "\\\\";
+    }
+    else if (chText = "\"") {
+      escapedText = escapedText + "\\\"";
+    }
+    else if (chText = "\r") {
+      escapedText = escapedText + "\\r";
+    }
+    else if (chText = "\n") {
+      escapedText = escapedText + "\\n";
+    }
+    else {
+      escapedText = escapedText + chText;
+    }
+  }
+  return escapedText;
 }
 
 operation Any jsonString() : String {

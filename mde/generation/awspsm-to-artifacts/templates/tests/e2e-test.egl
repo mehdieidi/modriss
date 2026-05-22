@@ -1,15 +1,11 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-def test_generated_e2e_placeholder():
-[%=out.startPreserve("#", "", awsRoot.manualRegionId("e2e-business-flow-assertions"), true)%]
-    assert True
-[%=out.stopPreserve()%]
-[% } else { %]
-import test from 'node:test';
-import assert from 'node:assert/strict';
+package e2e
 
-test('generated e2e placeholder', async () => {
+import "testing"
+
+func TestGeneratedE2EFlowPlaceholder(t *testing.T) {
 [%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("e2e-business-flow-assertions"), true)%]
-  assert.ok(true);
+	if false {
+		t.Fatal("unreachable custom assertion guard")
+	}
 [%=out.stopPreserve()%]
-});
-[% } %]
+}

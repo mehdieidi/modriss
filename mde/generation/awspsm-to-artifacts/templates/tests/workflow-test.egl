@@ -1,24 +1,26 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-import json
-from pathlib import Path
+package workflows
 
+import (
+	"encoding/json"
+	"os"
+	"testing"
+)
 
-def test_[%= stateMachineObj.workflowSlug().replace("-", "_") %]_asl_is_valid_json():
-    asl_obj = json.loads(Path("[%= stateMachineObj.aslPath() %]").read_text(encoding="utf-8"))
-    assert asl_obj["StartAt"]
-[%=out.startPreserve("#", "", stateMachineObj.manualRegionId("workflow-assertions"), true)%]
-    assert "States" in asl_obj
-[%=out.stopPreserve()%]
-[% } else { %]
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-
-test('[%= stateMachineObj.workflowSlug() %] ASL is valid JSON', () => {
-  const aslObj = JSON.parse(readFileSync('[%= stateMachineObj.aslPath() %]', 'utf8'));
-  assert.ok(aslObj.StartAt);
+func Test[%= stateMachineObj.cfnLogicalId() %]ASLIsValidJSON(t *testing.T) {
+	encodedBytes, err := os.ReadFile("../../[%= stateMachineObj.aslPath() %]")
+	if err != nil {
+		t.Fatalf("ASL file should be readable: %v", err)
+	}
+	var aslObj map[string]any
+	if err := json.Unmarshal(encodedBytes, &aslObj); err != nil {
+		t.Fatalf("ASL file should be valid JSON: %v", err)
+	}
+	if aslObj["StartAt"] == "" {
+		t.Fatal("ASL StartAt is required")
+	}
 [%=out.startPreserve("/*", "*/", stateMachineObj.manualRegionId("workflow-assertions"), true)%]
-  assert.ok(aslObj.States);
+	if aslObj["States"] == nil {
+		t.Fatal("ASL States are required")
+	}
 [%=out.stopPreserve()%]
-});
-[% } %]
+}

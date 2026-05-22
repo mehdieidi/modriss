@@ -113,9 +113,10 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) :
         outText = outText + emitYamlStringListProperty("EntryPoint", self.code.imageConfig.entryPoint, 8);
         outText = outText + emitYamlScalarProperty("WorkingDirectory", self.code.imageConfig.workingDirectory, 8);
       }
+    }
     else {
-      outText = outText + emitYamlScalarProperty("Runtime", self.code.runtimeIdentifier.orElseText(emitCtx.get("primaryLanguage").defaultRuntimeIdentifier()), 6);
-      outText = outText + emitYamlScalarProperty("Handler", self.code.handler.orElseText(self.generatedHandlerName(emitCtx)), 6);
+      outText = outText + emitYamlScalarProperty("Runtime", emitCtx.get("primaryLanguage").defaultRuntimeIdentifier(), 6);
+      outText = outText + emitYamlScalarProperty("Handler", self.generatedHandlerName(emitCtx), 6);
       if (self.code.codeUri.isPresent()) {
         outText = outText + emitYamlScalarProperty("CodeUri", self.code.codeUri, 6);
       }
@@ -164,7 +165,6 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) :
       outText = outText + spaces(8) + "Type: SNS\n";
       outText = outText + spaces(8) + "TargetArn: " + arnForResource(self.deadLetterConfig.targetTopic) + "\n";
     }
-    }
   }
   if (self.tracing.isDefined() and self.tracing.mode.lambdaTracingModeText().isPresent()) {
     outText = outText + spaces(6) + "Tracing: " + self.tracing.mode.lambdaTracingModeText() + "\n";
@@ -187,7 +187,6 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) :
       for (sgObj in self.vpcConfig.securityGroups.sortBy(sgObj | sgObj.cfnLogicalId())) {
         outText = outText + spaces(10) + "- !Ref " + sgObj.cfnLogicalId() + "\n";
       }
-    }
     }
     if (self.vpcConfig.ipv6AllowedForDualStack.isDefined()) {
       outText = outText + emitYamlBooleanProperty("Ipv6AllowedForDualStack", self.vpcConfig.ipv6AllowedForDualStack, 8);
@@ -229,20 +228,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) :
 }
 
 operation Any defaultRuntimeIdentifier() : String {
-  var langText = self.orElseText("TYPESCRIPT").toUpperCase();
-  if (langText = "PYTHON") {
-    return "python3.12";
-  }
-  if (langText = "JAVA") {
-    return "java17";
-  }
-  if (langText = "GO") {
-    return "provided.al2023";
-  }
-  if (langText = "RUST") {
-    return "provided.al2023";
-  }
-  return "nodejs20.x";
+  return "provided.al2023";
 }
 
 operation AWSPSMCOMPUTE!LambdaEventSourceMapping cfnTypeText(emitCtx : Map) : String {
@@ -251,7 +237,7 @@ operation AWSPSMCOMPUTE!LambdaEventSourceMapping cfnTypeText(emitCtx : Map) : St
 
 operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
-  outText = outText + spaces(6) + "FunctionName: !Ref " + self.function.cfnLogicalId() + "\n";
+  outText = outText + spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
   outText = outText + emitYamlIntegerProperty("BatchSize", self.batchSize, 6);
   outText = outText + emitYamlIntegerProperty("MaximumBatchingWindowInSeconds", self.maximumBatchingWindowSeconds, 6);
   if (self.startingPosition.isDefined()) {
@@ -306,7 +292,7 @@ operation AWSPSMCOMPUTE!LambdaPermission cfnTypeText(emitCtx : Map) : String {
 
 operation AWSPSMCOMPUTE!LambdaPermission emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
-  outText = outText + spaces(6) + "FunctionName: !Ref " + self.function.cfnLogicalId() + "\n";
+  outText = outText + spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Action", self.action, 6);
   outText = outText + emitYamlScalarProperty("Principal", self.principal, 6);
   outText = outText + emitYamlScalarProperty("SourceArn", self.sourceArn, 6);
@@ -352,7 +338,7 @@ operation AWSPSMCOMPUTE!LambdaFunctionUrl cfnTypeText(emitCtx : Map) : String {
 
 operation AWSPSMCOMPUTE!LambdaFunctionUrl emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
-  outText = outText + spaces(6) + "TargetFunctionArn: " + arnForResource(self.function) + "\n";
+  outText = outText + spaces(6) + "TargetFunctionArn: " + arnForResource(self.modelFeatureValue("function")) + "\n";
   outText = outText + emitYamlScalarProperty("AuthType", self.authType.asString(), 6);
   if (self.invokeMode.isDefined()) {
     outText = outText + emitYamlScalarProperty("InvokeMode", self.invokeMode.asString(), 6);
@@ -368,7 +354,7 @@ operation AWSPSMCOMPUTE!LambdaVersion cfnTypeText(emitCtx : Map) : String {
 }
 
 operation AWSPSMCOMPUTE!LambdaVersion emitCfnPropertiesYaml(emitCtx : Map) : String {
-  var outText = spaces(6) + "FunctionName: !Ref " + self.function.cfnLogicalId() + "\n";
+  var outText = spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Description", self.versionDescription, 6);
   if (self.provisionedConcurrencyConfig.isDefined()) {
     outText = outText + spaces(6) + "ProvisionedConcurrencyConfig:\n";
@@ -382,7 +368,7 @@ operation AWSPSMCOMPUTE!LambdaAlias cfnTypeText(emitCtx : Map) : String {
 }
 
 operation AWSPSMCOMPUTE!LambdaAlias emitCfnPropertiesYaml(emitCtx : Map) : String {
-  var outText = spaces(6) + "FunctionName: !Ref " + self.function.cfnLogicalId() + "\n";
+  var outText = spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Name", self.aliasName, 6);
   if (self.version.isDefined()) {
     outText = outText + spaces(6) + "FunctionVersion: !GetAtt " + self.version.cfnLogicalId() + ".Version\n";
@@ -401,12 +387,13 @@ operation AWSPSMCOMPUTE!LambdaEventInvokeConfig cfnTypeText(emitCtx : Map) : Str
 }
 
 operation AWSPSMCOMPUTE!LambdaEventInvokeConfig emitCfnPropertiesYaml(emitCtx : Map) : String {
-  var outText = spaces(6) + "FunctionName: !Ref " + self.function.cfnLogicalId() + "\n";
+  var lambdaObj = self.modelFeatureValue("function");
+  var outText = spaces(6) + "FunctionName: !Ref " + lambdaObj.cfnLogicalId() + "\n";
   if (self.qualifierAlias.isDefined()) {
     outText = outText + spaces(6) + "Qualifier: !Ref " + self.qualifierAlias.cfnLogicalId() + "\n";
   }
-  else if (self.function.autoPublishAlias.isPresent()) {
-    outText = outText + emitYamlScalarProperty("Qualifier", self.function.autoPublishAlias, 6);
+  else if (lambdaObj.autoPublishAlias.isPresent()) {
+    outText = outText + emitYamlScalarProperty("Qualifier", lambdaObj.autoPublishAlias, 6);
   }
   else {
     outText = outText + spaces(6) + "Qualifier: $LATEST\n";
@@ -779,7 +766,6 @@ operation AWSPSMEVENTS!EventBridgeRule emitCfnPropertiesYaml(emitCtx : Map) : St
   else if (self.eventPattern.isDefined()) {
     outText = outText + spaces(6) + "EventPattern:\n" + self.eventPattern.emitEventPatternYaml(8);
   }
-  }
   if (self.targets.notEmpty()) {
     outText = outText + spaces(6) + "Targets:\n";
     for (targetObj in self.targets.sortBy(targetObj | targetObj.targetId)) {
@@ -1104,7 +1090,6 @@ operation AWSPSMSTORAGE!S3Bucket emitCfnPropertiesYaml(emitCtx : Map) : String {
     outText = outText + spaces(8) + "IgnorePublicAcls: true\n";
     outText = outText + spaces(8) + "RestrictPublicBuckets: true\n";
   }
-  }
   if (self.ownershipControls.isDefined()) {
     outText = outText + spaces(6) + "OwnershipControls:\n";
     outText = outText + spaces(8) + "Rules:\n";
@@ -1193,7 +1178,6 @@ operation Collection emitS3NotificationRulesYaml(indentCount : Integer) : String
       else if (destClassText = "SnsTopic") {
         topicText = topicText + notifObj.emitSingleS3NotificationYaml("Topic", indentCount + 2);
       }
-      }
     }
   }
   var outText = "";
@@ -1255,7 +1239,6 @@ operation AWSPSMAPI!ApiGatewayApi emitApiCommonPropertiesYaml(emitCtx : Map) : S
   }
   else if (self.routes.notEmpty() and (self.eClass().getName() = "HttpApi" or self.eClass().getName() = "RestApi")) {
     outText = outText + emitYamlScalarProperty("DefinitionUri", self.openApiPath(), 6);
-  }
   }
   if (self.corsEnabled = true and self.cors.isDefined()) {
     outText = outText + spaces(6) + "CorsConfiguration:\n" + self.cors.emitCorsYaml(8);
@@ -1363,7 +1346,6 @@ operation AWSPSMAPI!ApiGatewayRoute emitCfnPropertiesYaml(emitCtx : Map) : Strin
   else if (self.eClass().getName() = "WebSocketRoute") {
     outText = outText + emitYamlScalarProperty("RouteKey", self.routeKey, 6);
   }
-  }
   if (self.integration.isDefined()) {
     outText = outText + spaces(6) + "Target: !Sub integrations/${" + self.integration.cfnLogicalId() + "}\n";
   }
@@ -1412,6 +1394,7 @@ operation AWSPSMAPI!ApiGatewayStage emitCfnPropertiesYaml(emitCtx : Map) : Strin
     if (self.deployment.isDefined()) {
       outText = outText + spaces(6) + "DeploymentId: !Ref " + self.deployment.cfnLogicalId() + "\n";
     }
+  }
   else {
     outText = outText + spaces(6) + "ApiId: !Ref " + self.api.cfnLogicalId() + "\n";
     outText = outText + emitYamlBooleanProperty("AutoDeploy", self.autoDeploy, 6);
@@ -1455,10 +1438,9 @@ operation AWSPSMAPI!ApiGatewayAuthorizer emitCfnPropertiesYaml(emitCtx : Map) : 
     outText = outText + spaces(8) + "- " + arnForResource(self.userPool) + "\n";
   }
   else if (self.eClass().getName() = "LambdaAuthorizer") {
-    outText = outText + spaces(6) + "AuthorizerUri: " + arnForResource(self.function) + "\n";
+    outText = outText + spaces(6) + "AuthorizerUri: " + arnForResource(self.modelFeatureValue("function")) + "\n";
     outText = outText + emitYamlScalarProperty("AuthorizerPayloadFormatVersion", self.authorizerPayloadFormatVersion, 6);
     outText = outText + emitYamlBooleanProperty("EnableSimpleResponses", self.enableSimpleResponses, 6);
-  }
   }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -1889,7 +1871,6 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx 
   }
   else if (self.definitionString.isPresent()) {
     outText = outText + yamlBlock("Definition", self.definitionString, 6);
-  }
   }
   if (self.definitionSubstitutionsJson.isPresent()) {
     outText = outText + yamlBlock("DefinitionSubstitutions", self.definitionSubstitutionsJson, 6);

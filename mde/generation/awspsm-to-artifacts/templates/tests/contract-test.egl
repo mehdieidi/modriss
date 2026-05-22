@@ -1,39 +1,35 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-from pathlib import Path
-import json
+package contract
 
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"testing"
+)
 
-def test_generated_json_schemas_parse():
-    for path_obj in Path("schemas").glob("**/*.json"):
-        json.loads(path_obj.read_text(encoding="utf-8"))
-    for path_obj in Path("src/functions").glob("*/schema.json"):
-        json.loads(path_obj.read_text(encoding="utf-8"))
-[%=out.startPreserve("#", "", awsRoot.manualRegionId("contract-custom-assertions"), true)%]
-    assert True
-[%=out.stopPreserve()%]
-[% } else { %]
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-
-function jsonFiles(rootText: string): string[] {
-  try {
-    return readdirSync(rootText).flatMap(nameText => {
-      const pathText = join(rootText, nameText);
-      return statSync(pathText).isDirectory() ? jsonFiles(pathText) : (pathText.endsWith('.json') ? [pathText] : []);
-    });
-  } catch {
-    return [];
-  }
-}
-
-test('generated JSON contracts parse', () => {
-  for (const pathText of [...jsonFiles('schemas'), ...jsonFiles('src/functions')]) {
-    JSON.parse(readFileSync(pathText, 'utf8'));
-  }
+func TestGeneratedJSONContractsParse(t *testing.T) {
+	for _, rootText := range []string{"../../schemas", "../../src/functions", "../../events/samples", "../../asl"} {
+		if _, err := os.Stat(rootText); err != nil {
+			continue
+		}
+		err := filepath.WalkDir(rootText, func(pathText string, entryObj os.DirEntry, walkErr error) error {
+			if walkErr != nil || entryObj.IsDir() || filepath.Ext(pathText) != ".json" {
+				return walkErr
+			}
+			encodedBytes, err := os.ReadFile(pathText)
+			if err != nil {
+				return err
+			}
+			var decodedObj any
+			return json.Unmarshal(encodedBytes, &decodedObj)
+		})
+		if err != nil {
+			t.Fatalf("contract JSON parse failed: %v", err)
+		}
+	}
 [%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("contract-custom-assertions"), true)%]
-  assert.ok(true);
+	if false {
+		t.Fatal("unreachable custom assertion guard")
+	}
 [%=out.stopPreserve()%]
-});
-[% } %]
+}

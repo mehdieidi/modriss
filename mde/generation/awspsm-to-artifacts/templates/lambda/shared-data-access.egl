@@ -1,19 +1,10 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-from typing import Any
+package shared
 
-
-class GeneratedDataAccess:
-    def __init__(self, config_obj: Any) -> None:
-        self.config_obj = config_obj
-[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
-package shared;
-
-public final class DataAccess {
+type DataAccess struct {
+	Config GeneratedConfig
+	Logger Logger
 }
-[% } else { %]
-import type { GeneratedConfig } from './config';
 
-export class GeneratedDataAccess {
-  constructor(readonly configObj: GeneratedConfig) {}
+func NewDataAccess(configObj GeneratedConfig, loggerObj Logger) DataAccess {
+	return DataAccess{Config: configObj, Logger: loggerObj}
 }
-[% } %]

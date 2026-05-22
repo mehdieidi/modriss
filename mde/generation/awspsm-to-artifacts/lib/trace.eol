@@ -6,8 +6,8 @@ operation AWSPSM!AwsPsmModel defaultEmitContext() : Map {
   var rootNameText = firstText(self.name, "Generated AWS Serverless Project");
   profileMap.put("projectName", rootNameText);
   profileMap.put("projectSlug", rootNameText.toSlug());
-  profileMap.put("primaryLanguage", "TYPESCRIPT");
-  profileMap.put("packageManager", "npm");
+  profileMap.put("primaryLanguage", "GO");
+  profileMap.put("packageManager", "go");
   profileMap.put("generatorVersion", "1.0-production-ready-generator-spec");
   profileMap.put("defaultStageName", self.defaultStageName());
   profileMap.put("productionMode", self.productionMode.isDefined() and self.productionMode);

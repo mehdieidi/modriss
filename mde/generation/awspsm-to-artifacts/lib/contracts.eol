@@ -53,13 +53,12 @@ operation AWSPSMAPI!ApiGatewayRoute emitOpenApiOperationYaml(indentCount : Integ
 
 operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
-  outText = outText + spaces(indentCount + 2) + "\"Type\": " + self.type.asString().firstToUpperCase().toLowerCase().firstToUpperCase().jsonString();
+  outText = outText + spaces(indentCount + 2) + "\"Type\": " + self.modelFeatureValue("type").asString().firstToUpperCase().toLowerCase().firstToUpperCase().jsonString();
   if (self.resource.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + self.resource.jsonString();
   }
   else if (self.invokedResource.isDefined()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + ("${" + self.invokedResource.cfnLogicalId() + "Arn}").jsonString();
-  }
   }
   if (self.inputPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"InputPath\": " + self.inputPath.jsonString();

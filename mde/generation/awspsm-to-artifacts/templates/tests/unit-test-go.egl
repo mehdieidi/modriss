@@ -1,0 +1,28 @@
+package unit
+
+import (
+	"os"
+	"testing"
+)
+
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("unit-custom-fixtures"), true)%]
+var fixtureObj = map[string]any{"id": "unit-fixture", "sourceStableId": "[%= awsFn.stableKey() %]"}
+[%=out.stopPreserve()%]
+
+func Test[%= awsFn.cfnLogicalId() %]GeneratedHandlerArtifactsExist(t *testing.T) {
+	if _, err := os.Stat("../../src/functions/[%= awsFn.functionPathSegment(emitCtx) %]/handler.go"); err != nil {
+		t.Fatalf("handler.go should exist: %v", err)
+	}
+	if _, err := os.Stat("../../src/functions/[%= awsFn.functionPathSegment(emitCtx) %]/schema.json"); err != nil {
+		t.Fatalf("schema.json should exist: %v", err)
+	}
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("unit-custom-assertions"), true)%]
+	if fixtureObj["id"] == "" {
+		t.Fatal("fixture id is required")
+	}
+[%=out.stopPreserve()%]
+}
+
+[%=out.startPreserve("/*", "*/", awsFn.manualRegionId("unit-edge-cases"), true)%]
+// Add developer-owned edge case tests here.
+[%=out.stopPreserve()%]

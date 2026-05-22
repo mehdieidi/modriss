@@ -33,14 +33,6 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     if (awsFn.code.isUndefined()) {
       issueSeq.add(self.issueTuple("LAMBDA_CODE_MISSING", "BLOCKER", "Lambda function has no code configuration: " + awsFn.stableKey(), awsFn, true));
     }
-    else if (awsFn.code.eClass().getName() = "LambdaZipCodeConfig") {
-      if (not awsFn.code.runtimeIdentifier.isPresent()) {
-        issueSeq.add(self.issueTuple("LAMBDA_RUNTIME_MISSING", "BLOCKER", "ZIP Lambda is missing runtimeIdentifier: " + awsFn.stableKey(), awsFn, profileMap.get("productionMode") = true));
-      }
-      if (not awsFn.code.handler.isPresent()) {
-        issueSeq.add(self.issueTuple("LAMBDA_HANDLER_MISSING", "BLOCKER", "ZIP Lambda is missing handler: " + awsFn.stableKey(), awsFn, profileMap.get("productionMode") = true));
-      }
-    }
     if (profileMap.get("productionMode") = true and awsFn.codeSigningDecision.asString() = "UNDECIDED") {
       issueSeq.add(self.issueTuple("LAMBDA_CODE_SIGNING_UNDECIDED", "WARNING", "Production Lambda code signing decision is undecided: " + awsFn.stableKey(), awsFn, false));
     }

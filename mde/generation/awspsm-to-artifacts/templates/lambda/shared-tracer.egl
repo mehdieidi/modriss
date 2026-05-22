@@ -1,38 +1,13 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-from typing import Any
+package shared
 
-
-class GeneratedTracer:
-    def __init__(self, **context: Any) -> None:
-        self.context = context
-
-    def annotate(self, key_text: str, value_obj: Any) -> None:
-        return None
-
-    def flush(self) -> None:
-        return None
-
-
-def create_tracer(**context: Any) -> GeneratedTracer:
-    return GeneratedTracer(**context)
-[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
-package shared;
-
-public final class Tracer implements AutoCloseable {
-  public void annotate(String keyText, Object valueObj) {}
-  public void flush() {}
-  @Override public void close() { flush(); }
-}
-[% } else { %]
-export interface Tracer {
-  annotate(keyText: string, valueObj: unknown): void;
-  flush(): Promise<void>;
+type Tracer struct {
+	CorrelationID  string
+	SourceStableID string
 }
 
-export function createTracer(contextObj: Record<string, unknown>): Tracer {
-  return {
-    annotate: (_keyText, _valueObj) => undefined,
-    flush: async () => undefined
-  };
+func NewTracer(correlationID string, sourceStableID string) Tracer {
+	return Tracer{CorrelationID: correlationID, SourceStableID: sourceStableID}
 }
-[% } %]
+
+func (tracerObj Tracer) Flush() {
+}

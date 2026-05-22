@@ -1,27 +1,17 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-from typing import Any
+package shared
 
+import "context"
 
-def create_event_publisher(config_obj: Any, log_obj: Any):
-    class Publisher:
-        def publish_modeled_events(self, source_stable_id: str, payload_obj: Any) -> None:
-            log_obj.info("Modeled event publication hook", {"sourceStableId": source_stable_id})
-    return Publisher()
-[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
-package shared;
-
-public final class EventPublisher {
-  public void publishModeledEvents(String sourceStableId, Object payloadObj) {}
+type EventPublisher struct {
+	Config GeneratedConfig
+	Logger Logger
 }
-[% } else { %]
-import type { GeneratedConfig } from './config';
-import type { Logger } from './logger';
 
-export function createEventPublisher(_configObj: GeneratedConfig, logObj: Logger) {
-  return {
-    publishModeledEvents: async (sourceStableId: string, _payloadObj: unknown): Promise<void> => {
-      logObj.info('Modeled event publication hook', { sourceStableId });
-    }
-  };
+func NewEventPublisher(configObj GeneratedConfig, loggerObj Logger) EventPublisher {
+	return EventPublisher{Config: configObj, Logger: loggerObj}
 }
-[% } %]
+
+func (publisherObj EventPublisher) PublishModeledEvents(ctx context.Context, sourceStableID string, payloadObj any) error {
+	publisherObj.Logger.Info("modeled event publication hook", map[string]any{"sourceStableId": sourceStableID})
+	return nil
+}

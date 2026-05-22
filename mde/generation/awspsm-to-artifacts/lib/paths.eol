@@ -1,26 +1,7 @@
 import "naming.eol";
 
 operation Any sourceExtension() : String {
-  var langText = self.orElseText("TYPESCRIPT").toUpperCase();
-  if (langText = "TYPESCRIPT") {
-    return "ts";
-  }
-  if (langText = "JAVASCRIPT") {
-    return "js";
-  }
-  if (langText = "PYTHON") {
-    return "py";
-  }
-  if (langText = "JAVA") {
-    return "java";
-  }
-  if (langText = "GO") {
-    return "go";
-  }
-  if (langText = "RUST") {
-    return "rs";
-  }
-  return "ts";
+  return "go";
 }
 
 operation Any testExtension() : String {
@@ -28,7 +9,7 @@ operation Any testExtension() : String {
 }
 
 operation Map primaryLanguage() : String {
-  return self.get("primaryLanguage").orElseText("TYPESCRIPT").toUpperCase();
+  return "GO";
 }
 
 operation Map sourceExtension() : String {
@@ -40,9 +21,6 @@ operation Map testExtension() : String {
 }
 
 operation AWSPSMCOMPUTE!AwsLambdaFunction functionPathSegment(profileMap : Map) : String {
-  if (profileMap.primaryLanguage() = "PYTHON") {
-    return self.functionSlug().toSnake();
-  }
   return self.functionSlug();
 }
 
@@ -59,29 +37,20 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction localSchemaPath() : String {
 }
 
 operation AWSPSMCOMPUTE!AwsLambdaFunction generatedHandlerName(profileMap : Map) : String {
-  return "functions." + self.functionPathSegment(profileMap).replace("/", ".") + ".handler.handler";
+  return "bootstrap";
 }
 
 operation AWSPSMCOMPUTE!AwsLambdaFunction generatedCodeUri(profileMap : Map) : String {
-  if (profileMap.primaryLanguage() = "TYPESCRIPT") {
-    return "dist";
-  }
-  return "src";
+  return "bin/" + self.functionPathSegment(profileMap);
 }
 
 operation AWSPSMCOMPUTE!AwsLambdaFunction unitTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  if (profileMap.primaryLanguage() = "PYTHON") {
-    return "tests/unit/test_" + self.functionSlug().replace("-", "_") + ".py";
-  }
   return "tests/unit/" + self.functionSlug() + ".test." + extText;
 }
 
 operation AWSPSMCOMPUTE!AwsLambdaFunction integrationTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  if (profileMap.primaryLanguage() = "PYTHON") {
-    return "tests/integration/test_" + self.functionSlug().replace("-", "_") + "_integration.py";
-  }
   return "tests/integration/" + self.functionSlug() + ".integration.test." + extText;
 }
 
@@ -95,9 +64,6 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine aslPath() : String {
 
 operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  if (profileMap.primaryLanguage() = "PYTHON") {
-    return "tests/workflows/test_" + self.workflowSlug().replace("-", "_") + ".py";
-  }
   return "tests/workflows/" + self.workflowSlug() + ".workflow.test." + extText;
 }
 
@@ -133,14 +99,12 @@ operation Any pathKind(pathText : String) : String {
   if (pathText.endsWith(".sh")) {
     return "SHELL";
   }
-  if (pathText.endsWith(".ts")) {
-    return "TYPESCRIPT";
-  }
-  if (pathText.endsWith(".js")) {
-    return "JAVASCRIPT";
-  }
-  if (pathText.endsWith(".py")) {
-    return "PYTHON";
+  if (pathText.endsWith(".go")) {
+    return "GO";
   }
   return "TEXT";
+}
+
+operation Map goModulePath() : String {
+  return "example.com/" + self.get("projectSlug");
 }

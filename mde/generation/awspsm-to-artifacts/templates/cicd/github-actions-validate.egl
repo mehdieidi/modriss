@@ -14,24 +14,19 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-go@v5
         with:
-          python-version: '3.12'
-      - run: python -m pip install -e '.[dev]'
-[% } else { %]
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-      - run: npm ci
-[% } %]
+          go-version: '1.22'
+          cache: true
       - uses: aws-actions/setup-sam@v2
-      - run: bash scripts/validate-models.sh
+      - name: Install project dependencies
+        run: bash scripts/build.sh --install-only
       - run: bash scripts/validate-contracts.sh
+      - run: bash scripts/validate-template.sh
       - run: bash scripts/build.sh
       - run: bash scripts/test.sh
-      - run: bash scripts/validate-template.sh
+      - name: Security checks
+        run: bash scripts/validate-models.sh --security
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("ci-validate-customizations"), true)%]
       # Add organization validation steps here.
 [%=out.stopPreserve()%]

@@ -1,36 +1,19 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-import os
-from dataclasses import dataclass
+package shared
 
+import "os"
 
-@dataclass(frozen=True)
-class GeneratedConfig:
-    stage: str
-    project_slug: str
-
-
-def load_config() -> GeneratedConfig:
-    return GeneratedConfig(stage=os.environ.get("STAGE", "[%= emitCtx.get("defaultStageName") %]"), project_slug="[%= emitCtx.get("projectSlug") %]")
-[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
-package shared;
-
-public record GeneratedConfig(String stage, String projectSlug) {
-  public static GeneratedConfig loadConfig() {
-    return new GeneratedConfig(System.getenv().getOrDefault("STAGE", "[%= emitCtx.get("defaultStageName") %]"), "[%= emitCtx.get("projectSlug") %]");
-  }
-}
-[% } else { %]
-export interface GeneratedConfig {
-  readonly stage: string;
-  readonly projectSlug: string;
-  readonly eventBusName?: string;
+type GeneratedConfig struct {
+	Stage             string
+	EventBridgeBusArn string
 }
 
-export function loadConfig(envObj: NodeJS.ProcessEnv = process.env): GeneratedConfig {
-  return {
-    stage: envObj.STAGE ?? '[%= emitCtx.get("defaultStageName") %]',
-    projectSlug: '[%= emitCtx.get("projectSlug") %]',
-    eventBusName: envObj.EVENT_BUS_NAME
-  };
+func LoadConfig() GeneratedConfig {
+	stageText := os.Getenv("STAGE")
+	if stageText == "" {
+		stageText = "local"
+	}
+	return GeneratedConfig{
+		Stage:             stageText,
+		EventBridgeBusArn: os.Getenv("EVENTBRIDGE_BUS_ARN"),
+	}
 }
-[% } %]

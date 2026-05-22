@@ -1,4 +1,3 @@
-[% out.setContentType("YAML"); %]
 AWSTemplateFormatVersion: '2010-09-09'
 [% if (stackObj.useSamTransform.isUndefined() or stackObj.useSamTransform = true) { %]
 Transform: AWS::Serverless-2016-10-31

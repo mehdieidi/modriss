@@ -8,10 +8,26 @@
 
 ## Artifact Kinds
 
-[% for (kindText in emitCtx.get("traceRows").collect(rowMap | rowMap.get("artifactKind")).asSet().sort()) { %]
+[% for (kindText in emitCtx.get("traceRows").collect(rowMap | rowMap.get("artifactKind")).asSet().sortBy(kindText | kindText)) { %]
 - `[%= kindText %]`: [%= emitCtx.get("traceRows").select(rowMap | rowMap.get("artifactKind") = kindText).size() %]
 [% } %]
 
 ## Merge Policy
 
 Generated files use EGL protected regions for developer-owned content where the spec permits it. JSON, ASL JSON, and generated reports are overwritten because they must remain machine-valid.
+
+## Manual Actions
+
+[% if (emitCtx.get("manualIssueList").isEmpty()) { %]
+No manual actions were recorded by the generator.
+[% } %]
+[% for (issueObj in emitCtx.get("manualIssueList")) { %]
+- `[%= issueObj.get("code") %]` ([%= issueObj.get("severity") %], blocking: [%= issueObj.get("blocking") %]) - [%= issueObj.get("message") %]
+[% } %]
+
+## Export Gates
+
+- Model validation issues: [%= emitCtx.get("manualIssueList").size() %]
+- Blocking production issues: [%= emitCtx.get("manualIssueList").select(issueObj | issueObj.get("blocking") = true).size() %]
+- Required protected regions: [%= emitCtx.get("protectedRegionRows").select(regionObj | regionObj.get("requiredForProduction") = true).size() %]
+- Artifact trace rows: [%= emitCtx.get("traceRows").size() %]

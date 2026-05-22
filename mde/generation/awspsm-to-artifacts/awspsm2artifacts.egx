@@ -37,18 +37,8 @@ rule ProjectScaffold {
 }
 
 rule PackageManifest {
-  template {
-    if (emitCtx.primaryLanguage() = "PYTHON") {
-      return "infrastructure/pyproject.egl";
-    }
-    return "infrastructure/package-json.egl";
-  }
-  target {
-    if (emitCtx.primaryLanguage() = "PYTHON") {
-      return "pyproject.toml";
-    }
-    return "package.json";
-  }
+  template : "infrastructure/go-mod.egl"
+  target : "go.mod"
   merge : false
   overwrite : true
   parameters : Map {
@@ -56,11 +46,7 @@ rule PackageManifest {
     "emitCtx" = emitCtx
   }
   post {
-    var pathText = "package.json";
-    if (emitCtx.primaryLanguage() = "PYTHON") {
-      pathText = "pyproject.toml";
-    }
-    emitCtx.recordArtifact(pathText, "PACKAGE_MANIFEST", "AWSPSM2ART_PackageManifest", Sequence{awsRoot.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+    emitCtx.recordArtifact("go.mod", "PACKAGE_MANIFEST", "AWSPSM2ART_PackageManifest", Sequence{awsRoot.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -72,18 +58,6 @@ rule Gitignore {
   parameters : Map {"awsRoot" = awsRoot, "emitCtx" = emitCtx}
   post {
     emitCtx.recordArtifact(".gitignore", "GITIGNORE", "AWSPSM2ART_Gitignore", Sequence{awsRoot.stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot.manualRegionId("gitignore")});
-  }
-}
-
-rule TypeScriptConfig {
-  guard : emitCtx.primaryLanguage() = "TYPESCRIPT" or emitCtx.primaryLanguage() = "JAVASCRIPT"
-  template : "infrastructure/tsconfig.egl"
-  target : "tsconfig.json"
-  merge : false
-  overwrite : true
-  parameters : Map {"awsRoot" = awsRoot, "emitCtx" = emitCtx}
-  post {
-    emitCtx.recordArtifact("tsconfig.json", "TYPESCRIPT_CONFIG", "AWSPSM2ART_TypeScriptConfig", Sequence{awsRoot.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
   }
 }
 
@@ -240,15 +214,7 @@ rule WorkflowToAsl transform stateMachineObj : AWSPSMWORKFLOW!StepFunctionStateM
 
 rule LambdaToHandler transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
   guard : awsFn.code.isDefined()
-  template {
-    if (emitCtx.primaryLanguage() = "PYTHON") {
-      return "lambda/python-handler.egl";
-    }
-    if (emitCtx.primaryLanguage() = "JAVA") {
-      return "lambda/java-handler.egl";
-    }
-    return "lambda/typescript-handler.egl";
-  }
+  template : "lambda/go-handler.egl"
   target : awsFn.handlerPath(emitCtx)
   merge : true
   overwrite : true
@@ -283,29 +249,9 @@ rule LambdaToLocalSchema transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
   }
 }
 
-rule LambdaToFunctionPackage transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
-  guard : awsFn.stack.packageIndividually = true and (emitCtx.primaryLanguage() = "TYPESCRIPT" or emitCtx.primaryLanguage() = "JAVASCRIPT")
-  template : "infrastructure/function-package-json.egl"
-  target : "src/functions/" + awsFn.functionPathSegment(emitCtx) + "/package.json"
-  merge : true
-  overwrite : true
-  parameters : Map {
-    "awsFn" = awsFn,
-    "emitCtx" = emitCtx
-  }
-  post {
-    emitCtx.recordArtifact("src/functions/" + awsFn.functionPathSegment(emitCtx) + "/package.json", "FUNCTION_PACKAGE_MANIFEST", "AWSPSM2ART_Lambda_To_FunctionPackage", Sequence{awsFn.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
-  }
-}
-
 rule LambdaToUnitTest transform awsFn : AWSPSMCOMPUTE!AwsLambdaFunction {
   guard : emitCtx.get("enableTests") = true
-  template {
-    if (emitCtx.primaryLanguage() = "PYTHON") {
-      return "tests/unit-test-python.egl";
-    }
-    return "tests/unit-test-typescript.egl";
-  }
+  template : "tests/unit-test-go.egl"
   target : awsFn.unitTestPath(emitCtx)
   merge : true
   overwrite : true

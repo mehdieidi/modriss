@@ -1,27 +1,40 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-from pathlib import Path
-import json
+package events
 
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"testing"
+)
 
-def test_generated_event_samples_parse():
-    for path_obj in Path("events/samples").glob("*.json"):
-        event_obj = json.loads(path_obj.read_text(encoding="utf-8"))
-        assert "detail" in event_obj
-[%=out.startPreserve("#", "", awsRoot.manualRegionId("event-custom-assertions"), true)%]
-    assert True
-[%=out.stopPreserve()%]
-[% } else { %]
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
-
-test('generated event samples parse', () => {
-  for (const nameText of readdirSync('events/samples', { withFileTypes: true }).filter(direntObj => direntObj.isFile()).map(direntObj => direntObj.name)) {
-    const eventObj = JSON.parse(readFileSync(`events/samples/${nameText}`, 'utf8'));
-    assert.ok(eventObj.detail);
-  }
+func TestGeneratedEventSamplesParse(t *testing.T) {
+	rootText := "../../events/samples"
+	if _, err := os.Stat(rootText); err != nil {
+		return
+	}
+	err := filepath.WalkDir(rootText, func(pathText string, entryObj os.DirEntry, walkErr error) error {
+		if walkErr != nil || entryObj.IsDir() || filepath.Ext(pathText) != ".json" {
+			return walkErr
+		}
+		encodedBytes, err := os.ReadFile(pathText)
+		if err != nil {
+			return err
+		}
+		var eventObj map[string]any
+		if err := json.Unmarshal(encodedBytes, &eventObj); err != nil {
+			return err
+		}
+		if _, ok := eventObj["detail"]; !ok {
+			t.Fatalf("%s should include detail", pathText)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("event sample validation failed: %v", err)
+	}
 [%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("event-custom-assertions"), true)%]
-  assert.ok(true);
+	if false {
+		t.Fatal("unreachable custom assertion guard")
+	}
 [%=out.stopPreserve()%]
-});
-[% } %]
+}

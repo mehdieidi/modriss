@@ -1,54 +1,38 @@
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-import hashlib
-import json
-from typing import Any
+package shared
 
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"sync"
+)
 
-class InMemoryIdempotencyStore:
-    def __init__(self) -> None:
-        self.values: dict[str, Any] = {}
-
-    def get(self, key_text: str) -> Any | None:
-        return self.values.get(key_text)
-
-    def put(self, key_text: str, value_obj: Any) -> None:
-        self.values[key_text] = value_obj
-
-
-def create_idempotency_store(config_obj: Any) -> InMemoryIdempotencyStore:
-    return InMemoryIdempotencyStore()
-
-
-def derive_idempotency_key(payload_obj: Any) -> str:
-[%=out.startPreserve("#", "", awsRoot.manualRegionId("idempotency-key-derivation"), true)%]
-    encoded_text = json.dumps(payload_obj, sort_keys=True, default=str)
-    return hashlib.sha256(encoded_text.encode("utf-8")).hexdigest()
-[%=out.stopPreserve()%]
-[% } else if (emitCtx.primaryLanguage() = "JAVA") { %]
-package shared;
-
-public final class Idempotency {
-  private Idempotency() {}
-  public static String deriveIdempotencyKey(Object payloadObj) {
-    return Integer.toHexString(String.valueOf(payloadObj).hashCode());
-  }
-}
-[% } else { %]
-import { createHash } from 'crypto';
-import type { GeneratedConfig } from './config';
-
-const memoryMap = new Map<string, unknown>();
-
-export function createIdempotencyStore(_configObj: GeneratedConfig) {
-  return {
-    get: async (keyText: string) => memoryMap.get(keyText),
-    put: async (keyText: string, valueObj: unknown) => { memoryMap.set(keyText, valueObj); }
-  };
+type IdempotencyStore struct {
+	mutexObj sync.RWMutex
+	values   map[string]any
 }
 
-export function deriveIdempotencyKey(payloadObj: unknown): string {
+func NewIdempotencyStore(configObj GeneratedConfig) *IdempotencyStore {
+	return &IdempotencyStore{values: map[string]any{}}
+}
+
+func (storeObj *IdempotencyStore) Get(keyText string) (any, bool) {
+	storeObj.mutexObj.RLock()
+	defer storeObj.mutexObj.RUnlock()
+	valueObj, ok := storeObj.values[keyText]
+	return valueObj, ok
+}
+
+func (storeObj *IdempotencyStore) Put(keyText string, valueObj any) {
+	storeObj.mutexObj.Lock()
+	defer storeObj.mutexObj.Unlock()
+	storeObj.values[keyText] = valueObj
+}
+
+func DeriveIdempotencyKey(payloadObj any) string {
 [%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("idempotency-key-derivation"), true)%]
-  return createHash('sha256').update(JSON.stringify(payloadObj)).digest('hex');
+	encodedBytes, _ := json.Marshal(payloadObj)
+	hashBytes := sha256.Sum256(encodedBytes)
+	return hex.EncodeToString(hashBytes[:])
 [%=out.stopPreserve()%]
 }
-[% } %]

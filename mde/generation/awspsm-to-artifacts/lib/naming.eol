@@ -16,6 +16,10 @@ operation Any orElseText(fallbackText : String) : String {
   return fallbackText;
 }
 
+operation Any modelFeatureValue(featureNameText : String) : Any {
+  return self.eGet(self.eClass().getEStructuralFeature(featureNameText));
+}
+
 operation firstText(primaryValue, fallbackValue) : String {
   if (primaryValue.isPresent()) {
     return primaryValue.asString();

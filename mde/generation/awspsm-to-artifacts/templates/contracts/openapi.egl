@@ -1,4 +1,3 @@
-[% out.setContentType("YAML"); %]
 openapi: 3.0.3
 info:
   title: [%= apiObj.apiName.orElseText(apiObj.cfnLogicalId()).yamlScalar() %]

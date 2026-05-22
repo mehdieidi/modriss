@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-[% if (emitCtx.primaryLanguage() = "PYTHON") { %]
-python3 -m compileall src tests
+mode_text="${1:-}"
+
+go mod download
+if [[ "$mode_text" == "--install-only" ]]; then
+  exit 0
+fi
+go test ./...
+[% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %]
+mkdir -p "bin/[%= awsFn.functionPathSegment(emitCtx) %]"
+[% if (awsFn.architecture.isDefined() and awsFn.architecture.asString() = "ARM64") { %]
+GOOS=linux GOARCH=arm64 go build -o "bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap" "./src/functions/[%= awsFn.functionPathSegment(emitCtx) %]"
 [% } else { %]
-npm run build
+GOOS=linux GOARCH=amd64 go build -o "bin/[%= awsFn.functionPathSegment(emitCtx) %]/bootstrap" "./src/functions/[%= awsFn.functionPathSegment(emitCtx) %]"
+[% } %]
 [% } %]
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("build-customizations"), true)%]
