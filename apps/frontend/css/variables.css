@@ -1,0 +1,149 @@
+@font-face {
+  font-family: "Flamenco";
+  src: url("../assets/fonts/Flamenco/Flamenco-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("../assets/fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+}
+
+:root {
+  --font-ui: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-mono: "Space Grotesk", "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+
+  --bg: #101217;
+  --surface: #151820;
+  --surface-2: #1a1f29;
+  --surface-3: #232a37;
+  --surface-high: #2a3343;
+  --surface-contrast: #0f1219;
+
+  --panel: var(--surface-2);
+  --panel-2: var(--surface-3);
+  --panel-3: #313d52;
+  --input-bg: #0f141d;
+  --canvas-bg: #0e1117;
+  --node-bg: #131923;
+  --node-border: #3d495f;
+
+  --border: #394558;
+  --border-subtle: #2a3343;
+  --outline: #5f708d;
+  --outline-soft: rgba(154, 170, 196, 0.22);
+
+  --text: #e3e8f2;
+  --text-strong: #f3f7ff;
+  --muted: #98a8c0;
+  --muted-2: #6f809c;
+  --node-title: #b8c5da;
+
+  --accent: #00a6e0;
+  --accent-dark: #0078ac;
+  --accent-light: #7bd0ff;
+  --accent-glow: rgba(0, 166, 224, 0.28);
+  --accent-select: #5ecbff;
+  --accent-2: #dec29a;
+
+  --danger: #ef6060;
+  --danger-dark: #cf4848;
+  --success: #16b485;
+  --warning: #d89b2f;
+
+  --chat-user-bg: #0078ac;
+  --chat-user-text: #f2fbff;
+  --chat-assistant-bg: #1b2230;
+  --chat-assistant-border: #3c475d;
+
+  --grid-line-major: rgba(153, 173, 206, 0.15);
+  --grid-line-minor: rgba(153, 173, 206, 0.06);
+  --grid-size: 28px;
+  --canvas-dot: rgb(103 115 136 / 0.56);
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  --shadow-sm: 0 2px 8px rgba(6, 11, 20, 0.36);
+  --shadow: 0 10px 28px rgba(6, 11, 20, 0.45);
+  --shadow-lg: 0 18px 42px rgba(4, 8, 16, 0.52);
+  --overlay-bg: rgba(5, 10, 18, 0.74);
+  --modal-overlay-bg: rgba(5, 10, 18, 0.66);
+  --mobile-backdrop-bg: rgba(6, 10, 18, 0.62);
+
+  --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--canvas-bg)) 40%, transparent);
+  --glass-pane-border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  --glass-pane-highlight: inset 0 0 0 1px color-mix(in srgb, var(--outline-soft) 28%, transparent);
+  --glass-pane-blur: blur(14px) saturate(130%);
+
+  --transition: 0.18s ease;
+  --topbar-h: 56px;
+  --rail-w: 52px;
+}
+
+html.light {
+  --bg: #edf3fa;
+  --surface: #ffffff;
+  --surface-2: #f7f9fc;
+  --surface-3: #edf2f8;
+  --surface-high: #e3ebf5;
+  --surface-contrast: #f4f7fb;
+
+  --panel: #f7f9fc;
+  --panel-2: #edf2f8;
+  --panel-3: #e2e9f3;
+  --input-bg: #ffffff;
+  --canvas-bg: #f8fbff;
+  --node-bg: #ffffff;
+  --node-border: #c2cfdf;
+
+  --border: #c6d2e2;
+  --border-subtle: #d7e0ec;
+  --outline: #70829b;
+  --outline-soft: rgba(112, 130, 155, 0.2);
+
+  --text: #1f2733;
+  --text-strong: #111926;
+  --muted: #5f6f84;
+  --muted-2: #7a8aa0;
+  --node-title: #44546d;
+
+  --accent: #0077a8;
+  --accent-dark: #005f89;
+  --accent-light: #008dc8;
+  --accent-glow: rgba(0, 119, 168, 0.2);
+  --accent-select: #0c9bd6;
+  --accent-2: #8c6b3f;
+
+  --danger: #be3636;
+  --danger-dark: #982727;
+  --success: #0f8e6e;
+  --warning: #aa7215;
+
+  --chat-user-bg: #0077a8;
+  --chat-user-text: #ffffff;
+  --chat-assistant-bg: #f2f6fb;
+  --chat-assistant-border: #cfd9e6;
+
+  --grid-line-major: rgba(81, 99, 126, 0.12);
+  --grid-line-minor: rgba(81, 99, 126, 0.05);
+  --canvas-dot: rgba(113, 130, 155, 0.35);
+
+  --shadow-sm: 0 1px 3px rgba(22, 34, 52, 0.1), 0 6px 14px rgba(22, 34, 52, 0.08);
+  --shadow: 0 8px 24px rgba(22, 34, 52, 0.13);
+  --shadow-lg: 0 16px 34px rgba(22, 34, 52, 0.18);
+  --overlay-bg: rgba(236, 243, 252, 0.74);
+  --modal-overlay-bg: rgba(236, 243, 252, 0.66);
+  --mobile-backdrop-bg: rgba(225, 235, 247, 0.7);
+  --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--canvas-bg)) 72%, transparent);
+  --glass-pane-border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  --glass-pane-highlight: inset 0 0 0 1px color-mix(in srgb, #fff 72%, transparent);
+  --glass-pane-blur: blur(12px) saturate(116%);
+}

@@ -1,0 +1,126 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 82%, #000 18%);
+  color: color-mix(in srgb, var(--text) 88%, var(--muted) 12%);
+  font: 700 10px/1.15 var(--font-display);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition), filter var(--transition);
+}
+
+.btn:hover:not(:disabled) {
+  color: var(--text-strong);
+  background: color-mix(in srgb, var(--surface-high) 78%, #000 22%);
+  box-shadow: 0 8px 16px rgba(8, 14, 24, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-glow) 66%, transparent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: color-mix(in srgb, var(--accent-light) 72%, #fff 28%);
+  color: color-mix(in srgb, var(--accent-dark) 88%, #000 12%);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.btn-secondary {
+  background: color-mix(in srgb, var(--surface-3) 82%, #000 18%);
+  color: var(--text);
+}
+
+.btn-danger {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--danger-dark) 80%, #000 20%);
+  background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--danger) 82%, #fff 18%),
+      var(--danger-dark)
+  );
+}
+
+.btn-danger:hover:not(:disabled) {
+  box-shadow: 0 10px 22px rgba(180, 48, 48, 0.26);
+}
+
+.btn-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.btn-icon-only {
+  width: 31px;
+  height: 31px;
+  padding: 0;
+}
+
+.btn-sm {
+  min-height: 26px;
+  padding: 4px 8px;
+  font-size: 9px;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-half {
+  flex: 1;
+}
+
+.btn-icon-xs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 82%, #000 18%);
+  color: var(--muted);
+  font: 700 9px/1 var(--font-display);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.btn-icon-xs:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--outline) 55%, transparent);
+  background: color-mix(in srgb, var(--surface-high) 80%, #000 20%);
+}
+
+.btn.active {
+  color: var(--accent-light);
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+  background: color-mix(in srgb, var(--accent-glow) 72%, transparent);
+}

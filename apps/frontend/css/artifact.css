@@ -1,0 +1,376 @@
+.artifact-explorer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 84%, #000 16%);
+}
+
+.workspace.artifact-mode .left-pane {
+  padding: 0;
+}
+
+.workspace.artifact-mode .pane-shell {
+  gap: 0;
+  padding: 0;
+  border: var(--glass-pane-border);
+  border-radius: 0;
+  box-shadow: var(--glass-pane-highlight);
+  backdrop-filter: var(--glass-pane-blur);
+  -webkit-backdrop-filter: var(--glass-pane-blur);
+  background: var(--glass-pane-bg);
+  border-right: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+}
+
+.workspace.artifact-mode .canvas-stage {
+  padding: 0;
+}
+
+.artifact-explorer-title {
+  color: var(--muted);
+  font: 700 10px/1.2 var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.artifact-explorer-action {
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artifact-explorer-action:hover {
+  border-color: color-mix(in srgb, var(--border) 74%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 70%, transparent);
+  color: var(--text);
+}
+
+.artifact-tree-toggle-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.artifact-explorer-root {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--text-strong);
+  font: 600 12px/1.3 var(--font-ui);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background: color-mix(in srgb, var(--surface) 85%, #000 15%);
+}
+
+.artifact-explorer-root-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-light);
+}
+
+.artifact-explorer-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 84%, #000 16%);
+}
+
+.file-tree {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: color-mix(in srgb, var(--surface-contrast) 90%, #000 10%);
+  padding: 6px 0;
+  scrollbar-gutter: stable both-edges;
+}
+
+.file-tree-empty {
+  padding: 12px 10px;
+  color: var(--muted);
+  font: 500 12px/1.4 var(--font-ui);
+}
+
+.file-tree-children {
+  display: block;
+  padding-left: 8px;
+}
+
+.file-tree-dir,
+.file-tree-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+  text-align: left;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  font: 500 12px/1.3 var(--font-ui);
+}
+
+.file-tree-dir {
+  color: color-mix(in srgb, var(--text) 90%, var(--muted) 10%);
+}
+
+.file-tree-dir:hover,
+.file-tree-item:hover {
+  background: color-mix(in srgb, var(--surface-3) 74%, transparent);
+}
+
+.file-tree-item.active {
+  background: color-mix(in srgb, var(--accent-glow) 72%, transparent);
+  color: var(--accent-light);
+  border-left-color: color-mix(in srgb, var(--accent) 84%, transparent);
+}
+
+.file-tree-indent {
+  width: calc(var(--tree-depth, 0) * 18px);
+  flex-shrink: 0;
+}
+
+.file-tree-dir-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--muted-2);
+  transition: color var(--transition);
+}
+
+.file-tree-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.file-tree-dir .file-tree-icon {
+  color: var(--accent-light);
+}
+
+.file-tree-item.active .file-tree-icon {
+  color: var(--accent-light);
+}
+
+.file-tree-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifact-editor {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
+  background: color-mix(in srgb, var(--surface-contrast) 90%, #000 10%);
+  overflow: hidden;
+}
+
+.workspace.artifact-mode .artifact-editor {
+  border: none;
+  border-radius: 0;
+}
+
+.artifact-editor-tabs,
+.artifact-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 84%, #000 16%);
+}
+
+.artifact-editor-tab {
+  min-width: 0;
+  max-width: 420px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 10px;
+  border-top: 2px solid transparent;
+  color: var(--muted);
+  background: transparent;
+}
+
+.artifact-editor-tab.active {
+  color: var(--text-strong);
+  background: color-mix(in srgb, var(--surface-contrast) 88%, #000 12%);
+  border-top-color: color-mix(in srgb, var(--accent) 84%, transparent);
+}
+
+.artifact-editor-tab-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-light);
+  flex-shrink: 0;
+}
+
+.artifact-editor-save-btn {
+  margin-left: auto;
+}
+
+.artifact-editor-fileicon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 46%, transparent);
+  background: color-mix(in srgb, var(--accent-glow) 68%, transparent);
+  color: var(--accent-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 10px/1 var(--font-display);
+  letter-spacing: 0.08em;
+}
+
+.artifact-editor-filename {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: 500 12px/1.3 var(--font-mono);
+}
+
+.artifact-editor-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: color-mix(in srgb, var(--canvas-bg) 96%, #000 4%);
+}
+
+.artifact-editor-line-numbers {
+  width: 56px;
+  margin: 0;
+  padding: 12px 10px;
+  border-right: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 88%, #000 12%);
+  color: var(--muted-2);
+  text-align: right;
+  user-select: none;
+  overflow: hidden;
+  white-space: pre;
+  font: 500 12px/1.7 var(--font-mono);
+}
+
+.artifact-editor-host {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.artifact-editor-content {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  padding: 12px;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+  font: 500 13px/1.7 var(--font-mono);
+}
+
+.artifact-editor-statusbar {
+  height: 24px;
+  padding: 0 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background: color-mix(in srgb, var(--accent) 32%, #1f6feb 68%);
+  color: #dce9ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font: 500 11px/1 var(--font-ui);
+}
+
+.artifact-editor-status-left,
+.artifact-editor-status-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.artifact-editor-status-right {
+  justify-content: flex-end;
+}
+
+.artifact-editor-status-sep {
+  color: color-mix(in srgb, #dce9ff 76%, transparent);
+}
+
+.artifact-editor-statusbar span {
+  white-space: nowrap;
+}
+
+.artifact-editor-host .monaco-editor,
+.artifact-editor-host .overflow-guard {
+  border-radius: 0;
+}
+
+.github-deploy-status {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.github-deploy-meta {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.github-deploy-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.github-link {
+  font-size: 11px;
+  color: var(--accent-light);
+  text-decoration: none;
+}
+
+.github-link:hover {
+  text-decoration: underline;
+}
+
+html.light .artifact-editor,
+html.light .file-tree {
+  background: color-mix(in srgb, var(--surface) 94%, #fff 6%);
+}
+
+html.light .artifact-editor-statusbar {
+  background: color-mix(in srgb, var(--accent) 24%, #f0f6ff 76%);
+  color: #12325f;
+}
+
+html.light .artifact-editor-status-sep {
+  color: color-mix(in srgb, #12325f 55%, transparent);
+}

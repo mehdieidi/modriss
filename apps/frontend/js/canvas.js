@@ -1,0 +1,4186 @@
+import {MODEL_TYPES, TOUCH_MOVE_THRESHOLD} from './config.js';
+import {state} from './state.js';
+import {el} from './dom.js';
+import {api} from './api.js';
+import {escapeHtml, genId} from './utils.js';
+import {getDefaultNode, legalKinds, saveStoredEdgeLayout} from './diagram.js';
+import {
+  activeView,
+  addConnectionToGraphAndActiveView,
+  addNodeToGraphAndActiveView,
+  syncActiveViewFromVisibleGraph
+} from './graph-store.js';
+import {isContainerElement} from './view-materializer.js';
+import {toggleContainerCollapsed} from './container-collapse.js';
+import {
+  modelingElementDefinition,
+  modelingPalette
+} from './modeling-config-data.js';
+import {setStatus} from './status.js';
+// NOTE: These imports form intentional circular references (ES module live bindings).
+// All functions are only called at runtime (event handlers / async), never at module init.
+import {flushAutoSave, scheduleAutoSave} from './autosave.js';
+import {
+  closeAttributePanel,
+  openAttributePanel,
+  openBoundedContextPanel,
+  openConnectionPanel
+} from './attr-panel.js';
+import {fetchImpact} from './impact.js';
+import {
+  publishCursor,
+  publishDiagramUpdate,
+  publishNodeAdd,
+  publishNodeMove,
+  publishNodeRename,
+  renderRemoteCursors
+} from './collaboration.js';
+import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
+
+const DEFAULT_NODE_W = 228;
+const DEFAULT_NODE_H = 112;
+const CIM_NODE_W = 176;
+const CIM_NODE_H = 96;
+const DEFAULT_BOUNDED_CONTEXT_NAME = "Core";
+const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
+const EDGE_SIDE_CORNER_PADDING = 14;
+const nodeElementsById = new Map();
+const edgeElementsById = new Map();
+const edgeGeometryCache = new Map(); // Cache: edgeId -> {d, x, y, selected}
+const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
+let dragSyncFrame = 0;
+const connectionsById = new Map();
+let suppressNextNodeClickId = null;
+let edgeHoverHandleEl = null;
+let edgeHoverHandleState = null;
+let edgeHoverHideTimer = 0;
+let hoveredEdgeId = null;
+let edgePinDrag = null;
+let inlineLabelEditStartLabel = "";
+let inlineLabelEditUndoSnapshot = null;
+
+const CIM_NODE_NOTATION = {
+  Actor: {
+    tag: "participant",
+    line: (meta) => meta.actorType || meta.trustLevel
+  },
+  ExternalSystem: {
+    tag: "external",
+    line: (meta) => meta.owningOrganization || meta.trustLevel
+  },
+  Command: {tag: "command", line: (meta) => meta.intent || meta.commandType},
+  Query: {tag: "query", line: (meta) => meta.intent || meta.queryType},
+  BusinessEvent: {
+    tag: "event",
+    line: (meta) => meta.occurredInPastTenseName || meta.semanticName
+  },
+  Policy: {
+    tag: "policy",
+    line: (meta) => meta.triggeringCondition || meta.policyType
+  },
+  BusinessError: {
+    tag: "error",
+    line: (meta) => meta.errorCode || meta.userVisibleMessage
+  },
+  Condition: {
+    tag: "condition",
+    line: (meta) => meta.naturalLanguage || meta.expression
+  },
+  BusinessCapability: {
+    tag: "capability",
+    line: (meta) => meta.criticality || meta.maturity
+  },
+  BoundedContextCandidate: {
+    tag: "context",
+    line: (meta) => meta.languageBoundary || meta.ownershipBoundary
+  },
+  DomainEntity: {
+    tag: "entity",
+    line: (meta) => meta.identityDescription || meta.businessOwner
+  },
+  ValueObject: {
+    tag: "value object",
+    line: (meta) => meta.valueType || (meta.immutable ? "immutable" : "")
+  },
+  AggregateCandidate: {
+    tag: "aggregate",
+    line: (meta) => meta.consistencyExpectation
+        || meta.consistencyBoundaryRationale
+  },
+  InformationItem: {
+    tag: "data",
+    line: (meta) => meta.businessName || meta.type
+  },
+  DataClassification: {
+    tag: "classification",
+    line: (meta) => meta.kind || meta.confidentialityLevel
+  },
+  BusinessProcess: {
+    tag: "process",
+    line: (meta) => meta.processKind || meta.completionCriterion
+  },
+  StartStep: {tag: "start", line: () => "process entry"},
+  EndStep: {tag: "end", line: () => "process completion"},
+  CommandStep: {tag: "command step", line: (meta) => refLabel(meta.command)},
+  QueryStep: {tag: "query step", line: (meta) => refLabel(meta.query)},
+  EventStep: {tag: "event step", line: (meta) => refLabel(meta.event)},
+  PolicyStep: {tag: "policy step", line: (meta) => refLabel(meta.policy)},
+  HumanTaskStep: {tag: "human task", line: (meta) => meta.taskDescription},
+  ExternalInteractionStep: {
+    tag: "external task",
+    line: (meta) => refLabel(meta.externalSystem) || meta.interactionPurpose
+  },
+  DecisionStep: {
+    tag: "decision",
+    line: (meta) => refLabel(meta.condition) || refLabel(meta.decisionTable)
+  },
+  WaitStep: {
+    tag: "wait",
+    line: (meta) => meta.durationExpression || meta.waitReason
+  },
+  Requirement: {
+    tag: "requirement",
+    line: (meta) => meta.requirementType || meta.priority
+  },
+  BusinessGoal: {
+    tag: "goal",
+    line: (meta) => meta.successCriterion || meta.priority
+  },
+  KPI: {tag: "kpi", line: (meta) => meta.metricName || meta.targetValue},
+  Stakeholder: {
+    tag: "stakeholder",
+    line: (meta) => meta.stakeholderType || meta.influenceLevel
+  },
+  NonFunctionalRequirement: {
+    tag: "quality",
+    line: (meta) => meta.qualityType || meta.metric
+  },
+  SecurityConstraint: {
+    tag: "security",
+    line: (meta) => meta.authenticationNeed || meta.authorizationRule
+  },
+  PrivacyConstraint: {tag: "privacy", line: (meta) => meta.law || meta.purpose},
+  ComplianceConstraint: {
+    tag: "compliance",
+    line: (meta) => meta.regulation || meta.controlId
+  },
+  Risk: {tag: "risk", line: (meta) => meta.impact || meta.probability},
+  Assumption: {
+    tag: "assumption",
+    line: (meta) => meta.sourceRule || meta.value
+  },
+  Hotspot: {tag: "hotspot", line: (meta) => meta.severity || meta.rationale}
+};
+
+const CIM_EDGE_LABELS = {
+  ISSUES: "issues",
+  OBSERVES: "observes",
+  ASSIGNED_TO: "assigned to",
+  PRODUCES: "produces",
+  CONSUMED_BY: "consumed by",
+  SUPPORTS: "supports",
+  REALIZES: "realizes",
+  CONTAINS_COMMAND: "contains command",
+  CONTAINS_QUERY: "contains query",
+  CONTAINS_EVENT: "contains event",
+  MANAGES: "manages",
+  DEPENDS_ON: "depends on",
+  CONTAINS: "contains",
+  DOMAIN_RELATIONSHIP: "relationship",
+  ROOT: "root",
+  MEMBER: "member",
+  EXPECTS: "expects",
+  REJECTS_WITH: "rejects with",
+  MAY_FAIL_WITH: "may fail with",
+  TARGETS: "targets",
+  HANDLED_BY: "handled by",
+  READS: "reads",
+  TRIGGERS: "triggers",
+  FEEDS: "starts/feeds",
+  EMITS_COMMAND: "emits command",
+  EMITS_EVENT: "emits event",
+  GUARDS: "guards",
+  CONSTRAINS: "constrains",
+  TRANSITION: "transition",
+  USES: "uses",
+  RESULTS_IN: "results in",
+  ATTACHED_TO: "attached to"
+};
+
+const CIM_PROVIDER_TERMS = [
+  "aws", "amazon", "lambda", "dynamodb", "dynamo", "s3", "sns", "sqs",
+  "eventbridge", "cognito", "apigateway", "api gateway", "azure", "gcp",
+  "google cloud", "pubsub", "cloud run", "cloud functions", "cosmos",
+  "firebase", "kinesis", "rds", "cloudwatch"
+];
+
+const CIM_TABLE_LIKE_TYPES = new Set([
+  "AcceptanceCriterion", "DecisionRule", "QualityScenario",
+  "DataClassification"
+]);
+
+const CIM_EDGE_TOOLS_BY_PROFILE = {
+  requirements: [],
+  capability: [{kind: "DEPENDS_ON", label: "Capability dependency"}],
+  domain: [{kind: "DOMAIN_RELATIONSHIP", label: "Domain relationship"}],
+  eventstorming: [],
+  process: [{kind: "TRANSITION", label: "Process transition"}],
+  decision: [],
+  governance: [],
+  readiness: []
+};
+
+const CIM_VIEW_PALETTES = {
+  requirements: [
+    "Requirement", "BusinessGoal", "KPI", "Stakeholder",
+    "NonFunctionalRequirement", "SecurityConstraint", "PrivacyConstraint",
+    "ComplianceConstraint", "Risk", "Assumption", "Hotspot"
+  ],
+  capability: [
+    "BusinessCapability", "BoundedContextCandidate",
+    "UbiquitousLanguageTerm", "Requirement", "BusinessGoal", "Stakeholder",
+    "Actor"
+  ],
+  domain: [
+    "DomainEntity", "ValueObject", "AggregateCandidate",
+    "BusinessInvariant", "LifecycleStateDefinition", "InformationItem"
+  ],
+  eventstorming: [
+    "Actor", "ExternalSystem", "Command", "Query", "BusinessEvent",
+    "Policy", "BusinessError", "Condition", "Hotspot", "InformationItem",
+    "AggregateCandidate", "BusinessCapability"
+  ],
+  process: [
+    "BusinessProcess", "StartStep", "EndStep", "CommandStep", "QueryStep",
+    "EventStep", "PolicyStep", "HumanTaskStep", "ExternalInteractionStep",
+    "DecisionStep", "WaitStep", "ExceptionScenario", "TemporalConstraint",
+    "Condition", "Role"
+  ],
+  decision: [
+    "DecisionTable", "InformationItem", "Command", "BusinessEvent", "Policy",
+    "Condition"
+  ],
+  governance: [
+    "InformationItem", "DataClassification", "PrivacyConstraint",
+    "ComplianceConstraint", "SecurityConstraint", "NonFunctionalRequirement"
+  ],
+  readiness: [
+    "Risk", "Assumption", "Hotspot", "Requirement", "BusinessCapability",
+    "Command", "Query", "BusinessEvent", "BusinessProcess",
+    "AggregateCandidate"
+  ]
+};
+
+const CIM_PROFILE_LABELS = {
+  requirements: "Requirements and goals",
+  capability: "Capability and context",
+  domain: "Domain model",
+  eventstorming: "EventStorming behavior",
+  process: "Business process",
+  decision: "Decision",
+  governance: "Information and governance",
+  readiness: "Transformation readiness"
+};
+
+function refLabel(value) {
+  if (!value) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "object") {
+    return value.name || value.label || value.$ref || value.id || "";
+  }
+  return "";
+}
+
+function cimEdgeLabel(edge) {
+  if (state.activeType !== "cim") {
+    return edge.bundle ? (edge.label || "Bundled relations") : edge.kind;
+  }
+  if (edge.label) {
+    return edge.label;
+  }
+  const key = String(edge.kind || "").toUpperCase();
+  return edge.bundle ? (edge.label || "Bundled relations")
+      : (CIM_EDGE_LABELS[key] || key.toLowerCase().replaceAll("_", " "));
+}
+
+function cimNodeNotation(node) {
+  if (state.activeType !== "cim") {
+    return null;
+  }
+  return CIM_NODE_NOTATION[node.type] || null;
+}
+
+function normalizeViewText(value) {
+  return String(value || "").trim().toLowerCase().replaceAll(/[^a-z0-9]+/g,
+      " ");
+}
+
+function activeCimViewProfile() {
+  if (state.activeType !== "cim") {
+    return null;
+  }
+  const view = activeView();
+  const text = normalizeViewText([
+    view?.id, view?.name, view?.layoutProfile, view?.description
+  ].filter(Boolean).join(" "));
+  if (!text) {
+    return "eventstorming";
+  }
+  if (text.includes("readiness")) {
+    return "readiness";
+  }
+  if (text.includes("requirement") || text.includes("objective")
+      || text.includes("goal")) {
+    return "requirements";
+  }
+  if (text.includes("capability") || text.includes("context")) {
+    return "capability";
+  }
+  if (text.includes("entity") || text.includes("aggregate")
+      || text.includes("domain")) {
+    return "domain";
+  }
+  if (text.includes("process") || text.includes("timeline")) {
+    return "process";
+  }
+  if (text.includes("decision") || text.includes("policy")
+      || text.includes("rule")) {
+    return "decision";
+  }
+  if (text.includes("governance") || text.includes("security")
+      || text.includes("privacy") || text.includes("nfr")
+      || text.includes("information")) {
+    return "governance";
+  }
+  if (text.includes("actor") || text.includes("command")
+      || text.includes("query") || text.includes("event")
+      || text.includes("storm")) {
+    return "eventstorming";
+  }
+  return "eventstorming";
+}
+
+function hasOwnValue(object, key) {
+  return object && Object.prototype.hasOwnProperty.call(object, key)
+      && object[key] !== null && object[key] !== undefined
+      && String(object[key]).trim() !== "";
+}
+
+function firstValue(meta, keys) {
+  for (const key of keys) {
+    if (hasOwnValue(meta, key)) {
+      return meta[key];
+    }
+  }
+  return "";
+}
+
+function compactRefCount(value) {
+  if (Array.isArray(value)) {
+    return value.length ? `${value.length}` : "";
+  }
+  if (value && typeof value === "object") {
+    return refLabel(value);
+  }
+  return value ? String(value) : "";
+}
+
+function compactList(value, limit = 3) {
+  const values = Array.isArray(value) ? value : (value ? [value] : []);
+  return values.slice(0, limit).map(refLabel).filter(Boolean).join(", ");
+}
+
+function refsArray(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return value ? [value] : [];
+}
+
+function isPastTenseBusinessEventName(value) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return false;
+  }
+  const words = text.split(/\s+/).filter(Boolean);
+  const first = words[0]?.toLowerCase() || "";
+  const last = words[words.length - 1]?.toLowerCase() || "";
+  return first.endsWith("ed") || last.endsWith("ed")
+      || /(?:submitted|created|updated|deleted|confirmed|rejected|approved|cancelled|canceled|completed|failed|paid|sent|received|placed|registered|enrolled|verified|accepted|declined)$/.test(
+          first);
+}
+
+function hasProviderTermInText(value) {
+  const text = String(value || "").toLowerCase();
+  return CIM_PROVIDER_TERMS.some((term) => text.includes(term));
+}
+
+function nodeProviderTermHit(node) {
+  const meta = node?.meta || {};
+  const values = [node?.label, node?.type, ...Object.values(meta).flatMap(
+      (value) => Array.isArray(value) ? value : [value])];
+  return values.some((value) => typeof value === "string"
+      && hasProviderTermInText(value));
+}
+
+function cimNodeIssueBadges(node) {
+  const badges = [];
+  if (nodeProviderTermHit(node)) {
+    badges.push("provider-independent");
+  }
+  if (node.type === "BusinessEvent") {
+    const eventName = node.meta?.occurredInPastTenseName || node.label;
+    if (!isPastTenseBusinessEventName(eventName)) {
+      badges.push("past tense");
+    }
+  }
+  if (node.type === "Hotspot" && (node.meta?.productionBlocking
+      || node.meta?.blocksTransformation)) {
+    badges.push("blocking");
+  }
+  return badges;
+}
+
+function detailRow(label, value) {
+  const normalized = Array.isArray(value) ? compactList(value) : value;
+  const text = String(normalized || "").trim();
+  if (!text) {
+    return "";
+  }
+  return `<div class="node-cim-row"><span>${escapeHtml(
+      label)}</span><strong>${escapeHtml(
+      text)}</strong></div>`;
+}
+
+function detailBadge(label, issue = false) {
+  const text = String(label || "").trim();
+  if (!text) {
+    return "";
+  }
+  return `<span class="node-cim-badge${issue ? " node-cim-issue"
+      : ""}">${escapeHtml(text)}</span>`;
+}
+
+function detailCompartment(title, rows) {
+  const content = rows.filter(Boolean).join("");
+  if (!content) {
+    return "";
+  }
+  return `<div class="node-cim-compartment"><div class="node-cim-compartment-title">${escapeHtml(
+      title)}</div>${content}</div>`;
+}
+
+function cimNodeDetailsHtml(node) {
+  if (state.activeType !== "cim") {
+    return "";
+  }
+  const meta = node.meta || {};
+  const badges = cimNodeIssueBadges(node).map((label) => detailBadge(label,
+      true));
+  const addBadge = (value) => {
+    const text = String(value || "").trim();
+    if (text) {
+      badges.push(detailBadge(text));
+    }
+  };
+  const sections = [];
+  switch (node.type) {
+    case "Requirement":
+      addBadge(firstValue(meta, ["requirementType", "priority"]));
+      if (meta.mandatory) {
+        addBadge("mandatory");
+      }
+      if (meta.productionBlocking) {
+        badges.push(detailBadge("production blocking", true));
+      }
+      sections.push(detailCompartment("Fit", [
+        detailRow("criterion", meta.fitCriterion),
+        detailRow("acceptance", compactRefCount(meta.acceptanceCriteria))
+      ]));
+      break;
+    case "BusinessGoal":
+      addBadge(meta.priority);
+      sections.push(detailCompartment("Outcome", [
+        detailRow("success", meta.successCriterion),
+        detailRow("value", meta.businessValue),
+        detailRow("measured by", compactList(meta.measuredBy))
+      ]));
+      break;
+    case "KPI":
+      addBadge(firstValue(meta, ["metricType", "unit"]));
+      sections.push(detailCompartment("Metric", [
+        detailRow("name", meta.metricName),
+        detailRow("target", [meta.operator, meta.targetValue, meta.unit].filter(
+            Boolean).join(" ")),
+        detailRow("measures", compactList(meta.measures))
+      ]));
+      break;
+    case "Actor":
+    case "ExternalSystem":
+    case "Stakeholder":
+      addBadge(firstValue(meta, ["actorType", "trustLevel",
+        "stakeholderType"]));
+      sections.push(detailCompartment("Participant", [
+        detailRow("roles", compactList(meta.playsRoles)),
+        detailRow("commands", compactRefCount(meta.issuesCommands)),
+        detailRow("queries", compactRefCount(meta.issuesQueries)),
+        detailRow("events", compactRefCount(meta.producedEvents
+            || meta.observesEvents))
+      ]));
+      break;
+    case "BusinessCapability":
+      addBadge(firstValue(meta, ["criticality", "maturity"]));
+      sections.push(detailCompartment("Scope", [
+        detailRow("supports", compactList(meta.supports)),
+        detailRow("realizes", compactRefCount(meta.realizesRequirements)),
+        detailRow("commands", compactRefCount(meta.containsCommands)),
+        detailRow("queries", compactRefCount(meta.containsQueries)),
+        detailRow("events", compactRefCount(meta.containsEvents)),
+        detailRow("entities", compactRefCount(meta.managesEntities))
+      ]));
+      break;
+    case "BoundedContextCandidate":
+      addBadge(firstValue(meta, ["languageBoundary", "ownershipBoundary"]));
+      sections.push(detailCompartment("Boundary", [
+        detailRow("capabilities", compactRefCount(meta.capabilities)),
+        detailRow("concepts", compactRefCount(meta.entities)),
+        detailRow("language", compactRefCount(meta.ubiquitousLanguage))
+      ]));
+      break;
+    case "DomainEntity":
+    case "ValueObject":
+      addBadge(node.type === "ValueObject" && meta.immutable ? "immutable"
+          : firstValue(meta, ["identityAttribute", "valueType"]));
+      sections.push(detailCompartment("Structure", [
+        detailRow("identity",
+            meta.identityAttribute || meta.identityDescription),
+        detailRow("attributes", compactList(meta.attributes)),
+        detailRow("invariants", compactList(meta.invariants)),
+        detailRow("states", compactList(meta.lifecycleStates))
+      ]));
+      break;
+    case "AggregateCandidate":
+      addBadge(firstValue(meta, ["consistencyExpectation",
+        "consistencyBoundaryRationale"]));
+      sections.push(detailCompartment("Aggregate", [
+        detailRow("root", refLabel(meta.root)),
+        detailRow("members", compactList(meta.members)),
+        detailRow("invariants", compactList(meta.invariants))
+      ]));
+      break;
+    case "Command":
+      addBadge(firstValue(meta, ["commandType", "priority"]));
+      if (meta.auditRequired) {
+        addBadge("audit");
+      }
+      sections.push(detailCompartment("Behavior", [
+        detailRow("intent", meta.intent),
+        detailRow("input", compactList(meta.input)),
+        detailRow("expects", compactList(meta.expectedEvents)),
+        detailRow("rejects", compactList(meta.rejectionEvents)),
+        detailRow("errors", compactList(meta.possibleErrors))
+      ]));
+      break;
+    case "Query":
+      addBadge(firstValue(meta, ["queryType", "freshnessNeed"]));
+      sections.push(detailCompartment("Read", [
+        detailRow("input", compactList(meta.input)),
+        detailRow("output", compactList(meta.output)),
+        detailRow("reads", compactList(meta.reads)),
+        detailRow("auth", meta.authorizationRule)
+      ]));
+      break;
+    case "BusinessEvent":
+      addBadge(firstValue(meta, ["occurredInPastTenseName", "eventType"]));
+      sections.push(detailCompartment("Event", [
+        detailRow("payload", compactList(meta.payload)),
+        detailRow("caused by", compactList(meta.causedByExternalSystems)),
+        detailRow("consumed by", compactList(meta.consumedByPolicies
+            || meta.consumedByProcesses)),
+        detailRow("retention", meta.retentionNeed)
+      ]));
+      break;
+    case "Policy":
+      addBadge(firstValue(meta, ["severity", "policyType"]));
+      sections.push(detailCompartment("Policy", [
+        detailRow("condition", meta.triggeringCondition || meta.expression),
+        detailRow("guards", compactList(meta.guards)),
+        detailRow("emits", compactList([...refsArray(meta.emitsCommands),
+          ...refsArray(meta.emitsEvents)]))
+      ]));
+      break;
+    case "BusinessProcess":
+      addBadge(firstValue(meta, ["processKind", "completionCriterion"]));
+      sections.push(detailCompartment("Flow", [
+        detailRow("steps", compactRefCount(meta.steps)),
+        detailRow("exceptions", compactRefCount(meta.exceptionScenarios)),
+        detailRow("deadlines", compactRefCount(meta.temporalConstraints))
+      ]));
+      break;
+    case "DecisionTable":
+      addBadge(firstValue(meta, ["hitPolicy", "decisionOwner"]));
+      sections.push(detailCompartment("Rules", [
+        detailRow("inputs", compactList(meta.inputs)),
+        detailRow("outputs", compactList(meta.outputs)),
+        detailRow("rules", compactRefCount(meta.rules))
+      ]));
+      break;
+    case "InformationItem":
+      addBadge(firstValue(meta, ["type", "required"]));
+      sections.push(detailCompartment("Data", [
+        detailRow("business", meta.businessName),
+        detailRow("classification", refLabel(meta.classification)),
+        detailRow("privacy", meta.privacyPurpose),
+        detailRow("retention", meta.retentionNeed)
+      ]));
+      break;
+    case "SecurityConstraint":
+    case "PrivacyConstraint":
+    case "ComplianceConstraint":
+    case "NonFunctionalRequirement":
+      addBadge(firstValue(meta, ["qualityType", "regulation", "law",
+        "authenticationNeed"]));
+      sections.push(detailCompartment("Constraint", [
+        detailRow("target", compactList(meta.constrainedElements
+            || meta.scopedElements || meta.dataItems)),
+        detailRow("rule", meta.authorizationRule || meta.controlId
+            || meta.purpose || meta.scenario),
+        detailRow("metric", [meta.metric, meta.target].filter(Boolean).join(
+            " "))
+      ]));
+      break;
+    case "Risk":
+    case "Assumption":
+    case "Hotspot":
+      addBadge(firstValue(meta, ["severity", "impact", "status"]));
+      sections.push(detailCompartment("Readiness", [
+        detailRow("owner", meta.owner),
+        detailRow("attached", compactList(meta.attachedTo
+            || meta.affectedElements)),
+        detailRow("rationale", meta.rationale)
+      ]));
+      break;
+    default:
+      break;
+  }
+  if (!badges.length && !sections.length) {
+    return "";
+  }
+  return `<div class="node-cim-details">${badges.length
+      ? `<div class="node-cim-badges">${badges.join("")}</div>` : ""}${
+      sections.join("")}</div>`;
+}
+
+function commitUndoSnapshot(snapshot) {
+  if (!snapshot) {
+    return false;
+  }
+  return pushDiagramUndoSnapshot(snapshot);
+}
+
+function dragUndoSnapshot() {
+  return captureDiagramUndoSnapshot();
+}
+
+function getNodeWidth() {
+  return state.activeType === "cim" ? CIM_NODE_W : DEFAULT_NODE_W;
+}
+
+function getNodeHeight() {
+  return state.activeType === "cim" ? CIM_NODE_H : DEFAULT_NODE_H;
+}
+
+export function getCurrentDiagramNodeSize() {
+  return {width: getNodeWidth(), height: getNodeHeight()};
+}
+
+function normalizePinPoint(point) {
+  return {
+    x: Math.round(Number(point?.x) || 0),
+    y: Math.round(Number(point?.y) || 0)
+  };
+}
+
+function normalizeEdgeAnchor(anchor) {
+  if (!anchor || typeof anchor !== "object") {
+    return null;
+  }
+  const side = anchor.side === "left" ? "left"
+      : anchor.side === "right" ? "right" : null;
+  const offsetY = Math.round(Number(anchor.offsetY));
+  if (!side || !Number.isFinite(offsetY)) {
+    return null;
+  }
+  return {side, offsetY};
+}
+
+function clampEdgeAnchorOffset(offsetY, nodeH) {
+  const min = EDGE_SIDE_CORNER_PADDING;
+  const max = Math.max(min, nodeH - EDGE_SIDE_CORNER_PADDING);
+  return Math.max(min, Math.min(max, Math.round(Number(offsetY) || 0)));
+}
+
+export function edgePresentationFromLayout(layout, sourceNode, targetNode) {
+  const pinPoints = Array.isArray(layout?.bendPoints)
+      ? layout.bendPoints.map(normalizePinPoint)
+      : [];
+  const sections = Array.isArray(layout?.sections) ? layout.sections : [];
+  const firstSection = sections[0];
+  const lastSection = sections[sections.length - 1];
+  const sourceAnchor = sourceNode && firstSection?.startPoint
+      ? normalizeEdgeAnchor({
+        side: Number(firstSection.startPoint.x) >= sourceNode.x + getNodeWidth()
+        / 2
+            ? "right" : "left",
+        offsetY: Number(firstSection.startPoint.y) - sourceNode.y
+      }) : null;
+  const targetAnchor = targetNode && lastSection?.endPoint
+      ? normalizeEdgeAnchor({
+        side: Number(lastSection.endPoint.x) >= targetNode.x + getNodeWidth()
+        / 2
+            ? "right" : "left",
+        offsetY: Number(lastSection.endPoint.y) - targetNode.y
+      }) : null;
+  return {
+    pinPoints,
+    sourceAnchor,
+    targetAnchor
+  };
+}
+
+export function pinPointsFromEdgeLayout(layout) {
+  return edgePresentationFromLayout(layout, null, null).pinPoints;
+}
+
+function persistEdgePinPoints(edge) {
+  if (!edge?.id) {
+    return;
+  }
+  saveStoredEdgeLayout(state.activeType, edge.id, {
+    pinPoints: Array.isArray(edge.pinPoints)
+        ? edge.pinPoints.map(normalizePinPoint)
+        : [],
+    sourceAnchor: normalizeEdgeAnchor(edge.sourceAnchor),
+    targetAnchor: normalizeEdgeAnchor(edge.targetAnchor)
+  });
+}
+
+function clearTransientEdgeLayouts() {
+  state.diagram.connections.forEach((edge) => {
+    if (!Array.isArray(edge.pinPoints) && edge.layout) {
+      const presentation = edgePresentationFromLayout(edge.layout, null, null);
+      edge.pinPoints = presentation.pinPoints;
+      edge.sourceAnchor = normalizeEdgeAnchor(edge.sourceAnchor)
+          || presentation.sourceAnchor;
+      edge.targetAnchor = normalizeEdgeAnchor(edge.targetAnchor)
+          || presentation.targetAnchor;
+      persistEdgePinPoints(edge);
+    }
+    delete edge.layout;
+  });
+}
+
+function nodeCenter(node, nodeW, nodeH) {
+  return {
+    x: node.x + nodeW / 2,
+    y: node.y + nodeH / 2
+  };
+}
+
+function pointOnNodeBoundary(node, nodeW, nodeH, toward, anchor = null) {
+  const center = nodeCenter(node, nodeW, nodeH);
+  const normalizedAnchor = normalizeEdgeAnchor(anchor);
+  if (normalizedAnchor) {
+    return {
+      x: normalizedAnchor.side === "right" ? node.x + nodeW : node.x,
+      y: node.y + clampEdgeAnchorOffset(normalizedAnchor.offsetY, nodeH)
+    };
+  }
+  const towardX = Number(toward?.x);
+  const towardY = Number(toward?.y);
+  const useRightSide = !Number.isFinite(towardX) || towardX >= center.x;
+  const clampedY = Math.max(node.y + EDGE_SIDE_CORNER_PADDING,
+      Math.min(node.y + nodeH - EDGE_SIDE_CORNER_PADDING,
+          Number.isFinite(towardY) ? towardY : center.y));
+  return {
+    x: useRightSide ? node.x + nodeW : node.x,
+    y: clampedY
+  };
+}
+
+function pinPointsForEdge(edge) {
+  return Array.isArray(edge?.pinPoints)
+      ? edge.pinPoints.map(normalizePinPoint)
+      : [];
+}
+
+function polylineMidpoint(points) {
+  if (!Array.isArray(points) || points.length < 2) {
+    const point = points?.[0] || {x: 0, y: 0};
+    return {x: point.x, y: point.y};
+  }
+  const lengths = [];
+  let total = 0;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const from = points[i];
+    const to = points[i + 1];
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    lengths.push(length);
+    total += length;
+  }
+  if (!total) {
+    const point = points[Math.floor(points.length / 2)];
+    return {x: point.x, y: point.y};
+  }
+  let traversed = 0;
+  const targetLength = total / 2;
+  for (let i = 0; i < lengths.length; i += 1) {
+    const segmentLength = lengths[i];
+    if (traversed + segmentLength >= targetLength) {
+      const from = points[i];
+      const to = points[i + 1];
+      const ratio = (targetLength - traversed) / segmentLength;
+      return {
+        x: from.x + (to.x - from.x) * ratio,
+        y: from.y + (to.y - from.y) * ratio
+      };
+    }
+    traversed += segmentLength;
+  }
+  const last = points[points.length - 1];
+  return {x: last.x, y: last.y};
+}
+
+function closestPointOnSegment(point, start, end) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (!lengthSquared) {
+    return {
+      x: start.x, y: start.y, distance: Math.hypot(point.x - start.x,
+          point.y - start.y), t: 0
+    };
+  }
+  const rawT = ((point.x - start.x) * dx + (point.y - start.y) * dy)
+      / lengthSquared;
+  const t = Math.max(0, Math.min(1, rawT));
+  const x = start.x + dx * t;
+  const y = start.y + dy * t;
+  return {x, y, distance: Math.hypot(point.x - x, point.y - y), t};
+}
+
+function closestPointOnPolyline(points, point) {
+  let best = null;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const candidate = closestPointOnSegment(point, points[i], points[i + 1]);
+    if (!best || candidate.distance < best.distance) {
+      best = {...candidate, segmentIndex: i};
+    }
+  }
+  return best;
+}
+
+function edgePathGeometry(edge, source, target, nodeW, nodeH) {
+  const pins = pinPointsForEdge(edge);
+  const sourceCenter = nodeCenter(source, nodeW, nodeH);
+  const targetCenter = nodeCenter(target, nodeW, nodeH);
+  const startReference = pins[0] || targetCenter;
+  const endReference = pins[pins.length - 1] || sourceCenter;
+  const startPoint = pointOnNodeBoundary(source, nodeW, nodeH, startReference,
+      edge.sourceAnchor);
+  const endPoint = pointOnNodeBoundary(target, nodeW, nodeH, endReference,
+      edge.targetAnchor);
+  const points = [startPoint, ...pins, endPoint];
+  const pathParts = [];
+  points.forEach((point, index) => {
+    pathParts.push(`${index === 0 ? "M" : "L"} ${point.x} ${point.y}`);
+  });
+  const midpoint = polylineMidpoint(points);
+  return {
+    d: pathParts.join(" "),
+    midX: midpoint.x,
+    midY: midpoint.y,
+    points
+  };
+}
+
+function normalizeContextName(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ");
+}
+
+function isValidContextName(value) {
+  return /^[A-Za-z0-9 _-]{1,80}$/.test(value);
+}
+
+function assignContextName(node, contextName) {
+  if (!node || !contextName) {
+    return false;
+  }
+  node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
+  node.meta.contextName = contextName;
+  return true;
+}
+
+export function contextNameFromNode(node) {
+  const meta = node?.meta || {};
+  const explicit = normalizeContextName(meta.contextName);
+  if (explicit) {
+    return explicit;
+  }
+  const context = meta.context;
+  if (typeof context === "string") {
+    return normalizeContextName(context);
+  }
+  if (context && typeof context === "object") {
+    return normalizeContextName(context.name || context.id || context.$ref);
+  }
+  return "";
+}
+
+function contextNodes(contextName) {
+  return state.diagram.nodes.filter(
+      (node) => contextNameFromNode(node) === contextName);
+}
+
+function setCanvasPanSelectionGuard(active) {
+  document.body?.classList.toggle("canvas-panning", active);
+  el.canvasViewport?.classList.toggle("is-panning", active);
+  if (active) {
+    const selection = window.getSelection?.();
+    if (selection && selection.rangeCount) {
+      selection.removeAllRanges();
+    }
+  }
+}
+
+function clearContextDraftSelection() {
+  state.boundedContextDraftNodeIds = new Set();
+}
+
+function setContextCreateMode(enabled) {
+  const isEnabled = Boolean(enabled && state.activeType === "cim");
+  state.boundedContextCreateMode = isEnabled;
+  if (!isEnabled) {
+    clearContextDraftSelection();
+  }
+  renderPalette();
+  applyNodeSelectionStyles();
+}
+
+function ensureBaseWorkshopBoundedContexts() {
+  if (!state.baseModel || typeof state.baseModel !== "object") {
+    return null;
+  }
+  if (!Array.isArray(state.baseModel.boundedContexts)) {
+    state.baseModel.boundedContexts = [];
+  }
+  return state.baseModel.boundedContexts;
+}
+
+function ensureBaseBoundedContext(contextName) {
+  const contexts = ensureBaseWorkshopBoundedContexts();
+  if (!contexts) {
+    return;
+  }
+  if (contexts.some(
+      (context) => normalizeContextName(context?.name) === contextName)) {
+    return;
+  }
+  contexts.push({name: contextName, ubiquitousLanguage: "Domain language"});
+}
+
+function renameBaseBoundedContext(oldName, nextName) {
+  const contexts = ensureBaseWorkshopBoundedContexts();
+  if (!contexts) {
+    return;
+  }
+  contexts.forEach((context) => {
+    if (normalizeContextName(context?.name) !== oldName) {
+      return;
+    }
+    context.name = nextName;
+  });
+}
+
+function removeBaseBoundedContext(contextName) {
+  const contexts = ensureBaseWorkshopBoundedContexts();
+  if (!contexts) {
+    return;
+  }
+  const kept = contexts.filter(
+      (context) => normalizeContextName(context?.name) !== contextName);
+  contexts.length = 0;
+  kept.forEach((context) => contexts.push(context));
+}
+
+function applyBoundedContextToNodes(nodeIds, contextName) {
+  let updated = 0;
+  nodeIds.forEach((nodeId) => {
+    const node = state.nodesById.get(nodeId);
+    if (!node) {
+      return;
+    }
+    if (assignContextName(node, contextName)) {
+      updated += 1;
+    }
+  });
+  if (updated) {
+    ensureBaseBoundedContext(contextName);
+  }
+  return updated;
+}
+
+async function persistActiveWorkbenchOperation(operation) {
+  if (!state.modelId || !operation?.opType) {
+    return false;
+  }
+  try {
+    await api(`/models/${state.modelId}/ops`, {
+      method: "PATCH",
+      body: JSON.stringify({operation})
+    });
+    return true;
+  } catch (error) {
+    console.warn("Workbench operation persistence failed", error);
+    return false;
+  }
+}
+
+function showBoundedContextNameModal(defaultValue = "") {
+  if (!el.boundedContextNameOverlay || !el.boundedContextNameInput
+      || !el.boundedContextNameSaveBtn || !el.boundedContextNameCancelBtn) {
+    return Promise.resolve(null);
+  }
+  el.boundedContextNameInput.value = defaultValue;
+  el.boundedContextNameOverlay.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  el.boundedContextNameInput.focus();
+  el.boundedContextNameInput.select();
+  return new Promise((resolve) => {
+    const close = (value) => {
+      el.boundedContextNameOverlay.classList.add("hidden");
+      document.body.classList.remove("modal-open");
+      el.boundedContextNameSaveBtn.removeEventListener("click", onSave);
+      el.boundedContextNameCancelBtn.removeEventListener("click", onCancel);
+      el.boundedContextNameOverlay.removeEventListener("click", onOverlayClick);
+      el.boundedContextNameInput.removeEventListener("keydown", onKeyDown);
+      resolve(value);
+    };
+    const onSave = () => close(el.boundedContextNameInput.value);
+    const onCancel = () => close(null);
+    const onOverlayClick = (event) => {
+      if (event.target === el.boundedContextNameOverlay) {
+        onCancel();
+      }
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        onSave();
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+      }
+    };
+    el.boundedContextNameSaveBtn.addEventListener("click", onSave);
+    el.boundedContextNameCancelBtn.addEventListener("click", onCancel);
+    el.boundedContextNameOverlay.addEventListener("click", onOverlayClick);
+    el.boundedContextNameInput.addEventListener("keydown", onKeyDown);
+  });
+}
+
+async function finalizeBoundedContextDraft() {
+  const selectedIds = [...state.boundedContextDraftNodeIds];
+  if (!selectedIds.length) {
+    setStatus("Select one or more CIM elements first");
+    return;
+  }
+  const contextOptions = availableBoundedContexts();
+  const chosen = await showBoundedContextNameModal(
+      contextOptions[0] || DEFAULT_BOUNDED_CONTEXT_NAME);
+  if (chosen === null) {
+    setStatus("Bounded context creation canceled");
+    return;
+  }
+  const contextName = normalizeContextName(chosen);
+  if (!contextName) {
+    setStatus("Bounded context name cannot be empty");
+    return;
+  }
+  if (!isValidContextName(contextName)) {
+    setStatus("Use 1-80 chars: letters, numbers, spaces, '-' or '_'");
+    return;
+  }
+  pushDiagramUndoSnapshot();
+  const updated = applyBoundedContextToNodes(selectedIds, contextName);
+  syncActiveViewFromVisibleGraph();
+  await persistActiveWorkbenchOperation({
+    opType: "BOUNDED_CONTEXT_ASSIGN",
+    viewId: state.views.activeViewId,
+    contextName,
+    elementIds: selectedIds
+  });
+  state.selectedBoundedContextName = contextName;
+  setContextCreateMode(false);
+  renderDiagram();
+  scheduleAutoSave();
+  publishDiagramUpdate();
+  openBoundedContextPanel(contextName);
+  setStatus(`Assigned ${updated} element${updated !== 1 ? "s"
+      : ""} to bounded context "${contextName}"`);
+}
+
+function renderBoundedContextBoxes() {
+  if (state.activeType !== "cim") {
+    return;
+  }
+  const byContext = new Map();
+  state.diagram.nodes.forEach((node) => {
+    const contextName = contextNameFromNode(node);
+    if (!contextName) {
+      return;
+    }
+    if (!byContext.has(contextName)) {
+      byContext.set(contextName, []);
+    }
+    byContext.get(contextName).push(node);
+  });
+  const PADDING_X = 22;
+  const PADDING_Y = 26;
+  byContext.forEach((nodes, contextName) => {
+    if (!nodes.length) {
+      return;
+    }
+    const nodeW = getNodeWidth();
+    const nodeH = getNodeHeight();
+    const minX = Math.min(...nodes.map((node) => node.x));
+    const minY = Math.min(...nodes.map((node) => node.y));
+    const maxX = Math.max(...nodes.map((node) => node.x + nodeW));
+    const maxY = Math.max(...nodes.map((node) => node.y + nodeH));
+    const box = document.createElement("div");
+    box.className = "bounded-context-box";
+    box.dataset.contextName = contextName;
+    box.classList.toggle("selected",
+        state.selectedBoundedContextName === contextName);
+    box.style.left = `${minX - PADDING_X}px`;
+    box.style.top = `${minY - PADDING_Y}px`;
+    box.style.width = `${maxX - minX + PADDING_X * 2}px`;
+    box.style.height = `${maxY - minY + PADDING_Y * 2}px`;
+    box.addEventListener("mousedown", onBoundedContextMouseDown);
+    box.addEventListener("click", onBoundedContextClick);
+    box.addEventListener("touchstart", onBoundedContextTouchStart,
+        {passive: false});
+    const label = document.createElement("div");
+    label.className = "bounded-context-label";
+    label.textContent = contextName;
+    box.appendChild(label);
+    el.nodeLayer.appendChild(box);
+  });
+}
+
+function syncBoundedContextBoxes() {
+  if (state.activeType !== "cim") {
+    return;
+  }
+  // Update existing boxes instead of recreating them
+  const byContext = new Map();
+  state.diagram.nodes.forEach((node) => {
+    const contextName = contextNameFromNode(node);
+    if (!contextName) {
+      return;
+    }
+    if (!byContext.has(contextName)) {
+      byContext.set(contextName, []);
+    }
+    byContext.get(contextName).push(node);
+  });
+  const PADDING_X = 22;
+  const PADDING_Y = 26;
+  byContext.forEach((nodes, contextName) => {
+    if (!nodes.length) {
+      return;
+    }
+    const nodeW = getNodeWidth();
+    const nodeH = getNodeHeight();
+    const minX = Math.min(...nodes.map((node) => node.x));
+    const minY = Math.min(...nodes.map((node) => node.y));
+    const maxX = Math.max(...nodes.map((node) => node.x + nodeW));
+    const maxY = Math.max(...nodes.map((node) => node.y + nodeH));
+    const box = el.nodeLayer.querySelector(
+        `[data-context-name="${CSS.escape(contextName)}"]`);
+    if (box && box.classList.contains("bounded-context-box")) {
+      // Update existing box position and size
+      box.style.left = `${minX - PADDING_X}px`;
+      box.style.top = `${minY - PADDING_Y}px`;
+      box.style.width = `${maxX - minX + PADDING_X * 2}px`;
+      box.style.height = `${maxY - minY + PADDING_Y * 2}px`;
+    } else {
+      // Create if missing
+      const newBox = document.createElement("div");
+      newBox.className = "bounded-context-box";
+      newBox.dataset.contextName = contextName;
+      newBox.classList.toggle("selected",
+          state.selectedBoundedContextName === contextName);
+      newBox.style.left = `${minX - PADDING_X}px`;
+      newBox.style.top = `${minY - PADDING_Y}px`;
+      newBox.style.width = `${maxX - minX + PADDING_X * 2}px`;
+      newBox.style.height = `${maxY - minY + PADDING_Y * 2}px`;
+      newBox.addEventListener("mousedown", onBoundedContextMouseDown);
+      newBox.addEventListener("click", onBoundedContextClick);
+      newBox.addEventListener("touchstart", onBoundedContextTouchStart,
+          {passive: false});
+      const label = document.createElement("div");
+      label.className = "bounded-context-label";
+      label.textContent = contextName;
+      newBox.appendChild(label);
+      el.nodeLayer.appendChild(newBox);
+    }
+  });
+  // Remove boxes for contexts that no longer exist
+  el.nodeLayer.querySelectorAll(".bounded-context-box").forEach((box) => {
+    const contextName = box.dataset.contextName;
+    if (!byContext.has(contextName)) {
+      box.remove();
+    }
+  });
+}
+
+function syncNodeElementPosition(node) {
+  const nodeEl = nodeElementsById.get(node.id);
+  if (!nodeEl) {
+    return;
+  }
+  const left = `${node.x}px`;
+  const top = `${node.y}px`;
+  if (nodeEl.style.left !== left) {
+    nodeEl.style.left = left;
+  }
+  if (nodeEl.style.top !== top) {
+    nodeEl.style.top = top;
+  }
+}
+
+function removeEdgeEntry(edgeId) {
+  const entry = edgeElementsById.get(edgeId);
+  if (!entry) {
+    return;
+  }
+  entry.hitPad?.remove();
+  entry.path?.remove();
+  entry.label?.remove();
+  entry.pinHandles?.forEach((pin) => pin.remove());
+  edgeElementsById.delete(edgeId);
+  edgeGeometryCache.delete(edgeId);
+  // remove from adjacency and connections maps
+  edgeIdsByNodeId.forEach((set) => set.delete(edgeId));
+  connectionsById.delete(edgeId);
+  if (edgeHoverHandleState?.edgeId === edgeId) {
+    edgeHoverHandleState = null;
+    edgeHoverHandleEl?.remove();
+    edgeHoverHandleEl = null;
+  }
+}
+
+function syncEdgeGeometryImmediate(changedNodeIds = null) {
+  if (!edgeElementsById.size) {
+    renderEdges();
+    return;
+  }
+  const changedSet = changedNodeIds instanceof Set ? changedNodeIds : null;
+  const nodeW = getNodeWidth();
+  const nodeH = getNodeHeight();
+  if (changedSet) {
+    // collect affected edge ids from adjacency map
+    const edgesToProcess = new Set();
+    changedSet.forEach((nodeId) => {
+      const set = edgeIdsByNodeId.get(nodeId);
+      if (set) {
+        set.forEach((eid) => edgesToProcess.add(eid));
+      }
+    });
+    edgesToProcess.forEach((eid) => {
+      const edge = connectionsById.get(eid);
+      if (!edge) {
+        return;
+      }
+      const entry = edgeElementsById.get(edge.id);
+      if (!entry) {
+        return;
+      }
+      const source = state.nodesById.get(edge.sourceId);
+      const target = state.nodesById.get(edge.targetId);
+      if (!source || !target) {
+        removeEdgeEntry(edge.id);
+        return;
+      }
+
+      const geometry = edgePathGeometry(edge, source, target, nodeW, nodeH);
+      const d = geometry.d;
+      const midX = geometry.midX;
+      const midY = geometry.midY;
+      const isSelected = state.selectedConnectionId === edge.id;
+
+      // Check cache to avoid redundant DOM updates
+      const cached = edgeGeometryCache.get(edge.id) || {};
+
+      // Only update path geometry if changed
+      if (cached.d !== d) {
+        entry.hitPad?.setAttribute("d", d);
+        entry.path?.setAttribute("d", d);
+      }
+
+      // Only update label position if changed
+      if (cached.x !== midX || cached.y !== midY) {
+        entry.label?.setAttribute("x", String(midX));
+        entry.label?.setAttribute("y", String(midY - 8));
+      }
+
+      // Only toggle selected state if changed
+      if (cached.selected !== isSelected) {
+        entry.path?.classList.toggle("selected", isSelected);
+        entry.label?.classList.toggle("selected", isSelected);
+        entry.pinHandles?.forEach(
+            (pinHandle) => pinHandle.classList.toggle("selected", isSelected));
+      }
+
+      // Update cache
+      edgeGeometryCache.set(edge.id,
+          {d, x: midX, y: midY, selected: isSelected, points: geometry.points});
+      entry.geometry = geometry;
+    });
+    return;
+  }
+
+  // No changedSet provided -> process all connections
+  connectionsById.forEach((edge) => {
+    const entry = edgeElementsById.get(edge.id);
+    if (!entry) {
+      return;
+    }
+    const source = state.nodesById.get(edge.sourceId);
+    const target = state.nodesById.get(edge.targetId);
+    if (!source || !target) {
+      removeEdgeEntry(edge.id);
+      return;
+    }
+
+    const geometry = edgePathGeometry(edge, source, target, nodeW, nodeH);
+    const d = geometry.d;
+    const midX = geometry.midX;
+    const midY = geometry.midY;
+    const isSelected = state.selectedConnectionId === edge.id;
+
+    // Check cache to avoid redundant DOM updates
+    const cached = edgeGeometryCache.get(edge.id) || {};
+
+    // Only update path geometry if changed
+    if (cached.d !== d) {
+      entry.hitPad?.setAttribute("d", d);
+      entry.path?.setAttribute("d", d);
+    }
+
+    // Only update label position if changed
+    if (cached.x !== midX || cached.y !== midY) {
+      entry.label?.setAttribute("x", String(midX));
+      entry.label?.setAttribute("y", String(midY - 8));
+    }
+
+    // Only toggle selected state if changed
+    if (cached.selected !== isSelected) {
+      entry.path?.classList.toggle("selected", isSelected);
+      entry.label?.classList.toggle("selected", isSelected);
+      entry.pinHandles?.forEach(
+          (pinHandle) => pinHandle.classList.toggle("selected", isSelected));
+    }
+
+    // Update cache
+    edgeGeometryCache.set(edge.id,
+        {d, x: midX, y: midY, selected: isSelected, points: geometry.points});
+    entry.geometry = geometry;
+  });
+}
+
+function syncEdgeGeometry(changedNodeIds = null) {
+  // Call immediately with caching to skip redundant DOM updates
+  syncEdgeGeometryImmediate(changedNodeIds);
+}
+
+function syncDraggedDiagram() {
+  if (state.dragNode) {
+    const node = state.nodesById.get(state.dragNode.id);
+    if (!node) {
+      return;
+    }
+    syncNodeElementPosition(node);
+    syncEdgeGeometry(new Set([node.id]));
+    if (state.activeType === "cim") {
+      syncBoundedContextBoxes();
+    }
+    return;
+  }
+
+  if (state.dragBoundedContext) {
+    const changedNodeIds = new Set();
+    state.dragBoundedContext.nodePositions.forEach((entry) => {
+      const node = state.nodesById.get(entry.id);
+      if (!node) {
+        return;
+      }
+      changedNodeIds.add(node.id);
+      syncNodeElementPosition(node);
+    });
+    syncEdgeGeometry(changedNodeIds);
+    if (state.activeType === "cim") {
+      syncBoundedContextBoxes();
+    }
+  }
+}
+
+let lastPublishMoveTime = 0;
+const PUBLISH_THROTTLE_MS = 100;
+
+function scheduleDraggedDiagramSync() {
+  if (dragSyncFrame) {
+    return;
+  }
+  dragSyncFrame = window.requestAnimationFrame(() => {
+    dragSyncFrame = 0;
+    syncDraggedDiagram();
+  });
+}
+
+function throttledPublishNodeMove(nodeId, x, y) {
+  // Deprecated: sending during drag caused UI churn; keep final publish on mouseup only.
+}
+
+function clearNodeMultiSelection() {
+  state.selectedNodeIds = new Set();
+}
+
+function commitNodeLabel(node, rawText) {
+  if (!node) {
+    return "";
+  }
+  const previous = String(node.label || "").trim();
+  const next = String(rawText ?? "").trim();
+  const resolved = next || previous;
+  node.label = resolved;
+  node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
+  if (state.activeType === "cim") {
+    node.meta.label = resolved;
+  } else {
+    node.meta.name = resolved;
+  }
+  if (state.selectedNodeId === node.id && el.attrPanelTitle) {
+    el.attrPanelTitle.textContent = resolved;
+  }
+  return resolved;
+}
+
+function setNodeMultiSelection(ids) {
+  state.selectedNodeIds = new Set(ids);
+  state.selectedBoundedContextName = null;
+}
+
+function deselectEdges() {
+  state.selectedConnectionId = null;
+  el.edgeLayer.querySelectorAll(".edge-path, .edge-label, .edge-pin").forEach(
+      (edge) => edge.classList.remove("selected"));
+}
+
+function applyNodeSelectionStyles() {
+  el.nodeLayer.querySelectorAll(".node").forEach((nodeEl) => {
+    nodeEl.classList.toggle("selected",
+        state.selectedNodeIds.has(nodeEl.dataset.nodeId));
+    nodeEl.classList.toggle("context-draft-selected",
+        state.boundedContextDraftNodeIds.has(nodeEl.dataset.nodeId));
+  });
+}
+
+function applyHoverFocusStyles() {
+  const hoveredNodeId = state.hoveredNodeId;
+  const activeEdgeIds = hoveredNodeId ? edgeIdsByNodeId.get(hoveredNodeId)
+      || new Set() : null;
+
+  el.canvasGrid?.classList.toggle("hover-focus-active", !!hoveredNodeId);
+
+  nodeElementsById.forEach((nodeEl, nodeId) => {
+    const isTarget = hoveredNodeId === nodeId;
+    nodeEl.classList.toggle("hover-focus-target", isTarget);
+    nodeEl.classList.toggle("hover-dimmed", !!hoveredNodeId && !isTarget);
+  });
+
+  edgeElementsById.forEach((entry, edgeId) => {
+    const isActive = !!hoveredNodeId && activeEdgeIds?.has(edgeId);
+    const isDimmed = !!hoveredNodeId && !isActive;
+    entry.path?.classList.toggle("hover-focus-edge", isActive);
+    entry.path?.classList.toggle("edge-dimmed", isDimmed);
+    entry.label?.classList.toggle("hover-focus-edge-label", isActive);
+    entry.label?.classList.toggle("edge-dimmed", isDimmed);
+    entry.pinHandles?.forEach((pinHandle) => {
+      pinHandle.classList.toggle("hover-focus-edge-pin", isActive);
+      pinHandle.classList.toggle("edge-dimmed", isDimmed);
+    });
+  });
+}
+
+function setHoveredNode(nodeId) {
+  const nextHoveredNodeId = typeof nodeId === "string" && nodeId.trim()
+      ? nodeId : null;
+  if (state.hoveredNodeId === nextHoveredNodeId) {
+    return;
+  }
+  state.hoveredNodeId = nextHoveredNodeId;
+  applyHoverFocusStyles();
+}
+
+function toggleNodeInSelection(nodeId) {
+  const nextSelection = new Set(state.selectedNodeIds);
+  if (nextSelection.has(nodeId)) {
+    nextSelection.delete(nodeId);
+  } else {
+    nextSelection.add(nodeId);
+  }
+  setNodeMultiSelection(nextSelection);
+  state.selectedNodeId = nextSelection.size === 1 ? [...nextSelection][0]
+      : null;
+  deselectEdges();
+  el.attributePanel.classList.add("hidden");
+  el.workspace.classList.remove("attr-open", "mobile-right-open");
+  if (el.mobileBackdrop) {
+    el.mobileBackdrop.classList.add("hidden");
+  }
+  applyNodeSelectionStyles();
+  if (nextSelection.size) {
+    setStatus(`${nextSelection.size} element${nextSelection.size > 1 ? "s"
+        : ""} selected`);
+  } else {
+    setStatus("Selection cleared");
+  }
+}
+
+function availableBoundedContexts() {
+  const contexts = new Set();
+  if (state.activeType === "cim") {
+    (state.baseModel?.boundedContexts || []).forEach((context) => {
+      const name = normalizeContextName(context?.name);
+      if (name) {
+        contexts.add(name);
+      }
+    });
+    state.diagram.nodes.forEach((node) => {
+      const name = contextNameFromNode(node);
+      if (name) {
+        contexts.add(name);
+      }
+    });
+  }
+  return [...contexts];
+}
+
+export function renameBoundedContext(oldName, nextName) {
+  const normalizedOld = normalizeContextName(oldName);
+  const normalizedNext = normalizeContextName(nextName);
+  if (!normalizedOld || !normalizedNext) {
+    return false;
+  }
+  if (normalizedOld === normalizedNext) {
+    return true;
+  }
+  if (!isValidContextName(normalizedNext)) {
+    setStatus("Use 1-80 chars: letters, numbers, spaces, '-' or '_'");
+    return false;
+  }
+  const nodes = contextNodes(normalizedOld);
+  if (!nodes.length) {
+    setStatus("No elements found for selected bounded context");
+    return false;
+  }
+  pushDiagramUndoSnapshot();
+  nodes.forEach((node) => assignContextName(node, normalizedNext));
+  renameBaseBoundedContext(normalizedOld, normalizedNext);
+  ensureBaseBoundedContext(normalizedNext);
+  state.selectedBoundedContextName = normalizedNext;
+  renderDiagram();
+  return true;
+}
+
+export function deleteBoundedContext(contextName) {
+  const normalized = normalizeContextName(contextName);
+  if (!normalized) {
+    return false;
+  }
+  const nodes = contextNodes(normalized);
+  if (!nodes.length) {
+    return false;
+  }
+  pushDiagramUndoSnapshot();
+  nodes.forEach((node) => {
+    if (!node.meta || typeof node.meta !== "object") {
+      return;
+    }
+    if (normalizeContextName(node.meta.contextName)
+        === normalized) {
+      delete node.meta.contextName;
+    }
+    if (typeof node.meta.context === "string" && normalizeContextName(
+        node.meta.context) === normalized) {
+      delete node.meta.context;
+    }
+  });
+  removeBaseBoundedContext(normalized);
+  state.selectedBoundedContextName = null;
+  renderDiagram();
+  return true;
+}
+
+// ── Viewport helpers ──────────────────────────────────────────────────────────
+
+export function toCanvasCoordinates(clientX, clientY) {
+  const rect = el.canvasViewport.getBoundingClientRect();
+  const px = clientX - rect.left;
+  const py = clientY - rect.top;
+  return {
+    x: (px - state.viewport.x) / state.viewport.scale,
+    y: (py - state.viewport.y) / state.viewport.scale
+  };
+}
+
+let viewportUpdateScheduled = false;
+
+export function applyViewport() {
+  el.canvasContent.style.transform = `translate(${state.viewport.x}px, ${state.viewport.y}px) scale(${state.viewport.scale})`;
+  el.canvasGrid?.style.setProperty("--viewport-scale",
+      String(state.viewport.scale || 1));
+  el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
+  el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
+      && state.viewport.scale < 0.75);
+  el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
+  // Defer cursor rendering to batch with other updates, don't render on every pan
+  if (!viewportUpdateScheduled) {
+    viewportUpdateScheduled = true;
+    window.requestAnimationFrame(() => {
+      viewportUpdateScheduled = false;
+      renderRemoteCursors();
+    });
+  }
+}
+
+export function resetCanvasView() {
+  state.viewport = {x: 0, y: 0, scale: 1};
+  applyViewport();
+}
+
+function diagramBounds({includeContexts = true} = {}) {
+  if (!state.diagram?.nodes?.length) {
+    return null;
+  }
+  const nodeW = getNodeWidth();
+  const nodeH = getNodeHeight();
+  let minX = Math.min(...state.diagram.nodes.map((node) => node.x));
+  let minY = Math.min(...state.diagram.nodes.map((node) => node.y));
+  let maxX = Math.max(...state.diagram.nodes.map((node) => node.x + nodeW));
+  let maxY = Math.max(...state.diagram.nodes.map((node) => node.y + nodeH));
+  if (includeContexts && state.activeType === "cim") {
+    const byContext = new Map();
+    state.diagram.nodes.forEach((node) => {
+      const contextName = contextNameFromNode(node);
+      if (!contextName) {
+        return;
+      }
+      if (!byContext.has(contextName)) {
+        byContext.set(contextName, []);
+      }
+      byContext.get(contextName).push(node);
+    });
+    byContext.forEach((nodes) => {
+      const contextMinX = Math.min(...nodes.map((node) => node.x)) - 22;
+      const contextMinY = Math.min(...nodes.map((node) => node.y)) - 26;
+      const contextMaxX = Math.max(...nodes.map((node) => node.x + nodeW)) + 22;
+      const contextMaxY = Math.max(...nodes.map((node) => node.y + nodeH)) + 26;
+      minX = Math.min(minX, contextMinX);
+      minY = Math.min(minY, contextMinY);
+      maxX = Math.max(maxX, contextMaxX);
+      maxY = Math.max(maxY, contextMaxY);
+    });
+  }
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: Math.max(1, maxX - minX),
+    height: Math.max(1, maxY - minY)
+  };
+}
+
+export function centerViewportOnDiagram({fit = false} = {}) {
+  const bounds = diagramBounds();
+  const viewportRect = el.canvasViewport?.getBoundingClientRect();
+  if (!bounds || !viewportRect) {
+    return;
+  }
+  const padding = 96;
+  let scale = state.viewport.scale || 1;
+  if (fit) {
+    const fitScale = Math.min(
+        (viewportRect.width - padding) / bounds.width,
+        (viewportRect.height - padding) / bounds.height);
+    scale = Math.max(0.2, Math.min(1, fitScale || 1));
+  }
+  const centerX = bounds.minX + bounds.width / 2;
+  const centerY = bounds.minY + bounds.height / 2;
+  state.viewport = {
+    x: Math.round(viewportRect.width / 2 - centerX * scale),
+    y: Math.round(viewportRect.height / 2 - centerY * scale),
+    scale
+  };
+  applyViewport();
+}
+
+function createMaskIcon(className, src, {ariaHidden = true} = {}) {
+  const icon = document.createElement("span");
+  icon.className = `${className} icon-svg icon-mask`;
+  if (ariaHidden) {
+    icon.setAttribute("aria-hidden", "true");
+  }
+  icon.style.setProperty("--icon-src", `url('${src || PLACEHOLDER_ICON}')`);
+  return icon;
+}
+
+function setMaskIconSource(icon, src) {
+  if (!icon) {
+    return;
+  }
+  icon.style.setProperty("--icon-src", `url('${src || PLACEHOLDER_ICON}')`);
+}
+
+function definitionUi(definition) {
+  return definition?.ui && typeof definition.ui === "object" ? definition.ui
+      : {};
+}
+
+function applyDefinitionAccent(element, definition) {
+  if (!element) {
+    return;
+  }
+  const color = String(definitionUi(definition).color || "").trim();
+  if (color) {
+    element.style.setProperty("--node-accent", color);
+  } else {
+    element.style.removeProperty("--node-accent");
+  }
+}
+
+// ── Palette ───────────────────────────────────────────────────────────────────
+
+function createWizardEdge(sourceId, targetId, kind) {
+  const edge = {
+    id: genId("e"),
+    sourceId,
+    targetId,
+    kind
+  };
+  state.diagram.connections.push(edge);
+  addConnectionToGraphAndActiveView(edge);
+}
+
+function createModelingWizard(kind) {
+  const rect = el.canvasViewport?.getBoundingClientRect();
+  const origin = rect ? toCanvasCoordinates(rect.left + rect.width / 2,
+      rect.top + rect.height / 2) : {x: 120, y: 120};
+  const specs = {
+    cimCommandFlow: {
+      nodes: [
+        ["BusinessGoal", -260, -150],
+        ["BusinessCapability", 0, -150],
+        ["Actor", -220, -20],
+        ["Command", 0, -20],
+        ["BusinessEvent", 220, -20]
+      ],
+      edges: [[1, 0, "SUPPORTS"], [2, 3, "ISSUES"], [3, 4, "EXPECTS"]],
+      label: "Command flow"
+    },
+    pimCommandHandler: {
+      nodes: [
+        ["Function", 0, 0],
+        ["FunctionContract", -260, 0],
+        ["EventType", 260, -80],
+        ["EventChannel", 260, 80],
+        ["DataStore", 0, 160]
+      ],
+      edges: [[0, 1, "USES"], [0, 2, "PUBLISHES"], [3, 2, "CONTAINS"],
+        [0, 4, "READS"]],
+      label: "Serverless command handler"
+    },
+    psmLambdaEndpoint: {
+      nodes: [
+        ["ApiGatewayRoute", -260, 0],
+        ["ApiGatewayTrigger", -40, 0],
+        ["AwsLambdaFunction", 190, 0],
+        ["IamRole", 190, 150],
+        ["CloudWatchLogGroup", 430, 0]
+      ],
+      edges: [[0, 1, "TARGETS"], [1, 2, "TRIGGERS"], [2, 3, "USES_ROLE"],
+        [2, 4, "WRITES_LOGS_TO"]],
+      label: "AWS Lambda endpoint"
+    }
+  };
+  const spec = specs[kind];
+  if (!spec) {
+    return;
+  }
+  pushDiagramUndoSnapshot();
+  const nodes = spec.nodes.map(([type, dx, dy]) => {
+    const node = getDefaultNode(state.activeType, type,
+        Math.round(origin.x + dx), Math.round(origin.y + dy));
+    state.diagram.nodes.push(node);
+    addNodeToGraphAndActiveView(node);
+    return node;
+  });
+  if (kind === "cimCommandFlow") {
+    const [goal, capability, actor, command, event] = nodes;
+    goal.label = "Fulfill Business Outcome";
+    capability.label = "Handle Command";
+    actor.label = "Business Actor";
+    command.label = "Execute Command";
+    event.label = "Command Completed";
+    capability.meta = {
+      ...(capability.meta || {}),
+      supports: [goal.id]
+    };
+    actor.meta = {
+      ...(actor.meta || {}),
+      actorType: "HUMAN",
+      issuesCommands: [command.id]
+    };
+    command.meta = {
+      ...(command.meta || {}),
+      intent: "Execute a user initiated business command.",
+      commandType: "USER_INTENT",
+      userInitiated: true,
+      priority: "MEDIUM",
+      issuedBy: [actor.id],
+      targetCapability: capability.id,
+      expectedEvents: [event.id]
+    };
+  }
+  spec.edges.forEach(([sourceIndex, targetIndex, edgeKind]) => {
+    createWizardEdge(nodes[sourceIndex].id, nodes[targetIndex].id, edgeKind);
+  });
+  renderDiagram();
+  scheduleAutoSave({delayMs: 200});
+  publishDiagramUpdate({immediate: true});
+  setStatus(`Created ${spec.label}`);
+}
+
+function createPaletteActionButton(label, {
+  title = "", active = false,
+  done = false, compact = false
+} = {}) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `palette-quick-action${active ? " active" : ""}${
+      done ? " palette-quick-action-done" : ""}${
+      compact ? " palette-quick-action-compact" : ""}`;
+  button.title = title || label;
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "palette-quick-action-label";
+  labelSpan.textContent = label;
+  button.appendChild(labelSpan);
+  return button;
+}
+
+function appendPaletteActionGroup(groupName, buildButtons) {
+  if (!el.palette) {
+    return false;
+  }
+  const buttons = buildButtons() || [];
+  if (!buttons.length) {
+    return false;
+  }
+  const group = document.createElement("div");
+  group.className = "palette-group";
+  const collapsed = isPaletteGroupCollapsed(groupName);
+  group.classList.toggle("palette-group-collapsed", collapsed);
+
+  const title = document.createElement("button");
+  title.type = "button";
+  title.className = "palette-group-title";
+  title.setAttribute("aria-expanded", String(!collapsed));
+  const titleMeta = document.createElement("span");
+  titleMeta.className = "palette-group-meta";
+  const titleChevron = document.createElement("span");
+  titleChevron.className = "palette-group-chevron";
+  titleChevron.setAttribute("aria-hidden", "true");
+  const titleText = document.createElement("span");
+  titleText.className = "palette-group-name";
+  titleText.textContent = groupName;
+  const titleCount = document.createElement("span");
+  titleCount.className = "palette-group-count";
+  const items = document.createElement("div");
+  items.className = "palette-group-items palette-context-actions";
+
+  titleCount.textContent = `${buttons.length} item${buttons.length === 1
+      ? "" : "s"}`;
+  titleMeta.appendChild(titleChevron);
+  titleMeta.appendChild(titleText);
+  title.appendChild(titleMeta);
+  title.appendChild(titleCount);
+  title.addEventListener("click", () => {
+    setPaletteGroupCollapsed(groupName, !isPaletteGroupCollapsed(groupName));
+    renderPalette();
+  });
+  group.appendChild(title);
+
+  buttons.forEach((button) => items.appendChild(button));
+  group.appendChild(items);
+  el.palette.appendChild(group);
+  return true;
+}
+
+function activeViewElementTypeFilter() {
+  return new Set((activeView()?.filters?.elementTypes || []).map(String));
+}
+
+function availableCimPaletteTypes(allTypes) {
+  const available = new Set(allTypes);
+  const profile = activeCimViewProfile();
+  const scoped = CIM_VIEW_PALETTES[profile] || CIM_VIEW_PALETTES.eventstorming;
+  const filtered = scoped.filter((type) => available.has(type)
+      && !CIM_TABLE_LIKE_TYPES.has(type));
+  if (filtered.length) {
+    return filtered;
+  }
+  return allTypes.filter((type) => !CIM_TABLE_LIKE_TYPES.has(type)
+      && type !== "CapabilityDependency" && type !== "DomainRelationship"
+      && type !== "ProcessTransition" && type !== "TransformationProfile"
+      && type !== "TraceModel");
+}
+
+function renderCimConnectionTools(query) {
+  if (state.activeType !== "cim") {
+    return false;
+  }
+  const profile = activeCimViewProfile();
+  const tools = CIM_EDGE_TOOLS_BY_PROFILE[profile] || [];
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  const filtered = normalizedQuery
+      ? tools.filter((tool) => tool.label.toLowerCase().includes(
+          normalizedQuery) || tool.kind.toLowerCase().includes(
+          normalizedQuery))
+      : tools;
+  if (!filtered.length) {
+    return false;
+  }
+  return appendPaletteActionGroup("Connection Tools", () => {
+    return filtered.map((tool) => {
+      const button = createPaletteActionButton(tool.label, {
+        active: state.preferredConnectionKind === tool.kind
+            && state.connectMode,
+        title: `${tool.label}: ${cimEdgeLabel({kind: tool.kind})}`
+      });
+      button.dataset.edgeKind = tool.kind;
+      button.addEventListener("click", () => {
+        state.preferredConnectionKind = tool.kind;
+        setConnectMode(true);
+        setStatus(`${tool.label}: click source then target`);
+        renderPalette();
+      });
+      return button;
+    });
+  });
+}
+
+function renderWizardActions() {
+  const actions = ({
+    cim: [["cimCommandFlow", "Command Flow"]],
+    pim: [["pimCommandHandler", "Command Handler"]],
+    psm: [["psmLambdaEndpoint", "Lambda Endpoint"]]
+  }[state.activeType] || []).filter(([kind]) => {
+    const requiredTypes = {
+      cimCommandFlow: ["Actor", "Command", "BusinessEvent"],
+      pimCommandHandler: ["Function", "FunctionContract", "EventType",
+        "EventChannel", "DataStore"],
+      psmLambdaEndpoint: ["ApiGatewayRoute", "ApiGatewayTrigger",
+        "AwsLambdaFunction", "IamRole", "CloudWatchLogGroup"]
+    }[kind] || [];
+    const allowedTypes = activeViewElementTypeFilter();
+    return !allowedTypes.size || requiredTypes.every(
+        (type) => allowedTypes.has(type));
+  });
+  if (!actions.length) {
+    return false;
+  }
+  return appendPaletteActionGroup("Quick Actions", () => {
+    return actions.map(([kind, label]) => {
+      const button = createPaletteActionButton(label, {
+        title: `Create ${label}`
+      });
+      button.addEventListener("click", () => createModelingWizard(kind));
+      return button;
+    });
+  });
+}
+
+function isPaletteGroupCollapsed(groupName) {
+  const levelState = state.paletteGroupCollapsed?.[state.activeType] || {};
+  if (!Object.prototype.hasOwnProperty.call(levelState, groupName)) {
+    return true;
+  }
+  return Boolean(levelState[groupName]);
+}
+
+function setPaletteGroupCollapsed(groupName, collapsed) {
+  state.paletteGroupCollapsed ??= {cim: {}, pim: {}, psm: {}};
+  state.paletteGroupCollapsed[state.activeType] ??= {};
+  state.paletteGroupCollapsed[state.activeType][groupName] = Boolean(
+      collapsed);
+}
+
+function setAllPaletteGroupsCollapsed(groupNames, collapsed) {
+  groupNames.forEach((groupName) => {
+    if (groupName) {
+      setPaletteGroupCollapsed(groupName, collapsed);
+    }
+  });
+}
+
+function createBoundedContextActionControls() {
+  if (state.activeType !== "cim") {
+    return [];
+  }
+  const controls = [];
+  const toggle = createPaletteActionButton(
+      state.boundedContextCreateMode ? "Context On" : "Context", {
+        active: state.boundedContextCreateMode,
+        title: "Toggle bounded context creation mode"
+      });
+  toggle.addEventListener("click", () => {
+    setContextCreateMode(!state.boundedContextCreateMode);
+    setStatus(state.boundedContextCreateMode
+        ? "Bounded context mode enabled. Click elements, then Done."
+        : "Bounded context mode disabled");
+  });
+  controls.push(toggle);
+
+  if (state.boundedContextCreateMode) {
+    toggle.classList.add("palette-quick-action-compact");
+    const done = createPaletteActionButton("Done", {
+      done: true,
+      compact: true,
+      title: "Create bounded context from selected elements"
+    });
+    done.addEventListener("click", () => {
+      finalizeBoundedContextDraft();
+    });
+    controls.push(done);
+  }
+  const row = document.createElement("div");
+  row.className = "palette-context-inline-row";
+  controls.forEach((control) => row.appendChild(control));
+  return [row];
+}
+
+export function renderPalette() {
+  const config = MODEL_TYPES[state.activeType];
+  if (!config || !el.palette) {
+    return;
+  }
+  const isModelingType = ["cim", "pim", "psm"].includes(state.activeType);
+  if (el.paletteSearchInput) {
+    el.paletteSearchInput.disabled = !isModelingType;
+    el.paletteSearchInput.value = isModelingType
+        ? (state.paletteSearch[state.activeType] || "")
+        : "";
+    el.paletteSearchInput.placeholder = isModelingType
+        ? "Search elements..."
+        : "Search disabled";
+  }
+  let allTypes = [];
+  if (isModelingType) {
+    try {
+      allTypes = modelingPalette(state.activeType);
+    } catch (error) {
+      console.error("Palette rendering failed", error);
+      setStatus(error.message || "Backend modeling config is unavailable");
+      allTypes = [];
+    }
+  } else {
+    allTypes = config.palette;
+  }
+  const query = ((state.paletteSearch[state.activeType] || "") + "").trim()
+  .toLowerCase();
+  const activeViewElementTypes = activeViewElementTypeFilter();
+  const viewScopedTypes = state.activeType === "cim"
+      ? availableCimPaletteTypes(allTypes)
+      : (activeViewElementTypes.size
+          ? allTypes.filter((type) => activeViewElementTypes.has(type))
+          : allTypes);
+  const actionableTypes = viewScopedTypes;
+  const filteredTypes = query
+      ? actionableTypes.filter((type) => type.toLowerCase().includes(query))
+      : actionableTypes;
+  const groupedTypes = groupPaletteTypes(filteredTypes);
+  syncPaletteCollapsedUi();
+  el.palette.innerHTML = "";
+  el.palette.dataset.activeType = state.activeType;
+  const hasQuickActionsGroup = renderWizardActions();
+  const hasConnectionToolsGroup = renderCimConnectionTools(query);
+  const namedGroups = groupedTypes.map(([groupName]) => groupName).filter(
+      Boolean);
+  if (hasQuickActionsGroup) {
+    namedGroups.unshift("Quick Actions");
+  }
+  if (hasConnectionToolsGroup) {
+    namedGroups.unshift("Connection Tools");
+  }
+  if (namedGroups.length > 1) {
+    const groupToolbar = document.createElement("div");
+    groupToolbar.className = "palette-group-toolbar";
+    const toolbarLabel = document.createElement("div");
+    toolbarLabel.className = "palette-group-toolbar-label";
+    toolbarLabel.textContent = "Groupings";
+    const toolbarActions = document.createElement("div");
+    toolbarActions.className = "palette-group-toolbar-actions";
+    const expandBtn = document.createElement("button");
+    expandBtn.type = "button";
+    expandBtn.className = "palette-group-toolbar-btn";
+    expandBtn.textContent = "Expand All";
+    expandBtn.addEventListener("click", () => {
+      setAllPaletteGroupsCollapsed(namedGroups, false);
+      renderPalette();
+    });
+    const collapseBtn = document.createElement("button");
+    collapseBtn.type = "button";
+    collapseBtn.className = "palette-group-toolbar-btn";
+    collapseBtn.textContent = "Collapse All";
+    collapseBtn.addEventListener("click", () => {
+      setAllPaletteGroupsCollapsed(namedGroups, true);
+      renderPalette();
+    });
+    toolbarActions.appendChild(expandBtn);
+    toolbarActions.appendChild(collapseBtn);
+    groupToolbar.appendChild(toolbarLabel);
+    groupToolbar.appendChild(toolbarActions);
+    el.palette.appendChild(groupToolbar);
+  }
+  groupedTypes.forEach(([groupName, types]) => {
+    const group = document.createElement("div");
+    group.className = "palette-group";
+    const collapsed = isPaletteGroupCollapsed(groupName);
+    group.classList.toggle("palette-group-collapsed", collapsed);
+    if (groupName) {
+      const title = document.createElement("button");
+      title.type = "button";
+      title.className = "palette-group-title";
+      title.setAttribute("aria-expanded", String(!collapsed));
+      const titleMeta = document.createElement("span");
+      titleMeta.className = "palette-group-meta";
+      const titleChevron = document.createElement("span");
+      titleChevron.className = "palette-group-chevron";
+      titleChevron.setAttribute("aria-hidden", "true");
+      const titleText = document.createElement("span");
+      titleText.className = "palette-group-name";
+      titleText.textContent = groupName;
+      const titleCount = document.createElement("span");
+      titleCount.className = "palette-group-count";
+      titleCount.textContent = `${types.length} item${types.length === 1
+          ? "" : "s"}`;
+      titleMeta.appendChild(titleChevron);
+      titleMeta.appendChild(titleText);
+      title.appendChild(titleMeta);
+      title.appendChild(titleCount);
+      title.addEventListener("click", () => {
+        setPaletteGroupCollapsed(groupName, !isPaletteGroupCollapsed(
+            groupName));
+        renderPalette();
+      });
+      group.appendChild(title);
+    }
+    const items = document.createElement("div");
+    items.className = "palette-group-items";
+    types.forEach((type) => {
+      const definition = modelingElementDefinition(state.activeType, type);
+      const label = definition?.displayName || type;
+      const description = definition?.description || label;
+      const item = document.createElement("div");
+      item.className = "palette-item";
+      item.draggable = true;
+      item.dataset.nodeType = type;
+      applyDefinitionAccent(item, definition);
+      const iconImg = createMaskIcon("palette-item-icon",
+          definitionUi(definition).icon || PLACEHOLDER_ICON);
+      const labelSpan = document.createElement("span");
+      labelSpan.className = "palette-item-label";
+      labelSpan.textContent = label;
+      item.appendChild(iconImg);
+      item.appendChild(labelSpan);
+      item.title = description;
+      item.addEventListener("dragstart", (event) => {
+        el.workspace?.classList.remove("mobile-left-open");
+        el.mobileBackdrop?.classList.add("hidden");
+        event.dataTransfer.setData("text/node-type", type);
+      });
+      items.appendChild(item);
+    });
+    if (state.activeType === "cim" && groupName === "Capabilities") {
+      createBoundedContextActionControls().forEach((control) => {
+        items.appendChild(control);
+      });
+    }
+    group.appendChild(items);
+    el.palette.appendChild(group);
+  });
+  if (!filteredTypes.length) {
+    const empty = document.createElement("div");
+    empty.className = "palette-empty";
+    empty.textContent = isModelingType
+        ? "No backend palette available"
+        : "No matching elements";
+    el.palette.appendChild(empty);
+  }
+}
+
+export function syncPaletteCollapsedUi() {
+  if (!el.palette) {
+    return;
+  }
+  const shouldCollapsePalette = !!state.paletteCollapsed
+      && state.activeType !== "artifact";
+  el.palette.classList.toggle("palette-collapsed", !!state.paletteCollapsed);
+  el.workspace?.classList.toggle("palette-collapsed", shouldCollapsePalette);
+  const paletteSearchRow = el.paletteSearchInput?.closest(
+      ".palette-search-row");
+  if (paletteSearchRow) {
+    paletteSearchRow.classList.toggle("hidden", shouldCollapsePalette);
+  }
+}
+
+function paletteGroupForType(type) {
+  if (state.activeType === "cim") {
+    return CIM_PROFILE_LABELS[activeCimViewProfile()] || "CIM";
+  }
+  const groups = {
+    cim: [
+      ["Requirements & Goals",
+        ["Requirement", "AcceptanceCriterion", "BusinessGoal", "Objective",
+          "KPI", "Stakeholder", "StakeholderConcern"]],
+      ["Actors & Systems", ["Actor", "Role", "Persona", "ExternalSystem"]],
+      ["Capabilities & Contexts",
+        ["BusinessCapability", "CapabilityDependency",
+          "BoundedContextCandidate", "UbiquitousLanguageTerm"]],
+      ["Commands & Events",
+        ["Command", "Query", "BusinessEvent", "BusinessError"]],
+      ["Processes & Decisions",
+        ["BusinessProcess", "ProcessStep", "CommandStep", "QueryStep",
+          "EventStep", "PolicyStep", "HumanTaskStep",
+          "ExternalInteractionStep", "DecisionStep", "WaitStep",
+          "ProcessTransition", "Condition", "Policy", "DecisionTable",
+          "DecisionRule"]],
+      ["Domain Model",
+        ["DomainEntity", "ValueObject", "DomainRelationship",
+          "AggregateCandidate", "LifecycleStateDefinition",
+          "BusinessInvariant", "InformationItem", "DataClassification",
+          "ConsentRequirement"]],
+      ["Quality & Constraints",
+        ["Precondition", "Postcondition", "ExceptionScenario",
+          "TemporalConstraint", "NonFunctionalRequirement", "QualityScenario",
+          "SecurityConstraint", "PrivacyConstraint", "ComplianceConstraint",
+          "RegulatoryConstraint"]],
+      ["Readiness & Traceability",
+        ["Hotspot", "OpenQuestion", "Risk", "RequirementLink",
+          "GoalSatisfactionLink", "Assumption", "TransformationProfile"]]
+    ],
+    pim: [
+      ["Services & Compute",
+        ["ServerlessService", "Function", "ExternalAdapter",
+          "CredentialRequirement"]],
+      ["Deployment",
+        ["DeploymentUnit", "Environment", "ImplementationProfile"]],
+      ["Contracts & Schemas",
+        ["Schema", "SchemaField", "SchemaConstraint", "FunctionContract",
+          "ApiContract", "EventEnvelope"]],
+      ["API",
+        ["Api", "ApiRoute", "ErrorMapping", "RequestResponseFlow",
+          "CorsPolicy"]],
+      ["Events",
+        ["EventSource", "Trigger", "EventChannel", "EventRoutingRule", "Queue",
+          "Topic", "EventBus", "EventType", "Subscription", "EventFlow",
+          "MessageFlow", "PubSubFlow", "ExternalIntegrationFlow"]],
+      ["Workflow",
+        ["Workflow", "WorkflowState", "WorkflowTransition", "ErrorHandler",
+          "CompensationPolicy", "OrchestrationFlow", "Flow"]],
+      ["Data",
+        ["DataStore", "ObjectStore", "DataStructure", "DataField",
+          "AccessPattern", "IndexCandidate"]],
+      ["Security",
+        ["IdentityProvider", "Principal", "Permission", "Secret",
+          "SecurityPolicy", "AuthPolicy", "AuthorizationPolicy",
+          "DataProtectionPolicy", "CompliancePolicy"]],
+      ["Configuration",
+        ["ConfigurationSet", "ConfigParameter", "EnvironmentVariable"]],
+      ["Operations",
+        ["ConfigParameter", "EnvironmentVariable", "ResiliencePolicy",
+          "RetryPolicy", "DeadLetterPolicy", "TimeoutPolicy",
+          "ObservabilityConfig", "LoggingPolicy", "MetricPolicy",
+          "TracingPolicy", "AlertPolicy", "Slo", "IdempotencyPolicy",
+          "ConcurrencyPolicy", "RateLimitPolicy", "BatchPolicy",
+          "OrderingPolicy", "CachePolicy", "BackupPolicy", "RetentionPolicy",
+          "CostPolicy"]]
+    ],
+    psm: [
+      ["Stack & Governance",
+        ["AwsStage", "SamStack", "CfnParameter", "CfnMapping",
+          "CfnCondition", "CfnOutput", "SamGlobals", "AwsNamingPolicy",
+          "AwsTaggingPolicy", "AwsSecurityBaseline", "AwsTag",
+          "NativeProperty", "AwsNativeResource"]],
+      ["Lambda Compute",
+        ["AwsLambdaFunction", "LambdaLayerVersion", "LambdaVersion",
+          "LambdaAlias", "LambdaProvisionedConcurrencyConfig",
+          "LambdaPermission", "LambdaFunctionUrl", "LambdaFileSystemConfig",
+          "CodeSigningConfig", "LambdaEventInvokeConfig",
+          "LambdaTracingConfig", "LambdaLoggingConfig"]],
+      ["Lambda Triggers",
+        ["ApiGatewayTrigger", "ApiGatewayLambdaTrigger",
+          "EventBridgeLambdaTarget", "SnsLambdaSubscription",
+          "LambdaEventSourceMapping", "SqsLambdaEventSourceMapping",
+          "DynamoDbStreamLambdaEventSourceMapping", "LambdaDeadLetterConfig",
+          "LambdaDestinationConfig"]],
+      ["API Gateway & Edge",
+        ["ApiGatewayApi", "ApiGatewayRoute", "ApiGatewayIntegration",
+          "ApiGatewayStage", "ApiGatewayAuthorizer", "JwtAuthorizer",
+          "CognitoAuthorizer", "LambdaAuthorizer", "ApiGatewayDomainName",
+          "ApiGatewayBasePathMapping", "WafWebAclAssociation"]],
+      ["EventBridge",
+        ["EventBridgeBus", "EventBridgeRule", "EventBridgeTarget",
+          "EventBridgeInputTransformer", "EventBridgeArchive",
+          "EventBridgeSchedule", "EventBridgePipe", "EventBridgeConnection",
+          "EventBridgeApiDestination", "AwsRetryPolicy"]],
+      ["Queues & Topics",
+        ["SqsQueue", "SqsRedrivePolicy", "SqsRedriveAllowPolicy",
+          "SqsQueuePolicy", "SnsTopic", "SnsSubscription", "SnsTopicPolicy",
+          "EventSchema"]],
+      ["Step Functions",
+        ["StepFunctionStateMachine", "AslDocument", "AslState",
+          "StepFunctionLoggingConfig", "StepFunctionTracingConfig",
+          "StepFunctionEvent"]],
+      ["Data & Storage",
+        ["DynamoDbTable", "DynamoDbAttributeDefinition",
+          "DynamoDbKeySchemaElement", "DynamoDbProjection",
+          "DynamoDbProvisionedThroughput", "DynamoDbOnDemandThroughput",
+          "DynamoDbLocalSecondaryIndex", "DynamoDbGlobalSecondaryIndex",
+          "DynamoDbReplicaSpecification", "DynamoDbStreamSpecification",
+          "DynamoDbTimeToLiveSpecification", "DynamoDbSseSpecification",
+          "S3Bucket", "S3BucketEncryption", "S3LifecycleConfiguration",
+          "S3LifecycleRule", "S3PublicAccessBlockConfiguration",
+          "S3NotificationConfiguration", "S3NotificationRule",
+          "S3ReplicationConfiguration", "S3BucketPolicy"]],
+      ["Security",
+        ["IamPolicy", "IamManagedPolicy", "IamStatement", "IamRole",
+          "CognitoUserPool", "CognitoUserPoolClient",
+          "CognitoUserPoolGroup", "CognitoUserPoolDomain",
+          "CognitoIdentityPool", "SecretsManagerSecret", "SsmParameter",
+          "KmsKey", "KmsAlias", "SecretRotationSchedule",
+          "SecretsManagerResourcePolicy", "VpcConfig", "VpcEndpointReference",
+          "SecurityGroup"]],
+      ["Deployment", ["SamStack", "AwsStage", "EnvironmentConfig",
+        "LambdaEnvironmentVariable"]],
+      ["Observability",
+        ["CloudWatchAlarm", "CloudWatchCompositeAlarm",
+          "CloudWatchLogGroup", "CloudWatchMetricFilter",
+          "CloudWatchLogSubscriptionFilter", "CloudWatchDashboard",
+          "XRayTracingConfig"]]
+    ]
+  };
+  for (const [name, members] of groups[state.activeType] || []) {
+    if (members.includes(type)) {
+      return name;
+    }
+  }
+  return "Other";
+}
+
+function groupPaletteTypes(types) {
+  const buckets = new Map();
+  types.forEach((type) => {
+    const groupName = paletteGroupForType(type);
+    if (!buckets.has(groupName)) {
+      buckets.set(groupName, []);
+    }
+    buckets.get(groupName).push(type);
+  });
+  return [...buckets.entries()];
+}
+
+// ── Node rendering ────────────────────────────────────────────────────────────
+
+export function renderNodes() {
+  state.nodesById.clear();
+  nodeElementsById.clear();
+  el.nodeLayer.innerHTML = "";
+  renderBoundedContextBoxes();
+  state.diagram.nodes.forEach((node) => {
+    state.nodesById.set(node.id, node);
+    const n = document.createElement("div");
+    n.className = "node";
+    n.style.left = `${node.x}px`;
+    n.style.top = `${node.y}px`;
+    n.dataset.nodeId = node.id;
+    n.dataset.nodeType = node.type;
+    n.dataset.diagramType = state.activeType;
+    const notation = cimNodeNotation(node);
+    if (notation) {
+      n.dataset.cimNotation = notation.tag;
+    }
+
+    n.innerHTML = `
+      <div class="node-link-handle node-link-handle-left" title="Drag to connect"></div>
+      <div class="node-header">
+        <span aria-hidden="true" class="node-icon icon-svg icon-mask" style="--icon-src: url('${PLACEHOLDER_ICON}');"></span>
+        <span class="node-title">${escapeHtml(node.type)}</span>
+        <span aria-hidden="true" class="node-menu-dot"></span>
+      </div>
+      <div class="node-body">
+        <div class="node-label" contenteditable="true" spellcheck="false">${escapeHtml(
+        node.label)}</div>
+        ${notation ? `<div class="node-notation-line">${escapeHtml(
+        String(notation.line?.(node.meta || {}) || ""))}</div>` : ""}
+        ${cimNodeDetailsHtml(node)}
+        <div class="node-id">${escapeHtml(node.id)}</div>
+      </div>
+      <div class="node-link-handle node-link-handle-right" title="Drag to connect"></div>`;
+
+    const nodeIcon = n.querySelector(".node-icon");
+    const definition = modelingElementDefinition(state.activeType, node.type);
+    setMaskIconSource(nodeIcon,
+        definitionUi(definition).icon || PLACEHOLDER_ICON);
+    applyDefinitionAccent(n, definition);
+
+    if (isContainerElement(node)) {
+      const containerTools = document.createElement("div");
+      containerTools.className = "node-container-tools";
+      const collapseBtn = document.createElement("button");
+      collapseBtn.type = "button";
+      collapseBtn.className = "node-container-tool";
+      collapseBtn.title = node.meta?.__collapsed ? "Expand container"
+          : "Collapse container";
+      collapseBtn.textContent = node.meta?.__collapsed ? "+" : "-";
+      collapseBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleContainerCollapsed(node.id);
+      });
+      containerTools.appendChild(collapseBtn);
+      n.appendChild(containerTools);
+    }
+
+    if (node.meta?.__collapsedSummary) {
+      n.classList.add("node-collapsed-container");
+      const summary = node.meta.__collapsedSummary;
+      const summaryEl = document.createElement("div");
+      summaryEl.className = "node-collapse-summary";
+      const counts = Object.entries(summary.elementCounts || {})
+      .slice(0, 3)
+      .map(([type, count]) => `${count} ${type}`)
+      .join(", ");
+      summaryEl.textContent = `${summary.hiddenNodes || 0} elements, ${
+          summary.hiddenEdges || 0} relationships${counts ? `: ${counts}`
+          : ""}`;
+      n.querySelector(".node-body")?.appendChild(summaryEl);
+    }
+
+    n.addEventListener("mousedown", onNodeMouseDown);
+    n.addEventListener("click", onNodeClick);
+    n.addEventListener("touchstart", onNodeTouchStart, {passive: false});
+    n.addEventListener("mouseenter", () => setHoveredNode(node.id));
+    n.addEventListener("mouseleave", () => setHoveredNode(null));
+
+    // Both handles trigger link drag
+    n.querySelectorAll(".node-link-handle").forEach((handle) => {
+      handle.addEventListener("mousedown", onLinkHandleMouseDown);
+      handle.addEventListener("touchstart", onLinkHandleTouchStart,
+          {passive: false});
+    });
+
+    const nodeLabelEl = n.querySelector(".node-label");
+    nodeLabelEl.addEventListener("mousedown", (e) => {
+      // Prevent accidental label text selection when initiating node drag.
+      // Keep bubbling so the node drag handler still runs.
+      if (!nodeLabelEl.classList.contains("is-editing")) {
+        e.preventDefault();
+      }
+    });
+    nodeLabelEl.addEventListener("dblclick", (e) => {
+      // Explicit user intent to edit/select label text.
+      e.preventDefault();
+      e.stopPropagation();
+      nodeLabelEl.focus();
+      const selection = window.getSelection?.();
+      if (!selection) {
+        return;
+      }
+      selection.removeAllRanges();
+      const range = document.createRange();
+      range.selectNodeContents(nodeLabelEl);
+      selection.addRange(range);
+    });
+    nodeLabelEl.addEventListener("focus", () => {
+      nodeLabelEl.classList.add("is-editing");
+      state.inlineLabelEditNodeId = node.id;
+      inlineLabelEditStartLabel = node.label;
+      inlineLabelEditUndoSnapshot = captureDiagramUndoSnapshot();
+    });
+    nodeLabelEl.addEventListener("input", (e) => {
+      const resolved = commitNodeLabel(node, e.target.textContent);
+      publishNodeRename(node.id, resolved);
+    });
+    nodeLabelEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        e.currentTarget.blur();
+      }
+    });
+    nodeLabelEl.addEventListener("blur", (e) => {
+      const resolved = commitNodeLabel(node, e.target.textContent);
+      e.target.textContent = resolved;
+      nodeLabelEl.classList.remove("is-editing");
+      if (state.inlineLabelEditNodeId === node.id) {
+        state.inlineLabelEditNodeId = null;
+      }
+      if (resolved !== inlineLabelEditStartLabel) {
+        commitUndoSnapshot(inlineLabelEditUndoSnapshot);
+      }
+      inlineLabelEditStartLabel = "";
+      inlineLabelEditUndoSnapshot = null;
+      publishNodeRename(node.id, resolved);
+      scheduleAutoSave({delayMs: 250});
+      publishDiagramUpdate({immediate: true});
+    });
+
+    el.nodeLayer.appendChild(n);
+    nodeElementsById.set(node.id, n);
+  });
+
+  // Re-apply selected class if a node is still selected
+  applyNodeSelectionStyles();
+  applyHoverFocusStyles();
+
+  // Apply impact analysis highlights
+  highlightImpactedNodes();
+}
+
+// ── Edge rendering ────────────────────────────────────────────────────────────
+
+let edgeKindPickerBound = false;
+
+function renderLinkPreview() {
+  // Only render the edges layer with preview, not the full edge graph
+  if (!el.edgeLayer) {
+    return;
+  }
+  // Keep existing edges, just update/add preview
+  const existingPreview = el.edgeLayer.querySelector(".edge-path.preview");
+  if (existingPreview) {
+    existingPreview.remove();
+  }
+
+  if (state.linkDrag) {
+    const source = state.nodesById.get(state.linkDrag.sourceId);
+    if (!source) {
+      return;
+    }
+    const nodeW = getNodeWidth();
+    const nodeH = getNodeHeight();
+    const pointer = toCanvasCoordinates(state.linkDrag.pointerX,
+        state.linkDrag.pointerY);
+    const sx = source.x + nodeW;
+    const sy = source.y + nodeH / 2;
+    const tx = pointer.x;
+    const ty = pointer.y;
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class", "edge-path preview");
+    path.setAttribute("d", `M ${sx} ${sy} L ${tx} ${ty}`);
+    el.edgeLayer.appendChild(path);
+  }
+}
+
+function canvasToViewportPoint(x, y) {
+  return {
+    x: x * state.viewport.scale + state.viewport.x,
+    y: y * state.viewport.scale + state.viewport.y
+  };
+}
+
+function clearEdgeHoverHideTimer() {
+  if (edgeHoverHideTimer) {
+    window.clearTimeout(edgeHoverHideTimer);
+    edgeHoverHideTimer = 0;
+  }
+}
+
+function setHoveredEdge(edgeId) {
+  hoveredEdgeId = edgeId || null;
+  edgeElementsById.forEach((entry, currentEdgeId) => {
+    const isVisible = hoveredEdgeId === currentEdgeId;
+    entry.pinHandles?.forEach((pinHandle) => pinHandle.classList.toggle(
+        "visible", isVisible));
+  });
+}
+
+function hideEdgeHoverHandle() {
+  clearEdgeHoverHideTimer();
+  setHoveredEdge(null);
+  edgeHoverHandleState = null;
+  if (edgeHoverHandleEl) {
+    edgeHoverHandleEl.style.display = "none";
+  }
+}
+
+function scheduleHideEdgeHoverHandle() {
+  clearEdgeHoverHideTimer();
+  edgeHoverHideTimer = window.setTimeout(() => {
+    hideEdgeHoverHandle();
+  }, 30);
+}
+
+function ensureEdgeHoverHandleElement() {
+  if (!el.edgeLayer) {
+    return null;
+  }
+  if (edgeHoverHandleEl?.isConnected) {
+    return edgeHoverHandleEl;
+  }
+  edgeHoverHandleEl = document.createElementNS(
+      "http://www.w3.org/2000/svg", "circle");
+  edgeHoverHandleEl.setAttribute("class", "edge-hover-handle");
+  edgeHoverHandleEl.setAttribute("r", "7");
+  edgeHoverHandleEl.style.display = "none";
+  edgeHoverHandleEl.addEventListener("mouseenter", clearEdgeHoverHideTimer);
+  edgeHoverHandleEl.addEventListener("mouseleave", scheduleHideEdgeHoverHandle);
+  edgeHoverHandleEl.addEventListener("mousedown", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  });
+  edgeHoverHandleEl.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!edgeHoverHandleState?.edgeId) {
+      return;
+    }
+    const edge = connectionsById.get(edgeHoverHandleState.edgeId);
+    if (!edge) {
+      return;
+    }
+    const nextPins = pinPointsForEdge(edge);
+    const undoSnapshot = captureDiagramUndoSnapshot();
+    nextPins.splice(edgeHoverHandleState.segmentIndex, 0, {
+      x: Math.round(edgeHoverHandleState.x),
+      y: Math.round(edgeHoverHandleState.y)
+    });
+    edge.pinPoints = nextPins;
+    persistEdgePinPoints(edge);
+    state.selectedConnectionId = edge.id;
+    openConnectionPanel(edge.id);
+    commitUndoSnapshot(undoSnapshot);
+    renderEdges();
+    scheduleAutoSave({delayMs: 220});
+    publishDiagramUpdate({immediate: true});
+    setStatus("Edge pin added");
+  });
+  el.edgeLayer.appendChild(edgeHoverHandleEl);
+  return edgeHoverHandleEl;
+}
+
+function updateEdgeHoverHandle(edgeId, clientX, clientY) {
+  const entry = edgeElementsById.get(edgeId);
+  const geometry = entry?.geometry;
+  if (!geometry?.points?.length) {
+    hideEdgeHoverHandle();
+    return;
+  }
+  setHoveredEdge(edgeId);
+  const pointer = toCanvasCoordinates(clientX, clientY);
+  const pins = pinPointsForEdge(connectionsById.get(edgeId));
+  const hoveredPin = pins.find((pin) => Math.hypot(pointer.x - pin.x,
+      pointer.y - pin.y) <= 10);
+  if (hoveredPin) {
+    edgeHoverHandleState = null;
+    if (edgeHoverHandleEl) {
+      edgeHoverHandleEl.style.display = "none";
+    }
+    return;
+  }
+  const closest = closestPointOnPolyline(geometry.points, pointer);
+  if (!closest) {
+    hideEdgeHoverHandle();
+    return;
+  }
+  const handle = ensureEdgeHoverHandleElement();
+  if (!handle) {
+    return;
+  }
+  clearEdgeHoverHideTimer();
+  edgeHoverHandleState = {
+    edgeId,
+    x: closest.x,
+    y: closest.y,
+    segmentIndex: closest.segmentIndex
+  };
+  handle.setAttribute("cx", String(closest.x));
+  handle.setAttribute("cy", String(closest.y));
+  handle.style.display = "block";
+  el.edgeLayer.appendChild(handle);
+}
+
+function removeEdgePin(edgeId, pinIndex) {
+  const edge = connectionsById.get(edgeId);
+  if (!edge) {
+    return;
+  }
+  const nextPins = pinPointsForEdge(edge);
+  if (pinIndex < 0 || pinIndex >= nextPins.length) {
+    return;
+  }
+  const undoSnapshot = captureDiagramUndoSnapshot();
+  nextPins.splice(pinIndex, 1);
+  edge.pinPoints = nextPins;
+  persistEdgePinPoints(edge);
+  state.selectedConnectionId = edgeId;
+  openConnectionPanel(edgeId);
+  commitUndoSnapshot(undoSnapshot);
+  renderEdges();
+  scheduleAutoSave({delayMs: 220});
+  publishDiagramUpdate({immediate: true});
+  setStatus(nextPins.length ? "Edge pin removed" : "Edge returned to straight");
+}
+
+function startEdgePinDrag(edgeId, pinIndex, clientX, clientY) {
+  const edge = connectionsById.get(edgeId);
+  if (!edge) {
+    return;
+  }
+  const pins = pinPointsForEdge(edge);
+  const pin = pins[pinIndex];
+  if (!pin) {
+    return;
+  }
+  hideEdgeHoverHandle();
+  closeEdgeKindPicker();
+  state.selectedConnectionId = edgeId;
+  openConnectionPanel(edgeId);
+  edgePinDrag = {
+    edgeId,
+    pinIndex,
+    startX: clientX,
+    startY: clientY,
+    pinX: pin.x,
+    pinY: pin.y,
+    moved: false,
+    undoSnapshot: dragUndoSnapshot()
+  };
+  setHoveredEdge(edgeId);
+  renderEdges();
+}
+
+function updateEdgePinDrag(clientX, clientY) {
+  if (!edgePinDrag) {
+    return false;
+  }
+  const edge = connectionsById.get(edgePinDrag.edgeId);
+  if (!edge) {
+    edgePinDrag = null;
+    return false;
+  }
+  const pins = pinPointsForEdge(edge);
+  if (!pins[edgePinDrag.pinIndex]) {
+    edgePinDrag = null;
+    return false;
+  }
+  const dx = (clientX - edgePinDrag.startX) / state.viewport.scale;
+  const dy = (clientY - edgePinDrag.startY) / state.viewport.scale;
+  if (Math.hypot(clientX - edgePinDrag.startX,
+      clientY - edgePinDrag.startY) > TOUCH_MOVE_THRESHOLD) {
+    edgePinDrag.moved = true;
+  }
+  if (!edgePinDrag.moved) {
+    return true;
+  }
+  pins[edgePinDrag.pinIndex] = normalizePinPoint({
+    x: edgePinDrag.pinX + dx,
+    y: edgePinDrag.pinY + dy
+  });
+  edge.pinPoints = pins;
+  persistEdgePinPoints(edge);
+  setHoveredEdge(edge.id);
+  renderEdges();
+  return true;
+}
+
+function finalizeEdgePinDrag() {
+  if (!edgePinDrag) {
+    return false;
+  }
+  const drag = edgePinDrag;
+  edgePinDrag = null;
+  if (!drag.moved) {
+    removeEdgePin(drag.edgeId, drag.pinIndex);
+    return true;
+  }
+  const edge = connectionsById.get(drag.edgeId);
+  if (!edge) {
+    return true;
+  }
+  commitUndoSnapshot(drag.undoSnapshot);
+  persistEdgePinPoints(edge);
+  setHoveredEdge(edge.id);
+  renderEdges();
+  scheduleAutoSave({delayMs: 220});
+  publishDiagramUpdate({immediate: true});
+  setStatus("Edge pin moved");
+  return true;
+}
+
+function closeEdgeKindPicker() {
+  state.edgeKindPicker.open = false;
+  state.edgeKindPicker.edgeId = null;
+  state.edgeKindPicker.options = [];
+  if (el.edgeKindPicker) {
+    el.edgeKindPicker.classList.add("hidden");
+  }
+}
+
+function buildDirectedKindOptions(source, target) {
+  const options = [];
+  const pushOption = (fromNode, toNode, kind) => {
+    options.push({
+      value: `${fromNode.id}|${toNode.id}|${kind}`,
+      label: `${fromNode.label || fromNode.type} -> ${toNode.label
+      || toNode.type}: ${cimEdgeLabel({kind})}`,
+      sourceId: fromNode.id,
+      targetId: toNode.id,
+      kind
+    });
+  };
+  legalKinds(state.activeType, source.type, target.type).forEach((kind) => {
+    pushOption(source, target, kind);
+  });
+  legalKinds(state.activeType, target.type, source.type).forEach((kind) => {
+    pushOption(target, source, kind);
+  });
+  const unique = [];
+  const seen = new Set();
+  options.forEach((option) => {
+    if (seen.has(option.value)) {
+      return;
+    }
+    seen.add(option.value);
+    unique.push(option);
+  });
+  return unique;
+}
+
+function updateEdgeKind(edgeId, nextKind) {
+  const edge = state.diagram.connections.find((item) => item.id === edgeId);
+  if (!edge || !nextKind) {
+    return;
+  }
+  const [sourceId, targetId, kind] = String(nextKind).split("|");
+  if (!sourceId || !targetId || !kind) {
+    return;
+  }
+  if (edge.sourceId === sourceId && edge.targetId === targetId
+      && edge.kind === kind) {
+    return;
+  }
+  const undoSnapshot = captureDiagramUndoSnapshot();
+  edge.sourceId = sourceId;
+  edge.targetId = targetId;
+  edge.kind = kind;
+  addConnectionToGraphAndActiveView(edge);
+  commitUndoSnapshot(undoSnapshot);
+  renderEdges();
+  scheduleAutoSave({delayMs: 220});
+  publishDiagramUpdate();
+  setStatus(`Connection updated: ${kind}`);
+}
+
+function ensureEdgeKindPickerBindings() {
+  if (edgeKindPickerBound || !el.edgeKindPicker || !el.edgeKindSelect) {
+    return;
+  }
+  edgeKindPickerBound = true;
+  el.edgeKindSelect.addEventListener("change", (event) => {
+    const edgeId = state.edgeKindPicker.edgeId;
+    updateEdgeKind(edgeId, event.target.value);
+  });
+  document.addEventListener("mousedown", (event) => {
+    if (!state.edgeKindPicker.open) {
+      return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) {
+      closeEdgeKindPicker();
+      return;
+    }
+    if (target.closest(
+        ".edge-kind-picker, .edge-label, .edge-path, .edge-hit-pad, .edge-pin, .edge-hover-handle")) {
+      return;
+    }
+    closeEdgeKindPicker();
+  });
+  document.addEventListener("touchstart", (event) => {
+    if (!state.edgeKindPicker.open) {
+      return;
+    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) {
+      closeEdgeKindPicker();
+      return;
+    }
+    if (target.closest(
+        ".edge-kind-picker, .edge-label, .edge-path, .edge-hit-pad, .edge-pin, .edge-hover-handle")) {
+      return;
+    }
+    closeEdgeKindPicker();
+  }, {passive: true});
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.edgeKindPicker.open) {
+      closeEdgeKindPicker();
+    }
+  });
+}
+
+function openEdgeKindPicker(edgeId, options, canvasX, canvasY) {
+  if (!el.edgeKindPicker || !el.edgeKindSelect) {
+    return;
+  }
+  ensureEdgeKindPickerBindings();
+  const edge = state.diagram.connections.find((item) => item.id === edgeId);
+  if (!edge) {
+    closeEdgeKindPicker();
+    return;
+  }
+  state.edgeKindPicker.open = true;
+  state.edgeKindPicker.edgeId = edgeId;
+  state.edgeKindPicker.options = [...options];
+  state.edgeKindPicker.x = canvasX;
+  state.edgeKindPicker.y = canvasY;
+
+  el.edgeKindSelect.innerHTML = options.map(
+      (option) => `<option value="${option.value}">${escapeHtml(
+          option.label)}</option>`).join("");
+  const selectedValue = `${edge.sourceId}|${edge.targetId}|${edge.kind}`;
+  const selectedExists = options.some(
+      (option) => option.value === selectedValue);
+  el.edgeKindSelect.value = selectedExists ? selectedValue : options[0].value;
+  const pos = canvasToViewportPoint(canvasX, canvasY);
+  el.edgeKindPicker.style.left = `${Math.round(pos.x)}px`;
+  el.edgeKindPicker.style.top = `${Math.round(pos.y)}px`;
+  el.edgeKindPicker.classList.remove("hidden");
+  el.edgeKindSelect.focus();
+}
+
+export function renderEdges() {
+  if (state.selectedConnectionId && !state.diagram.connections.some(
+      (edge) => edge.id === state.selectedConnectionId)) {
+    state.selectedConnectionId = null;
+  }
+
+  el.edgeLayer.innerHTML = `<defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 7">
+      <path d="M0,0 L0,7 L10,3.5 z" class="arrow-head"/>
+    </marker>
+    <marker id="arrow-preview" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 7">
+      <path d="M0,0 L0,7 L10,3.5 z" class="arrow-head-preview"/>
+    </marker>
+  </defs>`;
+  edgeElementsById.clear();
+  edgeGeometryCache.clear();
+  edgeIdsByNodeId.clear();
+  connectionsById.clear();
+  let pickerAnchor = null;
+
+  state.diagram.connections.forEach((edge) => {
+    const nodeW = getNodeWidth();
+    const nodeH = getNodeHeight();
+    const source = state.nodesById.get(edge.sourceId);
+    const target = state.nodesById.get(edge.targetId);
+    if (!source || !target) {
+      return;
+    }
+
+    const geometry = edgePathGeometry(edge, source, target, nodeW, nodeH);
+    const d = geometry.d;
+    const midX = geometry.midX;
+    const midY = geometry.midY;
+    const openPickerForEdge = () => {
+      if (edge.bundle) {
+        return;
+      }
+      const kinds = buildDirectedKindOptions(source, target);
+      if (kinds.length) {
+        openEdgeKindPicker(edge.id, kinds, midX, midY - 18);
+      }
+    };
+
+    // Wide invisible hit-pad so the user can click near (not exactly on) the edge
+    const hitPad = document.createElementNS("http://www.w3.org/2000/svg",
+        "path");
+    hitPad.setAttribute("class", "edge-hit-pad");
+    hitPad.setAttribute("d", d);
+    hitPad.dataset.edgeId = edge.id;
+    hitPad.dataset.edgeKind = edge.kind;
+    hitPad.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    hitPad.addEventListener("touchstart", (event) => event.stopPropagation(),
+        {passive: true});
+    hitPad.addEventListener("mousemove",
+        (event) => updateEdgeHoverHandle(edge.id, event.clientX,
+            event.clientY));
+    hitPad.addEventListener("mouseenter",
+        (event) => updateEdgeHoverHandle(edge.id, event.clientX,
+            event.clientY));
+    hitPad.addEventListener("mouseleave", scheduleHideEdgeHoverHandle);
+    hitPad.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectConnection(edge.id);
+      openPickerForEdge();
+    });
+    el.edgeLayer.appendChild(hitPad);
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class",
+        `edge-path${state.selectedConnectionId === edge.id ? " selected"
+            : ""}`);
+    path.setAttribute("d", d);
+    path.dataset.edgeId = edge.id;
+    path.dataset.edgeKind = edge.kind;
+    path.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    path.addEventListener("touchstart", (event) => event.stopPropagation(),
+        {passive: true});
+    path.addEventListener("mousemove",
+        (event) => updateEdgeHoverHandle(edge.id, event.clientX,
+            event.clientY));
+    path.addEventListener("mouseenter",
+        (event) => updateEdgeHoverHandle(edge.id, event.clientX,
+            event.clientY));
+    path.addEventListener("mouseleave", scheduleHideEdgeHoverHandle);
+    path.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectConnection(edge.id);
+      openPickerForEdge();
+    });
+    el.edgeLayer.appendChild(path);
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg",
+        "text");
+    label.setAttribute("class",
+        `edge-label${state.selectedConnectionId === edge.id ? " selected"
+            : ""}`);
+    label.setAttribute("x", String(midX));
+    label.setAttribute("y", String(midY - 8));
+    label.setAttribute("text-anchor", "middle");
+    label.dataset.edgeId = edge.id;
+    label.dataset.edgeKind = edge.kind;
+    label.textContent = cimEdgeLabel(edge);
+    label.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    label.addEventListener("touchstart", (event) => event.stopPropagation(),
+        {passive: true});
+    label.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectConnection(edge.id);
+      openPickerForEdge();
+    });
+    el.edgeLayer.appendChild(label);
+    const pinHandles = pinPointsForEdge(edge).map((pin, pinIndex) => {
+      const pinHandle = document.createElementNS("http://www.w3.org/2000/svg",
+          "circle");
+      pinHandle.setAttribute("class",
+          `edge-pin${state.selectedConnectionId === edge.id ? " selected"
+              : ""}`);
+      pinHandle.setAttribute("cx", String(pin.x));
+      pinHandle.setAttribute("cy", String(pin.y));
+      pinHandle.setAttribute("r", "6");
+      pinHandle.dataset.edgeId = edge.id;
+      pinHandle.dataset.pinIndex = String(pinIndex);
+      pinHandle.addEventListener("mouseenter", () => {
+        clearEdgeHoverHideTimer();
+        setHoveredEdge(edge.id);
+        if (edgeHoverHandleEl) {
+          edgeHoverHandleEl.style.display = "none";
+        }
+      });
+      pinHandle.addEventListener("mouseleave", scheduleHideEdgeHoverHandle);
+      pinHandle.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        startEdgePinDrag(edge.id, pinIndex, event.clientX, event.clientY);
+      });
+      pinHandle.addEventListener("touchstart", (event) => {
+        if (event.touches.length !== 1) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const touch = event.touches[0];
+        startEdgePinDrag(edge.id, pinIndex, touch.clientX, touch.clientY);
+      }, {passive: false});
+      el.edgeLayer.appendChild(pinHandle);
+      return pinHandle;
+    });
+    edgeElementsById.set(edge.id,
+        {hitPad, path, label, pinHandles, geometry});
+    // register connection and adjacency for quick updates
+    connectionsById.set(edge.id, edge);
+    [edge.sourceId, edge.targetId].forEach((nodeId) => {
+      let set = edgeIdsByNodeId.get(nodeId);
+      if (!set) {
+        set = new Set();
+        edgeIdsByNodeId.set(nodeId, set);
+      }
+      set.add(edge.id);
+    });
+
+    if (state.edgeKindPicker.open && state.edgeKindPicker.edgeId === edge.id) {
+      pickerAnchor = {source, target, x: midX, y: midY - 18};
+    }
+  });
+
+  if (state.linkDrag) {
+    const source = state.nodesById.get(state.linkDrag.sourceId);
+    if (!source) {
+      return;
+    }
+    const nodeW = getNodeWidth();
+    const nodeH = getNodeHeight();
+    const pointer = toCanvasCoordinates(state.linkDrag.pointerX,
+        state.linkDrag.pointerY);
+    const sx = source.x + nodeW;
+    const sy = source.y + nodeH / 2;
+    const tx = pointer.x;
+    const ty = pointer.y;
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class", "edge-path preview");
+    path.setAttribute("d", `M ${sx} ${sy} L ${tx} ${ty}`);
+    el.edgeLayer.appendChild(path);
+  }
+
+  if (pickerAnchor && state.edgeKindPicker.open) {
+    const kinds = buildDirectedKindOptions(pickerAnchor.source,
+        pickerAnchor.target);
+    if (kinds.length) {
+      openEdgeKindPicker(state.edgeKindPicker.edgeId, kinds, pickerAnchor.x,
+          pickerAnchor.y);
+    } else {
+      closeEdgeKindPicker();
+    }
+  } else if (state.edgeKindPicker.open) {
+    closeEdgeKindPicker();
+  }
+
+  if (edgeHoverHandleState?.edgeId && connectionsById.has(
+      edgeHoverHandleState.edgeId)) {
+    const handle = ensureEdgeHoverHandleElement();
+    if (handle) {
+      setHoveredEdge(edgeHoverHandleState.edgeId);
+      handle.setAttribute("cx", String(edgeHoverHandleState.x));
+      handle.setAttribute("cy", String(edgeHoverHandleState.y));
+      handle.style.display = "block";
+      el.edgeLayer.appendChild(handle);
+    }
+  } else {
+    if (edgeHoverHandleEl) {
+      edgeHoverHandleEl.style.display = "none";
+    }
+    edgeHoverHandleState = null;
+    if (hoveredEdgeId && !connectionsById.has(hoveredEdgeId)) {
+      setHoveredEdge(null);
+    }
+  }
+
+  applyHoverFocusStyles();
+}
+
+function modelRootValue(keys) {
+  const root = state.baseModel && typeof state.baseModel === "object"
+      ? state.baseModel : {};
+  for (const key of keys) {
+    if (hasOwnValue(root, key)) {
+      return root[key];
+    }
+  }
+  return "";
+}
+
+function hasModelArtifact(keys) {
+  const root = state.baseModel && typeof state.baseModel === "object"
+      ? state.baseModel : {};
+  return keys.some((key) => {
+    const value = root[key];
+    return Array.isArray(value) ? value.length > 0 : Boolean(value);
+  });
+}
+
+function cimReadinessSignals() {
+  const signals = [];
+  if (!hasModelArtifact(["traceModel", "traces", "traceLinks"])) {
+    signals.push({label: "TraceModel", issue: true});
+  }
+  if (!hasModelArtifact(["transformationProfile", "transformationProfiles"])) {
+    signals.push({label: "TransformationProfile", issue: true});
+  }
+  const providerHits = state.diagram.nodes.filter(nodeProviderTermHit).length;
+  if (providerHits) {
+    signals.push({
+      label: `${providerHits} provider term${providerHits === 1
+          ? "" : "s"}`, issue: true
+    });
+  }
+  const eventHits = state.diagram.nodes.filter((node) => node.type
+      === "BusinessEvent" && !isPastTenseBusinessEventName(
+          node.meta?.occurredInPastTenseName || node.label)).length;
+  if (eventHits) {
+    signals.push({label: `${eventHits} event tense`, issue: true});
+  }
+  const blockingHits = state.diagram.nodes.filter((node) => node.type
+      === "Hotspot" && (node.meta?.productionBlocking
+          || node.meta?.blocksTransformation)).length;
+  if (blockingHits) {
+    signals.push({
+      label: `${blockingHits} blocking hotspot${blockingHits === 1
+          ? "" : "s"}`, issue: true
+    });
+  }
+  if (!signals.length) {
+    signals.push({label: "ready"});
+  }
+  return signals;
+}
+
+function removeCimReadinessOverlay() {
+  el.canvasViewport?.querySelector(".cim-readiness-strip")?.remove();
+}
+
+function renderCimReadinessOverlay() {
+  removeCimReadinessOverlay();
+  if (state.activeType !== "cim" || !el.canvasViewport) {
+    return;
+  }
+  const profile = activeCimViewProfile();
+  const strip = document.createElement("div");
+  strip.className = "cim-readiness-strip";
+  strip.dataset.cimViewProfile = profile || "";
+  strip.addEventListener("mousedown", (event) => event.stopPropagation());
+  strip.addEventListener("touchstart", (event) => event.stopPropagation(),
+      {passive: true});
+
+  const root = document.createElement("div");
+  root.className = "cim-readiness-root";
+  const title = document.createElement("strong");
+  title.textContent = modelRootValue(["domainName", "name"]) || "CIMModel";
+  const meta = document.createElement("span");
+  meta.textContent = [
+    modelRootValue(["businessScope", "scope"]),
+    modelRootValue(["organization", "owningOrganization"]),
+    modelRootValue(["language"])
+  ].filter(Boolean).join(" / ");
+  root.appendChild(title);
+  if (meta.textContent) {
+    root.appendChild(meta);
+  }
+  strip.appendChild(root);
+
+  const view = document.createElement("div");
+  view.className = "cim-readiness-view";
+  view.textContent = CIM_PROFILE_LABELS[profile] || activeView()?.name || "CIM";
+  strip.appendChild(view);
+
+  const signals = document.createElement("div");
+  signals.className = "cim-readiness-signals";
+  cimReadinessSignals().forEach((signal) => {
+    const item = document.createElement("span");
+    item.className = `cim-readiness-signal${signal.issue ? " issue" : ""}`;
+    item.textContent = signal.label;
+    signals.appendChild(item);
+  });
+  strip.appendChild(signals);
+  el.canvasViewport.appendChild(strip);
+}
+
+export function renderDiagram() {
+  renderNodes();
+  renderEdges();
+  el.canvasGrid?.style.setProperty("--viewport-scale",
+      String(state.viewport.scale || 1));
+  el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
+  el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
+      && state.viewport.scale < 0.75);
+  el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
+  el.workspace?.classList.toggle("cim-view-active", state.activeType === "cim");
+  el.workspace?.setAttribute("data-cim-view-profile",
+      activeCimViewProfile() || "");
+  renderCimReadinessOverlay();
+  renderRemoteCursors();
+}
+
+// ── Canvas event handlers ─────────────────────────────────────────────────────
+
+export function onNodeMouseDown(event) {
+  if (event.button !== 0) {
+    return;
+  }
+  hideEdgeHoverHandle();
+  closeEdgeKindPicker();
+  clearTransientEdgeLayouts();
+  if (state.activeType === "cim" && state.boundedContextCreateMode) {
+    return;
+  }
+  const nodeId = event.currentTarget.dataset.nodeId;
+  const node = state.nodesById.get(nodeId);
+  if (!node) {
+    return;
+  }
+  state.dragNode = {
+    id: nodeId,
+    startX: event.clientX,
+    startY: event.clientY,
+    nodeX: node.x,
+    nodeY: node.y,
+    moved: false,
+    undoSnapshot: dragUndoSnapshot()
+  };
+  event.stopPropagation();
+}
+
+export function onNodeClick(event) {
+  event.stopPropagation();
+  const nodeId = event.currentTarget.dataset.nodeId;
+  if (suppressNextNodeClickId && suppressNextNodeClickId === nodeId) {
+    suppressNextNodeClickId = null;
+    return;
+  }
+  if (state.activeType === "cim" && state.boundedContextCreateMode) {
+    const next = new Set(state.boundedContextDraftNodeIds);
+    if (next.has(nodeId)) {
+      next.delete(nodeId);
+    } else {
+      next.add(nodeId);
+    }
+    state.boundedContextDraftNodeIds = next;
+    applyNodeSelectionStyles();
+    setStatus(`${next.size} element${next.size !== 1 ? "s"
+        : ""} selected for bounded context`);
+    return;
+  }
+  if (event.shiftKey || event.ctrlKey || event.metaKey) {
+    toggleNodeInSelection(nodeId);
+    return;
+  }
+  setNodeMultiSelection([nodeId]);
+  activateNode(nodeId);
+}
+
+function selectConnection(connectionId) {
+  if (!connectionId) {
+    return;
+  }
+  if (state.selectedConnectionId === connectionId) {
+    closeAttributePanel();
+    renderEdges();
+    return;
+  }
+  openConnectionPanel(connectionId);
+  renderEdges();
+  setStatus("Connection selected (press Delete to remove)");
+}
+
+function activateNode(nodeId) {
+  if (state.connectMode) {
+    if (!state.connectSourceId) {
+      state.connectSourceId = nodeId;
+      setStatus(`Connection source: ${nodeId}. Select target.`);
+      return;
+    }
+    if (state.connectSourceId === nodeId) {
+      setStatus("Source and target cannot be the same");
+      return;
+    }
+    addConnection(state.connectSourceId, nodeId, {
+      interactivePicker: true,
+      preferredKind: state.preferredConnectionKind
+    });
+    state.connectSourceId = null;
+    return;
+  }
+
+  // In impact mode, clicking a node fetches impact analysis for it
+  if (state.impactMode) {
+    if (!state.modelId) {
+      setStatus("Save or load a model first to use impact analysis");
+    } else {
+      fetchImpact(nodeId);
+    }
+    return;
+  }
+
+  // Toggle: clicking the same node again closes the panel
+  if (state.selectedNodeId === nodeId) {
+    closeAttributePanel();
+    clearNodeMultiSelection();
+    return;
+  }
+
+  setNodeMultiSelection([nodeId]);
+  openAttributePanel(nodeId);
+}
+
+export function onNodeTouchStart(event) {
+  if (event.touches.length !== 1) {
+    return;
+  }
+  hideEdgeHoverHandle();
+  closeEdgeKindPicker();
+  clearTransientEdgeLayouts();
+  if (state.activeType === "cim" && state.boundedContextCreateMode) {
+    return;
+  }
+  const nodeId = event.currentTarget.dataset.nodeId;
+  const node = state.nodesById.get(nodeId);
+  if (!node) {
+    return;
+  }
+  const touch = event.touches[0];
+  state.touchTap = {
+    nodeId,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    moved: false
+  };
+  state.dragNode = {
+    id: nodeId,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    nodeX: node.x,
+    nodeY: node.y,
+    moved: false,
+    undoSnapshot: dragUndoSnapshot()
+  };
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function selectBoundedContext(contextName) {
+  const normalized = normalizeContextName(contextName);
+  if (!normalized) {
+    return;
+  }
+  state.selectedBoundedContextName = normalized;
+  state.selectedNodeId = null;
+  state.selectedNodeIds = new Set();
+  state.selectedConnectionId = null;
+  applyNodeSelectionStyles();
+  openBoundedContextPanel(normalized);
+  renderEdges();
+}
+
+function onBoundedContextClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const contextName = event.currentTarget?.dataset?.contextName;
+  selectBoundedContext(contextName);
+}
+
+function onBoundedContextMouseDown(event) {
+  if (event.button !== 0) {
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  hideEdgeHoverHandle();
+  clearTransientEdgeLayouts();
+  const contextName = event.currentTarget?.dataset?.contextName;
+  const normalized = normalizeContextName(contextName);
+  if (!normalized) {
+    return;
+  }
+  selectBoundedContext(normalized);
+  const nodes = contextNodes(normalized);
+  state.dragBoundedContext = {
+    name: normalized,
+    startX: event.clientX,
+    startY: event.clientY,
+    nodePositions: nodes.map((node) => ({id: node.id, x: node.x, y: node.y})),
+    undoSnapshot: dragUndoSnapshot()
+  };
+}
+
+function onBoundedContextTouchStart(event) {
+  if (event.touches.length !== 1) {
+    return;
+  }
+  hideEdgeHoverHandle();
+  clearTransientEdgeLayouts();
+  const touch = event.touches[0];
+  const contextName = event.currentTarget?.dataset?.contextName;
+  const normalized = normalizeContextName(contextName);
+  if (!normalized) {
+    return;
+  }
+  selectBoundedContext(normalized);
+  const nodes = contextNodes(normalized);
+  state.dragBoundedContext = {
+    name: normalized,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    nodePositions: nodes.map((node) => ({id: node.id, x: node.x, y: node.y})),
+    undoSnapshot: dragUndoSnapshot()
+  };
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+export function onLinkHandleMouseDown(event) {
+  if (event.button !== 0) {
+    return;
+  }
+  hideEdgeHoverHandle();
+  const nodeEl = event.currentTarget.closest(".node");
+  if (!nodeEl) {
+    return;
+  }
+  state.linkDrag = {
+    sourceId: nodeEl.dataset.nodeId,
+    pointerX: event.clientX,
+    pointerY: event.clientY
+  };
+  renderLinkPreview();
+  setStatus("Drag to another element to create a legal connection");
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+export function onLinkHandleTouchStart(event) {
+  if (event.touches.length !== 1) {
+    return;
+  }
+  hideEdgeHoverHandle();
+  const nodeEl = event.currentTarget.closest(".node");
+  if (!nodeEl) {
+    return;
+  }
+  const touch = event.touches[0];
+  state.linkDrag = {
+    sourceId: nodeEl.dataset.nodeId,
+    pointerX: touch.clientX,
+    pointerY: touch.clientY
+  };
+  renderLinkPreview();
+  setStatus("Drag to another element to create a legal connection");
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+export function onCanvasMouseDown(event) {
+  if (event.target.closest(
+      ".node, .edge-path, .edge-label, .edge-hit-pad, .edge-pin, .edge-hover-handle, .edge-kind-picker, .bounded-context-box")) {
+    return;
+  }
+  if (event.button !== 0) {
+    return;
+  }
+  hideEdgeHoverHandle();
+  closeEdgeKindPicker();
+  closeAttributePanel();
+  state.panDrag = {
+    startX: event.clientX,
+    startY: event.clientY,
+    viewX: state.viewport.x,
+    viewY: state.viewport.y
+  };
+  setCanvasPanSelectionGuard(true);
+  event.preventDefault();
+}
+
+export function onCanvasTouchStart(event) {
+  if (event.target.closest(
+      ".node, .edge-path, .edge-label, .edge-hit-pad, .edge-pin, .edge-hover-handle, .edge-kind-picker, .bounded-context-box")) {
+    return;
+  }
+  if (event.touches.length !== 1) {
+    return;
+  }
+  const touch = event.touches[0];
+  hideEdgeHoverHandle();
+  closeEdgeKindPicker();
+  closeAttributePanel();
+  state.panDrag = {
+    startX: touch.clientX,
+    startY: touch.clientY,
+    viewX: state.viewport.x,
+    viewY: state.viewport.y
+  };
+  setCanvasPanSelectionGuard(true);
+  event.preventDefault();
+}
+
+export function onGlobalMouseMove(event) {
+  if ((event.buttons & 1) === 0) {
+    const hadPanDrag = Boolean(state.panDrag);
+    if (state.linkDrag) {
+      state.linkDrag = null;
+      renderEdges();
+      setStatus("Connection canceled");
+    }
+    state.dragNode = null;
+    state.dragBoundedContext = null;
+    if (hadPanDrag) {
+      setCanvasPanSelectionGuard(false);
+    }
+    state.panDrag = null;
+  }
+
+  if (state.linkDrag) {
+    state.linkDrag.pointerX = event.clientX;
+    state.linkDrag.pointerY = event.clientY;
+    renderLinkPreview();
+    return;
+  }
+
+  if (edgePinDrag) {
+    updateEdgePinDrag(event.clientX, event.clientY);
+    event.preventDefault();
+    return;
+  }
+
+  if (state.dragNode) {
+    const node = state.nodesById.get(state.dragNode.id);
+    const dx = (event.clientX - state.dragNode.startX) / state.viewport.scale;
+    const dy = (event.clientY - state.dragNode.startY) / state.viewport.scale;
+    if (Math.hypot(event.clientX - state.dragNode.startX,
+        event.clientY - state.dragNode.startY) > TOUCH_MOVE_THRESHOLD) {
+      state.dragNode.moved = true;
+    }
+    node.x = Math.round(state.dragNode.nodeX + dx);
+    node.y = Math.round(state.dragNode.nodeY + dy);
+    if (node.meta) {
+      node.meta.x = node.x;
+      node.meta.y = node.y;
+    }
+    scheduleDraggedDiagramSync();
+    return;
+  }
+
+  if (state.dragBoundedContext) {
+    const dx = (event.clientX - state.dragBoundedContext.startX)
+        / state.viewport.scale;
+    const dy = (event.clientY - state.dragBoundedContext.startY)
+        / state.viewport.scale;
+    state.dragBoundedContext.nodePositions.forEach((entry) => {
+      const node = state.nodesById.get(entry.id);
+      if (!node) {
+        return;
+      }
+      node.x = Math.round(entry.x + dx);
+      node.y = Math.round(entry.y + dy);
+      if (node.meta) {
+        node.meta.x = node.x;
+        node.meta.y = node.y;
+      }
+    });
+    scheduleDraggedDiagramSync();
+    return;
+  }
+
+  if (state.panDrag) {
+    state.viewport.x = state.panDrag.viewX + (event.clientX
+        - state.panDrag.startX);
+    state.viewport.y = state.panDrag.viewY + (event.clientY
+        - state.panDrag.startY);
+    applyViewport();
+    event.preventDefault();
+  }
+  // Only publish cursor when not performing a drag/pan/link operation
+  if (!state.dragNode && !state.dragBoundedContext && !state.panDrag
+      && !state.linkDrag) {
+    publishCursor(event.clientX, event.clientY, "ONLINE");
+  }
+}
+
+export function onGlobalTouchMove(event) {
+  if (event.touches.length !== 1) {
+    return;
+  }
+  const touch = event.touches[0];
+
+  if (state.linkDrag) {
+    state.linkDrag.pointerX = touch.clientX;
+    state.linkDrag.pointerY = touch.clientY;
+    renderLinkPreview();
+    event.preventDefault();
+    return;
+  }
+
+  if (edgePinDrag) {
+    updateEdgePinDrag(touch.clientX, touch.clientY);
+    event.preventDefault();
+    return;
+  }
+
+  if (state.dragNode) {
+    const node = state.nodesById.get(state.dragNode.id);
+    const dx = (touch.clientX - state.dragNode.startX) / state.viewport.scale;
+    const dy = (touch.clientY - state.dragNode.startY) / state.viewport.scale;
+    if (state.touchTap && Math.hypot(touch.clientX - state.touchTap.startX,
+        touch.clientY - state.touchTap.startY) > TOUCH_MOVE_THRESHOLD) {
+      state.touchTap.moved = true;
+    }
+    node.x = Math.round(state.dragNode.nodeX + dx);
+    node.y = Math.round(state.dragNode.nodeY + dy);
+    if (node.meta) {
+      node.meta.x = node.x;
+      node.meta.y = node.y;
+    }
+    scheduleDraggedDiagramSync();
+    event.preventDefault();
+    return;
+  }
+
+  if (state.dragBoundedContext) {
+    const dx = (touch.clientX - state.dragBoundedContext.startX)
+        / state.viewport.scale;
+    const dy = (touch.clientY - state.dragBoundedContext.startY)
+        / state.viewport.scale;
+    state.dragBoundedContext.nodePositions.forEach((entry) => {
+      const node = state.nodesById.get(entry.id);
+      if (!node) {
+        return;
+      }
+      node.x = Math.round(entry.x + dx);
+      node.y = Math.round(entry.y + dy);
+      if (node.meta) {
+        node.meta.x = node.x;
+        node.meta.y = node.y;
+      }
+    });
+    scheduleDraggedDiagramSync();
+    event.preventDefault();
+    return;
+  }
+
+  if (state.panDrag) {
+    state.viewport.x = state.panDrag.viewX + (touch.clientX
+        - state.panDrag.startX);
+    state.viewport.y = state.panDrag.viewY + (touch.clientY
+        - state.panDrag.startY);
+    applyViewport();
+    event.preventDefault();
+  }
+  // Only publish cursor when not performing a drag/pan/link operation
+  if (!state.dragNode && !state.dragBoundedContext && !state.panDrag
+      && !state.linkDrag) {
+    publishCursor(touch.clientX, touch.clientY, "ONLINE");
+  }
+}
+
+export function onGlobalMouseUp(event) {
+  if (edgePinDrag) {
+    finalizeEdgePinDrag();
+    event.preventDefault();
+    return;
+  }
+  if (state.linkDrag) {
+    const sourceId = state.linkDrag.sourceId;
+    const dropTarget = document.elementFromPoint(event.clientX,
+        event.clientY)?.closest(".node");
+    state.linkDrag = null;
+    renderEdges();
+    if (dropTarget) {
+      addConnection(sourceId, dropTarget.dataset.nodeId,
+          {
+            interactivePicker: true,
+            preferredKind: state.preferredConnectionKind
+          });
+    } else {
+      setStatus("Connection canceled");
+    }
+  }
+  if (state.dragNode || state.dragBoundedContext) {
+    scheduleAutoSave({delayMs: 400});
+    if (dragSyncFrame) {
+      window.cancelAnimationFrame(dragSyncFrame);
+      dragSyncFrame = 0;
+    }
+    // Force immediate edge sync on drag end for final accurate state
+    syncDraggedDiagram();
+  }
+  if (state.dragNode?.moved) {
+    commitUndoSnapshot(state.dragNode.undoSnapshot);
+  }
+  if (state.dragBoundedContext && state.dragBoundedContext.nodePositions.some(
+      (entry) => {
+        const node = state.nodesById.get(entry.id);
+        return node && (node.x !== entry.x || node.y !== entry.y);
+      })) {
+    commitUndoSnapshot(state.dragBoundedContext.undoSnapshot);
+  }
+  if (state.dragNode) {
+    const draggedNode = state.nodesById.get(state.dragNode.id);
+    if (state.dragNode.moved) {
+      suppressNextNodeClickId = state.dragNode.id;
+    }
+    if (draggedNode) {
+      // Always publish final position with immediate flag
+      publishNodeMove(draggedNode.id, draggedNode.x, draggedNode.y,
+          {immediate: true});
+    }
+  }
+  if (state.dragBoundedContext) {
+    state.dragBoundedContext.nodePositions.forEach((entry) => {
+      const node = state.nodesById.get(entry.id);
+      if (!node) {
+        return;
+      }
+      publishNodeMove(node.id, node.x, node.y, {immediate: true});
+    });
+  }
+  if (state.dragNode || state.dragBoundedContext || state.linkDrag) {
+    publishDiagramUpdate({immediate: true});
+  }
+  state.dragNode = null;
+  state.dragBoundedContext = null;
+  state.panDrag = null;
+  lastPublishMoveTime = 0;
+  setCanvasPanSelectionGuard(false);
+}
+
+export function onGlobalTouchEnd(event) {
+  const touch = event.changedTouches?.[0];
+  if (edgePinDrag) {
+    finalizeEdgePinDrag();
+    event.preventDefault();
+    return;
+  }
+  if (state.linkDrag) {
+    const sourceId = state.linkDrag.sourceId;
+    const dropTarget = touch ? document.elementFromPoint(touch.clientX,
+        touch.clientY)?.closest(".node") : null;
+    state.linkDrag = null;
+    renderEdges();
+    if (dropTarget) {
+      addConnection(sourceId, dropTarget.dataset.nodeId,
+          {
+            interactivePicker: true,
+            preferredKind: state.preferredConnectionKind
+          });
+    } else {
+      setStatus("Connection canceled");
+    }
+  }
+
+  if (state.dragNode || state.dragBoundedContext) {
+    scheduleAutoSave({delayMs: 400});
+    if (dragSyncFrame) {
+      window.cancelAnimationFrame(dragSyncFrame);
+      dragSyncFrame = 0;
+    }
+    // Force immediate edge sync on drag end for final accurate state
+    syncDraggedDiagram();
+  }
+  if (state.dragNode?.moved) {
+    commitUndoSnapshot(state.dragNode.undoSnapshot);
+  }
+  if (state.dragBoundedContext && state.dragBoundedContext.nodePositions.some(
+      (entry) => {
+        const node = state.nodesById.get(entry.id);
+        return node && (node.x !== entry.x || node.y !== entry.y);
+      })) {
+    commitUndoSnapshot(state.dragBoundedContext.undoSnapshot);
+  }
+  if (state.dragNode) {
+    const draggedNode = state.nodesById.get(state.dragNode.id);
+    if (draggedNode) {
+      publishNodeMove(draggedNode.id, draggedNode.x, draggedNode.y,
+          {immediate: true});
+    }
+  }
+  if (state.dragBoundedContext) {
+    state.dragBoundedContext.nodePositions.forEach((entry) => {
+      const node = state.nodesById.get(entry.id);
+      if (!node) {
+        return;
+      }
+      publishNodeMove(node.id, node.x, node.y, {immediate: true});
+    });
+  }
+  if (state.dragNode || state.dragBoundedContext || state.linkDrag) {
+    publishDiagramUpdate({immediate: true});
+  }
+
+  if (state.touchTap && !state.touchTap.moved) {
+    activateNode(state.touchTap.nodeId);
+  }
+
+  state.touchTap = null;
+  state.dragNode = null;
+  state.dragBoundedContext = null;
+  state.panDrag = null;
+  lastPublishMoveTime = 0;
+  setCanvasPanSelectionGuard(false);
+}
+
+export function onCanvasWheel(event) {
+  closeEdgeKindPicker();
+  event.preventDefault();
+  const prev = state.viewport.scale;
+  const delta = event.deltaY < 0 ? 1.1 : 0.9;
+  const next = Math.max(0.2, Math.min(2.5, prev * delta));
+
+  const rect = el.canvasViewport.getBoundingClientRect();
+  const px = event.clientX - rect.left;
+  const py = event.clientY - rect.top;
+  state.viewport.x = px - ((px - state.viewport.x) * (next / prev));
+  state.viewport.y = py - ((py - state.viewport.y) * (next / prev));
+  state.viewport.scale = next;
+  applyViewport();
+}
+
+// ── Drag-and-drop from palette ────────────────────────────────────────────────
+
+export function setupDnD() {
+  el.canvasViewport.addEventListener("dragover", (e) => e.preventDefault());
+  el.canvasViewport.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    const type = e.dataTransfer.getData("text/node-type");
+    if (!type) {
+      return;
+    }
+    pushDiagramUndoSnapshot();
+    const pos = toCanvasCoordinates(e.clientX, e.clientY);
+    const node = getDefaultNode(state.activeType, type, Math.round(pos.x),
+        Math.round(pos.y));
+    state.diagram.nodes.push(node);
+    addNodeToGraphAndActiveView(node);
+    if (state.tabs[state.activeType]) {
+      state.tabs[state.activeType].diagram = state.diagram;
+    }
+    renderDiagram();
+    setStatus(`Added ${type}`);
+    try {
+      await flushAutoSave();
+    } catch {
+      scheduleAutoSave({delayMs: 200});
+    }
+    publishNodeAdd(node);
+    publishDiagramUpdate({immediate: true});
+  });
+}
+
+// ── Connection management ─────────────────────────────────────────────────────
+
+export function addConnection(sourceId, targetId,
+    {interactivePicker = false, preferredKind = null} = {}) {
+  const source = state.nodesById.get(sourceId);
+  const target = state.nodesById.get(targetId);
+  if (!source || !target) {
+    return false;
+  }
+  if (source.id === target.id) {
+    setStatus("Source and target cannot be the same");
+    return false;
+  }
+  const forwardKinds = legalKinds(state.activeType, source.type, target.type);
+  const reverseKinds = legalKinds(state.activeType, target.type, source.type);
+  if (!forwardKinds.length && !reverseKinds.length) {
+    setStatus("Illegal connection type for selected nodes");
+    return false;
+  }
+  let resolvedSource = source;
+  let resolvedTarget = target;
+  let resolvedKinds = forwardKinds;
+  if (!forwardKinds.length && reverseKinds.length) {
+    resolvedSource = target;
+    resolvedTarget = source;
+    resolvedKinds = reverseKinds;
+  }
+  let kind = resolvedKinds.includes(preferredKind) ? preferredKind
+      : resolvedKinds[0];
+
+  const exists = state.diagram.connections.some(
+      (edge) => edge.sourceId === resolvedSource.id
+          && edge.targetId === resolvedTarget.id);
+  if (exists) {
+    setStatus("Connection already exists between these elements");
+    return false;
+  }
+
+  const edge = {
+    id: genId("e"),
+    sourceId: resolvedSource.id,
+    targetId: resolvedTarget.id,
+    kind
+  };
+  pushDiagramUndoSnapshot();
+  state.diagram.connections.push(edge);
+  addConnectionToGraphAndActiveView(edge);
+  state.selectedConnectionId = edge.id;
+  renderEdges();
+  scheduleAutoSave();
+  publishDiagramUpdate();
+  if (interactivePicker) {
+    const nodeW = getNodeWidth();
+    const nodeH = getNodeHeight();
+    const sx = resolvedSource.x + nodeW / 2;
+    const sy = resolvedSource.y + nodeH / 2;
+    const tx = resolvedTarget.x + nodeW / 2;
+    const ty = resolvedTarget.y + nodeH / 2;
+    const options = buildDirectedKindOptions(source, target);
+    if (options.length) {
+      openEdgeKindPicker(edge.id, options, (sx + tx) / 2, (sy + ty) / 2 - 18);
+    }
+  }
+  if (!forwardKinds.length && reverseKinds.length) {
+    setStatus(`Connection added with legal direction: ${resolvedSource.label
+    || resolvedSource.type} -> ${resolvedTarget.label || resolvedTarget.type}`);
+  } else if (forwardKinds.length && reverseKinds.length) {
+    setStatus(
+        "Connection added. Both directions are legal; choose direction/type from the inline selector.");
+  } else {
+    setStatus(interactivePicker ? "Connection added. Choose relationship type."
+        : `Connection added: ${kind}`);
+  }
+  return true;
+}
+
+// ── Connect mode ─────────────────────────────────────────────────────────────
+
+export function setConnectMode(enabled) {
+  state.connectMode = enabled;
+  state.connectSourceId = null;
+  if (!enabled) {
+    state.preferredConnectionKind = null;
+    closeEdgeKindPicker();
+  }
+  setStatus(enabled ? "Connect mode enabled - click source then target"
+      : "Connect mode disabled");
+}
+
+// ── Impact highlight (called by renderNodes and impact module) ────────────────
+
+export function highlightImpactedNodes() {
+  el.nodeLayer.querySelectorAll(".node").forEach((n) => {
+    n.classList.remove("node-impact-focal", "node-impacted-upstream",
+        "node-impacted-downstream", "node-impact-connected");
+  });
+
+  if (!state.impactMode || !state.impactData) {
+    return;
+  }
+
+  const data = state.impactData;
+
+  if (data.focalElement?.elementId) {
+    const focalEl = el.nodeLayer.querySelector(
+        `[data-node-id="${data.focalElement.elementId}"]`);
+    if (focalEl) {
+      focalEl.classList.add("node-impact-focal");
+    }
+  }
+
+  (data.upstream || []).forEach((item) => {
+    if (item.elementId) {
+      const nodeEl = el.nodeLayer.querySelector(
+          `[data-node-id="${item.elementId}"]`);
+      if (nodeEl) {
+        nodeEl.classList.add("node-impacted-upstream");
+      }
+    }
+  });
+
+  (data.downstream || []).forEach((item) => {
+    if (item.elementId) {
+      const nodeEl = el.nodeLayer.querySelector(
+          `[data-node-id="${item.elementId}"]`);
+      if (nodeEl) {
+        nodeEl.classList.add("node-impacted-downstream");
+      }
+    }
+  });
+
+  (data.connectedElements || []).forEach((item) => {
+    if (item.elementId) {
+      const nodeEl = el.nodeLayer.querySelector(
+          `[data-node-id="${item.elementId}"]`);
+      if (nodeEl) {
+        nodeEl.classList.add("node-impact-connected");
+      }
+    }
+  });
+}
+
+export function scrollToNodeAndHighlight(elementId) {
+  const nodeEl = el.nodeLayer.querySelector(`[data-node-id="${elementId}"]`);
+  if (!nodeEl) {
+    return;
+  }
+
+  const node = state.nodesById.get(elementId);
+  if (!node) {
+    return;
+  }
+
+  const vpRect = el.canvasViewport.getBoundingClientRect();
+  state.viewport.x = vpRect.width / 2 - node.x * state.viewport.scale - 70;
+  state.viewport.y = vpRect.height / 2 - node.y * state.viewport.scale - 28;
+  applyViewport();
+
+  nodeEl.classList.add("node-impact-focal");
+  setTimeout(() => {
+    nodeEl.classList.remove("node-impact-focal");
+    highlightImpactedNodes();
+  }, 2500);
+}
+
+export function scrollToConnectionAndHighlight(connectionId) {
+  const edge = state.diagram.connections.find(
+      (item) => item.id === connectionId);
+  if (!edge) {
+    return false;
+  }
+  const source = state.nodesById.get(edge.sourceId);
+  const target = state.nodesById.get(edge.targetId);
+  if (!source || !target) {
+    return false;
+  }
+
+  const nodeW = getNodeWidth();
+  const nodeH = getNodeHeight();
+  const midX = (source.x + nodeW / 2 + target.x + nodeW / 2) / 2;
+  const midY = (source.y + nodeH / 2 + target.y + nodeH / 2) / 2;
+  const vpRect = el.canvasViewport.getBoundingClientRect();
+  state.viewport.x = vpRect.width / 2 - midX * state.viewport.scale;
+  state.viewport.y = vpRect.height / 2 - midY * state.viewport.scale;
+  state.selectedConnectionId = connectionId;
+  applyViewport();
+  renderEdges();
+
+  const focused = el.edgeLayer.querySelectorAll(
+      `[data-edge-id="${connectionId}"]`);
+  focused.forEach((item) => item.classList.add("edge-focus-flash"));
+  setTimeout(() => {
+    focused.forEach((item) => item.classList.remove("edge-focus-flash"));
+  }, 1800);
+  return true;
+}
