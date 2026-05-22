@@ -27,6 +27,11 @@
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <artifactId>mde-m2t-runner</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <description>Model-Driven Low-Code Platform for Serverless Software Development.</description>
@@ -36,8 +41,10 @@
   <modules>
     <module>apps/backend</module>
     <module>packages/java/mde-etl-runner</module>
+    <module>packages/java/mde-m2t-runner</module>
     <module>tools/mde-cli</module>
     <module>tools/mde-etl-cli</module>
+    <module>tools/mde-m2t-cli</module>
   </modules>
 
   <name>Modless</name>
