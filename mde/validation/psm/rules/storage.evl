@@ -56,7 +56,7 @@ context AWSPSM!DynamoDbTable {
 
 context AWSPSM!DynamoDbGlobalSecondaryIndex {
   constraint GsiProjectionIncludeHasAttributes {
-    guard : self.projection.projectionType = AWSPSMENUMS!DynamoDbProjectionType#INCLUDE
+    guard : self.projection.isDefined() and self.projection.projectionType = AWSPSMENUMS!DynamoDbProjectionType#INCLUDE
     check : self.projection.nonKeyAttributes.notEmpty()
     message : 'DynamoDB GSI ' + self.indexName + ' uses INCLUDE projection but has no nonKeyAttributes. Fix: add projected attributes or change projectionType to ALL/KEYS_ONLY.'
   }

@@ -98,7 +98,7 @@ context AWSPSM!ApiGatewayStage {
   }
 
   critique ProductionStageShouldThrottle {
-    guard : self.api.isProductionScoped()
+    guard : self.api.isDefined() and self.api.isProductionScoped()
     check : self.throttlingBurstLimit.isDefined() and self.throttlingRateLimit.isDefined()
     message : 'Production API stage ' + self.stageName + ' has no explicit throttling limits. Fix: set throttlingBurstLimit and throttlingRateLimit to protect backend services.'
   }

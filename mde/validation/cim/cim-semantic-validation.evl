@@ -18,4 +18,3 @@ import "rules/domain-data.evl";
 import "rules/behavior.evl";
 import "rules/process-policy.evl";
 import "rules/governance-readiness.evl";
-import "rules/diagrams.evl";

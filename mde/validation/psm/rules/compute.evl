@@ -89,7 +89,7 @@ context AWSPSM!LambdaEnvironmentVariable {
   }
 
   constraint SecretEnvironmentValueUsesSecureReference {
-    guard : self.value.secret = true
+    guard : self.value.isDefined() and self.value.secret = true
     check : self.value.usesSecureSource()
     message : 'Lambda environment variable ' + self.variableName + ' is marked secret but does not use a secure source. Fix: use SSM_SECURE_REFERENCE, SECRETS_MANAGER_REFERENCE, or DYNAMIC_REFERENCE.'
   }
@@ -133,9 +133,10 @@ context AWSPSM!LambdaEventSourceMapping {
 
 context AWSPSM!SqsLambdaEventSourceMapping {
   constraint QueueVisibilityGreaterThanFunctionTimeout {
-    check : (self.queue.visibilityTimeoutSeconds.isUndefined()) or
-      (self.`function`.timeoutSeconds.isUndefined()) or
-      (self.queue.visibilityTimeoutSeconds > self.`function`.timeoutSeconds)
+    check : self.queue.isDefined() and self.`function`.isDefined() and
+      ((self.queue.visibilityTimeoutSeconds.isUndefined()) or
+       (self.`function`.timeoutSeconds.isUndefined()) or
+       (self.queue.visibilityTimeoutSeconds > self.`function`.timeoutSeconds))
     message : 'SQS queue visibility timeout must be greater than Lambda timeout for mapping ' + self.resourceLabel() + '. Fix: increase queue.visibilityTimeoutSeconds or reduce function.timeoutSeconds to avoid duplicate processing.'
   }
 
@@ -153,7 +154,7 @@ context AWSPSM!SqsLambdaEventSourceMapping {
 
 context AWSPSM!DynamoDbStreamLambdaEventSourceMapping {
   constraint DynamoStreamMappingRequiresStreamSpecification {
-    check : self.table.streamSpecification.isDefined()
+    check : self.table.isDefined() and self.table.streamSpecification.isDefined()
     message : 'DynamoDB stream event source mapping ' + self.resourceLabel() + ' points to a table without streamSpecification. Fix: enable DynamoDbStreamSpecification on the table or remove the mapping.'
   }
 
@@ -172,7 +173,7 @@ context AWSPSM!LambdaProvisionedConcurrencyConfig {
 
 context AWSPSM!LambdaFunctionUrl {
   constraint ProductionFunctionUrlRequiresAuth {
-    guard : self.`function`.isProductionScoped()
+    guard : self.`function`.isDefined() and self.`function`.isProductionScoped()
     check : self.authType <> AWSPSMENUMS!ApiGatewayAuthorizationType#NONE
     message : 'Production-scoped Lambda function URL for ' + self.`function`.resourceLabel() + ' has authType NONE. Fix: use AWS_IAM or expose the function through an authenticated API Gateway route.'
   }

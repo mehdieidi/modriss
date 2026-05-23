@@ -184,7 +184,7 @@ context CIM!WaitStep {
 context CIM!ProcessTransition {
 
   constraint TransitionConnectsDifferentSteps {
-    check : self.source <> self.target
+    check : self.source.isDefined() and self.target.isDefined() and self.source <> self.target
     message :
       "Error [CIM-TRANS-001] ProcessTransition '" + self.labelText() + "' connects a step to itself. " +
       "Suggestion: connect the transition to a distinct target step."
@@ -192,6 +192,7 @@ context CIM!ProcessTransition {
 
   constraint TransitionDoesNotLeaveEndOrEnterStart {
     check :
+      self.source.isDefined() and self.target.isDefined() and
       (self.source.stepKind <> CIM!StepKind#END) and (self.target.stepKind <> CIM!StepKind#START)
     message :
       "Error [CIM-TRANS-002] ProcessTransition '" + self.labelText() + "' leaves an END step or enters a START step. " +
@@ -199,7 +200,7 @@ context CIM!ProcessTransition {
   }
 
   critique ConditionalTransitionIsLabelled {
-    guard : self.source.stepKind = CIM!StepKind#DECISION
+    guard : self.source.isDefined() and self.source.stepKind = CIM!StepKind#DECISION
     check : self.label.hasText() or self.conditionExpression.hasText() or self.condition.isDefined()
     message :
       "Warning [CIM-TRANS-003] Decision transition '" + self.labelText() + "' has no label, conditionExpression, or Condition. " +

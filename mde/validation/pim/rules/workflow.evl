@@ -60,8 +60,9 @@ context PIM!WorkflowState {
 context PIM!WorkflowTransition {
 
   constraint TransitionStaysInsideWorkflow {
-    check : self.source.workflow = self.workflow and self.target.workflow = self.workflow
-    message : "[PIM-WF-010] Transition '" + self.displayName() + "' connects states outside its owning workflow. Fix: use source and target states contained by workflow '" + self.workflow.displayName() + "'."
+    check : self.source.isDefined() and self.target.isDefined() and self.workflow.isDefined()
+      and self.source.workflow = self.workflow and self.target.workflow = self.workflow
+    message : "[PIM-WF-010] Transition '" + self.displayName() + "' connects states outside its owning workflow. Fix: set workflow, source and target, and use source/target states contained by the same workflow."
   }
 
   critique ConditionalTransitionShouldHaveConditionUnlessDefault {

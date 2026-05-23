@@ -65,7 +65,7 @@ context AWSPSM!SnsSubscription {
   }
 
   constraint FifoTopicToSqsRequiresFifoQueue {
-    guard : (self.topic.fifoTopic = true) and self.endpointResource.isDefined() and self.endpointResource.isKindOf(AWSPSM!SqsQueue)
+    guard : self.topic.isDefined() and (self.topic.fifoTopic = true) and self.endpointResource.isDefined() and self.endpointResource.isKindOf(AWSPSM!SqsQueue)
     check : self.endpointResource.queueType = AWSPSMENUMS!SqsQueueType#FIFO
     message : 'SNS FIFO topic subscription ' + self.resourceLabel() + ' targets a non-FIFO SQS queue. Fix: use a FIFO queue ending in .fifo or change the topic to standard.'
   }

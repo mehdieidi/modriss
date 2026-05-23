@@ -1,5 +1,5 @@
-operation String hasText() : Boolean {
-  return self.isDefined() and self.trim().size() > 0;
+operation Any hasText() : Boolean {
+  return self.isDefined() and self.asString().trim().size() > 0;
 }
 
 operation Collection hasItems() : Boolean {
