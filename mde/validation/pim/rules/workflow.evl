@@ -1,0 +1,98 @@
+import "../lib/pim-validation-helpers.eol";
+
+context PIM!Workflow {
+
+  constraint WorkflowStartAndEndStatesAreContained {
+    check : self.states.includes(self.startState) and self.endStates.forAll(stateItem | self.states.includes(stateItem))
+    message : "[PIM-WF-001] Workflow '" + self.displayName() + "' has start/end states outside its contained states. Fix: set startState and all endStates to WorkflowState elements contained by this workflow."
+  }
+
+  constraint WorkflowHasAtLeastOneEndState {
+    check : self.endStates.notEmpty()
+    message : "[PIM-WF-002] Workflow '" + self.displayName() + "' has no endStates. Fix: mark one or more contained states as successful/failure terminal end states."
+  }
+
+  constraint EndStatesMustBeTerminal {
+    check : self.endStates.forAll(stateItem | stateItem.terminal.isTrue() or stateItem.stateKind.enumIn(Sequence{"SUCCESS", "FAILURE"}))
+    message : "[PIM-WF-003] Workflow '" + self.displayName() + "' has end states that are not terminal. Fix: set terminal to true or use SUCCESS/FAILURE stateKind for all endStates."
+  }
+
+  critique StatefulWorkflowNeedsIdempotency {
+    guard : self.stateful.isTrue() or self.compensationRequired.isTrue()
+    check : self.idempotency.isDefined()
+    message : "[PIM-WF-004] Stateful or compensation-capable workflow '" + self.displayName() + "' lacks idempotency policy. Suggested fix: attach IdempotencyPolicy to prevent duplicate side effects in retries/restarts."
+  }
+}
+
+context PIM!WorkflowState {
+
+  constraint ChoiceHasAtLeastTwoTransitions {
+    guard : self.stateKind.enumIs("CHOICE")
+    check : self.outgoingTransitions().size() >= 2
+    message : "[PIM-WF-005] Choice state '" + self.displayName() + "' has fewer than two outgoing transitions. Fix: add at least two transitions with conditions/default handling."
+  }
+
+  constraint TerminalStatesHaveNoOutgoingTransitions {
+    guard : self.terminal.isTrue() or self.stateKind.enumIn(Sequence{"SUCCESS", "FAILURE"})
+    check : self.outgoingTransitions().isEmpty()
+    message : "[PIM-WF-006] Terminal workflow state '" + self.displayName() + "' has outgoing transitions. Fix: remove outgoing transitions or mark the state as non-terminal."
+  }
+
+  constraint TaskStateInvokesExactlyOneAction {
+    guard : self.stateKind.enumIs("TASK")
+    check : self.actionCount() = 1
+    message : "[PIM-WF-007] Task state '" + self.displayName() + "' must invoke exactly one function, adapter or nested workflow. Fix: set one of invokesFunction, invokesAdapter or nestedWorkflow and clear the others."
+  }
+
+  critique NonStartStateShouldHaveIncomingTransition {
+    guard : self.workflow.isDefined() and self <> self.workflow.startState
+    check : self.incomingTransitions().exists(transitionItem | transitionItem.workflow = self.workflow)
+    message : "[PIM-WF-008] Workflow state '" + self.displayName() + "' is not the start state and has no incoming transition. Suggested fix: connect it from another state or remove the unreachable state."
+  }
+
+  critique TimedStateShouldUseTimeoutPolicy {
+    guard : self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0
+    check : self.retry.isDefined() or self.catchHandlers.notEmpty() or self.rationale.hasText()
+    message : "[PIM-WF-009] Workflow state '" + self.displayName() + "' has timeoutSeconds but no retry/catch/rationale. Suggested fix: define retry/error handling or explain why timeout failure needs no handling."
+  }
+}
+
+context PIM!WorkflowTransition {
+
+  constraint TransitionStaysInsideWorkflow {
+    check : self.source.workflow = self.workflow and self.target.workflow = self.workflow
+    message : "[PIM-WF-010] Transition '" + self.displayName() + "' connects states outside its owning workflow. Fix: use source and target states contained by workflow '" + self.workflow.displayName() + "'."
+  }
+
+  critique ConditionalTransitionShouldHaveConditionUnlessDefault {
+    check : self.defaultTransition.isTrue() or self.conditionExpression.hasText()
+    message : "[PIM-WF-011] Transition '" + self.displayName() + "' has no conditionExpression and is not marked defaultTransition. Suggested fix: add a condition or mark it as the default branch."
+  }
+}
+
+context PIM!ErrorHandler {
+
+  constraint ErrorHandlerHasRecoveryTarget {
+    check : self.nextState.isDefined() or self.handlerFunction.isDefined()
+    message : "[PIM-WF-012] ErrorHandler '" + self.displayName() + "' has neither nextState nor handlerFunction. Fix: route recovery to a state or handler function."
+  }
+
+  critique ErrorHandlerShouldSelectErrors {
+    check : self.errorSelector.hasText() and self.recoveryAction.hasText()
+    message : "[PIM-WF-013] ErrorHandler '" + self.displayName() + "' lacks errorSelector or recoveryAction. Suggested fix: state which errors it handles and how recovery proceeds."
+  }
+}
+
+context PIM!CompensationPolicy {
+
+  constraint CompensationPolicyHasAction {
+    check : self.compensationFunctions.notEmpty() or self.compensationEvents.notEmpty() or self.compensationStrategy.hasText()
+    message : "[PIM-WF-014] CompensationPolicy '" + self.displayName() + "' has no compensation action. Fix: add compensation functions, compensation events or a clear strategy."
+  }
+}
+
+/***********************************
+ * External/configuration/security
+ ***********************************/
+
+

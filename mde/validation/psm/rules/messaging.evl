@@ -1,0 +1,86 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* Messaging / SQS / SNS */
+
+context AWSPSM!SqsQueue {
+  constraint FifoQueueNameSuffix {
+    guard : self.queueType = AWSPSMENUMS!SqsQueueType#FIFO
+    check : self.queueName.hasText() and self.queueName.endsWith('.fifo')
+    message : 'FIFO SQS queue ' + self.resourceLabel() + ' must have a queueName ending in .fifo. Fix: rename the queue to end with .fifo.'
+  }
+
+  critique StandardQueueShouldNotUseFifoSuffix {
+    guard : self.queueType = AWSPSMENUMS!SqsQueueType#STANDARD
+    check : (not self.queueName.hasText()) or (not self.queueName.endsWith('.fifo'))
+    message : 'Standard SQS queue ' + self.resourceLabel() + ' has a .fifo suffix. Fix: remove the suffix or change queueType to FIFO.'
+  }
+
+  constraint QueueTimingRangesValid {
+    check : ((self.delaySeconds.isUndefined()) or ((self.delaySeconds >= 0) and (self.delaySeconds <= 900))) and
+      ((self.messageRetentionPeriodSeconds.isUndefined()) or ((self.messageRetentionPeriodSeconds >= 60) and (self.messageRetentionPeriodSeconds <= 1209600))) and
+      ((self.receiveMessageWaitTimeSeconds.isUndefined()) or ((self.receiveMessageWaitTimeSeconds >= 0) and (self.receiveMessageWaitTimeSeconds <= 20))) and
+      ((self.visibilityTimeoutSeconds.isUndefined()) or ((self.visibilityTimeoutSeconds >= 0) and (self.visibilityTimeoutSeconds <= 43200)))
+    message : 'SQS queue ' + self.resourceLabel() + ' has timing settings outside AWS-supported ranges. Fix: delay 0..900s, retention 60..1209600s, wait time 0..20s, visibility 0..43200s.'
+  }
+
+  constraint QueueMessageSizeRangeValid {
+    check : (self.maximumMessageSize.isUndefined()) or ((self.maximumMessageSize >= 1024) and (self.maximumMessageSize <= 1048576))
+    message : 'SQS queue ' + self.resourceLabel() + ' has maximumMessageSize outside 1024..1048576 bytes. Fix: use a valid message size limit.'
+  }
+
+  constraint RedrivePolicyValid {
+    guard : self.redrivePolicy.isDefined()
+    check : (self.redrivePolicy.deadLetterQueue.isDefined()) and
+      (self.redrivePolicy.deadLetterQueue <> self) and
+      (self.redrivePolicy.maxReceiveCount >= 1) and
+      (self.redrivePolicy.deadLetterQueue.queueType = self.queueType)
+    message : 'SQS queue ' + self.resourceLabel() + ' has an invalid redrive policy. Fix: set a different DLQ, maxReceiveCount >= 1, and ensure source queue and DLQ have the same queueType.'
+  }
+
+  critique ProductionQueueShouldBeEncrypted {
+    guard : self.isProductionScoped()
+    check : (self.sqsManagedSseEnabled = true) or self.kmsKey.isDefined()
+    message : 'Production-scoped SQS queue ' + self.resourceLabel() + ' has no explicit encryption. Fix: enable sqsManagedSseEnabled or attach a KMS key.'
+  }
+}
+
+context AWSPSM!SnsTopic {
+  constraint FifoTopicNameSuffix {
+    guard : self.fifoTopic = true
+    check : self.topicName.hasText() and self.topicName.endsWith('.fifo')
+    message : 'FIFO SNS topic ' + self.resourceLabel() + ' must have a topicName ending in .fifo. Fix: rename the topic to end with .fifo.'
+  }
+
+  critique ProductionTopicShouldBeEncrypted {
+    guard : self.isProductionScoped()
+    check : self.kmsKey.isDefined()
+    message : 'Production-scoped SNS topic ' + self.resourceLabel() + ' has no KMS key. Fix: attach kmsKey unless an approved exception exists.'
+  }
+}
+
+context AWSPSM!SnsSubscription {
+  constraint SubscriptionHasEndpointOrResource {
+    check : self.endpoint.hasText() or self.endpointResource.isDefined()
+    message : 'SNS subscription ' + self.resourceLabel() + ' has neither endpoint nor endpointResource. Fix: provide an endpoint string or reference the target AwsResource.'
+  }
+
+  constraint FifoTopicToSqsRequiresFifoQueue {
+    guard : (self.topic.fifoTopic = true) and self.endpointResource.isDefined() and self.endpointResource.isKindOf(AWSPSM!SqsQueue)
+    check : self.endpointResource.queueType = AWSPSMENUMS!SqsQueueType#FIFO
+    message : 'SNS FIFO topic subscription ' + self.resourceLabel() + ' targets a non-FIFO SQS queue. Fix: use a FIFO queue ending in .fifo or change the topic to standard.'
+  }
+
+  critique ExternalHttpSubscriptionsShouldHaveDlq {
+    guard : (self.protocol = AWSPSMENUMS!SnsProtocol#HTTP) or (self.protocol = AWSPSMENUMS!SnsProtocol#HTTPS)
+    check : self.deadLetterQueue.isDefined()
+    message : 'HTTP/HTTPS SNS subscription ' + self.resourceLabel() + ' has no DLQ. Fix: attach deadLetterQueue so failed deliveries can be retained and replayed.'
+  }
+}
+
+context AWSPSM!SnsFilterRule {
+  constraint FilterRuleHasValues {
+    check : self.fieldPath.hasText() and self.operator.hasText() and self.values.notEmpty()
+    message : 'SNS filter rule is incomplete. Fix: set fieldPath, operator, and at least one value.'
+  }
+}
+

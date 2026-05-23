@@ -1,0 +1,21 @@
+/*
+ * CIM semantic validation entry point.
+ *
+ * Run this module after parsing and structural EMF/Ecore conformance checks.
+ *
+ * Severity convention:
+ *   - constraint = error: the model violates a mandatory semantic rule.
+ *   - critique = warning: the model remains valid, but quality/readiness is weak.
+ *
+ * Expected model aliases:
+ *   - CIM for the CIM metamodel packages
+ *   - KERNEL for the shared kernel package
+ */
+
+import "rules/core-kernel-trace.evl";
+import "rules/organization-intent.evl";
+import "rules/domain-data.evl";
+import "rules/behavior.evl";
+import "rules/process-policy.evl";
+import "rules/governance-readiness.evl";
+import "rules/diagrams.evl";

@@ -1,0 +1,38 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* Networking */
+
+context AWSPSM!VpcAttachmentConfig {
+  constraint VpcAttachmentHasSubnetsAndSecurityGroups {
+    check : self.subnetIds.notEmpty() and (self.securityGroupIds.notEmpty() or self.securityGroups.notEmpty())
+    message : 'VPC attachment is missing subnetIds or security groups. Fix: provide at least one subnet and one security group for the attached Lambda/function resource.'
+  }
+
+  critique PrivateSubnetsRequireEndpointsWhenFlagged {
+    guard : self.privateSubnetsRequireNatOrEndpoints = true
+    check : self.requiredEndpoints.forAll(endpointItem | endpointItem.requiredForPrivateAccess <> true or endpointItem.serviceName.hasText())
+    message : 'VPC attachment requires NAT/endpoints but has incomplete endpoint references. Fix: add serviceName for every required VpcEndpointReference or document NAT availability.'
+  }
+}
+
+context AWSPSM!Vpc {
+  critique VpcShouldEnableDns {
+    check : (self.enableDnsHostnames = true) and (self.enableDnsSupport = true)
+    message : 'VPC ' + self.resourceLabel() + ' does not enable both DNS hostnames and DNS support. Fix: set enableDnsHostnames and enableDnsSupport to true unless explicitly unsupported.'
+  }
+}
+
+context AWSPSM!SecurityGroupRule {
+  constraint PortRangeValid {
+    check : (self.fromPort.isUndefined() and self.toPort.isUndefined()) or
+      (self.fromPort.isDefined() and self.toPort.isDefined() and self.fromPort >= 0 and self.toPort <= 65535 and self.fromPort <= self.toPort)
+    message : 'Security group rule has invalid port range. Fix: set fromPort/toPort within 0..65535 and ensure fromPort <= toPort, or omit both for protocols that do not use ports.'
+  }
+
+  critique PublicAdminIngressRequiresReview {
+    guard : (self.cidrIp = '0.0.0.0/0') and self.fromPort.isDefined() and ((self.fromPort <= 22 and self.toPort >= 22) or (self.fromPort <= 3389 and self.toPort >= 3389))
+    check : self.ruleDescription.hasText() and self.ruleDescription.toLowerCase().matches('.*review.*|.*approved.*|.*exception.*')
+    message : 'Security group rule exposes SSH/RDP to the public internet. Fix: restrict cidrIp, use a bastion/VPN/SSM access pattern, or add an approved exception in ruleDescription.'
+  }
+}
+

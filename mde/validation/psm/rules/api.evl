@@ -1,0 +1,141 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* API Gateway */
+
+context AWSPSM!ApiGatewayApi {
+  constraint ApiHasRoutes {
+    check : self.routes.notEmpty()
+    message : 'API ' + self.resourceLabel() + ' has no routes. Fix: add at least one HttpApiRoute, RestApiRoute, or WebSocketRoute connected to an integration.'
+  }
+
+  critique ApiShouldHaveStage {
+    check : self.stages.notEmpty()
+    message : 'API ' + self.resourceLabel() + ' has no stage. Fix: add an ApiGatewayStage so the API can be deployed.'
+  }
+
+  constraint AccessLogsRequireLogGroupAndFormat {
+    guard : self.accessLogsEnabled = true
+    check : self.accessLogGroup.isDefined()
+    message : 'API ' + self.resourceLabel() + ' enables access logs but has no accessLogGroup. Fix: attach a CloudWatchLogGroup for API access logs.'
+  }
+
+  critique ProductionApiShouldHaveMetricsAndTracing {
+    guard : self.isProductionScoped()
+    check : (self.metricsEnabled = true) and ((self.tracingEnabled = true) or self.tracingConfig.isDefined())
+    message : 'Production-scoped API ' + self.resourceLabel() + ' does not enable both metrics and tracing. Fix: set metricsEnabled true and enable tracing/tracingConfig unless intentionally disabled with rationale.'
+  }
+}
+
+context AWSPSM!HttpApiRoute {
+  constraint UniqueHttpRouteWithinApi {
+    check : AWSPSM!HttpApiRoute.all.select(routeItem |
+      (routeItem.api = self.api) and (routeItem.method = self.method) and (routeItem.path = self.path)).size() = 1
+    message : 'HTTP API route ' + self.method.asString() + ' ' + self.path + ' is duplicated in API ' + self.api.resourceLabel() + '. Fix: make method+path unique within the API.'
+  }
+}
+
+context AWSPSM!RestApiRoute {
+  constraint UniqueRestRouteWithinApi {
+    check : AWSPSM!RestApiRoute.all.select(routeItem |
+      (routeItem.api = self.api) and (routeItem.method = self.method) and (routeItem.path = self.path)).size() = 1
+    message : 'REST API route ' + self.method.asString() + ' ' + self.path + ' is duplicated in API ' + self.api.resourceLabel() + '. Fix: make method+path unique within the API.'
+  }
+}
+
+context AWSPSM!WebSocketRoute {
+  constraint UniqueWebSocketRouteKeyWithinApi {
+    check : AWSPSM!WebSocketRoute.all.select(routeItem |
+      (routeItem.api = self.api) and (routeItem.routeKey = self.routeKey)).size() = 1
+    message : 'WebSocket routeKey ' + self.routeKey + ' is duplicated in API ' + self.api.resourceLabel() + '. Fix: give each WebSocket route a unique routeKey.'
+  }
+}
+
+context AWSPSM!ApiGatewayRoute {
+  constraint ProtectedRouteHasRequiredAuthConfiguration {
+    check : (self.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#NONE) or
+      (self.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM) or
+      (self.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY) or
+      self.authorizer.isDefined()
+    message : 'Protected route ' + self.resourceLabel() + ' has authorizationType ' + self.authorizationType.asString() + ' but no authorizer. Fix: attach a matching JwtAuthorizer, CognitoAuthorizer, or LambdaAuthorizer; AWS_IAM/API_KEY do not require an authorizer object.'
+  }
+
+  constraint RouteHasIntegration {
+    check : self.integration.isDefined()
+    message : 'API route ' + self.resourceLabel() + ' has no integration. Fix: attach an ApiGatewayIntegration that points to Lambda, Step Functions, HTTP, AWS, or MOCK target configuration.'
+  }
+
+  critique IntegrationTimeoutShouldNotExceedLambdaTimeout {
+    guard : self.integration.isDefined() and self.integration.lambdaTarget.isDefined() and self.timeoutInMillis.isDefined() and self.integration.lambdaTarget.timeoutSeconds.isDefined()
+    check : self.timeoutInMillis >= (self.integration.lambdaTarget.timeoutSeconds * 1000)
+    message : 'Route ' + self.resourceLabel() + ' may time out before Lambda ' + self.integration.lambdaTarget.resourceLabel() + '. Fix: align route/integration timeout with the Lambda timeout or make the operation asynchronous.'
+  }
+}
+
+context AWSPSM!ApiGatewayIntegration {
+  constraint IntegrationHasSingleTarget {
+    check : self.targetCount() = 1 or self.integrationType = AWSPSMENUMS!ApiGatewayIntegrationType#MOCK
+    message : 'API integration ' + self.resourceLabel() + ' must have exactly one backend target, unless it is MOCK. Fix: set one of lambdaTarget, stateMachineTarget, or integrationUri, and remove conflicting targets.'
+  }
+
+  critique LongApiGatewayTimeoutRequiresQuotaReview {
+    guard : self.timeoutInMillis.isDefined()
+    check : self.timeoutInMillis <= 29000
+    message : 'API integration ' + self.resourceLabel() + ' has timeoutInMillis greater than 29 seconds. Fix: verify that the API type, region, and account quota support the longer timeout, or redesign as asynchronous.'
+  }
+
+  constraint CredentialsArnMatchesCredentialsRole {
+    guard : self.credentialsArn.hasText()
+    check : self.credentialsRole.isDefined() or self.credentialsArn.matches('^arn:aws[a-zA-Z-]*:iam::[0-9]{12}:role/.+')
+    message : 'API integration ' + self.resourceLabel() + ' has a credentialsArn that is not a valid IAM role ARN and no credentialsRole reference. Fix: attach credentialsRole or provide a valid IAM role ARN.'
+  }
+}
+
+context AWSPSM!ApiGatewayStage {
+  constraint AccessLogStageRequiresGroupAndFormat {
+    guard : self.accessLogEnabled = true
+    check : self.accessLogGroup.isDefined() and self.accessLogFormat.hasText()
+    message : 'API stage ' + self.stageName + ' enables access logs but lacks accessLogGroup or accessLogFormat. Fix: attach a CloudWatchLogGroup and define a JSON access log format.'
+  }
+
+  critique ProductionStageShouldThrottle {
+    guard : self.api.isProductionScoped()
+    check : self.throttlingBurstLimit.isDefined() and self.throttlingRateLimit.isDefined()
+    message : 'Production API stage ' + self.stageName + ' has no explicit throttling limits. Fix: set throttlingBurstLimit and throttlingRateLimit to protect backend services.'
+  }
+}
+
+context AWSPSM!JwtAuthorizer {
+  constraint JwtAuthorizerHasIssuerAndAudience {
+    check : self.issuer.hasText() and self.audience.notEmpty()
+    message : 'JWT authorizer ' + self.resourceLabel() + ' is missing issuer or audience. Fix: set issuer and add one or more expected audience values.'
+  }
+}
+
+context AWSPSM!CognitoAuthorizer {
+  critique CognitoAuthorizerShouldReferenceClients {
+    check : self.clients.notEmpty()
+    message : 'Cognito authorizer ' + self.resourceLabel() + ' references a user pool but no clients. Fix: attach expected CognitoUserPoolClient entries to restrict accepted app clients.'
+  }
+}
+
+context AWSPSM!LambdaAuthorizer {
+  constraint LambdaAuthorizerHasFunction {
+    check : self.`function`.isDefined()
+    message : 'Lambda authorizer ' + self.resourceLabel() + ' has no Lambda function. Fix: attach the AwsLambdaFunction that implements authorization.'
+  }
+}
+
+context AWSPSM!ApiGatewayDomainName {
+  constraint DomainHasCertificate {
+    check : self.certificateArn.hasText()
+    message : 'API Gateway domain ' + self.domainName + ' has no certificateArn. Fix: attach an ACM certificate ARN in the appropriate region for the endpoint type.'
+  }
+}
+
+context AWSPSM!ApiGatewayUsagePlanKey {
+  constraint UsagePlanKeyUsesKnownType {
+    check : self.keyType.hasText() and self.keyType.toUpperCase() = 'API_KEY'
+    message : 'Usage plan key ' + self.resourceLabel() + ' has invalid keyType. Fix: set keyType to API_KEY.'
+  }
+}
+

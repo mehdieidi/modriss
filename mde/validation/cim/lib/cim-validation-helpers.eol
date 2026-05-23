@@ -1,0 +1,79 @@
+operation String hasText() : Boolean {
+  return self.isDefined() and self.trim().size() > 0;
+}
+
+operation Collection hasItems() : Boolean {
+  return self.isDefined() and self.size() > 0;
+}
+
+operation providerTechnologyPattern() : String {
+  return "(?i).*(lambda|dynamodb|sqs|sns|eventbridge|cloudwatch|xray|iam|cognito|s3|aws|arn|sam|cloudformation|azure|gcp|pubsub|kafka|kubernetes|terraform).*";
+}
+
+operation KERNEL!ModelElement labelText() : String {
+  if (self.name.hasText()) {
+    return self.name;
+  }
+  return "<unnamed " + self.eClass().getName() + ">";
+}
+
+operation KERNEL!ModelElement containsProviderTechnologyTerm() : Boolean {
+  return
+    ((self.name.hasText()) and (self.name.matches(providerTechnologyPattern()))) or
+    ((self.summary.hasText()) and (self.summary.matches(providerTechnologyPattern()))) or
+    ((self.description.hasText()) and (self.description.matches(providerTechnologyPattern()))) or
+    ((self.documentation.hasText()) and (self.documentation.matches(providerTechnologyPattern())));
+}
+
+operation CIM!DataClassification isPersonalKind() : Boolean {
+  return (self.kind = CIM!DataKind#PERSONAL) or (self.kind = CIM!DataKind#SENSITIVE_PERSONAL);
+}
+
+operation CIM!DataClassification requiresStrongProtection() : Boolean {
+  return
+    (self.kind = CIM!DataKind#SENSITIVE_PERSONAL) or
+    (self.kind = CIM!DataKind#FINANCIAL) or
+    (self.kind = CIM!DataKind#HEALTH) or
+    (self.kind = CIM!DataKind#AUTHENTICATION_SECRET) or
+    (self.kind = CIM!DataKind#REGULATED);
+}
+
+operation CIM!InformationItem hasPersonalClassification() : Boolean {
+  return self.classification.isDefined() and self.classification.isPersonalKind();
+}
+
+operation CIM!InformationItem requiresPrivacyControls() : Boolean {
+  return
+    self.hasPersonalClassification() or
+    ((self.classification.isDefined()) and
+      ((self.classification.kind = CIM!DataKind#FINANCIAL) or
+       (self.classification.kind = CIM!DataKind#HEALTH) or
+       (self.classification.kind = CIM!DataKind#REGULATED)));
+}
+
+operation CIM!Command hasHumanIssuer() : Boolean {
+  return self.issuedBy.exists(actorItem | actorItem.actorType = CIM!ActorType#HUMAN);
+}
+
+operation CIM!Command hasExternalOrUntrustedIssuer() : Boolean {
+  return self.issuedBy.exists(actorItem |
+    (actorItem.actorType = CIM!ActorType#EXTERNAL_SYSTEM) or
+    (actorItem.actorType = CIM!ActorType#EXTERNAL_ORGANIZATION) or
+    (actorItem.trustLevel = CIM!TrustLevel#UNTRUSTED_EXTERNAL) or
+    (actorItem.trustLevel = CIM!TrustLevel#REGULATED_EXTERNAL)
+  );
+}
+
+operation CIM!Command hasAuthorizationDecision() : Boolean {
+  return (self.authorizationRequired = true) and self.authorizationRule.hasText();
+}
+
+operation CIM!Query outputsPersonalData() : Boolean {
+  return self.output.exists(item | item.hasPersonalClassification());
+}
+
+operation CIM!CIMModel isProductionReadyIntent() : Boolean {
+  return
+    (self.lifecycleStatus = KERNEL!LifecycleStatus#PRODUCTION_READY) or
+    ((self.readiness.isDefined()) and (self.readiness.productionReady = true));
+}

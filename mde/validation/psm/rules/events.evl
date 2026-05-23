@@ -1,0 +1,77 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* EventBridge */
+
+context AWSPSM!EventBridgeRule {
+  constraint RuleHasPatternOrSchedule {
+    check : self.eventPatternJson.hasText() or self.scheduleExpression.hasText() or self.eventPattern.isDefined()
+    message : 'EventBridge rule ' + self.resourceLabel() + ' has neither an event pattern nor a schedule expression. Fix: define eventPattern/eventPatternJson for event-driven rules or scheduleExpression for scheduled rules.'
+  }
+
+  constraint RuleDoesNotMixPatternAndSchedule {
+    check : not ((self.eventPatternJson.hasText() or self.eventPattern.isDefined()) and self.scheduleExpression.hasText())
+    message : 'EventBridge rule ' + self.resourceLabel() + ' defines both event pattern and schedule expression. Fix: split into two rules or keep only the intended trigger type.'
+  }
+
+  constraint RuleHasTargets {
+    check : self.targets.notEmpty()
+    message : 'EventBridge rule ' + self.resourceLabel() + ' has no targets. Fix: add at least one EventBridgeTarget.'
+  }
+
+  constraint TargetIdsUniqueWithinRule {
+    check : self.targets.forAll(targetItem |
+      self.targets.select(otherTarget | otherTarget.targetId = targetItem.targetId).size() = 1)
+    message : 'EventBridge rule ' + self.resourceLabel() + ' contains duplicate targetId values. Fix: make targetId unique within the rule.'
+  }
+}
+
+context AWSPSM!EventBridgeTarget {
+  constraint TargetHasResourceOrArn {
+    check : self.targetResource.isDefined() or self.arnExpression.hasText()
+    message : 'EventBridge target ' + self.targetId + ' has neither targetResource nor arnExpression. Fix: reference a PSM resource or provide an ARN expression.'
+  }
+
+  constraint CriticalEventTargetsHaveRetryOrDlq {
+    guard : self.targetResource.isDefined() and self.targetResource.isProductionScoped()
+    check : self.retryPolicy.isDefined() or self.deadLetterQueue.isDefined()
+    message : 'Production-scoped EventBridge target ' + self.targetId + ' has no retry policy or DLQ. Fix: add AwsRetryPolicy and/or deadLetterQueue to reduce event loss risk.'
+  }
+
+  constraint SqsFifoTargetHasMessageGroupId {
+    guard : self.targetResource.isDefined() and self.targetResource.isKindOf(AWSPSM!SqsQueue) and self.targetResource.queueType = AWSPSMENUMS!SqsQueueType#FIFO
+    check : self.parameters.isDefined() and self.parameters.isKindOf(AWSPSM!EventBridgeSqsTargetParameters) and self.parameters.messageGroupId.hasText()
+    message : 'EventBridge target ' + self.targetId + ' sends to a FIFO SQS queue without messageGroupId. Fix: add EventBridgeSqsTargetParameters.messageGroupId.'
+  }
+}
+
+context AWSPSM!AwsRetryPolicy {
+  constraint RetryPolicyRangesValid {
+    check : ((self.maximumRetryAttempts.isUndefined()) or ((self.maximumRetryAttempts >= 0) and (self.maximumRetryAttempts <= 185))) and
+      ((self.maximumEventAgeInSeconds.isUndefined()) or ((self.maximumEventAgeInSeconds >= 60) and (self.maximumEventAgeInSeconds <= 86400)))
+    message : 'EventBridge retry policy has invalid range values. Fix: set maximumRetryAttempts to 0..185 and maximumEventAgeInSeconds to 60..86400, or remove the fields to use defaults.'
+  }
+}
+
+context AWSPSM!EventBridgeSchedule {
+  constraint ScheduleHasExpressionAndRole {
+    check : self.scheduleExpression.hasText() and self.role.isDefined()
+    message : 'EventBridge schedule ' + self.resourceLabel() + ' lacks scheduleExpression or role. Fix: set scheduleExpression and attach the IAM role used by the scheduler.'
+  }
+}
+
+context AWSPSM!EventBridgePipe {
+  constraint PipeHasSourceTargetAndRole {
+    check : (self.sourceArn.hasText() or self.sourceResource.isDefined()) and
+      (self.targetArn.hasText() or self.targetResource.isDefined()) and
+      self.role.isDefined()
+    message : 'EventBridge pipe ' + self.resourceLabel() + ' must have source, target, and role. Fix: set sourceArn/sourceResource, targetArn/targetResource, and attach the IAM role.'
+  }
+}
+
+context AWSPSM!EventBridgeApiDestination {
+  constraint ApiDestinationHasEndpointAndConnection {
+    check : self.invocationEndpoint.hasText() and self.connection.isDefined()
+    message : 'EventBridge API destination ' + self.resourceLabel() + ' lacks invocationEndpoint or connection. Fix: set an HTTPS endpoint and attach EventBridgeConnection.'
+  }
+}
+

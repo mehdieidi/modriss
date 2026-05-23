@@ -1,0 +1,206 @@
+operation Any hasText() : Boolean {
+  if (self.isUndefined()) {
+    return false;
+  }
+  return self.asString().trim().size() > 0;
+}
+
+operation Any isTrueValue() : Boolean {
+  return self.isDefined() and (self = true);
+}
+
+operation Any isFalseValue() : Boolean {
+  return self.isDefined() and (self = false);
+}
+
+operation currentPsmModel() : Any {
+  if (AWSPSM!AwsPsmModel.all.isEmpty()) {
+    return null;
+  }
+  return AWSPSM!AwsPsmModel.all.first();
+}
+
+operation productionStageExists() : Boolean {
+  return AWSPSM!AwsStage.all.exists(stageItem |
+    stageItem.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD);
+}
+
+
+operation AWSPSM!AwsPsmModel stackResourceSet() : Set {
+  var resourceSet : Set = Set{};
+  for (stackItem in self.stacks) {
+    resourceSet.addAll(stackItem.resources);
+  }
+  return resourceSet;
+}
+
+operation AWSPSM!AwsResource resourceLabel() : String {
+  if (self.logicalId.hasText()) {
+    return self.logicalId;
+  }
+  if (self.name.hasText()) {
+    return self.name;
+  }
+  return self.eClass().name;
+}
+
+operation AWSPSM!AwsResource deployedToProductionStage() : Boolean {
+  if (self.stack.isUndefined()) {
+    return false;
+  }
+  return AWSPSM!AwsStage.all.exists(stageItem |
+    (stageItem.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD) and
+    stageItem.deploysStacks.includes(self.stack));
+}
+
+operation AWSPSM!AwsResource isProductionScoped() : Boolean {
+  return (self.productionCritical = true) or self.deployedToProductionStage();
+}
+
+operation AWSPSM!AwsResource hasTagKey(keyText : String) : Boolean {
+  return self.tags.exists(tagItem | tagItem.key = keyText);
+}
+
+operation AWSPSM!AwsResource duplicateTagKeys() : Set {
+  var duplicates : Set = Set{};
+  for (tagItem in self.tags) {
+    if (self.tags.select(otherTag | otherTag.key = tagItem.key).size() > 1) {
+      duplicates.add(tagItem.key);
+    }
+  }
+  return duplicates;
+}
+
+operation activeTaggingPolicy() : Any {
+  var modelRoot = currentPsmModel();
+  if (modelRoot.isUndefined()) {
+    return null;
+  }
+  return modelRoot.taggingPolicy;
+}
+
+operation requiredTagKeys() : Sequence {
+  var policyItem = activeTaggingPolicy();
+  var keys : Sequence = Sequence{};
+
+  if (policyItem.isDefined()) {
+    if (policyItem.requireOwnerTag = true) {
+      keys.add('Owner');
+    }
+    if (policyItem.requireEnvironmentTag = true) {
+      keys.add('Environment');
+    }
+    if (policyItem.requireCostCenterTag = true) {
+      keys.add('CostCenter');
+    }
+    for (requiredTag in policyItem.requiredTags) {
+      if (requiredTag.key.hasText()) {
+        keys.add(requiredTag.key);
+      }
+    }
+  }
+  else {
+    keys.add('Owner');
+    keys.add('Environment');
+  }
+
+  return keys.asSet().asSequence();
+}
+
+operation AWSPSM!AwsResource missingRequiredTagKeys() : Sequence {
+  var missingKeys : Sequence = Sequence{};
+  for (requiredKey in requiredTagKeys()) {
+    if (not self.hasTagKey(requiredKey)) {
+      missingKeys.add(requiredKey);
+    }
+  }
+  return missingKeys;
+}
+
+operation AWSPSM!AwsResource transitivelyDependsOn(candidateResource : AWSPSM!AwsResource, visitedResources : Set) : Boolean {
+  if (self.dependsOn.includes(candidateResource)) {
+    return true;
+  }
+  if (visitedResources.includes(self)) {
+    return false;
+  }
+  visitedResources.add(self);
+  return self.dependsOn.exists(dependencyItem |
+    dependencyItem.transitivelyDependsOn(candidateResource, visitedResources));
+}
+
+operation AWSPSM!ValueExpression usesSecureSource() : Boolean {
+  return (self.sourceKind = AWSPSMENUMS!ValueSourceKind#SECRETS_MANAGER_REFERENCE) or
+    (self.sourceKind = AWSPSMENUMS!ValueSourceKind#SSM_SECURE_REFERENCE) or
+    (self.sourceKind = AWSPSMENUMS!ValueSourceKind#DYNAMIC_REFERENCE);
+}
+
+operation AWSPSM!IamStatement actionIsWildcard() : Boolean {
+  return (self.wildcardAction = true) or
+    self.actions.exists(actionText | (actionText = '*') or actionText.endsWith(':*'));
+}
+
+operation AWSPSM!IamStatement resourceIsWildcard() : Boolean {
+  return (self.wildcardResource = true) or
+    self.resources.exists(resourceText | resourceText = '*');
+}
+
+operation AWSPSM!IamStatement hasLeastPrivilegeJustification() : Boolean {
+  return self.wildcardJustification.hasText() or self.conditions.notEmpty();
+}
+
+operation AWSPSM!S3Bucket blocksAllPublicAccess() : Boolean {
+  if (self.publicAccessMode = AWSPSMENUMS!S3BlockPublicAccessMode#STRICT_BLOCK_ALL) {
+    return true;
+  }
+  if (self.publicAccessBlock.isUndefined()) {
+    return false;
+  }
+  return (self.publicAccessBlock.blockPublicAcls = true) and
+    (self.publicAccessBlock.blockPublicPolicy = true) and
+    (self.publicAccessBlock.ignorePublicAcls = true) and
+    (self.publicAccessBlock.restrictPublicBuckets = true);
+}
+
+operation AWSPSM!ApiGatewayIntegration targetCount() : Integer {
+  var count : Integer = 0;
+  if (self.lambdaTarget.isDefined()) {
+    count = count + 1;
+  }
+  if (self.stateMachineTarget.isDefined()) {
+    count = count + 1;
+  }
+  if (self.integrationUri.hasText()) {
+    count = count + 1;
+  }
+  return count;
+}
+
+operation AWSPSM!StepFunctionStateMachine definitionCount() : Integer {
+  var count : Integer = 0;
+  if (self.definitionUri.hasText()) {
+    count = count + 1;
+  }
+  if (self.definitionString.hasText()) {
+    count = count + 1;
+  }
+  if (self.aslDocument.isDefined()) {
+    count = count + 1;
+  }
+  return count;
+}
+
+operation AWSPSM!AslDocument hasStateNamed(stateNameText : String) : Boolean {
+  return self.states.exists(stateItem | stateItem.stateName = stateNameText);
+}
+
+operation AWSPSM!AslDocument duplicateStateNames() : Set {
+  var duplicates : Set = Set{};
+  for (stateItem in self.states) {
+    if (self.states.select(otherState | otherState.stateName = stateItem.stateName).size() > 1) {
+      duplicates.add(stateItem.stateName);
+    }
+  }
+  return duplicates;
+}
+

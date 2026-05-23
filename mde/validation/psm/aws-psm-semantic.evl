@@ -1,0 +1,6 @@
+/*
+ * Compatibility entry point matching the AWS PSM semantic validation
+ * specification artifact name.
+ */
+
+import "psm-semantic-validation.evl";

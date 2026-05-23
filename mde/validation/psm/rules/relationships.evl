@@ -1,0 +1,61 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* Relationship views */
+
+context AWSPSM!AwsRelationshipView {
+  constraint RelationshipViewHasEndpoints {
+    check : self.source.isDefined() and self.target.isDefined()
+    message : 'Relationship view has missing source or target. Fix: attach both source and target AwsResource references or remove the incomplete view.'
+  }
+}
+
+context AWSPSM!ApiGatewayLambdaIntegrationView {
+  constraint ApiLambdaViewMatchesDeployableObjects {
+    check : self.route.integration = self.integration and self.integration.lambdaTarget = self.`function` and self.source = self.route and self.target = self.`function`
+    message : 'API Gateway to Lambda relationship view is inconsistent with route/integration/function references. Fix: align source=route, target=function, route.integration=integration, and integration.lambdaTarget=function.'
+  }
+
+  critique ApiLambdaPermissionRecommended {
+    check : self.permission.isDefined()
+    message : 'API Gateway to Lambda relationship view has no LambdaPermission. Fix: add LambdaPermission allowing API Gateway to invoke the function, unless permission is generated elsewhere.'
+  }
+}
+
+context AWSPSM!EventBridgeLambdaTargetView {
+  constraint EventBridgeLambdaViewMatchesDeployableObjects {
+    check : self.rule.targets.includes(self.targetRow) and self.targetRow.targetResource = self.`function` and self.source = self.rule and self.target = self.`function`
+    message : 'EventBridge to Lambda relationship view is inconsistent. Fix: ensure targetRow belongs to rule, targetRow.targetResource references function, and view source/target match.'
+  }
+
+  critique EventBridgeLambdaPermissionRecommended {
+    check : self.permission.isDefined()
+    message : 'EventBridge to Lambda relationship view has no LambdaPermission. Fix: add LambdaPermission allowing EventBridge to invoke the function, unless permission is generated elsewhere.'
+  }
+}
+
+context AWSPSM!SnsLambdaSubscriptionView {
+  constraint SnsLambdaViewMatchesDeployableObjects {
+    check : self.topic.subscriptions.includes(self.subscription) and self.subscription.endpointResource = self.`function` and self.source = self.topic and self.target = self.`function`
+    message : 'SNS to Lambda relationship view is inconsistent. Fix: ensure subscription belongs to topic, endpointResource references function, and view source/target match.'
+  }
+
+  critique SnsLambdaPermissionRecommended {
+    check : self.permission.isDefined()
+    message : 'SNS to Lambda relationship view has no LambdaPermission. Fix: add LambdaPermission allowing SNS to invoke the function, unless permission is generated elsewhere.'
+  }
+}
+
+context AWSPSM!SqsLambdaEventSourceView {
+  constraint SqsLambdaViewMatchesMapping {
+    check : self.mapping.queue = self.queue and self.mapping.`function` = self.`function` and self.source = self.queue and self.target = self.`function`
+    message : 'SQS to Lambda relationship view is inconsistent with its mapping. Fix: align mapping.queue, mapping.function, source, and target references.'
+  }
+}
+
+context AWSPSM!StepFunctionEventBridgeTargetView {
+  constraint StepFunctionEventBridgeViewMatchesTarget {
+    check : self.rule.targets.includes(self.targetRow) and self.targetRow.targetResource = self.stateMachine and self.source = self.rule and self.target = self.stateMachine
+    message : 'EventBridge to Step Functions relationship view is inconsistent. Fix: ensure targetRow belongs to rule, targetResource references stateMachine, and view source/target match.'
+  }
+}
+

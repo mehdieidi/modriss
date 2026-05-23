@@ -1,0 +1,86 @@
+import "../lib/pim-validation-helpers.eol";
+
+context PIM!Api {
+
+  constraint ApiHasAtLeastOneRoute {
+    check : self.routes.notEmpty()
+    message : "[PIM-API-001] API '" + self.displayName() + "' has no routes. Fix: add ApiRoute elements for the operations exposed by this API."
+  }
+
+  constraint ProtectedApiHasAuthPolicy {
+    guard : self.authRequired.isTrue()
+    check : self.auth.isDefined()
+    message : "[PIM-API-002] API '" + self.displayName() + "' requires authentication but has no AuthPolicy. Fix: attach auth with scheme, identity provider and token/scopes validation rules."
+  }
+
+  critique ConsumerFacingApiHasPublicMetadata {
+    guard : self.externalConsumerFacing.isTrue()
+    check : self.publicName.hasText() and self.version.hasText() and self.basePath.hasText()
+    message : "[PIM-API-003] Consumer-facing API '" + self.displayName() + "' lacks publicName, version or basePath. Suggested fix: fill these fields so OpenAPI/docs can be generated with stable public metadata."
+  }
+
+  critique GeneratedOpenApiNeedsContract {
+    guard : self.generatedOpenApiRequired.isTrue()
+    check : self.contract.isDefined()
+    message : "[PIM-API-004] API '" + self.displayName() + "' requires generated OpenAPI but has no ApiContract. Suggested fix: add request, response and error schemas through ApiContract."
+  }
+}
+
+context PIM!ApiRoute {
+
+  constraint UniqueMethodPathWithinApi {
+    check : PIM!ApiRoute.all.select(routeItem |
+      routeItem.api = self.api and routeItem.method = self.method and routeItem.pathTemplate = self.pathTemplate
+    ).size() = 1
+    message : "[PIM-ROUTE-001] API route '" + self.method.asString() + " " + self.pathTemplate + "' is duplicated within API '" + self.api.displayName() + "'. Fix: change the method or pathTemplate so each route is unique inside the API."
+  }
+
+  constraint RoutePathStartsWithSlash {
+    check : self.pathTemplate.hasText() and self.pathTemplate.startsWith("/")
+    message : "[PIM-ROUTE-002] API route pathTemplate '" + self.pathTemplate.ifUndefined("<missing>") + "' must start with '/'. Fix: use a portable absolute path template such as /orders/{orderId}."
+  }
+
+  constraint RouteIntegrationIsExactlyOneBackend {
+    check : (self.functionIntegration.isDefined() and self.workflowIntegration.isUndefined())
+      or (self.functionIntegration.isUndefined() and self.workflowIntegration.isDefined())
+    message : "[PIM-ROUTE-003] API route '" + self.displayName() + "' must integrate with exactly one backend. Fix: set either functionIntegration or workflowIntegration, not both and not neither."
+  }
+
+  constraint ProtectedRouteHasAuthorization {
+    guard : self.authRequired.isTrue() or self.api.authRequired.isTrue()
+    check : self.authorization.isDefined()
+    message : "[PIM-ROUTE-004] Protected route '" + self.method.asString() + " " + self.pathTemplate + "' has no AuthorizationPolicy. Fix: attach authorization with ruleExpression, role/scope, allowed principals or permissions."
+  }
+
+  constraint RequestValidationNeedsRequestSchema {
+    guard : self.requestValidationRequired.isTrue()
+    check : self.requestSchema.isDefined()
+    message : "[PIM-ROUTE-005] Route '" + self.displayName() + "' requires request validation but has no requestSchema. Fix: attach a request Schema or set requestValidationRequired to false."
+  }
+
+  constraint ResponseValidationNeedsResponseSchema {
+    guard : self.responseValidationRequired.isTrue()
+    check : self.responseSchema.isDefined()
+    message : "[PIM-ROUTE-006] Route '" + self.displayName() + "' requires response validation but has no responseSchema. Fix: attach a response Schema or set responseValidationRequired to false."
+  }
+
+  critique PublicRouteShouldDescribeConsumers {
+    guard : self.publicRoute.isTrue()
+    check : self.descriptionForConsumers.hasText()
+    message : "[PIM-ROUTE-007] Public route '" + self.method.asString() + " " + self.pathTemplate + "' lacks descriptionForConsumers. Suggested fix: explain what the route does, key request/response fields and important errors."
+  }
+}
+
+context PIM!ErrorMapping {
+
+  critique ErrorMappingShouldBeActionable {
+    check : self.domainErrorCode.hasText() and self.abstractStatusClass.hasText() and self.responseMessage.hasText()
+    message : "[PIM-ROUTE-008] ErrorMapping '" + self.displayName() + "' is missing domainErrorCode, abstractStatusClass or responseMessage. Suggested fix: define a stable domain error, map it to an abstract status class, and write a client-safe response message."
+  }
+}
+
+/*****************************
+ * Events and integration rules
+ *****************************/
+
+

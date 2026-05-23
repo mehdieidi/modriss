@@ -1,0 +1,46 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* Observability */
+
+context AWSPSM!CloudWatchLogGroup {
+  constraint ProductionLogRetentionExplicit {
+    guard : self.isProductionScoped()
+    check : self.retentionDays.isDefined() and self.retentionDays > 0
+    message : 'Production-scoped log group ' + self.resourceLabel() + ' has no explicit retentionDays. Fix: set a positive retention period aligned to the data retention policy.'
+  }
+
+  critique ProductionLogGroupShouldUseKms {
+    guard : self.isProductionScoped()
+    check : self.kmsKey.isDefined()
+    message : 'Production-scoped log group ' + self.resourceLabel() + ' has no KMS key. Fix: attach kmsKey if customer-managed encryption is required.'
+  }
+}
+
+context AWSPSM!CloudWatchAlarm {
+  constraint AlarmHasMetricAndThreshold {
+    check : self.namespace.hasText() and self.metricName.hasText() and self.threshold.isDefined() and self.comparisonOperator.isDefined()
+    message : 'CloudWatch alarm ' + self.resourceLabel() + ' is missing namespace, metricName, threshold, or comparisonOperator. Fix: complete the metric and threshold configuration.'
+  }
+
+  constraint AlarmEvaluationSettingsValid {
+    check : ((self.period.isUndefined()) or (self.period > 0)) and
+      ((self.evaluationPeriods.isUndefined()) or (self.evaluationPeriods > 0)) and
+      ((self.datapointsToAlarm.isUndefined()) or (self.datapointsToAlarm > 0)) and
+      (self.datapointsToAlarm.isUndefined() or self.evaluationPeriods.isUndefined() or self.datapointsToAlarm <= self.evaluationPeriods)
+    message : 'CloudWatch alarm ' + self.resourceLabel() + ' has invalid evaluation settings. Fix: use positive period/evaluationPeriods/datapointsToAlarm and ensure datapointsToAlarm <= evaluationPeriods.'
+  }
+
+  critique ProductionAlarmShouldHaveActions {
+    guard : self.monitoredResource.isDefined() and self.monitoredResource.isProductionScoped()
+    check : self.alarmActionArns.notEmpty() or self.alarmActionResources.notEmpty()
+    message : 'Alarm ' + self.resourceLabel() + ' monitors a production-scoped resource but has no alarm actions. Fix: add SNS, incident, or automation actions.'
+  }
+}
+
+context AWSPSM!CloudWatchCompositeAlarm {
+  critique CompositeAlarmShouldHaveActions {
+    check : self.alarmActionArns.notEmpty() or self.alarmActionResources.notEmpty()
+    message : 'Composite alarm ' + self.resourceLabel() + ' has no alarm actions. Fix: add notification or incident actions, or document why observation-only is acceptable.'
+  }
+}
+

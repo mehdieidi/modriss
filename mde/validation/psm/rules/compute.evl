@@ -1,0 +1,180 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* Compute / Lambda */
+
+context AWSPSM!AwsLambdaFunction {
+
+  constraint LambdaHasSupportedCodeConfig {
+    check : self.code.isKindOf(AWSPSM!LambdaZipCodeConfig) or self.code.isKindOf(AWSPSM!LambdaImageCodeConfig)
+    message : 'Lambda ' + self.resourceLabel() + ' uses an unsupported code configuration. Fix: use LambdaZipCodeConfig for ZIP functions or LambdaImageCodeConfig for container-image functions.'
+  }
+
+  constraint LambdaMemoryRange {
+    check : (self.memorySizeMb.isUndefined()) or ((self.memorySizeMb >= 128) and (self.memorySizeMb <= 10240))
+    message : 'Lambda ' + self.resourceLabel() + ' memorySizeMb is outside the valid range 128..10240. Fix: set memorySizeMb to a valid Lambda memory value in MB.'
+  }
+
+  constraint LambdaTimeoutRange {
+    check : (self.timeoutSeconds.isUndefined()) or ((self.timeoutSeconds >= 1) and (self.timeoutSeconds <= 900))
+    message : 'Lambda ' + self.resourceLabel() + ' timeoutSeconds is outside the valid range 1..900. Fix: choose a timeout from 1 second to 15 minutes.'
+  }
+
+  constraint LambdaEphemeralStorageRange {
+    check : (self.ephemeralStorageMb.isUndefined()) or ((self.ephemeralStorageMb >= 512) and (self.ephemeralStorageMb <= 10240))
+    message : 'Lambda ' + self.resourceLabel() + ' ephemeralStorageMb is outside the valid range 512..10240. Fix: set /tmp storage to a valid MB value.'
+  }
+
+  constraint ReservedConcurrencyNonNegative {
+    check : (self.reservedConcurrentExecutions.isUndefined()) or (self.reservedConcurrentExecutions >= 0)
+    message : 'Lambda ' + self.resourceLabel() + ' has a negative reservedConcurrentExecutions value. Fix: remove the value or set it to zero or greater.'
+  }
+
+  constraint AutoPublishAliasRequiresVersionPublishing {
+    guard : self.autoPublishAlias.hasText()
+    check : self.publishVersion = true
+    message : 'Lambda ' + self.resourceLabel() + ' has autoPublishAlias but publishVersion is not true. Fix: set publishVersion to true so aliases can point to immutable versions.'
+  }
+
+  constraint CodeSigningDecisionHonored {
+    guard : self.codeSigningDecision = AWSPSMENUMS!Decision#REQUIRED
+    check : self.codeSigningConfig.isDefined()
+    message : 'Lambda ' + self.resourceLabel() + ' requires code signing but has no codeSigningConfig. Fix: attach a CodeSigningConfig or change codeSigningDecision if code signing is not required.'
+  }
+
+  critique ProductionLambdaShouldUseTracing {
+    guard : self.isProductionScoped()
+    check : self.tracing.isDefined() and self.tracing.mode = AWSPSMENUMS!LambdaTracingMode#ACTIVE
+    message : 'Production-scoped Lambda ' + self.resourceLabel() + ' does not enable active tracing. Fix: add LambdaTracingConfig with mode ACTIVE unless tracing is intentionally disabled with a documented rationale.'
+  }
+
+  critique ProductionLambdaShouldUseStructuredLogging {
+    guard : self.isProductionScoped()
+    check : self.logging.isDefined() and self.logging.logFormat.hasText()
+    message : 'Production-scoped Lambda ' + self.resourceLabel() + ' has no explicit logging configuration. Fix: add LambdaLoggingConfig and set logFormat/applicationLogLevel/systemLogLevel to the platform standard.'
+  }
+
+  critique ProductionLambdaShouldHaveFailureDestinationOrDlq {
+    guard : self.isProductionScoped()
+    check : self.deadLetterConfig.isDefined() or self.eventInvokeConfigs.exists(invokeItem |
+      invokeItem.destinationConfig.isDefined() and invokeItem.destinationConfig.onFailure.isDefined())
+    message : 'Production-scoped Lambda ' + self.resourceLabel() + ' has no DLQ or async failure destination. Fix: add LambdaDeadLetterConfig or LambdaEventInvokeConfig.destinationConfig.onFailure.'
+  }
+}
+
+context AWSPSM!LambdaZipCodeConfig {
+  constraint ZipCodeHasRuntimeAndHandler {
+    check : self.runtimeIdentifier.hasText() and self.handler.hasText()
+    message : 'ZIP Lambda code configuration is missing runtimeIdentifier or handler. Fix: set runtimeIdentifier, for example python3.12 or nodejs20.x, and set handler, for example app.handler.'
+  }
+
+  constraint ZipCodeHasExactlyOneLocation {
+    check : ((self.codeUri.hasText() ? 1 else 0) +
+             (((self.s3Bucket.hasText()) and (self.s3Key.hasText())) ? 1 else 0) +
+             (self.inlineZipFile.hasText() ? 1 else 0)) = 1
+    message : 'ZIP Lambda code configuration must define exactly one code location. Fix: use either codeUri, or s3Bucket+s3Key, or inlineZipFile; remove the others.'
+  }
+}
+
+context AWSPSM!LambdaImageCodeConfig {
+  constraint ImageCodeHasImageUri {
+    check : self.imageUri.hasText()
+    message : 'Image Lambda code configuration has no imageUri. Fix: provide the ECR image URI including repository and tag or digest.'
+  }
+}
+
+context AWSPSM!LambdaEnvironmentVariable {
+  constraint EnvironmentVariableNameValid {
+    check : self.variableName.matches('^[A-Za-z][A-Za-z0-9_]*$')
+    message : 'Lambda environment variable name ' + self.variableName + ' is invalid. Fix: start with a letter and use only letters, digits, and underscores.'
+  }
+
+  constraint SecretEnvironmentValueUsesSecureReference {
+    guard : self.value.secret = true
+    check : self.value.usesSecureSource()
+    message : 'Lambda environment variable ' + self.variableName + ' is marked secret but does not use a secure source. Fix: use SSM_SECURE_REFERENCE, SECRETS_MANAGER_REFERENCE, or DYNAMIC_REFERENCE.'
+  }
+
+  critique StageSpecificVariableShouldHaveRationale {
+    guard : self.stageSpecific = true
+    check : self.rationale.hasText()
+    message : 'Stage-specific environment variable ' + self.variableName + ' has no rationale. Fix: add rationale explaining why the value must vary by stage.'
+  }
+}
+
+context AWSPSM!LambdaDeadLetterConfig {
+  constraint DlqHasExactlyOneTarget {
+    check : ((self.targetQueue.isDefined() ? 1 else 0) + (self.targetTopic.isDefined() ? 1 else 0)) = 1
+    message : 'Lambda DLQ configuration must choose exactly one target. Fix: set either targetQueue or targetTopic, not both.'
+  }
+}
+
+context AWSPSM!LambdaEventSourceMapping {
+  constraint BatchSizePositive {
+    check : (self.batchSize.isUndefined()) or (self.batchSize > 0)
+    message : 'Lambda event source mapping ' + self.resourceLabel() + ' has an invalid batchSize. Fix: remove batchSize to use the service default, or set it to a positive integer.'
+  }
+
+  constraint MaximumBatchingWindowRange {
+    check : (self.maximumBatchingWindowSeconds.isUndefined()) or ((self.maximumBatchingWindowSeconds >= 0) and (self.maximumBatchingWindowSeconds <= 300))
+    message : 'Lambda event source mapping ' + self.resourceLabel() + ' maximumBatchingWindowSeconds is outside 0..300. Fix: choose a batching window within five minutes.'
+  }
+
+  constraint ParallelizationFactorRange {
+    check : (self.parallelizationFactor.isUndefined()) or ((self.parallelizationFactor >= 1) and (self.parallelizationFactor <= 10))
+    message : 'Lambda event source mapping ' + self.resourceLabel() + ' parallelizationFactor is outside 1..10. Fix: set a value from 1 to 10 or remove it.'
+  }
+
+  constraint StartingTimestampRequiresAtTimestamp {
+    guard : self.startingPositionTimestamp.hasText()
+    check : self.startingPosition = AWSPSMENUMS!StartingPosition#AT_TIMESTAMP
+    message : 'Event source mapping ' + self.resourceLabel() + ' has startingPositionTimestamp without AT_TIMESTAMP. Fix: set startingPosition to AT_TIMESTAMP or remove startingPositionTimestamp.'
+  }
+}
+
+context AWSPSM!SqsLambdaEventSourceMapping {
+  constraint QueueVisibilityGreaterThanFunctionTimeout {
+    check : (self.queue.visibilityTimeoutSeconds.isUndefined()) or
+      (self.`function`.timeoutSeconds.isUndefined()) or
+      (self.queue.visibilityTimeoutSeconds > self.`function`.timeoutSeconds)
+    message : 'SQS queue visibility timeout must be greater than Lambda timeout for mapping ' + self.resourceLabel() + '. Fix: increase queue.visibilityTimeoutSeconds or reduce function.timeoutSeconds to avoid duplicate processing.'
+  }
+
+  critique PartialBatchFailureRecommendedForSqs {
+    check : self.reportBatchItemFailures = true
+    message : 'SQS event source mapping ' + self.resourceLabel() + ' does not report partial batch item failures. Fix: set reportBatchItemFailures to true and include FunctionResponseTypes=ReportBatchItemFailures in the generated mapping.'
+  }
+
+  constraint RequiredPartialBatchFailureDecisionHonored {
+    guard : self.partialBatchFailureHandlingDecision = AWSPSMENUMS!Decision#REQUIRED
+    check : self.reportBatchItemFailures = true
+    message : 'SQS event source mapping ' + self.resourceLabel() + ' marks partial batch failure handling as REQUIRED but does not enable it. Fix: set reportBatchItemFailures to true or change the decision with rationale.'
+  }
+}
+
+context AWSPSM!DynamoDbStreamLambdaEventSourceMapping {
+  constraint DynamoStreamMappingRequiresStreamSpecification {
+    check : self.table.streamSpecification.isDefined()
+    message : 'DynamoDB stream event source mapping ' + self.resourceLabel() + ' points to a table without streamSpecification. Fix: enable DynamoDbStreamSpecification on the table or remove the mapping.'
+  }
+
+  constraint DynamoStreamMappingHasStartingPosition {
+    check : self.startingPosition.isDefined()
+    message : 'DynamoDB stream event source mapping ' + self.resourceLabel() + ' has no startingPosition. Fix: set startingPosition to LATEST, TRIM_HORIZON, or AT_TIMESTAMP.'
+  }
+}
+
+context AWSPSM!LambdaProvisionedConcurrencyConfig {
+  constraint ProvisionedConcurrencyPositive {
+    check : self.provisionedConcurrentExecutions > 0
+    message : 'Provisioned concurrency must be greater than zero. Fix: set provisionedConcurrentExecutions to a positive integer or remove the provisioned concurrency config.'
+  }
+}
+
+context AWSPSM!LambdaFunctionUrl {
+  constraint ProductionFunctionUrlRequiresAuth {
+    guard : self.`function`.isProductionScoped()
+    check : self.authType <> AWSPSMENUMS!ApiGatewayAuthorizationType#NONE
+    message : 'Production-scoped Lambda function URL for ' + self.`function`.resourceLabel() + ' has authType NONE. Fix: use AWS_IAM or expose the function through an authenticated API Gateway route.'
+  }
+}
+

@@ -1,0 +1,26 @@
+/*
+ * PIM semantic validation entry point.
+ *
+ * Run this module after parsing and structural EMF/Ecore conformance checks.
+ *
+ * Severity convention:
+ *   - constraint = error: the model violates a mandatory semantic rule.
+ *   - critique = warning: the model remains valid, but quality/readiness is weak.
+ *
+ * Expected model aliases:
+ *   - PIM for the provider-independent serverless PIM packages
+ *   - KERNEL for the shared kernel package
+ */
+
+import "rules/core.evl";
+import "rules/deployment.evl";
+import "rules/compute.evl";
+import "rules/contracts.evl";
+import "rules/api.evl";
+import "rules/integration.evl";
+import "rules/data.evl";
+import "rules/workflow.evl";
+import "rules/security-config-external.evl";
+import "rules/policies.evl";
+import "rules/readiness.evl";
+

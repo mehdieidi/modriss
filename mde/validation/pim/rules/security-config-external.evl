@@ -1,0 +1,151 @@
+import "../lib/pim-validation-helpers.eol";
+
+context PIM!ExternalAdapter {
+
+  constraint CredentialRequirementForCredentialedAdapter {
+    guard : self.credentialsRequired.isTrue()
+    check : self.credentials.notEmpty()
+    message : "[PIM-EXT-001] ExternalAdapter '" + self.displayName() + "' requires credentials but has none. Fix: add CredentialRequirement entries and link them to Secret references."
+  }
+
+  critique ExternalAdapterShouldDescribeEndpointAndProtocol {
+    check : self.externalSystemName.hasText() and self.protocolFamily.hasText() and self.endpointDescription.hasText()
+    message : "[PIM-EXT-002] ExternalAdapter '" + self.displayName() + "' lacks externalSystemName, protocolFamily or endpointDescription. Suggested fix: describe the external system boundary without embedding provider-specific deployment details."
+  }
+
+  critique RateLimitedAdapterShouldHaveResilience {
+    guard : self.rateLimitedByProvider.isTrue() or self.privateNetworkRequired.isTrue()
+    check : self.resilience.isDefined()
+    message : "[PIM-EXT-003] ExternalAdapter '" + self.displayName() + "' is rate-limited or private-network dependent but lacks resilience policy. Suggested fix: attach ResiliencePolicy with retry, timeout, fallback and circuit-breaker decisions."
+  }
+}
+
+context PIM!ConfigurationSet {
+
+  critique ConfigurationSetShouldApplySomewhere {
+    check : self.environments.notEmpty() or self.appliesTo.notEmpty()
+    message : "[PIM-CONFIG-001] ConfigurationSet '" + self.displayName() + "' is not attached to environments or targets. Suggested fix: link environments/appliesTo so generated configuration is scoped correctly."
+  }
+}
+
+context PIM!ConfigParameter {
+
+  critique RequiredParameterShouldHaveDefaultOrStageSpecificDecision {
+    guard : self.required.isTrue()
+    check : self.defaultValue.hasText() or self.stageSpecific.isTrue() or self.secret.isTrue()
+    message : "[PIM-CONFIG-002] Required ConfigParameter '" + self.displayName() + "' has no default, stage-specific decision or secret flag. Suggested fix: provide a safe default, mark stageSpecific, or model it as a secret."
+  }
+}
+
+context PIM!EnvironmentVariable {
+
+  constraint SecretEnvironmentVariableReferencesSecret {
+    guard : self.secretReference.isTrue()
+    check : self.secret.isDefined()
+    message : "[PIM-CONFIG-003] EnvironmentVariable '" + self.variableName + "' is a secret reference but has no secret. Fix: link a Secret and avoid storing plaintext values."
+  }
+
+  constraint EnvironmentVariableNameIsPortable {
+    check : self.variableName.hasText() and self.variableName.matches("^[A-Z][A-Z0-9_]*$")
+    message : "[PIM-CONFIG-004] EnvironmentVariable name '" + self.variableName.ifUndefined("<missing>") + "' is not portable. Fix: use uppercase snake case, for example PAYMENT_API_BASE_URL."
+  }
+
+  constraint SecretNotPlainEnvironmentValue {
+    guard : self.secretReference.isTrue()
+    check : not self.valueSource.hasText() or self.valueSource.matches("(?i).*(secret|reference|parameter|vault|manager).*" )
+    message : "[PIM-CONFIG-005] Secret EnvironmentVariable '" + self.variableName + "' appears to define a plain value source. Fix: reference a Secret/ConfigParameter location instead of storing the secret value directly."
+  }
+}
+
+context PIM!Secret {
+
+  constraint SecretReferenceOnly {
+    check : self.generatedReferenceOnly.isTrue()
+    message : "[PIM-SECRET-001] Secret '" + self.displayName() + "' is not marked generatedReferenceOnly. Fix: set generatedReferenceOnly to true so generated artifacts only reference secret locations and never contain secret values."
+  }
+
+  constraint RotationRequiredNeedsFrequency {
+    guard : self.rotationRequired.isTrue()
+    check : self.rotationFrequency.hasText()
+    message : "[PIM-SECRET-002] Secret '" + self.displayName() + "' requires rotation but has no rotationFrequency. Fix: specify an abstract rotation cadence such as every-30-days or per-release."
+  }
+
+  critique EnvironmentSpecificSecretShouldHaveOwner {
+    guard : self.environmentSpecific.isTrue()
+    check : self.ownerTeam.hasText()
+    message : "[PIM-SECRET-003] Environment-specific secret '" + self.displayName() + "' has no ownerTeam. Suggested fix: set the team responsible for rotation, provisioning and incident response."
+  }
+}
+
+context PIM!CredentialRequirement {
+
+  constraint CredentialRequirementHasSecret {
+    check : self.secret.isDefined()
+    message : "[PIM-CRED-001] CredentialRequirement '" + self.displayName() + "' is not linked to a Secret. Fix: create/link a Secret that will be referenced by generated configuration."
+  }
+
+  critique CredentialRequirementShouldExplainPurpose {
+    check : self.purpose.hasText()
+    message : "[PIM-CRED-002] CredentialRequirement '" + self.displayName() + "' has no purpose. Suggested fix: describe why this credential is needed and which external call or adapter uses it."
+  }
+}
+
+context PIM!IdentityProvider {
+
+  critique FederatedIdentityShouldDescribeTokenAndAttributes {
+    guard : self.federationRequired.isTrue()
+    check : self.tokenType.hasText() and self.userAttributeRequirements.hasText()
+    message : "[PIM-SEC-001] Federated IdentityProvider '" + self.displayName() + "' lacks tokenType or userAttributeRequirements. Suggested fix: describe token and required claims/attributes."
+  }
+}
+
+context PIM!Principal {
+
+  critique PrivilegedPrincipalNeedsPermissions {
+    guard : self.privileged.isTrue()
+    check : self.permissions.notEmpty()
+    message : "[PIM-SEC-002] Privileged Principal '" + self.displayName() + "' has no permissions. Suggested fix: either remove privileged=true or model the exact permissions and least-privilege decision."
+  }
+}
+
+context PIM!Permission {
+
+  constraint PermissionIsScoped {
+    check : self.action.hasText() and self.resource.hasText() and self.targetResource.isDefined()
+    message : "[PIM-SEC-003] Permission '" + self.displayName() + "' is not scoped. Fix: fill action, resource and targetResource using provider-independent action/resource descriptions."
+  }
+
+  critique LeastPrivilegeShouldBeConfirmed {
+    check : self.leastPrivilegeConfirmed.isTrue() and self.action.hasText() and self.resource.hasText() and not self.action.matches(".*\\*.*") and not self.resource.matches(".*\\*.*")
+    message : "[PIM-SEC-004] Permission '" + self.displayName() + "' has not been confirmed as least-privilege or uses wildcards. Suggested fix: narrow action/resource and set leastPrivilegeConfirmed to true after review."
+  }
+}
+
+context PIM!AuthPolicy {
+
+  constraint AuthPolicyHasScheme {
+    check : self.authScheme.hasText() and self.identityProvider.isDefined()
+    message : "[PIM-SEC-005] AuthPolicy '" + self.displayName() + "' lacks authScheme or identityProvider. Fix: define the authentication scheme and link the identity provider."
+  }
+}
+
+context PIM!AuthorizationPolicy {
+
+  constraint AuthorizationPolicyHasDecisionLogic {
+    check : self.ruleExpression.hasText() or self.roleOrScopeRequired.hasText()
+      or self.allowedPrincipals.notEmpty() or self.permissions.notEmpty()
+    message : "[PIM-SEC-006] AuthorizationPolicy '" + self.displayName() + "' has no decision logic. Fix: provide ruleExpression, role/scope, allowed principals or permissions."
+  }
+
+  critique ResourceLevelAuthorizationShouldHaveExpression {
+    guard : self.resourceLevelAuthorization.isTrue()
+    check : self.ruleExpression.hasText()
+    message : "[PIM-SEC-007] Resource-level AuthorizationPolicy '" + self.displayName() + "' has no ruleExpression. Suggested fix: define the rule that binds principal, resource identity and permitted operation."
+  }
+}
+
+/****************
+ * Policy rules
+ ****************/
+
+

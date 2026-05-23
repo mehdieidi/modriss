@@ -1,0 +1,184 @@
+import "../lib/pim-validation-helpers.eol";
+
+context PIM!RetryPolicy {
+
+  constraint RetryPolicyBounded {
+    check : self.maxAttempts.isDefined() and self.maxAttempts > 0 and self.maxAttempts <= 10
+    message : "[PIM-POL-001] RetryPolicy '" + self.displayName() + "' must have maxAttempts between 1 and 10. Fix: set a bounded retry count to avoid infinite or excessive retries."
+  }
+
+  constraint RetryBackoffIsValid {
+    check : (self.initialDelaySeconds.isUndefined() or self.initialDelaySeconds >= 0)
+      and (self.maxDelaySeconds.isUndefined() or self.maxDelaySeconds >= 0)
+      and (self.backoffRate.isUndefined() or self.backoffRate >= 1.0)
+    message : "[PIM-POL-002] RetryPolicy '" + self.displayName() + "' has invalid delay/backoff values. Fix: use non-negative delays and a backoffRate of at least 1.0."
+  }
+}
+
+context PIM!DeadLetterPolicy {
+
+  constraint RequiredDeadLetterPolicyHasChannel {
+    guard : self.required.isTrue()
+    check : self.deadLetterChannel.isDefined()
+    message : "[PIM-POL-003] DeadLetterPolicy '" + self.displayName() + "' is required but has no deadLetterChannel. Fix: link a queue/topic/channel/object carrier for failed messages."
+  }
+}
+
+context PIM!TimeoutPolicy {
+
+  constraint TimeoutPolicyIsPositive {
+    check : self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0
+      and (self.clientTimeoutSeconds.isUndefined() or self.clientTimeoutSeconds > 0)
+      and (self.clientTimeoutSeconds.isUndefined() or self.clientTimeoutSeconds <= self.timeoutSeconds)
+    message : "[PIM-POL-004] TimeoutPolicy '" + self.displayName() + "' has invalid timeout values. Fix: set timeoutSeconds > 0 and make clientTimeoutSeconds positive and not greater than timeoutSeconds."
+  }
+}
+
+context PIM!IdempotencyPolicy {
+
+  constraint IdempotencyKeyRequired {
+    check : self.keySource.hasText()
+    message : "[PIM-POL-005] IdempotencyPolicy '" + self.displayName() + "' has no keySource. Fix: specify where the idempotency key comes from, such as request header, event id, business id or generated operation id."
+  }
+
+  critique IdempotencyStoreDecisionRecommended {
+    check : self.storeRequired.isDefined() and self.scope.hasText() and (self.expirationSeconds.isUndefined() or self.expirationSeconds > 0)
+    message : "[PIM-POL-006] IdempotencyPolicy '" + self.displayName() + "' lacks store/scope/expiration decision. Suggested fix: state whether storage is required, define the idempotency scope and set expiration for stored keys."
+  }
+}
+
+context PIM!ConcurrencyPolicy {
+
+  critique ConcurrencyPolicyShouldExplainScaling {
+    check : (self.maxConcurrency.isDefined() or self.reservedConcurrencyHint.isDefined()) and self.scalingRationale.hasText()
+    message : "[PIM-POL-007] ConcurrencyPolicy '" + self.displayName() + "' lacks concurrency limits or scaling rationale. Suggested fix: set max/reserved concurrency and explain why the limit protects downstream services or cost."
+  }
+}
+
+context PIM!RateLimitPolicy {
+
+  constraint RateLimitPolicyIsPositive {
+    check : self.requestsPerSecond.isDefined() and self.requestsPerSecond > 0
+      and (self.burstLimit.isUndefined() or self.burstLimit >= self.requestsPerSecond)
+    message : "[PIM-POL-008] RateLimitPolicy '" + self.displayName() + "' has invalid limits. Fix: set requestsPerSecond > 0 and make burstLimit at least requestsPerSecond if provided."
+  }
+}
+
+context PIM!BatchPolicy {
+
+  constraint BatchPolicyHasSizeAndFailureDecision {
+    check : self.batchSize.isDefined() and self.batchSize > 0
+      and not self.partialFailureHandling.enumIs("UNDECIDED")
+    message : "[PIM-POL-009] BatchPolicy '" + self.displayName() + "' needs a positive batchSize and a partialFailureHandling decision. Fix: set batchSize and choose REQUIRED or NOT_REQUIRED with rationale."
+  }
+
+  critique BatchPolicyNeedsRationaleForNoPartialFailureHandling {
+    guard : self.partialFailureHandling.enumIs("NOT_REQUIRED")
+    check : self.decisionRationale.hasText()
+    message : "[PIM-POL-010] BatchPolicy '" + self.displayName() + "' says partial failure handling is not required but gives no rationale. Suggested fix: explain why whole-batch retry/failure is acceptable."
+  }
+}
+
+context PIM!ObservabilityConfig {
+
+  constraint ProductionObservabilityNeedsCorrelation {
+    guard : self.productionRequired.isTrue()
+    check : self.correlationIdRequired.isTrue() and self.correlationIdField.hasText()
+    message : "[PIM-POL-011] Production ObservabilityConfig '" + self.displayName() + "' must require correlation IDs. Fix: set correlationIdRequired to true and define correlationIdField."
+  }
+
+  critique ObservabilityShouldEnableSignals {
+    check : self.loggingEnabled.isTrue() or self.metricsEnabled.isTrue() or self.tracingEnabled.isTrue() or self.alarmsEnabled.isTrue()
+    message : "[PIM-POL-012] ObservabilityConfig '" + self.displayName() + "' enables no observability signal. Suggested fix: enable logging, metrics, tracing or alarms according to production needs."
+  }
+}
+
+context PIM!LoggingPolicy {
+
+  constraint StructuredLoggingNeedsFormat {
+    guard : self.structuredLogging.isTrue()
+    check : self.logFormat.hasText()
+    message : "[PIM-POL-013] LoggingPolicy '" + self.displayName() + "' requires structured logging but has no logFormat. Fix: specify a portable format such as JSON."
+  }
+
+  critique LoggingShouldIncludeCorrelationId {
+    check : self.includeCorrelationId.isTrue()
+    message : "[PIM-POL-014] LoggingPolicy '" + self.displayName() + "' does not include correlation IDs. Suggested fix: set includeCorrelationId to true so logs can be traced across API, function, event and workflow boundaries."
+  }
+}
+
+context PIM!MetricPolicy {
+
+  critique MetricPolicyShouldNameMetricAndUnit {
+    check : self.metricName.hasText() and self.unit.hasText() and self.statistic.hasText()
+    message : "[PIM-POL-015] MetricPolicy '" + self.displayName() + "' lacks metricName, unit or statistic. Suggested fix: define the metric clearly enough to generate dashboards/alarms."
+  }
+}
+
+context PIM!AlertPolicy {
+
+  constraint AlertPolicyIsActionable {
+    check : self.metricName.hasText() and self.condition.hasText() and self.threshold.hasText() and self.notificationTarget.hasText()
+    message : "[PIM-POL-016] AlertPolicy '" + self.displayName() + "' is incomplete. Fix: specify metricName, condition, threshold and notificationTarget."
+  }
+}
+
+context PIM!Slo {
+
+  critique SloShouldBeMeasurable {
+    check : self.objectiveName.hasText() and self.metric.hasText() and self.target.hasText() and self.measurementWindow.hasText()
+    message : "[PIM-POL-017] SLO '" + self.displayName() + "' is not measurable. Suggested fix: fill objectiveName, metric, target and measurementWindow."
+  }
+}
+
+context PIM!CorsPolicy {
+
+  constraint CredentialedCorsCannotUseWildcardOrigins {
+    guard : self.credentialsAllowed.isTrue()
+    check : not self.allowedOrigins.includes("*")
+    message : "[PIM-POL-018] CorsPolicy '" + self.displayName() + "' allows credentials with wildcard origins. Fix: replace '*' with explicit trusted origins."
+  }
+
+  critique CorsPolicyShouldDeclareMethodsAndHeaders {
+    check : self.allowedOrigins.notEmpty() and self.allowedMethods.notEmpty() and self.allowedHeaders.notEmpty()
+    message : "[PIM-POL-019] CorsPolicy '" + self.displayName() + "' lacks allowed origins, methods or headers. Suggested fix: list the explicit CORS contract needed by browser clients."
+  }
+}
+
+context PIM!DataProtectionPolicy {
+
+  constraint ProtectedDataHasRetentionDecision {
+    guard : self.classification.hasText()
+    check : self.retentionPeriod.hasText()
+    message : "[PIM-POL-020] DataProtectionPolicy '" + self.displayName() + "' classifies data but has no retentionPeriod. Fix: define retention to support deletion, compliance and lifecycle generation."
+  }
+
+  constraint ClassifiedDataNeedsProtectionDecision {
+    guard : self.classification.hasText()
+    check : self.encryptionRequired.isTrue() or self.maskingRequired.isTrue() or self.tokenizationRequired.isTrue() or self.accessAuditRequired.isTrue()
+    message : "[PIM-POL-021] DataProtectionPolicy '" + self.displayName() + "' classifies data but has no protection decision. Fix: enable encryption, masking, tokenization or access auditing."
+  }
+}
+
+context PIM!RetentionPolicy {
+
+  constraint RetentionPolicyHasPeriod {
+    check : self.retentionPeriod.hasText()
+    message : "[PIM-POL-022] RetentionPolicy '" + self.displayName() + "' has no retentionPeriod. Fix: define the retention duration or lifecycle rule in provider-independent terms."
+  }
+}
+
+context PIM!BackupPolicy {
+
+  critique RequiredBackupPolicyHasObjectives {
+    guard : self.backupRequired.isTrue()
+    check : self.backupFrequency.hasText() and self.recoveryPointObjective.hasText() and self.recoveryTimeObjective.hasText()
+    message : "[PIM-POL-023] BackupPolicy '" + self.displayName() + "' requires backup but lacks frequency/RPO/RTO. Suggested fix: define backupFrequency, recoveryPointObjective and recoveryTimeObjective."
+  }
+}
+
+/************************
+ * Readiness/trace rules
+ ************************/
+
+

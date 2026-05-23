@@ -1,0 +1,193 @@
+import "../lib/cim-validation-helpers.eol";
+
+context CIM!Command {
+
+  constraint CommandMustCauseBusinessOutcome {
+    check : (self.expectedEvents.size() > 0) or (self.rejectionEvents.size() > 0)
+    message :
+      "Error [CIM-CMD-001] Command '" + self.labelText() + "' has no expectedEvents or rejectionEvents. " +
+      "Suggestion: link the business facts that occur when the command succeeds or is rejected."
+  }
+
+  constraint CommandHasBehavioralOwner {
+    check : self.targetCapability.isDefined() or self.targetAggregate.isDefined()
+    message :
+      "Error [CIM-CMD-002] Command '" + self.labelText() + "' has no targetCapability or targetAggregate. " +
+      "Suggestion: assign the capability or aggregate responsible for deciding and executing the command."
+  }
+
+  constraint ActorFacingCommandHasAuthorizationDecision {
+    guard : self.hasHumanIssuer()
+    check : self.hasAuthorizationDecision()
+    message :
+      "Error [CIM-CMD-003] Human-issued Command '" + self.labelText() + "' lacks an explicit authorization decision. " +
+      "Suggestion: set authorizationRequired=true and add an authorizationRule explaining who may issue it and under what business conditions."
+  }
+
+  constraint ExternalOrUntrustedCommandRequiresAuditAndAuthorization {
+    guard : self.hasExternalOrUntrustedIssuer()
+    check : (self.auditRequired = true) and self.hasAuthorizationDecision()
+    message :
+      "Error [CIM-CMD-004] Command '" + self.labelText() + "' is issued by an external/untrusted actor but lacks auditRequired=true or an authorizationRule. " +
+      "Suggestion: require authorization and auditing for commands crossing trust boundaries."
+  }
+
+  critique DuplicateSubmissionCommandHasIdempotencyKey {
+    guard : self.duplicateSubmissionPossible = true
+    check : self.idempotencyBusinessKey.hasText()
+    message :
+      "Warning [CIM-CMD-005] Command '" + self.labelText() + "' may be submitted more than once but has no idempotencyBusinessKey. " +
+      "Suggestion: define the business key that lets the system recognize duplicate intent."
+  }
+
+  critique CommandHasPreconditionsOrErrors {
+    check : (self.preconditions.size() > 0) or (self.possibleErrors.size() > 0)
+    message :
+      "Warning [CIM-CMD-006] Command '" + self.labelText() + "' has no preconditions or possibleErrors. " +
+      "Suggestion: document business conditions and rejection/error cases so command semantics are complete."
+  }
+}
+
+context CIM!Query {
+
+  constraint QueryMustHaveOutput {
+    check : self.output.size() >= 1
+    message :
+      "Error [CIM-QRY-001] Query '" + self.labelText() + "' has no output. " +
+      "Suggestion: link at least one InformationItem that the query returns."
+  }
+
+  constraint PersonalQueryMustDeclareAuthorization {
+    guard : (self.containsPersonalData = true) or self.outputsPersonalData()
+    check : (self.authorizationRequired = true) and self.authorizationRule.hasText()
+    message :
+      "Error [CIM-QRY-002] Query '" + self.labelText() + "' returns or declares personal data but lacks authorizationRequired=true and authorizationRule. " +
+      "Suggestion: specify who may read this data and under which business/legal conditions."
+  }
+
+  critique QueryPersonalFlagMatchesOutput {
+    check :
+      (self.containsPersonalData = self.outputsPersonalData()) or
+      ((self.containsPersonalData = true) and (self.output.size() = 0))
+    message :
+      "Warning [CIM-QRY-003] Query '" + self.labelText() + "' has containsPersonalData inconsistent with output classifications. " +
+      "Suggestion: update containsPersonalData or classify the output InformationItems correctly."
+  }
+
+  critique ListSearchQueryDeclaresResultHandling {
+    guard : (self.queryType = CIM!QueryType#LIST) or (self.queryType = CIM!QueryType#SEARCH)
+    check : self.paginationExpectation.hasText() and self.filteringExpectation.hasText()
+    message :
+      "Warning [CIM-QRY-004] List/Search Query '" + self.labelText() + "' lacks paginationExpectation or filteringExpectation. " +
+      "Suggestion: declare expected pagination and filtering behavior so frontends and read models can be generated safely."
+  }
+
+  critique QueryDeclaresFreshness {
+    check : self.freshnessNeed.isDefined()
+    message :
+      "Warning [CIM-QRY-005] Query '" + self.labelText() + "' has no freshnessNeed. " +
+      "Suggestion: choose REAL_TIME, NEAR_REAL_TIME, EVENTUALLY_CONSISTENT, PERIODIC, or HISTORICAL."
+  }
+}
+
+context CIM!BusinessEvent {
+
+  constraint EventNamePastTense {
+    check :
+      (self.name.matches("(?i).*(ed|done|completed|created|updated|deleted|rejected|accepted|submitted|failed|cancelled)$")) or
+      self.occurredInPastTenseName.hasText()
+    message :
+      "Error [CIM-EVT-001] BusinessEvent '" + self.labelText() + "' is not clearly named as a past-tense business fact. " +
+      "Suggestion: rename it to a past-tense fact such as 'OrderSubmitted', 'PaymentRejected', or fill occurredInPastTenseName."
+  }
+
+  constraint EventIsBusinessFactNotCommand {
+    check :
+      (not self.name.startsWith("Create")) and
+      (not self.name.startsWith("Update")) and
+      (not self.name.startsWith("Delete")) and
+      (not self.name.startsWith("Submit")) and
+      (not self.name.startsWith("Approve")) and
+      (not self.name.startsWith("Cancel"))
+    message :
+      "Error [CIM-EVT-002] BusinessEvent '" + self.labelText() + "' is named like an imperative command. " +
+      "Suggestion: model commands as Command elements and events as facts that already happened, e.g. 'CustomerApproved' instead of 'ApproveCustomer'."
+  }
+
+  constraint EventHasBusinessMeaning {
+    check : self.businessMeaning.hasText() or self.semanticName.hasText()
+    message :
+      "Error [CIM-EVT-003] BusinessEvent '" + self.labelText() + "' lacks businessMeaning or semanticName. " +
+      "Suggestion: explain the business fact and why it matters."
+  }
+
+  critique EventHasProducerOrConsumer {
+    check :
+      (self.expectedByCommands.size() > 0) or (self.rejectedByCommands.size() > 0) or
+      (self.causedByPolicies.size() > 0) or (self.causedByExternalSystems.size() > 0) or
+      (self.consumedByPolicies.size() > 0) or (self.consumedByProcesses.size() > 0) or
+      (self.consumedByExternalSystems.size() > 0)
+    message :
+      "Warning [CIM-EVT-004] BusinessEvent '" + self.labelText() + "' has no producer or consumer. " +
+      "Suggestion: connect it to a command, policy, process, or external system that produces or consumes it."
+  }
+
+  critique ExternallyVisibleEventHasVersioningRationale {
+    guard : self.externallyVisible = true
+    check : self.versioningRationale.hasText()
+    message :
+      "Warning [CIM-EVT-005] Externally visible BusinessEvent '" + self.labelText() + "' has no versioningRationale. " +
+      "Suggestion: describe how event meaning/payload changes will be managed for external consumers."
+  }
+
+  constraint EventPayloadInformationIsTyped {
+    check : self.payload.forAll(item | item.type.isDefined())
+    message :
+      "Error [CIM-EVT-006] BusinessEvent '" + self.labelText() + "' has payload InformationItems without type. " +
+      "Suggestion: type every payload item so event schemas and transformations are deterministic."
+  }
+}
+
+context CIM!BusinessError {
+
+  constraint BusinessErrorIsUserUnderstandable {
+    check :
+      self.errorCode.hasText() and self.businessMeaning.hasText() and self.userVisibleMessage.hasText()
+    message :
+      "Error [CIM-ERR-001] BusinessError '" + self.labelText() + "' lacks errorCode, businessMeaning, or userVisibleMessage. " +
+      "Suggestion: define a stable business error code and a user-facing explanation that does not expose implementation details."
+  }
+
+  critique RetryMeaningfulImpliesRecoverable {
+    guard : self.retryMeaningful = true
+    check : self.recoverable = true
+    message :
+      "Warning [CIM-ERR-002] BusinessError '" + self.labelText() + "' says retry is meaningful but recoverable is not true. " +
+      "Suggestion: set recoverable=true or explain why retrying is meaningful despite non-recoverability."
+  }
+}
+
+context CIM!Condition {
+
+  constraint ConditionIsSpecified {
+    check : self.naturalLanguage.hasText() or self.expression.hasText()
+    message :
+      "Error [CIM-COND-001] Condition '" + self.labelText() + "' has neither naturalLanguage nor expression. " +
+      "Suggestion: write the condition in business language and optionally add expressionLanguage/expression for automation."
+  }
+
+  constraint AutomatableConditionHasExpression {
+    guard : self.mustBeAutomatable = true
+    check : self.expressionLanguage.hasText() and self.expression.hasText()
+    message :
+      "Error [CIM-COND-002] Condition '" + self.labelText() + "' must be automatable but lacks expressionLanguage or expression. " +
+      "Suggestion: provide a machine-evaluable expression and name the expression language."
+  }
+
+  critique ConditionReferencesInformationOrConcepts {
+    check : (self.referencedInformation.size() > 0) or (self.referencedConcepts.size() > 0)
+    message :
+      "Warning [CIM-COND-003] Condition '" + self.labelText() + "' is not linked to referencedInformation or referencedConcepts. " +
+      "Suggestion: link the data or concepts used by the condition."
+  }
+}

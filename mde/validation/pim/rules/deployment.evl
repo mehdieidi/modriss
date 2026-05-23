@@ -1,0 +1,91 @@
+import "../lib/pim-validation-helpers.eol";
+
+context PIM!ServerlessService {
+
+  constraint ServiceResponsibilityRequired {
+    check : self.responsibility.hasText()
+    message : "[PIM-SVC-001] Service '" + self.displayName() + "' has no responsibility. Fix: describe the business capability, bounded context, process step or architectural role this service owns."
+  }
+
+  constraint ServiceOwnsAtLeastOneElement {
+    check : self.ownsFunctions.notEmpty() or self.ownsApis.notEmpty() or self.ownsChannels.notEmpty()
+      or self.ownsStores.notEmpty() or self.ownsWorkflows.notEmpty() or self.ownsAdapters.notEmpty()
+    message : "[PIM-SVC-002] Service '" + self.displayName() + "' does not own any PIM elements. Fix: attach owned functions, APIs, channels, stores, workflows or adapters, or remove the empty service."
+  }
+
+  constraint ExternallyExposedServiceNeedsApi {
+    guard : self.externallyExposed.isTrue()
+    check : self.ownsApis.notEmpty()
+    message : "[PIM-SVC-003] Externally exposed service '" + self.displayName() + "' owns no API. Fix: add an Api/ApiRoute model or mark externallyExposed as false if exposure is indirect."
+  }
+
+  constraint DataOwningServiceNeedsStore {
+    guard : self.ownsData.isTrue()
+    check : self.ownsStores.notEmpty()
+    message : "[PIM-SVC-004] Data-owning service '" + self.displayName() + "' owns no storage element. Fix: attach a DataStore or ObjectStore that represents the owned data boundary."
+  }
+
+  critique ServiceOwnerTeamRecommended {
+    check : self.ownerTeam.hasText()
+    message : "[PIM-SVC-005] Service '" + self.displayName() + "' has no ownerTeam. Suggested fix: set the owning team so generated documentation and production readiness reports have an accountable owner."
+  }
+}
+
+context PIM!DeploymentUnit {
+
+  constraint DeploymentUnitContainsElements {
+    check : self.contains.notEmpty()
+    message : "[PIM-DU-001] Deployment unit '" + self.displayName() + "' contains no deployable elements. Fix: add the functions, APIs, channels, workflows, adapters, stores, schedules or configuration that should deploy together."
+  }
+
+  constraint DeploymentUnitTargetsEnvironment {
+    check : self.targetEnvironments.notEmpty()
+    message : "[PIM-DU-002] Deployment unit '" + self.displayName() + "' has no target environments. Fix: reference DEV/TEST/STAGING/PROD or another Environment where the unit can be generated/deployed."
+  }
+
+  critique IndependentlyDeployableUnitNeedsReleaseStrategy {
+    guard : self.independentlyDeployable.isTrue()
+    check : self.releaseStrategy.hasText() and self.versioningStrategy.hasText()
+    message : "[PIM-DU-003] Independently deployable unit '" + self.displayName() + "' lacks release or versioning strategy. Suggested fix: define how this unit is versioned, promoted and rolled back independently."
+  }
+}
+
+context PIM!Environment {
+
+  constraint ProdEnvironmentIsProductionLike {
+    guard : self.environmentClass.enumIs("PROD")
+    check : self.productionLike.isTrue()
+    message : "[PIM-ENV-001] PROD environment '" + self.displayName() + "' is not marked productionLike. Fix: set productionLike to true or choose a non-PROD environmentClass."
+  }
+
+  critique ProdEnvironmentShouldRequireApproval {
+    guard : self.environmentClass.enumIs("PROD")
+    check : self.requiresApproval.isTrue()
+    message : "[PIM-ENV-002] PROD environment '" + self.displayName() + "' does not require approval. Suggested fix: set requiresApproval to true so generated release workflows include a production approval gate."
+  }
+}
+
+context PIM!ImplementationProfile {
+
+  constraint ProfileHasGenerationBasics {
+    check : self.sourceLayout.hasText() and self.buildCommand.hasText()
+    message : "[PIM-PROFILE-001] Implementation profile '" + self.displayName() + "' lacks sourceLayout or buildCommand. Fix: specify where generated code should be placed and how it is built."
+  }
+
+  constraint PackageManagerMatchesRuntimeLanguage {
+    check : self.packageManagerFitsLanguage()
+    message : "[PIM-PROFILE-002] Implementation profile '" + self.displayName() + "' uses package manager '" + self.packageManager.asString() + "' with runtime language '" + self.primaryLanguage.asString() + "'. Fix: choose a compatible package manager, for example NPM/PNPM/YARN for TypeScript/JavaScript, PIP/POETRY for Python, MAVEN/GRADLE for Java, DOTNET for C#, GO_MOD for Go, or CARGO for Rust."
+  }
+
+  critique RuntimeValidationShouldGenerateTypedContracts {
+    guard : self.generateRuntimeValidation.isTrue()
+    check : self.generateTypedContracts.isTrue()
+    message : "[PIM-PROFILE-003] Runtime validation is requested without typed contract generation. Suggested fix: enable generateTypedContracts so generated validators and handlers share the same schema-derived types."
+  }
+}
+
+/*****************
+ * Function rules
+ *****************/
+
+

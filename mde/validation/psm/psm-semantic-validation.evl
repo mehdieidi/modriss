@@ -1,0 +1,27 @@
+/*
+ * AWS PSM semantic validation entry point.
+ *
+ * Run this module after parsing and structural EMF/Ecore conformance checks.
+ *
+ * Severity convention:
+ *   - constraint = error: the model violates a mandatory semantic rule.
+ *   - critique = warning: the model remains valid, but quality/readiness is weak.
+ *
+ * Expected model aliases:
+ *   - AWSPSM for the AWS PSM packages
+ *   - AWSPSMENUMS for the AWS PSM enum package
+ *   - KERNEL for the shared kernel package
+ */
+
+import "rules/core.evl";
+import "rules/compute.evl";
+import "rules/api.evl";
+import "rules/events.evl";
+import "rules/messaging.evl";
+import "rules/storage.evl";
+import "rules/security.evl";
+import "rules/identity.evl";
+import "rules/workflow.evl";
+import "rules/observability.evl";
+import "rules/networking.evl";
+import "rules/relationships.evl";

@@ -1,0 +1,267 @@
+import "../lib/cim-validation-helpers.eol";
+
+context CIM!NonFunctionalRequirement {
+
+  constraint NFRMustBeMeasurable {
+    check : self.metric.hasText() and self.target.hasText()
+    message :
+      "Error [CIM-NFR-001] NonFunctionalRequirement '" + self.labelText() + "' lacks metric or target. " +
+      "Suggestion: define the measurable quality metric and target threshold."
+  }
+
+  constraint NFRConstrainsElements {
+    check : self.constrainedElements.size() > 0
+    message :
+      "Error [CIM-NFR-002] NonFunctionalRequirement '" + self.labelText() + "' does not constrain any elements. " +
+      "Suggestion: link the commands, queries, capabilities, information items, processes, or other elements affected by this NFR."
+  }
+
+  critique ProductionBlockingNFRHasScenario {
+    guard : self.productionBlocking = true
+    check : self.scenarios.size() > 0
+    message :
+      "Warning [CIM-NFR-003] Production-blocking NFR '" + self.labelText() + "' has no QualityScenario. " +
+      "Suggestion: add at least one scenario describing source, stimulus, environment, artifact, response, and responseMeasure."
+  }
+}
+
+context CIM!QualityScenario {
+
+  constraint QualityScenarioIsComplete {
+    check :
+      self.source.hasText() and self.stimulus.hasText() and self.environment.hasText() and
+      self.artifact.hasText() and self.response.hasText() and self.responseMeasure.hasText()
+    message :
+      "Error [CIM-NFR-004] QualityScenario '" + self.labelText() + "' is incomplete. " +
+      "Suggestion: fill source, stimulus, environment, artifact, response, and responseMeasure."
+  }
+}
+
+context CIM!SecurityConstraint {
+
+  constraint SecurityConstraintMustConstrainBehaviorOrInformation {
+    check :
+      (self.constrainedActors.size() > 0) or
+      (self.constrainedCommands.size() > 0) or
+      (self.constrainedQueries.size() > 0) or
+      (self.constrainedInformation.size() > 0)
+    message :
+      "Error [CIM-SEC-001] SecurityConstraint '" + self.labelText() + "' has no constrained actors, commands, queries, or information. " +
+      "Suggestion: link the business elements affected by the security rule."
+  }
+
+  constraint SecurityConstraintHasRuleOrThreatRationale {
+    check :
+      self.authenticationNeed.hasText() or self.authorizationRule.hasText() or self.threatRationale.hasText()
+    message :
+      "Error [CIM-SEC-002] SecurityConstraint '" + self.labelText() + "' lacks authenticationNeed, authorizationRule, or threatRationale. " +
+      "Suggestion: state the security need/rule and why it exists."
+  }
+
+  critique SecurityConstraintAlignsCommandAuthorization {
+    guard : self.authorizationRule.hasText()
+    check :
+      self.constrainedCommands.forAll(commandItem |
+        (commandItem.authorizationRequired = true) and commandItem.authorizationRule.hasText()
+      )
+    message :
+      "Warning [CIM-SEC-003] SecurityConstraint '" + self.labelText() + "' defines an authorization rule but at least one constrained command does not. " +
+      "Suggestion: copy or specialize the authorization rule on each constrained command so command-level validation is explicit."
+  }
+}
+
+context CIM!PrivacyConstraint {
+
+  constraint PrivacyNeedsPurposeAndLegalBasis {
+    check :
+      (self.dataItems.size() = 0) or
+      (self.purpose.hasText() and self.legalBasis.isDefined() and (self.legalBasis <> CIM!LegalBasis#UNKNOWN))
+    message :
+      "Error [CIM-PRIV-001] PrivacyConstraint '" + self.labelText() + "' covers data items but lacks purpose or a known legalBasis. " +
+      "Suggestion: provide the processing purpose and set legalBasis to CONSENT, CONTRACT, LEGAL_OBLIGATION, VITAL_INTERESTS, PUBLIC_TASK, LEGITIMATE_INTEREST, or NOT_APPLICABLE."
+  }
+
+  constraint PrivacyConstraintHasRetentionOrMinimization {
+    check : self.retentionPeriod.hasText() or self.minimizationRule.hasText()
+    message :
+      "Error [CIM-PRIV-002] PrivacyConstraint '" + self.labelText() + "' lacks retentionPeriod and minimizationRule. " +
+      "Suggestion: document how long data is kept or how the collected data is minimized."
+  }
+
+  constraint ConsentBasisRequiresConsent {
+    guard : self.legalBasis = CIM!LegalBasis#CONSENT
+    check : self.consentRequired = true
+    message :
+      "Error [CIM-PRIV-003] PrivacyConstraint '" + self.labelText() + "' uses CONSENT legal basis but consentRequired is not true. " +
+      "Suggestion: set consentRequired=true or choose the correct legalBasis."
+  }
+
+  critique DataResidencyHasAllowedArea {
+    guard : self.dataResidencyRequired = true
+    check : self.allowedResidencyArea.hasText()
+    message :
+      "Warning [CIM-PRIV-004] PrivacyConstraint '" + self.labelText() + "' requires data residency but has no allowedResidencyArea. " +
+      "Suggestion: specify the allowed region, country, jurisdiction, or business residency boundary."
+  }
+}
+
+context CIM!ComplianceConstraint {
+
+  constraint ComplianceConstraintIsAuditable {
+    check :
+      self.regulation.hasText() and self.controlId.hasText() and
+      self.controlObjective.hasText() and self.evidenceRequired.hasText()
+    message :
+      "Error [CIM-COMP-001] ComplianceConstraint '" + self.labelText() + "' lacks regulation, controlId, controlObjective, or evidenceRequired. " +
+      "Suggestion: identify the regulation/control and the evidence needed for audit or review."
+  }
+
+  critique ComplianceConstraintHasScope {
+    check : self.scopedElements.size() > 0
+    message :
+      "Warning [CIM-COMP-002] ComplianceConstraint '" + self.labelText() + "' has no scopedElements. " +
+      "Suggestion: link the elements that must satisfy this compliance control."
+  }
+}
+
+context CIM!Risk {
+
+  constraint RiskIsActionableWhenBlocking {
+    guard : self.productionBlocking = true
+    check :
+      self.riskStatement.hasText() and self.probability.hasText() and
+      self.impact.hasText() and self.mitigation.hasText() and
+      (self.affectedElements.size() > 0)
+    message :
+      "Error [CIM-RISK-001] Production-blocking Risk '" + self.labelText() + "' is not actionable. " +
+      "Suggestion: provide riskStatement, probability, impact, mitigation, and affectedElements before it can be managed."
+  }
+
+  critique RiskHasAffectedElements {
+    check : self.affectedElements.size() > 0
+    message :
+      "Warning [CIM-RISK-002] Risk '" + self.labelText() + "' has no affectedElements. " +
+      "Suggestion: link the goals, capabilities, processes, commands, information, or external systems affected by the risk."
+  }
+}
+
+context CIM!Assumption {
+
+  constraint AssumptionHasStatementAndValidation {
+    check : self.assumptionStatement.hasText() and self.validationApproach.hasText()
+    message :
+      "Error [CIM-ASM-001] Assumption '" + self.labelText() + "' lacks assumptionStatement or validationApproach. " +
+      "Suggestion: state what is assumed and how it will be validated or retired."
+  }
+
+  constraint AcceptedAssumptionHasDecisionDetails {
+    guard : self.accepted = true
+    check : self.acceptedBy.hasText() and self.acceptedOn.isDefined()
+    message :
+      "Error [CIM-ASM-002] Assumption '" + self.labelText() + "' is accepted but lacks acceptedBy or acceptedOn. " +
+      "Suggestion: record who accepted the assumption and when."
+  }
+}
+
+context CIM!Hotspot {
+
+  constraint BlockingHotspotRequiresOwner {
+    guard : (self.blocksTransformation = true) or (self.blocksProduction = true)
+    check : self.owner.hasText()
+    message :
+      "Error [CIM-HOT-001] Blocking Hotspot '" + self.labelText() + "' has no owner. " +
+      "Suggestion: assign the person/role responsible for resolving the open question."
+  }
+
+  critique BlockingHotspotHasDueDateAndImpact {
+    guard : (self.blocksTransformation = true) or (self.blocksProduction = true)
+    check : self.dueDate.isDefined() and self.impact.hasText() and (self.attachedTo.size() > 0)
+    message :
+      "Warning [CIM-HOT-002] Blocking Hotspot '" + self.labelText() + "' lacks dueDate, impact, or attachedTo links. " +
+      "Suggestion: add a target resolution date, business impact, and affected elements."
+  }
+}
+
+context CIM!TransformationProfile {
+
+  critique ServiceGranularityPreferenceHasRationale {
+    guard : self.preferCapabilityAsServiceBoundary = true
+    check : self.defaultServiceGranularityRationale.hasText()
+    message :
+      "Warning [CIM-TP-001] TransformationProfile prefers capabilities as service boundaries but has no defaultServiceGranularityRationale. " +
+      "Suggestion: document why capability-based service boundaries are preferred and when exceptions are allowed."
+  }
+
+  critique RequiredManualDecisionsAreOwned {
+    check :
+      self.requiredDecisions.forAll(decisionItem |
+        decisionItem.question.hasText() and decisionItem.decisionOwner.hasText()
+      )
+    message :
+      "Warning [CIM-TP-002] TransformationProfile has requiredDecisions without question or decisionOwner. " +
+      "Suggestion: make each manual decision explicit and assign an owner."
+  }
+}
+
+context KERNEL!ProductionReadinessAssessment {
+
+  constraint ProductionReadyAssessmentIsConsistent {
+    guard : self.productionReady = true
+    check :
+      (self.readinessStatus = KERNEL!LifecycleStatus#PRODUCTION_READY) and
+      self.checks.forAll(checkItem | checkItem.passed = true) and
+      self.findings.forAll(findingItem | not (findingItem.blocking = true))
+    message :
+      "Error [CIM-READY-001] ProductionReadinessAssessment is marked productionReady but readinessStatus/checks/findings are inconsistent. " +
+      "Suggestion: set readinessStatus=PRODUCTION_READY only when all checks pass and no blocking findings remain."
+  }
+
+  critique ReadinessAssessmentHasAssessor {
+    check : self.assessedAt.isDefined() and self.assessedBy.hasText()
+    message :
+      "Warning [CIM-READY-002] ProductionReadinessAssessment lacks assessedAt or assessedBy. " +
+      "Suggestion: record when the assessment happened and who performed it."
+  }
+}
+
+context KERNEL!ReadinessFinding {
+
+  constraint BlockingFindingHasRecommendation {
+    guard : self.blocking = true
+    check :
+      self.`message`.hasText() and self.recommendation.hasText() and (self.affectedElements.size() > 0)
+    message :
+      "Error [CIM-READY-003] Blocking ReadinessFinding '" + self.labelText() + "' lacks message, recommendation, or affectedElements. " +
+      "Suggestion: make the finding actionable by explaining the issue, the remediation, and the affected elements."
+  }
+}
+
+context KERNEL!ReadinessCheck {
+
+  constraint FailedReadinessCheckHasRemediation {
+    guard : not (self.passed = true)
+    check : self.`message`.hasText() and self.remediation.hasText()
+    message :
+      "Error [CIM-READY-004] Failed ReadinessCheck '" + self.labelText() + "' lacks message or remediation. " +
+      "Suggestion: explain why the check failed and how the user can make it pass."
+  }
+}
+
+context KERNEL!ManualDecision {
+
+  constraint BlockingManualDecisionHasOwner {
+    guard : self.blocking = true
+    check : self.question.hasText() and self.decisionOwner.hasText()
+    message :
+      "Error [CIM-READY-005] Blocking ManualDecision '" + self.labelText() + "' lacks question or decisionOwner. " +
+      "Suggestion: write the decision question and assign an accountable owner."
+  }
+
+  critique ManualDecisionHasDueDate {
+    guard : self.blocking = true
+    check : self.dueDate.isDefined()
+    message :
+      "Warning [CIM-READY-006] Blocking ManualDecision '" + self.labelText() + "' has no dueDate. " +
+      "Suggestion: set a due date to avoid indefinite transformation or production blockage."
+  }
+}

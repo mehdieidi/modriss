@@ -1,0 +1,172 @@
+import "../lib/pim-validation-helpers.eol";
+
+context PIM!EventType {
+
+  constraint EventTypeHasSchema {
+    check : self.schema.isDefined()
+    message : "[PIM-EVENT-001] EventType '" + self.displayName() + "' has no schema. Fix: attach a Schema with schemaKind EVENT or MESSAGE."
+  }
+
+  constraint PersonalDataEventSchemaIsClassified {
+    guard : self.carriesPersonalData()
+    check : self.schema.isDefined() and self.schema.hasClassifiedSensitiveFields()
+    message : "[PIM-EVENT-002] EventType '" + self.displayName() + "' carries personal/sensitive data but its schema fields are not fully classified. Fix: classify every sensitive field and attach appropriate data protection policies."
+  }
+
+  critique EventTypeShouldHaveVersionAndSource {
+    check : self.version.hasText() and self.sourceDomain.hasText()
+    message : "[PIM-EVENT-003] EventType '" + self.displayName() + "' should have version and sourceDomain. Suggested fix: set a semantic event version and the domain/service that owns the event."
+  }
+
+  critique ExternalOrReplayableEventShouldHaveEnvelope {
+    guard : self.externalEvent.isTrue() or self.replayable.isTrue() or self.auditEvent.isTrue()
+    check : self.envelope.isDefined()
+    message : "[PIM-EVENT-004] EventType '" + self.displayName() + "' is external, replayable or audit-related but has no EventEnvelope. Suggested fix: define envelope fields for eventId, eventType, source, time, version and correlation/causation IDs."
+  }
+}
+
+context PIM!EventEnvelope {
+
+  critique EnvelopeShouldCarryCorrelationFields {
+    check : self.eventIdField.hasText() and self.eventTypeField.hasText() and self.sourceField.hasText()
+      and self.timeField.hasText() and self.versionField.hasText() and self.correlationIdField.hasText()
+    message : "[PIM-EVENT-005] EventEnvelope '" + self.displayName() + "' lacks one or more standard envelope fields. Suggested fix: define eventIdField, eventTypeField, sourceField, timeField, versionField and correlationIdField."
+  }
+}
+
+context PIM!EventChannel {
+
+  constraint ChannelHasEventTypes {
+    check : self.eventTypes.notEmpty()
+    message : "[PIM-CHAN-001] Event channel '" + self.displayName() + "' has no eventTypes. Fix: attach the event types/messages that can flow through this channel."
+  }
+
+  constraint PersonalDataChannelMustBeEncrypted {
+    guard : self.carriesPersonalData()
+    check : self.encrypted.isTrue()
+    message : "[PIM-CHAN-002] Event channel '" + self.displayName() + "' carries personal/sensitive events but is not encrypted. Fix: set encrypted to true and attach relevant data protection/security policies."
+  }
+
+  constraint ExactlyOnceRequiresIdempotentConsumers {
+    guard : self.deliverySemantics.enumIs("EXACTLY_ONCE_REQUIRED") or self.deliverySemantics.enumIs("EFFECTIVELY_ONCE_WITH_IDEMPOTENCY")
+    check : self.consumers.forAll(functionItem | functionItem.idempotency.isDefined() and functionItem.idempotency.keySource.hasText())
+      and self.workflowConsumers.forAll(flowItem | flowItem.idempotency.isDefined() and flowItem.idempotency.keySource.hasText())
+    message : "[PIM-CHAN-003] Channel '" + self.displayName() + "' requires exactly/effectively-once delivery but not all consumers have idempotency policies. Fix: attach IdempotencyPolicy with keySource to every consumer function/workflow."
+  }
+
+  constraint OrderedChannelHasOrderingKey {
+    guard : self.orderingRequirement.enumIs("PER_KEY") or self.orderingRequirement.enumIs("GLOBAL")
+    check : self.partitionKeyExpression.hasText() or self.eventTypes.exists(eventItem | eventItem.orderingKey.hasText())
+    message : "[PIM-CHAN-004] Ordered channel '" + self.displayName() + "' has no partitionKeyExpression or event orderingKey. Fix: define how messages are ordered without naming a provider-specific mechanism."
+  }
+
+  critique ChannelShouldHaveProducerAndConsumerIntent {
+    check : self.producers.notEmpty() or self.externalProducers.notEmpty() or self.consumers.notEmpty() or self.workflowConsumers.notEmpty() or self.externalConsumers.notEmpty()
+    message : "[PIM-CHAN-005] Channel '" + self.displayName() + "' has no producer/consumer intent. Suggested fix: connect producers and consumers or mark it as intentionally reserved in rationale."
+  }
+}
+
+context PIM!Queue {
+
+  constraint RetryQueueNeedsDeadLetterChannel {
+    guard : self.maxReceiveAttempts.isDefined() and self.maxReceiveAttempts > 1
+    check : self.deadLetterChannel.isDefined()
+    message : "[PIM-QUEUE-001] Queue '" + self.displayName() + "' retries messages but has no deadLetterChannel. Fix: attach a DLQ queue or set maxReceiveAttempts to 1 if no retry/DLQ behavior is intended."
+  }
+
+  constraint BatchQueueNeedsPartialFailureDecision {
+    guard : self.batchPolicy.isDefined()
+    check : not self.batchPolicy.partialFailureHandling.enumIs("UNDECIDED")
+    message : "[PIM-QUEUE-002] Queue '" + self.displayName() + "' has a BatchPolicy but partialFailureHandling is UNDECIDED. Fix: set partialFailureHandling to REQUIRED or NOT_REQUIRED and record the decisionRationale."
+  }
+
+  constraint FifoQueueNeedsDeduplicationOrIdempotency {
+    guard : self.fifoRequired.isTrue()
+    check : self.deduplicationRequired.isTrue() or self.consumers.forAll(functionItem | functionItem.idempotency.isDefined())
+    message : "[PIM-QUEUE-003] FIFO queue '" + self.displayName() + "' needs deduplication or idempotent consumers. Fix: set deduplicationRequired to true or attach idempotency policies to all consumers."
+  }
+
+  critique QueueShouldHaveVisibilityTimeout {
+    check : self.visibilityTimeoutSeconds.isDefined() and self.visibilityTimeoutSeconds > 0
+    message : "[PIM-QUEUE-004] Queue '" + self.displayName() + "' has no positive visibilityTimeoutSeconds. Suggested fix: set a timeout that exceeds normal consumer processing time and retry behavior."
+  }
+}
+
+context PIM!Topic {
+
+  critique FilteringTopicShouldUseSubscriptionFilters {
+    guard : self.filteringRequired.isTrue()
+    check : self.subscriptions.exists(subscriptionItem | subscriptionItem.filterExpression.hasText())
+    message : "[PIM-TOPIC-001] Topic '" + self.displayName() + "' requires filtering but none of its subscriptions define filterExpression. Suggested fix: add subscription filters or mark filteringRequired false."
+  }
+}
+
+context PIM!EventBus {
+
+  critique EventBusShouldHaveRoutingRules {
+    check : self.routingRules.notEmpty()
+    message : "[PIM-BUS-001] EventBus '" + self.displayName() + "' has no routingRules. Suggested fix: add EventRoutingRule entries or use a simpler channel type if no routing is needed."
+  }
+}
+
+context PIM!EventRoutingRule {
+
+  constraint RoutingRuleHasPatternOrSchedule {
+    check : self.eventPattern.hasText() or self.scheduleExpression.hasText()
+    message : "[PIM-BUS-002] EventRoutingRule '" + self.displayName() + "' has neither eventPattern nor scheduleExpression. Fix: define the event pattern or schedule that activates the rule."
+  }
+
+  constraint EnabledRoutingRuleHasTargets {
+    guard : self.enabled.isUndefined() or self.enabled.isTrue()
+    check : self.targets.notEmpty()
+    message : "[PIM-BUS-003] Enabled EventRoutingRule '" + self.displayName() + "' has no targets. Fix: add at least one routing target such as function, workflow, adapter, channel or store."
+  }
+}
+
+context PIM!Subscription {
+
+  critique DeadLetterSubscriptionShouldExplainHandling {
+    guard : self.deadLetterRequired.isTrue()
+    check : self.filterExpression.hasText() or self.rationale.hasText() or self.reviewNotes.hasText()
+    message : "[PIM-SUB-001] Subscription '" + self.displayName() + "' requires dead-letter behavior but does not document filtering/error-handling intent. Suggested fix: add filterExpression, rationale or reviewNotes explaining poison message handling."
+  }
+}
+
+context PIM!Schedule {
+
+  constraint ScheduleExpressionRequired {
+    check : self.scheduleExpression.hasText()
+    message : "[PIM-SCHED-001] Schedule '" + self.displayName() + "' has no scheduleExpression. Fix: provide a portable cron/rate expression."
+  }
+
+  critique ScheduleShouldDeclareTimezone {
+    check : self.timeZone.hasText()
+    message : "[PIM-SCHED-002] Schedule '" + self.displayName() + "' has no timeZone. Suggested fix: set an IANA timezone or document why UTC/default timezone is intended."
+  }
+}
+
+context PIM!Flow {
+
+  constraint FlowPurposeRequired {
+    check : self.flowPurpose.hasText()
+    message : "[PIM-FLOW-001] Flow '" + self.displayName() + "' has no flowPurpose. Fix: describe what business or integration behavior this flow represents."
+  }
+
+  critique CriticalFlowNeedsResilienceAndObservability {
+    guard : self.criticalPath.isTrue()
+    check : self.resilience.isDefined() and self.observability.isDefined()
+    message : "[PIM-FLOW-002] Critical flow '" + self.displayName() + "' lacks resilience or observability. Suggested fix: attach retry/timeout/dead-letter decisions and observability configuration."
+  }
+
+  critique PersonalDataFlowNeedsPolicy {
+    guard : self.containsPersonalData.isTrue()
+    check : self.policies.exists(policyItem | policyItem.isKindOf(PIM!DataProtectionPolicy))
+    message : "[PIM-FLOW-003] Flow '" + self.displayName() + "' contains personal data but has no DataProtectionPolicy. Suggested fix: attach data protection policy covering encryption, masking, auditing, retention and residency."
+  }
+}
+
+/**********************
+ * Data/storage rules
+ **********************/
+
+

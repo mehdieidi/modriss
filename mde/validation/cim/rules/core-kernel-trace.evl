@@ -1,0 +1,124 @@
+import "../lib/cim-validation-helpers.eol";
+
+context CIM!CIMModel {
+
+  constraint CIMModelHasSemanticCore {
+    check :
+      (self.goals.size() >= 1) and
+      (self.actors.size() >= 1) and
+      (self.capabilities.size() >= 1)
+    message :
+      "Error [CIM-CORE-001] The CIM model must contain at least one business goal, one actor, and one business capability. " +
+      "Suggestion: add the minimal business core before semantic validation: a goal that explains value, an actor that initiates or observes work, and a capability that realizes the goal."
+  }
+
+  critique CIMModelDeclaresBusinessScope {
+    check :
+      self.domainName.hasText() and self.businessScope.hasText() and self.organizationName.hasText()
+    message :
+      "Warning [CIM-CORE-002] The CIM model is missing domainName, businessScope, or organizationName. " +
+      "Suggestion: describe the business domain, the boundary of what is included/excluded, and the organization or business unit that owns the model."
+  }
+
+  constraint ProductionReadyModelHasNoBlockers {
+    guard : self.isProductionReadyIntent()
+    check :
+      (self.hotspots.forAll(hotspotItem | not (hotspotItem.blocksProduction = true))) and
+      (self.risks.forAll(riskItem | not (riskItem.productionBlocking = true))) and
+      ((self.readiness.isUndefined()) or
+        (self.readiness.findings.forAll(findingItem | not (findingItem.blocking = true))) and
+        (self.readiness.checks.forAll(checkItem | checkItem.passed = true)))
+    message :
+      "Error [CIM-CORE-003] This model is marked production-ready while blocking hotspots, production-blocking risks, blocking readiness findings, or failed readiness checks still exist. " +
+      "Suggestion: resolve or downgrade all blockers, record mitigations, and update readiness checks before setting lifecycleStatus/readiness to production-ready."
+  }
+
+  constraint TransformationProfileExplicitAuthIsEnforced {
+    guard :
+      self.transformationProfile.isDefined() and
+      (self.transformationProfile.requireExplicitActorAuthForCommands = true)
+    check :
+      self.commands.forAll(commandItem |
+        (not commandItem.hasHumanIssuer()) or commandItem.hasAuthorizationDecision()
+      )
+    message :
+      "Error [CIM-CORE-004] The transformation profile requires explicit actor authorization, but at least one human-issued command lacks authorizationRequired=true and a business authorizationRule. " +
+      "Suggestion: for each human-issued command, either define the authorization rule or remove the human actor as an issuer if the command is internal/system-triggered."
+  }
+
+  constraint TransformationProfilePrivacyClassificationIsEnforced {
+    guard :
+      self.transformationProfile.isDefined() and
+      (self.transformationProfile.requirePrivacyClassificationForAllInformation = true)
+    check :
+      self.informationItems.forAll(item | item.classification.isDefined())
+    message :
+      "Error [CIM-CORE-005] The transformation profile requires privacy classification for all information items, but at least one item has no DataClassification. " +
+      "Suggestion: classify every InformationItem as PUBLIC, INTERNAL, CONFIDENTIAL, PERSONAL, SENSITIVE_PERSONAL, FINANCIAL, HEALTH, AUTHENTICATION_SECRET, or REGULATED, and add privacy constraints where required."
+  }
+}
+
+context KERNEL!ModelElement {
+
+  constraint ModelElementNameIsPresent {
+    check : self.name.hasText()
+    message :
+      "Error [CIM-KERNEL-001] A model element has no user-facing name. " +
+      "Suggestion: provide a concise business name for this element. Avoid implementation names, provider products, acronyms without definitions, or generated placeholders."
+  }
+
+  constraint ModelElementAvoidsProviderSpecificTerms {
+    check : not self.containsProviderTechnologyTerm()
+    message :
+      "Error [CIM-KERNEL-002] '" + self.labelText() + "' contains provider-specific or implementation-level terms. " +
+      "Suggestion: rename/reword it in CIM-level business language. For example, prefer 'Customer notification requested' over 'SNS message sent' and 'Document storage' over 'S3 bucket'."
+  }
+
+  critique ModelElementHasExplanation {
+    check :
+      self.summary.hasText() or self.description.hasText() or self.documentation.hasText()
+    message :
+      "Warning [CIM-KERNEL-003] '" + self.labelText() + "' has a name but no explanatory summary, description, or documentation. " +
+      "Suggestion: add a short explanation of its business meaning so reviewers and transformations do not infer semantics from the name alone."
+  }
+}
+
+context KERNEL!TraceableElement {
+
+  critique TraceableElementHasSourceOrRationale {
+    check :
+      self.sourceReference.hasText() or self.sourceExcerpt.hasText() or
+      self.sourceUri.hasText() or self.rationale.hasText()
+    message :
+      "Warning [CIM-TRACE-001] '" + self.labelText() + "' has no source reference or rationale. " +
+      "Suggestion: link the element to the workshop note, requirement, policy, regulation, interview, or decision record that justifies it."
+  }
+
+  constraint GeneratedElementHasOrigin {
+    guard : self.generatedByTransformation = true
+    check : self.generatedFrom.hasText() or self.traceId.hasText() or self.sourceReference.hasText()
+    message :
+      "Error [CIM-TRACE-002] '" + self.labelText() + "' is marked generatedByTransformation=true but has no generatedFrom, traceId, or sourceReference. " +
+      "Suggestion: record the transformation rule, source element, or trace identifier that generated it."
+  }
+}
+
+context KERNEL!TraceLink {
+
+  constraint TraceLinkHasReferenceOrExternalId {
+    check :
+      ((self.source.isDefined()) and (self.target.isDefined())) or
+      (self.sourceElementId.hasText() and self.targetElementId.hasText())
+    message :
+      "Error [CIM-TRACE-003] A TraceLink must identify both ends either by model references or by sourceElementId/targetElementId. " +
+      "Suggestion: set source and target references when both elements are in the model; otherwise provide stable external IDs for both ends."
+  }
+
+  constraint TraceLinkDoesNotPointToSameElement {
+    check :
+      (self.source.isUndefined()) or (self.target.isUndefined()) or (self.source <> self.target)
+    message :
+      "Error [CIM-TRACE-004] TraceLink '" + self.labelText() + "' points from an element to itself. " +
+      "Suggestion: remove the self-link or change it to connect two distinct elements with a meaningful TraceLinkType."
+  }
+}

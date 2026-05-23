@@ -1,0 +1,117 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* IAM, KMS, Secrets Manager, SSM */
+
+context AWSPSM!IamRole {
+  constraint RoleHasTrustPolicyStatements {
+    check : self.assumeRolePolicy.isDefined() and self.assumeRolePolicy.statements.notEmpty()
+    message : 'IAM role ' + self.resourceLabel() + ' has no trust policy statements. Fix: add assumeRolePolicy statements that define who can assume the role.'
+  }
+
+  critique ProductionRoleShouldUsePermissionsBoundary {
+    guard : self.isProductionScoped()
+    check : self.permissionsBoundaryArn.hasText()
+    message : 'Production-scoped IAM role ' + self.resourceLabel() + ' has no permissions boundary. Fix: attach permissionsBoundaryArn if your organization requires permission boundaries.'
+  }
+}
+
+context AWSPSM!IamPolicyDocument {
+  constraint PolicyDocumentHasStatements {
+    check : self.statements.notEmpty()
+    message : 'IAM policy document has no statements. Fix: add at least one IamStatement or remove the unused policy document.'
+  }
+}
+
+context AWSPSM!IamStatement {
+  constraint StatementHasActionAndResourceSide {
+    check : (self.actions.notEmpty() or self.notActions.notEmpty()) and (self.resources.notEmpty() or self.notResources.notEmpty())
+    message : 'IAM statement is missing action/notAction or resource/notResource. Fix: define the allowed/denied actions and the resources they apply to.'
+  }
+
+  constraint NoAllowWildcardInProductionWithoutJustification {
+    guard : productionStageExists() and self.effect = AWSPSMENUMS!IamEffect#ALLOW
+    check : (not self.actionIsWildcard()) and (not self.resourceIsWildcard()) or self.hasLeastPrivilegeJustification()
+    message : 'An ALLOW IAM statement uses wildcard action/resource in a model with a PROD stage. Fix: replace wildcards with least-privilege actions/resources, or add conditions and wildcardJustification approved by security.'
+  }
+
+  critique AvoidNotActionInAllowStatements {
+    guard : self.effect = AWSPSMENUMS!IamEffect#ALLOW
+    check : self.notActions.isEmpty()
+    message : 'ALLOW IAM statement uses notActions, which is difficult to reason about. Fix: list explicit actions whenever possible.'
+  }
+}
+
+context AWSPSM!IamPrincipal {
+  constraint PrincipalHasTypeAndIdentifiers {
+    check : self.principalType.hasText() and self.identifiers.notEmpty()
+    message : 'IAM principal is incomplete. Fix: set principalType, for example Service or AWS, and provide one or more identifiers.'
+  }
+}
+
+context AWSPSM!IamCondition {
+  constraint ConditionComplete {
+    check : self.operator.hasText() and self.key.hasText() and self.values.notEmpty()
+    message : 'IAM condition is incomplete. Fix: set operator, key, and at least one value.'
+  }
+}
+
+context AWSPSM!KmsKey {
+  constraint ProductionKmsKeyRotation {
+    guard : self.isProductionScoped()
+    check : self.enableKeyRotation = true
+    message : 'Production-scoped KMS key ' + self.resourceLabel() + ' does not enable rotation. Fix: set enableKeyRotation to true unless rotation is unsupported for the key type.'
+  }
+
+  constraint PendingWindowRange {
+    check : self.pendingWindowInDays.isUndefined() or ((self.pendingWindowInDays >= 7) and (self.pendingWindowInDays <= 30))
+    message : 'KMS key ' + self.resourceLabel() + ' pendingWindowInDays is outside 7..30. Fix: choose a valid pending deletion window.'
+  }
+}
+
+context AWSPSM!KmsAlias {
+  constraint KmsAliasNameValid {
+    check : self.aliasName.startsWith('alias/') and self.aliasName.size() > 6
+    message : 'KMS alias ' + self.aliasName + ' is invalid. Fix: use the alias/ prefix, for example alias/my-service-key.'
+  }
+}
+
+context AWSPSM!SecretsManagerSecret {
+  constraint SecretHasValueOrGenerator {
+    check : self.secretValue.isDefined() or self.generateSecretStringJson.hasText()
+    message : 'Secrets Manager secret ' + self.resourceLabel() + ' has no secretValue or generator configuration. Fix: provide secretValue for a referenced secret or generateSecretStringJson for generated secrets.'
+  }
+
+  constraint RotationRequiredHasSchedule {
+    guard : self.rotationRequired = true
+    check : self.rotationSchedule.isDefined()
+    message : 'Secrets Manager secret ' + self.resourceLabel() + ' requires rotation but has no rotationSchedule. Fix: add SecretRotationSchedule and rotation Lambda/resource as needed.'
+  }
+
+  critique ProductionSecretShouldUseKms {
+    guard : self.isProductionScoped()
+    check : self.kmsKey.isDefined()
+    message : 'Production-scoped secret ' + self.resourceLabel() + ' has no explicit KMS key. Fix: attach kmsKey unless the AWS-managed key is intentionally accepted.'
+  }
+}
+
+context AWSPSM!SecretRotationSchedule {
+  constraint RotationScheduleHasRulesOrLambda {
+    check : self.rotationRulesJson.hasText() or self.rotationLambda.isDefined()
+    message : 'Secret rotation schedule ' + self.resourceLabel() + ' has no rotationRulesJson or rotationLambda. Fix: define rotation cadence and the rotation function/resource.'
+  }
+}
+
+context AWSPSM!SsmParameter {
+  constraint SecureParameterUsesSecureType {
+    guard : self.value.isDefined() and self.value.secret = true
+    check : self.parameterType = AWSPSMENUMS!ParameterType#SECURE_STRING
+    message : 'SSM parameter ' + self.resourceLabel() + ' stores a secret value but parameterType is not SECURE_STRING. Fix: set parameterType to SECURE_STRING.'
+  }
+
+  critique SecureParameterShouldUseKmsKey {
+    guard : self.parameterType = AWSPSMENUMS!ParameterType#SECURE_STRING
+    check : self.kmsKey.isDefined()
+    message : 'Secure SSM parameter ' + self.parameterName + ' has no explicit KMS key. Fix: attach kmsKey where customer-managed key control is required.'
+  }
+}
+

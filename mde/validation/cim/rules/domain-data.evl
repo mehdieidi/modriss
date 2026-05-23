@@ -1,0 +1,265 @@
+import "../lib/cim-validation-helpers.eol";
+
+context CIM!DomainConcept {
+
+  critique DomainConceptHasBusinessDefinition {
+    check : self.glossaryDefinition.hasText() or self.description.hasText()
+    message :
+      "Warning [CIM-DOM-001] DomainConcept '" + self.labelText() + "' lacks a glossaryDefinition or description. " +
+      "Suggestion: define the concept in business vocabulary so entities, value objects, and relationships are not interpreted technically."
+  }
+}
+
+context CIM!DomainEntity {
+
+  constraint EntityHasIdentityAttribute {
+    check : self.identityAttribute.isDefined()
+    message :
+      "Error [CIM-ENTITY-001] DomainEntity '" + self.labelText() + "' has no identityAttribute. " +
+      "Suggestion: select or create the InformationItem that uniquely identifies the entity in business terms."
+  }
+
+  constraint IdentityAttributeIsOwnedAttribute {
+    guard : self.identityAttribute.isDefined()
+    check : self.attributes.includes(self.identityAttribute)
+    message :
+      "Error [CIM-ENTITY-002] DomainEntity '" + self.labelText() + "' uses an identityAttribute that is not included in attributes. " +
+      "Suggestion: add the identity InformationItem to the entity's attributes collection or choose one of the existing attributes as identity."
+  }
+
+  critique EntityHasOwningCapability {
+    check : self.owningCapability.isDefined() or self.businessOwner.hasText()
+    message :
+      "Warning [CIM-ENTITY-003] DomainEntity '" + self.labelText() + "' has no owningCapability or businessOwner. " +
+      "Suggestion: assign the business capability or owner responsible for the entity's lifecycle and invariants."
+  }
+
+  constraint LifecycleStatesHaveSingleInitialState {
+    guard : self.lifecycleStates.size() > 0
+    check :
+      (self.lifecycleStates.select(stateItem | stateItem.initial = true).size() = 1) and
+      (self.lifecycleStates.select(stateItem | stateItem.terminal = true).size() >= 1)
+    message :
+      "Error [CIM-ENTITY-004] DomainEntity '" + self.labelText() + "' has lifecycle states but does not have exactly one initial state and at least one terminal state. " +
+      "Suggestion: mark one LifecycleStateDefinition as initial=true and at least one as terminal=true."
+  }
+}
+
+context CIM!ValueObject {
+
+  critique ValueObjectShouldBeImmutable {
+    check : self.immutable = true
+    message :
+      "Warning [CIM-VO-001] ValueObject '" + self.labelText() + "' is not marked immutable. " +
+      "Suggestion: set immutable=true unless this concept is actually an entity with identity and lifecycle."
+  }
+
+  constraint ValueObjectDefinesEquality {
+    check : self.equalityAttributes.size() > 0
+    message :
+      "Error [CIM-VO-002] ValueObject '" + self.labelText() + "' has no equalityAttributes. " +
+      "Suggestion: select the attributes that determine value equality."
+  }
+}
+
+context CIM!DomainRelationship {
+
+  constraint DomainRelationshipHasDistinctEnds {
+    check : self.source <> self.target
+    message :
+      "Error [CIM-REL-001] DomainRelationship '" + self.labelText() + "' connects a concept to itself. " +
+      "Suggestion: connect distinct source and target concepts, or model the self-relation explicitly with named roles and rationale if it is truly intentional."
+  }
+
+  critique DomainRelationshipHasRolesAndMultiplicities {
+    check :
+      self.sourceRole.hasText() and self.targetRole.hasText() and
+      self.sourceMultiplicity.hasText() and self.targetMultiplicity.hasText()
+    message :
+      "Warning [CIM-REL-002] DomainRelationship '" + self.labelText() + "' lacks role names or multiplicities. " +
+      "Suggestion: provide sourceRole, targetRole, sourceMultiplicity, and targetMultiplicity to remove ambiguity."
+  }
+
+  constraint OwnershipRelationshipUsesOwnershipType {
+    guard : self.ownership = true
+    check :
+      (self.relationshipType = CIM!DomainRelationshipType#COMPOSITION) or
+      (self.relationshipType = CIM!DomainRelationshipType#AGGREGATION) or
+      (self.relationshipType = CIM!DomainRelationshipType#OWNERSHIP)
+    message :
+      "Error [CIM-REL-003] DomainRelationship '" + self.labelText() + "' is marked ownership=true but relationshipType is not COMPOSITION, AGGREGATION, or OWNERSHIP. " +
+      "Suggestion: change relationshipType or set ownership=false."
+  }
+}
+
+context CIM!AggregateCandidate {
+
+  constraint RootIsMember {
+    check : self.members.includes(self.root)
+    message :
+      "Error [CIM-AGG-001] AggregateCandidate '" + self.labelText() + "' has a root that is not part of members. " +
+      "Suggestion: add the root entity to members or select a root from the existing member entities."
+  }
+
+  constraint StrongConsistencyRequiresRationale {
+    guard : self.strongConsistencyRequired = true
+    check : self.consistencyBoundaryRationale.hasText()
+    message :
+      "Error [CIM-AGG-002] AggregateCandidate '" + self.labelText() + "' requires strong consistency but has no consistencyBoundaryRationale. " +
+      "Suggestion: explain the invariant or business rule that makes the strong consistency boundary necessary."
+  }
+
+  constraint StrongConsistencyExpectationIsConsistent {
+    guard : self.strongConsistencyRequired = true
+    check :
+      (self.consistencyExpectation = CIM!ConsistencyExpectation#SINGLE_ENTITY) or
+      (self.consistencyExpectation = CIM!ConsistencyExpectation#MULTI_ENTITY_STRONG_CONSISTENCY)
+    message :
+      "Error [CIM-AGG-003] AggregateCandidate '" + self.labelText() + "' sets strongConsistencyRequired=true but consistencyExpectation does not reflect strong consistency. " +
+      "Suggestion: set consistencyExpectation to SINGLE_ENTITY or MULTI_ENTITY_STRONG_CONSISTENCY, or set strongConsistencyRequired=false."
+  }
+
+  critique EventualConsistencyHasConflictPolicy {
+    guard :
+      (self.consistencyExpectation = CIM!ConsistencyExpectation#EVENTUAL_CONSISTENCY_ACCEPTABLE) or
+      (self.consistencyExpectation = CIM!ConsistencyExpectation#MANUAL_RECONCILIATION_ACCEPTABLE)
+    check : self.conflictResolutionPolicy.hasText()
+    message :
+      "Warning [CIM-AGG-004] AggregateCandidate '" + self.labelText() + "' allows eventual/manual consistency but has no conflictResolutionPolicy. " +
+      "Suggestion: describe how conflicting updates, reconciliation, or stale reads are handled."
+  }
+
+  critique AggregateCommandsDeclareIdempotency {
+    guard : self.handledCommands.exists(commandItem | commandItem.duplicateSubmissionPossible = true)
+    check :
+      self.handledCommands.select(commandItem | commandItem.duplicateSubmissionPossible = true).forAll(commandItem |
+        commandItem.idempotencyBusinessKey.hasText() or self.idempotencyBusinessKey.hasText()
+      )
+    message :
+      "Warning [CIM-AGG-005] AggregateCandidate '" + self.labelText() + "' handles duplicate-prone commands without command-level or aggregate-level idempotencyBusinessKey. " +
+      "Suggestion: define a business key such as request number, external correlation ID, or natural transaction ID."
+  }
+}
+
+context CIM!BusinessInvariant {
+
+  constraint BusinessInvariantIsExpressed {
+    check : self.naturalLanguageStatement.hasText() or self.expression.hasText()
+    message :
+      "Error [CIM-INV-001] BusinessInvariant '" + self.labelText() + "' has no naturalLanguageStatement or expression. " +
+      "Suggestion: write the invariant as a business rule, optionally adding expressionLanguage/expression for automatable validation."
+  }
+
+  critique BusinessInvariantConstrainsConcepts {
+    check : self.constrainedConcepts.size() > 0
+    message :
+      "Warning [CIM-INV-002] BusinessInvariant '" + self.labelText() + "' is not linked to constrainedConcepts. " +
+      "Suggestion: link the entity, aggregate, value object, or relationship that the invariant constrains."
+  }
+}
+
+context CIM!InformationItem {
+
+  constraint RequiredInformationHasType {
+    guard : self.required = true
+    check : self.type.isDefined()
+    message :
+      "Error [CIM-INFO-001] Required InformationItem '" + self.labelText() + "' has no type. " +
+      "Suggestion: choose the PrimitiveBusinessType that best represents the business value, such as TEXT, MONEY, DATE, EMAIL, IDENTIFIER, OBJECT, or LIST."
+  }
+
+  critique OptionalInformationShouldStillDeclareType {
+    guard : not (self.required = true)
+    check : self.type.isDefined()
+    message :
+      "Warning [CIM-INFO-002] Optional InformationItem '" + self.labelText() + "' has no type. " +
+      "Suggestion: classify the item with PrimitiveBusinessType even when optional so generated schemas and transformations are stable."
+  }
+
+  constraint InformationItemHasBusinessName {
+    check : self.businessName.hasText() or self.name.hasText()
+    message :
+      "Error [CIM-INFO-003] InformationItem has neither businessName nor inherited name. " +
+      "Suggestion: provide a business-facing name such as 'Customer email address' rather than a technical field name alone."
+  }
+
+  constraint PersonalOrSensitiveInformationHasPrivacyConstraint {
+    guard : self.requiresPrivacyControls()
+    check : self.privacyConstraints.size() > 0
+    message :
+      "Error [CIM-INFO-004] InformationItem '" + self.labelText() + "' is personal, sensitive, financial, health, or regulated data but has no PrivacyConstraint. " +
+      "Suggestion: add a PrivacyConstraint covering purpose, legalBasis, retention, minimization, and data subject obligations."
+  }
+
+  constraint CollectionInformationHasMultiplicity {
+    guard : self.collection = true
+    check : self.multiplicity.hasText()
+    message :
+      "Error [CIM-INFO-005] Collection InformationItem '" + self.labelText() + "' has no multiplicity. " +
+      "Suggestion: specify expected cardinality such as 0..*, 1..*, 0..10, or business-specific limits."
+  }
+
+  constraint DerivedInformationHasDerivationRule {
+    guard : self.derived = true
+    check : self.derivationRule.hasText()
+    message :
+      "Error [CIM-INFO-006] Derived InformationItem '" + self.labelText() + "' lacks derivationRule. " +
+      "Suggestion: explain the business formula, source items, or policy used to derive the value."
+  }
+
+  critique SearchOrReportItemHasSourceOfTruth {
+    guard : (self.searchRelevant = true) or (self.reportingRelevant = true)
+    check : self.sourceOfTruth.hasText()
+    message :
+      "Warning [CIM-INFO-007] Search/reporting InformationItem '" + self.labelText() + "' has no sourceOfTruth. " +
+      "Suggestion: identify the authoritative business source to avoid inconsistent read models and reports."
+  }
+
+  constraint LengthBoundsAreConsistent {
+    guard : self.minLength.isDefined() and self.maxLength.isDefined()
+    check : self.minLength <= self.maxLength
+    message :
+      "Error [CIM-INFO-008] InformationItem '" + self.labelText() + "' has minLength greater than maxLength. " +
+      "Suggestion: correct minLength/maxLength so the lower bound is less than or equal to the upper bound."
+  }
+}
+
+context CIM!DataClassification {
+
+  constraint DataClassificationHasKind {
+    check : self.kind.isDefined()
+    message :
+      "Error [CIM-DATA-001] DataClassification '" + self.labelText() + "' has no kind. " +
+      "Suggestion: set kind to PUBLIC, INTERNAL, CONFIDENTIAL, PERSONAL, SENSITIVE_PERSONAL, FINANCIAL, HEALTH, AUTHENTICATION_SECRET, or REGULATED."
+  }
+
+  constraint SensitiveDataRequiresProtectionExpectation {
+    guard : self.requiresStrongProtection()
+    check : (self.encryptionExpected = true) and (self.auditAccessRequired = true)
+    message :
+      "Error [CIM-DATA-002] DataClassification '" + self.labelText() + "' represents sensitive/protected data without encryptionExpected=true and auditAccessRequired=true. " +
+      "Suggestion: enable encryption and audit access, or downgrade kind only if the business classification was wrong."
+  }
+
+  constraint PersonalDataHasIdentifiability {
+    guard : self.isPersonalKind()
+    check :
+      (self.identifiability = CIM!Identifiability#PSEUDONYMOUS) or
+      (self.identifiability = CIM!Identifiability#DIRECTLY_IDENTIFYING) or
+      (self.identifiability = CIM!Identifiability#INDIRECTLY_IDENTIFYING)
+    message :
+      "Error [CIM-DATA-003] Personal DataClassification '" + self.labelText() + "' must declare a personal identifiability level. " +
+      "Suggestion: set identifiability to PSEUDONYMOUS, DIRECTLY_IDENTIFYING, or INDIRECTLY_IDENTIFYING."
+  }
+
+  critique RegulatedDataHasRegulatoryCategory {
+    guard :
+      (self.kind = CIM!DataKind#REGULATED) or
+      (self.kind = CIM!DataKind#FINANCIAL) or
+      (self.kind = CIM!DataKind#HEALTH)
+    check : self.regulatoryCategory.hasText() and self.classificationRationale.hasText()
+    message :
+      "Warning [CIM-DATA-004] DataClassification '" + self.labelText() + "' is regulated/financial/health data without regulatoryCategory or classificationRationale. " +
+      "Suggestion: identify the regulation/category and explain why the data is classified this way."
+  }
+}

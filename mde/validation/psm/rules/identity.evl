@@ -1,0 +1,44 @@
+import "../lib/psm-validation-helpers.eol";
+
+/* Identity / Cognito */
+
+context AWSPSM!CognitoUserPool {
+  constraint MfaForProductionPrivilegedPools {
+    guard : self.isProductionScoped()
+    check : self.mfaConfiguration.isDefined() and self.mfaConfiguration <> AWSPSMENUMS!CognitoMfaConfiguration#OFF
+    message : 'Production-scoped Cognito user pool ' + self.resourceLabel() + ' has MFA OFF or unset. Fix: set mfaConfiguration to ON or OPTIONAL, or document a security-approved exception.'
+  }
+
+  constraint MfaDecisionMadeForProductionCriticalPools {
+    guard : self.isProductionScoped()
+    check : self.mfaDecision.isDefined() and self.mfaDecision <> AWSPSMENUMS!Decision#UNDECIDED
+    message : 'Production-scoped Cognito user pool ' + self.resourceLabel() + ' has no MFA decision. Fix: set mfaDecision to REQUIRED, NOT_REQUIRED, ACCEPTED, or NEEDS_REVIEW with mfaRationale.'
+  }
+
+  critique ProductionUserPoolShouldUseDeletionProtection {
+    guard : self.isProductionScoped()
+    check : self.deletionProtection = true
+    message : 'Production-scoped Cognito user pool ' + self.resourceLabel() + ' does not enable deletion protection. Fix: set deletionProtection to true.'
+  }
+}
+
+context AWSPSM!CognitoUserPoolClient {
+  constraint OAuthClientHasCallbackUrls {
+    guard : self.allowedOAuthFlowsUserPoolClient = true
+    check : self.callbackUrls.notEmpty()
+    message : 'Cognito user pool client ' + self.resourceLabel() + ' enables OAuth flows but has no callbackUrls. Fix: add valid callback URLs for the application.'
+  }
+
+  critique PreventUserExistenceErrorsRecommended {
+    check : self.preventUserExistenceErrors.hasText() and self.preventUserExistenceErrors.toUpperCase() = 'ENABLED'
+    message : 'Cognito user pool client ' + self.resourceLabel() + ' does not explicitly prevent user-existence errors. Fix: set preventUserExistenceErrors to ENABLED.'
+  }
+}
+
+context AWSPSM!CognitoIdentityPool {
+  critique UnauthenticatedIdentitiesRequireReview {
+    check : self.allowUnauthenticatedIdentities <> true
+    message : 'Cognito identity pool ' + self.resourceLabel() + ' allows unauthenticated identities. Fix: disable unauthenticated identities or add rationale and least-privilege roles.'
+  }
+}
+

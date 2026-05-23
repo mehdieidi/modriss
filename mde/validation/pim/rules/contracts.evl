@@ -1,0 +1,105 @@
+import "../lib/pim-validation-helpers.eol";
+
+context PIM!FunctionContract {
+
+  constraint ContractHasAtLeastInputOrOutput {
+    check : self.inputSchema.isDefined() or self.outputSchema.isDefined()
+    message : "[PIM-CONTRACT-001] Function contract '" + self.displayName() + "' has neither inputSchema nor outputSchema. Fix: attach at least one schema so generated handlers have a clear contract."
+  }
+
+  constraint InputValidationRequiresInputSchema {
+    guard : self.validatesInput.isTrue()
+    check : self.inputSchema.isDefined()
+    message : "[PIM-CONTRACT-002] Contract '" + self.displayName() + "' validates input but has no inputSchema. Fix: attach inputSchema or set validatesInput to false."
+  }
+
+  constraint OutputValidationRequiresOutputSchema {
+    guard : self.validatesOutput.isTrue()
+    check : self.outputSchema.isDefined()
+    message : "[PIM-CONTRACT-003] Contract '" + self.displayName() + "' validates output but has no outputSchema. Fix: attach outputSchema or set validatesOutput to false."
+  }
+
+  critique CorrelationIdFieldShouldExistInSchema {
+    guard : self.correlationIdField.hasText() and self.inputSchema.isDefined()
+    check : self.inputSchema.hasFieldNamed(self.correlationIdField)
+    message : "[PIM-CONTRACT-004] Contract '" + self.displayName() + "' declares correlationIdField '" + self.correlationIdField + "' but the input schema does not contain such a field. Suggested fix: add the field to the schema or correct the field name."
+  }
+
+  critique IdempotencyKeyFieldShouldExistInSchema {
+    guard : self.idempotencyKeyField.hasText() and self.inputSchema.isDefined()
+    check : self.inputSchema.hasFieldNamed(self.idempotencyKeyField)
+    message : "[PIM-CONTRACT-005] Contract '" + self.displayName() + "' declares idempotencyKeyField '" + self.idempotencyKeyField + "' but the input schema does not contain such a field. Suggested fix: add the field or update idempotencyKeyField."
+  }
+}
+
+context PIM!Schema {
+
+  constraint SchemaHasFieldsUnlessExternal {
+    check : self.externalSchemaUri.hasText() or self.fields.notEmpty()
+    message : "[PIM-SCHEMA-001] Schema '" + self.displayName() + "' has no fields and no externalSchemaUri. Fix: add SchemaField children or reference an externally managed schema URI."
+  }
+
+  critique SchemaVersionShouldBeSemver {
+    check : self.semanticVersion.hasText() and self.semanticVersion.matches("^[0-9]+\\.[0-9]+\\.[0-9]+.*$")
+    message : "[PIM-SCHEMA-002] Schema '" + self.displayName() + "' has no SemVer-like semanticVersion. Suggested fix: use a version such as 1.0.0 so compatibility and contract evolution can be validated."
+  }
+
+  critique ExternalSchemaShouldStateCompatibility {
+    guard : self.externalSchemaUri.hasText()
+    check : self.compatibility.isDefined()
+    message : "[PIM-SCHEMA-003] External schema '" + self.displayName() + "' does not state compatibility. Suggested fix: set compatibility to BACKWARD, FORWARD, FULL or NONE based on the evolution contract."
+  }
+}
+
+context PIM!SchemaField {
+
+  constraint SensitiveFieldIsClassified {
+    guard : self.personalData.isTrue() or self.sensitiveData.isTrue() or self.secretValue.isTrue()
+    check : self.classification.hasText()
+    message : "[PIM-SCHEMA-004] Field '" + self.displayName() + "' is personal, sensitive or secret but has no classification. Fix: set classification, for example PII, confidential, restricted, credential or secret."
+  }
+
+  constraint EnumFieldHasLiterals {
+    guard : self.fieldType.enumIs("ENUM")
+    check : self.enumValues.notEmpty()
+    message : "[PIM-SCHEMA-005] Enum field '" + self.displayName() + "' has no enumValues. Fix: add SchemaEnumLiteral children for every allowed value."
+  }
+
+  constraint ObjectFieldHasObjectSchema {
+    guard : self.fieldType.enumIs("OBJECT")
+    check : self.objectSchema.isDefined()
+    message : "[PIM-SCHEMA-006] Object field '" + self.displayName() + "' has no objectSchema. Fix: link the nested Schema that describes the object structure."
+  }
+
+  constraint FieldLengthBoundsAreValid {
+    guard : self.minLength.isDefined() and self.maxLength.isDefined()
+    check : self.minLength >= 0 and self.maxLength >= self.minLength
+    message : "[PIM-SCHEMA-007] Field '" + self.displayName() + "' has invalid minLength/maxLength. Fix: make minLength non-negative and maxLength greater than or equal to minLength."
+  }
+
+  critique RequiredNullableFieldNeedsRationale {
+    guard : self.required.isTrue() and self.nullable.isTrue()
+    check : self.rationale.hasText() or self.descriptionForConsumers.hasText()
+    message : "[PIM-SCHEMA-008] Field '" + self.displayName() + "' is both required and nullable. Suggested fix: either make it non-nullable or explain the intended null semantics in descriptionForConsumers/rationale."
+  }
+
+  critique SensitiveFieldShouldNotExposeExamplesOrDefaults {
+    guard : self.personalData.isTrue() or self.sensitiveData.isTrue() or self.secretValue.isTrue()
+    check : not self.defaultValue.hasText() and not self.example.hasText()
+    message : "[PIM-SCHEMA-009] Sensitive field '" + self.displayName() + "' has example/default data. Suggested fix: remove real-looking examples/defaults or replace them with clearly synthetic, non-sensitive placeholders."
+  }
+}
+
+context PIM!SchemaConstraint {
+
+  constraint SchemaConstraintHasExpressionAndMessage {
+    check : self.expressionLanguage.hasText() and self.expression.hasText() and self.`message`.hasText()
+    message : "[PIM-SCHEMA-010] SchemaConstraint '" + self.displayName() + "' is incomplete. Fix: provide expressionLanguage, expression and a user-facing message."
+  }
+}
+
+/************
+ * API rules
+ ************/
+
+

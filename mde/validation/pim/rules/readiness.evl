@@ -1,0 +1,50 @@
+import "../lib/pim-validation-helpers.eol";
+
+context KERNEL!TraceLink {
+
+  constraint TraceLinkHasReferenceOrExternalId {
+    check : (self.source.isDefined() and self.target.isDefined())
+      or (self.sourceElementId.hasText() and self.targetElementId.hasText())
+    message : "[PIM-READY-001] TraceLink '" + self.displayName() + "' has no complete source/target reference. Fix: link source and target model elements, or provide sourceElementId and targetElementId for external trace endpoints."
+  }
+}
+
+context KERNEL!ProductionReadinessAssessment {
+
+  constraint ProductionReadyRequiresPassedChecksAndNoBlockingFindings {
+    guard : self.productionReady.isTrue()
+    check : self.transformationReady.isTrue() and self.deploymentReady.isTrue()
+      and self.findings.forAll(findingItem | not findingItem.blocking.isTrue())
+      and self.checks.forAll(checkItem | checkItem.passed.isTrue())
+      and self.manualDecisions.forAll(decisionItem | not decisionItem.blocking.isTrue() or decisionItem.decision.hasText())
+    message : "[PIM-READY-002] ProductionReadinessAssessment '" + self.displayName() + "' is marked productionReady while checks/findings/manual decisions are unresolved. Fix: pass all checks, resolve blocking findings, and record decisions for blocking manual decisions."
+  }
+}
+
+context KERNEL!ReadinessFinding {
+
+  critique FindingShouldRecommendRemediation {
+    check : self.`message`.hasText() and self.recommendation.hasText() and self.affectedElements.notEmpty()
+    message : "[PIM-READY-003] ReadinessFinding '" + self.displayName() + "' lacks message, recommendation or affectedElements. Suggested fix: explain the issue, attach affected elements and provide remediation."
+  }
+}
+
+context KERNEL!ReadinessCheck {
+
+  critique FailedCheckShouldHaveRemediation {
+    guard : self.passed.isDefined() and not self.passed
+    check : self.`message`.hasText() and self.remediation.hasText()
+    message : "[PIM-READY-004] Failed ReadinessCheck '" + self.displayName() + "' has no message/remediation. Suggested fix: explain what failed and how the user can fix it."
+  }
+}
+
+context KERNEL!ManualDecision {
+
+  constraint BlockingManualDecisionMustBeAnswered {
+    guard : self.blocking.isTrue()
+    check : self.decision.hasText() and self.decisionOwner.hasText()
+    message : "[PIM-READY-005] Blocking ManualDecision '" + self.displayName() + "' is unanswered or has no owner. Fix: record the decision and decisionOwner, or mark it non-blocking if it should not stop generation."
+  }
+}
+
+

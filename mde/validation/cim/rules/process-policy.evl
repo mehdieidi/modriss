@@ -1,0 +1,332 @@
+import "../lib/cim-validation-helpers.eol";
+
+context CIM!BusinessProcess {
+
+  constraint ProcessHasStartAndEnd {
+    check :
+      (self.steps.select(stepItem | stepItem.stepKind = CIM!StepKind#START).size() = 1) and
+      (self.steps.select(stepItem | stepItem.stepKind = CIM!StepKind#END).size() >= 1)
+    message :
+      "Error [CIM-PROC-001] BusinessProcess '" + self.labelText() + "' must have exactly one START step and at least one END step. " +
+      "Suggestion: add one StartStep and one or more EndSteps, and ensure their stepKind values match."
+  }
+
+  constraint ProcessHasTriggerAndCompletionCriterion {
+    check :
+      (self.trigger.isDefined() or self.businessTriggerDescription.hasText()) and
+      self.completionCriterion.hasText()
+    message :
+      "Error [CIM-PROC-002] BusinessProcess '" + self.labelText() + "' lacks a trigger or completionCriterion. " +
+      "Suggestion: specify what starts the process and the business condition that means the process is complete."
+  }
+
+  constraint LongRunningProcessHasTemporalConstraint {
+    guard : (self.longRunning = true) or (self.processKind = CIM!ProcessKind#LONG_RUNNING) or (self.processKind = CIM!ProcessKind#SAGA_LIKE_BUSINESS_PROCESS)
+    check : self.temporalConstraints.size() > 0
+    message :
+      "Error [CIM-PROC-003] Long-running/Saga-like BusinessProcess '" + self.labelText() + "' has no TemporalConstraint. " +
+      "Suggestion: add deadlines, durations, or ordering constraints that define acceptable process timing."
+  }
+
+  constraint ProcessTransitionsStayInsideProcess {
+    check :
+      self.transitions.forAll(transitionItem |
+        self.steps.includes(transitionItem.source) and self.steps.includes(transitionItem.target)
+      )
+    message :
+      "Error [CIM-PROC-004] BusinessProcess '" + self.labelText() + "' contains a transition whose source or target is not one of its steps. " +
+      "Suggestion: reconnect the transition to steps contained by the same process."
+  }
+
+  constraint ProcessStepOrderIndexesAreUnique {
+    check {
+      var indexedSteps = self.steps.select(stepItem | stepItem.orderIndex.isDefined());
+      return indexedSteps.collect(stepItem | stepItem.orderIndex).asSet().size() = indexedSteps.size();
+    }
+    message :
+      "Error [CIM-PROC-005] BusinessProcess '" + self.labelText() + "' has duplicate step orderIndex values. " +
+      "Suggestion: assign unique orderIndex values to ordered steps, or leave orderIndex unset where ordering is fully represented by transitions."
+  }
+
+  critique CompensationProcessHasExceptionScenarios {
+    guard : self.compensationExpected = true
+    check : self.exceptions.size() > 0
+    message :
+      "Warning [CIM-PROC-006] BusinessProcess '" + self.labelText() + "' expects compensation but has no ExceptionScenario. " +
+      "Suggestion: add exception scenarios and recovery/compensation actions."
+  }
+}
+
+context CIM!ProcessStep {
+
+  critique ProcessStepHasResponsibility {
+    guard : (self.stepKind <> CIM!StepKind#START) and (self.stepKind <> CIM!StepKind#END)
+    check : self.responsibility.hasText() or (self.responsibleRoles.size() > 0)
+    message :
+      "Warning [CIM-STEP-001] ProcessStep '" + self.labelText() + "' has no responsibility or responsibleRoles. " +
+      "Suggestion: identify who or what is responsible for this step."
+  }
+}
+
+context CIM!StartStep {
+  constraint StartStepKindMatchesClass {
+    check : self.stepKind = CIM!StepKind#START
+    message :
+      "Error [CIM-STEP-002] StartStep '" + self.labelText() + "' must have stepKind=START. " +
+      "Suggestion: set stepKind to START."
+  }
+}
+
+context CIM!EndStep {
+  constraint EndStepKindMatchesClass {
+    check : self.stepKind = CIM!StepKind#END
+    message :
+      "Error [CIM-STEP-003] EndStep '" + self.labelText() + "' must have stepKind=END. " +
+      "Suggestion: set stepKind to END."
+  }
+}
+
+context CIM!CommandStep {
+  constraint CommandStepKindMatchesClass {
+    check : self.stepKind = CIM!StepKind#COMMAND
+    message :
+      "Error [CIM-STEP-004] CommandStep '" + self.labelText() + "' must have stepKind=COMMAND. " +
+      "Suggestion: set stepKind to COMMAND and link the command reference."
+  }
+}
+
+context CIM!QueryStep {
+  constraint QueryStepKindMatchesClass {
+    check : self.stepKind = CIM!StepKind#QUERY
+    message :
+      "Error [CIM-STEP-005] QueryStep '" + self.labelText() + "' must have stepKind=QUERY. " +
+      "Suggestion: set stepKind to QUERY and link the query reference."
+  }
+}
+
+context CIM!EventStep {
+  constraint EventStepKindMatchesClass {
+    check : self.stepKind = CIM!StepKind#EVENT
+    message :
+      "Error [CIM-STEP-006] EventStep '" + self.labelText() + "' must have stepKind=EVENT. " +
+      "Suggestion: set stepKind to EVENT and link the event reference."
+  }
+}
+
+context CIM!PolicyStep {
+  constraint PolicyStepKindMatchesClass {
+    check : self.stepKind = CIM!StepKind#POLICY
+    message :
+      "Error [CIM-STEP-007] PolicyStep '" + self.labelText() + "' must have stepKind=POLICY. " +
+      "Suggestion: set stepKind to POLICY and link the policy reference."
+  }
+}
+
+context CIM!HumanTaskStep {
+  constraint HumanTaskStepKindAndDescription {
+    check :
+      (self.stepKind = CIM!StepKind#HUMAN_TASK) and
+      self.taskDescription.hasText() and self.completionEvidence.hasText()
+    message :
+      "Error [CIM-STEP-008] HumanTaskStep '" + self.labelText() + "' must have stepKind=HUMAN_TASK, taskDescription, and completionEvidence. " +
+      "Suggestion: describe the human task and the evidence that proves completion."
+  }
+}
+
+context CIM!ExternalInteractionStep {
+  constraint ExternalInteractionStepIsExplicit {
+    check :
+      (self.stepKind = CIM!StepKind#EXTERNAL_INTERACTION) and
+      self.externalSystem.isDefined() and self.interactionPurpose.hasText()
+    message :
+      "Error [CIM-STEP-009] ExternalInteractionStep '" + self.labelText() + "' lacks stepKind=EXTERNAL_INTERACTION, externalSystem, or interactionPurpose. " +
+      "Suggestion: set the correct stepKind, select the external system, and explain the business purpose of the interaction."
+  }
+
+  critique ExternalInteractionDeclaresInformation {
+    check : self.exchangedInformation.size() > 0
+    message :
+      "Warning [CIM-STEP-010] ExternalInteractionStep '" + self.labelText() + "' has no exchangedInformation. " +
+      "Suggestion: link the information items crossing the external boundary."
+  }
+}
+
+context CIM!DecisionStep {
+  constraint DecisionStepHasDecisionLogic {
+    check :
+      (self.stepKind = CIM!StepKind#DECISION) and
+      (self.condition.isDefined() or self.decisionTable.isDefined())
+    message :
+      "Error [CIM-STEP-011] DecisionStep '" + self.labelText() + "' lacks stepKind=DECISION or decision logic. " +
+      "Suggestion: set stepKind=DECISION and link either a Condition or a DecisionTable."
+  }
+
+  constraint DecisionHasBranches {
+    check :
+      CIM!ProcessTransition.all.select(transitionItem | transitionItem.source = self).size() >= 2
+    message :
+      "Error [CIM-STEP-012] DecisionStep '" + self.labelText() + "' has fewer than two outgoing branches. " +
+      "Suggestion: add at least two ProcessTransition elements representing alternative outcomes."
+  }
+}
+
+context CIM!WaitStep {
+  constraint WaitStepHasDurationOrReason {
+    check :
+      (self.stepKind = CIM!StepKind#WAIT) and
+      (self.durationExpression.hasText() or self.waitReason.hasText())
+    message :
+      "Error [CIM-STEP-013] WaitStep '" + self.labelText() + "' lacks stepKind=WAIT or a duration/reason. " +
+      "Suggestion: set stepKind=WAIT and provide durationExpression or waitReason."
+  }
+}
+
+context CIM!ProcessTransition {
+
+  constraint TransitionConnectsDifferentSteps {
+    check : self.source <> self.target
+    message :
+      "Error [CIM-TRANS-001] ProcessTransition '" + self.labelText() + "' connects a step to itself. " +
+      "Suggestion: connect the transition to a distinct target step."
+  }
+
+  constraint TransitionDoesNotLeaveEndOrEnterStart {
+    check :
+      (self.source.stepKind <> CIM!StepKind#END) and (self.target.stepKind <> CIM!StepKind#START)
+    message :
+      "Error [CIM-TRANS-002] ProcessTransition '" + self.labelText() + "' leaves an END step or enters a START step. " +
+      "Suggestion: remove the invalid transition or reconnect it so flow starts at START and terminates at END."
+  }
+
+  critique ConditionalTransitionIsLabelled {
+    guard : self.source.stepKind = CIM!StepKind#DECISION
+    check : self.label.hasText() or self.conditionExpression.hasText() or self.condition.isDefined()
+    message :
+      "Warning [CIM-TRANS-003] Decision transition '" + self.labelText() + "' has no label, conditionExpression, or Condition. " +
+      "Suggestion: name the branch or attach a condition so users understand why this path is taken."
+  }
+}
+
+context CIM!DecisionTable {
+
+  constraint DecisionTableHasRules {
+    check : self.rules.size() >= 1
+    message :
+      "Error [CIM-DT-001] DecisionTable '" + self.labelText() + "' has no rules. " +
+      "Suggestion: add at least one DecisionRule with a condition and outcome."
+  }
+
+  constraint DecisionTableRulesHaveUniquePriority {
+    check {
+      var orderedRules = self.rules.select(ruleItem | ruleItem.priorityOrder.isDefined());
+      return orderedRules.collect(ruleItem | ruleItem.priorityOrder).asSet().size() = orderedRules.size();
+    }
+    message :
+      "Error [CIM-DT-002] DecisionTable '" + self.labelText() + "' has duplicate priorityOrder values. " +
+      "Suggestion: assign unique priorityOrder values or remove priority ordering if hitPolicy does not need it."
+  }
+
+  critique IncompleteDecisionTableHasDefault {
+    guard : not (self.complete = true)
+    check : self.defaultOutcome.hasText()
+    message :
+      "Warning [CIM-DT-003] DecisionTable '" + self.labelText() + "' is incomplete but has no defaultOutcome. " +
+      "Suggestion: provide a default outcome for unmatched cases."
+  }
+}
+
+context CIM!DecisionRule {
+
+  constraint DecisionRuleHasConditionAndOutcome {
+    check : self.condition.hasText() and self.outcome.hasText()
+    message :
+      "Error [CIM-DT-004] DecisionRule '" + self.labelText() + "' lacks condition or outcome. " +
+      "Suggestion: specify when the rule applies and what business outcome it produces."
+  }
+
+  critique DecisionRuleHasExecutableEffect {
+    check : (self.resultingCommands.size() > 0) or (self.resultingEvents.size() > 0) or self.outcome.hasText()
+    message :
+      "Warning [CIM-DT-005] DecisionRule '" + self.labelText() + "' has no resultingCommands, resultingEvents, or meaningful outcome. " +
+      "Suggestion: connect the rule to the commands/events it causes or make the outcome explicit."
+  }
+}
+
+context CIM!Policy {
+
+  constraint PolicyEitherReactsOrGuards {
+    check :
+      (self.triggeredBy.size() > 0) or
+      (self.guards.size() > 0) or
+      (self.constrainsQueries.size() > 0)
+    message :
+      "Error [CIM-POL-001] Policy '" + self.labelText() + "' neither reacts to events nor guards commands/queries. " +
+      "Suggestion: link triggeredBy events, guarded commands, constrained queries, or split this policy into a more specific policy."
+  }
+
+  constraint PolicyHasRuleDefinition {
+    check :
+      self.naturalLanguageRule.hasText() or
+      (self.expressionLanguage.hasText() and self.expression.hasText()) or
+      self.decisionTable.isDefined()
+    message :
+      "Error [CIM-POL-002] Policy '" + self.labelText() + "' has no naturalLanguageRule, executable expression, or decisionTable. " +
+      "Suggestion: define the rule in natural language and optionally provide expressionLanguage/expression or a DecisionTable."
+  }
+
+  constraint MandatoryOrBlockingPolicyHasSeverity {
+    guard :
+      (self.enforcementStrength = KERNEL!ConstraintStrength#MANDATORY) or
+      (self.enforcementStrength = KERNEL!ConstraintStrength#BLOCKING)
+    check : self.violationSeverity.isDefined()
+    message :
+      "Error [CIM-POL-003] Mandatory/blocking Policy '" + self.labelText() + "' lacks violationSeverity. " +
+      "Suggestion: set violationSeverity to ERROR, CRITICAL, or BLOCKER according to business impact."
+  }
+
+  critique ReactionPolicyEmitsOutcome {
+    guard : self.policyType = CIM!PolicyType#REACTION
+    check : (self.emitsCommands.size() > 0) or (self.emitsEvents.size() > 0)
+    message :
+      "Warning [CIM-POL-004] Reaction Policy '" + self.labelText() + "' has no emitted commands or events. " +
+      "Suggestion: link the command/event that represents the reaction outcome."
+  }
+}
+
+context CIM!ExceptionScenario {
+
+  constraint ExceptionScenarioIsActionable {
+    check :
+      self.scenario.hasText() and self.businessImpact.hasText() and
+      ((self.recoverable <> true) or self.recoveryAction.hasText())
+    message :
+      "Error [CIM-EXC-001] ExceptionScenario '" + self.labelText() + "' lacks scenario/businessImpact or a recoveryAction for a recoverable scenario. " +
+      "Suggestion: describe the exception, its business impact, and how recovery should happen."
+  }
+
+  critique CompensationScenarioEmitsEvent {
+    guard : self.compensationRequired = true
+    check : (self.recoveryAction.hasText()) and (self.resultingEvents.size() > 0)
+    message :
+      "Warning [CIM-EXC-002] ExceptionScenario '" + self.labelText() + "' requires compensation but has no recoveryAction or resultingEvents. " +
+      "Suggestion: model the compensation action and event(s) that record completion/failure."
+  }
+}
+
+context CIM!TemporalConstraint {
+
+  constraint TemporalConstraintHasExpression {
+    check :
+      self.deadlineExpression.hasText() or self.durationExpression.hasText() or self.orderingExpression.hasText()
+    message :
+      "Error [CIM-TIME-001] TemporalConstraint '" + self.labelText() + "' has no deadline, duration, or ordering expression. " +
+      "Suggestion: provide at least one temporal expression and link constrainedElements."
+  }
+
+  critique TemporalConstraintHasScope {
+    check : self.constrainedElements.size() > 0
+    message :
+      "Warning [CIM-TIME-002] TemporalConstraint '" + self.labelText() + "' has no constrainedElements. " +
+      "Suggestion: link the process, step, event, command, or policy to which the timing rule applies."
+  }
+}

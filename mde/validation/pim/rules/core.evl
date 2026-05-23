@@ -1,0 +1,76 @@
+import "../lib/pim-validation-helpers.eol";
+
+context PIM!PIMModel {
+
+  constraint ProviderIndependentFlagMustBeTrue {
+    check : self.providerIndependent.isTrue()
+    message : "[PIM-ROOT-001] The PIM model must remain provider-independent. Fix: set providerIndependent to true and move provider-specific implementation details to a PSM or implementation profile extension."
+  }
+
+  constraint DomainNameRequired {
+    check : self.domainName.hasText()
+    message : "[PIM-ROOT-002] The PIM model is missing a domainName. Fix: provide a stable domain or bounded-context name so generated artifacts and reports can be named consistently."
+  }
+
+  constraint ImplementationProfileRequiredForGeneration {
+    check : self.implementationProfile.isDefined()
+    message : "[PIM-ROOT-003] Artifact generation requires an ImplementationProfile. Fix: add one with primaryLanguage, packageManager, sourceLayout, test/build commands and contract-generation choices."
+  }
+
+  constraint NoProviderSpecificNamesInModel {
+    check : KERNEL!ModelElement.all.forAll(elementItem |
+      not elementItem.name.containsProviderToken()
+      and not elementItem.summary.containsProviderToken()
+      and not elementItem.description.containsProviderToken()
+      and not elementItem.documentation.containsProviderToken()
+    )
+    message : "[PIM-ROOT-004] The model contains provider-specific wording in a name or description. Fix: replace cloud/vendor service names with provider-independent domain terms such as function, queue, topic, object store, identity provider, event bus, trace, metric or deployment unit."
+  }
+
+  critique DefaultCorrelationIdShouldBeNamed {
+    check : self.defaultCorrelationIdName.hasText()
+    message : "[PIM-ROOT-005] No defaultCorrelationIdName is defined. Suggested fix: set a portable name such as correlationId so APIs, events, workflows and logs can share the same correlation convention."
+  }
+
+  critique ArchitectureStyleShouldMatchContents {
+    check :
+      (not self.architectureStyle.enumIs("API_FIRST_SERVERLESS") or self.apis.notEmpty()) and
+      (not self.architectureStyle.enumIs("EVENT_DRIVEN_SERVERLESS") or self.eventTypes.notEmpty() or self.channels.notEmpty()) and
+      (not self.architectureStyle.enumIs("WORKFLOW_ORCHESTRATED_SERVERLESS") or self.workflows.notEmpty())
+    message : "[PIM-ROOT-006] The selected architectureStyle does not match the model contents. Suggested fix: add the matching APIs/events/workflows or choose HYBRID_SERVERLESS if multiple styles are intentionally combined."
+  }
+}
+
+context KERNEL!ModelElement {
+
+  constraint UniqueModelElementId {
+    check : self.`id`.hasText() and KERNEL!ModelElement.all.select(elementItem | elementItem.`id` = self.`id`).size() = 1
+    message : "[PIM-NAME-001] Element id '" + self.`id`.ifUndefined("<missing>") + "' is missing or duplicated. Fix: assign a globally unique stable id to '" + self.displayName() + "'."
+  }
+
+  critique PortableNameRecommended {
+    check : self.name.hasText() and self.name.matches("^[A-Za-z][A-Za-z0-9 _\\-.]*$")
+    message : "[PIM-NAME-002] The element name '" + self.displayName() + "' is hard to use in generated artifacts. Suggested fix: start with a letter and use only letters, numbers, spaces, underscores, hyphens or dots."
+  }
+}
+
+context KERNEL!TraceableElement {
+
+  critique GeneratedElementShouldBeTraceable {
+    guard : self.generatedByTransformation.isTrue()
+    check : self.generatedFrom.hasText() or self.sourceReference.hasText() or self.sourceUri.hasText() or self.traceId.hasText()
+    message : "[PIM-TRACE-001] Generated element '" + self.displayName() + "' has no trace back to its source. Suggested fix: fill generatedFrom, sourceReference, sourceUri or traceId so users can understand where the element came from."
+  }
+
+  critique RationaleRecommendedForManuallyMaintainedElements {
+    guard : self.manuallyMaintained.isTrue()
+    check : self.rationale.hasText() or self.reviewNotes.hasText()
+    message : "[PIM-TRACE-002] Manually maintained element '" + self.displayName() + "' has no rationale/review notes. Suggested fix: explain why this element is manual and how it should be reviewed."
+  }
+}
+
+/******************************
+ * Service and deployment rules
+ ******************************/
+
+

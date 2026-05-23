@@ -1,0 +1,159 @@
+operation Any hasText() : Boolean {
+  return self.isDefined() and self.asString().trim().size() > 0;
+}
+
+operation Any isTrue() : Boolean {
+  return self.isDefined() and self = true;
+}
+
+operation Any enumIs(expectedLiteral : String) : Boolean {
+  return self.isDefined() and self.asString() = expectedLiteral;
+}
+
+operation Any enumIn(expectedLiterals : Sequence) : Boolean {
+  return self.isDefined() and expectedLiterals.includes(self.asString());
+}
+
+operation Collection notEmpty() : Boolean {
+  return self.isDefined() and self.size() > 0;
+}
+
+operation KERNEL!ModelElement displayName() : String {
+  if (self.name.hasText()) {
+    return self.name;
+  }
+  if (self.`id`.hasText()) {
+    return self.`id`;
+  }
+  return self.eClass().getName() + " instance";
+}
+
+operation Any containsProviderToken() : Boolean {
+  if (not self.hasText()) {
+    return false;
+  }
+  return self.asString().matches("(?i)(Lambda|DynamoDB|SQS|SNS|EventBridge|CloudWatch|XRay|IAM|Cognito|S3|AWS|ARN|SAM|CloudFormation|ApiGateway|Azure|GCP|PubSub|CloudRun|CloudFunctions|ServiceBus|CosmosDB|BigQuery)");
+}
+
+operation PIM!Function hasAnyIncomingBinding() : Boolean {
+  return self.triggers.notEmpty()
+    or PIM!ApiRoute.all.exists(routeItem |
+      routeItem.functionIntegration.isDefined() and routeItem.functionIntegration = self)
+    or PIM!WorkflowState.all.exists(stateItem |
+      stateItem.invokesFunction.isDefined() and stateItem.invokesFunction = self)
+    or PIM!EventChannel.all.exists(channelItem |
+      channelItem.producers.includes(self) or channelItem.consumers.includes(self))
+    or PIM!EventType.all.exists(eventItem |
+      eventItem.producedBy.includes(self) or eventItem.consumedBy.includes(self));
+}
+
+operation PIM!Function changesStateOrEmitsEvents() : Boolean {
+  return self.writesState.isTrue()
+    or self.publishesEvents.isTrue()
+    or self.writes.notEmpty()
+    or self.publishes.notEmpty();
+}
+
+operation PIM!Function needsIdempotencyPolicy() : Boolean {
+  return self.requiresIdempotency.isTrue()
+    or self.changesStateOrEmitsEvents()
+    or self.triggers.exists(triggerItem |
+      triggerItem.resilience.isDefined() and
+      triggerItem.resilience.retry.isDefined() and
+      triggerItem.resilience.retry.maxAttempts.isDefined() and
+      triggerItem.resilience.retry.maxAttempts > 1)
+    or PIM!EventChannel.all.exists(channelItem |
+      channelItem.consumers.includes(self) and
+      channelItem.deliverySemantics.enumIn(Sequence{"EFFECTIVELY_ONCE_WITH_IDEMPOTENCY", "EXACTLY_ONCE_REQUIRED"}));
+}
+
+operation PIM!Schema hasFieldNamed(fieldName : String) : Boolean {
+  return fieldName.hasText() and self.fields.exists(fieldItem | fieldItem.name = fieldName);
+}
+
+operation PIM!Schema hasClassifiedSensitiveFields() : Boolean {
+  return self.fields.select(fieldItem |
+    fieldItem.personalData.isTrue() or fieldItem.sensitiveData.isTrue() or fieldItem.secretValue.isTrue()
+  ).forAll(fieldItem | fieldItem.classification.hasText());
+}
+
+operation PIM!EventType carriesPersonalData() : Boolean {
+  return self.containsPersonalData.isTrue()
+    or self.schema.fields.exists(fieldItem | fieldItem.personalData.isTrue());
+}
+
+operation PIM!EventChannel carriesPersonalData() : Boolean {
+  return self.eventTypes.exists(eventItem | eventItem.carriesPersonalData());
+}
+
+operation PIM!WorkflowState outgoingTransitions() : Collection {
+  return PIM!WorkflowTransition.all.select(transitionItem | transitionItem.source = self);
+}
+
+operation PIM!WorkflowState incomingTransitions() : Collection {
+  return PIM!WorkflowTransition.all.select(transitionItem | transitionItem.target = self);
+}
+
+operation PIM!WorkflowState actionCount() : Integer {
+  var total = 0;
+  if (self.invokesFunction.isDefined()) { total = total + 1; }
+  if (self.invokesAdapter.isDefined()) { total = total + 1; }
+  if (self.nestedWorkflow.isDefined()) { total = total + 1; }
+  return total;
+}
+
+operation PIM!DataStore dataStoreContainsSensitiveData() : Boolean {
+  return self.containsPersonalData.isTrue()
+    or self.ownedDataModels.exists(modelItem |
+      modelItem.storageFields.exists(fieldItem | fieldItem.personalData.isTrue() or fieldItem.sensitiveData.isTrue())
+    );
+}
+
+operation PIM!ObjectStore objectStoreContainsSensitiveData() : Boolean {
+  return self.containsPersonalData.isTrue();
+}
+
+operation PIM!StorageElement storageContainsSensitiveData() : Boolean {
+  if (self.isKindOf(PIM!DataStore)) {
+    return self.dataStoreContainsSensitiveData();
+  }
+  if (self.isKindOf(PIM!ObjectStore)) {
+    return self.objectStoreContainsSensitiveData();
+  }
+  return self.containsPersonalData.isTrue();
+}
+
+operation PIM!AccessPattern hasQueryShape() : Boolean {
+  return self.`operation`.hasText()
+    or self.queryBy.hasText()
+    or self.sortBy.hasText()
+    or self.filterBy.hasText();
+}
+
+operation PIM!ImplementationProfile packageManagerFitsLanguage() : Boolean {
+  if (self.primaryLanguage.enumIn(Sequence{"TYPESCRIPT", "JAVASCRIPT"})) {
+    return self.packageManager.enumIn(Sequence{"NPM", "PNPM", "YARN"});
+  }
+  if (self.primaryLanguage.enumIs("PYTHON")) {
+    return self.packageManager.enumIn(Sequence{"PIP", "POETRY"});
+  }
+  if (self.primaryLanguage.enumIs("JAVA")) {
+    return self.packageManager.enumIn(Sequence{"MAVEN", "GRADLE"});
+  }
+  if (self.primaryLanguage.enumIs("CSHARP")) {
+    return self.packageManager.enumIs("DOTNET");
+  }
+  if (self.primaryLanguage.enumIs("GO")) {
+    return self.packageManager.enumIs("GO_MOD");
+  }
+  if (self.primaryLanguage.enumIs("RUST")) {
+    return self.packageManager.enumIs("CARGO");
+  }
+  return true;
+}
+
+/***********************
+ * Root and naming rules
+ ***********************/
+
+
