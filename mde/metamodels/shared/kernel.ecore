@@ -1,26 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="kernel" nsURI="https://modless.org/kernel/1.0" nsPrefix="kernel">
-  <eClassifiers xsi:type="ecore:EEnum" name="Priority">
+<ecore:EPackage xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+  xmlns:xmi="http://www.omg.org/XMI"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  name="kernel" nsPrefix="kernel"
+  nsURI="https://modless.org/kernel/1.0" xmi:version="2.0">
+  <eClassifiers name="Priority" xsi:type="ecore:EEnum">
     <eLiterals name="LOW"/>
     <eLiterals name="MEDIUM" value="1"/>
     <eLiterals name="HIGH" value="2"/>
     <eLiterals name="CRITICAL" value="3"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EEnum" name="Severity">
+  <eClassifiers name="Severity" xsi:type="ecore:EEnum">
     <eLiterals name="INFO"/>
     <eLiterals name="WARNING" value="1"/>
     <eLiterals name="ERROR" value="2"/>
     <eLiterals name="CRITICAL" value="3"/>
     <eLiterals name="BLOCKER" value="4"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EEnum" name="ConstraintStrength">
+  <eClassifiers name="ConstraintStrength" xsi:type="ecore:EEnum">
     <eLiterals name="ADVISORY"/>
     <eLiterals name="RECOMMENDED" value="1"/>
     <eLiterals name="MANDATORY" value="2"/>
     <eLiterals name="BLOCKING" value="3"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EEnum" name="LifecycleStatus">
+  <eClassifiers name="LifecycleStatus" xsi:type="ecore:EEnum">
     <eLiterals name="DRAFT"/>
     <eLiterals name="INCOMPLETE" value="1"/>
     <eLiterals name="REVIEW_REQUIRED" value="2"/>
@@ -32,7 +35,7 @@
     <eLiterals name="BLOCKED" value="8"/>
     <eLiterals name="DEPRECATED" value="9"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EEnum" name="TraceLinkType">
+  <eClassifiers name="TraceLinkType" xsi:type="ecore:EEnum">
     <eLiterals name="DERIVES_FROM"/>
     <eLiterals name="REFINES" value="1"/>
     <eLiterals name="SATISFIES" value="2"/>
@@ -49,7 +52,7 @@
     <eLiterals name="OBSERVES" value="13"/>
     <eLiterals name="OTHER" value="14"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EEnum" name="FindingType">
+  <eClassifiers name="FindingType" xsi:type="ecore:EEnum">
     <eLiterals name="MISSING_INFORMATION"/>
     <eLiterals name="INCONSISTENCY" value="1"/>
     <eLiterals name="BLOCKING_RISK" value="2"/>
@@ -62,7 +65,7 @@
     <eLiterals name="DEPLOYMENT_RISK" value="9"/>
     <eLiterals name="OTHER" value="10"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EEnum" name="StructuredFormat">
+  <eClassifiers name="StructuredFormat" xsi:type="ecore:EEnum">
     <eLiterals name="TEXT"/>
     <eLiterals name="JSON" value="1"/>
     <eLiterals name="YAML" value="2"/>
@@ -74,153 +77,273 @@
     <eLiterals name="CLOUDFORMATION_INTRINSIC" value="8"/>
     <eLiterals name="OTHER" value="9"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="DeployableElement" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="InvocationSource" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="InvocationTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="FunctionTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="WorkflowTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="SubscriptionTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="RoutingTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="FlowEndpoint" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="ProtectedResource" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="PolicyTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="DataAccessTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="ExternalCallTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="EnvironmentTarget" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="CredentialRequirementLike" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="RouteEndpoint" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="EventCarrier" interface="true"/>
-  <eClassifiers xsi:type="ecore:EClass" name="KeyValue">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="key" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  <eClassifiers interface="true" name="DeployableElement" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="InvocationSource" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="InvocationTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="FunctionTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="WorkflowTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="SubscriptionTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="RoutingTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="FlowEndpoint" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="ProtectedResource" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="PolicyTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="DataAccessTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="ExternalCallTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="EnvironmentTarget" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="CredentialRequirementLike" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="RouteEndpoint" xsi:type="ecore:EClass"/>
+  <eClassifiers interface="true" name="EventCarrier" xsi:type="ecore:EClass"/>
+  <eClassifiers name="KeyValue" xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      lowerBound="1" name="key"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="value"
+      xsi:type="ecore:EAttribute"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="Annotation" eSuperTypes="#//KeyValue">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="source" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="owner" lowerBound="1" eType="#//ModelElement"
-        changeable="false" transient="true" eOpposite="#//ModelElement/annotations"/>
+  <eClassifiers eSuperTypes="#//KeyValue" name="Annotation" xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="source"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures changeable="false" eOpposite="#//ModelElement/annotations"
+      eType="#//ModelElement"
+      lowerBound="1"
+      name="owner" transient="true" xsi:type="ecore:EReference"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="ModelElement" abstract="true">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
-        iD="true"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="summary" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="documentation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="modelTags" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="externalId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lifecycleStatus" eType="#//LifecycleStatus"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="annotations" upperBound="-1"
-        eType="#//Annotation" containment="true" eOpposite="#//Annotation/owner"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="incomingTraces" upperBound="-1"
-        eType="#//TraceLink" eOpposite="#//TraceLink/target"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="outgoingTraces" upperBound="-1"
-        eType="#//TraceLink" eOpposite="#//TraceLink/source"/>
+  <eClassifiers abstract="true" name="ModelElement" xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      iD="true" lowerBound="1"
+      name="id"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      lowerBound="1" name="name"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="summary"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="description"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="documentation"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="modelTags"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="externalId"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="#//LifecycleStatus" name="lifecycleStatus"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures containment="true" eOpposite="#//Annotation/owner" eType="#//Annotation"
+      name="annotations" upperBound="-1" xsi:type="ecore:EReference"/>
+    <eStructuralFeatures eOpposite="#//TraceLink/target" eType="#//TraceLink" name="incomingTraces"
+      upperBound="-1" xsi:type="ecore:EReference"/>
+    <eStructuralFeatures eOpposite="#//TraceLink/source" eType="#//TraceLink" name="outgoingTraces"
+      upperBound="-1" xsi:type="ecore:EReference"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="TraceableElement" abstract="true" eSuperTypes="#//ModelElement">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceReference" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceExcerpt" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceQualifiedName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceUri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceLine" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="traceId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="generatedFrom" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="generatedByTransformation"
-        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="rationale" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="reviewStatus" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="reviewNotes" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="manuallyMaintained" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
+  <eClassifiers abstract="true" eSuperTypes="#//ModelElement" name="TraceableElement"
+    xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="sourceReference"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="sourceExcerpt"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="sourceQualifiedName"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="sourceUri"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="sourceLine"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="traceId"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="generatedFrom"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"
+      name="generatedByTransformation"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="rationale"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="reviewStatus"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="reviewNotes"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"
+      name="manuallyMaintained"
+      xsi:type="ecore:EAttribute"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="SemanticRelationship" abstract="true"
-      eSuperTypes="#//TraceableElement"/>
-  <eClassifiers xsi:type="ecore:EClass" name="TraceModel" eSuperTypes="#//TraceableElement">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="links" upperBound="-1"
-        eType="#//TraceLink" containment="true" eOpposite="#//TraceLink/traceModel"/>
+  <eClassifiers abstract="true" eSuperTypes="#//TraceableElement" name="SemanticRelationship"
+    xsi:type="ecore:EClass"/>
+  <eClassifiers eSuperTypes="#//TraceableElement" name="TraceModel" xsi:type="ecore:EClass">
+    <eStructuralFeatures containment="true" eOpposite="#//TraceLink/traceModel" eType="#//TraceLink"
+      name="links" upperBound="-1" xsi:type="ecore:EReference"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="TraceLink" eSuperTypes="#//TraceableElement">
+  <eClassifiers eSuperTypes="#//TraceableElement" name="TraceLink" xsi:type="ecore:EClass">
     <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
       <details key="constraints" value="TraceLinkHasReferenceOrExternalId"/>
     </eAnnotations>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="linkType" lowerBound="1"
-        eType="#//TraceLinkType"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="transformationRule" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="confidence" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sourceElementId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetElementId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="traceModel" lowerBound="1"
-        eType="#//TraceModel" changeable="false" transient="true" eOpposite="#//TraceModel/links"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="source" eType="#//ModelElement"
-        eOpposite="#//ModelElement/outgoingTraces"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="#//ModelElement"
-        eOpposite="#//ModelElement/incomingTraces"/>
+    <eStructuralFeatures eType="#//TraceLinkType" lowerBound="1" name="linkType"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="transformationRule"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="confidence"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="sourceElementId"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="targetElementId"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures changeable="false" eOpposite="#//TraceModel/links" eType="#//TraceModel"
+      lowerBound="1" name="traceModel" transient="true" xsi:type="ecore:EReference"/>
+    <eStructuralFeatures eOpposite="#//ModelElement/outgoingTraces" eType="#//ModelElement"
+      name="source"
+      xsi:type="ecore:EReference"/>
+    <eStructuralFeatures eOpposite="#//ModelElement/incomingTraces" eType="#//ModelElement"
+      name="target"
+      xsi:type="ecore:EReference"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="TransformationAssumption" abstract="true"
-      eSuperTypes="#//TraceableElement">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="assumptionStatement" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="validationApproach" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="accepted" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="acceptedBy" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="acceptedOn" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
+  <eClassifiers abstract="true" eSuperTypes="#//TraceableElement" name="TransformationAssumption"
+    xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="assumptionStatement"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="validationApproach"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject" name="accepted"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="acceptedBy"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"
+      name="acceptedOn"
+      xsi:type="ecore:EAttribute"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="StructuredDocument" eSuperTypes="#//TraceableElement">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="format" lowerBound="1"
-        eType="#//StructuredFormat"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="content" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="externalUri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  <eClassifiers eSuperTypes="#//TraceableElement" name="StructuredDocument" xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="#//StructuredFormat" lowerBound="1" name="format"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="content"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="externalUri"
+      xsi:type="ecore:EAttribute"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="ProductionReadinessAssessment" eSuperTypes="#//TraceableElement">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="readinessStatus" eType="#//LifecycleStatus"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="assessedAt" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="assessedBy" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="transformationReady" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="deploymentReady" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="productionReady" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="findings" upperBound="-1"
-        eType="#//ReadinessFinding" containment="true" eOpposite="#//ReadinessFinding/assessment"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="checks" upperBound="-1"
-        eType="#//ReadinessCheck" containment="true" eOpposite="#//ReadinessCheck/assessment"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="manualDecisions" upperBound="-1"
-        eType="#//ManualDecision" containment="true" eOpposite="#//ManualDecision/assessment"/>
+  <eClassifiers eSuperTypes="#//TraceableElement" name="ProductionReadinessAssessment"
+    xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="#//LifecycleStatus" name="readinessStatus"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"
+      name="assessedAt"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="assessedBy"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"
+      name="transformationReady"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"
+      name="deploymentReady"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"
+      name="productionReady"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures containment="true" eOpposite="#//ReadinessFinding/assessment"
+      eType="#//ReadinessFinding"
+      name="findings" upperBound="-1" xsi:type="ecore:EReference"/>
+    <eStructuralFeatures containment="true" eOpposite="#//ReadinessCheck/assessment"
+      eType="#//ReadinessCheck"
+      name="checks" upperBound="-1" xsi:type="ecore:EReference"/>
+    <eStructuralFeatures containment="true" eOpposite="#//ManualDecision/assessment"
+      eType="#//ManualDecision"
+      name="manualDecisions" upperBound="-1" xsi:type="ecore:EReference"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="ReadinessFinding" eSuperTypes="#//TraceableElement">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="findingType" eType="#//FindingType"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="severity" lowerBound="1"
-        eType="#//Severity"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="ruleId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="message" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="recommendation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="blocking" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="assessment" lowerBound="1"
-        eType="#//ProductionReadinessAssessment" changeable="false" transient="true"
-        eOpposite="#//ProductionReadinessAssessment/findings"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="affectedElements" upperBound="-1"
-        eType="#//ModelElement"/>
+  <eClassifiers eSuperTypes="#//TraceableElement" name="ReadinessFinding" xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="#//FindingType" name="findingType" xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="#//Severity" lowerBound="1" name="severity"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="ruleId"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="message"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="recommendation"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject" name="blocking"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures changeable="false" eOpposite="#//ProductionReadinessAssessment/findings"
+      eType="#//ProductionReadinessAssessment"
+      lowerBound="1" name="assessment" transient="true"
+      xsi:type="ecore:EReference"/>
+    <eStructuralFeatures eType="#//ModelElement" name="affectedElements" upperBound="-1"
+      xsi:type="ecore:EReference"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="ReadinessCheck" eSuperTypes="#//TraceableElement">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="checkId" lowerBound="1"
-        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="severity" lowerBound="1"
-        eType="#//Severity"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="passed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="message" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="remediation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="assessment" lowerBound="1"
-        eType="#//ProductionReadinessAssessment" changeable="false" transient="true"
-        eOpposite="#//ProductionReadinessAssessment/checks"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="affectedElements" upperBound="-1"
-        eType="#//ModelElement"/>
+  <eClassifiers eSuperTypes="#//TraceableElement" name="ReadinessCheck" xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      lowerBound="1" name="checkId"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="#//Severity" lowerBound="1" name="severity"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject" name="passed"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="message"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="remediation"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures changeable="false" eOpposite="#//ProductionReadinessAssessment/checks"
+      eType="#//ProductionReadinessAssessment"
+      lowerBound="1" name="assessment" transient="true"
+      xsi:type="ecore:EReference"/>
+    <eStructuralFeatures eType="#//ModelElement" name="affectedElements" upperBound="-1"
+      xsi:type="ecore:EReference"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="ManualDecision" eSuperTypes="#//TraceableElement">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="question" lowerBound="1"
-        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="decision" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="decisionOwner" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="dueDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="blocking" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="severity" eType="#//Severity"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="assessment" eType="#//ProductionReadinessAssessment"
-        changeable="false" transient="true" eOpposite="#//ProductionReadinessAssessment/manualDecisions"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="affectedElements" upperBound="-1"
-        eType="#//ModelElement"/>
+  <eClassifiers eSuperTypes="#//TraceableElement" name="ManualDecision" xsi:type="ecore:EClass">
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      lowerBound="1" name="question"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="decision"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+      name="decisionOwner"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"
+      name="dueDate"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBooleanObject" name="blocking"
+      xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures eType="#//Severity" name="severity" xsi:type="ecore:EAttribute"/>
+    <eStructuralFeatures changeable="false"
+      eOpposite="#//ProductionReadinessAssessment/manualDecisions"
+      eType="#//ProductionReadinessAssessment"
+      name="assessment" transient="true"
+      xsi:type="ecore:EReference"/>
+    <eStructuralFeatures eType="#//ModelElement" name="affectedElements" upperBound="-1"
+      xsi:type="ecore:EReference"/>
   </eClassifiers>
 </ecore:EPackage>
