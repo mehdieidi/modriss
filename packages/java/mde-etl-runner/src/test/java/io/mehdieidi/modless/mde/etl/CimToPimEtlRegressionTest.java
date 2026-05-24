@@ -129,7 +129,7 @@ final class CimToPimEtlRegressionTest {
                         .flatMap(store -> values(store, "ownedDataModels").stream())
                         .flatMap(model -> values(model, "storageFields").stream())
                         .anyMatch(field -> "inventory".equals(get(field, "name"))),
-                "Domain relationships should be represented in data model storage fields.");
+                "Domain relationships should be represented in data model repository fields.");
         assertTrue(values(root, "flows").stream()
                         .anyMatch(flow -> "ExternalIntegrationFlow".equals(flow.eClass().getName())),
                 "External process steps should create external integration flows.");

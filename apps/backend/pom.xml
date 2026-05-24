@@ -3,12 +3,50 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>backend</artifactId>
 
-  <description>Placeholder Spring Boot backend application module.</description>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <skip>false</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+        <groupId>org.springframework.boot</groupId>
+        <version>${spring.boot.version}</version>
+      </plugin>
+    </plugins>
+  </build>
 
+  <dependencies>
+    <dependency>
+      <artifactId>platform-core</artifactId>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-validation</artifactId>
+      <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <description>Spring Boot backend application for the Modless web frontend.</description>
   <modelVersion>4.0.0</modelVersion>
+
   <name>backend</name>
   <packaging>jar</packaging>
-
   <parent>
     <artifactId>modless</artifactId>
     <groupId>io.mehdieidi</groupId>

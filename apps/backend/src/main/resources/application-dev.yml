@@ -1,1 +1,3 @@
-# Placeholder development application configuration.
+logging:
+  level:
+    io.mehdieidi.modless: DEBUG

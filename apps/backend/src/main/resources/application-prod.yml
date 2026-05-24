@@ -1,1 +1,4 @@
 # Placeholder production application configuration.
+logging:
+  level:
+    io.mehdieidi.modless: INFO

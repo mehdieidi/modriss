@@ -7,8 +7,14 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <groupId>org.springframework.boot</groupId>
+          <version>${spring.boot.version}</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
+            <parameters>true</parameters>
             <release>${maven.compiler.release}</release>
           </configuration>
           <version>${maven.compiler.plugin.version}</version>
@@ -19,9 +25,31 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+        <groupId>org.springframework.boot</groupId>
+        <version>${spring.boot.version}</version>
+      </plugin>
+    </plugins>
   </build>
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <groupId>org.springframework.boot</groupId>
+        <scope>import</scope>
+        <type>pom</type>
+        <version>${spring.boot.version}</version>
+      </dependency>
+      <dependency>
+        <artifactId>platform-core</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <artifactId>mde-etl-runner</artifactId>
         <groupId>${project.groupId}</groupId>
@@ -45,6 +73,7 @@
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>apps/backend</module>
+    <module>packages/java/platform-core</module>
     <module>packages/java/mde-etl-runner</module>
     <module>packages/java/mde-evl-validator</module>
     <module>packages/java/mde-m2t-runner</module>
@@ -64,6 +93,7 @@
     <maven.compiler.release>${java.version}</maven.compiler.release>
     <maven.surefire.version>3.5.4</maven.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spring.boot.version>3.3.4</spring.boot.version>
   </properties>
 
   <version>0.0.1-SNAPSHOT</version>

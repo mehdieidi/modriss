@@ -1,5 +1,138 @@
 openapi: 3.1.0
 info:
-  title: Modless
+  title: Modless Backend API
   version: 0.0.1
-paths: { }
+paths:
+  /api/health:
+    get:
+      summary: Get backend health
+      responses:
+        '200': { description: Healthy }
+  /api/auth/register:
+    post:
+      summary: Register a user
+      responses:
+        '200': { description: Auth session }
+  /api/auth/login:
+    post:
+      summary: Create an auth session
+      responses:
+        '200': { description: Auth session }
+  /api/auth/me:
+    get:
+      summary: Get current user
+      responses:
+        '200': { description: User }
+    put:
+      summary: Update current user profile
+      responses:
+        '200': { description: User }
+  /api/projects:
+    get:
+      summary: List projects
+      responses:
+        '200': { description: Projects }
+    post:
+      summary: Create project
+      responses:
+        '200': { description: Project }
+  /api/projects/{id}:
+    get:
+      summary: Get project
+      responses:
+        '200': { description: Project }
+    put:
+      summary: Update project
+      responses:
+        '200': { description: Project }
+    delete:
+      summary: Delete project
+      responses:
+        '200': { description: Deleted }
+  /api/{level}:
+    get:
+      summary: List CIM/PIM/PSM models
+      responses:
+        '200': { description: Models }
+    post:
+      summary: Create CIM/PIM/PSM model
+      responses:
+        '200': { description: Model }
+  /api/{level}/{id}:
+    get:
+      summary: Get model
+      responses:
+        '200': { description: Model }
+    put:
+      summary: Update model
+      responses:
+        '200': { description: Model }
+    delete:
+      summary: Delete model
+      responses:
+        '200': { description: Deleted }
+  /api/{level}/validate:
+    post:
+      summary: Validate model
+      responses:
+        '200': { description: Validation result }
+  /api/{level}/import:
+    post:
+      summary: Import model JSON
+      responses:
+        '200': { description: Imported model }
+  /api/{level}/export:
+    post:
+      summary: Export model JSON
+      responses:
+        '200': { description: Exported file }
+  /api/transformations/cim-to-pim:
+    post:
+      summary: Generate PIM from CIM
+      responses:
+        '200': { description: PIM model }
+  /api/transformations/pim-to-psm:
+    post:
+      summary: Generate PSM from PIM
+      responses:
+        '200': { description: PSM model }
+  /api/transformations/psm-to-artifact:
+    post:
+      summary: Generate artifacts from PSM
+      responses:
+        '200': { description: Artifact }
+  /api/artifact:
+    get:
+      summary: List artifacts
+      responses:
+        '200': { description: Artifacts }
+  /api/artifact/{id}:
+    get:
+      summary: Get artifact
+      responses:
+        '200': { description: Artifact }
+  /api/artifact/{id}/file:
+    get:
+      summary: Read artifact file
+      responses:
+        '200': { description: File content }
+  /api/artifact/{id}/files:
+    put:
+      summary: Save artifact file
+      responses:
+        '200': { description: Artifact }
+  /api/artifact/{id}/download:
+    get:
+      summary: Download artifact ZIP
+      responses:
+        '200': { description: ZIP archive }
+  /api/modeling/config:
+    get:
+      summary: Get modeling palette and UI metadata
+      responses:
+        '200': { description: Modeling config }
+  /api/layout:
+    post:
+      summary: Auto-layout diagram nodes
+      responses:
+        '200': { description: Layout result }

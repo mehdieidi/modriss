@@ -1,0 +1,229 @@
+{
+  "displayName": "PSM",
+  "elements": [
+    {
+      "type": "AwsLambdaFunction",
+      "label": "AWS Lambda Function",
+      "icon": "functions",
+      "color": "#2563EB",
+      "category": "Compute"
+    },
+    {
+      "type": "ApiGatewayTrigger",
+      "label": "API Gateway Trigger",
+      "icon": "link",
+      "color": "#7C3AED",
+      "category": "API"
+    },
+    {
+      "type": "SqsLambdaEventSourceMapping",
+      "label": "SQS Lambda Event Source Mapping",
+      "icon": "link",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "EventBridgeLambdaTarget",
+      "label": "EventBridge Lambda Target",
+      "icon": "track_changes",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "ApiGatewayApi",
+      "label": "API Gateway API",
+      "icon": "api",
+      "color": "#7C3AED",
+      "category": "API"
+    },
+    {
+      "type": "ApiGatewayRoute",
+      "label": "API Gateway Route",
+      "icon": "route",
+      "color": "#7C3AED",
+      "category": "API"
+    },
+    {
+      "type": "EventBridgeBus",
+      "label": "EventBridge Bus",
+      "icon": "hub",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "EventBridgeRule",
+      "label": "EventBridge Rule",
+      "icon": "rule",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "SqsQueue",
+      "label": "SQS Queue",
+      "icon": "queue",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "SnsTopic",
+      "label": "SNS Topic",
+      "icon": "campaign",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "EventSchema",
+      "label": "Event Schema",
+      "icon": "rule",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "StepFunctionStateMachine",
+      "label": "Step Function State Machine",
+      "icon": "alt_route",
+      "color": "#EA580C",
+      "category": "Workflow"
+    },
+    {
+      "type": "DynamoDbTable",
+      "label": "DynamoDB Table",
+      "icon": "table_rows",
+      "color": "#0891B2",
+      "category": "Data"
+    },
+    {
+      "type": "DynamoDbAttributeDefinition",
+      "label": "DynamoDB Attribute Definition",
+      "icon": "list_alt",
+      "color": "#0891B2",
+      "category": "Data"
+    },
+    {
+      "type": "DynamoDbGlobalSecondaryIndex",
+      "label": "DynamoDB Global Secondary Index",
+      "icon": "view_list",
+      "color": "#0891B2",
+      "category": "Data"
+    },
+    {
+      "type": "S3Bucket",
+      "label": "S3 Bucket",
+      "icon": "folder_zip",
+      "color": "#0891B2",
+      "category": "Data"
+    },
+    {
+      "type": "SamStack",
+      "label": "SAM Stack",
+      "icon": "inventory",
+      "color": "#0F766E",
+      "category": "Deployment"
+    },
+    {
+      "type": "AwsStage",
+      "label": "AWS Stage",
+      "icon": "layers",
+      "color": "#0F766E",
+      "category": "Deployment"
+    },
+    {
+      "type": "LambdaEventSourceMapping",
+      "label": "Lambda Event Source Mapping",
+      "icon": "link",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "CognitoUserPool",
+      "label": "Cognito User Pool",
+      "icon": "supervised_user_circle",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "IamPolicy",
+      "label": "IAM Policy",
+      "icon": "policy",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "IamStatement",
+      "label": "IAM Statement",
+      "icon": "gavel",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "IamRole",
+      "label": "IAM Role",
+      "icon": "verified_user",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "SecretsManagerSecret",
+      "label": "Secrets Manager Secret",
+      "icon": "key",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "SsmParameter",
+      "label": "SSM Parameter",
+      "icon": "tune",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "KmsKey",
+      "label": "KMS Key",
+      "icon": "vpn_key",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "VpcConfig",
+      "label": "VPC Config",
+      "icon": "lan",
+      "color": "#0F766E",
+      "category": "Networking"
+    },
+    {
+      "type": "EnvironmentConfig",
+      "label": "Environment Config",
+      "icon": "settings",
+      "color": "#0F766E",
+      "category": "Deployment"
+    },
+    {
+      "type": "LambdaEnvironmentVariable",
+      "label": "Lambda Environment Variable",
+      "icon": "settings_input_component",
+      "color": "#0F766E",
+      "category": "Deployment"
+    },
+    {
+      "type": "CloudWatchAlarm",
+      "label": "CloudWatch Alarm",
+      "icon": "notifications",
+      "color": "#64748B",
+      "category": "Operations"
+    },
+    {
+      "type": "CloudWatchLogGroup",
+      "label": "CloudWatch Log Group",
+      "icon": "article",
+      "color": "#64748B",
+      "category": "Operations"
+    },
+    {
+      "type": "XRayTracingConfig",
+      "label": "X-Ray Tracing Config",
+      "icon": "timeline",
+      "color": "#64748B",
+      "category": "Operations"
+    }
+  ]
+}

@@ -1,1 +1,6 @@
 # Placeholder test application configuration.
+modless:
+  storage-root: target/test-storage
+  session-ttl: 1d
+  allowed-origins:
+    - http://localhost:8080

@@ -1,0 +1,285 @@
+{
+  "displayName": "CIM",
+  "elements": [
+    {
+      "type": "BusinessGoal",
+      "label": "Business Goal",
+      "icon": "flag",
+      "color": "#2563EB",
+      "category": "Intent"
+    },
+    {
+      "type": "Objective",
+      "label": "Objective",
+      "icon": "track_changes",
+      "color": "#2563EB",
+      "category": "Intent"
+    },
+    {
+      "type": "KPI",
+      "label": "KPI",
+      "icon": "analytics",
+      "color": "#2563EB",
+      "category": "Intent"
+    },
+    {
+      "type": "StakeholderConcern",
+      "label": "Stakeholder Concern",
+      "icon": "report",
+      "color": "#2563EB",
+      "category": "Intent"
+    },
+    {
+      "type": "Actor",
+      "label": "Actor",
+      "icon": "person",
+      "color": "#7C3AED",
+      "category": "People"
+    },
+    {
+      "type": "Role",
+      "label": "Role",
+      "icon": "badge",
+      "color": "#7C3AED",
+      "category": "People"
+    },
+    {
+      "type": "Persona",
+      "label": "Persona",
+      "icon": "face",
+      "color": "#7C3AED",
+      "category": "People"
+    },
+    {
+      "type": "ExternalSystem",
+      "label": "External System",
+      "icon": "language",
+      "color": "#7C3AED",
+      "category": "People"
+    },
+    {
+      "type": "BusinessCapability",
+      "label": "Business Capability",
+      "icon": "track_changes",
+      "color": "#0F766E",
+      "category": "Capability"
+    },
+    {
+      "type": "CapabilityDependency",
+      "label": "Capability Dependency",
+      "icon": "link",
+      "color": "#0F766E",
+      "category": "Capability"
+    },
+    {
+      "type": "BoundedContextCandidate",
+      "label": "Bounded Context Candidate",
+      "icon": "hub",
+      "color": "#0F766E",
+      "category": "Capability"
+    },
+    {
+      "type": "AggregateCandidate",
+      "label": "Aggregate Candidate",
+      "icon": "account_tree",
+      "color": "#0F766E",
+      "category": "Capability"
+    },
+    {
+      "type": "Command",
+      "label": "Command",
+      "icon": "play_arrow",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "Query",
+      "label": "Query",
+      "icon": "search",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "BusinessEvent",
+      "label": "Business Event",
+      "icon": "bolt",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "BusinessProcess",
+      "label": "Business Process",
+      "icon": "schema",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "ProcessStep",
+      "label": "Process Step",
+      "icon": "stairs",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "Decision",
+      "label": "Decision",
+      "icon": "alt_route",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "Precondition",
+      "label": "Precondition",
+      "icon": "rule",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "Postcondition",
+      "label": "Postcondition",
+      "icon": "check_circle",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "ExceptionScenario",
+      "label": "Exception Scenario",
+      "icon": "error",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "TemporalConstraint",
+      "label": "Temporal Constraint",
+      "icon": "schedule",
+      "color": "#DC2626",
+      "category": "Behavior"
+    },
+    {
+      "type": "Policy",
+      "label": "Policy",
+      "icon": "gavel",
+      "color": "#CA8A04",
+      "category": "Constraint"
+    },
+    {
+      "type": "DomainEntity",
+      "label": "Domain Entity",
+      "icon": "category",
+      "color": "#0891B2",
+      "category": "Domain"
+    },
+    {
+      "type": "ValueObject",
+      "label": "Value Object",
+      "icon": "data_object",
+      "color": "#0891B2",
+      "category": "Domain"
+    },
+    {
+      "type": "DomainRelationship",
+      "label": "Domain Relationship",
+      "icon": "join_full",
+      "color": "#0891B2",
+      "category": "Domain"
+    },
+    {
+      "type": "InformationItem",
+      "label": "Information Item",
+      "icon": "description",
+      "color": "#0891B2",
+      "category": "Domain"
+    },
+    {
+      "type": "DataClassification",
+      "label": "Data Classification",
+      "icon": "privacy_tip",
+      "color": "#0891B2",
+      "category": "Domain"
+    },
+    {
+      "type": "ConsentRequirement",
+      "label": "Consent Requirement",
+      "icon": "task_alt",
+      "color": "#0891B2",
+      "category": "Domain"
+    },
+    {
+      "type": "NonFunctionalRequirement",
+      "label": "Non Functional Requirement",
+      "icon": "rule",
+      "color": "#CA8A04",
+      "category": "Constraint"
+    },
+    {
+      "type": "QualityScenario",
+      "label": "Quality Scenario",
+      "icon": "monitor_heart",
+      "color": "#CA8A04",
+      "category": "Constraint"
+    },
+    {
+      "type": "SecurityConstraint",
+      "label": "Security Constraint",
+      "icon": "security",
+      "color": "#CA8A04",
+      "category": "Constraint"
+    },
+    {
+      "type": "PrivacyConstraint",
+      "label": "Privacy Constraint",
+      "icon": "shield",
+      "color": "#CA8A04",
+      "category": "Constraint"
+    },
+    {
+      "type": "RegulatoryConstraint",
+      "label": "Regulatory Constraint",
+      "icon": "balance",
+      "color": "#CA8A04",
+      "category": "Constraint"
+    },
+    {
+      "type": "Hotspot",
+      "label": "Hotspot",
+      "icon": "local_fire_department",
+      "color": "#64748B",
+      "category": "Knowledge"
+    },
+    {
+      "type": "OpenQuestion",
+      "label": "Open Question",
+      "icon": "help",
+      "color": "#64748B",
+      "category": "Knowledge"
+    },
+    {
+      "type": "Risk",
+      "label": "Risk",
+      "icon": "warning",
+      "color": "#64748B",
+      "category": "Knowledge"
+    },
+    {
+      "type": "RequirementLink",
+      "label": "Requirement Link",
+      "icon": "link",
+      "color": "#64748B",
+      "category": "Knowledge"
+    },
+    {
+      "type": "GoalSatisfactionLink",
+      "label": "Goal Satisfaction Link",
+      "icon": "done_all",
+      "color": "#64748B",
+      "category": "Knowledge"
+    },
+    {
+      "type": "Assumption",
+      "label": "Assumption",
+      "icon": "help",
+      "color": "#64748B",
+      "category": "Knowledge"
+    }
+  ]
+}

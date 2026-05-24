@@ -1,0 +1,243 @@
+{
+  "displayName": "PIM",
+  "elements": [
+    {
+      "type": "Function",
+      "label": "Function",
+      "icon": "functions",
+      "color": "#2563EB",
+      "category": "Compute"
+    },
+    {
+      "type": "FunctionContract",
+      "label": "Function Contract",
+      "icon": "description",
+      "color": "#2563EB",
+      "category": "Compute"
+    },
+    {
+      "type": "Api",
+      "label": "API",
+      "icon": "api",
+      "color": "#7C3AED",
+      "category": "API"
+    },
+    {
+      "type": "ApiRoute",
+      "label": "API Route",
+      "icon": "route",
+      "color": "#7C3AED",
+      "category": "API"
+    },
+    {
+      "type": "EventSource",
+      "label": "Event Source",
+      "icon": "input",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "Trigger",
+      "label": "Trigger",
+      "icon": "play_lesson",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "EventChannel",
+      "label": "Event Channel",
+      "icon": "alt_route",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "EventRoutingRule",
+      "label": "Event Routing Rule",
+      "icon": "account_tree",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "Queue",
+      "label": "Queue",
+      "icon": "queue",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "Topic",
+      "label": "Topic",
+      "icon": "campaign",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "EventBus",
+      "label": "Event Bus",
+      "icon": "hub",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "EventType",
+      "label": "Event Type",
+      "icon": "description",
+      "color": "#DB2777",
+      "category": "Eventing"
+    },
+    {
+      "type": "ServerlessService",
+      "label": "Serverless Service",
+      "icon": "domain",
+      "color": "#0F766E",
+      "category": "Deployment"
+    },
+    {
+      "type": "DeploymentUnit",
+      "label": "Deployment Unit",
+      "icon": "inventory_2",
+      "color": "#0F766E",
+      "category": "Deployment"
+    },
+    {
+      "type": "Workflow",
+      "label": "Workflow",
+      "icon": "schema",
+      "color": "#EA580C",
+      "category": "Workflow"
+    },
+    {
+      "type": "WorkflowState",
+      "label": "Workflow State",
+      "icon": "timeline",
+      "color": "#EA580C",
+      "category": "Workflow"
+    },
+    {
+      "type": "Flow",
+      "label": "Flow",
+      "icon": "east",
+      "color": "#EA580C",
+      "category": "Workflow"
+    },
+    {
+      "type": "RequestResponseFlow",
+      "label": "Request Response Flow",
+      "icon": "sync_alt",
+      "color": "#EA580C",
+      "category": "Workflow"
+    },
+    {
+      "type": "EventFlow",
+      "label": "Event Flow",
+      "icon": "shuffle",
+      "color": "#EA580C",
+      "category": "Workflow"
+    },
+    {
+      "type": "MessageFlow",
+      "label": "Message Flow",
+      "icon": "mail",
+      "color": "#EA580C",
+      "category": "Workflow"
+    },
+    {
+      "type": "OrchestrationFlow",
+      "label": "Orchestration Flow",
+      "icon": "account_tree",
+      "color": "#EA580C",
+      "category": "Workflow"
+    },
+    {
+      "type": "DataStore",
+      "label": "Data Store",
+      "icon": "database",
+      "color": "#0891B2",
+      "category": "Data"
+    },
+    {
+      "type": "ObjectStore",
+      "label": "Object Store",
+      "icon": "folder_zip",
+      "color": "#0891B2",
+      "category": "Data"
+    },
+    {
+      "type": "IdentityProvider",
+      "label": "Identity Provider",
+      "icon": "verified_user",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "Principal",
+      "label": "Principal",
+      "icon": "group",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "Permission",
+      "label": "Permission",
+      "icon": "policy",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "Secret",
+      "label": "Secret",
+      "icon": "key",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "ConfigParameter",
+      "label": "Config Parameter",
+      "icon": "tune",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "EnvironmentVariable",
+      "label": "Environment Variable",
+      "icon": "settings",
+      "color": "#CA8A04",
+      "category": "Security"
+    },
+    {
+      "type": "ResiliencePolicy",
+      "label": "Resilience Policy",
+      "icon": "shield",
+      "color": "#64748B",
+      "category": "Operations"
+    },
+    {
+      "type": "ObservabilityConfig",
+      "label": "Observability Config",
+      "icon": "monitoring",
+      "color": "#64748B",
+      "category": "Operations"
+    },
+    {
+      "type": "IdempotencyPolicy",
+      "label": "Idempotency Policy",
+      "icon": "repeat",
+      "color": "#64748B",
+      "category": "Operations"
+    },
+    {
+      "type": "ConcurrencyPolicy",
+      "label": "Concurrency Policy",
+      "icon": "groups",
+      "color": "#64748B",
+      "category": "Operations"
+    },
+    {
+      "type": "CostPolicy",
+      "label": "Cost Policy",
+      "icon": "savings",
+      "color": "#64748B",
+      "category": "Operations"
+    }
+  ]
+}
