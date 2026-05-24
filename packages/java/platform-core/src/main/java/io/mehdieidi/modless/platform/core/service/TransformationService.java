@@ -8,15 +8,21 @@ import io.mehdieidi.modless.mde.etl.EpsilonEtlExecutor;
 import io.mehdieidi.modless.mde.etl.EtlExecutionException;
 import io.mehdieidi.modless.mde.etl.EtlExecutionReport;
 import io.mehdieidi.modless.mde.etl.EtlExecutionStatus;
+import io.mehdieidi.modless.mde.etl.PimToAwsPsmDefaults;
+import io.mehdieidi.modless.mde.generation.AwsPsmToArtifactsDefaults;
+import io.mehdieidi.modless.mde.generation.EgxGenerationException;
+import io.mehdieidi.modless.mde.generation.EgxGenerationReport;
+import io.mehdieidi.modless.mde.generation.EpsilonEgxGenerator;
+import io.mehdieidi.modless.mde.generation.GenerationStatus;
 import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
 import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -25,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public final class TransformationService {
 
@@ -33,6 +40,7 @@ public final class TransformationService {
     private final ArtifactService artifactService;
     private final XmiModelImportService xmiModelIo;
     private final EpsilonEtlExecutor etlExecutor;
+    private final EpsilonEgxGenerator artifactGenerator;
 
     public TransformationService(JsonFileStore store, ModelService modelService,
             ArtifactService artifactService) {
@@ -41,6 +49,7 @@ public final class TransformationService {
         this.artifactService = artifactService;
         this.xmiModelIo = new XmiModelImportService(store.objectMapper());
         this.etlExecutor = new EpsilonEtlExecutor();
+        this.artifactGenerator = new EpsilonEgxGenerator();
     }
 
     public ModelRecord cimToPim(UserRecord user, String sourceModelId) {
@@ -54,29 +63,15 @@ public final class TransformationService {
 
     public ModelRecord pimToPsm(UserRecord user, String sourceModelId) {
         ModelRecord source = modelService.get(user, ModelLevel.PIM, sourceModelId);
-        ObjectNode target = transformedModel(source, ModelLevel.PSM);
+        ObjectNode target = formalPimToPsmModel(source);
         target.put("sourceModelId", source.id());
-        addManualBacklog(target,
-                "Review generated AWS resource sizing, IAM scope, and deployment settings.");
         return modelService.create(user, ModelLevel.PSM, source.projectId(), source.name() + "-psm",
                 target);
     }
 
     public ArtifactRecord psmToArtifact(UserRecord user, String sourceModelId) {
         ModelRecord source = modelService.get(user, ModelLevel.PSM, sourceModelId);
-        Map<String, String> files = new LinkedHashMap<>();
-        String projectName = sanitize(source.name());
-        files.put("README.md", "# " + source.name() + "\n\nGenerated from PSM model `" + source.id()
-                + "` at " + Instant.now() + ".\n\nReview generated files before deployment.\n");
-        files.put("template.yaml", """
-                AWSTemplateFormatVersion: '2010-09-09'
-                Transform: AWS::Serverless-2016-10-31
-                Description: Generated Modless AWS serverless scaffold
-                Resources: {}
-                """);
-        files.put("modless/model.psm.json", pretty(source.modelJson()));
-        files.put("docs/generation-report.md", "Generated artifact scaffold for `" + projectName
-                + "`.\n\nThe formal EGX generator can replace this file-backed implementation when XMI export is wired.\n");
+        Map<String, String> files = formalPsmToArtifactFiles(source);
         return artifactService.create(user, source.projectId(), source.name() + "-artifact", files);
     }
 
@@ -103,6 +98,8 @@ public final class TransformationService {
             target.put("transformedFrom", ModelLevel.CIM.name());
             target.put("transformedFromModelId", source.id());
             target.put("transformationStatus", "GENERATED_BY_ETL");
+            target.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(
+                    Files.readAllBytes(pimXmi)));
             return target;
         } catch (PlatformException ex) {
             throw ex;
@@ -119,21 +116,106 @@ public final class TransformationService {
         }
     }
 
+    private ObjectNode formalPimToPsmModel(ModelRecord source) {
+        Path repositoryRoot = findRepositoryRoot();
+        Path workDir = null;
+        try {
+            workDir = Files.createTempDirectory("modless-pim-to-psm-");
+            Path pimXmi = workDir.resolve("source-pim.xmi");
+            Path psmXmi = workDir.resolve("target-awspsm.xmi");
+            Files.write(pimXmi, sourcePimXmi(source.modelJson()));
+
+            EtlExecutionReport report = etlExecutor.execute(PimToAwsPsmDefaults.request(
+                    repositoryRoot, pimXmi, psmXmi, true, true));
+            if (report.status() != EtlExecutionStatus.SUCCEEDED) {
+                throw new PlatformException(500, "PIM-to-PSM ETL failed: "
+                        + summarizeDiagnostics(report));
+            }
+            JsonNode imported = xmiModelIo.importModel(ModelLevel.PSM, Files.readAllBytes(psmXmi));
+            if (!imported.isObject()) {
+                throw new PlatformException(500, "PIM-to-PSM ETL did not produce a PSM model.");
+            }
+            ObjectNode target = (ObjectNode) imported;
+            target.put("transformedFrom", ModelLevel.PIM.name());
+            target.put("transformedFromModelId", source.id());
+            target.put("transformationStatus", "GENERATED_BY_ETL");
+            target.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(
+                    Files.readAllBytes(psmXmi)));
+            mirrorReadinessToManualBacklog(target);
+            return target;
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (EtlExecutionException ex) {
+            throw new PlatformException(500, "PIM-to-PSM ETL failed: "
+                    + summarizeDiagnostics(ex.getReport()));
+        } catch (Exception ex) {
+            throw new PlatformException(500, "PIM-to-PSM ETL could not run: "
+                    + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()));
+        } finally {
+            if (workDir != null && !Boolean.getBoolean("modless.keepEtlTemp")) {
+                deleteQuietly(workDir);
+            }
+        }
+    }
+
+    private Map<String, String> formalPsmToArtifactFiles(ModelRecord source) {
+        Path repositoryRoot = findRepositoryRoot();
+        Path workDir = null;
+        try {
+            workDir = Files.createTempDirectory("modless-psm-to-artifact-");
+            Path psmXmi = workDir.resolve("source-awspsm.xmi");
+            Path outputDirectory = workDir.resolve("generated-artifacts");
+            Files.write(psmXmi, sourcePsmXmi(source.modelJson()));
+
+            EgxGenerationReport report = artifactGenerator.generate(
+                    AwsPsmToArtifactsDefaults.request(
+                            repositoryRoot, psmXmi, outputDirectory, true, true));
+            if (report.status() != GenerationStatus.SUCCEEDED) {
+                throw new PlatformException(500, "PSM-to-artifact generation failed: "
+                        + summarizeDiagnostics(report));
+            }
+            Map<String, String> files = generatedFiles(outputDirectory);
+            if (files.isEmpty()) {
+                throw new PlatformException(500,
+                        "PSM-to-artifact generation did not produce files.");
+            }
+            return files;
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (EgxGenerationException ex) {
+            throw new PlatformException(500, "PSM-to-artifact generation failed: "
+                    + summarizeDiagnostics(ex.getReport()));
+        } catch (Exception ex) {
+            throw new PlatformException(500, "PSM-to-artifact generation could not run: "
+                    + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()));
+        } finally {
+            if (workDir != null && !Boolean.getBoolean("modless.keepGenerationTemp")) {
+                deleteQuietly(workDir);
+            }
+        }
+    }
+
     private Path findRepositoryRoot() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {
             if (Files.isRegularFile(
                     current.resolve("mde/transformations/cim-to-pim/cim-to-pim.etl"))
                     && Files.isRegularFile(current.resolve(
+                    "mde/transformations/pim-to-awspsm/pim-to-awspsm.etl"))
+                    && Files.isRegularFile(current.resolve(
+                    "mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx"))
+                    && Files.isRegularFile(current.resolve(
                     "mde/metamodels/cim/cim-combined.ecore"))
                     && Files.isRegularFile(current.resolve(
-                    "mde/metamodels/pim/pim-combined.ecore"))) {
+                    "mde/metamodels/pim/pim-combined.ecore"))
+                    && Files.isRegularFile(current.resolve(
+                    "mde/metamodels/psm/psm-combined.ecore"))) {
                 return current;
             }
             current = current.getParent();
         }
         throw new PlatformException(500,
-                "CIM-to-PIM ETL files were not found from the backend working directory.");
+                "ETL transformation files were not found from the backend working directory.");
     }
 
     private byte[] sourceCimXmi(JsonNode modelJson) {
@@ -148,6 +230,30 @@ public final class TransformationService {
         return xmiModelIo.exportModel(ModelLevel.CIM, hydrateSemanticReferences(modelJson));
     }
 
+    private byte[] sourcePimXmi(JsonNode modelJson) {
+        String sourceXmi = text(modelJson, "_sourceXmiBase64", "");
+        if (!sourceXmi.isBlank()) {
+            try {
+                return Base64.getDecoder().decode(sourceXmi);
+            } catch (IllegalArgumentException ex) {
+                throw new PlatformException(400, "Stored source XMI is not valid base64.");
+            }
+        }
+        return xmiModelIo.exportModel(ModelLevel.PIM, hydrateSemanticReferences(modelJson));
+    }
+
+    private byte[] sourcePsmXmi(JsonNode modelJson) {
+        String sourceXmi = text(modelJson, "_sourceXmiBase64", "");
+        if (!sourceXmi.isBlank()) {
+            try {
+                return Base64.getDecoder().decode(sourceXmi);
+            } catch (IllegalArgumentException ex) {
+                throw new PlatformException(400, "Stored source XMI is not valid base64.");
+            }
+        }
+        return xmiModelIo.exportModel(ModelLevel.PSM, hydrateSemanticReferences(modelJson));
+    }
+
     private String summarizeDiagnostics(EtlExecutionReport report) {
         if (report == null || report.diagnostics().isEmpty()) {
             return "no diagnostics were reported";
@@ -158,6 +264,30 @@ public final class TransformationService {
                         + diagnostic.file() + ":" + diagnostic.line() + ":"
                         + diagnostic.column() + " " + diagnostic.reason())
                 .collect(java.util.stream.Collectors.joining("; "));
+    }
+
+    private String summarizeDiagnostics(EgxGenerationReport report) {
+        if (report == null || report.diagnostics().isEmpty()) {
+            return "no diagnostics were reported";
+        }
+        return report.diagnostics().stream()
+                .limit(3)
+                .map(diagnostic -> diagnostic.phase() + " "
+                        + diagnostic.file() + ":" + diagnostic.line() + ":"
+                        + diagnostic.column() + " " + diagnostic.reason())
+                .collect(java.util.stream.Collectors.joining("; "));
+    }
+
+    private Map<String, String> generatedFiles(Path outputDirectory) throws Exception {
+        Map<String, String> files = new LinkedHashMap<>();
+        try (Stream<Path> paths = Files.walk(outputDirectory)) {
+            for (Path path : paths.filter(Files::isRegularFile).sorted().toList()) {
+                Path relative = outputDirectory.relativize(path);
+                String artifactPath = relative.toString().replace('\\', '/');
+                files.put(artifactPath, Files.readString(path, StandardCharsets.UTF_8));
+            }
+        }
+        return files;
     }
 
     private JsonNode hydrateSemanticReferences(JsonNode modelJson) {

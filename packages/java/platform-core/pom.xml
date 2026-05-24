@@ -44,6 +44,10 @@
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
+      <artifactId>mde-m2t-runner</artifactId>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
       <artifactId>slf4j-api</artifactId>
       <groupId>org.slf4j</groupId>
     </dependency>

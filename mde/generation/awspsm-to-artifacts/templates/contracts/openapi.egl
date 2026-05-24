@@ -4,7 +4,7 @@ info:
   version: '1.0.0'
   description: [%= apiObj.descriptionText.orElseText("Generated from AWS PSM API model.").yamlScalar() %]
 paths:
-[% for (pathText in routeSeq.collect(routeObj | routeObj.routePath()).asSet().sort()) { %]
+[% for (pathText in routeSeq.collect(routeObj | routeObj.routePath()).asSet().asSequence().sortBy(pathText | pathText)) { %]
   [%= pathText %]:
 [% for (routeObj in routeSeq.select(routeObj | routeObj.routePath() = pathText).sortBy(routeObj | routeObj.routeMethod())) { %]
 [%= routeObj.emitOpenApiOperationYaml(4) %][% } %]
