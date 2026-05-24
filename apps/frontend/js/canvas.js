@@ -3383,8 +3383,30 @@ function activeViewElementTypeFilter() {
   return new Set((activeView()?.filters?.elementTypes || []).map(String));
 }
 
+function isActionableScopedPaletteType(typeKey, type, creatableTypes) {
+  if (creatableTypes.has(type)) {
+    return true;
+  }
+  let definition = null;
+  try {
+    definition = modelingElementDefinition(typeKey, type);
+  } catch {
+    definition = null;
+  }
+  if (!definition) {
+    return false;
+  }
+  return Boolean(definition.containedOnly) && !definition.relationshipElement
+      && !definition.abstract;
+}
+
+function filterScopedPaletteTypes(typeKey, scopedTypes, allTypes) {
+  const creatableTypes = new Set(allTypes);
+  return scopedTypes.filter((type) => isActionableScopedPaletteType(typeKey,
+      type, creatableTypes));
+}
+
 function availableCimPaletteTypes(allTypes) {
-  const available = new Set(allTypes);
   const view = activeView();
   if (!view || String(view.id || "") === "view-cim-main"
       || String(view.kind || "").toUpperCase() === "MAIN") {
@@ -3400,7 +3422,7 @@ function availableCimPaletteTypes(allTypes) {
   const scoped = Array.isArray(viewDefinition?.palette)
   && viewDefinition.palette.length ? viewDefinition.palette
       : (CIM_VIEW_PALETTES[profile] || CIM_VIEW_PALETTES.eventstorming);
-  const filtered = scoped.filter((type) => available.has(type));
+  const filtered = filterScopedPaletteTypes("cim", scoped, allTypes);
   if (filtered.length) {
     return filtered;
   }
@@ -3408,7 +3430,6 @@ function availableCimPaletteTypes(allTypes) {
 }
 
 function availablePimPaletteTypes(allTypes) {
-  const available = new Set(allTypes);
   const view = activeView();
   if (!view || String(view.id || "") === "view-pim-main"
       || String(view.kind || "").toUpperCase() === "MAIN") {
@@ -3423,7 +3444,7 @@ function availablePimPaletteTypes(allTypes) {
   const scoped = Array.isArray(viewDefinition?.palette)
   && viewDefinition.palette.length ? viewDefinition.palette
       : [...activeViewElementTypeFilter()];
-  const filtered = scoped.filter((type) => available.has(type));
+  const filtered = filterScopedPaletteTypes("pim", scoped, allTypes);
   return filtered.length ? filtered : allTypes;
 }
 
