@@ -235,7 +235,10 @@ operation createAslState(w, ws) {
   }
   if (ws.stateKind = PIMTYPES!WorkflowStateKind#CHOICE) {
     for (tr in w.transitions.select(x | x.source = ws)) {
-      st.choices.add(createAslChoice(tr));
+      var choiceRule = createAslChoice(tr);
+      if (choiceRule.isDefined()) {
+        st.choices.add(choiceRule);
+      }
     }
   }
   if (ws.stateKind = PIMTYPES!WorkflowStateKind#PARALLEL) {
@@ -252,19 +255,30 @@ operation createAslState(w, ws) {
   }
   for (h in ws.catchHandlers) {
     if (h.nextState.isDefined()) {
-      st.catch.add(createAslCatch(h));
+      var catchRule = createAslCatch(h);
+      if (catchRule.isDefined()) {
+        st.catch.add(catchRule);
+      }
     }
   }
   return st;
 }
 
 operation createAslChoice(tr) {
+  var resolvedNextState = tr.target.equivalent();
+  if (resolvedNextState.isUndefined()) {
+    manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
+      "Resolve target state for choice transition " + firstText(tr.name, tr.id) + ".",
+      KERNEL!Severity#ERROR, true, Sequence{tr},
+      "Ensure WorkflowTransition.target references a state in the same transformed workflow.");
+    return null;
+  }
   var c = new AWSPSMWORKFLOW!AslChoiceRule;
   c.id = generatedId("asl_choice", tr, "choice");
   c.name = firstText(tr.name, "Choice");
   c.conditionExpression = tr.conditionExpression;
   c.variable = "$";
-  c.nextState = tr.target.equivalent();
+  c.nextState = resolvedNextState;
   if (not hasText(c.conditionExpression) and not isTrue(tr.defaultTransition)) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
       "Provide condition expression for choice transition " + tr.name + ".",
@@ -301,7 +315,7 @@ operation mapAslStateType(kind) {
 
 operation createAslRetry(p) {
   var r = new AWSPSMWORKFLOW!AslRetryRule;
-  r.id = "asl_retry_" + slug(p.name);
+  r.id = uniqueId("asl_retry_" + slug(p.name));
   r.name = firstText(p.name, "Retry");
   r.errorEquals.addAll(p.retryableErrors);
   if (r.errorEquals.isEmpty()) {
@@ -321,12 +335,20 @@ operation createAslRetry(p) {
 }
 
 operation createAslCatch(h) {
+  var resolvedNextState = h.nextState.equivalent();
+  if (resolvedNextState.isUndefined()) {
+    manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
+      "Resolve catch target state for " + firstText(h.name, h.id) + ".",
+      KERNEL!Severity#ERROR, true, Sequence{h},
+      "Ensure CatchHandler.nextState references a state in the same transformed workflow.");
+    return null;
+  }
   var c = new AWSPSMWORKFLOW!AslCatchRule;
-  c.id = "asl_catch_" + slug(h.name);
+  c.id = uniqueId("asl_catch_" + slug(h.name));
   c.name = firstText(h.name, "Catch");
   c.errorEquals.add(firstText(h.errorSelector, "States.ALL"));
   c.resultPath = "$.error";
-  c.nextState = h.nextState.equivalent();
+  c.nextState = resolvedNextState;
   return c;
 }
 

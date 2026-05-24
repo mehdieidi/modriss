@@ -153,7 +153,7 @@ rule ExternalSystem2Adapter
 
 post EnsureServiceExists {
   if (pimRoot().services.isEmpty()) {
-    var c = CIM!CIMModel.all.first();
+    var c = cimRoot();
     var s = new DEPLOY!ServerlessService;
     s.id = "svc_default_review_required";
     s.name = c.domainName + " Service";

@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/awspsm/events/2.1", prefix="awspsmevents")
+@namespace(uri="https://modless.org/awspsm/events/1.0", prefix="awspsmevents")
 package awspsmevents;
 
 import "../shared/kernel.ecore";

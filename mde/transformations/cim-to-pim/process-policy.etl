@@ -9,7 +9,7 @@ operation shouldGenerateWorkflow(bp : CIMPROCESS!BusinessProcess) {
     bp.processKind.asString() = "LONG_RUNNING" or bp.processKind.asString() = "HUMAN_INVOLVED" or
     bp.processKind.asString() = "CASE_MANAGEMENT" or bp.processKind.asString() = "SAGA_LIKE_BUSINESS_PROCESS" or
     bp.steps.size() > 2 or
-    (CIM!CIMModel.all.first().transformationProfile.isDefined() and CIM!CIMModel.all.first().transformationProfile.preferProcessAsWorkflowCandidate);
+    (cimRoot().transformationProfile.isDefined() and cimRoot().transformationProfile.preferProcessAsWorkflowCandidate);
 }
 
 operation workflowStateFor(step : CIMPROCESS!ProcessStep) {
@@ -420,7 +420,7 @@ post AttachWorkflowDetails {
       for (ex in bp.exceptions) {
         var handler = ex.equivalents("ExceptionScenario2ErrorHandler").first();
         if (handler.isDefined()) {
-          var recoveryTarget = wf.states.sortBy(s | s.orderIndex).select(s | not s.terminal and s <> wf.startState).first();
+          var recoveryTarget = wf.states.sortBy(s | s.orderIndex).selectOne(s | not s.terminal and s <> wf.startState);
           if (recoveryTarget.isUndefined() and wf.endStates.notEmpty()) {
             recoveryTarget = wf.endStates.first();
           }
@@ -448,7 +448,7 @@ post AttachWorkflowDetails {
       }
     }
     for (state in wf.states.select(s | s.invokesAdapter.isDefined())) {
-      if (INTEGRATION!ExternalIntegrationFlow.all.select(f | f.source = state and f.target = state.invokesAdapter).isEmpty()) {
+      if (INTEGRATION!ExternalIntegrationFlow.all.selectOne(f | f.source = state and f.target = state.invokesAdapter).isUndefined()) {
         var flow = new INTEGRATION!ExternalIntegrationFlow;
         flow.id = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
         flow.name = state.name + " calls " + state.invokesAdapter.name;
@@ -509,7 +509,7 @@ rule SecurityConstraint2SecurityPolicies
   auth.mfaRequired = sc.segregationOfDutiesRequired or sc.nonRepudiationRequired;
   if (sc.constrainedActors.notEmpty()) {
     var idp = sc.constrainedActors.first().equivalents("Actor2Principal").first();
-    var actorIdp = SECURITY!IdentityProvider.all.select(provider | provider.principals.includes(idp)).first();
+    var actorIdp = SECURITY!IdentityProvider.all.selectOne(provider | provider.principals.includes(idp));
     if (actorIdp.isDefined()) {
       auth.identityProvider = actorIdp;
     }

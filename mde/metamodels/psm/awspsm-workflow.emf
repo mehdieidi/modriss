@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/awspsm/workflow/2.1", prefix="awspsmworkflow")
+@namespace(uri="https://modless.org/awspsm/workflow/1.0", prefix="awspsmworkflow")
 package awspsmworkflow;
 
 import "../shared/kernel.ecore";

@@ -8,6 +8,7 @@ import io.mehdieidi.modless.mdecli.diagnostics.ConversionReport;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -45,7 +46,7 @@ class EmfConversionServiceIntegrationTest {
 
     @Test
     void convertsSampleCimDirectoryIntoCombinedEcore() throws Exception {
-        Path projectRoot = Path.of("..", "..").toAbsolutePath().normalize();
+        Path projectRoot = findProjectRoot();
         Path inputDirectory = projectRoot.resolve("mde/metamodels/cim");
         Path output = Files.createTempDirectory("mde-cli-cim-").resolve("cim-combined.ecore");
 
@@ -71,10 +72,10 @@ class EmfConversionServiceIntegrationTest {
 
     @Test
     void convertsModularSingleFileWithoutLeakingTempUris() throws Exception {
-        Path projectRoot = Path.of("..", "..").toAbsolutePath().normalize();
-        Path input = projectRoot.resolve("mde/metamodels/cim/cim-diagram.emf");
+        Path projectRoot = findProjectRoot();
+        Path input = projectRoot.resolve("mde/metamodels/cim/cim-root.emf");
         Path outputDirectory = Files.createTempDirectory("mde-cli-single-cim-");
-        Path output = outputDirectory.resolve("cim-diagram.ecore");
+        Path output = outputDirectory.resolve("cim-root.ecore");
 
         ConversionReport report = conversionService.convert(
                 new ConversionRequest(input, output, null, true, false));
@@ -88,5 +89,19 @@ class EmfConversionServiceIntegrationTest {
                 "Single-file modular output should not point to temp workspaces.");
         assertFalse(POSITIONAL_FRAGMENT_PATTERN.matcher(serialized).find(),
                 "Single-file modular output should not use positional local XMI fragments.");
+    }
+
+    private Path findProjectRoot() {
+        try (Stream<Path> parents = Stream.iterate(
+                Path.of("").toAbsolutePath().normalize(),
+                path -> path != null,
+                Path::getParent)) {
+            return parents
+                    .filter(path -> Files.exists(path.resolve("mde/metamodels/cim/cim-root.emf")))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Could not locate the repository root from " +
+                                    Path.of("").toAbsolutePath().normalize()));
+        }
     }
 }

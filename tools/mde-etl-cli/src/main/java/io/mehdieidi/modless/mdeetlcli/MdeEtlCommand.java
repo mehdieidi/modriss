@@ -9,13 +9,15 @@ import picocli.CommandLine.Command;
         description = "Executes Eclipse Epsilon ETL transformations.",
         subcommands = {
                 RunCommand.class,
-                CimToPimCommand.class
+                CimToPimCommand.class,
+                PimToAwsPsmCommand.class
         })
 public final class MdeEtlCommand implements Runnable {
 
     @Override
     public void run() {
         throw new picocli.CommandLine.ParameterException(
-                new picocli.CommandLine(this), "Choose a subcommand: run or cim-to-pim.");
+                new picocli.CommandLine(this),
+                "Choose a subcommand: run, cim-to-pim, or pim-to-awspsm.");
     }
 }

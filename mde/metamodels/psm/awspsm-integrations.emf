@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/awspsm/integrations/2.1", prefix="awspsmintegrations")
+@namespace(uri="https://modless.org/awspsm/integrations/1.0", prefix="awspsmintegrations")
 package awspsmintegrations;
 
 import "../shared/kernel.ecore";

@@ -145,6 +145,7 @@ final class XmiModelImportService {
     private void registerPackage(ResourceSet resourceSet, EPackage ePackage) {
         if (ePackage.getNsURI() != null && !ePackage.getNsURI().isBlank()) {
             resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
+            EPackage.Registry.INSTANCE.put(ePackage.getNsURI(), ePackage);
         }
         ePackage.getESubpackages().forEach(child -> registerPackage(resourceSet, child));
     }

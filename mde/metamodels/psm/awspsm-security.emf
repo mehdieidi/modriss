@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/awspsm/security/2.1", prefix="awspsmsecurity")
+@namespace(uri="https://modless.org/awspsm/security/1.0", prefix="awspsmsecurity")
 package awspsmsecurity;
 
 import "../shared/kernel.ecore";

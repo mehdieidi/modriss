@@ -244,6 +244,60 @@ class ModelingConfigServiceTest {
                 type + " is creatable but not available from any PIM view palette"));
     }
 
+    @Test
+    void exposesConcreteAwsPsmVisualNotationAndViewsFromMetamodel() {
+        Map<String, Object> psm = level("psm");
+        List<Map<String, Object>> elements = listOfMaps(psm.get("elements"));
+        Set<String> palette = creatableTypes(elements);
+
+        assertTrue(elements.size() > 150);
+        assertTrue(palette.contains("SamStack"));
+        assertTrue(palette.contains("AwsStage"));
+        assertTrue(palette.contains("AwsLambdaFunction"));
+        assertTrue(palette.contains("HttpApi"));
+        assertTrue(palette.contains("RestApi"));
+        assertTrue(palette.contains("DynamoDbTable"));
+        assertTrue(palette.contains("S3Bucket"));
+        assertTrue(palette.contains("IamRole"));
+        assertTrue(palette.contains("CloudWatchLogGroup"));
+        assertFalse(palette.contains("AwsResource"));
+        assertFalse(palette.contains("LambdaZipCodeConfig"));
+        assertFalse(palette.contains("IamStatement"));
+        assertFalse(palette.contains("ApiGatewayLambdaIntegrationView"));
+
+        Map<String, Object> lambda = element(elements, "AwsLambdaFunction");
+        assertTrue(stringList(lambda.get("supertypes")).contains("AwsResource"));
+        assertEquals("resource-card", map(lambda.get("notation")).get("shape"));
+        assertNotBlank(lambda.get("visibleFields"), "lambda visible fields");
+
+        Map<String, Object> env = element(elements, "LambdaEnvironmentVariable");
+        assertTrue(Boolean.TRUE.equals(env.get("containedOnly")));
+
+        Map<String, Object> bundle = element(elements, "ApiGatewayLambdaIntegrationView");
+        assertTrue(Boolean.TRUE.equals(bundle.get("relationshipElement")));
+
+        List<Map<String, Object>> views = listOfMaps(psm.get("viewDefinitions"));
+        assertEquals(13, views.size());
+        assertTrue(views.stream().anyMatch(view -> "psm-api-edge".equals(view.get("id"))));
+        assertTrue(views.stream().anyMatch(view -> "psm-lambda-compute".equals(view.get("id"))));
+        assertTrue(views.stream().anyMatch(view -> "psm-traceability-readiness".equals(
+                view.get("id"))));
+        assertTrue(views.stream().anyMatch(view -> "psm-integration-shortcuts".equals(
+                view.get("id"))));
+
+        List<Map<String, Object>> shortcuts = listOfMaps(psm.get("shortcutConnectorRules"));
+        assertEquals(5, shortcuts.size());
+        assertTrue(shortcuts.stream().anyMatch(rule ->
+                "ApiGatewayRoute".equals(rule.get("sourceType"))
+                        && "AwsLambdaFunction".equals(rule.get("targetType"))
+                        && "ApiGatewayLambdaIntegrationView".equals(rule.get("viewType"))));
+
+        Map<String, Object> rootTemplate = map(psm.get("rootTemplate"));
+        assertEquals("AwsPsmModel", rootTemplate.get("eClass"));
+        assertEquals("AWS", rootTemplate.get("platform"));
+        assertEquals("us-east-1", rootTemplate.get("defaultRegion"));
+    }
+
     private Map<String, Object> level(String key) {
         return map(map(service.config().get("levels")).get(key));
     }

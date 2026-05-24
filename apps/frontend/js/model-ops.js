@@ -1092,14 +1092,18 @@ export async function exportActiveModel(format = "json") {
       `Exported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}`);
 }
 
-export async function importActiveModel(file, format = "json") {
-  if (!isModelingType()) {
+export async function importActiveModel(file, format = "json",
+    typeKey = state.activeType) {
+  if (!isModelingType(typeKey)) {
     setStatus(
         `Switch to CIM, PIM, or PSM to import model ${format.toUpperCase()}.`);
     return;
   }
   if (!file) {
     return;
+  }
+  if (state.activeType !== typeKey) {
+    await switchTab(typeKey);
   }
   const confirmed = await confirmAction({
     title: "Replace Current Model?",

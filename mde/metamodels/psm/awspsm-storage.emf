@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/awspsm/storage/2.1", prefix="awspsmstorage")
+@namespace(uri="https://modless.org/awspsm/storage/1.0", prefix="awspsmstorage")
 package awspsmstorage;
 
 import "../shared/kernel.ecore";

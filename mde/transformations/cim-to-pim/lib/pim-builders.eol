@@ -60,7 +60,7 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
 
   if (item.subItems.notEmpty()) {
     var objectSchemaId = idFor("schema_item", item);
-    var objectSchema = CONTRACTS!Schema.all.select(s | s.id = objectSchemaId).first();
+    var objectSchema = CONTRACTS!Schema.all.selectOne(s | s.id = objectSchemaId);
     if (objectSchema.isUndefined()) {
       objectSchema = new CONTRACTS!Schema;
       objectSchema.id = objectSchemaId;
@@ -80,7 +80,7 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
   }
   else if (f.fieldType = PIMTYPES!FieldType#OBJECT) {
     var placeholderSchemaId = idFor("schema_item", item);
-    var placeholderSchema = CONTRACTS!Schema.all.select(s | s.id = placeholderSchemaId).first();
+    var placeholderSchema = CONTRACTS!Schema.all.selectOne(s | s.id = placeholderSchemaId);
     if (placeholderSchema.isUndefined()) {
       placeholderSchema = new CONTRACTS!Schema;
       placeholderSchema.id = placeholderSchemaId;
@@ -320,7 +320,7 @@ operation createQueryResponseSchema(q : CIMBEHAVIOR!Query) {
 
 operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, alarms : Boolean) {
   var id = newId("observability", seed.id + "_" + ruleId);
-  var existing = POLICY!ObservabilityConfig.all.select(o | o.id = id).first();
+  var existing = POLICY!ObservabilityConfig.all.selectOne(o | o.id = id);
   if (existing.isDefined()) {
     if (not existing.attachedTo.includes(seed)) {
       existing.attachedTo.add(seed);
@@ -348,7 +348,7 @@ operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, a
 
 operation createDefaultResilience(seed, ruleId : String, deadLetter : Boolean) {
   var id = newId("resilience", seed.id + "_" + ruleId);
-  var existing = POLICY!ResiliencePolicy.all.select(p | p.id = id).first();
+  var existing = POLICY!ResiliencePolicy.all.selectOne(p | p.id = id);
   if (existing.isDefined()) {
     if (not existing.attachedTo.includes(seed)) {
       existing.attachedTo.add(seed);
@@ -408,7 +408,7 @@ operation createIdempotencyPolicy(cmd : CIMBEHAVIOR!Command) {
 
 operation createIdempotencyPolicyForTarget(target, seed, ruleId : String, keySource : String) {
   var id = newId("idempotency", target.id);
-  var existing = POLICY!IdempotencyPolicy.all.select(policy | policy.id = id).first();
+  var existing = POLICY!IdempotencyPolicy.all.selectOne(policy | policy.id = id);
   if (existing.isDefined()) {
     return existing;
   }

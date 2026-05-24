@@ -1,3 +1,12 @@
+operation initialiseCimToPimCaches() {
+  cachedCimRoot = CIM!CIMModel.all.first();
+  cachedPimRoot = null;
+}
+
+operation cimRoot() {
+  return cachedCimRoot;
+}
+
 operation asText(value) {
   if (value.isUndefined()) {
     return "";
@@ -27,26 +36,11 @@ operation firstText(primary, fallback) {
 }
 
 operation slug(value) {
-  var s = asText(value).toLowerCase().trim();
+  var s = asText(value).toLowerCase().trim().replaceAll("[^a-z0-9]+", "_").replaceAll("^_+|_+$", "");
   if (s.isEmpty()) {
     return "unnamed";
   }
-  var out = "";
-  for (i in Sequence{1..s.length()}) {
-    var ch = s.substring(i - 1, i);
-    if ("abcdefghijklmnopqrstuvwxyz0123456789".contains(ch)) {
-      out = out + ch;
-    }
-    else {
-      if (not out.endsWith("_")) {
-        out = out + "_";
-      }
-    }
-  }
-  while (out.endsWith("_") and out.length() > 1) {
-    out = out.substring(0, out.length() - 1);
-  }
-  return out;
+  return s;
 }
 
 operation kebab(value) {

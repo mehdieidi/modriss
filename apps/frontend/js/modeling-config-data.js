@@ -103,6 +103,8 @@ function ensureConfigShape(raw) {
           ? incoming.relationshipKindLabels : {},
       semanticReferenceRules: Array.isArray(incoming.semanticReferenceRules)
           ? incoming.semanticReferenceRules : [],
+      shortcutConnectorRules: Array.isArray(incoming.shortcutConnectorRules)
+          ? incoming.shortcutConnectorRules : [],
       viewDefinitions: Array.isArray(incoming.viewDefinitions)
           ? incoming.viewDefinitions : [],
       strictnessModes: Array.isArray(incoming.strictnessModes)
@@ -201,6 +203,10 @@ export function modelingRelationshipKindLabel(typeKey, kind) {
 
 export function modelingSemanticReferenceRules(typeKey = state.activeType) {
   return modelingLevelConfig(typeKey).semanticReferenceRules || [];
+}
+
+export function modelingShortcutConnectorRules(typeKey = state.activeType) {
+  return modelingLevelConfig(typeKey).shortcutConnectorRules || [];
 }
 
 export function modelingTypeMatches(typeKey, expected, actual) {

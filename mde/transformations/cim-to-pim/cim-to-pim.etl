@@ -9,4 +9,5 @@ pre ValidateInput {
   if (CIM!CIMModel.all.isEmpty()) {
     throw "CIM to PIM requires one CIMModel root.";
   }
+  initialiseCimToPimCaches();
 }

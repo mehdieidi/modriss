@@ -62,7 +62,7 @@ operation manualDecision(decisionId : String, question : String, severity, block
     return;
   }
   var d = new KERNEL!ManualDecision;
-  d.id = "decision_" + slug(decisionId + "_" + question);
+  d.id = uniqueId("decision_" + slug(decisionId + "_" + question));
   d.name = decisionId;
   d.question = question;
   d.severity = severity;
@@ -74,7 +74,7 @@ operation manualDecision(decisionId : String, question : String, severity, block
   r.manualDecisions.add(d);
 
   var f = new KERNEL!ReadinessFinding;
-  f.id = "finding_" + slug(decisionId + "_" + question);
+  f.id = uniqueId("finding_" + slug(decisionId + "_" + question));
   f.name = decisionId + " finding";
   f.findingType = KERNEL!FindingType#MISSING_INFORMATION;
   f.severity = severity;
@@ -94,7 +94,7 @@ operation finding(checkId : String, message : String, severity, blocking : Boole
     return;
   }
   var f = new KERNEL!ReadinessFinding;
-  f.id = "finding_" + slug(checkId + "_" + message);
+  f.id = uniqueId("finding_" + slug(checkId + "_" + message));
   f.name = checkId;
   f.findingType = KERNEL!FindingType#VALIDATION_ERROR;
   f.severity = severity;
@@ -114,7 +114,7 @@ operation check(checkId : String, passed : Boolean, message : String, severity, 
     return;
   }
   var c = new KERNEL!ReadinessCheck;
-  c.id = "check_" + slug(checkId + "_" + message);
+  c.id = uniqueId("check_" + slug(checkId + "_" + message));
   c.name = checkId;
   c.checkId = checkId;
   c.passed = passed;

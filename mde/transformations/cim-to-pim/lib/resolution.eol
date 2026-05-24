@@ -4,7 +4,7 @@ import "pim-builders.eol";
 
 operation serviceFor(source) {
   if (DEPLOY!ServerlessService.all.isEmpty() and PIM!PIMModel.all.notEmpty()) {
-    var c = CIM!CIMModel.all.first();
+    var c = cimRoot();
     var s = new DEPLOY!ServerlessService;
     s.id = "svc_default_review_required";
     s.name = c.domainName + " Service";
@@ -25,7 +25,7 @@ operation serviceFor(source) {
     if (source.isKindOf(CIMORG!BusinessCapability)) {
       var capSvc = source.equivalents("Capability2Service").first();
       if (capSvc.isDefined()) return capSvc;
-      var context = CIMORG!BoundedContextCandidate.all.select(bc | bc.capabilities.includes(source)).first();
+      var context = CIMORG!BoundedContextCandidate.all.selectOne(bc | bc.capabilities.includes(source));
       if (context.isDefined()) return serviceFor(context);
     }
     if (source.isKindOf(CIMBEHAVIOR!Command) and source.targetCapability.isDefined()) {
@@ -52,10 +52,10 @@ operation serviceFor(source) {
     if (source.isKindOf(CIMPROCESS!BusinessProcess) and source.owningCapability.isDefined()) {
       return serviceFor(source.owningCapability);
     }
-    for (bc in CIMORG!BoundedContextCandidate.all) {
-      if (bc.commands.includes(source) or bc.queries.includes(source) or bc.events.includes(source) or bc.entities.includes(source) or bc.policies.includes(source)) {
-        return serviceFor(bc);
-      }
+    var ownerContext = CIMORG!BoundedContextCandidate.all.selectOne(bc |
+      bc.commands.includes(source) or bc.queries.includes(source) or bc.events.includes(source) or bc.entities.includes(source) or bc.policies.includes(source));
+    if (ownerContext.isDefined()) {
+      return serviceFor(ownerContext);
     }
     return DEPLOY!ServerlessService.all.first();
   }
@@ -97,10 +97,9 @@ operation storeForAggregate(ag : CIMDOMAIN!AggregateCandidate) {
 }
 
 operation storeForEntity(entity : CIMDOMAIN!DomainEntity) {
-  for (ag in CIMDOMAIN!AggregateCandidate.all) {
-    if (ag.root = entity or ag.members.includes(entity)) {
-      return storeForAggregate(ag);
-    }
+  var ag = CIMDOMAIN!AggregateCandidate.all.selectOne(a | a.root = entity or a.members.includes(entity));
+  if (ag.isDefined()) {
+    return storeForAggregate(ag);
   }
   return null;
 }
@@ -192,7 +191,7 @@ operation ensureApiForService(service : DEPLOY!ServerlessService) {
 }
 
 operation ensureEventBusForService(service : DEPLOY!ServerlessService) {
-  var existing = service.ownsChannels.select(c | c.isKindOf(INTEGRATION!EventBus)).first();
+  var existing = service.ownsChannels.selectOne(c | c.isKindOf(INTEGRATION!EventBus));
   if (existing.isDefined()) {
     return existing;
   }

@@ -17,6 +17,8 @@ import {
   modelingElementDefinition,
   modelingPalette,
   modelingRelationshipKindLabel,
+  modelingShortcutConnectorRules,
+  modelingTypeMatches,
   modelingViewDefinition
 } from './modeling-config-data.js';
 import {setStatus} from './status.js';
@@ -41,6 +43,7 @@ import {
 import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
 import {renderCimWorkbenchSurface} from './cim-workbench.js';
 import {renderPimWorkbenchSurface} from './pim-workbench.js';
+import {renderPsmWorkbenchSurface} from './psm-workbench.js';
 
 const DEFAULT_NODE_W = 228;
 const DEFAULT_NODE_H = 112;
@@ -504,6 +507,25 @@ function cimEdgeLabel(edge) {
 }
 
 function cimEdgePresentation(edge) {
+  if (state.activeType === "psm") {
+    const kind = String(edge.kind || "").toUpperCase();
+    const presentation = {className: "", markerStart: "", markerEnd: "arrow"};
+    if (["CONTAINS", "DEPLOYS", "DEPLOYS_TO"].includes(kind)) {
+      presentation.className = " edge-domain-ownership";
+    } else if (["EVENT_FLOW", "MESSAGE_FLOW"].includes(kind)) {
+      presentation.className = " edge-pim-event";
+    } else if (["READS", "WRITES", "DATA_ACCESS"].includes(kind)) {
+      presentation.className = " edge-pim-data";
+    } else if (["USES_ROLE", "PERMISSION", "AUTHORIZED_BY",
+      "USES_SECRET"].includes(kind)) {
+      presentation.className = " edge-conflict";
+    } else if (["OBSERVES", "WRITES_LOGS_TO"].includes(kind)) {
+      presentation.className = " edge-trace-link";
+    } else if (kind === "TRANSITION") {
+      presentation.className = " edge-process-transition";
+    }
+    return presentation;
+  }
   if (state.activeType !== "cim" && state.activeType !== "pim") {
     return {className: "", markerStart: "", markerEnd: "arrow"};
   }
@@ -569,7 +591,7 @@ function cimEdgePresentation(edge) {
 }
 
 function cimNodeNotation(node) {
-  if (!["cim", "pim"].includes(state.activeType)) {
+  if (!["cim", "pim", "psm"].includes(state.activeType)) {
     return null;
   }
   let definition = null;
@@ -843,6 +865,9 @@ function cimNodeDetailsHtml(node) {
   if (state.activeType === "pim") {
     return pimNodeDetailsHtml(node);
   }
+  if (state.activeType === "psm") {
+    return metadataNodeDetailsHtml("psm", node);
+  }
   if (state.activeType !== "cim") {
     return "";
   }
@@ -1053,6 +1078,59 @@ function cimNodeDetailsHtml(node) {
   return `<div class="node-cim-details">${badges.length
       ? `<div class="node-cim-badges">${badges.join("")}</div>` : ""}${
       sections.join("")}</div>`;
+}
+
+function metadataNodeDetailsHtml(typeKey, node) {
+  const meta = node.meta || {};
+  let definition = null;
+  try {
+    definition = modelingElementDefinition(typeKey, node.type);
+  } catch {
+    definition = null;
+  }
+  const badges = [];
+  const addBadge = (label, issue = false) => {
+    const text = String(label || "").trim();
+    if (text) {
+      badges.push(detailBadge(text, issue));
+    }
+  };
+  const riskFields = [
+    "productionCritical", "importedResource", "retainInProduction",
+    "tracingEnabled", "metricsEnabled", "accessLogsEnabled",
+    "deletionProtectionEnabled", "pointInTimeRecoveryEnabled",
+    "eventBridgeNotificationEnabled", "enableKeyRotation", "rotationRequired",
+    "publicAccessMode", "xrayDefault"
+  ];
+  riskFields.forEach((field) => {
+    const value = meta[field];
+    if (value === true) {
+      addBadge(field.replaceAll(/([A-Z])/g, " $1").toLowerCase());
+    } else if (typeof value === "string" && value.trim()) {
+      addBadge(value, /disabled|public|not_recommended/i.test(value));
+    }
+  });
+  const visibleFields = Array.isArray(definition?.visibleFields)
+      ? definition.visibleFields : [];
+  const sections = [
+    detailCompartment(definition?.notation?.shape === "resource-card"
+        ? "Resource" : "Detail", visibleFields.slice(0, 8).map((field) =>
+        detailRow(field, Array.isArray(meta[field])
+            ? compactList(meta[field]) : compactRefCount(meta[field]))))
+  ];
+  const referenceRows = (definition?.references || []).filter((reference) =>
+      !reference.containment && meta[reference.name]).slice(0, 5).map(
+      (reference) => detailRow(reference.name, Array.isArray(
+          meta[reference.name]) ? compactList(meta[reference.name])
+          : compactRefCount(meta[reference.name])));
+  if (referenceRows.length) {
+    sections.push(detailCompartment("References", referenceRows));
+  }
+  return badges.length || sections.some(Boolean)
+      ? `<div class="node-cim-details psm-node-details">${
+          badges.length ? `<div class="node-cim-badges">${badges.join(
+              "")}</div>` : ""}${sections.join("")}</div>`
+      : "";
 }
 
 function pimNodeDetailsHtml(node) {
@@ -3255,13 +3333,13 @@ function createModelingWizard(kind) {
     },
     psmLambdaEndpoint: {
       nodes: [
-        ["ApiGatewayRoute", -260, 0],
-        ["ApiGatewayTrigger", -40, 0],
+        ["HttpApiRoute", -260, 0],
+        ["ApiGatewayIntegration", -40, 0],
         ["AwsLambdaFunction", 190, 0],
         ["IamRole", 190, 150],
         ["CloudWatchLogGroup", 430, 0]
       ],
-      edges: [[0, 1, "TARGETS"], [1, 2, "TRIGGERS"], [2, 3, "USES_ROLE"],
+      edges: [[0, 1, "ROUTES_TO"], [1, 2, "INVOKES"], [2, 3, "USES_ROLE"],
         [2, 4, "WRITES_LOGS_TO"]],
       label: "AWS Lambda endpoint"
     }
@@ -3448,6 +3526,25 @@ function availablePimPaletteTypes(allTypes) {
   return filtered.length ? filtered : allTypes;
 }
 
+function availablePsmPaletteTypes(allTypes) {
+  const view = activeView();
+  if (!view || String(view.id || "") === "view-psm-main"
+      || String(view.kind || "").toUpperCase() === "MAIN") {
+    return allTypes;
+  }
+  let viewDefinition = null;
+  try {
+    viewDefinition = modelingViewDefinition("psm", view);
+  } catch {
+    viewDefinition = null;
+  }
+  const scoped = Array.isArray(viewDefinition?.palette)
+  && viewDefinition.palette.length ? viewDefinition.palette
+      : [...activeViewElementTypeFilter()];
+  const filtered = filterScopedPaletteTypes("psm", scoped, allTypes);
+  return filtered.length ? filtered : allTypes;
+}
+
 function renderCimConnectionTools(query) {
   if (state.activeType !== "cim") {
     return false;
@@ -3517,6 +3614,48 @@ function renderPimConnectionTools(query) {
   });
 }
 
+function renderMetadataConnectionTools(typeKey, query) {
+  if (state.activeType !== typeKey) {
+    return false;
+  }
+  let viewDefinition = null;
+  try {
+    viewDefinition = modelingViewDefinition(typeKey, activeView());
+  } catch {
+    viewDefinition = null;
+  }
+  const tools = (Array.isArray(viewDefinition?.relationshipKinds)
+      ? viewDefinition.relationshipKinds : []).map((kind) => ({
+    kind,
+    label: modelingRelationshipKindLabel(typeKey, kind)
+  }));
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  const filtered = normalizedQuery
+      ? tools.filter((tool) => tool.label.toLowerCase().includes(
+          normalizedQuery) || tool.kind.toLowerCase().includes(
+          normalizedQuery))
+      : tools;
+  if (!filtered.length) {
+    return false;
+  }
+  return appendPaletteActionGroup("Connection Tools", () => filtered.map(
+      (tool) => {
+        const button = createPaletteActionButton(tool.label, {
+          active: state.preferredConnectionKind === tool.kind
+              && state.connectMode,
+          title: `${tool.label}: click source then target`
+        });
+        button.dataset.edgeKind = tool.kind;
+        button.addEventListener("click", () => {
+          state.preferredConnectionKind = tool.kind;
+          setConnectMode(true);
+          setStatus(`${tool.label}: click source then target`);
+          renderPalette();
+        });
+        return button;
+      }));
+}
+
 function renderWizardActions() {
   const actions = ({
     cim: [["cimCommandFlow", "Command Flow"]],
@@ -3527,7 +3666,7 @@ function renderWizardActions() {
       cimCommandFlow: ["Actor", "Command", "BusinessEvent"],
       pimCommandHandler: ["Function", "FunctionContract", "EventType",
         "Queue", "DataStore"],
-      psmLambdaEndpoint: ["ApiGatewayRoute", "ApiGatewayTrigger",
+      psmLambdaEndpoint: ["HttpApiRoute", "ApiGatewayIntegration",
         "AwsLambdaFunction", "IamRole", "CloudWatchLogGroup"]
     }[kind] || [];
     const allowedTypes = activeViewElementTypeFilter();
@@ -3651,9 +3790,11 @@ export function renderPalette() {
       ? availableCimPaletteTypes(allTypes)
       : (state.activeType === "pim"
           ? availablePimPaletteTypes(allTypes)
-          : (activeViewElementTypes.size
-              ? allTypes.filter((type) => activeViewElementTypes.has(type))
-              : allTypes));
+          : (state.activeType === "psm"
+              ? availablePsmPaletteTypes(allTypes)
+              : (activeViewElementTypes.size
+                  ? allTypes.filter((type) => activeViewElementTypes.has(type))
+                  : allTypes)));
   const actionableTypes = viewScopedTypes;
   const filteredTypes = query
       ? actionableTypes.filter((type) => type.toLowerCase().includes(query))
@@ -3665,7 +3806,8 @@ export function renderPalette() {
   const hasQuickActionsGroup = renderWizardActions();
   const hasConnectionToolsGroup = state.activeType === "cim"
       ? renderCimConnectionTools(query)
-      : renderPimConnectionTools(query);
+      : (state.activeType === "pim" ? renderPimConnectionTools(query)
+          : renderMetadataConnectionTools(state.activeType, query));
   const namedGroups = groupedTypes.map(([groupName]) => groupName).filter(
       Boolean);
   if (hasQuickActionsGroup) {
@@ -3799,11 +3941,12 @@ function paletteGroupForType(type) {
       return "CIM";
     }
   }
-  if (state.activeType === "pim") {
+  if (state.activeType === "pim" || state.activeType === "psm") {
     try {
-      return modelingElementDefinition("pim", type)?.category || "PIM";
+      return modelingElementDefinition(state.activeType, type)?.category
+          || state.activeType.toUpperCase();
     } catch {
-      return "PIM";
+      return state.activeType.toUpperCase();
     }
   }
   const groups = {
@@ -4897,6 +5040,7 @@ export function renderDiagram() {
   renderEdges();
   renderCimWorkbenchSurface();
   renderPimWorkbenchSurface();
+  renderPsmWorkbenchSurface();
   el.canvasGrid?.style.setProperty("--viewport-scale",
       String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
@@ -4905,10 +5049,13 @@ export function renderDiagram() {
   el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
   el.workspace?.classList.toggle("cim-view-active", state.activeType === "cim");
   el.workspace?.classList.toggle("pim-view-active", state.activeType === "pim");
+  el.workspace?.classList.toggle("psm-view-active", state.activeType === "psm");
   el.workspace?.setAttribute("data-cim-view-profile",
       activeCimViewProfile() || "");
   el.workspace?.setAttribute("data-pim-view-profile",
       activePimViewProfile() || "");
+  el.workspace?.setAttribute("data-psm-view-profile",
+      state.activeType === "psm" ? (activeView()?.viewpoint || "") : "");
   renderRemoteCursors();
 }
 
@@ -5664,6 +5811,9 @@ export function addConnection(sourceId, targetId,
   const forwardKinds = legalKindsForConnection(source.type, target.type);
   const reverseKinds = legalKindsForConnection(target.type, source.type);
   if (!forwardKinds.length && !reverseKinds.length) {
+    if (createShortcutConnection(source, target)) {
+      return true;
+    }
     setStatus("Illegal connection type for selected nodes");
     return false;
   }
@@ -5722,6 +5872,134 @@ export function addConnection(sourceId, targetId,
         : `Connection added: ${kind}`);
   }
   return true;
+}
+
+function createShortcutConnection(source, target) {
+  if (state.activeType !== "psm") {
+    return false;
+  }
+  let rule = null;
+  try {
+    rule = modelingShortcutConnectorRules("psm").find((candidate) =>
+        modelingTypeMatchesSafe(candidate.sourceType, source.type)
+        && modelingTypeMatchesSafe(candidate.targetType, target.type));
+  } catch {
+    rule = null;
+  }
+  if (!rule) {
+    return false;
+  }
+  const intermediateTypes = Array.isArray(rule.intermediateTypes)
+      ? rule.intermediateTypes : [];
+  const edgeKinds = Array.isArray(rule.edgeKinds) ? rule.edgeKinds : [];
+  if (!intermediateTypes.length || edgeKinds.length < intermediateTypes.length
+      + 1) {
+    return false;
+  }
+  pushDiagramUndoSnapshot();
+  const chain = [source];
+  intermediateTypes.forEach((type, index) => {
+    const offsetX = 180 + index * 140;
+    const offsetY = index % 2 === 0 ? 72 : -72;
+    const node = getDefaultNode("psm", type, source.x + offsetX,
+        source.y + offsetY);
+    node.label = `${type}-${node.id.slice(-4)}`;
+    node.meta.name = node.label;
+    node.meta.label = node.label;
+    state.diagram.nodes.push(node);
+    addNodeToGraphAndActiveView(node);
+    chain.push(node);
+  });
+  const viewNode = createShortcutViewNode(rule, source, target, chain.slice(1));
+  chain.push(target);
+  for (let index = 0; index < chain.length - 1; index++) {
+    const edge = {
+      id: genId("e"),
+      sourceId: chain[index].id,
+      targetId: chain[index + 1].id,
+      kind: edgeKinds[index] || "DEPENDS_ON"
+    };
+    state.diagram.connections.push(edge);
+    addConnectionToGraphAndActiveView(edge);
+  }
+  if (viewNode) {
+    const summaryEdge = {
+      id: genId("e"),
+      sourceId: source.id,
+      targetId: viewNode.id,
+      kind: "CONTAINS"
+    };
+    const targetEdge = {
+      id: genId("e"),
+      sourceId: viewNode.id,
+      targetId: target.id,
+      kind: "INVOKES"
+    };
+    state.diagram.connections.push(summaryEdge, targetEdge);
+    addConnectionToGraphAndActiveView(summaryEdge);
+    addConnectionToGraphAndActiveView(targetEdge);
+  }
+  syncActiveViewFromVisibleGraph();
+  renderDiagram();
+  scheduleAutoSave({delayMs: 220});
+  publishDiagramUpdate({immediate: true});
+  setStatus(`Created ${rule.label || "PSM shortcut connector"}`);
+  return true;
+}
+
+function createShortcutViewNode(rule, source, target, intermediates) {
+  const viewType = String(rule.viewType || "").trim();
+  if (!viewType) {
+    return null;
+  }
+  const node = getDefaultNode("psm", viewType,
+      Math.round((source.x + target.x) / 2),
+      Math.round((source.y + target.y) / 2 - 130));
+  node.label = `${rule.label || viewType}`;
+  node.meta.name = node.label;
+  node.meta.label = node.label;
+  node.meta.generated = true;
+  node.meta.source = source.id;
+  node.meta.target = target.id;
+  const byType = new Map(intermediates.map((item) => [item.type, item.id]));
+  if (modelingTypeMatchesSafe("ApiGatewayRoute", source.type)) {
+    node.meta.route = source.id;
+  }
+  if (source.type === "EventBridgeRule") {
+    node.meta.rule = source.id;
+  }
+  if (source.type === "SnsTopic") {
+    node.meta.topic = source.id;
+  }
+  if (source.type === "SqsQueue") {
+    node.meta.queue = source.id;
+  }
+  if (target.type === "AwsLambdaFunction") {
+    node.meta.function = target.id;
+  }
+  if (target.type === "StepFunctionStateMachine") {
+    node.meta.stateMachine = target.id;
+  }
+  node.meta.integration = byType.get("ApiGatewayIntegration")
+      || node.meta.integration;
+  node.meta.targetRow = byType.get("EventBridgeTarget")
+      || node.meta.targetRow;
+  node.meta.subscription = byType.get("SnsSubscription")
+      || node.meta.subscription;
+  node.meta.mapping = byType.get("SqsLambdaEventSourceMapping")
+      || node.meta.mapping;
+  node.meta.permission = byType.get("LambdaPermission") || null;
+  state.diagram.nodes.push(node);
+  addNodeToGraphAndActiveView(node);
+  return node;
+}
+
+function modelingTypeMatchesSafe(expected, actual) {
+  try {
+    return modelingTypeMatches(state.activeType, expected, actual);
+  } catch {
+    return expected === actual;
+  }
 }
 
 // ── Connect mode ─────────────────────────────────────────────────────────────

@@ -65,6 +65,24 @@ class ClimateReliefSampleXmiImportTest {
     }
 
     @Test
+    void importsAwsPsmSampleWithNestedPsmPackages() throws Exception {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+
+        byte[] bytes = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
+                "psm.xmi").normalize());
+
+        ModelService.ImportResult result = service.importModel(ModelLevel.PSM, "psm.xmi", bytes,
+                "xmi");
+
+        assertEquals("AwsPsmModel", result.modelJson().path("eClass").asText());
+        assertFalse(result.modelJson().path("allResources").isEmpty());
+    }
+
+    @Test
     void rawEmfLoadOfClimateReliefSample() throws Exception {
         Path sample = Path.of("..", "..", "..", "mde", "samples",
                 "climate-relief-grants-cim-sample.xmi").normalize().toAbsolutePath();

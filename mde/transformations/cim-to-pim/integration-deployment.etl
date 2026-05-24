@@ -36,7 +36,7 @@ operation attachOwnedElements() {
     }
   }
   for (api in API!Api.all) {
-    var owner = DEPLOY!ServerlessService.all.select(s | s.ownsApis.includes(api)).first();
+    var owner = DEPLOY!ServerlessService.all.selectOne(s | s.ownsApis.includes(api));
     if (owner.isUndefined()) {
       DEPLOY!ServerlessService.all.first().ownsApis.add(api);
     }
@@ -315,7 +315,7 @@ operation createPolicyRoutingRules() {
 operation createExternalIntegrationFlows() {
   for (state in WORKFLOW!WorkflowState.all.select(s | s.invokesAdapter.isDefined())) {
     var flowId = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
-    if (INTEGRATION!ExternalIntegrationFlow.all.select(existing | existing.id = flowId).isEmpty()) {
+    if (INTEGRATION!ExternalIntegrationFlow.all.selectOne(existing | existing.id = flowId).isUndefined()) {
       var flow = new INTEGRATION!ExternalIntegrationFlow;
       flow.id = flowId;
       flow.name = state.name + " calls " + state.invokesAdapter.name;
@@ -458,70 +458,76 @@ operation containsProviderSpecificTerm(text) {
 
 operation createDataAccesses() {
   for (cmd in CIMBEHAVIOR!Command.all) {
-    if (cmd.targetAggregate.isDefined() and commandFunction(cmd).isDefined() and storeForAggregate(cmd.targetAggregate).isDefined()) {
-      var daId = newId("dataaccess", commandFunction(cmd).id + "_" + storeForAggregate(cmd.targetAggregate).id + "_write");
-      if (DATA!DataAccess.all.select(existing | existing.id = daId).isEmpty()) {
+    var cmdFn = commandFunction(cmd);
+    var targetStore = null;
+    if (cmd.targetAggregate.isDefined()) {
+      targetStore = storeForAggregate(cmd.targetAggregate);
+    }
+    if (cmd.targetAggregate.isDefined() and cmdFn.isDefined() and targetStore.isDefined()) {
+      var daId = newId("dataaccess", cmdFn.id + "_" + targetStore.id + "_write");
+      if (DATA!DataAccess.all.selectOne(existing | existing.id = daId).isUndefined()) {
         var da = new DATA!DataAccess;
         da.id = daId;
-        da.name = commandFunction(cmd).name + " writes " + storeForAggregate(cmd.targetAggregate).name;
+        da.name = cmdFn.name + " writes " + targetStore.name;
         da.mode = PIMTYPES!DataAccessMode#WRITE;
-        da.transactional = storeForAggregate(cmd.targetAggregate).transactional;
+        da.transactional = targetStore.transactional;
         da.purpose = "Command state change";
-        setFeature(da, "function", commandFunction(cmd));
-        da.store = storeForAggregate(cmd.targetAggregate);
-        da.dataModels.addAll(storeForAggregate(cmd.targetAggregate).ownedDataModels);
-        da.accessPatterns.addAll(storeForAggregate(cmd.targetAggregate).accessPatterns);
+        setFeature(da, "function", cmdFn);
+        da.store = targetStore;
+        da.dataModels.addAll(targetStore.ownedDataModels);
+        da.accessPatterns.addAll(targetStore.accessPatterns);
         pimRoot().dataAccesses.add(da);
       }
-      if (not commandFunction(cmd).writes.includes(storeForAggregate(cmd.targetAggregate))) {
-        commandFunction(cmd).writes.add(storeForAggregate(cmd.targetAggregate));
+      if (not cmdFn.writes.includes(targetStore)) {
+        cmdFn.writes.add(targetStore);
       }
     }
     for (condition in cmd.preconditions) {
       for (concept in condition.referencedConcepts.select(c | c.isKindOf(CIMDOMAIN!DomainEntity))) {
         var readStore = storeForEntity(concept);
-        if (readStore.isDefined() and commandFunction(cmd).isDefined()) {
-          var dacId = newId("dataaccess", commandFunction(cmd).id + "_" + readStore.id + "_" + condition.id + "_precondition_read");
-          if (DATA!DataAccess.all.select(existing | existing.id = dacId).isEmpty()) {
+        if (readStore.isDefined() and cmdFn.isDefined()) {
+          var dacId = newId("dataaccess", cmdFn.id + "_" + readStore.id + "_" + condition.id + "_precondition_read");
+          if (DATA!DataAccess.all.selectOne(existing | existing.id = dacId).isUndefined()) {
             var dac = new DATA!DataAccess;
             dac.id = dacId;
-            dac.name = commandFunction(cmd).name + " checks " + readStore.name;
+            dac.name = cmdFn.name + " checks " + readStore.name;
             dac.mode = PIMTYPES!DataAccessMode#READ;
             dac.transactional = false;
             dac.purpose = "Command precondition read";
-            setFeature(dac, "function", commandFunction(cmd));
+            setFeature(dac, "function", cmdFn);
             dac.store = readStore;
             dac.dataModels.addAll(readStore.ownedDataModels);
             pimRoot().dataAccesses.add(dac);
             traceGenerated(condition, dac, "TR-140", "MEDIUM");
           }
-          if (not commandFunction(cmd).reads.includes(readStore)) {
-            commandFunction(cmd).reads.add(readStore);
+          if (not cmdFn.reads.includes(readStore)) {
+            cmdFn.reads.add(readStore);
           }
         }
       }
     }
   }
   for (q in CIMBEHAVIOR!Query.all) {
+    var queryFn = queryFunction(q);
     for (entity in q.reads) {
       var store = storeForEntity(entity);
-      if (store.isDefined() and queryFunction(q).isDefined()) {
-        var daqId = newId("dataaccess", queryFunction(q).id + "_" + store.id + "_read");
-        if (DATA!DataAccess.all.select(existing | existing.id = daqId).isEmpty()) {
+      if (store.isDefined() and queryFn.isDefined()) {
+        var daqId = newId("dataaccess", queryFn.id + "_" + store.id + "_read");
+        if (DATA!DataAccess.all.selectOne(existing | existing.id = daqId).isUndefined()) {
           var daq = new DATA!DataAccess;
           daq.id = daqId;
-          daq.name = queryFunction(q).name + " reads " + store.name;
+          daq.name = queryFn.name + " reads " + store.name;
           daq.mode = PIMTYPES!DataAccessMode#READ;
           daq.transactional = false;
           daq.purpose = "Query read access";
-          setFeature(daq, "function", queryFunction(q));
+          setFeature(daq, "function", queryFn);
           daq.store = store;
           daq.dataModels.addAll(store.ownedDataModels);
-          daq.accessPatterns.addAll(store.accessPatterns.select(ap | ap.usedByFunctions.includes(queryFunction(q))));
+          daq.accessPatterns.addAll(store.accessPatterns.select(ap | ap.usedByFunctions.includes(queryFn)));
           pimRoot().dataAccesses.add(daq);
         }
-        if (not queryFunction(q).reads.includes(store)) {
-          queryFunction(q).reads.add(store);
+        if (not queryFn.reads.includes(store)) {
+          queryFn.reads.add(store);
         }
       }
     }
@@ -533,7 +539,7 @@ operation createDataAccesses() {
         var guardedStore = storeForAggregate(guardCommand.targetAggregate);
         if (guardedStore.isDefined()) {
           var dapId = newId("dataaccess", fn.id + "_" + guardedStore.id + "_" + guardCommand.id + "_policy_read");
-          if (DATA!DataAccess.all.select(existing | existing.id = dapId).isEmpty()) {
+          if (DATA!DataAccess.all.selectOne(existing | existing.id = dapId).isUndefined()) {
             var dap = new DATA!DataAccess;
             dap.id = dapId;
             dap.name = fn.name + " reads " + guardedStore.name;
@@ -625,7 +631,7 @@ operation copySeedEventTypesToChannel(seed, channel : INTEGRATION!EventChannel) 
 
 operation ensureDeadLetterQueue(seed) {
   var queueId = newId("dlq", seed.id);
-  var queue = INTEGRATION!Queue.all.select(q | q.id = queueId).first();
+  var queue = INTEGRATION!Queue.all.selectOne(q | q.id = queueId);
   if (queue.isUndefined()) {
     queue = new INTEGRATION!Queue;
     queue.id = queueId;

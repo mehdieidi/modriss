@@ -1058,7 +1058,13 @@ function selectElementIdsForView(graph, view, typeKey) {
       return;
     }
     const includeByType = !filterTypes.size || filterTypes.has(
-        semanticType(element)) || elementId === view?.scope?.rootElementId;
+        semanticType(element)) || [...filterTypes].some((expected) => {
+      try {
+        return matchesSemanticType(element, expected, typeKey);
+      } catch {
+        return false;
+      }
+    }) || elementId === view?.scope?.rootElementId;
     if (includeByType) {
       selected.push(elementId);
     }
@@ -1670,8 +1676,78 @@ export function serializeGraphAndViewsInto(root) {
     populateCimRootContainments(root, state.graph);
   } else if (state.activeType === "pim") {
     populatePimRootContainments(root, state.graph);
+  } else if (state.activeType === "psm") {
+    populatePsmRootContainments(root, state.graph);
   }
   return root;
+}
+
+function psmElementType(element) {
+  return String(element?.eClass || element?.type || "");
+}
+
+function psmMatches(type, expected) {
+  try {
+    return modelingTypeMatches("psm", expected, type);
+  } catch {
+    return type === expected;
+  }
+}
+
+function psmCloneElement(element) {
+  const copyElement = clone(element);
+  delete copyElement.__collapsed;
+  delete copyElement.__collapsedSummary;
+  return copyElement;
+}
+
+function populatePsmRootContainments(root, graph) {
+  const elements = [...graph.elementsById.values()].map(psmCloneElement);
+  const byId = new Map(elements.map((element) => [element.id, element]));
+  const resources = elements.filter((element) =>
+      psmMatches(psmElementType(element), "AwsResource"));
+  const stacks = elements.filter((element) => psmElementType(element)
+      === "SamStack");
+  const stages = elements.filter((element) => psmElementType(element)
+      === "AwsStage");
+  root.stages = stages;
+  root.stacks = stacks;
+  root.allResources = resources.map((resource) => resource.id);
+  root.relationshipViews = elements.filter((element) =>
+      psmMatches(psmElementType(element), "AwsRelationshipView"));
+  root.samGlobals = elements.find((element) => psmElementType(element)
+      === "SamGlobals") || root.samGlobals || null;
+  root.namingPolicy = elements.find((element) => psmElementType(element)
+      === "AwsNamingPolicy") || root.namingPolicy || null;
+  root.taggingPolicy = elements.find((element) => psmElementType(element)
+      === "AwsTaggingPolicy") || root.taggingPolicy || null;
+  root.securityBaseline = elements.find((element) => psmElementType(element)
+      === "AwsSecurityBaseline") || root.securityBaseline || null;
+  const stackIds = new Set(stacks.map((stack) => stack.id));
+  stacks.forEach((stack) => {
+    const ownedIds = referenceIds(stack.resources);
+    const contained = resources.filter((resource) => {
+      const stackRef = refId(resource.stack);
+      return stackRef === stack.id || ownedIds.includes(resource.id);
+    });
+    stack.resources = contained;
+  });
+  resources.forEach((resource) => {
+    const stackId = refId(resource.stack);
+    if (stackId && stackIds.has(stackId)) {
+      resource.stack = stackId;
+      return;
+    }
+    const owner = stacks.find((stack) => safeArray(stack.resources).some(
+        (owned) => refId(owned) === resource.id || owned?.id === resource.id));
+    if (owner) {
+      resource.stack = owner.id;
+    }
+  });
+  stages.forEach((stage) => {
+    stage.deploysStacks = referenceIds(stage.deploysStacks).filter((id) =>
+        byId.has(id));
+  });
 }
 
 export function addNodeToGraphAndActiveView(node) {
@@ -1839,7 +1915,7 @@ function removePreviousSemanticReference(edge, previous) {
 }
 
 function applySemanticReference(edge, previous = null) {
-  if (!["cim", "pim"].includes(state.activeType) || !edge?.sourceId
+  if (!["cim", "pim", "psm"].includes(state.activeType) || !edge?.sourceId
       || !edge?.targetId) {
     return null;
   }

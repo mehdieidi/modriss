@@ -16,6 +16,7 @@ import org.eclipse.epsilon.common.util.StringProperties;
 import org.eclipse.epsilon.emc.emf.EmfModel;
 import org.eclipse.epsilon.eol.exceptions.EolRuntimeException;
 import org.eclipse.epsilon.eol.exceptions.models.EolModelLoadingException;
+import org.eclipse.epsilon.eol.execute.context.Variable;
 import org.eclipse.epsilon.eol.models.IModel;
 import org.eclipse.epsilon.eol.models.Model;
 import org.eclipse.epsilon.etl.EtlModule;
@@ -51,6 +52,7 @@ public final class EpsilonEtlExecutor {
                 module.getContext().getModelRepository().addModel(model);
             }
 
+            configureTransformationState(module);
             module.execute();
             storeModels(request, loadedModels, diagnostics);
             return report(
@@ -235,6 +237,24 @@ public final class EpsilonEtlExecutor {
         properties.put(EmfModel.PROPERTY_VALIDATE, Boolean.toString(modelConfiguration.validate()));
         model.load(properties);
         return model;
+    }
+
+    private void configureTransformationState(EtlModule module) {
+        module.getContext().getFrameStack().putGlobal(
+                new Variable("usedModelElementIds", new java.util.LinkedHashSet<>(),
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("usedAwsLogicalIds", new java.util.LinkedHashSet<>(),
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimRoot", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedCimRoot", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedAwsRoot", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedDefaultStage", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedIsProductionRoot", false,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance));
     }
 
     private void storeModels(

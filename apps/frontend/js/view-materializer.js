@@ -1,6 +1,7 @@
 import {state} from './state.js';
 import {emptyDiagram} from './utils.js';
 import {activeView} from './graph-store.js';
+import {modelingTypeMatches} from './modeling-config-data.js';
 
 const CONTAINER_TYPES = {
   cim: new Set([
@@ -83,7 +84,14 @@ function selectedElementIds(view) {
       return false;
     }
     return !filterTypes.size || filterTypes.has(elementType(element))
-        || elementId === view?.scope?.rootElementId;
+        || [...filterTypes].some((expected) => {
+          try {
+            return modelingTypeMatches(state.activeType, expected,
+                elementType(element));
+          } catch {
+            return false;
+          }
+        }) || elementId === view?.scope?.rootElementId;
   });
 }
 
@@ -313,4 +321,3 @@ export function materializeActiveView() {
   state.diagram = state.visibleGraph;
   return state.visibleGraph;
 }
-

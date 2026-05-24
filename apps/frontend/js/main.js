@@ -68,6 +68,7 @@ import {loadModelingConfig} from './modeling-config-data.js';
 import {initViewWorkbench, renderViewWorkbench} from './view-explorer.js';
 import {initCimWorkbenchSurface} from './cim-workbench.js';
 import {initPimWorkbenchSurface} from './pim-workbench.js';
+import {initPsmWorkbenchSurface} from './psm-workbench.js';
 import {configureContainerCollapse} from './container-collapse.js';
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
@@ -631,6 +632,7 @@ function bindEvents() {
       if (el.importModelFileInput) {
         el.importModelFileInput.accept = ".json,application/json";
         el.importModelFileInput.dataset.importFormat = "json";
+        el.importModelFileInput.dataset.importType = state.activeType;
         el.importModelFileInput.click();
       }
     });
@@ -644,6 +646,7 @@ function bindEvents() {
       if (el.importModelFileInput) {
         el.importModelFileInput.accept = ".xmi,application/xml,text/xml";
         el.importModelFileInput.dataset.importFormat = "xmi";
+        el.importModelFileInput.dataset.importType = state.activeType;
         el.importModelFileInput.click();
       }
     });
@@ -652,13 +655,15 @@ function bindEvents() {
     el.importModelFileInput.addEventListener("change", async (event) => {
       const file = event.target.files?.[0];
       const format = event.target.dataset.importFormat || "json";
+      const type = event.target.dataset.importType || state.activeType;
       try {
-        await importActiveModel(file, format);
+        await importActiveModel(file, format, type);
       } catch (error) {
         setError(`Import failed: ${error.message}`);
       } finally {
         event.target.value = "";
         delete event.target.dataset.importFormat;
+        delete event.target.dataset.importType;
       }
     });
   }
@@ -895,6 +900,12 @@ async function init() {
     openConnectionPanel
   });
   initPimWorkbenchSurface({
+    renderDiagram,
+    renderPalette,
+    openAttributePanel,
+    openConnectionPanel
+  });
+  initPsmWorkbenchSurface({
     renderDiagram,
     renderPalette,
     openAttributePanel,

@@ -160,6 +160,18 @@ export const state = {
     sortKey: "name",
     hidPalette: false
   },
+  psmWorkbench: {
+    representationByViewId: {},
+    registerByViewId: {},
+    search: "",
+    missingOnly: false,
+    sliceKind: "",
+    sliceValue: "",
+    activeLens: "all",
+    edgeMode: "both",
+    sortKey: "name",
+    hidPalette: false
+  },
   paletteGroupCollapsed: {
     cim: {},
     pim: {},

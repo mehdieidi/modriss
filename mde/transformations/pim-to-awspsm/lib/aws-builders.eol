@@ -38,7 +38,7 @@ operation inferDefaultRegion(p) {
 
 operation tag(key : String, value : String) {
   var t = new AWSPSMCORE!AwsTag;
-  t.id = "tag_" + slug(key + "_" + value);
+  t.id = uniqueId("tag_" + slug(key + "_" + value));
   t.name = key;
   t.key = key;
   t.value = value;
@@ -50,7 +50,7 @@ operation tag(key : String, value : String) {
 
 operation literalValue(value : String, secret : Boolean) {
   var v = new AWSPSMCORE!ValueExpression;
-  v.id = "value_" + slug(value);
+  v.id = uniqueId("value_" + slug(value));
   v.name = "Literal value";
   v.sourceKind = AWSPSMENUMS!ValueSourceKind#PLAINTEXT;
   v.literal = value;
@@ -60,7 +60,7 @@ operation literalValue(value : String, secret : Boolean) {
 
 operation refValue(resource) {
   var v = new AWSPSMCORE!ValueExpression;
-  v.id = "ref_" + slug(resource.logicalId);
+  v.id = uniqueId("ref_" + slug(resource.logicalId));
   v.name = "Ref " + resource.logicalId;
   v.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_REF;
   v.resource = resource;
@@ -69,7 +69,7 @@ operation refValue(resource) {
 
 operation getAtt(resource, attributeName : String) {
   var v = new AWSPSMCORE!ValueExpression;
-  v.id = "getatt_" + slug(resource.logicalId + "_" + attributeName);
+  v.id = uniqueId("getatt_" + slug(resource.logicalId + "_" + attributeName));
   v.name = "GetAtt " + resource.logicalId + "." + attributeName;
   v.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_GETATT;
   v.resource = resource;
@@ -79,7 +79,7 @@ operation getAtt(resource, attributeName : String) {
 
 operation nativeText(name : String, value : String, fmt, required : Boolean, secret : Boolean) {
   var p = new AWSPSMCORE!NativeProperty;
-  p.id = "native_" + slug(name + "_" + value);
+  p.id = uniqueId("native_" + slug(name + "_" + value));
   p.name = name;
   p.propertyName = name;
   p.format = fmt;
@@ -271,10 +271,19 @@ operation createLogGroupFor(source, logicalSeed : String, logName : String) {
   var g = new AWSPSMOBSERVABILITY!CloudWatchLogGroup;
   g.id = generatedId("log_group", source, logicalSeed);
   g.name = firstText(source.name, logicalSeed) + " Log Group";
-  g.logicalId = pascalCase(logicalSeed) + "LogGroup";
+  g.logicalId = uniqueLogicalId(pascalCase(logicalSeed) + "LogGroup");
   g.physicalName = logName;
   g.awsResourceType = "AWS::Logs::LogGroup";
   g.logGroupName = logName;
+  g.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#RETAIN;
+  g.updateReplacePolicy = AWSPSMENUMS!CloudFormationUpdateReplacePolicy#RETAIN;
+  g.retainInProduction = isProductionRoot();
+  g.productionCritical = isProductionRoot();
+  g.importedResource = false;
+  g.tags.add(tag("GeneratedFromPIM", firstText(source.name, source.id)));
+  g.tags.add(tag("Service", owningServiceName(source)));
+  g.tags.add(tag("Owner", owningOwnerTeam(source)));
+  g.tags.add(tag("Environment", defaultStageName()));
   if (isProductionRoot()) {
     g.retentionDays = 90;
   }
@@ -288,7 +297,7 @@ operation createLogGroupFor(source, logicalSeed : String, logName : String) {
 
 operation policyDocument() {
   var doc = new AWSPSMSECURITY!IamPolicyDocument;
-  doc.id = "policy_doc_" + slug("generated");
+  doc.id = uniqueId("policy_doc_generated");
   doc.name = "Policy document";
   doc.version = "2012-10-17";
   return doc;
@@ -299,7 +308,7 @@ operation serviceAssumeRolePolicy(service : String) {
   var st = allowStatement("AssumeRole");
   st.actions.add("sts:AssumeRole");
   var p = new AWSPSMSECURITY!IamPrincipal;
-  p.id = "principal_" + slug(service);
+  p.id = uniqueId("principal_" + slug(service));
   p.name = service;
   p.principalType = "Service";
   p.identifiers.add(service);
@@ -310,7 +319,7 @@ operation serviceAssumeRolePolicy(service : String) {
 
 operation allowStatement(sid : String) {
   var st = new AWSPSMSECURITY!IamStatement;
-  st.id = "stmt_" + slug(sid);
+  st.id = uniqueId("stmt_" + slug(sid));
   st.name = sid;
   st.sid = sid;
   st.effect = AWSPSMENUMS!IamEffect#ALLOW;

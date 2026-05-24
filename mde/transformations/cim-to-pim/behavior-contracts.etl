@@ -393,7 +393,7 @@ rule Query2AccessPattern
     manualDecision("TR-080", "Define query key/filter/index strategy for query '" + q.name + "'.", KERNEL!Severity#WARNING, ap.highCardinality, Sequence{q, ap});
   }
 
-  var profile = CIM!CIMModel.all.first().transformationProfile;
+  var profile = cimRoot().transformationProfile;
   if ((profile.isDefined() and profile.generateReadModelsFromQueries) or q.queryType.asString() = "SEARCH" or q.queryType.asString() = "REPORT" or q.queryType.asString() = "ANALYTICS") {
     var readStore = new DATA!DataStore;
     readStore.id = idFor("readstore", q);

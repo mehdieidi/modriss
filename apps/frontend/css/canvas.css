@@ -602,7 +602,8 @@
 }
 
 .canvas-grid.cim-surface-active .canvas-content,
-.canvas-grid.pim-surface-active .canvas-content {
+.canvas-grid.pim-surface-active .canvas-content,
+.canvas-grid.psm-surface-active .canvas-content {
   opacity: 0.08;
   pointer-events: none;
 }

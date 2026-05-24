@@ -1,3 +1,19 @@
+operation initialisePimToAwsPsmCaches() {
+  usedModelElementIds = Set{};
+  usedAwsLogicalIds = Set{};
+  cachedPimRoot = PIM!PIMModel.all.first();
+  cachedAwsRoot = null;
+  cachedDefaultStage = null;
+  cachedIsProductionRoot = isProductionPim(cachedPimRoot);
+
+  for (element in KERNEL!ModelElement.all.select(e | hasText(e.id))) {
+    usedModelElementIds.add(element.id);
+  }
+  for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.logicalId))) {
+    usedAwsLogicalIds.add(resource.logicalId);
+  }
+}
+
 operation asText(value) {
   if (value.isUndefined()) {
     return "";
@@ -20,26 +36,11 @@ operation firstText(primary, fallback) {
 }
 
 operation slug(value) {
-  var s = asText(value).toLowerCase().trim();
+  var s = asText(value).toLowerCase().trim().replaceAll("[^a-z0-9]+", "_").replaceAll("^_+|_+$", "");
   if (s.isEmpty()) {
     return "unnamed";
   }
-  var out = "";
-  for (i in Sequence{1..s.length()}) {
-    var ch = s.substring(i - 1, i);
-    if ("abcdefghijklmnopqrstuvwxyz0123456789".contains(ch)) {
-      out = out + ch;
-    }
-    else {
-      if (not out.endsWith("_")) {
-        out = out + "_";
-      }
-    }
-  }
-  while (out.endsWith("_") and out.length() > 1) {
-    out = out.substring(0, out.length() - 1);
-  }
-  return out;
+  return s;
 }
 
 operation kebab(value) {
@@ -76,11 +77,23 @@ operation idFor(prefix : String, source) {
   if (not hasText(seed)) {
     seed = prefix;
   }
-  return prefix + "_" + slug(seed);
+  return uniqueId(prefix + "_" + slug(seed));
 }
 
 operation generatedId(prefix : String, source, suffix : String) {
-  return prefix + "_" + slug(firstText(source.id, source.name) + "_" + suffix);
+  return uniqueId(prefix + "_" + slug(firstText(source.id, source.name) + "_" + suffix));
+}
+
+operation uniqueId(base : String) {
+  var seed = slug(base);
+  var candidate = seed;
+  var index = 2;
+  while (usedModelElementIds.includes(candidate)) {
+    candidate = seed + "_" + index.asString();
+    index = index + 1;
+  }
+  usedModelElementIds.add(candidate);
+  return candidate;
 }
 
 operation isTrue(value) {
@@ -127,11 +140,14 @@ operation rootName() {
 }
 
 operation pimRoot() {
-  return PIM!PIMModel.all.first();
+  return cachedPimRoot;
 }
 
 operation awsRoot() {
-  return AWSPSM!AwsPsmModel.all.first();
+  if (cachedAwsRoot.isUndefined()) {
+    cachedAwsRoot = AWSPSM!AwsPsmModel.all.first();
+  }
+  return cachedAwsRoot;
 }
 
 operation copyTraceable(source, target) {
@@ -186,10 +202,24 @@ operation copyAwsResource(source, target, kind : String, awsType : String) {
   target.importedResource = false;
   target.tags.add(tag("GeneratedFromPIM", firstText(source.name, source.id)));
   target.tags.add(tag("Service", owningServiceName(source)));
+  target.tags.add(tag("Owner", owningOwnerTeam(source)));
+  target.tags.add(tag("Environment", defaultStageName()));
 }
 
 operation logicalId(source, awsKind : String) {
-  return pascalCase(firstText(firstText(source.name, source.externalId), source.id)) + awsKind;
+  return uniqueLogicalId(pascalCase(firstText(firstText(source.name, source.externalId), source.id)) + awsKind);
+}
+
+operation uniqueLogicalId(base : String) {
+  var seed = pascalCase(base);
+  var candidate = seed;
+  var index = 2;
+  while (usedAwsLogicalIds.includes(candidate)) {
+    candidate = seed + index.asString();
+    index = index + 1;
+  }
+  usedAwsLogicalIds.add(candidate);
+  return candidate;
 }
 
 operation physicalName(source, awsKind : String, stage) {
@@ -215,8 +245,19 @@ operation owningServiceName(element) {
   return "Application";
 }
 
+operation owningOwnerTeam(element) {
+  var svc = pimRoot().services.selectOne(s |
+    s.ownsFunctions.includes(element) or s.ownsApis.includes(element) or
+    s.ownsChannels.includes(element) or s.ownsStores.includes(element) or
+    s.ownsWorkflows.includes(element) or s.ownsAdapters.includes(element));
+  if (svc.isDefined() and hasText(svc.ownerTeam)) {
+    return svc.ownerTeam;
+  }
+  return "REVIEW_REQUIRED_OWNER";
+}
+
 operation isProductionRoot() {
-  return isProductionPim(pimRoot());
+  return cachedIsProductionRoot;
 }
 
 operation isProductionPim(p) {
@@ -224,10 +265,18 @@ operation isProductionPim(p) {
 }
 
 operation defaultStage() {
-  if (AWSPSMCORE!AwsStage.all.notEmpty()) {
-    return AWSPSMCORE!AwsStage.all.first();
+  if (cachedDefaultStage.isUndefined() and AWSPSMCORE!AwsStage.all.notEmpty()) {
+    cachedDefaultStage = AWSPSMCORE!AwsStage.all.first();
   }
-  return null;
+  return cachedDefaultStage;
+}
+
+operation defaultStageName() {
+  var stage = defaultStage();
+  if (stage.isDefined() and hasText(stage.stageName)) {
+    return stage.stageName;
+  }
+  return "dev";
 }
 
 operation envBoolean(value) {

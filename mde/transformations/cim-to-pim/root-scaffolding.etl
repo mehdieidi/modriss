@@ -109,7 +109,7 @@ rule DefaultEnvironmentsAndImplementationProfile
 }
 
 post InitialReadinessChecks {
-  var c = CIM!CIMModel.all.first();
+  var c = cimRoot();
   readinessCheck("CIM_HAS_AT_LEAST_ONE_BEHAVIOR", KERNEL!Severity#ERROR,
     c.commands.notEmpty() or c.queries.notEmpty() or c.processes.notEmpty() or c.policies.notEmpty() or c.events.notEmpty(),
     "CIM contains transformable behavior.", "Add command, query, event, process, or policy.", Sequence{c});

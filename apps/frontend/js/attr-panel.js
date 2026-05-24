@@ -416,6 +416,10 @@ function renderAttributeFields(node) {
     renderPimAttributeFields(node, meta, definition);
     return;
   }
+  if (state.activeType === "psm") {
+    renderPsmAttributeFields(node, meta, definition);
+    return;
+  }
   if (state.activeType === "cim") {
     renderCimAttributeFields(node, meta, definition);
     return;
@@ -575,6 +579,61 @@ function renderPimAttributeFields(node, meta, definition) {
   bindContainmentSectionActions();
 }
 
+function renderPsmAttributeFields(node, meta, definition) {
+  const sections = psmInspectorSections();
+  const rendered = new Set(["label", "name"]);
+
+  sections.identity.appendChild(buildAttrField("name", node.label, {
+    fieldType: "text"
+  }));
+  rendered.add("name");
+  rendered.add("label");
+  sections.identity.appendChild(buildAttrField("id", node.id, {
+    fieldType: "text",
+    readonly: true
+  }));
+  rendered.add("id");
+
+  const configuredFields = [
+    ...(definition?.attributes || []),
+    ...(definition?.references || []).map((reference) => ({
+      ...reference,
+      fieldType: "reference"
+    }))
+  ];
+  configuredFields.forEach((field) => {
+    const key = field?.name;
+    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    rendered.add(key);
+    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key]
+        : field.defaultValue;
+    psmSectionForField(sections, key, field).appendChild(
+        buildAttrField(key, value, field));
+  });
+
+  Object.entries(meta).forEach(([key, value]) => {
+    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    rendered.add(key);
+    psmSectionForField(sections, key, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key)
+    }).appendChild(buildAttrField(key, value, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key)
+    }));
+  });
+  appendContainmentSections(node, sections.containment);
+  appendTraceabilitySection(node, sections.trace, {includeTitle: false});
+  appendPsmValidationSummary(sections.validation, meta, node.type);
+  appendEmptyHints(sections);
+  renderAttrTabs(sections);
+  bindContainmentSectionActions();
+}
+
 function pimInspectorSections() {
   return {
     identity: createAttrTabSection("identity", "Identity"),
@@ -592,6 +651,18 @@ function cimInspectorSections() {
     core: createAttrTabSection("core", "Business Fields"),
     relationships: createAttrTabSection("relationships", "Relationships"),
     governance: createAttrTabSection("governance", "Governance"),
+    trace: createAttrTabSection("trace", "Trace & Review"),
+    validation: createAttrTabSection("validation", "Validation")
+  };
+}
+
+function psmInspectorSections() {
+  return {
+    identity: createAttrTabSection("identity", "Identity"),
+    operations: createAttrTabSection("operations", "Runtime / Operations"),
+    security: createAttrTabSection("security", "Security"),
+    relationships: createAttrTabSection("relationships", "References"),
+    containment: createAttrTabSection("containment", "Contained Details"),
     trace: createAttrTabSection("trace", "Trace & Review"),
     validation: createAttrTabSection("validation", "Validation")
   };
@@ -636,6 +707,28 @@ function cimSectionForField(sections, key, field = {}) {
     return sections.relationships;
   }
   return sections.core;
+}
+
+function psmSectionForField(sections, key, field = {}) {
+  if (TRACE_ATTR_KEYS.has(key)) {
+    return sections.trace;
+  }
+  if (field.containment) {
+    return sections.containment;
+  }
+  if (field.fieldType === "reference" || field.kind === "reference") {
+    return sections.relationships;
+  }
+  if (isPsmSecurityField(key, field)) {
+    return sections.security;
+  }
+  return sections.operations;
+}
+
+function isPsmSecurityField(key, field = {}) {
+  const targetType = String(field.targetType || "");
+  return /role|policy|principal|auth|kms|secret|permission|public|cors|vpc|subnet|security/i.test(
+      `${key} ${targetType}`);
 }
 
 function isPimPolicySecurityField(key, field = {}) {
@@ -707,7 +800,7 @@ function buildAttrSectionTitle(title) {
 
 function appendTraceabilitySection(node, host = el.attrPanelBody,
     {includeTitle = true} = {}) {
-  if (!["cim", "pim"].includes(state.activeType)) {
+  if (!["cim", "pim", "psm"].includes(state.activeType)) {
     return;
   }
   if (includeTitle) {
@@ -757,6 +850,20 @@ function appendTraceabilitySection(node, host = el.attrPanelBody,
 }
 
 function cimContainmentEntriesForType(type) {
+  if (state.activeType === "psm") {
+    let definition = null;
+    try {
+      definition = modelingElementDefinition("psm", type);
+    } catch {
+      definition = null;
+    }
+    return (definition?.references || []).filter((reference) =>
+        reference.containment && reference.name && reference.targetType
+        && !reference.readonly).map((reference) => ({
+      feature: reference.name,
+      types: [reference.targetType]
+    }));
+  }
   if (state.activeType === "pim") {
     return pimNestedContainmentsForType(type).map((entry) => ({
       ...entry,
@@ -915,6 +1022,61 @@ function appendCimValidationSummary(section, element, type) {
     </div>`
       : `<div class="attr-field-hint">No linked risks, hotspots, or readiness findings.</div>`}`;
   section.appendChild(summary);
+}
+
+function appendPsmValidationSummary(section, element, type) {
+  const normalized = {
+    ...(element || {}),
+    eClass: type || element?.eClass || element?.type
+  };
+  const missing = metadataMissingRequiredFeatures("psm", normalized);
+  const impactedBy = [];
+  state.graph?.elementsById?.forEach((candidate) => {
+    const candidateType = candidate.eClass || candidate.type;
+    if (!["ProductionReadinessAssessment", "ReadinessFinding",
+      "ReadinessCheck", "ManualDecision"].includes(candidateType)) {
+      return;
+    }
+    if (refIds(candidate.affectedElements).includes(element?.id)
+        || refIds(candidate.attachedTo).includes(element?.id)) {
+      impactedBy.push(candidate);
+    }
+  });
+  const summary = document.createElement("div");
+  summary.className = "attr-validation-summary";
+  summary.innerHTML = `
+    ${missing.length ? `<div class="attr-validation-block is-error">
+      <strong>Missing required</strong>
+      ${missing.map((field) => `<span>${escapeAttr(field)}</span>`).join("")}
+    </div>` : `<div class="attr-validation-block is-ok">
+      <strong>Required fields complete</strong>
+    </div>`}
+    ${impactedBy.length ? `<div class="attr-validation-block">
+      <strong>Readiness links</strong>
+      ${impactedBy.map((item) => `<span>${escapeAttr(item.name || item.label
+          || item.checkId || item.question || item.id)}</span>`).join("")}
+    </div>`
+      : `<div class="attr-field-hint">No linked readiness findings.</div>`}`;
+  section.appendChild(summary);
+}
+
+function metadataMissingRequiredFeatures(typeKey, element) {
+  let definition = null;
+  try {
+    definition = modelingElementDefinition(typeKey, element.eClass
+        || element.type);
+  } catch {
+    return [];
+  }
+  return [...(definition?.attributes || []), ...(definition?.references || [])]
+  .filter((field) => field.required && !field.readonly)
+  .filter((field) => {
+    const value = element[field.name];
+    if (Array.isArray(value)) {
+      return !value.length;
+    }
+    return value === null || value === undefined || String(value).trim() === "";
+  }).map((field) => field.name);
 }
 
 function initializeContainedChildDefaults(child, parent, feature) {
@@ -1076,12 +1238,12 @@ const PIM_EXPRESSION_FIELDS = new Set([
 ]);
 
 function isPimExpressionField(key, fieldType) {
-  if (state.activeType !== "pim") {
+  if (!["pim", "psm"].includes(state.activeType)) {
     return false;
   }
   const normalized = String(key || "");
   return fieldType !== "reference" && (PIM_EXPRESSION_FIELDS.has(normalized)
-      || /expression|pattern|condition|mapping|query|filter|projection/i.test(
+      || /expression|pattern|condition|mapping|query|filter|projection|json|document|definition|policy/i.test(
           normalized));
 }
 

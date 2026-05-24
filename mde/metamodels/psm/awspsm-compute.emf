@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/awspsm/compute/2.1", prefix="awspsmcompute")
+@namespace(uri="https://modless.org/awspsm/compute/1.0", prefix="awspsmcompute")
 package awspsmcompute;
 
 import "../shared/kernel.ecore";

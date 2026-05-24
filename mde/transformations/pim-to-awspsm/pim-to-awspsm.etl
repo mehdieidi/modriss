@@ -8,12 +8,13 @@ pre ValidatePimInput {
   if (PIM!PIMModel.all.isEmpty()) {
     throw "PIM to AWS PSM requires one PIMModel root.";
   }
+  initialisePimToAwsPsmCaches();
 }
 
 post ResolveAndValidate {
-  placeUncontainedAwsResources();
   resolveAwsRelationships();
   generateIamStatements();
+  placeUncontainedAwsResources();
   generateRelationshipViews();
   generateReadinessChecks();
   validatePsmConstraints();

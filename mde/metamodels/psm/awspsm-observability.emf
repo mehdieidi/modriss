@@ -1,4 +1,4 @@
-@namespace(uri="https://modless.org/awspsm/observability/2.1", prefix="awspsmobservability")
+@namespace(uri="https://modless.org/awspsm/observability/1.0", prefix="awspsmobservability")
 package awspsmobservability;
 
 import "../shared/kernel.ecore";

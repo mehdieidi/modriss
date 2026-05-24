@@ -12,12 +12,18 @@ operation defaultStack() {
 operation placeUncontainedAwsResources() {
   flagUnassignedDeployables();
   var st = defaultStack();
-  if (st.isDefined()) {
-    for (r in AWSPSMCORE!AwsResource.all) {
-      if (r.stack.isUndefined()) {
-        st.resources.add(r);
+  for (r in AWSPSMCORE!AwsResource.all) {
+    if (r.stack.isUndefined()) {
+      var targetStack = stackForGeneratedResource(r);
+      if (targetStack.isUndefined()) {
+        targetStack = st;
+      }
+      if (targetStack.isDefined()) {
+        targetStack.resources.add(r);
       }
     }
+  }
+  if (st.isDefined()) {
     for (p in AWSPSMCORE!CfnParameter.all) {
       if (p.eContainer().isUndefined()) {
         st.parameters.add(p);
@@ -27,6 +33,26 @@ operation placeUncontainedAwsResources() {
   if (AWSPSM!AwsPsmModel.all.notEmpty()) {
     awsRoot().allResources.addAll(AWSPSMCORE!AwsResource.all);
   }
+  for (stage in AWSPSMCORE!AwsStage.all) {
+    for (stack in AWSPSMCORE!SamStack.all) {
+      if (not stage.deploysStacks.includes(stack)) {
+        stage.deploysStacks.add(stack);
+      }
+    }
+  }
+}
+
+operation stackForGeneratedResource(resource) {
+  if (not hasText(resource.generatedFrom)) {
+    return null;
+  }
+  var unit = pimRoot().deploymentUnits.selectOne(d |
+    d.contains.exists(element | element.id = resource.generatedFrom) or
+    d.services.exists(service | service.id = resource.generatedFrom));
+  if (unit.isDefined()) {
+    return unit.equivalent();
+  }
+  return null;
 }
 
 operation resolveAwsRelationships() {
@@ -61,6 +87,9 @@ operation generateIamStatements() {
       for (sec in f.usesSecrets) {
         addSecretStatement(pol.document, sec);
       }
+      if (pol.document.statements.isEmpty()) {
+        pol.document.statements.add(unresolvedAccessStatement(f));
+      }
       if (pol.document.statements.notEmpty()) {
         l.role.inlinePolicies.add(pol);
       }
@@ -72,7 +101,7 @@ operation generateRelationshipViews() {
   for (route in AWSPSMAPI!ApiGatewayRoute.all) {
     if (route.integration.isDefined() and route.integration.lambdaTarget.isDefined()) {
       var v = new AWSPSMINTEGRATIONS!ApiGatewayLambdaIntegrationView;
-      v.id = "view_api_lambda_" + slug(route.logicalId + "_" + route.integration.lambdaTarget.logicalId);
+      v.id = uniqueId("view_api_lambda_" + slug(route.logicalId + "_" + route.integration.lambdaTarget.logicalId));
       v.name = route.name + " to " + route.integration.lambdaTarget.name;
       v.generated = true;
       v.source = route;
@@ -86,7 +115,7 @@ operation generateRelationshipViews() {
   for (m in AWSPSMCOMPUTE!SqsLambdaEventSourceMapping.all) {
     var mappedFunction = m.eGet(m.eClass().getEStructuralFeature("function"));
     var sqsView = new AWSPSMINTEGRATIONS!SqsLambdaEventSourceView;
-    sqsView.id = "view_sqs_lambda_" + slug(m.queue.logicalId + "_" + mappedFunction.logicalId);
+    sqsView.id = uniqueId("view_sqs_lambda_" + slug(m.queue.logicalId + "_" + mappedFunction.logicalId));
     sqsView.name = m.queue.name + " to " + mappedFunction.name;
     sqsView.generated = true;
     sqsView.source = m.queue;
@@ -99,7 +128,7 @@ operation generateRelationshipViews() {
   for (sub in AWSPSMMESSAGING!SnsSubscription.all) {
     if (sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA and sub.endpointResource.isDefined()) {
       var snsView = new AWSPSMINTEGRATIONS!SnsLambdaSubscriptionView;
-      snsView.id = "view_sns_lambda_" + slug(sub.topic.logicalId + "_" + sub.endpointResource.logicalId);
+      snsView.id = uniqueId("view_sns_lambda_" + slug(sub.topic.logicalId + "_" + sub.endpointResource.logicalId));
       snsView.name = sub.topic.name + " to " + sub.endpointResource.name;
       snsView.generated = true;
       snsView.source = sub.topic;
@@ -115,7 +144,7 @@ operation generateRelationshipViews() {
     for (targetRow in er.targets) {
       if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#LAMBDA and targetRow.targetResource.isDefined()) {
         var ebView = new AWSPSMINTEGRATIONS!EventBridgeLambdaTargetView;
-        ebView.id = "view_event_lambda_" + slug(er.logicalId + "_" + targetRow.targetResource.logicalId);
+        ebView.id = uniqueId("view_event_lambda_" + slug(er.logicalId + "_" + targetRow.targetResource.logicalId));
         ebView.name = er.name + " to " + targetRow.targetResource.name;
         ebView.generated = true;
         ebView.source = er;
@@ -128,7 +157,7 @@ operation generateRelationshipViews() {
       }
       if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#STEP_FUNCTIONS and targetRow.targetResource.isDefined()) {
         var sfView = new AWSPSMINTEGRATIONS!StepFunctionEventBridgeTargetView;
-        sfView.id = "view_event_sfn_" + slug(er.logicalId + "_" + targetRow.targetResource.logicalId);
+        sfView.id = uniqueId("view_event_sfn_" + slug(er.logicalId + "_" + targetRow.targetResource.logicalId));
         sfView.name = er.name + " to " + targetRow.targetResource.name;
         sfView.generated = true;
         sfView.source = er;
@@ -540,6 +569,21 @@ operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
   if (st.actions.notEmpty()) {
     doc.statements.add(st);
   }
+}
+
+operation unresolvedAccessStatement(source) {
+  var st = allowStatement("ReviewGeneratedAccess" + pascalCase(firstText(source.name, source.id)));
+  st.effect = AWSPSMENUMS!IamEffect#DENY;
+  st.actions.add("*");
+  st.resources.add("*");
+  st.wildcardAction = true;
+  st.wildcardResource = true;
+  st.wildcardJustification = "The PIM dependency maps to an AWS-native placeholder or unresolved target; least-privilege actions/resources require review.";
+  manualDecision("IAM_WILDCARD_REVIEW",
+    "Review AWS access policy for " + source.name + " because at least one dependency maps to an unresolved AWS target.",
+    KERNEL!Severity#WARNING, isProductionRoot(), Sequence{source},
+    "Replace the placeholder statement with service-specific least-privilege permissions after selecting the AWS target service.");
+  return st;
 }
 
 operation addPublishStatement(doc, eventType) {

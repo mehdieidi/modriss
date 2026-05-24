@@ -244,7 +244,7 @@ operation applySecurityPolicies(source, resource) {
   }
 }
 
-operation createLambdaAlarm(f, l, suffix : String, metric : String, threshold : Double) {
+operation createLambdaAlarm(f, l, suffix : String, metric : String, threshold : Real) {
   var a = new AWSPSMOBSERVABILITY!CloudWatchAlarm;
   copyAwsResource(f, a, "Alarm" + suffix, "AWS::CloudWatch::Alarm");
   a.id = generatedId("alarm", f, suffix);

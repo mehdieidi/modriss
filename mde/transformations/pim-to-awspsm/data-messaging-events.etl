@@ -283,6 +283,7 @@ rule Schedule2EventBridgeSchedule
   }
   es.descriptionText = s.summary;
   es.role = createSchedulerRole(s);
+  es.target = createUnresolvedScheduleTarget(s);
   manualDecision("SCHEDULE_TARGET_REQUIRED",
     "Choose the target for schedule " + s.name + ".",
     KERNEL!Severity#ERROR, true, Sequence{s, es},
@@ -319,7 +320,7 @@ operation addDynamoAttribute(t, field) {
     return;
   }
   var a = new AWSPSMSTORAGE!DynamoDbAttributeDefinition;
-  a.id = "dynamodb_attr_" + slug(t.logicalId + "_" + firstText(field.storageName, field.name));
+  a.id = uniqueId("dynamodb_attr_" + slug(t.logicalId + "_" + firstText(field.storageName, field.name)));
   a.name = firstText(field.storageName, field.name);
   a.attributeName = a.name;
   a.attributeType = dynamoType(field.fieldType);
@@ -328,7 +329,7 @@ operation addDynamoAttribute(t, field) {
 
 operation dynamoKey(name : String, keyType) {
   var k = new AWSPSMSTORAGE!DynamoDbKeySchemaElement;
-  k.id = "dynamodb_key_" + slug(name + "_" + keyType.asString());
+  k.id = uniqueId("dynamodb_key_" + slug(name + "_" + keyType.asString()));
   k.name = name + " " + keyType.asString();
   k.attributeName = name;
   k.keyType = keyType;
@@ -538,6 +539,16 @@ operation createSchedulerRole(s) {
   return role;
 }
 
+operation createUnresolvedScheduleTarget(s) {
+  var t = new AWSPSMEVENTS!EventBridgeTarget;
+  t.id = generatedId("eventbridge_target", s, "unresolved_schedule_target");
+  t.name = s.name + " unresolved target";
+  t.targetId = pascalCase(firstText(s.name, s.id)) + "Target";
+  t.targetKind = AWSPSMENUMS!EventBridgeTargetKind#OTHER_AWS_RESOURCE;
+  t.arnExpression = "";
+  return t;
+}
+
 operation createStorageResourcePolicy(source, resource) {
   var doc = policyDocument();
   var st = allowStatement("DenyInsecureTransport");
@@ -567,7 +578,7 @@ operation createDenyInsecureTransportPolicy(resource) {
   st.wildcardAction = true;
   st.wildcardJustification = "Deny statement covers all actions only when aws:SecureTransport is false.";
   var cond = new AWSPSMSECURITY!IamCondition;
-  cond.id = "condition_secure_transport_" + slug(resource.logicalId);
+  cond.id = uniqueId("condition_secure_transport_" + slug(resource.logicalId));
   cond.name = "Secure transport";
   cond.operator = "Bool";
   cond.key = "aws:SecureTransport";

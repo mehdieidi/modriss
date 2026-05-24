@@ -127,6 +127,21 @@ public final class ModelingConfigService {
             Map.entry("security", "Security and Access"),
             Map.entry("workflow", "Workflow"),
             Map.entry("kernel", "Traceability and Readiness"));
+    private static final Map<String, String> PSM_CATEGORY_BY_PACKAGE = Map.ofEntries(
+            Map.entry("awspsm", "Portfolio and Governance"),
+            Map.entry("awspsmcore", "Stack and Configuration"),
+            Map.entry("awspsmapi", "API and Edge"),
+            Map.entry("awspsmcompute", "Lambda Compute"),
+            Map.entry("awspsmevents", "Eventing"),
+            Map.entry("awspsmmessaging", "Messaging"),
+            Map.entry("awspsmworkflow", "Workflow"),
+            Map.entry("awspsmstorage", "Data Persistence"),
+            Map.entry("awspsmsecurity", "Security and Access"),
+            Map.entry("awspsmidentity", "Identity"),
+            Map.entry("awspsmnetworking", "Networking"),
+            Map.entry("awspsmobservability", "Observability"),
+            Map.entry("awspsmintegrations", "Visual Relationship Bundles"),
+            Map.entry("kernel", "Traceability and Readiness"));
     private static final Map<String, Map<String, Object>> PIM_VISUALS = Map.ofEntries(
             visual("PIMModel", "PIM Root", "database", "#334155", "model",
                     List.of("architectureStyle", "domainName", "providerIndependent")),
@@ -518,6 +533,10 @@ public final class ModelingConfigService {
             "ReadinessCheck", "ManualDecision");
     private static final Set<String> NON_CREATABLE_PIM_TYPES = Set.of("PIMModel", "KeyValue",
             "StructuredDocument");
+    private static final Set<String> PSM_ROOT_CREATABLE_TYPES = Set.of("AwsPsmModel",
+            "AwsStage", "SamStack");
+    private static final Set<String> PSM_SUPPORT_TYPES = Set.of("KeyValue", "StructuredDocument",
+            "TraceableElement", "ModelElement");
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static Map.Entry<String, Map<String, Object>> visual(String type, String category,
@@ -551,6 +570,8 @@ public final class ModelingConfigService {
             metadata = augmentCimMetadata(metadata);
         } else if ("pim".equals(key)) {
             metadata = augmentPimMetadata(metadata);
+        } else if ("psm".equals(key)) {
+            metadata = augmentPsmMetadata(metadata);
         }
         List<String> relationshipKinds = relationshipKinds(metadata);
         return Map.ofEntries(
@@ -568,6 +589,8 @@ public final class ModelingConfigService {
                         metadata.getOrDefault("relationshipKindLabels", Map.of())),
                 Map.entry("semanticReferenceRules",
                         metadata.getOrDefault("semanticReferenceRules", List.of())),
+                Map.entry("shortcutConnectorRules",
+                        metadata.getOrDefault("shortcutConnectorRules", List.of())),
                 Map.entry("viewDefinitions", metadata.getOrDefault("viewDefinitions", List.of())),
                 Map.entry("strictnessModes", List.of("exploration", "methodology", "production")),
                 Map.entry("constraints", metadata.getOrDefault("constraints", List.of())),
@@ -660,6 +683,134 @@ public final class ModelingConfigService {
         metadata.put("constraints", pimConstraints());
         metadata.put("rootTemplate", pimRootTemplate());
         return metadata;
+    }
+
+    private Map<String, Object> augmentPsmMetadata(Map<String, Object> base) {
+        Map<String, Object> metadata = new LinkedHashMap<>(base);
+        CimMetamodel metamodel = readEcoreMetamodel("psm", Map.of(),
+                PSM_CATEGORY_BY_PACKAGE, Set.of(), Set.of(), Set.of(), Set.of());
+        List<Map<String, Object>> elements = metamodel.elements();
+        elements.forEach(this::enrichPsmElement);
+        metadata.put("elements", elements);
+        metadata.put("relationshipRules", metamodel.relationshipRules());
+        metadata.put("semanticReferenceRules", metamodel.semanticReferenceRules());
+        metadata.put("relationshipKindLabels", psmRelationshipKindLabels());
+        metadata.put("shortcutConnectorRules", psmShortcutConnectorRules());
+        metadata.put("viewDefinitions", psmViewDefinitions());
+        metadata.put("constraints", psmConstraints());
+        metadata.put("rootTemplate", psmRootTemplate());
+        return metadata;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void enrichPsmElement(Map<String, Object> element) {
+        String type = String.valueOf(element.get("type"));
+        String category = String.valueOf(element.getOrDefault("category", ""));
+        List<String> supertypes = element.get("supertypes") instanceof List<?> list
+                ? list.stream().map(String::valueOf).toList() : List.of();
+        boolean awsResource = supertypes.contains("AwsResource");
+        boolean relationshipView = supertypes.contains("AwsRelationshipView")
+                || "AwsRelationshipView".equals(type);
+        boolean abstractType = Boolean.TRUE.equals(element.get("abstract"));
+        boolean rootCreatable = PSM_ROOT_CREATABLE_TYPES.contains(type) || awsResource;
+        boolean supportOnly = PSM_SUPPORT_TYPES.contains(type) || "awspsmenums".equals(
+                element.get("package"));
+        boolean containedOnly = !abstractType && !rootCreatable && !relationshipView
+                && !supportOnly;
+        element.put("relationshipElement", relationshipView);
+        element.put("containedOnly", containedOnly);
+        element.put("supportOnly", supportOnly);
+        element.put("creatable", rootCreatable && !abstractType && !relationshipView);
+        element.put("color", psmColor(category));
+        element.put("icon", PLACEHOLDER_ICON);
+        List<Map<String, Object>> attributes = element.get("attributes") instanceof List<?> attrs
+                ? (List<Map<String, Object>>) attrs : List.of();
+        List<Map<String, Object>> references = element.get("references") instanceof List<?> refs
+                ? (List<Map<String, Object>>) refs : List.of();
+        List<String> visibleFields = psmVisibleFields(type, attributes, references);
+        element.put("visibleFields", visibleFields);
+        element.put("notation", Map.of("tag", psmNotationTag(type, category, awsResource,
+                        relationshipView, containedOnly), "lineFields", visibleFields,
+                "ownership", awsResource ? "SamStack.resources"
+                        : containedOnly ? "contained detail" : "root/support",
+                "shape", awsResource ? "resource-card"
+                        : relationshipView ? "shortcut-connector" : "nested-detail"));
+    }
+
+    private String psmColor(String category) {
+        String normalized = category.toLowerCase();
+        if (normalized.contains("api")) {
+            return "#7C3AED";
+        }
+        if (normalized.contains("compute")) {
+            return "#2563EB";
+        }
+        if (normalized.contains("event") || normalized.contains("messaging")) {
+            return "#DB2777";
+        }
+        if (normalized.contains("workflow")) {
+            return "#EA580C";
+        }
+        if (normalized.contains("data") || normalized.contains("storage")) {
+            return "#0891B2";
+        }
+        if (normalized.contains("security") || normalized.contains("identity")) {
+            return "#CA8A04";
+        }
+        if (normalized.contains("network")) {
+            return "#0F766E";
+        }
+        if (normalized.contains("observability")) {
+            return "#64748B";
+        }
+        return "#0F766E";
+    }
+
+    private List<String> psmVisibleFields(String type, List<Map<String, Object>> attributes,
+            List<Map<String, Object>> references) {
+        List<String> priority = List.of("logicalId", "physicalName", "stackName", "stageName",
+                "functionName", "tableName", "bucketName", "queueName", "topicName", "apiName",
+                "domainName", "routeKey", "method", "path", "authorizationType",
+                "integrationType", "billingMode", "publicAccessMode", "parameterName",
+                "secretName", "roleName", "policyName", "stateMachineName", "retentionInDays",
+                "runtime", "handler", "memorySizeMb", "timeoutSeconds");
+        LinkedHashSet<String> fields = new LinkedHashSet<>();
+        for (String field : priority) {
+            if (hasField(attributes, field) || hasField(references, field)) {
+                fields.add(field);
+            }
+        }
+        for (Map<String, Object> attribute : attributes) {
+            String name = String.valueOf(attribute.getOrDefault("name", ""));
+            if (fields.size() >= 5) {
+                break;
+            }
+            if (!name.isBlank() && !"id".equals(name) && !"name".equals(name)) {
+                fields.add(name);
+            }
+        }
+        if (fields.isEmpty()) {
+            fields.add(type.endsWith("Model") ? "name" : "logicalId");
+        }
+        return new ArrayList<>(fields);
+    }
+
+    private boolean hasField(List<Map<String, Object>> fields, String name) {
+        return fields.stream().anyMatch(field -> name.equals(field.get("name")));
+    }
+
+    private String psmNotationTag(String type, String category, boolean awsResource,
+            boolean relationshipView, boolean containedOnly) {
+        if (relationshipView) {
+            return "bundle";
+        }
+        if (awsResource) {
+            return category.toLowerCase().replace(" and ", "-").replace(" ", "-");
+        }
+        if (containedOnly) {
+            return "nested";
+        }
+        return type.endsWith("Policy") ? "policy" : "governance";
     }
 
     private CimMetamodel readEcoreMetamodel(String key, Map<String, Map<String, Object>> visuals,
@@ -1398,6 +1549,9 @@ public final class ModelingConfigService {
         if ("pim".equals(levelKey)) {
             return pimRelationshipKind(sourceType, featureName, containment);
         }
+        if ("psm".equals(levelKey)) {
+            return psmRelationshipKind(sourceType, featureName, containment);
+        }
         return relationshipKind(sourceType, featureName, containment);
     }
 
@@ -1445,7 +1599,67 @@ public final class ModelingConfigService {
             return Set.of("producedBy", "consumedBy", "invokesFunction", "startsWorkflow")
                     .contains(featureName);
         }
+        if ("psm".equals(levelKey)) {
+            return Set.of("api", "function", "queue", "topic", "bucket", "table", "rule",
+                    "stateMachine").contains(featureName);
+        }
         return reverseReference(featureName);
+    }
+
+    private String psmRelationshipKind(String sourceType, String featureName,
+            boolean containment) {
+        if (containment) {
+            if ("AslDocument".equals(sourceType) && "states".equals(featureName)) {
+                return "TRANSITION";
+            }
+            if (sourceType.startsWith("Iam") || featureName.toLowerCase().contains("policy")) {
+                return "PERMISSION";
+            }
+            return "CONTAINS";
+        }
+        String normalized = featureName.toLowerCase();
+        if ("dependsOn".equals(featureName)) {
+            return "DEPENDS_ON";
+        }
+        if (Set.of("role", "credentialsRole", "executionRole").contains(featureName)) {
+            return "USES_ROLE";
+        }
+        if (normalized.contains("authorizer")) {
+            return "AUTHORIZED_BY";
+        }
+        if (normalized.contains("kms") || normalized.contains("secret")
+                || normalized.contains("parameter")) {
+            return "USES_SECRET";
+        }
+        if (normalized.contains("log") || normalized.contains("metric")
+                || normalized.contains("alarm")) {
+            return "OBSERVES";
+        }
+        if (normalized.contains("queue") || normalized.contains("topic")
+                || normalized.contains("bus") || normalized.contains("rule")
+                || normalized.contains("event") || normalized.contains("subscription")) {
+            return "EVENT_FLOW";
+        }
+        if (normalized.contains("lambda") || normalized.contains("function")
+                || normalized.contains("target") || normalized.contains("integration")
+                || normalized.contains("stateMachine")) {
+            return "INVOKES";
+        }
+        if (normalized.contains("api") || normalized.contains("route")
+                || normalized.contains("stage") || normalized.contains("domain")) {
+            return "ROUTES_TO";
+        }
+        if (normalized.contains("vpc") || normalized.contains("subnet")
+                || normalized.contains("securitygroup") || normalized.contains("endpoint")) {
+            return "NETWORKS_WITH";
+        }
+        if (normalized.contains("resource") || normalized.contains("stack")) {
+            return "DEPLOYS";
+        }
+        if ("source".equals(featureName) || "target".equals(featureName)) {
+            return "TRACE";
+        }
+        return featureNameToKind(featureName);
     }
 
     private int lowerBound(Element feature) {
@@ -1953,6 +2167,260 @@ public final class ModelingConfigService {
         root.put("traceModel", null);
         root.put("readiness", null);
         root.put("implementationProfile", null);
+        return root;
+    }
+
+    private Map<String, String> psmRelationshipKindLabels() {
+        return Map.ofEntries(Map.entry("CONTAINS", "contains"),
+                Map.entry("DEPENDS_ON", "depends on"), Map.entry("ROUTES_TO", "routes to"),
+                Map.entry("INVOKES", "invokes"), Map.entry("EVENT_FLOW", "event flow"),
+                Map.entry("MESSAGE_FLOW", "message flow"), Map.entry("USES_ROLE", "uses role"),
+                Map.entry("USES_SECRET", "uses secret"), Map.entry("AUTHORIZED_BY",
+                        "authorized by"), Map.entry("NETWORKS_WITH", "networks with"),
+                Map.entry("OBSERVES", "observes"), Map.entry("PERMISSION", "permission"),
+                Map.entry("DEPLOYS", "deploys"), Map.entry("DEPLOYS_TO", "deploys to"),
+                Map.entry("TARGETS", "targets"), Map.entry("TRACE", "trace"),
+                Map.entry("TRANSITION", "transition"), Map.entry("WRITES_LOGS_TO",
+                        "writes logs to"), Map.entry("READS", "reads"), Map.entry("WRITES",
+                        "writes"));
+    }
+
+    private List<Map<String, Object>> psmViewDefinitions() {
+        return List.of(
+                view("psm-portfolio-governance", "Portfolio, Stages, and Governance",
+                        "PORTFOLIO_GOVERNANCE", "governance",
+                        List.of("AwsPsmModel", "AwsStage", "SamStack", "AwsNamingPolicy",
+                                "AwsTaggingPolicy", "AwsSecurityBaseline", "SamGlobals",
+                                "AwsTag", "CfnParameter", "CfnOutput"),
+                        List.of("AwsStage", "SamStack", "AwsNamingPolicy", "AwsTaggingPolicy",
+                                "AwsSecurityBaseline"),
+                        List.of("CONTAINS", "DEPLOYS", "DEPLOYS_TO", "TRACE"), "MATRIX"),
+                view("psm-resource-topology", "Deployable Resource Topology",
+                        "RESOURCE_TOPOLOGY", "topology",
+                        List.of("SamStack", "AwsStage", "AwsResource", "AwsNativeResource",
+                                "HttpApi", "RestApi", "WebSocketApi", "AwsLambdaFunction",
+                                "EventBridgeBus", "EventBridgeRule", "SqsQueue", "SnsTopic",
+                                "DynamoDbTable", "S3Bucket", "StepFunctionStateMachine",
+                                "IamRole", "KmsKey", "Vpc", "Subnet", "SecurityGroup",
+                                "CloudWatchLogGroup"),
+                        List.of("SamStack", "AwsLambdaFunction", "HttpApi", "RestApi",
+                                "EventBridgeBus", "SqsQueue", "SnsTopic", "DynamoDbTable",
+                                "S3Bucket", "StepFunctionStateMachine", "IamRole",
+                                "CloudWatchLogGroup"),
+                        List.of("DEPENDS_ON", "CONTAINS", "INVOKES", "EVENT_FLOW",
+                                "USES_ROLE", "USES_SECRET", "OBSERVES", "NETWORKS_WITH"),
+                        "CONTAINER"),
+                view("psm-api-edge", "API and Edge Access", "API_EDGE", "api",
+                        List.of("HttpApi", "RestApi", "WebSocketApi", "HttpApiRoute",
+                                "RestApiRoute", "WebSocketRoute", "ApiGatewayIntegration",
+                                "HttpApiStage", "RestApiStage", "WebSocketStage",
+                                "JwtAuthorizer", "CognitoAuthorizer", "LambdaAuthorizer",
+                                "ApiGatewayDomainName", "ApiGatewayBasePathMapping",
+                                "ApiGatewayApiKey", "ApiGatewayUsagePlan",
+                                "ApiGatewayUsagePlanKey", "ApiGatewayDeployment",
+                                "WafWebAclAssociation", "AwsLambdaFunction",
+                                "StepFunctionStateMachine", "CloudWatchLogGroup"),
+                        List.of("HttpApi", "RestApi", "WebSocketApi", "ApiGatewayIntegration",
+                                "JwtAuthorizer", "CognitoAuthorizer", "LambdaAuthorizer",
+                                "ApiGatewayDomainName", "ApiGatewayApiKey",
+                                "ApiGatewayUsagePlan", "WafWebAclAssociation",
+                                "AwsLambdaFunction", "StepFunctionStateMachine"),
+                        List.of("ROUTES_TO", "INVOKES", "AUTHORIZED_BY", "OBSERVES",
+                                "CONTAINS"), "TABLE"),
+                view("psm-lambda-compute", "Lambda Compute Runtime", "LAMBDA_COMPUTE",
+                        "compute",
+                        List.of("AwsLambdaFunction", "LambdaZipCodeConfig",
+                                "LambdaImageCodeConfig", "LambdaEnvironmentVariable",
+                                "SqsLambdaEventSourceMapping",
+                                "DynamoDbStreamLambdaEventSourceMapping",
+                                "GenericLambdaEventSourceMapping", "LambdaDeadLetterConfig",
+                                "LambdaEventInvokeConfig", "LambdaDestinationConfig",
+                                "LambdaLayerVersion", "LambdaVersion", "LambdaAlias",
+                                "LambdaPermission", "LambdaFunctionUrl", "CodeSigningConfig",
+                                "IamRole", "CloudWatchLogGroup", "SqsQueue", "SnsTopic",
+                                "DynamoDbTable"),
+                        List.of("AwsLambdaFunction", "LambdaLayerVersion", "LambdaVersion",
+                                "LambdaAlias", "LambdaPermission", "LambdaFunctionUrl",
+                                "CodeSigningConfig", "IamRole", "CloudWatchLogGroup",
+                                "SqsQueue", "SnsTopic", "DynamoDbTable"),
+                        List.of("INVOKES", "EVENT_FLOW", "USES_ROLE", "USES_SECRET",
+                                "OBSERVES", "CONTAINS"), "DEFAULT_LAYERED"),
+                view("psm-eventing-messaging", "Eventing and Messaging",
+                        "EVENTING_MESSAGING", "eventing",
+                        List.of("EventBridgeBus", "EventBridgeBusPolicy", "EventBridgeRule",
+                                "EventBridgeTarget", "EventPattern", "EventBridgeArchive",
+                                "EventBridgeSchedule", "EventBridgePipe",
+                                "EventBridgeConnection", "EventBridgeApiDestination",
+                                "AwsRetryPolicy", "SqsQueue", "SqsQueuePolicy", "SnsTopic",
+                                "SnsSubscription", "SnsTopicPolicy", "AwsLambdaFunction",
+                                "StepFunctionStateMachine"),
+                        List.of("EventBridgeBus", "EventBridgeRule", "EventBridgeSchedule",
+                                "EventBridgePipe", "SqsQueue", "SnsTopic", "AwsLambdaFunction",
+                                "StepFunctionStateMachine"),
+                        List.of("EVENT_FLOW", "MESSAGE_FLOW", "INVOKES", "TARGETS",
+                                "CONTAINS"), "EVENT_FLOW"),
+                view("psm-workflow-asl", "Workflow and ASL State Machine",
+                        "WORKFLOW_ASL", "workflow",
+                        List.of("StepFunctionStateMachine", "AslDocument", "AslState",
+                                "AslRetryRule", "AslCatchRule", "AslChoiceRule",
+                                "StepFunctionLoggingConfig", "StepFunctionTracingConfig",
+                                "SamStateMachineEvent", "AwsLambdaFunction", "EventBridgeRule"),
+                        List.of("StepFunctionStateMachine", "AwsLambdaFunction",
+                                "EventBridgeRule"),
+                        List.of("TRANSITION", "INVOKES", "EVENT_FLOW", "CONTAINS",
+                                "OBSERVES"), "PROCESS"),
+                view("psm-data-persistence", "Data Persistence", "DATA_PERSISTENCE", "data",
+                        List.of("DynamoDbTable", "DynamoDbAttributeDefinition",
+                                "DynamoDbKeySchemaElement", "DynamoDbProjection",
+                                "DynamoDbProvisionedThroughput", "DynamoDbGlobalSecondaryIndex",
+                                "DynamoDbLocalSecondaryIndex", "DynamoDbStreamSpecification",
+                                "DynamoDbTimeToLiveSpecification", "DynamoDbSseSpecification",
+                                "DynamoDbBackupPolicy", "S3Bucket", "S3BucketEncryption",
+                                "S3LifecycleConfiguration", "S3NotificationConfiguration",
+                                "S3ReplicationConfiguration", "S3BucketPolicy", "KmsKey",
+                                "IamRole", "AwsLambdaFunction"),
+                        List.of("DynamoDbTable", "S3Bucket", "S3BucketPolicy", "KmsKey",
+                                "IamRole", "AwsLambdaFunction"),
+                        List.of("READS", "WRITES", "EVENT_FLOW", "USES_SECRET",
+                                "PERMISSION", "CONTAINS"), "TABLE"),
+                view("psm-security-access", "Security, Identity, Secrets, and Access",
+                        "SECURITY_ACCESS", "security",
+                        List.of("IamRole", "IamPolicy", "IamManagedPolicy", "IamStatement",
+                                "KmsKey", "KmsAlias", "SecretsManagerSecret",
+                                "SecretRotationSchedule", "SecretsManagerResourcePolicy",
+                                "SsmParameter", "CognitoUserPool", "CognitoUserPoolClient",
+                                "CognitoUserPoolGroup", "CognitoUserPoolDomain",
+                                "CognitoIdentityPool", "AwsLambdaFunction", "HttpApi",
+                                "RestApi", "S3Bucket", "DynamoDbTable"),
+                        List.of("IamRole", "IamPolicy", "IamManagedPolicy", "KmsKey",
+                                "KmsAlias", "SecretsManagerSecret", "SecretRotationSchedule",
+                                "SsmParameter", "CognitoUserPool", "CognitoUserPoolClient",
+                                "AwsLambdaFunction", "HttpApi", "RestApi"),
+                        List.of("PERMISSION", "AUTHORIZED_BY", "USES_ROLE", "USES_SECRET",
+                                "CONTAINS"), "GOVERNANCE"),
+                view("psm-networking", "Networking and Private Connectivity", "NETWORKING",
+                        "networking",
+                        List.of("VpcAttachmentConfig", "VpcEndpointReference", "Vpc", "Subnet",
+                                "VpcEndpoint", "SecurityGroup", "SecurityGroupRule",
+                                "AwsLambdaFunction"),
+                        List.of("Vpc", "Subnet", "VpcEndpoint", "SecurityGroup",
+                                "AwsLambdaFunction"),
+                        List.of("NETWORKS_WITH", "CONTAINS"), "CONTAINER"),
+                view("psm-observability-operations", "Observability and Operations",
+                        "OBSERVABILITY_OPERATIONS", "observability",
+                        List.of("CloudWatchLogGroup", "CloudWatchMetricFilter",
+                                "CloudWatchLogSubscriptionFilter", "CloudWatchAlarm",
+                                "MetricDimension", "CloudWatchCompositeAlarm",
+                                "CloudWatchDashboard", "AwsLambdaFunction", "HttpApi",
+                                "SqsQueue", "DynamoDbTable"),
+                        List.of("CloudWatchLogGroup", "CloudWatchMetricFilter",
+                                "CloudWatchLogSubscriptionFilter", "CloudWatchAlarm",
+                                "CloudWatchCompositeAlarm", "CloudWatchDashboard",
+                                "AwsLambdaFunction", "HttpApi"),
+                        List.of("OBSERVES", "WRITES_LOGS_TO", "CONTAINS"), "TABLE"),
+                view("psm-configuration-cfn", "Configuration, CloudFormation, and SAM",
+                        "CONFIGURATION_CFN", "configuration",
+                        List.of("CfnParameter", "CfnMapping", "CfnCondition", "CfnOutput",
+                                "SamGlobals", "NativeProperty", "ValueExpression",
+                                "NamedValueExpression", "AwsNativeResource", "ResourceImport",
+                                "StructuredDocument", "KeyValue"),
+                        List.of("CfnParameter", "CfnMapping", "CfnCondition", "CfnOutput",
+                                "SamGlobals", "AwsNativeResource"),
+                        List.of("CONTAINS", "DEPLOYS", "TRACE"), "TABLE"),
+                view("psm-traceability-readiness", "Traceability, Readiness, and Review",
+                        "TRACEABILITY_READINESS", "readiness",
+                        List.of("TraceLink", "ProductionReadinessAssessment",
+                                "ReadinessFinding", "ReadinessCheck", "ManualDecision",
+                                "StructuredDocument", "AwsLambdaFunction", "HttpApi",
+                                "DynamoDbTable", "S3Bucket", "IamRole"),
+                        List.of("ProductionReadinessAssessment", "StructuredDocument"),
+                        List.of("TRACE", "CONSTRAINS", "ATTACHED_TO"), "MATRIX"),
+                view("psm-integration-shortcuts", "Integration Shortcut Views",
+                        "INTEGRATION_SHORTCUTS", "shortcuts",
+                        List.of("AwsRelationshipView", "ApiGatewayLambdaIntegrationView",
+                                "EventBridgeLambdaTargetView", "SnsLambdaSubscriptionView",
+                                "SqsLambdaEventSourceView",
+                                "StepFunctionEventBridgeTargetView", "ApiGatewayIntegration",
+                                "EventBridgeTarget", "SnsSubscription",
+                                "SqsLambdaEventSourceMapping", "LambdaPermission",
+                                "AwsLambdaFunction", "StepFunctionStateMachine", "HttpApiRoute",
+                                "RestApiRoute", "WebSocketRoute", "EventBridgeRule",
+                                "SnsTopic", "SqsQueue"),
+                        List.of("ApiGatewayLambdaIntegrationView",
+                                "EventBridgeLambdaTargetView", "SnsLambdaSubscriptionView",
+                                "SqsLambdaEventSourceView",
+                                "StepFunctionEventBridgeTargetView"),
+                        List.of("ROUTES_TO", "EVENT_FLOW", "TARGETS", "PERMISSION",
+                                "INVOKES", "CONTAINS"), "EVENT_FLOW"));
+    }
+
+    private List<Map<String, Object>> psmShortcutConnectorRules() {
+        return List.of(
+                Map.of("sourceType", "ApiGatewayRoute", "targetType", "AwsLambdaFunction",
+                        "label", "API route invokes Lambda", "viewType",
+                        "ApiGatewayLambdaIntegrationView", "intermediateTypes",
+                        List.of("ApiGatewayIntegration"), "edgeKinds",
+                        List.of("ROUTES_TO", "INVOKES")),
+                Map.of("sourceType", "SnsTopic", "targetType", "AwsLambdaFunction", "label",
+                        "SNS invokes Lambda", "viewType", "SnsLambdaSubscriptionView",
+                        "intermediateTypes", List.of("SnsSubscription", "LambdaPermission"),
+                        "edgeKinds",
+                        List.of("EVENT_FLOW", "PERMISSION", "INVOKES")),
+                Map.of("sourceType", "SqsQueue", "targetType", "AwsLambdaFunction", "label",
+                        "SQS event source invokes Lambda", "viewType", "SqsLambdaEventSourceView",
+                        "intermediateTypes", List.of("SqsLambdaEventSourceMapping"), "edgeKinds",
+                        List.of("EVENT_FLOW", "INVOKES")),
+                Map.of("sourceType", "EventBridgeRule", "targetType", "AwsLambdaFunction",
+                        "label", "EventBridge targets Lambda", "viewType",
+                        "EventBridgeLambdaTargetView", "intermediateTypes",
+                        List.of("EventBridgeTarget", "LambdaPermission"), "edgeKinds",
+                        List.of("TARGETS", "PERMISSION", "INVOKES")),
+                Map.of("sourceType", "EventBridgeRule", "targetType",
+                        "StepFunctionStateMachine", "label", "EventBridge starts state machine",
+                        "viewType", "StepFunctionEventBridgeTargetView", "intermediateTypes",
+                        List.of("EventBridgeTarget"), "edgeKinds",
+                        List.of("TARGETS", "INVOKES")));
+    }
+
+    private List<Map<String, Object>> psmConstraints() {
+        return List.of(
+                Map.of("type", "SamStack", "requiredAny", List.of("resources"), "message",
+                        "SAM stacks should contain at least one deployable AWS resource."),
+                Map.of("type", "AwsResource", "requiredAny", List.of("logicalId", "stack"),
+                        "message", "Deployable resources need a logical ID and stack."),
+                Map.of("type", "AwsLambdaFunction", "requiredAny",
+                        List.of("role", "code", "logGroup"), "message",
+                        "Lambda functions need an execution role, code configuration and log group."),
+                Map.of("type", "ApiGatewayRoute", "requiredAny",
+                        List.of("api", "integration"), "message",
+                        "API routes need an API and integration."),
+                Map.of("type", "ApiGatewayIntegration", "requiredAny",
+                        List.of("lambdaTarget", "stateMachineTarget", "integrationUri"),
+                        "message", "API integrations need exactly one concrete target or URI."),
+                Map.of("type", "DynamoDbTable", "requiredAny",
+                        List.of("billingMode", "attributeDefinitions", "keySchema"), "message",
+                        "DynamoDB tables need billing mode, attributes and a key schema."),
+                Map.of("type", "S3Bucket", "requiredAny",
+                        List.of("publicAccessMode", "encryption", "publicAccessBlock"),
+                        "message",
+                        "S3 buckets should declare public access and encryption posture."),
+                Map.of("type", "IamRole", "requiredAny", List.of("trustPolicy"),
+                        "message", "IAM roles need a trust policy."));
+    }
+
+    private Map<String, Object> psmRootTemplate() {
+        Map<String, Object> root = new LinkedHashMap<>(defaultRootTemplate());
+        root.put("modelLevel", "AWS_PSM");
+        root.put("eClass", "AwsPsmModel");
+        root.put("platform", "AWS");
+        root.put("defaultRegion", "us-east-1");
+        root.put("stages", List.of());
+        root.put("stacks", List.of());
+        root.put("relationshipViews", List.of());
+        root.put("namingPolicy", null);
+        root.put("taggingPolicy", null);
+        root.put("securityBaseline", null);
+        root.put("globals", null);
         return root;
     }
 

@@ -246,7 +246,7 @@ operation createLambdaTracing(f) {
 
 operation createLambdaLogging(l) {
   var cfg = new AWSPSMCOMPUTE!LambdaLoggingConfig;
-  cfg.id = "lambda_logging_" + slug(l.logicalId);
+  cfg.id = uniqueId("lambda_logging_" + slug(l.logicalId));
   cfg.name = l.name + " logging";
   cfg.applicationLogLevel = "INFO";
   cfg.systemLogLevel = "INFO";
@@ -524,7 +524,7 @@ operation findAuthorizerFor(r) {
 
 operation createCors(policy) {
   var c = new AWSPSMCORE!CorsConfiguration;
-  c.id = "cors_" + slug(rootName());
+  c.id = uniqueId("cors_" + slug(rootName()));
   c.name = "CORS";
   if (policy.isDefined() and policy.allowedOrigins.notEmpty()) {
     c.allowOrigins.addAll(policy.allowedOrigins);
@@ -680,7 +680,7 @@ operation createApiKeyAndUsagePlan(api, g) {
 
 operation secretValue(secret) {
   var v = new AWSPSMSECURITY!SecretValueExpression;
-  v.id = "secret_value_" + slug(secret.logicalId);
+  v.id = uniqueId("secret_value_" + slug(secret.logicalId));
   v.name = "Secret reference " + secret.logicalId;
   v.sourceKind = AWSPSMENUMS!ValueSourceKind#SECRETS_MANAGER_REFERENCE;
   v.secret = true;

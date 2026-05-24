@@ -1,10 +1,13 @@
 import "common.eol";
 
 operation pimRoot() {
-  if (PIM!PIMModel.all.isEmpty()) {
-    return null;
+  if (cachedPimRoot.isUndefined()) {
+    if (PIM!PIMModel.all.isEmpty()) {
+      return null;
+    }
+    cachedPimRoot = PIM!PIMModel.all.first();
   }
-  return PIM!PIMModel.all.first();
+  return cachedPimRoot;
 }
 
 operation readinessRoot() {
@@ -104,7 +107,7 @@ operation manualDecision(ruleId : String, question : String, severity, blocking 
     return null;
   }
   var id = newId("decision", ruleId + "_" + question);
-  var existing = readiness.manualDecisions.select(d | d.id = id).first();
+  var existing = readiness.manualDecisions.selectOne(d | d.id = id);
   if (existing.isDefined()) {
     appendTargetAffectedElements(existing, affected);
     return existing;
@@ -139,7 +142,7 @@ operation readinessFinding(ruleId : String, findingType, severity, message : Str
     return null;
   }
   var id = newId("finding", ruleId + "_" + message);
-  var existing = readiness.findings.select(f | f.id = id).first();
+  var existing = readiness.findings.selectOne(f | f.id = id);
   if (existing.isDefined()) {
     appendTargetAffectedElements(existing, affected);
     return existing;
@@ -166,7 +169,7 @@ operation readinessCheck(checkId : String, severity, passed : Boolean, message :
     return null;
   }
   var id = newId("check", checkId);
-  var existing = readiness.checks.select(c | c.id = id).first();
+  var existing = readiness.checks.selectOne(c | c.id = id);
   if (existing.isDefined()) {
     appendTargetAffectedElements(existing, affected);
     return existing;
