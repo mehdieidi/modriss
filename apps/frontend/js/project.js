@@ -7,7 +7,7 @@ import {toDiagram} from './diagram.js';
 import {renderDiagram, renderPalette, resetCanvasView} from './canvas.js';
 import {updateGenerateButtonState} from './model-ops.js';
 import {renderViewWorkbench} from './view-explorer.js';
-import {restoreTabGraphState, saveCurrentTabGraphState} from './graph-store.js';
+import {restoreTabGraphState} from './graph-store.js';
 import {materializeActiveView} from './view-materializer.js';
 import {clearArtifactState} from './artifact.js';
 import {MODEL_TYPES} from './config.js';
@@ -636,7 +636,11 @@ export async function loadProject(project) {
         modelId: null,
         baseModel: null,
         diagram: emptyDiagram(type),
-        modelName: `${type}-model`
+        modelName: `${type}-model`,
+        graph: null,
+        views: null,
+        fragments: null,
+        activeViewId: null
       };
     }
 
@@ -645,7 +649,8 @@ export async function loadProject(project) {
       // Support legacy projects that stored active-model keys as uppercase tab types.
       const activeModelId = normalizedProject.activeModelIds?.[type]
           || normalizedProject.activeModelIds?.[type.toUpperCase()];
-      const fallbackModelId = recordsByType[type]?.[0]?.id || null;
+      const fallbackModelId = type === "cim" ? (recordsByType[type]?.[0]?.id
+          || null) : null;
       const modelIdToLoad = activeModelId || fallbackModelId;
       if (modelIdToLoad) {
         try {
@@ -655,9 +660,12 @@ export async function loadProject(project) {
             modelId: record.id,
             baseModel: structuredClone(record.modelJson),
             diagram: toDiagram(type, record.modelJson, record.name),
-            modelName: record.name || `${type}-model`
+            modelName: record.name || `${type}-model`,
+            graph: null,
+            views: null,
+            fragments: null,
+            activeViewId: null
           };
-          saveCurrentTabGraphState(type);
         } catch (_) {
           // model not found or deleted – leave blank
         }

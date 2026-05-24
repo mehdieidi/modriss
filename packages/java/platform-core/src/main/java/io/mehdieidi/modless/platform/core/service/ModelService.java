@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -272,13 +273,17 @@ public final class ModelService {
     public ImportResult importModel(ModelLevel level, String fileName, byte[] bytes,
             String format) {
         try {
-            JsonNode model = switch (String.valueOf(format).toLowerCase()) {
+            String normalizedFormat = String.valueOf(format).toLowerCase();
+            JsonNode model = switch (normalizedFormat) {
                 case "json" ->
                         store.objectMapper().readTree(new String(bytes, StandardCharsets.UTF_8));
                 case "xmi" -> xmiImportService.importModel(level, bytes);
                 default -> throw new PlatformException(400,
                         "Unsupported import format. Use JSON or XMI.");
             };
+            if ("xmi".equals(normalizedFormat) && model instanceof ObjectNode objectModel) {
+                objectModel.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(bytes));
+            }
             String name = fileName == null || fileName.isBlank() ? level.apiName() + "-model"
                     : fileName.replaceFirst("\\.[^.]+$", "");
             ValidationResult validation = validate(level, model);

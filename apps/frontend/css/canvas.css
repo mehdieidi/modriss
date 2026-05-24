@@ -601,7 +601,8 @@
   border-radius: 0 0 10px 10px;
 }
 
-.canvas-grid.cim-surface-active .canvas-content {
+.canvas-grid.cim-surface-active .canvas-content,
+.canvas-grid.pim-surface-active .canvas-content {
   opacity: 0.08;
   pointer-events: none;
 }
@@ -622,6 +623,10 @@
 }
 
 .cim-workbench-dock .cim-filter-row {
+  display: none;
+}
+
+.cim-workbench-dock .pim-edge-toolbar {
   display: none;
 }
 
@@ -695,6 +700,57 @@
   grid-template-columns: minmax(180px, 1fr) minmax(128px, auto) minmax(128px, auto) auto;
   gap: 6px;
   align-items: center;
+}
+
+.pim-lens-toolbar,
+.pim-edge-toolbar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.pim-lens-toolbar > span,
+.pim-edge-toolbar > span {
+  color: var(--muted);
+  font: 800 9px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pim-lens-buttons,
+.pim-edge-buttons {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.pim-lens-buttons button,
+.pim-edge-buttons button {
+  flex: 0 0 auto;
+  min-height: 24px;
+  border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-3) 68%, transparent);
+  color: var(--muted);
+  padding: 4px 8px;
+  font: 750 9px/1 var(--font-display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pim-lens-buttons button:hover,
+.pim-lens-buttons button.is-active,
+.pim-edge-buttons button:hover,
+.pim-edge-buttons button.is-active {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-3) 84%);
+  color: var(--text-strong);
 }
 
 .cim-guidance {
@@ -2475,6 +2531,15 @@
 
 .edge-path.edge-process-transition {
   stroke: #0f766e;
+}
+
+.edge-path.edge-pim-event {
+  stroke: #0891b2;
+}
+
+.edge-path.edge-pim-data {
+  stroke: #15803d;
+  stroke-dasharray: 4 3;
 }
 
 .edge-path.edge-trace-link {

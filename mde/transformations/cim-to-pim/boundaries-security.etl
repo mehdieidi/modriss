@@ -98,7 +98,11 @@ rule Role2Principal
     perm.name = r.name + " abstract permission";
     perm.effect = PIMTYPES!PermissionEffect#ALLOW;
     perm.action = "invoke:review-required";
-    perm.resource = "review-required";
+    perm.resource = actor.id;
+    var principalTarget = actor.equivalents("Actor2Principal").first();
+    if (principalTarget.isDefined()) {
+      perm.targetResource = principalTarget;
+    }
     perm.leastPrivilegeConfirmed = false;
     p.permissions.add(perm);
   }
@@ -131,6 +135,7 @@ rule ExternalSystem2Adapter
     cred.secretKind = PIMTYPES!SecretKind#OTHER;
     cred.purpose = "Credentials for " + es.name;
     cred.rotationRequired = true;
+    cred.rotationFrequency = "every-90-days";
     cred.sharedAcrossEnvironments = false;
     a.credentials.add(cred);
   }

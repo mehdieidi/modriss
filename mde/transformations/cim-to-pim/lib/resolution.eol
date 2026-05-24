@@ -25,6 +25,8 @@ operation serviceFor(source) {
     if (source.isKindOf(CIMORG!BusinessCapability)) {
       var capSvc = source.equivalents("Capability2Service").first();
       if (capSvc.isDefined()) return capSvc;
+      var context = CIMORG!BoundedContextCandidate.all.select(bc | bc.capabilities.includes(source)).first();
+      if (context.isDefined()) return serviceFor(context);
     }
     if (source.isKindOf(CIMBEHAVIOR!Command) and source.targetCapability.isDefined()) {
       return serviceFor(source.targetCapability);
@@ -78,6 +80,16 @@ operation eventTypeFor(e : CIMBEHAVIOR!BusinessEvent) {
 
 operation schemaForEntity(e : CIMDOMAIN!DomainEntity) {
   return e.equivalents("Entity2Schema").first();
+}
+
+operation schemaForDomainConcept(concept : CIMDOMAIN!DomainConcept) {
+  if (concept.isKindOf(CIMDOMAIN!DomainEntity)) {
+    return concept.equivalents("Entity2Schema").first();
+  }
+  if (concept.isKindOf(CIMDOMAIN!ValueObject)) {
+    return concept.equivalents("ValueObject2Schema").first();
+  }
+  return null;
 }
 
 operation storeForAggregate(ag : CIMDOMAIN!AggregateCandidate) {

@@ -145,6 +145,18 @@ export const state = {
     missingOnly: false,
     sliceKind: "",
     sliceValue: "",
+    activeLens: "all",
+    edgeMode: "both",
+    sortKey: "name",
+    hidPalette: false
+  },
+  pimWorkbench: {
+    representationByViewId: {},
+    registerByViewId: {},
+    search: "",
+    missingOnly: false,
+    sliceKind: "",
+    sliceValue: "",
     sortKey: "name",
     hidPalette: false
   },

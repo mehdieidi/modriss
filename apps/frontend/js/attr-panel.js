@@ -20,7 +20,10 @@ import {
 } from './diagram.js';
 import {confirmAction} from './confirm-action.js';
 import {escapeHtml} from './utils.js';
-import {modelingElementDefinition} from './modeling-config-data.js';
+import {
+  modelingElementDefinition,
+  modelingTypeMatches
+} from './modeling-config-data.js';
 import {
   addNodeToGraphAndActiveView,
   removeElementFromGraph,
@@ -30,11 +33,19 @@ import {
 import {
   addReferenceValue,
   CIM_ABSTRACT_TYPES,
+  CIM_COMMON_METADATA_FIELDS,
   CIM_NESTED_CONTAINMENTS,
   cimTypeMatches,
   elementLabel,
+  missingRequiredFeatures as cimMissingRequiredFeatures,
   refIds
 } from './cim-model-utils.js';
+import {
+  missingRequiredFeatures as pimMissingRequiredFeatures,
+  nestedContainmentsForType as pimNestedContainmentsForType,
+  PIM_ABSTRACT_TYPES,
+  refIds as pimRefIds
+} from './pim-model-utils.js';
 import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
 
 // Fields managed by canvas – shown read-only
@@ -54,6 +65,36 @@ const TRACE_ATTR_KEYS = new Set([
   "reviewStatus",
   "reviewNotes",
   "manuallyMaintained"
+]);
+const PIM_IDENTITY_FIELDS = new Set([
+  "id", "name", "summary", "description", "documentation", "modelTags",
+  "externalId", "lifecycleStatus"
+]);
+const CIM_IDENTITY_FIELDS = new Set([
+  ...CIM_COMMON_METADATA_FIELDS,
+  "label"
+]);
+const CIM_GOVERNANCE_FIELDS = new Set([
+  "requirementType", "sourceType", "priority", "mandatory",
+  "fitCriterion", "qualityType", "securityGoal", "authorizationRule",
+  "auditRequired", "purpose", "legalBasis", "retentionPolicy",
+  "crossBorderTransferExpected", "regulation", "controlId",
+  "constraintStrength", "policyType", "naturalLanguageRule", "riskStatement",
+  "probability", "impact", "mitigation", "productionBlocking",
+  "blocksTransformation", "blocksProduction", "blocking", "severity",
+  "findingType", "recommendation", "readinessStatus", "transformationReady",
+  "deploymentReady", "productionReady"
+]);
+const PIM_POLICY_SECURITY_FIELDS = new Set([
+  "auth", "authorization", "cors", "rateLimit", "timeout", "resilience",
+  "observability", "idempotency", "concurrency", "security", "policies",
+  "dataProtectionPolicies", "backupPolicy", "retentionPolicy",
+  "constrainedBy", "attachedTo", "targetResource", "allowedPrincipals",
+  "permissions", "identityProvider", "principals", "usesSecrets",
+  "usedForCredentials", "secret", "secretReference", "credentials",
+  "credentialRequirements", "requiresNetworkAccess", "authRequired",
+  "authorizationRequired", "encrypted", "encryptionAtRestRequired",
+  "containsPersonalData", "privileged", "mfaRequired"
 ]);
 
 // ── Open / close ──────────────────────────────────────────────────────────────
@@ -164,6 +205,10 @@ export function openConnectionPanel(connectionId) {
 }
 
 function renderConnectionFields(connection, source, target) {
+  if (state.activeType === "pim") {
+    renderPimConnectionFields(connection, source, target);
+    return;
+  }
   el.attrPanelBody.innerHTML = "";
   const relationship = state.graph?.relationshipsById?.get(connection.id)
       || connection;
@@ -223,6 +268,74 @@ function renderConnectionFields(connection, source, target) {
       readonly: READONLY_ATTR_KEYS.has(key)
     }));
   });
+}
+
+function renderPimConnectionFields(connection, source, target) {
+  el.attrPanelBody.innerHTML = "";
+  const relationship = state.graph?.relationshipsById?.get(connection.id)
+      || connection;
+  const semanticType = relationship.eClass || "Connection";
+  let definition = null;
+  try {
+    definition = semanticType !== "Connection"
+        ? modelingElementDefinition(state.activeType, semanticType) : null;
+  } catch {
+    definition = null;
+  }
+  const sections = pimInspectorSections();
+  sections.identity.appendChild(buildAttrField("kind", connection.kind, {
+    fieldType: "text",
+    readonly: true
+  }));
+  sections.identity.appendChild(
+      buildAttrField("source", source?.label || connection.sourceId, {
+        fieldType: "text",
+        readonly: true
+      }));
+  sections.identity.appendChild(
+      buildAttrField("target", target?.label || connection.targetId, {
+        fieldType: "text",
+        readonly: true
+      }));
+  sections.identity.appendChild(buildAttrField("id", connection.id, {
+    fieldType: "text",
+    readonly: true
+  }));
+
+  const rendered = new Set(["id", "kind", "source", "target", "name"]);
+  const fields = [
+    ...(definition?.attributes || []),
+    ...(definition?.references || []).map((reference) => ({
+      ...reference,
+      fieldType: "reference"
+    }))
+  ];
+  fields.forEach((field) => {
+    if (!field?.name || rendered.has(field.name) || field.readonly) {
+      return;
+    }
+    rendered.add(field.name);
+    const value = Object.prototype.hasOwnProperty.call(relationship,
+        field.name) ? relationship[field.name] : field.defaultValue;
+    const section = field.fieldType === "reference"
+        ? sections.relationships : sections.core;
+    section.appendChild(buildAttrField(field.name, value, field));
+  });
+  Object.entries(relationship).forEach(([key, value]) => {
+    if (rendered.has(key) || ["sourceElementId", "targetElementId",
+      "sourceType", "targetType", "semanticFeature", "semanticSourceElementId",
+      "semanticTargetElementId", "visualOnly"].includes(key)) {
+      return;
+    }
+    const section = TRACE_ATTR_KEYS.has(key) ? sections.trace : sections.core;
+    section.appendChild(buildAttrField(key, value, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key)
+    }));
+  });
+  appendPimValidationSummary(sections.validation, relationship, semanticType);
+  appendEmptyHints(sections);
+  renderAttrTabs(sections);
 }
 
 export function openBoundedContextPanel(contextName) {
@@ -299,6 +412,14 @@ function renderAttributeFields(node) {
   } catch {
     definition = null;
   }
+  if (state.activeType === "pim") {
+    renderPimAttributeFields(node, meta, definition);
+    return;
+  }
+  if (state.activeType === "cim") {
+    renderCimAttributeFields(node, meta, definition);
+    return;
+  }
 
   const labelKey = state.activeType === "cim" ? "label" : "name";
   el.attrPanelBody.appendChild(buildAttrSectionTitle("Identity"));
@@ -346,6 +467,237 @@ function renderAttributeFields(node) {
   bindContainmentSectionActions();
 }
 
+function renderCimAttributeFields(node, meta, definition) {
+  const sections = cimInspectorSections();
+  const rendered = new Set(["label", "name"]);
+
+  sections.identity.appendChild(buildAttrField("label", node.label, {
+    fieldType: "text"
+  }));
+  sections.identity.appendChild(buildAttrField("id", node.id, {
+    fieldType: "text",
+    readonly: true
+  }));
+  rendered.add("id");
+
+  const configuredFields = [
+    ...(definition?.attributes || []),
+    ...(definition?.references || []).map((reference) => ({
+      ...reference,
+      fieldType: "reference"
+    }))
+  ];
+  configuredFields.forEach((field) => {
+    const key = field?.name;
+    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    rendered.add(key);
+    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key]
+        : field.defaultValue;
+    cimSectionForField(sections, key, field).appendChild(
+        buildAttrField(key, value, field));
+  });
+
+  Object.entries(meta).forEach(([key, value]) => {
+    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    rendered.add(key);
+    cimSectionForField(sections, key, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key)
+    }).appendChild(buildAttrField(key, value, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key)
+    }));
+  });
+  appendContainmentSections(node, sections.relationships);
+  appendTraceabilitySection(node, sections.trace, {includeTitle: false});
+  appendCimValidationSummary(sections.validation, meta, node.type);
+  appendEmptyHints(sections);
+  renderAttrTabs(sections);
+  bindContainmentSectionActions();
+}
+
+function renderPimAttributeFields(node, meta, definition) {
+  const sections = pimInspectorSections();
+  const rendered = new Set(["label", "name"]);
+
+  sections.identity.appendChild(buildAttrField("name", node.label, {
+    fieldType: "text"
+  }));
+  rendered.add("name");
+  rendered.add("label");
+  sections.identity.appendChild(buildAttrField("id", node.id, {
+    fieldType: "text",
+    readonly: true
+  }));
+  rendered.add("id");
+
+  const configuredFields = [
+    ...(definition?.attributes || []),
+    ...(definition?.references || []).map((reference) => ({
+      ...reference,
+      fieldType: "reference"
+    }))
+  ];
+  configuredFields.forEach((field) => {
+    const key = field?.name;
+    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    rendered.add(key);
+    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key]
+        : field.defaultValue;
+    pimSectionForField(sections, key, field).appendChild(
+        buildAttrField(key, value, field));
+  });
+
+  Object.entries(meta).forEach(([key, value]) => {
+    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    rendered.add(key);
+    pimSectionForField(sections, key, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key)
+    }).appendChild(buildAttrField(key, value, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key)
+    }));
+  });
+  appendContainmentSections(node, sections.relationships);
+  appendTraceabilitySection(node, sections.trace, {includeTitle: false});
+  appendPimValidationSummary(sections.validation, meta, node.type);
+  appendEmptyHints(sections);
+  renderAttrTabs(sections);
+  bindContainmentSectionActions();
+}
+
+function pimInspectorSections() {
+  return {
+    identity: createAttrTabSection("identity", "Identity"),
+    core: createAttrTabSection("core", "Core Properties"),
+    relationships: createAttrTabSection("relationships", "Relationships"),
+    policies: createAttrTabSection("policies", "Policies / Security"),
+    trace: createAttrTabSection("trace", "Trace & Review"),
+    validation: createAttrTabSection("validation", "Validation")
+  };
+}
+
+function cimInspectorSections() {
+  return {
+    identity: createAttrTabSection("identity", "Identity"),
+    core: createAttrTabSection("core", "Business Fields"),
+    relationships: createAttrTabSection("relationships", "Relationships"),
+    governance: createAttrTabSection("governance", "Governance"),
+    trace: createAttrTabSection("trace", "Trace & Review"),
+    validation: createAttrTabSection("validation", "Validation")
+  };
+}
+
+function createAttrTabSection(tab, title) {
+  const section = document.createElement("section");
+  section.className = "attr-tab-section";
+  section.dataset.attrTabPanel = tab;
+  section.dataset.attrTabTitle = title;
+  section.appendChild(buildAttrSectionTitle(title));
+  return section;
+}
+
+function pimSectionForField(sections, key, field = {}) {
+  if (TRACE_ATTR_KEYS.has(key)) {
+    return sections.trace;
+  }
+  if (PIM_IDENTITY_FIELDS.has(key)) {
+    return sections.identity;
+  }
+  if (isPimPolicySecurityField(key, field)) {
+    return sections.policies;
+  }
+  if (field.fieldType === "reference" || field.kind === "reference") {
+    return sections.relationships;
+  }
+  return sections.core;
+}
+
+function cimSectionForField(sections, key, field = {}) {
+  if (TRACE_ATTR_KEYS.has(key)) {
+    return sections.trace;
+  }
+  if (CIM_IDENTITY_FIELDS.has(key)) {
+    return sections.identity;
+  }
+  if (isCimGovernanceField(key, field)) {
+    return sections.governance;
+  }
+  if (field.fieldType === "reference" || field.kind === "reference") {
+    return sections.relationships;
+  }
+  return sections.core;
+}
+
+function isPimPolicySecurityField(key, field = {}) {
+  const targetType = String(field.targetType || "");
+  return PIM_POLICY_SECURITY_FIELDS.has(key)
+      || targetType.includes("Policy")
+      || targetType.includes("Principal")
+      || targetType.includes("ProtectedResource")
+      || targetType.includes("IdentityProvider")
+      || targetType.includes("Secret");
+}
+
+function isCimGovernanceField(key, field = {}) {
+  const targetType = String(field.targetType || "");
+  return CIM_GOVERNANCE_FIELDS.has(key)
+      || targetType.includes("Requirement")
+      || targetType.includes("Constraint")
+      || targetType.includes("Policy")
+      || targetType.includes("Risk")
+      || targetType.includes("Readiness");
+}
+
+function appendEmptyHints(sections) {
+  Object.values(sections).forEach((section) => {
+    if (section.children.length <= 1) {
+      const hint = document.createElement("div");
+      hint.className = "attr-field-hint";
+      hint.textContent = "No fields in this section.";
+      section.appendChild(hint);
+    }
+  });
+}
+
+function renderAttrTabs(sections) {
+  const entries = Object.entries(sections);
+  const tabbar = document.createElement("div");
+  tabbar.className = "attr-tabbar";
+  entries.forEach(([tab, section], index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `attr-tab-btn${index === 0 ? " active" : ""}`;
+    button.dataset.attrTab = tab;
+    button.textContent = section.dataset.attrTabTitle || tab;
+    button.addEventListener("click", () => activateAttrTab(tab));
+    tabbar.appendChild(button);
+    section.classList.toggle("hidden", index !== 0);
+  });
+  el.attrPanelBody.appendChild(tabbar);
+  entries.forEach(([, section]) => el.attrPanelBody.appendChild(section));
+}
+
+function activateAttrTab(tab) {
+  el.attrPanelBody.querySelectorAll("[data-attr-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.attrTab === tab);
+  });
+  el.attrPanelBody.querySelectorAll("[data-attr-tab-panel]").forEach(
+      (section) => {
+        section.classList.toggle("hidden", section.dataset.attrTabPanel
+            !== tab);
+      });
+}
+
 function buildAttrSectionTitle(title) {
   const section = document.createElement("div");
   section.className = "attr-section-title";
@@ -353,11 +705,14 @@ function buildAttrSectionTitle(title) {
   return section;
 }
 
-function appendTraceabilitySection(node) {
-  if (state.activeType !== "cim") {
+function appendTraceabilitySection(node, host = el.attrPanelBody,
+    {includeTitle = true} = {}) {
+  if (!["cim", "pim"].includes(state.activeType)) {
     return;
   }
-  el.attrPanelBody.appendChild(buildAttrSectionTitle("Traceability / Review"));
+  if (includeTitle) {
+    host.appendChild(buildAttrSectionTitle("Traceability / Review"));
+  }
   const traceLinks = [];
   state.graph?.relationshipsById?.forEach((relationship) => {
     if (relationship.kind !== "TRACE" && relationship.eClass !== "TraceLink") {
@@ -384,22 +739,31 @@ function appendTraceabilitySection(node) {
                 other?.name || other?.label || otherId || "external")}</em></div>`;
       }).join("")
       : `<div class="attr-field-hint">No trace links for this element.</div>`;
-  el.attrPanelBody.appendChild(summary);
+  host.appendChild(summary);
   [
-    "sourceReference", "sourceUri", "sourceLine", "traceId",
-    "generatedFrom", "generatedByTransformation", "rationale",
-    "reviewStatus", "reviewNotes", "manuallyMaintained"
+    "sourceReference", "sourceExcerpt", "sourceQualifiedName", "sourceUri",
+    "sourceLine", "traceId", "generatedFrom", "generatedByTransformation",
+    "rationale", "reviewStatus", "reviewNotes", "manuallyMaintained"
   ].forEach((key) => {
+    const booleanField = key === "generatedByTransformation"
+        || key === "manuallyMaintained";
     if (!Object.prototype.hasOwnProperty.call(node.meta || {}, key)) {
-      node.meta[key] = typeof node.meta?.[key] === "boolean" ? false : "";
+      node.meta[key] = booleanField ? false : "";
     }
-    el.attrPanelBody.appendChild(buildAttrField(key, node.meta?.[key], {
-      fieldType: inferFieldType(node.meta?.[key])
+    host.appendChild(buildAttrField(key, node.meta?.[key], {
+      fieldType: booleanField ? "boolean" : inferFieldType(node.meta?.[key])
     }));
   });
 }
 
 function cimContainmentEntriesForType(type) {
+  if (state.activeType === "pim") {
+    return pimNestedContainmentsForType(type).map((entry) => ({
+      ...entry,
+      types: (entry.types || []).filter((childType) => childType
+          && !PIM_ABSTRACT_TYPES.includes(childType))
+    })).filter((entry) => entry.types.length);
+  }
   if (state.activeType !== "cim") {
     return [];
   }
@@ -431,8 +795,8 @@ function cimContainmentEntriesForType(type) {
 
 function containmentChildren(parent, feature) {
   const parentElement = state.graph?.elementsById?.get(parent.id);
-  const ids = new Set(
-      refIds(parentElement?.[feature] ?? parent.meta?.[feature]));
+  const ids = new Set((state.activeType === "pim" ? pimRefIds : refIds)(
+      parentElement?.[feature] ?? parent.meta?.[feature]));
   const children = [];
   state.graph?.elementsById?.forEach((element) => {
     if (ids.has(element.id)
@@ -451,7 +815,7 @@ function containmentChildren(parent, feature) {
   });
 }
 
-function appendContainmentSections(node) {
+function appendContainmentSections(node, host = el.attrPanelBody) {
   const entries = cimContainmentEntriesForType(node.type);
   if (!entries.length) {
     return;
@@ -479,8 +843,78 @@ function appendContainmentSections(node) {
           </button>`).join("")
         : `<div class="attr-field-hint">No contained children.</div>`}
       </div>`;
-    el.attrPanelBody.appendChild(section);
+    host.appendChild(section);
   });
+}
+
+function appendPimValidationSummary(section, element, type) {
+  const missing = pimMissingRequiredFeatures({
+    ...(element || {}),
+    eClass: type || element?.eClass || element?.type
+  });
+  const impactedBy = [];
+  state.graph?.elementsById?.forEach((candidate) => {
+    const candidateType = candidate.eClass || candidate.type;
+    if (!["ReadinessFinding", "ReadinessCheck", "ManualDecision"].includes(
+        candidateType)) {
+      return;
+    }
+    if (pimRefIds(candidate.affectedElements).includes(element?.id)) {
+      impactedBy.push(candidate);
+    }
+  });
+  const summary = document.createElement("div");
+  summary.className = "attr-validation-summary";
+  summary.innerHTML = `
+    ${missing.length ? `<div class="attr-validation-block is-error">
+      <strong>Missing required</strong>
+      ${missing.map((field) => `<span>${escapeAttr(field)}</span>`).join("")}
+    </div>` : `<div class="attr-validation-block is-ok">
+      <strong>Required fields complete</strong>
+    </div>`}
+    ${impactedBy.length ? `<div class="attr-validation-block">
+      <strong>Readiness links</strong>
+      ${impactedBy.map((item) => `<span>${escapeAttr(item.name || item.label
+          || item.checkId || item.question || item.id)}</span>`).join("")}
+    </div>`
+      : `<div class="attr-field-hint">No linked readiness findings.</div>`}`;
+  section.appendChild(summary);
+}
+
+function appendCimValidationSummary(section, element, type) {
+  const normalized = {
+    ...(element || {}),
+    eClass: type || element?.eClass || element?.type
+  };
+  const missing = cimMissingRequiredFeatures(normalized);
+  const impactedBy = [];
+  state.graph?.elementsById?.forEach((candidate) => {
+    const candidateType = candidate.eClass || candidate.type;
+    if (!["Risk", "Hotspot", "ReadinessFinding", "ReadinessCheck",
+      "ManualDecision"].includes(candidateType)) {
+      return;
+    }
+    if (refIds(candidate.affectedElements).includes(element?.id)
+        || refIds(candidate.attachedTo).includes(element?.id)) {
+      impactedBy.push(candidate);
+    }
+  });
+  const summary = document.createElement("div");
+  summary.className = "attr-validation-summary";
+  summary.innerHTML = `
+    ${missing.length ? `<div class="attr-validation-block is-error">
+      <strong>Missing required</strong>
+      ${missing.map((field) => `<span>${escapeAttr(field)}</span>`).join("")}
+    </div>` : `<div class="attr-validation-block is-ok">
+      <strong>Required fields complete</strong>
+    </div>`}
+    ${impactedBy.length ? `<div class="attr-validation-block">
+      <strong>Readiness and risk links</strong>
+      ${impactedBy.map((item) => `<span>${escapeAttr(item.name || item.label
+          || item.checkId || item.question || item.id)}</span>`).join("")}
+    </div>`
+      : `<div class="attr-field-hint">No linked risks, hotspots, or readiness findings.</div>`}`;
+  section.appendChild(summary);
 }
 
 function initializeContainedChildDefaults(child, parent, feature) {
@@ -512,6 +946,56 @@ function initializeContainedChildDefaults(child, parent, feature) {
   } else if (child.type === "Annotation") {
     child.meta.key ||= child.label;
     child.meta.source ||= "frontend";
+  } else if (state.activeType === "pim") {
+    initializePimContainedChildDefaults(child, parent, feature);
+  }
+}
+
+function initializePimContainedChildDefaults(child, parent, feature) {
+  if (child.type === "FunctionContract") {
+    child.meta.contractVersion ||= "1.0.0";
+  } else if (child.type === "ApiRoute") {
+    child.meta.method ||= "GET";
+    child.meta.pathTemplate ||= "/";
+  } else if (child.type === "SchemaField" || child.type === "DataField") {
+    child.meta.fieldType ||= "STRING";
+  } else if (child.type === "SchemaEnumLiteral") {
+    child.meta.literal ||= child.label;
+  } else if (child.type === "SchemaConstraint") {
+    child.meta.severity ||= "WARNING";
+  } else if (child.type === "DataModel") {
+    child.meta.dataModelKind ||= "ENTITY";
+  } else if (child.type === "AccessPattern") {
+    child.meta.patternName ||= child.label;
+  } else if (child.type === "WorkflowState") {
+    child.meta.stateKind ||= "TASK";
+    if (parent?.meta && feature === "states") {
+      parent.meta.states = [...new Set(
+          [...(pimRefIds(parent.meta.states)), child.id])];
+      parent.meta.startState ||= child.id;
+      parent.meta.endStates = pimRefIds(parent.meta.endStates).length
+          ? parent.meta.endStates : [child.id];
+    }
+  } else if (child.type === "WorkflowTransition") {
+    child.meta.defaultTransition ||= false;
+  } else if (child.type === "Permission") {
+    child.meta.effect ||= "ALLOW";
+  } else if (child.type === "ConfigParameter") {
+    child.meta.scope ||= "APPLICATION";
+  } else if (child.type === "EnvironmentVariable") {
+    child.meta.variableName ||= child.label.replaceAll(/[^A-Za-z0-9_]+/g, "_")
+    .toUpperCase();
+  } else if (child.type === "CredentialRequirement") {
+    child.meta.secretKind ||= "TOKEN";
+  } else if (child.type === "MetricDimension") {
+    child.meta.key ||= child.label;
+  } else if (child.type === "ReadinessFinding") {
+    child.meta.severity ||= "WARNING";
+  } else if (child.type === "ReadinessCheck") {
+    child.meta.checkId ||= child.id;
+    child.meta.severity ||= "WARNING";
+  } else if (child.type === "ManualDecision") {
+    child.meta.question ||= child.label;
   }
 }
 
@@ -521,7 +1005,7 @@ function addContainedChildFromDrawer(parentId, feature, childType) {
   if (!parentNode || !parentElement || !feature || !childType) {
     return;
   }
-  const child = getDefaultNode("cim", childType, parentNode.x + 180,
+  const child = getDefaultNode(state.activeType, childType, parentNode.x + 180,
       parentNode.y + 120);
   child.label = `${childType} ${containmentChildren(parentNode, feature).length
   + 1}`;
@@ -582,8 +1066,31 @@ function inferFieldType(value) {
   return "text";
 }
 
+const PIM_EXPRESSION_FIELDS = new Set([
+  "pathTemplate", "filterExpression", "eventPattern", "routingExpression",
+  "routingExpressionLanguage", "inputTransformation", "inputMapping",
+  "outputMapping", "conditionExpression", "expression", "authorizationRule",
+  "retryableErrors", "nonRetryableErrors", "queryBy", "sortBy", "filterBy",
+  "projection", "scheduleExpression", "validationPattern", "condition",
+  "valueExpression"
+]);
+
+function isPimExpressionField(key, fieldType) {
+  if (state.activeType !== "pim") {
+    return false;
+  }
+  const normalized = String(key || "");
+  return fieldType !== "reference" && (PIM_EXPRESSION_FIELDS.has(normalized)
+      || /expression|pattern|condition|mapping|query|filter|projection/i.test(
+          normalized));
+}
+
 function buildAttrField(key, value, field) {
-  const fieldType = field?.fieldType || inferFieldType(value);
+  let fieldType = field?.fieldType || inferFieldType(value);
+  const expressionField = isPimExpressionField(key, fieldType);
+  if (expressionField && fieldType === "text") {
+    fieldType = "textarea";
+  }
   const readonly = Boolean(field?.readonly || READONLY_ATTR_KEYS.has(key));
   const wrapper = document.createElement("div");
 
@@ -643,6 +1150,11 @@ function buildAttrField(key, value, field) {
   } else if (fieldType === "textarea") {
     input = document.createElement("textarea");
     input.textContent = String(value ?? "");
+    if (expressionField) {
+      input.classList.add("attr-expression-editor");
+      input.spellcheck = false;
+      input.rows = Math.max(3, String(value ?? "").split("\n").length);
+    }
   } else if (fieldType === "reference") {
     input = buildReferenceInput(key, value, field);
   } else if (fieldType === "json") {
@@ -674,6 +1186,12 @@ function buildAttrField(key, value, field) {
         : `References ${field.targetType}`;
     wrapper.appendChild(hint);
   }
+  if (expressionField) {
+    const hint = document.createElement("div");
+    hint.className = "attr-field-hint";
+    hint.textContent = "Expression text is preserved exactly; use the related language field when one exists.";
+    wrapper.appendChild(hint);
+  }
   return wrapper;
 }
 
@@ -699,8 +1217,11 @@ function elementMatchesReferenceTarget(element, targetType) {
       === "SemanticRelationship") {
     return true;
   }
-  return state.activeType === "cim" ? cimTypeMatches(element, expected)
-      : String(element?.eClass || element?.type || "") === expected;
+  if (state.activeType === "cim") {
+    return cimTypeMatches(element, expected);
+  }
+  return modelingTypeMatches(state.activeType, expected,
+      String(element?.eClass || element?.type || ""));
 }
 
 function referenceOptions(targetType) {

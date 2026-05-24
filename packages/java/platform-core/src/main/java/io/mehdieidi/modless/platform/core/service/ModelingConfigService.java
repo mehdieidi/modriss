@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +27,10 @@ public final class ModelingConfigService {
 
     private static final List<String> KINDS = List.of("CONTAINS", "DEPENDS_ON", "TRIGGERS",
             "INVOKES", "READS", "WRITES", "USES", "OWNS", "SUPPORTS", "CONSTRAINS",
-            "ROUTES_TO", "DEPLOYS", "HAS_ENV", "AUTHORIZED_BY", "TARGETS");
+            "ROUTES_TO", "DEPLOYS", "DEPLOYS_TO", "HAS_ENV", "AUTHORIZED_BY", "TARGETS",
+            "PUBLISHES", "SUBSCRIBES_TO", "CALLS", "USES_SECRET", "FLOW", "REQUEST_RESPONSE",
+            "EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB", "ORCHESTRATES", "EXTERNAL_CALL",
+            "DATA_ACCESS", "PERMISSION", "TRANSITION", "TRACE");
     private static final Map<String, String> CIM_REFERENCE_KINDS = Map.ofEntries(
             Map.entry("supportsGoals", "SUPPORTS"), Map.entry("supports", "SUPPORTS"),
             Map.entry("refinedBy", "REFINES"), Map.entry("dependsOn", "DEPENDS_ON"),
@@ -65,6 +69,245 @@ public final class ModelingConfigService {
             "cimtransformation", "Transformation",
             "cimdiagram", "Diagram Layout",
             "kernel", "Traceability");
+    private static final Map<String, String> PIM_REFERENCE_KINDS = Map.ofEntries(
+            Map.entry("ownsFunctions", "OWNS"), Map.entry("ownsApis", "OWNS"),
+            Map.entry("ownsChannels", "OWNS"), Map.entry("ownsStores", "OWNS"),
+            Map.entry("ownsWorkflows", "OWNS"), Map.entry("ownsAdapters", "OWNS"),
+            Map.entry("constrainedBy", "CONSTRAINS"), Map.entry("services", "OWNS"),
+            Map.entry("contains", "DEPLOYS"), Map.entry("targetEnvironments", "DEPLOYS_TO"),
+            Map.entry("routes", "CONTAINS"), Map.entry("functionIntegration", "ROUTES_TO"),
+            Map.entry("workflowIntegration", "ROUTES_TO"), Map.entry("auth", "AUTHORIZED_BY"),
+            Map.entry("authorization", "AUTHORIZED_BY"), Map.entry("requestSchema", "USES"),
+            Map.entry("responseSchema", "USES"), Map.entry("errorSchema", "USES"),
+            Map.entry("inputSchema", "USES"), Map.entry("outputSchema", "USES"),
+            Map.entry("errorSchemas", "USES"), Map.entry("schema", "USES"),
+            Map.entry("emittedEvents", "PUBLISHES"), Map.entry("producedBy", "PUBLISHES"),
+            Map.entry("consumedBy", "SUBSCRIBES_TO"), Map.entry("triggers", "TRIGGERS"),
+            Map.entry("source", "INVOKES"), Map.entry("invokesFunction", "INVOKES"),
+            Map.entry("startsWorkflow", "INVOKES"), Map.entry("reads", "READS"),
+            Map.entry("writes", "WRITES"), Map.entry("publishes", "PUBLISHES"),
+            Map.entry("subscribesTo", "SUBSCRIBES_TO"), Map.entry("callsAdapters", "CALLS"),
+            Map.entry("usesSecrets", "USES_SECRET"), Map.entry("environmentVariables",
+                    "HAS_ENV"), Map.entry("eventTypes", "CONTAINS"), Map.entry("producers",
+                    "PUBLISHES"), Map.entry("consumers", "SUBSCRIBES_TO"),
+            Map.entry("workflowConsumers", "SUBSCRIBES_TO"), Map.entry("externalProducers",
+                    "PUBLISHES"), Map.entry("externalConsumers", "SUBSCRIBES_TO"),
+            Map.entry("deadLetterChannel", "DEAD_LETTER"), Map.entry("subscriptions",
+                    "SUBSCRIBES_TO"), Map.entry("target", "FLOW"), Map.entry("targets",
+                    "ROUTES_TO"), Map.entry("apiRoute", "ROUTES_TO"), Map.entry("eventType",
+                    "EVENT_FLOW"), Map.entry("channel", "EVENT_FLOW"), Map.entry("messageSchema",
+                    "MESSAGE_FLOW"), Map.entry("queue", "MESSAGE_FLOW"), Map.entry("topic",
+                    "PUB_SUB"), Map.entry("workflow", "ORCHESTRATES"), Map.entry("adapter",
+                    "EXTERNAL_CALL"), Map.entry("store", "DATA_ACCESS"), Map.entry("function",
+                    "DATA_ACCESS"), Map.entry("dataModels", "DATA_ACCESS"),
+            Map.entry("accessPatterns", "DATA_ACCESS"), Map.entry("startState", "TRANSITION"),
+            Map.entry("endStates", "TRANSITION"), Map.entry("invokesAdapter", "EXTERNAL_CALL"),
+            Map.entry("nestedWorkflow", "ORCHESTRATES"), Map.entry("nextState", "TRANSITION"),
+            Map.entry("handlerFunction", "INVOKES"), Map.entry("targetResource", "PERMISSION"),
+            Map.entry("allowedPrincipals", "AUTHORIZED_BY"), Map.entry("permissions",
+                    "PERMISSION"), Map.entry("identityProvider", "AUTHORIZED_BY"),
+            Map.entry("principals", "AUTHORIZED_BY"), Map.entry("attachedTo", "ATTACHED_TO"),
+            Map.entry("configurationSets", "HAS_ENV"), Map.entry("parameters", "HAS_ENV"),
+            Map.entry("variables", "HAS_ENV"), Map.entry("environments", "DEPLOYS_TO"),
+            Map.entry("appliesTo", "ATTACHED_TO"), Map.entry("secret", "USES_SECRET"),
+            Map.entry("usedForCredentials", "USES_SECRET"), Map.entry("credentials",
+                    "USES_SECRET"), Map.entry("adapterFunctions", "CALLS"),
+            Map.entry("affectedElements", "ATTACHED_TO"));
+    private static final Map<String, String> PIM_CATEGORY_BY_PACKAGE = Map.ofEntries(
+            Map.entry("pim", "PIM Root"),
+            Map.entry("api", "API Surface"),
+            Map.entry("compute", "Compute and Triggers"),
+            Map.entry("config", "Configuration and Secrets"),
+            Map.entry("contracts", "Contracts and Events"),
+            Map.entry("data", "Data Design"),
+            Map.entry("deployment", "Deployment and Environment"),
+            Map.entry("external", "External Integration"),
+            Map.entry("integration", "Integration and Events"),
+            Map.entry("policy", "Policies and Operations"),
+            Map.entry("security", "Security and Access"),
+            Map.entry("workflow", "Workflow"),
+            Map.entry("kernel", "Traceability and Readiness"));
+    private static final Map<String, Map<String, Object>> PIM_VISUALS = Map.ofEntries(
+            visual("PIMModel", "PIM Root", "database", "#334155", "model",
+                    List.of("architectureStyle", "domainName", "providerIndependent")),
+            visual("ServerlessService", "Architecture Overview", "box", "#0F766E", "service",
+                    List.of("boundaryType", "responsibility", "ownerTeam")),
+            visual("DeploymentUnit", "Deployment and Environment", "package", "#0F766E",
+                    "deployment unit", List.of("unitType", "independentlyDeployable",
+                            "targetEnvironments")),
+            visual("Environment", "Deployment and Environment", "landmark", "#0F766E",
+                    "environment", List.of("environmentClass", "productionLike",
+                            "requiresApproval")),
+            visual("ImplementationProfile", "Deployment and Environment", "settings",
+                    "#64748B", "implementation",
+                    List.of("primaryLanguage", "packageManager", "sourceLayout")),
+            visual("Function", "Compute and Triggers", "braces", "#2563EB", "function",
+                    List.of("functionKind", "handlerResponsibility", "executionModel")),
+            visual("FunctionContract", "Contracts and Events", "file-text", "#2563EB",
+                    "contract", List.of("contractVersion", "inputSchema", "outputSchema")),
+            visual("Trigger", "Compute and Triggers", "log-in", "#DB2777", "trigger",
+                    List.of("triggerKind", "invocationMode", "source")),
+            visual("Api", "API Surface", "route", "#7C3AED", "api",
+                    List.of("publicName", "version", "basePath", "apiStyle")),
+            visual("ApiRoute", "API Surface", "corner-down-right", "#7C3AED", "route",
+                    List.of("method", "pathTemplate", "operationId", "authRequired")),
+            visual("ErrorMapping", "API Surface", "triangle-alert", "#DC2626", "error map",
+                    List.of("domainErrorCode", "abstractStatusClass", "errorSchema")),
+            visual("Schema", "Contracts and Events", "braces", "#0891B2", "schema",
+                    List.of("schemaKind", "semanticVersion", "compatibility")),
+            visual("SchemaField", "Contracts and Events", "list", "#0891B2", "field",
+                    List.of("fieldType", "required", "classification")),
+            visual("SchemaEnumLiteral", "Contracts and Events", "list-checks", "#0891B2",
+                    "enum", List.of("literal", "displayName", "deprecationReason")),
+            visual("SchemaConstraint", "Contracts and Events", "badge-alert", "#0891B2",
+                    "constraint", List.of("expressionLanguage", "severity", "message")),
+            visual("ApiContract", "Contracts and Events", "file-text", "#7C3AED",
+                    "api contract", List.of("publicVersion", "backwardCompatible")),
+            visual("EventEnvelope", "Contracts and Events", "mail", "#DB2777", "envelope",
+                    List.of("eventIdField", "eventTypeField", "metadataRequired")),
+            visual("EventType", "Contracts and Events", "sparkles", "#DB2777", "event",
+                    List.of("semanticName", "version", "schema")),
+            visual("DataStore", "Data Design", "database", "#0891B2", "data store",
+                    List.of("storeKind", "consistencyNeed", "expectedAccessRate")),
+            visual("ObjectStore", "Data Design", "folder-archive", "#0891B2", "object store",
+                    List.of("objectTypes", "versioningRequired", "eventNotificationRequired")),
+            visual("DataModel", "Data Design", "table", "#0891B2", "data model",
+                    List.of("dataModelKind", "schema", "sourceOfTruth")),
+            visual("DataField", "Data Design", "columns", "#0891B2", "data field",
+                    List.of("fieldType", "identifier", "storageName")),
+            visual("AccessPattern", "Data Design", "search", "#0891B2", "access pattern",
+                    List.of("patternName", "operation", "queryBy")),
+            visual("IndexCandidate", "Data Design", "list-filter", "#0891B2", "index",
+                    List.of("indexPurpose", "partitionKeyField", "sortKeyField")),
+            visual("DataAccess", "Data Design", "database-zap", "#0891B2", "data access",
+                    List.of("mode", "purpose", "transactional")),
+            visual("Queue", "Integration and Events", "inbox", "#DB2777", "queue",
+                    List.of("channelKind", "deliverySemantics", "fifoRequired")),
+            visual("Topic", "Integration and Events", "radio", "#DB2777", "topic",
+                    List.of("channelKind", "subscriptionMode", "filteringRequired")),
+            visual("EventBus", "Integration and Events", "git-branch", "#DB2777",
+                    "event bus", List.of("channelKind", "routingExpressionLanguage")),
+            visual("Schedule", "Integration and Events", "clock", "#DB2777", "schedule",
+                    List.of("scheduleExpression", "enabled", "timeZone")),
+            visual("Subscription", "Integration and Events", "rss", "#DB2777",
+                    "subscription", List.of("filterExpression", "target", "rawDelivery")),
+            visual("EventRoutingRule", "Integration and Events", "route", "#DB2777",
+                    "routing rule", List.of("eventPattern", "enabled", "targets")),
+            visual("RequestResponseFlow", "Integration and Events", "move-right", "#EA580C",
+                    "request flow", List.of("flowPurpose", "synchronous", "apiRoute")),
+            visual("EventFlow", "Integration and Events", "shuffle", "#EA580C", "event flow",
+                    List.of("flowPurpose", "eventType", "channel")),
+            visual("MessageFlow", "Integration and Events", "mail", "#EA580C", "message flow",
+                    List.of("flowPurpose", "messageSchema", "queue")),
+            visual("PubSubFlow", "Integration and Events", "radio", "#EA580C", "pub/sub",
+                    List.of("flowPurpose", "topic", "subscriptions")),
+            visual("OrchestrationFlow", "Integration and Events", "workflow", "#EA580C",
+                    "orchestration", List.of("flowPurpose", "workflow")),
+            visual("ExternalIntegrationFlow", "Integration and Events", "server", "#EA580C",
+                    "external flow", List.of("flowPurpose", "adapter")),
+            visual("Workflow", "Workflow", "workflow", "#EA580C", "workflow",
+                    List.of("workflowKind", "executionSemantics", "startState")),
+            visual("WorkflowState", "Workflow", "circle-dot", "#EA580C", "state",
+                    List.of("stateKind", "orderIndex", "terminal")),
+            visual("WorkflowTransition", "Workflow", "arrow-right", "#EA580C", "transition",
+                    List.of("conditionExpression", "defaultTransition")),
+            visual("ErrorHandler", "Workflow", "octagon-alert", "#DC2626", "catch",
+                    List.of("errorSelector", "recoveryAction", "nextState")),
+            visual("CompensationPolicy", "Workflow", "rotate-ccw", "#EA580C", "compensation",
+                    List.of("compensationStrategy", "automatic")),
+            visual("ExternalAdapter", "External Integration", "server", "#64748B",
+                    "external adapter", List.of("externalSystemName", "protocolFamily",
+                            "endpointDescription")),
+            visual("ConfigurationSet", "Configuration and Secrets", "settings", "#CA8A04",
+                    "configuration", List.of("scope", "parameters", "environmentVariables")),
+            visual("ConfigParameter", "Configuration and Secrets", "sliders-horizontal",
+                    "#CA8A04", "parameter", List.of("valueKind", "stageSpecific", "required")),
+            visual("EnvironmentVariable", "Configuration and Secrets", "terminal", "#CA8A04",
+                    "env var", List.of("variableName", "valueSource", "secretReference")),
+            visual("Secret", "Configuration and Secrets", "key-round", "#CA8A04", "secret",
+                    List.of("secretKind", "rotationRequired", "ownerTeam")),
+            visual("CredentialRequirement", "Configuration and Secrets", "key", "#CA8A04",
+                    "credential", List.of("secretKind", "purpose", "rotationRequired")),
+            visual("IdentityProvider", "Security and Access", "shield-check", "#DC2626",
+                    "identity", List.of("identityKind", "mfaRequired", "tokenType")),
+            visual("Principal", "Security and Access", "users", "#DC2626", "principal",
+                    List.of("principalKind", "privileged", "externalRef")),
+            visual("Permission", "Security and Access", "badge-check", "#DC2626",
+                    "permission", List.of("effect", "action", "targetResource")),
+            visual("ArchitecturePolicy", "Policies and Operations", "gavel", "#64748B",
+                    "policy", List.of("policyScope", "productionRequired", "attachedTo")),
+            visual("SecurityPolicy", "Security and Access", "shield", "#DC2626",
+                    "security policy", List.of("authenticationRequired", "authorizationRequired")),
+            visual("AuthPolicy", "Security and Access", "lock", "#DC2626", "auth policy",
+                    List.of("authScheme", "mfaRequired", "identityProvider")),
+            visual("AuthorizationPolicy", "Security and Access", "user-check", "#DC2626",
+                    "authorization", List.of("roleOrScopeRequired", "allowedPrincipals")),
+            visual("DataProtectionPolicy", "Policies and Operations", "shield", "#16A34A",
+                    "data policy", List.of("classification", "encryptionRequired")),
+            visual("CompliancePolicy", "Policies and Operations", "scale", "#CA8A04",
+                    "compliance", List.of("regulation", "controlId")),
+            visual("ResiliencePolicy", "Policies and Operations", "shield-alert", "#64748B",
+                    "resilience", List.of("retryEnabled", "deadLetterRequired")),
+            visual("RetryPolicy", "Policies and Operations", "refresh-cw", "#64748B", "retry",
+                    List.of("maxAttempts", "backoffRate")),
+            visual("DeadLetterPolicy", "Policies and Operations", "mail-x", "#64748B",
+                    "dead letter", List.of("required", "deadLetterChannel")),
+            visual("TimeoutPolicy", "Policies and Operations", "timer", "#64748B", "timeout",
+                    List.of("timeoutSeconds", "clientTimeoutSeconds")),
+            visual("IdempotencyPolicy", "Policies and Operations", "repeat", "#64748B",
+                    "idempotency", List.of("keySource", "storeRequired")),
+            visual("ConcurrencyPolicy", "Policies and Operations", "gauge", "#64748B",
+                    "concurrency", List.of("maxConcurrency", "reservedConcurrencyHint")),
+            visual("RateLimitPolicy", "Policies and Operations", "activity", "#64748B",
+                    "rate limit", List.of("requestsPerSecond", "burstLimit")),
+            visual("BatchPolicy", "Policies and Operations", "rows", "#64748B", "batch",
+                    List.of("batchSize", "partialFailureHandling")),
+            visual("OrderingPolicy", "Policies and Operations", "list-ordered", "#64748B",
+                    "ordering", List.of("orderingRequirement", "orderingKey")),
+            visual("CachePolicy", "Policies and Operations", "archive", "#64748B", "cache",
+                    List.of("cacheRequired", "ttlSeconds")),
+            visual("BackupPolicy", "Policies and Operations", "database-backup", "#64748B",
+                    "backup", List.of("backupRequired", "backupFrequency")),
+            visual("RetentionPolicy", "Policies and Operations", "calendar-clock", "#64748B",
+                    "retention", List.of("retentionPeriod", "deletionAfterRetention")),
+            visual("CostPolicy", "Policies and Operations", "badge-dollar-sign", "#64748B",
+                    "cost", List.of("budget", "costDriver")),
+            visual("ObservabilityConfig", "Policies and Operations", "monitoring", "#64748B",
+                    "observability", List.of("loggingEnabled", "metricsEnabled",
+                            "tracingEnabled")),
+            visual("LoggingPolicy", "Policies and Operations", "file-text", "#64748B",
+                    "logging", List.of("logFormat", "logLevel", "structuredLogging")),
+            visual("MetricPolicy", "Policies and Operations", "chart-line", "#64748B",
+                    "metric", List.of("metricName", "unit", "statistic")),
+            visual("MetricDimension", "Policies and Operations", "tags", "#64748B",
+                    "dimension", List.of("key", "valueExpression")),
+            visual("TracingPolicy", "Policies and Operations", "git-merge", "#64748B",
+                    "tracing", List.of("tracingRequired", "samplingPolicy")),
+            visual("AlertPolicy", "Policies and Operations", "bell", "#64748B", "alert",
+                    List.of("metricName", "condition", "threshold")),
+            visual("Slo", "Policies and Operations", "target", "#64748B", "slo",
+                    List.of("objectiveName", "metric", "target")),
+            visual("CorsPolicy", "Policies and Operations", "globe", "#64748B", "cors",
+                    List.of("allowedOrigins", "allowedMethods")),
+            visual("TraceModel", "Traceability and Readiness", "git-merge", "#4F46E5",
+                    "trace model", List.of("links")),
+            visual("TraceLink", "Traceability and Readiness", "link", "#4F46E5", "trace",
+                    List.of("linkType", "source", "target")),
+            visual("ProductionReadinessAssessment", "Traceability and Readiness",
+                    "clipboard-check", "#0F766E", "readiness",
+                    List.of("readinessStatus", "transformationReady", "productionReady")),
+            visual("ReadinessFinding", "Traceability and Readiness", "triangle-alert",
+                    "#DC2626", "finding", List.of("severity", "message", "blocking")),
+            visual("ReadinessCheck", "Traceability and Readiness", "list-checks", "#0F766E",
+                    "check", List.of("checkId", "severity", "passed")),
+            visual("ManualDecision", "Traceability and Readiness", "clipboard-check",
+                    "#7C3AED", "decision", List.of("question", "decisionOwner", "blocking")),
+            visual("StructuredDocument", "Traceability and Readiness", "file-text", "#64748B",
+                    "document", List.of("format", "externalUri")),
+            visual("KeyValue", "Traceability and Readiness", "list", "#64748B",
+                    "key value", List.of("key", "value")),
+            visual("Annotation", "Traceability and Readiness", "sticky-note", "#64748B",
+                    "annotation", List.of("key", "value", "source")));
     private static final Map<String, Map<String, Object>> CIM_VISUALS = Map.ofEntries(
             visual("BusinessGoal", "Intent and Measurement", "target", "#D97706", "goal",
                     List.of("successCriterion", "businessValue", "measuredBy")),
@@ -244,6 +487,37 @@ public final class ModelingConfigService {
             "DomainConcept", "ProcessStep");
     private static final Set<String> RELATIONSHIP_ONLY_CIM_TYPES = Set.of("DomainRelationship",
             "CapabilityDependency", "ProcessTransition", "TraceLink");
+    private static final Set<String> CONTAINED_ONLY_CIM_TYPES = Set.of("AcceptanceCriterion",
+            "QualityScenario", "LifecycleStateDefinition", "BusinessInvariant", "StartStep",
+            "EndStep", "CommandStep", "QueryStep", "EventStep", "PolicyStep", "HumanTaskStep",
+            "ExternalInteractionStep", "DecisionStep", "WaitStep", "DecisionRule",
+            "ExceptionScenario", "TemporalConstraint", "Annotation", "ReadinessFinding",
+            "ReadinessCheck", "ManualDecision");
+    private static final Set<String> NON_CREATABLE_CIM_TYPES = Set.of("CIMWorkspace",
+            "CIMModel", "DiagramModel", "DiagramView", "DiagramNode", "DiagramEdge",
+            "KeyValue", "StructuredDocument");
+    private static final Set<String> ABSTRACT_PIM_TYPES = Set.of("ModelElement",
+            "TraceableElement", "SemanticRelationship", "TransformationAssumption",
+            "ComputeElement", "StorageElement", "IntegrationElement", "EventChannel", "Flow",
+            "ArchitecturePolicy", "DeployableElement", "InvocationSource", "InvocationTarget",
+            "FunctionTarget", "WorkflowTarget", "SubscriptionTarget", "RoutingTarget",
+            "FlowEndpoint", "ProtectedResource", "PolicyTarget", "DataAccessTarget",
+            "ExternalCallTarget", "EnvironmentTarget", "CredentialRequirementLike",
+            "RouteEndpoint", "EventCarrier");
+    private static final Set<String> RELATIONSHIP_ONLY_PIM_TYPES = Set.of("Trigger",
+            "DataAccess", "RequestResponseFlow", "EventFlow", "MessageFlow", "PubSubFlow",
+            "OrchestrationFlow", "ExternalIntegrationFlow", "WorkflowTransition", "Permission",
+            "Subscription", "EventRoutingRule", "TraceLink");
+    private static final Set<String> CONTAINED_ONLY_PIM_TYPES = Set.of("FunctionContract",
+            "ApiRoute", "ErrorMapping", "SchemaField", "SchemaEnumLiteral", "SchemaConstraint",
+            "ApiContract", "EventEnvelope", "DataModel", "DataField", "AccessPattern",
+            "IndexCandidate", "WorkflowState", "ErrorHandler", "CompensationPolicy",
+            "ConfigParameter", "EnvironmentVariable", "CredentialRequirement", "RetryPolicy",
+            "DeadLetterPolicy", "LoggingPolicy", "MetricPolicy", "MetricDimension",
+            "TracingPolicy", "AlertPolicy", "Slo", "Annotation", "ReadinessFinding",
+            "ReadinessCheck", "ManualDecision");
+    private static final Set<String> NON_CREATABLE_PIM_TYPES = Set.of("PIMModel", "KeyValue",
+            "StructuredDocument");
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static Map.Entry<String, Map<String, Object>> visual(String type, String category,
@@ -275,6 +549,8 @@ public final class ModelingConfigService {
         Map<String, Object> metadata = readMetadata(key);
         if ("cim".equals(key)) {
             metadata = augmentCimMetadata(metadata);
+        } else if ("pim".equals(key)) {
+            metadata = augmentPimMetadata(metadata);
         }
         List<String> relationshipKinds = relationshipKinds(metadata);
         return Map.ofEntries(
@@ -369,6 +645,62 @@ public final class ModelingConfigService {
         metadata.put("constraints", cimConstraints());
         metadata.put("rootTemplate", cimRootTemplate());
         return metadata;
+    }
+
+    private Map<String, Object> augmentPimMetadata(Map<String, Object> base) {
+        Map<String, Object> metadata = new LinkedHashMap<>(base);
+        CimMetamodel metamodel = readEcoreMetamodel("pim", PIM_VISUALS,
+                PIM_CATEGORY_BY_PACKAGE, ABSTRACT_PIM_TYPES, RELATIONSHIP_ONLY_PIM_TYPES,
+                CONTAINED_ONLY_PIM_TYPES, NON_CREATABLE_PIM_TYPES);
+        metadata.put("elements", metamodel.elements());
+        metadata.put("relationshipRules", metamodel.relationshipRules());
+        metadata.put("semanticReferenceRules", metamodel.semanticReferenceRules());
+        metadata.put("relationshipKindLabels", pimRelationshipKindLabels());
+        metadata.put("viewDefinitions", pimViewDefinitions());
+        metadata.put("constraints", pimConstraints());
+        metadata.put("rootTemplate", pimRootTemplate());
+        return metadata;
+    }
+
+    private CimMetamodel readEcoreMetamodel(String key, Map<String, Map<String, Object>> visuals,
+            Map<String, String> categoryByPackage, Set<String> abstractTypes,
+            Set<String> relationshipOnlyTypes, Set<String> containedOnlyTypes,
+            Set<String> nonCreatableTypes) {
+        String resource = "modeling/metamodels/" + key + "/" + key + "-combined.ecore";
+        try (InputStream input = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(resource)) {
+            if (input == null) {
+                throw new PlatformException(500,
+                        "Missing " + key.toUpperCase() + " metamodel metadata resource.");
+            }
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setNamespaceAware(false);
+            Document document = factory.newDocumentBuilder().parse(input);
+            NodeList packages = document.getElementsByTagName("ecore:EPackage");
+            Map<String, String> typeByPath = typeByPath(packages);
+            Map<String, List<String>> enumLiteralsByType = enumLiteralsByType(packages);
+            Map<String, EcoreClass> classByType = ecoreClasses(packages, typeByPath);
+            List<Map<String, Object>> elements = new ArrayList<>();
+            List<Map<String, Object>> relationshipRules = new ArrayList<>();
+            List<Map<String, Object>> semanticReferenceRules = new ArrayList<>();
+            for (EcoreClass modelClass : classByType.values()) {
+                elements.add(metamodelElement(modelClass, classByType, enumLiteralsByType,
+                        visuals, categoryByPackage, abstractTypes, relationshipOnlyTypes,
+                        containedOnlyTypes, nonCreatableTypes));
+                collectReferenceRules(key, modelClass, relationshipRules, semanticReferenceRules);
+            }
+            relationshipRules.sort(
+                    Comparator.comparing(rule -> String.valueOf(rule.get("sourceType"))
+                            + String.valueOf(rule.get("targetType")) + String.valueOf(
+                            rule.get("feature"))));
+            return new CimMetamodel(elements, relationshipRules, semanticReferenceRules);
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new PlatformException(500,
+                    "Could not read " + key.toUpperCase() + " metamodel metadata.");
+        }
     }
 
     private CimMetamodel readCimMetamodel() {
@@ -604,6 +936,155 @@ public final class ModelingConfigService {
         return result;
     }
 
+    private Map<String, EcoreClass> ecoreClasses(NodeList packages,
+            Map<String, String> typeByPath) {
+        Map<String, EcoreClass> result = new LinkedHashMap<>();
+        for (int packageIndex = 0; packageIndex < packages.getLength(); packageIndex++) {
+            Element ePackage = (Element) packages.item(packageIndex);
+            String packageName = ePackage.getAttribute("name");
+            NodeList children = ePackage.getChildNodes();
+            for (int classIndex = 0; classIndex < children.getLength(); classIndex++) {
+                Node node = children.item(classIndex);
+                if (!(node instanceof Element classifier)
+                        || !"eClassifiers".equals(classifier.getTagName())
+                        || !"ecore:EClass".equals(classifier.getAttribute("xsi:type"))) {
+                    continue;
+                }
+                List<String> superTypes = new ArrayList<>();
+                for (String rawSuperType : classifier.getAttribute("eSuperTypes").split("\\s+")) {
+                    String superType = typeName(rawSuperType, typeByPath);
+                    if (!superType.isBlank()) {
+                        superTypes.add(superType);
+                    }
+                }
+                List<EmfaticFeature> attributes = new ArrayList<>();
+                List<EmfaticFeature> references = new ArrayList<>();
+                NodeList featureNodes = classifier.getChildNodes();
+                for (int featureIndex = 0; featureIndex < featureNodes.getLength();
+                        featureIndex++) {
+                    Node featureNode = featureNodes.item(featureIndex);
+                    if (!(featureNode instanceof Element feature)
+                            || !"eStructuralFeatures".equals(feature.getTagName())) {
+                        continue;
+                    }
+                    String xsiType = feature.getAttribute("xsi:type");
+                    if ("ecore:EAttribute".equals(xsiType)) {
+                        attributes.add(ecoreFeature(feature, typeByPath, "attribute"));
+                    } else if ("ecore:EReference".equals(xsiType)) {
+                        references.add(ecoreFeature(feature, typeByPath, "reference"));
+                    }
+                }
+                String type = classifier.getAttribute("name");
+                result.put(type, new EcoreClass(packageName, type, superTypes,
+                        "true".equals(classifier.getAttribute("abstract")), attributes,
+                        references));
+            }
+        }
+        return result;
+    }
+
+    private EmfaticFeature ecoreFeature(Element feature, Map<String, String> typeByPath,
+            String kind) {
+        int lower = lowerBound(feature);
+        int upper = upperBound(feature);
+        String multiplicity = multiplicity(lower, upper);
+        boolean containment = "true".equals(feature.getAttribute("containment"));
+        boolean readonly = "false".equals(feature.getAttribute("changeable"))
+                || "true".equals(feature.getAttribute("transient"));
+        return new EmfaticFeature(feature.getAttribute("name"), kind,
+                typeName(feature.getAttribute("eType"), typeByPath), containment, multiplicity,
+                feature.getAttribute("eOpposite"), readonly);
+    }
+
+    private String multiplicity(int lower, int upper) {
+        if (upper == -1 || upper > 1) {
+            return lower > 0 ? "+" : "*";
+        }
+        return lower > 0 ? "1" : "";
+    }
+
+    private Map<String, Object> metamodelElement(EcoreClass modelClass,
+            Map<String, EcoreClass> classByType,
+            Map<String, List<String>> enumLiteralsByType,
+            Map<String, Map<String, Object>> visuals,
+            Map<String, String> categoryByPackage, Set<String> abstractTypes,
+            Set<String> relationshipOnlyTypes, Set<String> containedOnlyTypes,
+            Set<String> nonCreatableTypes) {
+        String type = modelClass.name();
+        Map<String, Object> visual = visuals.getOrDefault(type, Map.of());
+        List<Map<String, Object>> attributes = new ArrayList<>();
+        List<Map<String, Object>> references = new ArrayList<>();
+        inheritedEcoreFeatures(modelClass, classByType, true).forEach(feature ->
+                attributes.add(cimAttribute(feature, enumLiteralsByType)));
+        inheritedEcoreFeatures(modelClass, classByType, false).forEach(feature ->
+                references.add(cimReference(feature)));
+        boolean abstractType = modelClass.abstractType() || abstractTypes.contains(type);
+        boolean relationshipElement = relationshipOnlyTypes.contains(type);
+        Map<String, Object> element = new LinkedHashMap<>();
+        element.put("type", type);
+        element.put("label", humanize(type));
+        element.put("package", modelClass.packageName());
+        element.put("category", visual.getOrDefault("category",
+                categoryByPackage.getOrDefault(modelClass.packageName(), type)));
+        element.put("icon", PLACEHOLDER_ICON);
+        element.put("color", visual.getOrDefault("color", "#64748B"));
+        element.put("notation", Map.of("tag", visual.getOrDefault("notation", "element"),
+                "lineFields", visual.getOrDefault("visibleFields", List.of())));
+        element.put("visibleFields", visual.getOrDefault("visibleFields", List.of()));
+        element.put("attributes", attributes);
+        element.put("references", references);
+        element.put("supertypes", allEcoreSuperTypes(modelClass, classByType));
+        element.put("abstract", abstractType);
+        element.put("relationshipElement", relationshipElement);
+        element.put("containedOnly", containedOnlyTypes.contains(type));
+        element.put("supportOnly", nonCreatableTypes.contains(type));
+        element.put("creatable",
+                !abstractType && !relationshipElement && !containedOnlyTypes.contains(type)
+                        && !nonCreatableTypes.contains(type));
+        return element;
+    }
+
+    private List<EmfaticFeature> inheritedEcoreFeatures(EcoreClass modelClass,
+            Map<String, EcoreClass> classByType, boolean attributes) {
+        LinkedHashMap<String, EmfaticFeature> result = new LinkedHashMap<>();
+        for (String superType : modelClass.superTypes()) {
+            EcoreClass parent = classByType.get(superType);
+            if (parent == null) {
+                continue;
+            }
+            for (EmfaticFeature feature : inheritedEcoreFeatures(parent, classByType,
+                    attributes)) {
+                result.put(feature.name(), feature);
+            }
+        }
+        List<EmfaticFeature> local = attributes ? modelClass.attributes()
+                : modelClass.references();
+        for (EmfaticFeature feature : local) {
+            result.put(feature.name(), feature);
+        }
+        return new ArrayList<>(result.values());
+    }
+
+    private List<String> allEcoreSuperTypes(EcoreClass modelClass,
+            Map<String, EcoreClass> classByType) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        collectEcoreSuperTypes(modelClass, classByType, result);
+        return new ArrayList<>(result);
+    }
+
+    private void collectEcoreSuperTypes(EcoreClass modelClass, Map<String, EcoreClass> classByType,
+            LinkedHashSet<String> result) {
+        for (String superType : modelClass.superTypes()) {
+            if (!result.add(superType)) {
+                continue;
+            }
+            EcoreClass parent = classByType.get(superType);
+            if (parent != null) {
+                collectEcoreSuperTypes(parent, classByType, result);
+            }
+        }
+    }
+
     private Map<String, List<String>> enumLiteralsByType(NodeList packages) {
         Map<String, List<String>> result = new HashMap<>();
         for (int packageIndex = 0; packageIndex < packages.getLength(); packageIndex++) {
@@ -669,7 +1150,10 @@ public final class ModelingConfigService {
         element.put("abstract", abstractType);
         element.put("relationshipElement",
                 RELATIONSHIP_ONLY_CIM_TYPES.contains(type));
-        element.put("creatable", !abstractType && !RELATIONSHIP_ONLY_CIM_TYPES.contains(type));
+        element.put("containedOnly", CONTAINED_ONLY_CIM_TYPES.contains(type));
+        element.put("creatable", !abstractType && !RELATIONSHIP_ONLY_CIM_TYPES.contains(type)
+                && !CONTAINED_ONLY_CIM_TYPES.contains(type)
+                && !NON_CREATABLE_CIM_TYPES.contains(type));
         return element;
     }
 
@@ -703,7 +1187,10 @@ public final class ModelingConfigService {
         element.put("references", references);
         element.put("abstract", abstractType);
         element.put("relationshipElement", RELATIONSHIP_ONLY_CIM_TYPES.contains(type));
-        element.put("creatable", !abstractType && !RELATIONSHIP_ONLY_CIM_TYPES.contains(type));
+        element.put("containedOnly", CONTAINED_ONLY_CIM_TYPES.contains(type));
+        element.put("creatable", !abstractType && !RELATIONSHIP_ONLY_CIM_TYPES.contains(type)
+                && !CONTAINED_ONLY_CIM_TYPES.contains(type)
+                && !NON_CREATABLE_CIM_TYPES.contains(type));
         return element;
     }
 
@@ -837,6 +1324,27 @@ public final class ModelingConfigService {
         }
     }
 
+    private void collectReferenceRules(String levelKey, EcoreClass modelClass,
+            List<Map<String, Object>> relationshipRules,
+            List<Map<String, Object>> semanticReferenceRules) {
+        String sourceType = modelClass.name();
+        for (EmfaticFeature feature : modelClass.references()) {
+            if (feature.type().isBlank() || feature.readonly()) {
+                continue;
+            }
+            String kind = relationshipKind(levelKey, sourceType, feature.name(),
+                    feature.containment());
+            relationshipRules.add(Map.of("sourceType", sourceType, "targetType",
+                    genericTarget(feature.type()), "allowedKinds", List.of(kind), "feature",
+                    feature.name(), "containment", feature.containment()));
+            if (!feature.containment()) {
+                semanticReferenceRules.add(Map.of("sourceType", sourceType, "targetType",
+                        genericTarget(feature.type()), "feature", feature.name(), "kind", kind,
+                        "reverse", reverseReference(levelKey, feature.name())));
+            }
+        }
+    }
+
     private String typeName(String eType, Map<String, String> typeByPath) {
         if (eType == null || eType.isBlank()) {
             return "";
@@ -883,6 +1391,61 @@ public final class ModelingConfigService {
 
     private boolean reverseReference(String featureName) {
         return Set.of("issuedBy", "triggeredBy", "causedByExternalSystems").contains(featureName);
+    }
+
+    private String relationshipKind(String levelKey, String sourceType, String featureName,
+            boolean containment) {
+        if ("pim".equals(levelKey)) {
+            return pimRelationshipKind(sourceType, featureName, containment);
+        }
+        return relationshipKind(sourceType, featureName, containment);
+    }
+
+    private String pimRelationshipKind(String sourceType, String featureName, boolean containment) {
+        if (containment) {
+            if ("Workflow".equals(sourceType) && "transitions".equals(featureName)) {
+                return "TRANSITION";
+            }
+            if ("Principal".equals(sourceType) && "permissions".equals(featureName)) {
+                return "PERMISSION";
+            }
+            if ("Topic".equals(sourceType) && "subscriptions".equals(featureName)) {
+                return "SUBSCRIBES_TO";
+            }
+            if ("EventBus".equals(sourceType) && "routingRules".equals(featureName)) {
+                return "ROUTES_TO";
+            }
+            return "CONTAINS";
+        }
+        if (Set.of("RequestResponseFlow", "EventFlow", "MessageFlow", "PubSubFlow",
+                "OrchestrationFlow", "ExternalIntegrationFlow").contains(sourceType)
+                && Set.of("source", "target").contains(featureName)) {
+            return switch (sourceType) {
+                case "RequestResponseFlow" -> "REQUEST_RESPONSE";
+                case "EventFlow" -> "EVENT_FLOW";
+                case "MessageFlow" -> "MESSAGE_FLOW";
+                case "PubSubFlow" -> "PUB_SUB";
+                case "OrchestrationFlow" -> "ORCHESTRATES";
+                case "ExternalIntegrationFlow" -> "EXTERNAL_CALL";
+                default -> "FLOW";
+            };
+        }
+        if ("WorkflowTransition".equals(sourceType)
+                && Set.of("source", "target").contains(featureName)) {
+            return "TRANSITION";
+        }
+        if ("TraceLink".equals(sourceType) && Set.of("source", "target").contains(featureName)) {
+            return "TRACE";
+        }
+        return PIM_REFERENCE_KINDS.getOrDefault(featureName, featureNameToKind(featureName));
+    }
+
+    private boolean reverseReference(String levelKey, String featureName) {
+        if ("pim".equals(levelKey)) {
+            return Set.of("producedBy", "consumedBy", "invokesFunction", "startsWorkflow")
+                    .contains(featureName);
+        }
+        return reverseReference(featureName);
     }
 
     private int lowerBound(Element feature) {
@@ -1167,9 +1730,241 @@ public final class ModelingConfigService {
         return root;
     }
 
+    private Map<String, String> pimRelationshipKindLabels() {
+        return Map.ofEntries(Map.entry("CONTAINS", "contains"),
+                Map.entry("OWNS", "owns"), Map.entry("DEPLOYS", "packages"),
+                Map.entry("DEPLOYS_TO", "deploys to"), Map.entry("ROUTES_TO", "routes to"),
+                Map.entry("INVOKES", "invokes"), Map.entry("TRIGGERS", "triggers"),
+                Map.entry("READS", "reads"), Map.entry("WRITES", "writes"),
+                Map.entry("READ_WRITE", "read/write"), Map.entry("APPEND", "append"),
+                Map.entry("DELETE", "delete"), Map.entry("PUBLISHES", "publishes"),
+                Map.entry("SUBSCRIBES_TO", "subscribes to"), Map.entry("CALLS", "calls"),
+                Map.entry("USES", "uses"), Map.entry("USES_SECRET", "uses secret"),
+                Map.entry("HAS_ENV", "has env"), Map.entry("AUTHORIZED_BY", "authorized by"),
+                Map.entry("ATTACHED_TO", "attached to"), Map.entry("FLOW", "flow"),
+                Map.entry("REQUEST_RESPONSE", "request/response"),
+                Map.entry("EVENT_FLOW", "event flow"), Map.entry("MESSAGE_FLOW", "message flow"),
+                Map.entry("PUB_SUB", "pub/sub"), Map.entry("ORCHESTRATES", "orchestrates"),
+                Map.entry("EXTERNAL_CALL", "external call"),
+                Map.entry("DATA_ACCESS", "data access"), Map.entry("PERMISSION", "permission"),
+                Map.entry("TRANSITION", "transition"), Map.entry("TRACE", "trace"),
+                Map.entry("DEAD_LETTER", "dead letter"), Map.entry("TARGETS", "targets"),
+                Map.entry("CONSTRAINS", "constrains"));
+    }
+
+    private List<Map<String, Object>> pimViewDefinitions() {
+        return List.of(
+                view("pim-architecture-overview", "Architecture Overview",
+                        "ARCHITECTURE_OVERVIEW", "architecture",
+                        List.of("ServerlessService", "Api", "Function", "Workflow", "Queue",
+                                "Topic", "EventBus", "Schedule", "DataStore", "ObjectStore",
+                                "ExternalAdapter", "IdentityProvider", "Secret",
+                                "RequestResponseFlow", "EventFlow", "MessageFlow", "PubSubFlow",
+                                "OrchestrationFlow", "ExternalIntegrationFlow"),
+                        List.of("ServerlessService", "Api", "Function", "Workflow", "Queue",
+                                "Topic", "EventBus", "Schedule", "DataStore", "ObjectStore",
+                                "ExternalAdapter", "IdentityProvider", "Secret"),
+                        List.of("OWNS", "ROUTES_TO", "INVOKES", "PUBLISHES", "SUBSCRIBES_TO",
+                                "READS", "WRITES", "CALLS", "FLOW", "REQUEST_RESPONSE",
+                                "EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB", "ORCHESTRATES",
+                                "EXTERNAL_CALL"), "CONTAINER"),
+                view("pim-api-surface", "API Surface", "API_SURFACE", "api",
+                        List.of("Api", "ApiRoute", "ApiContract", "ErrorMapping", "Schema",
+                                "Function", "Workflow", "AuthPolicy", "AuthorizationPolicy",
+                                "CorsPolicy", "RateLimitPolicy", "TimeoutPolicy",
+                                "ObservabilityConfig"),
+                        List.of("Api", "Schema", "Function", "Workflow", "AuthPolicy",
+                                "AuthorizationPolicy", "CorsPolicy", "RateLimitPolicy",
+                                "TimeoutPolicy", "ObservabilityConfig"),
+                        List.of("CONTAINS", "ROUTES_TO", "AUTHORIZED_BY", "USES",
+                                "ATTACHED_TO"), "TABLE"),
+                view("pim-compute-trigger", "Compute and Trigger", "COMPUTE_TRIGGER", "compute",
+                        List.of("Function", "FunctionContract", "Trigger", "Schedule",
+                                "ApiRoute", "Queue", "Topic", "EventBus", "ObjectStore",
+                                "Workflow", "Schema", "EventType", "Secret",
+                                "EnvironmentVariable", "IdempotencyPolicy", "TimeoutPolicy",
+                                "ResiliencePolicy", "ConcurrencyPolicy", "ObservabilityConfig"),
+                        List.of("Function", "Schedule", "Queue", "Topic", "EventBus",
+                                "ObjectStore", "Workflow", "Schema", "EventType", "Secret",
+                                "IdempotencyPolicy", "TimeoutPolicy", "ResiliencePolicy",
+                                "ConcurrencyPolicy", "ObservabilityConfig"),
+                        List.of("INVOKES", "TRIGGERS", "ROUTES_TO", "PUBLISHES",
+                                "SUBSCRIBES_TO", "READS", "WRITES", "CALLS", "USES_SECRET",
+                                "HAS_ENV", "ATTACHED_TO"), "DEFAULT_LAYERED"),
+                view("pim-contract-schema-event", "Contract Schema and Event",
+                        "CONTRACT_SCHEMA_EVENT", "contracts",
+                        List.of("Schema", "SchemaField", "SchemaEnumLiteral", "SchemaConstraint",
+                                "FunctionContract", "ApiContract", "EventType",
+                                "EventEnvelope", "Function", "Api"),
+                        List.of("Schema", "EventType", "Function", "Api"),
+                        List.of("CONTAINS", "USES", "PUBLISHES", "SUBSCRIBES_TO"), "TABLE"),
+                view("pim-data-design", "Data Design", "DATA_DESIGN", "data",
+                        List.of("DataStore", "ObjectStore", "DataModel", "DataField",
+                                "AccessPattern", "IndexCandidate", "DataAccess", "Schema",
+                                "Function", "ApiRoute", "DataProtectionPolicy", "RetentionPolicy",
+                                "BackupPolicy"),
+                        List.of("DataStore", "ObjectStore", "Schema", "Function",
+                                "DataProtectionPolicy", "RetentionPolicy", "BackupPolicy"),
+                        List.of("READS", "WRITES", "DATA_ACCESS", "CONTAINS", "USES",
+                                "ATTACHED_TO"), "TABLE"),
+                view("pim-integration-events", "Integration and Event Channels",
+                        "INTEGRATION_EVENTS", "integration",
+                        List.of("Queue", "Topic", "EventBus", "Schedule", "Subscription",
+                                "EventRoutingRule", "RequestResponseFlow", "EventFlow",
+                                "MessageFlow", "PubSubFlow", "OrchestrationFlow",
+                                "ExternalIntegrationFlow", "EventType", "Function", "Workflow",
+                                "ExternalAdapter"),
+                        List.of("Queue", "Topic", "EventBus", "Schedule", "EventType",
+                                "Function", "Workflow", "ExternalAdapter"),
+                        List.of("PUBLISHES", "SUBSCRIBES_TO", "ROUTES_TO", "INVOKES",
+                                "EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB", "ORCHESTRATES",
+                                "EXTERNAL_CALL", "DEAD_LETTER"), "EVENT_FLOW"),
+                view("pim-workflow-designer", "Workflow Designer", "WORKFLOW_DESIGNER",
+                        "workflow",
+                        List.of("Workflow", "WorkflowState", "WorkflowTransition",
+                                "ErrorHandler", "CompensationPolicy", "Function",
+                                "ExternalAdapter", "RetryPolicy", "ResiliencePolicy",
+                                "ObservabilityConfig", "IdempotencyPolicy"),
+                        List.of("Workflow", "Function", "ExternalAdapter", "ResiliencePolicy",
+                                "ObservabilityConfig", "IdempotencyPolicy"),
+                        List.of("TRANSITION", "INVOKES", "EXTERNAL_CALL", "ORCHESTRATES",
+                                "CONTAINS", "ATTACHED_TO"), "PROCESS"),
+                view("pim-security-access", "Security and Access", "SECURITY_ACCESS",
+                        "security",
+                        List.of("IdentityProvider", "Principal", "Permission", "Api",
+                                "ApiRoute", "Function", "Secret", "DataStore", "ObjectStore",
+                                "ExternalAdapter", "Queue", "Topic", "EventBus", "Schedule",
+                                "Workflow", "WorkflowState", "SecurityPolicy", "AuthPolicy",
+                                "AuthorizationPolicy"),
+                        List.of("IdentityProvider", "Principal", "Api", "Function", "Secret",
+                                "DataStore", "ObjectStore", "Workflow", "SecurityPolicy",
+                                "AuthPolicy", "AuthorizationPolicy"),
+                        List.of("PERMISSION", "AUTHORIZED_BY", "ATTACHED_TO", "CONSTRAINS",
+                                "USES_SECRET"), "GOVERNANCE"),
+                view("pim-deployment-environment", "Deployment and Environment",
+                        "DEPLOYMENT_ENVIRONMENT", "deployment",
+                        List.of("DeploymentUnit", "ServerlessService", "Environment",
+                                "ImplementationProfile", "Function", "Api", "Workflow",
+                                "ConfigurationSet", "ConfigParameter", "EnvironmentVariable",
+                                "Secret", "Queue", "Topic", "EventBus", "Schedule",
+                                "DataStore", "ObjectStore", "ExternalAdapter"),
+                        List.of("DeploymentUnit", "ServerlessService", "Environment",
+                                "ImplementationProfile", "ConfigurationSet", "Secret"),
+                        List.of("DEPLOYS", "DEPLOYS_TO", "OWNS", "HAS_ENV", "ATTACHED_TO"),
+                        "MATRIX"),
+                view("pim-policy-operations", "Policy and Operations", "POLICY_OPERATIONS",
+                        "policy",
+                        List.of("ArchitecturePolicy", "DataProtectionPolicy", "CompliancePolicy",
+                                "ResiliencePolicy", "RetryPolicy", "DeadLetterPolicy",
+                                "TimeoutPolicy", "IdempotencyPolicy", "ConcurrencyPolicy",
+                                "RateLimitPolicy", "BatchPolicy", "OrderingPolicy",
+                                "CachePolicy", "BackupPolicy", "RetentionPolicy", "CostPolicy",
+                                "ObservabilityConfig", "LoggingPolicy", "MetricPolicy",
+                                "MetricDimension", "TracingPolicy", "AlertPolicy", "Slo",
+                                "CorsPolicy", "Api", "Function", "DataStore", "Queue",
+                                "Workflow"),
+                        List.of("DataProtectionPolicy", "CompliancePolicy", "ResiliencePolicy",
+                                "TimeoutPolicy", "IdempotencyPolicy", "ConcurrencyPolicy",
+                                "RateLimitPolicy", "BatchPolicy", "OrderingPolicy",
+                                "CachePolicy", "BackupPolicy", "RetentionPolicy", "CostPolicy",
+                                "ObservabilityConfig", "CorsPolicy"),
+                        List.of("ATTACHED_TO", "CONSTRAINS", "DEAD_LETTER", "CONTAINS"),
+                        "TABLE"),
+                view("pim-configuration-secrets", "Configuration and Secrets",
+                        "CONFIGURATION_SECRETS", "configuration",
+                        List.of("ConfigurationSet", "ConfigParameter", "EnvironmentVariable",
+                                "Secret", "CredentialRequirement", "Environment", "Function",
+                                "ExternalAdapter", "AuthPolicy"),
+                        List.of("ConfigurationSet", "Secret", "Environment", "Function",
+                                "ExternalAdapter"),
+                        List.of("HAS_ENV", "USES_SECRET", "ATTACHED_TO", "DEPLOYS_TO"),
+                        "TABLE"),
+                view("pim-readiness-traceability", "Readiness and Traceability",
+                        "READINESS_TRACEABILITY", "readiness",
+                        List.of("TraceModel", "TraceLink", "ProductionReadinessAssessment",
+                                "ReadinessFinding", "ReadinessCheck", "ManualDecision",
+                                "ServerlessService", "Function", "Api", "Workflow",
+                                "DataStore", "Queue", "ArchitecturePolicy"),
+                        List.of("TraceModel", "ProductionReadinessAssessment"),
+                        List.of("TRACE", "ATTACHED_TO", "CONSTRAINS"), "MATRIX"));
+    }
+
+    private List<Map<String, Object>> pimConstraints() {
+        return List.of(
+                Map.of("type", "PIMModel", "requiredAny",
+                        List.of("services", "deploymentUnits", "environments", "functions"),
+                        "message",
+                        "PIM models need a service, deployment unit, environment and function."),
+                Map.of("type", "Function", "requiredAny", List.of("functionKind", "contract"),
+                        "message", "Functions need a function kind and contract."),
+                Map.of("type", "Api", "requiredAny", List.of("apiStyle", "routes"), "message",
+                        "APIs need a style and at least one route."),
+                Map.of("type", "ApiRoute", "requiredAny", List.of("method", "pathTemplate"),
+                        "message", "API routes need method and path template."),
+                Map.of("type", "DataStore", "requiredAny",
+                        List.of("storeKind", "consistencyNeed", "ownedDataModels",
+                                "accessPatterns"), "message",
+                        "Data stores need a kind, consistency need, data model and access pattern."),
+                Map.of("type", "Workflow", "requiredAny",
+                        List.of("workflowKind", "states", "startState", "endStates"), "message",
+                        "Workflows need states, one start state and at least one end state."),
+                Map.of("type", "EventType", "requiredAny", List.of("semanticName", "schema"),
+                        "message", "Event types need a semantic name and schema."),
+                Map.of("type", "Trigger", "requiredAny",
+                        List.of("source", "invocationMode"), "message",
+                        "Triggers need an invocation source and mode."),
+                Map.of("type", "DataAccess", "requiredAny", List.of("mode", "function", "store"),
+                        "message", "Data access edges need mode, function and store."),
+                Map.of("type", "Permission", "requiredAny",
+                        List.of("effect", "targetResource"), "message",
+                        "Permissions need an effect and protected target."));
+    }
+
+    private Map<String, Object> pimRootTemplate() {
+        Map<String, Object> root = new LinkedHashMap<>(defaultRootTemplate());
+        root.put("modelLevel", "PIM");
+        root.put("eClass", "PIMModel");
+        root.put("architectureStyle", "EVENT_DRIVEN_SERVERLESS");
+        root.put("domainName", "");
+        root.put("architectureRationale", "");
+        root.put("defaultCorrelationIdName", "correlationId");
+        root.put("providerIndependent", true);
+        root.put("services", List.of());
+        root.put("deploymentUnits", List.of());
+        root.put("environments", List.of());
+        root.put("schemas", List.of());
+        root.put("functions", List.of());
+        root.put("apis", List.of());
+        root.put("eventTypes", List.of());
+        root.put("channels", List.of());
+        root.put("schedules", List.of());
+        root.put("triggers", List.of());
+        root.put("dataStores", List.of());
+        root.put("objectStores", List.of());
+        root.put("dataAccesses", List.of());
+        root.put("workflows", List.of());
+        root.put("externalAdapters", List.of());
+        root.put("identityProviders", List.of());
+        root.put("principals", List.of());
+        root.put("policies", List.of());
+        root.put("flows", List.of());
+        root.put("configurations", List.of());
+        root.put("secrets", List.of());
+        root.put("traceModel", null);
+        root.put("readiness", null);
+        root.put("implementationProfile", null);
+        return root;
+    }
+
     private record CimMetamodel(List<Map<String, Object>> elements,
                                 List<Map<String, Object>> relationshipRules,
                                 List<Map<String, Object>> semanticReferenceRules) {
+
+    }
+
+    private record EcoreClass(String packageName, String name, List<String> superTypes,
+                              boolean abstractType, List<EmfaticFeature> attributes,
+                              List<EmfaticFeature> references) {
 
     }
 

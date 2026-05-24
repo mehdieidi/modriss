@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -22,6 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.emf.common.util.Enumerator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EAttribute;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EClassifier;
+import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.emf.ecore.EEnum;
+import org.eclipse.emf.ecore.EEnumLiteral;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
@@ -56,6 +62,7 @@ final class XmiModelImportService {
             try (ByteArrayInputStream input = new ByteArrayInputStream(bytes)) {
                 resource.load(input, Map.of());
             }
+            EcoreUtil.resolveAll(resourceSet);
             EObject root = resource.getContents().stream()
                     .filter(EObject.class::isInstance)
                     .map(EObject.class::cast)
@@ -74,6 +81,30 @@ final class XmiModelImportService {
                     ? ex.getClass().getSimpleName()
                     : ex.getMessage();
             throw new PlatformException(400, "Uploaded model is not valid XMI: " + detail);
+        }
+    }
+
+    byte[] exportModel(ModelLevel level, JsonNode modelJson) {
+        try {
+            ResourceSet resourceSet = newResourceSet();
+            registerMetamodel(resourceSet, level);
+            Resource resource = resourceSet.createResource(URI.createURI(
+                    "memory:/export-" + level.apiName() + ".xmi"));
+            ExportContext context = new ExportContext(resourceSet);
+            EObject root = context.createContainedObject(modelJson, null);
+            if (root == null) {
+                throw new PlatformException(400, "Model JSON does not contain a valid root.");
+            }
+            resource.getContents().add(root);
+            context.resolveReferences();
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            resource.save(output, Map.of());
+            return output.toByteArray();
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new PlatformException(400, "Model JSON cannot be exported as XMI: "
+                    + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()));
         }
     }
 
@@ -118,6 +149,13 @@ final class XmiModelImportService {
         ePackage.getESubpackages().forEach(child -> registerPackage(resourceSet, child));
     }
 
+    private String scalarText(JsonNode value) {
+        if (value == null || value.isNull() || value.isContainerNode()) {
+            return "";
+        }
+        return value.asText("").trim();
+    }
+
     private ObjectNode serializeContainedObject(EObject object, SerializationContext context) {
         if (!context.beginSerialization(object)) {
             return null;
@@ -129,10 +167,10 @@ final class XmiModelImportService {
             node.put("id", objectId);
 
             for (EStructuralFeature feature : object.eClass().getEAllStructuralFeatures()) {
-                if (!object.eIsSet(feature)) {
-                    continue;
-                }
                 if (feature instanceof EAttribute attribute) {
+                    if (!object.eIsSet(feature)) {
+                        continue;
+                    }
                     JsonNode value = attributeValueNode(object, attribute);
                     if (value != null) {
                         node.set(attribute.getName(), value);
@@ -226,6 +264,223 @@ final class XmiModelImportService {
             return enumerator.getLiteral() != null ? enumerator.getLiteral() : enumerator.getName();
         }
         return value;
+    }
+
+    private record PendingReference(EObject owner, EReference reference, JsonNode value) {
+
+    }
+
+    private final class ExportContext {
+
+        private final ResourceSet resourceSet;
+        private final Map<String, EObject> objectsById = new java.util.LinkedHashMap<>();
+        private final List<PendingReference> pendingReferences = new ArrayList<>();
+
+        ExportContext(ResourceSet resourceSet) {
+            this.resourceSet = resourceSet;
+        }
+
+        EObject createContainedObject(JsonNode node, EClass expectedType) {
+            if (node == null || !node.isObject()) {
+                return null;
+            }
+            EClass eClass = eClassFor(node.path("eClass").asText(node.path("type").asText("")),
+                    expectedType);
+            EObject object = eClass.getEPackage().getEFactoryInstance().create(eClass);
+            String objectId = scalarText(node.get("id"));
+            if (!objectId.isBlank()) {
+                objectsById.put(objectId, object);
+            }
+            for (EStructuralFeature feature : eClass.getEAllStructuralFeatures()) {
+                if (feature.isDerived() || !feature.isChangeable()) {
+                    continue;
+                }
+                JsonNode value = node.get(feature.getName());
+                if (value == null || value.isNull()) {
+                    continue;
+                }
+                if (feature instanceof EAttribute attribute) {
+                    setAttribute(object, attribute, value);
+                    continue;
+                }
+                if (feature instanceof EReference reference) {
+                    if (reference.isContainment()) {
+                        setContainment(object, reference, value);
+                    } else if (!reference.isContainer()) {
+                        pendingReferences.add(new PendingReference(object, reference, value));
+                    }
+                }
+            }
+            applySafeAttributeDefaults(object);
+            return object;
+        }
+
+        private void applySafeAttributeDefaults(EObject object) {
+            for (EAttribute attribute : object.eClass().getEAllAttributes()) {
+                if (attribute.isMany() || object.eIsSet(attribute)) {
+                    continue;
+                }
+                EDataType type = attribute.getEAttributeType();
+                if (type == EcorePackage.Literals.EBOOLEAN
+                        || type == EcorePackage.Literals.EBOOLEAN_OBJECT) {
+                    object.eSet(attribute, false);
+                }
+            }
+        }
+
+        private void setContainment(EObject owner, EReference reference, JsonNode value) {
+            if (reference.isMany()) {
+                @SuppressWarnings("unchecked")
+                List<EObject> target = (List<EObject>) owner.eGet(reference);
+                if (value.isArray()) {
+                    value.forEach(item -> {
+                        EObject child = createContainedObject(item,
+                                reference.getEReferenceType());
+                        if (child != null) {
+                            target.add(child);
+                        }
+                    });
+                }
+                return;
+            }
+            EObject child = createContainedObject(value, reference.getEReferenceType());
+            if (child != null) {
+                owner.eSet(reference, child);
+            }
+        }
+
+        private void setAttribute(EObject object, EAttribute attribute, JsonNode value) {
+            if (attribute.isMany()) {
+                @SuppressWarnings("unchecked")
+                List<Object> target = (List<Object>) object.eGet(attribute);
+                if (value.isArray()) {
+                    value.forEach(item -> {
+                        Object converted = attributeValue(attribute, item);
+                        if (converted != null) {
+                            target.add(converted);
+                        }
+                    });
+                }
+                return;
+            }
+            Object converted = attributeValue(attribute, value);
+            if (converted != null) {
+                object.eSet(attribute, converted);
+            }
+        }
+
+        private Object attributeValue(EAttribute attribute, JsonNode value) {
+            EDataType type = attribute.getEAttributeType();
+            if (type instanceof EEnum eEnum) {
+                String literal = scalarText(value);
+                EEnumLiteral enumLiteral = eEnum.getEEnumLiteral(literal);
+                if (enumLiteral == null) {
+                    enumLiteral = eEnum.getEEnumLiteralByLiteral(literal);
+                }
+                if (enumLiteral == null) {
+                    return null;
+                }
+                return enumLiteral.getInstance();
+            }
+            String text = scalarText(value);
+            if (text.isBlank() && !value.isTextual()) {
+                text = value.asText();
+            }
+            try {
+                return type.getEPackage().getEFactoryInstance().createFromString(type, text);
+            } catch (RuntimeException ex) {
+                return null;
+            }
+        }
+
+        void resolveReferences() {
+            for (PendingReference pending : pendingReferences) {
+                if (pending.reference().isMany()) {
+                    @SuppressWarnings("unchecked")
+                    List<EObject> target = (List<EObject>) pending.owner().eGet(
+                            pending.reference());
+                    referenceIds(pending.value()).stream()
+                            .map(objectsById::get)
+                            .filter(candidate -> candidate != null)
+                            .forEach(target::add);
+                    continue;
+                }
+                referenceIds(pending.value()).stream()
+                        .map(objectsById::get)
+                        .filter(candidate -> candidate != null)
+                        .findFirst()
+                        .ifPresent(target -> pending.owner().eSet(pending.reference(), target));
+            }
+        }
+
+        private List<String> referenceIds(JsonNode value) {
+            if (value == null || value.isNull()) {
+                return List.of();
+            }
+            if (value.isArray()) {
+                List<String> ids = new ArrayList<>();
+                value.forEach(item -> {
+                    String id = referenceId(item);
+                    if (!id.isBlank()) {
+                        ids.add(id);
+                    }
+                });
+                return ids;
+            }
+            String id = referenceId(value);
+            return id.isBlank() ? List.of() : List.of(id);
+        }
+
+        private String referenceId(JsonNode value) {
+            if (value.isTextual() || value.isNumber() || value.isBoolean()) {
+                return value.asText("");
+            }
+            if (value.isObject()) {
+                return scalarText(value.get("$ref")).isBlank()
+                        ? scalarText(value.get("id"))
+                        : scalarText(value.get("$ref"));
+            }
+            return "";
+        }
+
+        private EClass eClassFor(String requestedType, EClass expectedType) {
+            if (requestedType != null && !requestedType.isBlank()) {
+                EClass found = findEClass(requestedType);
+                if (found != null) {
+                    return found;
+                }
+            }
+            if (expectedType != null) {
+                return expectedType;
+            }
+            throw new PlatformException(400, "Unknown model element type: " + requestedType);
+        }
+
+        private EClass findEClass(String name) {
+            for (Object value : resourceSet.getPackageRegistry().values()) {
+                if (value instanceof EPackage ePackage) {
+                    EClass found = findEClass(ePackage, name);
+                    if (found != null) {
+                        return found;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private EClass findEClass(EPackage ePackage, String name) {
+            EClassifier classifier = ePackage.getEClassifier(name);
+            if (classifier instanceof EClass eClass) {
+                return eClass;
+            }
+            for (EPackage child : ePackage.getESubpackages()) {
+                EClass found = findEClass(child, name);
+                if (found != null) {
+                    return found;
+                }
+            }
+            return null;
+        }
     }
 
     private final class SerializationContext {

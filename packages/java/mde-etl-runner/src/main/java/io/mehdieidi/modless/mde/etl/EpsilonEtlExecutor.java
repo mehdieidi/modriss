@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.epsilon.common.module.ModuleElement;
 import org.eclipse.epsilon.common.parse.problem.ParseProblem;
 import org.eclipse.epsilon.common.util.StringProperties;
@@ -228,11 +229,9 @@ public final class EpsilonEtlExecutor {
         properties.put(Model.PROPERTY_STOREONDISPOSAL,
                 Boolean.toString(modelConfiguration.storeOnDisposal()));
         properties.put(Model.PROPERTY_READONLY, Boolean.toString(modelConfiguration.readOnly()));
-        properties.put(EmfModel.PROPERTY_IS_METAMODEL_FILE_BASED, "true");
-        properties.put(EmfModel.PROPERTY_MODEL_FILE,
-                modelConfiguration.modelFile().toAbsolutePath().toString());
-        properties.put(EmfModel.PROPERTY_METAMODEL_FILE,
-                joinPaths(modelConfiguration.metamodelFiles()));
+        properties.put(EmfModel.PROPERTY_MODEL_URI, fileUri(modelConfiguration.modelFile()));
+        properties.put(EmfModel.PROPERTY_FILE_BASED_METAMODEL_URI,
+                joinFileUris(modelConfiguration.metamodelFiles()));
         properties.put(EmfModel.PROPERTY_VALIDATE, Boolean.toString(modelConfiguration.validate()));
         model.load(properties);
         return model;
@@ -285,11 +284,15 @@ public final class EpsilonEtlExecutor {
         }
     }
 
-    private String joinPaths(List<Path> paths) {
+    private String joinFileUris(List<Path> paths) {
         return paths.stream()
-                .map(path -> path.toAbsolutePath().toString())
+                .map(this::fileUri)
                 .reduce((left, right) -> left + "," + right)
                 .orElse("");
+    }
+
+    private String fileUri(Path path) {
+        return URI.createFileURI(path.toAbsolutePath().normalize().toString()).toString();
     }
 
     private void configureStreams(

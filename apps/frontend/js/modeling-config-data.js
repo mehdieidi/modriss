@@ -203,7 +203,7 @@ export function modelingSemanticReferenceRules(typeKey = state.activeType) {
   return modelingLevelConfig(typeKey).semanticReferenceRules || [];
 }
 
-function matchesRuleType(expected, actual) {
+export function modelingTypeMatches(typeKey, expected, actual) {
   if (!expected || expected === "*") {
     return true;
   }
@@ -230,6 +230,16 @@ function matchesRuleType(expected, actual) {
     DecisionStep: ["ProcessStep"],
     WaitStep: ["ProcessStep"]
   };
+  try {
+    const definition = modelingElementDefinition(typeKey, actual);
+    const configured = Array.isArray(definition?.supertypes)
+        ? definition.supertypes.map(String) : [];
+    if (configured.includes(expected)) {
+      return true;
+    }
+  } catch {
+    // fall through to the bundled CIM compatibility table
+  }
   return (supertypes[actual] || []).includes(expected);
 }
 
@@ -344,7 +354,8 @@ const CIM_REFERENCE_RULES = Object.freeze([
 function cimReferenceKinds(sourceType, targetType) {
   const kinds = [];
   for (const [source, target, ruleKinds] of CIM_REFERENCE_RULES) {
-    if (matchesRuleType(source, sourceType) && matchesRuleType(target,
+    if (modelingTypeMatches("cim", source, sourceType) && modelingTypeMatches(
+        "cim", target,
         targetType)) {
       kinds.push(...ruleKinds);
     }
@@ -361,8 +372,8 @@ export function modelingLegalKinds(typeKey, sourceType, targetType) {
         && !isMethodologyWildcardExempt(rule)) {
       continue;
     }
-    if (matchesRuleType(rule.sourceType, sourceType)
-        && matchesRuleType(rule.targetType, targetType)
+    if (modelingTypeMatches(typeKey, rule.sourceType, sourceType)
+        && modelingTypeMatches(typeKey, rule.targetType, targetType)
         && Array.isArray(rule.allowedKinds)) {
       matched.push(rule);
     }

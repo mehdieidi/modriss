@@ -137,3 +137,13 @@ operation mapRiskSeverity(impact, probability) {
   if (i.contains("medium") or p.contains("medium")) return KERNEL!Severity#WARNING;
   return KERNEL!Severity#INFO;
 }
+
+operation mapSeverity(severity) {
+  var value = severity.asString();
+  if (value = "BLOCKER") return KERNEL!Severity#BLOCKER;
+  if (value = "CRITICAL") return KERNEL!Severity#CRITICAL;
+  if (value = "ERROR") return KERNEL!Severity#ERROR;
+  if (value = "WARNING") return KERNEL!Severity#WARNING;
+  if (value = "INFO") return KERNEL!Severity#INFO;
+  return KERNEL!Severity#WARNING;
+}

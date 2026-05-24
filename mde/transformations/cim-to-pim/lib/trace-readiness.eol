@@ -67,13 +67,50 @@ operation traceGenerated(source, target, ruleId : String, confidence : String) {
   addTrace(source, target, ruleId, KERNEL!TraceLinkType#TRANSFORMS_TO, confidence);
 }
 
+operation isTargetModelReference(element) {
+  if (element.isUndefined()) {
+    return false;
+  }
+  if (element.eClass().isUndefined()) {
+    return false;
+  }
+  if (element.eClass().ePackage.isUndefined()) {
+    return false;
+  }
+  if (element.eClass().ePackage.nsURI.isUndefined()) {
+    return false;
+  }
+  var nsUri = element.eClass().ePackage.nsURI.asString();
+  if (nsUri = "https://modless.org/kernel/1.0") {
+    return true;
+  }
+  return nsUri.startsWith("https://modless.org/pim/");
+}
+
+operation appendTargetAffectedElements(owner, affected) {
+  if (owner.isUndefined() or affected.isUndefined()) {
+    return;
+  }
+  for (element in affected) {
+    if (isTargetModelReference(element) and not owner.affectedElements.includes(element)) {
+      owner.affectedElements.add(element);
+    }
+  }
+}
+
 operation manualDecision(ruleId : String, question : String, severity, blocking : Boolean, affected) {
   var readiness = readinessRoot();
   if (readiness.isUndefined()) {
     return null;
   }
+  var id = newId("decision", ruleId + "_" + question);
+  var existing = readiness.manualDecisions.select(d | d.id = id).first();
+  if (existing.isDefined()) {
+    appendTargetAffectedElements(existing, affected);
+    return existing;
+  }
   var d = new KERNEL!ManualDecision;
-  d.id = newId("decision", ruleId + "_" + question);
+  d.id = id;
   var shortQuestion = question;
   if (shortQuestion.length() > 80) {
     shortQuestion = shortQuestion.substring(0, 80);
@@ -91,9 +128,7 @@ operation manualDecision(ruleId : String, question : String, severity, blocking 
   d.generatedByTransformation = true;
   d.manuallyMaintained = false;
   d.reviewStatus = "review-required";
-  if (affected.isDefined()) {
-    d.affectedElements.addAll(affected);
-  }
+  appendTargetAffectedElements(d, affected);
   readiness.manualDecisions.add(d);
   return d;
 }
@@ -103,8 +138,14 @@ operation readinessFinding(ruleId : String, findingType, severity, message : Str
   if (readiness.isUndefined()) {
     return null;
   }
+  var id = newId("finding", ruleId + "_" + message);
+  var existing = readiness.findings.select(f | f.id = id).first();
+  if (existing.isDefined()) {
+    appendTargetAffectedElements(existing, affected);
+    return existing;
+  }
   var f = new KERNEL!ReadinessFinding;
-  f.id = newId("finding", ruleId + "_" + message);
+  f.id = id;
   f.name = "Finding - " + ruleId;
   f.findingType = findingType;
   f.severity = severity;
@@ -114,9 +155,7 @@ operation readinessFinding(ruleId : String, findingType, severity, message : Str
   f.blocking = blocking;
   f.generatedByTransformation = true;
   f.manuallyMaintained = false;
-  if (affected.isDefined()) {
-    f.affectedElements.addAll(affected);
-  }
+  appendTargetAffectedElements(f, affected);
   readiness.findings.add(f);
   return f;
 }
@@ -126,8 +165,14 @@ operation readinessCheck(checkId : String, severity, passed : Boolean, message :
   if (readiness.isUndefined()) {
     return null;
   }
+  var id = newId("check", checkId);
+  var existing = readiness.checks.select(c | c.id = id).first();
+  if (existing.isDefined()) {
+    appendTargetAffectedElements(existing, affected);
+    return existing;
+  }
   var c = new KERNEL!ReadinessCheck;
-  c.id = newId("check", checkId);
+  c.id = id;
   c.name = checkId;
   c.checkId = checkId;
   c.severity = severity;
@@ -135,9 +180,7 @@ operation readinessCheck(checkId : String, severity, passed : Boolean, message :
   c.message = message;
   c.remediation = remediation;
   c.generatedByTransformation = true;
-  if (affected.isDefined()) {
-    c.affectedElements.addAll(affected);
-  }
+  appendTargetAffectedElements(c, affected);
   readiness.checks.add(c);
   return c;
 }

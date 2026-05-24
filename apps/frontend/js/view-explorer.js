@@ -46,14 +46,18 @@ const SPEC_VIEW_NAMES = {
     "Traceability Matrix"
   ],
   pim: [
-    "Serverless component diagram",
-    "API surface diagram",
-    "Event/message flow diagram",
-    "Workflow/state-machine diagram",
-    "Data access diagram",
-    "Security/permission diagram",
-    "Observability/resilience overlay",
-    "Deployment unit diagram"
+    "Architecture Overview",
+    "API Surface",
+    "Compute and Trigger",
+    "Contract Schema and Event",
+    "Data Design",
+    "Integration and Event Channels",
+    "Workflow Designer",
+    "Security and Access",
+    "Deployment and Environment",
+    "Policy and Operations",
+    "Configuration and Secrets",
+    "Readiness and Traceability"
   ],
   psm: [
     "AWS resource architecture diagram",

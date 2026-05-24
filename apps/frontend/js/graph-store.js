@@ -3,7 +3,8 @@ import {autoLayoutIfStacked, emptyDiagram, genId} from './utils.js';
 import {
   modelingElementDefinition,
   modelingLevelConfig,
-  modelingSemanticReferenceRules
+  modelingSemanticReferenceRules,
+  modelingTypeMatches
 } from './modeling-config-data.js';
 import {
   addReferenceValue,
@@ -15,6 +16,15 @@ import {
   removeReferenceValue,
   semanticEdgeObjectSpec
 } from './cim-model-utils.js';
+import {
+  pimRelationshipSemanticCopy,
+  pimSemanticEdgeObjectSpec,
+  pimSemanticElementsFromRoot,
+  pimSemanticRelationshipsFromRoot,
+  pimTypeMatches,
+  pimTypeOf,
+  populatePimRootContainments
+} from './pim-model-utils.js';
 
 const MODEL_LEVEL = {
   cim: "CIM",
@@ -30,7 +40,7 @@ const LEVEL_ALIASES = {
 
 const ROOT_SCOPE_TYPE = {
   cim: "CIMModel",
-  pim: "PimModel",
+  pim: "PIMModel",
   psm: "PsmModel"
 };
 
@@ -582,8 +592,10 @@ function isFocusView(view) {
       || String(view?.id || "").includes("-focus-");
 }
 
-function elementRecords(modelJson) {
-  const semanticElements = cimSemanticElementsFromRoot(modelJson);
+function elementRecords(modelJson, typeKey = state.activeType) {
+  const semanticElements = typeKey === "cim"
+      ? cimSemanticElementsFromRoot(modelJson)
+      : typeKey === "pim" ? pimSemanticElementsFromRoot(modelJson) : [];
   if (semanticElements.length) {
     const graphElements = Array.isArray(modelJson?.graph?.elements)
         ? modelJson.graph.elements : [];
@@ -624,8 +636,10 @@ function elementRecords(modelJson) {
   return [];
 }
 
-function relationshipRecords(modelJson) {
-  const semanticRelationships = cimSemanticRelationshipsFromRoot(modelJson);
+function relationshipRecords(modelJson, typeKey = state.activeType) {
+  const semanticRelationships = typeKey === "cim"
+      ? cimSemanticRelationshipsFromRoot(modelJson)
+      : typeKey === "pim" ? pimSemanticRelationshipsFromRoot(modelJson) : [];
   if (semanticRelationships.length) {
     const graphRelationships = Array.isArray(modelJson?.graph?.relationships)
         ? modelJson.graph.relationships : [];
@@ -750,14 +764,21 @@ function referenceIds(value) {
   return single ? [single] : [];
 }
 
-function matchesSemanticType(element, expectedType) {
+function matchesSemanticType(element, expectedType,
+    typeKey = state.activeType) {
   if (!element) {
     return false;
   }
-  return cimTypeMatches(element, expectedType);
+  if (typeKey === "cim") {
+    return cimTypeMatches(element, expectedType);
+  }
+  if (typeKey === "pim") {
+    return pimTypeMatches(element, expectedType);
+  }
+  return modelingTypeMatches(typeKey, expectedType, semanticType(element));
 }
 
-function synthesizeCimRefRelationships(graph) {
+function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
   const additions = [];
   const edgeKeys = new Set();
   graph.relationshipsById.forEach((relationship) => {
@@ -765,24 +786,24 @@ function synthesizeCimRefRelationships(graph) {
         `${relationship.sourceElementId}|${relationship.targetElementId}|${relationship.kind}`);
   });
 
-  let rules = CIM_REF_EDGE_RULES;
+  let rules = typeKey === "cim" ? CIM_REF_EDGE_RULES : [];
   try {
-    const configured = modelingSemanticReferenceRules("cim");
+    const configured = modelingSemanticReferenceRules(typeKey);
     if (configured.length) {
       rules = configured;
     }
   } catch {
-    rules = CIM_REF_EDGE_RULES;
+    rules = typeKey === "cim" ? CIM_REF_EDGE_RULES : [];
   }
 
   graph.elementsById.forEach((element) => {
     for (const rule of rules) {
-      if (!matchesSemanticType(element, rule.sourceType)) {
+      if (!matchesSemanticType(element, rule.sourceType, typeKey)) {
         continue;
       }
       for (const targetId of referenceIds(element?.[rule.feature])) {
         const target = graph.elementsById.get(targetId);
-        if (!matchesSemanticType(target, rule.targetType)) {
+        if (!matchesSemanticType(target, rule.targetType, typeKey)) {
           continue;
         }
         const kind = String(rule.kind || "REFERENCES");
@@ -794,7 +815,7 @@ function synthesizeCimRefRelationships(graph) {
         }
         edgeKeys.add(key);
         additions.push({
-          id: `ref-cim-${sanitizeIdPart(kind)}-${sanitizeIdPart(
+          id: `ref-${typeKey}-${sanitizeIdPart(kind)}-${sanitizeIdPart(
               sourceId)}-${sanitizeIdPart(destinationId)}`,
           kind,
           sourceElementId: sourceId,
@@ -892,7 +913,7 @@ function buildGraph(typeKey, modelJson) {
   const seenElements = new Set();
   const allowedTypes = configuredElementTypes(typeKey);
 
-  elementRecords(modelJson).forEach((element, index) => {
+  elementRecords(modelJson, typeKey).forEach((element, index) => {
     const normalized = normalizeElement(element, index);
     if (allowedTypes.size && !allowedTypes.has(normalized.eClass)) {
       return;
@@ -905,7 +926,7 @@ function buildGraph(typeKey, modelJson) {
     graph.elementsById.set(normalized.id, normalized);
   });
 
-  relationshipRecords(modelJson).forEach((relationship, index) => {
+  relationshipRecords(modelJson, typeKey).forEach((relationship, index) => {
     const normalized = normalizeRelationship(typeKey, relationship, index);
     if (!normalized.sourceElementId || !normalized.targetElementId) {
       return;
@@ -917,8 +938,8 @@ function buildGraph(typeKey, modelJson) {
     graph.relationshipsById.set(normalized.id, normalized);
   });
 
-  if (typeKey === "cim") {
-    synthesizeCimRefRelationships(graph);
+  if (typeKey === "cim" || typeKey === "pim") {
+    synthesizeSemanticRefRelationships(graph, typeKey);
   }
 
   safeArray(modelJson?.graph?.traceLinks || modelJson?.traceLinks).forEach(
@@ -1647,6 +1668,8 @@ export function serializeGraphAndViewsInto(root) {
   }));
   if (state.activeType === "cim") {
     populateCimRootContainments(root, state.graph);
+  } else if (state.activeType === "pim") {
+    populatePimRootContainments(root, state.graph);
   }
   return root;
 }
@@ -1730,7 +1753,7 @@ function setOppositeReference(sourceElement, targetElement, reference) {
       || !targetElement?.id) {
     return;
   }
-  const oppositeDefinition = referenceDefinition(cimTypeOf(targetElement),
+  const oppositeDefinition = referenceDefinition(semanticType(targetElement),
       opposite);
   const many = oppositeDefinition?.many !== false;
   addReferenceValue(targetElement, opposite, sourceElement.id, many);
@@ -1742,34 +1765,39 @@ function removeOppositeReference(sourceElement, targetElement, reference) {
       || !targetElement?.id) {
     return;
   }
-  const oppositeDefinition = referenceDefinition(cimTypeOf(targetElement),
+  const oppositeDefinition = referenceDefinition(semanticType(targetElement),
       opposite);
   const many = oppositeDefinition?.many !== false;
   removeReferenceValue(targetElement, opposite, sourceElement.id, many);
 }
 
-function configuredCimSemanticReferenceRules() {
+function configuredSemanticReferenceRules(typeKey = state.activeType) {
   try {
-    const configured = modelingSemanticReferenceRules("cim");
-    return configured.length ? configured : CIM_REF_EDGE_RULES;
+    const configured = modelingSemanticReferenceRules(typeKey);
+    if (configured.length) {
+      return configured;
+    }
   } catch {
-    return CIM_REF_EDGE_RULES;
+    // fall through
   }
+  return typeKey === "cim" ? CIM_REF_EDGE_RULES : [];
 }
 
-function ruleMatchesForward(rule, sourceElement, targetElement, kind) {
+function ruleMatchesForward(rule, sourceElement, targetElement, kind,
+    typeKey = state.activeType) {
   return String(rule?.kind || "").toUpperCase() === String(kind || "")
       .toUpperCase()
-      && cimTypeMatches(sourceElement, rule?.sourceType)
-      && cimTypeMatches(targetElement, rule?.targetType);
+      && matchesSemanticType(sourceElement, rule?.sourceType, typeKey)
+      && matchesSemanticType(targetElement, rule?.targetType, typeKey);
 }
 
-function ruleMatchesReverse(rule, sourceElement, targetElement, kind) {
+function ruleMatchesReverse(rule, sourceElement, targetElement, kind,
+    typeKey = state.activeType) {
   return Boolean(rule?.reverse)
       && String(rule?.kind || "").toUpperCase() === String(kind || "")
       .toUpperCase()
-      && cimTypeMatches(targetElement, rule?.sourceType)
-      && cimTypeMatches(sourceElement, rule?.targetType);
+      && matchesSemanticType(targetElement, rule?.sourceType, typeKey)
+      && matchesSemanticType(sourceElement, rule?.targetType, typeKey);
 }
 
 function semanticRuleSpecificity(rule) {
@@ -1777,12 +1805,14 @@ function semanticRuleSpecificity(rule) {
       + (rule?.targetType && rule.targetType !== "*" ? 1 : 0);
 }
 
-function findCimReferenceRule(sourceElement, targetElement, kind) {
+function findSemanticReferenceRule(sourceElement, targetElement, kind,
+    typeKey = state.activeType) {
   const matches = [];
-  configuredCimSemanticReferenceRules().forEach((rule) => {
-    if (ruleMatchesForward(rule, sourceElement, targetElement, kind)) {
+  configuredSemanticReferenceRules(typeKey).forEach((rule) => {
+    if (ruleMatchesForward(rule, sourceElement, targetElement, kind, typeKey)) {
       matches.push({rule, reversedVisual: false});
-    } else if (ruleMatchesReverse(rule, sourceElement, targetElement, kind)) {
+    } else if (ruleMatchesReverse(rule, sourceElement, targetElement, kind,
+        typeKey)) {
       matches.push({rule, reversedVisual: true});
     }
   });
@@ -1801,15 +1831,16 @@ function removePreviousSemanticReference(edge, previous) {
   if (!sourceElement || !targetElement) {
     return;
   }
-  const reference = referenceDefinition(cimTypeOf(sourceElement),
+  const reference = referenceDefinition(semanticType(sourceElement),
       previous.feature);
   const many = reference?.many !== false;
   removeReferenceValue(sourceElement, previous.feature, targetElement.id, many);
   removeOppositeReference(sourceElement, targetElement, reference);
 }
 
-function applyCimSemanticReference(edge, previous = null) {
-  if (state.activeType !== "cim" || !edge?.sourceId || !edge?.targetId) {
+function applySemanticReference(edge, previous = null) {
+  if (!["cim", "pim"].includes(state.activeType) || !edge?.sourceId
+      || !edge?.targetId) {
     return null;
   }
   const visualSource = state.graph.elementsById.get(edge.sourceId);
@@ -1817,7 +1848,8 @@ function applyCimSemanticReference(edge, previous = null) {
   if (!visualSource || !visualTarget) {
     return null;
   }
-  const matched = findCimReferenceRule(visualSource, visualTarget, edge.kind);
+  const matched = findSemanticReferenceRule(visualSource, visualTarget,
+      edge.kind, state.activeType);
   if (!matched?.rule?.feature) {
     return null;
   }
@@ -1836,7 +1868,7 @@ function applyCimSemanticReference(edge, previous = null) {
           || previousSignature.feature !== feature)) {
     removePreviousSemanticReference(edge, previousSignature);
   }
-  const reference = referenceDefinition(cimTypeOf(semanticSource), feature);
+  const reference = referenceDefinition(semanticType(semanticSource), feature);
   const many = reference?.many !== false;
   addReferenceValue(semanticSource, feature, semanticTarget.id, many);
   setOppositeReference(semanticSource, semanticTarget, reference);
@@ -1884,6 +1916,95 @@ function materializeCimSemanticEdgeObject(edge, relationship) {
   };
 }
 
+function materializePimSemanticEdgeObject(edge, relationship) {
+  if (state.activeType !== "pim" || !edge?.sourceId || !edge?.targetId) {
+    return relationship;
+  }
+  const source = state.graph.elementsById.get(edge.sourceId);
+  const target = state.graph.elementsById.get(edge.targetId);
+  const spec = pimSemanticEdgeObjectSpec(edge.kind, pimTypeOf(source),
+      pimTypeOf(target));
+  if (!spec) {
+    return relationship;
+  }
+  const existing = state.graph.relationshipsById.get(edge.id) || {};
+  const materialized = {
+    ...spec.defaults,
+    ...existing,
+    ...relationship,
+    eClass: spec.eClass,
+    source: edge.sourceId,
+    target: edge.targetId,
+    sourceElementId: edge.sourceId,
+    targetElementId: edge.targetId,
+    name: existing.name || relationship.name || `${spec.eClass} ${edge.id}`,
+    rootFeature: spec.rootFeature,
+    visualOnly: false
+  };
+  if (spec.eClass === "WorkflowTransition" && source?.__ownerId
+      && source.__ownerId === target?.__ownerId) {
+    materialized.__ownerId = source.__ownerId;
+    materialized.__containmentFeature = "transitions";
+  } else if (spec.eClass === "Permission") {
+    materialized.__ownerId = source.id;
+    materialized.__containmentFeature = "permissions";
+  } else if (spec.eClass === "Subscription") {
+    materialized.__ownerId = source.id;
+    materialized.__containmentFeature = "subscriptions";
+  }
+  const semantic = pimRelationshipSemanticCopy(materialized, state.graph);
+  Object.assign(materialized, semantic, {
+    source: edge.sourceId,
+    target: edge.targetId,
+    sourceElementId: edge.sourceId,
+    targetElementId: edge.targetId
+  });
+  materializePimSideEffects(materialized, source, target);
+  return materialized;
+}
+
+function materializePimSideEffects(relationship, source, target) {
+  if (!source?.id || !target?.id) {
+    return;
+  }
+  const type = pimTypeOf(relationship);
+  if (type === "DataAccess") {
+    const mode = String(relationship.mode || "").toUpperCase();
+    if (mode === "READ" || mode === "READ_WRITE") {
+      addReferenceValue(source, "reads", target.id, true);
+    }
+    if (mode === "WRITE" || mode === "READ_WRITE" || mode === "APPEND"
+        || mode === "DELETE") {
+      addReferenceValue(source, "writes", target.id, true);
+    }
+  } else if (type === "Trigger") {
+    addReferenceValue(target, "triggers", relationship.id, true);
+  } else if (type === "Subscription") {
+    addReferenceValue(source, "subscriptions", relationship.id, true);
+  } else if (type === "Permission") {
+    addReferenceValue(source, "permissions", relationship.id, true);
+  }
+}
+
+function removePimMaterializedSideEffects(relationship) {
+  if (state.activeType !== "pim" || !relationship) {
+    return;
+  }
+  const source = state.graph.elementsById.get(relationship.sourceElementId);
+  const target = state.graph.elementsById.get(relationship.targetElementId);
+  const type = pimTypeOf(relationship);
+  if (type === "DataAccess" && source && target) {
+    removeReferenceValue(source, "reads", target.id, true);
+    removeReferenceValue(source, "writes", target.id, true);
+  } else if (type === "Trigger" && target) {
+    removeReferenceValue(target, "triggers", relationship.id, true);
+  } else if (type === "Subscription" && source) {
+    removeReferenceValue(source, "subscriptions", relationship.id, true);
+  } else if (type === "Permission" && source) {
+    removeReferenceValue(source, "permissions", relationship.id, true);
+  }
+}
+
 export function addConnectionToGraphAndActiveView(edge) {
   if (!edge?.id || edge.bundle) {
     return;
@@ -1905,12 +2026,13 @@ export function addConnectionToGraphAndActiveView(edge) {
     sourceElementId: edge.sourceId,
     targetElementId: edge.targetId
   }, state.graph.relationshipsById.size);
-  relationship.sourceType = cimTypeOf(state.graph.elementsById.get(
+  relationship.sourceType = semanticType(state.graph.elementsById.get(
       edge.sourceId)) || relationship.sourceType;
-  relationship.targetType = cimTypeOf(state.graph.elementsById.get(
+  relationship.targetType = semanticType(state.graph.elementsById.get(
       edge.targetId)) || relationship.targetType;
   relationship = materializeCimSemanticEdgeObject(edge, relationship);
-  const semanticReference = applyCimSemanticReference({
+  relationship = materializePimSemanticEdgeObject(edge, relationship);
+  const semanticReference = applySemanticReference({
         ...relationship,
         sourceId: edge.sourceId,
         targetId: edge.targetId
@@ -1952,6 +2074,7 @@ export function removeRelationshipFromGraph(relationshipId) {
       feature: relationship.semanticFeature
     });
   }
+  removePimMaterializedSideEffects(relationship);
   state.graph.relationshipsById.delete(id);
   state.views.byId.forEach((view) => {
     view.edges = safeArray(view.edges).filter((edge) => edge.relationshipId

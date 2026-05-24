@@ -89,6 +89,72 @@ final class CimToPimEtlRegressionTest {
     }
 
     @Test
+    void transformsClimateReliefSampleThroughDefaultProfileWithSpecCompletenessShape()
+            throws Exception {
+        Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
+        Path sampleModel = REPOSITORY_ROOT.resolve(
+                "mde/samples/climate-relief-grants-cim-sample.xmi");
+        Path pimModel = tempDir.resolve("climate-relief-grants-pim.xmi");
+
+        EtlExecutionReport report = executeOrFail(CimToPimDefaults.request(
+                REPOSITORY_ROOT, sampleModel, pimModel, true, true));
+
+        assertEquals(EtlExecutionStatus.SUCCEEDED, report.status(),
+                report.diagnostics().toString());
+        assertTrue(Files.isRegularFile(pimModel),
+                "The default profile should persist a PIM model.");
+
+        EObject root = loadModel(pimMetamodel, pimModel).getContents().get(0);
+        assertEquals("PIMModel", root.eClass().getName());
+        assertEquals(2, values(root, "services").size(),
+                "The sample's two bounded contexts should become two services.");
+        assertEquals(3, values(root, "environments").size(),
+                "The default dev/test/prod environments should be generated.");
+        assertTrue(reference(root, "implementationProfile") != null,
+                "Expected an implementation profile review artifact.");
+        assertTrue(reference(root, "traceModel") != null, "Expected a trace model.");
+        assertFalse(values(reference(root, "traceModel"), "links").isEmpty(),
+                "Expected generated trace links.");
+
+        assertFalse(values(root, "functions").isEmpty(), "Expected generated functions.");
+        assertTrue(values(root, "functions").stream()
+                        .allMatch(function -> reference(function, "contract") != null),
+                "Every generated function should have a function contract.");
+        assertFalse(values(root, "apis").isEmpty(), "Expected generated APIs.");
+        assertTrue(values(root, "apis").stream().allMatch(api -> !values(api, "routes").isEmpty()),
+                "Every generated API should have at least one route.");
+        assertFalse(values(root, "eventTypes").isEmpty(), "Expected generated event types.");
+        assertTrue(values(root, "eventTypes").stream()
+                        .allMatch(eventType -> reference(eventType, "schema") != null
+                                && reference(eventType, "envelope") != null),
+                "Every generated event type should have a schema and envelope.");
+        assertFalse(values(root, "channels").isEmpty(), "Expected generated channels.");
+        assertFalse(values(root, "dataStores").isEmpty(), "Expected generated data stores.");
+        assertTrue(values(root, "dataStores").stream()
+                        .allMatch(store -> !values(store, "ownedDataModels").isEmpty()
+                                && !values(store, "accessPatterns").isEmpty()),
+                "Every generated data store should have data models and access patterns.");
+        assertFalse(values(root, "workflows").isEmpty(), "Expected generated workflows.");
+        assertFalse(values(root, "externalAdapters").isEmpty(),
+                "Expected generated external adapters.");
+        assertFalse(values(root, "policies").isEmpty(),
+                "Expected generated governance, security, resilience, and data policies.");
+        assertTrue(values(root, "deploymentUnits").stream()
+                        .allMatch(unit -> !values(unit, "contains").isEmpty()),
+                "Every deployment unit should contain deployable elements.");
+
+        EObject readiness = reference(root, "readiness");
+        assertTrue(readiness != null, "Expected readiness assessment.");
+        assertFalse(values(readiness, "manualDecisions").isEmpty(),
+                "The sample's open transformation decisions should remain visible.");
+        assertFalse(values(readiness, "findings").isEmpty(),
+                "The sample's risks and assumptions should become readiness findings.");
+        String persisted = Files.readString(pimModel);
+        assertFalse(persisted.contains("https://modless.org/cim/"),
+                "Generated PIM XMI must be importable with only the PIM metamodel registered.");
+    }
+
+    @Test
     void coversCrossBoundaryRelationshipAndReviewBacklogRules() throws Exception {
         Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
         Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");

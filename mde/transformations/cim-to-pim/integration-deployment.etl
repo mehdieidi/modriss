@@ -314,19 +314,22 @@ operation createPolicyRoutingRules() {
 
 operation createExternalIntegrationFlows() {
   for (state in WORKFLOW!WorkflowState.all.select(s | s.invokesAdapter.isDefined())) {
-    var flow = new INTEGRATION!ExternalIntegrationFlow;
-    flow.id = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
-    flow.name = state.name + " calls " + state.invokesAdapter.name;
-    flow.flowPurpose = "External adapter invocation from workflow state.";
-    flow.criticalPath = true;
-    flow.containsPersonalData = false;
-    flow.source = state;
-    flow.target = state.invokesAdapter;
-    flow.adapter = state.invokesAdapter;
-    flow.observability = createDefaultObservability(flow, "TR-140", true, true);
-    flow.resilience = createDefaultResilience(flow, "TR-140", false);
-    pimRoot().flows.add(flow);
-    traceGenerated(state.invokesAdapter, flow, "TR-140", "MEDIUM");
+    var flowId = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
+    if (INTEGRATION!ExternalIntegrationFlow.all.select(existing | existing.id = flowId).isEmpty()) {
+      var flow = new INTEGRATION!ExternalIntegrationFlow;
+      flow.id = flowId;
+      flow.name = state.name + " calls " + state.invokesAdapter.name;
+      flow.flowPurpose = "External adapter invocation from workflow state.";
+      flow.criticalPath = true;
+      flow.containsPersonalData = false;
+      flow.source = state;
+      flow.target = state.invokesAdapter;
+      flow.adapter = state.invokesAdapter;
+      flow.observability = createDefaultObservability(flow, "TR-140", true, true);
+      flow.resilience = createDefaultResilience(flow, "TR-140", false);
+      pimRoot().flows.add(flow);
+      traceGenerated(state.invokesAdapter, flow, "TR-140", "MEDIUM");
+    }
   }
   for (adapter in EXTERNAL!ExternalAdapter.all) {
     if (not hasText(adapter.expectedSla) and adapter.resilience.isDefined()) {
@@ -456,35 +459,45 @@ operation containsProviderSpecificTerm(text) {
 operation createDataAccesses() {
   for (cmd in CIMBEHAVIOR!Command.all) {
     if (cmd.targetAggregate.isDefined() and commandFunction(cmd).isDefined() and storeForAggregate(cmd.targetAggregate).isDefined()) {
-      var da = new DATA!DataAccess;
-      da.id = newId("dataaccess", commandFunction(cmd).id + "_" + storeForAggregate(cmd.targetAggregate).id + "_write");
-      da.name = commandFunction(cmd).name + " writes " + storeForAggregate(cmd.targetAggregate).name;
-      da.mode = PIMTYPES!DataAccessMode#WRITE;
-      da.transactional = storeForAggregate(cmd.targetAggregate).transactional;
-      da.purpose = "Command state change";
-      setFeature(da, "function", commandFunction(cmd));
-      da.store = storeForAggregate(cmd.targetAggregate);
-      da.dataModels.addAll(storeForAggregate(cmd.targetAggregate).ownedDataModels);
-      da.accessPatterns.addAll(storeForAggregate(cmd.targetAggregate).accessPatterns);
-      commandFunction(cmd).writes.add(storeForAggregate(cmd.targetAggregate));
-      pimRoot().dataAccesses.add(da);
+      var daId = newId("dataaccess", commandFunction(cmd).id + "_" + storeForAggregate(cmd.targetAggregate).id + "_write");
+      if (DATA!DataAccess.all.select(existing | existing.id = daId).isEmpty()) {
+        var da = new DATA!DataAccess;
+        da.id = daId;
+        da.name = commandFunction(cmd).name + " writes " + storeForAggregate(cmd.targetAggregate).name;
+        da.mode = PIMTYPES!DataAccessMode#WRITE;
+        da.transactional = storeForAggregate(cmd.targetAggregate).transactional;
+        da.purpose = "Command state change";
+        setFeature(da, "function", commandFunction(cmd));
+        da.store = storeForAggregate(cmd.targetAggregate);
+        da.dataModels.addAll(storeForAggregate(cmd.targetAggregate).ownedDataModels);
+        da.accessPatterns.addAll(storeForAggregate(cmd.targetAggregate).accessPatterns);
+        pimRoot().dataAccesses.add(da);
+      }
+      if (not commandFunction(cmd).writes.includes(storeForAggregate(cmd.targetAggregate))) {
+        commandFunction(cmd).writes.add(storeForAggregate(cmd.targetAggregate));
+      }
     }
     for (condition in cmd.preconditions) {
       for (concept in condition.referencedConcepts.select(c | c.isKindOf(CIMDOMAIN!DomainEntity))) {
         var readStore = storeForEntity(concept);
         if (readStore.isDefined() and commandFunction(cmd).isDefined()) {
-          var dac = new DATA!DataAccess;
-          dac.id = newId("dataaccess", commandFunction(cmd).id + "_" + readStore.id + "_" + condition.id + "_precondition_read");
-          dac.name = commandFunction(cmd).name + " checks " + readStore.name;
-          dac.mode = PIMTYPES!DataAccessMode#READ;
-          dac.transactional = false;
-          dac.purpose = "Command precondition read";
-          setFeature(dac, "function", commandFunction(cmd));
-          dac.store = readStore;
-          dac.dataModels.addAll(readStore.ownedDataModels);
-          commandFunction(cmd).reads.add(readStore);
-          pimRoot().dataAccesses.add(dac);
-          traceGenerated(condition, dac, "TR-140", "MEDIUM");
+          var dacId = newId("dataaccess", commandFunction(cmd).id + "_" + readStore.id + "_" + condition.id + "_precondition_read");
+          if (DATA!DataAccess.all.select(existing | existing.id = dacId).isEmpty()) {
+            var dac = new DATA!DataAccess;
+            dac.id = dacId;
+            dac.name = commandFunction(cmd).name + " checks " + readStore.name;
+            dac.mode = PIMTYPES!DataAccessMode#READ;
+            dac.transactional = false;
+            dac.purpose = "Command precondition read";
+            setFeature(dac, "function", commandFunction(cmd));
+            dac.store = readStore;
+            dac.dataModels.addAll(readStore.ownedDataModels);
+            pimRoot().dataAccesses.add(dac);
+            traceGenerated(condition, dac, "TR-140", "MEDIUM");
+          }
+          if (not commandFunction(cmd).reads.includes(readStore)) {
+            commandFunction(cmd).reads.add(readStore);
+          }
         }
       }
     }
@@ -493,18 +506,23 @@ operation createDataAccesses() {
     for (entity in q.reads) {
       var store = storeForEntity(entity);
       if (store.isDefined() and queryFunction(q).isDefined()) {
-        var daq = new DATA!DataAccess;
-        daq.id = newId("dataaccess", queryFunction(q).id + "_" + store.id + "_read");
-        daq.name = queryFunction(q).name + " reads " + store.name;
-        daq.mode = PIMTYPES!DataAccessMode#READ;
-        daq.transactional = false;
-        daq.purpose = "Query read access";
-        setFeature(daq, "function", queryFunction(q));
-        daq.store = store;
-        daq.dataModels.addAll(store.ownedDataModels);
-        daq.accessPatterns.addAll(store.accessPatterns.select(ap | ap.usedByFunctions.includes(queryFunction(q))));
-        queryFunction(q).reads.add(store);
-        pimRoot().dataAccesses.add(daq);
+        var daqId = newId("dataaccess", queryFunction(q).id + "_" + store.id + "_read");
+        if (DATA!DataAccess.all.select(existing | existing.id = daqId).isEmpty()) {
+          var daq = new DATA!DataAccess;
+          daq.id = daqId;
+          daq.name = queryFunction(q).name + " reads " + store.name;
+          daq.mode = PIMTYPES!DataAccessMode#READ;
+          daq.transactional = false;
+          daq.purpose = "Query read access";
+          setFeature(daq, "function", queryFunction(q));
+          daq.store = store;
+          daq.dataModels.addAll(store.ownedDataModels);
+          daq.accessPatterns.addAll(store.accessPatterns.select(ap | ap.usedByFunctions.includes(queryFunction(q))));
+          pimRoot().dataAccesses.add(daq);
+        }
+        if (not queryFunction(q).reads.includes(store)) {
+          queryFunction(q).reads.add(store);
+        }
       }
     }
   }
@@ -514,18 +532,23 @@ operation createDataAccesses() {
       for (guardCommand in pol.guards.select(g | g.targetAggregate.isDefined())) {
         var guardedStore = storeForAggregate(guardCommand.targetAggregate);
         if (guardedStore.isDefined()) {
-          var dap = new DATA!DataAccess;
-          dap.id = newId("dataaccess", fn.id + "_" + guardedStore.id + "_" + guardCommand.id + "_policy_read");
-          dap.name = fn.name + " reads " + guardedStore.name;
-          dap.mode = PIMTYPES!DataAccessMode#READ;
-          dap.transactional = false;
-          dap.purpose = "Policy guard evaluation";
-          setFeature(dap, "function", fn);
-          dap.store = guardedStore;
-          dap.dataModels.addAll(guardedStore.ownedDataModels);
-          fn.reads.add(guardedStore);
-          pimRoot().dataAccesses.add(dap);
-          traceGenerated(pol, dap, "TR-140", "MEDIUM");
+          var dapId = newId("dataaccess", fn.id + "_" + guardedStore.id + "_" + guardCommand.id + "_policy_read");
+          if (DATA!DataAccess.all.select(existing | existing.id = dapId).isEmpty()) {
+            var dap = new DATA!DataAccess;
+            dap.id = dapId;
+            dap.name = fn.name + " reads " + guardedStore.name;
+            dap.mode = PIMTYPES!DataAccessMode#READ;
+            dap.transactional = false;
+            dap.purpose = "Policy guard evaluation";
+            setFeature(dap, "function", fn);
+            dap.store = guardedStore;
+            dap.dataModels.addAll(guardedStore.ownedDataModels);
+            pimRoot().dataAccesses.add(dap);
+            traceGenerated(pol, dap, "TR-140", "MEDIUM");
+          }
+          if (not fn.reads.includes(guardedStore)) {
+            fn.reads.add(guardedStore);
+          }
         }
       }
     }
@@ -567,6 +590,131 @@ operation attachDataProtectionPolicies() {
   }
 }
 
+operation addEventTypesToChannel(channel : INTEGRATION!EventChannel, eventTypes) {
+  for (eventType in eventTypes.select(e | e.isDefined())) {
+    if (not channel.eventTypes.includes(eventType)) {
+      channel.eventTypes.add(eventType);
+    }
+  }
+}
+
+operation copySeedEventTypesToChannel(seed, channel : INTEGRATION!EventChannel) {
+  if (seed.isKindOf(INTEGRATION!EventChannel)) {
+    addEventTypesToChannel(channel, seed.eventTypes);
+  }
+  if (seed.isKindOf(COMPUTE!Trigger) and seed.source.isKindOf(INTEGRATION!EventChannel)) {
+    addEventTypesToChannel(channel, seed.source.eventTypes);
+  }
+  if (seed.isKindOf(INTEGRATION!EventRoutingRule)) {
+    addEventTypesToChannel(channel, seed.eventTypes);
+  }
+  if (seed.isKindOf(INTEGRATION!EventFlow)) {
+    addEventTypesToChannel(channel, Sequence{seed.eventType});
+  }
+  if (seed.isKindOf(INTEGRATION!PubSubFlow)) {
+    addEventTypesToChannel(channel, seed.topic.eventTypes);
+  }
+  if (seed.isKindOf(INTEGRATION!MessageFlow)) {
+    addEventTypesToChannel(channel, seed.queue.eventTypes);
+  }
+  if (seed.isKindOf(COMPUTE!Function)) {
+    addEventTypesToChannel(channel, seed.subscribesTo);
+    addEventTypesToChannel(channel, seed.publishes);
+  }
+}
+
+operation ensureDeadLetterQueue(seed) {
+  var queueId = newId("dlq", seed.id);
+  var queue = INTEGRATION!Queue.all.select(q | q.id = queueId).first();
+  if (queue.isUndefined()) {
+    queue = new INTEGRATION!Queue;
+    queue.id = queueId;
+    queue.name = seed.name + " Dead Letter Queue";
+    queue.integrationPurpose = "Failure isolation for " + seed.name + ".";
+    queue.channelKind = PIMTYPES!ChannelKind#QUEUE;
+    queue.orderingRequirement = PIMTYPES!OrderingRequirement#NONE;
+    queue.deliverySemantics = PIMTYPES!DeliverySemantics#AT_LEAST_ONCE;
+    queue.encrypted = false;
+    queue.replayRequired = false;
+    queue.deadLetterRequired = false;
+    queue.fifoRequired = false;
+    queue.deduplicationRequired = false;
+    queue.maxReceiveAttempts = 1;
+    queue.visibilityTimeoutSeconds = 60;
+    queue.messageRetentionSeconds = 1209600;
+    queue.longPollingRequired = true;
+    queue.generatedByTransformation = true;
+    queue.manuallyMaintained = false;
+    pimRoot().channels.add(queue);
+  }
+  copySeedEventTypesToChannel(seed, queue);
+  if (queue.eventTypes.isEmpty()) {
+    ensureEventTypeForChannel(queue);
+  }
+  if (queue.eventTypes.exists(e | isTrue(e.containsPersonalData))) {
+    queue.encrypted = true;
+  }
+  return queue;
+}
+
+operation ensureEventTypeForChannel(channel : INTEGRATION!EventChannel) {
+  if (channel.eventTypes.notEmpty()) {
+    return channel.eventTypes.first();
+  }
+  var schema = new CONTRACTS!Schema;
+  schema.id = newId("schema_channel_message", channel.id);
+  schema.name = channel.name + " Message Schema";
+  schema.schemaKind = PIMTYPES!SchemaKind#MESSAGE;
+  schema.semanticVersion = "1.0.0";
+  schema.compatibility = PIMTYPES!SchemaCompatibility#BACKWARD;
+  schema.additionalPropertiesAllowed = false;
+  schema.generatedFromCimInformation = false;
+  schema.fields.add(fieldFor(schema.id, "correlationId", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "messageType", PIMTYPES!FieldType#STRING, true));
+  pimRoot().schemas.add(schema);
+
+  var eventType = new CONTRACTS!EventType;
+  eventType.id = newId("eventtype_channel_message", channel.id);
+  eventType.name = channel.name + " Message";
+  eventType.semanticName = pascalCase(channel.name) + "Message";
+  eventType.version = "1.0.0";
+  eventType.sourceDomain = pimRoot().domainName;
+  eventType.subjectExpression = "messageType";
+  eventType.orderingKey = channel.partitionKeyExpression;
+  eventType.externalEvent = false;
+  eventType.auditEvent = false;
+  eventType.replayable = channel.replayRequired;
+  eventType.containsPersonalData = false;
+  eventType.schema = schema;
+  eventType.envelope = defaultEventEnvelope(eventType.id);
+  pimRoot().eventTypes.add(eventType);
+  channel.eventTypes.add(eventType);
+  return eventType;
+}
+
+operation ensureApiAuthentication() {
+  var identityProvider = SECURITY!IdentityProvider.all.first();
+  for (api in API!Api.all.select(a | isTrue(a.authRequired) and a.auth.isUndefined())) {
+    var auth = new SECURITY!AuthPolicy;
+    auth.id = newId("auth_api", api.id);
+    auth.name = api.name + " Authentication";
+    auth.policyScope = "api authentication";
+    auth.productionRequired = true;
+    auth.authenticationRequired = true;
+    auth.authorizationRequired = true;
+    auth.authScheme = "review-required-token";
+    auth.mfaRequired = false;
+    auth.tokenValidationRules = "Validate issuer, audience, expiry, and subject claims.";
+    auth.scopesRequired = "review-required";
+    if (identityProvider.isDefined()) {
+      auth.identityProvider = identityProvider;
+    }
+    auth.attachedTo.add(api);
+    api.auth = auth;
+    pimRoot().policies.add(auth);
+  }
+}
+
 operation ensureGeneratedOperationalPolicies() {
   for (fn in COMPUTE!Function.all.select(f | f.observability.isUndefined())) {
     fn.observability = createDefaultObservability(fn, "TR-150", false, false);
@@ -575,7 +723,7 @@ operation ensureGeneratedOperationalPolicies() {
     api.observability = createDefaultObservability(api, "TR-150", true, false);
   }
   for (wf in WORKFLOW!Workflow.all.select(w | w.observability.isUndefined())) {
-    wf.observability = createDefaultObservability(wf, "TR-150", true, isTrue(w.expressLowLatencyRequired));
+    wf.observability = createDefaultObservability(wf, "TR-150", true, isTrue(wf.expressLowLatencyRequired));
   }
   for (adapter in EXTERNAL!ExternalAdapter.all.select(a | a.observability.isUndefined())) {
     adapter.observability = createDefaultObservability(adapter, "TR-150", true, true);
@@ -589,6 +737,31 @@ operation ensureGeneratedOperationalPolicies() {
   for (fnAsync in COMPUTE!Function.all.select(f | f.executionModel = PIMTYPES!ExecutionModel#ASYNC_EVENT and f.resilience.isUndefined())) {
     fnAsync.resilience = createDefaultResilience(fnAsync, "TR-150", true);
   }
+  for (policy in POLICY!DataProtectionPolicy.all.select(p | not isTrue(p.encryptionRequired) and not isTrue(p.maskingRequired) and not isTrue(p.tokenizationRequired) and not isTrue(p.accessAuditRequired))) {
+    policy.accessAuditRequired = true;
+  }
+  for (channel in INTEGRATION!EventChannel.all.select(c | c.eventTypes.isEmpty())) {
+    ensureEventTypeForChannel(channel);
+  }
+  for (flow in INTEGRATION!Flow.all.select(f | not hasText(f.flowPurpose))) {
+    flow.flowPurpose = flow.source.name + " to " + flow.target.name;
+  }
+  for (queue in INTEGRATION!Queue.all.select(q | q.maxReceiveAttempts.isDefined() and q.maxReceiveAttempts > 1 and q.deadLetterChannel.isUndefined())) {
+    queue.deadLetterChannel = ensureDeadLetterQueue(queue);
+  }
+  for (resilience in POLICY!ResiliencePolicy.all.select(r | r.deadLetter.isDefined() and isTrue(r.deadLetter.required) and r.deadLetter.deadLetterChannel.isUndefined())) {
+    var seed = resilience.attachedTo.first();
+    if (seed.isDefined()) {
+      resilience.deadLetter.deadLetterChannel = ensureDeadLetterQueue(seed);
+    }
+  }
+  for (workflow in WORKFLOW!Workflow.all.select(w | (isTrue(w.stateful) or isTrue(w.compensationRequired)) and w.idempotency.isUndefined())) {
+    workflow.idempotency = createIdempotencyPolicyForTarget(workflow, workflow, "TR-150", "workflowExecutionId");
+  }
+  for (fn in COMPUTE!Function.all.select(f | isTrue(f.requiresIdempotency) and f.idempotency.isUndefined())) {
+    fn.idempotency = createIdempotencyPolicyForTarget(fn, fn, "TR-150", "eventIdOrCorrelationId");
+  }
+  ensureApiAuthentication();
 }
 
 rule Risk2ReadinessFinding
@@ -608,7 +781,7 @@ rule Risk2ReadinessFinding
   f.message = r.riskStatement;
   f.recommendation = r.mitigation;
   f.blocking = r.productionBlocking;
-  f.affectedElements.addAll(r.affectedElements);
+  appendTargetAffectedElements(f, r.affectedElements);
   readinessRoot().findings.add(f);
 }
 
@@ -629,7 +802,7 @@ rule Assumption2ReadinessFinding
   f.message = a.assumptionStatement;
   f.recommendation = a.validationApproach;
   f.blocking = not a.accepted;
-  f.affectedElements.addAll(a.affectedElements);
+  appendTargetAffectedElements(f, a.affectedElements);
   readinessRoot().findings.add(f);
 }
 
@@ -649,7 +822,7 @@ rule Hotspot2ManualDecision
   else {
     d.severity = KERNEL!Severity#WARNING;
   }
-  d.affectedElements.addAll(h.attachedTo);
+  appendTargetAffectedElements(d, h.attachedTo);
   readinessRoot().manualDecisions.add(d);
 }
 

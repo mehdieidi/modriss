@@ -42,8 +42,6 @@ public final class CimToPimDefaults {
         Path module = repositoryRoot.resolve("mde/transformations/cim-to-pim/cim-to-pim.etl");
         Path cimMetamodel = repositoryRoot.resolve("mde/metamodels/cim/cim-combined.ecore");
         Path pimMetamodel = repositoryRoot.resolve("mde/metamodels/pim/pim-combined.ecore");
-        Path kernelMetamodel = repositoryRoot.resolve("mde/metamodels/shared/kernel.ecore");
-        Path pimTypesMetamodel = repositoryRoot.resolve("mde/metamodels/pim/pim-types.ecore");
         boolean readTarget = !overwriteOutput && targetModel.toFile().isFile();
 
         return new EtlExecutionRequest(
@@ -54,12 +52,12 @@ public final class CimToPimDefaults {
                                 "CIM",
                                 SOURCE_ALIASES,
                                 sourceModel,
-                                List.of(cimMetamodel, kernelMetamodel)),
+                                List.of(cimMetamodel)),
                         EtlModelConfiguration.target(
                                 "PIM",
                                 TARGET_ALIASES,
                                 targetModel,
-                                List.of(pimMetamodel, kernelMetamodel, pimTypesMetamodel),
+                                List.of(pimMetamodel),
                                 readTarget)),
                 overwriteOutput,
                 captureOutput);

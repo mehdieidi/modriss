@@ -51,6 +51,59 @@ operation secondsFromDurationExpression(value) {
   return amount;
 }
 
+operation createPolicyContextSchema(pol : CIMPROCESS!Policy) {
+  var schema = new CONTRACTS!Schema;
+  schema.id = newId("schema_policy_context", pol.id);
+  schema.name = pol.name + " Policy Context";
+  schema.schemaKind = PIMTYPES!SchemaKind#REQUEST;
+  schema.semanticVersion = "1.0.0";
+  schema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  schema.additionalPropertiesAllowed = true;
+  schema.generatedFromCimInformation = false;
+  schema.fields.add(fieldFor(schema.id, "sourceElementId", PIMTYPES!FieldType#STRING, false));
+  schema.fields.add(fieldFor(schema.id, "evaluationReason", PIMTYPES!FieldType#STRING, false));
+  schema.fields.add(fieldFor(schema.id, "effectiveAt", PIMTYPES!FieldType#DATETIME, false));
+  pimRoot().schemas.add(schema);
+  traceGenerated(pol, schema, "TR-100", "LOW");
+  return schema;
+}
+
+operation createHumanTaskInputSchema(step : CIMPROCESS!HumanTaskStep) {
+  var schema = new CONTRACTS!Schema;
+  schema.id = newId("schema_human_task_req", step.id);
+  schema.name = step.name + " Human Task Input";
+  schema.schemaKind = PIMTYPES!SchemaKind#REQUEST;
+  schema.semanticVersion = "1.0.0";
+  schema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  schema.additionalPropertiesAllowed = false;
+  schema.generatedFromCimInformation = false;
+  schema.fields.add(fieldFor(schema.id, "correlationId", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "workflowExecutionId", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "stateName", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "assignedRole", PIMTYPES!FieldType#STRING, false));
+  pimRoot().schemas.add(schema);
+  traceGenerated(step, schema, "TR-120", "LOW");
+  return schema;
+}
+
+operation createHumanTaskOutputSchema(step : CIMPROCESS!HumanTaskStep) {
+  var schema = new CONTRACTS!Schema;
+  schema.id = newId("schema_human_task_res", step.id);
+  schema.name = step.name + " Human Task Output";
+  schema.schemaKind = PIMTYPES!SchemaKind#RESPONSE;
+  schema.semanticVersion = "1.0.0";
+  schema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  schema.additionalPropertiesAllowed = false;
+  schema.generatedFromCimInformation = false;
+  schema.fields.add(fieldFor(schema.id, "correlationId", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "taskOutcome", PIMTYPES!FieldType#STRING, true));
+  schema.fields.add(fieldFor(schema.id, "evidenceReference", PIMTYPES!FieldType#STRING, false));
+  schema.fields.add(fieldFor(schema.id, "completedBy", PIMTYPES!FieldType#STRING, false));
+  pimRoot().schemas.add(schema);
+  traceGenerated(step, schema, "TR-120", "LOW");
+  return schema;
+}
+
 rule Policy2PolicyHandlerFunction
   transform pol : CIMPROCESS!Policy
   to fn : COMPUTE!Function {
@@ -91,6 +144,10 @@ rule Policy2PolicyHandlerFunction
   inputSchema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
   inputSchema.additionalPropertiesAllowed = false;
   inputSchema.generatedFromCimInformation = true;
+  inputSchema.fields.add(fieldFor(inputSchema.id, "correlationId", PIMTYPES!FieldType#STRING, true));
+  var policyContext = fieldFor(inputSchema.id, "policyContext", PIMTYPES!FieldType#OBJECT, false);
+  policyContext.objectSchema = createPolicyContextSchema(pol);
+  inputSchema.fields.add(policyContext);
   if (hasText(pol.expression) or hasText(pol.naturalLanguageRule)) {
     var constraint = new CONTRACTS!SchemaConstraint;
     constraint.id = idFor("constraint_policy", pol);
@@ -98,7 +155,7 @@ rule Policy2PolicyHandlerFunction
     constraint.expressionLanguage = pol.expressionLanguage.orDefault("natural-language");
     constraint.expression = firstText(pol.expression, pol.naturalLanguageRule);
     constraint.message = pol.naturalLanguageRule;
-    constraint.severity = pol.violationSeverity;
+    constraint.severity = mapSeverity(pol.violationSeverity);
     inputSchema.constraints.add(constraint);
     traceGenerated(pol, constraint, "TR-100", "MEDIUM");
   }
@@ -111,6 +168,10 @@ rule Policy2PolicyHandlerFunction
   }
   fn.contract = contract;
   fn.observability = createDefaultObservability(fn, "TR-100", pol.auditRequired, pol.auditRequired);
+  if (fn.publishesEvents or pol.triggeredBy.notEmpty()) {
+    fn.requiresIdempotency = true;
+    fn.idempotency = createIdempotencyPolicyForTarget(fn, pol, "TR-100", "eventId");
+  }
 
   pimRoot().functions.add(fn);
   traceGenerated(pol, fn, "TR-100", "MEDIUM");
@@ -152,11 +213,28 @@ rule DecisionTable2ChoiceLogic
   contract.validatesInput = true;
   contract.validatesOutput = true;
   contract.correlationIdField = "correlationId";
+  var inputSchema = new CONTRACTS!Schema;
+  inputSchema.id = idFor("schema_decision_req", dt);
+  inputSchema.name = dt.name + " Decision Input";
+  inputSchema.schemaKind = PIMTYPES!SchemaKind#REQUEST;
+  inputSchema.semanticVersion = "1.0.0";
+  inputSchema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+  inputSchema.additionalPropertiesAllowed = false;
+  inputSchema.generatedFromCimInformation = true;
+  for (item in dt.inputs) {
+    inputSchema.fields.add(createSchemaField(item, inputSchema.id));
+  }
+  if (inputSchema.fields.isEmpty()) {
+    inputSchema.fields.add(fieldFor(inputSchema.id, "decisionContext", PIMTYPES!FieldType#OBJECT, true));
+  }
+  pimRoot().schemas.add(inputSchema);
+  contract.inputSchema = inputSchema;
   fn.contract = contract;
   fn.observability = createDefaultObservability(fn, "TR-100", false, false);
 
   pimRoot().functions.add(fn);
   traceGenerated(dt, fn, "TR-100", "MEDIUM");
+  traceGenerated(dt, inputSchema, "TR-100", "MEDIUM");
 
   for (decisionRule in dt.rules) {
     var outcomeSchema = new CONTRACTS!Schema;
@@ -239,7 +317,44 @@ rule ProcessStep2WorkflowState
   if (s.isKindOf(CIMPROCESS!DecisionStep) and s.condition.isDefined()) {
     ws.conditionExpression = s.condition.expression;
   }
+  if (s.isKindOf(CIMPROCESS!DecisionStep) and s.decisionTable.isDefined()) {
+    var decisionFn = s.decisionTable.equivalents("DecisionTable2ChoiceLogic").first();
+    if (decisionFn.isDefined()) {
+      ws.invokesFunction = decisionFn;
+      traceGenerated(s, decisionFn, "TR-120", "MEDIUM");
+    }
+  }
   if (s.isKindOf(CIMPROCESS!HumanTaskStep)) {
+    var taskFn = new COMPUTE!Function;
+    taskFn.id = newId("fn_human_task", s.id);
+    taskFn.name = s.name + " Human Task Handler";
+    taskFn.functionKind = PIMTYPES!FunctionKind#ORCHESTRATION_TASK;
+    taskFn.responsibility = "Coordinate human task '" + s.name + "' and capture evidence for workflow continuation.";
+    taskFn.handlerResponsibility = taskFn.responsibility;
+    taskFn.sourceNameSuggestion = pascalCase(s.name) + "HumanTaskHandler";
+    taskFn.publicEntryPoint = false;
+    taskFn.writesState = false;
+    taskFn.readsState = false;
+    taskFn.publishesEvents = false;
+    taskFn.requiresIdempotency = true;
+    taskFn.executionModel = PIMTYPES!ExecutionModel#REQUEST_RESPONSE;
+    taskFn.computeProfile = PIMTYPES!ComputeProfile#LIGHTWEIGHT;
+    taskFn.stateless = true;
+    var taskContract = new CONTRACTS!FunctionContract;
+    taskContract.id = newId("contract_human_task", s.id);
+    taskContract.name = s.name + " Human Task Contract";
+    taskContract.contractVersion = "1.0.0";
+    taskContract.validatesInput = true;
+    taskContract.validatesOutput = true;
+    taskContract.correlationIdField = "correlationId";
+    taskContract.inputSchema = createHumanTaskInputSchema(s);
+    taskContract.outputSchema = createHumanTaskOutputSchema(s);
+    taskFn.contract = taskContract;
+    taskFn.idempotency = createIdempotencyPolicyForTarget(taskFn, s, "TR-120", "workflowExecutionAndState");
+    taskFn.observability = createDefaultObservability(taskFn, "TR-120", true, true);
+    pimRoot().functions.add(taskFn);
+    traceGenerated(s, taskFn, "TR-120", "LOW");
+    ws.invokesFunction = taskFn;
     ws.manuallyMaintained = true;
     manualDecision("TR-120", "Define assignment, UI, SLA, evidence, and escalation for human task '" + s.name + "'.", KERNEL!Severity#WARNING, false, Sequence{s, ws});
   }
@@ -288,11 +403,11 @@ post AttachWorkflowDetails {
         wf.startState = starts.first();
       }
       else {
-        wf.startState = wf.states.sortedBy(s | s.orderIndex).first();
+        wf.startState = wf.states.sortBy(s | s.orderIndex).first();
       }
       wf.endStates.addAll(wf.states.select(s | s.terminal));
       if (wf.endStates.isEmpty()) {
-        wf.endStates.add(wf.states.sortedBy(s | s.orderIndex).last());
+        wf.endStates.add(wf.states.sortBy(s | s.orderIndex).last());
       }
     }
     for (t in bp.transitions) {
@@ -305,6 +420,13 @@ post AttachWorkflowDetails {
       for (ex in bp.exceptions) {
         var handler = ex.equivalents("ExceptionScenario2ErrorHandler").first();
         if (handler.isDefined()) {
+          var recoveryTarget = wf.states.sortBy(s | s.orderIndex).select(s | not s.terminal and s <> wf.startState).first();
+          if (recoveryTarget.isUndefined() and wf.endStates.notEmpty()) {
+            recoveryTarget = wf.endStates.first();
+          }
+          if (recoveryTarget.isDefined()) {
+            handler.nextState = recoveryTarget;
+          }
           wf.startState.catchHandlers.add(handler);
         }
         if (ex.compensationRequired) {
@@ -385,6 +507,13 @@ rule SecurityConstraint2SecurityPolicies
   auth.authenticationRequired = sec.authenticationRequired;
   auth.authScheme = sc.authenticationNeed.orDefault("TBD");
   auth.mfaRequired = sc.segregationOfDutiesRequired or sc.nonRepudiationRequired;
+  if (sc.constrainedActors.notEmpty()) {
+    var idp = sc.constrainedActors.first().equivalents("Actor2Principal").first();
+    var actorIdp = SECURITY!IdentityProvider.all.select(provider | provider.principals.includes(idp)).first();
+    if (actorIdp.isDefined()) {
+      auth.identityProvider = actorIdp;
+    }
+  }
 
   authz.id = idFor("authz", sc);
   authz.name = nameFor(sc, " Authorization Policy");
@@ -397,6 +526,13 @@ rule SecurityConstraint2SecurityPolicies
   var protectedTargets = policyTargetsForAll(sc.constrainedCommands);
   protectedTargets.addAll(policyTargetsForAll(sc.constrainedQueries));
   protectedTargets.addAll(policyTargetsForAll(sc.constrainedElements));
+  var uniqueProtectedTargets = Sequence{};
+  for (target in protectedTargets) {
+    if (not uniqueProtectedTargets.includes(target)) {
+      uniqueProtectedTargets.add(target);
+    }
+  }
+  protectedTargets = uniqueProtectedTargets;
   sec.attachedTo.addAll(protectedTargets);
   auth.attachedTo.addAll(protectedTargets);
   authz.attachedTo.addAll(protectedTargets);
@@ -495,7 +631,7 @@ rule TemporalConstraint2TimeoutPolicy
 
   if ((hasText(tc.deadlineExpression) or hasText(tc.durationExpression)) and timeout.timeoutSeconds = 0) {
     manualDecision("TR-130", "Translate temporal constraint '" + tc.name + "' into concrete provider-independent timeout and schedule semantics.", KERNEL!Severity#WARNING, timeout.productionRequired, Sequence{tc, timeout});
-    readinessFinding("TR-130", KERNEL!FindingType#VALIDATION_WARNING, tc.violationSeverity, "Temporal constraint '" + tc.name + "' could not be converted to seconds.", "Provide duration/deadline as a parseable provider-independent duration.", timeout.productionRequired, Sequence{tc, timeout});
+    readinessFinding("TR-130", KERNEL!FindingType#VALIDATION_WARNING, mapSeverity(tc.violationSeverity), "Temporal constraint '" + tc.name + "' could not be converted to seconds.", "Provide duration/deadline as a parseable provider-independent duration.", timeout.productionRequired, Sequence{tc, timeout});
   }
   if (hasText(tc.orderingExpression)) {
     manualDecision("TR-130", "Confirm ordering semantics and idempotency strategy for temporal constraint '" + tc.name + "'.", KERNEL!Severity#WARNING, ordering.strictOrderingRequired, Sequence{tc, ordering});
@@ -591,8 +727,8 @@ rule PerformanceNfr2TimeoutPolicy
   rateLimit.name = nameFor(nfr, " Rate Limit Policy");
   rateLimit.policyScope = firstText(nfr.metric, nfr.target);
   rateLimit.productionRequired = nfr.mandatory or nfr.productionBlocking;
-  rateLimit.requestsPerSecond = 0;
-  rateLimit.burstLimit = 0;
+  rateLimit.requestsPerSecond = 1;
+  rateLimit.burstLimit = 10;
   rateLimit.keyBy = "client";
   rateLimit.clientSpecific = true;
   rateLimit.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));

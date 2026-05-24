@@ -40,6 +40,7 @@ import {
 } from './collaboration.js';
 import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
 import {renderCimWorkbenchSurface} from './cim-workbench.js';
+import {renderPimWorkbenchSurface} from './pim-workbench.js';
 
 const DEFAULT_NODE_W = 228;
 const DEFAULT_NODE_H = 112;
@@ -299,6 +300,77 @@ const CIM_EDGE_TOOLS_BY_PROFILE = {
   traceability: [{kind: "TRACE", label: "Trace link"}]
 };
 
+const PIM_EDGE_TOOLS_BY_PROFILE = {
+  architecture: [
+    {kind: "OWNS", label: "Service ownership"},
+    {kind: "FLOW", label: "Canonical flow"},
+    {kind: "INVOKES", label: "Invocation"}
+  ],
+  api: [
+    {kind: "ROUTES_TO", label: "Route integration"},
+    {kind: "AUTHORIZED_BY", label: "Authorization"},
+    {kind: "USES", label: "Schema use"}
+  ],
+  compute: [
+    {kind: "INVOKES", label: "Invocation"},
+    {kind: "PUBLISHES", label: "Publishes event"},
+    {kind: "SUBSCRIBES_TO", label: "Subscribes to event"},
+    {kind: "READS", label: "Reads data"},
+    {kind: "WRITES", label: "Writes data"},
+    {kind: "CALLS", label: "External call"},
+    {kind: "USES_SECRET", label: "Uses secret"}
+  ],
+  contracts: [
+    {kind: "USES", label: "Contract/schema use"},
+    {kind: "PUBLISHES", label: "Event producer"},
+    {kind: "SUBSCRIBES_TO", label: "Event consumer"}
+  ],
+  data: [
+    {kind: "READS", label: "Read access"},
+    {kind: "WRITES", label: "Write access"},
+    {kind: "READ_WRITE", label: "Read/write access"},
+    {kind: "DATA_ACCESS", label: "Data access"}
+  ],
+  integration: [
+    {kind: "EVENT_FLOW", label: "Event flow"},
+    {kind: "MESSAGE_FLOW", label: "Message flow"},
+    {kind: "PUB_SUB", label: "Pub/sub flow"},
+    {kind: "SUBSCRIBES_TO", label: "Subscription"},
+    {kind: "ROUTES_TO", label: "Routing target"},
+    {kind: "DEAD_LETTER", label: "Dead letter"}
+  ],
+  workflow: [
+    {kind: "TRANSITION", label: "State transition"},
+    {kind: "INVOKES", label: "State invokes"},
+    {kind: "EXTERNAL_CALL", label: "External call"},
+    {kind: "ORCHESTRATES", label: "Nested workflow"}
+  ],
+  security: [
+    {kind: "PERMISSION", label: "Permission"},
+    {kind: "AUTHORIZED_BY", label: "Authorized by"},
+    {kind: "USES_SECRET", label: "Uses secret"}
+  ],
+  deployment: [
+    {kind: "DEPLOYS", label: "Packages deployable"},
+    {kind: "DEPLOYS_TO", label: "Targets environment"},
+    {kind: "HAS_ENV", label: "Configuration"}
+  ],
+  policy: [
+    {kind: "ATTACHED_TO", label: "Policy attachment"},
+    {kind: "CONSTRAINS", label: "Policy constraint"},
+    {kind: "DEAD_LETTER", label: "Dead letter"}
+  ],
+  configuration: [
+    {kind: "HAS_ENV", label: "Environment config"},
+    {kind: "USES_SECRET", label: "Secret use"},
+    {kind: "DEPLOYS_TO", label: "Environment target"}
+  ],
+  readiness: [
+    {kind: "TRACE", label: "Trace link"},
+    {kind: "ATTACHED_TO", label: "Affected element"}
+  ]
+};
+
 const CIM_VIEW_PALETTES = {
   dashboard: [
     "BusinessGoal", "Actor", "BusinessCapability", "Requirement",
@@ -405,7 +477,16 @@ function refLabel(value) {
 
 function cimEdgeLabel(edge) {
   if (state.activeType !== "cim") {
-    return edge.bundle ? (edge.label || "Bundled relations") : edge.kind;
+    if (edge.bundle) {
+      return edge.label || "Bundled relations";
+    }
+    const key = String(edge.kind || "").toUpperCase();
+    try {
+      return modelingRelationshipKindLabel(state.activeType, key) || key
+      .toLowerCase().replaceAll("_", " ");
+    } catch {
+      return key.toLowerCase().replaceAll("_", " ");
+    }
   }
   if (edge.label) {
     return edge.label;
@@ -423,11 +504,33 @@ function cimEdgeLabel(edge) {
 }
 
 function cimEdgePresentation(edge) {
-  if (state.activeType !== "cim") {
+  if (state.activeType !== "cim" && state.activeType !== "pim") {
     return {className: "", markerStart: "", markerEnd: "arrow"};
   }
   const relationship = state.graph?.relationshipsById?.get(edge.id) || edge;
   const kind = String(edge.kind || "").toUpperCase();
+  if (state.activeType === "pim") {
+    const presentation = {className: "", markerStart: "", markerEnd: "arrow"};
+    if (kind === "TRACE" || relationship.eClass === "TraceLink") {
+      presentation.className = " edge-trace-link";
+    } else if (kind === "TRANSITION" || relationship.eClass
+        === "WorkflowTransition") {
+      presentation.className = " edge-process-transition";
+    } else if (kind === "PERMISSION" || kind === "AUTHORIZED_BY") {
+      presentation.className = " edge-conflict";
+    } else if (["EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB", "PUBLISHES",
+      "SUBSCRIBES_TO"].includes(kind)) {
+      presentation.className = " edge-pim-event";
+    } else if (["READS", "WRITES", "READ_WRITE", "DATA_ACCESS", "APPEND",
+      "DELETE"].includes(kind)) {
+      presentation.className = " edge-pim-data";
+    } else if (["EXTERNAL_CALL", "CALLS"].includes(kind)) {
+      presentation.className = " edge-domain-dependency";
+    } else if (["DEPLOYS", "DEPLOYS_TO", "OWNS", "CONTAINS"].includes(kind)) {
+      presentation.className = " edge-domain-ownership";
+    }
+    return presentation;
+  }
   const relationshipType = String(
       relationship.relationshipType || "").toUpperCase();
   const presentation = {className: "", markerStart: "", markerEnd: "arrow"};
@@ -466,12 +569,12 @@ function cimEdgePresentation(edge) {
 }
 
 function cimNodeNotation(node) {
-  if (state.activeType !== "cim") {
+  if (!["cim", "pim"].includes(state.activeType)) {
     return null;
   }
   let definition = null;
   try {
-    definition = modelingElementDefinition("cim", node.type);
+    definition = modelingElementDefinition(state.activeType, node.type);
   } catch {
     definition = null;
   }
@@ -493,7 +596,8 @@ function cimNodeNotation(node) {
       }
     };
   }
-  return CIM_NODE_NOTATION[node.type] || null;
+  return state.activeType === "cim" ? (CIM_NODE_NOTATION[node.type] || null)
+      : null;
 }
 
 function normalizeViewText(value) {
@@ -568,6 +672,61 @@ function activeCimViewProfile() {
     return "eventstorming";
   }
   return "eventstorming";
+}
+
+function activePimViewProfile() {
+  if (state.activeType !== "pim") {
+    return null;
+  }
+  const view = activeView();
+  let definition = null;
+  try {
+    definition = modelingViewDefinition("pim", view);
+  } catch {
+    definition = null;
+  }
+  if (definition?.viewpoint) {
+    return String(definition.viewpoint);
+  }
+  const text = normalizeViewText([
+    view?.id, view?.name, view?.layoutProfile, view?.description
+  ].filter(Boolean).join(" "));
+  if (text.includes("api")) {
+    return "api";
+  }
+  if (text.includes("compute") || text.includes("trigger")) {
+    return "compute";
+  }
+  if (text.includes("contract") || text.includes("schema")
+      || text.includes("event type")) {
+    return "contracts";
+  }
+  if (text.includes("data")) {
+    return "data";
+  }
+  if (text.includes("integration") || text.includes("channel")
+      || text.includes("event")) {
+    return "integration";
+  }
+  if (text.includes("workflow")) {
+    return "workflow";
+  }
+  if (text.includes("security") || text.includes("access")) {
+    return "security";
+  }
+  if (text.includes("deployment") || text.includes("environment")) {
+    return "deployment";
+  }
+  if (text.includes("policy") || text.includes("operation")) {
+    return "policy";
+  }
+  if (text.includes("configuration") || text.includes("secret")) {
+    return "configuration";
+  }
+  if (text.includes("readiness") || text.includes("trace")) {
+    return "readiness";
+  }
+  return "architecture";
 }
 
 function hasOwnValue(object, key) {
@@ -681,6 +840,9 @@ function detailCompartment(title, rows) {
 }
 
 function cimNodeDetailsHtml(node) {
+  if (state.activeType === "pim") {
+    return pimNodeDetailsHtml(node);
+  }
   if (state.activeType !== "cim") {
     return "";
   }
@@ -891,6 +1053,216 @@ function cimNodeDetailsHtml(node) {
   return `<div class="node-cim-details">${badges.length
       ? `<div class="node-cim-badges">${badges.join("")}</div>` : ""}${
       sections.join("")}</div>`;
+}
+
+function pimNodeDetailsHtml(node) {
+  const meta = node.meta || {};
+  const badges = [];
+  const addBadge = (value, issue = false) => {
+    const text = String(value || "").trim();
+    if (text) {
+      badges.push(detailBadge(text, issue));
+    }
+  };
+  const boolBadge = (field, label = field) => {
+    if (meta[field]) {
+      addBadge(label);
+    }
+  };
+  const sections = [];
+  switch (node.type) {
+    case "ServerlessService":
+      addBadge(meta.boundaryType);
+      boolBadge("externallyExposed", "external");
+      boolBadge("ownsData", "owns data");
+      sections.push(detailCompartment("Ownership", [
+        detailRow("functions", compactRefCount(meta.ownsFunctions)),
+        detailRow("apis", compactRefCount(meta.ownsApis)),
+        detailRow("channels", compactRefCount(meta.ownsChannels)),
+        detailRow("stores", compactRefCount(meta.ownsStores))
+      ]));
+      break;
+    case "Function":
+      addBadge(meta.functionKind);
+      boolBadge("publicEntryPoint", "public");
+      boolBadge("requiresIdempotency", "idempotent");
+      sections.push(detailCompartment("Function", [
+        detailRow("responsibility", meta.responsibility),
+        detailRow("handler", meta.handlerResponsibility),
+        detailRow("reads", compactRefCount(meta.reads)),
+        detailRow("writes", compactRefCount(meta.writes)),
+        detailRow("publishes", compactRefCount(meta.publishes))
+      ]));
+      break;
+    case "Api":
+      addBadge(meta.apiStyle);
+      boolBadge("authRequired", "auth");
+      boolBadge("externalConsumerFacing", "external");
+      sections.push(detailCompartment("Surface", [
+        detailRow("public", meta.publicName),
+        detailRow("base", meta.basePath),
+        detailRow("routes", compactRefCount(meta.routes))
+      ]));
+      break;
+    case "ApiRoute":
+      addBadge([meta.method, meta.pathTemplate].filter(Boolean).join(" "));
+      boolBadge("publicRoute", "public");
+      boolBadge("authRequired", "auth");
+      sections.push(detailCompartment("Integration", [
+        detailRow("operation", meta.operationId),
+        detailRow("function", refLabel(meta.functionIntegration)),
+        detailRow("workflow", refLabel(meta.workflowIntegration)),
+        detailRow("success", meta.expectedSuccessStatus)
+      ]));
+      break;
+    case "Schema":
+      addBadge(meta.schemaKind);
+      addBadge(meta.compatibility);
+      sections.push(detailCompartment("Schema", [
+        detailRow("version", meta.semanticVersion),
+        detailRow("fields", compactRefCount(meta.fields)),
+        detailRow("constraints", compactRefCount(meta.constraints))
+      ]));
+      break;
+    case "EventType":
+      addBadge(meta.semanticName);
+      boolBadge("replayable", "replayable");
+      boolBadge("containsPersonalData", "personal data");
+      sections.push(detailCompartment("Event", [
+        detailRow("schema", refLabel(meta.schema)),
+        detailRow("producers", compactRefCount(meta.producedBy)),
+        detailRow("consumers", compactRefCount(meta.consumedBy))
+      ]));
+      break;
+    case "DataStore":
+      addBadge(meta.storeKind);
+      addBadge(meta.consistencyNeed);
+      boolBadge("encrypted", "encrypted");
+      boolBadge("containsPersonalData", "personal data");
+      sections.push(detailCompartment("Data", [
+        detailRow("models", compactRefCount(meta.ownedDataModels)),
+        detailRow("access", compactRefCount(meta.accessPatterns)),
+        detailRow("indexes", compactRefCount(meta.indexCandidates)),
+        detailRow("volume", meta.expectedDataVolume)
+      ]));
+      break;
+    case "ObjectStore":
+      addBadge("object store");
+      boolBadge("versioningRequired", "versioned");
+      boolBadge("eventNotificationRequired", "events");
+      sections.push(detailCompartment("Objects", [
+        detailRow("types", compactList(meta.objectTypes)),
+        detailRow("schemas", compactRefCount(meta.objectMetadataSchemas))
+      ]));
+      break;
+    case "Queue":
+    case "Topic":
+    case "EventBus":
+      addBadge(node.type);
+      addBadge(meta.deliverySemantics);
+      boolBadge("encrypted", "encrypted");
+      boolBadge("deadLetterRequired", "dlq");
+      sections.push(detailCompartment("Channel", [
+        detailRow("events", compactRefCount(meta.eventTypes)),
+        detailRow("producers", compactRefCount(meta.producers)),
+        detailRow("consumers", compactRefCount(meta.consumers))
+      ]));
+      break;
+    case "Schedule":
+      addBadge(meta.enabled === false ? "disabled" : "enabled");
+      sections.push(detailCompartment("Timer", [
+        detailRow("expression", meta.scheduleExpression),
+        detailRow("time zone", meta.timeZone)
+      ]));
+      break;
+    case "Workflow":
+      addBadge(meta.workflowKind);
+      boolBadge("longRunning", "long running");
+      boolBadge("stateful", "stateful");
+      sections.push(detailCompartment("States", [
+        detailRow("start", refLabel(meta.startState)),
+        detailRow("end", compactList(meta.endStates)),
+        detailRow("states", compactRefCount(meta.states)),
+        detailRow("transitions", compactRefCount(meta.transitions))
+      ]));
+      break;
+    case "WorkflowState":
+      addBadge(meta.stateKind);
+      boolBadge("terminal", "terminal");
+      sections.push(detailCompartment("Invocation", [
+        detailRow("function", refLabel(meta.invokesFunction)),
+        detailRow("adapter", refLabel(meta.invokesAdapter)),
+        detailRow("workflow", refLabel(meta.nestedWorkflow))
+      ]));
+      break;
+    case "ExternalAdapter":
+      addBadge(meta.protocolFamily);
+      boolBadge("credentialsRequired", "credentials");
+      sections.push(detailCompartment("External", [
+        detailRow("system", meta.externalSystemName),
+        detailRow("endpoint", meta.endpointDescription),
+        detailRow("sla", meta.expectedSla)
+      ]));
+      break;
+    case "DeploymentUnit":
+      addBadge(meta.unitType);
+      boolBadge("independentlyDeployable", "independent");
+      sections.push(detailCompartment("Package", [
+        detailRow("contains", compactRefCount(meta.contains)),
+        detailRow("envs", compactRefCount(meta.targetEnvironments)),
+        detailRow("release", meta.releaseStrategy)
+      ]));
+      break;
+    case "Environment":
+      addBadge(meta.environmentClass);
+      boolBadge("productionLike", "prod-like");
+      boolBadge("requiresApproval", "approval");
+      sections.push(detailCompartment("Config", [
+        detailRow("suffix", meta.nameSuffix),
+        detailRow("sets", compactRefCount(meta.configurationSets))
+      ]));
+      break;
+    case "IdentityProvider":
+    case "Principal":
+      addBadge(meta.identityKind || meta.principalKind);
+      boolBadge("privileged", "privileged");
+      boolBadge("mfaRequired", "mfa");
+      sections.push(detailCompartment("Access", [
+        detailRow("principals", compactRefCount(meta.principals)),
+        detailRow("permissions", compactRefCount(meta.permissions)),
+        detailRow("external", meta.externalRef)
+      ]));
+      break;
+    case "Secret":
+    case "ConfigurationSet":
+      addBadge(meta.secretKind || meta.scope);
+      boolBadge("rotationRequired", "rotation");
+      sections.push(detailCompartment("Configuration", [
+        detailRow("parameters", compactRefCount(meta.parameters)),
+        detailRow("env vars", compactRefCount(meta.environmentVariables)),
+        detailRow("owner", meta.ownerTeam)
+      ]));
+      break;
+    default:
+      try {
+        const definition = modelingElementDefinition("pim", node.type);
+        const visibleFields = Array.isArray(definition?.visibleFields)
+            ? definition.visibleFields : [];
+        sections.push(detailCompartment("Fields", visibleFields.slice(0, 7)
+        .map((field) => detailRow(field, Array.isArray(meta[field])
+            ? compactList(meta[field]) : compactRefCount(meta[field])))));
+      } catch {
+        // Unknown PIM nodes remain editable through the property panel.
+      }
+  }
+  if (meta.lifecycleStatus) {
+    addBadge(meta.lifecycleStatus);
+  }
+  return badges.length || sections.length
+      ? `<div class="node-cim-details">${badges.length
+          ? `<div class="node-cim-badges">${badges.join("")}</div>` : ""}${
+          sections.join("")}</div>`
+      : "";
 }
 
 function commitUndoSnapshot(snapshot) {
@@ -2398,6 +2770,10 @@ function attachNestedNode(node, {ownerTypes, feature}) {
 }
 
 function createRequiredCimCompanions(node) {
+  if (state.activeType === "pim") {
+    createRequiredPimCompanions(node);
+    return;
+  }
   if (state.activeType !== "cim" || !node) {
     return;
   }
@@ -2653,6 +3029,202 @@ function createRequiredCimCompanions(node) {
   state.diagram.nodes.forEach(syncNodeMetaToGraph);
 }
 
+function createRequiredPimCompanions(node) {
+  if (!node) {
+    return;
+  }
+  const x = node.x;
+  const y = node.y;
+  switch (node.type) {
+    case "Function": {
+      node.meta.functionKind ||= "COMMAND_HANDLER";
+      const contract = addScaffoldNode("FunctionContract", x - 260, y,
+          `${node.label} Contract`);
+      contract.meta.__ownerId = node.id;
+      contract.meta.__containmentFeature = "contract";
+      contract.meta.contractVersion = "1.0.0";
+      node.meta.contract = contract.id;
+      createWizardEdge(node.id, contract.id, "CONTAINS");
+      break;
+    }
+    case "Api": {
+      node.meta.apiStyle ||= "RESOURCE_ORIENTED_HTTP";
+      const route = addScaffoldNode("ApiRoute", x + 260, y,
+          `${node.label} Route`);
+      route.meta.__ownerId = node.id;
+      route.meta.__containmentFeature = "routes";
+      route.meta.method = "GET";
+      route.meta.pathTemplate = "/";
+      route.meta.authRequired = Boolean(node.meta.authRequired);
+      node.meta.routes = [route.id];
+      createWizardEdge(node.id, route.id, "CONTAINS");
+      break;
+    }
+    case "Schema": {
+      node.meta.schemaKind ||= "ENTITY";
+      const field = addScaffoldNode("SchemaField", x + 260, y,
+          `${node.label} Field`);
+      field.meta.__ownerId = node.id;
+      field.meta.__containmentFeature = "fields";
+      field.meta.fieldType = "STRING";
+      field.meta.required = true;
+      node.meta.fields = [field.id];
+      createWizardEdge(node.id, field.id, "CONTAINS");
+      break;
+    }
+    case "EventType": {
+      node.meta.semanticName ||= node.label;
+      const schema = addScaffoldNode("Schema", x - 260, y,
+          `${node.label} Schema`);
+      schema.meta.schemaKind = "EVENT";
+      node.meta.schema = schema.id;
+      createWizardEdge(node.id, schema.id, "USES");
+      break;
+    }
+    case "DataStore": {
+      node.meta.storeKind ||= "DOCUMENT";
+      node.meta.consistencyNeed ||= "EVENTUAL";
+      const schema = addScaffoldNode("Schema", x - 300, y + 150,
+          `${node.label} Schema`);
+      schema.meta.schemaKind = "ENTITY";
+      const model = addScaffoldNode("DataModel", x, y + 150,
+          `${node.label} Model`);
+      model.meta.__ownerId = node.id;
+      model.meta.__containmentFeature = "ownedDataModels";
+      model.meta.dataModelKind = "ENTITY";
+      model.meta.schema = schema.id;
+      const access = addScaffoldNode("AccessPattern", x + 300, y + 150,
+          `${node.label} Access`);
+      access.meta.__ownerId = node.id;
+      access.meta.__containmentFeature = "accessPatterns";
+      access.meta.patternName = "Primary lookup";
+      access.meta.operation = "Get";
+      node.meta.ownedDataModels = [model.id];
+      node.meta.accessPatterns = [access.id];
+      createWizardEdge(node.id, model.id, "CONTAINS");
+      createWizardEdge(node.id, access.id, "CONTAINS");
+      createWizardEdge(model.id, schema.id, "USES");
+      break;
+    }
+    case "Workflow": {
+      node.meta.workflowKind ||= "ORCHESTRATION";
+      const start = addScaffoldNode("WorkflowState", x - 240, y + 150,
+          "Start");
+      const end = addScaffoldNode("WorkflowState", x + 240, y + 150, "End");
+      start.meta.__ownerId = node.id;
+      start.meta.__containmentFeature = "states";
+      start.meta.stateKind = "TASK";
+      end.meta.__ownerId = node.id;
+      end.meta.__containmentFeature = "states";
+      end.meta.stateKind = "SUCCESS";
+      end.meta.terminal = true;
+      node.meta.states = [start.id, end.id];
+      node.meta.startState = start.id;
+      node.meta.endStates = [end.id];
+      createWizardEdge(node.id, start.id, "CONTAINS");
+      createWizardEdge(node.id, end.id, "CONTAINS");
+      createWizardEdge(start.id, end.id, "TRANSITION");
+      break;
+    }
+    case "Queue":
+      node.meta.channelKind = "QUEUE";
+      node.meta.orderingRequirement ||= "NONE";
+      node.meta.deliverySemantics ||= "AT_LEAST_ONCE";
+      break;
+    case "Topic":
+      node.meta.channelKind = "TOPIC";
+      node.meta.orderingRequirement ||= "NONE";
+      node.meta.deliverySemantics ||= "AT_LEAST_ONCE";
+      break;
+    case "EventBus":
+      node.meta.channelKind = "EVENT_BUS";
+      node.meta.orderingRequirement ||= "NONE";
+      node.meta.deliverySemantics ||= "AT_LEAST_ONCE";
+      break;
+    case "Schedule":
+      node.meta.scheduleExpression ||= "rate(1 day)";
+      node.meta.enabled = node.meta.enabled !== false;
+      break;
+    case "DeploymentUnit": {
+      node.meta.unitType ||= "SERVICE";
+      const env = state.diagram.nodes.find((candidate) =>
+              candidate.type === "Environment")
+          || addScaffoldNode("Environment", x + 280, y, "Dev");
+      env.meta.environmentClass ||= "DEV";
+      const deployable = state.diagram.nodes.find((candidate) =>
+          ["Function", "Api", "Workflow", "Queue", "Topic", "EventBus",
+            "Schedule", "DataStore", "ObjectStore", "ExternalAdapter",
+            "IdentityProvider", "ConfigurationSet"].includes(candidate.type));
+      if (deployable) {
+        node.meta.contains = [deployable.id];
+        createWizardEdge(node.id, deployable.id, "DEPLOYS");
+      }
+      node.meta.targetEnvironments = [env.id];
+      createWizardEdge(node.id, env.id, "DEPLOYS_TO");
+      break;
+    }
+    case "ServerlessService":
+      node.meta.boundaryType ||= "CAPABILITY_BASED";
+      break;
+    case "Environment":
+      node.meta.environmentClass ||= "DEV";
+      break;
+    case "ImplementationProfile":
+      node.meta.primaryLanguage ||= "TYPESCRIPT";
+      node.meta.packageManager ||= "NPM";
+      break;
+    case "IdentityProvider":
+      node.meta.identityKind ||= "USER_DIRECTORY";
+      break;
+    case "Principal":
+      node.meta.principalKind ||= "ROLE";
+      break;
+    case "Secret":
+      node.meta.secretKind ||= "TOKEN";
+      break;
+    case "ConfigurationSet":
+      node.meta.scope ||= "APPLICATION";
+      break;
+    case "WorkflowState":
+      node.meta.stateKind ||= "TASK";
+      attachNestedNode(node, {ownerTypes: ["Workflow"], feature: "states"});
+      break;
+    case "ApiRoute":
+      node.meta.method ||= "GET";
+      node.meta.pathTemplate ||= "/";
+      attachNestedNode(node, {ownerTypes: ["Api"], feature: "routes"});
+      break;
+    case "SchemaField":
+      node.meta.fieldType ||= "STRING";
+      attachNestedNode(node, {ownerTypes: ["Schema"], feature: "fields"});
+      break;
+    case "DataModel":
+      node.meta.dataModelKind ||= "ENTITY";
+      attachNestedNode(node,
+          {ownerTypes: ["DataStore"], feature: "ownedDataModels"});
+      break;
+    case "AccessPattern":
+      node.meta.patternName ||= node.label;
+      attachNestedNode(node,
+          {ownerTypes: ["DataStore"], feature: "accessPatterns"});
+      break;
+    case "ConfigParameter":
+      node.meta.scope ||= "APPLICATION";
+      attachNestedNode(node,
+          {ownerTypes: ["ConfigurationSet"], feature: "parameters"});
+      break;
+    case "EnvironmentVariable":
+      node.meta.variableName ||= node.label.replaceAll(/[^A-Za-z0-9_]+/g, "_")
+      .toUpperCase();
+      attachNestedNode(node,
+          {ownerTypes: ["ConfigurationSet"], feature: "environmentVariables"});
+      break;
+    default:
+      break;
+  }
+  state.diagram.nodes.forEach(syncNodeMetaToGraph);
+}
+
 function createModelingWizard(kind) {
   const rect = el.canvasViewport?.getBoundingClientRect();
   const origin = rect ? toCanvasCoordinates(rect.left + rect.width / 2,
@@ -2674,7 +3246,7 @@ function createModelingWizard(kind) {
         ["Function", 0, 0],
         ["FunctionContract", -260, 0],
         ["EventType", 260, -80],
-        ["EventChannel", 260, 80],
+        ["Queue", 260, 80],
         ["DataStore", 0, 160]
       ],
       edges: [[0, 1, "USES"], [0, 2, "PUBLISHES"], [3, 2, "CONTAINS"],
@@ -2835,12 +3407,67 @@ function availableCimPaletteTypes(allTypes) {
   return allTypes;
 }
 
+function availablePimPaletteTypes(allTypes) {
+  const available = new Set(allTypes);
+  const view = activeView();
+  if (!view || String(view.id || "") === "view-pim-main"
+      || String(view.kind || "").toUpperCase() === "MAIN") {
+    return allTypes;
+  }
+  let viewDefinition = null;
+  try {
+    viewDefinition = modelingViewDefinition("pim", view);
+  } catch {
+    viewDefinition = null;
+  }
+  const scoped = Array.isArray(viewDefinition?.palette)
+  && viewDefinition.palette.length ? viewDefinition.palette
+      : [...activeViewElementTypeFilter()];
+  const filtered = scoped.filter((type) => available.has(type));
+  return filtered.length ? filtered : allTypes;
+}
+
 function renderCimConnectionTools(query) {
   if (state.activeType !== "cim") {
     return false;
   }
   const profile = activeCimViewProfile();
   const tools = CIM_EDGE_TOOLS_BY_PROFILE[profile] || [];
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  const filtered = normalizedQuery
+      ? tools.filter((tool) => tool.label.toLowerCase().includes(
+          normalizedQuery) || tool.kind.toLowerCase().includes(
+          normalizedQuery))
+      : tools;
+  if (!filtered.length) {
+    return false;
+  }
+  return appendPaletteActionGroup("Connection Tools", () => {
+    return filtered.map((tool) => {
+      const button = createPaletteActionButton(tool.label, {
+        active: state.preferredConnectionKind === tool.kind
+            && state.connectMode,
+        title: `${tool.label}: ${cimEdgeLabel({kind: tool.kind})}`
+      });
+      button.dataset.edgeKind = tool.kind;
+      button.addEventListener("click", () => {
+        state.preferredConnectionKind = tool.kind;
+        setConnectMode(true);
+        setStatus(`${tool.label}: click source then target`);
+        renderPalette();
+      });
+      return button;
+    });
+  });
+}
+
+function renderPimConnectionTools(query) {
+  if (state.activeType !== "pim") {
+    return false;
+  }
+  const profile = activePimViewProfile();
+  const tools = PIM_EDGE_TOOLS_BY_PROFILE[profile]
+      || PIM_EDGE_TOOLS_BY_PROFILE.architecture;
   const normalizedQuery = String(query || "").trim().toLowerCase();
   const filtered = normalizedQuery
       ? tools.filter((tool) => tool.label.toLowerCase().includes(
@@ -2878,7 +3505,7 @@ function renderWizardActions() {
     const requiredTypes = {
       cimCommandFlow: ["Actor", "Command", "BusinessEvent"],
       pimCommandHandler: ["Function", "FunctionContract", "EventType",
-        "EventChannel", "DataStore"],
+        "Queue", "DataStore"],
       psmLambdaEndpoint: ["ApiGatewayRoute", "ApiGatewayTrigger",
         "AwsLambdaFunction", "IamRole", "CloudWatchLogGroup"]
     }[kind] || [];
@@ -3001,9 +3628,11 @@ export function renderPalette() {
   const activeViewElementTypes = activeViewElementTypeFilter();
   const viewScopedTypes = state.activeType === "cim"
       ? availableCimPaletteTypes(allTypes)
-      : (activeViewElementTypes.size
-          ? allTypes.filter((type) => activeViewElementTypes.has(type))
-          : allTypes);
+      : (state.activeType === "pim"
+          ? availablePimPaletteTypes(allTypes)
+          : (activeViewElementTypes.size
+              ? allTypes.filter((type) => activeViewElementTypes.has(type))
+              : allTypes));
   const actionableTypes = viewScopedTypes;
   const filteredTypes = query
       ? actionableTypes.filter((type) => type.toLowerCase().includes(query))
@@ -3013,7 +3642,9 @@ export function renderPalette() {
   el.palette.innerHTML = "";
   el.palette.dataset.activeType = state.activeType;
   const hasQuickActionsGroup = renderWizardActions();
-  const hasConnectionToolsGroup = renderCimConnectionTools(query);
+  const hasConnectionToolsGroup = state.activeType === "cim"
+      ? renderCimConnectionTools(query)
+      : renderPimConnectionTools(query);
   const namedGroups = groupedTypes.map(([groupName]) => groupName).filter(
       Boolean);
   if (hasQuickActionsGroup) {
@@ -3145,6 +3776,13 @@ function paletteGroupForType(type) {
       return modelingElementDefinition("cim", type)?.category || "CIM";
     } catch {
       return "CIM";
+    }
+  }
+  if (state.activeType === "pim") {
+    try {
+      return modelingElementDefinition("pim", type)?.category || "PIM";
+    } catch {
+      return "PIM";
     }
   }
   const groups = {
@@ -4237,6 +4875,7 @@ export function renderDiagram() {
   renderNodes();
   renderEdges();
   renderCimWorkbenchSurface();
+  renderPimWorkbenchSurface();
   el.canvasGrid?.style.setProperty("--viewport-scale",
       String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
@@ -4244,8 +4883,11 @@ export function renderDiagram() {
       && state.viewport.scale < 0.75);
   el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
   el.workspace?.classList.toggle("cim-view-active", state.activeType === "cim");
+  el.workspace?.classList.toggle("pim-view-active", state.activeType === "pim");
   el.workspace?.setAttribute("data-cim-view-profile",
       activeCimViewProfile() || "");
+  el.workspace?.setAttribute("data-pim-view-profile",
+      activePimViewProfile() || "");
   renderRemoteCursors();
 }
 

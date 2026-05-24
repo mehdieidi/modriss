@@ -17,6 +17,10 @@ import {
   cimSemanticElementsFromRoot,
   cimSemanticRelationshipsFromRoot
 } from './cim-model-utils.js';
+import {
+  pimSemanticElementsFromRoot,
+  pimSemanticRelationshipsFromRoot
+} from './pim-model-utils.js';
 
 function sanitizeConnectionIdPart(value) {
   const normalized = String(value ?? "").trim().toLowerCase().replaceAll(
@@ -30,7 +34,7 @@ function connectionIdFor(modelType, index, sourceId, targetId, kind) {
       targetId)}`;
 }
 
-function connectionRecords(modelJson) {
+function connectionRecords(modelJson, modelType = state.activeType) {
   if (Array.isArray(modelJson?.diagram?.relationships)) {
     return modelJson.diagram.relationships;
   }
@@ -41,14 +45,16 @@ function connectionRecords(modelJson) {
   if (Array.isArray(modelJson?.connectors)) {
     return modelJson.connectors;
   }
-  const semanticRelationships = cimSemanticRelationshipsFromRoot(modelJson);
+  const semanticRelationships = modelType === "cim"
+      ? cimSemanticRelationshipsFromRoot(modelJson)
+      : modelType === "pim" ? pimSemanticRelationshipsFromRoot(modelJson) : [];
   if (semanticRelationships.length) {
     return semanticRelationships;
   }
   return [];
 }
 
-function elementRecords(modelJson) {
+function elementRecords(modelJson, modelType = state.activeType) {
   if (Array.isArray(modelJson?.diagram?.elements)) {
     return modelJson.diagram.elements;
   }
@@ -62,7 +68,9 @@ function elementRecords(modelJson) {
   if (Array.isArray(modelJson?.resources)) {
     return modelJson.resources;
   }
-  const semanticElements = cimSemanticElementsFromRoot(modelJson);
+  const semanticElements = modelType === "cim"
+      ? cimSemanticElementsFromRoot(modelJson)
+      : modelType === "pim" ? pimSemanticElementsFromRoot(modelJson) : [];
   if (semanticElements.length) {
     return semanticElements;
   }
@@ -70,7 +78,7 @@ function elementRecords(modelJson) {
 }
 
 export function relationshipIdsFromModel(modelType, modelJson) {
-  return connectionRecords(modelJson).map((connection, index) => {
+  return connectionRecords(modelJson, modelType).map((connection, index) => {
     const sourceId = typeof connection?.source === "string" ? connection.source
         : connection?.source?.$ref;
     const targetId = typeof connection?.target === "string" ? connection.target
@@ -301,8 +309,8 @@ export function toDiagram(modelType, modelJson, fallbackName) {
 
   const diagram = emptyDiagram(modelType);
   diagram.name = modelJson?.name || fallbackName || `${modelType}-model`;
-  const rawElements = elementRecords(modelJson);
-  const rawRelationships = connectionRecords(modelJson);
+  const rawElements = elementRecords(modelJson, modelType);
+  const rawRelationships = connectionRecords(modelJson, modelType);
 
   // Deduplicate elements by ID, keeping only the first occurrence.
   // This prevents duplicate node IDs in the layout endpoint which would cause validation errors.

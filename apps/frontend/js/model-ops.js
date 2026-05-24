@@ -7,6 +7,7 @@ import {emptyDiagram} from './utils.js';
 import {saveStoredEdgeLayout, serializeModel, toDiagram} from './diagram.js';
 import {
   activeView,
+  installGraphAndViews,
   restoreTabGraphState,
   saveCurrentTabGraphState,
   syncActiveViewFromVisibleGraph
@@ -414,6 +415,9 @@ export async function loadModelById(typeKey, id,
   state.modelId = record.id;
   state.baseModel = structuredClone(record.modelJson);
   state.diagram = toDiagram(typeKey, record.modelJson, record.name);
+  installGraphAndViews(typeKey, record.modelJson, record.name
+      || defaultModelName(typeKey));
+  materializeActiveView();
   if (typeKey === "cim") {
     state.boundedContextCreateMode = false;
     state.boundedContextDraftNodeIds = new Set();
@@ -432,6 +436,7 @@ export async function loadModelById(typeKey, id,
   clearValidationIssues();
   setActiveModelName(record.name || defaultModelName(typeKey));
   resetCanvasView();
+  renderPalette();
   renderDiagram();
   renderViewWorkbench();
   if (showManualGuidance) {

@@ -67,6 +67,7 @@ import {
 import {loadModelingConfig} from './modeling-config-data.js';
 import {initViewWorkbench, renderViewWorkbench} from './view-explorer.js';
 import {initCimWorkbenchSurface} from './cim-workbench.js';
+import {initPimWorkbenchSurface} from './pim-workbench.js';
 import {configureContainerCollapse} from './container-collapse.js';
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
@@ -888,6 +889,12 @@ async function init() {
       {renderDiagram, renderWorkbench: renderViewWorkbench});
   initViewWorkbench({renderDiagram, renderPalette});
   initCimWorkbenchSurface({
+    renderDiagram,
+    renderPalette,
+    openAttributePanel,
+    openConnectionPanel
+  });
+  initPimWorkbenchSurface({
     renderDiagram,
     renderPalette,
     openAttributePanel,

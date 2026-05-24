@@ -32,8 +32,12 @@ operation fieldForWithDefault(ownerSeed : String, name : String, fieldType, requ
 }
 
 operation createSchemaField(item : CIMDOMAIN!InformationItem) {
+  return createSchemaField(item, "shared");
+}
+
+operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String) {
   var f = new CONTRACTS!SchemaField;
-  f.id = idFor("field", item);
+  f.id = newId("field", ownerSeed + "_" + item.id);
   f.name = camelCase(firstText(item.businessName, item.name));
   f.fieldType = mapFieldType(item);
   f.required = isTrue(item.required);
@@ -55,28 +59,52 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem) {
   f.descriptionForConsumers = firstText(item.summary, item.description);
 
   if (item.subItems.notEmpty()) {
-    var objectSchema = new CONTRACTS!Schema;
-    objectSchema.id = idFor("schema_item", item);
-    objectSchema.name = nameFor(item, " Object Schema");
-    objectSchema.schemaKind = PIMTYPES!SchemaKind#VALUE_OBJECT;
-    objectSchema.semanticVersion = "1.0.0";
-    objectSchema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
-    objectSchema.additionalPropertiesAllowed = false;
-    objectSchema.generatedFromCimInformation = true;
-    for (subItem in item.subItems) {
-      objectSchema.fields.add(createSchemaField(subItem));
+    var objectSchemaId = idFor("schema_item", item);
+    var objectSchema = CONTRACTS!Schema.all.select(s | s.id = objectSchemaId).first();
+    if (objectSchema.isUndefined()) {
+      objectSchema = new CONTRACTS!Schema;
+      objectSchema.id = objectSchemaId;
+      objectSchema.name = nameFor(item, " Object Schema");
+      objectSchema.schemaKind = PIMTYPES!SchemaKind#VALUE_OBJECT;
+      objectSchema.semanticVersion = "1.0.0";
+      objectSchema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+      objectSchema.additionalPropertiesAllowed = false;
+      objectSchema.generatedFromCimInformation = true;
+      for (subItem in item.subItems) {
+        objectSchema.fields.add(createSchemaField(subItem, objectSchema.id));
+      }
+      pimRoot().schemas.add(objectSchema);
+      traceGenerated(item, objectSchema, "TR-040", "MEDIUM");
     }
-    pimRoot().schemas.add(objectSchema);
-    traceGenerated(item, objectSchema, "TR-040", "MEDIUM");
     f.objectSchema = objectSchema;
+  }
+  else if (f.fieldType = PIMTYPES!FieldType#OBJECT) {
+    var placeholderSchemaId = idFor("schema_item", item);
+    var placeholderSchema = CONTRACTS!Schema.all.select(s | s.id = placeholderSchemaId).first();
+    if (placeholderSchema.isUndefined()) {
+      placeholderSchema = new CONTRACTS!Schema;
+      placeholderSchema.id = placeholderSchemaId;
+      placeholderSchema.name = nameFor(item, " Object Schema");
+      placeholderSchema.schemaKind = PIMTYPES!SchemaKind#VALUE_OBJECT;
+      placeholderSchema.semanticVersion = "1.0.0";
+      placeholderSchema.compatibility = PIMTYPES!SchemaCompatibility#NONE;
+      placeholderSchema.additionalPropertiesAllowed = false;
+      placeholderSchema.generatedFromCimInformation = true;
+      placeholderSchema.fields.add(fieldFor(placeholderSchema.id, "reference", PIMTYPES!FieldType#STRING, true));
+      placeholderSchema.fields.add(fieldFor(placeholderSchema.id, "description", PIMTYPES!FieldType#STRING, false));
+      pimRoot().schemas.add(placeholderSchema);
+      traceGenerated(item, placeholderSchema, "TR-040", "LOW");
+      manualDecision("TR-040", "Define object structure for information item '" + item.name + "'.", KERNEL!Severity#WARNING, false, Sequence{item, placeholderSchema});
+    }
+    f.objectSchema = placeholderSchema;
   }
 
   if (f.fieldType = PIMTYPES!FieldType#ENUM and hasText(item.allowedValues)) {
-    var rawValues = item.allowedValues.replace(";", ",").replace("|", ",").split(",");
+    var rawValues = splitAllowedValues(item.allowedValues);
     for (rawValue in rawValues) {
       if (hasText(rawValue)) {
         var literal = new CONTRACTS!SchemaEnumLiteral;
-        literal.id = newId("enum_literal", item.id + "_" + rawValue.trim());
+        literal.id = newId("enum_literal", ownerSeed + "_" + item.id + "_" + rawValue.trim());
         literal.name = rawValue.trim();
         literal.literal = rawValue.trim();
         literal.displayName = rawValue.trim();
@@ -101,9 +129,35 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem) {
   return f;
 }
 
+operation splitAllowedValues(value) {
+  var values = Sequence{};
+  var current = "";
+  var text = asText(value);
+  for (i in Sequence{1..text.length()}) {
+    var ch = text.substring(i - 1, i);
+    if (ch = "," or ch = ";" or ch = "|") {
+      if (hasText(current)) {
+        values.add(current.trim());
+      }
+      current = "";
+    }
+    else {
+      current = current + ch;
+    }
+  }
+  if (hasText(current)) {
+    values.add(current.trim());
+  }
+  return values;
+}
+
 operation createConditionConstraint(condition : CIMBEHAVIOR!Condition, ruleId : String) {
+  return createConditionConstraint(condition, ruleId, "shared");
+}
+
+operation createConditionConstraint(condition : CIMBEHAVIOR!Condition, ruleId : String, ownerSeed : String) {
   var c = new CONTRACTS!SchemaConstraint;
-  c.id = idFor("constraint", condition);
+  c.id = newId("constraint", ownerSeed + "_" + condition.id);
   c.name = nameFor(condition, " Constraint");
   c.expressionLanguage = condition.expressionLanguage.orDefault("natural-language");
   c.expression = firstText(condition.expression, condition.naturalLanguage);
@@ -117,8 +171,12 @@ operation createConditionConstraint(condition : CIMBEHAVIOR!Condition, ruleId : 
 }
 
 operation createDataField(item : CIMDOMAIN!InformationItem, identityItem) {
+  return createDataField(item, identityItem, "shared");
+}
+
+operation createDataField(item : CIMDOMAIN!InformationItem, identityItem, ownerSeed : String) {
   var f = new DATA!DataField;
-  f.id = idFor("datafield", item);
+  f.id = newId("datafield", ownerSeed + "_" + item.id);
   f.name = camelCase(firstText(item.businessName, item.name));
   f.fieldType = mapFieldType(item);
   f.identifier = identityItem.isDefined() and item = identityItem;
@@ -185,10 +243,10 @@ operation createCommandRequestSchema(cmd : CIMBEHAVIOR!Command) {
   s.additionalPropertiesAllowed = false;
   s.generatedFromCimInformation = true;
   for (item in cmd.input) {
-    s.fields.add(createSchemaField(item));
+    s.fields.add(createSchemaField(item, s.id));
   }
   for (condition in cmd.preconditions) {
-    s.constraints.add(createConditionConstraint(condition, "TR-070"));
+    s.constraints.add(createConditionConstraint(condition, "TR-070", s.id));
   }
   addCorrelationFields(s);
   if (hasText(cmd.idempotencyBusinessKey) or cmd.duplicateSubmissionPossible) {
@@ -228,7 +286,7 @@ operation createQueryRequestSchema(q : CIMBEHAVIOR!Query) {
   s.additionalPropertiesAllowed = false;
   s.generatedFromCimInformation = true;
   for (item in q.input) {
-    s.fields.add(createSchemaField(item));
+    s.fields.add(createSchemaField(item, s.id));
   }
   if (hasText(q.paginationExpectation)) {
     s.fields.add(fieldFor(s.id, "pageToken", PIMTYPES!FieldType#STRING, false));
@@ -249,7 +307,7 @@ operation createQueryResponseSchema(q : CIMBEHAVIOR!Query) {
   s.additionalPropertiesAllowed = false;
   s.generatedFromCimInformation = true;
   for (item in q.output) {
-    s.fields.add(createSchemaField(item));
+    s.fields.add(createSchemaField(item, s.id));
   }
   if (q.queryType.asString() = "LIST" or q.queryType.asString() = "SEARCH" or q.queryType.asString() = "REPORT" or q.queryType.asString() = "ANALYTICS" or hasText(q.paginationExpectation)) {
     s.fields.add(fieldFor(s.id, "items", PIMTYPES!FieldType#ARRAY, true));
@@ -261,8 +319,16 @@ operation createQueryResponseSchema(q : CIMBEHAVIOR!Query) {
 }
 
 operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, alarms : Boolean) {
+  var id = newId("observability", seed.id + "_" + ruleId);
+  var existing = POLICY!ObservabilityConfig.all.select(o | o.id = id).first();
+  if (existing.isDefined()) {
+    if (not existing.attachedTo.includes(seed)) {
+      existing.attachedTo.add(seed);
+    }
+    return existing;
+  }
   var o = new POLICY!ObservabilityConfig;
-  o.id = newId("observability", seed.id + "_" + ruleId);
+  o.id = id;
   o.name = seed.name + " Observability";
   o.policyScope = "operational telemetry";
   o.productionRequired = true;
@@ -281,8 +347,16 @@ operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, a
 }
 
 operation createDefaultResilience(seed, ruleId : String, deadLetter : Boolean) {
+  var id = newId("resilience", seed.id + "_" + ruleId);
+  var existing = POLICY!ResiliencePolicy.all.select(p | p.id = id).first();
+  if (existing.isDefined()) {
+    if (not existing.attachedTo.includes(seed)) {
+      existing.attachedTo.add(seed);
+    }
+    return existing;
+  }
   var r = new POLICY!ResiliencePolicy;
-  r.id = newId("resilience", seed.id + "_" + ruleId);
+  r.id = id;
   r.name = seed.name + " Resilience";
   r.policyScope = "retry and failure handling";
   r.productionRequired = true;
@@ -328,6 +402,29 @@ operation createIdempotencyPolicy(cmd : CIMBEHAVIOR!Command) {
   p.appliesToRetries = true;
   p.appliesToDuplicateRequests = true;
   traceGenerated(cmd, p, "TR-070", "MEDIUM");
+  pimRoot().policies.add(p);
+  return p;
+}
+
+operation createIdempotencyPolicyForTarget(target, seed, ruleId : String, keySource : String) {
+  var id = newId("idempotency", target.id);
+  var existing = POLICY!IdempotencyPolicy.all.select(policy | policy.id = id).first();
+  if (existing.isDefined()) {
+    return existing;
+  }
+  var p = new POLICY!IdempotencyPolicy;
+  p.id = id;
+  p.name = target.name + " Idempotency";
+  p.policyScope = "idempotent invocation";
+  p.productionRequired = true;
+  p.keySource = keySource;
+  p.storeRequired = true;
+  p.scope = target.name;
+  p.expirationSeconds = 86400;
+  p.appliesToRetries = true;
+  p.appliesToDuplicateRequests = true;
+  p.attachedTo.add(target);
+  traceGenerated(seed, p, ruleId, "MEDIUM");
   pimRoot().policies.add(p);
   return p;
 }

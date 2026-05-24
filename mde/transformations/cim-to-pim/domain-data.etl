@@ -40,10 +40,10 @@ rule Entity2Schema
   s.generatedFromCimInformation = true;
 
   if (e.identityAttribute.isDefined()) {
-    s.fields.add(createSchemaField(e.identityAttribute));
+    s.fields.add(createSchemaField(e.identityAttribute, s.id));
   }
   for (item in e.attributes.excluding(e.identityAttribute)) {
-    s.fields.add(createSchemaField(item));
+    s.fields.add(createSchemaField(item, s.id));
   }
   for (inv in e.invariants) {
     var c = new CONTRACTS!SchemaConstraint;
@@ -52,7 +52,7 @@ rule Entity2Schema
     c.expressionLanguage = inv.expressionLanguage;
     c.expression = inv.expression;
     c.message = inv.naturalLanguageStatement;
-    c.severity = inv.violationSeverity;
+    c.severity = mapSeverity(inv.violationSeverity);
     s.constraints.add(c);
     traceGenerated(inv, c, "TR-040", "HIGH");
   }
@@ -73,7 +73,7 @@ rule ValueObject2Schema
   s.additionalPropertiesAllowed = false;
   s.generatedFromCimInformation = true;
   for (item in v.attributes) {
-    s.fields.add(createSchemaField(item));
+    s.fields.add(createSchemaField(item, s.id));
   }
 
   pimRoot().schemas.add(s);
@@ -92,8 +92,9 @@ rule DomainRelationship2SchemaReference
   field.nullable = not field.required;
   field.array = hasText(rel.targetMultiplicity) and (rel.targetMultiplicity.contains("*") or rel.targetMultiplicity.contains(".."));
   field.descriptionForConsumers = "Reference generated from " + rel.relationshipType.asString() + " relationship to " + rel.target.name + ".";
-  if (rel.target.isKindOf(CIMDOMAIN!DomainEntity)) {
-    field.objectSchema = schemaForEntity(rel.target);
+  var targetSchema = schemaForDomainConcept(rel.target);
+  if (targetSchema.isDefined()) {
+    field.objectSchema = targetSchema;
   }
 
   constraint.id = idFor("relationship_constraint", rel);
@@ -103,12 +104,10 @@ rule DomainRelationship2SchemaReference
   constraint.message = "Review relationship storage shape, multiplicity, and navigation strategy.";
   constraint.severity = KERNEL!Severity#WARNING;
 
-  if (rel.source.isKindOf(CIMDOMAIN!DomainEntity)) {
-    var sourceSchema = schemaForEntity(rel.source);
-    if (sourceSchema.isDefined()) {
-      sourceSchema.fields.add(field);
-      sourceSchema.constraints.add(constraint);
-    }
+  var sourceSchema = schemaForDomainConcept(rel.source);
+  if (sourceSchema.isDefined()) {
+    sourceSchema.fields.add(field);
+    sourceSchema.constraints.add(constraint);
   }
 
   traceGenerated(rel, field, "TR-040", "MEDIUM");
@@ -178,7 +177,7 @@ rule Aggregate2DataStore
   dataModel.schema = schemaForEntity(ag.root);
 
   for (item in aggregateItems(ag)) {
-    dataModel.storageFields.add(createDataField(item, ag.root.identityAttribute));
+    dataModel.storageFields.add(createDataField(item, ag.root.identityAttribute, dataModel.id));
   }
   store.ownedDataModels.add(dataModel);
 
