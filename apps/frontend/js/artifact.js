@@ -1,6 +1,6 @@
 import {state} from "./state.js";
 import {el} from "./dom.js";
-import {api} from "./api.js";
+import {api, apiAuthHeaders} from "./api.js";
 import {apiUrl} from "./config.js";
 import {setStatus} from "./status.js";
 
@@ -611,7 +611,12 @@ export async function openArtifactFile(filePath) {
     const url = apiUrl(
         `/artifact/${state.artifact.id}/file?path=${encodeURIComponent(
             filePath)}`);
-    const response = await fetch(url, {headers: {"Accept": "text/plain"}});
+    const response = await fetch(url, {
+      headers: {
+        "Accept": "text/plain",
+        ...apiAuthHeaders()
+      }
+    });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -652,14 +657,30 @@ export async function saveCurrentFile() {
   }
 }
 
-export function downloadCurrentArtifact() {
+export async function downloadCurrentArtifact() {
   if (!state.artifact.id) {
     setStatus("No artifact loaded");
     return;
   }
   const url = apiUrl(`/artifact/${state.artifact.id}/download`);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "";
-  link.click();
+  try {
+    const response = await fetch(url, {headers: apiAuthHeaders()});
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("content-disposition")
+        || "";
+    const filenameMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+    const filename = filenameMatch?.[1] || `${state.artifact.name
+    || "artifact"}.zip`;
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(objectUrl);
+  } catch (error) {
+    setStatus(`Download failed: ${error.message}`);
+  }
 }

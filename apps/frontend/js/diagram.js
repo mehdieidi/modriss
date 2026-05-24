@@ -13,6 +13,10 @@ import {
   serializeGraphAndViewsInto
 } from './graph-store.js';
 import {materializeActiveView} from './view-materializer.js';
+import {
+  cimSemanticElementsFromRoot,
+  cimSemanticRelationshipsFromRoot
+} from './cim-model-utils.js';
 
 function sanitizeConnectionIdPart(value) {
   const normalized = String(value ?? "").trim().toLowerCase().replaceAll(
@@ -37,6 +41,10 @@ function connectionRecords(modelJson) {
   if (Array.isArray(modelJson?.connectors)) {
     return modelJson.connectors;
   }
+  const semanticRelationships = cimSemanticRelationshipsFromRoot(modelJson);
+  if (semanticRelationships.length) {
+    return semanticRelationships;
+  }
   return [];
 }
 
@@ -53,6 +61,10 @@ function elementRecords(modelJson) {
   }
   if (Array.isArray(modelJson?.resources)) {
     return modelJson.resources;
+  }
+  const semanticElements = cimSemanticElementsFromRoot(modelJson);
+  if (semanticElements.length) {
+    return semanticElements;
   }
   return [];
 }
@@ -89,10 +101,12 @@ export function getDefaultNode(typeKey, nodeType, x, y) {
     x,
     y,
     status: "DRAFT",
+    lifecycleStatus: "INCOMPLETE",
     tags: []
   };
   const definition = modelingElementDefinition(typeKey, nodeType);
   applyAttributes(meta, definition);
+  meta.lifecycleStatus ||= "INCOMPLETE";
   if (labelField === "label") {
     meta.label = label;
   } else {

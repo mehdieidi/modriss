@@ -269,6 +269,61 @@
   gap: 5px;
 }
 
+.attr-section-title {
+  margin: 4px 0 -2px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
+  color: var(--accent-light);
+  font: 800 10px/1.2 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.attr-section-title:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.attr-trace-summary {
+  display: grid;
+  gap: 5px;
+}
+
+.attr-trace-row {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 0.7fr) minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-3) 76%, transparent);
+  padding: 5px 7px;
+}
+
+.attr-trace-row span,
+.attr-trace-row em {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attr-trace-row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font: 800 9px/1 var(--font-display);
+  letter-spacing: 0.05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .attr-field label {
   color: var(--muted);
   font: 600 10px/1.2 var(--font-display);
@@ -317,6 +372,12 @@
   word-break: break-all;
 }
 
+.attr-field-hint {
+  margin-top: 4px;
+  color: var(--muted);
+  font: 600 10px/1.35 var(--font-ui);
+}
+
 .attr-field-checkbox {
   flex-direction: row;
   align-items: center;
@@ -328,6 +389,55 @@
   font: 500 12px/1.2 var(--font-ui);
   letter-spacing: 0;
   text-transform: none;
+}
+
+.attr-containment-section {
+  display: grid;
+  gap: 8px;
+}
+
+.attr-containment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attr-contained-list {
+  display: grid;
+  gap: 6px;
+}
+
+.attr-contained-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.attr-contained-row:hover {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--border) 38%);
+  background: color-mix(in srgb, var(--accent-glow) 28%, var(--surface) 72%);
+}
+
+.attr-contained-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attr-contained-row em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
 }
 
 .attr-panel-footer {

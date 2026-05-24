@@ -10,6 +10,12 @@ import {
   syncActiveViewFromVisibleGraph
 } from './graph-store.js';
 import {materializeActiveView} from './view-materializer.js';
+import {
+  closeBoundedContextSpecialView,
+  finalizeBoundedContextDraft,
+  openBoundedContextOverview,
+  setContextCreateMode
+} from './canvas.js';
 
 let renderDiagramCallback = null;
 let renderPaletteCallback = null;
@@ -24,14 +30,20 @@ let treeLayerScrollTop = 0;
 
 const SPEC_VIEW_NAMES = {
   cim: [
-    "Requirements/Objectives View",
+    "Model Dashboard",
+    "Strategy Goals Requirements and KPIs",
     "Capability Map",
+    "Actor Role and External System Interactions",
+    "Bounded Context and Ubiquitous Language",
     "Domain Model View",
-    "EventStorming / Business Behavior View",
+    "Aggregate and Consistency View",
+    "Data Dictionary and Classification",
+    "Behavior Event Storming View",
     "Business Process View",
-    "Decision View",
-    "Information and Governance View",
-    "Transformation Readiness View"
+    "Policy and Decision View",
+    "Governance Constraint Matrix",
+    "Transformation Readiness View",
+    "Traceability Matrix"
   ],
   pim: [
     "Serverless component diagram",
@@ -155,6 +167,75 @@ function activeViewLabel() {
     return `No ${state.activeType.toUpperCase()} views`;
   }
   return view.name || view.id;
+}
+
+function normalizeBoundedContextToolState() {
+  if (state.activeType !== "cim") {
+    state.boundedContextViewMode = "normal";
+    state.activeBoundedContextName = "";
+    state.boundedContextCreateMode = false;
+    state.boundedContextDraftNodeIds = new Set();
+    state.boundedContextDraftName = "";
+    return;
+  }
+  const contextNames = new Set();
+  (state.baseModel?.boundedContexts || []).forEach((context) => {
+    const name = String(context?.name || "").trim();
+    if (name) {
+      contextNames.add(name);
+    }
+  });
+  (state.diagram?.nodes || []).forEach((node) => {
+    if (node.type === "BoundedContextCandidate") {
+      const name = String(node.label || node.meta?.name || "").trim();
+      if (name) {
+        contextNames.add(name);
+      }
+      return;
+    }
+    const explicit = String(node.meta?.contextName || "").trim();
+    if (explicit) {
+      contextNames.add(explicit);
+    }
+  });
+  if (state.boundedContextViewMode === "overview" && !contextNames.size) {
+    state.boundedContextViewMode = "normal";
+    state.activeBoundedContextName = "";
+  }
+  if (state.boundedContextViewMode === "focus") {
+    const activeName = String(state.activeBoundedContextName || "").trim();
+    const exists = contextNames.has(activeName);
+    if (!activeName || !exists) {
+      state.boundedContextViewMode = "normal";
+      state.activeBoundedContextName = "";
+    }
+  }
+}
+
+function boundedContextToolMarkup() {
+  if (state.activeType !== "cim") {
+    return "";
+  }
+  if (state.boundedContextViewMode !== "normal") {
+    return `<div class="workbench-context-actions">
+      <button class="sidebar-inline-action context-action-primary"
+              id="boundedContextBackBtn" type="button">Back</button>
+    </div>`;
+  }
+  if (state.boundedContextCreateMode) {
+    return `<div class="workbench-context-actions">
+      <button class="sidebar-inline-action context-action-primary"
+              id="boundedContextDoneBtn" type="button">Done</button>
+      <button class="sidebar-inline-action" id="boundedContextCancelBtn"
+              type="button">Cancel</button>
+    </div>`;
+  }
+  return `<div class="workbench-context-actions">
+    <button class="sidebar-inline-action" id="boundedContextNewBtn"
+            type="button">New Context</button>
+    <button class="sidebar-inline-action" id="boundedContextOverviewBtn"
+            type="button">Contexts</button>
+  </div>`;
 }
 
 function viewMenuMarkup() {
@@ -301,10 +382,27 @@ export function renderViewWorkbench() {
     layerMenuOpen = false;
     return;
   }
+  normalizeBoundedContextToolState();
+  panel.classList.toggle("model-workbench-minimized", Boolean(
+      state.modelingToolsMinimized));
+  if (state.modelingToolsMinimized) {
+    panel.innerHTML = `
+      <button class="model-tools-restore" id="modelToolsRestoreBtn"
+              type="button"
+              title="Show modeling tools">
+        <span>Modeling Tools</span>
+        <strong>${escapeHtml(state.activeType.toUpperCase())}</strong>
+      </button>`;
+    return;
+  }
   ensureActiveGraphAndViews();
   const view = activeView();
   captureLayerPanelState();
   panel.innerHTML = `
+    <div class="workbench-strip-title">
+      <strong>Modeling Tools</strong>
+      <span>${escapeHtml(state.activeType.toUpperCase())}</span>
+    </div>
     <div class="workbench-view-select-wrap${viewMenuOpen ? " is-open" : ""}">
       <button class="sidebar-select workbench-view-select"
               id="activeViewSelect"
@@ -323,13 +421,18 @@ export function renderViewWorkbench() {
         ${viewMenuMarkup()}
       </div>
     </div>
+    ${boundedContextToolMarkup()}
     <button class="sidebar-inline-action" id="workbenchAutoLayoutBtn" type="button">Auto Layout</button>
     <button class="sidebar-inline-action" id="modelTreeToggleBtn" type="button">Views</button>
     <div class="workbench-layer-menu">
       <button class="sidebar-inline-action" id="layerMenuBtn" type="button">Layers</button>
       <div class="workbench-layer-panel${layerMenuOpen ? ""
       : " hidden"}" id="layerMenuPanel">${layerMarkup(view)}</div>
-    </div>`;
+    </div>
+    <button class="sidebar-inline-action model-tools-minimize"
+            id="modelToolsMinimizeBtn"
+            type="button"
+            title="Minimize modeling tools">Minimize</button>`;
   restoreLayerPanelState();
   renderModelTree();
 }
@@ -442,9 +545,52 @@ function bindWorkbenchEvents() {
   });
   panel.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("#modelToolsRestoreBtn")) {
+      state.modelingToolsMinimized = false;
+      renderDiagramCallback?.();
+      renderViewWorkbench();
+      setStatus("Modeling tools restored");
+      return;
+    }
+    if (target?.closest("#modelToolsMinimizeBtn")) {
+      state.modelingToolsMinimized = true;
+      layerMenuOpen = false;
+      viewMenuOpen = false;
+      setTreeOpen(false);
+      renderDiagramCallback?.();
+      renderViewWorkbench();
+      setStatus("Modeling tools minimized");
+      return;
+    }
     if (target?.closest("#activeViewSelect")) {
       viewMenuOpen = !viewMenuOpen;
       renderViewWorkbench();
+      return;
+    }
+    if (target?.closest("#boundedContextOverviewBtn")) {
+      openBoundedContextOverview();
+      renderViewWorkbench();
+      return;
+    }
+    if (target?.closest("#boundedContextNewBtn")) {
+      setContextCreateMode(true);
+      renderViewWorkbench();
+      setStatus("Select elements for a new bounded context, then Done.");
+      return;
+    }
+    if (target?.closest("#boundedContextBackBtn")) {
+      closeBoundedContextSpecialView();
+      renderViewWorkbench();
+      return;
+    }
+    if (target?.closest("#boundedContextDoneBtn")) {
+      void finalizeBoundedContextDraft().then(renderViewWorkbench);
+      return;
+    }
+    if (target?.closest("#boundedContextCancelBtn")) {
+      setContextCreateMode(false);
+      renderViewWorkbench();
+      setStatus("Bounded context assignment canceled");
       return;
     }
     const selectedView = target?.closest(
@@ -479,6 +625,9 @@ function bindWorkbenchEvents() {
       viewMenuOpen = false;
       renderViewWorkbench();
     }
+  });
+  window.addEventListener("model-tools-state-change", () => {
+    renderViewWorkbench();
   });
 }
 

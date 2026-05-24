@@ -5,7 +5,7 @@ function normalizeBaseUrl(value) {
   return String(value).trim().replace(/\/+$/, "");
 }
 
-export const backendBaseUrl = normalizeBaseUrl(window.FUNC2_BACKEND_BASE_URL);
+export const backendBaseUrl = normalizeBaseUrl(window.MODLESS_BACKEND_BASE_URL);
 export const backendOrigin = backendBaseUrl || window.location.origin;
 export const apiBase = backendBaseUrl ? `${backendBaseUrl}/api` : "/api";
 
@@ -24,7 +24,7 @@ export function websocketUrl(path) {
 export const DEFAULT_AWS_ACCOUNT_ID = "000000000000";
 export const DEFAULT_AWS_REGION = "us-east-1";
 export const CHAT_ATTACHMENT_MAX_BYTES = 300000;
-export const LOG_HINT = "See backend logs (default path: logs/func2-backend.log)";
+export const LOG_HINT = "See backend logs (default path: logs/backend.log)";
 export const MOBILE_BREAKPOINT = 768;
 export const TOUCH_MOVE_THRESHOLD = 6;
 

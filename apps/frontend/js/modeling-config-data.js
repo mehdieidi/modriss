@@ -98,6 +98,11 @@ function ensureConfigShape(raw) {
       elements: Array.isArray(incoming.elements) ? incoming.elements : [],
       relationshipRules: Array.isArray(incoming.relationshipRules)
           ? incoming.relationshipRules : [],
+      relationshipKindLabels: incoming.relationshipKindLabels
+      && typeof incoming.relationshipKindLabels === "object"
+          ? incoming.relationshipKindLabels : {},
+      semanticReferenceRules: Array.isArray(incoming.semanticReferenceRules)
+          ? incoming.semanticReferenceRules : [],
       viewDefinitions: Array.isArray(incoming.viewDefinitions)
           ? incoming.viewDefinitions : [],
       strictnessModes: Array.isArray(incoming.strictnessModes)
@@ -161,7 +166,8 @@ export function modelingLevelConfig(typeKey = state.activeType) {
 
 export function modelingPalette(typeKey = state.activeType) {
   return (modelingLevelConfig(typeKey).elements || []).map(
-      (entry) => String(entry.type || "").trim()).filter(Boolean);
+      (entry) => entry?.creatable === false ? "" : String(entry.type
+          || "").trim()).filter(Boolean);
 }
 
 export function modelingElementDefinition(typeKey, elementType) {
@@ -170,11 +176,61 @@ export function modelingElementDefinition(typeKey, elementType) {
       || null;
 }
 
+export function modelingViewDefinition(typeKey, view) {
+  const level = modelingLevelConfig(typeKey);
+  const viewId = String(view?.definitionId || view?.sourceDefinitionId
+      || view?.id || "").toLowerCase();
+  const viewpoint = String(view?.viewpoint || "").toLowerCase();
+  const kind = String(view?.kind || "").toLowerCase().replaceAll("_", "-");
+  return (level.viewDefinitions || []).find((entry) => {
+    const entryId = String(entry.id || "").toLowerCase();
+    const entryKind = String(entry.viewType || "").toLowerCase().replaceAll("_",
+        "-");
+    const entryViewpoint = String(entry.viewpoint || "").toLowerCase();
+    return entryId && (viewId.includes(entryId) || kind.includes(entryId)
+        || kind.includes(entryKind) || (viewpoint && viewpoint
+            === entryViewpoint));
+  }) || null;
+}
+
+export function modelingRelationshipKindLabel(typeKey, kind) {
+  const labels = modelingLevelConfig(typeKey).relationshipKindLabels || {};
+  const key = String(kind || "").toUpperCase();
+  return labels[key] || key.toLowerCase().replaceAll("_", " ");
+}
+
+export function modelingSemanticReferenceRules(typeKey = state.activeType) {
+  return modelingLevelConfig(typeKey).semanticReferenceRules || [];
+}
+
 function matchesRuleType(expected, actual) {
   if (!expected || expected === "*") {
     return true;
   }
-  return expected === actual;
+  if (expected === actual) {
+    return true;
+  }
+  const supertypes = {
+    ExternalSystem: ["Actor"],
+    NonFunctionalRequirement: ["Requirement"],
+    SecurityConstraint: ["NonFunctionalRequirement", "Requirement"],
+    PrivacyConstraint: ["NonFunctionalRequirement", "Requirement"],
+    ComplianceConstraint: ["NonFunctionalRequirement", "Requirement"],
+    DomainEntity: ["DomainConcept"],
+    ValueObject: ["DomainConcept"],
+    AggregateCandidate: ["DomainConcept"],
+    StartStep: ["ProcessStep"],
+    EndStep: ["ProcessStep"],
+    CommandStep: ["ProcessStep"],
+    QueryStep: ["ProcessStep"],
+    EventStep: ["ProcessStep"],
+    PolicyStep: ["ProcessStep"],
+    HumanTaskStep: ["ProcessStep"],
+    ExternalInteractionStep: ["ProcessStep"],
+    DecisionStep: ["ProcessStep"],
+    WaitStep: ["ProcessStep"]
+  };
+  return (supertypes[actual] || []).includes(expected);
 }
 
 function ruleSpecificity(rule) {
@@ -214,9 +270,14 @@ const CIM_REFERENCE_RULES = Object.freeze([
   ["Actor", "Command", ["ISSUES"]],
   ["Actor", "Query", ["ISSUES"]],
   ["Actor", "BusinessEvent", ["OBSERVES"]],
+  ["Actor", "Role", ["PLAYS_ROLE"]],
   ["Role", "Actor", ["ASSIGNED_TO"]],
+  ["Stakeholder", "BusinessGoal", ["OWNS"]],
+  ["BusinessGoal", "KPI", ["MEASURED_BY"]],
+  ["BusinessGoal", "BusinessCapability", ["REFINED_BY"]],
   ["ExternalSystem", "BusinessEvent", ["PRODUCES"]],
   ["BusinessEvent", "ExternalSystem", ["CONSUMED_BY"]],
+  ["ExternalSystem", "InformationItem", ["EXCHANGES_INFORMATION"]],
   ["BusinessCapability", "BusinessGoal", ["SUPPORTS"]],
   ["BusinessCapability", "Requirement", ["REALIZES"]],
   ["BusinessCapability", "Command", ["CONTAINS_COMMAND"]],
@@ -224,33 +285,53 @@ const CIM_REFERENCE_RULES = Object.freeze([
   ["BusinessCapability", "BusinessEvent", ["CONTAINS_EVENT"]],
   ["BusinessCapability", "DomainEntity", ["MANAGES"]],
   ["BusinessCapability", "BusinessCapability", ["DEPENDS_ON"]],
+  ["BusinessCapability", "BusinessProcess", ["OWNS_PROCESS"]],
   ["BoundedContextCandidate", "BusinessCapability", ["CONTAINS"]],
   ["BoundedContextCandidate", "DomainEntity", ["CONTAINS"]],
   ["BoundedContextCandidate", "Command", ["CONTAINS"]],
   ["BoundedContextCandidate", "Query", ["CONTAINS"]],
   ["BoundedContextCandidate", "BusinessEvent", ["CONTAINS"]],
-  ["DomainEntity", "DomainEntity", ["DOMAIN_RELATIONSHIP"]],
-  ["DomainEntity", "ValueObject", ["DOMAIN_RELATIONSHIP"]],
-  ["ValueObject", "DomainEntity", ["DOMAIN_RELATIONSHIP"]],
-  ["ValueObject", "ValueObject", ["DOMAIN_RELATIONSHIP"]],
+  ["BoundedContextCandidate", "Policy", ["CONTAINS"]],
+  ["DomainConcept", "DomainConcept", ["DOMAIN_RELATIONSHIP"]],
+  ["DomainEntity", "InformationItem", ["HAS_ATTRIBUTE"]],
+  ["ValueObject", "InformationItem", ["HAS_ATTRIBUTE"]],
   ["AggregateCandidate", "DomainEntity", ["ROOT", "MEMBER"]],
+  ["AggregateCandidate", "Command", ["HANDLES"]],
+  ["AggregateCandidate", "BusinessEvent", ["EMITS_EVENT"]],
+  ["Command", "InformationItem", ["INPUT"]],
   ["Command", "BusinessEvent", ["EXPECTS", "REJECTS_WITH"]],
   ["Command", "BusinessError", ["MAY_FAIL_WITH"]],
+  ["Command", "Condition", ["PRECONDITION"]],
   ["Command", "AggregateCandidate", ["TARGETS"]],
   ["Command", "BusinessCapability", ["HANDLED_BY"]],
+  ["Query", "InformationItem", ["INPUT", "OUTPUT"]],
   ["Query", "DomainEntity", ["READS"]],
+  ["Query", "BusinessCapability", ["HANDLED_BY"]],
+  ["BusinessEvent", "InformationItem", ["PAYLOAD"]],
+  ["BusinessEvent", "DomainEntity", ["AFFECTS"]],
+  ["BusinessError", "BusinessEvent", ["EMITS_EVENT"]],
+  ["Condition", "InformationItem", ["REFERENCES"]],
+  ["Condition", "DomainConcept", ["REFERENCES"]],
   ["BusinessEvent", "Policy", ["TRIGGERS"]],
   ["BusinessEvent", "BusinessProcess", ["FEEDS"]],
   ["Policy", "Command", ["EMITS_COMMAND", "GUARDS"]],
   ["Policy", "BusinessEvent", ["EMITS_EVENT"]],
   ["Policy", "Query", ["CONSTRAINS"]],
+  ["Policy", "DecisionTable", ["USES"]],
   ["BusinessProcess", "ProcessStep", ["CONTAINS"]],
   ["StartStep", "ProcessStep", ["TRANSITION"]],
   ["ProcessStep", "ProcessStep", ["TRANSITION"]],
   ["ProcessStep", "EndStep", ["TRANSITION"]],
+  ["CommandStep", "Command", ["USES"]],
+  ["QueryStep", "Query", ["USES"]],
+  ["EventStep", "BusinessEvent", ["USES"]],
+  ["PolicyStep", "Policy", ["USES"]],
+  ["ExternalInteractionStep", "ExternalSystem", ["USES"]],
   ["DecisionStep", "DecisionTable", ["USES"]],
   ["DecisionRule", "Command", ["RESULTS_IN"]],
   ["DecisionRule", "BusinessEvent", ["RESULTS_IN"]],
+  ["Requirement", "Requirement", ["DEPENDS_ON", "CONFLICTS_WITH"]],
+  ["Requirement", "*", ["CONSTRAINS"]],
   ["NonFunctionalRequirement", "*", ["CONSTRAINS"]],
   ["SecurityConstraint", "*", ["CONSTRAINS"]],
   ["PrivacyConstraint", "*", ["CONSTRAINS"]],

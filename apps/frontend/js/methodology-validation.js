@@ -223,7 +223,7 @@ export function bindValidationCenterUi() {
     if (!id) {
       return;
     }
-    window.dispatchEvent(new CustomEvent("func2:locate-issue-target", {
+    window.dispatchEvent(new CustomEvent("modless:locate-issue-target", {
       detail: {
         id,
         elementName: button.getAttribute("data-issue-element-name") || "",
@@ -238,7 +238,7 @@ export function bindValidationCenterUi() {
       return;
     }
     const manualTaskId = input.getAttribute("data-manual-task-id") || "";
-    window.dispatchEvent(new CustomEvent("func2:manual-task-toggle", {
+    window.dispatchEvent(new CustomEvent("modless:manual-task-toggle", {
       detail: {manualTaskId, resolved: input.checked}
     }));
   });

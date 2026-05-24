@@ -27,7 +27,7 @@ function normalizeId(value) {
 
 const getElementTarget = (event) => (event.target instanceof Element
     ? event.target : null);
-const LAST_PROJECT_STORAGE_PREFIX = "func2.lastProjectId";
+const LAST_PROJECT_STORAGE_PREFIX = "modless.lastProjectId";
 
 function lastProjectStorageKey() {
   const userId = state.auth?.user?.id || state.auth?.user?.email || "anonymous";
@@ -669,6 +669,11 @@ export async function loadProject(project) {
     state.modelId = state.tabs.cim.modelId;
     state.baseModel = state.tabs.cim.baseModel;
     state.diagram = state.tabs.cim.diagram;
+    state.boundedContextCreateMode = false;
+    state.boundedContextDraftNodeIds = new Set();
+    state.boundedContextDraftName = "";
+    state.boundedContextViewMode = "normal";
+    state.activeBoundedContextName = "";
     restoreTabGraphState("cim");
     materializeActiveView();
 
@@ -758,6 +763,11 @@ export async function deleteCurrentProject() {
     state.diagram = state.tabs.cim.diagram;
     state.selectedNodeId = null;
     state.selectedConnectionId = null;
+    state.boundedContextCreateMode = false;
+    state.boundedContextDraftNodeIds = new Set();
+    state.boundedContextDraftName = "";
+    state.boundedContextViewMode = "normal";
+    state.activeBoundedContextName = "";
     restoreTabGraphState("cim");
     materializeActiveView();
     if (el.projectLabel) {

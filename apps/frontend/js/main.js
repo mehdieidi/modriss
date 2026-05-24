@@ -37,7 +37,9 @@ import {
 import {
   applyAttributePanel,
   closeAttributePanel,
-  deleteSelection
+  deleteSelection,
+  openAttributePanel,
+  openConnectionPanel
 } from './attr-panel.js';
 import {closeImpactPanel, toggleImpactMode} from './impact.js';
 import {
@@ -64,6 +66,7 @@ import {
 } from './github.js';
 import {loadModelingConfig} from './modeling-config-data.js';
 import {initViewWorkbench, renderViewWorkbench} from './view-explorer.js';
+import {initCimWorkbenchSurface} from './cim-workbench.js';
 import {configureContainerCollapse} from './container-collapse.js';
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
@@ -884,6 +887,12 @@ async function init() {
   configureContainerCollapse(
       {renderDiagram, renderWorkbench: renderViewWorkbench});
   initViewWorkbench({renderDiagram, renderPalette});
+  initCimWorkbenchSurface({
+    renderDiagram,
+    renderPalette,
+    openAttributePanel,
+    openConnectionPanel
+  });
   syncPaletteRailToggleState();
   initTheme();
   syncResponsiveUi();

@@ -444,7 +444,7 @@ function scheduleReconnect(projectId) {
 
 function openCollaborationSocket(projectId) {
   const token = state.auth.token || window.localStorage.getItem(
-      "func2.authToken");
+      "modless.authToken");
   if (!projectId || !token) {
     return;
   }

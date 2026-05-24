@@ -2,7 +2,7 @@ import {state} from './state.js';
 import {el} from './dom.js';
 import {apiUrl} from './config.js';
 
-const AUTH_TOKEN_KEY = "func2.authToken";
+const AUTH_TOKEN_KEY = "modless.authToken";
 
 export function getAuthToken() {
   return window.localStorage.getItem(AUTH_TOKEN_KEY) || "";
@@ -57,8 +57,8 @@ function setAuthMode(mode) {
     el.authConfirmPasswordInput.classList.toggle("hidden", !registerMode);
   }
   if (el.authTitle) {
-    el.authTitle.textContent = registerMode ? "Create your FUNC2 account"
-        : "Sign in to FUNC2";
+    el.authTitle.textContent = registerMode ? "Create your Modless account"
+        : "Sign in to Modless";
   }
   if (el.authSubtitle) {
     el.authSubtitle.textContent = registerMode

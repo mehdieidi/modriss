@@ -4,25 +4,57 @@ import {MODEL_TYPES} from './config.js';
 import {api} from './api.js';
 import {setStatus} from './status.js';
 import {
+  contextNameFromNode,
   deleteBoundedContext,
+  removeElementFromBoundedContext,
   renameBoundedContext,
   renderDiagram
 } from './canvas.js';
 import {scheduleAutoSave} from './autosave.js';
 import {isMobileViewport} from './responsive.js';
 import {publishDiagramUpdate} from './collaboration.js';
-import {relationshipIdsFromModel, toDiagram} from './diagram.js';
-import {confirmAction} from './confirm-action.js';
 import {
+  getDefaultNode,
+  relationshipIdsFromModel,
+  toDiagram
+} from './diagram.js';
+import {confirmAction} from './confirm-action.js';
+import {escapeHtml} from './utils.js';
+import {modelingElementDefinition} from './modeling-config-data.js';
+import {
+  addNodeToGraphAndActiveView,
   removeElementFromGraph,
-  removeRelationshipFromGraph
+  removeRelationshipFromGraph,
+  syncActiveViewFromVisibleGraph
 } from './graph-store.js';
+import {
+  addReferenceValue,
+  CIM_ABSTRACT_TYPES,
+  CIM_NESTED_CONTAINMENTS,
+  cimTypeMatches,
+  elementLabel,
+  refIds
+} from './cim-model-utils.js';
 import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
 
 // Fields managed by canvas – shown read-only
 const READONLY_ATTR_KEYS = new Set(["id", "eClass", "x", "y"]);
 // Fields skipped entirely (rendered via canvas label editing)
 const SKIP_ATTR_KEYS = new Set(["label", "name", "tags", "status"]);
+const TRACE_ATTR_KEYS = new Set([
+  "sourceReference",
+  "sourceExcerpt",
+  "sourceQualifiedName",
+  "sourceUri",
+  "sourceLine",
+  "traceId",
+  "generatedFrom",
+  "generatedByTransformation",
+  "rationale",
+  "reviewStatus",
+  "reviewNotes",
+  "manuallyMaintained"
+]);
 
 // ── Open / close ──────────────────────────────────────────────────────────────
 
@@ -108,24 +140,15 @@ export function openConnectionPanel(connectionId) {
   el.attrPanelTitle.textContent = `${source?.label
   || connection.sourceId} → ${target?.label || connection.targetId}`;
   if (el.attrPanelApplyBtn) {
-    el.attrPanelApplyBtn.hidden = true;
+    el.attrPanelApplyBtn.hidden = false;
+    el.attrPanelApplyBtn.textContent = "✓ Apply Connection";
   }
   if (el.attrPanelDeleteBtn) {
     el.attrPanelDeleteBtn.hidden = false;
     el.attrPanelDeleteBtn.textContent = "🗑 Delete Connection";
   }
 
-  el.attrPanelBody.innerHTML = "";
-  el.attrPanelBody.appendChild(
-      buildAttrField("kind", connection.kind, "text", true));
-  el.attrPanelBody.appendChild(
-      buildAttrField("source", source?.label || connection.sourceId, "text",
-          true));
-  el.attrPanelBody.appendChild(
-      buildAttrField("target", target?.label || connection.targetId, "text",
-          true));
-  el.attrPanelBody.appendChild(
-      buildAttrField("id", connection.id, "text", true));
+  renderConnectionFields(connection, source, target);
 
   el.modelTreePanel?.classList.add("hidden");
   el.attributePanel.classList.remove("hidden");
@@ -138,6 +161,68 @@ export function openConnectionPanel(connectionId) {
       el.mobileBackdrop.classList.remove("hidden");
     }
   }
+}
+
+function renderConnectionFields(connection, source, target) {
+  el.attrPanelBody.innerHTML = "";
+  const relationship = state.graph?.relationshipsById?.get(connection.id)
+      || connection;
+  const semanticType = relationship.eClass || "Connection";
+  el.attrPanelBody.appendChild(buildAttrSectionTitle("Connection"));
+  el.attrPanelBody.appendChild(
+      buildAttrField("kind", connection.kind, {
+        fieldType: "text",
+        readonly: true
+      }));
+  el.attrPanelBody.appendChild(
+      buildAttrField("source", source?.label || connection.sourceId,
+          {fieldType: "text", readonly: true}));
+  el.attrPanelBody.appendChild(
+      buildAttrField("target", target?.label || connection.targetId,
+          {fieldType: "text", readonly: true}));
+  el.attrPanelBody.appendChild(
+      buildAttrField("id", connection.id, {
+        fieldType: "text",
+        readonly: true
+      }));
+  if (semanticType !== "Connection") {
+    el.attrPanelBody.appendChild(buildAttrSectionTitle(semanticType));
+  }
+  let definition = null;
+  try {
+    definition = semanticType !== "Connection"
+        ? modelingElementDefinition(state.activeType, semanticType) : null;
+  } catch {
+    definition = null;
+  }
+  const rendered = new Set(["id", "kind", "source", "target", "name"]);
+  const fields = [
+    ...(definition?.attributes || []),
+    ...(definition?.references || []).map((reference) => ({
+      ...reference,
+      fieldType: "reference"
+    }))
+  ];
+  fields.forEach((field) => {
+    if (!field?.name || rendered.has(field.name) || field.readonly) {
+      return;
+    }
+    rendered.add(field.name);
+    const value = Object.prototype.hasOwnProperty.call(relationship,
+        field.name) ? relationship[field.name] : field.defaultValue;
+    el.attrPanelBody.appendChild(buildAttrField(field.name, value, field));
+  });
+  Object.entries(relationship).forEach(([key, value]) => {
+    if (rendered.has(key) || ["sourceElementId", "targetElementId",
+      "sourceType", "targetType", "semanticFeature", "semanticSourceElementId",
+      "semanticTargetElementId", "visualOnly"].includes(key)) {
+      return;
+    }
+    el.attrPanelBody.appendChild(buildAttrField(key, value, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key)
+    }));
+  });
 }
 
 export function openBoundedContextPanel(contextName) {
@@ -164,7 +249,32 @@ export function openBoundedContextPanel(contextName) {
   }
   el.attrPanelBody.innerHTML = "";
   el.attrPanelBody.appendChild(
-      buildAttrField("contextName", contextName, "text", false));
+      buildAttrField("contextName", contextName, {fieldType: "text"}));
+  const members = [...state.diagram.nodes].filter((node) =>
+      contextNameFromNode(node) === contextName);
+  const memberSection = document.createElement("div");
+  memberSection.className = "attr-section bounded-context-members";
+  memberSection.innerHTML = `
+    <div class="attr-section-title">Members</div>
+    ${members.length ? members.map((node) => `
+      <div class="bounded-context-member-row">
+        <span>${escapeHtml(node.label || node.id)} <em>${escapeHtml(
+          node.type)}</em></span>
+        <button class="btn btn-secondary btn-sm"
+                data-remove-context-member="${escapeHtml(node.id)}"
+                type="button">Remove</button>
+      </div>`).join("")
+      : `<div class="attr-empty">No elements assigned.</div>`}`;
+  el.attrPanelBody.appendChild(memberSection);
+  memberSection.querySelectorAll("[data-remove-context-member]").forEach(
+      (button) => {
+        button.addEventListener("click", () => {
+          const nodeId = button.dataset.removeContextMember;
+          if (removeElementFromBoundedContext(nodeId, contextName)) {
+            openBoundedContextPanel(contextName);
+          }
+        });
+      });
   el.modelTreePanel?.classList.add("hidden");
   el.attributePanel.classList.remove("hidden");
   el.workspace.classList.remove("views-open", "impact-open");
@@ -183,22 +293,277 @@ export function openBoundedContextPanel(contextName) {
 function renderAttributeFields(node) {
   el.attrPanelBody.innerHTML = "";
   const meta = node.meta || {};
+  let definition = null;
+  try {
+    definition = modelingElementDefinition(state.activeType, node.type);
+  } catch {
+    definition = null;
+  }
 
   const labelKey = state.activeType === "cim" ? "label" : "name";
+  el.attrPanelBody.appendChild(buildAttrSectionTitle("Identity"));
   el.attrPanelBody.appendChild(
-      buildAttrField(labelKey, node.label, "text", false));
+      buildAttrField(labelKey, node.label, {fieldType: "text"}));
+
+  const rendered = new Set([labelKey, "label", "name"]);
+  el.attrPanelBody.appendChild(buildAttrSectionTitle("Type Specific"));
+  const configuredFields = [
+    ...(definition?.attributes || []),
+    ...(definition?.references || []).map((reference) => ({
+      ...reference,
+      fieldType: "reference"
+    }))
+  ];
+  configuredFields.forEach((field) => {
+    const key = field?.name;
+    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)
+        || TRACE_ATTR_KEYS.has(key)) {
+      return;
+    }
+    rendered.add(key);
+    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key]
+        : field.defaultValue;
+    el.attrPanelBody.appendChild(buildAttrField(key, value, field));
+  });
 
   Object.entries(meta).forEach(([key, value]) => {
     if (key === labelKey || key === "label" || key === "name") {
       return;
     }
-    if (SKIP_ATTR_KEYS.has(key)) {
+    if (SKIP_ATTR_KEYS.has(key) || TRACE_ATTR_KEYS.has(key)
+        || rendered.has(key)) {
       return;
     }
     const readonly = READONLY_ATTR_KEYS.has(key);
     el.attrPanelBody.appendChild(
-        buildAttrField(key, value, inferFieldType(value), readonly));
+        buildAttrField(key, value, {
+          fieldType: inferFieldType(value),
+          readonly
+        }));
   });
+  appendContainmentSections(node);
+  appendTraceabilitySection(node);
+  bindContainmentSectionActions();
+}
+
+function buildAttrSectionTitle(title) {
+  const section = document.createElement("div");
+  section.className = "attr-section-title";
+  section.textContent = title;
+  return section;
+}
+
+function appendTraceabilitySection(node) {
+  if (state.activeType !== "cim") {
+    return;
+  }
+  el.attrPanelBody.appendChild(buildAttrSectionTitle("Traceability / Review"));
+  const traceLinks = [];
+  state.graph?.relationshipsById?.forEach((relationship) => {
+    if (relationship.kind !== "TRACE" && relationship.eClass !== "TraceLink") {
+      return;
+    }
+    if (relationship.sourceElementId === node.id
+        || relationship.targetElementId === node.id
+        || relationship.source === node.id || relationship.target === node.id) {
+      traceLinks.push(relationship);
+    }
+  });
+  const summary = document.createElement("div");
+  summary.className = "attr-trace-summary";
+  summary.innerHTML = traceLinks.length ? traceLinks.map((link) => {
+        const direction = (link.sourceElementId || link.source) === node.id
+            ? "outgoing" : "incoming";
+        const otherId = direction === "outgoing"
+            ? (link.targetElementId || link.target)
+            : (link.sourceElementId || link.source);
+        const other = state.graph?.elementsById?.get(otherId);
+        return `<div class="attr-trace-row"><span>${direction}</span><strong>${
+            escapeAttr(link.linkType || link.kind || "TRACE")}</strong><em>${
+            escapeAttr(
+                other?.name || other?.label || otherId || "external")}</em></div>`;
+      }).join("")
+      : `<div class="attr-field-hint">No trace links for this element.</div>`;
+  el.attrPanelBody.appendChild(summary);
+  [
+    "sourceReference", "sourceUri", "sourceLine", "traceId",
+    "generatedFrom", "generatedByTransformation", "rationale",
+    "reviewStatus", "reviewNotes", "manuallyMaintained"
+  ].forEach((key) => {
+    if (!Object.prototype.hasOwnProperty.call(node.meta || {}, key)) {
+      node.meta[key] = typeof node.meta?.[key] === "boolean" ? false : "";
+    }
+    el.attrPanelBody.appendChild(buildAttrField(key, node.meta?.[key], {
+      fieldType: inferFieldType(node.meta?.[key])
+    }));
+  });
+}
+
+function cimContainmentEntriesForType(type) {
+  if (state.activeType !== "cim") {
+    return [];
+  }
+  const entries = [];
+  Object.entries(CIM_NESTED_CONTAINMENTS).forEach(
+      ([ownerType, containments]) => {
+        if (ownerType === "ModelElement"
+            ? cimTypeMatches({eClass: type}, "ModelElement")
+            : cimTypeMatches({eClass: type}, ownerType)) {
+          entries.push(...containments);
+        }
+      });
+  const byFeature = new Map();
+  entries.forEach((entry) => {
+    if (!entry?.feature) {
+      return;
+    }
+    const current = byFeature.get(entry.feature) || {
+      feature: entry.feature,
+      types: []
+    };
+    current.types = [...new Set([...current.types, ...(entry.types || [])])]
+    .filter((childType) => childType
+        && !CIM_ABSTRACT_TYPES.includes(childType));
+    byFeature.set(entry.feature, current);
+  });
+  return [...byFeature.values()].filter((entry) => entry.types.length);
+}
+
+function containmentChildren(parent, feature) {
+  const parentElement = state.graph?.elementsById?.get(parent.id);
+  const ids = new Set(
+      refIds(parentElement?.[feature] ?? parent.meta?.[feature]));
+  const children = [];
+  state.graph?.elementsById?.forEach((element) => {
+    if (ids.has(element.id)
+        || (element.__ownerId === parent.id
+            && element.__containmentFeature === feature)) {
+      children.push(element);
+    }
+  });
+  const seen = new Set();
+  return children.filter((child) => {
+    if (!child?.id || seen.has(child.id)) {
+      return false;
+    }
+    seen.add(child.id);
+    return true;
+  });
+}
+
+function appendContainmentSections(node) {
+  const entries = cimContainmentEntriesForType(node.type);
+  if (!entries.length) {
+    return;
+  }
+  entries.forEach((entry) => {
+    const section = document.createElement("div");
+    section.className = "attr-section attr-containment-section";
+    const children = containmentChildren(node, entry.feature);
+    section.innerHTML = `
+      <div class="attr-section-title">${escapeAttr(entry.feature)}</div>
+      <div class="attr-containment-actions">
+        ${entry.types.map((type) => `<button class="btn btn-secondary btn-sm"
+            data-add-contained-child="${escapeAttr(node.id)}"
+            data-containment-feature="${escapeAttr(entry.feature)}"
+            data-contained-type="${escapeAttr(type)}" type="button">Add ${
+        escapeAttr(type)}</button>`).join("")}
+      </div>
+      <div class="attr-contained-list">
+        ${children.length ? children.map((child) => `
+          <button class="attr-contained-row"
+                  data-open-contained-child="${escapeAttr(child.id)}"
+                  type="button">
+            <span>${escapeAttr(elementLabel(child))}</span>
+            <em>${escapeAttr(child.eClass || child.type || "Element")}</em>
+          </button>`).join("")
+        : `<div class="attr-field-hint">No contained children.</div>`}
+      </div>`;
+    el.attrPanelBody.appendChild(section);
+  });
+}
+
+function initializeContainedChildDefaults(child, parent, feature) {
+  child.meta.__ownerId = parent.id;
+  child.meta.__containmentFeature = feature;
+  if (child.type === "DecisionRule") {
+    child.meta.priorityOrder = containmentChildren(parent, feature).length + 1;
+    child.meta.condition = "";
+    child.meta.outcome = "";
+  } else if (child.type === "AcceptanceCriterion") {
+    child.meta.givenContext = "";
+    child.meta.whenAction = "";
+    child.meta.thenOutcome = "";
+  } else if (child.type === "LifecycleStateDefinition") {
+    child.meta.stateName = child.label;
+  } else if (child.type === "QualityScenario") {
+    child.meta.source = "";
+    child.meta.stimulus = "";
+    child.meta.response = "";
+  } else if (child.type === "BusinessInvariant") {
+    child.meta.naturalLanguageStatement = "";
+  } else if (child.type === "ReadinessFinding") {
+    child.meta.severity ||= "WARNING";
+  } else if (child.type === "ReadinessCheck") {
+    child.meta.checkId ||= child.id;
+    child.meta.severity ||= "WARNING";
+  } else if (child.type === "ManualDecision") {
+    child.meta.question ||= child.label;
+  } else if (child.type === "Annotation") {
+    child.meta.key ||= child.label;
+    child.meta.source ||= "frontend";
+  }
+}
+
+function addContainedChildFromDrawer(parentId, feature, childType) {
+  const parentNode = state.nodesById.get(parentId);
+  const parentElement = state.graph?.elementsById?.get(parentId);
+  if (!parentNode || !parentElement || !feature || !childType) {
+    return;
+  }
+  const child = getDefaultNode("cim", childType, parentNode.x + 180,
+      parentNode.y + 120);
+  child.label = `${childType} ${containmentChildren(parentNode, feature).length
+  + 1}`;
+  child.meta.name = child.label;
+  child.meta.label = child.label;
+  initializeContainedChildDefaults(child, parentNode, feature);
+  state.diagram.nodes.push(child);
+  addNodeToGraphAndActiveView(child);
+  addReferenceValue(parentElement, feature, child.id, true);
+  parentNode.meta[feature] = parentElement[feature];
+  scheduleAutoSave({delayMs: 250});
+  publishDiagramUpdate({immediate: true});
+  renderDiagram();
+  openAttributePanel(parentId);
+  setStatus(`Added ${childType}`);
+}
+
+function bindContainmentSectionActions() {
+  el.attrPanelBody.querySelectorAll("[data-add-contained-child]").forEach(
+      (button) => {
+        button.addEventListener("click", () => {
+          addContainedChildFromDrawer(button.dataset.addContainedChild,
+              button.dataset.containmentFeature,
+              button.dataset.containedType);
+        });
+      });
+  el.attrPanelBody.querySelectorAll("[data-open-contained-child]").forEach(
+      (button) => {
+        button.addEventListener("click", () => {
+          openAttributePanel(button.dataset.openContainedChild);
+        });
+      });
+}
+
+function escapeAttr(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  }[char]));
 }
 
 function inferFieldType(value) {
@@ -217,7 +582,9 @@ function inferFieldType(value) {
   return "text";
 }
 
-function buildAttrField(key, value, fieldType, readonly) {
+function buildAttrField(key, value, field) {
+  const fieldType = field?.fieldType || inferFieldType(value);
+  const readonly = Boolean(field?.readonly || READONLY_ATTR_KEYS.has(key));
   const wrapper = document.createElement("div");
 
   if (readonly) {
@@ -251,13 +618,33 @@ function buildAttrField(key, value, fieldType, readonly) {
   wrapper.className = "attr-field";
   const lbl = document.createElement("label");
   lbl.htmlFor = `attr-${key}`;
-  lbl.textContent = key;
+  lbl.textContent = field?.required ? `${key} *` : key;
   wrapper.appendChild(lbl);
 
   let input;
-  if (fieldType === "textarea") {
+  if (fieldType === "select" && Array.isArray(field?.options)
+      && field.options.length) {
+    input = document.createElement("select");
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "";
+    input.appendChild(empty);
+    field.options.forEach((optionValue) => {
+      const option = document.createElement("option");
+      option.value = String(optionValue);
+      option.textContent = String(optionValue);
+      option.selected = String(value ?? "") === String(optionValue);
+      input.appendChild(option);
+    });
+  } else if (fieldType === "date") {
+    input = document.createElement("input");
+    input.type = "date";
+    input.value = String(value ?? "").slice(0, 10);
+  } else if (fieldType === "textarea") {
     input = document.createElement("textarea");
     input.textContent = String(value ?? "");
+  } else if (fieldType === "reference") {
+    input = buildReferenceInput(key, value, field);
   } else if (fieldType === "json") {
     input = document.createElement("textarea");
     input.textContent = JSON.stringify(value ?? null, null, 2);
@@ -273,8 +660,88 @@ function buildAttrField(key, value, fieldType, readonly) {
   input.id = `attr-${key}`;
   input.dataset.attrKey = key;
   input.dataset.attrType = fieldType;
+  if (field?.many) {
+    input.dataset.attrMany = "true";
+  }
+  if (field?.required) {
+    input.required = true;
+  }
   wrapper.appendChild(input);
+  if (field?.kind === "reference" && field?.targetType) {
+    const hint = document.createElement("div");
+    hint.className = "attr-field-hint";
+    hint.textContent = field.many ? `References ${field.targetType}[]`
+        : `References ${field.targetType}`;
+    wrapper.appendChild(hint);
+  }
   return wrapper;
+}
+
+function referenceValueId(value) {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value && typeof value === "object") {
+    return value.$ref || value.id || value.elementId || "";
+  }
+  return "";
+}
+
+function referenceValueIds(value) {
+  return Array.isArray(value) ? value.map(referenceValueId).filter(Boolean)
+      : [referenceValueId(value)].filter(Boolean);
+}
+
+function elementMatchesReferenceTarget(element, targetType) {
+  const expected = String(targetType || "").trim();
+  if (!expected || expected === "*" || expected === "ModelElement"
+      || expected === "TraceableElement" || expected
+      === "SemanticRelationship") {
+    return true;
+  }
+  return state.activeType === "cim" ? cimTypeMatches(element, expected)
+      : String(element?.eClass || element?.type || "") === expected;
+}
+
+function referenceOptions(targetType) {
+  const options = [];
+  state.graph?.elementsById?.forEach((element) => {
+    if (elementMatchesReferenceTarget(element, targetType)) {
+      options.push({
+        id: element.id,
+        label: element.name || element.label || element.id,
+        type: element.eClass || element.type || "Element"
+      });
+    }
+  });
+  return options.sort((a, b) => a.type.localeCompare(b.type)
+      || a.label.localeCompare(b.label));
+}
+
+function buildReferenceInput(key, value, field) {
+  const many = Boolean(field?.many);
+  const input = document.createElement(many ? "select" : "select");
+  const selectedIds = new Set(referenceValueIds(value));
+  input.multiple = many;
+  if (many) {
+    input.size = Math.min(8, Math.max(3,
+        referenceOptions(field?.targetType).length || 3));
+  } else {
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "";
+    input.appendChild(empty);
+  }
+  referenceOptions(field?.targetType).forEach((entry) => {
+    const option = document.createElement("option");
+    option.value = entry.id;
+    option.textContent = `${entry.label} (${entry.type})`;
+    option.selected = selectedIds.has(entry.id);
+    input.appendChild(option);
+  });
+  input.dataset.attrReferenceTarget = field?.targetType || "*";
+  input.dataset.attrReferenceName = key;
+  return input;
 }
 
 // ── Apply / delete ────────────────────────────────────────────────────────────
@@ -300,6 +767,7 @@ export function applyAttributePanel() {
     return;
   }
   if (state.selectedConnectionId) {
+    applyConnectionPanel();
     return;
   }
   const node = state.nodesById.get(state.selectedNodeId);
@@ -320,6 +788,13 @@ export function applyAttributePanel() {
         value = input.checked;
       } else if (attrType === "number") {
         value = Number(input.value);
+      } else if (attrType === "reference") {
+        if (input.dataset.attrMany === "true") {
+          value = [...input.selectedOptions].map((option) => option.value)
+          .filter(Boolean);
+        } else {
+          value = input.value || null;
+        }
       } else if (attrType === "json") {
         value = JSON.parse(input.value || "null");
       } else if (input.tagName === "TEXTAREA") {
@@ -341,6 +816,8 @@ export function applyAttributePanel() {
         node.meta[key] = value;
       }
     });
+    syncActiveViewFromVisibleGraph();
+    synchronizeOppositeReferences(node);
   } catch {
     setStatus(
         "One property contains invalid JSON. Fix it before applying changes.");
@@ -362,6 +839,133 @@ export function applyAttributePanel() {
   scheduleAutoSave();
   publishDiagramUpdate();
   setStatus(`Attributes updated for ${node.id}`);
+}
+
+function readInputValue(input) {
+  const attrType = input.dataset.attrType;
+  if (attrType === "boolean") {
+    return input.checked;
+  }
+  if (attrType === "number") {
+    return Number(input.value);
+  }
+  if (attrType === "reference") {
+    if (input.dataset.attrMany === "true") {
+      return [...input.selectedOptions].map((option) => option.value).filter(
+          Boolean);
+    }
+    return input.value || null;
+  }
+  if (attrType === "json") {
+    return JSON.parse(input.value || "null");
+  }
+  if (input.tagName === "TEXTAREA") {
+    return input.value;
+  }
+  return input.value;
+}
+
+function applyConnectionPanel() {
+  const edge = state.diagram.connections.find(
+      (item) => item.id === state.selectedConnectionId);
+  if (!edge) {
+    return;
+  }
+  const relationship = state.graph?.relationshipsById?.get(edge.id);
+  if (!relationship) {
+    return;
+  }
+  try {
+    el.attrPanelBody.querySelectorAll("[data-attr-key]").forEach((input) => {
+      const key = input.dataset.attrKey;
+      if (["id", "kind", "source", "target"].includes(key)) {
+        return;
+      }
+      relationship[key] = readInputValue(input);
+    });
+  } catch {
+    setStatus(
+        "One connection property contains invalid JSON. Fix it before applying changes.");
+    return;
+  }
+  renderDiagram();
+  scheduleAutoSave({delayMs: 250});
+  publishDiagramUpdate();
+  setStatus(`Connection updated: ${edge.kind}`);
+}
+
+function asReferenceIds(value) {
+  return Array.isArray(value) ? value.map(referenceValueId).filter(Boolean)
+      : [referenceValueId(value)].filter(Boolean);
+}
+
+function setElementReference(element, key, sourceId, many) {
+  if (!key || !element) {
+    return;
+  }
+  if (many) {
+    const ids = new Set(asReferenceIds(element[key]));
+    ids.add(sourceId);
+    element[key] = [...ids];
+  } else {
+    element[key] = sourceId;
+  }
+}
+
+function removeElementReference(element, key, sourceId, many) {
+  if (!key || !element) {
+    return;
+  }
+  if (many) {
+    element[key] = asReferenceIds(element[key]).filter((id) => id !== sourceId);
+  } else if (referenceValueId(element[key]) === sourceId) {
+    element[key] = null;
+  }
+}
+
+function referenceDefinition(type, name) {
+  try {
+    return (modelingElementDefinition(state.activeType, type)?.references || [])
+    .find((reference) => reference.name === name) || null;
+  } catch {
+    return null;
+  }
+}
+
+function synchronizeOppositeReferences(node) {
+  if (!node?.id || !node?.meta) {
+    return;
+  }
+  let definition = null;
+  try {
+    definition = modelingElementDefinition(state.activeType, node.type);
+  } catch {
+    return;
+  }
+  for (const reference of definition?.references || []) {
+    const opposite = String(reference?.opposite || "").replace(/^#/, "");
+    if (!opposite || reference.readonly) {
+      continue;
+    }
+    const selectedIds = new Set(asReferenceIds(node.meta[reference.name]));
+    state.graph?.elementsById?.forEach((targetElement, targetId) => {
+      if (!elementMatchesReferenceTarget(targetElement, reference.targetType)) {
+        return;
+      }
+      const targetDefinition = referenceDefinition(targetElement.eClass
+          || targetElement.type, opposite);
+      const oppositeMany = targetDefinition?.many !== false;
+      if (selectedIds.has(targetId)) {
+        setElementReference(targetElement, opposite, node.id, oppositeMany);
+      } else {
+        removeElementReference(targetElement, opposite, node.id, oppositeMany);
+      }
+      const visibleTarget = state.nodesById?.get(targetId);
+      if (visibleTarget?.meta) {
+        visibleTarget.meta[opposite] = targetElement[opposite];
+      }
+    });
+  }
 }
 
 export async function deleteSelection() {

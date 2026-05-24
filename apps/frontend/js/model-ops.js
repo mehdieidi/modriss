@@ -63,11 +63,14 @@ function isModelingType(typeKey = state.activeType) {
 
 function captureModelReplacementSnapshot(typeKey = state.activeType) {
   const tabState = state.tabs[typeKey];
+  const serializedModel = typeKey === state.activeType
+      ? serializeModel()
+      : structuredClone(tabState?.baseModel || {});
   return {
     typeKey,
     modelId: state.modelId,
     modelName: tabState?.modelName || defaultModelName(typeKey),
-    baseModel: structuredClone(state.baseModel || {}),
+    baseModel: serializedModel,
     diagram: structuredClone(state.diagram || emptyDiagram(typeKey)),
     graph: state.graph ? structuredClone({
       elements: [...state.graph.elementsById.values()],
@@ -411,6 +414,13 @@ export async function loadModelById(typeKey, id,
   state.modelId = record.id;
   state.baseModel = structuredClone(record.modelJson);
   state.diagram = toDiagram(typeKey, record.modelJson, record.name);
+  if (typeKey === "cim") {
+    state.boundedContextCreateMode = false;
+    state.boundedContextDraftNodeIds = new Set();
+    state.boundedContextDraftName = "";
+    state.boundedContextViewMode = "normal";
+    state.activeBoundedContextName = "";
+  }
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
     state.tabs[typeKey].baseModel = structuredClone(record.modelJson);
@@ -816,6 +826,9 @@ export async function switchTab(type) {
   if (type !== "cim") {
     state.boundedContextCreateMode = false;
     state.boundedContextDraftNodeIds = new Set();
+    state.boundedContextDraftName = "";
+    state.boundedContextViewMode = "normal";
+    state.activeBoundedContextName = "";
     state.selectedBoundedContextName = null;
   }
   Array.from(el.modelTabs.querySelectorAll(".tab")).forEach(
@@ -858,6 +871,13 @@ export async function switchTab(type) {
   state.modelId = tabState.modelId;
   state.baseModel = tabState.baseModel;
   state.diagram = tabState.diagram || emptyDiagram(type);
+  if (type === "cim") {
+    state.boundedContextCreateMode = false;
+    state.boundedContextDraftNodeIds = new Set();
+    state.boundedContextDraftName = "";
+    state.boundedContextViewMode = "normal";
+    state.activeBoundedContextName = "";
+  }
   restoreTabGraphState(type);
   materializeActiveView();
   clearValidationIssues({keepPanelState: false});
@@ -1114,6 +1134,13 @@ export async function importActiveModel(file, format = "json") {
   state.baseModel = structuredClone(body.modelJson);
   state.diagram = toDiagram(state.activeType, body.modelJson,
       body.name || defaultModelName());
+  if (state.activeType === "cim") {
+    state.boundedContextCreateMode = false;
+    state.boundedContextDraftNodeIds = new Set();
+    state.boundedContextDraftName = "";
+    state.boundedContextViewMode = "normal";
+    state.activeBoundedContextName = "";
+  }
   if (state.tabs[state.activeType]) {
     state.tabs[state.activeType].baseModel = structuredClone(state.baseModel);
     state.tabs[state.activeType].diagram = structuredClone(state.diagram);
@@ -1193,7 +1220,7 @@ bindValidationCenterUi();
 let locateIssueTargetBound = false;
 if (!locateIssueTargetBound) {
   locateIssueTargetBound = true;
-  window.addEventListener("func2:locate-issue-target", (event) => {
+  window.addEventListener("modless:locate-issue-target", (event) => {
     const detail = event?.detail || {};
     const id = String(detail.id || "").trim();
     const issueName = String(detail.elementName || "").trim().toLowerCase();
@@ -1227,7 +1254,7 @@ if (!locateIssueTargetBound) {
     }
     setStatus("Issue target is not present on current canvas.");
   });
-  window.addEventListener("func2:manual-task-toggle", async (event) => {
+  window.addEventListener("modless:manual-task-toggle", async (event) => {
     const detail = event?.detail || {};
     const manualTaskId = String(detail.manualTaskId || "").trim();
     const resolved = Boolean(detail.resolved);

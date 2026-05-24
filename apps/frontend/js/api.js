@@ -13,7 +13,7 @@ export class ApiError extends Error {
 }
 
 export function apiAuthHeaders(extraHeaders = {}) {
-  const token = window.localStorage.getItem("func2.authToken");
+  const token = window.localStorage.getItem("modless.authToken");
   return {
     ...(token ? {"X-Auth-Token": token} : {}),
     ...extraHeaders

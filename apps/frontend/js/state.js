@@ -37,6 +37,7 @@ export const state = {
   },
   visibleGraph: emptyDiagram("cim"),
   modelingStrictness: "methodology",
+  modelingToolsMinimized: false,
   // Per-tab persisted state (save/restore on tab switch)
   tabs: {
     cim: {
@@ -125,6 +126,9 @@ export const state = {
   selectedConnectionId: null,
   boundedContextCreateMode: false,
   boundedContextDraftNodeIds: new Set(),
+  boundedContextDraftName: "",
+  boundedContextViewMode: "normal",
+  activeBoundedContextName: "",
   dragBoundedContext: null,
   impactMode: false,
   impactData: null,
@@ -133,6 +137,16 @@ export const state = {
     cim: "",
     pim: "",
     psm: ""
+  },
+  cimWorkbench: {
+    representationByViewId: {},
+    registerByViewId: {},
+    search: "",
+    missingOnly: false,
+    sliceKind: "",
+    sliceValue: "",
+    sortKey: "name",
+    hidPalette: false
   },
   paletteGroupCollapsed: {
     cim: {},

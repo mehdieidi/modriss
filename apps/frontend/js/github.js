@@ -4,7 +4,7 @@ import {api} from './api.js';
 import {backendOrigin} from './config.js';
 import {setError, setStatus} from './status.js';
 
-const OAUTH_MESSAGE_SOURCE = "func2-github-oauth";
+const OAUTH_MESSAGE_SOURCE = "modless-github-oauth";
 const OAUTH_POPUP_TIMEOUT_MS = 180000;
 const POPUP_CLOSED_CHECK_INTERVAL_MS = 400;
 
@@ -104,7 +104,7 @@ async function openGithubOAuthPopup() {
 
   const popup = window.open(
       oauthStart.authorizeUrl,
-      "func2-github-oauth",
+      "modless-github-oauth",
       "popup=yes,width=640,height=760,noopener,noreferrer"
   );
   if (!popup) {
