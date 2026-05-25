@@ -2,7 +2,7 @@
   position: absolute;
   right: 22px;
   bottom: 20px;
-  z-index: 110;
+  z-index: 190;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -47,7 +47,7 @@
   position: absolute;
   right: 22px;
   bottom: 70px;
-  z-index: 110;
+  z-index: 190;
   width: 420px;
   max-width: calc(100vw - 44px);
   height: 590px;

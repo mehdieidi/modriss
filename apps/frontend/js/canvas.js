@@ -2,7 +2,7 @@ import {MODEL_TYPES, TOUCH_MOVE_THRESHOLD} from './config.js';
 import {state} from './state.js';
 import {el} from './dom.js';
 import {api} from './api.js';
-import {escapeHtml, genId} from './utils.js';
+import {autoLayoutIfStacked, escapeHtml, genId} from './utils.js';
 import {getDefaultNode, legalKinds, saveStoredEdgeLayout} from './diagram.js';
 import {
   activeView,
@@ -11,7 +11,7 @@ import {
   removeElementFromGraph,
   syncActiveViewFromVisibleGraph
 } from './graph-store.js';
-import {isContainerElement} from './view-materializer.js';
+import {isContainerElement, materializeActiveView} from './view-materializer.js';
 import {toggleContainerCollapsed} from './container-collapse.js';
 import {
   modelingElementDefinition,
@@ -242,137 +242,6 @@ const CIM_TABLE_LIKE_TYPES = new Set([
   "AcceptanceCriterion", "DecisionRule", "QualityScenario",
   "DataClassification"
 ]);
-
-const CIM_EDGE_TOOLS_BY_PROFILE = {
-  dashboard: [],
-  requirements: [
-    {kind: "DEPENDS_ON", label: "Requirement dependency"},
-    {kind: "CONFLICTS_WITH", label: "Requirement conflict"},
-    {kind: "CONSTRAINS", label: "Constraint target"}
-  ],
-  capability: [
-    {kind: "DEPENDS_ON", label: "Capability dependency"},
-    {kind: "SUPPORTS", label: "Supports goal"},
-    {kind: "REALIZES", label: "Realizes requirement"}
-  ],
-  actor: [
-    {kind: "ISSUES", label: "Issues command/query"},
-    {kind: "OBSERVES", label: "Observes event"},
-    {kind: "PRODUCES", label: "Produces event"},
-    {kind: "CONSUMED_BY", label: "Consumes event"}
-  ],
-  "bounded-context": [{kind: "CONTAINS", label: "Context membership"}],
-  domain: [{kind: "DOMAIN_RELATIONSHIP", label: "Domain relationship"}],
-  aggregate: [
-    {kind: "ROOT", label: "Aggregate root"},
-    {kind: "MEMBER", label: "Aggregate member"},
-    {kind: "HANDLES", label: "Handled command"},
-    {kind: "EMITS_EVENT", label: "Emitted event"}
-  ],
-  data: [
-    {kind: "INPUT", label: "Input data"},
-    {kind: "OUTPUT", label: "Output data"},
-    {kind: "PAYLOAD", label: "Event payload"},
-    {kind: "CONSTRAINS", label: "Data constraint"}
-  ],
-  eventstorming: [
-    {kind: "ISSUES", label: "Actor issues"},
-    {kind: "EXPECTS", label: "Expected event"},
-    {kind: "REJECTS_WITH", label: "Rejection event"},
-    {kind: "MAY_FAIL_WITH", label: "Possible error"},
-    {kind: "TARGETS", label: "Targets aggregate"},
-    {kind: "TRIGGERS", label: "Triggers policy/process"},
-    {kind: "EMITS_EVENT", label: "Emits event"}
-  ],
-  process: [
-    {kind: "TRANSITION", label: "Process transition"},
-    {kind: "USES", label: "Step semantic ref"},
-    {kind: "CONTAINS", label: "Process contains step"}
-  ],
-  decision: [
-    {kind: "TRIGGERS", label: "Policy trigger"},
-    {kind: "GUARDS", label: "Policy guards"},
-    {kind: "CONSTRAINS", label: "Policy constrains"},
-    {kind: "EMITS_COMMAND", label: "Emits command"},
-    {kind: "EMITS_EVENT", label: "Emits event"},
-    {kind: "USES", label: "Uses decision table"},
-    {kind: "RESULTS_IN", label: "Rule result"}
-  ],
-  governance: [{kind: "CONSTRAINS", label: "Constraint target"}],
-  readiness: [{kind: "ATTACHED_TO", label: "Attach blocker"}],
-  traceability: [{kind: "TRACE", label: "Trace link"}]
-};
-
-const PIM_EDGE_TOOLS_BY_PROFILE = {
-  architecture: [
-    {kind: "OWNS", label: "Service ownership"},
-    {kind: "FLOW", label: "Canonical flow"},
-    {kind: "INVOKES", label: "Invocation"}
-  ],
-  api: [
-    {kind: "ROUTES_TO", label: "Route integration"},
-    {kind: "AUTHORIZED_BY", label: "Authorization"},
-    {kind: "USES", label: "Schema use"}
-  ],
-  compute: [
-    {kind: "INVOKES", label: "Invocation"},
-    {kind: "PUBLISHES", label: "Publishes event"},
-    {kind: "SUBSCRIBES_TO", label: "Subscribes to event"},
-    {kind: "READS", label: "Reads data"},
-    {kind: "WRITES", label: "Writes data"},
-    {kind: "CALLS", label: "External call"},
-    {kind: "USES_SECRET", label: "Uses secret"}
-  ],
-  contracts: [
-    {kind: "USES", label: "Contract/schema use"},
-    {kind: "PUBLISHES", label: "Event producer"},
-    {kind: "SUBSCRIBES_TO", label: "Event consumer"}
-  ],
-  data: [
-    {kind: "READS", label: "Read access"},
-    {kind: "WRITES", label: "Write access"},
-    {kind: "READ_WRITE", label: "Read/write access"},
-    {kind: "DATA_ACCESS", label: "Data access"}
-  ],
-  integration: [
-    {kind: "EVENT_FLOW", label: "Event flow"},
-    {kind: "MESSAGE_FLOW", label: "Message flow"},
-    {kind: "PUB_SUB", label: "Pub/sub flow"},
-    {kind: "SUBSCRIBES_TO", label: "Subscription"},
-    {kind: "ROUTES_TO", label: "Routing target"},
-    {kind: "DEAD_LETTER", label: "Dead letter"}
-  ],
-  workflow: [
-    {kind: "TRANSITION", label: "State transition"},
-    {kind: "INVOKES", label: "State invokes"},
-    {kind: "EXTERNAL_CALL", label: "External call"},
-    {kind: "ORCHESTRATES", label: "Nested workflow"}
-  ],
-  security: [
-    {kind: "PERMISSION", label: "Permission"},
-    {kind: "AUTHORIZED_BY", label: "Authorized by"},
-    {kind: "USES_SECRET", label: "Uses secret"}
-  ],
-  deployment: [
-    {kind: "DEPLOYS", label: "Packages deployable"},
-    {kind: "DEPLOYS_TO", label: "Targets environment"},
-    {kind: "HAS_ENV", label: "Configuration"}
-  ],
-  policy: [
-    {kind: "ATTACHED_TO", label: "Policy attachment"},
-    {kind: "CONSTRAINS", label: "Policy constraint"},
-    {kind: "DEAD_LETTER", label: "Dead letter"}
-  ],
-  configuration: [
-    {kind: "HAS_ENV", label: "Environment config"},
-    {kind: "USES_SECRET", label: "Secret use"},
-    {kind: "DEPLOYS_TO", label: "Environment target"}
-  ],
-  readiness: [
-    {kind: "TRACE", label: "Trace link"},
-    {kind: "ATTACHED_TO", label: "Affected element"}
-  ]
-};
 
 const CIM_VIEW_PALETTES = {
   dashboard: [
@@ -1799,16 +1668,255 @@ function nodeVisibleInBoundedContextMode(node) {
   }
   if (state.boundedContextViewMode === "focus") {
     const active = normalizeContextName(state.activeBoundedContextName);
-    return Boolean(active && (contextNameFromNode(node) === active
-        || (isBoundedContextNode(node)
-            && boundedContextNameFromContextNode(node) === active)));
+    return Boolean(active && contextNameFromNode(node) === active);
   }
-  return true;
+  return !isBoundedContextNode(node);
 }
 
 function visibleBoundedContextNodeIds() {
   return new Set(state.diagram.nodes.filter(nodeVisibleInBoundedContextMode)
   .map((node) => node.id));
+}
+
+function elementType(element) {
+  return String(element?.eClass || element?.type || "Element");
+}
+
+function elementLabel(element) {
+  return String(element?.name || element?.label || element?.id || "Element");
+}
+
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function focusStack() {
+  state.canvasFocusStack = Array.isArray(state.canvasFocusStack)
+      ? state.canvasFocusStack : [];
+  return state.canvasFocusStack;
+}
+
+export function activeCanvasFocus() {
+  const stack = focusStack();
+  const current = stack[stack.length - 1] || null;
+  if (!current || current.typeKey !== state.activeType
+      || state.views.activeViewId !== current.focusViewId
+      || !state.views.byId.has(current.focusViewId)) {
+    return null;
+  }
+  return current;
+}
+
+export function canvasFocusLabel() {
+  const focus = activeCanvasFocus();
+  return focus ? `${focus.label || focus.elementId}` : "";
+}
+
+function collectContainedDescendantIds(elementId, into = new Set()) {
+  const children = state.graph?.containmentByParent?.get(elementId);
+  if (!children) {
+    return into;
+  }
+  children.forEach((childId) => {
+    if (!childId || into.has(childId)) {
+      return;
+    }
+    into.add(childId);
+    collectContainedDescendantIds(childId, into);
+  });
+  return into;
+}
+
+function viewNodesByElement(view) {
+  return new Map(safeArray(view?.nodes).map((node) => [node.elementId, node]));
+}
+
+function viewEdgesByRelationship(view) {
+  return new Map(safeArray(view?.edges).map((edge) => [
+    edge.relationshipId,
+    edge
+  ]));
+}
+
+function nodeForFocusElement(elementId, viewNode) {
+  const element = state.graph?.elementsById?.get(elementId);
+  if (!element) {
+    return null;
+  }
+  const x = Number.isFinite(Number(viewNode?.x)) ? Number(viewNode.x)
+      : Number.isFinite(Number(element.x)) ? Number(element.x) : 0;
+  const y = Number.isFinite(Number(viewNode?.y)) ? Number(viewNode.y)
+      : Number.isFinite(Number(element.y)) ? Number(element.y) : 0;
+  return {
+    id: elementId,
+    type: elementType(element),
+    label: elementLabel(element),
+    x,
+    y,
+    meta: structuredClone(element)
+  };
+}
+
+function edgeForFocusRelationship(relationship, viewEdge = null) {
+  if (!relationship) {
+    return null;
+  }
+  return {
+    id: relationship.id,
+    sourceId: relationship.sourceElementId || relationship.source,
+    targetId: relationship.targetElementId || relationship.target,
+    kind: relationship.kind,
+    pinPoints: safeArray(viewEdge?.pinPoints).map((point) =>
+        structuredClone(point)),
+    sourceAnchor: viewEdge?.sourceAnchor ? structuredClone(
+        viewEdge.sourceAnchor) : undefined,
+    targetAnchor: viewEdge?.targetAnchor ? structuredClone(
+        viewEdge.targetAnchor) : undefined
+  };
+}
+
+function focusViewIdFor(elementId) {
+  return `view-${state.activeType}-focus-${String(elementId || "").replaceAll(
+      /[^A-Za-z0-9_-]+/g, "-")}-${Date.now().toString(36)}`;
+}
+
+function createContainerFocusView(node) {
+  const previousView = activeView();
+  const descendantIds = [...collectContainedDescendantIds(node.id)];
+  const descendantSet = new Set(descendantIds);
+  const viewNodePositions = viewNodesByElement(previousView);
+  const focusNodes = descendantIds.map((elementId) => ({
+    elementId,
+    ...(viewNodePositions.get(elementId) || {})
+  }));
+  const fakeNodes = focusNodes.map((entry, index) => {
+    const element = state.graph.elementsById.get(entry.elementId) || {};
+    return {
+      id: entry.elementId,
+      x: Number.isFinite(Number(entry.x)) ? Number(entry.x)
+          : Number.isFinite(Number(element.x)) ? Number(element.x)
+              : 80 + (index % 3) * 250,
+      y: Number.isFinite(Number(entry.y)) ? Number(entry.y)
+          : Number.isFinite(Number(element.y)) ? Number(element.y)
+              : 80 + Math.floor(index / 3) * 170
+    };
+  });
+  autoLayoutIfStacked(fakeNodes);
+  const positionById = new Map(fakeNodes.map((entry) => [entry.id, entry]));
+  const edgePositions = viewEdgesByRelationship(previousView);
+  const edges = [];
+  state.graph.relationshipsById.forEach((relationship) => {
+    const sourceId = relationship.sourceElementId || relationship.source;
+    const targetId = relationship.targetElementId || relationship.target;
+    if (!descendantSet.has(sourceId) || !descendantSet.has(targetId)) {
+      return;
+    }
+    edges.push({
+      relationshipId: relationship.id,
+      visible: true,
+      ...(edgePositions.get(relationship.id) || {})
+    });
+  });
+  return {
+    id: focusViewIdFor(node.id),
+    name: `${node.label || node.id} Contents`,
+    level: String(state.activeType || "").toUpperCase(),
+    kind: "FOCUS",
+    scope: {
+      rootElementId: node.id,
+      scopeKind: "CONTAINER",
+      depth: 999
+    },
+    filters: {elementTypes: [], relationshipKinds: []},
+    layoutProfile: "CONTAINER_FOCUS",
+    nodes: focusNodes.map((entry) => {
+      const position = positionById.get(entry.elementId) || entry;
+      return {
+        ...entry,
+        x: Number(position.x) || 0,
+        y: Number(position.y) || 0,
+        collapsed: false
+      };
+    }),
+    edges,
+    hidden: {elementIds: [], relationshipIds: []},
+    collapsedElementIds: []
+  };
+}
+
+export function openContainerFocus(elementId) {
+  const node = state.nodesById.get(elementId)
+      || state.diagram.nodes.find((candidate) => candidate.id === elementId);
+  if (!node || !isContainerElement(node)) {
+    return false;
+  }
+  const descendants = collectContainedDescendantIds(node.id);
+  if (!descendants.size) {
+    setStatus("This container has no contained elements yet.");
+    return false;
+  }
+  syncActiveViewFromVisibleGraph();
+  const previousViewId = state.views.activeViewId;
+  const focusView = createContainerFocusView(node);
+  state.views.byId.set(focusView.id, focusView);
+  state.views.activeViewId = focusView.id;
+  focusStack().push({
+    typeKey: state.activeType,
+    elementId: node.id,
+    elementType: node.type,
+    label: node.label || node.id,
+    previousViewId,
+    focusViewId: focusView.id
+  });
+  state.selectedNodeId = null;
+  state.selectedNodeIds = new Set();
+  state.selectedConnectionId = null;
+  materializeActiveView();
+  renderDiagram();
+  notifyModelToolsChanged();
+  setStatus(`Opened ${node.label || node.id}. Use Back to return.`);
+  return true;
+}
+
+export function closeCanvasFocus() {
+  const focus = activeCanvasFocus();
+  if (!focus) {
+    focusStack().length = 0;
+    return false;
+  }
+  syncActiveViewFromVisibleGraph();
+  state.views.byId.delete(focus.focusViewId);
+  focusStack().pop();
+  state.views.activeViewId = focus.previousViewId
+      && state.views.byId.has(focus.previousViewId)
+      ? focus.previousViewId
+      : state.views.byId.keys().next().value || null;
+  materializeActiveView();
+  renderDiagram();
+  notifyModelToolsChanged();
+  setStatus("Returned to previous canvas");
+  return true;
+}
+
+function nodeVisibleInContainerMode(node) {
+  if (activeCanvasFocus()) {
+    return true;
+  }
+  const parentId = state.graph?.parentByChild?.get(node.id);
+  if (!parentId) {
+    return true;
+  }
+  const parent = state.graph?.elementsById?.get(parentId);
+  if (state.activeType === "cim" && elementType(parent)
+      === "BoundedContextCandidate") {
+    return true;
+  }
+  return !state.diagram.nodes.some((candidate) => candidate.id === parentId);
+}
+
+function nodeVisibleInCurrentCanvasMode(node) {
+  return nodeVisibleInBoundedContextMode(node)
+      && nodeVisibleInContainerMode(node);
 }
 
 function setCanvasPanSelectionGuard(active) {
@@ -2032,6 +2140,28 @@ export async function finalizeBoundedContextDraft() {
       : ""} to bounded context "${contextName}"`);
 }
 
+function createBoundedContextBoxLabel(contextName) {
+  const label = document.createElement("div");
+  label.className = "bounded-context-label";
+  const name = document.createElement("span");
+  name.textContent = contextName;
+  const openBtn = document.createElement("button");
+  openBtn.type = "button";
+  openBtn.className = "bounded-context-open-btn";
+  openBtn.textContent = "Open";
+  openBtn.title = `Open ${contextName}`;
+  openBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openBoundedContextFocus(contextName);
+  });
+  openBtn.addEventListener("mousedown", (event) => event.stopPropagation());
+  openBtn.addEventListener("touchstart", (event) => event.stopPropagation(),
+      {passive: true});
+  label.append(name, openBtn);
+  return label;
+}
+
 function renderBoundedContextBoxes() {
   if (state.activeType !== "cim"
       || state.boundedContextViewMode === "overview") {
@@ -2079,10 +2209,7 @@ function renderBoundedContextBoxes() {
     box.addEventListener("dblclick", onBoundedContextDoubleClick);
     box.addEventListener("touchstart", onBoundedContextTouchStart,
         {passive: false});
-    const label = document.createElement("div");
-    label.className = "bounded-context-label";
-    label.textContent = contextName;
-    box.appendChild(label);
+    box.appendChild(createBoundedContextBoxLabel(contextName));
     el.nodeLayer.appendChild(box);
   });
 }
@@ -2145,10 +2272,7 @@ function syncBoundedContextBoxes() {
       newBox.addEventListener("dblclick", onBoundedContextDoubleClick);
       newBox.addEventListener("touchstart", onBoundedContextTouchStart,
           {passive: false});
-      const label = document.createElement("div");
-      label.className = "bounded-context-label";
-      label.textContent = contextName;
-      newBox.appendChild(label);
+      newBox.appendChild(createBoundedContextBoxLabel(contextName));
       el.nodeLayer.appendChild(newBox);
     }
   });
@@ -3550,117 +3674,6 @@ function availablePsmPaletteTypes(allTypes) {
   return filtered.length ? filtered : allTypes;
 }
 
-function renderCimConnectionTools(query) {
-  if (state.activeType !== "cim") {
-    return false;
-  }
-  const profile = activeCimViewProfile();
-  const tools = CIM_EDGE_TOOLS_BY_PROFILE[profile] || [];
-  const normalizedQuery = String(query || "").trim().toLowerCase();
-  const filtered = normalizedQuery
-      ? tools.filter((tool) => tool.label.toLowerCase().includes(
-          normalizedQuery) || tool.kind.toLowerCase().includes(
-          normalizedQuery))
-      : tools;
-  if (!filtered.length) {
-    return false;
-  }
-  return appendPaletteActionGroup("Connection Tools", () => {
-    return filtered.map((tool) => {
-      const button = createPaletteActionButton(tool.label, {
-        active: state.preferredConnectionKind === tool.kind
-            && state.connectMode,
-        title: `${tool.label}: ${cimEdgeLabel({kind: tool.kind})}`
-      });
-      button.dataset.edgeKind = tool.kind;
-      button.addEventListener("click", () => {
-        state.preferredConnectionKind = tool.kind;
-        setConnectMode(true);
-        setStatus(`${tool.label}: click source then target`);
-        renderPalette();
-      });
-      return button;
-    });
-  });
-}
-
-function renderPimConnectionTools(query) {
-  if (state.activeType !== "pim") {
-    return false;
-  }
-  const profile = activePimViewProfile();
-  const tools = PIM_EDGE_TOOLS_BY_PROFILE[profile]
-      || PIM_EDGE_TOOLS_BY_PROFILE.architecture;
-  const normalizedQuery = String(query || "").trim().toLowerCase();
-  const filtered = normalizedQuery
-      ? tools.filter((tool) => tool.label.toLowerCase().includes(
-          normalizedQuery) || tool.kind.toLowerCase().includes(
-          normalizedQuery))
-      : tools;
-  if (!filtered.length) {
-    return false;
-  }
-  return appendPaletteActionGroup("Connection Tools", () => {
-    return filtered.map((tool) => {
-      const button = createPaletteActionButton(tool.label, {
-        active: state.preferredConnectionKind === tool.kind
-            && state.connectMode,
-        title: `${tool.label}: ${cimEdgeLabel({kind: tool.kind})}`
-      });
-      button.dataset.edgeKind = tool.kind;
-      button.addEventListener("click", () => {
-        state.preferredConnectionKind = tool.kind;
-        setConnectMode(true);
-        setStatus(`${tool.label}: click source then target`);
-        renderPalette();
-      });
-      return button;
-    });
-  });
-}
-
-function renderMetadataConnectionTools(typeKey, query) {
-  if (state.activeType !== typeKey) {
-    return false;
-  }
-  let viewDefinition = null;
-  try {
-    viewDefinition = modelingViewDefinition(typeKey, activeView());
-  } catch {
-    viewDefinition = null;
-  }
-  const tools = (Array.isArray(viewDefinition?.relationshipKinds)
-      ? viewDefinition.relationshipKinds : []).map((kind) => ({
-    kind,
-    label: modelingRelationshipKindLabel(typeKey, kind)
-  }));
-  const normalizedQuery = String(query || "").trim().toLowerCase();
-  const filtered = normalizedQuery
-      ? tools.filter((tool) => tool.label.toLowerCase().includes(
-          normalizedQuery) || tool.kind.toLowerCase().includes(
-          normalizedQuery))
-      : tools;
-  if (!filtered.length) {
-    return false;
-  }
-  return appendPaletteActionGroup("Connection Tools", () => filtered.map(
-      (tool) => {
-        const button = createPaletteActionButton(tool.label, {
-          active: state.preferredConnectionKind === tool.kind
-              && state.connectMode,
-          title: `${tool.label}: click source then target`
-        });
-        button.dataset.edgeKind = tool.kind;
-        button.addEventListener("click", () => {
-          state.preferredConnectionKind = tool.kind;
-          setConnectMode(true);
-          setStatus(`${tool.label}: click source then target`);
-          renderPalette();
-        });
-        return button;
-      }));
-}
-
 function renderWizardActions() {
   const actions = ({
     cim: [["cimCommandFlow", "Command Flow"]],
@@ -3809,17 +3822,10 @@ export function renderPalette() {
   el.palette.innerHTML = "";
   el.palette.dataset.activeType = state.activeType;
   const hasQuickActionsGroup = renderWizardActions();
-  const hasConnectionToolsGroup = state.activeType === "cim"
-      ? renderCimConnectionTools(query)
-      : (state.activeType === "pim" ? renderPimConnectionTools(query)
-          : renderMetadataConnectionTools(state.activeType, query));
   const namedGroups = groupedTypes.map(([groupName]) => groupName).filter(
       Boolean);
   if (hasQuickActionsGroup) {
     namedGroups.unshift("Quick Actions");
-  }
-  if (hasConnectionToolsGroup) {
-    namedGroups.unshift("Connection Tools");
   }
   if (namedGroups.length > 1) {
     const groupToolbar = document.createElement("div");
@@ -4114,7 +4120,7 @@ export function renderNodes() {
   el.nodeLayer.innerHTML = "";
   renderBoundedContextBoxes();
   state.diagram.nodes.forEach((node) => {
-    if (!nodeVisibleInBoundedContextMode(node)) {
+    if (!nodeVisibleInCurrentCanvasMode(node)) {
       return;
     }
     state.nodesById.set(node.id, node);
@@ -4161,9 +4167,40 @@ export function renderNodes() {
       nodeBody?.insertAdjacentHTML("beforeend", detailsHtml);
     }
 
+    if (state.activeType === "cim"
+        && state.boundedContextViewMode === "overview"
+        && isBoundedContextNode(node)) {
+      const members = contextNodes(boundedContextNameFromContextNode(node));
+      const summaryEl = document.createElement("div");
+      summaryEl.className = "node-collapse-summary";
+      summaryEl.textContent = `${members.length} member${members.length === 1
+          ? "" : "s"}`;
+      n.querySelector(".node-body")?.appendChild(summaryEl);
+    }
+
     if (isContainerElement(node)) {
       const containerTools = document.createElement("div");
       containerTools.className = "node-container-tools";
+      const focusBtn = document.createElement("button");
+      focusBtn.type = "button";
+      focusBtn.className = "node-container-tool";
+      focusBtn.title = state.activeType === "cim" && isBoundedContextNode(node)
+          ? "Open bounded context"
+          : "Open contained canvas";
+      focusBtn.textContent = "Open";
+      focusBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (state.activeType === "cim" && isBoundedContextNode(node)) {
+          openBoundedContextFocus(boundedContextNameFromContextNode(node));
+          return;
+        }
+        openContainerFocus(node.id);
+      });
+      focusBtn.addEventListener("mousedown", (event) => event.stopPropagation());
+      focusBtn.addEventListener("touchstart", (event) => event.stopPropagation(),
+          {passive: true});
+      containerTools.appendChild(focusBtn);
       const collapseBtn = document.createElement("button");
       collapseBtn.type = "button";
       collapseBtn.className = "node-container-tool";
@@ -4175,7 +4212,13 @@ export function renderNodes() {
         event.stopPropagation();
         toggleContainerCollapsed(node.id);
       });
-      containerTools.appendChild(collapseBtn);
+      collapseBtn.addEventListener("mousedown",
+          (event) => event.stopPropagation());
+      collapseBtn.addEventListener("touchstart",
+          (event) => event.stopPropagation(), {passive: true});
+      if (!(state.activeType === "cim" && isBoundedContextNode(node))) {
+        containerTools.appendChild(collapseBtn);
+      }
       n.appendChild(containerTools);
     }
 
@@ -4217,6 +4260,11 @@ export function renderNodes() {
       }
     });
     nodeLabelEl.addEventListener("dblclick", (e) => {
+      if (isContainerElement(node) && !nodeLabelEl.classList.contains(
+          "is-editing")) {
+        e.preventDefault();
+        return;
+      }
       // Explicit user intent to edit/select label text.
       e.preventDefault();
       e.stopPropagation();
@@ -4723,25 +4771,38 @@ function renderBoundedContextOverviewEdges() {
   state.diagram.nodes.filter(isBoundedContextNode).forEach((node) => {
     contextNodeByName.set(boundedContextNameFromContextNode(node), node);
   });
+  const overviewContextNameForNode = (node) => {
+    if (isBoundedContextNode(node)) {
+      return boundedContextNameFromContextNode(node);
+    }
+    return contextNameFromNode(node);
+  };
   const relationCounts = new Map();
   state.diagram.connections.forEach((edge) => {
     const sourceNode = state.diagram.nodes.find((node) => node.id
         === edge.sourceId);
     const targetNode = state.diagram.nodes.find((node) => node.id
         === edge.targetId);
-    const sourceContext = normalizeContextName(contextNameFromNode(sourceNode));
-    const targetContext = normalizeContextName(contextNameFromNode(targetNode));
+    const sourceContext = normalizeContextName(
+        overviewContextNameForNode(sourceNode));
+    const targetContext = normalizeContextName(
+        overviewContextNameForNode(targetNode));
     if (!sourceContext || !targetContext || sourceContext === targetContext
         || !contextNodeByName.has(sourceContext)
         || !contextNodeByName.has(targetContext)) {
       return;
     }
     const key = `${sourceContext}|${targetContext}`;
-    relationCounts.set(key, (relationCounts.get(key) || 0) + 1);
+    const entry = relationCounts.get(key) || {count: 0, kinds: new Set()};
+    entry.count += 1;
+    if (edge.kind) {
+      entry.kinds.add(edge.kind);
+    }
+    relationCounts.set(key, entry);
   });
   const nodeW = getNodeWidth();
   const nodeH = getNodeHeight();
-  relationCounts.forEach((countValue, key) => {
+  relationCounts.forEach((entry, key) => {
     const [sourceContext, targetContext] = key.split("|");
     const source = contextNodeByName.get(sourceContext);
     const target = contextNodeByName.get(targetContext);
@@ -4764,7 +4825,9 @@ function renderBoundedContextOverviewEdges() {
     label.setAttribute("x", String((sx + tx) / 2));
     label.setAttribute("y", String((sy + ty) / 2 - 8));
     label.setAttribute("text-anchor", "middle");
-    label.textContent = `${countValue} relation${countValue === 1 ? "" : "s"}`;
+    const kinds = [...entry.kinds].slice(0, 2).join(", ");
+    label.textContent = kinds || `${entry.count} relation${entry.count === 1
+        ? "" : "s"}`;
     el.edgeLayer.appendChild(label);
   });
 }
@@ -5130,6 +5193,11 @@ export function onNodeClick(event) {
   }
   const node = state.nodesById.get(nodeId);
   if (state.activeType === "cim" && isBoundedContextNode(node)) {
+    if (state.boundedContextViewMode === "overview") {
+      setNodeMultiSelection([nodeId]);
+      selectBoundedContext(boundedContextNameFromContextNode(node));
+      return;
+    }
     startBoundedContextAssignment(boundedContextNameFromContextNode(node));
     setNodeMultiSelection([nodeId]);
     return;
@@ -5141,12 +5209,18 @@ export function onNodeClick(event) {
 function onNodeDoubleClick(event) {
   const nodeId = event.currentTarget.dataset.nodeId;
   const node = state.nodesById.get(nodeId);
-  if (state.activeType !== "cim" || !isBoundedContextNode(node)) {
+  if (!node) {
     return;
   }
   event.preventDefault();
   event.stopPropagation();
-  openBoundedContextFocus(boundedContextNameFromContextNode(node));
+  if (state.activeType === "cim" && isBoundedContextNode(node)) {
+    openBoundedContextFocus(boundedContextNameFromContextNode(node));
+    return;
+  }
+  if (isContainerElement(node)) {
+    openContainerFocus(nodeId);
+  }
 }
 
 function selectConnection(connectionId) {
@@ -6026,6 +6100,22 @@ export function setConnectMode(enabled) {
   renderNodes();
   setStatus(enabled ? "Connect mode enabled - click source then target"
       : "Connect mode disabled");
+}
+
+export function startConnectionFromNode(nodeId, preferredKind = null) {
+  const node = state.nodesById.get(nodeId)
+      || state.diagram.nodes.find((candidate) => candidate.id === nodeId);
+  if (!node) {
+    return false;
+  }
+  state.connectMode = true;
+  state.connectSourceId = nodeId;
+  state.preferredConnectionKind = preferredKind || null;
+  renderNodes();
+  setStatus(preferredKind
+      ? `${preferredKind}: select a highlighted legal target`
+      : "Select a highlighted legal target");
+  return true;
 }
 
 // ── Impact highlight (called by renderNodes and impact module) ────────────────

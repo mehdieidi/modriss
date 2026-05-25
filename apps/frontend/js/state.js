@@ -130,6 +130,7 @@ export const state = {
   boundedContextViewMode: "normal",
   activeBoundedContextName: "",
   dragBoundedContext: null,
+  canvasFocusStack: [],
   impactMode: false,
   impactData: null,
   paletteCollapsed: false,

@@ -1011,12 +1011,12 @@ function renderControls(profile, representation) {
     ["detail", "Detail"]
   ];
   const guidance = representation === "diagram"
-      ? "Use the palette to add CIM elements, choose a connection tool, then click a source and legal target on the canvas."
+      ? "Use the palette to add CIM elements. Select an element to draw legal outgoing relationships from the inspector, or drag a node handle."
       : "Edit this projection directly. Open rows for full details, use matrices for references, and switch back to Diagram for spatial modeling.";
   const quickHelp = representation === "diagram"
       ? [
         "Add elements from the palette.",
-        "Use Connection Tools or drag a node handle; legal targets turn green.",
+        "Select an element to draw legal relationships; valid targets turn green.",
         "Open Dashboard/Register/Matrix when the diagram gets too dense."
       ]
       : [

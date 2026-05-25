@@ -8,7 +8,8 @@ import {
   deleteBoundedContext,
   removeElementFromBoundedContext,
   renameBoundedContext,
-  renderDiagram
+  renderDiagram,
+  startConnectionFromNode
 } from './canvas.js';
 import {scheduleAutoSave} from './autosave.js';
 import {isMobileViewport} from './responsive.js';
@@ -22,6 +23,9 @@ import {confirmAction} from './confirm-action.js';
 import {escapeHtml} from './utils.js';
 import {
   modelingElementDefinition,
+  modelingLegalKinds,
+  modelingLevelConfig,
+  modelingRelationshipKindLabel,
   modelingTypeMatches
 } from './modeling-config-data.js';
 import {
@@ -493,6 +497,7 @@ function renderAttributeFields(node) {
           readonly
         }));
   });
+  appendLegalOutgoingRelationships(node);
   appendContainmentSections(node);
   appendTraceabilitySection(node);
   bindContainmentSectionActions();
@@ -545,6 +550,7 @@ function renderCimAttributeFields(node, meta, definition) {
       readonly: READONLY_ATTR_KEYS.has(key)
     }));
   });
+  appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
   appendTraceabilitySection(node, sections.trace, {includeTitle: false});
   appendCimValidationSummary(sections.validation, meta, node.type);
@@ -602,6 +608,7 @@ function renderPimAttributeFields(node, meta, definition) {
       readonly: READONLY_ATTR_KEYS.has(key)
     }));
   });
+  appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
   appendTraceabilitySection(node, sections.trace, {includeTitle: false});
   appendPimValidationSummary(sections.validation, meta, node.type);
@@ -659,6 +666,7 @@ function renderPsmAttributeFields(node, meta, definition) {
       readonly: READONLY_ATTR_KEYS.has(key)
     }));
   });
+  appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.containment);
   appendTraceabilitySection(node, sections.trace, {includeTitle: false});
   appendPsmValidationSummary(sections.validation, meta, node.type);
@@ -1077,6 +1085,97 @@ function appendTraceabilitySection(node, host = el.attrPanelBody,
       fieldType: booleanField ? "boolean" : inferFieldType(node.meta?.[key])
     }));
   });
+}
+
+function legalOutgoingRelationshipOptions(node) {
+  if (!node || !["cim", "pim", "psm"].includes(state.activeType)) {
+    return [];
+  }
+  let level = null;
+  try {
+    level = modelingLevelConfig(state.activeType);
+  } catch {
+    return [];
+  }
+  const targetTypes = (level.elements || []).map((entry) => String(entry?.type
+      || "").trim()).filter(Boolean).filter((type) => {
+    try {
+      const definition = modelingElementDefinition(state.activeType, type);
+      return !definition?.relationshipElement && !definition?.abstract
+          && !definition?.supportOnly;
+    } catch {
+      return true;
+    }
+  });
+  const byKind = new Map();
+  targetTypes.forEach((targetType) => {
+    let kinds = [];
+    try {
+      kinds = modelingLegalKinds(state.activeType, node.type, targetType);
+    } catch {
+      kinds = [];
+    }
+    kinds.forEach((kind) => {
+      const key = String(kind || "").trim();
+      if (!key) {
+        return;
+      }
+      const entry = byKind.get(key) || {
+        kind: key,
+        label: modelingRelationshipKindLabel(state.activeType, key),
+        targets: new Set()
+      };
+      entry.targets.add(targetType);
+      byKind.set(key, entry);
+    });
+  });
+  return [...byKind.values()].map((entry) => ({
+    ...entry,
+    targets: [...entry.targets].sort((a, b) => a.localeCompare(b))
+  })).sort((a, b) => a.label.localeCompare(b.label)
+      || a.kind.localeCompare(b.kind));
+}
+
+function appendLegalOutgoingRelationships(node, host = el.attrPanelBody) {
+  const options = legalOutgoingRelationshipOptions(node);
+  const section = document.createElement("div");
+  section.className = "attr-section attr-legal-relationships";
+  section.appendChild(buildAttrSectionTitle("Legal Outgoing Relationships"));
+  if (!options.length) {
+    const hint = document.createElement("div");
+    hint.className = "attr-field-hint";
+    hint.textContent = "No legal outgoing relationship types for this element.";
+    section.appendChild(hint);
+    host.appendChild(section);
+    return;
+  }
+  const list = document.createElement("div");
+  list.className = "attr-legal-relationship-list";
+  options.forEach((option) => {
+    const row = document.createElement("div");
+    row.className = "attr-legal-relationship-row";
+    const body = document.createElement("div");
+    body.className = "attr-legal-relationship-body";
+    const title = document.createElement("strong");
+    title.textContent = option.label || option.kind;
+    const targets = document.createElement("span");
+    const visibleTargets = option.targets.slice(0, 5).join(", ");
+    targets.textContent = `${visibleTargets}${option.targets.length > 5
+        ? ` +${option.targets.length - 5}` : ""}`;
+    body.append(title, targets);
+    const action = document.createElement("button");
+    action.type = "button";
+    action.className = "btn btn-secondary btn-sm";
+    action.textContent = "Draw";
+    action.title = `Draw ${option.kind}`;
+    action.addEventListener("click", () => {
+      startConnectionFromNode(node.id, option.kind);
+    });
+    row.append(body, action);
+    list.appendChild(row);
+  });
+  section.appendChild(list);
+  host.appendChild(section);
 }
 
 function cimContainmentEntriesForType(type) {

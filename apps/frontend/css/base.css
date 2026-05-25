@@ -208,7 +208,7 @@ body {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: 288px 1fr;
+  grid-template-columns: 248px 1fr;
   grid-template-rows: minmax(0, 1fr);
   position: relative;
   overflow: visible;
@@ -271,15 +271,15 @@ body {
 }
 
 .workspace.attr-open .workspace-main {
-  grid-template-columns: 288px 1fr;
+  grid-template-columns: 248px 1fr;
 }
 
 .workspace.views-open .workspace-main {
-  grid-template-columns: 288px 1fr 360px;
+  grid-template-columns: 248px 1fr 360px;
 }
 
 .workspace.impact-open .workspace-main {
-  grid-template-columns: 288px 1fr;
+  grid-template-columns: 248px 1fr;
 }
 
 .workspace.artifact-mode.impact-open .workspace-main {
@@ -287,22 +287,22 @@ body {
 }
 
 .workspace.palette-collapsed .workspace-main {
-  grid-template-columns: 74px 1fr;
+  grid-template-columns: 64px 1fr;
 }
 
 .workspace.palette-collapsed {
 }
 
 .workspace.palette-collapsed.attr-open .workspace-main {
-  grid-template-columns: 74px 1fr;
+  grid-template-columns: 64px 1fr;
 }
 
 .workspace.palette-collapsed.views-open .workspace-main {
-  grid-template-columns: 74px 1fr 360px;
+  grid-template-columns: 64px 1fr 360px;
 }
 
 .workspace.palette-collapsed.impact-open .workspace-main {
-  grid-template-columns: 74px 1fr;
+  grid-template-columns: 64px 1fr;
 }
 
 .workspace.artifact-mode.palette-collapsed .workspace-main,
@@ -362,42 +362,42 @@ body {
   }
 
   .workspace-main {
-    grid-template-columns: 252px 1fr;
+    grid-template-columns: 228px 1fr;
   }
 
   .workspace.attr-open .workspace-main {
-    grid-template-columns: 252px 1fr;
+    grid-template-columns: 228px 1fr;
   }
 
   .workspace.views-open .workspace-main {
-    grid-template-columns: 252px 1fr 340px;
+    grid-template-columns: 228px 1fr 340px;
   }
 
   .workspace.impact-open .workspace-main {
-    grid-template-columns: 252px 1fr;
+    grid-template-columns: 228px 1fr;
   }
 
   .workspace.artifact-mode.impact-open .workspace-main {
-    grid-template-columns: 252px 1fr;
+    grid-template-columns: 228px 1fr;
   }
 
   .workspace.palette-collapsed .workspace-main {
-    grid-template-columns: 68px 1fr;
+    grid-template-columns: 60px 1fr;
   }
 
   .workspace.palette-collapsed {
   }
 
   .workspace.palette-collapsed.attr-open .workspace-main {
-    grid-template-columns: 68px 1fr;
+    grid-template-columns: 60px 1fr;
   }
 
   .workspace.palette-collapsed.views-open .workspace-main {
-    grid-template-columns: 68px 1fr 340px;
+    grid-template-columns: 60px 1fr 340px;
   }
 
   .workspace.palette-collapsed.impact-open .workspace-main {
-    grid-template-columns: 68px 1fr;
+    grid-template-columns: 60px 1fr;
   }
 
   .workspace.artifact-mode .workspace-main,

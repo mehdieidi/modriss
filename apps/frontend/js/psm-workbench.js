@@ -664,12 +664,12 @@ function renderControls(profile, representation) {
       state.psmWorkbench.missingOnly ? "checked" : ""}> Missing required</label>
     </div>
     <div class="cim-guidance">${escapeHtml(representation === "diagram"
-      ? "Use the palette to add concrete AWS resources, choose a connection tool, then click a source and legal target on the canvas."
+      ? "Use the palette to add concrete AWS resources. Select an element to draw legal outgoing relationships from the inspector, or drag a node handle."
       : "Edit this projection directly. Open rows for full details, use matrices for references, and switch back to Diagram for spatial modeling.")}</div>
     <div class="cim-quick-help">${(representation === "diagram"
       ? [
         "Add concrete AWS resources from the palette.",
-        "Use Connection Tools or drag a node handle; legal targets turn green.",
+        "Select an element to draw legal relationships; valid targets turn green.",
         "Open Register/Matrix when the view gets dense."
       ]
       : [

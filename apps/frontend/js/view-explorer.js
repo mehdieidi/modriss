@@ -11,6 +11,9 @@ import {
 } from './graph-store.js';
 import {materializeActiveView} from './view-materializer.js';
 import {
+  activeCanvasFocus,
+  canvasFocusLabel,
+  closeCanvasFocus,
   closeBoundedContextSpecialView,
   finalizeBoundedContextDraft,
   openBoundedContextOverview,
@@ -217,6 +220,14 @@ function normalizeBoundedContextToolState() {
 }
 
 function boundedContextToolMarkup() {
+  if (activeCanvasFocus()) {
+    return `<div class="workbench-context-actions workbench-focus-actions">
+      <button class="sidebar-inline-action context-action-primary"
+              id="canvasFocusBackBtn" type="button">Back</button>
+      <span class="workbench-focus-label">${escapeHtml(
+        canvasFocusLabel())}</span>
+    </div>`;
+  }
   if (state.activeType !== "cim") {
     return "";
   }
@@ -574,6 +585,11 @@ function bindWorkbenchEvents() {
     }
     if (target?.closest("#boundedContextBackBtn")) {
       closeBoundedContextSpecialView();
+      renderViewWorkbench();
+      return;
+    }
+    if (target?.closest("#canvasFocusBackBtn")) {
+      closeCanvasFocus();
       renderViewWorkbench();
       return;
     }

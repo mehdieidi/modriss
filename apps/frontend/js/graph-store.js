@@ -1636,7 +1636,8 @@ function mergeManualBacklog(primary, secondary) {
 }
 
 export function serializeRuntimeViews() {
-  return [...state.views.byId.values()].map(clone);
+  return [...state.views.byId.values()].filter(
+      (view) => !isFocusView(view)).map(clone);
 }
 
 export function serializeRuntimeFragments() {
@@ -1735,8 +1736,15 @@ export function serializeGraphAndViewsInto(root) {
   state.graph.manualBacklog = manualBacklog.map(clone);
   root.graph = graph;
   root.fragments = serializeRuntimeFragments();
-  root.views = serializeRuntimeViews();
-  root.activeViewId = state.views.activeViewId;
+  const views = serializeRuntimeViews();
+  root.views = views;
+  const currentView = activeView();
+  const focusStack = Array.isArray(state.canvasFocusStack)
+      ? state.canvasFocusStack : [];
+  const focusBaseViewId = focusStack[focusStack.length - 1]?.previousViewId;
+  root.activeViewId = isFocusView(currentView)
+      ? (focusBaseViewId || views[0]?.id || null)
+      : state.views.activeViewId;
   root.traceLinks = graph.traceLinks;
   root.assumptions = graph.assumptions;
   root.validationIssues = graph.validationIssues;
