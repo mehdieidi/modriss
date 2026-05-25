@@ -12,6 +12,22 @@ const WORKBENCH_EVENT_TYPES = [
   "drop"
 ];
 
+function syncValidationFabAnchor(surface) {
+  const canvasStage = el.canvasGrid?.closest(".canvas-stage");
+  if (!canvasStage) {
+    return;
+  }
+  const isVisible = surface && !surface.classList.contains("hidden");
+  if (!isVisible) {
+    canvasStage.style.removeProperty("--validation-fab-top");
+    return;
+  }
+  const stageRect = canvasStage.getBoundingClientRect();
+  const surfaceRect = surface.getBoundingClientRect();
+  const top = Math.max(0, Math.round(surfaceRect.bottom - stageRect.top + 8));
+  canvasStage.style.setProperty("--validation-fab-top", `${top}px`);
+}
+
 export function ensureWorkbenchSurface(existingSurface, surfaceId) {
   if (existingSurface) {
     return existingSurface;
@@ -95,9 +111,12 @@ export function renderWorkbenchSurfaceLayout({
   surfaceDockClass,
   hasLevelConfig = true
 }) {
+  const canvasStage = el.canvasGrid?.closest(".canvas-stage");
   if (activeType !== expectedType || minimized || !hasLevelConfig) {
     host.className = "cim-workbench-surface hidden";
     el.canvasGrid?.classList.remove(surfaceActiveClass, surfaceDockClass);
+    canvasStage?.classList.remove(surfaceActiveClass, surfaceDockClass);
+    syncValidationFabAnchor(host);
     restoreWorkbenchPalette(workbenchState);
     return;
   }
@@ -106,6 +125,9 @@ export function renderWorkbenchSurfaceLayout({
     host.innerHTML = controlsHtml;
     el.canvasGrid?.classList.remove(surfaceActiveClass);
     el.canvasGrid?.classList.add(surfaceDockClass);
+    canvasStage?.classList.remove(surfaceActiveClass);
+    canvasStage?.classList.add(surfaceDockClass);
+    requestAnimationFrame(() => syncValidationFabAnchor(host));
     restoreWorkbenchPalette(workbenchState);
     return;
   }
@@ -113,6 +135,9 @@ export function renderWorkbenchSurfaceLayout({
   host.innerHTML = `${controlsHtml}<div class="cim-surface-body">${bodyHtml}</div>`;
   el.canvasGrid?.classList.add(surfaceActiveClass);
   el.canvasGrid?.classList.remove(surfaceDockClass);
+  canvasStage?.classList.add(surfaceActiveClass);
+  canvasStage?.classList.remove(surfaceDockClass);
+  requestAnimationFrame(() => syncValidationFabAnchor(host));
   hideWorkbenchPalette(workbenchState);
 }
 

@@ -11,7 +11,10 @@ import {
   removeElementFromGraph,
   syncActiveViewFromVisibleGraph
 } from './graph-store.js';
-import {isContainerElement, materializeActiveView} from './view-materializer.js';
+import {
+  isContainerElement,
+  materializeActiveView
+} from './view-materializer.js';
 import {toggleContainerCollapsed} from './container-collapse.js';
 import {
   modelingElementDefinition,
@@ -1888,7 +1891,7 @@ export function closeCanvasFocus() {
   state.views.byId.delete(focus.focusViewId);
   focusStack().pop();
   state.views.activeViewId = focus.previousViewId
-      && state.views.byId.has(focus.previousViewId)
+  && state.views.byId.has(focus.previousViewId)
       ? focus.previousViewId
       : state.views.byId.keys().next().value || null;
   materializeActiveView();
@@ -4197,8 +4200,10 @@ export function renderNodes() {
         }
         openContainerFocus(node.id);
       });
-      focusBtn.addEventListener("mousedown", (event) => event.stopPropagation());
-      focusBtn.addEventListener("touchstart", (event) => event.stopPropagation(),
+      focusBtn.addEventListener("mousedown",
+          (event) => event.stopPropagation());
+      focusBtn.addEventListener("touchstart",
+          (event) => event.stopPropagation(),
           {passive: true});
       containerTools.appendChild(focusBtn);
       const collapseBtn = document.createElement("button");

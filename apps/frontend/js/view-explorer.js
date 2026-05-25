@@ -13,8 +13,8 @@ import {materializeActiveView} from './view-materializer.js';
 import {
   activeCanvasFocus,
   canvasFocusLabel,
-  closeCanvasFocus,
   closeBoundedContextSpecialView,
+  closeCanvasFocus,
   finalizeBoundedContextDraft,
   openBoundedContextOverview,
   setContextCreateMode

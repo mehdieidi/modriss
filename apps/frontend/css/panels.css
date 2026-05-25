@@ -294,7 +294,7 @@
   gap: 4px;
   margin: -2px 0 2px;
   padding: 4px 0 8px;
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  background: transparent;
 }
 
 .attr-tab-btn {
@@ -577,6 +577,34 @@
   max-height: 230px;
   overflow: auto;
   padding-right: 2px;
+}
+
+.attr-relationship-draw-active {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 54%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-glow) 26%, var(--surface-3) 74%);
+}
+
+.attr-relationship-draw-active span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-strong);
+  font: 800 10px/1.2 var(--font-display);
+  letter-spacing: 0.05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.attr-relationship-draw-selected {
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-high) 78%);
+  color: var(--text-strong);
 }
 
 .attr-legal-relationship-row {

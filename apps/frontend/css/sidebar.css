@@ -3,7 +3,7 @@
   flex-direction: column;
   min-height: 0;
   background: transparent;
-  padding: 8px 7px 8px 6px;
+  padding: 8px 7px;
   overflow: hidden;
   /* Removed transitions to improve FPS during collapse toggles */
 }
@@ -80,9 +80,10 @@
   align-content: start;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 2px;
+  padding-inline: 0;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
+  scrollbar-width: thin;
 }
 
 .sidebar-section {
@@ -199,10 +200,13 @@
   grid-template-columns: 1fr;
   grid-auto-rows: min-content;
   gap: 5px;
+  box-sizing: border-box;
 }
 
 .palette-search-row {
   margin: 0 0 6px;
+  min-width: 0;
+  padding-inline: 2px;
 }
 
 .palette-search-input {
@@ -214,6 +218,7 @@
 .palette-empty {
   grid-column: 1 / -1;
   padding: 10px 8px;
+  margin-inline: 2px;
   border-radius: 8px;
   border: 1px dashed color-mix(in srgb, var(--border) 78%, transparent);
   color: var(--muted);
@@ -234,6 +239,8 @@
   display: grid;
   gap: 5px;
   padding-top: 4px;
+  padding-inline: 2px;
+  min-width: 0;
 }
 
 .palette-group-toolbar {
@@ -241,8 +248,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 4px 2px 2px;
+  min-width: 0;
 }
 
 .palette-group-toolbar-label {
@@ -255,7 +264,10 @@
 .palette-group-toolbar-actions {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
+  min-width: 0;
 }
 
 .palette-group-toolbar-btn {
@@ -267,6 +279,7 @@
   color: var(--muted);
   font: 600 10px/1 var(--font-ui);
   cursor: pointer;
+  max-width: 100%;
 }
 
 .palette-group-toolbar-btn:hover {
@@ -283,6 +296,7 @@
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  box-sizing: border-box;
   min-height: 24px;
   padding: 5px 8px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
@@ -290,6 +304,7 @@
   background: color-mix(in srgb, var(--glass-pane-bg) 88%, transparent);
   color: var(--muted-2);
   cursor: pointer;
+  min-width: 0;
 }
 
 .palette-group-meta {
@@ -339,6 +354,7 @@
   font: 700 9px/1 var(--font-display);
   letter-spacing: 0;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .palette-group-items {
@@ -346,10 +362,16 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .palette-group-collapsed .palette-group-items {
   display: none;
+}
+
+#modelingPanel:not(.hidden) .palette::-webkit-scrollbar {
+  width: 7px;
 }
 
 .model-workbench-section {
