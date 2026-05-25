@@ -61,7 +61,8 @@ context PIM!EventChannel {
   }
 
   critique ChannelShouldHaveProducerAndConsumerIntent {
-    check : self.producers.notEmpty() or self.externalProducers.notEmpty() or self.consumers.notEmpty() or self.workflowConsumers.notEmpty() or self.externalConsumers.notEmpty()
+    check : self.producers.notEmpty() or self.externalProducers.notEmpty() or self.consumers.notEmpty()
+      or self.workflowConsumers.notEmpty() or self.externalConsumers.notEmpty() or self.rationale.hasText()
     message : "[PIM-CHAN-005] Channel '" + self.displayName() + "' has no producer/consumer intent. Suggested fix: connect producers and consumers or mark it as intentionally reserved in rationale."
   }
 }

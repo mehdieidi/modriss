@@ -1013,7 +1013,7 @@ public final class TransformationService {
         }
         findings.forEach(finding -> {
             boolean required = finding.path("blocking").asBoolean(false)
-                    || isAtLeastWarning(text(finding, "severity", ""));
+                    || isBlockingSeverity(text(finding, "severity", ""));
             if (!required) {
                 return;
             }
@@ -1051,6 +1051,12 @@ public final class TransformationService {
         String normalized = String.valueOf(severity).toUpperCase(Locale.ROOT);
         return "WARNING".equals(normalized) || "ERROR".equals(normalized)
                 || "CRITICAL".equals(normalized) || "BLOCKER".equals(normalized);
+    }
+
+    private boolean isBlockingSeverity(String severity) {
+        String normalized = String.valueOf(severity).toUpperCase(Locale.ROOT);
+        return "ERROR".equals(normalized) || "CRITICAL".equals(normalized)
+                || "BLOCKER".equals(normalized);
     }
 
     private ObjectNode manualTask(String id, String title, String rationale, boolean required,

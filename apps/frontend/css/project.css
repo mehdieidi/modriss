@@ -447,6 +447,29 @@ body.modal-open {
   padding: 0;
   display: grid;
   gap: 10px;
+  min-width: 0;
+}
+
+.validation-issue-section {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.validation-issue-section + .validation-issue-section {
+  margin-top: 12px;
+}
+
+.validation-issue-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text-strong);
+  font: 700 11px/1.1 var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .validation-issue-item {
@@ -456,6 +479,23 @@ body.modal-open {
   padding: 10px;
   display: grid;
   gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.validation-issue-warning {
+  border-color: color-mix(in srgb, var(--warning) 52%, var(--border));
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface-2));
+}
+
+.validation-issue-manual {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface-2));
+}
+
+.validation-issue-other {
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 72%, transparent);
 }
 
 .validation-issue-item.validation-issue-item-resolved {
@@ -469,12 +509,16 @@ body.modal-open {
   justify-content: flex-start;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .validation-issue-head {
   font-size: 13px;
   font-weight: 700;
   color: var(--text-strong);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .validation-issue-locate {
@@ -491,20 +535,40 @@ body.modal-open {
   border-color: color-mix(in srgb, var(--accent) 58%, transparent);
 }
 
-.validation-issue-kind {
+.validation-issue-locate:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.validation-issue-tags {
   margin-left: auto;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.validation-issue-kind {
   padding: 2px 7px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   background: color-mix(in srgb, var(--surface-high) 84%, #000 16%);
   color: var(--muted);
   font: 600 10px/1 var(--font-ui);
+  white-space: nowrap;
 }
 
 .validation-manual-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-bottom: 8px;
+  background: var(--glass-pane-bg);
 }
 
 .validation-manual-tab {
@@ -528,21 +592,28 @@ body.modal-open {
   gap: 5px;
   font: 600 11px/1 var(--font-ui);
   color: var(--muted);
+  white-space: nowrap;
 }
 
 .validation-issue-element {
   font-size: 12px;
   color: var(--muted);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .validation-issue-message {
   font-size: 13px;
   color: var(--text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .validation-issue-guide {
   font-size: 12px;
   color: var(--text-soft);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 body.canvas-panning,

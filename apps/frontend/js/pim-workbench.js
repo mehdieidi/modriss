@@ -18,6 +18,15 @@ import {scheduleAutoSave} from './autosave.js';
 import {publishDiagramUpdate} from './collaboration.js';
 import {setStatus} from './status.js';
 import {
+  activeWorkbenchRepresentation,
+  bindWorkbenchInteractionShield,
+  commitWorkbenchModelChange,
+  downloadWorkbenchCsv,
+  ensureWorkbenchSurface,
+  renderWorkbenchSurfaceLayout,
+  setWorkbenchRepresentation
+} from './workbench-common.js';
+import {
   addReferenceValue,
   elementLabel,
   missingRequiredFeatures,
@@ -206,13 +215,7 @@ function safeArray(value) {
 }
 
 function ensureSurface() {
-  if (surface) {
-    return surface;
-  }
-  surface = document.createElement("div");
-  surface.id = "pimWorkbenchSurface";
-  surface.className = "cim-workbench-surface hidden";
-  el.canvasGrid?.appendChild(surface);
+  surface = ensureWorkbenchSurface(surface, "pimWorkbenchSurface");
   return surface;
 }
 
@@ -274,16 +277,14 @@ function activePimViewProfile() {
 
 function activeRepresentation(profile) {
   const viewId = activeView()?.id || "pim";
-  return state.pimWorkbench.representationByViewId[viewId]
-      || DEFAULT_REPRESENTATION_BY_PROFILE[profile] || "diagram";
+  return activeWorkbenchRepresentation(state.pimWorkbench, viewId, profile,
+      DEFAULT_REPRESENTATION_BY_PROFILE);
 }
 
 function setActiveRepresentation(mode) {
   const viewId = activeView()?.id || "pim";
-  state.pimWorkbench.representationByViewId[viewId] = mode;
-  renderPimWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
+  setWorkbenchRepresentation(state.pimWorkbench, viewId, mode,
+      renderPimWorkbenchSurface, renderDiagramCallback, renderPaletteCallback);
 }
 
 function activeRegister(profile) {
@@ -976,47 +977,21 @@ function renderBody(profile, representation) {
 
 export function renderPimWorkbenchSurface() {
   const host = ensureSurface();
-  if (state.activeType !== "pim" || state.modelingToolsMinimized) {
-    host.className = "cim-workbench-surface hidden";
-    el.canvasGrid?.classList.remove("pim-surface-active", "pim-surface-dock");
-    restorePaletteAfterWorkbench();
-    return;
-  }
   const profile = activePimViewProfile();
   const representation = activeRepresentation(profile);
   const controls = renderControls(profile, representation);
-  if (representation === "diagram") {
-    host.className = "cim-workbench-surface cim-workbench-dock";
-    host.innerHTML = controls;
-    el.canvasGrid?.classList.remove("pim-surface-active");
-    el.canvasGrid?.classList.add("pim-surface-dock");
-    restorePaletteAfterWorkbench();
-    return;
-  }
-  host.className = "cim-workbench-surface";
-  host.innerHTML = `${controls}<div class="cim-surface-body">${renderBody(
-      profile, representation)}</div>`;
-  el.canvasGrid?.classList.add("pim-surface-active");
-  el.canvasGrid?.classList.remove("pim-surface-dock");
-  hidePaletteForWorkbench();
-}
-
-function hidePaletteForWorkbench() {
-  if (!el.workspace || el.workspace.classList.contains("palette-hidden")) {
-    return;
-  }
-  state.pimWorkbench.hidPalette = true;
-  el.workspace.classList.add("palette-hidden");
-  el.paletteRailToggleBtn?.classList.remove("active");
-}
-
-function restorePaletteAfterWorkbench() {
-  if (!state.pimWorkbench.hidPalette || !el.workspace) {
-    return;
-  }
-  state.pimWorkbench.hidPalette = false;
-  el.workspace.classList.remove("palette-hidden");
-  el.paletteRailToggleBtn?.classList.add("active");
+  renderWorkbenchSurfaceLayout({
+    host,
+    activeType: state.activeType,
+    expectedType: "pim",
+    minimized: state.modelingToolsMinimized,
+    representation,
+    controlsHtml: controls,
+    bodyHtml: renderBody(profile, representation),
+    workbenchState: state.pimWorkbench,
+    surfaceActiveClass: "pim-surface-active",
+    surfaceDockClass: "pim-surface-dock"
+  });
 }
 
 function currentCenter() {
@@ -1223,16 +1198,18 @@ function openPimDetail(id) {
 }
 
 function commitModelChange(message) {
-  syncActiveViewFromVisibleGraph();
-  saveCurrentTabGraphState("pim");
-  renderPimWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
-  scheduleAutoSave({delayMs: 250});
-  publishDiagramUpdate({immediate: true});
-  if (message) {
-    setStatus(message);
-  }
+  commitWorkbenchModelChange({
+    typeKey: "pim",
+    renderWorkbench: renderPimWorkbenchSurface,
+    renderDiagram: renderDiagramCallback,
+    renderPalette: renderPaletteCallback,
+    message,
+    syncActiveViewFromVisibleGraph,
+    saveCurrentTabGraphState,
+    scheduleAutoSave,
+    publishDiagramUpdate,
+    setStatus
+  });
 }
 
 function updateField(rowId, field, rawValue, inputType = "text") {
@@ -1267,24 +1244,11 @@ function updateRootField(field, value) {
   commitModelChange(`Updated ${field}`);
 }
 
-function csvEscape(value) {
-  const text = valueText(value);
-  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-}
-
 function exportCsv(feature) {
   const rows = filteredRows(feature);
   const columns = ["id", "eClass", "name",
     ...(REGISTER_COLUMNS[feature] || [])];
-  const csv = [columns.join(","), ...rows.map((row) => columns.map((column) =>
-      csvEscape(row[column])).join(","))].join("\n");
-  const blob = new Blob([csv], {type: "text/csv"});
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `pim-${feature}.csv`;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  downloadWorkbenchCsv(`pim-${feature}.csv`, rows, columns, valueText);
 }
 
 function bindSurfaceEvents() {
@@ -1293,11 +1257,7 @@ function bindSurfaceEvents() {
     return;
   }
   bound = true;
-  ["mousedown", "mouseup", "click", "dblclick", "touchstart", "touchmove",
-    "wheel", "dragover", "drop"].forEach((type) => {
-    host.addEventListener(type, (event) => event.stopPropagation(),
-        {passive: type !== "wheel"});
-  });
+  bindWorkbenchInteractionShield(host);
   host.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const mode = target?.closest("[data-pim-mode]")?.dataset?.pimMode;

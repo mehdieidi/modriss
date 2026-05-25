@@ -489,6 +489,7 @@
 .validation-drawer-body {
   padding: 10px 12px;
   overflow: auto;
+  min-width: 0;
 }
 
 @keyframes validation-progress-sweep {

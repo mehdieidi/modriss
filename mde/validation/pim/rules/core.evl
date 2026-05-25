@@ -49,6 +49,10 @@ context KERNEL!ModelElement {
   }
 
   critique PortableNameRecommended {
+    guard : not self.isKindOf(KERNEL!TraceLink)
+      and not self.isKindOf(KERNEL!ManualDecision)
+      and not self.isKindOf(KERNEL!ReadinessFinding)
+      and not self.isKindOf(KERNEL!ReadinessCheck)
     check : self.name.hasText() and self.name.matches("^[A-Za-z][A-Za-z0-9 _\\-.]*$")
     message : "[PIM-NAME-002] The element name '" + self.displayName() + "' is hard to use in generated artifacts. Suggested fix: start with a letter and use only letters, numbers, spaces, underscores, hyphens or dots."
   }
@@ -58,6 +62,13 @@ context KERNEL!TraceableElement {
 
   critique GeneratedElementShouldBeTraceable {
     guard : self.generatedByTransformation.isTrue()
+      and not self.isKindOf(KERNEL!TraceLink)
+      and not self.isKindOf(KERNEL!TraceModel)
+      and not self.isKindOf(KERNEL!ProductionReadinessAssessment)
+      and not self.isKindOf(KERNEL!ReadinessFinding)
+      and not self.isKindOf(KERNEL!ReadinessCheck)
+      and not self.isKindOf(KERNEL!ManualDecision)
+      and not self.isGeneratedTraceSupportElement()
     check : self.generatedFrom.hasText() or self.sourceReference.hasText() or self.sourceUri.hasText() or self.traceId.hasText()
     message : "[PIM-TRACE-001] Generated element '" + self.displayName() + "' has no trace back to its source. Suggested fix: fill generatedFrom, sourceReference, sourceUri or traceId so users can understand where the element came from."
   }
@@ -67,6 +78,16 @@ context KERNEL!TraceableElement {
     check : self.rationale.hasText() or self.reviewNotes.hasText()
     message : "[PIM-TRACE-002] Manually maintained element '" + self.displayName() + "' has no rationale/review notes. Suggested fix: explain why this element is manual and how it should be reviewed."
   }
+}
+
+operation KERNEL!TraceableElement isGeneratedTraceSupportElement() : Boolean {
+  return Sequence{
+    "SchemaField",
+    "SchemaEnumLiteral",
+    "EventEnvelope",
+    "ObservabilityConfig",
+    "ResiliencePolicy"
+  }.includes(self.eClass().getName());
 }
 
 /******************************

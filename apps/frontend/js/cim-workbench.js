@@ -18,6 +18,15 @@ import {scheduleAutoSave} from './autosave.js';
 import {publishDiagramUpdate} from './collaboration.js';
 import {setStatus} from './status.js';
 import {
+  activeWorkbenchRepresentation,
+  bindWorkbenchInteractionShield,
+  commitWorkbenchModelChange,
+  downloadWorkbenchCsv,
+  ensureWorkbenchSurface,
+  renderWorkbenchSurfaceLayout,
+  setWorkbenchRepresentation
+} from './workbench-common.js';
+import {
   addReferenceValue,
   CIM_ROOT_CONTAINMENTS,
   compactRefLabels,
@@ -165,13 +174,7 @@ function safeArray(value) {
 }
 
 function ensureSurface() {
-  if (surface) {
-    return surface;
-  }
-  surface = document.createElement("div");
-  surface.id = "cimWorkbenchSurface";
-  surface.className = "cim-workbench-surface hidden";
-  el.canvasGrid?.appendChild(surface);
+  surface = ensureWorkbenchSurface(surface, "cimWorkbenchSurface");
   return surface;
 }
 
@@ -237,16 +240,14 @@ function activeCimViewProfile() {
 
 function activeRepresentation(profile) {
   const viewId = activeView()?.id || "cim";
-  return state.cimWorkbench.representationByViewId[viewId]
-      || DEFAULT_REPRESENTATION_BY_PROFILE[profile] || "diagram";
+  return activeWorkbenchRepresentation(state.cimWorkbench, viewId, profile,
+      DEFAULT_REPRESENTATION_BY_PROFILE);
 }
 
 function setActiveRepresentation(mode) {
   const viewId = activeView()?.id || "cim";
-  state.cimWorkbench.representationByViewId[viewId] = mode;
-  renderCimWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
+  setWorkbenchRepresentation(state.cimWorkbench, viewId, mode,
+      renderCimWorkbenchSurface, renderDiagramCallback, renderPaletteCallback);
 }
 
 function activeRegister(profile) {
@@ -1081,48 +1082,21 @@ function renderBody(profile, representation) {
 
 export function renderCimWorkbenchSurface() {
   const host = ensureSurface();
-  if (state.activeType !== "cim" || state.modelingToolsMinimized) {
-    host.className = "cim-workbench-surface hidden";
-    el.canvasGrid?.classList.remove("cim-surface-active",
-        "cim-surface-dock");
-    restorePaletteAfterWorkbench();
-    return;
-  }
   const profile = activeCimViewProfile();
   const representation = activeRepresentation(profile);
   const controls = renderControls(profile, representation);
-  if (representation === "diagram") {
-    host.className = "cim-workbench-surface cim-workbench-dock";
-    host.innerHTML = controls;
-    el.canvasGrid?.classList.remove("cim-surface-active");
-    el.canvasGrid?.classList.add("cim-surface-dock");
-    restorePaletteAfterWorkbench();
-    return;
-  }
-  host.className = "cim-workbench-surface";
-  host.innerHTML = `${controls}<div class="cim-surface-body">${renderBody(
-      profile, representation)}</div>`;
-  el.canvasGrid?.classList.add("cim-surface-active");
-  el.canvasGrid?.classList.remove("cim-surface-dock");
-  hidePaletteForWorkbench();
-}
-
-function hidePaletteForWorkbench() {
-  if (!el.workspace || el.workspace.classList.contains("palette-hidden")) {
-    return;
-  }
-  state.cimWorkbench.hidPalette = true;
-  el.workspace.classList.add("palette-hidden");
-  el.paletteRailToggleBtn?.classList.remove("active");
-}
-
-function restorePaletteAfterWorkbench() {
-  if (!state.cimWorkbench.hidPalette || !el.workspace) {
-    return;
-  }
-  state.cimWorkbench.hidPalette = false;
-  el.workspace.classList.remove("palette-hidden");
-  el.paletteRailToggleBtn?.classList.add("active");
+  renderWorkbenchSurfaceLayout({
+    host,
+    activeType: state.activeType,
+    expectedType: "cim",
+    minimized: state.modelingToolsMinimized,
+    representation,
+    controlsHtml: controls,
+    bodyHtml: renderBody(profile, representation),
+    workbenchState: state.cimWorkbench,
+    surfaceActiveClass: "cim-surface-active",
+    surfaceDockClass: "cim-surface-dock"
+  });
 }
 
 function currentCenter() {
@@ -1383,16 +1357,18 @@ function createRequiredRoot() {
 }
 
 function commitModelChange(message) {
-  syncActiveViewFromVisibleGraph();
-  saveCurrentTabGraphState("cim");
-  renderCimWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
-  scheduleAutoSave({delayMs: 250});
-  publishDiagramUpdate({immediate: true});
-  if (message) {
-    setStatus(message);
-  }
+  commitWorkbenchModelChange({
+    typeKey: "cim",
+    renderWorkbench: renderCimWorkbenchSurface,
+    renderDiagram: renderDiagramCallback,
+    renderPalette: renderPaletteCallback,
+    message,
+    syncActiveViewFromVisibleGraph,
+    saveCurrentTabGraphState,
+    scheduleAutoSave,
+    publishDiagramUpdate,
+    setStatus
+  });
 }
 
 function updateField(rowId, field, rawValue, inputType = "text") {
@@ -1452,25 +1428,11 @@ function updateRootField(field, value) {
   commitModelChange(`Updated ${field}`);
 }
 
-function csvEscape(value) {
-  const text = valueText(value);
-  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-}
-
 function exportCsv(feature) {
   const rows = filteredRows(feature);
   const columns = ["id", "eClass", "name",
     ...(REGISTER_COLUMNS[feature] || [])];
-  const csv = [columns.join(","),
-    ...rows.map((row) => columns.map((column) => csvEscape(row[column]))
-    .join(","))].join("\n");
-  const blob = new Blob([csv], {type: "text/csv"});
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `cim-${feature}.csv`;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  downloadWorkbenchCsv(`cim-${feature}.csv`, rows, columns, valueText);
 }
 
 async function importCsv(feature, file) {
@@ -1512,12 +1474,7 @@ function bindSurfaceEvents() {
     return;
   }
   bound = true;
-  ["mousedown", "mouseup", "click", "dblclick", "touchstart", "touchmove",
-    "wheel", "dragover", "drop"].forEach((type) => {
-    host.addEventListener(type, (event) => {
-      event.stopPropagation();
-    }, {passive: type !== "wheel"});
-  });
+  bindWorkbenchInteractionShield(host);
   host.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const mode = target?.closest("[data-cim-mode]")?.dataset?.cimMode;

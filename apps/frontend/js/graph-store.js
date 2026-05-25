@@ -962,7 +962,9 @@ function buildGraph(typeKey, modelJson) {
       modelJson?.graph?.validationIssues || modelJson?.validationIssues).map(
       clone);
   graph.manualBacklog = safeArray(
-      modelJson?.graph?.manualBacklog || modelJson?.manualBacklog).map(clone);
+      Array.isArray(modelJson?.manualBacklog)
+          ? modelJson.manualBacklog
+          : modelJson?.graph?.manualBacklog).map(clone);
 
   rebuildGraphIndexes(graph);
   return graph;
@@ -1584,6 +1586,40 @@ export function serializeRuntimeGraph() {
   };
 }
 
+function manualBacklogKey(task, index) {
+  const explicit = String(task?.id || "").trim();
+  if (explicit) {
+    return `id:${explicit}`;
+  }
+  const title = String(task?.name || task?.title || "").trim().toLowerCase();
+  const elementId = String(task?.elementId || task?.relatedElementId
+      || task?.targetElementId || task?.sourceElementId || "").trim()
+  .toLowerCase();
+  return `fallback:${index}:${title}:${elementId}`;
+}
+
+function mergeManualBacklog(primary, secondary) {
+  const merged = [];
+  const seen = new Set();
+  safeArray(primary).forEach((task, index) => {
+    const key = manualBacklogKey(task, index);
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    merged.push(clone(task));
+  });
+  safeArray(secondary).forEach((task, index) => {
+    const key = manualBacklogKey(task, index);
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    merged.push(clone(task));
+  });
+  return merged;
+}
+
 export function serializeRuntimeViews() {
   return [...state.views.byId.values()].map(clone);
 }
@@ -1678,6 +1714,10 @@ export function syncActiveViewFromVisibleGraph() {
 export function serializeGraphAndViewsInto(root) {
   syncActiveViewFromVisibleGraph();
   const graph = serializeRuntimeGraph();
+  const manualBacklog = mergeManualBacklog(root.manualBacklog,
+      graph.manualBacklog);
+  graph.manualBacklog = manualBacklog.map(clone);
+  state.graph.manualBacklog = manualBacklog.map(clone);
   root.graph = graph;
   root.fragments = serializeRuntimeFragments();
   root.views = serializeRuntimeViews();
@@ -1685,7 +1725,7 @@ export function serializeGraphAndViewsInto(root) {
   root.traceLinks = graph.traceLinks;
   root.assumptions = graph.assumptions;
   root.validationIssues = graph.validationIssues;
-  root.manualBacklog = graph.manualBacklog;
+  root.manualBacklog = manualBacklog;
   root.diagram ??= {};
   root.diagram.elements = graph.elements.map((element) => {
     const copyElement = clone(element);

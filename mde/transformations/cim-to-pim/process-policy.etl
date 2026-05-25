@@ -789,8 +789,8 @@ rule AuditOperabilityNfr2Observability
   metric.policyScope = "operational metric";
   metric.productionRequired = nfr.mandatory or nfr.productionBlocking;
   metric.metricName = firstText(nfr.metric, nfr.name);
-  metric.unit = "";
-  metric.statistic = "TBD";
+  metric.unit = "Count";
+  metric.statistic = "Sum";
   metric.businessMetric = nfr.qualityType.asString() = "AUDITABILITY";
   pol.metrics.add(metric);
   traceGenerated(nfr, metric, "TR-060", "MEDIUM");

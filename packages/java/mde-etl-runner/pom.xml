@@ -51,6 +51,12 @@
       <scope>test</scope>
       <version>${junit.version}</version>
     </dependency>
+    <dependency>
+      <artifactId>mde-evl-validator</artifactId>
+      <groupId>io.mehdieidi</groupId>
+      <scope>test</scope>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <description>Reusable Java API for executing Eclipse Epsilon ETL transformations with
     diagnostics.

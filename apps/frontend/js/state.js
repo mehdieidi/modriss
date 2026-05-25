@@ -157,6 +157,8 @@ export const state = {
     missingOnly: false,
     sliceKind: "",
     sliceValue: "",
+    activeLens: "all",
+    edgeMode: "both",
     sortKey: "name",
     hidPalette: false
   },
@@ -200,7 +202,7 @@ export const state = {
     panelOpen: false,
     firstIssueShown: false,
     lastValidatedAt: null,
-    manualView: "open"
+    issueView: "errors"
   },
   edgeKindPicker: {
     open: false,

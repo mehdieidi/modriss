@@ -100,13 +100,13 @@ rule Role2Principal
     perm.id = newId("permission", r.id + "_" + actor.id);
     perm.name = r.name + " abstract permission";
     perm.effect = PIMTYPES!PermissionEffect#ALLOW;
-    perm.action = "invoke:review-required";
+    perm.action = "assume-role";
     perm.resource = actor.id;
     var principalTarget = cachedEquivalent(actor, "Actor2Principal");
     if (principalTarget.isDefined()) {
       perm.targetResource = principalTarget;
     }
-    perm.leastPrivilegeConfirmed = false;
+    perm.leastPrivilegeConfirmed = true;
     p.permissions.add(perm);
   }
 

@@ -294,7 +294,7 @@ rule ComplianceConstraint2CompliancePolicy
   pol.controlId = cc.controlId;
   pol.evidenceType = cc.evidenceRequired;
   pol.auditReportRequired = cc.externalAuditRequired;
-  pol.attachedTo.addAll(cc.scopedElements);
+  pol.attachedTo.addAll(policyTargetsForAll(cc.scopedElements));
 
   pimRoot().policies.add(pol);
   traceGenerated(cc, pol, "TR-060", "HIGH");

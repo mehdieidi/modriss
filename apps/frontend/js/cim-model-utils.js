@@ -367,7 +367,11 @@ export const CIM_NESTED_CONTAINMENTS = Object.freeze({
   ],
   BusinessProcess: [
     {feature: "steps", types: CIM_PROCESS_STEP_TYPES},
-    {feature: "transitions", types: ["ProcessTransition"]},
+    {
+      feature: "transitions",
+      types: ["ProcessTransition"],
+      relationshipOnly: true
+    },
     {feature: "exceptions", types: ["ExceptionScenario"]},
     {feature: "temporalConstraints", types: ["TemporalConstraint"]}
   ],
@@ -378,7 +382,7 @@ export const CIM_NESTED_CONTAINMENTS = Object.freeze({
     {feature: "requiredDecisions", types: ["ManualDecision"]}
   ],
   TraceModel: [
-    {feature: "links", types: ["TraceLink"]}
+    {feature: "links", types: ["TraceLink"], relationshipOnly: true}
   ],
   ProductionReadinessAssessment: [
     {feature: "findings", types: ["ReadinessFinding"]},
@@ -648,6 +652,8 @@ function nestedContainmentsForType(elementType) {
     const existing = byFeature.get(entry.feature);
     existing.types = [...new Set([...(existing.types || []),
       ...(entry.types || [])])];
+    existing.relationshipOnly = Boolean(
+        existing.relationshipOnly || entry.relationshipOnly);
   });
   return [...byFeature.values()];
 }
@@ -655,14 +661,23 @@ function nestedContainmentsForType(elementType) {
 function nestedContainmentCopies(parentId, parentType, graph, feature) {
   const parent = graph.elementsById.get(parentId);
   const ids = new Set(refIds(parent?.[feature]));
+  const childIds = new Set();
   const children = [];
   const containment = nestedContainmentsForType(parentType).find(
       (entry) => entry.feature === feature);
   const allowedTypes = new Set(containment?.types || []);
   graph.elementsById.forEach((candidate) => {
+    const candidateType = cimTypeOf(candidate);
+    if (allowedTypes.size && !allowedTypes.has(candidateType)) {
+      return;
+    }
     if ((candidate.__ownerId === parentId
             && candidate.__containmentFeature === feature)
         || ids.has(candidate.id)) {
+      if (childIds.has(candidate.id)) {
+        return;
+      }
+      childIds.add(candidate.id);
       children.push(candidate);
     }
   });
@@ -676,6 +691,10 @@ function nestedContainmentCopies(parentId, parentType, graph, feature) {
         || ids.has(candidate.id)
         || relationshipBelongsToParentContainment(candidate, parent,
             parentId, feature, graph)) {
+      if (childIds.has(candidate.id)) {
+        return;
+      }
+      childIds.add(candidate.id);
       children.push(candidate);
     }
   });
@@ -807,6 +826,9 @@ function normalizeSemanticElement(raw, fallbackType, index, owner = null) {
     return null;
   }
   const type = raw.eClass || raw.type || fallbackType;
+  if (isCimRelationshipElementType(type)) {
+    return null;
+  }
   const id = String(raw.id || generatedSemanticId(type, index, owner?.id));
   return {
     eClass: type,
@@ -825,6 +847,9 @@ function collectNestedSemanticElements(parent, result) {
   const type = cimTypeOf(parent);
   const containments = nestedContainmentsForType(type);
   containments.forEach((entry) => {
+    if (entry.relationshipOnly) {
+      return;
+    }
     const values = Array.isArray(parent?.[entry.feature])
         ? parent[entry.feature] : [];
     values.forEach((raw, index) => {
@@ -848,6 +873,9 @@ export function cimSemanticElementsFromRoot(modelJson) {
     return result;
   }
   CIM_ROOT_CONTAINMENTS.forEach((entry) => {
+    if (entry.relationshipOnly) {
+      return;
+    }
     const rawValues = entry.singleton
         ? (modelJson[entry.feature] ? [modelJson[entry.feature]] : [])
         : (Array.isArray(modelJson[entry.feature])

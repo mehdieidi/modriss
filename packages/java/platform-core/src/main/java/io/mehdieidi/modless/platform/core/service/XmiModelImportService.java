@@ -205,6 +205,7 @@ final class XmiModelImportService {
             ObjectNode rootJson = serializeContainedObject(root, context);
             rootJson.set("graph", context.graphNode(objectMapper));
             rootJson.set("diagram", context.diagramNode(objectMapper));
+            restoreRelationshipEndpoints(rootJson);
             return rootJson;
         } catch (PlatformException ex) {
             throw ex;
@@ -287,6 +288,55 @@ final class XmiModelImportService {
             return "";
         }
         return value.asText("").trim();
+    }
+
+    private void restoreRelationshipEndpoints(ObjectNode rootJson) {
+        JsonNode graphRelationships = rootJson.path("graph").path("relationships");
+        if (!graphRelationships.isArray()) {
+            return;
+        }
+        Map<String, JsonNode> relationshipsById = new java.util.LinkedHashMap<>();
+        graphRelationships.forEach(relationship -> {
+            String id = scalarText(relationship.get("id"));
+            if (!id.isBlank()) {
+                relationshipsById.put(id, relationship);
+            }
+        });
+        if (relationshipsById.isEmpty()) {
+            return;
+        }
+        restoreRelationshipEndpoints(rootJson, relationshipsById);
+    }
+
+    private void restoreRelationshipEndpoints(JsonNode node,
+            Map<String, JsonNode> relationshipsById) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isObject()) {
+            ObjectNode object = (ObjectNode) node;
+            JsonNode relationship = relationshipsById.get(scalarText(object.get("id")));
+            if (relationship != null) {
+                copyTextIfMissing(object, relationship, "source");
+                copyTextIfMissing(object, relationship, "target");
+            }
+            object.fields().forEachRemaining(entry -> restoreRelationshipEndpoints(
+                    entry.getValue(), relationshipsById));
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(child -> restoreRelationshipEndpoints(child, relationshipsById));
+        }
+    }
+
+    private void copyTextIfMissing(ObjectNode target, JsonNode source, String fieldName) {
+        if (target.hasNonNull(fieldName) && !target.path(fieldName).asText("").isBlank()) {
+            return;
+        }
+        String value = scalarText(source.get(fieldName));
+        if (!value.isBlank()) {
+            target.put(fieldName, value);
+        }
     }
 
     private ObjectNode serializeContainedObject(EObject object, SerializationContext context) {
@@ -458,10 +508,8 @@ final class XmiModelImportService {
                 if (attribute.isMany() || object.eIsSet(attribute)) {
                     continue;
                 }
-                EDataType type = attribute.getEAttributeType();
-                if (type == EcorePackage.Literals.EBOOLEAN
-                        || type == EcorePackage.Literals.EBOOLEAN_OBJECT) {
-                    object.eSet(attribute, false);
+                if (attribute.getDefaultValueLiteral() != null) {
+                    object.eSet(attribute, attribute.getDefaultValue());
                 }
             }
         }

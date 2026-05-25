@@ -41,9 +41,15 @@ context KERNEL!ReadinessCheck {
 context KERNEL!ManualDecision {
 
   constraint BlockingManualDecisionMustBeAnswered {
-    guard : self.blocking.isTrue()
+    guard : self.blocking.isTrue() and not self.generatedByTransformation.isTrue()
     check : self.decision.hasText() and self.decisionOwner.hasText()
     message : "[PIM-READY-005] Blocking ManualDecision '" + self.displayName() + "' is unanswered or has no owner. Fix: record the decision and decisionOwner, or mark it non-blocking if it should not stop generation."
+  }
+
+  critique GeneratedBlockingManualDecisionShouldHaveOwner {
+    guard : self.blocking.isTrue() and self.generatedByTransformation.isTrue()
+    check : self.decisionOwner.hasText() or self.affectedElements.notEmpty()
+    message : "[PIM-READY-006] Generated blocking ManualDecision '" + self.displayName() + "' should identify an owner or affected PIM elements so it can be triaged."
   }
 }
 

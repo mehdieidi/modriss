@@ -6,6 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import io.mehdieidi.modless.mde.validation.EpsilonEvlValidator;
+import io.mehdieidi.modless.mde.validation.EvlValidationReport;
+import io.mehdieidi.modless.mde.validation.EvlValidationRequest;
+import io.mehdieidi.modless.mde.validation.EvlValidationStatus;
+import io.mehdieidi.modless.mde.validation.FileEvlModelConfiguration;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -152,6 +157,21 @@ final class CimToPimEtlRegressionTest {
         String persisted = Files.readString(pimModel);
         assertFalse(persisted.contains("https://modless.org/cim/"),
                 "Generated PIM XMI must be importable with only the PIM metamodel registered.");
+
+        EvlValidationReport validation = new EpsilonEvlValidator().validate(
+                EvlValidationRequest.forRoot(
+                        REPOSITORY_ROOT.resolve("mde/validation/pim/pim-semantic-validation.evl"),
+                        List.of(FileEvlModelConfiguration.readOnly(
+                                "PIM",
+                                List.of("KERNEL"),
+                                pimModel,
+                                List.of(pimMetamodel))),
+                        true));
+        assertEquals(EvlValidationStatus.SUCCEEDED, validation.status(),
+                validation.diagnostics().toString());
+        assertTrue(validation.violations().isEmpty(),
+                "Generated climate-relief PIM should pass semantic validation: "
+                        + validation.violations());
     }
 
     @Test

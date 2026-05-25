@@ -205,7 +205,6 @@ function sanitizeRootForType(typeKey, root) {
     delete root.platform;
     delete root.defaultRegion;
   } else if (typeKey === "pim") {
-    delete root.domainName;
     delete root.platform;
     delete root.defaultRegion;
   } else if (typeKey === "psm") {
@@ -247,7 +246,9 @@ export function serializeModel() {
       state.baseModel || defaultRootModel(state.activeType, name));
   delete root._sourceXmiBase64;
   sanitizeRootForType(state.activeType, root);
-  root.name = name;
+  if (!String(root.name || "").trim()) {
+    root.name = name;
+  }
   root.diagram ??= {};
 
   root.diagram.elements = state.diagram.nodes.map((node) => {

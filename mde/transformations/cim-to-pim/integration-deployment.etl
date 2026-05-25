@@ -345,6 +345,174 @@ operation createExternalIntegrationFlows() {
   }
 }
 
+operation createDefaultRetentionPolicy(store : DATA!StorageElement) {
+  var id = newId("retention", store.id);
+  var existing = POLICY!RetentionPolicy.all.selectOne(p | p.id = id);
+  if (existing.isDefined()) {
+    return existing;
+  }
+  var policy = new POLICY!RetentionPolicy;
+  policy.id = id;
+  policy.name = store.name + " Retention";
+  policy.policyScope = "generated storage retention";
+  policy.productionRequired = store.persistent;
+  policy.retentionPeriod = "review-required";
+  policy.deletionAfterRetention = store.containsPersonalData;
+  policy.legalHoldPossible = store.containsPersonalData;
+  policy.attachedTo.add(store);
+  pimRoot().policies.add(policy);
+  traceGenerated(store, policy, "TR-150", "LOW");
+  return policy;
+}
+
+operation createDefaultBackupPolicy(store : DATA!StorageElement) {
+  var id = newId("backup", store.id);
+  var existing = POLICY!BackupPolicy.all.selectOne(p | p.id = id);
+  if (existing.isDefined()) {
+    return existing;
+  }
+  var policy = new POLICY!BackupPolicy;
+  policy.id = id;
+  policy.name = store.name + " Backup";
+  policy.policyScope = "generated storage backup";
+  policy.productionRequired = store.persistent;
+  policy.backupRequired = store.persistent;
+  policy.backupFrequency = "daily";
+  policy.recoveryPointObjective = "24 hours";
+  policy.recoveryTimeObjective = "24 hours";
+  policy.attachedTo.add(store);
+  pimRoot().policies.add(policy);
+  traceGenerated(store, policy, "TR-150", "LOW");
+  return policy;
+}
+
+operation ensureStoreOperationalPolicies() {
+  for (store in DATA!StorageElement.all.select(s | s.persistent)) {
+    if (store.retentionPolicy.isUndefined()) {
+      store.retentionPolicy = createDefaultRetentionPolicy(store);
+    }
+    if (store.backupPolicy.isUndefined()) {
+      store.backupPolicy = createDefaultBackupPolicy(store);
+    }
+  }
+}
+
+operation ensureIndexCandidatesForAccessPatterns() {
+  for (store in DATA!DataStore.all) {
+    for (pattern in store.accessPatterns.select(p | p.highFrequency or p.highCardinality)) {
+      var existing = store.indexCandidates.selectOne(indexItem | indexItem.supportsAccessPatterns.includes(pattern));
+      if (existing.isUndefined()) {
+        var index = new DATA!IndexCandidate;
+        index.id = newId("index", store.id + "_" + pattern.id);
+        index.name = pattern.name + " Index";
+        index.indexPurpose = "Supports " + pattern.patternName;
+        if (hasText(pattern.queryBy) and pattern.queryBy <> "TBD") {
+          index.partitionKeyField = pattern.queryBy;
+        }
+        else if (store.ownedDataModels.notEmpty() and store.ownedDataModels.first().storageFields.exists(f | f.identifier)) {
+          index.partitionKeyField = store.ownedDataModels.first().storageFields.selectOne(f | f.identifier).name;
+        }
+        else {
+          index.partitionKeyField = "id";
+        }
+        index.requiredForProduction = true;
+        index.supportsAccessPatterns.add(pattern);
+        store.indexCandidates.add(index);
+        traceGenerated(pattern, index, "TR-150", "LOW");
+      }
+    }
+  }
+}
+
+operation ensureFunctionContractFields() {
+  for (contract in CONTRACTS!FunctionContract.all.select(c | c.inputSchema.isDefined())) {
+    if (hasText(contract.correlationIdField)) {
+      ensureSchemaField(contract.inputSchema, contract.correlationIdField, PIMTYPES!FieldType#STRING, true);
+    }
+    if (hasText(contract.causationIdField)) {
+      ensureSchemaField(contract.inputSchema, contract.causationIdField, PIMTYPES!FieldType#STRING, false);
+    }
+    if (hasText(contract.idempotencyKeyField)) {
+      ensureSchemaField(contract.inputSchema, contract.idempotencyKeyField, PIMTYPES!FieldType#STRING, true);
+    }
+  }
+}
+
+operation ensureApiContracts() {
+  for (api in API!Api.all.select(a | a.generatedOpenApiRequired and a.contract.isUndefined())) {
+    var contract = new CONTRACTS!ApiContract;
+    contract.id = newId("api_contract", api.id);
+    contract.name = api.name + " Contract";
+    contract.publicVersion = api.version.orDefault("1.0.0");
+    contract.backwardCompatible = true;
+    for (route in api.routes) {
+      if (route.requestSchema.isDefined() and not contract.requestSchemas.includes(route.requestSchema)) {
+        contract.requestSchemas.add(route.requestSchema);
+      }
+      if (route.responseSchema.isDefined() and not contract.responseSchemas.includes(route.responseSchema)) {
+        contract.responseSchemas.add(route.responseSchema);
+      }
+      for (mapping in route.errorMappings.select(m | m.errorSchema.isDefined())) {
+        if (not contract.errorSchemas.includes(mapping.errorSchema)) {
+          contract.errorSchemas.add(mapping.errorSchema);
+        }
+      }
+    }
+    api.contract = contract;
+    traceGenerated(api, contract, "TR-150", "LOW");
+  }
+}
+
+operation ensureChannelConnectivityIntent() {
+  for (channel in INTEGRATION!EventChannel.all) {
+    for (eventType in channel.eventTypes) {
+      for (producer in eventType.producedBy.select(p | p.isKindOf(COMPUTE!Function))) {
+        if (not channel.producers.includes(producer)) {
+          channel.producers.add(producer);
+        }
+      }
+      for (consumer in eventType.consumedBy.select(c | c.isKindOf(COMPUTE!Function))) {
+        if (not channel.consumers.includes(consumer)) {
+          channel.consumers.add(consumer);
+        }
+      }
+    }
+    if (channel.producers.isEmpty() and channel.externalProducers.isEmpty() and channel.consumers.isEmpty()
+      and channel.workflowConsumers.isEmpty() and channel.externalConsumers.isEmpty()) {
+      channel.rationale = firstText(channel.rationale, "Reserved channel generated for failure isolation or future routing.");
+    }
+    if (channel.isKindOf(INTEGRATION!Topic) and channel.subscriptions.isEmpty()) {
+      channel.filteringRequired = false;
+      channel.subscriptionMode = "none";
+    }
+  }
+}
+
+operation ensureFlowOperationalPolicies() {
+  var defaultDataProtection = POLICY!DataProtectionPolicy.all.selectOne(p | hasText(p.classification));
+  for (flow in INTEGRATION!Flow.all) {
+    if (flow.criticalPath and flow.resilience.isUndefined()) {
+      flow.resilience = createDefaultResilience(flow, "TR-150", true);
+      if (flow.resilience.deadLetter.isDefined() and flow.resilience.deadLetter.deadLetterChannel.isUndefined()) {
+        flow.resilience.deadLetter.deadLetterChannel = ensureDeadLetterQueue(flow);
+      }
+    }
+    if (flow.criticalPath and flow.observability.isUndefined()) {
+      flow.observability = createDefaultObservability(flow, "TR-150", true, true);
+    }
+    if (flow.containsPersonalData and defaultDataProtection.isDefined()
+      and not flow.policies.exists(policyItem | policyItem.isKindOf(POLICY!DataProtectionPolicy))) {
+      flow.policies.add(defaultDataProtection);
+    }
+  }
+}
+
+operation ensureReadinessFindingAffectedElements() {
+  for (finding in KERNEL!ReadinessFinding.all.select(f | f.affectedElements.isEmpty())) {
+    finding.affectedElements.add(pimRoot());
+  }
+}
+
 operation firstOwnedFunction(service : DEPLOY!ServerlessService) {
   if (service.ownsFunctions.notEmpty()) {
     return service.ownsFunctions.first();
@@ -657,6 +825,7 @@ operation attachDataProtectionPolicies() {
 
       for (flow in personalFlows) {
         if (not policy.attachedTo.includes(flow)) policy.attachedTo.add(flow);
+        if (not flow.policies.includes(policy)) flow.policies.add(policy);
       }
     }
   }
@@ -719,6 +888,7 @@ operation ensureDeadLetterQueue(seed) {
     queue.manuallyMaintained = false;
     pimRoot().channels.add(queue);
     cachedPimQueueById.put(queueId, queue);
+    traceGenerated(seed, queue, "TR-140", "LOW");
   }
   copySeedEventTypesToChannel(seed, queue);
   if (queue.eventTypes.isEmpty()) {
@@ -834,6 +1004,13 @@ operation ensureGeneratedOperationalPolicies() {
   for (fn in COMPUTE!Function.all.select(f | isTrue(f.requiresIdempotency) and f.idempotency.isUndefined())) {
     fn.idempotency = createIdempotencyPolicyForTarget(fn, fn, "TR-150", "eventIdOrCorrelationId");
   }
+  ensureFunctionContractFields();
+  ensureApiContracts();
+  ensureChannelConnectivityIntent();
+  ensureStoreOperationalPolicies();
+  ensureIndexCandidatesForAccessPatterns();
+  ensureFlowOperationalPolicies();
+  ensureReadinessFindingAffectedElements();
   ensureApiAuthentication();
 }
 
@@ -851,10 +1028,13 @@ rule Risk2ReadinessFinding
   }
   f.severity = mapRiskSeverity(r.impact, r.probability);
   f.ruleId = "TR-160";
-  f.message = r.riskStatement;
-  f.recommendation = r.mitigation;
+  f.message = r.riskStatement.orDefault("Risk requires review: " + r.name + ".");
+  f.recommendation = r.mitigation.orDefault("Review the risk and record mitigation before production release.");
   f.blocking = r.productionBlocking;
   appendTargetAffectedElements(f, r.affectedElements);
+  if (f.affectedElements.isEmpty()) {
+    f.affectedElements.add(pimRoot());
+  }
   readinessRoot().findings.add(f);
 }
 
@@ -872,10 +1052,13 @@ rule Assumption2ReadinessFinding
     f.severity = KERNEL!Severity#WARNING;
   }
   f.ruleId = "TR-160";
-  f.message = a.assumptionStatement;
-  f.recommendation = a.validationApproach;
+  f.message = a.assumptionStatement.orDefault("Assumption requires validation: " + a.name + ".");
+  f.recommendation = a.validationApproach.orDefault("Validate or retire the assumption before production release.");
   f.blocking = not a.accepted;
   appendTargetAffectedElements(f, a.affectedElements);
+  if (f.affectedElements.isEmpty()) {
+    f.affectedElements.add(pimRoot());
+  }
   readinessRoot().findings.add(f);
 }
 
@@ -895,7 +1078,13 @@ rule Hotspot2ManualDecision
   else {
     d.severity = KERNEL!Severity#WARNING;
   }
+  d.generatedByTransformation = true;
+  d.manuallyMaintained = false;
+  d.reviewStatus = "review-required";
   appendTargetAffectedElements(d, h.attachedTo);
+  if (d.affectedElements.isEmpty()) {
+    d.affectedElements.add(pimRoot());
+  }
   readinessRoot().manualDecisions.add(d);
 }
 
@@ -978,6 +1167,11 @@ post DeploymentAndConfiguration {
       sec.rotationFrequency = cred.rotationFrequency;
       sec.generatedReferenceOnly = true;
       sec.environmentSpecific = true;
+      var ownerService = pimRoot().services.selectOne(service | service.ownsAdapters.includes(adapter));
+      if (ownerService.isUndefined()) {
+        ownerService = pimRoot().services.first();
+      }
+      sec.ownerTeam = ownerService.ownerTeam.orDefault(ownerService.name);
       cred.secret = sec;
       pimRoot().secrets.add(sec);
       traceGenerated(adapter, sec, "TR-150", "MEDIUM");

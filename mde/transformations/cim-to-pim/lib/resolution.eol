@@ -214,7 +214,7 @@ operation ensureApiForService(service : DEPLOY!ServerlessService) {
   api.manuallyMaintained = false;
   service.ownsApis.add(api);
   pimRoot().apis.add(api);
-  addTrace(service, api, "TR-070", KERNEL!TraceLinkType#DERIVES_FROM, "MEDIUM");
+  traceGenerated(service, api, "TR-070", "MEDIUM");
   return api;
 }
 
@@ -240,6 +240,6 @@ operation ensureEventBusForService(service : DEPLOY!ServerlessService) {
   ch.manuallyMaintained = false;
   service.ownsChannels.add(ch);
   pimRoot().channels.add(ch);
-  addTrace(service, ch, "TR-090", KERNEL!TraceLinkType#DERIVES_FROM, "MEDIUM");
+  traceGenerated(service, ch, "TR-090", "MEDIUM");
   return ch;
 }

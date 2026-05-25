@@ -44,7 +44,6 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
   f.nullable = not isTrue(item.required);
   f.array = isTrue(item.collection) or item.type.asString() = "LIST";
   f.format = deriveFormat(item);
-  f.example = item.example;
   f.minLength = item.minLength;
   f.maxLength = item.maxLength;
   f.pattern = item.pattern;
@@ -56,6 +55,12 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
   f.personalData = isPersonal(item);
   f.sensitiveData = isSensitive(item);
   f.secretValue = isSecret(item);
+  if (not (f.personalData or f.sensitiveData or f.secretValue)) {
+    f.example = item.example;
+  }
+  else if (hasText(item.example)) {
+    f.reviewNotes = "Source example omitted because the field is classified as personal, sensitive, or secret.";
+  }
   f.descriptionForConsumers = firstText(item.summary, item.description);
 
   if (item.subItems.notEmpty()) {
@@ -197,12 +202,26 @@ operation createDataField(item : CIMDOMAIN!InformationItem, identityItem, ownerS
 }
 
 operation addCorrelationFields(schema : CONTRACTS!Schema) {
-  if (schema.fields.none(f | f.name = "correlationId")) {
-    schema.fields.add(fieldFor(schema.id, "correlationId", PIMTYPES!FieldType#STRING, true));
+  ensureSchemaField(schema, "correlationId", PIMTYPES!FieldType#STRING, true);
+  ensureSchemaField(schema, "causationId", PIMTYPES!FieldType#STRING, false);
+}
+
+operation ensureSchemaField(schema : CONTRACTS!Schema, name : String, fieldType, required : Boolean) {
+  var normalizedName = name;
+  var generatedName = camelCase(name);
+  var existing = schema.fields.selectOne(f | f.name = normalizedName or f.name = generatedName);
+  if (existing.isDefined()) {
+    existing.name = normalizedName;
+    if (required) {
+      existing.required = true;
+      existing.nullable = false;
+    }
+    return existing;
   }
-  if (schema.fields.none(f | f.name = "causationId")) {
-    schema.fields.add(fieldFor(schema.id, "causationId", PIMTYPES!FieldType#STRING, false));
-  }
+  var f = fieldFor(schema.id, normalizedName, fieldType, required);
+  f.name = normalizedName;
+  schema.fields.add(f);
+  return f;
 }
 
 operation addEventMetadataFields(schema : CONTRACTS!Schema, event : CIMBEHAVIOR!BusinessEvent) {
@@ -294,6 +313,7 @@ operation createQueryRequestSchema(q : CIMBEHAVIOR!Query) {
     s.fields.add(fieldFor(s.id, "pageToken", PIMTYPES!FieldType#STRING, false));
     s.fields.add(fieldFor(s.id, "pageSize", PIMTYPES!FieldType#INTEGER, false));
   }
+  addCorrelationFields(s);
   traceGenerated(q, s, "TR-080", "HIGH");
   pimRoot().schemas.add(s);
   return s;

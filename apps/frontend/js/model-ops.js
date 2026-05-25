@@ -10,6 +10,7 @@ import {
   installGraphAndViews,
   restoreTabGraphState,
   saveCurrentTabGraphState,
+  setActiveViewId,
   syncActiveViewFromVisibleGraph
 } from './graph-store.js';
 import {materializeActiveView} from './view-materializer.js';
@@ -173,8 +174,14 @@ function manualGuidanceIssuesFromModel(modelJson) {
     const mandatory = required || enforcement.startsWith("MANDATORY");
     const taskTitle = String(task?.name || task?.title
         || `Manual task ${index + 1}`);
-    const elementId = String(task?.elementId || task?.relatedElementId || "")
-    .trim() || null;
+    const elementId = firstReferenceId(
+        task?.elementId,
+        task?.relatedElementId,
+        task?.targetElementId,
+        task?.sourceElementId,
+        task?.affectedElements,
+        task?.relatedElements
+    ) || null;
     return {
       code: mandatory ? "MANUAL_REQUIRED" : "MANUAL_OPTIONAL",
       severity: resolved ? "INFO" : (mandatory ? "ERROR" : "WARNING"),
@@ -185,6 +192,7 @@ function manualGuidanceIssuesFromModel(modelJson) {
       manualTaskId,
       resolved,
       elementId,
+      elementType: String(task?.elementType || task?.relatedElementType || ""),
       elementName: taskTitle,
       message: taskTitle,
       guidance: String(task?.rationale || task?.description
@@ -204,6 +212,34 @@ function manualTaskIdentity(task, index) {
   return `manual-task-${index}-${sanitizeManualTaskKey(
       title)}-${sanitizeManualTaskKey(
       elementId)}`;
+}
+
+function firstReferenceId(...values) {
+  for (const value of values) {
+    const id = referenceId(value);
+    if (id) {
+      return id;
+    }
+  }
+  return "";
+}
+
+function referenceId(value) {
+  if (value == null) {
+    return "";
+  }
+  if (typeof value === "string" || typeof value === "number"
+      || typeof value === "boolean") {
+    return String(value).trim();
+  }
+  if (Array.isArray(value)) {
+    return firstReferenceId(...value);
+  }
+  if (typeof value === "object") {
+    return firstReferenceId(value.$ref, value.id, value.elementId,
+        value.targetElementId, value.sourceElementId);
+  }
+  return "";
 }
 
 function sanitizeManualTaskKey(value) {
@@ -273,6 +309,14 @@ async function setManualTaskResolved(manualTaskId, resolved) {
   }
   task.id = id;
   task.status = resolved ? "DONE" : "OPEN";
+  if (Array.isArray(state.graph?.manualBacklog)) {
+    const graphTask = state.graph.manualBacklog.find(
+        (item, index) => manualTaskIdentity(item, index) === id);
+    if (graphTask) {
+      graphTask.id = id;
+      graphTask.status = task.status;
+    }
+  }
   await saveCurrentModel({quiet: true, rethrow: true});
   const merged = mergeIssuesWithManualGuidance(
       state.validation.issues.filter(
@@ -1269,42 +1313,107 @@ export async function undoLastEdit() {
 
 bindValidationCenterUi();
 
+function issueTargetCandidates(id) {
+  const candidates = [];
+  let current = String(id || "").trim();
+  const seen = new Set();
+  while (current && !seen.has(current)) {
+    candidates.push(current);
+    seen.add(current);
+    current = state.graph?.parentByChild instanceof Map
+        ? String(state.graph.parentByChild.get(current) || "").trim()
+        : "";
+  }
+  return candidates;
+}
+
+function viewContainingIssueTarget(ids) {
+  const candidates = Array.isArray(ids) ? ids : [ids];
+  if (!candidates.length || !(state.views?.byId instanceof Map)) {
+    return null;
+  }
+  for (const view of state.views.byId.values()) {
+    const hasNode = Array.isArray(view?.nodes) && view.nodes.some((node) =>
+        candidates.includes(String(node?.elementId || node?.id || "")));
+    if (hasNode) {
+      return view;
+    }
+    const viewRelationships = Array.isArray(view?.edges) ? view.edges
+        : view?.relationships;
+    const hasRelationship = Array.isArray(viewRelationships)
+        && viewRelationships.some((relationship) =>
+            candidates.includes(String(relationship?.relationshipId
+                || relationship?.id || "")));
+    if (hasRelationship) {
+      return view;
+    }
+  }
+  return null;
+}
+
+function activateViewForIssueTarget(ids) {
+  const view = viewContainingIssueTarget(ids);
+  if (!view || view.id === state.views.activeViewId) {
+    return false;
+  }
+  if (!setActiveViewId(view.id)) {
+    return false;
+  }
+  state.diagram = materializeActiveView();
+  renderDiagram();
+  renderViewWorkbench();
+  return true;
+}
+
+function locateIssueTarget(detail) {
+  const id = String(detail.id || "").trim();
+  const issueName = String(detail.elementName || "").trim().toLowerCase();
+  const issueType = String(detail.elementType || "").trim().toLowerCase();
+  if (!id) {
+    setStatus("Unable to locate issue target.");
+    return;
+  }
+
+  const candidates = issueTargetCandidates(id);
+  activateViewForIssueTarget(candidates);
+
+  for (const candidate of candidates) {
+    if (state.diagram.nodes.some((node) => node.id === candidate)) {
+      scrollToNodeAndHighlight(candidate);
+      setStatus(candidate === id ? "Located issue element on canvas."
+          : "Located containing element on canvas.");
+      return;
+    }
+  }
+  for (const candidate of candidates) {
+    if (state.diagram.connections.some((edge) => edge.id === candidate)) {
+      scrollToConnectionAndHighlight(candidate);
+      setStatus(candidate === id ? "Located issue connection on canvas."
+          : "Located containing connection on canvas.");
+      return;
+    }
+  }
+
+  const byName = state.diagram.nodes.find((node) => {
+    const nodeLabel = String(node.label || "").trim().toLowerCase();
+    const nodeType = String(node.type || "").trim().toLowerCase();
+    return (issueName && nodeLabel === issueName)
+        || (issueType && nodeType === issueType);
+  });
+  if (byName) {
+    scrollToNodeAndHighlight(byName.id);
+    setStatus("Located related element on canvas.");
+    return;
+  }
+
+  setStatus("Issue target is not present on current canvas.");
+}
+
 let locateIssueTargetBound = false;
 if (!locateIssueTargetBound) {
   locateIssueTargetBound = true;
   window.addEventListener("modless:locate-issue-target", (event) => {
-    const detail = event?.detail || {};
-    const id = String(detail.id || "").trim();
-    const issueName = String(detail.elementName || "").trim().toLowerCase();
-    const issueType = String(detail.elementType || "").trim().toLowerCase();
-    if (!id) {
-      setStatus("Unable to locate issue target.");
-      return;
-    }
-
-    if (state.diagram.nodes.some((node) => node.id === id)) {
-      scrollToNodeAndHighlight(id);
-      setStatus("Located issue element on canvas.");
-      return;
-    }
-    if (state.diagram.connections.some((edge) => edge.id === id)) {
-      scrollToConnectionAndHighlight(id);
-      setStatus("Located issue connection on canvas.");
-      return;
-    }
-
-    const byName = state.diagram.nodes.find((node) => {
-      const nodeLabel = String(node.label || "").trim().toLowerCase();
-      const nodeType = String(node.type || "").trim().toLowerCase();
-      return (issueName && nodeLabel === issueName)
-          || (issueType && nodeType === issueType);
-    });
-    if (byName) {
-      scrollToNodeAndHighlight(byName.id);
-      setStatus("Located related element on canvas.");
-      return;
-    }
-    setStatus("Issue target is not present on current canvas.");
+    locateIssueTarget(event?.detail || {});
   });
   window.addEventListener("modless:manual-task-toggle", async (event) => {
     const detail = event?.detail || {};

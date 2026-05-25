@@ -14,6 +14,65 @@ function severityOf(issue) {
   return String(issue?.severity || "ERROR").toUpperCase();
 }
 
+function isManualIssue(issue) {
+  return String(issue?.issueClass || "").startsWith("MANUAL_");
+}
+
+function issueTargetId(issue) {
+  return String(
+      issue?.elementId || issue?.relationshipId || issue?.targetElementId
+      || issue?.sourceElementId || "").trim();
+}
+
+function manualRequirementLabel(issue) {
+  const rawClass = String(issue?.issueClass || issue?.code || "").toUpperCase();
+  if (rawClass.includes("MANUAL_REQUIRED")) {
+    return "Mandatory";
+  }
+  if (rawClass.includes("MANUAL_OPTIONAL")) {
+    return "Optional";
+  }
+  return severityOf(issue) === "ERROR" ? "Mandatory" : "Optional";
+}
+
+function preferredIssueView({errors, warnings, openManual, closedManual}) {
+  const current = state.validation.issueView || "errors";
+  const counts = {
+    errors: errors.length,
+    warnings: warnings.length,
+    "manual-open": openManual.length,
+    "manual-closed": closedManual.length
+  };
+  if (counts[current] > 0 || Object.prototype.hasOwnProperty.call(counts,
+      current)) {
+    return current;
+  }
+  return Object.entries(counts).find(([, count]) => count > 0)?.[0]
+      || "errors";
+}
+
+function defaultIssueViewForIssues(issues) {
+  const manualIssues = issues.filter(isManualIssue);
+  const nonManual = issues.filter((issue) => !isManualIssue(issue));
+  if (nonManual.some((issue) => severityOf(issue) === "ERROR")) {
+    return "errors";
+  }
+  if (nonManual.some((issue) => severityOf(issue) === "WARNING")) {
+    return "warnings";
+  }
+  if (manualIssues.some((issue) => !issue?.resolved)) {
+    return "manual-open";
+  }
+  if (manualIssues.some((issue) => issue?.resolved)) {
+    return "manual-closed";
+  }
+  return "errors";
+}
+
+function applyIssueView(issues) {
+  state.validation.issueView = defaultIssueViewForIssues(issues);
+}
+
 function statusFromIssues(issues) {
   if (!issues.length) {
     return {
@@ -53,69 +112,106 @@ function renderIssues(issues) {
     el.validationDrawerIssues.innerHTML = `<div class="validation-issue-message">Model is valid against current metamodel and constraints.</div>`;
     return;
   }
-  const manualIssues = issues.filter((issue) =>
-      String(issue?.issueClass || "").startsWith("MANUAL_"));
+  const manualIssues = issues.filter(isManualIssue);
   const openManual = manualIssues.filter((issue) => !issue?.resolved);
   const resolvedManual = manualIssues.filter(
       (issue) => Boolean(issue?.resolved));
-  const nonManual = issues.filter((issue) =>
-      !String(issue?.issueClass || "").startsWith("MANUAL_"));
-  const showResolved = state.validation.manualView === "resolved";
-  const visibleIssues = showResolved ? resolvedManual : [...nonManual,
-    ...openManual];
-  const rendered = visibleIssues.map((issue) => {
+  const nonManual = issues.filter((issue) => !isManualIssue(issue));
+  const openErrors = nonManual.filter((issue) => severityOf(issue) === "ERROR");
+  const openWarnings = nonManual.filter((issue) => severityOf(issue)
+      === "WARNING");
+  const openOther = nonManual.filter((issue) => !["ERROR", "WARNING"].includes(
+      severityOf(issue)));
+
+  const renderIssue = (issue, sectionType = "validation") => {
     const rawClass = String(issue.issueClass || issue.code || "").toUpperCase();
-    const issueClass = rawClass.includes("MANUAL_REQUIRED")
-        ? "Manual Required"
-        : rawClass.includes("MANUAL_OPTIONAL")
-            ? "Manual Optional"
-            : rawClass.includes("GENERATION") || rawClass.includes("SYSTEM")
-                ? "System Error"
-                : "Validation";
+    const manual = isManualIssue(issue);
+    const issueClass = manual ? "Manual Task"
+        : rawClass.includes("GENERATION") || rawClass.includes("SYSTEM")
+            ? "System Error"
+            : "Validation";
+    const severity = severityOf(issue);
     const title = issue.constraint || issue.code || "Constraint";
     const message = issue.message || "Invalid model state.";
     const guide = issue.guidance || issue.suggestedFix
         || "Review and fix this element.";
-    const element = issue.elementName || issue.elementId || "";
-    const hasTarget = Boolean(issue.elementId);
-    const isManual = rawClass.startsWith("MANUAL_");
-    const toggle = isManual
+    const targetId = issueTargetId(issue);
+    const element = issue.elementName || targetId || "";
+    const toggle = manual
         ? `<label class="validation-manual-toggle"><input data-manual-task-id="${escapeHtml(
             issue.manualTaskId || "")}" type="checkbox" ${issue.resolved
             ? "checked" : ""}/> Resolve</label>`
         : "";
-    const itemClass = `validation-issue-item${issue.resolved
+    const tags = [
+      manual ? manualRequirementLabel(issue) : severity,
+      issueClass
+    ];
+    const itemClass = `validation-issue-item validation-issue-${escapeHtml(
+        sectionType)}${issue.resolved
         ? " validation-issue-item-resolved" : ""}`;
     return `<li class="${itemClass}">
       <div class="validation-issue-head-row">
         <div class="validation-issue-head">${escapeHtml(title)}</div>
-        <span class="validation-issue-kind">${escapeHtml(issueClass)}</span>
+        <div class="validation-issue-tags">
+          ${tags.map((tag) => `<span class="validation-issue-kind">${escapeHtml(
+        tag)}</span>`).join("")}
+        </div>
         ${toggle}
-        ${hasTarget
-        ? `<button class="validation-issue-locate" data-issue-locate="${escapeHtml(
-            issue.elementId)}" data-issue-element-name="${escapeHtml(
-            issue.elementName || "")}" data-issue-element-type="${escapeHtml(
-            issue.elementType || "")}" type="button">Locate</button>` : ""}
+        <button class="validation-issue-locate" ${targetId ? "" : "disabled"}
+            data-issue-locate="${escapeHtml(targetId)}"
+            data-issue-element-name="${escapeHtml(issue.elementName || "")}"
+            data-issue-element-type="${escapeHtml(issue.elementType || "")}"
+            type="button">Locate</button>
       </div>
       ${element ? `<div class="validation-issue-element">${escapeHtml(
         element)}</div>` : ""}
       <div class="validation-issue-message">${escapeHtml(message)}</div>
       <div class="validation-issue-guide">${escapeHtml(guide)}</div>
     </li>`;
-  }).join("");
-  const tabs = manualIssues.length
-      ? `<div class="validation-manual-tabs">
-          <button class="validation-manual-tab${showResolved ? ""
-          : " active"}" data-manual-view="open" type="button">Open (${openManual.length})</button>
-          <button class="validation-manual-tab${showResolved ? " active"
-          : ""}" data-manual-view="resolved" type="button">Resolved (${resolvedManual.length})</button>
-        </div>`
-      : "";
-  const empty = !visibleIssues.length
-      ? `<div class="validation-issue-message">${showResolved
-          ? "No resolved manual tasks." : "No open issues."}</div>`
-      : `<ul class="validation-issue-list">${rendered}</ul>`;
-  el.validationDrawerIssues.innerHTML = `${tabs}${empty}`;
+  };
+  const renderSection = (title, sectionIssues, sectionType) => {
+    if (!sectionIssues.length) {
+      return `<div class="validation-issue-message">No ${escapeHtml(
+          title.toLowerCase())}.</div>`;
+    }
+    return `<section class="validation-issue-section validation-issue-section-${escapeHtml(
+        sectionType)}">
+      <div class="validation-issue-section-head">
+        <span>${escapeHtml(title)}</span>
+        <span>${sectionIssues.length}</span>
+      </div>
+      <ul class="validation-issue-list">${sectionIssues.map((issue) =>
+        renderIssue(issue, sectionType)).join("")}</ul>
+    </section>`;
+  };
+  const issueView = preferredIssueView({
+    errors: openErrors,
+    warnings: openWarnings,
+    openManual,
+    closedManual: resolvedManual
+  });
+  state.validation.issueView = issueView;
+  const tabs = [
+    ["errors", "Errors", openErrors.length],
+    ["warnings", "Warnings", openWarnings.length],
+    ["manual-open", "Manual Tasks", openManual.length],
+    ["manual-closed", "Closed Manual", resolvedManual.length]
+  ].map(([id, label, count]) =>
+      `<button class="validation-manual-tab${issueView === id ? " active" : ""}"
+        data-issue-view="${escapeHtml(id)}" type="button">${escapeHtml(
+          label)} (${count})</button>`).join("");
+  const content = issueView === "warnings"
+      ? renderSection("Warnings", openWarnings, "warning")
+      : issueView === "manual-open"
+          ? renderSection("Open Manual Tasks", openManual, "manual")
+          : issueView === "manual-closed"
+              ? renderSection("Closed Manual Tasks", resolvedManual, "manual")
+              : [
+                renderSection("Errors", openErrors, "error"),
+                openOther.length ? renderSection("Other", openOther, "other")
+                    : ""
+              ].join("");
+  el.validationDrawerIssues.innerHTML = `<div class="validation-manual-tabs">${tabs}</div>${content}`;
 }
 
 function renderValidationCenter() {
@@ -159,6 +255,7 @@ export function isMethodologyValidationError(error) {
 
 export function applyValidationIssues(issues, {openOnFirst = false} = {}) {
   state.validation.issues = Array.isArray(issues) ? issues : [];
+  applyIssueView(state.validation.issues);
   state.validation.lastValidatedAt = Date.now();
   if (state.validation.issues.length && openOnFirst
       && !state.validation.firstIssueShown) {
@@ -174,7 +271,7 @@ export function applyValidationIssues(issues, {openOnFirst = false} = {}) {
 export function clearValidationIssues({keepPanelState = true} = {}) {
   state.validation.issues = [];
   state.validation.lastValidatedAt = Date.now();
-  state.validation.manualView = "open";
+  state.validation.issueView = "errors";
   if (!keepPanelState) {
     state.validation.panelOpen = false;
   }
@@ -208,10 +305,10 @@ export function bindValidationCenterUi() {
       () => toggleValidationDrawer(false));
   el.validationDrawerIssues?.addEventListener("click", (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
-    const tab = target?.closest("[data-manual-view]");
+    const tab = target?.closest("[data-issue-view]");
     if (tab) {
-      state.validation.manualView = tab.getAttribute("data-manual-view")
-          || "open";
+      state.validation.issueView = tab.getAttribute("data-issue-view")
+          || "errors";
       renderValidationCenter();
       return;
     }

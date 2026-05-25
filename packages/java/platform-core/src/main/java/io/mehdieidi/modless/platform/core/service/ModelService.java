@@ -144,6 +144,19 @@ public final class ModelService {
         return new ValidationResult(valid, issues);
     }
 
+    private ValidationResult validateImportedXmi(ModelLevel level, JsonNode modelJson,
+            byte[] xmiBytes) {
+        if (xmiBytes == null || xmiBytes.length == 0) {
+            return validate(level, modelJson);
+        }
+        List<ValidationIssue> issues = new ArrayList<>(validateWithEvl(level, xmiBytes));
+        if (level == ModelLevel.CIM) {
+            issues.addAll(validateCimModel(modelJson));
+        }
+        boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
+        return new ValidationResult(valid, issues);
+    }
+
     private List<ValidationIssue> validateWithEvl(ModelLevel level, JsonNode modelJson) {
         Path workDir = null;
         try {
@@ -152,6 +165,37 @@ public final class ModelService {
             Path modelFile = workDir.resolve("model-" + level.apiName() + ".xmi");
             Files.write(modelFile, xmiImportService.exportModel(level,
                     hydrateSemanticReferences(modelJson)));
+            EvlValidationReport report = evlValidator.validate(new EvlValidationRequest(
+                    validationRoot(repositoryRoot, level),
+                    List.of(Path.of(validationEntryFile(level))),
+                    List.of(FileEvlModelConfiguration.readOnly(
+                            validationModelName(level),
+                            validationModelAliases(level),
+                            modelFile,
+                            List.of(metamodelFile(repositoryRoot, level)))),
+                    true));
+            return validationIssues(report);
+        } catch (EvlValidationException ex) {
+            return validationIssues(ex.getReport());
+        } catch (Exception ex) {
+            return List.of(issue("ERROR", "EvlValidationExecution",
+                    "EVL validation could not run: "
+                            + (ex.getMessage() == null ? ex.getClass().getSimpleName()
+                            : ex.getMessage())));
+        } finally {
+            if (workDir != null) {
+                deleteQuietly(workDir);
+            }
+        }
+    }
+
+    private List<ValidationIssue> validateWithEvl(ModelLevel level, byte[] xmiBytes) {
+        Path workDir = null;
+        try {
+            Path repositoryRoot = findRepositoryRoot();
+            workDir = Files.createTempDirectory("modless-" + level.apiName() + "-validation-");
+            Path modelFile = workDir.resolve("model-" + level.apiName() + ".xmi");
+            Files.write(modelFile, xmiBytes);
             EvlValidationReport report = evlValidator.validate(new EvlValidationRequest(
                     validationRoot(repositoryRoot, level),
                     List.of(Path.of(validationEntryFile(level))),
@@ -511,8 +555,11 @@ public final class ModelService {
             }
             String name = fileName == null || fileName.isBlank() ? level.apiName() + "-model"
                     : fileName.replaceFirst("\\.[^.]+$", "");
-            ValidationResult validation = validate(level, model);
-            return new ImportResult(name, normalizeModel(name, level, model), validation.issues());
+            JsonNode normalizedModel = normalizeModel(name, level, model);
+            ValidationResult validation = "xmi".equals(normalizedFormat)
+                    ? validateImportedXmi(level, normalizedModel, bytes)
+                    : validate(level, normalizedModel);
+            return new ImportResult(name, normalizedModel, validation.issues());
         } catch (PlatformException ex) {
             throw ex;
         } catch (Exception ex) {

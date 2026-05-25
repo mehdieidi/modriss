@@ -1,8 +1,10 @@
 import {state} from './state.js';
 import {el} from './dom.js';
 import {escapeHtml} from './utils.js';
+import {getDefaultNode} from './diagram.js';
 import {
   activeView,
+  addNodeToGraphAndActiveView,
   saveCurrentTabGraphState,
   syncActiveViewFromVisibleGraph
 } from './graph-store.js';
@@ -16,6 +18,15 @@ import {
 import {scheduleAutoSave} from './autosave.js';
 import {publishDiagramUpdate} from './collaboration.js';
 import {setStatus} from './status.js';
+import {
+  activeWorkbenchRepresentation,
+  bindWorkbenchInteractionShield,
+  commitWorkbenchModelChange,
+  downloadWorkbenchCsv,
+  ensureWorkbenchSurface,
+  renderWorkbenchSurfaceLayout,
+  setWorkbenchRepresentation
+} from './workbench-common.js';
 
 let surface = null;
 let bound = false;
@@ -45,18 +56,27 @@ const PSM_EDGE_MODES = {
   references: {label: "Refs"}
 };
 
+const DEFAULT_REGISTER_BY_PROFILE = {
+  governance: "all",
+  topology: "SamStack",
+  api: "ApiGatewayApi",
+  compute: "AwsLambdaFunction",
+  eventing: "EventBridgeBus",
+  workflow: "StepFunctionStateMachine",
+  data: "DynamoDbTable",
+  security: "IamRole",
+  networking: "VpcConfig",
+  observability: "CloudWatchLogGroup",
+  configuration: "EnvironmentConfig",
+  readiness: "ProductionReadinessAssessment"
+};
+
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
 function ensureSurface() {
-  if (surface) {
-    return surface;
-  }
-  surface = document.createElement("div");
-  surface.id = "psmWorkbenchSurface";
-  surface.className = "cim-workbench-surface hidden";
-  el.canvasGrid?.appendChild(surface);
+  surface = ensureWorkbenchSurface(surface, "psmWorkbenchSurface");
   return surface;
 }
 
@@ -86,16 +106,38 @@ function activeProfile() {
 
 function activeRepresentation(profile) {
   const viewId = activeView()?.id || "psm";
-  return state.psmWorkbench.representationByViewId[viewId]
-      || DEFAULT_REPRESENTATION_BY_PROFILE[profile] || "diagram";
+  return activeWorkbenchRepresentation(state.psmWorkbench, viewId, profile,
+      DEFAULT_REPRESENTATION_BY_PROFILE);
+}
+
+function activeRegister(profile) {
+  const viewId = activeView()?.id || "psm";
+  return state.psmWorkbench.registerByViewId[viewId]
+      || DEFAULT_REGISTER_BY_PROFILE[profile] || "all";
+}
+
+function resolveActiveRegister(profile = activeProfile()) {
+  const requested = activeRegister(profile);
+  if (requested === "all") {
+    return requested;
+  }
+  const available = new Set([
+    ...rowsForActiveView().map((row) => String(row.eClass || "")),
+    ...viewTypes().map(String)
+  ]);
+  return available.has(requested) ? requested : "all";
+}
+
+function setActiveRegister(typeName) {
+  const viewId = activeView()?.id || "psm";
+  state.psmWorkbench.registerByViewId[viewId] = typeName;
+  renderPsmWorkbenchSurface();
 }
 
 function setActiveRepresentation(mode) {
   const viewId = activeView()?.id || "psm";
-  state.psmWorkbench.representationByViewId[viewId] = mode;
-  renderPsmWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
+  setWorkbenchRepresentation(state.psmWorkbench, viewId, mode,
+      renderPsmWorkbenchSurface, renderDiagramCallback, renderPaletteCallback);
 }
 
 function titleCase(value) {
@@ -347,6 +389,30 @@ function rowsForActiveView() {
       || elementLabel(b))));
 }
 
+function registerRows(profile = activeProfile()) {
+  const register = resolveActiveRegister(profile);
+  const rows = rowsForActiveView();
+  if (register === "all") {
+    return rows;
+  }
+  return rows.filter((row) => modelingTypeMatches("psm", register, row.eClass));
+}
+
+function registerTypeOptions(profile = activeProfile()) {
+  const fromRows = [...new Set(rowsForActiveView().map((row) =>
+      String(row.eClass || "")).filter(Boolean))];
+  const fromView = [...new Set(viewTypes().map(String).filter(Boolean))];
+  const types = (fromRows.length ? fromRows : fromView).sort((left, right) =>
+      left.localeCompare(right));
+  const active = resolveActiveRegister(profile);
+  return [
+    `<option value="all"${active === "all" ? " selected"
+        : ""}>All Visible Types</option>`,
+    ...types.map((type) => `<option value="${escapeHtml(type)}"${
+        active === type ? " selected" : ""}>${escapeHtml(type)}</option>`)
+  ].join("");
+}
+
 function columnsForRows(rows) {
   const definition = activeDefinition();
   const preferred = ["name", "logicalId", "physicalName"];
@@ -417,11 +483,22 @@ function rowBadge(row) {
           missing.join(", "))}">${missing.length}</span>` : ""}`;
 }
 
-function renderRegister() {
-  const rows = rowsForActiveView();
+function exportCsv(profile = activeProfile()) {
+  const rows = registerRows(profile);
+  const columns = ["id", "eClass", ...columnsForRows(rows)];
+  downloadWorkbenchCsv(
+      `psm-${resolveActiveRegister(profile).toLowerCase()}.csv`,
+      rows, columns, valueText);
+}
+
+function renderRegister(profile) {
+  const rows = registerRows(profile);
   const columns = columnsForRows(rows);
   return `<div class="cim-toolbar">
+    <select class="cim-select" data-psm-register>${registerTypeOptions(
+      profile)}</select>
     <button class="cim-action cim-action-primary" data-psm-open-create type="button">Add From Palette</button>
+    <button class="cim-action" data-psm-export type="button">Export CSV</button>
   </div>
   <div class="cim-table-wrap"><table class="cim-table">
     <thead><tr><th>Type</th>${columns.map((column) =>
@@ -505,11 +582,15 @@ function countRowsMatchingTypes(types) {
 }
 
 function renderDashboard() {
+  const stacks = countRowsMatchingTypes(["SamStack"]);
+  const stages = countRowsMatchingTypes(["AwsStage"]);
   const lensCards = psmLensEntries().filter((lens) => lens.key !== "all").map(
       (lens) => [lens.label, countRowsMatchingTypes(lens.types)]);
   const cards = [
     ["Elements", elements().length],
     ["Connectors", relationships().length],
+    ["Stacks", stacks],
+    ["Stages", stages],
     ["Missing", elements().filter((item) =>
         missingRequiredFields(item).length).length],
     ...lensCards
@@ -518,6 +599,11 @@ function renderDashboard() {
     ${cards.map(([label, value]) => `<div class="cim-metric">
       <strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span>
     </div>`).join("")}
+  </div>
+  <div class="cim-dashboard-actions">
+    <button class="cim-action" data-psm-create-root type="button">${
+      stacks && stages ? "Refresh PSM Foundation" : "Create PSM Foundation"}</button>
+    <button class="cim-action" data-psm-mode="diagram" type="button">Open Diagram</button>
   </div>`;
 }
 
@@ -588,7 +674,7 @@ function renderControls(profile, representation) {
       ]
       : [
         "The palette is hidden so this editor has room.",
-        "Use Register for bulk AWS fields, Matrix for references, Board for readiness.",
+        "Use Register for bulk AWS fields and CSV export, Matrix for references, Board for readiness.",
         "Use Open on any row to edit the full detail drawer."
       ]).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>
   </div>`;
@@ -610,7 +696,7 @@ function renderBody(representation) {
     return renderDashboard();
   }
   if (representation === "register") {
-    return renderRegister();
+    return renderRegister(activeProfile());
   }
   if (representation === "matrix") {
     return renderMatrix();
@@ -626,66 +712,43 @@ function renderBody(representation) {
 
 export function renderPsmWorkbenchSurface() {
   const host = ensureSurface();
-  if (state.activeType !== "psm" || state.modelingToolsMinimized) {
-    host.className = "cim-workbench-surface hidden";
-    el.canvasGrid?.classList.remove("psm-surface-active", "psm-surface-dock");
-    restorePaletteAfterWorkbench();
-    return;
-  }
+  let hasLevelConfig = true;
   try {
     modelingLevelConfig("psm");
   } catch {
-    host.className = "cim-workbench-surface hidden";
-    return;
+    hasLevelConfig = false;
   }
   const profile = activeProfile();
   const representation = activeRepresentation(profile);
   const controls = renderControls(profile, representation);
-  if (representation === "diagram") {
-    host.className = "cim-workbench-surface cim-workbench-dock";
-    host.innerHTML = controls;
-    el.canvasGrid?.classList.remove("psm-surface-active");
-    el.canvasGrid?.classList.add("psm-surface-dock");
-    restorePaletteAfterWorkbench();
-    return;
-  }
-  host.className = "cim-workbench-surface";
-  host.innerHTML = `${controls}<div class="cim-surface-body">${renderBody(
-      representation)}</div>`;
-  el.canvasGrid?.classList.add("psm-surface-active");
-  el.canvasGrid?.classList.remove("psm-surface-dock");
-  hidePaletteForWorkbench();
-}
-
-function hidePaletteForWorkbench() {
-  if (!el.workspace || el.workspace.classList.contains("palette-hidden")) {
-    return;
-  }
-  state.psmWorkbench.hidPalette = true;
-  el.workspace.classList.add("palette-hidden");
-  el.paletteRailToggleBtn?.classList.remove("active");
-}
-
-function restorePaletteAfterWorkbench() {
-  if (!state.psmWorkbench.hidPalette || !el.workspace) {
-    return;
-  }
-  state.psmWorkbench.hidPalette = false;
-  el.workspace.classList.remove("palette-hidden");
-  el.paletteRailToggleBtn?.classList.add("active");
+  renderWorkbenchSurfaceLayout({
+    host,
+    activeType: state.activeType,
+    expectedType: "psm",
+    minimized: state.modelingToolsMinimized,
+    representation,
+    controlsHtml: controls,
+    bodyHtml: renderBody(representation),
+    workbenchState: state.psmWorkbench,
+    surfaceActiveClass: "psm-surface-active",
+    surfaceDockClass: "psm-surface-dock",
+    hasLevelConfig
+  });
 }
 
 function commitModelChange(message) {
-  syncActiveViewFromVisibleGraph();
-  saveCurrentTabGraphState("psm");
-  renderPsmWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
-  scheduleAutoSave({delayMs: 250});
-  publishDiagramUpdate({immediate: true});
-  if (message) {
-    setStatus(message);
-  }
+  commitWorkbenchModelChange({
+    typeKey: "psm",
+    renderWorkbench: renderPsmWorkbenchSurface,
+    renderDiagram: renderDiagramCallback,
+    renderPalette: renderPaletteCallback,
+    message,
+    syncActiveViewFromVisibleGraph,
+    saveCurrentTabGraphState,
+    scheduleAutoSave,
+    publishDiagramUpdate,
+    setStatus
+  });
 }
 
 function updateField(rowId, field, rawValue, inputType = "text") {
@@ -713,17 +776,53 @@ function updateField(rowId, field, rawValue, inputType = "text") {
   commitModelChange(`Updated ${field}`);
 }
 
+function currentCenter() {
+  const rect = el.canvasViewport?.getBoundingClientRect();
+  if (!rect) {
+    return {x: 120, y: 120};
+  }
+  return {
+    x: Math.round((rect.width / 2 - state.viewport.x) / state.viewport.scale),
+    y: Math.round((rect.height / 2 - state.viewport.y) / state.viewport.scale)
+  };
+}
+
+function addNode(type, x, y, name = "") {
+  const node = getDefaultNode("psm", type, Math.round(x), Math.round(y));
+  if (name) {
+    node.label = name;
+    node.meta.name = name;
+    node.meta.label = name;
+  }
+  state.diagram.nodes.push(node);
+  addNodeToGraphAndActiveView(node);
+  return node;
+}
+
+function createRequiredRoot() {
+  const center = currentCenter();
+  const stack = elements().find((row) => row.eClass === "SamStack")
+      || addNode("SamStack", center.x - 140, center.y, "Main Stack");
+  const stage = elements().find((row) => row.eClass === "AwsStage")
+      || addNode("AwsStage", center.x + 140, center.y, "Dev Stage");
+  const deployedStacks = new Set(refIds(stage.deploysStacks));
+  deployedStacks.add(stack.id);
+  stage.deploysStacks = [...deployedStacks];
+  const visibleStage = state.nodesById.get(stage.id);
+  if (visibleStage?.meta) {
+    visibleStage.meta.deploysStacks = stage.deploysStacks;
+  }
+  commitModelChange("Completed PSM root model");
+  openAttributePanelCallback?.(stack.id);
+}
+
 function bindSurfaceEvents() {
   const host = ensureSurface();
   if (bound) {
     return;
   }
   bound = true;
-  ["mousedown", "mouseup", "click", "dblclick", "touchstart", "touchmove",
-    "wheel", "dragover", "drop"].forEach((type) => {
-    host.addEventListener(type, (event) => event.stopPropagation(),
-        {passive: type !== "wheel"});
-  });
+  bindWorkbenchInteractionShield(host);
   host.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const mode = target?.closest("[data-psm-mode]")?.dataset?.psmMode;
@@ -753,8 +852,16 @@ function bindSurfaceEvents() {
       openConnectionPanelCallback?.(openRelationship);
       return;
     }
+    if (target?.closest("[data-psm-create-root]")) {
+      createRequiredRoot();
+      return;
+    }
     if (target?.closest("[data-psm-open-create]")) {
       setStatus("Use the PSM palette to add a concrete resource or stack.");
+      return;
+    }
+    if (target?.closest("[data-psm-export]")) {
+      exportCsv(activeProfile());
       return;
     }
     const sortKey = target?.closest("[data-psm-sort]")?.dataset?.psmSort;
@@ -772,6 +879,10 @@ function bindSurfaceEvents() {
     if (target.dataset.psmSearch !== undefined) {
       state.psmWorkbench.search = target.value;
       renderPsmWorkbenchSurface();
+      return;
+    }
+    if (target.dataset.psmRegister !== undefined) {
+      setActiveRegister(target.value);
       return;
     }
     if (target.dataset.psmSliceKind !== undefined) {
