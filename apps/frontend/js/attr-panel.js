@@ -96,6 +96,32 @@ const PIM_POLICY_SECURITY_FIELDS = new Set([
   "authorizationRequired", "encrypted", "encryptionAtRestRequired",
   "containsPersonalData", "privileged", "mfaRequired"
 ]);
+const OVERVIEW_BADGE_FIELDS = [
+  "priority", "severity", "status", "requirementType", "qualityType",
+  "commandType", "queryType", "eventType", "processKind", "policyType",
+  "criticality", "maturity", "boundaryType", "functionKind", "runtime",
+  "languageBoundary", "ownershipBoundary", "trustLevel", "actorType",
+  "valueType", "consistencyExpectation", "publicAccessMode", "xrayDefault"
+];
+const OVERVIEW_BOOLEAN_BADGES = new Map([
+  ["mandatory", "mandatory"],
+  ["immutable", "immutable"],
+  ["externallyExposed", "external"],
+  ["publicEntryPoint", "public"],
+  ["ownsData", "owns data"],
+  ["auditRequired", "audit"],
+  ["productionBlocking", "production blocking"],
+  ["blocksTransformation", "blocks transformation"],
+  ["blocksProduction", "blocks production"],
+  ["tracingEnabled", "tracing"],
+  ["metricsEnabled", "metrics"],
+  ["accessLogsEnabled", "access logs"],
+  ["deletionProtectionEnabled", "deletion protection"],
+  ["pointInTimeRecoveryEnabled", "point in time recovery"],
+  ["eventBridgeNotificationEnabled", "eventbridge notifications"],
+  ["enableKeyRotation", "key rotation"],
+  ["rotationRequired", "rotation required"]
+]);
 
 // ── Open / close ──────────────────────────────────────────────────────────────
 
@@ -426,6 +452,7 @@ function renderAttributeFields(node) {
   }
 
   const labelKey = state.activeType === "cim" ? "label" : "name";
+  appendElementOverviewSection(el.attrPanelBody, node, definition);
   el.attrPanelBody.appendChild(buildAttrSectionTitle("Identity"));
   el.attrPanelBody.appendChild(
       buildAttrField(labelKey, node.label, {fieldType: "text"}));
@@ -475,6 +502,8 @@ function renderCimAttributeFields(node, meta, definition) {
   const sections = cimInspectorSections();
   const rendered = new Set(["label", "name"]);
 
+  appendElementOverviewSection(sections.overview, node, definition,
+      {includeTitle: false});
   sections.identity.appendChild(buildAttrField("label", node.label, {
     fieldType: "text"
   }));
@@ -528,6 +557,8 @@ function renderPimAttributeFields(node, meta, definition) {
   const sections = pimInspectorSections();
   const rendered = new Set(["label", "name"]);
 
+  appendElementOverviewSection(sections.overview, node, definition,
+      {includeTitle: false});
   sections.identity.appendChild(buildAttrField("name", node.label, {
     fieldType: "text"
   }));
@@ -583,6 +614,8 @@ function renderPsmAttributeFields(node, meta, definition) {
   const sections = psmInspectorSections();
   const rendered = new Set(["label", "name"]);
 
+  appendElementOverviewSection(sections.overview, node, definition,
+      {includeTitle: false});
   sections.identity.appendChild(buildAttrField("name", node.label, {
     fieldType: "text"
   }));
@@ -636,6 +669,7 @@ function renderPsmAttributeFields(node, meta, definition) {
 
 function pimInspectorSections() {
   return {
+    overview: createAttrTabSection("overview", "Overview"),
     identity: createAttrTabSection("identity", "Identity"),
     core: createAttrTabSection("core", "Core Properties"),
     relationships: createAttrTabSection("relationships", "Relationships"),
@@ -647,6 +681,7 @@ function pimInspectorSections() {
 
 function cimInspectorSections() {
   return {
+    overview: createAttrTabSection("overview", "Overview"),
     identity: createAttrTabSection("identity", "Identity"),
     core: createAttrTabSection("core", "Business Fields"),
     relationships: createAttrTabSection("relationships", "Relationships"),
@@ -658,6 +693,7 @@ function cimInspectorSections() {
 
 function psmInspectorSections() {
   return {
+    overview: createAttrTabSection("overview", "Overview"),
     identity: createAttrTabSection("identity", "Identity"),
     operations: createAttrTabSection("operations", "Runtime / Operations"),
     security: createAttrTabSection("security", "Security"),
@@ -778,6 +814,200 @@ function renderAttrTabs(sections) {
   });
   el.attrPanelBody.appendChild(tabbar);
   entries.forEach(([, section]) => el.attrPanelBody.appendChild(section));
+}
+
+function appendElementOverviewSection(host, node, definition,
+    {includeTitle = true} = {}) {
+  const overview = buildElementOverview(node, definition);
+  if (!overview) {
+    return;
+  }
+  if (includeTitle) {
+    host.appendChild(buildAttrSectionTitle("Overview"));
+  }
+  host.appendChild(overview);
+}
+
+function buildElementOverview(node, definition) {
+  const meta = node.meta || {};
+  const container = document.createElement("div");
+  container.className = "attr-element-overview";
+
+  const badges = overviewBadges(node, definition);
+  if (badges.length) {
+    const badgeRow = document.createElement("div");
+    badgeRow.className = "attr-overview-badges";
+    badges.forEach(({label, issue}) => {
+      const badge = document.createElement("span");
+      badge.className = `attr-overview-badge${issue ? " issue" : ""}`;
+      badge.textContent = label;
+      badgeRow.appendChild(badge);
+    });
+    container.appendChild(badgeRow);
+  }
+
+  const summary = document.createElement("div");
+  summary.className = "attr-overview-summary";
+  let hasSummary = false;
+
+  const overviewRows = [];
+  const visibleFields = Array.isArray(definition?.visibleFields)
+      ? definition.visibleFields : [];
+  visibleFields.slice(0, 8).forEach((field) => {
+    const text = overviewValueText(meta[field]);
+    if (text) {
+      overviewRows.push([formatOverviewKey(field), text]);
+    }
+  });
+  if (overviewRows.length) {
+    hasSummary = true;
+    summary.appendChild(buildOverviewGroup("Key Fields", overviewRows));
+  }
+
+  const referenceRows = (definition?.references || []).filter((reference) =>
+      !reference.containment).map((reference) => [
+    formatOverviewKey(reference.name),
+    overviewValueText(meta[reference.name])
+  ]).filter(([, value]) => value).slice(0, 6);
+  if (referenceRows.length) {
+    hasSummary = true;
+    summary.appendChild(buildOverviewGroup("References", referenceRows));
+  }
+
+  if (hasSummary) {
+    container.appendChild(summary);
+  }
+
+  if (!container.children.length) {
+    return null;
+  }
+  return container;
+}
+
+function buildOverviewGroup(title, rows) {
+  const group = document.createElement("div");
+  group.className = "attr-overview-group";
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+  group.appendChild(heading);
+  rows.forEach(([label, value]) => {
+    const row = document.createElement("div");
+    row.className = "attr-overview-row";
+    const key = document.createElement("span");
+    key.textContent = label;
+    const val = document.createElement("em");
+    val.textContent = value;
+    row.append(key, val);
+    group.appendChild(row);
+  });
+  return group;
+}
+
+function overviewBadges(node, definition) {
+  const meta = node.meta || {};
+  const badges = [];
+  const seen = new Set();
+  const pushBadge = (label, issue = false) => {
+    const text = String(label || "").trim();
+    if (!text || seen.has(`${issue}:${text}`)) {
+      return;
+    }
+    seen.add(`${issue}:${text}`);
+    badges.push({label: text, issue});
+  };
+
+  OVERVIEW_BADGE_FIELDS.forEach((field) => {
+    const value = meta[field];
+    if (typeof value === "string" && value.trim()) {
+      pushBadge(value, /disabled|public|blocking|not recommended/i.test(value));
+    }
+  });
+  OVERVIEW_BOOLEAN_BADGES.forEach((label, field) => {
+    if (meta[field] === true) {
+      pushBadge(label, /blocking/i.test(label));
+    }
+  });
+
+  if (state.activeType === "cim") {
+    cimOverviewIssueBadges(node).forEach((label) => pushBadge(label, true));
+  }
+
+  const visibleFields = Array.isArray(definition?.visibleFields)
+      ? definition.visibleFields : [];
+  visibleFields.slice(0, 6).forEach((field) => {
+    const value = meta[field];
+    if (typeof value === "boolean" && value) {
+      pushBadge(formatOverviewKey(field));
+    }
+  });
+
+  return badges;
+}
+
+function cimOverviewIssueBadges(node) {
+  const issues = [];
+  const values = [node?.label, node?.type, ...Object.values(node?.meta || {})
+  .flatMap((value) => Array.isArray(value) ? value : [value])];
+  if (values.some((value) => typeof value === "string"
+      && /aws|lambda|dynamodb|eventbridge|step function|api gateway|sns|sqs|cognito|cloudwatch|iam|kms|s3/i.test(
+          value))) {
+    issues.push("provider-independent");
+  }
+  if (node.type === "BusinessEvent"
+      && !isPastTenseBusinessEventName(node.meta?.occurredInPastTenseName
+          || node.label)) {
+    issues.push("past tense");
+  }
+  return issues;
+}
+
+function isPastTenseBusinessEventName(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) {
+    return false;
+  }
+  const words = text.split(/\s+/).filter(Boolean);
+  const first = words[0] || "";
+  const last = words[words.length - 1] || "";
+  return first.endsWith("ed") || last.endsWith("ed")
+      || /(?:submitted|created|updated|deleted|confirmed|rejected|approved|cancelled|canceled|completed|failed|paid|sent|received|placed|registered|enrolled|verified|accepted|declined)$/.test(
+          first);
+}
+
+function overviewValueText(value) {
+  if (Array.isArray(value)) {
+    if (!value.length) {
+      return "";
+    }
+    return value.slice(0, 3).map((item) => refSummaryLabel(item)).filter(
+        Boolean).join(", ") + (value.length > 3 ? ` +${value.length - 3}`
+        : "");
+  }
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "";
+  }
+  if (value && typeof value === "object") {
+    return refSummaryLabel(value);
+  }
+  return String(value || "").trim();
+}
+
+function refSummaryLabel(value) {
+  if (!value) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "object") {
+    return value.name || value.label || value.$ref || value.id || "";
+  }
+  return String(value);
+}
+
+function formatOverviewKey(value) {
+  return String(value || "").replaceAll(/([A-Z])/g, " $1").replaceAll(
+      /[_-]+/g, " ").trim().replace(/^./, (match) => match.toUpperCase());
 }
 
 function activateAttrTab(tab) {

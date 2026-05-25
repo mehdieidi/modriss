@@ -4141,10 +4141,6 @@ export function renderNodes() {
       <div class="node-body">
         <div class="node-label" contenteditable="true" spellcheck="false">${escapeHtml(
         node.label)}</div>
-        ${notation ? `<div class="node-notation-line">${escapeHtml(
-        String(notation.line?.(node.meta || {}) || ""))}</div>` : ""}
-        ${cimNodeDetailsHtml(node)}
-        <div class="node-id">${escapeHtml(node.id)}</div>
       </div>
       <div class="node-link-handle node-link-handle-right" title="Drag to connect"></div>`;
 

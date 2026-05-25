@@ -336,6 +336,80 @@
   gap: 5px;
 }
 
+.attr-element-overview {
+  display: grid;
+  gap: 10px;
+}
+
+.attr-overview-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attr-overview-badge {
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-3) 82%, transparent);
+  color: var(--text);
+  font: 700 10px/1.2 var(--font-ui);
+}
+
+.attr-overview-badge.issue {
+  border-color: color-mix(in srgb, #d98080 58%, transparent);
+  background: color-mix(in srgb, rgba(217, 128, 128, 0.18) 78%, transparent);
+  color: color-mix(in srgb, #ffd7d7 86%, var(--text) 14%);
+}
+
+.attr-overview-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.attr-overview-group {
+  display: grid;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-3) 76%, transparent);
+  padding: 8px;
+}
+
+.attr-overview-group strong {
+  color: var(--text-strong);
+  font: 800 10px/1.2 var(--font-display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.attr-overview-row {
+  display: grid;
+  grid-template-columns: minmax(0, 92px) minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.attr-overview-row span,
+.attr-overview-row em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.attr-overview-row span {
+  color: var(--muted);
+  font: 700 10px/1.2 var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.attr-overview-row em {
+  color: var(--text);
+  font: 500 11px/1.35 var(--font-ui);
+  font-style: normal;
+}
+
 .attr-trace-row {
   display: grid;
   grid-template-columns: 62px minmax(0, 0.7fr) minmax(0, 1fr);
