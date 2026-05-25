@@ -139,12 +139,20 @@ class ModelServiceXmiImportTest {
                 "ROUTES_TO");
         JsonNode functionReadsStore = relationship(relationships, "fn-submit", "store-app",
                 "READS");
+        JsonNode workflowTransition = relationship(relationships, "wf-start", "wf-end",
+                "TRANSITION");
+        JsonNode principalPermission = relationship(relationships, "principal-resident",
+                "permission-submit", "PERMISSION");
         JsonNode rootContainsApi = relationship(relationships, "pim-root", "api-main",
                 "CONTAINS");
         assertNotNull(routeToFunction);
         assertEquals("functionIntegration", routeToFunction.path("semanticFeature").asText());
         assertNotNull(functionReadsStore);
         assertEquals("reads", functionReadsStore.path("semanticFeature").asText());
+        assertNotNull(workflowTransition);
+        assertEquals("WorkflowTransition", workflowTransition.path("eClass").asText());
+        assertNotNull(principalPermission);
+        assertTrue(principalPermission.path("containment").asBoolean());
         assertNotNull(rootContainsApi);
         assertTrue(rootContainsApi.path("containment").asBoolean());
     }
@@ -236,6 +244,38 @@ class ModelServiceXmiImportTest {
                       name="Application Store"
                       storeKind="DOCUMENT"
                       consistencyNeed="EVENTUAL"/>
+                  <workflows id="workflow-main"
+                      name="Main workflow"
+                      workflowKind="ORCHESTRATION"
+                      startState="wf-start"
+                      endStates="wf-end">
+                    <states id="wf-start"
+                        name="Start"
+                        stateKind="TASK"
+                        orderIndex="1"
+                        invokesFunction="fn-submit"/>
+                    <states id="wf-end"
+                        name="End"
+                        stateKind="SUCCESS"
+                        orderIndex="2"
+                        terminal="true"/>
+                    <transitions id="wf-transition"
+                        name="Start to End"
+                        source="wf-start"
+                        target="wf-end"
+                        defaultTransition="true"/>
+                  </workflows>
+                  <principals id="principal-resident"
+                      name="Resident"
+                      principalKind="HUMAN_USER"
+                      privileged="false">
+                    <permissions id="permission-submit"
+                        name="Submit permission"
+                        effect="ALLOW"
+                        action="invoke"
+                        resource="submit"
+                        targetResource="fn-submit"/>
+                  </principals>
                 </pim:PIMModel>
                 """;
     }

@@ -768,12 +768,7 @@ public final class ModelingConfigService {
 
     private List<String> psmVisibleFields(String type, List<Map<String, Object>> attributes,
             List<Map<String, Object>> references) {
-        List<String> priority = List.of("logicalId", "physicalName", "stackName", "stageName",
-                "functionName", "tableName", "bucketName", "queueName", "topicName", "apiName",
-                "domainName", "routeKey", "method", "path", "authorizationType",
-                "integrationType", "billingMode", "publicAccessMode", "parameterName",
-                "secretName", "roleName", "policyName", "stateMachineName", "retentionInDays",
-                "runtime", "handler", "memorySizeMb", "timeoutSeconds");
+        List<String> priority = psmVisibleFieldPriority();
         LinkedHashSet<String> fields = new LinkedHashSet<>();
         for (String field : priority) {
             if (hasField(attributes, field) || hasField(references, field)) {
@@ -797,6 +792,61 @@ public final class ModelingConfigService {
 
     private boolean hasField(List<Map<String, Object>> fields, String name) {
         return fields.stream().anyMatch(field -> name.equals(field.get("name")));
+    }
+
+    private List<String> visibleFieldPriority() {
+        return List.of("name", "logicalId", "physicalName", "stackName", "stageName",
+                "functionName", "tableName", "bucketName", "queueName", "topicName", "apiName",
+                "domainName", "routeKey", "method", "path", "authorizationType",
+                "integrationType", "billingMode", "publicAccessMode", "parameterName",
+                "secretName", "roleName", "policyName", "stateMachineName", "retentionInDays",
+                "runtime", "handler", "memorySizeMb", "timeoutSeconds", "kind", "type",
+                "status", "priority", "severity", "owner", "businessName", "semanticName",
+                "version", "purpose", "description");
+    }
+
+    private List<String> psmVisibleFieldPriority() {
+        return List.of("logicalId", "physicalName", "stackName", "stageName", "functionName",
+                "tableName", "bucketName", "queueName", "topicName", "apiName", "domainName",
+                "routeKey", "method", "path", "authorizationType", "integrationType",
+                "billingMode", "publicAccessMode", "parameterName", "secretName", "roleName",
+                "policyName", "stateMachineName", "retentionInDays", "runtime", "handler",
+                "memorySizeMb", "timeoutSeconds");
+    }
+
+    private List<String> defaultVisibleFields(String type, List<Map<String, Object>> attributes,
+            List<Map<String, Object>> references) {
+        LinkedHashSet<String> fields = new LinkedHashSet<>();
+        for (String field : visibleFieldPriority()) {
+            if (fields.size() >= 5) {
+                break;
+            }
+            if (hasField(attributes, field) || hasField(references, field)) {
+                fields.add(field);
+            }
+        }
+        for (Map<String, Object> attribute : attributes) {
+            String name = String.valueOf(attribute.getOrDefault("name", ""));
+            if (fields.size() >= 5) {
+                break;
+            }
+            if (!name.isBlank() && !"id".equals(name) && !"name".equals(name)) {
+                fields.add(name);
+            }
+        }
+        for (Map<String, Object> reference : references) {
+            String name = String.valueOf(reference.getOrDefault("name", ""));
+            if (fields.size() >= 5) {
+                break;
+            }
+            if (!name.isBlank() && !Boolean.TRUE.equals(reference.get("containment"))) {
+                fields.add(name);
+            }
+        }
+        if (fields.isEmpty()) {
+            fields.add(type.endsWith("Model") ? "name" : "id");
+        }
+        return new ArrayList<>(fields);
     }
 
     private String psmNotationTag(String type, String category, boolean awsResource,
@@ -1179,9 +1229,14 @@ public final class ModelingConfigService {
                 categoryByPackage.getOrDefault(modelClass.packageName(), type)));
         element.put("icon", PLACEHOLDER_ICON);
         element.put("color", visual.getOrDefault("color", "#64748B"));
-        element.put("notation", Map.of("tag", visual.getOrDefault("notation", "element"),
-                "lineFields", visual.getOrDefault("visibleFields", List.of())));
-        element.put("visibleFields", visual.getOrDefault("visibleFields", List.of()));
+        List<String> visibleFields = visual.get("visibleFields") instanceof List<?> configured
+                ? configured.stream().map(String::valueOf).toList()
+                : defaultVisibleFields(type, attributes, references);
+        element.put("notation", Map.of("tag", visual.getOrDefault("notation",
+                categoryByPackage.getOrDefault(modelClass.packageName(), "element")
+                        .toString().toLowerCase().replace(" and ", "-").replace(" ", "-")),
+                "lineFields", visibleFields));
+        element.put("visibleFields", visibleFields);
         element.put("attributes", attributes);
         element.put("references", references);
         element.put("supertypes", allEcoreSuperTypes(modelClass, classByType));
@@ -1293,11 +1348,17 @@ public final class ModelingConfigService {
                 CIM_CATEGORY_BY_PACKAGE.getOrDefault(packageName, "CIM")));
         element.put("icon", PLACEHOLDER_ICON);
         element.put("color", visual.getOrDefault("color", "#64748B"));
-        element.put("notation", Map.of("tag", visual.getOrDefault("notation", "element"),
-                "lineFields", visual.getOrDefault("visibleFields", List.of())));
-        element.put("visibleFields", visual.getOrDefault("visibleFields", List.of()));
+        List<String> visibleFields = visual.get("visibleFields") instanceof List<?> configured
+                ? configured.stream().map(String::valueOf).toList()
+                : defaultVisibleFields(type, attributes, references);
+        element.put("notation", Map.of("tag", visual.getOrDefault("notation",
+                        CIM_CATEGORY_BY_PACKAGE.getOrDefault(packageName, "CIM").toLowerCase()
+                                .replace(" and ", "-").replace(" ", "-")),
+                "lineFields", visibleFields));
+        element.put("visibleFields", visibleFields);
         element.put("attributes", attributes);
         element.put("references", references);
+        element.put("supertypes", directSuperTypes(classifier, typeByPath));
         element.put("abstract", abstractType);
         element.put("relationshipElement",
                 RELATIONSHIP_ONLY_CIM_TYPES.contains(type));
@@ -1331,11 +1392,18 @@ public final class ModelingConfigService {
                 CIM_CATEGORY_BY_PACKAGE.getOrDefault(modelClass.packageName(), "CIM")));
         element.put("icon", PLACEHOLDER_ICON);
         element.put("color", visual.getOrDefault("color", "#64748B"));
-        element.put("notation", Map.of("tag", visual.getOrDefault("notation", "element"),
-                "lineFields", visual.getOrDefault("visibleFields", List.of())));
-        element.put("visibleFields", visual.getOrDefault("visibleFields", List.of()));
+        List<String> visibleFields = visual.get("visibleFields") instanceof List<?> configured
+                ? configured.stream().map(String::valueOf).toList()
+                : defaultVisibleFields(type, attributes, references);
+        element.put("notation", Map.of("tag", visual.getOrDefault("notation",
+                        CIM_CATEGORY_BY_PACKAGE.getOrDefault(modelClass.packageName(), "CIM")
+                                .toLowerCase().replace(" and ", "-").replace(" ", "-")),
+                "lineFields", visibleFields));
+        element.put("visibleFields", visibleFields);
         element.put("attributes", attributes);
         element.put("references", references);
+        element.put("supertypes", modelClass.superType().isBlank() ? List.of()
+                : List.of(modelClass.superType()));
         element.put("abstract", abstractType);
         element.put("relationshipElement", RELATIONSHIP_ONLY_CIM_TYPES.contains(type));
         element.put("containedOnly", CONTAINED_ONLY_CIM_TYPES.contains(type));
@@ -1508,6 +1576,17 @@ public final class ModelingConfigService {
             return eType.substring(marker + 3);
         }
         return eType;
+    }
+
+    private List<String> directSuperTypes(Element classifier, Map<String, String> typeByPath) {
+        List<String> result = new ArrayList<>();
+        for (String rawSuperType : classifier.getAttribute("eSuperTypes").split("\\s+")) {
+            String superType = typeName(rawSuperType, typeByPath);
+            if (!superType.isBlank()) {
+                result.add(superType);
+            }
+        }
+        return result;
     }
 
     private String genericTarget(String targetType) {

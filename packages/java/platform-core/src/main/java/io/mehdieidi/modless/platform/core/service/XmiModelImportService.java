@@ -120,6 +120,7 @@ final class XmiModelImportService {
             Map.entry("adapter", "EXTERNAL_CALL"), Map.entry("store", "DATA_ACCESS"),
             Map.entry("function", "DATA_ACCESS"), Map.entry("dataModels", "DATA_ACCESS"),
             Map.entry("accessPatterns", "DATA_ACCESS"),
+            Map.entry("transitions", "TRANSITION"),
             Map.entry("startState", "TRANSITION"), Map.entry("endStates", "TRANSITION"),
             Map.entry("invokesAdapter", "EXTERNAL_CALL"),
             Map.entry("nestedWorkflow", "ORCHESTRATES"),
@@ -821,14 +822,15 @@ final class XmiModelImportService {
         private void addContainmentEdge(EObject owner, EReference reference, EObject child) {
             String sourceId = ensureId(owner);
             String targetId = ensureId(child);
-            String key = sourceId + "|" + targetId + "|CONTAINS";
+            String kind = containmentRelationshipKind(reference.getName());
+            String key = sourceId + "|" + targetId + "|" + kind;
             if (!graphRelationshipKeys.add(key)) {
                 return;
             }
             ObjectNode relationship = objectMapper.createObjectNode();
             relationship.put("id", "contains-" + sanitizeId(sourceId) + "-"
                     + sanitizeId(targetId));
-            relationship.put("kind", "CONTAINS");
+            relationship.put("kind", kind);
             relationship.put("source", sourceId);
             relationship.put("target", targetId);
             relationship.put("sourceElementId", sourceId);
@@ -875,6 +877,10 @@ final class XmiModelImportService {
             if (!referenceKind.isBlank()) {
                 return referenceKind;
             }
+            String classKind = relationshipClassKind(value);
+            if (!classKind.isBlank()) {
+                return classKind;
+            }
             String semanticKind = psmRelationshipViewKind(value);
             if (!semanticKind.isBlank()) {
                 return semanticKind;
@@ -893,6 +899,27 @@ final class XmiModelImportService {
                 case PSM -> PSM_REFERENCE_KINDS;
             };
             return kinds.getOrDefault(String.valueOf(value), "");
+        }
+
+        private String containmentRelationshipKind(String featureName) {
+            String kind = referenceFeatureKind(featureName);
+            return kind.isBlank() ? "CONTAINS" : kind;
+        }
+
+        private String relationshipClassKind(String value) {
+            return switch (String.valueOf(value)) {
+                case "ProcessTransition", "WorkflowTransition" -> "TRANSITION";
+                case "TraceLink" -> "TRACE";
+                case "CapabilityDependency" -> "DEPENDS_ON";
+                case "DomainRelationship" -> "DOMAIN_RELATIONSHIP";
+                case "RequestResponseFlow" -> "REQUEST_RESPONSE";
+                case "EventFlow" -> "EVENT_FLOW";
+                case "MessageFlow" -> "MESSAGE_FLOW";
+                case "PubSubFlow" -> "PUB_SUB";
+                case "OrchestrationFlow" -> "ORCHESTRATES";
+                case "ExternalIntegrationFlow" -> "EXTERNAL_CALL";
+                default -> "";
+            };
         }
 
         private String psmRelationshipViewKind(String value) {

@@ -4149,6 +4149,17 @@ export function renderNodes() {
     setMaskIconSource(nodeIcon,
         definitionUi(definition).icon || PLACEHOLDER_ICON);
     applyDefinitionAccent(n, definition);
+    const nodeBody = n.querySelector(".node-body");
+    if (notation) {
+      const notationLine = document.createElement("div");
+      notationLine.className = "node-notation-line";
+      notationLine.textContent = notation.line?.(node.meta || {}) || "";
+      nodeBody?.appendChild(notationLine);
+    }
+    const detailsHtml = cimNodeDetailsHtml(node);
+    if (detailsHtml) {
+      nodeBody?.insertAdjacentHTML("beforeend", detailsHtml);
+    }
 
     if (isContainerElement(node)) {
       const containerTools = document.createElement("div");

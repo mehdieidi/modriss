@@ -1,7 +1,10 @@
 import {state} from './state.js';
 import {emptyDiagram} from './utils.js';
 import {activeView} from './graph-store.js';
-import {modelingTypeMatches} from './modeling-config-data.js';
+import {
+  modelingElementDefinition,
+  modelingTypeMatches
+} from './modeling-config-data.js';
 
 const CONTAINER_TYPES = {
   cim: new Set([
@@ -124,7 +127,20 @@ function selectedRelationshipIds(view, elementIds) {
 export function isContainerElement(elementOrType, typeKey = state.activeType) {
   const type = typeof elementOrType === "string" ? elementOrType
       : elementType(elementOrType);
-  return Boolean(CONTAINER_TYPES[typeKey]?.has(type));
+  if (CONTAINER_TYPES[typeKey]?.has(type)) {
+    return true;
+  }
+  try {
+    const definition = modelingElementDefinition(typeKey, type);
+    if (!definition || definition.relationshipElement || definition.containedOnly
+        || definition.supportOnly) {
+      return false;
+    }
+    return safeArray(definition.references).some((reference) =>
+        reference?.containment === true && reference?.many !== false);
+  } catch {
+    return false;
+  }
 }
 
 function collapsedContainerIds(view, elementIds) {

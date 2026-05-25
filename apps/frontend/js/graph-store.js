@@ -880,7 +880,8 @@ function rebuildGraphIndexes(graph) {
     addToIndex(graph.relationshipsByTarget, relationship.targetElementId,
         relationship.id);
     addToIndex(graph.relationshipsByKind, relationship.kind, relationship.id);
-    if (CONTAINMENT_KINDS.has(String(relationship.kind || "").toUpperCase())) {
+    if (relationship.containment === true || CONTAINMENT_KINDS.has(
+        String(relationship.kind || "").toUpperCase())) {
       addToIndex(graph.containmentByParent, relationship.sourceElementId,
           relationship.targetElementId);
       if (relationship.targetElementId && !graph.parentByChild.has(
@@ -1082,6 +1083,19 @@ function selectElementIdsForView(graph, view, typeKey) {
     return [...graph.elementsById.keys()].filter((elementId) => !hidden.has(
         elementId));
   }
+  const selectedSet = new Set(selected);
+  [...selected].forEach((elementId) => {
+    let parentId = graph.parentByChild.get(elementId);
+    while (parentId && !selectedSet.has(parentId) && !hidden.has(parentId)) {
+      const parent = graph.elementsById.get(parentId);
+      if (!parent || semanticType(parent) === ROOT_SCOPE_TYPE[typeKey]) {
+        break;
+      }
+      selected.push(parentId);
+      selectedSet.add(parentId);
+      parentId = graph.parentByChild.get(parentId);
+    }
+  });
   return selected;
 }
 
@@ -1104,7 +1118,8 @@ function selectRelationshipIdsForView(graph, view, elementIds) {
         relationship.targetElementId)) {
       return;
     }
-    if (filterKinds.size && !filterKinds.has(relationship.kind)) {
+    if (filterKinds.size && !filterKinds.has(relationship.kind)
+        && relationship.containment !== true) {
       return;
     }
     relationshipIds.push(relationshipId);
