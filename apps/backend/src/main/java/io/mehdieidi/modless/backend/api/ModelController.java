@@ -35,10 +35,10 @@ public class ModelController {
     }
 
     @GetMapping("/api/{level:cim|pim|psm}")
-    List<ModelRecord> list(@RequestHeader("X-Auth-Token") String token,
+    List<ModelService.ModelSummary> list(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
             @RequestParam(value = "projectId", required = false) String projectId) {
-        return models.list(auth.user(token), ModelLevel.fromApiName(level), projectId);
+        return models.listSummaries(auth.user(token), ModelLevel.fromApiName(level), projectId);
     }
 
     @PostMapping("/api/{level:cim|pim|psm}")

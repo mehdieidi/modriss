@@ -1,8 +1,10 @@
+import "lib/aws-builders.eol";
 import "root-stage-stack.etl";
 import "compute-api.etl";
 import "data-messaging-events.etl";
 import "workflow-security-config.etl";
 import "contracts-external-policy.etl";
+import "lib/resolution.eol";
 
 pre ValidatePimInput {
   if (PIM!PIMModel.all.isEmpty()) {

@@ -1,8 +1,3 @@
-import "lib/common.eol";
-import "lib/aws-builders.eol";
-import "lib/readiness-trace.eol";
-import "lib/resolution.eol";
-
 rule PIMModel2AwsPsmModel
   transform p : PIM!PIMModel
   to a : AWSPSM!AwsPsmModel {

@@ -3,6 +3,21 @@ import "trace-readiness.eol";
 import "pim-builders.eol";
 
 operation serviceFor(source) {
+  if (source.isUndefined()) {
+    return null;
+  }
+  var key = cacheKeyFor(source);
+  if (cachedCimServiceBySourceId.containsKey(key)) {
+    return cachedCimServiceBySourceId.get(key);
+  }
+  var service = resolveServiceFor(source);
+  if (service.isDefined()) {
+    cachedCimServiceBySourceId.put(key, service);
+  }
+  return service;
+}
+
+operation resolveServiceFor(source) {
   if (DEPLOY!ServerlessService.all.isEmpty() and PIM!PIMModel.all.notEmpty()) {
     var c = cimRoot();
     var s = new DEPLOY!ServerlessService;
@@ -19,11 +34,11 @@ operation serviceFor(source) {
   }
   if (DEPLOY!ServerlessService.all.notEmpty()) {
     if (source.isKindOf(CIMORG!BoundedContextCandidate)) {
-      var svc = source.equivalents("BoundedContext2Service").first();
+      var svc = cachedEquivalent(source, "BoundedContext2Service");
       if (svc.isDefined()) return svc;
     }
     if (source.isKindOf(CIMORG!BusinessCapability)) {
-      var capSvc = source.equivalents("Capability2Service").first();
+      var capSvc = cachedEquivalent(source, "Capability2Service");
       if (capSvc.isDefined()) return capSvc;
       var context = CIMORG!BoundedContextCandidate.all.selectOne(bc | bc.capabilities.includes(source));
       if (context.isDefined()) return serviceFor(context);
@@ -63,41 +78,41 @@ operation serviceFor(source) {
 }
 
 operation commandFunction(cmd : CIMBEHAVIOR!Command) {
-  return cmd.equivalents("Command2Function").first();
+  return cachedEquivalent(cmd, "Command2Function");
 }
 
 operation queryFunction(q : CIMBEHAVIOR!Query) {
-  return q.equivalents("Query2Function").first();
+  return cachedEquivalent(q, "Query2Function");
 }
 
 operation policyFunction(p : CIMPROCESS!Policy) {
-  return p.equivalents("Policy2PolicyHandlerFunction").first();
+  return cachedEquivalent(p, "Policy2PolicyHandlerFunction");
 }
 
 operation eventTypeFor(e : CIMBEHAVIOR!BusinessEvent) {
-  return e.equivalents("BusinessEvent2EventType").select(x | x.isKindOf(CONTRACTS!EventType)).first();
+  return cachedEquivalentOfClass(e, "BusinessEvent2EventType", "EventType");
 }
 
 operation schemaForEntity(e : CIMDOMAIN!DomainEntity) {
-  return e.equivalents("Entity2Schema").first();
+  return cachedEquivalent(e, "Entity2Schema");
 }
 
 operation schemaForDomainConcept(concept : CIMDOMAIN!DomainConcept) {
   if (concept.isKindOf(CIMDOMAIN!DomainEntity)) {
-    return concept.equivalents("Entity2Schema").first();
+    return cachedEquivalent(concept, "Entity2Schema");
   }
   if (concept.isKindOf(CIMDOMAIN!ValueObject)) {
-    return concept.equivalents("ValueObject2Schema").first();
+    return cachedEquivalent(concept, "ValueObject2Schema");
   }
   return null;
 }
 
 operation storeForAggregate(ag : CIMDOMAIN!AggregateCandidate) {
-  return ag.equivalents("Aggregate2DataStore").select(x | x.isKindOf(DATA!DataStore)).first();
+  return cachedEquivalentOfClass(ag, "Aggregate2DataStore", "DataStore");
 }
 
 operation storeForEntity(entity : CIMDOMAIN!DomainEntity) {
-  var ag = CIMDOMAIN!AggregateCandidate.all.selectOne(a | a.root = entity or a.members.includes(entity));
+  var ag = cachedAggregateForEntity(entity);
   if (ag.isDefined()) {
     return storeForAggregate(ag);
   }
@@ -105,26 +120,30 @@ operation storeForEntity(entity : CIMDOMAIN!DomainEntity) {
 }
 
 operation adapterFor(es : CIMORG!ExternalSystem) {
-  return es.equivalents("ExternalSystem2Adapter").first();
+  return cachedEquivalent(es, "ExternalSystem2Adapter");
 }
 
 operation workflowFor(bp : CIMPROCESS!BusinessProcess) {
-  return bp.equivalents("BusinessProcess2Workflow").first();
+  return cachedEquivalent(bp, "BusinessProcess2Workflow");
 }
 
 operation policyTargetsFor(source) {
+  var sourceKey = cacheKeyFor(source);
+  if (hasText(sourceKey) and cachedCimPolicyTargetsBySourceId.containsKey(sourceKey)) {
+    return cachedCimPolicyTargetsBySourceId.get(sourceKey);
+  }
   var targets = Sequence{};
   if (source.isUndefined()) {
     return targets;
   }
   if (source.isKindOf(CIMBEHAVIOR!Command)) {
     if (commandFunction(source).isDefined()) targets.add(commandFunction(source));
-    var route = source.equivalents("UserInitiatedCommand2ApiRoute").first();
+    var route = cachedEquivalent(source, "UserInitiatedCommand2ApiRoute");
     if (route.isDefined()) targets.add(route);
   }
   else if (source.isKindOf(CIMBEHAVIOR!Query)) {
     if (queryFunction(source).isDefined()) targets.add(queryFunction(source));
-    var qRoute = source.equivalents("Query2ApiRoute").first();
+    var qRoute = cachedEquivalent(source, "Query2ApiRoute");
     if (qRoute.isDefined()) targets.add(qRoute);
   }
   else if (source.isKindOf(CIMPROCESS!Policy)) {
@@ -134,7 +153,7 @@ operation policyTargetsFor(source) {
     if (workflowFor(source).isDefined()) targets.add(workflowFor(source));
   }
   else if (source.isKindOf(CIMPROCESS!ProcessStep)) {
-    var state = source.equivalents("ProcessStep2WorkflowState").first();
+    var state = cachedEquivalent(source, "ProcessStep2WorkflowState");
     if (state.isDefined()) targets.add(state);
   }
   else if (source.isKindOf(CIMDOMAIN!AggregateCandidate)) {
@@ -152,6 +171,9 @@ operation policyTargetsFor(source) {
   }
   else if (source.isKindOf(CIMBEHAVIOR!BusinessEvent)) {
     if (eventTypeFor(source).isDefined()) targets.add(eventTypeFor(source));
+  }
+  if (hasText(sourceKey)) {
+    cachedCimPolicyTargetsBySourceId.put(sourceKey, targets);
   }
   return targets;
 }

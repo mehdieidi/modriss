@@ -13,7 +13,7 @@ operation shouldGenerateWorkflow(bp : CIMPROCESS!BusinessProcess) {
 }
 
 operation workflowStateFor(step : CIMPROCESS!ProcessStep) {
-  return step.equivalents("ProcessStep2WorkflowState").first();
+  return cachedEquivalent(step, "ProcessStep2WorkflowState");
 }
 
 operation firstIntegerText(value) {
@@ -318,7 +318,7 @@ rule ProcessStep2WorkflowState
     ws.conditionExpression = s.condition.expression;
   }
   if (s.isKindOf(CIMPROCESS!DecisionStep) and s.decisionTable.isDefined()) {
-    var decisionFn = s.decisionTable.equivalents("DecisionTable2ChoiceLogic").first();
+    var decisionFn = cachedEquivalent(s.decisionTable, "DecisionTable2ChoiceLogic");
     if (decisionFn.isDefined()) {
       ws.invokesFunction = decisionFn;
       traceGenerated(s, decisionFn, "TR-120", "MEDIUM");
@@ -411,14 +411,14 @@ post AttachWorkflowDetails {
       }
     }
     for (t in bp.transitions) {
-      var transition = t.equivalents("ProcessTransition2WorkflowTransition").first();
+      var transition = cachedEquivalent(t, "ProcessTransition2WorkflowTransition");
       if (transition.isDefined() and not wf.transitions.includes(transition)) {
         wf.transitions.add(transition);
       }
     }
     if (wf.states.notEmpty()) {
       for (ex in bp.exceptions) {
-        var handler = ex.equivalents("ExceptionScenario2ErrorHandler").first();
+        var handler = cachedEquivalent(ex, "ExceptionScenario2ErrorHandler");
         if (handler.isDefined()) {
           var recoveryTarget = wf.states.sortBy(s | s.orderIndex).selectOne(s | not s.terminal and s <> wf.startState);
           if (recoveryTarget.isUndefined() and wf.endStates.notEmpty()) {
@@ -448,9 +448,11 @@ post AttachWorkflowDetails {
       }
     }
     for (state in wf.states.select(s | s.invokesAdapter.isDefined())) {
-      if (INTEGRATION!ExternalIntegrationFlow.all.selectOne(f | f.source = state and f.target = state.invokesAdapter).isUndefined()) {
+      var flowId = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
+      if (not cachedPimExternalFlowIds.includes(flowId)) {
+        cachedPimExternalFlowIds.add(flowId);
         var flow = new INTEGRATION!ExternalIntegrationFlow;
-        flow.id = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
+        flow.id = flowId;
         flow.name = state.name + " calls " + state.invokesAdapter.name;
         flow.flowPurpose = "External adapter invocation from workflow state.";
         flow.criticalPath = true;
@@ -508,7 +510,7 @@ rule SecurityConstraint2SecurityPolicies
   auth.authScheme = sc.authenticationNeed.orDefault("TBD");
   auth.mfaRequired = sc.segregationOfDutiesRequired or sc.nonRepudiationRequired;
   if (sc.constrainedActors.notEmpty()) {
-    var idp = sc.constrainedActors.first().equivalents("Actor2Principal").first();
+    var idp = cachedEquivalent(sc.constrainedActors.first(), "Actor2Principal");
     var actorIdp = SECURITY!IdentityProvider.all.selectOne(provider | provider.principals.includes(idp));
     if (actorIdp.isDefined()) {
       auth.identityProvider = actorIdp;
@@ -538,7 +540,7 @@ rule SecurityConstraint2SecurityPolicies
   authz.attachedTo.addAll(protectedTargets);
 
   for (actor in sc.constrainedActors) {
-    var principal = actor.equivalents("Actor2Principal").first();
+    var principal = cachedEquivalent(actor, "Actor2Principal");
     if (principal.isDefined()) {
       authz.allowedPrincipals.add(principal);
       for (target in protectedTargets) {

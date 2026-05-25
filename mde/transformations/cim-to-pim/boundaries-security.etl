@@ -99,7 +99,7 @@ rule Role2Principal
     perm.effect = PIMTYPES!PermissionEffect#ALLOW;
     perm.action = "invoke:review-required";
     perm.resource = actor.id;
-    var principalTarget = actor.equivalents("Actor2Principal").first();
+    var principalTarget = cachedEquivalent(actor, "Actor2Principal");
     if (principalTarget.isDefined()) {
       perm.targetResource = principalTarget;
     }

@@ -471,16 +471,6 @@ async function openWorkbenchView(viewId) {
     renderPaletteCallback?.();
     renderDiagramCallback?.();
     renderViewWorkbench();
-    if (["cim", "pim", "psm"].includes(state.activeType)
-        && state.diagram?.nodes?.length) {
-      try {
-        const {autoLayoutCurrentDiagram} = await import('./model-ops.js');
-        await autoLayoutCurrentDiagram();
-      } catch (error) {
-        console.warn("View auto layout failed", error);
-      }
-      return;
-    }
     saveCurrentTabGraphState();
     setStatus("View selected.");
   }

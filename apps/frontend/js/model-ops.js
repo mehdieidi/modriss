@@ -315,6 +315,9 @@ async function syncProjectActiveModel(type, modelId) {
   if (!state.project || !modelId) {
     return;
   }
+  if (String(state.project.activeModelIds?.[type] || "") === String(modelId)) {
+    return;
+  }
   try {
     const activeModelIds = {
       ...(state.project.activeModelIds || {}),
@@ -392,7 +395,9 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
       saveCurrentTabGraphState(state.activeType);
     }
     await syncProjectActiveModel(state.activeType, state.modelId);
-    await reloadModels();
+    if (!quiet) {
+      await reloadModels();
+    }
   } catch (error) {
     if (isMethodologyValidationError(error)) {
       applyValidationIssues(error.issues, {openOnFirst: !quiet});
@@ -444,6 +449,41 @@ export async function loadModelById(typeKey, id,
   }
 }
 
+async function loadModelRecord(typeKey, record,
+    {showManualGuidance = false} = {}) {
+  if (!record?.id || !record?.modelJson) {
+    await loadModelById(typeKey, record?.id, {showManualGuidance});
+    return;
+  }
+  if (state.activeType !== typeKey) {
+    await switchTab(typeKey);
+  }
+  state.modelId = record.id;
+  state.baseModel = structuredClone(record.modelJson);
+  state.diagram = toDiagram(typeKey, record.modelJson, record.name);
+  installGraphAndViews(typeKey, record.modelJson, record.name
+      || defaultModelName(typeKey));
+  materializeActiveView();
+  if (state.tabs[typeKey]) {
+    state.tabs[typeKey].modelId = record.id;
+    state.tabs[typeKey].baseModel = state.baseModel;
+    state.tabs[typeKey].diagram = state.diagram;
+    state.tabs[typeKey].modelName = record.name || defaultModelName(typeKey);
+    saveCurrentTabGraphState(typeKey);
+  }
+  rememberModelSummary(typeKey, record);
+  clearDiagramUndoHistory(typeKey);
+  clearValidationIssues();
+  setActiveModelName(record.name || defaultModelName(typeKey));
+  resetCanvasView();
+  renderPalette();
+  renderDiagram();
+  renderViewWorkbench();
+  if (showManualGuidance) {
+    applyManualGuidanceFromLoadedModel();
+  }
+}
+
 // ── Transformation / generation ───────────────────────────────────────────────
 
 async function runTransformation(path, sourceModelId) {
@@ -456,6 +496,24 @@ async function runTransformation(path, sourceModelId) {
 function isTransformationApiError(error, path) {
   const expected = `/transformations/${path}`;
   return typeof error?.path === "string" && error.path === expected;
+}
+
+function rememberModelSummary(typeKey, record) {
+  if (!record?.id || !state.modelsCache?.[typeKey]) {
+    return;
+  }
+  const summary = {
+    id: record.id,
+    projectId: record.projectId,
+    level: record.level,
+    name: record.name,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt
+  };
+  state.modelsCache[typeKey] = [
+    summary,
+    ...state.modelsCache[typeKey].filter((item) => item.id !== record.id)
+  ];
 }
 
 function semanticPortsForNode(node) {
@@ -595,18 +653,6 @@ function separateBoundedContextOverlaps(nodeSize) {
   return movedNodeIds;
 }
 
-async function autoLayoutGeneratedModel(targetLabel) {
-  if (!state.diagram?.nodes?.length) {
-    return;
-  }
-  try {
-    await autoLayoutCurrentDiagram();
-  } catch (error) {
-    console.warn(`Auto layout after ${targetLabel} generation failed:`, error);
-    setStatus(`${targetLabel} generated and loaded, but auto layout failed.`);
-  }
-}
-
 export function updateGenerateButtonState() {
   if (!el.generateContextBtn) {
     return;
@@ -664,13 +710,11 @@ export async function generateCimToPim() {
     setGenerationProgressPhase(
         "Translating the CIM into a draft PIM model…", 68);
     const pim = await runTransformation("cim-to-pim", state.modelId);
-    await loadModelById("pim", pim.id, {showManualGuidance: true});
-    setGenerationProgressPhase(
-        "Arranging the generated PIM diagram for a cleaner view…", 92);
-    await autoLayoutGeneratedModel("PIM");
+    await loadModelRecord("pim", pim, {showManualGuidance: true});
+    setGenerationProgressPhase("Opening the generated PIM model…", 92);
     await completeGenerationProgress("PIM ready.");
     if (!state.validation.issues.length) {
-      setStatus("PIM generated, loaded, and auto-laid out");
+      setStatus("PIM generated and loaded");
     }
   } catch (error) {
     if (isMethodologyValidationError(error)) {
@@ -714,13 +758,11 @@ export async function generatePimToPsm() {
     setGenerationProgressPhase(
         "Transforming the PIM into a platform-specific design…", 68);
     const psm = await runTransformation("pim-to-psm", state.modelId);
-    await loadModelById("psm", psm.id, {showManualGuidance: true});
-    setGenerationProgressPhase(
-        "Arranging the generated PSM diagram for readability…", 92);
-    await autoLayoutGeneratedModel("PSM");
+    await loadModelRecord("psm", psm, {showManualGuidance: true});
+    setGenerationProgressPhase("Opening the generated PSM model…", 92);
     await completeGenerationProgress("PSM ready.");
     if (!state.validation.issues.length) {
-      setStatus("PSM generated, loaded, and auto-laid out");
+      setStatus("PSM generated and loaded");
     }
   } catch (error) {
     if (isMethodologyValidationError(error)) {
@@ -1141,8 +1183,9 @@ export async function importActiveModel(file, format = "json",
   pushModelReplacementSnapshot();
   clearDiagramUndoHistory(state.activeType);
   state.baseModel = structuredClone(body.modelJson);
-  state.diagram = toDiagram(state.activeType, body.modelJson,
+  installGraphAndViews(state.activeType, body.modelJson,
       body.name || defaultModelName());
+  state.diagram = materializeActiveView();
   if (state.activeType === "cim") {
     state.boundedContextCreateMode = false;
     state.boundedContextDraftNodeIds = new Set();

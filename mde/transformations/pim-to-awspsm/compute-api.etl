@@ -1,8 +1,3 @@
-import "lib/common.eol";
-import "lib/aws-builders.eol";
-import "lib/readiness-trace.eol";
-import "lib/resolution.eol";
-
 rule Function2AwsLambdaFunction
   transform f : COMPUTE!Function
   to l : AWSPSMCOMPUTE!AwsLambdaFunction {
@@ -151,7 +146,7 @@ rule ApiRoute2HttpApiRoute
   gr.responseModelsJson = schemaRefJson(r.responseSchema);
   gr.timeoutInMillis = inferRouteTimeoutMillis(r);
   gr.routeSettingsJson = "{ \"DetailedMetricsEnabled\": true }";
-  gr.api = r.api.equivalent();
+  gr.api = awsEquivalent(r.api);
   gr.integration = createApiIntegration(r, gr);
   if (routeNeedsAuth(r) and gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#NONE) {
     manualDecision("API_ROUTE_AUTHORIZER_MISSING",
@@ -166,7 +161,7 @@ rule ApiRoute2RestApiRoute
   transform r : API!ApiRoute
   to gr : AWSPSMAPI!RestApiRoute {
 
-  guard : r.api.equivalent().isDefined() and r.api.equivalent().eClass().getName() = "RestApi"
+  guard : awsEquivalent(r.api).isDefined() and awsEquivalent(r.api).eClass().getName() = "RestApi"
 
   copyAwsResource(r, gr, "Route", "AWS::ApiGateway::Method");
   gr.id = idFor("rest_route", r);
@@ -180,7 +175,7 @@ rule ApiRoute2RestApiRoute
   gr.responseModelsJson = schemaRefJson(r.responseSchema);
   gr.timeoutInMillis = inferRouteTimeoutMillis(r);
   gr.routeSettingsJson = "{ \"DataTraceEnabled\": false, \"MetricsEnabled\": true }";
-  gr.api = r.api.equivalent();
+  gr.api = awsEquivalent(r.api);
   gr.integration = createApiIntegration(r, gr);
   gr.authorizer = findAuthorizerFor(r);
   if (routeNeedsAuth(r) and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY and gr.authorizer.isUndefined()) {
@@ -264,7 +259,7 @@ operation createLambdaEnvironment(f) {
     le.variableName = ev.variableName;
     le.stageSpecific = false;
     if (ev.secret.isDefined()) {
-      le.value = secretValue(ev.secret.equivalent());
+      le.value = secretValue(awsEquivalent(ev.secret));
     }
     else {
       if (ev.parameter.isDefined()) {
@@ -281,7 +276,7 @@ operation createLambdaEnvironment(f) {
     se.id = generatedId("lambda_env_secret", f, s.name);
     se.name = pascalCase(s.name) + " Secret Arn";
     se.variableName = slug(s.name).toUpperCase() + "_SECRET_ARN";
-    se.value = getAtt(s.equivalent(), "Arn");
+    se.value = getAtt(awsEquivalent(s), "Arn");
     se.stageSpecific = false;
     out.add(se);
   }
@@ -301,7 +296,7 @@ operation resourceNameEnv(f, store) {
   le.id = generatedId("lambda_env_resource", f, store.name);
   le.name = store.name + " name";
   le.variableName = slug(store.name).toUpperCase() + "_NAME";
-  le.value = refValue(store.equivalent());
+  le.value = refValue(awsEquivalent(store));
   le.stageSpecific = false;
   return le;
 }
@@ -406,13 +401,13 @@ operation createApiIntegration(r, gr) {
   i.payloadFormatVersion = "2.0";
   i.timeoutInMillis = gr.timeoutInMillis;
   if (r.functionIntegration.isDefined()) {
-    i.lambdaTarget = r.functionIntegration.equivalent();
+    i.lambdaTarget = awsEquivalent(r.functionIntegration);
     i.integrationUri = "${" + i.lambdaTarget.logicalId + ".Arn}";
     createLambdaPermissionFor("ApiGatewayInvoke", r, i.lambdaTarget, "apigateway.amazonaws.com");
   }
   else {
     if (r.workflowIntegration.isDefined()) {
-      i.stateMachineTarget = r.workflowIntegration.equivalent();
+      i.stateMachineTarget = awsEquivalent(r.workflowIntegration);
       i.integrationUri = "${" + i.stateMachineTarget.logicalId + ".Arn}";
     }
     else {
@@ -480,7 +475,7 @@ operation createApiAuthorizer(api, g) {
     return null;
   }
   if (api.auth.identityProvider.isDefined()) {
-    var pool = api.auth.identityProvider.equivalent();
+    var pool = awsEquivalent(api.auth.identityProvider);
     if (pool.isDefined()) {
       var c = new AWSPSMAPI!CognitoAuthorizer;
       copyAwsResource(api.auth, c, "Authorizer", "AWS::ApiGateway::Authorizer");
@@ -491,6 +486,7 @@ operation createApiAuthorizer(api, g) {
       c.authorizerResultTtlInSeconds = 300;
       c.api = g;
       c.userPool = pool;
+      cachedAwsAuthorizerByApiId.put(g.id, c);
       return c;
     }
   }
@@ -510,16 +506,21 @@ operation createApiAuthorizer(api, g) {
         KERNEL!Severity#ERROR, isProductionRoot(), Sequence{api, j},
         "Set AuthPolicy.tokenValidationRules and scopes/audience details.");
     }
+    cachedAwsAuthorizerByApiId.put(g.id, j);
     return j;
   }
   return null;
 }
 
 operation findAuthorizerFor(r) {
-  if (r.api.equivalent().isUndefined()) {
+  var apiTarget = awsEquivalent(r.api);
+  if (apiTarget.isUndefined()) {
     return null;
   }
-  return AWSPSMAPI!ApiGatewayAuthorizer.all.selectOne(a | a.api = r.api.equivalent());
+  if (cachedAwsAuthorizerByApiId.containsKey(apiTarget.id)) {
+    return cachedAwsAuthorizerByApiId.get(apiTarget.id);
+  }
+  return null;
 }
 
 operation createCors(policy) {
@@ -650,7 +651,8 @@ operation createApiKeyAndUsagePlan(api, g) {
   key.apiKeyName = physicalName(api, "api-key", defaultStage());
   key.enabled = true;
   key.descriptionText = "Generated API key placeholder for " + api.name;
-  for (s in AWSPSMAPI!RestApiStage.all.select(stage | stage.api = g)) {
+  var restStages = AWSPSMAPI!RestApiStage.all.select(stage | stage.api = g);
+  for (s in restStages) {
     key.stages.add(s);
   }
 
@@ -666,7 +668,7 @@ operation createApiKeyAndUsagePlan(api, g) {
     }
   }
   plan.quotaPeriod = "MONTH";
-  for (stage in AWSPSMAPI!RestApiStage.all.select(s | s.api = g)) {
+  for (stage in restStages) {
     plan.apiStages.add(stage);
   }
 

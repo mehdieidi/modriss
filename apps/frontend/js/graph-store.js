@@ -44,6 +44,12 @@ const ROOT_SCOPE_TYPE = {
   psm: "PsmModel"
 };
 
+const MAIN_SURFACE_ROOT_TYPES = {
+  cim: new Set(["CIMModel"]),
+  pim: new Set(["PIMModel"]),
+  psm: new Set(["AwsPsmModel", "PsmModel"])
+};
+
 const CONTAINER_TYPES = {
   cim: new Set([
     "BoundedContextCandidate",
@@ -1136,6 +1142,27 @@ function layoutNodesForElements(graph, elementIds, existingNodes = []) {
   return nodes;
 }
 
+function isMainSurfaceElement(typeKey, element) {
+  const type = semanticType(element);
+  if (MAIN_SURFACE_ROOT_TYPES[typeKey]?.has(type)) {
+    return true;
+  }
+  try {
+    const definition = modelingElementDefinition(typeKey, type);
+    if (definition?.relationshipElement || definition?.containedOnly
+        || definition?.supportOnly) {
+      return false;
+    }
+    if (definition?.creatable) {
+      return true;
+    }
+    return typeKey === "psm" && safeArray(definition?.supertypes).includes(
+        "AwsResource");
+  } catch {
+    return true;
+  }
+}
+
 function buildViewFromDefinition(typeKey, graph, definition,
     scopeElement = null) {
   const idParts = [
@@ -1188,7 +1215,8 @@ function buildViewFromDefinition(typeKey, graph, definition,
 }
 
 function defaultMainView(typeKey, graph, modelName) {
-  const elementIds = [...graph.elementsById.keys()];
+  const elementIds = [...graph.elementsById.entries()].filter(([, element]) =>
+      isMainSurfaceElement(typeKey, element)).map(([elementId]) => elementId);
   const relationshipIds = edgeIdsForElementIds(graph, elementIds);
   return {
     id: `view-${typeKey}-main`,

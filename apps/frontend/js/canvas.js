@@ -1367,9 +1367,14 @@ export function getCurrentDiagramNodeSize() {
 }
 
 function normalizePinPoint(point) {
+  const x = Number(point?.x);
+  const y = Number(point?.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return null;
+  }
   return {
-    x: Math.round(Number(point?.x) || 0),
-    y: Math.round(Number(point?.y) || 0)
+    x: Math.round(x),
+    y: Math.round(y)
   };
 }
 
@@ -1394,7 +1399,7 @@ function clampEdgeAnchorOffset(offsetY, nodeH) {
 
 export function edgePresentationFromLayout(layout, sourceNode, targetNode) {
   const pinPoints = Array.isArray(layout?.bendPoints)
-      ? layout.bendPoints.map(normalizePinPoint)
+      ? layout.bendPoints.map(normalizePinPoint).filter(Boolean)
       : [];
   const sections = Array.isArray(layout?.sections) ? layout.sections : [];
   const firstSection = sections[0];
@@ -1430,7 +1435,7 @@ function persistEdgePinPoints(edge) {
   }
   saveStoredEdgeLayout(state.activeType, edge.id, {
     pinPoints: Array.isArray(edge.pinPoints)
-        ? edge.pinPoints.map(normalizePinPoint)
+        ? edge.pinPoints.map(normalizePinPoint).filter(Boolean)
         : [],
     sourceAnchor: normalizeEdgeAnchor(edge.sourceAnchor),
     targetAnchor: normalizeEdgeAnchor(edge.targetAnchor)
@@ -1482,7 +1487,7 @@ function pointOnNodeBoundary(node, nodeW, nodeH, toward, anchor = null) {
 
 function pinPointsForEdge(edge) {
   return Array.isArray(edge?.pinPoints)
-      ? edge.pinPoints.map(normalizePinPoint)
+      ? edge.pinPoints.map(normalizePinPoint).filter(Boolean)
       : [];
 }
 

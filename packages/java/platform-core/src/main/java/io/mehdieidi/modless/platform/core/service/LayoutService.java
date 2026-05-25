@@ -29,6 +29,8 @@ public final class LayoutService {
     private static final double DEFAULT_PORT_SIZE = 10.0d;
     private static final double DEFAULT_NODE_SPACING = 48.0d;
     private static final String LAYERED_ALGORITHM = "org.eclipse.elk.layered";
+    private static final RecursiveGraphLayoutEngine LAYOUT_ENGINE =
+            new RecursiveGraphLayoutEngine();
 
     public LayoutResponse layout(LayoutRequest request) {
         LayoutRequest normalizedRequest = validate(request);
@@ -81,7 +83,9 @@ public final class LayoutService {
         }
 
         try {
-            new RecursiveGraphLayoutEngine().layout(graph, new BasicProgressMonitor());
+            synchronized (LAYOUT_ENGINE) {
+                LAYOUT_ENGINE.layout(graph, new BasicProgressMonitor());
+            }
         } catch (NoClassDefFoundError | ExceptionInInitializerError exception) {
             throw new PlatformException(500,
                     "ELK layout runtime is not available on the backend classpath.");
@@ -91,7 +95,7 @@ public final class LayoutService {
 
         return new LayoutResponse(
                 buildNodeLayouts(normalizedRequest, nodesById),
-                buildEdgeLayouts(normalizedRequest, edgesById, warnings),
+                buildEdgeLayouts(normalizedRequest, nodesById, edgesById, warnings),
                 List.copyOf(warnings));
     }
 
@@ -271,6 +275,7 @@ public final class LayoutService {
 
     private List<RoutedEdge> buildEdgeLayouts(
             LayoutRequest request,
+            Map<String, ElkNode> nodesById,
             Map<String, ElkEdge> edgesById,
             List<String> warnings) {
         List<RoutedEdge> result = new ArrayList<>();
@@ -293,6 +298,7 @@ public final class LayoutService {
             if (sections.isEmpty()) {
                 warnings.add("Edge '" + edgeRequest.id()
                         + "' was laid out without explicit sections.");
+                sections.add(fallbackSection(edgeRequest, nodesById, warnings));
             }
             result.add(new RoutedEdge(
                     edgeRequest.id(),
@@ -300,6 +306,24 @@ public final class LayoutService {
                     List.copyOf(bendPoints)));
         }
         return List.copyOf(result);
+    }
+
+    private EdgeSection fallbackSection(LayoutEdge edge, Map<String, ElkNode> nodesById,
+            List<String> warnings) {
+        ElkNode source = nodesById.get(edge.sourceNodeId());
+        ElkNode target = nodesById.get(edge.targetNodeId());
+        if (source == null || target == null) {
+            warnings.add("Edge '" + edge.id()
+                    + "' could not be given a fallback route because an endpoint was missing.");
+            return new EdgeSection(new LayoutPoint(0, 0), new LayoutPoint(0, 0), List.of());
+        }
+        LayoutPoint start = new LayoutPoint(
+                finiteOrDefault(source.getX(), 0) + source.getWidth(),
+                finiteOrDefault(source.getY(), 0) + source.getHeight() / 2.0d);
+        LayoutPoint end = new LayoutPoint(
+                finiteOrDefault(target.getX(), 0),
+                finiteOrDefault(target.getY(), 0) + target.getHeight() / 2.0d);
+        return new EdgeSection(start, end, List.of());
     }
 
     private void addLabel(ElkNode node, String labelText) {
@@ -353,6 +377,10 @@ public final class LayoutService {
 
     private double positiveOrDefault(double value, double fallback) {
         return value > 0 ? value : fallback;
+    }
+
+    private double finiteOrDefault(double value, double fallback) {
+        return Double.isFinite(value) ? value : fallback;
     }
 
     private String normalize(String value) {

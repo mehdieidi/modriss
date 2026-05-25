@@ -1,10 +1,79 @@
 operation initialiseCimToPimCaches() {
   cachedCimRoot = CIM!CIMModel.all.first();
   cachedPimRoot = null;
+  cachedCimAggregateByEntityId = new Map;
+  cachedCimServiceBySourceId = new Map;
+  cachedCimEquivalentByRule = new Map;
+  cachedCimPolicyTargetsBySourceId = new Map;
+  cachedPimObservabilityById = new Map;
+  cachedPimResilienceById = new Map;
+  cachedPimIdempotencyById = new Map;
+  cachedPimSchemaById = new Map;
+  cachedPimDataAccessIds = Set{};
+  cachedPimExternalFlowIds = Set{};
+  cachedPimQueueById = new Map;
+  cachedReadinessManualDecisionsById = new Map;
+  cachedReadinessFindingsById = new Map;
+  cachedReadinessChecksById = new Map;
+
+  for (ag in cachedCimRoot.aggregates) {
+    cacheAggregateEntity(ag.root, ag);
+    for (member in ag.members) {
+      cacheAggregateEntity(member, ag);
+    }
+  }
 }
 
 operation cimRoot() {
   return cachedCimRoot;
+}
+
+operation cacheKeyFor(element) {
+  if (element.isUndefined()) {
+    return "";
+  }
+  if (hasText(element.id)) {
+    return element.id;
+  }
+  if (hasText(element.name)) {
+    return element.eClass().getName() + "_" + slug(element.name);
+  }
+  return element.eClass().getName() + "_" + slug(element.asString());
+}
+
+operation cacheAggregateEntity(entity, aggregate) {
+  var key = cacheKeyFor(entity);
+  if (hasText(key)) {
+    cachedCimAggregateByEntityId.put(key, aggregate);
+  }
+}
+
+operation cachedAggregateForEntity(entity) {
+  return cachedCimAggregateByEntityId.get(cacheKeyFor(entity));
+}
+
+operation cachedEquivalent(source, ruleName : String) {
+  var key = ruleName + "::" + cacheKeyFor(source);
+  if (cachedCimEquivalentByRule.containsKey(key)) {
+    return cachedCimEquivalentByRule.get(key);
+  }
+  var target = source.equivalents(ruleName).first();
+  if (target.isDefined()) {
+    cachedCimEquivalentByRule.put(key, target);
+  }
+  return target;
+}
+
+operation cachedEquivalentOfClass(source, ruleName : String, className : String) {
+  var key = ruleName + "::" + cacheKeyFor(source) + "::" + className;
+  if (cachedCimEquivalentByRule.containsKey(key)) {
+    return cachedCimEquivalentByRule.get(key);
+  }
+  var target = source.equivalents(ruleName).selectOne(x | x.eClass().getName() = className);
+  if (target.isDefined()) {
+    cachedCimEquivalentByRule.put(key, target);
+  }
+  return target;
 }
 
 operation asText(value) {

@@ -107,8 +107,8 @@ operation manualDecision(ruleId : String, question : String, severity, blocking 
     return null;
   }
   var id = newId("decision", ruleId + "_" + question);
-  var existing = readiness.manualDecisions.selectOne(d | d.id = id);
-  if (existing.isDefined()) {
+  if (cachedReadinessManualDecisionsById.containsKey(id)) {
+    var existing = cachedReadinessManualDecisionsById.get(id);
     appendTargetAffectedElements(existing, affected);
     return existing;
   }
@@ -133,6 +133,7 @@ operation manualDecision(ruleId : String, question : String, severity, blocking 
   d.reviewStatus = "review-required";
   appendTargetAffectedElements(d, affected);
   readiness.manualDecisions.add(d);
+  cachedReadinessManualDecisionsById.put(id, d);
   return d;
 }
 
@@ -142,8 +143,8 @@ operation readinessFinding(ruleId : String, findingType, severity, message : Str
     return null;
   }
   var id = newId("finding", ruleId + "_" + message);
-  var existing = readiness.findings.selectOne(f | f.id = id);
-  if (existing.isDefined()) {
+  if (cachedReadinessFindingsById.containsKey(id)) {
+    var existing = cachedReadinessFindingsById.get(id);
     appendTargetAffectedElements(existing, affected);
     return existing;
   }
@@ -160,6 +161,7 @@ operation readinessFinding(ruleId : String, findingType, severity, message : Str
   f.manuallyMaintained = false;
   appendTargetAffectedElements(f, affected);
   readiness.findings.add(f);
+  cachedReadinessFindingsById.put(id, f);
   return f;
 }
 
@@ -169,8 +171,8 @@ operation readinessCheck(checkId : String, severity, passed : Boolean, message :
     return null;
   }
   var id = newId("check", checkId);
-  var existing = readiness.checks.selectOne(c | c.id = id);
-  if (existing.isDefined()) {
+  if (cachedReadinessChecksById.containsKey(id)) {
+    var existing = cachedReadinessChecksById.get(id);
     appendTargetAffectedElements(existing, affected);
     return existing;
   }
@@ -185,5 +187,6 @@ operation readinessCheck(checkId : String, severity, passed : Boolean, message :
   c.generatedByTransformation = true;
   appendTargetAffectedElements(c, affected);
   readiness.checks.add(c);
+  cachedReadinessChecksById.put(id, c);
   return c;
 }

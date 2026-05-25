@@ -5,6 +5,24 @@ operation initialisePimToAwsPsmCaches() {
   cachedAwsRoot = null;
   cachedDefaultStage = null;
   cachedIsProductionRoot = isProductionPim(cachedPimRoot);
+  cachedAwsExistingTargetByKey = new Map;
+  cachedPimServiceNameByElementId = new Map;
+  cachedPimOwnerTeamByElementId = new Map;
+  cachedPimDeploymentAssignedIds = Set{};
+  cachedPimDeploymentUnitByElementId = new Map;
+  cachedAwsEquivalentBySourceId = new Map;
+  cachedAwsAuthorizerByApiId = new Map;
+  cachedLambdaPermissionByKey = new Map;
+  cachedSqsLambdaMappingByKey = new Map;
+  cachedSnsSubscriptionByKey = new Map;
+  cachedTopicsByEventTypeId = new Map;
+  cachedEventBusesByEventTypeId = new Map;
+  cachedQueuesByEventTypeId = new Map;
+  cachedAwsReadinessDecisionIds = Set{};
+  cachedAwsReadinessFindingIds = Set{};
+  cachedAwsReadinessCheckIds = Set{};
+  cachedAwsTargetHadPreloadedContent =
+    AWSPSM!AwsPsmModel.all.notEmpty() or AWSPSMCORE!AwsResource.all.notEmpty() or KERNEL!TraceableElement.all.notEmpty();
 
   for (element in KERNEL!ModelElement.all.select(e | hasText(e.id))) {
     usedModelElementIds.add(element.id);
@@ -12,6 +30,145 @@ operation initialisePimToAwsPsmCaches() {
   for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.logicalId))) {
     usedAwsLogicalIds.add(resource.logicalId);
   }
+  if (cachedAwsTargetHadPreloadedContent) {
+    for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.generatedFrom))) {
+      cacheExistingTarget(resource);
+    }
+    for (element in KERNEL!TraceableElement.all.select(e | hasText(e.generatedFrom))) {
+      cacheExistingTarget(element);
+    }
+  }
+  cachePimOwnership();
+  cachePimEventChannels();
+}
+
+operation cacheKeyFor(element) {
+  if (element.isUndefined()) {
+    return "";
+  }
+  if (hasText(element.id)) {
+    return element.id;
+  }
+  if (hasText(element.name)) {
+    return element.eClass().getName() + "_" + slug(element.name);
+  }
+  return element.eClass().getName() + "_" + slug(element.asString());
+}
+
+operation cacheExistingTarget(target) {
+  cachedAwsExistingTargetByKey.put(target.generatedFrom + "::" + target.eClass().getName(), target);
+}
+
+operation cachePimOwnership() {
+  for (service in cachedPimRoot.services) {
+    cachePimServiceOwner(service, service);
+    for (fn in service.ownsFunctions) {
+      cachePimServiceOwner(fn, service);
+    }
+    for (api in service.ownsApis) {
+      cachePimServiceOwner(api, service);
+      for (route in api.routes) {
+        cachePimServiceOwner(route, service);
+      }
+    }
+    for (channel in service.ownsChannels) {
+      cachePimServiceOwner(channel, service);
+    }
+    for (store in service.ownsStores) {
+      cachePimServiceOwner(store, service);
+    }
+    for (workflow in service.ownsWorkflows) {
+      cachePimServiceOwner(workflow, service);
+      for (state in workflow.states) {
+        cachePimServiceOwner(state, service);
+      }
+    }
+    for (adapter in service.ownsAdapters) {
+      cachePimServiceOwner(adapter, service);
+    }
+  }
+  for (unit in cachedPimRoot.deploymentUnits) {
+    for (service in unit.services) {
+      cacheDeploymentAssignment(service, unit);
+    }
+    for (element in unit.contains) {
+      cacheDeploymentAssignment(element, unit);
+    }
+  }
+}
+
+operation cachePimServiceOwner(element, service) {
+  var key = cacheKeyFor(element);
+  if (hasText(key)) {
+    cachedPimServiceNameByElementId.put(key, firstText(service.name, "Application"));
+    cachedPimOwnerTeamByElementId.put(key, firstText(service.ownerTeam, "REVIEW_REQUIRED_OWNER"));
+  }
+}
+
+operation cacheDeploymentAssignment(element, unit) {
+  var key = cacheKeyFor(element);
+  if (hasText(key)) {
+    cachedPimDeploymentAssignedIds.add(key);
+    cachedPimDeploymentUnitByElementId.put(key, unit);
+  }
+}
+
+operation addIndexed(index, key, value) {
+  if (not hasText(key) or value.isUndefined()) {
+    return;
+  }
+  var values = index.get(key);
+  if (values.isUndefined()) {
+    values = Sequence{};
+    index.put(key, values);
+  }
+  if (not values.includes(value)) {
+    values.add(value);
+  }
+}
+
+operation indexedValues(index, key) {
+  var values = index.get(key);
+  if (values.isDefined()) {
+    return values;
+  }
+  return Sequence{};
+}
+
+operation cachePimEventChannels() {
+  for (topic in INTEGRATION!Topic.all) {
+    for (eventType in topic.eventTypes) {
+      addIndexed(cachedTopicsByEventTypeId, cacheKeyFor(eventType), topic);
+    }
+  }
+  for (bus in INTEGRATION!EventBus.all) {
+    for (eventType in bus.eventTypes) {
+      addIndexed(cachedEventBusesByEventTypeId, cacheKeyFor(eventType), bus);
+    }
+  }
+  for (queue in INTEGRATION!Queue.all) {
+    for (eventType in queue.eventTypes) {
+      addIndexed(cachedQueuesByEventTypeId, cacheKeyFor(eventType), queue);
+    }
+  }
+}
+
+operation awsEquivalent(source) {
+  if (source.isUndefined()) {
+    return null;
+  }
+  var key = cacheKeyFor(source);
+  if (not hasText(key)) {
+    return source.equivalent();
+  }
+  if (cachedAwsEquivalentBySourceId.containsKey(key)) {
+    return cachedAwsEquivalentBySourceId.get(key);
+  }
+  var target = source.equivalent();
+  if (target.isDefined()) {
+    cachedAwsEquivalentBySourceId.put(key, target);
+  }
+  return target;
 }
 
 operation asText(value) {
@@ -169,18 +326,10 @@ operation copyTraceable(source, target) {
 }
 
 operation existingTargetFor(source, className : String) {
-  if (not hasText(source.id)) {
+  if (not cachedAwsTargetHadPreloadedContent or not hasText(source.id)) {
     return null;
   }
-  var existing = AWSPSMCORE!AwsResource.all.selectOne(r | r.generatedFrom = source.id and r.eClass().getName() = className);
-  if (existing.isDefined()) {
-    return existing;
-  }
-  existing = KERNEL!TraceableElement.all.selectOne(e | e.generatedFrom = source.id and e.eClass().getName() = className);
-  if (existing.isDefined()) {
-    return existing;
-  }
-  return null;
+  return cachedAwsExistingTargetByKey.get(source.id + "::" + className);
 }
 
 operation copyAwsResource(source, target, kind : String, awsType : String) {
@@ -235,23 +384,17 @@ operation physicalName(source, awsKind : String, stage) {
 }
 
 operation owningServiceName(element) {
-  var svc = pimRoot().services.selectOne(s |
-    s.ownsFunctions.includes(element) or s.ownsApis.includes(element) or
-    s.ownsChannels.includes(element) or s.ownsStores.includes(element) or
-    s.ownsWorkflows.includes(element) or s.ownsAdapters.includes(element));
-  if (svc.isDefined()) {
-    return firstText(svc.name, "Application");
+  var name = cachedPimServiceNameByElementId.get(cacheKeyFor(element));
+  if (hasText(name)) {
+    return name;
   }
   return "Application";
 }
 
 operation owningOwnerTeam(element) {
-  var svc = pimRoot().services.selectOne(s |
-    s.ownsFunctions.includes(element) or s.ownsApis.includes(element) or
-    s.ownsChannels.includes(element) or s.ownsStores.includes(element) or
-    s.ownsWorkflows.includes(element) or s.ownsAdapters.includes(element));
-  if (svc.isDefined() and hasText(svc.ownerTeam)) {
-    return svc.ownerTeam;
+  var owner = cachedPimOwnerTeamByElementId.get(cacheKeyFor(element));
+  if (hasText(owner)) {
+    return owner;
   }
   return "REVIEW_REQUIRED_OWNER";
 }

@@ -60,7 +60,7 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
 
   if (item.subItems.notEmpty()) {
     var objectSchemaId = idFor("schema_item", item);
-    var objectSchema = CONTRACTS!Schema.all.selectOne(s | s.id = objectSchemaId);
+    var objectSchema = cachedPimSchemaById.get(objectSchemaId);
     if (objectSchema.isUndefined()) {
       objectSchema = new CONTRACTS!Schema;
       objectSchema.id = objectSchemaId;
@@ -74,13 +74,14 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
         objectSchema.fields.add(createSchemaField(subItem, objectSchema.id));
       }
       pimRoot().schemas.add(objectSchema);
+      cachedPimSchemaById.put(objectSchema.id, objectSchema);
       traceGenerated(item, objectSchema, "TR-040", "MEDIUM");
     }
     f.objectSchema = objectSchema;
   }
   else if (f.fieldType = PIMTYPES!FieldType#OBJECT) {
     var placeholderSchemaId = idFor("schema_item", item);
-    var placeholderSchema = CONTRACTS!Schema.all.selectOne(s | s.id = placeholderSchemaId);
+    var placeholderSchema = cachedPimSchemaById.get(placeholderSchemaId);
     if (placeholderSchema.isUndefined()) {
       placeholderSchema = new CONTRACTS!Schema;
       placeholderSchema.id = placeholderSchemaId;
@@ -93,6 +94,7 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
       placeholderSchema.fields.add(fieldFor(placeholderSchema.id, "reference", PIMTYPES!FieldType#STRING, true));
       placeholderSchema.fields.add(fieldFor(placeholderSchema.id, "description", PIMTYPES!FieldType#STRING, false));
       pimRoot().schemas.add(placeholderSchema);
+      cachedPimSchemaById.put(placeholderSchema.id, placeholderSchema);
       traceGenerated(item, placeholderSchema, "TR-040", "LOW");
       manualDecision("TR-040", "Define object structure for information item '" + item.name + "'.", KERNEL!Severity#WARNING, false, Sequence{item, placeholderSchema});
     }
@@ -320,8 +322,8 @@ operation createQueryResponseSchema(q : CIMBEHAVIOR!Query) {
 
 operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, alarms : Boolean) {
   var id = newId("observability", seed.id + "_" + ruleId);
-  var existing = POLICY!ObservabilityConfig.all.selectOne(o | o.id = id);
-  if (existing.isDefined()) {
+  if (cachedPimObservabilityById.containsKey(id)) {
+    var existing = cachedPimObservabilityById.get(id);
     if (not existing.attachedTo.includes(seed)) {
       existing.attachedTo.add(seed);
     }
@@ -343,13 +345,14 @@ operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, a
   o.manuallyMaintained = false;
   o.attachedTo.add(seed);
   pimRoot().policies.add(o);
+  cachedPimObservabilityById.put(id, o);
   return o;
 }
 
 operation createDefaultResilience(seed, ruleId : String, deadLetter : Boolean) {
   var id = newId("resilience", seed.id + "_" + ruleId);
-  var existing = POLICY!ResiliencePolicy.all.selectOne(p | p.id = id);
-  if (existing.isDefined()) {
+  if (cachedPimResilienceById.containsKey(id)) {
+    var existing = cachedPimResilienceById.get(id);
     if (not existing.attachedTo.includes(seed)) {
       existing.attachedTo.add(seed);
     }
@@ -386,6 +389,7 @@ operation createDefaultResilience(seed, ruleId : String, deadLetter : Boolean) {
   r.manuallyMaintained = false;
   r.attachedTo.add(seed);
   pimRoot().policies.add(r);
+  cachedPimResilienceById.put(id, r);
   return r;
 }
 
@@ -403,14 +407,14 @@ operation createIdempotencyPolicy(cmd : CIMBEHAVIOR!Command) {
   p.appliesToDuplicateRequests = true;
   traceGenerated(cmd, p, "TR-070", "MEDIUM");
   pimRoot().policies.add(p);
+  cachedPimIdempotencyById.put(p.id, p);
   return p;
 }
 
 operation createIdempotencyPolicyForTarget(target, seed, ruleId : String, keySource : String) {
   var id = newId("idempotency", target.id);
-  var existing = POLICY!IdempotencyPolicy.all.selectOne(policy | policy.id = id);
-  if (existing.isDefined()) {
-    return existing;
+  if (cachedPimIdempotencyById.containsKey(id)) {
+    return cachedPimIdempotencyById.get(id);
   }
   var p = new POLICY!IdempotencyPolicy;
   p.id = id;
@@ -426,5 +430,6 @@ operation createIdempotencyPolicyForTarget(target, seed, ruleId : String, keySou
   p.attachedTo.add(target);
   traceGenerated(seed, p, ruleId, "MEDIUM");
   pimRoot().policies.add(p);
+  cachedPimIdempotencyById.put(id, p);
   return p;
 }

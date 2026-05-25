@@ -61,8 +61,13 @@ operation manualDecision(decisionId : String, question : String, severity, block
   if (r.isUndefined()) {
     return;
   }
+  var decisionBaseId = "decision_" + slug(decisionId + "_" + question);
+  if (cachedAwsReadinessDecisionIds.includes(decisionBaseId)) {
+    return;
+  }
+  cachedAwsReadinessDecisionIds.add(decisionBaseId);
   var d = new KERNEL!ManualDecision;
-  d.id = uniqueId("decision_" + slug(decisionId + "_" + question));
+  d.id = uniqueId(decisionBaseId);
   d.name = decisionId;
   d.question = question;
   d.severity = severity;
@@ -73,8 +78,13 @@ operation manualDecision(decisionId : String, question : String, severity, block
   addTargetAffected(d, affected);
   r.manualDecisions.add(d);
 
+  var findingBaseId = "finding_" + slug(decisionId + "_" + question);
+  if (cachedAwsReadinessFindingIds.includes(findingBaseId)) {
+    return;
+  }
+  cachedAwsReadinessFindingIds.add(findingBaseId);
   var f = new KERNEL!ReadinessFinding;
-  f.id = uniqueId("finding_" + slug(decisionId + "_" + question));
+  f.id = uniqueId(findingBaseId);
   f.name = decisionId + " finding";
   f.findingType = KERNEL!FindingType#MISSING_INFORMATION;
   f.severity = severity;
@@ -93,8 +103,13 @@ operation finding(checkId : String, message : String, severity, blocking : Boole
   if (r.isUndefined()) {
     return;
   }
+  var findingBaseId = "finding_" + slug(checkId + "_" + message);
+  if (cachedAwsReadinessFindingIds.includes(findingBaseId)) {
+    return;
+  }
+  cachedAwsReadinessFindingIds.add(findingBaseId);
   var f = new KERNEL!ReadinessFinding;
-  f.id = uniqueId("finding_" + slug(checkId + "_" + message));
+  f.id = uniqueId(findingBaseId);
   f.name = checkId;
   f.findingType = KERNEL!FindingType#VALIDATION_ERROR;
   f.severity = severity;
@@ -113,8 +128,13 @@ operation check(checkId : String, passed : Boolean, message : String, severity, 
   if (r.isUndefined()) {
     return;
   }
+  var checkBaseId = "check_" + slug(checkId + "_" + message);
+  if (cachedAwsReadinessCheckIds.includes(checkBaseId)) {
+    return;
+  }
+  cachedAwsReadinessCheckIds.add(checkBaseId);
   var c = new KERNEL!ReadinessCheck;
-  c.id = uniqueId("check_" + slug(checkId + "_" + message));
+  c.id = uniqueId(checkBaseId);
   c.name = checkId;
   c.checkId = checkId;
   c.passed = passed;

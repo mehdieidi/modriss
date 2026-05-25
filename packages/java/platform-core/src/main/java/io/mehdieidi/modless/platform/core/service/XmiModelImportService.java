@@ -47,6 +47,138 @@ final class XmiModelImportService {
             ModelLevel.PIM, "modeling/metamodels/pim/pim-combined.ecore",
             ModelLevel.PSM, "modeling/metamodels/psm/psm-combined.ecore");
 
+    private static final Map<String, String> CIM_REFERENCE_KINDS = Map.ofEntries(
+            Map.entry("supportsGoals", "SUPPORTS"), Map.entry("supports", "SUPPORTS"),
+            Map.entry("refinedBy", "REFINES"), Map.entry("dependsOn", "DEPENDS_ON"),
+            Map.entry("conflictsWith", "CONFLICTS_WITH"), Map.entry("constrains", "CONSTRAINS"),
+            Map.entry("realizesRequirements", "REALIZES"),
+            Map.entry("containsCommands", "CONTAINS_COMMAND"),
+            Map.entry("containsQueries", "CONTAINS_QUERY"),
+            Map.entry("containsEvents", "CONTAINS_EVENT"),
+            Map.entry("managesEntities", "MANAGES"), Map.entry("ownsProcesses", "OWNS"),
+            Map.entry("owner", "OWNS"), Map.entry("issuesCommands", "ISSUES"),
+            Map.entry("issuesQueries", "ISSUES"), Map.entry("observesEvents", "OBSERVES"),
+            Map.entry("playsRoles", "PLAYS_ROLE"), Map.entry("assignedTo", "ASSIGNED_TO"),
+            Map.entry("producedEvents", "PRODUCES"),
+            Map.entry("consumedEvents", "CONSUMED_BY"),
+            Map.entry("exchangedInformation", "EXCHANGES_INFORMATION"),
+            Map.entry("expectedEvents", "EXPECTS"),
+            Map.entry("rejectionEvents", "REJECTS_WITH"),
+            Map.entry("possibleErrors", "MAY_FAIL_WITH"),
+            Map.entry("targetAggregate", "TARGETS"),
+            Map.entry("targetCapability", "HANDLED_BY"), Map.entry("reads", "READS"),
+            Map.entry("triggeredBy", "TRIGGERS"),
+            Map.entry("consumedByPolicies", "TRIGGERS"),
+            Map.entry("consumedByProcesses", "FEEDS"),
+            Map.entry("emitsCommands", "EMITS_COMMAND"),
+            Map.entry("emitsEvents", "EMITS_EVENT"), Map.entry("guards", "GUARDS"),
+            Map.entry("constrainsQueries", "CONSTRAINS"),
+            Map.entry("resultingCommands", "RESULTS_IN"),
+            Map.entry("resultingEvents", "RESULTS_IN"), Map.entry("decisionTable", "USES"),
+            Map.entry("dataItems", "CONSTRAINS"),
+            Map.entry("constrainedElements", "CONSTRAINS"),
+            Map.entry("constrainedActors", "CONSTRAINS"),
+            Map.entry("constrainedCommands", "CONSTRAINS"),
+            Map.entry("constrainedQueries", "CONSTRAINS"),
+            Map.entry("constrainedInformation", "CONSTRAINS"),
+            Map.entry("scopedElements", "CONSTRAINS"),
+            Map.entry("affectedElements", "ATTACHED_TO"),
+            Map.entry("attachedTo", "ATTACHED_TO"), Map.entry("root", "ROOT"),
+            Map.entry("members", "MEMBER"), Map.entry("source", "TRANSITION"),
+            Map.entry("target", "TRANSITION"));
+
+    private static final Map<String, String> PIM_REFERENCE_KINDS = Map.ofEntries(
+            Map.entry("ownsFunctions", "OWNS"), Map.entry("ownsApis", "OWNS"),
+            Map.entry("ownsChannels", "OWNS"), Map.entry("ownsStores", "OWNS"),
+            Map.entry("ownsWorkflows", "OWNS"), Map.entry("ownsAdapters", "OWNS"),
+            Map.entry("constrainedBy", "CONSTRAINS"), Map.entry("services", "OWNS"),
+            Map.entry("contains", "DEPLOYS"), Map.entry("targetEnvironments", "DEPLOYS_TO"),
+            Map.entry("routes", "CONTAINS"), Map.entry("functionIntegration", "ROUTES_TO"),
+            Map.entry("workflowIntegration", "ROUTES_TO"), Map.entry("auth", "AUTHORIZED_BY"),
+            Map.entry("authorization", "AUTHORIZED_BY"), Map.entry("requestSchema", "USES"),
+            Map.entry("responseSchema", "USES"), Map.entry("errorSchema", "USES"),
+            Map.entry("inputSchema", "USES"), Map.entry("outputSchema", "USES"),
+            Map.entry("errorSchemas", "USES"), Map.entry("schema", "USES"),
+            Map.entry("emittedEvents", "PUBLISHES"), Map.entry("producedBy", "PUBLISHES"),
+            Map.entry("consumedBy", "SUBSCRIBES_TO"), Map.entry("triggers", "TRIGGERS"),
+            Map.entry("source", "INVOKES"), Map.entry("invokesFunction", "INVOKES"),
+            Map.entry("startsWorkflow", "INVOKES"), Map.entry("reads", "READS"),
+            Map.entry("writes", "WRITES"), Map.entry("publishes", "PUBLISHES"),
+            Map.entry("subscribesTo", "SUBSCRIBES_TO"), Map.entry("callsAdapters", "CALLS"),
+            Map.entry("usesSecrets", "USES_SECRET"), Map.entry("environmentVariables", "HAS_ENV"),
+            Map.entry("eventTypes", "CONTAINS"), Map.entry("producers", "PUBLISHES"),
+            Map.entry("consumers", "SUBSCRIBES_TO"),
+            Map.entry("workflowConsumers", "SUBSCRIBES_TO"),
+            Map.entry("externalProducers", "PUBLISHES"),
+            Map.entry("externalConsumers", "SUBSCRIBES_TO"),
+            Map.entry("deadLetterChannel", "DEAD_LETTER"),
+            Map.entry("subscriptions", "SUBSCRIBES_TO"), Map.entry("target", "FLOW"),
+            Map.entry("targets", "ROUTES_TO"), Map.entry("apiRoute", "ROUTES_TO"),
+            Map.entry("eventType", "EVENT_FLOW"), Map.entry("channel", "EVENT_FLOW"),
+            Map.entry("messageSchema", "MESSAGE_FLOW"), Map.entry("queue", "MESSAGE_FLOW"),
+            Map.entry("topic", "PUB_SUB"), Map.entry("workflow", "ORCHESTRATES"),
+            Map.entry("adapter", "EXTERNAL_CALL"), Map.entry("store", "DATA_ACCESS"),
+            Map.entry("function", "DATA_ACCESS"), Map.entry("dataModels", "DATA_ACCESS"),
+            Map.entry("accessPatterns", "DATA_ACCESS"),
+            Map.entry("startState", "TRANSITION"), Map.entry("endStates", "TRANSITION"),
+            Map.entry("invokesAdapter", "EXTERNAL_CALL"),
+            Map.entry("nestedWorkflow", "ORCHESTRATES"),
+            Map.entry("nextState", "TRANSITION"),
+            Map.entry("handlerFunction", "INVOKES"),
+            Map.entry("targetResource", "PERMISSION"),
+            Map.entry("allowedPrincipals", "AUTHORIZED_BY"),
+            Map.entry("permissions", "PERMISSION"),
+            Map.entry("identityProvider", "AUTHORIZED_BY"),
+            Map.entry("principals", "AUTHORIZED_BY"),
+            Map.entry("attachedTo", "ATTACHED_TO"),
+            Map.entry("configurationSets", "HAS_ENV"), Map.entry("parameters", "HAS_ENV"),
+            Map.entry("variables", "HAS_ENV"), Map.entry("environments", "DEPLOYS_TO"),
+            Map.entry("appliesTo", "ATTACHED_TO"), Map.entry("secret", "USES_SECRET"),
+            Map.entry("usedForCredentials", "USES_SECRET"),
+            Map.entry("credentials", "USES_SECRET"),
+            Map.entry("adapterFunctions", "CALLS"),
+            Map.entry("affectedElements", "ATTACHED_TO"));
+
+    private static final Map<String, String> PSM_REFERENCE_KINDS = Map.ofEntries(
+            Map.entry("resources", "CONTAINS"), Map.entry("stacks", "CONTAINS"),
+            Map.entry("stages", "CONTAINS"), Map.entry("parameters", "CONTAINS"),
+            Map.entry("tags", "CONTAINS"), Map.entry("routes", "CONTAINS"),
+            Map.entry("targets", "CONTAINS"), Map.entry("subscriptions", "CONTAINS"),
+            Map.entry("permissions", "CONTAINS"), Map.entry("inlinePolicies", "CONTAINS"),
+            Map.entry("statements", "CONTAINS"), Map.entry("code", "CONTAINS"),
+            Map.entry("environment", "CONTAINS"), Map.entry("variables", "CONTAINS"),
+            Map.entry("logging", "CONTAINS"), Map.entry("tracing", "CONTAINS"),
+            Map.entry("accessLogGroup", "CONTAINS"),
+            Map.entry("authorizers", "CONTAINS"), Map.entry("apiStages", "CONTAINS"),
+            Map.entry("deployments", "CONTAINS"),
+            Map.entry("attributeDefinitions", "CONTAINS"),
+            Map.entry("keySchema", "CONTAINS"),
+            Map.entry("globalSecondaryIndexes", "CONTAINS"),
+            Map.entry("localSecondaryIndexes", "CONTAINS"),
+            Map.entry("deploysStacks", "DEPLOYS"), Map.entry("stack", "DEPLOYS"),
+            Map.entry("integration", "ROUTES_TO"), Map.entry("api", "ROUTES_TO"),
+            Map.entry("route", "ROUTES_TO"), Map.entry("lambdaTarget", "INVOKES"),
+            Map.entry("function", "INVOKES"), Map.entry("stateMachineTarget", "INVOKES"),
+            Map.entry("stateMachine", "INVOKES"), Map.entry("targetResource", "INVOKES"),
+            Map.entry("endpointResource", "INVOKES"), Map.entry("mapping", "INVOKES"),
+            Map.entry("queue", "EVENT_FLOW"), Map.entry("topic", "EVENT_FLOW"),
+            Map.entry("bus", "EVENT_FLOW"), Map.entry("rule", "EVENT_FLOW"),
+            Map.entry("targetRow", "EVENT_FLOW"),
+            Map.entry("eventSourceResource", "EVENT_FLOW"), Map.entry("role", "USES_ROLE"),
+            Map.entry("secret", "USES_SECRET"), Map.entry("secretRef", "USES_SECRET"),
+            Map.entry("usesSecrets", "USES_SECRET"), Map.entry("kmsKey", "ENCRYPTED_BY"),
+            Map.entry("encryptionKey", "ENCRYPTED_BY"), Map.entry("logGroup", "OBSERVES"),
+            Map.entry("destinationResource", "OBSERVES"),
+            Map.entry("monitoredResource", "OBSERVES"), Map.entry("reads", "READS"),
+            Map.entry("writes", "WRITES"), Map.entry("permission", "PERMISSION"),
+            Map.entry("policyDocument", "PERMISSION"),
+            Map.entry("resourcePolicy", "PERMISSION"),
+            Map.entry("bucketPolicy", "PERMISSION"),
+            Map.entry("queuePolicy", "PERMISSION"),
+            Map.entry("topicPolicy", "PERMISSION"), Map.entry("authorizer", "AUTHORIZED_BY"),
+            Map.entry("userPool", "AUTHORIZED_BY"), Map.entry("traceLinks", "TRACE"),
+            Map.entry("incomingTraces", "TRACE"), Map.entry("outgoingTraces", "TRACE"));
+
     private final ObjectMapper objectMapper;
 
     XmiModelImportService(ObjectMapper objectMapper) {
@@ -69,7 +201,7 @@ final class XmiModelImportService {
                     .findFirst()
                     .orElseThrow(() -> new PlatformException(400,
                             "Uploaded XMI does not contain a model root."));
-            SerializationContext context = new SerializationContext();
+            SerializationContext context = new SerializationContext(level);
             ObjectNode rootJson = serializeContainedObject(root, context);
             rootJson.set("graph", context.graphNode(objectMapper));
             rootJson.set("diagram", context.diagramNode(objectMapper));
@@ -212,13 +344,18 @@ final class XmiModelImportService {
                     ObjectNode serializedChild = serializeContainedObject(child, context);
                     if (serializedChild != null) {
                         array.add(serializedChild);
+                        context.addContainmentEdge(owner, reference, child);
                     }
                 }
             }
             return array;
         }
         if (rawValue instanceof EObject child) {
-            return serializeContainedObject(child, context);
+            ObjectNode serializedChild = serializeContainedObject(child, context);
+            if (serializedChild != null) {
+                context.addContainmentEdge(owner, reference, child);
+            }
+            return serializedChild;
         }
         return null;
     }
@@ -486,6 +623,7 @@ final class XmiModelImportService {
 
     private final class SerializationContext {
 
+        private final ModelLevel level;
         private final Map<EObject, String> ids = new IdentityHashMap<>();
         private final Set<EObject> serializing = java.util.Collections.newSetFromMap(
                 new IdentityHashMap<>());
@@ -494,6 +632,10 @@ final class XmiModelImportService {
         private final List<ObjectNode> graphRelationships = new ArrayList<>();
         private final Set<String> graphRelationshipKeys = new LinkedHashSet<>();
         private final AtomicInteger syntheticIds = new AtomicInteger(1);
+
+        SerializationContext(ModelLevel level) {
+            this.level = level;
+        }
 
         String ensureId(EObject object) {
             return ids.computeIfAbsent(object, this::createId);
@@ -628,6 +770,28 @@ final class XmiModelImportService {
             graphRelationships.add(relationship);
         }
 
+        private void addContainmentEdge(EObject owner, EReference reference, EObject child) {
+            String sourceId = ensureId(owner);
+            String targetId = ensureId(child);
+            String key = sourceId + "|" + targetId + "|CONTAINS";
+            if (!graphRelationshipKeys.add(key)) {
+                return;
+            }
+            ObjectNode relationship = objectMapper.createObjectNode();
+            relationship.put("id", "contains-" + sanitizeId(sourceId) + "-"
+                    + sanitizeId(targetId));
+            relationship.put("kind", "CONTAINS");
+            relationship.put("source", sourceId);
+            relationship.put("target", targetId);
+            relationship.put("sourceElementId", sourceId);
+            relationship.put("targetElementId", targetId);
+            relationship.put("semanticFeature", reference.getName());
+            relationship.put("sourceType", owner.eClass().getName());
+            relationship.put("targetType", child.eClass().getName());
+            relationship.put("containment", true);
+            graphRelationships.add(relationship);
+        }
+
         private boolean isRelationshipObject(EObject object) {
             EStructuralFeature source = object.eClass().getEStructuralFeature("source");
             EStructuralFeature target = object.eClass().getEStructuralFeature("target");
@@ -659,11 +823,38 @@ final class XmiModelImportService {
         }
 
         private String relationshipKind(String value) {
+            String referenceKind = referenceFeatureKind(value);
+            if (!referenceKind.isBlank()) {
+                return referenceKind;
+            }
+            String semanticKind = psmRelationshipViewKind(value);
+            if (!semanticKind.isBlank()) {
+                return semanticKind;
+            }
             return String.valueOf(value)
                     .replaceAll("([a-z0-9])([A-Z])", "$1_$2")
                     .replaceAll("[^A-Za-z0-9]+", "_")
                     .replaceAll("^_+|_+$", "")
                     .toUpperCase(Locale.ROOT);
+        }
+
+        private String referenceFeatureKind(String value) {
+            Map<String, String> kinds = switch (level) {
+                case CIM -> CIM_REFERENCE_KINDS;
+                case PIM -> PIM_REFERENCE_KINDS;
+                case PSM -> PSM_REFERENCE_KINDS;
+            };
+            return kinds.getOrDefault(String.valueOf(value), "");
+        }
+
+        private String psmRelationshipViewKind(String value) {
+            return switch (String.valueOf(value)) {
+                case "ApiGatewayLambdaIntegrationView" -> "INVOKES";
+                case "SqsLambdaEventSourceView", "SnsLambdaSubscriptionView",
+                     "EventBridgeLambdaTargetView", "StepFunctionEventBridgeTargetView" ->
+                        "EVENT_FLOW";
+                default -> "";
+            };
         }
 
         private String sanitizeId(String value) {

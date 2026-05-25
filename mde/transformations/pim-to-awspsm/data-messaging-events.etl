@@ -1,8 +1,3 @@
-import "lib/common.eol";
-import "lib/aws-builders.eol";
-import "lib/readiness-trace.eol";
-import "lib/resolution.eol";
-
 rule DataStore2DynamoDbTable
   transform ds : DATA!DataStore
   to t : AWSPSMSTORAGE!DynamoDbTable {
@@ -151,7 +146,7 @@ rule Queue2SqsQueue
     rd.id = generatedId("sqs_redrive", q, "dlq");
     rd.name = q.name + " redrive";
     rd.maxReceiveCount = positiveOr(q.maxReceiveAttempts, 5);
-    rd.deadLetterQueue = q.deadLetterChannel.equivalent();
+    rd.deadLetterQueue = awsEquivalent(q.deadLetterChannel);
     sqs.redrivePolicy = rd;
   }
   else {
@@ -202,11 +197,18 @@ rule Subscription2SnsSubscription
 
   copyAwsResource(s, sub, "Subscription", "AWS::SNS::Subscription");
   sub.id = idFor("sns_subscription", s);
-  sub.topic = s.ownerTopic.equivalent();
+  sub.topic = awsEquivalent(s.ownerTopic);
   sub.protocol = subscriptionProtocol(s.target);
   sub.endpointResource = endpointResource(s.target);
   if (sub.endpointResource.isDefined()) {
     sub.endpoint = "${" + sub.endpointResource.logicalId + ".Arn}";
+    cachedSnsSubscriptionByKey.put(sub.topic.logicalId + "::" + sub.protocol.asString().toLowerCase() + "::" + sub.endpointResource.logicalId, sub);
+    if (sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA) {
+      cachedSnsSubscriptionByKey.put(sub.topic.logicalId + "::lambda::" + sub.endpointResource.logicalId, sub);
+    }
+    if (sub.protocol = AWSPSMENUMS!SnsProtocol#SQS) {
+      cachedSnsSubscriptionByKey.put(sub.topic.logicalId + "::sqs::" + sub.endpointResource.logicalId, sub);
+    }
   }
   else {
     sub.endpoint = "";
@@ -252,7 +254,7 @@ rule EventRoutingRule2EventBridgeRule
   else {
     er.state = "DISABLED";
   }
-  er.bus = rr.eventBus.equivalent();
+  er.bus = awsEquivalent(rr.eventBus);
   for (dest in rr.targets) {
     er.targets.add(createEventBridgeTarget(rr, dest));
   }
@@ -485,7 +487,7 @@ operation endpointResource(endpoint) {
   if (endpoint.isUndefined()) {
     return null;
   }
-  var eq = endpoint.equivalent();
+  var eq = awsEquivalent(endpoint);
   if (eq.isDefined()) {
     return eq;
   }

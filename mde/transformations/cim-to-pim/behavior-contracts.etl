@@ -145,7 +145,7 @@ rule Command2Function
     fn.publishes.add(eventTypeFor(rejection));
   }
   for (err in cmd.possibleErrors) {
-    contract.errorSchemas.add(err.equivalents("BusinessError2ErrorSchema").first());
+    contract.errorSchemas.add(cachedEquivalent(err, "BusinessError2ErrorSchema"));
   }
   fn.contract = contract;
 
@@ -237,7 +237,7 @@ rule UserInitiatedCommand2ApiRoute
       mapping.abstractStatusClass = "400_OR_422_BUSINESS_VALIDATION";
     }
     mapping.responseMessage = err.userVisibleMessage;
-    mapping.errorSchema = err.equivalents("BusinessError2ErrorSchema").first();
+    mapping.errorSchema = cachedEquivalent(err, "BusinessError2ErrorSchema");
     route.errorMappings.add(mapping);
     traceGenerated(err, mapping, "TR-130", "HIGH");
   }
@@ -382,7 +382,7 @@ rule Query2AccessPattern
   if (store.isDefined()) {
     store.accessPatterns.add(ap);
     ap.usedByFunctions.add(queryFunction(q));
-    var route = q.equivalents("Query2ApiRoute").first();
+    var route = cachedEquivalent(q, "Query2ApiRoute");
     if (route.isDefined()) {
       ap.exposedByRoutes.add(route);
     }

@@ -1,8 +1,3 @@
-import "lib/common.eol";
-import "lib/aws-builders.eol";
-import "lib/readiness-trace.eol";
-import "lib/resolution.eol";
-
 rule Workflow2StepFunctionStateMachine
   transform w : WORKFLOW!Workflow
   to sm : AWSPSMWORKFLOW!StepFunctionStateMachine {
@@ -209,7 +204,7 @@ operation createAslState(w, ws) {
   st.end = isTrue(ws.terminal) or w.endStates.includes(ws);
   var out = w.transitions.select(x | x.source = ws);
   if (out.size() = 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
-    st.nextState = out.first().target.equivalent();
+    st.nextState = awsEquivalent(out.first().target);
     st.nextStateName = out.first().target.name;
   }
   else {
@@ -221,12 +216,12 @@ operation createAslState(w, ws) {
     }
   }
   if (ws.invokesFunction.isDefined()) {
-    st.invokedResource = ws.invokesFunction.equivalent();
+    st.invokedResource = awsEquivalent(ws.invokesFunction);
     st.resource = "arn:aws:states:::lambda:invoke";
   }
   else {
     if (ws.nestedWorkflow.isDefined()) {
-      st.invokedResource = ws.nestedWorkflow.equivalent();
+      st.invokedResource = awsEquivalent(ws.nestedWorkflow);
       st.resource = "arn:aws:states:::states:startExecution.sync";
     }
   }
@@ -234,7 +229,7 @@ operation createAslState(w, ws) {
     st.retry.add(createAslRetry(ws.retry));
   }
   if (ws.stateKind = PIMTYPES!WorkflowStateKind#CHOICE) {
-    for (tr in w.transitions.select(x | x.source = ws)) {
+    for (tr in out) {
       var choiceRule = createAslChoice(tr);
       if (choiceRule.isDefined()) {
         st.choices.add(choiceRule);
@@ -265,7 +260,7 @@ operation createAslState(w, ws) {
 }
 
 operation createAslChoice(tr) {
-  var resolvedNextState = tr.target.equivalent();
+  var resolvedNextState = awsEquivalent(tr.target);
   if (resolvedNextState.isUndefined()) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
       "Resolve target state for choice transition " + firstText(tr.name, tr.id) + ".",
@@ -335,7 +330,7 @@ operation createAslRetry(p) {
 }
 
 operation createAslCatch(h) {
-  var resolvedNextState = h.nextState.equivalent();
+  var resolvedNextState = awsEquivalent(h.nextState);
   if (resolvedNextState.isUndefined()) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
       "Resolve catch target state for " + firstText(h.name, h.id) + ".",

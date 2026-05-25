@@ -245,6 +245,7 @@ export function serializeModel() {
       || `${state.activeType}-model`).trim();
   const root = structuredClone(
       state.baseModel || defaultRootModel(state.activeType, name));
+  delete root._sourceXmiBase64;
   sanitizeRootForType(state.activeType, root);
   root.name = name;
   root.diagram ??= {};

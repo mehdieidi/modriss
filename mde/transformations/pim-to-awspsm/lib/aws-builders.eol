@@ -347,6 +347,13 @@ operation permissionStatement(perm) {
 }
 
 operation createLambdaPermissionFor(prefix : String, origin, fn, principal : String) {
+  if (fn.isUndefined()) {
+    return null;
+  }
+  var key = prefix + "::" + principal + "::" + fn.logicalId;
+  if (cachedLambdaPermissionByKey.containsKey(key)) {
+    return cachedLambdaPermissionByKey.get(key);
+  }
   var p = new AWSPSMCOMPUTE!LambdaPermission;
   copyAwsResource(origin, p, prefix + "Permission", "AWS::Lambda::Permission");
   p.id = generatedId("lambda_permission", origin, prefix + "_" + fn.logicalId);
@@ -354,5 +361,6 @@ operation createLambdaPermissionFor(prefix : String, origin, fn, principal : Str
   p.principal = principal;
   p.sourceArn = "";
   setFeature(p, "function", fn);
+  cachedLambdaPermissionByKey.put(key, p);
   return p;
 }

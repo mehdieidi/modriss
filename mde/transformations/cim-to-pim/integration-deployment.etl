@@ -7,32 +7,37 @@ import "lib/resolution.eol";
 operation attachOwnedElements() {
   for (cmd in CIMBEHAVIOR!Command.all) {
     var svc = serviceFor(cmd);
-    if (commandFunction(cmd).isDefined() and not svc.ownsFunctions.includes(commandFunction(cmd))) {
-      svc.ownsFunctions.add(commandFunction(cmd));
+    var fn = commandFunction(cmd);
+    if (fn.isDefined() and not svc.ownsFunctions.includes(fn)) {
+      svc.ownsFunctions.add(fn);
     }
   }
   for (q in CIMBEHAVIOR!Query.all) {
     var svc = serviceFor(q);
-    if (queryFunction(q).isDefined() and not svc.ownsFunctions.includes(queryFunction(q))) {
-      svc.ownsFunctions.add(queryFunction(q));
+    var fn = queryFunction(q);
+    if (fn.isDefined() and not svc.ownsFunctions.includes(fn)) {
+      svc.ownsFunctions.add(fn);
     }
   }
   for (ag in CIMDOMAIN!AggregateCandidate.all) {
     var svc = serviceFor(ag);
-    if (storeForAggregate(ag).isDefined() and not svc.ownsStores.includes(storeForAggregate(ag))) {
-      svc.ownsStores.add(storeForAggregate(ag));
+    var store = storeForAggregate(ag);
+    if (store.isDefined() and not svc.ownsStores.includes(store)) {
+      svc.ownsStores.add(store);
     }
   }
   for (bp in CIMPROCESS!BusinessProcess.all) {
     var svc = serviceFor(bp);
-    if (workflowFor(bp).isDefined() and not svc.ownsWorkflows.includes(workflowFor(bp))) {
-      svc.ownsWorkflows.add(workflowFor(bp));
+    var workflow = workflowFor(bp);
+    if (workflow.isDefined() and not svc.ownsWorkflows.includes(workflow)) {
+      svc.ownsWorkflows.add(workflow);
     }
   }
   for (es in CIMORG!ExternalSystem.all) {
     var svc = DEPLOY!ServerlessService.all.first();
-    if (adapterFor(es).isDefined() and not svc.ownsAdapters.includes(adapterFor(es))) {
-      svc.ownsAdapters.add(adapterFor(es));
+    var adapter = adapterFor(es);
+    if (adapter.isDefined() and not svc.ownsAdapters.includes(adapter)) {
+      svc.ownsAdapters.add(adapter);
     }
   }
   for (api in API!Api.all) {
@@ -315,7 +320,8 @@ operation createPolicyRoutingRules() {
 operation createExternalIntegrationFlows() {
   for (state in WORKFLOW!WorkflowState.all.select(s | s.invokesAdapter.isDefined())) {
     var flowId = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
-    if (INTEGRATION!ExternalIntegrationFlow.all.selectOne(existing | existing.id = flowId).isUndefined()) {
+    if (not cachedPimExternalFlowIds.includes(flowId)) {
+      cachedPimExternalFlowIds.add(flowId);
       var flow = new INTEGRATION!ExternalIntegrationFlow;
       flow.id = flowId;
       flow.name = state.name + " calls " + state.invokesAdapter.name;
@@ -465,7 +471,8 @@ operation createDataAccesses() {
     }
     if (cmd.targetAggregate.isDefined() and cmdFn.isDefined() and targetStore.isDefined()) {
       var daId = newId("dataaccess", cmdFn.id + "_" + targetStore.id + "_write");
-      if (DATA!DataAccess.all.selectOne(existing | existing.id = daId).isUndefined()) {
+      if (not cachedPimDataAccessIds.includes(daId)) {
+        cachedPimDataAccessIds.add(daId);
         var da = new DATA!DataAccess;
         da.id = daId;
         da.name = cmdFn.name + " writes " + targetStore.name;
@@ -487,7 +494,8 @@ operation createDataAccesses() {
         var readStore = storeForEntity(concept);
         if (readStore.isDefined() and cmdFn.isDefined()) {
           var dacId = newId("dataaccess", cmdFn.id + "_" + readStore.id + "_" + condition.id + "_precondition_read");
-          if (DATA!DataAccess.all.selectOne(existing | existing.id = dacId).isUndefined()) {
+          if (not cachedPimDataAccessIds.includes(dacId)) {
+            cachedPimDataAccessIds.add(dacId);
             var dac = new DATA!DataAccess;
             dac.id = dacId;
             dac.name = cmdFn.name + " checks " + readStore.name;
@@ -513,7 +521,8 @@ operation createDataAccesses() {
       var store = storeForEntity(entity);
       if (store.isDefined() and queryFn.isDefined()) {
         var daqId = newId("dataaccess", queryFn.id + "_" + store.id + "_read");
-        if (DATA!DataAccess.all.selectOne(existing | existing.id = daqId).isUndefined()) {
+        if (not cachedPimDataAccessIds.includes(daqId)) {
+          cachedPimDataAccessIds.add(daqId);
           var daq = new DATA!DataAccess;
           daq.id = daqId;
           daq.name = queryFn.name + " reads " + store.name;
@@ -539,7 +548,8 @@ operation createDataAccesses() {
         var guardedStore = storeForAggregate(guardCommand.targetAggregate);
         if (guardedStore.isDefined()) {
           var dapId = newId("dataaccess", fn.id + "_" + guardedStore.id + "_" + guardCommand.id + "_policy_read");
-          if (DATA!DataAccess.all.selectOne(existing | existing.id = dapId).isUndefined()) {
+          if (not cachedPimDataAccessIds.includes(dapId)) {
+            cachedPimDataAccessIds.add(dapId);
             var dap = new DATA!DataAccess;
             dap.id = dapId;
             dap.name = fn.name + " reads " + guardedStore.name;
@@ -568,28 +578,84 @@ operation schemaContainsItem(schema : CONTRACTS!Schema, item : CIMDOMAIN!Informa
   return schema.fields.exists(f | f.generatedFrom = item.id);
 }
 
+operation addIndexed(index, key, value) {
+  if (not hasText(key) or value.isUndefined()) {
+    return;
+  }
+  var values = index.get(key);
+  if (values.isUndefined()) {
+    values = Sequence{};
+    index.put(key, values);
+  }
+  if (not values.includes(value)) {
+    values.add(value);
+  }
+}
+
+operation indexedValues(index, key) {
+  var values = index.get(key);
+  if (values.isDefined()) {
+    return values;
+  }
+  return Sequence{};
+}
+
 operation attachDataProtectionPolicies() {
+  var policiesByClassificationId = new Map;
+  for (policy in POLICY!DataProtectionPolicy.all.select(p | hasText(p.generatedFrom))) {
+    addIndexed(policiesByClassificationId, policy.generatedFrom, policy);
+  }
+
+  var schemasByItemId = new Map;
+  for (schema in CONTRACTS!Schema.all) {
+    for (field in schema.fields.select(f | hasText(f.generatedFrom))) {
+      addIndexed(schemasByItemId, field.generatedFrom, schema);
+    }
+  }
+
+  var storesByItemId = new Map;
+  for (store in DATA!DataStore.all) {
+    for (dataModel in store.ownedDataModels) {
+      for (field in dataModel.storageFields.select(f | hasText(f.generatedFrom))) {
+        addIndexed(storesByItemId, field.generatedFrom, store);
+      }
+    }
+  }
+
+  var routesByItemId = new Map;
+  for (route in API!ApiRoute.all) {
+    if (route.requestSchema.isDefined()) {
+      for (field in route.requestSchema.fields.select(f | hasText(f.generatedFrom))) {
+        addIndexed(routesByItemId, field.generatedFrom, route);
+      }
+    }
+    if (route.responseSchema.isDefined()) {
+      for (field in route.responseSchema.fields.select(f | hasText(f.generatedFrom))) {
+        addIndexed(routesByItemId, field.generatedFrom, route);
+      }
+    }
+  }
+
+  var personalFlows = INTEGRATION!Flow.all.select(f | f.containsPersonalData);
   for (item in CIMDOMAIN!InformationItem.all.select(i | i.classification.isDefined())) {
-    var policies = POLICY!DataProtectionPolicy.all.select(p | p.generatedFrom = item.classification.id);
+    var policies = indexedValues(policiesByClassificationId, item.classification.id);
     for (policy in policies) {
-      var schemas = CONTRACTS!Schema.all.select(s | schemaContainsItem(s, item));
+      var schemas = indexedValues(schemasByItemId, item.id);
       policy.attachedTo.addAll(schemas);
 
-      for (store in DATA!DataStore.all.select(ds | ds.ownedDataModels.exists(dm | dm.storageFields.exists(df | df.generatedFrom = item.id)))) {
+      for (store in indexedValues(storesByItemId, item.id)) {
         if (not policy.attachedTo.includes(store)) policy.attachedTo.add(store);
         if (not store.dataProtectionPolicies.includes(policy)) store.dataProtectionPolicies.add(policy);
       }
 
-      for (route in API!ApiRoute.all.select(r |
-          (r.requestSchema.isDefined() and schemaContainsItem(r.requestSchema, item)) or
-          (r.responseSchema.isDefined() and schemaContainsItem(r.responseSchema, item)))) {
+      for (route in indexedValues(routesByItemId, item.id)) {
         if (not policy.attachedTo.includes(route)) policy.attachedTo.add(route);
         if (route.functionIntegration.isDefined() and not policy.attachedTo.includes(route.functionIntegration)) {
           policy.attachedTo.add(route.functionIntegration);
         }
       }
 
-      for (flow in INTEGRATION!Flow.all.select(f | f.containsPersonalData)) {
+      for (flow in personalFlows) {
         if (not policy.attachedTo.includes(flow)) policy.attachedTo.add(flow);
       }
     }
@@ -631,7 +697,7 @@ operation copySeedEventTypesToChannel(seed, channel : INTEGRATION!EventChannel) 
 
 operation ensureDeadLetterQueue(seed) {
   var queueId = newId("dlq", seed.id);
-  var queue = INTEGRATION!Queue.all.selectOne(q | q.id = queueId);
+  var queue = cachedPimQueueById.get(queueId);
   if (queue.isUndefined()) {
     queue = new INTEGRATION!Queue;
     queue.id = queueId;
@@ -652,6 +718,7 @@ operation ensureDeadLetterQueue(seed) {
     queue.generatedByTransformation = true;
     queue.manuallyMaintained = false;
     pimRoot().channels.add(queue);
+    cachedPimQueueById.put(queueId, queue);
   }
   copySeedEventTypesToChannel(seed, queue);
   if (queue.eventTypes.isEmpty()) {

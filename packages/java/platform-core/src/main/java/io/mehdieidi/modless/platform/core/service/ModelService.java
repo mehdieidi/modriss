@@ -2,6 +2,15 @@ package io.mehdieidi.modless.platform.core.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.mehdieidi.modless.mde.validation.EpsilonEvlValidator;
+import io.mehdieidi.modless.mde.validation.EvlConstraintKind;
+import io.mehdieidi.modless.mde.validation.EvlConstraintViolation;
+import io.mehdieidi.modless.mde.validation.EvlDiagnostic;
+import io.mehdieidi.modless.mde.validation.EvlValidationException;
+import io.mehdieidi.modless.mde.validation.EvlValidationReport;
+import io.mehdieidi.modless.mde.validation.EvlValidationRequest;
+import io.mehdieidi.modless.mde.validation.FileEvlModelConfiguration;
+import io.mehdieidi.modless.mde.validation.ValidationSeverity;
 import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
@@ -12,8 +21,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,6 +36,7 @@ public final class ModelService {
     private final ProjectService projectService;
     private final ModelingConfigService modelingConfig;
     private final XmiModelImportService xmiImportService;
+    private final EpsilonEvlValidator evlValidator;
 
     public ModelService(JsonFileStore store, ProjectService projectService) {
         this(store, projectService, new ModelingConfigService());
@@ -36,6 +48,7 @@ public final class ModelService {
         this.projectService = projectService;
         this.modelingConfig = modelingConfig;
         this.xmiImportService = new XmiModelImportService(store.objectMapper());
+        this.evlValidator = new EpsilonEvlValidator();
     }
 
     private static ValidationIssue issue(String severity, String constraint, String message) {
@@ -63,6 +76,18 @@ public final class ModelService {
         }
     }
 
+    public List<ModelSummary> listSummaries(UserRecord user, ModelLevel level, String projectId) {
+        return list(user, level, projectId).stream()
+                .map(model -> new ModelSummary(
+                        model.id(),
+                        model.projectId(),
+                        model.level(),
+                        model.name(),
+                        model.createdAt(),
+                        model.updatedAt()))
+                .toList();
+    }
+
     public ModelRecord get(UserRecord user, ModelLevel level, String id) {
         ModelRecord model = find(level, id);
         projectService.get(user, model.projectId());
@@ -86,9 +111,11 @@ public final class ModelService {
         ModelRecord existing = get(user, level, id);
         ProjectRecord project = projectService.get(user, existing.projectId());
         projectService.requireEditor(project, user.id());
+        JsonNode normalizedModel = normalizeModel(name, level, modelJson);
+        preserveServerManagedFields(existing.modelJson(), normalizedModel);
         ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
                 requireName(name, level),
-                normalizeModel(name, level, modelJson), existing.createdAt(), Instant.now());
+                normalizedModel, existing.createdAt(), Instant.now());
         store.write(modelPath(existing.projectId(), level, id), updated);
         return updated;
     }
@@ -109,12 +136,77 @@ public final class ModelService {
             return new ValidationResult(false,
                     List.of(issue("ERROR", "ModelRequired", "Model JSON is required.")));
         }
-        if (level != ModelLevel.CIM) {
-            return new ValidationResult(true, List.of());
+        List<ValidationIssue> issues = new ArrayList<>(validateWithEvl(level, modelJson));
+        if (level == ModelLevel.CIM) {
+            issues.addAll(validateCimModel(modelJson));
         }
-        List<ValidationIssue> issues = validateCimModel(modelJson);
         boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
         return new ValidationResult(valid, issues);
+    }
+
+    private List<ValidationIssue> validateWithEvl(ModelLevel level, JsonNode modelJson) {
+        Path workDir = null;
+        try {
+            Path repositoryRoot = findRepositoryRoot();
+            workDir = Files.createTempDirectory("modless-" + level.apiName() + "-validation-");
+            Path modelFile = workDir.resolve("model-" + level.apiName() + ".xmi");
+            Files.write(modelFile, xmiImportService.exportModel(level,
+                    hydrateSemanticReferences(modelJson)));
+            EvlValidationReport report = evlValidator.validate(new EvlValidationRequest(
+                    validationRoot(repositoryRoot, level),
+                    List.of(Path.of(validationEntryFile(level))),
+                    List.of(FileEvlModelConfiguration.readOnly(
+                            validationModelName(level),
+                            validationModelAliases(level),
+                            modelFile,
+                            List.of(metamodelFile(repositoryRoot, level)))),
+                    true));
+            return validationIssues(report);
+        } catch (EvlValidationException ex) {
+            return validationIssues(ex.getReport());
+        } catch (Exception ex) {
+            return List.of(issue("ERROR", "EvlValidationExecution",
+                    "EVL validation could not run: "
+                            + (ex.getMessage() == null ? ex.getClass().getSimpleName()
+                            : ex.getMessage())));
+        } finally {
+            if (workDir != null) {
+                deleteQuietly(workDir);
+            }
+        }
+    }
+
+    private List<ValidationIssue> validationIssues(EvlValidationReport report) {
+        if (report == null) {
+            return List.of(issue("ERROR", "EvlValidationExecution",
+                    "EVL validation failed without a report."));
+        }
+        List<ValidationIssue> issues = new ArrayList<>();
+        report.violations().forEach(violation -> issues.add(validationIssue(violation)));
+        report.diagnostics().forEach(diagnostic -> issues.add(validationIssue(diagnostic)));
+        return issues;
+    }
+
+    private ValidationIssue validationIssue(EvlConstraintViolation violation) {
+        String severity = violation.kind() == EvlConstraintKind.MANDATORY ? "ERROR" : "WARNING";
+        String elementId = violation.element().attributes().getOrDefault("id", null);
+        String elementName = violation.element().attributes().getOrDefault("name",
+                violation.element().summary());
+        String guidance = violation.fixes().isEmpty() ? ""
+                : "Suggested fix: " + violation.fixes().get(0).title();
+        return new ValidationIssue(severity, textOrDefault(violation.constraintName(),
+                "EvlConstraint"), violation.contextType(), violation.message(), guidance,
+                elementId, elementName);
+    }
+
+    private ValidationIssue validationIssue(EvlDiagnostic diagnostic) {
+        String severity = diagnostic.severity() == ValidationSeverity.ERROR ? "ERROR" : "WARNING";
+        String constraint = "EVL_" + diagnostic.phase().name();
+        String message = !diagnostic.reason().isBlank() ? diagnostic.reason()
+                : diagnostic.whatWentWrong();
+        String guidance = diagnostic.howToFix();
+        return new ValidationIssue(severity, constraint, "EVL_DIAGNOSTIC", message, guidance,
+                null, diagnostic.file() == null ? null : diagnostic.file().toString());
     }
 
     private List<ValidationIssue> validateCimModel(JsonNode modelJson) {
@@ -224,6 +316,65 @@ public final class ModelService {
         }
     }
 
+    private Path findRepositoryRoot() {
+        Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        while (current != null) {
+            if (Files.isRegularFile(
+                    current.resolve("mde/validation/cim/cim-semantic-validation.evl"))
+                    && Files.isRegularFile(current.resolve(
+                    "mde/validation/pim/pim-semantic-validation.evl"))
+                    && Files.isRegularFile(current.resolve(
+                    "mde/validation/psm/psm-semantic-validation.evl"))
+                    && Files.isRegularFile(current.resolve(
+                    "mde/metamodels/cim/cim-combined.ecore"))
+                    && Files.isRegularFile(current.resolve(
+                    "mde/metamodels/pim/pim-combined.ecore"))
+                    && Files.isRegularFile(current.resolve(
+                    "mde/metamodels/psm/psm-combined.ecore"))) {
+                return current;
+            }
+            current = current.getParent();
+        }
+        throw new PlatformException(500,
+                "EVL validation files were not found from the backend working directory.");
+    }
+
+    private Path validationRoot(Path repositoryRoot, ModelLevel level) {
+        return repositoryRoot.resolve("mde/validation/" + level.apiName());
+    }
+
+    private String validationEntryFile(ModelLevel level) {
+        return switch (level) {
+            case CIM -> "cim-semantic-validation.evl";
+            case PIM -> "pim-semantic-validation.evl";
+            case PSM -> "psm-semantic-validation.evl";
+        };
+    }
+
+    private String validationModelName(ModelLevel level) {
+        return switch (level) {
+            case CIM -> "CIM";
+            case PIM -> "PIM";
+            case PSM -> "AWSPSM";
+        };
+    }
+
+    private List<String> validationModelAliases(ModelLevel level) {
+        return switch (level) {
+            case CIM, PIM -> List.of("KERNEL");
+            case PSM -> List.of("AWSPSMENUMS", "KERNEL");
+        };
+    }
+
+    private Path metamodelFile(Path repositoryRoot, ModelLevel level) {
+        return repositoryRoot.resolve("mde/metamodels/" + level.apiName() + "/"
+                + switch (level) {
+            case CIM -> "cim-combined.ecore";
+            case PIM -> "pim-combined.ecore";
+            case PSM -> "psm-combined.ecore";
+        });
+    }
+
     private void validateRequiredFeatures(JsonNode element, JsonNode fallbackElement,
             Map<?, ?> definition,
             List<ValidationIssue> issues, String elementId, String elementName) {
@@ -267,6 +418,80 @@ public final class ModelService {
                 issues.add(new ValidationIssue("ERROR", constraint, element.path("eClass").asText(),
                         "Required CIM feature is missing: " + name, null, elementId, elementName));
             }
+        }
+    }
+
+    private JsonNode hydrateSemanticReferences(JsonNode modelJson) {
+        if (modelJson == null || !modelJson.isObject()) {
+            return modelJson;
+        }
+        ObjectNode copy = (ObjectNode) modelJson.deepCopy();
+        Map<String, JsonNode> graphRelationships = new LinkedHashMap<>();
+        JsonNode relationships = copy.path("graph").path("relationships");
+        if (relationships.isArray()) {
+            relationships.forEach(relationship -> {
+                String id = text(relationship, "id", "");
+                if (!id.isBlank()) {
+                    graphRelationships.put(id, relationship);
+                }
+            });
+        }
+        if (!graphRelationships.isEmpty()) {
+            hydrateSemanticReferences(copy, graphRelationships);
+        }
+        return copy;
+    }
+
+    private void hydrateSemanticReferences(JsonNode node,
+            Map<String, JsonNode> graphRelationships) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isObject()) {
+            ObjectNode object = (ObjectNode) node;
+            JsonNode graphRelationship = graphRelationships.get(text(object, "id", ""));
+            if (graphRelationship != null) {
+                copyReferenceIfMissing(object, graphRelationship, "source");
+                copyReferenceIfMissing(object, graphRelationship, "target");
+            }
+            object.fields().forEachRemaining(entry -> hydrateSemanticReferences(entry.getValue(),
+                    graphRelationships));
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(child -> hydrateSemanticReferences(child, graphRelationships));
+        }
+    }
+
+    private void copyReferenceIfMissing(ObjectNode target, JsonNode source, String fieldName) {
+        if (target.hasNonNull(fieldName) && !target.path(fieldName).asText("").isBlank()) {
+            return;
+        }
+        String value = text(source, fieldName, "");
+        if (!value.isBlank()) {
+            target.put(fieldName, value);
+        }
+    }
+
+    private String text(JsonNode node, String field, String fallback) {
+        return node == null ? fallback : node.path(field).asText(fallback);
+    }
+
+    private String textOrDefault(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private void deleteQuietly(Path path) {
+        try (var paths = Files.walk(path)) {
+            paths.sorted(java.util.Comparator.reverseOrder()).forEach(item -> {
+                try {
+                    Files.deleteIfExists(item);
+                } catch (Exception ignored) {
+                    // Temporary validation files should not mask validation results.
+                }
+            });
+        } catch (Exception ignored) {
+            // Best-effort cleanup.
         }
     }
 
@@ -344,6 +569,25 @@ public final class ModelService {
         return copy;
     }
 
+    private void preserveServerManagedFields(JsonNode existingModel, JsonNode updatedModel) {
+        if (!(updatedModel instanceof ObjectNode updatedObject) || existingModel == null) {
+            return;
+        }
+        preserveTextField(existingModel, updatedObject, "_sourceXmiBase64");
+    }
+
+    private void preserveTextField(JsonNode existingModel, ObjectNode updatedModel,
+            String fieldName) {
+        if (updatedModel.has(fieldName)) {
+            return;
+        }
+        JsonNode existingValue = existingModel.get(fieldName);
+        if (existingValue != null && existingValue.isTextual()
+                && !existingValue.asText("").isBlank()) {
+            updatedModel.set(fieldName, existingValue.deepCopy());
+        }
+    }
+
     private Path modelDir(String projectId, ModelLevel level) {
         return Path.of("projects", projectId, "models", level.apiName());
     }
@@ -372,6 +616,16 @@ public final class ModelService {
     }
 
     public record ImportResult(String name, JsonNode modelJson, List<ValidationIssue> issues) {
+
+    }
+
+    public record ModelSummary(
+            String id,
+            String projectId,
+            ModelLevel level,
+            String name,
+            Instant createdAt,
+            Instant updatedAt) {
 
     }
 }
