@@ -1233,8 +1233,8 @@ public final class ModelingConfigService {
                 ? configured.stream().map(String::valueOf).toList()
                 : defaultVisibleFields(type, attributes, references);
         element.put("notation", Map.of("tag", visual.getOrDefault("notation",
-                categoryByPackage.getOrDefault(modelClass.packageName(), "element")
-                        .toString().toLowerCase().replace(" and ", "-").replace(" ", "-")),
+                        categoryByPackage.getOrDefault(modelClass.packageName(), "element")
+                                .toString().toLowerCase().replace(" and ", "-").replace(" ", "-")),
                 "lineFields", visibleFields));
         element.put("visibleFields", visibleFields);
         element.put("attributes", attributes);

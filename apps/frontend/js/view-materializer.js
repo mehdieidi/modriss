@@ -132,7 +132,8 @@ export function isContainerElement(elementOrType, typeKey = state.activeType) {
   }
   try {
     const definition = modelingElementDefinition(typeKey, type);
-    if (!definition || definition.relationshipElement || definition.containedOnly
+    if (!definition || definition.relationshipElement
+        || definition.containedOnly
         || definition.supportOnly) {
       return false;
     }
