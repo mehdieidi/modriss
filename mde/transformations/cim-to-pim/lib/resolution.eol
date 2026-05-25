@@ -18,7 +18,7 @@ operation serviceFor(source) {
 }
 
 operation resolveServiceFor(source) {
-  if (DEPLOY!ServerlessService.all.isEmpty() and PIM!PIMModel.all.notEmpty()) {
+  if (pimRoot().services.isEmpty() and PIM!PIMModel.all.notEmpty()) {
     var c = cimRoot();
     var s = new DEPLOY!ServerlessService;
     s.id = "svc_default_review_required";
@@ -32,7 +32,7 @@ operation resolveServiceFor(source) {
     addTrace(c, s, "TR-010", KERNEL!TraceLinkType#DERIVES_FROM, "LOW");
     manualDecision("TR-010", "Define service boundaries using bounded contexts or business capabilities.", KERNEL!Severity#BLOCKER, true, Sequence{c, s});
   }
-  if (DEPLOY!ServerlessService.all.notEmpty()) {
+  if (pimRoot().services.notEmpty()) {
     if (source.isKindOf(CIMORG!BoundedContextCandidate)) {
       var svc = cachedEquivalent(source, "BoundedContext2Service");
       if (svc.isDefined()) return svc;
@@ -40,7 +40,10 @@ operation resolveServiceFor(source) {
     if (source.isKindOf(CIMORG!BusinessCapability)) {
       var capSvc = cachedEquivalent(source, "Capability2Service");
       if (capSvc.isDefined()) return capSvc;
-      var context = CIMORG!BoundedContextCandidate.all.selectOne(bc | bc.capabilities.includes(source));
+      var context = cachedContextForCapability(source);
+      if (context.isUndefined()) {
+        context = CIMORG!BoundedContextCandidate.all.selectOne(bc | bc.capabilities.includes(source));
+      }
       if (context.isDefined()) return serviceFor(context);
     }
     if (source.isKindOf(CIMBEHAVIOR!Command) and source.targetCapability.isDefined()) {
@@ -67,12 +70,15 @@ operation resolveServiceFor(source) {
     if (source.isKindOf(CIMPROCESS!BusinessProcess) and source.owningCapability.isDefined()) {
       return serviceFor(source.owningCapability);
     }
-    var ownerContext = CIMORG!BoundedContextCandidate.all.selectOne(bc |
-      bc.commands.includes(source) or bc.queries.includes(source) or bc.events.includes(source) or bc.entities.includes(source) or bc.policies.includes(source));
+    var ownerContext = cachedOwnerContextFor(source);
+    if (ownerContext.isUndefined()) {
+      ownerContext = CIMORG!BoundedContextCandidate.all.selectOne(bc |
+        bc.commands.includes(source) or bc.queries.includes(source) or bc.events.includes(source) or bc.entities.includes(source) or bc.policies.includes(source));
+    }
     if (ownerContext.isDefined()) {
       return serviceFor(ownerContext);
     }
-    return DEPLOY!ServerlessService.all.first();
+    return pimRoot().services.first();
   }
   return null;
 }

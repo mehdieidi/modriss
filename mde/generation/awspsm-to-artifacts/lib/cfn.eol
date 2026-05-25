@@ -1292,8 +1292,8 @@ operation AWSPSMAPI!ApiGatewayIntegration cfnTypeText(emitCtx : Map) : String {
 
 operation AWSPSMAPI!ApiGatewayIntegration emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
-  if (AWSPSMAPI!ApiGatewayRoute.all.exists(routeObj | routeObj.integration = self)) {
-    var routeObj = AWSPSMAPI!ApiGatewayRoute.all.selectOne(routeObj | routeObj.integration = self);
+  var routeObj = AWSPSMAPI!ApiGatewayRoute.all.selectOne(routeObj | routeObj.integration = self);
+  if (routeObj.isDefined()) {
     outText = outText + spaces(6) + "ApiId: !Ref " + routeObj.api.cfnLogicalId() + "\n";
   }
   outText = outText + emitYamlScalarProperty("IntegrationType", self.integrationType.asString(), 6);

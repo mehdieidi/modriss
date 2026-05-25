@@ -35,10 +35,10 @@ context CIM!DomainEntity {
   }
 
   constraint LifecycleStatesHaveSingleInitialState {
-    guard : self.lifecycleStates.size() > 0
+    guard : self.lifecycleStates.notEmpty()
     check :
-      (self.lifecycleStates.select(stateItem | stateItem.initial = true).size() = 1) and
-      (self.lifecycleStates.select(stateItem | stateItem.terminal = true).size() >= 1)
+      self.lifecycleStates.one(stateItem | stateItem.initial = true) and
+      self.lifecycleStates.exists(stateItem | stateItem.terminal = true)
     message :
       "Error [CIM-ENTITY-004] DomainEntity '" + self.labelText() + "' has lifecycle states but does not have exactly one initial state and at least one terminal state. " +
       "Suggestion: mark one LifecycleStateDefinition as initial=true and at least one as terminal=true."
@@ -55,7 +55,7 @@ context CIM!ValueObject {
   }
 
   constraint ValueObjectDefinesEquality {
-    check : self.equalityAttributes.size() > 0
+    check : self.equalityAttributes.notEmpty()
     message :
       "Error [CIM-VO-002] ValueObject '" + self.labelText() + "' has no equalityAttributes. " +
       "Suggestion: select the attributes that determine value equality."
@@ -151,7 +151,7 @@ context CIM!BusinessInvariant {
   }
 
   critique BusinessInvariantConstrainsConcepts {
-    check : self.constrainedConcepts.size() > 0
+    check : self.constrainedConcepts.notEmpty()
     message :
       "Warning [CIM-INV-002] BusinessInvariant '" + self.labelText() + "' is not linked to constrainedConcepts. " +
       "Suggestion: link the entity, aggregate, value object, or relationship that the invariant constrains."
@@ -185,7 +185,7 @@ context CIM!InformationItem {
 
   constraint PersonalOrSensitiveInformationHasPrivacyConstraint {
     guard : self.requiresPrivacyControls()
-    check : self.privacyConstraints.size() > 0
+    check : self.privacyConstraints.notEmpty()
     message :
       "Error [CIM-INFO-004] InformationItem '" + self.labelText() + "' is personal, sensitive, financial, health, or regulated data but has no PrivacyConstraint. " +
       "Suggestion: add a PrivacyConstraint covering purpose, legalBasis, retention, minimization, and data subject obligations."

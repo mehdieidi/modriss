@@ -1,8 +1,8 @@
 operation defaultStack() {
-  if (AWSPSMCORE!SamStack.all.notEmpty()) {
-    return AWSPSMCORE!SamStack.all.first();
+  if (cachedDefaultStack.isUndefined() and AWSPSMCORE!SamStack.all.notEmpty()) {
+    cachedDefaultStack = AWSPSMCORE!SamStack.all.first();
   }
-  return null;
+  return cachedDefaultStack;
 }
 
 operation placeUncontainedAwsResources() {

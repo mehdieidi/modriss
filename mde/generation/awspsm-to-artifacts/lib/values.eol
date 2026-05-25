@@ -1,11 +1,7 @@
 import "naming.eol";
 
 operation spaces(indentCount : Integer) : String {
-  var text = "";
-  for (idx in Sequence{1..indentCount}) {
-    text = text + " ";
-  }
-  return text;
+  return "".pad(indentCount, " ", true);
 }
 
 operation Any jsonEscape() : String {
@@ -186,6 +182,7 @@ operation arnForResource(resObj) : String {
   return "!GetAtt " + resObj.cfnLogicalId() + ".Arn";
 }
 
+@cached
 operation AWSPSMCORE!ValueExpression cfnInlineYaml() : String {
   var kindText = self.sourceKind.asString();
   if (kindText = "PLAINTEXT") {

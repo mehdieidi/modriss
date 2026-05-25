@@ -60,7 +60,7 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     if (stateMachineObj.aslDocument.isUndefined() and not stateMachineObj.definitionUri.isPresent() and not stateMachineObj.definitionString.isPresent()) {
       issueSeq.add(self.issueTuple("STATE_MACHINE_ASL_MISSING", "BLOCKER", "State machine has no ASL document or definition: " + stateMachineObj.stableKey(), stateMachineObj, profileMap.get("productionMode") = true));
     }
-    if (stateMachineObj.aslDocument.isDefined() and stateMachineObj.aslDocument.states.select(stateObj | stateObj.stateName = stateMachineObj.aslDocument.startAt).isEmpty()) {
+    if (stateMachineObj.aslDocument.isDefined() and stateMachineObj.aslDocument.states.none(stateObj | stateObj.stateName = stateMachineObj.aslDocument.startAt)) {
       issueSeq.add(self.issueTuple("STATE_MACHINE_START_AT_INVALID", "BLOCKER", "ASL StartAt does not reference a modeled state: " + stateMachineObj.stableKey(), stateMachineObj, true));
     }
   }

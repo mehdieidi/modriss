@@ -197,10 +197,10 @@ operation createDataField(item : CIMDOMAIN!InformationItem, identityItem, ownerS
 }
 
 operation addCorrelationFields(schema : CONTRACTS!Schema) {
-  if (schema.fields.select(f | f.name = "correlationId").isEmpty()) {
+  if (schema.fields.none(f | f.name = "correlationId")) {
     schema.fields.add(fieldFor(schema.id, "correlationId", PIMTYPES!FieldType#STRING, true));
   }
-  if (schema.fields.select(f | f.name = "causationId").isEmpty()) {
+  if (schema.fields.none(f | f.name = "causationId")) {
     schema.fields.add(fieldFor(schema.id, "causationId", PIMTYPES!FieldType#STRING, false));
   }
 }

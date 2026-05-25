@@ -651,7 +651,7 @@ operation createApiKeyAndUsagePlan(api, g) {
   key.apiKeyName = physicalName(api, "api-key", defaultStage());
   key.enabled = true;
   key.descriptionText = "Generated API key placeholder for " + api.name;
-  var restStages = AWSPSMAPI!RestApiStage.all.select(stage | stage.api = g);
+  var restStages = g.stages.select(stage | stage.isKindOf(AWSPSMAPI!RestApiStage));
   for (s in restStages) {
     key.stages.add(s);
   }

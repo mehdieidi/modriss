@@ -44,7 +44,7 @@ context PIM!PIMModel {
 context KERNEL!ModelElement {
 
   constraint UniqueModelElementId {
-    check : self.`id`.hasText() and KERNEL!ModelElement.all.select(elementItem | elementItem.`id` = self.`id`).size() = 1
+    check : self.`id`.hasText() and KERNEL!ModelElement.all.one(elementItem | elementItem.`id` = self.`id`)
     message : "[PIM-NAME-001] Element id '" + self.`id`.ifUndefined("<missing>") + "' is missing or duplicated. Fix: assign a globally unique stable id to '" + self.displayName() + "'."
   }
 

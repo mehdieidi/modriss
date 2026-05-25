@@ -13,6 +13,7 @@ operation Any isFalseValue() : Boolean {
   return self.isDefined() and (self = false);
 }
 
+@cached
 operation currentPsmModel() : Any {
   if (AWSPSM!AwsPsmModel.all.isEmpty()) {
     return null;
@@ -20,12 +21,14 @@ operation currentPsmModel() : Any {
   return AWSPSM!AwsPsmModel.all.first();
 }
 
+@cached
 operation productionStageExists() : Boolean {
   return AWSPSM!AwsStage.all.exists(stageItem |
     stageItem.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD);
 }
 
 
+@cached
 operation AWSPSM!AwsPsmModel stackResourceSet() : Set {
   var resourceSet : Set = Set{};
   for (stackItem in self.stacks) {
@@ -44,6 +47,7 @@ operation AWSPSM!AwsResource resourceLabel() : String {
   return self.eClass().name;
 }
 
+@cached
 operation AWSPSM!AwsResource deployedToProductionStage() : Boolean {
   if (self.stack.isUndefined()) {
     return false;
@@ -53,6 +57,7 @@ operation AWSPSM!AwsResource deployedToProductionStage() : Boolean {
     stageItem.deploysStacks.includes(self.stack));
 }
 
+@cached
 operation AWSPSM!AwsResource isProductionScoped() : Boolean {
   return (self.productionCritical = true) or self.deployedToProductionStage();
 }
@@ -61,16 +66,18 @@ operation AWSPSM!AwsResource hasTagKey(keyText : String) : Boolean {
   return self.tags.exists(tagItem | tagItem.key = keyText);
 }
 
+@cached
 operation AWSPSM!AwsResource duplicateTagKeys() : Set {
   var duplicates : Set = Set{};
   for (tagItem in self.tags) {
-    if (self.tags.select(otherTag | otherTag.key = tagItem.key).size() > 1) {
+    if (self.tags.atLeastNMatch(otherTag | otherTag.key = tagItem.key, 2)) {
       duplicates.add(tagItem.key);
     }
   }
   return duplicates;
 }
 
+@cached
 operation activeTaggingPolicy() : Any {
   var modelRoot = currentPsmModel();
   if (modelRoot.isUndefined()) {
@@ -79,6 +86,7 @@ operation activeTaggingPolicy() : Any {
   return modelRoot.taggingPolicy;
 }
 
+@cached
 operation requiredTagKeys() : Sequence {
   var policyItem = activeTaggingPolicy();
   var keys : Sequence = Sequence{};
@@ -107,6 +115,7 @@ operation requiredTagKeys() : Sequence {
   return keys.asSet().asSequence();
 }
 
+@cached
 operation AWSPSM!AwsResource missingRequiredTagKeys() : Sequence {
   var missingKeys : Sequence = Sequence{};
   for (requiredKey in requiredTagKeys()) {
@@ -149,6 +158,7 @@ operation AWSPSM!IamStatement hasLeastPrivilegeJustification() : Boolean {
   return self.wildcardJustification.hasText() or self.conditions.notEmpty();
 }
 
+@cached
 operation AWSPSM!S3Bucket blocksAllPublicAccess() : Boolean {
   if (self.publicAccessMode = AWSPSMENUMS!S3BlockPublicAccessMode#STRICT_BLOCK_ALL) {
     return true;
@@ -162,6 +172,7 @@ operation AWSPSM!S3Bucket blocksAllPublicAccess() : Boolean {
     (self.publicAccessBlock.restrictPublicBuckets = true);
 }
 
+@cached
 operation AWSPSM!ApiGatewayIntegration targetCount() : Integer {
   var count : Integer = 0;
   if (self.lambdaTarget.isDefined()) {
@@ -176,6 +187,7 @@ operation AWSPSM!ApiGatewayIntegration targetCount() : Integer {
   return count;
 }
 
+@cached
 operation AWSPSM!StepFunctionStateMachine definitionCount() : Integer {
   var count : Integer = 0;
   if (self.definitionUri.hasText()) {
@@ -194,13 +206,13 @@ operation AWSPSM!AslDocument hasStateNamed(stateNameText : String) : Boolean {
   return self.states.exists(stateItem | stateItem.stateName = stateNameText);
 }
 
+@cached
 operation AWSPSM!AslDocument duplicateStateNames() : Set {
   var duplicates : Set = Set{};
   for (stateItem in self.states) {
-    if (self.states.select(otherState | otherState.stateName = stateItem.stateName).size() > 1) {
+    if (self.states.atLeastNMatch(otherState | otherState.stateName = stateItem.stateName, 2)) {
       duplicates.add(stateItem.stateName);
     }
   }
   return duplicates;
 }
-

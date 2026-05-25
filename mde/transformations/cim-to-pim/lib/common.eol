@@ -2,6 +2,8 @@ operation initialiseCimToPimCaches() {
   cachedCimRoot = CIM!CIMModel.all.first();
   cachedPimRoot = null;
   cachedCimAggregateByEntityId = new Map;
+  cachedCimContextByCapabilityId = new Map;
+  cachedCimOwnerContextByElementId = new Map;
   cachedCimServiceBySourceId = new Map;
   cachedCimEquivalentByRule = new Map;
   cachedCimPolicyTargetsBySourceId = new Map;
@@ -21,6 +23,16 @@ operation initialiseCimToPimCaches() {
     for (member in ag.members) {
       cacheAggregateEntity(member, ag);
     }
+  }
+  for (context in cachedCimRoot.boundedContexts) {
+    for (capability in context.capabilities) {
+      cacheContextByCapability(capability, context);
+    }
+    cacheContextElements(context.commands, context);
+    cacheContextElements(context.queries, context);
+    cacheContextElements(context.events, context);
+    cacheContextElements(context.entities, context);
+    cacheContextElements(context.policies, context);
   }
 }
 
@@ -48,8 +60,32 @@ operation cacheAggregateEntity(entity, aggregate) {
   }
 }
 
+operation cacheContextByCapability(capability, context) {
+  var key = cacheKeyFor(capability);
+  if (hasText(key)) {
+    cachedCimContextByCapabilityId.put(key, context);
+  }
+}
+
+operation cacheContextElements(elements, context) {
+  for (element in elements) {
+    var key = cacheKeyFor(element);
+    if (hasText(key)) {
+      cachedCimOwnerContextByElementId.put(key, context);
+    }
+  }
+}
+
 operation cachedAggregateForEntity(entity) {
   return cachedCimAggregateByEntityId.get(cacheKeyFor(entity));
+}
+
+operation cachedContextForCapability(capability) {
+  return cachedCimContextByCapabilityId.get(cacheKeyFor(capability));
+}
+
+operation cachedOwnerContextFor(element) {
+  return cachedCimOwnerContextByElementId.get(cacheKeyFor(element));
 }
 
 operation cachedEquivalent(source, ruleName : String) {

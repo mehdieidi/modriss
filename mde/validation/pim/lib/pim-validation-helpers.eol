@@ -35,6 +35,7 @@ operation Any containsProviderToken() : Boolean {
   return self.asString().matches("(?i)(Lambda|DynamoDB|SQS|SNS|EventBridge|CloudWatch|XRay|IAM|Cognito|S3|AWS|ARN|SAM|CloudFormation|ApiGateway|Azure|GCP|PubSub|CloudRun|CloudFunctions|ServiceBus|CosmosDB|BigQuery)");
 }
 
+@cached
 operation PIM!Function hasAnyIncomingBinding() : Boolean {
   return self.triggers.notEmpty()
     or PIM!ApiRoute.all.exists(routeItem |
@@ -47,6 +48,7 @@ operation PIM!Function hasAnyIncomingBinding() : Boolean {
       eventItem.producedBy.includes(self) or eventItem.consumedBy.includes(self));
 }
 
+@cached
 operation PIM!Function changesStateOrEmitsEvents() : Boolean {
   return self.writesState.isTrue()
     or self.publishesEvents.isTrue()
@@ -54,6 +56,7 @@ operation PIM!Function changesStateOrEmitsEvents() : Boolean {
     or self.publishes.notEmpty();
 }
 
+@cached
 operation PIM!Function needsIdempotencyPolicy() : Boolean {
   return self.requiresIdempotency.isTrue()
     or self.changesStateOrEmitsEvents()
@@ -71,29 +74,41 @@ operation PIM!Schema hasFieldNamed(fieldName : String) : Boolean {
   return fieldName.hasText() and self.fields.exists(fieldItem | fieldItem.name = fieldName);
 }
 
+@cached
 operation PIM!Schema hasClassifiedSensitiveFields() : Boolean {
-  return self.fields.select(fieldItem |
-    fieldItem.personalData.isTrue() or fieldItem.sensitiveData.isTrue() or fieldItem.secretValue.isTrue()
-  ).forAll(fieldItem | fieldItem.classification.hasText());
+  return self.fields.forAll(fieldItem |
+    not (fieldItem.personalData.isTrue() or fieldItem.sensitiveData.isTrue() or fieldItem.secretValue.isTrue())
+    or fieldItem.classification.hasText());
 }
 
+@cached
 operation PIM!EventType carriesPersonalData() : Boolean {
   return self.containsPersonalData.isTrue()
     or self.schema.fields.exists(fieldItem | fieldItem.personalData.isTrue());
 }
 
+@cached
 operation PIM!EventChannel carriesPersonalData() : Boolean {
   return self.eventTypes.exists(eventItem | eventItem.carriesPersonalData());
 }
 
+@cached
 operation PIM!WorkflowState outgoingTransitions() : Collection {
+  if (self.workflow.isDefined()) {
+    return self.workflow.transitions.select(transitionItem | transitionItem.source = self);
+  }
   return PIM!WorkflowTransition.all.select(transitionItem | transitionItem.source = self);
 }
 
+@cached
 operation PIM!WorkflowState incomingTransitions() : Collection {
+  if (self.workflow.isDefined()) {
+    return self.workflow.transitions.select(transitionItem | transitionItem.target = self);
+  }
   return PIM!WorkflowTransition.all.select(transitionItem | transitionItem.target = self);
 }
 
+@cached
 operation PIM!WorkflowState actionCount() : Integer {
   var total = 0;
   if (self.invokesFunction.isDefined()) { total = total + 1; }
@@ -102,6 +117,7 @@ operation PIM!WorkflowState actionCount() : Integer {
   return total;
 }
 
+@cached
 operation PIM!DataStore dataStoreContainsSensitiveData() : Boolean {
   return self.containsPersonalData.isTrue()
     or self.ownedDataModels.exists(modelItem |
@@ -109,10 +125,12 @@ operation PIM!DataStore dataStoreContainsSensitiveData() : Boolean {
     );
 }
 
+@cached
 operation PIM!ObjectStore objectStoreContainsSensitiveData() : Boolean {
   return self.containsPersonalData.isTrue();
 }
 
+@cached
 operation PIM!StorageElement storageContainsSensitiveData() : Boolean {
   if (self.isKindOf(PIM!DataStore)) {
     return self.dataStoreContainsSensitiveData();
@@ -123,6 +141,7 @@ operation PIM!StorageElement storageContainsSensitiveData() : Boolean {
   return self.containsPersonalData.isTrue();
 }
 
+@cached
 operation PIM!AccessPattern hasQueryShape() : Boolean {
   return self.`operation`.hasText()
     or self.queryBy.hasText()
@@ -130,6 +149,7 @@ operation PIM!AccessPattern hasQueryShape() : Boolean {
     or self.filterBy.hasText();
 }
 
+@cached
 operation PIM!ImplementationProfile packageManagerFitsLanguage() : Boolean {
   if (self.primaryLanguage.enumIn(Sequence{"TYPESCRIPT", "JAVASCRIPT"})) {
     return self.packageManager.enumIn(Sequence{"NPM", "PNPM", "YARN"});
@@ -155,5 +175,4 @@ operation PIM!ImplementationProfile packageManagerFitsLanguage() : Boolean {
 /***********************
  * Root and naming rules
  ***********************/
-
 

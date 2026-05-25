@@ -28,7 +28,7 @@ context PIM!WorkflowState {
 
   constraint ChoiceHasAtLeastTwoTransitions {
     guard : self.stateKind.enumIs("CHOICE")
-    check : self.outgoingTransitions().size() >= 2
+    check : self.outgoingTransitions().atLeastNMatch(transitionItem | true, 2)
     message : "[PIM-WF-005] Choice state '" + self.displayName() + "' has fewer than two outgoing transitions. Fix: add at least two transitions with conditions/default handling."
   }
 

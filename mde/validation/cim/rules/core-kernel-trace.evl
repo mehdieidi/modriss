@@ -4,9 +4,9 @@ context CIM!CIMModel {
 
   constraint CIMModelHasSemanticCore {
     check :
-      (self.goals.size() >= 1) and
-      (self.actors.size() >= 1) and
-      (self.capabilities.size() >= 1)
+      self.goals.notEmpty() and
+      self.actors.notEmpty() and
+      self.capabilities.notEmpty()
     message :
       "Error [CIM-CORE-001] The CIM model must contain at least one business goal, one actor, and one business capability. " +
       "Suggestion: add the minimal business core before semantic validation: a goal that explains value, an actor that initiates or observes work, and a capability that realizes the goal."

@@ -4,6 +4,9 @@ import "lib/trace-readiness.eol";
 import "lib/pim-builders.eol";
 
 operation capabilityInBoundedContext(cap : CIMORG!BusinessCapability) {
+  if (cachedContextForCapability(cap).isDefined()) {
+    return true;
+  }
   return CIMORG!BoundedContextCandidate.all.exists(bc | bc.capabilities.includes(cap));
 }
 

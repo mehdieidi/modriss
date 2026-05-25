@@ -3,7 +3,7 @@ import "../lib/cim-validation-helpers.eol";
 context CIM!Command {
 
   constraint CommandMustCauseBusinessOutcome {
-    check : (self.expectedEvents.size() > 0) or (self.rejectionEvents.size() > 0)
+    check : self.expectedEvents.notEmpty() or self.rejectionEvents.notEmpty()
     message :
       "Error [CIM-CMD-001] Command '" + self.labelText() + "' has no expectedEvents or rejectionEvents. " +
       "Suggestion: link the business facts that occur when the command succeeds or is rejected."
@@ -41,7 +41,7 @@ context CIM!Command {
   }
 
   critique CommandHasPreconditionsOrErrors {
-    check : (self.preconditions.size() > 0) or (self.possibleErrors.size() > 0)
+    check : self.preconditions.notEmpty() or self.possibleErrors.notEmpty()
     message :
       "Warning [CIM-CMD-006] Command '" + self.labelText() + "' has no preconditions or possibleErrors. " +
       "Suggestion: document business conditions and rejection/error cases so command semantics are complete."
@@ -51,7 +51,7 @@ context CIM!Command {
 context CIM!Query {
 
   constraint QueryMustHaveOutput {
-    check : self.output.size() >= 1
+    check : self.output.notEmpty()
     message :
       "Error [CIM-QRY-001] Query '" + self.labelText() + "' has no output. " +
       "Suggestion: link at least one InformationItem that the query returns."
@@ -68,7 +68,7 @@ context CIM!Query {
   critique QueryPersonalFlagMatchesOutput {
     check :
       (self.containsPersonalData = self.outputsPersonalData()) or
-      ((self.containsPersonalData = true) and (self.output.size() = 0))
+      ((self.containsPersonalData = true) and self.output.isEmpty())
     message :
       "Warning [CIM-QRY-003] Query '" + self.labelText() + "' has containsPersonalData inconsistent with output classifications. " +
       "Suggestion: update containsPersonalData or classify the output InformationItems correctly."
@@ -123,10 +123,10 @@ context CIM!BusinessEvent {
 
   critique EventHasProducerOrConsumer {
     check :
-      (self.expectedByCommands.size() > 0) or (self.rejectedByCommands.size() > 0) or
-      (self.causedByPolicies.size() > 0) or (self.causedByExternalSystems.size() > 0) or
-      (self.consumedByPolicies.size() > 0) or (self.consumedByProcesses.size() > 0) or
-      (self.consumedByExternalSystems.size() > 0)
+      self.expectedByCommands.notEmpty() or self.rejectedByCommands.notEmpty() or
+      self.causedByPolicies.notEmpty() or self.causedByExternalSystems.notEmpty() or
+      self.consumedByPolicies.notEmpty() or self.consumedByProcesses.notEmpty() or
+      self.consumedByExternalSystems.notEmpty()
     message :
       "Warning [CIM-EVT-004] BusinessEvent '" + self.labelText() + "' has no producer or consumer. " +
       "Suggestion: connect it to a command, policy, process, or external system that produces or consumes it."
@@ -185,7 +185,7 @@ context CIM!Condition {
   }
 
   critique ConditionReferencesInformationOrConcepts {
-    check : (self.referencedInformation.size() > 0) or (self.referencedConcepts.size() > 0)
+    check : self.referencedInformation.notEmpty() or self.referencedConcepts.notEmpty()
     message :
       "Warning [CIM-COND-003] Condition '" + self.labelText() + "' is not linked to referencedInformation or referencedConcepts. " +
       "Suggestion: link the data or concepts used by the condition."

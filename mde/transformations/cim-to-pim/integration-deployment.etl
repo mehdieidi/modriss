@@ -34,16 +34,16 @@ operation attachOwnedElements() {
     }
   }
   for (es in CIMORG!ExternalSystem.all) {
-    var svc = DEPLOY!ServerlessService.all.first();
+    var svc = pimRoot().services.first();
     var adapter = adapterFor(es);
     if (adapter.isDefined() and not svc.ownsAdapters.includes(adapter)) {
       svc.ownsAdapters.add(adapter);
     }
   }
   for (api in API!Api.all) {
-    var owner = DEPLOY!ServerlessService.all.selectOne(s | s.ownsApis.includes(api));
+    var owner = pimRoot().services.selectOne(s | s.ownsApis.includes(api));
     if (owner.isUndefined()) {
-      DEPLOY!ServerlessService.all.first().ownsApis.add(api);
+      pimRoot().services.first().ownsApis.add(api);
     }
   }
 }
@@ -913,7 +913,7 @@ post LinkAndDerive {
 }
 
 post DeploymentAndConfiguration {
-  for (s in DEPLOY!ServerlessService.all) {
+  for (s in pimRoot().services) {
     var du = new DEPLOY!DeploymentUnit;
     du.id = idFor("du", s);
     du.name = s.name + " Deployment Unit";
@@ -1006,7 +1006,7 @@ post ValidationAndReadinessClosure {
     fn.contract = contract;
     fn.lifecycleStatus = KERNEL!LifecycleStatus#INCOMPLETE;
     pimRoot().functions.add(fn);
-    DEPLOY!ServerlessService.all.first().ownsFunctions.add(fn);
+    pimRoot().services.first().ownsFunctions.add(fn);
     manualDecision("TR-170", "Add at least one executable command, query, process, policy, or event consumer to complete the PIM.", KERNEL!Severity#BLOCKER, true, Sequence{fn});
   }
 

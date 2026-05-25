@@ -4,8 +4,8 @@ import "../lib/psm-validation-helpers.eol";
 
 context AWSPSM!DynamoDbTable {
   constraint DynamoTableHasValidPrimaryKeySchema {
-    check : (self.keySchema.select(keyItem | keyItem.keyType = AWSPSMENUMS!DynamoDbKeyType#HASH).size() = 1) and
-      (self.keySchema.select(keyItem | keyItem.keyType = AWSPSMENUMS!DynamoDbKeyType#RANGE).size() <= 1)
+    check : self.keySchema.one(keyItem | keyItem.keyType = AWSPSMENUMS!DynamoDbKeyType#HASH) and
+      self.keySchema.atMostNMatch(keyItem | keyItem.keyType = AWSPSMENUMS!DynamoDbKeyType#RANGE, 1)
     message : 'DynamoDB table ' + self.resourceLabel() + ' must have exactly one HASH key and at most one RANGE key. Fix: adjust keySchema accordingly.'
   }
 

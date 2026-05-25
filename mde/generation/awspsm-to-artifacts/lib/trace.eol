@@ -27,6 +27,7 @@ operation AWSPSM!AwsPsmModel defaultEmitContext() : Map {
   return profileMap;
 }
 
+@cached
 operation AWSPSM!AwsPsmModel defaultStageName() : String {
   if (self.stages.notEmpty()) {
     return self.stages.first().stageName;
@@ -34,20 +35,13 @@ operation AWSPSM!AwsPsmModel defaultStageName() : String {
   return "dev";
 }
 
+@cached
 operation AWSPSM!AwsPsmModel allModeledResources() : Sequence {
-  var resSeq = new Sequence;
+  var resSeq = OrderedSet{};
   for (stackObj in self.stacks) {
-    for (resObj in stackObj.resources) {
-      if (not resSeq.includes(resObj)) {
-        resSeq.add(resObj);
-      }
-    }
+    resSeq.addAll(stackObj.resources);
   }
-  for (resObj in self.allResources) {
-    if (not resSeq.includes(resObj)) {
-      resSeq.add(resObj);
-    }
-  }
+  resSeq.addAll(self.allResources);
   return resSeq.sortBy(resObj | resObj.cfnLogicalId());
 }
 

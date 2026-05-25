@@ -10,7 +10,7 @@ context CIM!NonFunctionalRequirement {
   }
 
   constraint NFRConstrainsElements {
-    check : self.constrainedElements.size() > 0
+    check : self.constrainedElements.notEmpty()
     message :
       "Error [CIM-NFR-002] NonFunctionalRequirement '" + self.labelText() + "' does not constrain any elements. " +
       "Suggestion: link the commands, queries, capabilities, information items, processes, or other elements affected by this NFR."
@@ -18,7 +18,7 @@ context CIM!NonFunctionalRequirement {
 
   critique ProductionBlockingNFRHasScenario {
     guard : self.productionBlocking = true
-    check : self.scenarios.size() > 0
+    check : self.scenarios.notEmpty()
     message :
       "Warning [CIM-NFR-003] Production-blocking NFR '" + self.labelText() + "' has no QualityScenario. " +
       "Suggestion: add at least one scenario describing source, stimulus, environment, artifact, response, and responseMeasure."
@@ -41,10 +41,10 @@ context CIM!SecurityConstraint {
 
   constraint SecurityConstraintMustConstrainBehaviorOrInformation {
     check :
-      (self.constrainedActors.size() > 0) or
-      (self.constrainedCommands.size() > 0) or
-      (self.constrainedQueries.size() > 0) or
-      (self.constrainedInformation.size() > 0)
+      self.constrainedActors.notEmpty() or
+      self.constrainedCommands.notEmpty() or
+      self.constrainedQueries.notEmpty() or
+      self.constrainedInformation.notEmpty()
     message :
       "Error [CIM-SEC-001] SecurityConstraint '" + self.labelText() + "' has no constrained actors, commands, queries, or information. " +
       "Suggestion: link the business elements affected by the security rule."
@@ -74,7 +74,7 @@ context CIM!PrivacyConstraint {
 
   constraint PrivacyNeedsPurposeAndLegalBasis {
     check :
-      (self.dataItems.size() = 0) or
+      self.dataItems.isEmpty() or
       (self.purpose.hasText() and self.legalBasis.isDefined() and (self.legalBasis <> CIM!LegalBasis#UNKNOWN))
     message :
       "Error [CIM-PRIV-001] PrivacyConstraint '" + self.labelText() + "' covers data items but lacks purpose or a known legalBasis. " +
@@ -117,7 +117,7 @@ context CIM!ComplianceConstraint {
   }
 
   critique ComplianceConstraintHasScope {
-    check : self.scopedElements.size() > 0
+    check : self.scopedElements.notEmpty()
     message :
       "Warning [CIM-COMP-002] ComplianceConstraint '" + self.labelText() + "' has no scopedElements. " +
       "Suggestion: link the elements that must satisfy this compliance control."
@@ -131,14 +131,14 @@ context CIM!Risk {
     check :
       self.riskStatement.hasText() and self.probability.hasText() and
       self.impact.hasText() and self.mitigation.hasText() and
-      (self.affectedElements.size() > 0)
+      self.affectedElements.notEmpty()
     message :
       "Error [CIM-RISK-001] Production-blocking Risk '" + self.labelText() + "' is not actionable. " +
       "Suggestion: provide riskStatement, probability, impact, mitigation, and affectedElements before it can be managed."
   }
 
   critique RiskHasAffectedElements {
-    check : self.affectedElements.size() > 0
+    check : self.affectedElements.notEmpty()
     message :
       "Warning [CIM-RISK-002] Risk '" + self.labelText() + "' has no affectedElements. " +
       "Suggestion: link the goals, capabilities, processes, commands, information, or external systems affected by the risk."
@@ -175,7 +175,7 @@ context CIM!Hotspot {
 
   critique BlockingHotspotHasDueDateAndImpact {
     guard : (self.blocksTransformation = true) or (self.blocksProduction = true)
-    check : self.dueDate.isDefined() and self.impact.hasText() and (self.attachedTo.size() > 0)
+    check : self.dueDate.isDefined() and self.impact.hasText() and self.attachedTo.notEmpty()
     message :
       "Warning [CIM-HOT-002] Blocking Hotspot '" + self.labelText() + "' lacks dueDate, impact, or attachedTo links. " +
       "Suggestion: add a target resolution date, business impact, and affected elements."
@@ -229,7 +229,7 @@ context KERNEL!ReadinessFinding {
   constraint BlockingFindingHasRecommendation {
     guard : self.blocking = true
     check :
-      self.`message`.hasText() and self.recommendation.hasText() and (self.affectedElements.size() > 0)
+      self.`message`.hasText() and self.recommendation.hasText() and self.affectedElements.notEmpty()
     message :
       "Error [CIM-READY-003] Blocking ReadinessFinding '" + self.labelText() + "' lacks message, recommendation, or affectedElements. " +
       "Suggestion: make the finding actionable by explaining the issue, the remediation, and the affected elements."

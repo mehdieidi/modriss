@@ -20,7 +20,7 @@ context AWSPSM!EventBridgeRule {
 
   constraint TargetIdsUniqueWithinRule {
     check : self.targets.forAll(targetItem |
-      self.targets.select(otherTarget | otherTarget.targetId = targetItem.targetId).size() = 1)
+      self.targets.one(otherTarget | otherTarget.targetId = targetItem.targetId))
     message : 'EventBridge rule ' + self.resourceLabel() + ' contains duplicate targetId values. Fix: make targetId unique within the rule.'
   }
 }

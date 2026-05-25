@@ -22,13 +22,13 @@ context AWSPSM!AwsPsmModel {
 
   constraint UniqueStackNames {
     check : self.stacks.forAll(stackItem |
-      self.stacks.select(otherStack | otherStack.stackName = stackItem.stackName).size() = 1)
+      self.stacks.one(otherStack | otherStack.stackName = stackItem.stackName))
     message : 'Two or more SAM stacks have the same stackName. Fix: rename stacks so each stackName is unique within the PSM model.'
   }
 
   constraint UniqueStageNames {
     check : self.stages.forAll(stageItem |
-      self.stages.select(otherStage | otherStage.stageName = stageItem.stageName).size() = 1)
+      self.stages.one(otherStage | otherStage.stageName = stageItem.stageName))
     message : 'Two or more deployment stages have the same stageName. Fix: rename stages so each stageName is unique within the PSM model.'
   }
 
@@ -83,7 +83,7 @@ context AWSPSM!SamStack {
 
   constraint StackLogicalIdsAreUnique {
     check : self.resources.forAll(resourceItem |
-      self.resources.select(otherResource | otherResource.logicalId = resourceItem.logicalId).size() = 1)
+      self.resources.one(otherResource | otherResource.logicalId = resourceItem.logicalId))
     message : 'SAM stack ' + self.stackName + ' contains duplicate resource logical IDs. Fix: rename the duplicate logicalId values; logical IDs must be unique per CloudFormation stack.'
   }
 
@@ -106,8 +106,8 @@ context AWSPSM!AwsResource {
   }
 
   constraint LogicalIdUniqueInStack {
-    check : AWSPSM!AwsResource.all.select(resourceItem |
-      (resourceItem.stack = self.stack) and (resourceItem.logicalId = self.logicalId)).size() = 1
+    check : AWSPSM!AwsResource.all.one(resourceItem |
+      (resourceItem.stack = self.stack) and (resourceItem.logicalId = self.logicalId))
     message : 'Logical ID ' + self.logicalId + ' is duplicated in stack ' + self.stack.stackName + '. Fix: give each resource in a stack a unique logicalId.'
   }
 

@@ -3,7 +3,7 @@ import "../lib/cim-validation-helpers.eol";
 context CIM!Requirement {
 
   constraint RequirementHasFitCriterionOrAcceptanceCriteria {
-    check : self.fitCriterion.hasText() or (self.acceptanceCriteria.size() > 0)
+    check : self.fitCriterion.hasText() or self.acceptanceCriteria.notEmpty()
     message :
       "Error [CIM-REQ-001] Requirement '" + self.labelText() + "' has neither a fitCriterion nor acceptanceCriteria. " +
       "Suggestion: add a measurable fit criterion or at least one Given/When/Then-style acceptance criterion describing how satisfaction will be judged."
@@ -26,7 +26,7 @@ context CIM!Requirement {
   }
 
   critique RequirementSupportsGoalOrConstrainsElement {
-    check : (self.supportsGoals.size() > 0) or (self.constrains.size() > 0)
+    check : self.supportsGoals.notEmpty() or self.constrains.notEmpty()
     message :
       "Warning [CIM-REQ-004] Requirement '" + self.labelText() + "' is not connected to a business goal or constrained element. " +
       "Suggestion: link it to the goal it supports or the model element it constrains so transformation and readiness checks can assess impact."
@@ -63,7 +63,7 @@ context CIM!BusinessGoal {
 
   critique CriticalGoalHasOwnerAndKpi {
     guard : self.priority = KERNEL!Priority#CRITICAL
-    check : (self.owners.size() > 0) and (self.measuredBy.size() > 0)
+    check : self.owners.notEmpty() and self.measuredBy.notEmpty()
     message :
       "Warning [CIM-GOAL-002] Critical BusinessGoal '" + self.labelText() + "' has no owner or KPI. " +
       "Suggestion: assign an accountable stakeholder and at least one KPI so the critical goal can be governed."
@@ -125,7 +125,7 @@ context CIM!Actor {
 
   critique HumanActorHasRole {
     guard : self.actorType = CIM!ActorType#HUMAN
-    check : self.playsRoles.size() > 0
+    check : self.playsRoles.notEmpty()
     message :
       "Warning [CIM-ACTOR-002] Human Actor '" + self.labelText() + "' has no assigned Role. " +
       "Suggestion: add at least one role describing the responsibility and business permissions used when issuing commands or queries."
@@ -155,7 +155,7 @@ context CIM!Role {
   }
 
   critique RoleAssignedToActor {
-    check : self.assignedTo.size() > 0
+    check : self.assignedTo.notEmpty()
     message :
       "Warning [CIM-ROLE-002] Role '" + self.labelText() + "' is not assigned to any Actor. " +
       "Suggestion: assign it to the actors who perform that responsibility, or remove the unused role."
@@ -178,9 +178,9 @@ context CIM!ExternalSystem {
       (self.sendsBusinessEvents = true) or
       (self.receivesBusinessEvents = true)
     check :
-      (self.exchangedInformation.size() > 0) or
-      (self.producedEvents.size() > 0) or
-      (self.consumedEvents.size() > 0)
+      self.exchangedInformation.notEmpty() or
+      self.producedEvents.notEmpty() or
+      self.consumedEvents.notEmpty()
     message :
       "Error [CIM-EXT-002] ExternalSystem '" + self.labelText() + "' is marked as exchanging/storing business data but no exchangedInformation or events are linked. " +
       "Suggestion: connect the information items and business events crossing the boundary."
@@ -190,7 +190,7 @@ context CIM!ExternalSystem {
 context CIM!BusinessCapability {
 
   constraint CapabilitySupportsGoal {
-    check : self.supports.size() >= 1
+    check : self.supports.notEmpty()
     message :
       "Error [CIM-CAP-001] BusinessCapability '" + self.labelText() + "' supports no BusinessGoal. " +
       "Suggestion: link the capability to at least one goal, or remove it if it is outside the CIM scope."
@@ -206,9 +206,9 @@ context CIM!BusinessCapability {
 
   critique CapabilityHasBehaviorOrManagedData {
     check :
-      (self.containsCommands.size() > 0) or (self.containsQueries.size() > 0) or
-      (self.containsEvents.size() > 0) or (self.managesEntities.size() > 0) or
-      (self.ownsProcesses.size() > 0)
+      self.containsCommands.notEmpty() or self.containsQueries.notEmpty() or
+      self.containsEvents.notEmpty() or self.managesEntities.notEmpty() or
+      self.ownsProcesses.notEmpty()
     message :
       "Warning [CIM-CAP-003] BusinessCapability '" + self.labelText() + "' has no commands, queries, events, managed entities, or processes. " +
       "Suggestion: add the behavior/data it owns, or mark it as out of transformation scope using notes/rationale."
@@ -218,7 +218,7 @@ context CIM!BusinessCapability {
     guard :
       (self.criticality = CIM!CapabilityCriticality#CORE) or
       (self.criticality = CIM!CapabilityCriticality#MISSION_CRITICAL)
-    check : (self.realizesRequirements.size() > 0) and (self.constrainedBy.size() > 0)
+    check : self.realizesRequirements.notEmpty() and self.constrainedBy.notEmpty()
     message :
       "Warning [CIM-CAP-004] Core or mission-critical BusinessCapability '" + self.labelText() + "' lacks realized requirements or non-functional constraints. " +
       "Suggestion: connect the capability to functional/business requirements and the relevant NFRs for performance, security, privacy, auditability, or reliability."
@@ -255,9 +255,9 @@ context CIM!BoundedContextCandidate {
 
   critique BoundedContextHasScopedContent {
     check :
-      (self.capabilities.size() > 0) or (self.entities.size() > 0) or
-      (self.commands.size() > 0) or (self.queries.size() > 0) or
-      (self.events.size() > 0) or (self.policies.size() > 0)
+      self.capabilities.notEmpty() or self.entities.notEmpty() or
+      self.commands.notEmpty() or self.queries.notEmpty() or
+      self.events.notEmpty() or self.policies.notEmpty()
     message :
       "Warning [CIM-BC-002] BoundedContextCandidate '" + self.labelText() + "' has no scoped content. " +
       "Suggestion: add capabilities, entities, commands, queries, events, or policies that belong to this boundary."
@@ -276,12 +276,12 @@ context CIM!UbiquitousLanguageTerm {
   critique UbiquitousLanguageTermIsUniqueInContext {
     guard : self.term.hasText()
     check :
-      CIM!UbiquitousLanguageTerm.all.select(termItem |
+      CIM!UbiquitousLanguageTerm.all.none(termItem |
         (termItem <> self) and
         (termItem.term.hasText()) and
         (termItem.term.toLowerCase() = self.term.toLowerCase()) and
         (termItem.`context` = self.`context`)
-      ).size() = 0
+      )
     message :
       "Warning [CIM-UL-002] UbiquitousLanguageTerm '" + self.term + "' is duplicated in the same bounded context. " +
       "Suggestion: merge duplicate terms or clarify if the terms intentionally have different meanings."

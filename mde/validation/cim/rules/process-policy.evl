@@ -4,8 +4,8 @@ context CIM!BusinessProcess {
 
   constraint ProcessHasStartAndEnd {
     check :
-      (self.steps.select(stepItem | stepItem.stepKind = CIM!StepKind#START).size() = 1) and
-      (self.steps.select(stepItem | stepItem.stepKind = CIM!StepKind#END).size() >= 1)
+      self.steps.one(stepItem | stepItem.stepKind = CIM!StepKind#START) and
+      self.steps.exists(stepItem | stepItem.stepKind = CIM!StepKind#END)
     message :
       "Error [CIM-PROC-001] BusinessProcess '" + self.labelText() + "' must have exactly one START step and at least one END step. " +
       "Suggestion: add one StartStep and one or more EndSteps, and ensure their stepKind values match."
@@ -22,7 +22,7 @@ context CIM!BusinessProcess {
 
   constraint LongRunningProcessHasTemporalConstraint {
     guard : (self.longRunning = true) or (self.processKind = CIM!ProcessKind#LONG_RUNNING) or (self.processKind = CIM!ProcessKind#SAGA_LIKE_BUSINESS_PROCESS)
-    check : self.temporalConstraints.size() > 0
+    check : self.temporalConstraints.notEmpty()
     message :
       "Error [CIM-PROC-003] Long-running/Saga-like BusinessProcess '" + self.labelText() + "' has no TemporalConstraint. " +
       "Suggestion: add deadlines, durations, or ordering constraints that define acceptable process timing."
@@ -50,7 +50,7 @@ context CIM!BusinessProcess {
 
   critique CompensationProcessHasExceptionScenarios {
     guard : self.compensationExpected = true
-    check : self.exceptions.size() > 0
+    check : self.exceptions.notEmpty()
     message :
       "Warning [CIM-PROC-006] BusinessProcess '" + self.labelText() + "' expects compensation but has no ExceptionScenario. " +
       "Suggestion: add exception scenarios and recovery/compensation actions."
@@ -61,7 +61,7 @@ context CIM!ProcessStep {
 
   critique ProcessStepHasResponsibility {
     guard : (self.stepKind <> CIM!StepKind#START) and (self.stepKind <> CIM!StepKind#END)
-    check : self.responsibility.hasText() or (self.responsibleRoles.size() > 0)
+    check : self.responsibility.hasText() or self.responsibleRoles.notEmpty()
     message :
       "Warning [CIM-STEP-001] ProcessStep '" + self.labelText() + "' has no responsibility or responsibleRoles. " +
       "Suggestion: identify who or what is responsible for this step."
@@ -144,7 +144,7 @@ context CIM!ExternalInteractionStep {
   }
 
   critique ExternalInteractionDeclaresInformation {
-    check : self.exchangedInformation.size() > 0
+    check : self.exchangedInformation.notEmpty()
     message :
       "Warning [CIM-STEP-010] ExternalInteractionStep '" + self.labelText() + "' has no exchangedInformation. " +
       "Suggestion: link the information items crossing the external boundary."
@@ -163,7 +163,7 @@ context CIM!DecisionStep {
 
   constraint DecisionHasBranches {
     check :
-      CIM!ProcessTransition.all.select(transitionItem | transitionItem.source = self).size() >= 2
+      CIM!ProcessTransition.all.atLeastNMatch(transitionItem | transitionItem.source = self, 2)
     message :
       "Error [CIM-STEP-012] DecisionStep '" + self.labelText() + "' has fewer than two outgoing branches. " +
       "Suggestion: add at least two ProcessTransition elements representing alternative outcomes."
@@ -211,7 +211,7 @@ context CIM!ProcessTransition {
 context CIM!DecisionTable {
 
   constraint DecisionTableHasRules {
-    check : self.rules.size() >= 1
+    check : self.rules.notEmpty()
     message :
       "Error [CIM-DT-001] DecisionTable '" + self.labelText() + "' has no rules. " +
       "Suggestion: add at least one DecisionRule with a condition and outcome."
@@ -246,7 +246,7 @@ context CIM!DecisionRule {
   }
 
   critique DecisionRuleHasExecutableEffect {
-    check : (self.resultingCommands.size() > 0) or (self.resultingEvents.size() > 0) or self.outcome.hasText()
+    check : self.resultingCommands.notEmpty() or self.resultingEvents.notEmpty() or self.outcome.hasText()
     message :
       "Warning [CIM-DT-005] DecisionRule '" + self.labelText() + "' has no resultingCommands, resultingEvents, or meaningful outcome. " +
       "Suggestion: connect the rule to the commands/events it causes or make the outcome explicit."
@@ -257,9 +257,9 @@ context CIM!Policy {
 
   constraint PolicyEitherReactsOrGuards {
     check :
-      (self.triggeredBy.size() > 0) or
-      (self.guards.size() > 0) or
-      (self.constrainsQueries.size() > 0)
+      self.triggeredBy.notEmpty() or
+      self.guards.notEmpty() or
+      self.constrainsQueries.notEmpty()
     message :
       "Error [CIM-POL-001] Policy '" + self.labelText() + "' neither reacts to events nor guards commands/queries. " +
       "Suggestion: link triggeredBy events, guarded commands, constrained queries, or split this policy into a more specific policy."
@@ -287,7 +287,7 @@ context CIM!Policy {
 
   critique ReactionPolicyEmitsOutcome {
     guard : self.policyType = CIM!PolicyType#REACTION
-    check : (self.emitsCommands.size() > 0) or (self.emitsEvents.size() > 0)
+    check : self.emitsCommands.notEmpty() or self.emitsEvents.notEmpty()
     message :
       "Warning [CIM-POL-004] Reaction Policy '" + self.labelText() + "' has no emitted commands or events. " +
       "Suggestion: link the command/event that represents the reaction outcome."
@@ -307,7 +307,7 @@ context CIM!ExceptionScenario {
 
   critique CompensationScenarioEmitsEvent {
     guard : self.compensationRequired = true
-    check : (self.recoveryAction.hasText()) and (self.resultingEvents.size() > 0)
+    check : self.recoveryAction.hasText() and self.resultingEvents.notEmpty()
     message :
       "Warning [CIM-EXC-002] ExceptionScenario '" + self.labelText() + "' requires compensation but has no recoveryAction or resultingEvents. " +
       "Suggestion: model the compensation action and event(s) that record completion/failure."
@@ -325,7 +325,7 @@ context CIM!TemporalConstraint {
   }
 
   critique TemporalConstraintHasScope {
-    check : self.constrainedElements.size() > 0
+    check : self.constrainedElements.notEmpty()
     message :
       "Warning [CIM-TIME-002] TemporalConstraint '" + self.labelText() + "' has no constrainedElements. " +
       "Suggestion: link the process, step, event, command, or policy to which the timing rule applies."

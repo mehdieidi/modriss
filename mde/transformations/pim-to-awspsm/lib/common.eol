@@ -3,6 +3,7 @@ operation initialisePimToAwsPsmCaches() {
   usedAwsLogicalIds = Set{};
   cachedPimRoot = PIM!PIMModel.all.first();
   cachedAwsRoot = null;
+  cachedDefaultStack = null;
   cachedDefaultStage = null;
   cachedIsProductionRoot = isProductionPim(cachedPimRoot);
   cachedAwsExistingTargetByKey = new Map;
