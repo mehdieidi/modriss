@@ -1749,20 +1749,7 @@ export function serializeGraphAndViewsInto(root) {
   root.assumptions = graph.assumptions;
   root.validationIssues = graph.validationIssues;
   root.manualBacklog = manualBacklog;
-  root.diagram ??= {};
-  root.diagram.elements = graph.elements.map((element) => {
-    const copyElement = clone(element);
-    delete copyElement.__collapsed;
-    delete copyElement.__collapsedSummary;
-    return copyElement;
-  });
-  root.diagram.relationships = graph.relationships.map((relationship) => ({
-    id: relationship.id,
-    kind: relationship.kind,
-    source: relationship.sourceElementId || relationship.source,
-    target: relationship.targetElementId || relationship.target,
-    note: relationship.note || relationship.description || ""
-  }));
+  delete root.diagram;
   if (state.activeType === "cim") {
     populateCimRootContainments(root, state.graph);
   } else if (state.activeType === "pim") {

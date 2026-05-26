@@ -264,6 +264,15 @@ function ensureManualBacklogIdentity(model) {
   });
 }
 
+function stripServerTransportFields(model) {
+  if (!model || typeof model !== "object") {
+    return model;
+  }
+  delete model._sourceXmiBase64;
+  delete model._sourceXmiToken;
+  return model;
+}
+
 function manualGuidanceIssuesFromCurrentModel() {
   ensureManualBacklogIdentity(state.baseModel);
   return manualGuidanceIssuesFromModel(state.baseModel || {});
@@ -415,7 +424,8 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
             method: "PUT",
             body: JSON.stringify(payload)
           });
-      state.baseModel = structuredClone(updated.modelJson);
+      state.baseModel = stripServerTransportFields(structuredClone(
+          payload.model));
       setActiveModelName(updated.name || payload.name);
       if (!quiet) {
         setStatus(`Model saved`);
@@ -426,7 +436,8 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
         body: JSON.stringify(payload)
       });
       state.modelId = created.id;
-      state.baseModel = structuredClone(created.modelJson);
+      state.baseModel = stripServerTransportFields(structuredClone(
+          payload.model));
       setActiveModelName(created.name || payload.name);
       if (!quiet) {
         setStatus(`Model saved (${created.id.slice(0, 8)}…)`);

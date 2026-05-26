@@ -41,6 +41,9 @@ class ModelServiceXmiImportTest {
         assertEquals("goal-1", result.modelJson().path("capabilities").path(0).path("supports")
                 .path(0).asText());
         assertEquals("CIM", result.modelJson().path("modelLevel").asText());
+        assertTrue(result.modelJson().path("_sourceXmiBase64").isMissingNode());
+        assertFalse(result.modelJson().path("_sourceXmiToken").asText().isBlank());
+        assertTrue(result.modelJson().path("diagram").isMissingNode());
 
         assertFalse(result.modelJson().path("graph").path("elements").isEmpty());
         assertTrue(result.modelJson().path("graph").path("elements").findValuesAsText("id")
@@ -59,7 +62,7 @@ class ModelServiceXmiImportTest {
     }
 
     @Test
-    void preservesStoredSourceXmiWhenFrontendSavesWithoutIt() {
+    void stripsTransportOnlyFieldsWhenSavingModel() {
         JsonFileStore store = new JsonFileStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
@@ -82,7 +85,8 @@ class ModelServiceXmiImportTest {
         ModelRecord updated = service.update(user, ModelLevel.CIM, created.id(),
                 "climate-edited", update);
 
-        assertEquals("PGNpbS8+", updated.modelJson().path("_sourceXmiBase64").asText());
+        assertTrue(created.modelJson().path("_sourceXmiBase64").isMissingNode());
+        assertTrue(updated.modelJson().path("_sourceXmiBase64").isMissingNode());
         var summaries = service.listSummaries(user, ModelLevel.CIM, project.id());
         assertEquals(1, summaries.size());
         assertEquals(created.id(), summaries.get(0).id());

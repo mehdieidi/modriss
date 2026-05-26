@@ -205,7 +205,6 @@ final class XmiModelImportService {
             SerializationContext context = new SerializationContext(level);
             ObjectNode rootJson = serializeContainedObject(root, context);
             rootJson.set("graph", context.graphNode(objectMapper));
-            rootJson.set("diagram", context.diagramNode(objectMapper));
             restoreRelationshipEndpoints(rootJson);
             return rootJson;
         } catch (PlatformException ex) {
@@ -951,13 +950,5 @@ final class XmiModelImportService {
             return graph;
         }
 
-        ObjectNode diagramNode(ObjectMapper mapper) {
-            ObjectNode diagram = mapper.createObjectNode();
-            ArrayNode elements = diagram.putArray("elements");
-            graphElements.forEach(element -> elements.add(element.deepCopy()));
-            ArrayNode relationships = diagram.putArray("relationships");
-            graphRelationships.forEach(relationship -> relationships.add(relationship.deepCopy()));
-            return diagram;
-        }
     }
 }

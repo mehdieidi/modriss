@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -54,19 +53,23 @@ public final class TransformationService {
 
     public ModelRecord cimToPim(UserRecord user, String sourceModelId) {
         ModelRecord source = modelService.get(user, ModelLevel.CIM, sourceModelId);
-        ObjectNode target = formalCimToPimModel(source);
-        target.put("sourceModelId", source.id());
-        mirrorReadinessToManualBacklog(target);
-        return modelService.create(user, ModelLevel.PIM, source.projectId(), source.name() + "-pim",
-                target);
+        GeneratedModel generated = formalCimToPimModel(source);
+        generated.model().put("sourceModelId", source.id());
+        mirrorReadinessToManualBacklog(generated.model());
+        ModelRecord target = modelService.create(user, ModelLevel.PIM, source.projectId(),
+                source.name() + "-pim", generated.model());
+        modelService.attachSourceXmi(target, generated.sourceXmi());
+        return target;
     }
 
     public ModelRecord pimToPsm(UserRecord user, String sourceModelId) {
         ModelRecord source = modelService.get(user, ModelLevel.PIM, sourceModelId);
-        ObjectNode target = formalPimToPsmModel(source);
-        target.put("sourceModelId", source.id());
-        return modelService.create(user, ModelLevel.PSM, source.projectId(), source.name() + "-psm",
-                target);
+        GeneratedModel generated = formalPimToPsmModel(source);
+        generated.model().put("sourceModelId", source.id());
+        ModelRecord target = modelService.create(user, ModelLevel.PSM, source.projectId(),
+                source.name() + "-psm", generated.model());
+        modelService.attachSourceXmi(target, generated.sourceXmi());
+        return target;
     }
 
     public ArtifactRecord psmToArtifact(UserRecord user, String sourceModelId) {
@@ -75,14 +78,14 @@ public final class TransformationService {
         return artifactService.create(user, source.projectId(), source.name() + "-artifact", files);
     }
 
-    private ObjectNode formalCimToPimModel(ModelRecord source) {
+    private GeneratedModel formalCimToPimModel(ModelRecord source) {
         Path repositoryRoot = findRepositoryRoot();
         Path workDir = null;
         try {
             workDir = Files.createTempDirectory("modless-cim-to-pim-");
             Path cimXmi = workDir.resolve("source-cim.xmi");
             Path pimXmi = workDir.resolve("target-pim.xmi");
-            Files.write(cimXmi, sourceCimXmi(source.modelJson()));
+            Files.write(cimXmi, sourceCimXmi(source));
 
             EtlExecutionReport report = etlExecutor.execute(CimToPimDefaults.request(
                     repositoryRoot, cimXmi, pimXmi, true, true));
@@ -98,9 +101,7 @@ public final class TransformationService {
             target.put("transformedFrom", ModelLevel.CIM.name());
             target.put("transformedFromModelId", source.id());
             target.put("transformationStatus", "GENERATED_BY_ETL");
-            target.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(
-                    Files.readAllBytes(pimXmi)));
-            return target;
+            return new GeneratedModel(target, Files.readAllBytes(pimXmi));
         } catch (PlatformException ex) {
             throw ex;
         } catch (EtlExecutionException ex) {
@@ -116,14 +117,14 @@ public final class TransformationService {
         }
     }
 
-    private ObjectNode formalPimToPsmModel(ModelRecord source) {
+    private GeneratedModel formalPimToPsmModel(ModelRecord source) {
         Path repositoryRoot = findRepositoryRoot();
         Path workDir = null;
         try {
             workDir = Files.createTempDirectory("modless-pim-to-psm-");
             Path pimXmi = workDir.resolve("source-pim.xmi");
             Path psmXmi = workDir.resolve("target-awspsm.xmi");
-            Files.write(pimXmi, sourcePimXmi(source.modelJson()));
+            Files.write(pimXmi, sourcePimXmi(source));
 
             EtlExecutionReport report = etlExecutor.execute(PimToAwsPsmDefaults.request(
                     repositoryRoot, pimXmi, psmXmi, true, true));
@@ -139,10 +140,8 @@ public final class TransformationService {
             target.put("transformedFrom", ModelLevel.PIM.name());
             target.put("transformedFromModelId", source.id());
             target.put("transformationStatus", "GENERATED_BY_ETL");
-            target.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(
-                    Files.readAllBytes(psmXmi)));
             mirrorReadinessToManualBacklog(target);
-            return target;
+            return new GeneratedModel(target, Files.readAllBytes(psmXmi));
         } catch (PlatformException ex) {
             throw ex;
         } catch (EtlExecutionException ex) {
@@ -165,7 +164,7 @@ public final class TransformationService {
             workDir = Files.createTempDirectory("modless-psm-to-artifact-");
             Path psmXmi = workDir.resolve("source-awspsm.xmi");
             Path outputDirectory = workDir.resolve("generated-artifacts");
-            Files.write(psmXmi, sourcePsmXmi(source.modelJson()));
+            Files.write(psmXmi, sourcePsmXmi(source));
 
             EgxGenerationReport report = artifactGenerator.generate(
                     AwsPsmToArtifactsDefaults.request(
@@ -218,40 +217,22 @@ public final class TransformationService {
                 "ETL transformation files were not found from the backend working directory.");
     }
 
-    private byte[] sourceCimXmi(JsonNode modelJson) {
-        String sourceXmi = text(modelJson, "_sourceXmiBase64", "");
-        if (!sourceXmi.isBlank()) {
-            try {
-                return Base64.getDecoder().decode(sourceXmi);
-            } catch (IllegalArgumentException ex) {
-                throw new PlatformException(400, "Stored source XMI is not valid base64.");
-            }
-        }
-        return xmiModelIo.exportModel(ModelLevel.CIM, hydrateSemanticReferences(modelJson));
+    private byte[] sourceCimXmi(ModelRecord model) {
+        return modelService.sourceXmi(model)
+                .orElseGet(() -> xmiModelIo.exportModel(ModelLevel.CIM,
+                        hydrateSemanticReferences(model.modelJson())));
     }
 
-    private byte[] sourcePimXmi(JsonNode modelJson) {
-        String sourceXmi = text(modelJson, "_sourceXmiBase64", "");
-        if (!sourceXmi.isBlank()) {
-            try {
-                return Base64.getDecoder().decode(sourceXmi);
-            } catch (IllegalArgumentException ex) {
-                throw new PlatformException(400, "Stored source XMI is not valid base64.");
-            }
-        }
-        return xmiModelIo.exportModel(ModelLevel.PIM, hydrateSemanticReferences(modelJson));
+    private byte[] sourcePimXmi(ModelRecord model) {
+        return modelService.sourceXmi(model)
+                .orElseGet(() -> xmiModelIo.exportModel(ModelLevel.PIM,
+                        hydrateSemanticReferences(model.modelJson())));
     }
 
-    private byte[] sourcePsmXmi(JsonNode modelJson) {
-        String sourceXmi = text(modelJson, "_sourceXmiBase64", "");
-        if (!sourceXmi.isBlank()) {
-            try {
-                return Base64.getDecoder().decode(sourceXmi);
-            } catch (IllegalArgumentException ex) {
-                throw new PlatformException(400, "Stored source XMI is not valid base64.");
-            }
-        }
-        return xmiModelIo.exportModel(ModelLevel.PSM, hydrateSemanticReferences(modelJson));
+    private byte[] sourcePsmXmi(ModelRecord model) {
+        return modelService.sourceXmi(model)
+                .orElseGet(() -> xmiModelIo.exportModel(ModelLevel.PSM,
+                        hydrateSemanticReferences(model.modelJson())));
     }
 
     private String summarizeDiagnostics(EtlExecutionReport report) {
@@ -1094,5 +1075,9 @@ public final class TransformationService {
     private String sanitize(String value) {
         return String.valueOf(value == null ? "artifact" : value)
                 .replaceAll("[^A-Za-z0-9_.-]+", "-");
+    }
+
+    private record GeneratedModel(ObjectNode model, byte[] sourceXmi) {
+
     }
 }

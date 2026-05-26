@@ -42,12 +42,12 @@ public class ModelController {
     }
 
     @PostMapping("/api/{level:cim|pim|psm}")
-    ModelRecord create(@RequestHeader("X-Auth-Token") String token,
+    ModelService.ModelSummary create(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
             @Valid @RequestBody SaveModelRequest request) {
-        return models.create(auth.user(token), ModelLevel.fromApiName(level), request.projectId(),
-                request.name(),
-                request.model());
+        ModelRecord created = models.create(auth.user(token), ModelLevel.fromApiName(level),
+                request.projectId(), request.name(), request.model());
+        return models.summary(created);
     }
 
     @GetMapping("/api/{level:cim|pim|psm}/{id}")
@@ -58,12 +58,13 @@ public class ModelController {
     }
 
     @PutMapping("/api/{level:cim|pim|psm}/{id}")
-    ModelRecord update(@RequestHeader("X-Auth-Token") String token,
+    ModelService.ModelSummary update(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
             @PathVariable("id") String id,
             @Valid @RequestBody SaveModelRequest request) {
-        return models.update(auth.user(token), ModelLevel.fromApiName(level), id, request.name(),
-                request.model());
+        ModelRecord updated = models.update(auth.user(token), ModelLevel.fromApiName(level), id,
+                request.name(), request.model());
+        return models.summary(updated);
     }
 
     @DeleteMapping("/api/{level:cim|pim|psm}/{id}")

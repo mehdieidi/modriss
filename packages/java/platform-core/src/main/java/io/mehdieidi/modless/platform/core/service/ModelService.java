@@ -24,11 +24,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -101,7 +101,7 @@ public final class ModelService {
     public ModelRecord get(UserRecord user, ModelLevel level, String id) {
         ModelRecord model = find(level, id);
         projectService.get(user, model.projectId());
-        return model;
+        return clientRecord(model);
     }
 
     public ModelRecord create(UserRecord user, ModelLevel level, String projectId, String name,
@@ -109,11 +109,13 @@ public final class ModelService {
         ProjectRecord project = projectService.get(user, projectId);
         projectService.requireEditor(project, user.id());
         Instant now = Instant.now();
+        JsonNode normalizedModel = normalizeModel(name, level, modelJson);
+        String sourceXmiToken = removeSourceXmiToken(normalizedModel);
         ModelRecord model = new ModelRecord(UUID.randomUUID().toString(), projectId, level,
-                requireName(name, level),
-                normalizeModel(name, level, modelJson), now, now);
+                requireName(name, level), normalizedModel, now, now);
         store.write(modelPath(projectId, level, model.id()), model);
-        return model;
+        consumeSourceXmiToken(sourceXmiToken, model);
+        return clientRecord(model);
     }
 
     public ModelRecord update(UserRecord user, ModelLevel level, String id, String name,
@@ -122,12 +124,13 @@ public final class ModelService {
         ProjectRecord project = projectService.get(user, existing.projectId());
         projectService.requireEditor(project, user.id());
         JsonNode normalizedModel = normalizeModel(name, level, modelJson);
-        preserveServerManagedFields(existing.modelJson(), normalizedModel);
+        String sourceXmiToken = removeSourceXmiToken(normalizedModel);
         ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
                 requireName(name, level),
                 normalizedModel, existing.createdAt(), Instant.now());
         store.write(modelPath(existing.projectId(), level, id), updated);
-        return updated;
+        consumeSourceXmiToken(sourceXmiToken, updated);
+        return clientRecord(updated);
     }
 
     public void delete(UserRecord user, ModelLevel level, String id) {
@@ -136,6 +139,7 @@ public final class ModelService {
         projectService.requireEditor(project, user.id());
         try {
             Files.deleteIfExists(store.resolve(modelPath(model.projectId(), level, id)));
+            Files.deleteIfExists(store.resolve(sourceXmiPath(model.projectId(), level, id)));
         } catch (Exception ex) {
             throw new PlatformException(500, "Could not delete model.");
         }
@@ -561,7 +565,7 @@ public final class ModelService {
                         "Unsupported import format. Use JSON or XMI.");
             };
             if ("xmi".equals(normalizedFormat) && model instanceof ObjectNode objectModel) {
-                objectModel.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(bytes));
+                objectModel.put("_sourceXmiToken", stageSourceXmi(bytes));
             }
             String name = fileName == null || fileName.isBlank() ? level.apiName() + "-model"
                     : fileName.replaceFirst("\\.[^.]+$", "");
@@ -618,30 +622,132 @@ public final class ModelService {
         if (!copy.hasNonNull("modelLevel")) {
             copy.put("modelLevel", level.name());
         }
-        if (!copy.has("diagram")) {
-            ObjectNode diagram = copy.putObject("diagram");
-            diagram.putArray("elements");
-            diagram.putArray("relationships");
-        }
+        stripTransportOnlyFields(copy);
         return copy;
     }
 
-    private void preserveServerManagedFields(JsonNode existingModel, JsonNode updatedModel) {
-        if (!(updatedModel instanceof ObjectNode updatedObject) || existingModel == null) {
-            return;
-        }
-        preserveTextField(existingModel, updatedObject, "_sourceXmiBase64");
+    public ModelSummary summary(ModelRecord model) {
+        return new ModelSummary(model.id(), model.projectId(), model.level(), model.name(),
+                model.createdAt(), model.updatedAt());
     }
 
-    private void preserveTextField(JsonNode existingModel, ObjectNode updatedModel,
-            String fieldName) {
-        if (updatedModel.has(fieldName)) {
+    public Optional<byte[]> sourceXmi(ModelRecord model) {
+        Path path = sourceXmiPath(model.projectId(), model.level(), model.id());
+        try {
+            Path resolved = store.resolve(path);
+            return Files.isRegularFile(resolved)
+                    ? Optional.of(Files.readAllBytes(resolved))
+                    : Optional.empty();
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not read stored source XMI.");
+        }
+    }
+
+    public void attachSourceXmi(ModelRecord model, byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
             return;
         }
-        JsonNode existingValue = existingModel.get(fieldName);
-        if (existingValue != null && existingValue.isTextual()
-                && !existingValue.asText("").isBlank()) {
-            updatedModel.set(fieldName, existingValue.deepCopy());
+        writeSourceXmi(sourceXmiPath(model.projectId(), model.level(), model.id()), bytes);
+    }
+
+    private ModelRecord clientRecord(ModelRecord model) {
+        JsonNode modelJson = model.modelJson();
+        if (modelJson instanceof ObjectNode objectNode) {
+            ObjectNode copy = objectNode.deepCopy();
+            stripTransportOnlyFields(copy);
+            copy.remove("_sourceXmiToken");
+            modelJson = copy;
+        }
+        return new ModelRecord(model.id(), model.projectId(), model.level(), model.name(),
+                modelJson, model.createdAt(), model.updatedAt());
+    }
+
+    private void stripTransportOnlyFields(ObjectNode model) {
+        model.remove("_sourceXmiBase64");
+        JsonNode diagram = model.get("diagram");
+        if (isGeneratedDiagramDuplicate(model.path("graph"), diagram)) {
+            model.remove("diagram");
+        }
+    }
+
+    private boolean isGeneratedDiagramDuplicate(JsonNode graph, JsonNode diagram) {
+        if (graph == null || diagram == null || !graph.isObject() || !diagram.isObject()) {
+            return false;
+        }
+        JsonNode graphElements = graph.path("elements");
+        JsonNode graphRelationships = graph.path("relationships");
+        JsonNode diagramElements = diagram.path("elements");
+        JsonNode diagramRelationships = diagram.path("relationships");
+        if (!graphElements.isArray() || !graphRelationships.isArray()
+                || !diagramElements.isArray() || !diagramRelationships.isArray()) {
+            return false;
+        }
+        return graphElements.equals(diagramElements)
+                && sameRelationshipEndpoints(graphRelationships, diagramRelationships);
+    }
+
+    private boolean sameRelationshipEndpoints(JsonNode graphRelationships,
+            JsonNode diagramRelationships) {
+        if (graphRelationships.size() != diagramRelationships.size()) {
+            return false;
+        }
+        for (int i = 0; i < graphRelationships.size(); i++) {
+            JsonNode graphRelationship = graphRelationships.get(i);
+            JsonNode diagramRelationship = diagramRelationships.get(i);
+            if (!text(graphRelationship, "id", "").equals(text(diagramRelationship, "id", ""))
+                    || !text(graphRelationship, "kind", "").equals(
+                    text(diagramRelationship, "kind", ""))
+                    || !text(graphRelationship, "source", "").equals(
+                    text(diagramRelationship, "source", ""))
+                    || !text(graphRelationship, "target", "").equals(
+                    text(diagramRelationship, "target", ""))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String stageSourceXmi(byte[] bytes) {
+        String token = UUID.randomUUID().toString();
+        writeSourceXmi(stagedSourceXmiPath(token), bytes);
+        return token;
+    }
+
+    private String removeSourceXmiToken(JsonNode modelJson) {
+        if (modelJson instanceof ObjectNode objectNode) {
+            String token = text(objectNode, "_sourceXmiToken", "");
+            objectNode.remove("_sourceXmiToken");
+            return token;
+        }
+        return "";
+    }
+
+    private void consumeSourceXmiToken(String token, ModelRecord model) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        Path stagedPath = stagedSourceXmiPath(token);
+        Path targetPath = sourceXmiPath(model.projectId(), model.level(), model.id());
+        Path staged = store.resolve(stagedPath);
+        if (!Files.isRegularFile(staged)) {
+            return;
+        }
+        try {
+            Files.createDirectories(store.resolve(targetPath).getParent());
+            Files.move(staged, store.resolve(targetPath),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not persist source XMI.");
+        }
+    }
+
+    private void writeSourceXmi(Path path, byte[] bytes) {
+        try {
+            Path resolved = store.resolve(path);
+            Files.createDirectories(resolved.getParent());
+            Files.write(resolved, bytes);
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not persist source XMI.");
         }
     }
 
@@ -701,6 +807,14 @@ public final class ModelService {
 
     private Path modelPath(String projectId, ModelLevel level, String id) {
         return modelDir(projectId, level).resolve(id + ".json");
+    }
+
+    private Path sourceXmiPath(String projectId, ModelLevel level, String id) {
+        return modelDir(projectId, level).resolve(id + ".xmi");
+    }
+
+    private Path stagedSourceXmiPath(String token) {
+        return Path.of("model-imports", token + ".xmi");
     }
 
     private String requireName(String name, ModelLevel level) {
