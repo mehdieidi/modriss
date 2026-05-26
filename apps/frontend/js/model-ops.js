@@ -25,6 +25,7 @@ import {
   scrollToConnectionAndHighlight,
   scrollToNodeAndHighlight
 } from './canvas.js';
+import {resolveNodeOverlaps} from './layout-engine.js';
 import {closeAttributePanel} from './attr-panel.js';
 import {closeImpactPanel} from './impact.js';
 import {refreshGithubConnection} from './github.js';
@@ -61,6 +62,14 @@ function defaultModelName(typeKey = state.activeType) {
 
 function isModelingType(typeKey = state.activeType) {
   return ["cim", "pim", "psm"].includes(typeKey);
+}
+
+function centerCurrentDiagram({fit = true} = {}) {
+  if (Array.isArray(state.diagram?.nodes) && state.diagram.nodes.length) {
+    centerViewportOnDiagram({fit});
+    return;
+  }
+  resetCanvasView();
 }
 
 function captureModelReplacementSnapshot(typeKey = state.activeType) {
@@ -129,7 +138,7 @@ async function applyModelReplacementSnapshot(
   clearDiagramUndoHistory(snapshot.typeKey);
   renderDiagram();
   renderViewWorkbench();
-  resetCanvasView();
+  centerCurrentDiagram();
   if (persist) {
     await saveCurrentModel({quiet: true, rethrow: true});
     publishDiagramUpdate({immediate: true});
@@ -495,10 +504,10 @@ export async function loadModelById(typeKey, id,
   clearDiagramUndoHistory(typeKey);
   clearValidationIssues();
   setActiveModelName(record.name || defaultModelName(typeKey));
-  resetCanvasView();
   renderPalette();
   renderDiagram();
   renderViewWorkbench();
+  centerCurrentDiagram();
   if (showManualGuidance) {
     applyManualGuidanceFromLoadedModel();
   }
@@ -530,10 +539,10 @@ async function loadModelRecord(typeKey, record,
   clearDiagramUndoHistory(typeKey);
   clearValidationIssues();
   setActiveModelName(record.name || defaultModelName(typeKey));
-  resetCanvasView();
   renderPalette();
   renderDiagram();
   renderViewWorkbench();
+  centerCurrentDiagram();
   if (showManualGuidance) {
     applyManualGuidanceFromLoadedModel();
   }
@@ -1064,6 +1073,11 @@ export async function autoLayoutCurrentDiagram() {
     viewId: state.views.activeViewId,
     profile: view?.layoutProfile || "DEFAULT_LAYERED",
     preserveExistingPositions: true,
+    options: {
+      nodeSpacing: state.activeType === "cim" ? 96 : 112,
+      layerSpacing: state.activeType === "cim" ? 164 : 188,
+      nodePlacementStrategy: "NETWORK_SIMPLEX"
+    },
     nodes: state.diagram.nodes.map((node) => ({
       id: node.id,
       label: node.label,
@@ -1084,7 +1098,14 @@ export async function autoLayoutCurrentDiagram() {
   };
 
   try {
+    showGenerationProgress({
+      kicker: "Auto Layout in Progress",
+      title: "Arranging current view",
+      subtitle: "Computing positions for the elements visible in this view.",
+      label: "Preparing diagram elements…"
+    });
     setBusy("Auto layout…");
+    setGenerationProgressPhase("Computing layout…", 46);
     const response = await api("/layout", {
       method: "POST",
       body: JSON.stringify(payload)
@@ -1105,11 +1126,16 @@ export async function autoLayoutCurrentDiagram() {
       node.meta.x = node.x;
       node.meta.y = node.y;
     });
+    const movedNodeIds = new Set(resolveNodeOverlaps(state.diagram.nodes,
+        nodeSize));
     const movedByContext = separateBoundedContextOverlaps(nodeSize);
+    movedByContext.forEach((nodeId) => movedNodeIds.add(nodeId));
+    resolveNodeOverlaps(state.diagram.nodes, nodeSize).forEach((nodeId) =>
+        movedNodeIds.add(nodeId));
     const layoutNodesById = new Map(
         state.diagram.nodes.map((node) => [node.id, node]));
     state.diagram.connections.filter((edge) => !edge.bundle).forEach((edge) => {
-      if (movedByContext.has(edge.sourceId) || movedByContext.has(
+      if (movedNodeIds.has(edge.sourceId) || movedNodeIds.has(
           edge.targetId)) {
         edge.pinPoints = [];
         delete edge.sourceAnchor;
@@ -1123,19 +1149,26 @@ export async function autoLayoutCurrentDiagram() {
       const targetNode = layoutNodesById.get(edge.targetId);
       const presentation = edgePresentationFromLayout(layoutData, sourceNode,
           targetNode);
-      edge.pinPoints = presentation.pinPoints;
+      edge.pinPoints = [];
       edge.sourceAnchor = presentation.sourceAnchor;
       edge.targetAnchor = presentation.targetAnchor;
       delete edge.layout;
-      saveStoredEdgeLayout(state.activeType, edge.id, presentation);
+      saveStoredEdgeLayout(state.activeType, edge.id, {
+        pinPoints: [],
+        sourceAnchor: presentation.sourceAnchor,
+        targetAnchor: presentation.targetAnchor
+      });
     });
+    setGenerationProgressPhase("Refreshing the canvas…", 76);
     syncActiveViewFromVisibleGraph();
 
     renderDiagram();
     renderViewWorkbench();
     centerViewportOnDiagram({fit: true});
+    setGenerationProgressPhase("Saving layout…", 92);
     await saveCurrentModel({quiet: true, rethrow: true});
     publishDiagramUpdate({immediate: true});
+    await completeGenerationProgress("Layout applied.");
     const warnings = Array.isArray(response.warnings) ? response.warnings : [];
     if (warnings.length) {
       setStatus(`Auto layout applied with ${warnings.length} warning(s).`);
@@ -1144,6 +1177,8 @@ export async function autoLayoutCurrentDiagram() {
     setStatus("Auto layout applied.");
   } catch (error) {
     setError(`Auto layout failed: ${error.message}`);
+  } finally {
+    hideGenerationProgress();
   }
 }
 
@@ -1258,7 +1293,7 @@ export async function importActiveModel(file, format = "json",
   setActiveModelName(body.name || defaultModelName());
   renderDiagram();
   renderViewWorkbench();
-  resetCanvasView();
+  centerCurrentDiagram();
 
   const backendIssues = Array.isArray(body?.issues) ? body.issues : [];
   const hasErrorIssue = backendIssues.some(

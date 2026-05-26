@@ -2,19 +2,28 @@ package io.mehdieidi.modless.platform.core.service;
 
 import io.mehdieidi.modless.platform.core.PlatformException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.eclipse.elk.alg.layered.options.CrossingMinimizationStrategy;
+import org.eclipse.elk.alg.layered.options.GreedySwitchType;
+import org.eclipse.elk.alg.layered.options.LayeredOptions;
+import org.eclipse.elk.alg.layered.options.NodePlacementStrategy;
 import org.eclipse.elk.core.RecursiveGraphLayoutEngine;
 import org.eclipse.elk.core.math.ElkPadding;
+import org.eclipse.elk.core.options.Alignment;
 import org.eclipse.elk.core.options.CoreOptions;
 import org.eclipse.elk.core.options.Direction;
 import org.eclipse.elk.core.options.EdgeRouting;
+import org.eclipse.elk.core.options.HierarchyHandling;
+import org.eclipse.elk.core.options.PortAlignment;
 import org.eclipse.elk.core.options.PortConstraints;
 import org.eclipse.elk.core.options.PortSide;
+import org.eclipse.elk.core.options.SizeOptions;
 import org.eclipse.elk.core.util.BasicProgressMonitor;
 import org.eclipse.elk.graph.ElkConnectableShape;
 import org.eclipse.elk.graph.ElkEdge;
@@ -27,7 +36,8 @@ import org.eclipse.elk.graph.util.ElkGraphUtil;
 public final class LayoutService {
 
     private static final double DEFAULT_PORT_SIZE = 10.0d;
-    private static final double DEFAULT_NODE_SPACING = 48.0d;
+    private static final double DEFAULT_NODE_SPACING = 88.0d;
+    private static final double DEFAULT_LAYER_SPACING = 156.0d;
     private static final String LAYERED_ALGORITHM = "org.eclipse.elk.layered";
     private static final RecursiveGraphLayoutEngine LAYOUT_ENGINE =
             new RecursiveGraphLayoutEngine();
@@ -163,7 +173,30 @@ public final class LayoutService {
         graph.setProperty(CoreOptions.DIRECTION, direction(request));
         graph.setProperty(CoreOptions.EDGE_ROUTING, edgeRouting(request));
         graph.setProperty(CoreOptions.SPACING_NODE_NODE, nodeSpacing(request));
-        graph.setProperty(CoreOptions.PADDING, new ElkPadding(24));
+        graph.setProperty(LayeredOptions.SPACING_NODE_NODE_BETWEEN_LAYERS,
+                layerSpacing(request));
+        graph.setProperty(CoreOptions.PADDING, new ElkPadding(48));
+        graph.setProperty(CoreOptions.HIERARCHY_HANDLING,
+                HierarchyHandling.INCLUDE_CHILDREN);
+        graph.setProperty(CoreOptions.ALIGNMENT, Alignment.CENTER);
+        graph.setProperty(CoreOptions.PORT_ALIGNMENT_DEFAULT, PortAlignment.JUSTIFIED);
+        graph.setProperty(CoreOptions.NODE_SIZE_OPTIONS,
+                EnumSet.of(SizeOptions.DEFAULT_MINIMUM_SIZE,
+                        SizeOptions.MINIMUM_SIZE_ACCOUNTS_FOR_PADDING,
+                        SizeOptions.PORTS_OVERHANG));
+        graph.setProperty(CoreOptions.SEPARATE_CONNECTED_COMPONENTS, true);
+        graph.setProperty(LayeredOptions.NODE_PLACEMENT_STRATEGY,
+                nodePlacementStrategy(request));
+        graph.setProperty(LayeredOptions.CROSSING_MINIMIZATION_STRATEGY,
+                CrossingMinimizationStrategy.LAYER_SWEEP);
+        graph.setProperty(LayeredOptions.CROSSING_MINIMIZATION_GREEDY_SWITCH_TYPE,
+                GreedySwitchType.TWO_SIDED);
+        graph.setProperty(
+                LayeredOptions.CROSSING_MINIMIZATION_GREEDY_SWITCH_HIERARCHICAL_TYPE,
+                GreedySwitchType.TWO_SIDED);
+        graph.setProperty(LayeredOptions.NODE_PLACEMENT_FAVOR_STRAIGHT_EDGES, true);
+        graph.setProperty(LayeredOptions.CONSIDER_MODEL_ORDER_NO_MODEL_ORDER, true);
+        graph.setProperty(LayeredOptions.UNNECESSARY_BENDPOINTS, false);
     }
 
     private Direction direction(LayoutRequest request) {
@@ -209,12 +242,51 @@ public final class LayoutService {
         }
         String profile = normalize(request.profile()).toUpperCase(Locale.ROOT);
         if (profile.contains("SECURITY") || profile.contains("IAM")) {
-            return 64.0d;
+            return 96.0d;
         }
         if (profile.contains("OVERLAY")) {
-            return 36.0d;
+            return 72.0d;
         }
         return DEFAULT_NODE_SPACING;
+    }
+
+    private double layerSpacing(LayoutRequest request) {
+        Object configured = request.options().get("layerSpacing");
+        if (configured instanceof Number number && number.doubleValue() > 0) {
+            return number.doubleValue();
+        }
+        if (configured instanceof String stringValue) {
+            try {
+                double parsed = Double.parseDouble(stringValue);
+                if (parsed > 0) {
+                    return parsed;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        String profile = normalize(request.profile()).toUpperCase(Locale.ROOT);
+        if (profile.contains("CONTAINER") || profile.contains("FOCUS")) {
+            return 196.0d;
+        }
+        if (profile.contains("SECURITY") || profile.contains("IAM")) {
+            return 176.0d;
+        }
+        return DEFAULT_LAYER_SPACING;
+    }
+
+    private NodePlacementStrategy nodePlacementStrategy(LayoutRequest request) {
+        String normalized = configuredValue(request, "nodePlacementStrategy",
+                "NETWORK_SIMPLEX").toUpperCase(Locale.ROOT);
+        if (normalized.contains("BRANDES")) {
+            return NodePlacementStrategy.BRANDES_KOEPF;
+        }
+        if (normalized.contains("LINEAR")) {
+            return NodePlacementStrategy.LINEAR_SEGMENTS;
+        }
+        if (normalized.contains("SIMPLE")) {
+            return NodePlacementStrategy.SIMPLE;
+        }
+        return NodePlacementStrategy.NETWORK_SIMPLEX;
     }
 
     private Map<String, ElkPort> createPorts(ElkNode node, LayoutNode nodeRequest) {

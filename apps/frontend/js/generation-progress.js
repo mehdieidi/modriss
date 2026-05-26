@@ -63,6 +63,7 @@ function animateTo(targetProgress) {
 }
 
 export function showGenerationProgress({
+  kicker = "Generation in Progress",
   title = "Generating model",
   subtitle = "Preparing the next step in your modeling flow.",
   label = "Starting generation…"
@@ -76,6 +77,9 @@ export function showGenerationProgress({
   renderProgress();
   if (el.generationProgressTitle) {
     el.generationProgressTitle.textContent = title;
+  }
+  if (el.generationProgressKicker) {
+    el.generationProgressKicker.textContent = kicker;
   }
   if (el.generationProgressSubtitle) {
     el.generationProgressSubtitle.textContent = subtitle;

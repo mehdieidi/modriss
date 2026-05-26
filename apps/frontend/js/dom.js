@@ -192,6 +192,7 @@ export const el = {
   validationCloseBtn: document.getElementById("validationCloseBtn"),
   generationProgressOverlay: document.getElementById(
       "generationProgressOverlay"),
+  generationProgressKicker: document.getElementById("generationProgressKicker"),
   generationProgressTitle: document.getElementById("generationProgressTitle"),
   generationProgressSubtitle: document.getElementById(
       "generationProgressSubtitle"),

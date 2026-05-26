@@ -1,5 +1,6 @@
 import {state} from './state.js';
-import {autoLayoutIfStacked, emptyDiagram, genId} from './utils.js';
+import {emptyDiagram, genId} from './utils.js';
+import {ensureReadableLayout, nodeSizeForType} from './layout-engine.js';
 import {
   modelingElementDefinition,
   modelingLevelConfig,
@@ -1127,7 +1128,8 @@ function selectRelationshipIdsForView(graph, view, elementIds) {
   return relationshipIds;
 }
 
-function layoutNodesForElements(graph, elementIds, existingNodes = []) {
+function layoutNodesForElements(
+    graph, elementIds, existingNodes = [], typeKey = state.activeType) {
   const existingByElement = new Map(
       safeArray(existingNodes).map((node) => [node.elementId, node]));
   const nodes = elementIds.map((elementId, index) => {
@@ -1149,9 +1151,19 @@ function layoutNodesForElements(graph, elementIds, existingNodes = []) {
   const fakeNodes = nodes.map((node) => ({
     id: node.elementId,
     x: node.x,
-    y: node.y
+    y: node.y,
+    width: node.width,
+    height: node.height
   }));
-  autoLayoutIfStacked(fakeNodes);
+  const elementIdSet = new Set(elementIds);
+  const fakeEdges = [...graph.relationshipsById.values()].filter(
+      (relationship) => elementIdSet.has(relationship.sourceElementId)
+          && elementIdSet.has(relationship.targetElementId)).map(
+      (relationship) => ({
+        sourceId: relationship.sourceElementId,
+        targetId: relationship.targetElementId
+      }));
+  ensureReadableLayout(fakeNodes, fakeEdges, nodeSizeForType(typeKey));
   fakeNodes.forEach((node, index) => {
     nodes[index].x = node.x;
     nodes[index].y = node.y;
@@ -1223,7 +1235,7 @@ function buildViewFromDefinition(typeKey, graph, definition,
   };
   const elementIds = selectElementIdsForView(graph, view, typeKey);
   const relationshipIds = selectRelationshipIdsForView(graph, view, elementIds);
-  view.nodes = layoutNodesForElements(graph, elementIds);
+  view.nodes = layoutNodesForElements(graph, elementIds, [], typeKey);
   view.edges = relationshipIds.map((relationshipId) => ({
     relationshipId,
     visible: true
@@ -1246,7 +1258,7 @@ function defaultMainView(typeKey, graph, modelName) {
       relationshipKinds: []
     },
     layoutProfile: "DEFAULT_LAYERED",
-    nodes: layoutNodesForElements(graph, elementIds),
+    nodes: layoutNodesForElements(graph, elementIds, [], typeKey),
     edges: relationshipIds.map((relationshipId) => ({
       relationshipId,
       visible: true
@@ -1324,9 +1336,12 @@ function normalizeView(view, graph, typeKey, modelName) {
       normalized.filters.elementTypes).map(String);
   normalized.filters.relationshipKinds = safeArray(
       normalized.filters.relationshipKinds).map(String);
-  if (!normalized.nodes.length && graph.elementsById.size) {
-    const elementIds = selectElementIdsForView(graph, normalized, typeKey);
-    normalized.nodes = layoutNodesForElements(graph, elementIds);
+  if (graph.elementsById.size) {
+    const elementIds = normalized.nodes.length
+        ? normalized.nodes.map((node) => node.elementId)
+        : selectElementIdsForView(graph, normalized, typeKey);
+    normalized.nodes = layoutNodesForElements(graph, elementIds,
+        normalized.nodes, typeKey);
   }
   if (!normalized.edges.length && graph.relationshipsById.size) {
     const elementIds = normalized.nodes.map((node) => node.elementId);

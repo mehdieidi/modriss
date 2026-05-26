@@ -1,5 +1,6 @@
 import {state} from './state.js';
-import {autoLayoutIfStacked, emptyDiagram, genId} from './utils.js';
+import {emptyDiagram, genId} from './utils.js';
+import {ensureReadableLayout, nodeSizeForType} from './layout-engine.js';
 import {
   modelingElementDefinition,
   modelingLabelField,
@@ -402,7 +403,8 @@ export function toDiagram(modelType, modelJson, fallbackName) {
     return !!(edge.sourceId && edge.targetId);
   });
 
-  autoLayoutIfStacked(diagram.nodes);
+  ensureReadableLayout(diagram.nodes, diagram.connections,
+      nodeSizeForType(modelType));
   return diagram;
 }
 

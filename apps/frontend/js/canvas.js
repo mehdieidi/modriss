@@ -2,7 +2,8 @@ import {MODEL_TYPES, TOUCH_MOVE_THRESHOLD} from './config.js';
 import {state} from './state.js';
 import {el} from './dom.js';
 import {api} from './api.js';
-import {autoLayoutIfStacked, escapeHtml, genId} from './utils.js';
+import {escapeHtml, genId} from './utils.js';
+import {ensureReadableLayout} from './layout-engine.js';
 import {getDefaultNode, legalKinds, saveStoredEdgeLayout} from './diagram.js';
 import {
   activeView,
@@ -1363,6 +1364,123 @@ function pinPointsForEdge(edge) {
       : [];
 }
 
+function edgeObstacleRect(node, nodeW, nodeH, padding = 18) {
+  return {
+    minX: node.x - padding,
+    minY: node.y - padding,
+    maxX: node.x + nodeW + padding,
+    maxY: node.y + nodeH + padding
+  };
+}
+
+function axisSegmentIntersectsRect(start, end, rect) {
+  if (start.x === end.x) {
+    const x = start.x;
+    const minY = Math.min(start.y, end.y);
+    const maxY = Math.max(start.y, end.y);
+    return x > rect.minX && x < rect.maxX && maxY > rect.minY
+        && minY < rect.maxY;
+  }
+  if (start.y === end.y) {
+    const y = start.y;
+    const minX = Math.min(start.x, end.x);
+    const maxX = Math.max(start.x, end.x);
+    return y > rect.minY && y < rect.maxY && maxX > rect.minX
+        && minX < rect.maxX;
+  }
+  return false;
+}
+
+function compressPolyline(points) {
+  const compact = [];
+  points.forEach((point) => {
+    const normalized = normalizePinPoint(point);
+    if (!normalized) {
+      return;
+    }
+    const previous = compact[compact.length - 1];
+    if (previous && previous.x === normalized.x && previous.y
+        === normalized.y) {
+      return;
+    }
+    compact.push(normalized);
+  });
+  for (let index = 1; index < compact.length - 1;) {
+    const prev = compact[index - 1];
+    const current = compact[index];
+    const next = compact[index + 1];
+    if ((prev.x === current.x && current.x === next.x)
+        || (prev.y === current.y && current.y === next.y)) {
+      compact.splice(index, 1);
+      continue;
+    }
+    index += 1;
+  }
+  return compact;
+}
+
+function defaultOrthogonalPoints(edge, source, target, nodeW, nodeH,
+    startPoint, endPoint) {
+  const sourceSide = normalizeEdgeAnchor(edge.sourceAnchor)?.side
+      || (startPoint.x >= source.x + nodeW / 2 ? "right" : "left");
+  const targetSide = normalizeEdgeAnchor(edge.targetAnchor)?.side
+      || (endPoint.x >= target.x + nodeW / 2 ? "right" : "left");
+  const stub = 34;
+  const startStubX = startPoint.x + (sourceSide === "right" ? stub : -stub);
+  const endStubX = endPoint.x + (targetSide === "right" ? stub : -stub);
+  const midpointX = Math.round((startStubX + endStubX) / 2);
+  const primaryCandidates = [];
+  if (sourceSide === "right" && targetSide === "left") {
+    primaryCandidates.push(midpointX, Math.max(startStubX, endStubX) + 42);
+  } else if (sourceSide === "left" && targetSide === "right") {
+    primaryCandidates.push(midpointX, Math.min(startStubX, endStubX) - 42);
+  } else if (sourceSide === "right") {
+    primaryCandidates.push(Math.max(startStubX, endStubX) + 68, midpointX);
+  } else {
+    primaryCandidates.push(Math.min(startStubX, endStubX) - 68, midpointX);
+  }
+  const fallbackDistance = 108;
+  primaryCandidates.push(startStubX + (sourceSide === "right"
+      ? fallbackDistance : -fallbackDistance));
+  primaryCandidates.push(endStubX + (targetSide === "right"
+      ? fallbackDistance : -fallbackDistance));
+
+  const obstacleRects = state.diagram.nodes.filter((node) =>
+      node.id !== source.id && node.id !== target.id).map((node) =>
+      edgeObstacleRect(node, nodeW, nodeH));
+  const uniqueCandidates = [...new Set(primaryCandidates.map((value) =>
+      Math.round(value)))];
+  let trunkX = uniqueCandidates[0] || midpointX;
+  candidateLoop:
+      for (const candidate of uniqueCandidates) {
+        const segments = [
+          [{x: startPoint.x, y: startPoint.y},
+            {x: startStubX, y: startPoint.y}],
+          [{x: startStubX, y: startPoint.y}, {x: candidate, y: startPoint.y}],
+          [{x: candidate, y: startPoint.y}, {x: candidate, y: endPoint.y}],
+          [{x: candidate, y: endPoint.y}, {x: endStubX, y: endPoint.y}],
+          [{x: endStubX, y: endPoint.y}, {x: endPoint.x, y: endPoint.y}]
+        ];
+        for (const rect of obstacleRects) {
+          if (segments.some(([segmentStart, segmentEnd]) =>
+              axisSegmentIntersectsRect(segmentStart, segmentEnd, rect))) {
+            continue candidateLoop;
+          }
+        }
+        trunkX = candidate;
+        break;
+      }
+
+  return compressPolyline([
+    startPoint,
+    {x: startStubX, y: startPoint.y},
+    {x: trunkX, y: startPoint.y},
+    {x: trunkX, y: endPoint.y},
+    {x: endStubX, y: endPoint.y},
+    endPoint
+  ]);
+}
+
 function polylineMidpoint(points) {
   if (!Array.isArray(points) || points.length < 2) {
     const point = points?.[0] || {x: 0, y: 0};
@@ -1430,16 +1548,19 @@ function closestPointOnPolyline(points, point) {
 }
 
 function edgePathGeometry(edge, source, target, nodeW, nodeH) {
-  const pins = pinPointsForEdge(edge);
   const sourceCenter = nodeCenter(source, nodeW, nodeH);
   const targetCenter = nodeCenter(target, nodeW, nodeH);
-  const startReference = pins[0] || targetCenter;
-  const endReference = pins[pins.length - 1] || sourceCenter;
+  const explicitPins = pinPointsForEdge(edge);
+  const startReference = explicitPins[0] || targetCenter;
+  const endReference = explicitPins[explicitPins.length - 1] || sourceCenter;
   const startPoint = pointOnNodeBoundary(source, nodeW, nodeH, startReference,
       edge.sourceAnchor);
   const endPoint = pointOnNodeBoundary(target, nodeW, nodeH, endReference,
       edge.targetAnchor);
-  const points = [startPoint, ...pins, endPoint];
+  const points = explicitPins.length
+      ? [startPoint, ...explicitPins, endPoint]
+      : defaultOrthogonalPoints(edge, source, target, nodeW, nodeH, startPoint,
+          endPoint);
   const pathParts = [];
   points.forEach((point, index) => {
     pathParts.push(`${index === 0 ? "M" : "L"} ${point.x} ${point.y}`);
@@ -1788,6 +1909,20 @@ function createContainerFocusView(node) {
   const descendantIds = [...collectContainedDescendantIds(node.id)];
   const descendantSet = new Set(descendantIds);
   const viewNodePositions = viewNodesByElement(previousView);
+  const edges = [];
+  state.graph.relationshipsById.forEach((relationship) => {
+    const sourceId = relationship.sourceElementId || relationship.source;
+    const targetId = relationship.targetElementId || relationship.target;
+    if (!descendantSet.has(sourceId) || !descendantSet.has(targetId)) {
+      return;
+    }
+    edges.push({
+      relationshipId: relationship.id,
+      sourceId,
+      targetId,
+      visible: true
+    });
+  });
   const focusNodes = descendantIds.map((elementId) => ({
     elementId,
     ...(viewNodePositions.get(elementId) || {})
@@ -1804,22 +1939,9 @@ function createContainerFocusView(node) {
               : 80 + Math.floor(index / 3) * 170
     };
   });
-  autoLayoutIfStacked(fakeNodes);
+  ensureReadableLayout(fakeNodes, edges, getCurrentDiagramNodeSize());
   const positionById = new Map(fakeNodes.map((entry) => [entry.id, entry]));
   const edgePositions = viewEdgesByRelationship(previousView);
-  const edges = [];
-  state.graph.relationshipsById.forEach((relationship) => {
-    const sourceId = relationship.sourceElementId || relationship.source;
-    const targetId = relationship.targetElementId || relationship.target;
-    if (!descendantSet.has(sourceId) || !descendantSet.has(targetId)) {
-      return;
-    }
-    edges.push({
-      relationshipId: relationship.id,
-      visible: true,
-      ...(edgePositions.get(relationship.id) || {})
-    });
-  });
   return {
     id: focusViewIdFor(node.id),
     name: `${node.label || node.id} Contents`,
@@ -1841,7 +1963,13 @@ function createContainerFocusView(node) {
         collapsed: false
       };
     }),
-    edges,
+    edges: edges.map((edge) => ({
+      relationshipId: edge.relationshipId,
+      sourceId: edge.sourceId,
+      targetId: edge.targetId,
+      visible: true,
+      ...(edgePositions.get(edge.relationshipId) || {})
+    })),
     hidden: {elementIds: [], relationshipIds: []},
     collapsedElementIds: []
   };
@@ -2477,6 +2605,97 @@ function syncDraggedDiagram() {
       syncBoundedContextBoxes();
     }
   }
+}
+
+function dragCollisionRect(x, y, nodeW, nodeH, padding = 10) {
+  return {
+    minX: x - padding,
+    minY: y - padding,
+    maxX: x + nodeW + padding,
+    maxY: y + nodeH + padding
+  };
+}
+
+function dragRectsOverlap(a, b) {
+  return a.minX < b.maxX && a.maxX > b.minX
+      && a.minY < b.maxY && a.maxY > b.minY;
+}
+
+function movingSelectionOverlaps(nextPositionsById) {
+  const nodeW = getNodeWidth();
+  const nodeH = getNodeHeight();
+  const movingIds = new Set(nextPositionsById.keys());
+  const movingRects = [...nextPositionsById.entries()].map(
+      ([nodeId, position]) => ({
+        nodeId,
+        rect: dragCollisionRect(position.x, position.y, nodeW, nodeH)
+      }));
+  for (let index = 0; index < movingRects.length; index += 1) {
+    for (let compareIndex = index + 1; compareIndex < movingRects.length;
+        compareIndex += 1) {
+      if (dragRectsOverlap(movingRects[index].rect,
+          movingRects[compareIndex].rect)) {
+        return true;
+      }
+    }
+  }
+  for (const {rect} of movingRects) {
+    for (const node of state.diagram.nodes) {
+      if (movingIds.has(node.id)) {
+        continue;
+      }
+      if (dragRectsOverlap(rect, dragCollisionRect(node.x, node.y, nodeW,
+          nodeH))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function applyBlockedDragPositions(desiredPositionsById) {
+  if (!desiredPositionsById?.size) {
+    return;
+  }
+  const currentPositionsById = new Map();
+  desiredPositionsById.forEach((_, nodeId) => {
+    const node = state.nodesById.get(nodeId);
+    if (!node) {
+      return;
+    }
+    currentPositionsById.set(nodeId, {x: node.x, y: node.y});
+  });
+
+  const xAttempt = new Map();
+  currentPositionsById.forEach((position, nodeId) => {
+    const desired = desiredPositionsById.get(nodeId) || position;
+    xAttempt.set(nodeId, {x: desired.x, y: position.y});
+  });
+  const allowX = !movingSelectionOverlaps(xAttempt);
+
+  const xyAttempt = new Map();
+  currentPositionsById.forEach((position, nodeId) => {
+    const desired = desiredPositionsById.get(nodeId) || position;
+    xyAttempt.set(nodeId, {
+      x: allowX ? desired.x : position.x,
+      y: desired.y
+    });
+  });
+  const allowY = !movingSelectionOverlaps(xyAttempt);
+
+  currentPositionsById.forEach((position, nodeId) => {
+    const node = state.nodesById.get(nodeId);
+    const desired = desiredPositionsById.get(nodeId) || position;
+    if (!node) {
+      return;
+    }
+    node.x = allowX ? desired.x : position.x;
+    node.y = allowY ? desired.y : position.y;
+    if (node.meta) {
+      node.meta.x = node.x;
+      node.meta.y = node.y;
+    }
+  });
 }
 
 let lastPublishMoveTime = 0;
@@ -5568,12 +5787,10 @@ export function onGlobalMouseMove(event) {
         event.clientY - state.dragNode.startY) > TOUCH_MOVE_THRESHOLD) {
       state.dragNode.moved = true;
     }
-    node.x = Math.round(state.dragNode.nodeX + dx);
-    node.y = Math.round(state.dragNode.nodeY + dy);
-    if (node.meta) {
-      node.meta.x = node.x;
-      node.meta.y = node.y;
-    }
+    applyBlockedDragPositions(new Map([[node.id, {
+      x: Math.round(state.dragNode.nodeX + dx),
+      y: Math.round(state.dragNode.nodeY + dy)
+    }]]));
     scheduleDraggedDiagramSync();
     return;
   }
@@ -5583,18 +5800,12 @@ export function onGlobalMouseMove(event) {
         / state.viewport.scale;
     const dy = (event.clientY - state.dragBoundedContext.startY)
         / state.viewport.scale;
-    state.dragBoundedContext.nodePositions.forEach((entry) => {
-      const node = state.nodesById.get(entry.id);
-      if (!node) {
-        return;
-      }
-      node.x = Math.round(entry.x + dx);
-      node.y = Math.round(entry.y + dy);
-      if (node.meta) {
-        node.meta.x = node.x;
-        node.meta.y = node.y;
-      }
-    });
+    const desiredPositions = new Map(state.dragBoundedContext.nodePositions.map(
+        (entry) => [entry.id, {
+          x: Math.round(entry.x + dx),
+          y: Math.round(entry.y + dy)
+        }]));
+    applyBlockedDragPositions(desiredPositions);
     scheduleDraggedDiagramSync();
     return;
   }
@@ -5642,12 +5853,10 @@ export function onGlobalTouchMove(event) {
         touch.clientY - state.touchTap.startY) > TOUCH_MOVE_THRESHOLD) {
       state.touchTap.moved = true;
     }
-    node.x = Math.round(state.dragNode.nodeX + dx);
-    node.y = Math.round(state.dragNode.nodeY + dy);
-    if (node.meta) {
-      node.meta.x = node.x;
-      node.meta.y = node.y;
-    }
+    applyBlockedDragPositions(new Map([[node.id, {
+      x: Math.round(state.dragNode.nodeX + dx),
+      y: Math.round(state.dragNode.nodeY + dy)
+    }]]));
     scheduleDraggedDiagramSync();
     event.preventDefault();
     return;
@@ -5658,18 +5867,12 @@ export function onGlobalTouchMove(event) {
         / state.viewport.scale;
     const dy = (touch.clientY - state.dragBoundedContext.startY)
         / state.viewport.scale;
-    state.dragBoundedContext.nodePositions.forEach((entry) => {
-      const node = state.nodesById.get(entry.id);
-      if (!node) {
-        return;
-      }
-      node.x = Math.round(entry.x + dx);
-      node.y = Math.round(entry.y + dy);
-      if (node.meta) {
-        node.meta.x = node.x;
-        node.meta.y = node.y;
-      }
-    });
+    const desiredPositions = new Map(state.dragBoundedContext.nodePositions.map(
+        (entry) => [entry.id, {
+          x: Math.round(entry.x + dx),
+          y: Math.round(entry.y + dy)
+        }]));
+    applyBlockedDragPositions(desiredPositions);
     scheduleDraggedDiagramSync();
     event.preventDefault();
     return;

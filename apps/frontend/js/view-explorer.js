@@ -13,6 +13,7 @@ import {materializeActiveView} from './view-materializer.js';
 import {
   activeCanvasFocus,
   canvasFocusLabel,
+  centerViewportOnDiagram,
   closeBoundedContextSpecialView,
   closeCanvasFocus,
   finalizeBoundedContextDraft,
@@ -481,6 +482,7 @@ async function openWorkbenchView(viewId) {
     materializeActiveView();
     renderPaletteCallback?.();
     renderDiagramCallback?.();
+    centerViewportOnDiagram({fit: true});
     renderViewWorkbench();
     saveCurrentTabGraphState();
     setStatus("View selected.");
