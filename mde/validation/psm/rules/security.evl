@@ -24,8 +24,8 @@ context AWSPSM!IamPolicyDocument {
 
 context AWSPSM!IamStatement {
   constraint StatementHasActionAndResourceSide {
-    check : (self.actions.notEmpty() or self.notActions.notEmpty()) and (self.resources.notEmpty() or self.notResources.notEmpty())
-    message : 'IAM statement is missing action/notAction or resource/notResource. Fix: define the allowed/denied actions and the resources they apply to.'
+    check : self.hasActionSide() and (self.hasResourceSide() or self.isTrustPolicyStatement())
+    message : 'IAM statement is missing action/notAction or an applicable target side. Fix: define resource/notResource for permission policies, or principal entries for trust policies.'
   }
 
   constraint NoAllowWildcardInProductionWithoutJustification {

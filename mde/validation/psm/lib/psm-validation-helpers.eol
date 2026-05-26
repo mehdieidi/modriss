@@ -158,6 +158,24 @@ operation AWSPSM!IamStatement hasLeastPrivilegeJustification() : Boolean {
   return self.wildcardJustification.hasText() or self.conditions.notEmpty();
 }
 
+operation AWSPSM!IamStatement hasActionSide() : Boolean {
+  return self.actions.notEmpty() or self.notActions.notEmpty();
+}
+
+operation AWSPSM!IamStatement hasResourceSide() : Boolean {
+  return self.resources.notEmpty() or self.notResources.notEmpty();
+}
+
+@cached
+operation AWSPSM!IamStatement isTrustPolicyStatement() : Boolean {
+  return self.principals.notEmpty();
+}
+
+@cached
+operation AWSPSM!LambdaZipCodeConfig isGeneratorManagedCodeSkeleton() : Boolean {
+  return self.generatedByTransformation = true;
+}
+
 @cached
 operation AWSPSM!S3Bucket blocksAllPublicAccess() : Boolean {
   if (self.publicAccessMode = AWSPSMENUMS!S3BlockPublicAccessMode#STRICT_BLOCK_ALL) {
@@ -181,10 +199,21 @@ operation AWSPSM!ApiGatewayIntegration targetCount() : Integer {
   if (self.stateMachineTarget.isDefined()) {
     count = count + 1;
   }
-  if (self.integrationUri.hasText()) {
+  if (self.integrationUri.hasText() and self.lambdaTarget.isUndefined() and self.stateMachineTarget.isUndefined()) {
     count = count + 1;
   }
   return count;
+}
+
+@cached
+operation AWSPSM!ApiGatewayStage resolvedAccessLogGroup() : Any {
+  if (self.accessLogGroup.isDefined()) {
+    return self.accessLogGroup;
+  }
+  if (self.api.isDefined() and self.api.accessLogGroup.isDefined()) {
+    return self.api.accessLogGroup;
+  }
+  return null;
 }
 
 @cached

@@ -125,6 +125,11 @@ class TransformationServiceTest {
         ArtifactRecord artifact = transformations.psmToArtifact(user, psm.id());
 
         assertFalse(artifact.files().isEmpty());
+        assertTrue(artifact.modelJson().path("files").isMissingNode(),
+                "Artifact metadata must not duplicate generated file contents.");
+        assertEquals(artifact.files().size(), artifact.modelJson().path("fileCount").asInt());
+        assertEquals(artifact.id(), artifactService.get(user, artifact.id()).id());
+        assertFalse(artifactService.list(user, project.id()).isEmpty());
         assertTrue(artifact.files().containsKey("generated/reports/generation-report.md"));
         assertTrue(artifact.files().keySet().stream().anyMatch(path -> path.startsWith("src/")),
                 "Formal generation should produce source files, not only a placeholder scaffold.");
@@ -134,6 +139,8 @@ class TransformationServiceTest {
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElseThrow();
+        assertTrue(samTemplate.length() < 500_000,
+                "SAM template must not contain runaway EGL indentation.");
         assertFalse(samTemplate.contains("Resources: {}"),
                 "SAM template must be generated from AWS PSM resources.");
     }

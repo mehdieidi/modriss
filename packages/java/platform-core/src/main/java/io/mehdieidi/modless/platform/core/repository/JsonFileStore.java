@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.platform.core.repository;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -21,7 +23,12 @@ public final class JsonFileStore {
 
     public JsonFileStore(Path root) {
         this.root = root.toAbsolutePath().normalize();
-        this.objectMapper = new ObjectMapper()
+        JsonFactory jsonFactory = JsonFactory.builder()
+                .streamReadConstraints(StreamReadConstraints.builder()
+                        .maxStringLength(128 * 1024 * 1024)
+                        .build())
+                .build();
+        this.objectMapper = new ObjectMapper(jsonFactory)
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .enable(SerializationFeature.INDENT_OUTPUT);

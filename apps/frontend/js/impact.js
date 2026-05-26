@@ -114,7 +114,7 @@ async function enrichImpactWithArtifactFiles(data) {
     const id = String(artifact.modelId);
     try {
       const record = await api(`/artifact/${id}`);
-      const filesMap = record?.modelJson?.files || {};
+      const filesMap = record?.files || record?.modelJson?.files || {};
       const allFiles = Object.keys(filesMap)
       .map((path) => String(path || '').trim())
       .filter(Boolean);

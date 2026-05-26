@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.platform.core.service;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.mde.validation.EpsilonEvlValidator;
@@ -77,15 +79,23 @@ public final class ModelService {
     }
 
     public List<ModelSummary> listSummaries(UserRecord user, ModelLevel level, String projectId) {
-        return list(user, level, projectId).stream()
-                .map(model -> new ModelSummary(
-                        model.id(),
-                        model.projectId(),
-                        model.level(),
-                        model.name(),
-                        model.createdAt(),
-                        model.updatedAt()))
-                .toList();
+        if (projectId == null || projectId.isBlank()) {
+            return List.of();
+        }
+        projectService.get(user, projectId);
+        Path dir = store.resolve(modelDir(projectId, level));
+        if (!Files.isDirectory(dir)) {
+            return List.of();
+        }
+        try (Stream<Path> files = Files.list(dir)) {
+            return files.filter(path -> path.getFileName().toString().endsWith(".json"))
+                    .map(path -> readSummary(path, level))
+                    .filter(model -> model != null)
+                    .sorted(Comparator.comparing(ModelSummary::updatedAt).reversed())
+                    .toList();
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not list model summaries.");
+        }
     }
 
     public ModelRecord get(UserRecord user, ModelLevel level, String id) {
@@ -637,6 +647,56 @@ public final class ModelService {
 
     private Path modelDir(String projectId, ModelLevel level) {
         return Path.of("projects", projectId, "models", level.apiName());
+    }
+
+    private ModelSummary readSummary(Path path, ModelLevel fallbackLevel) {
+        try (JsonParser parser = store.objectMapper().getFactory().createParser(path.toFile())) {
+            String id = null;
+            String projectId = null;
+            ModelLevel level = fallbackLevel;
+            String name = null;
+            Instant updatedAt = Files.getLastModifiedTime(path).toInstant();
+            Instant createdAt = updatedAt;
+            if (parser.nextToken() != JsonToken.START_OBJECT) {
+                return null;
+            }
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                String field = parser.currentName();
+                parser.nextToken();
+                if ("id".equals(field)) {
+                    id = parser.getValueAsString();
+                } else if ("projectId".equals(field)) {
+                    projectId = parser.getValueAsString();
+                } else if ("level".equals(field)) {
+                    level = ModelLevel.valueOf(parser.getValueAsString());
+                } else if ("name".equals(field)) {
+                    name = parser.getValueAsString();
+                } else if ("createdAt".equals(field)) {
+                    createdAt = parseInstant(parser.getValueAsString(), createdAt);
+                } else if ("updatedAt".equals(field)) {
+                    updatedAt = parseInstant(parser.getValueAsString(), updatedAt);
+                } else if ("modelJson".equals(field)) {
+                    break;
+                } else {
+                    parser.skipChildren();
+                }
+            }
+            if (id == null || projectId == null) {
+                return null;
+            }
+            return new ModelSummary(id, projectId, level, name == null ? id : name,
+                    createdAt, updatedAt);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private Instant parseInstant(String value, Instant fallback) {
+        try {
+            return value == null || value.isBlank() ? fallback : Instant.parse(value);
+        } catch (Exception ex) {
+            return fallback;
+        }
     }
 
     private Path modelPath(String projectId, ModelLevel level, String id) {

@@ -9,7 +9,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
@@ -101,6 +105,26 @@ final class EpsilonEgxGeneratorTest {
         assertTraceFilesAreFinalized(outputDirectory);
         assertGenerationReportContainsExportGateSummary(outputDirectory);
         assertGeneratedScriptsAndCiImplementProductionGates(outputDirectory);
+    }
+
+    @Test
+    void generatesCompleteUniqueTraceForRepositoryPsmSample() throws Exception {
+        Path sourceModel = REPOSITORY_ROOT.resolve("mde/samples/psm.xmi");
+        Path outputDirectory = tempDir.resolve("sample-generated-project");
+
+        EgxGenerationReport report = generateOrFail(AwsPsmToArtifactsDefaults.request(
+                REPOSITORY_ROOT,
+                sourceModel,
+                outputDirectory,
+                true,
+                true));
+
+        assertEquals(GenerationStatus.SUCCEEDED, report.status(),
+                report.diagnostics().toString());
+        assertFalse(report.generatedFiles().isEmpty(),
+                "Expected sample generation to write artifacts.");
+        assertTraceCoversEveryGeneratedFile(outputDirectory, report);
+        assertGeneratedSamTemplatesDoNotRepeatParameterKeys(outputDirectory);
     }
 
     private void assertRequiredProjectTreeWasGenerated(Path outputDirectory) throws IOException {
@@ -216,6 +240,70 @@ final class EpsilonEgxGeneratorTest {
                 "Artifact trace sections should include checksums.");
         assertTrue(artifactTrace.contains("\"path\": \"template.yaml\""));
         assertTrue(artifactTrace.contains("\"artifactKind\": \"SAM_TEMPLATE\""));
+    }
+
+    private void assertTraceCoversEveryGeneratedFile(Path outputDirectory,
+            EgxGenerationReport report)
+            throws IOException {
+        String artifactTrace = Files.readString(
+                outputDirectory.resolve("generated/trace/artifact-trace.json"));
+        List<String> tracePaths = tracePaths(artifactTrace);
+        Set<String> uniqueTracePaths = new LinkedHashSet<>(tracePaths);
+
+        assertEquals(tracePaths.size(), uniqueTracePaths.size(),
+                "Artifact trace must not contain duplicate paths.");
+        assertEquals(report.generatedFiles().size(), tracePaths.size(),
+                "Artifact trace should contain one row per generated file.");
+
+        for (Path generatedFile : report.generatedFiles()) {
+            String normalizedPath = generatedFile.toString().replace('\\', '/');
+            assertTrue(uniqueTracePaths.contains(normalizedPath),
+                    () -> "Generated file missing from artifact trace: " + normalizedPath);
+        }
+    }
+
+    private List<String> tracePaths(String artifactTrace) {
+        Matcher matcher = Pattern.compile("\"path\"\\s*:\\s*\"([^\"]+)\"")
+                .matcher(artifactTrace);
+        java.util.ArrayList<String> paths = new java.util.ArrayList<>();
+        while (matcher.find()) {
+            paths.add(matcher.group(1));
+        }
+        return paths;
+    }
+
+    private void assertGeneratedSamTemplatesDoNotRepeatParameterKeys(Path outputDirectory)
+            throws IOException {
+        try (var files = Files.walk(outputDirectory)) {
+            for (Path templateFile : files
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().startsWith("template"))
+                    .filter(path -> path.getFileName().toString().endsWith(".yaml"))
+                    .toList()) {
+                assertNoDuplicateParameterKeys(templateFile);
+            }
+        }
+    }
+
+    private void assertNoDuplicateParameterKeys(Path templateFile) throws IOException {
+        Set<String> parameterNames = new LinkedHashSet<>();
+        boolean inParameters = false;
+        for (String line : Files.readAllLines(templateFile)) {
+            if (line.equals("Parameters:")) {
+                inParameters = true;
+                continue;
+            }
+            if (inParameters && !line.startsWith(" ") && line.endsWith(":")) {
+                return;
+            }
+            if (inParameters && line.startsWith("  ") && !line.startsWith("    ")
+                    && line.endsWith(":")) {
+                String parameterName = line.trim().replace(":", "");
+                assertTrue(parameterNames.add(parameterName),
+                        () -> "Duplicate SAM parameter key " + parameterName + " in "
+                                + templateFile);
+            }
+        }
     }
 
     private void assertGenerationReportContainsExportGateSummary(Path outputDirectory)

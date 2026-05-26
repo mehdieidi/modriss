@@ -516,7 +516,7 @@ export async function loadArtifactById(id, {collapseTree = true} = {}) {
     state.artifact.name = record.name || "artifact";
     setArtifactDirty(false);
 
-    const files = record.modelJson?.files || {};
+    const files = record.files || record.modelJson?.files || {};
     state.artifact.files = Object.keys(files).map((path) => ({path}));
     if (typeof collapseTree === "boolean") {
       state.artifact.treeCollapsed = collapseTree;

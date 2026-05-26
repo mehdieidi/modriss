@@ -67,16 +67,23 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestPath(profileMap : 
   return "tests/workflows/" + self.workflowSlug() + ".workflow.test." + extText;
 }
 
+operation KERNEL!TraceableElement fixtureSlug(fallbackText : String) : String {
+  if (self.id.isPresent()) {
+    return self.id.toSlug();
+  }
+  return fallbackText.toSlug();
+}
+
 operation AWSPSMEVENTS!EventBridgeRule eventFixturePath() : String {
-  return "events/samples/" + self.eventRuleSlug() + ".json";
+  return "events/samples/" + self.fixtureSlug(self.eventRuleSlug()) + ".json";
 }
 
 operation AWSPSMMESSAGING!SqsQueue queueFixturePath() : String {
-  return "events/samples/" + self.queueSlug() + "-sqs-message.json";
+  return "events/samples/" + self.fixtureSlug(self.queueSlug()) + "-sqs-message.json";
 }
 
 operation AWSPSMMESSAGING!SnsTopic topicFixturePath() : String {
-  return "events/samples/" + self.topicSlug() + "-sns-message.json";
+  return "events/samples/" + self.fixtureSlug(self.topicSlug()) + "-sns-message.json";
 }
 
 operation AWSPSMCORE!AwsStage envPath() : String {

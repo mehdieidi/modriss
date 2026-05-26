@@ -93,8 +93,8 @@ context AWSPSM!ApiGatewayIntegration {
 context AWSPSM!ApiGatewayStage {
   constraint AccessLogStageRequiresGroupAndFormat {
     guard : self.accessLogEnabled = true
-    check : self.accessLogGroup.isDefined() and self.accessLogFormat.hasText()
-    message : 'API stage ' + self.stageName + ' enables access logs but lacks accessLogGroup or accessLogFormat. Fix: attach a CloudWatchLogGroup and define a JSON access log format.'
+    check : self.resolvedAccessLogGroup().isDefined() and self.accessLogFormat.hasText()
+    message : 'API stage ' + self.stageName + ' enables access logs but lacks an access log group or format. Fix: attach a CloudWatchLogGroup on the stage or API and define a JSON access log format.'
   }
 
   critique ProductionStageShouldThrottle {

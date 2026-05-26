@@ -20,37 +20,6 @@ operation AWSPSMAPI!ApiGatewayRoute operationIdText() : String {
   return self.operationName.orElseText(self.stableKey()).toCamel();
 }
 
-operation AWSPSMAPI!ApiGatewayRoute emitOpenApiOperationYaml(indentCount : Integer) : String {
-  var outText = spaces(indentCount) + self.routeMethod() + ":\n";
-  outText = outText + emitYamlScalarProperty("operationId", self.operationIdText(), indentCount + 2);
-  outText = outText + spaces(indentCount + 2) + "tags:\n";
-  outText = outText + spaces(indentCount + 4) + "- " + self.api.apiName.orElseText("api").yamlScalar() + "\n";
-  if (self.authorizationType.asString() <> "NONE") {
-    outText = outText + spaces(indentCount + 2) + "security:\n";
-    outText = outText + spaces(indentCount + 4) + "- " + self.authorizationType.asString().toLowerCase().toSlug() + ": []\n";
-  }
-  outText = outText + spaces(indentCount + 2) + "responses:\n";
-  outText = outText + spaces(indentCount + 4) + "'200':\n";
-  outText = outText + spaces(indentCount + 6) + "description: Successful response\n";
-  outText = outText + spaces(indentCount + 4) + "'400':\n";
-  outText = outText + spaces(indentCount + 6) + "$ref: '#/components/responses/BadRequest'\n";
-  outText = outText + spaces(indentCount + 4) + "'500':\n";
-  outText = outText + spaces(indentCount + 6) + "$ref: '#/components/responses/InternalError'\n";
-  if (self.integration.isDefined()) {
-    outText = outText + spaces(indentCount + 2) + "x-amazon-apigateway-integration:\n";
-    outText = outText + emitYamlScalarProperty("type", self.integration.integrationType.asString().toLowerCase(), indentCount + 4);
-    if (self.integration.lambdaTarget.isDefined()) {
-      outText = outText + spaces(indentCount + 4) + "uri: " + arnForResource(self.integration.lambdaTarget) + "\n";
-    }
-    else {
-      outText = outText + emitYamlScalarProperty("uri", self.integration.integrationUri, indentCount + 4);
-    }
-    outText = outText + emitYamlScalarProperty("httpMethod", self.integration.integrationMethod.orElseText("POST"), indentCount + 4);
-    outText = outText + emitYamlScalarProperty("payloadFormatVersion", self.integration.payloadFormatVersion.orElseText("2.0"), indentCount + 4);
-  }
-  return outText;
-}
-
 operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
   outText = outText + spaces(indentCount + 2) + "\"Type\": " + self.modelFeatureValue("type").asString().firstToUpperCase().toLowerCase().firstToUpperCase().jsonString();

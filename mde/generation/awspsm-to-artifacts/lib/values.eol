@@ -1,34 +1,21 @@
 import "naming.eol";
 
 operation spaces(indentCount : Integer) : String {
-  return "".pad(indentCount, " ", true);
+  if (indentCount <= 0) {
+    return "";
+  }
+  return " ".repeat(indentCount);
 }
 
 operation Any jsonEscape() : String {
   if (self.isUndefined()) {
     return "";
   }
-  var rawText = self.asString();
-  var escapedText = "";
-  for (idx in Sequence{1..rawText.length()}) {
-    var chText = rawText.substring(idx - 1, idx);
-    if (chText = "\\") {
-      escapedText = escapedText + "\\\\";
-    }
-    else if (chText = "\"") {
-      escapedText = escapedText + "\\\"";
-    }
-    else if (chText = "\r") {
-      escapedText = escapedText + "\\r";
-    }
-    else if (chText = "\n") {
-      escapedText = escapedText + "\\n";
-    }
-    else {
-      escapedText = escapedText + chText;
-    }
-  }
-  return escapedText;
+  return self.asString()
+    .replaceAll("\\\\", "\\\\\\\\")
+    .replaceAll("\"", "\\\\\"")
+    .replaceAll("\r", "\\\\r")
+    .replaceAll("\n", "\\\\n");
 }
 
 operation Any jsonString() : String {

@@ -63,8 +63,8 @@ context AWSPSM!AwsLambdaFunction {
 
 context AWSPSM!LambdaZipCodeConfig {
   constraint ZipCodeHasRuntimeAndHandler {
-    check : self.runtimeIdentifier.hasText() and self.handler.hasText()
-    message : 'ZIP Lambda code configuration is missing runtimeIdentifier or handler. Fix: set runtimeIdentifier, for example python3.12 or nodejs20.x, and set handler, for example app.handler.'
+    check : (self.runtimeIdentifier.hasText() and self.handler.hasText()) or self.isGeneratorManagedCodeSkeleton()
+    message : 'ZIP Lambda code configuration is missing runtimeIdentifier or handler. Fix: set runtimeIdentifier and handler for externally supplied ZIP code; generator-managed skeletons may rely on the artifact generator runtime defaults.'
   }
 
   constraint ZipCodeHasExactlyOneLocation {

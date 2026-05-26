@@ -7,7 +7,8 @@ paths:
 [% for (pathText in routeSeq.collect(routeObj | routeObj.routePath()).asSet().asSequence().sortBy(pathText | pathText)) { %]
   [%= pathText %]:
 [% for (routeObj in routeSeq.select(routeObj | routeObj.routePath() = pathText).sortBy(routeObj | routeObj.routeMethod())) { %]
-[%= routeObj.emitOpenApiOperationYaml(4) %][% } %]
+[%= routeObj.openApiOperation(4) %]
+[% } %]
 [% } %]
 components:
   responses:
@@ -15,6 +16,31 @@ components:
       description: Invalid request
     InternalError:
       description: Internal error
-[%=out.startPreserve("#", "", apiObj.manualRegionId("openapi-extension"), true)%]
+[%= out.startPreserve("#", "", apiObj.manualRegionId("openapi-extension"), true) %]
 # Add vendor extensions that cannot yet be represented in the PSM here.
-[%=out.stopPreserve()%]
+[%= out.stopPreserve() %]
+
+[%
+@template
+operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) { %]
+[%= spaces(indentCount) %][%= self.routeMethod() %]:
+[%= spaces(indentCount + 2) %]operationId: [%= self.operationIdText().yamlScalar() %]
+[%= spaces(indentCount + 2) %]tags:
+[%= spaces(indentCount + 4) %]- [%= self.api.apiName.orElseText("api").yamlScalar() %]
+[% if (self.authorizationType.asString() <> "NONE") { %][%= spaces(indentCount + 2) %]security:
+[%= spaces(indentCount + 4) %]- [%= self.authorizationType.asString().toLowerCase().toSlug() %]: []
+[% } %][%= spaces(indentCount + 2) %]responses:
+[%= spaces(indentCount + 4) %]'200':
+[%= spaces(indentCount + 6) %]description: Successful response
+[%= spaces(indentCount + 4) %]'400':
+[%= spaces(indentCount + 6) %]$ref: '#/components/responses/BadRequest'
+[%= spaces(indentCount + 4) %]'500':
+[%= spaces(indentCount + 6) %]$ref: '#/components/responses/InternalError'
+[% if (self.integration.isDefined()) { %][%= spaces(indentCount + 2) %]x-amazon-apigateway-integration:
+[%= spaces(indentCount + 4) %]type: [%= self.integration.integrationType.asString().toLowerCase().yamlScalar() %]
+[% if (self.integration.lambdaTarget.isDefined()) { %][%= spaces(indentCount + 4) %]uri: [%= arnForResource(self.integration.lambdaTarget) %]
+[% } else if (self.integration.integrationUri.isPresent()) { %][%= spaces(indentCount + 4) %]uri: [%= self.integration.integrationUri.yamlScalar() %]
+[% } %][%= spaces(indentCount + 4) %]httpMethod: [%= self.integration.integrationMethod.orElseText("POST").yamlScalar() %]
+[%= spaces(indentCount + 4) %]payloadFormatVersion: [%= self.integration.payloadFormatVersion.orElseText("2.0").yamlScalar() %]
+[% } %][% }
+%]

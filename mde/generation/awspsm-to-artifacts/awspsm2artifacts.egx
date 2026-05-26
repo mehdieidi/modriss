@@ -717,17 +717,6 @@ rule TraceabilityDoc {
   post { emitCtx.recordArtifact("docs/traceability.md", "TRACEABILITY_DOC", "AWSPSM2ART_TraceabilityDoc", Sequence{awsRoot.stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
-rule ArtifactTraceJson {
-  pre {
-    emitCtx.recordArtifact("generated/trace/artifact-trace.json", "TRACE_REPORT", "AWSPSM2ART_ArtifactTraceJson", Sequence{awsRoot.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
-  }
-  template : "docs/artifact-trace-json.egl"
-  target : "generated/trace/artifact-trace.json"
-  merge : false
-  overwrite : true
-  parameters : Map {"awsRoot" = awsRoot, "emitCtx" = emitCtx}
-}
-
 rule ProtectedRegionsJson {
   pre {
     emitCtx.recordArtifact("generated/trace/protected-regions.json", "TRACE_REPORT", "AWSPSM2ART_ProtectedRegionsJson", Sequence{awsRoot.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
@@ -789,6 +778,17 @@ rule GenerationReport {
   }
   template : "docs/generation-report.egl"
   target : "generated/reports/generation-report.md"
+  merge : false
+  overwrite : true
+  parameters : Map {"awsRoot" = awsRoot, "emitCtx" = emitCtx}
+}
+
+rule ArtifactTraceJson {
+  pre {
+    emitCtx.recordArtifact("generated/trace/artifact-trace.json", "TRACE_REPORT", "AWSPSM2ART_ArtifactTraceJson", Sequence{awsRoot.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+  }
+  template : "docs/artifact-trace-json.egl"
+  target : "generated/trace/artifact-trace.json"
   merge : false
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot, "emitCtx" = emitCtx}

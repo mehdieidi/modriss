@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.platform.core.service;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.PlatformException;
@@ -42,8 +44,7 @@ public final class ArtifactService {
         }
         try (Stream<Path> files = Files.list(dir)) {
             return files.filter(path -> path.getFileName().toString().endsWith(".json"))
-                    .map(path -> store.read(store.root().relativize(path), ArtifactRecord.class)
-                            .orElse(null))
+                    .map(this::readSummary)
                     .filter(artifact -> artifact != null)
                     .sorted(Comparator.comparing(ArtifactRecord::updatedAt).reversed())
                     .toList();
@@ -55,7 +56,7 @@ public final class ArtifactService {
     public ArtifactRecord get(UserRecord user, String id) {
         ArtifactRecord artifact = find(id);
         projectService.get(user, artifact.projectId());
-        return artifact;
+        return repairLegacyMetadata(artifact);
     }
 
     public ArtifactRecord create(UserRecord user, String projectId, String name,
@@ -67,7 +68,7 @@ public final class ArtifactService {
         Map<String, String> normalizedFiles = new LinkedHashMap<>(files);
         ObjectNode modelJson = store.objectMapper().createObjectNode();
         modelJson.put("name", name);
-        modelJson.set("files", store.objectMapper().valueToTree(normalizedFiles));
+        modelJson.put("fileCount", normalizedFiles.size());
         ArtifactRecord artifact = new ArtifactRecord(id, projectId, name, modelJson,
                 normalizedFiles, now, now);
         store.write(artifactPath(projectId, id), artifact);
@@ -92,7 +93,7 @@ public final class ArtifactService {
         files.put(normalizePath(path), content == null ? "" : content);
         ObjectNode modelJson = store.objectMapper().createObjectNode();
         modelJson.put("name", artifact.name());
-        modelJson.set("files", store.objectMapper().valueToTree(files));
+        modelJson.put("fileCount", files.size());
         ArtifactRecord updated = new ArtifactRecord(artifact.id(), artifact.projectId(),
                 artifact.name(), modelJson,
                 files, artifact.createdAt(), Instant.now());
@@ -137,6 +138,69 @@ public final class ArtifactService {
 
     private Path artifactPath(String projectId, String id) {
         return Path.of("projects", projectId, "artifacts", id + ".json");
+    }
+
+    private ArtifactRecord readSummary(Path path) {
+        try (JsonParser parser = store.objectMapper().getFactory().createParser(path.toFile())) {
+            String id = null;
+            String projectId = null;
+            String name = null;
+            Instant updatedAt = Files.getLastModifiedTime(path).toInstant();
+            Instant createdAt = updatedAt;
+            if (parser.nextToken() != JsonToken.START_OBJECT) {
+                return null;
+            }
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                String field = parser.currentName();
+                parser.nextToken();
+                if ("id".equals(field)) {
+                    id = parser.getValueAsString();
+                } else if ("projectId".equals(field)) {
+                    projectId = parser.getValueAsString();
+                } else if ("name".equals(field)) {
+                    name = parser.getValueAsString();
+                } else if ("createdAt".equals(field)) {
+                    createdAt = parseInstant(parser.getValueAsString(), createdAt);
+                } else if ("updatedAt".equals(field)) {
+                    updatedAt = parseInstant(parser.getValueAsString(), updatedAt);
+                } else if ("modelJson".equals(field) || "files".equals(field)) {
+                    break;
+                } else {
+                    parser.skipChildren();
+                }
+            }
+            if (id == null || projectId == null) {
+                return null;
+            }
+            ObjectNode modelJson = store.objectMapper().createObjectNode();
+            modelJson.put("name", name == null ? id : name);
+            return new ArtifactRecord(id, projectId, name == null ? id : name, modelJson,
+                    Map.of(), createdAt, updatedAt);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private Instant parseInstant(String value, Instant fallback) {
+        try {
+            return value == null || value.isBlank() ? fallback : Instant.parse(value);
+        } catch (Exception ex) {
+            return fallback;
+        }
+    }
+
+    private ArtifactRecord repairLegacyMetadata(ArtifactRecord artifact) {
+        if (!artifact.modelJson().path("files").isObject()) {
+            return artifact;
+        }
+        ObjectNode modelJson = store.objectMapper().createObjectNode();
+        modelJson.put("name", artifact.name());
+        modelJson.put("fileCount", artifact.files().size());
+        ArtifactRecord repaired = new ArtifactRecord(artifact.id(), artifact.projectId(),
+                artifact.name(), modelJson, artifact.files(), artifact.createdAt(),
+                artifact.updatedAt());
+        store.write(artifactPath(artifact.projectId(), artifact.id()), repaired);
+        return repaired;
     }
 
     private String normalizePath(String path) {

@@ -4,6 +4,102 @@ Transform: AWS::Serverless-2016-10-31
 [% } %]
 Description: [%= stackObj.templateDescription.orElseText(emitCtx.get("projectName") + " generated serverless stack") %]
 
-[%=stackObj.emitParametersYaml()%][%=stackObj.emitMappingsYaml()%][%=stackObj.emitConditionsYaml()%][%=stackObj.emitGlobalsYaml(awsRoot)%][%=stackObj.emitResourcesYaml(emitCtx)%][%=stackObj.emitOutputsYaml()%][%=out.startPreserve("#", "", stackObj.manualRegionId("yaml-extension"), true)%]
+[%= stackObj.parametersSection() %]
+[%= stackObj.mappingsSection() %]
+[%= stackObj.conditionsSection() %]
+[%= stackObj.globalsSection(awsRoot) %]
+[%= stackObj.resourcesSection(emitCtx) %]
+[%= stackObj.outputsSection() %]
+[%= out.startPreserve("#", "", stackObj.manualRegionId("yaml-extension"), true) %]
 # Optional developer-owned CloudFormation/SAM additions that cannot yet be represented in the PSM.
-[%=out.stopPreserve()%]
+[%= out.stopPreserve() %]
+
+[%
+@template
+operation AWSPSMCORE!SamStack parametersSection() { %]
+[% if (self.uniqueParameters().notEmpty()) { %]
+Parameters:
+[% for (paramObj in self.uniqueParameters()) { %]
+  [%= paramObj.parameterName.toCfnLogicalId() %]:
+[%= emitYamlScalarProperty("Type", paramObj.type, 4) %]
+[%= emitYamlScalarProperty("Description", paramObj.parameterDescription, 4) %]
+[% if (paramObj.defaultValue.isDefined()) { %][%= paramObj.defaultValue.emitCfnValueProperty("Default", 4) %][% } %]
+[%= emitYamlStringListProperty("AllowedValues", paramObj.allowedValues, 4) %]
+[%= emitYamlScalarProperty("AllowedPattern", paramObj.allowedPattern, 4) %]
+[%= emitYamlBooleanProperty("NoEcho", paramObj.noEcho, 4) %]
+[% } %]
+
+[% } %]
+[% }
+
+@template
+operation AWSPSMCORE!SamStack mappingsSection() { %]
+[% if (self.mappings.notEmpty()) { %]
+Mappings:
+[% for (mappingObj in self.mappings.sortBy(mappingObj | mappingObj.mappingName)) { %]
+[% if (mappingObj.content.isPresent()) { %][%= yamlBlock(mappingObj.mappingName.toCfnLogicalId(), mappingObj.content, 2) %][% } %]
+[% } %]
+
+[% } %]
+[% }
+
+@template
+operation AWSPSMCORE!SamStack conditionsSection() { %]
+[% if (self.conditions.notEmpty()) { %]
+Conditions:
+[% for (condObj in self.conditions.sortBy(condObj | condObj.conditionName)) { %]
+[% if (condObj.expressionValue.isDefined()) { %][%= condObj.expressionValue.emitCfnValueProperty(condObj.conditionName.toCfnLogicalId(), 2) %][% } else { %]  [%= condObj.conditionName.toCfnLogicalId() %]: [%= condObj.expression.orElseText("true") %]
+[% } %]
+[% } %]
+
+[% } %]
+[% }
+
+@template
+operation AWSPSMCORE!SamStack globalsSection(awsRoot : AWSPSM!AwsPsmModel) { %]
+[% if (awsRoot.samGlobals.isDefined() or self.globals.notEmpty()) { %]
+Globals:
+[% if (awsRoot.samGlobals.isDefined()) { %][%= awsRoot.samGlobals.samGlobalsBody() %][% } %]
+[% if (self.globals.notEmpty()) { %][%= self.globals.emitNativePropertiesYaml(2) %][% } %]
+
+[% } %]
+[% }
+
+@template
+operation AWSPSMCORE!SamGlobals samGlobalsBody() { %]
+[% if (self.functionGlobals.notEmpty()) { %]  Function:
+[%= self.functionGlobals.emitNativePropertiesYaml(4) %][% } %]
+[% if (self.apiGlobals.notEmpty()) { %]  Api:
+[%= self.apiGlobals.emitNativePropertiesYaml(4) %][% } %]
+[% if (self.httpApiGlobals.notEmpty()) { %]  HttpApi:
+[%= self.httpApiGlobals.emitNativePropertiesYaml(4) %][% } %]
+[% if (self.stateMachineGlobals.notEmpty()) { %]  StateMachine:
+[%= self.stateMachineGlobals.emitNativePropertiesYaml(4) %][% } %]
+[% }
+
+@template
+operation AWSPSMCORE!SamStack resourcesSection(emitCtx : Map) { %]
+[% if (self.resources.notEmpty()) { %]
+Resources:
+[% for (resObj in self.orderedResources()) { %]
+[%= resObj.emitCfnResourceYaml(emitCtx) %]
+[% } %]
+
+[% } %]
+[% }
+
+@template
+operation AWSPSMCORE!SamStack outputsSection() { %]
+[% if (self.outputs.notEmpty()) { %]
+Outputs:
+[% for (outObj in self.outputs.sortBy(outObj | outObj.outputName)) { %]
+  [%= outObj.outputName.toCfnLogicalId() %]:
+[%= emitYamlScalarProperty("Description", outObj.outputDescription.orElseText(outObj.outputName), 4) %]
+[%= outObj.value.emitCfnValueProperty("Value", 4) %]
+[% if (outObj.exportName.isPresent()) { %]    Export:
+[%= emitYamlScalarProperty("Name", outObj.exportName, 6) %][% } %]
+[% } %]
+
+[% } %]
+[% }
+%]

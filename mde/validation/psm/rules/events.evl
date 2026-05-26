@@ -31,10 +31,10 @@ context AWSPSM!EventBridgeTarget {
     message : 'EventBridge target ' + self.targetId + ' has neither targetResource nor arnExpression. Fix: reference a PSM resource or provide an ARN expression.'
   }
 
-  constraint CriticalEventTargetsHaveRetryOrDlq {
+  critique CriticalEventTargetsHaveRetryOrDlq {
     guard : self.targetResource.isDefined() and self.targetResource.isProductionScoped()
     check : self.retryPolicy.isDefined() or self.deadLetterQueue.isDefined()
-    message : 'Production-scoped EventBridge target ' + self.targetId + ' has no retry policy or DLQ. Fix: add AwsRetryPolicy and/or deadLetterQueue to reduce event loss risk.'
+    message : 'Production-scoped EventBridge target ' + self.targetId + ' has no explicit retry policy or DLQ. Suggested fix: add AwsRetryPolicy and/or deadLetterQueue when default EventBridge retries are not sufficient.'
   }
 
   constraint SqsFifoTargetHasMessageGroupId {

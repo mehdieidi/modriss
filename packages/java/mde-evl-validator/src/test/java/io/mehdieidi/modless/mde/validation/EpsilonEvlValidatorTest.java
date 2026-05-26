@@ -23,8 +23,28 @@ import org.junit.jupiter.api.io.TempDir;
 
 class EpsilonEvlValidatorTest {
 
+    private static final Path REPOSITORY_ROOT = findRepositoryRoot();
+
     @TempDir
     Path tempDir;
+
+    private static long countViolations(EvlValidationReport report, String constraintName) {
+        return report.violations().stream()
+                .filter(v -> v.constraintName().equals(constraintName))
+                .count();
+    }
+
+    private static Path findRepositoryRoot() {
+        Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        while (current != null) {
+            if (Files.isDirectory(current.resolve("mde/metamodels"))
+                    && Files.isDirectory(current.resolve("mde/validation/psm"))) {
+                return current;
+            }
+            current = current.getParent();
+        }
+        throw new IllegalStateException("Could not locate repository root from user.dir.");
+    }
 
     @Test
     void reportsMandatoryAndOptionalViolationsFromImportedEvl() throws Exception {
@@ -100,6 +120,37 @@ class EpsilonEvlValidatorTest {
         assertEquals(EvlValidationStatus.SUCCEEDED, report.status());
         assertTrue(report.violations().isEmpty());
         assertFalse(report.hasMandatoryViolations());
+    }
+
+    @Test
+    void validatesRepositoryPsmSampleWithIntentionalManualBlockers() throws Exception {
+        EvlValidationReport report = new EpsilonEvlValidator().validate(
+                EvlValidationRequest.forRoot(
+                        REPOSITORY_ROOT.resolve("mde/validation/psm/psm-semantic-validation.evl"),
+                        List.of(FileEvlModelConfiguration.readOnly(
+                                "AWSPSM",
+                                List.of("AWSPSMENUMS", "KERNEL"),
+                                REPOSITORY_ROOT.resolve("mde/samples/psm.xmi"),
+                                List.of(REPOSITORY_ROOT.resolve(
+                                        "mde/metamodels/psm/psm-combined.ecore")))),
+                        true));
+
+        assertEquals(EvlValidationStatus.SUCCEEDED, report.status());
+        assertTrue(report.diagnostics().isEmpty(), report.diagnostics().toString());
+        assertTrue(report.hasMandatoryViolations(),
+                "The sample still carries explicit manual review blockers.");
+        assertEquals(37, report.violations().stream()
+                .filter(v -> v.kind() == EvlConstraintKind.MANDATORY)
+                .count());
+        assertEquals(17, countViolations(report, "StatementHasActionAndResourceSide"));
+        assertEquals(0, countViolations(report, "ZipCodeHasRuntimeAndHandler"));
+        assertEquals(0, countViolations(report, "IntegrationHasSingleTarget"));
+        assertEquals(0, countViolations(report, "AccessLogStageRequiresGroupAndFormat"));
+        assertEquals(EvlConstraintKind.OPTIONAL, report.violations().stream()
+                .filter(v -> v.constraintName().equals("CriticalEventTargetsHaveRetryOrDlq"))
+                .findFirst()
+                .orElseThrow()
+                .kind());
     }
 
     @Test

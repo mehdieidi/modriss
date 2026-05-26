@@ -1,129 +1,23 @@
 import "naming.eol";
-import "values.eol";
-import "cfn.eol";
 
-operation AWSPSMCORE!SamStack emitParametersYaml() : String {
-  if (self.parameters.isEmpty()) {
-    return "";
-  }
-  var outText = "Parameters:\n";
+operation AWSPSMCORE!SamStack uniqueParameters() : Sequence {
+  var seenNames : Set = Set{};
+  var uniqueSeq : Sequence = Sequence{};
   for (paramObj in self.parameters.sortBy(paramObj | paramObj.parameterName)) {
-    outText = outText + "  " + paramObj.parameterName.toCfnLogicalId() + ":\n";
-    outText = outText + emitYamlScalarProperty("Type", paramObj.type, 4);
-    outText = outText + emitYamlScalarProperty("Description", paramObj.parameterDescription, 4);
-    if (paramObj.defaultValue.isDefined()) {
-      outText = outText + paramObj.defaultValue.emitCfnValueProperty("Default", 4);
-    }
-    outText = outText + emitYamlStringListProperty("AllowedValues", paramObj.allowedValues, 4);
-    outText = outText + emitYamlScalarProperty("AllowedPattern", paramObj.allowedPattern, 4);
-    outText = outText + emitYamlBooleanProperty("NoEcho", paramObj.noEcho, 4);
-  }
-  return outText + "\n";
-}
-
-operation AWSPSMCORE!SamStack emitMappingsYaml() : String {
-  if (self.mappings.isEmpty()) {
-    return "";
-  }
-  var outText = "Mappings:\n";
-  for (mappingObj in self.mappings.sortBy(mappingObj | mappingObj.mappingName)) {
-    if (mappingObj.content.isPresent()) {
-      outText = outText + yamlBlock(mappingObj.mappingName.toCfnLogicalId(), mappingObj.content, 2);
+    var logicalName = paramObj.parameterName.toCfnLogicalId();
+    if (not seenNames.includes(logicalName)) {
+      seenNames.add(logicalName);
+      uniqueSeq.add(paramObj);
     }
   }
-  return outText + "\n";
+  return uniqueSeq;
 }
 
-operation AWSPSMCORE!SamStack emitConditionsYaml() : String {
-  if (self.conditions.isEmpty()) {
-    return "";
-  }
-  var outText = "Conditions:\n";
-  for (condObj in self.conditions.sortBy(condObj | condObj.conditionName)) {
-    if (condObj.expressionValue.isDefined()) {
-      outText = outText + condObj.expressionValue.emitCfnValueProperty(condObj.conditionName.toCfnLogicalId(), 2);
-    }
-    else {
-      outText = outText + "  " + condObj.conditionName.toCfnLogicalId() + ": " + condObj.expression.orElseText("true") + "\n";
-    }
-  }
-  return outText + "\n";
-}
-
-operation AWSPSMCORE!SamStack emitGlobalsYaml(awsRoot : AWSPSM!AwsPsmModel) : String {
-  var outText = "";
-  if (awsRoot.samGlobals.isDefined()) {
-    outText = outText + awsRoot.samGlobals.emitSamGlobalsYaml();
-  }
-  if (self.globals.notEmpty()) {
-    if (outText.isEmpty()) {
-      outText = "Globals:\n";
-    }
-    outText = outText + self.globals.emitNativePropertiesYaml(2);
-  }
-  if (not outText.isEmpty()) {
-    return outText + "\n";
-  }
-  return "";
-}
-
-operation AWSPSMCORE!SamGlobals emitSamGlobalsYaml() : String {
-  var outText = "Globals:\n";
-  if (self.functionGlobals.notEmpty()) {
-    outText = outText + "  Function:\n" + self.functionGlobals.emitNativePropertiesYaml(4);
-  }
-  if (self.apiGlobals.notEmpty()) {
-    outText = outText + "  Api:\n" + self.apiGlobals.emitNativePropertiesYaml(4);
-  }
-  if (self.httpApiGlobals.notEmpty()) {
-    outText = outText + "  HttpApi:\n" + self.httpApiGlobals.emitNativePropertiesYaml(4);
-  }
-  if (self.stateMachineGlobals.notEmpty()) {
-    outText = outText + "  StateMachine:\n" + self.stateMachineGlobals.emitNativePropertiesYaml(4);
-  }
-  return outText;
-}
-
-operation AWSPSMCORE!SamStack emitResourcesYaml(emitCtx : Map) : String {
-  if (self.resources.isEmpty()) {
-    return "";
-  }
-  var outText = "Resources:\n";
-  for (resObj in self.orderedResources()) {
-    outText = outText + resObj.emitCfnResourceYaml(emitCtx);
-  }
-  return outText + "\n";
-}
-
-operation AWSPSMCORE!SamStack emitOutputsYaml() : String {
-  if (self.outputs.isEmpty()) {
-    return "";
-  }
-  var outText = "Outputs:\n";
-  for (outObj in self.outputs.sortBy(outObj | outObj.outputName)) {
-    outText = outText + "  " + outObj.outputName.toCfnLogicalId() + ":\n";
-    outText = outText + emitYamlScalarProperty("Description", outObj.outputDescription.orElseText(outObj.outputName), 4);
-    outText = outText + outObj.value.emitCfnValueProperty("Value", 4);
-    if (outObj.exportName.isPresent()) {
-      outText = outText + "    Export:\n";
-      outText = outText + emitYamlScalarProperty("Name", outObj.exportName, 6);
-    }
-  }
-  return outText + "\n";
-}
-
-operation AWSPSMCORE!SamStack emitCapabilities() : String {
+operation AWSPSMCORE!SamStack capabilitiesText() : String {
   if (self.capabilities.isEmpty()) {
     return "CAPABILITY_IAM";
   }
-  var outText = "";
-  for (capObj in self.capabilities) {
-    if (not outText.isEmpty()) {
-      outText = outText + " ";
-    }
-    outText = outText + capObj.asString();
-  }
-  return outText;
+  return self.capabilities.collect(capObj | capObj.asString()).concat(" ");
 }
 
 operation AWSPSMCORE!AwsStage stackDeployName(stackObj : AWSPSMCORE!SamStack) : String {
@@ -134,30 +28,9 @@ operation AWSPSMCORE!AwsStage stackDeployName(stackObj : AWSPSMCORE!SamStack) : 
   return stackObj.stackName;
 }
 
-operation AWSPSMCORE!AwsStage emitSamConfigEnv(stackObj : AWSPSMCORE!SamStack) : String {
-  var outText = "[" + self.stageSlug() + ".deploy.parameters]\n";
-  outText = outText + "stack_name = " + self.stackDeployName(stackObj).jsonString() + "\n";
-  if (self.region.isPresent()) {
-    outText = outText + "region = " + self.region.jsonString() + "\n";
-  }
-  if (self.artifactBucketName.isPresent()) {
-    outText = outText + "s3_bucket = " + self.artifactBucketName.jsonString() + "\n";
-  }
-  if (self.deploymentRoleArn.isPresent()) {
-    outText = outText + "role_arn = " + self.deploymentRoleArn.jsonString() + "\n";
-  }
-  outText = outText + "capabilities = " + stackObj.emitCapabilities().jsonString() + "\n";
-  outText = outText + "confirm_changeset = " + self.confirmChangeset.orElseText("true").toLowerCase() + "\n";
-  outText = outText + "fail_on_empty_changeset = " + self.failOnEmptyChangeset.orElseText("false").toLowerCase() + "\n";
-  if (self.parameterOverrides.notEmpty()) {
-    var paramText = "";
-    for (kvObj in self.parameterOverrides.sortBy(kvObj | kvObj.key)) {
-      if (not paramText.isEmpty()) {
-        paramText = paramText + " ";
-      }
-      paramText = paramText + kvObj.key + "=" + kvObj.value.orElseText("");
-    }
-    outText = outText + "parameter_overrides = " + paramText.jsonString() + "\n";
-  }
-  return outText + "\n";
+operation AWSPSMCORE!AwsStage parameterOverrideText() : String {
+  return self.parameterOverrides
+    .sortBy(kvObj | kvObj.key)
+    .collect(kvObj | kvObj.key + "=" + kvObj.value.orElseText(""))
+    .concat(" ");
 }
