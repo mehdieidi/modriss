@@ -9,8 +9,8 @@ import "pim-workflow.ecore";
 import "pim-policy.ecore";
 import "pim-security.ecore";
 
-class Api extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr types.ApiStyle[1] apiStyle;
+class Api extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.ConfigurableElement {
+  attr pimtypes.ApiStyle[1] apiStyle;
   attr String publicName;
   attr String version;
   attr Boolean authRequired;
@@ -18,7 +18,7 @@ class Api extends kernel.TraceableElement, kernel.DeployableElement, kernel.Flow
   attr Boolean externalConsumerFacing;
   attr Boolean generatedOpenApiRequired;
   attr String basePath;
-  val ApiRoute[+]#api routes;
+  val ApiRoute[*]#api routes;
   ref security.AuthPolicy[?] auth;
   ref policy.CorsPolicy[?] cors;
   ref policy.RateLimitPolicy[?] rateLimit;
@@ -26,8 +26,9 @@ class Api extends kernel.TraceableElement, kernel.DeployableElement, kernel.Flow
   val contracts.ApiContract[?] contract;
 }
 
-class ApiRoute extends kernel.TraceableElement, kernel.InvocationSource, kernel.FlowEndpoint, kernel.RouteEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr types.HttpMethod[1] method;
+@Ecore(constraints="ExactlyOneIntegration")
+class ApiRoute extends kernel.TraceableElement, kernel.InvocationSource, kernel.FlowEndpoint, kernel.RouteEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.ConfigurableElement {
+  attr pimtypes.HttpMethod[1] method;
   attr String[1] pathTemplate;
   attr String operationId;
   attr Boolean publicRoute;

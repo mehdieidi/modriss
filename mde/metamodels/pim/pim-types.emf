@@ -1,5 +1,5 @@
 @namespace(uri="https://modless.org/pim/types/1.0", prefix="pimtypes")
-package types;
+package pimtypes;
 
 enum ArchitectureStyle {
   EVENT_DRIVEN_SERVERLESS;
@@ -23,6 +23,13 @@ enum DeploymentUnitType {
   LIBRARY;
   EDGE_INTERFACE;
   OBSERVABILITY;
+}
+
+enum OwnershipKind {
+  OWNS;
+  USES_SHARED;
+  DEPENDS_ON;
+  EXPOSES;
 }
 
 enum FunctionKind {
@@ -112,6 +119,7 @@ enum StoreKind {
   SEARCH;
   TIME_SERIES;
   CACHE;
+  OBJECT;
 }
 
 enum ConsistencyNeed {
@@ -162,6 +170,28 @@ enum PrincipalKind {
 enum PermissionEffect {
   ALLOW;
   DENY;
+}
+
+enum PermissionActionKind {
+  INVOKE;
+  READ;
+  WRITE;
+  DELETE;
+  LIST;
+  PUBLISH;
+  SUBSCRIBE;
+  CONSUME;
+  ENCRYPT;
+  DECRYPT;
+  READ_SECRET;
+  MANAGE;
+}
+
+enum LeastPrivilegeStatus {
+  UNREVIEWED;
+  GENERATED_BROAD;
+  REVIEW_REQUIRED;
+  CONFIRMED_LEAST_PRIVILEGE;
 }
 
 enum SecretKind {
@@ -217,6 +247,8 @@ enum FieldType {
   UUID;
   EMAIL;
   URI;
+  MAP;
+  UNION;
 }
 
 enum EnvironmentClass {
@@ -265,4 +297,30 @@ enum DataAccessMode {
   READ_WRITE;
   APPEND;
   DELETE;
+}
+
+enum AccessPatternKind {
+  GET_BY_ID;
+  QUERY_BY_KEY;
+  SCAN_FILTERED;
+  SEARCH_TEXT;
+  AGGREGATE_REPORT;
+  WRITE_COMMAND;
+  APPEND_EVENT;
+}
+
+enum SupportLevel {
+  SUPPORTED_FIRST_CLASS;
+  SUPPORTED_WITH_ASSUMPTIONS;
+  REQUIRES_MANUAL_DECISION;
+  METADATA_ONLY;
+  UNSUPPORTED;
+}
+
+enum ValidationProfile {
+  DRAFT_EDITING;
+  TRANSFORMATION_INPUT;
+  TRANSFORMATION_OUTPUT_REVIEW;
+  DEPLOYMENT_READY;
+  PRODUCTION_READY;
 }

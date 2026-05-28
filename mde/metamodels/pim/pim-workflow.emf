@@ -7,9 +7,11 @@ import "pim-compute.ecore";
 import "pim-external.ecore";
 import "pim-policy.ecore";
 import "pim-contracts.ecore";
+import "pim-security.ecore";
 
-class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.WorkflowTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr types.WorkflowKind[1] workflowKind;
+@Ecore(constraints="StatesContainStart AndEndStatesBelongToWorkflow ReachableFromStart")
+class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.WorkflowTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.ConfigurableElement {
+  attr pimtypes.WorkflowKind[1] workflowKind;
   attr String executionSemantics;
   attr Boolean longRunning;
   attr Boolean stateful;
@@ -17,9 +19,9 @@ class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel
   attr Boolean humanApprovalRequired;
   attr Integer expectedMaxDurationSeconds;
   attr Boolean expressLowLatencyRequired;
-  val WorkflowState[+]#workflow states;
-  ref WorkflowState[1] startState;
-  ref WorkflowState[+] endStates;
+  val WorkflowState[*]#workflow states;
+  ref WorkflowState[?] startState;
+  ref WorkflowState[*] endStates;
   val WorkflowTransition[*]#workflow transitions;
   ref policy.ObservabilityConfig[?] observability;
   ref policy.ResiliencePolicy[?] resilience;
@@ -27,30 +29,38 @@ class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel
 }
 
 class WorkflowState extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr types.WorkflowStateKind[1] stateKind;
+  attr pimtypes.WorkflowStateKind[1] stateKind;
   attr Integer orderIndex;
   attr Integer timeoutSeconds;
   attr String inputMapping;
   attr String outputMapping;
   attr String conditionExpression;
+  val kernel.Expression[?] condition;
   attr Boolean terminal;
   readonly transient ref Workflow[1]#states workflow;
   ref compute.Function[?] invokesFunction;
   ref external.ExternalAdapter[?] invokesAdapter;
   ref Workflow[?] nestedWorkflow;
+  ref HumanTask[?] humanTask;
+  val ParallelBranch[*]#ownerState branches;
+  val MapStateConfig[?] mapConfig;
+  val CallbackTaskConfig[?] callbackConfig;
   val policy.RetryPolicy[?] retry;
   val ErrorHandler[*]#state catchHandlers;
   val CompensationPolicy[?] compensation;
 }
 
+@Ecore(constraints="SameWorkflow")
 class WorkflowTransition extends kernel.TraceableElement {
   attr String conditionExpression;
+  val kernel.Expression[?] condition;
   attr Boolean defaultTransition;
   readonly transient ref Workflow[1]#transitions workflow;
   ref WorkflowState[1] source;
   ref WorkflowState[1] target;
 }
 
+@Ecore(constraints="NextStateInSameWorkflow")
 class ErrorHandler extends kernel.TraceableElement {
   attr String errorSelector;
   attr String recoveryAction;
@@ -58,6 +68,50 @@ class ErrorHandler extends kernel.TraceableElement {
   readonly transient ref WorkflowState[1]#catchHandlers state;
   ref WorkflowState[?] nextState;
   ref compute.Function[?] handlerFunction;
+}
+
+class ParallelBranch extends kernel.TraceableElement {
+  readonly transient ref WorkflowState[1]#branches ownerState;
+  val WorkflowState[+] states;
+  ref WorkflowState[1] startState;
+  ref WorkflowState[+] endStates;
+  val WorkflowTransition[*] transitions;
+}
+
+class MapStateConfig extends kernel.TraceableElement {
+  attr String itemsPath;
+  attr String itemSelectorJson;
+  attr Integer maxConcurrency;
+  attr Boolean distributed;
+  val ParallelBranch[1] itemProcessor;
+  attr String resultWriterJson;
+}
+
+class CallbackTaskConfig extends kernel.TraceableElement {
+  attr String taskTokenPath;
+  ref kernel.RouteEndpoint[?] callbackRoute;
+  ref contracts.EventType[*] completionEvents;
+  ref policy.TimeoutPolicy[?] timeout;
+}
+
+class EscalationPolicy extends kernel.TraceableElement {
+  attr String escalationRule;
+  attr Integer afterSeconds;
+  ref security.Principal[*] escalateTo;
+}
+
+class HumanTask extends kernel.TraceableElement, kernel.PolicyTarget {
+  attr String taskDescription;
+  attr String completionEvidence;
+  ref security.Principal[*] assignees;
+  ref policy.TimeoutPolicy[?] timeout;
+  ref EscalationPolicy[?] escalation;
+  ref contracts.EventType[*] completionEvents;
+}
+
+class ApprovalTask extends HumanTask {
+  attr Boolean explicitApprovalRequired;
+  attr String approvalOutcomeField;
 }
 
 class CompensationPolicy extends policy.ArchitecturePolicy {

@@ -6,15 +6,20 @@ import "pim-types.ecore";
 import "pim-policy.ecore";
 import "pim-config.ecore";
 
-class ExternalAdapter extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.InvocationSource, kernel.InvocationTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.ExternalCallTarget, kernel.ProtectedResource, kernel.PolicyTarget {
+class ExternalEndpoint extends kernel.TraceableElement, kernel.ExternalCallTarget, kernel.PolicyTarget, kernel.ProtectedResource {
   attr String externalSystemName;
-  attr String responsibility;
   attr String protocolFamily;
   attr String endpointDescription;
   attr Boolean privateNetworkRequired;
   attr Boolean credentialsRequired;
   attr Boolean rateLimitedByProvider;
   attr String expectedSla;
+}
+
+class ExternalAdapter extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.InvocationTarget, kernel.FunctionTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.ExternalCallTarget, kernel.ProtectedResource, kernel.PolicyTarget, kernel.ConfigurableElement {
+  attr String responsibility;
+  ref ExternalEndpoint[1] endpoint;
+  ref kernel.FunctionTarget[?] adapterFunction;
   ref kernel.FunctionTarget[*] adapterFunctions;
   val config.CredentialRequirement[*] credentials;
   ref policy.ResiliencePolicy[?] resilience;

@@ -18,8 +18,18 @@ class CloudWatchLogGroup extends awspsmcore.AwsResource {
 
 class CloudWatchMetricFilter extends awspsmcore.AwsResource {
   attr String[1] filterPattern;
+  val CloudWatchMetricTransformation[*] metricTransformations;
   attr String metricTransformationsJson;
   ref CloudWatchLogGroup[1]#metricFilters logGroup;
+}
+
+class CloudWatchMetricTransformation extends kernel.TraceableElement {
+  attr String[1] metricName;
+  attr String[1] metricNamespace;
+  val awspsmcore.ValueExpression[1] metricValue;
+  attr String defaultValue;
+  attr String unit;
+  val MetricDimension[*] dimensions;
 }
 
 class CloudWatchLogSubscriptionFilter extends awspsmcore.AwsResource {

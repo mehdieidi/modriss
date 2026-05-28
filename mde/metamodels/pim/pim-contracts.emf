@@ -5,9 +5,9 @@ import "../shared/kernel.ecore";
 import "pim-types.ecore";
 
 class Schema extends kernel.TraceableElement, kernel.PolicyTarget {
-  attr types.SchemaKind[1] schemaKind;
+  attr pimtypes.SchemaKind[1] schemaKind;
   attr String semanticVersion;
-  attr types.SchemaCompatibility compatibility;
+  attr pimtypes.SchemaCompatibility compatibility;
   attr Boolean additionalPropertiesAllowed;
   attr Boolean generatedFromCimInformation;
   attr String externalSchemaUri;
@@ -16,7 +16,7 @@ class Schema extends kernel.TraceableElement, kernel.PolicyTarget {
 }
 
 class SchemaField extends kernel.TraceableElement {
-  attr types.FieldType[1] fieldType;
+  attr pimtypes.FieldType[1] fieldType;
   attr Boolean required;
   attr Boolean nullable;
   attr Boolean array;
@@ -33,9 +33,13 @@ class SchemaField extends kernel.TraceableElement {
   attr Boolean secretValue;
   attr String classification;
   attr String descriptionForConsumers;
+  val kernel.Cardinality[?] cardinality;
   readonly transient ref Schema[1]#fields ownerSchema;
   val SchemaEnumLiteral[*]#field enumValues;
+  val SchemaValidationConstraint[*] constraints;
   ref Schema[?] objectSchema;
+  val SchemaField[?] arrayItem;
+  val SchemaField[?] mapValue;
 }
 
 class SchemaEnumLiteral extends kernel.TraceableElement {
@@ -45,9 +49,18 @@ class SchemaEnumLiteral extends kernel.TraceableElement {
   readonly transient ref SchemaField[1]#enumValues field;
 }
 
+class SchemaValidationConstraint extends kernel.TraceableElement {
+  attr String keyword;
+  attr String value;
+  attr String message;
+  attr kernel.Severity severity;
+  val kernel.Expression[?] expression;
+}
+
 class SchemaConstraint extends kernel.TraceableElement {
   attr String expressionLanguage;
   attr String expression;
+  val kernel.Expression[?] expressionModel;
   attr String message;
   attr kernel.Severity severity;
   readonly transient ref Schema[1]#constraints ownerSchema;
@@ -99,6 +112,6 @@ class EventType extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.Pol
   attr Boolean containsPersonalData;
   ref Schema[1] schema;
   val EventEnvelope[?] envelope;
-  ref kernel.FunctionTarget[*] producedBy;
-  ref kernel.FunctionTarget[*] consumedBy;
+  readonly transient volatile derived ref kernel.FunctionTarget[*] producedBy;
+  readonly transient volatile derived ref kernel.FunctionTarget[*] consumedBy;
 }

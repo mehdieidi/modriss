@@ -18,12 +18,13 @@ class CIMModel extends kernel.TraceableElement {
   attr String language;
 
   val cimorg.Requirement[*] requirements;
-  val cimorg.BusinessGoal[+] goals;
+  val cimorg.RequirementRelationship[*] requirementRelationships;
+  val cimorg.BusinessGoal[*] goals;
   val cimorg.KPI[*] kpis;
   val cimorg.Stakeholder[*] stakeholders;
-  val cimorg.Actor[+] actors;
+  val cimorg.Actor[*] actors;
   val cimorg.Role[*] roles;
-  val cimorg.BusinessCapability[+] capabilities;
+  val cimorg.BusinessCapability[*] capabilities;
   val cimorg.CapabilityDependency[*] capabilityDependencies;
   val cimorg.BoundedContextCandidate[*] boundedContexts;
   val cimorg.UbiquitousLanguageTerm[*] glossary;

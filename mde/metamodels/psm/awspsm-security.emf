@@ -84,10 +84,24 @@ class KmsAlias extends awspsmcore.AwsResource {
   ref KmsKey[1]#aliases targetKey;
 }
 
+class GenerateSecretStringConfig extends kernel.TraceableElement {
+  attr String secretStringTemplate;
+  attr String generateStringKey;
+  attr Integer passwordLength;
+  attr String excludeCharacters;
+  attr Boolean excludeLowercase;
+  attr Boolean excludeUppercase;
+  attr Boolean excludeNumbers;
+  attr Boolean excludePunctuation;
+  attr Boolean includeSpace;
+  attr Boolean requireEachIncludedType;
+}
+
 class SecretsManagerSecret extends awspsmcore.AwsResource {
   attr String secretName;
   attr String descriptionText;
   val awspsmcore.ValueExpression[?] secretValue;
+  val GenerateSecretStringConfig[?] generateSecretString;
   attr String generateSecretStringJson;
   attr Boolean rotationRequired;
   attr String replicaRegionsJson;
@@ -96,7 +110,14 @@ class SecretsManagerSecret extends awspsmcore.AwsResource {
   ref SecretsManagerResourcePolicy[?]#secret resourcePolicy;
 }
 
+class SecretRotationRules extends kernel.TraceableElement {
+  attr Integer automaticallyAfterDays;
+  attr String scheduleExpression;
+  attr Integer durationHours;
+}
+
 class SecretRotationSchedule extends awspsmcore.AwsResource {
+  val SecretRotationRules[?] rotationRules;
   attr String rotationRulesJson;
   ref SecretsManagerSecret[1]#rotationSchedule secret;
   ref awspsmcore.AwsResource[?] rotationLambda;

@@ -24,9 +24,19 @@ class Command extends kernel.TraceableElement {
   ref cimdomain.AggregateCandidate[?] targetAggregate;
   ref cimdomain.InformationItem[*] input;
   ref Condition[*] preconditions;
-  ref BusinessEvent[+]#expectedByCommands expectedEvents;
+  ref BusinessEvent[*]#expectedByCommands expectedEvents;
   ref BusinessEvent[*]#rejectedByCommands rejectionEvents;
   ref BusinessError[*] possibleErrors;
+  val CommandOutcome[*]#command outcomes;
+}
+
+class CommandOutcome extends kernel.TraceableElement {
+  attr Boolean success;
+  attr String resultDescription;
+  readonly transient ref Command[1]#outcomes command;
+  ref BusinessEvent[*] emittedEvents;
+  ref BusinessError[*] errors;
+  ref cimdomain.InformationItem[*] output;
 }
 
 class Query extends kernel.TraceableElement {
@@ -86,6 +96,7 @@ class Condition extends kernel.TraceableElement {
   attr String naturalLanguage;
   attr String expressionLanguage;
   attr String expression;
+  val kernel.Expression[?] expressionModel;
   attr Boolean mustBeAutomatable;
   ref cimdomain.InformationItem[*] referencedInformation;
   ref cimdomain.DomainConcept[*] referencedConcepts;

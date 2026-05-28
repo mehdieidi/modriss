@@ -22,6 +22,14 @@ class Requirement extends kernel.TraceableElement {
   ref Requirement[*] conflictsWith;
 }
 
+class RequirementRelationship extends kernel.SemanticRelationship {
+  attr cimtypes.RequirementRelationshipKind[1] kind;
+  attr String rationale;
+  attr Boolean blocking;
+  ref Requirement[1] source;
+  ref Requirement[1] target;
+}
+
 class AcceptanceCriterion extends kernel.TraceableElement {
   attr String givenContext;
   attr String whenAction;
@@ -87,6 +95,7 @@ class Role extends kernel.TraceableElement {
  * CIMModel.actors. Frontends can expose it through a filtered virtual
  * "external systems" register without duplicating containment.
  */
+@Ecore(constraints="ActorTypeMatchesSubclass")
 class ExternalSystem extends Actor {
   attr String owningOrganization;
   attr String businessPurpose;
@@ -106,7 +115,7 @@ class BusinessCapability extends kernel.TraceableElement {
   attr String responsibility;
   attr String ownerName;
   ref Actor[?] owner;
-  ref BusinessGoal[+] supports;
+  ref BusinessGoal[*] supports;
   ref Requirement[*] realizesRequirements;
   ref cimbehavior.Command[*]#targetCapability containsCommands;
   ref cimbehavior.Query[*]#targetCapability containsQueries;

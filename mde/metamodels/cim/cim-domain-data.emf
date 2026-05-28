@@ -17,10 +17,11 @@ abstract class DomainConcept extends kernel.TraceableElement {
 }
 
 class DomainEntity extends DomainConcept {
+  attr cimtypes.IdentityStrategy[1] identityStrategy;
   attr String identityDescription;
   attr String lifecycleDescription;
   attr Boolean auditRelevant;
-  ref InformationItem[1] identityAttribute;
+  ref InformationItem[*] identityAttributes;
   ref InformationItem[*] attributes;
   val LifecycleStateDefinition[*] lifecycleStates;
   val BusinessInvariant[*] invariants;
@@ -38,8 +39,8 @@ class DomainRelationship extends kernel.SemanticRelationship {
   attr cimtypes.DomainRelationshipType relationshipType;
   attr String sourceRole;
   attr String targetRole;
-  attr String sourceMultiplicity;
-  attr String targetMultiplicity;
+  val kernel.Multiplicity[1] sourceMultiplicity;
+  val kernel.Multiplicity[1] targetMultiplicity;
   attr Boolean ownership;
   attr Boolean navigableFromSource;
   attr Boolean navigableFromTarget;
@@ -47,6 +48,7 @@ class DomainRelationship extends kernel.SemanticRelationship {
   ref DomainConcept[1]#incomingRelationships target;
 }
 
+@Ecore(constraints="RootIsMember StrongConsistencyHasRationale")
 class AggregateCandidate extends DomainConcept {
   attr String consistencyBoundaryRationale;
   attr cimtypes.ConsistencyExpectation consistencyExpectation;
@@ -55,6 +57,7 @@ class AggregateCandidate extends DomainConcept {
   attr Boolean strongConsistencyRequired;
   ref DomainEntity[1] root;
   ref DomainEntity[+] members;
+  ref cimorg.BoundedContextCandidate[?] context;
   val BusinessInvariant[*] invariants;
   ref cimbehavior.Command[*] handledCommands;
   ref cimbehavior.BusinessEvent[*] emittedEvents;
@@ -72,16 +75,18 @@ class BusinessInvariant extends kernel.TraceableElement {
   attr String naturalLanguageStatement;
   attr String expressionLanguage;
   attr String expression;
+  val kernel.Expression[?] expressionModel;
   attr kernel.Severity violationSeverity;
   ref DomainConcept[*] constrainedConcepts;
 }
 
+@Ecore(constraints="AcyclicSubItems StructuredItemsUseObjectOrList UniqueChildNames")
 class InformationItem extends kernel.TraceableElement {
   attr String businessName;
   attr cimtypes.PrimitiveBusinessType type;
   attr Boolean required;
   attr Boolean collection;
-  attr String multiplicity;
+  val kernel.Multiplicity[?] cardinality;
   attr String example;
   attr String allowedValues;
   attr String formatHint;
@@ -103,7 +108,8 @@ class InformationItem extends kernel.TraceableElement {
   ref DataClassification[?] classification;
   ref cimgov.PrivacyConstraint[*]#dataItems privacyConstraints;
   ref cimgov.ComplianceConstraint[*] complianceConstraints;
-  ref InformationItem[*] subItems;
+  val InformationItem[*]#parent subItems;
+  readonly transient ref InformationItem[?]#subItems parent;
 }
 
 class DataClassification extends kernel.TraceableElement {

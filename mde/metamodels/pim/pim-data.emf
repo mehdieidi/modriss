@@ -6,7 +6,7 @@ import "pim-types.ecore";
 import "pim-contracts.ecore";
 import "pim-policy.ecore";
 
-abstract class StorageElement extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.DataAccessTarget {
+abstract class StorageElement extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.DataAccessTarget, kernel.ConfigurableElement {
   attr Boolean persistent;
   attr Boolean encrypted;
   attr Boolean containsPersonalData;
@@ -16,8 +16,8 @@ abstract class StorageElement extends kernel.TraceableElement, kernel.Deployable
 }
 
 class DataStore extends StorageElement, kernel.RoutingTarget, kernel.SubscriptionTarget {
-  attr types.StoreKind[1] storeKind;
-  attr types.ConsistencyNeed[1] consistencyNeed;
+  attr pimtypes.StoreKind[1] storeKind;
+  attr pimtypes.ConsistencyNeed[1] consistencyNeed;
   attr Boolean transactional;
   attr Boolean readOptimized;
   attr Boolean writeOptimized;
@@ -26,9 +26,18 @@ class DataStore extends StorageElement, kernel.RoutingTarget, kernel.Subscriptio
   attr Boolean pointInTimeRecoveryRequired;
   attr String expectedDataVolume;
   attr String expectedAccessRate;
-  val DataModel[+]#dataStore ownedDataModels;
-  val AccessPattern[+]#dataStore accessPatterns;
+  val DataModel[*]#dataStore ownedDataModels;
+  val AccessPattern[*]#dataStore accessPatterns;
   val IndexCandidate[*]#dataStore indexCandidates;
+  val DataChangeStream[?]#dataStore changeStream;
+}
+
+class DataChangeStream extends kernel.TraceableElement, kernel.DeployableElement, kernel.InvocationSource, kernel.EventCarrier, kernel.FlowEndpoint, kernel.PolicyTarget {
+  attr Boolean enabled;
+  attr pimtypes.OrderingRequirement orderingRequirement;
+  attr pimtypes.DeliverySemantics deliverySemantics;
+  readonly transient ref DataStore[1]#changeStream dataStore;
+  ref contracts.EventType[*] emittedEvents;
 }
 
 class ObjectStore extends StorageElement, kernel.InvocationSource, kernel.RoutingTarget, kernel.SubscriptionTarget, kernel.EventCarrier {
@@ -39,10 +48,20 @@ class ObjectStore extends StorageElement, kernel.InvocationSource, kernel.Routin
   attr String maxObjectSize;
   ref contracts.Schema[*] objectMetadataSchemas;
   ref contracts.EventType[*] emittedEvents;
+  val ObjectNotificationRule[*]#objectStore notificationRules;
+}
+
+class ObjectNotificationRule extends kernel.TraceableElement {
+  attr String[*] eventTypes;
+  attr String filterPrefix;
+  attr String filterSuffix;
+  readonly transient ref ObjectStore[1]#notificationRules objectStore;
+  ref contracts.EventType[*] emittedEvents;
+  ref kernel.RoutingTarget[*] targets;
 }
 
 class DataModel extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget {
-  attr types.SchemaKind[1] dataModelKind;
+  attr pimtypes.SchemaKind[1] dataModelKind;
   attr String aggregateRef;
   attr String ownershipBoundary;
   attr Boolean sourceOfTruth;
@@ -55,7 +74,7 @@ class DataModel extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.Pol
 }
 
 class DataField extends kernel.TraceableElement {
-  attr types.FieldType[1] fieldType;
+  attr pimtypes.FieldType[1] fieldType;
   attr Boolean identifier;
   attr Boolean partitionKeyCandidate;
   attr Boolean sortKeyCandidate;
@@ -70,7 +89,8 @@ class DataField extends kernel.TraceableElement {
 
 class AccessPattern extends kernel.TraceableElement {
   attr String patternName;
-  attr String operation;
+  attr pimtypes.DataAccessMode[1] operation;
+  attr pimtypes.AccessPatternKind accessPatternKind;
   attr String queryBy;
   attr String sortBy;
   attr String filterBy;
@@ -97,8 +117,9 @@ class IndexCandidate extends kernel.TraceableElement {
   ref AccessPattern[*] supportsAccessPatterns;
 }
 
+@Ecore(constraints="DataAccessConsistentWithFunctionRefs GeneratesOrReferencesPermission")
 class DataAccess extends kernel.TraceableElement {
-  attr types.DataAccessMode[1] mode;
+  attr pimtypes.DataAccessMode[1] mode;
   attr Boolean transactional;
   attr String purpose;
   ref kernel.FunctionTarget[1] function;

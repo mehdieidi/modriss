@@ -6,27 +6,36 @@ import "pim-types.ecore";
 import "pim-policy.ecore";
 
 class IdentityProvider extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr types.IdentityKind[1] identityKind;
+  attr pimtypes.IdentityKind[1] identityKind;
   attr Boolean federationRequired;
   attr Boolean mfaRequired;
+  attr String issuer;
+  attr String[*] audience;
   attr String tokenType;
+  attr String tokenValidationRules;
+  attr String jwksUri;
   attr String userAttributeRequirements;
   attr String passwordPolicyDescription;
   ref Principal[*] principals;
 }
 
 class Principal extends kernel.TraceableElement, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr types.PrincipalKind[1] principalKind;
+  attr pimtypes.PrincipalKind[1] principalKind;
   attr String externalRef;
   attr Boolean privileged;
   val Permission[*]#principal permissions;
 }
 
 class Permission extends kernel.TraceableElement {
-  attr types.PermissionEffect[1] effect;
+  attr pimtypes.PermissionEffect[1] effect;
+  attr pimtypes.PermissionActionKind actionKind;
+  attr String providerActionOverride;
   attr String action;
   attr String resource;
   attr String condition;
+  attr String conditionExpression;
+  attr pimtypes.LeastPrivilegeStatus leastPrivilegeStatus;
+  attr String leastPrivilegeRationale;
   attr Boolean leastPrivilegeConfirmed;
   readonly transient ref Principal[1]#permissions principal;
   ref kernel.ProtectedResource[1] targetResource;
@@ -48,11 +57,13 @@ class AuthPolicy extends SecurityPolicy {
   attr Boolean mfaRequired;
   attr String tokenValidationRules;
   attr String scopesRequired;
+  attr String requiredClaimsExpression;
   ref IdentityProvider[?] identityProvider;
 }
 
 class AuthorizationPolicy extends SecurityPolicy {
   attr String ruleExpression;
+  val kernel.Expression[?] rule;
   attr String roleOrScopeRequired;
   attr Boolean resourceLevelAuthorization;
   ref Principal[*] allowedPrincipals;

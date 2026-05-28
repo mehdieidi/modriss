@@ -12,6 +12,7 @@ import "awspsm-storage.ecore";
 
 class AwsLambdaFunction extends awspsmcore.AwsResource, awspsmcore.S3NotificationDestination {
   val LambdaCodeConfig[1] code;
+  attr awspsmenums.PackageType[1] packageType;
   attr String functionName;
   attr String descriptionText;
   attr Integer memorySizeMb;
@@ -43,7 +44,7 @@ class AwsLambdaFunction extends awspsmcore.AwsResource, awspsmcore.S3Notificatio
   ref LambdaEventSourceMapping[*]#function eventSourceMappings;
   ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
   ref awspsmsecurity.KmsKey[?] kmsKey;
-  readonly transient volatile derived ref LambdaFunctionUrl[?]#function functionUrl;
+  ref LambdaFunctionUrl[?]#function functionUrl;
   ref CodeSigningConfig[?] codeSigningConfig;
 }
 
@@ -191,12 +192,12 @@ class LambdaPermission extends awspsmcore.AwsResource {
   attr String[1] principal;
   attr String sourceArn;
   attr String sourceAccount;
-  attr String functionUrlAuthType;
+  attr awspsmenums.LambdaFunctionUrlAuthType functionUrlAuthType;
   ref AwsLambdaFunction[1]#permissions function;
 }
 
 class LambdaFunctionUrl extends awspsmcore.AwsResource {
-  attr awspsmenums.ApiGatewayAuthorizationType[1] authType;
+  attr awspsmenums.LambdaFunctionUrlAuthType[1] authType;
   attr awspsmenums.LambdaInvokeMode invokeMode;
   val LambdaUrlCorsConfiguration[?] cors;
   ref AwsLambdaFunction[1]#functionUrl function;

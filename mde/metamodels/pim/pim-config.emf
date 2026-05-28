@@ -4,16 +4,16 @@ package config;
 import "../shared/kernel.ecore";
 import "pim-types.ecore";
 
-class ConfigurationSet extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget {
-  attr types.ConfigScope[1] scope;
+class ConfigurationSet extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget, kernel.ConfigurableElement {
+  attr pimtypes.ConfigScope[1] scope;
   val ConfigParameter[*]#configurationSet parameters;
   val EnvironmentVariable[*]#configurationSet environmentVariables;
   ref kernel.EnvironmentTarget[*] environments;
-  ref kernel.PolicyTarget[*] appliesTo;
+  ref kernel.ConfigurableElement[*] appliesTo;
 }
 
 class ConfigParameter extends kernel.TraceableElement {
-  attr types.ConfigScope scope;
+  attr pimtypes.ConfigScope scope;
   attr String valueKind;
   attr String defaultValue;
   attr Boolean stageSpecific;
@@ -33,7 +33,7 @@ class EnvironmentVariable extends kernel.TraceableElement {
 }
 
 class Secret extends kernel.TraceableElement, kernel.ProtectedResource, kernel.PolicyTarget {
-  attr types.SecretKind[1] secretKind;
+  attr pimtypes.SecretKind[1] secretKind;
   attr Boolean rotationRequired;
   attr String rotationFrequency;
   attr Boolean generatedReferenceOnly;
@@ -43,7 +43,7 @@ class Secret extends kernel.TraceableElement, kernel.ProtectedResource, kernel.P
 }
 
 class CredentialRequirement extends kernel.TraceableElement, kernel.CredentialRequirementLike {
-  attr types.SecretKind[1] secretKind;
+  attr pimtypes.SecretKind[1] secretKind;
   attr String purpose;
   attr Boolean rotationRequired;
   attr String rotationFrequency;

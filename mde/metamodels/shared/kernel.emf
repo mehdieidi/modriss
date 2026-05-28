@@ -32,13 +32,20 @@ enum LifecycleStatus {
   DRAFT;
   INCOMPLETE;
   REVIEW_REQUIRED;
-  REVIEW_READY;
-  REVIEWABLE;
+  APPROVED;
   TRANSFORMATION_READY;
   DEPLOYMENT_READY;
   PRODUCTION_READY;
   BLOCKED;
   DEPRECATED;
+}
+
+enum TraceConfidence {
+  LOW;
+  MEDIUM;
+  HIGH;
+  VERIFIED;
+  MANUAL;
 }
 
 enum TraceLinkType {
@@ -86,6 +93,27 @@ enum StructuredFormat {
   OTHER;
 }
 
+enum ExpressionLanguage {
+  NATURAL_LANGUAGE;
+  OCL;
+  FEEL;
+  JSONPATH;
+  JSONATA;
+  JAVASCRIPT;
+  TYPESCRIPT;
+  PYTHON;
+  SQL;
+  REGEX;
+  OTHER;
+}
+
+enum ExpressionPhase {
+  DESIGN_TIME;
+  VALIDATION_TIME;
+  RUNTIME;
+  GENERATION_TIME;
+}
+
 /* PIM/serverless architectural marker interfaces. Other metamodels may ignore them. */
 interface DeployableElement {}
 interface InvocationSource {}
@@ -103,6 +131,7 @@ interface EnvironmentTarget {}
 interface CredentialRequirementLike {}
 interface RouteEndpoint {}
 interface EventCarrier {}
+interface ConfigurableElement {}
 
 class KeyValue {
   attr String[1] key;
@@ -116,17 +145,21 @@ class Annotation extends KeyValue {
 
 abstract class ModelElement {
   id attr String[1] ~id;
-  attr String[1] name;
+  attr String name;
   attr String summary;
   attr String description;
   attr String documentation;
-  attr String modelTags;
+  attr String[*] modelTags;
   attr String externalId;
   attr LifecycleStatus lifecycleStatus;
 
   val Annotation[*]#owner annotations;
   ref TraceLink[*]#target incomingTraces;
   ref TraceLink[*]#source outgoingTraces;
+}
+
+abstract class NamedModelElement extends ModelElement {
+  attr String[1] displayName;
 }
 
 abstract class TraceableElement extends ModelElement {
@@ -147,6 +180,30 @@ abstract class TraceableElement extends ModelElement {
 abstract class SemanticRelationship extends TraceableElement {
 }
 
+class Multiplicity extends TraceableElement {
+  attr Integer[1] lowerBound;
+  attr Integer upperBound;
+  attr Boolean unbounded;
+  attr Boolean ordered;
+  attr Boolean unique = true;
+}
+
+class Cardinality extends TraceableElement {
+  attr Integer lowerBound;
+  attr Integer upperBound;
+  attr Boolean unbounded;
+  attr Boolean ordered;
+  attr Boolean unique = true;
+}
+
+class Expression extends TraceableElement {
+  attr ExpressionLanguage[1] language;
+  attr String[1] body;
+  attr ExpressionPhase phase;
+  attr Boolean sideEffectFree;
+  ref ModelElement[*] referencedElements;
+}
+
 class TraceModel extends TraceableElement {
   val TraceLink[*]#traceModel links;
 }
@@ -155,7 +212,9 @@ class TraceModel extends TraceableElement {
 class TraceLink extends TraceableElement {
   attr TraceLinkType[1] linkType;
   attr String transformationRule;
-  attr String confidence;
+  attr TraceConfidence[1] confidence;
+  attr String confidenceRationale;
+  attr Double confidenceScore;
   attr String sourceElementId;
   attr String targetElementId;
 

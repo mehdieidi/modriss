@@ -141,9 +141,22 @@ class S3LifecycleRule extends kernel.TraceableElement {
   attr String[1] status;
   attr String prefix;
   attr String tagFiltersJson;
+  val S3LifecycleFilter[?] filter;
   attr Integer expirationInDays;
   attr Integer noncurrentVersionExpirationInDays;
   val S3Transition[*] transitions;
+}
+
+class S3LifecycleFilter extends kernel.TraceableElement {
+  attr String prefix;
+  val S3TagFilter[*] tags;
+  attr Integer objectSizeGreaterThan;
+  attr Integer objectSizeLessThan;
+}
+
+class S3TagFilter extends kernel.TraceableElement {
+  attr String[1] key;
+  attr String value;
 }
 
 class S3Transition extends kernel.TraceableElement {
@@ -160,13 +173,14 @@ class S3PublicAccessBlockConfiguration extends kernel.TraceableElement {
 
 class S3NotificationConfiguration extends kernel.TraceableElement {
   attr Boolean eventBridgeEnabled;
-  val S3NotificationRule[*] rules;
+  val S3NotificationRule[*]#configuration rules;
 }
 
 class S3NotificationRule extends kernel.TraceableElement {
   attr String[*] eventTypes;
   attr String filterPrefix;
   attr String filterSuffix;
+  readonly transient ref S3NotificationConfiguration[1]#rules configuration;
   ref awspsmcore.S3NotificationDestination[?] destination;
 }
 
@@ -182,6 +196,15 @@ class S3ReplicationRule extends kernel.TraceableElement {
   attr String destinationBucketArn;
   attr String prefix;
   attr String filterJson;
+  val S3LifecycleFilter[?] filter;
+  val S3ReplicationDestination[?] destination;
+}
+
+class S3ReplicationDestination extends kernel.TraceableElement {
+  attr String[1] bucketArn;
+  attr String accountId;
+  attr String storageClass;
+  ref awspsmsecurity.KmsKey[?] replicaKmsKey;
 }
 
 class S3BucketPolicy extends awspsmcore.AwsResource {

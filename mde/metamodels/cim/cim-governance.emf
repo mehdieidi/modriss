@@ -7,6 +7,10 @@ import "cim-organization.ecore";
 import "cim-domain-data.ecore";
 import "cim-behavior.ecore";
 
+/*
+ * NonFunctionalRequirement is contained through CIMModel.requirements.
+ * Editors should expose filtered NFR views instead of duplicating containment.
+ */
 class NonFunctionalRequirement extends cimorg.Requirement {
   attr cimtypes.QualityType qualityType;
   attr String metric;

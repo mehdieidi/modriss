@@ -3,11 +3,15 @@ package policy;
 
 import "../shared/kernel.ecore";
 import "pim-types.ecore";
+import "pim-contracts.ecore";
 
 abstract class ArchitecturePolicy extends kernel.TraceableElement {
   attr String policyScope;
   attr Boolean productionRequired;
   ref kernel.PolicyTarget[*] attachedTo;
+}
+
+abstract class PolicySetting extends kernel.TraceableElement {
 }
 
 class DataProtectionPolicy extends ArchitecturePolicy {
@@ -28,6 +32,26 @@ class CompliancePolicy extends ArchitecturePolicy {
   attr Boolean auditReportRequired;
 }
 
+class BusinessRule extends kernel.TraceableElement, kernel.PolicyTarget {
+  attr String naturalLanguageRule;
+  val kernel.Expression[?] expression;
+  ref contracts.Schema[*] inputSchemas;
+  ref contracts.Schema[*] outputSchemas;
+  ref kernel.FunctionTarget[*] enforcedBy;
+}
+
+class DecisionModel extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget {
+  attr String hitPolicy;
+  ref contracts.Schema[*] inputs;
+  ref contracts.Schema[*] outputs;
+  val DecisionRule[+] rules;
+}
+
+class DecisionRule extends kernel.TraceableElement {
+  val kernel.Expression[1] condition;
+  val kernel.Expression[1] outcome;
+}
+
 class ResiliencePolicy extends ArchitecturePolicy {
   attr Boolean retryEnabled;
   attr Boolean deadLetterRequired;
@@ -39,7 +63,7 @@ class ResiliencePolicy extends ArchitecturePolicy {
   val TimeoutPolicy[?] timeout;
 }
 
-class RetryPolicy extends kernel.TraceableElement {
+class RetryPolicy extends PolicySetting {
   attr Integer maxAttempts;
   attr Integer initialDelaySeconds;
   attr Double backoffRate;
@@ -48,7 +72,7 @@ class RetryPolicy extends kernel.TraceableElement {
   attr String[*] nonRetryableErrors;
 }
 
-class DeadLetterPolicy extends kernel.TraceableElement {
+class DeadLetterPolicy extends PolicySetting {
   attr Boolean required;
   attr String reason;
   attr String retentionPeriod;
@@ -56,7 +80,7 @@ class DeadLetterPolicy extends kernel.TraceableElement {
   ref kernel.EventCarrier[?] deadLetterChannel;
 }
 
-class TimeoutPolicy extends ArchitecturePolicy {
+class TimeoutPolicy extends PolicySetting {
   attr Integer timeoutSeconds;
   attr Integer clientTimeoutSeconds;
 }
@@ -88,14 +112,14 @@ class RateLimitPolicy extends ArchitecturePolicy {
 class BatchPolicy extends ArchitecturePolicy {
   attr Integer batchSize;
   attr Integer maxBatchingWindowSeconds;
-  attr types.Decision[1] partialFailureHandling;
-  attr types.Decision[1] bisectOnError;
+  attr pimtypes.Decision[1] partialFailureHandling;
+  attr pimtypes.Decision[1] bisectOnError;
   attr Integer parallelizationFactor;
   attr String decisionRationale;
 }
 
 class OrderingPolicy extends ArchitecturePolicy {
-  attr types.OrderingRequirement[1] orderingRequirement;
+  attr pimtypes.OrderingRequirement[1] orderingRequirement;
   attr String orderingKey;
   attr Boolean strictOrderingRequired;
 }
@@ -142,7 +166,7 @@ class ObservabilityConfig extends ArchitecturePolicy {
   val Slo[*]#observability slos;
 }
 
-class LoggingPolicy extends ArchitecturePolicy {
+class LoggingPolicy extends PolicySetting {
   attr String logFormat;
   attr String logLevel;
   attr Boolean structuredLogging;
@@ -151,7 +175,7 @@ class LoggingPolicy extends ArchitecturePolicy {
   attr String retentionPeriod;
 }
 
-class MetricPolicy extends ArchitecturePolicy {
+class MetricPolicy extends PolicySetting {
   attr String metricName;
   attr String unit;
   attr String statistic;
@@ -166,15 +190,16 @@ class MetricDimension extends kernel.TraceableElement {
   readonly transient ref MetricPolicy[1]#dimensions metric;
 }
 
-class TracingPolicy extends ArchitecturePolicy {
+class TracingPolicy extends PolicySetting {
   attr Boolean tracingRequired;
   attr String samplingPolicy;
   attr Boolean propagateTraceContext;
 }
 
-class AlertPolicy extends ArchitecturePolicy {
+class AlertPolicy extends PolicySetting {
   attr String metricName;
   attr String condition;
+  val kernel.Expression[?] conditionExpression;
   attr String threshold;
   attr Integer evaluationPeriods;
   attr String severity;

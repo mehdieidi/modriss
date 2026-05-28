@@ -12,8 +12,8 @@ import "pim-security.ecore";
 
 abstract class ComputeElement extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
   attr String responsibility;
-  attr types.ComputeProfile computeProfile;
-  attr types.ExecutionModel executionModel;
+  attr pimtypes.ComputeProfile computeProfile;
+  attr pimtypes.ExecutionModel executionModel;
   attr Boolean stateless;
   attr Boolean coldStartSensitive;
   attr Integer expectedAverageDurationMs;
@@ -21,8 +21,8 @@ abstract class ComputeElement extends kernel.TraceableElement, kernel.FlowEndpoi
   attr Integer expectedPeakConcurrency;
 }
 
-class Function extends ComputeElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.FunctionTarget, kernel.SubscriptionTarget, kernel.RoutingTarget {
-  attr types.FunctionKind[1] functionKind;
+class Function extends ComputeElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.FunctionTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.ConfigurableElement {
+  attr pimtypes.FunctionKind[1] functionKind;
   attr String handlerResponsibility;
   attr String sourceNameSuggestion;
   attr Boolean publicEntryPoint;
@@ -36,8 +36,8 @@ class Function extends ComputeElement, kernel.DeployableElement, kernel.Invocati
   attr String businessOperationRef;
   val contracts.FunctionContract[1] contract;
   ref Trigger[*]#invokesFunction triggers;
-  ref data.StorageElement[*] reads;
-  ref data.StorageElement[*] writes;
+  readonly transient volatile derived ref data.StorageElement[*] reads;
+  readonly transient volatile derived ref data.StorageElement[*] writes;
   ref contracts.EventType[*] publishes;
   ref contracts.EventType[*] subscribesTo;
   ref external.ExternalAdapter[*] callsAdapters;
@@ -51,11 +51,13 @@ class Function extends ComputeElement, kernel.DeployableElement, kernel.Invocati
   ref security.SecurityPolicy[*] securityPolicies;
 }
 
+@Ecore(constraints="ExactlyOneInvocationTarget")
 class Trigger extends kernel.TraceableElement {
   attr String triggerKind;
-  attr types.InvocationMode[1] invocationMode;
+  attr pimtypes.InvocationMode[1] invocationMode;
   attr Boolean enabled;
   attr String filterExpression;
+  val kernel.Expression[?] filter;
   attr Boolean generatedFromFlow;
   ref kernel.InvocationSource[1] source;
   ref Function[?]#triggers invokesFunction;

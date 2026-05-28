@@ -17,27 +17,30 @@ import "pim-deployment.ecore";
 
 /*
  * Root assembly model for the provider-independent serverless PIM v1.0.
- * Root containment is used only for true top-level catalogs and relationship
- * objects that may target multiple element kinds. Nested elements such as
- * ApiRoute, EventRoutingRule, Subscription, DataModel, AccessPattern,
- * IndexCandidate, FunctionContract, ErrorMapping, and CredentialRequirement
- * are contained by their semantic owners.
+ * Root containment is permissive for draft and AI-assisted editing; readiness
+ * constraints decide when the model is transformation/deployment/production-ready.
  */
 
 class PIMModel extends kernel.TraceableElement {
-  attr types.ArchitectureStyle[1] architectureStyle;
+  attr pimtypes.ArchitectureStyle[1] architectureStyle;
+  attr pimtypes.ValidationProfile validationProfile;
   attr String domainName;
   attr String architectureRationale;
   attr String defaultCorrelationIdName;
   attr Boolean providerIndependent = true;
 
-  val deployment.ServerlessService[+] services;
-  val deployment.DeploymentUnit[+] deploymentUnits;
-  val deployment.Environment[+] environments;
+  val deployment.ServerlessService[*] services;
+  val deployment.ServiceElementMembership[*] serviceMemberships;
+  val deployment.DeploymentUnit[*] deploymentUnits;
+  val deployment.Environment[*] environments;
   val deployment.ImplementationProfile[?] implementationProfile;
+  val deployment.PlatformCapability[*] platformCapabilities;
+  val deployment.PlatformMappingAssessment[*] platformMappingAssessments;
 
   val contracts.Schema[*] schemas;
-  val compute.Function[+] functions;
+  val policy.BusinessRule[*] businessRules;
+  val policy.DecisionModel[*] decisionModels;
+  val compute.Function[*] functions;
   val api.Api[*] apis;
   val contracts.EventType[*] eventTypes;
   val integration.EventChannel[*] channels;
@@ -48,6 +51,8 @@ class PIMModel extends kernel.TraceableElement {
   val data.ObjectStore[*] objectStores;
   val data.DataAccess[*] dataAccesses;
   val workflow.Workflow[*] workflows;
+  val workflow.HumanTask[*] humanTasks;
+  val external.ExternalEndpoint[*] externalEndpoints;
   val external.ExternalAdapter[*] externalAdapters;
 
   val security.IdentityProvider[*] identityProviders;

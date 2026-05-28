@@ -7,6 +7,8 @@ import "awspsm-compute.ecore";
 import "awspsm-api.ecore";
 import "awspsm-events.ecore";
 import "awspsm-messaging.ecore";
+import "awspsm-storage.ecore";
+import "awspsm-security.ecore";
 import "awspsm-workflow.ecore";
 
 /**
@@ -51,4 +53,25 @@ class StepFunctionEventBridgeTargetView extends AwsRelationshipView {
   ref awspsmevents.EventBridgeRule[1] rule;
   ref awspsmworkflow.StepFunctionStateMachine[1] stateMachine;
   ref awspsmevents.EventBridgeTarget[1] targetRow;
+}
+
+class S3LambdaNotificationView extends AwsRelationshipView {
+  ref awspsmstorage.S3Bucket[1] bucket;
+  ref awspsmcompute.AwsLambdaFunction[1] function;
+  ref awspsmstorage.S3NotificationRule[1] rule;
+  ref awspsmcompute.LambdaPermission[1] permission;
+}
+
+class S3QueueNotificationView extends AwsRelationshipView {
+  ref awspsmstorage.S3Bucket[1] bucket;
+  ref awspsmmessaging.SqsQueue[1] queue;
+  ref awspsmstorage.S3NotificationRule[1] rule;
+  ref awspsmmessaging.SqsQueuePolicy[?] queuePolicy;
+}
+
+class S3TopicNotificationView extends AwsRelationshipView {
+  ref awspsmstorage.S3Bucket[1] bucket;
+  ref awspsmmessaging.SnsTopic[1] topic;
+  ref awspsmstorage.S3NotificationRule[1] rule;
+  ref awspsmmessaging.SnsTopicPolicy[?] topicPolicy;
 }

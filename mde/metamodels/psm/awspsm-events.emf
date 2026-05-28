@@ -96,13 +96,19 @@ class EventBridgeArchive extends awspsmcore.AwsResource {
 
 class EventBridgeSchedule extends awspsmcore.AwsResource {
   attr String scheduleName;
-  attr String scheduleExpression;
+  attr String[1] scheduleExpression;
   attr String scheduleExpressionTimezone;
   attr String flexibleTimeWindowJson;
+  val EventBridgeFlexibleTimeWindow[?] flexibleTimeWindow;
   attr String state;
   attr String descriptionText;
   val EventBridgeTarget[1] target;
   ref awspsmsecurity.IamRole[1] role;
+}
+
+class EventBridgeFlexibleTimeWindow extends kernel.TraceableElement {
+  attr String mode;
+  attr Integer maximumWindowInMinutes;
 }
 
 class EventBridgePipe extends awspsmcore.AwsResource {
@@ -120,10 +126,39 @@ class EventBridgePipe extends awspsmcore.AwsResource {
   ref awspsmsecurity.IamRole[1] role;
 }
 
+abstract class EventBridgeAuthParameters extends kernel.TraceableElement {
+}
+
+class EventBridgeApiKeyAuthParameters extends EventBridgeAuthParameters {
+  attr String[1] apiKeyName;
+  val awspsmcore.ValueExpression[1] apiKeyValue;
+}
+
+class EventBridgeBasicAuthParameters extends EventBridgeAuthParameters {
+  val awspsmcore.ValueExpression[1] username;
+  val awspsmcore.ValueExpression[1] password;
+}
+
+class EventBridgeOAuthParameters extends EventBridgeAuthParameters {
+  attr String[1] authorizationEndpoint;
+  attr awspsmenums.AwsHttpMethod[1] httpMethod;
+  val awspsmcore.ValueExpression[1] clientId;
+  val awspsmcore.ValueExpression[1] clientSecret;
+  val EventBridgeHttpParameters[?] oauthHttpParameters;
+}
+
+class EventBridgeHttpParameters extends kernel.TraceableElement {
+  val HttpParameter[*] headerParameters;
+  val HttpParameter[*] queryStringParameters;
+  val HttpParameter[*] bodyParameters;
+}
+
+@Ecore(constraints="ConnectionAuthParametersMatchAuthorizationType")
 class EventBridgeConnection extends awspsmcore.AwsResource {
   attr String connectionName;
   attr awspsmenums.EventBridgeConnectionAuthorizationType[1] authorizationType;
-  val awspsmcore.ValueExpression[*] authParameters;
+  val EventBridgeAuthParameters[1] authParameters;
+  val EventBridgeHttpParameters[?] invocationHttpParameters;
 }
 
 class EventBridgeApiDestination extends awspsmcore.AwsResource {

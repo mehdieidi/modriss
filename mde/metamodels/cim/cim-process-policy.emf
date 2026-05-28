@@ -75,16 +75,18 @@ class DecisionStep extends ProcessStep {
 class WaitStep extends ProcessStep {
   attr String waitReason;
   attr String durationExpression;
+  val kernel.Expression[?] durationExpressionModel;
 }
 
 class ProcessTransition extends kernel.SemanticRelationship {
   attr String label;
   attr String conditionExpression;
+  val kernel.Expression[?] condition;
   attr Integer orderIndex;
   attr String probabilityHint;
   ref ProcessStep[1] source;
   ref ProcessStep[1] target;
-  ref cimbehavior.Condition[?] condition;
+  ref cimbehavior.Condition[?] conditionRef;
 }
 
 class Policy extends kernel.TraceableElement {
@@ -92,6 +94,7 @@ class Policy extends kernel.TraceableElement {
   attr String naturalLanguageRule;
   attr String expressionLanguage;
   attr String expression;
+  val kernel.Expression[?] expressionModel;
   attr kernel.ConstraintStrength enforcementStrength;
   attr kernel.Severity violationSeverity;
   attr Boolean auditRequired;
@@ -116,6 +119,8 @@ class DecisionRule extends kernel.TraceableElement {
   attr Integer priorityOrder;
   attr String condition;
   attr String outcome;
+  val kernel.Expression[?] conditionExpression;
+  val kernel.Expression[?] outcomeExpression;
   ref cimbehavior.Command[*] resultingCommands;
   ref cimbehavior.BusinessEvent[*] resultingEvents;
 }
@@ -135,6 +140,9 @@ class TemporalConstraint extends kernel.TraceableElement {
   attr String deadlineExpression;
   attr String durationExpression;
   attr String orderingExpression;
+  val kernel.Expression[?] deadline;
+  val kernel.Expression[?] duration;
+  val kernel.Expression[?] ordering;
   attr kernel.Severity violationSeverity;
   ref kernel.ModelElement[*] constrainedElements;
 }

@@ -46,8 +46,24 @@ class AslState extends kernel.TraceableElement {
   val AslRetryRule[*] retry;
   val AslCatchRule[*] catch;
   val AslChoiceRule[*] choices;
+  val AslBranch[*] branches;
+  val AslMapConfig[?] mapConfig;
   ref AslState[?] nextState;
   ref awspsmcore.AwsResource[?] invokedResource;
+}
+
+class AslBranch extends kernel.TraceableElement {
+  attr String[1] startAt;
+  val AslState[+] states;
+}
+
+class AslMapConfig extends kernel.TraceableElement {
+  attr String itemsPath;
+  attr String itemSelectorJson;
+  attr Integer maxConcurrency;
+  attr Boolean distributed;
+  attr String resultWriterJson;
+  val AslBranch[?] itemProcessor;
 }
 
 class AslRetryRule extends kernel.TraceableElement {

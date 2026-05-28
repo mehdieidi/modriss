@@ -12,8 +12,8 @@ import "pim-external.ecore";
 import "pim-policy.ecore";
 import "pim-config.ecore";
 
-class ServerlessService extends kernel.TraceableElement, kernel.PolicyTarget {
-  attr types.BoundaryType[1] boundaryType;
+class ServerlessService extends kernel.TraceableElement, kernel.PolicyTarget, kernel.ConfigurableElement {
+  attr pimtypes.BoundaryType[1] boundaryType;
   attr String responsibility;
   attr String ownerTeam;
   attr String businessCapabilityRef;
@@ -28,19 +28,26 @@ class ServerlessService extends kernel.TraceableElement, kernel.PolicyTarget {
   ref policy.ArchitecturePolicy[*] constrainedBy;
 }
 
-class DeploymentUnit extends kernel.TraceableElement, kernel.PolicyTarget {
-  attr types.DeploymentUnitType[1] unitType;
+class ServiceElementMembership extends kernel.TraceableElement {
+  attr pimtypes.OwnershipKind[1] ownershipKind;
+  attr String rationale;
+  ref ServerlessService[1] service;
+  ref kernel.DeployableElement[1] element;
+}
+
+class DeploymentUnit extends kernel.TraceableElement, kernel.PolicyTarget, kernel.ConfigurableElement {
+  attr pimtypes.DeploymentUnitType[1] unitType;
   attr String lifecycle;
   attr Boolean independentlyDeployable;
   attr String releaseStrategy;
   attr String versioningStrategy;
   ref ServerlessService[*] services;
-  ref kernel.DeployableElement[+] contains;
-  ref Environment[+] targetEnvironments;
+  ref kernel.DeployableElement[*] contains;
+  ref Environment[*] targetEnvironments;
 }
 
 class Environment extends kernel.TraceableElement, kernel.EnvironmentTarget, kernel.PolicyTarget {
-  attr types.EnvironmentClass[1] environmentClass;
+  attr pimtypes.EnvironmentClass[1] environmentClass;
   attr String nameSuffix;
   attr Boolean productionLike;
   attr Boolean requiresApproval;
@@ -50,9 +57,9 @@ class Environment extends kernel.TraceableElement, kernel.EnvironmentTarget, ker
 }
 
 class ImplementationProfile extends kernel.TraceableElement {
-  attr types.RuntimeLanguage[1] primaryLanguage;
+  attr pimtypes.RuntimeLanguage[1] primaryLanguage;
   attr String languageVersion;
-  attr types.PackageManager[1] packageManager;
+  attr pimtypes.PackageManager[1] packageManager;
   attr String sourceLayout;
   attr String testFramework;
   attr String lintCommand;
@@ -61,4 +68,19 @@ class ImplementationProfile extends kernel.TraceableElement {
   attr String dependencyPolicy;
   attr Boolean generateTypedContracts;
   attr Boolean generateRuntimeValidation;
+}
+
+class PlatformCapability extends kernel.TraceableElement {
+  attr String platform;
+  attr String providerService;
+  attr pimtypes.SupportLevel[1] supportLevel;
+  attr String limitations;
+  ref kernel.ModelElement[*] supportedPimConcepts;
+}
+
+class PlatformMappingAssessment extends kernel.TraceableElement {
+  ref kernel.ModelElement[1] source;
+  attr pimtypes.SupportLevel[1] supportLevel;
+  attr String rationale;
+  attr String suggestedProviderService;
 }

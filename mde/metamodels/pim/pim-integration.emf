@@ -15,19 +15,19 @@ abstract class IntegrationElement extends kernel.TraceableElement, kernel.FlowEn
 }
 
 abstract class EventChannel extends IntegrationElement, kernel.DeployableElement, kernel.InvocationSource, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.EventCarrier {
-  attr types.ChannelKind[1] channelKind;
-  attr types.OrderingRequirement[1] orderingRequirement;
-  attr types.DeliverySemantics[1] deliverySemantics;
+  attr pimtypes.ChannelKind[1] channelKind;
+  attr pimtypes.OrderingRequirement[1] orderingRequirement;
+  attr pimtypes.DeliverySemantics[1] deliverySemantics;
   attr String partitionKeyExpression;
   attr Boolean encrypted;
   attr Boolean replayRequired;
   attr Boolean deadLetterRequired;
   ref contracts.EventType[*] eventTypes;
-  ref compute.Function[*] producers;
-  ref compute.Function[*] consumers;
-  ref workflow.Workflow[*] workflowConsumers;
-  ref external.ExternalAdapter[*] externalProducers;
-  ref external.ExternalAdapter[*] externalConsumers;
+  readonly transient volatile derived ref compute.Function[*] producers;
+  readonly transient volatile derived ref compute.Function[*] consumers;
+  readonly transient volatile derived ref workflow.Workflow[*] workflowConsumers;
+  readonly transient volatile derived ref external.ExternalAdapter[*] externalProducers;
+  readonly transient volatile derived ref external.ExternalAdapter[*] externalConsumers;
   ref policy.ResiliencePolicy[?] resilience;
   ref policy.ObservabilityConfig[?] observability;
 }
@@ -62,6 +62,7 @@ class Schedule extends IntegrationElement, kernel.DeployableElement, kernel.Invo
 
 class Subscription extends kernel.TraceableElement {
   attr String filterExpression;
+  val kernel.Expression[?] filter;
   attr Boolean rawDelivery;
   attr Boolean deadLetterRequired;
   readonly transient ref Topic[1]#subscriptions ownerTopic;

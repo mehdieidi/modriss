@@ -8,6 +8,10 @@ import "awspsm-enums.ecore";
 interface S3NotificationDestination {
 }
 
+/** Marker interface for resources that can be associated with an AWS WAF Web ACL. */
+interface WafAssociableResource {
+}
+
 abstract class AwsResource extends kernel.TraceableElement {
   attr String[1] logicalId;
   attr String physicalName;
@@ -25,7 +29,7 @@ abstract class AwsResource extends kernel.TraceableElement {
   val NativeProperty[*] metadata;
   val NativeProperty[*] overrides;
   val ResourceImport[?] importDetails;
-  ref SamStack[1]#resources stack;
+  readonly transient ref SamStack[1]#resources stack;
   ref AwsResource[*] dependsOn;
 }
 
@@ -52,8 +56,10 @@ class NativeProperty extends kernel.TraceableElement {
   attr awspsmenums.Decision validationState;
 }
 
+@Ecore(constraints="ValueExpressionSourceShape SecretLiteralReviewed")
 class ValueExpression extends kernel.TraceableElement {
   attr awspsmenums.ValueSourceKind[1] sourceKind;
+  attr awspsmenums.ValueType expectedType;
   attr String literal;
   attr String expression;
   attr String attributeName;
@@ -104,7 +110,7 @@ class AwsStage extends kernel.TraceableElement {
   ref SamStack[*] deploysStacks;
 }
 
-@Ecore(constraints="StackHasResources")
+@Ecore(constraints="DeployableStackHasResources")
 class SamStack extends kernel.TraceableElement {
   attr String[1] stackName;
   attr String templatePath;
@@ -117,7 +123,7 @@ class SamStack extends kernel.TraceableElement {
   val CfnParameter[*] parameters;
   val CfnMapping[*] mappings;
   val CfnCondition[*] conditions;
-  val AwsResource[+]#stack resources;
+  val AwsResource[*]#stack resources;
   val CfnOutput[*] outputs;
   val NativeProperty[*] globals;
   val NativeProperty[*] metadata;

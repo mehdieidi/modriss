@@ -23,6 +23,14 @@ enum RequirementSourceType {
   AI_ASSISTANT;
 }
 
+enum RequirementRelationshipKind {
+  DEPENDS_ON;
+  CONFLICTS_WITH;
+  REFINES;
+  DUPLICATES;
+  DERIVES_FROM;
+}
+
 enum ActorType {
   HUMAN;
   ORGANIZATION;
@@ -75,6 +83,14 @@ enum PrimitiveBusinessType {
   LIST;
   DOCUMENT;
   BINARY;
+}
+
+enum IdentityStrategy {
+  NATURAL_KEY;
+  COMPOSITE_NATURAL_KEY;
+  SURROGATE_KEY;
+  EXTERNAL_REFERENCE;
+  UNKNOWN;
 }
 
 enum DataKind {

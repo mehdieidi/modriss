@@ -70,6 +70,11 @@ enum LambdaInvokeMode {
   RESPONSE_STREAM;
 }
 
+enum LambdaFunctionUrlAuthType {
+  NONE;
+  AWS_IAM;
+}
+
 enum LambdaRecursiveLoopMode {
   ALLOW;
   TERMINATE;
@@ -278,6 +283,19 @@ enum ValueSourceKind {
   RESOURCE_ATTRIBUTE;
   LIST;
   MAP;
+}
+
+enum ValueType {
+  STRING;
+  NUMBER;
+  BOOLEAN;
+  LIST;
+  MAP;
+  ARN;
+  NAME;
+  URL;
+  JSON;
+  SECRET;
 }
 
 enum CloudWatchComparisonOperator {
