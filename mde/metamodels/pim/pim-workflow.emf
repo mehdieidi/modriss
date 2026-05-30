@@ -9,7 +9,6 @@ import "pim-policy.ecore";
 import "pim-contracts.ecore";
 import "pim-security.ecore";
 
-@Ecore(constraints="StatesContainStart AndEndStatesBelongToWorkflow ReachableFromStart")
 class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.WorkflowTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.ConfigurableElement {
   attr pimtypes.WorkflowKind[1] workflowKind;
   attr String executionSemantics;
@@ -47,10 +46,9 @@ class WorkflowState extends kernel.TraceableElement, kernel.FlowEndpoint, kernel
   val CallbackTaskConfig[?] callbackConfig;
   val policy.RetryPolicy[?] retry;
   val ErrorHandler[*]#state catchHandlers;
-  val CompensationPolicy[?] compensation;
+  ref CompensationPolicy[?] compensation;
 }
 
-@Ecore(constraints="SameWorkflow")
 class WorkflowTransition extends kernel.TraceableElement {
   attr String conditionExpression;
   val kernel.Expression[?] condition;
@@ -60,7 +58,6 @@ class WorkflowTransition extends kernel.TraceableElement {
   ref WorkflowState[1] target;
 }
 
-@Ecore(constraints="NextStateInSameWorkflow")
 class ErrorHandler extends kernel.TraceableElement {
   attr String errorSelector;
   attr String recoveryAction;

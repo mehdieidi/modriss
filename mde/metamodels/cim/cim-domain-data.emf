@@ -21,7 +21,8 @@ class DomainEntity extends DomainConcept {
   attr String identityDescription;
   attr String lifecycleDescription;
   attr Boolean auditRelevant;
-  ref InformationItem[*] identityAttributes;
+  ref InformationItem[+] identityAttributes;
+  ref InformationItem[1] primaryIdentityAttribute;
   ref InformationItem[*] attributes;
   val LifecycleStateDefinition[*] lifecycleStates;
   val BusinessInvariant[*] invariants;
@@ -48,7 +49,6 @@ class DomainRelationship extends kernel.SemanticRelationship {
   ref DomainConcept[1]#incomingRelationships target;
 }
 
-@Ecore(constraints="RootIsMember StrongConsistencyHasRationale")
 class AggregateCandidate extends DomainConcept {
   attr String consistencyBoundaryRationale;
   attr cimtypes.ConsistencyExpectation consistencyExpectation;
@@ -73,22 +73,21 @@ class LifecycleStateDefinition extends kernel.TraceableElement {
 
 class BusinessInvariant extends kernel.TraceableElement {
   attr String naturalLanguageStatement;
-  attr String expressionLanguage;
+  attr kernel.ExpressionLanguage expressionLanguage;
   attr String expression;
   val kernel.Expression[?] expressionModel;
   attr kernel.Severity violationSeverity;
   ref DomainConcept[*] constrainedConcepts;
 }
 
-@Ecore(constraints="AcyclicSubItems StructuredItemsUseObjectOrList UniqueChildNames")
 class InformationItem extends kernel.TraceableElement {
   attr String businessName;
-  attr cimtypes.PrimitiveBusinessType type;
+  attr cimtypes.PrimitiveBusinessType[1] type;
   attr Boolean required;
   attr Boolean collection;
   val kernel.Multiplicity[?] cardinality;
   attr String example;
-  attr String allowedValues;
+  attr String[*] allowedValues;
   attr String formatHint;
   attr String minValue;
   attr String maxValue;
@@ -113,7 +112,7 @@ class InformationItem extends kernel.TraceableElement {
 }
 
 class DataClassification extends kernel.TraceableElement {
-  attr cimtypes.DataKind kind;
+  attr cimtypes.DataKind[1] kind;
   attr cimtypes.Identifiability identifiability;
   attr String confidentialityLevel;
   attr String regulatoryCategory;

@@ -106,9 +106,8 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
     f.objectSchema = placeholderSchema;
   }
 
-  if (f.fieldType = PIMTYPES!FieldType#ENUM and hasText(item.allowedValues)) {
-    var rawValues = splitAllowedValues(item.allowedValues);
-    for (rawValue in rawValues) {
+  if (f.fieldType = PIMTYPES!FieldType#ENUM and item.allowedValues.notEmpty()) {
+    for (rawValue in item.allowedValues) {
       if (hasText(rawValue)) {
         var literal = new CONTRACTS!SchemaEnumLiteral;
         literal.id = newId("enum_literal", ownerSeed + "_" + item.id + "_" + rawValue.trim());

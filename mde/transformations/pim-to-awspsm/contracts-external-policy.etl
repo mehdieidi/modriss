@@ -29,18 +29,19 @@ rule ExternalAdapter2PsmMetadata
 
   copyAwsResource(a, n, "ExternalAdapter", "AWS::CloudFormation::CustomResource");
   n.id = idFor("external_adapter", a);
-  n.cloudFormationType = "AWS::CloudFormation::CustomResource";
-  n.samType = "ExternalAdapterMetadata";
-  n.properties.add(nativeText("ExternalSystemName", a.externalSystemName, KERNEL!StructuredFormat#TEXT, false, false));
-  n.properties.add(nativeText("ProtocolFamily", a.protocolFamily, KERNEL!StructuredFormat#TEXT, false, false));
-  n.properties.add(nativeText("EndpointDescription", a.endpointDescription, KERNEL!StructuredFormat#TEXT, false, false));
-  if (isTrue(a.credentialsRequired) and a.credentials.isEmpty()) {
+  n.cloudFormationType = "Custom::ExternalAdapterMetadata";
+  n.properties.add(nativeText("ServiceToken", "REVIEW_REQUIRED_SERVICE_TOKEN", KERNEL!StructuredFormat#TEXT, true, false));
+  var ep = endpointOf(a);
+  n.properties.add(nativeText("ExternalSystemName", ep.externalSystemName, KERNEL!StructuredFormat#TEXT, false, false));
+  n.properties.add(nativeText("ProtocolFamily", ep.protocolFamily, KERNEL!StructuredFormat#TEXT, false, false));
+  n.properties.add(nativeText("EndpointDescription", ep.endpointDescription, KERNEL!StructuredFormat#TEXT, false, false));
+  if (ep.isDefined() and isTrue(ep.credentialsRequired) and a.credentials.isEmpty()) {
     manualDecision("EXTERNAL_ADAPTER_CREDENTIALS_REQUIRED",
       "Model credentials for external adapter " + a.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, n},
       "Add CredentialRequirement/Secret entries or mark credentialsRequired=false.");
   }
-  if (isTrue(a.privateNetworkRequired)) {
+  if (ep.isDefined() and isTrue(ep.privateNetworkRequired)) {
     manualDecision("EXTERNAL_ADAPTER_NETWORK_REQUIRED",
       "Define private networking for external adapter " + a.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, n},
@@ -259,7 +260,12 @@ operation createLambdaAlarm(f, l, suffix : String, metric : String, threshold : 
 }
 
 operation isHttpAdapter(a) {
-  return asText(a.protocolFamily).toLowerCase().contains("http") or asText(a.protocolFamily).toLowerCase().contains("rest") or asText(a.endpointDescription).toLowerCase().startsWith("http");
+  var ep = endpointOf(a);
+  if (ep.isUndefined()) {
+    return false;
+  }
+  return asText(ep.protocolFamily).toLowerCase().contains("http") or asText(ep.protocolFamily).toLowerCase().contains("rest") or
+    asText(ep.endpointUri).toLowerCase().startsWith("http") or asText(ep.endpointDescription).toLowerCase().startsWith("http");
 }
 
 operation createEventBridgeConnectionAndApiDestination(a) {
@@ -268,17 +274,16 @@ operation createEventBridgeConnectionAndApiDestination(a) {
   conn.id = generatedId("eventbridge_connection", a, "connection");
   conn.connectionName = physicalName(a, "connection", defaultStage());
   conn.authorizationType = inferConnectionAuthType(a);
-  for (cred in a.credentials) {
-    conn.authParameters.add(literalValue(firstText(cred.name, cred.purpose), true));
-  }
+  conn.authParameters = createConnectionAuthParameters(a, conn.authorizationType);
 
   var dest = new AWSPSMEVENTS!EventBridgeApiDestination;
   copyAwsResource(a, dest, "ApiDestination", "AWS::Events::ApiDestination");
   dest.id = generatedId("eventbridge_api_destination", a, "destination");
   dest.destinationName = physicalName(a, "api-destination", defaultStage());
-  dest.invocationEndpoint = endpointFromDescription(a.endpointDescription);
+  var ep = endpointOf(a);
+  dest.invocationEndpoint = firstText(ep.endpointUri, endpointFromDescription(ep.endpointDescription));
   dest.httpMethod = AWSPSMENUMS!AwsHttpMethod#POST;
-  if (isTrue(a.rateLimitedByProvider)) {
+  if (ep.isDefined() and isTrue(ep.rateLimitedByProvider)) {
     dest.invocationRateLimitPerSecond = 10;
   }
   else {
@@ -289,8 +294,60 @@ operation createEventBridgeConnectionAndApiDestination(a) {
     manualDecision("API_DESTINATION_ENDPOINT_REQUIRED",
       "Provide HTTPS endpoint for external adapter " + a.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, dest},
-      "Set ExternalAdapter.endpointDescription to an HTTPS endpoint or model an adapter Lambda.");
+      "Set ExternalAdapter.endpoint.endpointUri to an HTTPS endpoint or model an adapter Lambda.");
   }
+}
+
+operation endpointOf(a) {
+  if (a.isUndefined() or a.endpoint.isUndefined()) {
+    return null;
+  }
+  return a.endpoint;
+}
+
+operation createConnectionAuthParameters(a, authType) {
+  if (authType = AWSPSMENUMS!EventBridgeConnectionAuthorizationType#BASIC) {
+    var b = new AWSPSMEVENTS!EventBridgeBasicAuthParameters;
+    b.id = generatedId("eventbridge_auth", a, "basic");
+    b.name = a.name + " basic auth";
+    b.username = literalValue(firstCredentialName(a), true);
+    b.password = literalValue(firstCredentialValue(a), true);
+    return b;
+  }
+  if (authType = AWSPSMENUMS!EventBridgeConnectionAuthorizationType#OAUTH_CLIENT_CREDENTIALS) {
+    var o = new AWSPSMEVENTS!EventBridgeOAuthParameters;
+    o.id = generatedId("eventbridge_auth", a, "oauth");
+    o.name = a.name + " OAuth auth";
+    o.authorizationEndpoint = endpointOf(a).authorizationEndpoint;
+    o.httpMethod = AWSPSMENUMS!AwsHttpMethod#POST;
+    o.clientId = literalValue(firstCredentialName(a), true);
+    o.clientSecret = literalValue(firstCredentialValue(a), true);
+    return o;
+  }
+  var k = new AWSPSMEVENTS!EventBridgeApiKeyAuthParameters;
+  k.id = generatedId("eventbridge_auth", a, "api_key");
+  k.name = a.name + " API key auth";
+  k.apiKeyName = firstCredentialName(a);
+  k.apiKeyValue = literalValue(firstCredentialValue(a), true);
+  return k;
+}
+
+operation firstCredentialName(a) {
+  if (a.credentials.notEmpty()) {
+    return firstText(a.credentials.first().name, a.credentials.first().purpose);
+  }
+  return "REVIEW_REQUIRED_CREDENTIAL_NAME";
+}
+
+operation firstCredentialValue(a) {
+  if (a.credentials.notEmpty()) {
+    return firstText(a.credentials.first().externalId, a.credentials.first().name);
+  }
+  manualDecision("EVENTBRIDGE_CONNECTION_CREDENTIAL_REQUIRED",
+    "Provide credentials for EventBridge connection generated from adapter " + a.name + ".",
+    KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a},
+    "Add ExternalAdapter.credentials entries or mark endpoint.credentialsRequired=false.");
+  return "REVIEW_REQUIRED_SECRET_VALUE";
 }
 
 operation inferConnectionAuthType(a) {
@@ -336,8 +393,14 @@ operation parseComparison(condition) {
 }
 
 operation parseThreshold(text) {
-  if (hasText(text)) {
+  if (hasText(text) and text.matches("^-?[0-9]+(\\.[0-9]+)?$")) {
     return text.asDouble();
+  }
+  if (hasText(text)) {
+    manualDecision("ALARM_THRESHOLD_NUMERIC_REQUIRED",
+      "Provide a numeric CloudWatch alarm threshold instead of '" + text + "'.",
+      KERNEL!Severity#WARNING, false, Sequence{},
+      "Set AlertPolicy.threshold to a plain number such as 5 or 200.5.");
   }
   return 1.0d;
 }

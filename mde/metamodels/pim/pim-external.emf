@@ -14,12 +14,13 @@ class ExternalEndpoint extends kernel.TraceableElement, kernel.ExternalCallTarge
   attr Boolean credentialsRequired;
   attr Boolean rateLimitedByProvider;
   attr String expectedSla;
+  attr String endpointUri;
+  attr String authorizationEndpoint;
 }
 
 class ExternalAdapter extends kernel.TraceableElement, kernel.DeployableElement, kernel.FlowEndpoint, kernel.InvocationTarget, kernel.FunctionTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.ExternalCallTarget, kernel.ProtectedResource, kernel.PolicyTarget, kernel.ConfigurableElement {
   attr String responsibility;
   ref ExternalEndpoint[1] endpoint;
-  ref kernel.FunctionTarget[?] adapterFunction;
   ref kernel.FunctionTarget[*] adapterFunctions;
   val config.CredentialRequirement[*] credentials;
   ref policy.ResiliencePolicy[?] resilience;

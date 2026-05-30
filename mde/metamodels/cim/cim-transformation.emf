@@ -35,5 +35,5 @@ class TransformationProfile extends kernel.TraceableElement {
   attr Boolean requirePrivacyClassificationForAllInformation;
   attr Boolean generateReadModelsFromQueries;
   attr String defaultServiceGranularityRationale;
-  val kernel.ManualDecision[*] requiredDecisions;
+  ref kernel.ManualDecision[*] requiredDecisions;
 }

@@ -75,3 +75,13 @@ context AWSPSM!EventBridgeApiDestination {
   }
 }
 
+context AWSPSM!EventBridgeConnection {
+  constraint ConnectionAuthParametersMatchAuthorizationType {
+    check :
+      (self.authorizationType = AWSPSMENUMS!EventBridgeConnectionAuthorizationType#API_KEY and self.authParameters.isKindOf(AWSPSM!EventBridgeApiKeyAuthParameters)) or
+      (self.authorizationType = AWSPSMENUMS!EventBridgeConnectionAuthorizationType#BASIC and self.authParameters.isKindOf(AWSPSM!EventBridgeBasicAuthParameters)) or
+      (self.authorizationType = AWSPSMENUMS!EventBridgeConnectionAuthorizationType#OAUTH_CLIENT_CREDENTIALS and self.authParameters.isKindOf(AWSPSM!EventBridgeOAuthParameters))
+    message : 'EventBridge connection ' + self.resourceLabel() + ' uses authParameters that do not match authorizationType. Fix: use the concrete auth parameter class for the selected authorization type.'
+  }
+}
+

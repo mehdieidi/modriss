@@ -6,6 +6,25 @@ operation Collection hasItems() : Boolean {
   return self.isDefined() and self.size() > 0;
 }
 
+operation KERNEL!Multiplicity hasMultiplicityBounds() : Boolean {
+  return self.isDefined() and self.lowerBound.isDefined() and
+    (self.upperBound.isDefined() or self.unbounded = true);
+}
+
+operation KERNEL!Multiplicity isMany() : Boolean {
+  return self.isDefined() and
+    (self.unbounded = true or (self.upperBound.isDefined() and self.upperBound > 1));
+}
+
+operation CIM!InformationItem transitiveSubItems() : Set {
+  var result : Set = Set{};
+  for (child in self.subItems) {
+    result.add(child);
+    result.addAll(child.transitiveSubItems());
+  }
+  return result;
+}
+
 @cached
 operation providerTechnologyPattern() : String {
   return "(?i).*(lambda|dynamodb|sqs|sns|eventbridge|cloudwatch|xray|iam|cognito|s3|aws|arn|sam|cloudformation|azure|gcp|pubsub|kafka|kubernetes|terraform).*";
@@ -29,7 +48,9 @@ operation KERNEL!ModelElement containsProviderTechnologyTerm() : Boolean {
 
 @cached
 operation CIM!DataClassification isPersonalKind() : Boolean {
-  return (self.kind = CIM!DataKind#PERSONAL) or (self.kind = CIM!DataKind#SENSITIVE_PERSONAL);
+  return (self.kind = CIM!DataKind#PERSONAL) or (self.kind = CIM!DataKind#SENSITIVE_PERSONAL) or
+    (self.kind = CIM!DataKind#FINANCIAL) or (self.kind = CIM!DataKind#HEALTH) or
+    (self.kind = CIM!DataKind#REGULATED);
 }
 
 @cached

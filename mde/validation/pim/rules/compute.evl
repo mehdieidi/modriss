@@ -62,6 +62,12 @@ context PIM!Function {
 
 context PIM!Trigger {
 
+  constraint ExactlyOneInvocationTarget {
+    check : (self.invokesFunction.isDefined() and self.startsWorkflow.isUndefined()) or
+      (self.invokesFunction.isUndefined() and self.startsWorkflow.isDefined())
+    message : "[PIM-TRIGGER-000] Trigger '" + self.displayName() + "' must target exactly one function or workflow."
+  }
+
   constraint TriggerTargetsFunctionOrWorkflow {
     check : self.invokesFunction.isDefined() or self.startsWorkflow.isDefined()
     message : "[PIM-TRIGGER-001] Trigger '" + self.displayName() + "' does not invoke a function or start a workflow. Fix: set invokesFunction or startsWorkflow."

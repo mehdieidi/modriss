@@ -164,6 +164,13 @@ context CIM!Role {
 
 context CIM!ExternalSystem {
 
+  constraint ActorTypeMatchesSubclass {
+    check : self.actorType = CIM!ActorType#EXTERNAL_SYSTEM
+    message :
+      "Error [CIM-EXT-000] ExternalSystem '" + self.labelText() + "' must have actorType=EXTERNAL_SYSTEM. " +
+      "Suggestion: align the actorType enum with the concrete ExternalSystem class."
+  }
+
   constraint ExternalSystemDeclaresPurposeAndTrust {
     check :
       self.owningOrganization.hasText() and self.businessPurpose.hasText() and self.trustRationale.hasText()
@@ -261,6 +268,17 @@ context CIM!BoundedContextCandidate {
     message :
       "Warning [CIM-BC-002] BoundedContextCandidate '" + self.labelText() + "' has no scoped content. " +
       "Suggestion: add capabilities, entities, commands, queries, events, or policies that belong to this boundary."
+  }
+
+  critique CommandsTargetContextOwnedAggregates {
+    check : self.commands.forAll(commandItem |
+      commandItem.targetAggregate.isUndefined() or
+      (self.entities.includes(commandItem.targetAggregate.root) and commandItem.targetAggregate.members.forAll(member | self.entities.includes(member))) or
+      CIM!CapabilityDependency.all.exists(dep | self.capabilities.includes(dep.source) or self.capabilities.includes(dep.target))
+    )
+    message :
+      "Warning [CIM-BC-003] BoundedContextCandidate '" + self.labelText() + "' contains commands that target aggregates/entities outside the context without an explicit dependency. " +
+      "Suggestion: add a CapabilityDependency or integration event for cross-boundary writes."
   }
 }
 

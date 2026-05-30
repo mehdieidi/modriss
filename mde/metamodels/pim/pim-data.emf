@@ -117,7 +117,6 @@ class IndexCandidate extends kernel.TraceableElement {
   ref AccessPattern[*] supportsAccessPatterns;
 }
 
-@Ecore(constraints="DataAccessConsistentWithFunctionRefs GeneratesOrReferencesPermission")
 class DataAccess extends kernel.TraceableElement {
   attr pimtypes.DataAccessMode[1] mode;
   attr Boolean transactional;

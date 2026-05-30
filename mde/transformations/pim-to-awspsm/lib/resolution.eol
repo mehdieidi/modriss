@@ -26,9 +26,6 @@ operation placeUncontainedAwsResources() {
       }
     }
   }
-  if (AWSPSM!AwsPsmModel.all.notEmpty()) {
-    awsRoot().allResources.addAll(AWSPSMCORE!AwsResource.all);
-  }
   for (stage in AWSPSMCORE!AwsStage.all) {
     for (stack in AWSPSMCORE!SamStack.all) {
       if (not stage.deploysStacks.includes(stack)) {
@@ -71,6 +68,12 @@ operation generateIamStatements() {
       }
       for (s in f.writes) {
         addResourceStatement(pol.document, s, false, true);
+      }
+      for (daRead in DATA!DataAccess.all.select(da | da.function = f and (da.mode = PIMTYPES!DataAccessMode#READ or da.mode = PIMTYPES!DataAccessMode#READ_WRITE))) {
+        addResourceStatement(pol.document, daRead.store, true, false);
+      }
+      for (daWrite in DATA!DataAccess.all.select(da | da.function = f and (da.mode = PIMTYPES!DataAccessMode#WRITE or da.mode = PIMTYPES!DataAccessMode#READ_WRITE or da.mode = PIMTYPES!DataAccessMode#APPEND or da.mode = PIMTYPES!DataAccessMode#DELETE))) {
+        addResourceStatement(pol.document, daWrite.store, false, true);
       }
       for (evt in f.publishes) {
         addPublishStatement(pol.document, evt);

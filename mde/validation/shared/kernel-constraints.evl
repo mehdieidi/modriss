@@ -1,0 +1,7 @@
+context KERNEL!TraceLink {
+  constraint TraceLinkHasReferenceOrExternalId {
+    check : self.source.isDefined() or self.target.isDefined() or
+      self.sourceElementId.hasText() or self.targetElementId.hasText() or self.externalId.hasText()
+    message : "TraceLink '" + self.labelText() + "' must reference a source/target element or external trace identifier."
+  }
+}

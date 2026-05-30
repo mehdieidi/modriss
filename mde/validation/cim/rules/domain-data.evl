@@ -12,19 +12,22 @@ context CIM!DomainConcept {
 
 context CIM!DomainEntity {
 
-  constraint EntityHasIdentityAttribute {
-    check : self.identityAttribute.isDefined()
+  constraint EntityHasPrimaryIdentityAttribute {
+    check : self.primaryIdentityAttribute.isDefined()
     message :
-      "Error [CIM-ENTITY-001] DomainEntity '" + self.labelText() + "' has no identityAttribute. " +
+      "Error [CIM-ENTITY-001] DomainEntity '" + self.labelText() + "' has no primaryIdentityAttribute. " +
       "Suggestion: select or create the InformationItem that uniquely identifies the entity in business terms."
   }
 
-  constraint IdentityAttributeIsOwnedAttribute {
-    guard : self.identityAttribute.isDefined()
-    check : self.attributes.includes(self.identityAttribute)
+  constraint IdentityAttributesAreOwnedAttributes {
+    guard : self.primaryIdentityAttribute.isDefined()
+    check : self.identityAttributes.notEmpty() and
+      self.attributes.includes(self.primaryIdentityAttribute) and
+      self.identityAttributes.includes(self.primaryIdentityAttribute) and
+      self.identityAttributes.forAll(attributeItem | self.attributes.includes(attributeItem))
     message :
-      "Error [CIM-ENTITY-002] DomainEntity '" + self.labelText() + "' uses an identityAttribute that is not included in attributes. " +
-      "Suggestion: add the identity InformationItem to the entity's attributes collection or choose one of the existing attributes as identity."
+      "Error [CIM-ENTITY-002] DomainEntity '" + self.labelText() + "' has identityAttributes that are not included in attributes or do not include primaryIdentityAttribute. " +
+      "Suggestion: add all identity attributes to attributes and choose primaryIdentityAttribute from identityAttributes."
   }
 
   critique EntityHasOwningCapability {
@@ -74,7 +77,7 @@ context CIM!DomainRelationship {
   critique DomainRelationshipHasRolesAndMultiplicities {
     check :
       self.sourceRole.hasText() and self.targetRole.hasText() and
-      self.sourceMultiplicity.hasText() and self.targetMultiplicity.hasText()
+      self.sourceMultiplicity.hasMultiplicityBounds() and self.targetMultiplicity.hasMultiplicityBounds()
     message :
       "Warning [CIM-REL-002] DomainRelationship '" + self.labelText() + "' lacks role names or multiplicities. " +
       "Suggestion: provide sourceRole, targetRole, sourceMultiplicity, and targetMultiplicity to remove ambiguity."
@@ -160,20 +163,33 @@ context CIM!BusinessInvariant {
 
 context CIM!InformationItem {
 
-  constraint RequiredInformationHasType {
-    guard : self.required = true
-    check : self.type.isDefined()
+  constraint AcyclicSubItems {
+    check : not self.subItems.exists(child | child = self or child.transitiveSubItems().includes(self))
     message :
-      "Error [CIM-INFO-001] Required InformationItem '" + self.labelText() + "' has no type. " +
-      "Suggestion: choose the PrimitiveBusinessType that best represents the business value, such as TEXT, MONEY, DATE, EMAIL, IDENTIFIER, OBJECT, or LIST."
+      "Error [CIM-INFO-000A] InformationItem '" + self.labelText() + "' has cyclic subItems. " +
+      "Suggestion: remove the recursive containment/reference cycle."
   }
 
-  critique OptionalInformationShouldStillDeclareType {
-    guard : not (self.required = true)
+  constraint StructuredItemsUseObjectOrList {
+    guard : self.subItems.notEmpty()
+    check : (self.type.asString() = "OBJECT") or (self.type.asString() = "LIST")
+    message :
+      "Error [CIM-INFO-000B] InformationItem '" + self.labelText() + "' has subItems but is not typed as OBJECT or LIST. " +
+      "Suggestion: use a structured business type for nested information."
+  }
+
+  constraint UniqueChildNames {
+    check : self.subItems.forAll(child | self.subItems.one(other | firstText(other.businessName, other.name) = firstText(child.businessName, child.name)))
+    message :
+      "Error [CIM-INFO-000C] InformationItem '" + self.labelText() + "' has duplicate child names. " +
+      "Suggestion: make nested InformationItem businessName/name values unique."
+  }
+
+  constraint InformationItemHasType {
     check : self.type.isDefined()
     message :
-      "Warning [CIM-INFO-002] Optional InformationItem '" + self.labelText() + "' has no type. " +
-      "Suggestion: classify the item with PrimitiveBusinessType even when optional so generated schemas and transformations are stable."
+      "Error [CIM-INFO-001] InformationItem '" + self.labelText() + "' has no type. " +
+      "Suggestion: choose the PrimitiveBusinessType that best represents the business value, such as TEXT, MONEY, DATE, EMAIL, IDENTIFIER, OBJECT, or LIST."
   }
 
   constraint InformationItemHasBusinessName {
@@ -193,10 +209,11 @@ context CIM!InformationItem {
 
   constraint CollectionInformationHasMultiplicity {
     guard : self.collection = true
-    check : self.multiplicity.hasText()
+    check : self.cardinality.isDefined() and self.cardinality.lowerBound.isDefined() and
+      (self.cardinality.upperBound.isDefined() or self.cardinality.unbounded = true)
     message :
-      "Error [CIM-INFO-005] Collection InformationItem '" + self.labelText() + "' has no multiplicity. " +
-      "Suggestion: specify expected cardinality such as 0..*, 1..*, 0..10, or business-specific limits."
+      "Error [CIM-INFO-005] Collection InformationItem '" + self.labelText() + "' has no cardinality. " +
+      "Suggestion: specify expected cardinality bounds such as 0..*, 1..*, 0..10, or business-specific limits."
   }
 
   constraint DerivedInformationHasDerivationRule {

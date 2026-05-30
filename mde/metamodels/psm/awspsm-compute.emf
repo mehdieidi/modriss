@@ -12,7 +12,7 @@ import "awspsm-storage.ecore";
 
 class AwsLambdaFunction extends awspsmcore.AwsResource, awspsmcore.S3NotificationDestination {
   val LambdaCodeConfig[1] code;
-  attr awspsmenums.PackageType[1] packageType;
+  attr awspsmenums.PackageType packageType;
   attr String functionName;
   attr String descriptionText;
   attr Integer memorySizeMb;

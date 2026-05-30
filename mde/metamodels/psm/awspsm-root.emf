@@ -34,5 +34,6 @@ class AwsPsmModel extends kernel.TraceableElement {
   val awspsmcore.AwsSecurityBaseline[?] securityBaseline;
   val kernel.TraceModel[?] traceModel;
   val kernel.ProductionReadinessAssessment[?] readiness;
+  val kernel.StructuredDocument[*] documents;
   val awspsmintegrations.AwsRelationshipView[*] relationshipViews;
 }

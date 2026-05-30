@@ -23,6 +23,12 @@ context PIM!EventType {
     check : self.envelope.isDefined()
     message : "[PIM-EVENT-004] EventType '" + self.displayName() + "' is external, replayable or audit-related but has no EventEnvelope. Suggested fix: define envelope fields for eventId, eventType, source, time, version and correlation/causation IDs."
   }
+
+  critique EventTypeProducerConsumerLinksConsistent {
+    check : self.producedBy.forAll(fn | PIM!EventChannel.all.exists(ch | ch.eventTypes.includes(self) and (ch.producers.includes(fn) or ch.externalProducers.includes(fn))))
+      and self.consumedBy.forAll(fn | PIM!EventChannel.all.exists(ch | ch.eventTypes.includes(self) and (ch.consumers.includes(fn) or ch.externalConsumers.includes(fn) or ch.workflowConsumers.includes(fn))))
+    message : "[PIM-EVENT-006] EventType '" + self.displayName() + "' has producedBy/consumedBy links that are not reflected by event-channel producer/consumer links. Suggested fix: synchronize EventType and EventChannel relationship references."
+  }
 }
 
 context PIM!EventEnvelope {
@@ -64,6 +70,12 @@ context PIM!EventChannel {
     check : self.producers.notEmpty() or self.externalProducers.notEmpty() or self.consumers.notEmpty()
       or self.workflowConsumers.notEmpty() or self.externalConsumers.notEmpty() or self.rationale.hasText()
     message : "[PIM-CHAN-005] Channel '" + self.displayName() + "' has no producer/consumer intent. Suggested fix: connect producers and consumers or mark it as intentionally reserved in rationale."
+  }
+
+  critique ChannelProducerConsumerLinksConsistent {
+    check : self.producers.forAll(fn | self.eventTypes.exists(eventItem | eventItem.producedBy.includes(fn) or fn.publishes.includes(eventItem)))
+      and self.consumers.forAll(fn | self.eventTypes.exists(eventItem | eventItem.consumedBy.includes(fn) or fn.subscribesTo.includes(eventItem)))
+    message : "[PIM-CHAN-006] Channel '" + self.displayName() + "' has producer/consumer links that are not reflected by event types or function publish/subscribe references. Suggested fix: keep EventChannel, EventType and Function event links synchronized."
   }
 }
 

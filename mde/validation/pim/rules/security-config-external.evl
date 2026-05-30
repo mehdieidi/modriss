@@ -2,19 +2,25 @@ import "../lib/pim-validation-helpers.eol";
 
 context PIM!ExternalAdapter {
 
+  constraint AdapterHasEndpoint {
+    check : self.endpoint.isDefined()
+    message : "[PIM-EXT-000] ExternalAdapter '" + self.displayName() + "' has no endpoint. Fix: attach the canonical ExternalEndpoint."
+  }
+
   constraint CredentialRequirementForCredentialedAdapter {
-    guard : self.credentialsRequired.isTrue()
+    guard : self.endpoint.isDefined() and self.endpoint.credentialsRequired.isTrue()
     check : self.credentials.notEmpty()
     message : "[PIM-EXT-001] ExternalAdapter '" + self.displayName() + "' requires credentials but has none. Fix: add CredentialRequirement entries and link them to Secret references."
   }
 
   critique ExternalAdapterShouldDescribeEndpointAndProtocol {
-    check : self.externalSystemName.hasText() and self.protocolFamily.hasText() and self.endpointDescription.hasText()
+    guard : self.endpoint.isDefined()
+    check : self.endpoint.externalSystemName.hasText() and self.endpoint.protocolFamily.hasText() and self.endpoint.endpointDescription.hasText()
     message : "[PIM-EXT-002] ExternalAdapter '" + self.displayName() + "' lacks externalSystemName, protocolFamily or endpointDescription. Suggested fix: describe the external system boundary without embedding provider-specific deployment details."
   }
 
   critique RateLimitedAdapterShouldHaveResilience {
-    guard : self.rateLimitedByProvider.isTrue() or self.privateNetworkRequired.isTrue()
+    guard : self.endpoint.isDefined() and (self.endpoint.rateLimitedByProvider.isTrue() or self.endpoint.privateNetworkRequired.isTrue())
     check : self.resilience.isDefined()
     message : "[PIM-EXT-003] ExternalAdapter '" + self.displayName() + "' is rate-limited or private-network dependent but lacks resilience policy. Suggested fix: attach ResiliencePolicy with retry, timeout, fallback and circuit-breaker decisions."
   }

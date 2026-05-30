@@ -46,6 +46,16 @@ context CIM!Command {
       "Warning [CIM-CMD-006] Command '" + self.labelText() + "' has no preconditions or possibleErrors. " +
       "Suggestion: document business conditions and rejection/error cases so command semantics are complete."
   }
+
+  critique CommandOutcomeLinksMatchDirectCollections {
+    guard : self.outcomes.notEmpty()
+    check : self.outcomes.forAll(outcome |
+      outcome.emittedEvents.forAll(eventItem | self.expectedEvents.includes(eventItem) or self.rejectionEvents.includes(eventItem)) and
+      outcome.errors.forAll(errorItem | self.possibleErrors.includes(errorItem)))
+    message :
+      "Warning [CIM-CMD-007] Command '" + self.labelText() + "' has CommandOutcome event/error links that are not reflected in expectedEvents, rejectionEvents, or possibleErrors. " +
+      "Suggestion: keep direct command collections and detailed outcomes consistent until outcome-derived helpers fully replace direct links."
+  }
 }
 
 context CIM!Query {

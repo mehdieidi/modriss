@@ -36,8 +36,8 @@ class Function extends ComputeElement, kernel.DeployableElement, kernel.Invocati
   attr String businessOperationRef;
   val contracts.FunctionContract[1] contract;
   ref Trigger[*]#invokesFunction triggers;
-  readonly transient volatile derived ref data.StorageElement[*] reads;
-  readonly transient volatile derived ref data.StorageElement[*] writes;
+  ref data.StorageElement[*] reads;
+  ref data.StorageElement[*] writes;
   ref contracts.EventType[*] publishes;
   ref contracts.EventType[*] subscribesTo;
   ref external.ExternalAdapter[*] callsAdapters;
@@ -51,7 +51,6 @@ class Function extends ComputeElement, kernel.DeployableElement, kernel.Invocati
   ref security.SecurityPolicy[*] securityPolicies;
 }
 
-@Ecore(constraints="ExactlyOneInvocationTarget")
 class Trigger extends kernel.TraceableElement {
   attr String triggerKind;
   attr pimtypes.InvocationMode[1] invocationMode;

@@ -431,5 +431,9 @@ operation envBoolean(value) {
 }
 
 operation setFeature(element, featureName : String, value) {
-  element.eSet(element.eClass().getEStructuralFeature(featureName), value);
+  var feature = element.eClass().getEStructuralFeature(featureName);
+  if (feature.isUndefined()) {
+    throw "Feature " + featureName + " does not exist on " + element.eClass().getName() + ".";
+  }
+  element.eSet(feature, value);
 }

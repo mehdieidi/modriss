@@ -25,6 +25,15 @@ class DataProtectionPolicy extends ArchitecturePolicy {
   attr String residencyRequirement;
 }
 
+class DataQualityPolicy extends ArchitecturePolicy {
+  attr Boolean validationRequired;
+  attr Boolean completenessCheckRequired;
+  attr Boolean freshnessCheckRequired;
+  attr Boolean duplicateDetectionRequired;
+  attr String qualityDimensions;
+  attr String measurementRule;
+}
+
 class CompliancePolicy extends ArchitecturePolicy {
   attr String regulation;
   attr String controlId;
@@ -60,7 +69,7 @@ class ResiliencePolicy extends ArchitecturePolicy {
   attr Boolean timeoutRequired;
   val RetryPolicy[?] retry;
   val DeadLetterPolicy[?] deadLetter;
-  val TimeoutPolicy[?] timeout;
+  ref TimeoutPolicy[?] timeout;
 }
 
 class RetryPolicy extends PolicySetting {
@@ -80,7 +89,7 @@ class DeadLetterPolicy extends PolicySetting {
   ref kernel.EventCarrier[?] deadLetterChannel;
 }
 
-class TimeoutPolicy extends PolicySetting {
+class TimeoutPolicy extends ArchitecturePolicy {
   attr Integer timeoutSeconds;
   attr Integer clientTimeoutSeconds;
 }

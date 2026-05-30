@@ -7,8 +7,8 @@ import "contracts-external-policy.etl";
 import "lib/resolution.eol";
 
 pre ValidatePimInput {
-  if (PIM!PIMModel.all.isEmpty()) {
-    throw "PIM to AWS PSM requires one PIMModel root.";
+  if (PIM!PIMModel.all.size() <> 1) {
+    throw "PIM to AWS PSM requires exactly one PIMModel root; found " + PIM!PIMModel.all.size().asString() + ".";
   }
   initialisePimToAwsPsmCaches();
 }

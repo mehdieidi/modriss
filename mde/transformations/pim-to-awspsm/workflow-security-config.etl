@@ -179,20 +179,32 @@ operation createAslDocument(w) {
   d.content = "{}";
   d.comment = firstText(w.summary, "Generated from PIM workflow " + w.name);
   d.queryLanguage = "JSONPath";
+  if (w.states.isEmpty()) {
+    manualDecision("WORKFLOW_STATES_REQUIRED",
+      "Workflow " + w.name + " has no states.",
+      KERNEL!Severity#BLOCKER, true, Sequence{w},
+      "Add at least one WorkflowState and define start/end states before AWS PSM generation.");
+    d.startAt = "Start";
+    return d;
+  }
   if (w.startState.isDefined()) {
     d.startAt = w.startState.name;
   }
   else {
     d.startAt = firstText(w.states.first().name, "Start");
   }
-  for (st in w.states) {
-    d.states.add(createAslState(w, st));
+  var stateByPimId = new Map;
+  for (ws in w.states) {
+    var aslState = createAslState(w, ws, stateByPimId);
+    d.states.add(aslState);
+    stateByPimId.put(cacheKeyFor(ws), aslState);
   }
+  completeAslStateTransitions(w, stateByPimId);
   d.content = renderAsl(d);
   return d;
 }
 
-operation createAslState(w, ws) {
+operation createAslState(w, ws, stateByPimId) {
   var st = new AWSPSMWORKFLOW!AslState;
   st.id = generatedId("asl_state", ws, "state");
   st.name = ws.name;
@@ -202,19 +214,6 @@ operation createAslState(w, ws) {
   st.inputPath = firstText(ws.inputMapping, "$");
   st.outputPath = firstText(ws.outputMapping, "$");
   st.end = isTrue(ws.terminal) or w.endStates.includes(ws);
-  var out = w.transitions.select(x | x.source = ws);
-  if (out.size() = 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
-    st.nextState = awsEquivalent(out.first().target);
-    st.nextStateName = out.first().target.name;
-  }
-  else {
-    if (out.size() <> 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
-      manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
-        "Resolve outgoing transition for workflow state " + ws.name + ".",
-        KERNEL!Severity#ERROR, true, Sequence{w, ws},
-        "Non-choice states need exactly one outgoing transition unless terminal.");
-    }
-  }
   if (ws.invokesFunction.isDefined()) {
     st.invokedResource = awsEquivalent(ws.invokesFunction);
     st.resource = "arn:aws:states:::lambda:invoke";
@@ -230,7 +229,7 @@ operation createAslState(w, ws) {
   }
   if (ws.stateKind = PIMTYPES!WorkflowStateKind#CHOICE) {
     for (tr in out) {
-      var choiceRule = createAslChoice(tr);
+      var choiceRule = createAslChoice(tr, stateByPimId);
       if (choiceRule.isDefined()) {
         st.choices.add(choiceRule);
       }
@@ -250,7 +249,7 @@ operation createAslState(w, ws) {
   }
   for (h in ws.catchHandlers) {
     if (h.nextState.isDefined()) {
-      var catchRule = createAslCatch(h);
+      var catchRule = createAslCatch(h, stateByPimId);
       if (catchRule.isDefined()) {
         st.catch.add(catchRule);
       }
@@ -259,8 +258,27 @@ operation createAslState(w, ws) {
   return st;
 }
 
-operation createAslChoice(tr) {
-  var resolvedNextState = awsEquivalent(tr.target);
+operation completeAslStateTransitions(w, stateByPimId) {
+  for (ws in w.states) {
+    var st = stateByPimId.get(cacheKeyFor(ws));
+    var out = w.transitions.select(x | x.source = ws);
+    if (st.isDefined() and out.size() = 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
+      st.nextState = stateByPimId.get(cacheKeyFor(out.first().target));
+      st.nextStateName = out.first().target.name;
+    }
+    else {
+      if (st.isDefined() and out.size() <> 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
+        manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
+          "Resolve outgoing transition for workflow state " + ws.name + ".",
+          KERNEL!Severity#ERROR, true, Sequence{w, ws},
+          "Non-choice states need exactly one outgoing transition unless terminal.");
+      }
+    }
+  }
+}
+
+operation createAslChoice(tr, stateByPimId) {
+  var resolvedNextState = stateByPimId.get(cacheKeyFor(tr.target));
   if (resolvedNextState.isUndefined()) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
       "Resolve target state for choice transition " + firstText(tr.name, tr.id) + ".",
@@ -329,8 +347,8 @@ operation createAslRetry(p) {
   return r;
 }
 
-operation createAslCatch(h) {
-  var resolvedNextState = awsEquivalent(h.nextState);
+operation createAslCatch(h, stateByPimId) {
+  var resolvedNextState = stateByPimId.get(cacheKeyFor(h.nextState));
   if (resolvedNextState.isUndefined()) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
       "Resolve catch target state for " + firstText(h.name, h.id) + ".",

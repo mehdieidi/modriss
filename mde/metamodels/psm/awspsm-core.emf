@@ -56,7 +56,6 @@ class NativeProperty extends kernel.TraceableElement {
   attr awspsmenums.Decision validationState;
 }
 
-@Ecore(constraints="ValueExpressionSourceShape SecretLiteralReviewed")
 class ValueExpression extends kernel.TraceableElement {
   attr awspsmenums.ValueSourceKind[1] sourceKind;
   attr awspsmenums.ValueType expectedType;
@@ -110,7 +109,6 @@ class AwsStage extends kernel.TraceableElement {
   ref SamStack[*] deploysStacks;
 }
 
-@Ecore(constraints="DeployableStackHasResources")
 class SamStack extends kernel.TraceableElement {
   attr String[1] stackName;
   attr String templatePath;

@@ -17,8 +17,8 @@ operation commandPath(cmd : CIMBEHAVIOR!Command) {
   var method = inferHttpMethod(cmd);
   if (method = PIMTYPES!HttpMethod#PATCH or method = PIMTYPES!HttpMethod#PUT or method = PIMTYPES!HttpMethod#DELETE) {
     var idName = "id";
-    if (cmd.targetAggregate.isDefined() and cmd.targetAggregate.root.identityAttribute.isDefined()) {
-      idName = camelCase(cmd.targetAggregate.root.identityAttribute.name);
+    if (cmd.targetAggregate.isDefined() and cmd.targetAggregate.root.primaryIdentityAttribute.isDefined()) {
+      idName = camelCase(cmd.targetAggregate.root.primaryIdentityAttribute.name);
     }
     return "/" + kebab(resource) + "/{" + idName + "}";
   }
@@ -84,7 +84,7 @@ rule BusinessEvent2EventType
   et.id = idFor("eventtype", e);
   et.name = firstText(e.occurredInPastTenseName, firstText(e.semanticName, e.name));
   et.semanticName = et.name;
-  et.version = "1.0.0";
+  et.version = firstText(e.semanticVersion, "1.0.0");
   et.sourceDomain = serviceFor(e).name.orDefault(pimRoot().domainName);
   et.subjectExpression = eventSubject(e);
   et.orderingKey = e.orderingKeyCandidate;
@@ -358,7 +358,7 @@ rule Query2AccessPattern
   ap.id = idFor("access", q);
   ap.name = q.name + " Access Pattern";
   ap.patternName = q.name;
-  setFeature(ap, "operation", "READ");
+  ap.operation = PIMTYPES!DataAccessMode#READ;
   if (q.input.notEmpty()) {
     ap.queryBy = joinText(q.input.collect(i | i.name), ", ");
   }

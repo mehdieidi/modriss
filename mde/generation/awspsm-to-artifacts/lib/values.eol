@@ -249,6 +249,30 @@ operation AWSPSMCORE!ValueExpression emitCfnValueProperty(nameText : String, ind
   return spaces(indentCount) + nameText + ": " + self.cfnInlineYaml() + "\n";
 }
 
+operation AWSPSMEVENTS!EventBridgeApiKeyAuthParameters eventBridgeAuthYaml(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "ApiKeyAuthParameters:\n";
+  outText = outText + emitYamlScalarProperty("ApiKeyName", self.apiKeyName, indentCount + 2);
+  outText = outText + spaces(indentCount + 2) + "ApiKeyValue: " + self.apiKeyValue.cfnInlineYaml() + "\n";
+  return outText;
+}
+
+operation AWSPSMEVENTS!EventBridgeBasicAuthParameters eventBridgeAuthYaml(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "BasicAuthParameters:\n";
+  outText = outText + spaces(indentCount + 2) + "Username: " + self.username.cfnInlineYaml() + "\n";
+  outText = outText + spaces(indentCount + 2) + "Password: " + self.password.cfnInlineYaml() + "\n";
+  return outText;
+}
+
+operation AWSPSMEVENTS!EventBridgeOAuthParameters eventBridgeAuthYaml(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + "OAuthParameters:\n";
+  outText = outText + emitYamlScalarProperty("AuthorizationEndpoint", self.authorizationEndpoint, indentCount + 2);
+  outText = outText + emitYamlScalarProperty("HttpMethod", self.httpMethod, indentCount + 2);
+  outText = outText + spaces(indentCount + 2) + "ClientParameters:\n";
+  outText = outText + spaces(indentCount + 4) + "ClientID: " + self.clientId.cfnInlineYaml() + "\n";
+  outText = outText + spaces(indentCount + 4) + "ClientSecret: " + self.clientSecret.cfnInlineYaml() + "\n";
+  return outText;
+}
+
 operation AWSPSMCORE!NativeProperty emitNativePropertyYaml(indentCount : Integer) : String {
   if (self.value.isUndefined()) {
     return "";

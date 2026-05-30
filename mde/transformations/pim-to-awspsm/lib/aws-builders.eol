@@ -347,10 +347,14 @@ operation permissionStatement(perm) {
 }
 
 operation createLambdaPermissionFor(prefix : String, origin, fn, principal : String) {
+  return createLambdaPermissionFor(prefix, origin, fn, principal, sourceArnFor(origin));
+}
+
+operation createLambdaPermissionFor(prefix : String, origin, fn, principal : String, sourceArnExpression : String) {
   if (fn.isUndefined()) {
     return null;
   }
-  var key = prefix + "::" + principal + "::" + fn.logicalId;
+  var key = prefix + "::" + principal + "::" + fn.logicalId + "::" + firstText(sourceArnExpression, "");
   if (cachedLambdaPermissionByKey.containsKey(key)) {
     return cachedLambdaPermissionByKey.get(key);
   }
@@ -359,8 +363,22 @@ operation createLambdaPermissionFor(prefix : String, origin, fn, principal : Str
   p.id = generatedId("lambda_permission", origin, prefix + "_" + fn.logicalId);
   p.action = "lambda:InvokeFunction";
   p.principal = principal;
-  p.sourceArn = "";
+  p.sourceArn = sourceArnExpression;
   setFeature(p, "function", fn);
   cachedLambdaPermissionByKey.put(key, p);
   return p;
+}
+
+operation sourceArnFor(origin) {
+  if (origin.isUndefined()) {
+    return "";
+  }
+  var equivalent = awsEquivalent(origin);
+  if (equivalent.isDefined() and equivalent.eClass().getEStructuralFeature("logicalId").isDefined()) {
+    return "${" + equivalent.logicalId + ".Arn}";
+  }
+  if (origin.eClass().getEStructuralFeature("logicalId").isDefined() and hasText(origin.logicalId)) {
+    return "${" + origin.logicalId + ".Arn}";
+  }
+  return "";
 }

@@ -112,6 +112,6 @@ class EventType extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.Pol
   attr Boolean containsPersonalData;
   ref Schema[1] schema;
   val EventEnvelope[?] envelope;
-  readonly transient volatile derived ref kernel.FunctionTarget[*] producedBy;
-  readonly transient volatile derived ref kernel.FunctionTarget[*] consumedBy;
+  ref kernel.FunctionTarget[*] producedBy;
+  ref kernel.FunctionTarget[*] consumedBy;
 }

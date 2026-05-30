@@ -17,6 +17,9 @@ class BusinessProcess extends kernel.TraceableElement {
   attr String completionCriterion;
   ref cimorg.BusinessCapability[?]#ownsProcesses owningCapability;
   ref kernel.ModelElement[?] trigger;
+  ref cimbehavior.BusinessEvent[?] triggeringEvent;
+  ref cimbehavior.Command[?] triggeringCommand;
+  ref cimorg.Actor[?] triggeringActor;
   val ProcessStep[+] steps;
   val ProcessTransition[*] transitions;
   ref cimbehavior.Condition[*] preconditions;
@@ -92,7 +95,7 @@ class ProcessTransition extends kernel.SemanticRelationship {
 class Policy extends kernel.TraceableElement {
   attr cimtypes.PolicyType policyType;
   attr String naturalLanguageRule;
-  attr String expressionLanguage;
+  attr kernel.ExpressionLanguage expressionLanguage;
   attr String expression;
   val kernel.Expression[?] expressionModel;
   attr kernel.ConstraintStrength enforcementStrength;

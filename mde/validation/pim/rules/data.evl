@@ -97,6 +97,11 @@ context PIM!DataField {
 
 context PIM!AccessPattern {
 
+  constraint AccessPatternOperationDefined {
+    check : self.`operation`.isDefined()
+    message : "[PIM-DATA-012A] AccessPattern '" + self.displayName() + "' has no operation. Fix: choose a DataAccessMode literal such as READ, WRITE, READ_WRITE, APPEND or DELETE."
+  }
+
   constraint AccessPatternNamesQueryShape {
     check : self.hasQueryShape()
     message : "[PIM-DATA-013] AccessPattern '" + self.displayName() + "' does not describe operation/query shape. Fix: fill operation, queryBy, sortBy, filterBy or projection."
@@ -121,6 +126,19 @@ context PIM!IndexCandidate {
 }
 
 context PIM!DataAccess {
+
+  constraint DataAccessConsistentWithFunctionRefs {
+    check :
+      (self.mode = PIMTYPES!DataAccessMode#READ and self.function.reads.includes(self.store)) or
+      ((self.mode = PIMTYPES!DataAccessMode#WRITE or self.mode = PIMTYPES!DataAccessMode#APPEND or self.mode = PIMTYPES!DataAccessMode#DELETE) and self.function.writes.includes(self.store)) or
+      (self.mode = PIMTYPES!DataAccessMode#READ_WRITE and self.function.reads.includes(self.store) and self.function.writes.includes(self.store))
+    message : "[PIM-DATA-015A] DataAccess '" + self.displayName() + "' is not reflected in Function.reads/writes. Fix: synchronize DataAccess.mode with the function shortcut references."
+  }
+
+  critique GeneratesOrReferencesPermission {
+    check : self.purpose.hasText() and self.function.isDefined() and self.store.isDefined()
+    message : "[PIM-DATA-015B] DataAccess '" + self.displayName() + "' lacks enough function/store/purpose information to generate or review permissions. Suggested fix: complete the access intent before PSM IAM generation."
+  }
 
   constraint DataAccessHasPurpose {
     check : self.purpose.hasText()

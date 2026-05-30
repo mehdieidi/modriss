@@ -70,6 +70,7 @@ class BusinessEvent extends kernel.TraceableElement {
   attr Boolean externallyVisible;
   attr Boolean auditRelevant;
   attr Boolean retentionRelevant;
+  attr String semanticVersion;
   attr String versioningRationale;
   ref cimdomain.InformationItem[*] payload;
   ref Command[*]#expectedEvents expectedByCommands;
@@ -94,7 +95,7 @@ class BusinessError extends kernel.TraceableElement {
 
 class Condition extends kernel.TraceableElement {
   attr String naturalLanguage;
-  attr String expressionLanguage;
+  attr kernel.ExpressionLanguage expressionLanguage;
   attr String expression;
   val kernel.Expression[?] expressionModel;
   attr Boolean mustBeAutomatable;

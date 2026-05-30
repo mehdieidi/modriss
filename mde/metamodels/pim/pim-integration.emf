@@ -23,11 +23,11 @@ abstract class EventChannel extends IntegrationElement, kernel.DeployableElement
   attr Boolean replayRequired;
   attr Boolean deadLetterRequired;
   ref contracts.EventType[*] eventTypes;
-  readonly transient volatile derived ref compute.Function[*] producers;
-  readonly transient volatile derived ref compute.Function[*] consumers;
-  readonly transient volatile derived ref workflow.Workflow[*] workflowConsumers;
-  readonly transient volatile derived ref external.ExternalAdapter[*] externalProducers;
-  readonly transient volatile derived ref external.ExternalAdapter[*] externalConsumers;
+  ref compute.Function[*] producers;
+  ref compute.Function[*] consumers;
+  ref workflow.Workflow[*] workflowConsumers;
+  ref external.ExternalAdapter[*] externalProducers;
+  ref external.ExternalAdapter[*] externalConsumers;
   ref policy.ResiliencePolicy[?] resilience;
   ref policy.ObservabilityConfig[?] observability;
 }

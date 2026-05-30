@@ -1,0 +1,6 @@
+context KERNEL!ModelElement {
+  constraint ModelElementIdIsGloballyUnique {
+    check : KERNEL!ModelElement.all.one(elementItem | elementItem.`id` = self.`id`)
+    message : "ModelElement id '" + self.`id` + "' is duplicated. Use globally unique stable IDs."
+  }
+}

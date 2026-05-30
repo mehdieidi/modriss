@@ -68,6 +68,16 @@ context CIM!SecurityConstraint {
       "Warning [CIM-SEC-003] SecurityConstraint '" + self.labelText() + "' defines an authorization rule but at least one constrained command does not. " +
       "Suggestion: copy or specialize the authorization rule on each constrained command so command-level validation is explicit."
   }
+
+  critique SpecializedScopeIncludedInGenericScope {
+    check : self.constrainedCommands.forAll(commandItem | self.constrainedElements.includes(commandItem))
+      and self.constrainedQueries.forAll(queryItem | self.constrainedElements.includes(queryItem))
+      and self.constrainedActors.forAll(actorItem | self.constrainedElements.includes(actorItem))
+      and self.constrainedInformation.forAll(infoItem | self.constrainedElements.includes(infoItem))
+    message :
+      "Warning [CIM-SEC-004] SecurityConstraint '" + self.labelText() + "' uses specialized scope references that are not included in constrainedElements. " +
+      "Suggestion: keep NonFunctionalRequirement.constrainedElements as the canonical scope and include every specialized target there."
+  }
 }
 
 context CIM!PrivacyConstraint {
@@ -200,6 +210,13 @@ context CIM!TransformationProfile {
     message :
       "Warning [CIM-TP-002] TransformationProfile has requiredDecisions without question or decisionOwner. " +
       "Suggestion: make each manual decision explicit and assign an owner."
+  }
+
+  critique RequiredDecisionsAreReferencedNotContainedReadinessDecisions {
+    check : self.requiredDecisions.forAll(decisionItem | decisionItem.eContainer().isUndefined() or decisionItem.eContainer().isKindOf(KERNEL!ProductionReadinessAssessment))
+    message :
+      "Warning [CIM-TP-003] TransformationProfile.requiredDecisions should reference readiness decisions rather than contain separate decision instances. " +
+      "Suggestion: keep ManualDecision ownership under ProductionReadinessAssessment and reference it from the profile."
   }
 }
 

@@ -1,0 +1,13 @@
+operation Any hasText() : Boolean {
+  return self.isDefined() and self.asString().trim().size() > 0;
+}
+
+operation KERNEL!ModelElement labelText() : String {
+  if (self.name.hasText()) {
+    return self.name;
+  }
+  if (self.`id`.hasText()) {
+    return self.`id`;
+  }
+  return "<unnamed " + self.eClass().getName() + ">";
+}

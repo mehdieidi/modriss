@@ -37,9 +37,9 @@ context AWSPSM!AwsPsmModel {
     message : 'The model has no defaultRegion. Fix: set defaultRegion, for example eu-central-1, or ensure every AwsStage declares an explicit region.'
   }
 
-  critique AllResourcesIndexMatchesStacks {
-    check : self.allResources.isEmpty() or self.stackResourceSet().includesAll(self.allResources.asSet())
-    message : 'allResources contains entries that are not contained in any stack. Fix: remove stale allResources references or ensure every resource is contained by exactly one SamStack.'
+  critique StackResourcesExist {
+    check : self.stackResourceSet().notEmpty() or self.stacks.isEmpty()
+    message : 'AWS PSM model has stacks but no stack-contained resources. Fix: place generated resources under SamStack.resources.'
   }
 }
 
@@ -75,6 +75,11 @@ context AWSPSM!AwsStage {
 }
 
 context AWSPSM!SamStack {
+
+  constraint DeployableStackHasResources {
+    check : self.resources.notEmpty()
+    message : 'SAM stack ' + self.stackName + ' has no resources. Fix: add at least one AwsResource to the stack before transformation/deployment.'
+  }
 
   constraint StackHasResources {
     check : self.resources.notEmpty()
@@ -135,6 +140,12 @@ context AWSPSM!AwsResource {
     message : 'Resource ' + self.resourceLabel() + ' is not marked imported but contains import metadata. Fix: either set importedResource to true or remove importedArn/importDetails.'
   }
 
+  constraint DeployableResourceHasAwsType {
+    guard : self.importedResource <> true and self.stack.isDefined()
+    check : self.awsResourceType.hasText()
+    message : 'Deployable resource ' + self.resourceLabel() + ' has no awsResourceType. Fix: set a valid CloudFormation/SAM resource type.'
+  }
+
   constraint ProductionResourcesHaveRequiredTags {
     guard : self.isProductionScoped()
     check : self.missingRequiredTagKeys().isEmpty()
@@ -150,6 +161,38 @@ context AWSPSM!AwsResource {
     guard : self.isProductionScoped()
     check : (self.retainInProduction = true) or (self.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#RETAIN) or (self.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#SNAPSHOT)
     message : 'Production-scoped resource ' + self.resourceLabel() + ' has no retain/snapshot deletion safeguard. Fix: set retainInProduction to true or configure deletionPolicy RETAIN/SNAPSHOT where data loss would be harmful.'
+  }
+}
+
+context AWSPSM!AwsNativeResource {
+  constraint NativeResourceTypeNameValid {
+    check : self.cloudFormationType.matches('^(AWS::[A-Za-z0-9]+::[A-Za-z0-9]+|Custom::[A-Za-z0-9][A-Za-z0-9_-]*)$')
+    message : 'Native resource ' + self.resourceLabel() + ' has invalid cloudFormationType. Fix: use AWS::Service::Resource or Custom::Name.'
+  }
+}
+
+context AWSPSM!ValueExpression {
+  constraint ValueExpressionSourceShape {
+    check :
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#PLAINTEXT and self.literal.hasText() and self.resource.isUndefined()) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_REF and (self.resource.isDefined() or self.parameter.isDefined()) and not self.attributeName.hasText()) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_GETATT and self.resource.isDefined() and self.attributeName.hasText()) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#RESOURCE_ATTRIBUTE and self.resource.isDefined() and self.attributeName.hasText()) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#SSM_PARAMETER_REFERENCE and (self.expression.hasText() or self.literal.hasText())) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#SSM_SECURE_REFERENCE and (self.expression.hasText() or self.literal.hasText())) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#SECRETS_MANAGER_REFERENCE and (self.expression.hasText() or self.literal.hasText())) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#DYNAMIC_REFERENCE and (self.expression.hasText() or self.literal.hasText())) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_SUB and (self.expression.hasText() or self.literal.hasText())) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#IMPORT_VALUE and (self.expression.hasText() or self.literal.hasText())) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#LIST and self.items.notEmpty()) or
+      (self.sourceKind = AWSPSMENUMS!ValueSourceKind#MAP and self.entries.notEmpty())
+    message : 'ValueExpression ' + self.labelText() + ' has fields that do not match sourceKind. Fix the literal/resource/attribute/reference shape.'
+  }
+
+  critique SecretLiteralReviewed {
+    guard : self.secret = true
+    check : self.sourceKind <> AWSPSMENUMS!ValueSourceKind#PLAINTEXT or self.reviewStatus.hasText()
+    message : 'Secret ValueExpression uses PLAINTEXT without reviewStatus. Suggested fix: use Secrets Manager/SSM secure references or document test-only plaintext use.'
   }
 }
 

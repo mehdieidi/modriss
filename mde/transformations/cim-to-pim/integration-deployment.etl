@@ -1099,6 +1099,35 @@ post LinkAndDerive {
   createDataAccesses();
   attachDataProtectionPolicies();
   ensureGeneratedOperationalPolicies();
+  generateServiceMemberships();
+}
+
+operation addServiceMembership(service, element) {
+  if (service.isUndefined() or element.isUndefined()) {
+    return;
+  }
+  if (pimRoot().serviceMemberships.exists(m | m.service = service and m.element = element)) {
+    return;
+  }
+  var membership = new DEPLOY!ServiceElementMembership;
+  membership.id = newId("svc_membership", service.id + "_" + element.id);
+  membership.name = service.name + " owns " + firstText(element.name, element.id);
+  membership.ownershipKind = PIMTYPES!OwnershipKind#OWNS;
+  membership.rationale = "Generated from ServerlessService owned references.";
+  membership.service = service;
+  membership.element = element;
+  pimRoot().serviceMemberships.add(membership);
+}
+
+operation generateServiceMemberships() {
+  for (service in pimRoot().services) {
+    for (fn in service.ownsFunctions) { addServiceMembership(service, fn); }
+    for (api in service.ownsApis) { addServiceMembership(service, api); }
+    for (channel in service.ownsChannels) { addServiceMembership(service, channel); }
+    for (store in service.ownsStores) { addServiceMembership(service, store); }
+    for (workflow in service.ownsWorkflows) { addServiceMembership(service, workflow); }
+    for (adapter in service.ownsAdapters) { addServiceMembership(service, adapter); }
+  }
 }
 
 post DeploymentAndConfiguration {
@@ -1234,8 +1263,8 @@ post ValidationAndReadinessClosure {
   for (fnSec in COMPUTE!Function.all.select(f | isTrue(f.publicEntryPoint) and f.securityPolicies.isEmpty())) {
     readinessFinding("TR-170", KERNEL!FindingType#SECURITY_RISK, KERNEL!Severity#WARNING, "Public function '" + fnSec.name + "' has no security policy.", "Attach authentication/authorization policy coverage.", false, Sequence{fnSec});
   }
-  for (adapter in EXTERNAL!ExternalAdapter.all.select(a | a.observability.isUndefined() or a.resilience.isUndefined() or (isTrue(a.credentialsRequired) and a.credentials.isEmpty()))) {
-    readinessFinding("TR-170", KERNEL!FindingType#DEPLOYMENT_RISK, KERNEL!Severity#ERROR, "External adapter '" + adapter.name + "' lacks credential, resilience, or observability review.", "Confirm protocol, credentials, resilience, and observability.", true, Sequence{adapter});
+  for (adapter in EXTERNAL!ExternalAdapter.all.select(a | a.observability.isUndefined() or a.resilience.isUndefined() or a.endpoint.isUndefined() or (a.endpoint.isDefined() and isTrue(a.endpoint.credentialsRequired) and a.credentials.isEmpty()))) {
+    readinessFinding("TR-170", KERNEL!FindingType#DEPLOYMENT_RISK, KERNEL!Severity#ERROR, "External adapter '" + adapter.name + "' lacks endpoint, credential, resilience, or observability review.", "Confirm ExternalAdapter.endpoint protocol, endpoint credentials, resilience, and observability.", true, Sequence{adapter});
   }
   for (ch in INTEGRATION!EventChannel.all.select(c | c.deliverySemantics.isUndefined() or c.orderingRequirement.isUndefined())) {
     readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Event channel '" + ch.name + "' lacks delivery or ordering semantics.", "Set provider-independent delivery and ordering semantics.", true, Sequence{ch});

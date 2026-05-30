@@ -831,7 +831,7 @@ rule CostNfr2CostPolicy
 
 rule DataQualityNfr2SchemaConstraintAndReadiness
   transform nfr : CIMGOV!NonFunctionalRequirement
-  to pol : POLICY!DataProtectionPolicy {
+  to pol : POLICY!DataQualityPolicy {
 
   guard : nfr.qualityType.asString() = "DATA_QUALITY"
 
@@ -839,14 +839,12 @@ rule DataQualityNfr2SchemaConstraintAndReadiness
   pol.name = nameFor(nfr, " Data Quality Policy");
   pol.policyScope = firstText(nfr.metric, nfr.target);
   pol.productionRequired = nfr.mandatory or nfr.productionBlocking;
-  pol.classification = "DATA_QUALITY";
-  pol.encryptionRequired = false;
-  pol.maskingRequired = false;
-  pol.tokenizationRequired = false;
-  pol.accessAuditRequired = nfr.productionBlocking;
-  pol.deletionRequired = false;
-  pol.retentionPeriod = "";
-  pol.residencyRequirement = "";
+  pol.validationRequired = true;
+  pol.completenessCheckRequired = firstText(nfr.metric, nfr.name).toLowerCase().contains("complete");
+  pol.freshnessCheckRequired = firstText(nfr.metric, nfr.name).toLowerCase().contains("fresh");
+  pol.duplicateDetectionRequired = firstText(nfr.metric, nfr.name).toLowerCase().contains("duplicate");
+  pol.qualityDimensions = firstText(nfr.qualityAttribute, firstText(nfr.metric, nfr.name));
+  pol.measurementRule = firstText(nfr.fitCriterion, nfr.description);
   pol.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
   pimRoot().policies.add(pol);
   traceGenerated(nfr, pol, "TR-060", "MEDIUM");

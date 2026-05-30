@@ -26,6 +26,11 @@ context PIM!DeadLetterPolicy {
 
 context PIM!TimeoutPolicy {
 
+  constraint TimeoutPolicyIsRootOwned {
+    check : PIM!PIMModel.all.exists(root | root.policies.includes(self))
+    message : "[PIM-POL-003A] TimeoutPolicy '" + self.displayName() + "' must be owned by PIMModel.policies and referenced from functions/routes/resilience policies."
+  }
+
   constraint TimeoutPolicyIsPositive {
     check : self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0
       and (self.clientTimeoutSeconds.isUndefined() or self.clientTimeoutSeconds > 0)
@@ -174,6 +179,14 @@ context PIM!BackupPolicy {
     guard : self.backupRequired.isTrue()
     check : self.backupFrequency.hasText() and self.recoveryPointObjective.hasText() and self.recoveryTimeObjective.hasText()
     message : "[PIM-POL-023] BackupPolicy '" + self.displayName() + "' requires backup but lacks frequency/RPO/RTO. Suggested fix: define backupFrequency, recoveryPointObjective and recoveryTimeObjective."
+  }
+}
+
+context PIM!DataQualityPolicy {
+  constraint DataQualityPolicyHasMeasurementRule {
+    check : (self.validationRequired.isTrue() or self.completenessCheckRequired.isTrue() or self.freshnessCheckRequired.isTrue() or self.duplicateDetectionRequired.isTrue())
+      and self.qualityDimensions.hasText() and self.measurementRule.hasText()
+    message : "[PIM-POL-021A] DataQualityPolicy '" + self.displayName() + "' lacks quality checks, dimensions or measurementRule. Fix: model validation/completeness/freshness/duplicate requirements explicitly."
   }
 }
 

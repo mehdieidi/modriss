@@ -2,6 +2,21 @@ import "../lib/pim-validation-helpers.eol";
 
 context PIM!Workflow {
 
+  constraint StatesContainStart {
+    check : self.startState.isDefined() and self.states.includes(self.startState)
+    message : "[PIM-WF-000A] Workflow '" + self.displayName() + "' must have a startState contained in states."
+  }
+
+  constraint AndEndStatesBelongToWorkflow {
+    check : self.endStates.notEmpty() and self.endStates.forAll(stateItem | self.states.includes(stateItem))
+    message : "[PIM-WF-000B] Workflow '" + self.displayName() + "' must have endStates contained in states."
+  }
+
+  constraint ReachableFromStart {
+    check : self.states.forAll(stateItem | stateItem = self.startState or stateItem.incomingTransitions().notEmpty() or stateItem.rationale.hasText())
+    message : "[PIM-WF-000C] Workflow '" + self.displayName() + "' contains states that are not reachable from startState. Fix transitions or document intentionally detached states."
+  }
+
   constraint WorkflowStartAndEndStatesAreContained {
     check : self.states.includes(self.startState) and self.endStates.forAll(stateItem | self.states.includes(stateItem))
     message : "[PIM-WF-001] Workflow '" + self.displayName() + "' has start/end states outside its contained states. Fix: set startState and all endStates to WorkflowState elements contained by this workflow."
@@ -59,6 +74,12 @@ context PIM!WorkflowState {
 
 context PIM!WorkflowTransition {
 
+  constraint SameWorkflow {
+    check : self.source.isDefined() and self.target.isDefined() and self.workflow.isDefined()
+      and self.source.workflow = self.workflow and self.target.workflow = self.workflow
+    message : "[PIM-WF-010A] Transition '" + self.displayName() + "' must connect states in its owning workflow."
+  }
+
   constraint TransitionStaysInsideWorkflow {
     check : self.source.isDefined() and self.target.isDefined() and self.workflow.isDefined()
       and self.source.workflow = self.workflow and self.target.workflow = self.workflow
@@ -73,6 +94,12 @@ context PIM!WorkflowTransition {
 
 context PIM!ErrorHandler {
 
+  constraint NextStateInSameWorkflow {
+    guard : self.nextState.isDefined()
+    check : self.state.isDefined() and self.state.workflow.isDefined() and self.nextState.workflow = self.state.workflow
+    message : "[PIM-WF-012A] ErrorHandler '" + self.displayName() + "' routes to a state outside the owning workflow. Fix: choose a nextState in the same workflow."
+  }
+
   constraint ErrorHandlerHasRecoveryTarget {
     check : self.nextState.isDefined() or self.handlerFunction.isDefined()
     message : "[PIM-WF-012] ErrorHandler '" + self.displayName() + "' has neither nextState nor handlerFunction. Fix: route recovery to a state or handler function."
@@ -85,6 +112,11 @@ context PIM!ErrorHandler {
 }
 
 context PIM!CompensationPolicy {
+
+  constraint CompensationPolicyIsRootOwned {
+    check : PIM!PIMModel.all.exists(root | root.policies.includes(self))
+    message : "[PIM-WF-013A] CompensationPolicy '" + self.displayName() + "' must be owned by PIMModel.policies and referenced from WorkflowState.compensation."
+  }
 
   constraint CompensationPolicyHasAction {
     check : self.compensationFunctions.notEmpty() or self.compensationEvents.notEmpty() or self.compensationStrategy.hasText()

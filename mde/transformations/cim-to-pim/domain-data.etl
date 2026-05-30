@@ -7,8 +7,8 @@ import "lib/resolution.eol";
 operation aggregateItems(ag : CIMDOMAIN!AggregateCandidate) {
   var items = Sequence{};
   for (entity in ag.members) {
-    if (entity.identityAttribute.isDefined() and not items.includes(entity.identityAttribute)) {
-      items.add(entity.identityAttribute);
+    if (entity.primaryIdentityAttribute.isDefined() and not items.includes(entity.primaryIdentityAttribute)) {
+      items.add(entity.primaryIdentityAttribute);
     }
     for (attribute in entity.attributes) {
       if (not items.includes(attribute)) {
@@ -39,10 +39,10 @@ rule Entity2Schema
   s.additionalPropertiesAllowed = false;
   s.generatedFromCimInformation = true;
 
-  if (e.identityAttribute.isDefined()) {
-    s.fields.add(createSchemaField(e.identityAttribute, s.id));
+  if (e.primaryIdentityAttribute.isDefined()) {
+    s.fields.add(createSchemaField(e.primaryIdentityAttribute, s.id));
   }
-  for (item in e.attributes.excluding(e.identityAttribute)) {
+  for (item in e.attributes.excluding(e.primaryIdentityAttribute)) {
     s.fields.add(createSchemaField(item, s.id));
   }
   for (inv in e.invariants) {
@@ -88,9 +88,9 @@ rule DomainRelationship2SchemaReference
   field.id = idFor("relationship_field", rel);
   field.name = camelCase(rel.targetRole.orDefault(rel.target.name));
   field.fieldType = PIMTYPES!FieldType#OBJECT;
-  field.required = rel.sourceMultiplicity = "1" or rel.sourceMultiplicity = "1..1";
+  field.required = rel.sourceMultiplicity.hasMultiplicityBounds() and rel.sourceMultiplicity.lowerBound >= 1;
   field.nullable = not field.required;
-  field.array = hasText(rel.targetMultiplicity) and (rel.targetMultiplicity.contains("*") or rel.targetMultiplicity.contains(".."));
+  field.array = rel.targetMultiplicity.isMany();
   field.descriptionForConsumers = "Reference generated from " + rel.relationshipType.asString() + " relationship to " + rel.target.name + ".";
   var targetSchema = schemaForDomainConcept(rel.target);
   if (targetSchema.isDefined()) {
@@ -113,7 +113,7 @@ rule DomainRelationship2SchemaReference
   traceGenerated(rel, field, "TR-040", "MEDIUM");
   traceGenerated(rel, constraint, "TR-040", "MEDIUM");
 
-  if (rel.relationshipType.asString() = "ASSOCIATION" or (hasText(rel.targetMultiplicity) and rel.targetMultiplicity.contains("*")) or (hasText(rel.sourceMultiplicity) and rel.sourceMultiplicity.contains("*"))) {
+  if (rel.relationshipType.asString() = "ASSOCIATION" or rel.targetMultiplicity.isMany() or rel.sourceMultiplicity.isMany()) {
     manualDecision("TR-040", "Confirm whether relationship '" + rel.name + "' should be embedded, referenced, joined, or projected into a read model.", KERNEL!Severity#WARNING, false, Sequence{rel, field});
   }
 }
@@ -130,7 +130,7 @@ post AttachRelationshipDataFields {
       dataField.partitionKeyCandidate = false;
       dataField.sortKeyCandidate = false;
       dataField.indexedCandidate = rel.navigableFromSource;
-      dataField.required = rel.sourceMultiplicity = "1" or rel.sourceMultiplicity = "1..1";
+      dataField.required = rel.sourceMultiplicity.hasMultiplicityBounds() and rel.sourceMultiplicity.lowerBound >= 1;
       dataField.personalData = false;
       dataField.sensitiveData = false;
       dataField.storageName = dataField.name;
@@ -177,7 +177,7 @@ rule Aggregate2DataStore
   dataModel.schema = schemaForEntity(ag.root);
 
   for (item in aggregateItems(ag)) {
-    dataModel.storageFields.add(createDataField(item, ag.root.identityAttribute, dataModel.id));
+    dataModel.storageFields.add(createDataField(item, ag.root.primaryIdentityAttribute, dataModel.id));
   }
   store.ownedDataModels.add(dataModel);
 
@@ -185,8 +185,8 @@ rule Aggregate2DataStore
   ap.id = idFor("access_identity", ag);
   ap.name = ag.name + " Identity Access Pattern";
   ap.patternName = "Get " + ag.root.name + " by identity";
-  setFeature(ap, "operation", "READ");
-  ap.queryBy = ag.root.identityAttribute.name;
+  ap.operation = PIMTYPES!DataAccessMode#READ;
+  ap.queryBy = ag.root.primaryIdentityAttribute.name;
   ap.highCardinality = true;
   ap.highFrequency = false;
   ap.stronglyConsistentReadRequired = store.consistencyNeed <> PIMTYPES!ConsistencyNeed#EVENTUAL;
@@ -197,7 +197,7 @@ rule Aggregate2DataStore
   ix.id = idFor("index_identity", ag);
   ix.name = ag.name + " Identity Index";
   ix.indexPurpose = "Identity lookup";
-  ix.partitionKeyField = ag.root.identityAttribute.name;
+  ix.partitionKeyField = ag.root.primaryIdentityAttribute.name;
   setFeature(ix, "unique", true);
   ix.requiredForProduction = true;
   ix.supportsAccessPatterns.add(ap);

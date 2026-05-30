@@ -28,6 +28,12 @@ context PIM!Api {
 
 context PIM!ApiRoute {
 
+  constraint ExactlyOneIntegration {
+    check : (self.functionIntegration.isDefined() and self.workflowIntegration.isUndefined())
+      or (self.functionIntegration.isUndefined() and self.workflowIntegration.isDefined())
+    message : "[PIM-ROUTE-000] API route '" + self.displayName() + "' must integrate exactly one backend."
+  }
+
   constraint UniqueMethodPathWithinApi {
     check : PIM!ApiRoute.all.one(routeItem |
       routeItem.api = self.api and routeItem.method = self.method and routeItem.pathTemplate = self.pathTemplate

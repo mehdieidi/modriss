@@ -243,5 +243,19 @@ operation isPublicActor(actor) {
 }
 
 operation setFeature(element, featureName : String, value) {
-  element.eSet(element.eClass().getEStructuralFeature(featureName), value);
+  var feature = element.eClass().getEStructuralFeature(featureName);
+  if (feature.isUndefined()) {
+    throw "Feature " + featureName + " does not exist on " + element.eClass().getName() + ".";
+  }
+  element.eSet(feature, value);
+}
+
+operation KERNEL!Multiplicity hasMultiplicityBounds() : Boolean {
+  return self.isDefined() and self.lowerBound.isDefined() and
+    (self.upperBound.isDefined() or self.unbounded = true);
+}
+
+operation KERNEL!Multiplicity isMany() : Boolean {
+  return self.isDefined() and
+    (self.unbounded = true or (self.upperBound.isDefined() and self.upperBound > 1));
 }

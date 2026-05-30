@@ -12,6 +12,9 @@
  *   - KERNEL for the shared kernel package
  */
 
+import "../shared/shared-validation-helpers.eol";
+import "../shared/model-element-identity.evl";
+import "../shared/kernel-constraints.evl";
 import "rules/core-kernel-trace.evl";
 import "rules/organization-intent.evl";
 import "rules/domain-data.evl";

@@ -53,8 +53,8 @@ rule DataStore2NativeUnsupportedStore
 
   copyAwsResource(ds, n, "NativeStore", "AWS::CloudFormation::CustomResource");
   n.id = idFor("native_store", ds);
-  n.cloudFormationType = "AWS::CloudFormation::CustomResource";
-  n.samType = "UnsupportedDataStore";
+  n.cloudFormationType = "Custom::UnsupportedDataStore";
+  n.properties.add(nativeText("ServiceToken", "REVIEW_REQUIRED_SERVICE_TOKEN", KERNEL!StructuredFormat#TEXT, true, false));
   n.properties.add(nativeText("PimStoreKind", ds.storeKind.asString(), KERNEL!StructuredFormat#TEXT, true, false));
   manualDecision("DATASTORE_SERVICE_SELECTION_REQUIRED",
     "Choose AWS storage service for " + ds.storeKind.asString() + " data store " + ds.name + ".",
@@ -294,6 +294,13 @@ rule Schedule2EventBridgeSchedule
 }
 
 operation addDynamoKeys(ds, t) {
+  if (ds.ownedDataModels.isEmpty()) {
+    manualDecision("DYNAMO_DATA_MODEL_REQUIRED",
+      "Choose a data model and key fields for " + ds.name + ".",
+      KERNEL!Severity#BLOCKER, true, Sequence{ds, t},
+      "Add DataStore.ownedDataModels with at least one DataField marked identifier or partitionKeyCandidate.");
+    return;
+  }
   var dm = ds.ownedDataModels.first();
   var hashField = dm.storageFields.selectOne(f | isTrue(f.partitionKeyCandidate));
   if (hashField.isUndefined()) {
@@ -354,9 +361,29 @@ operation addDynamoIndexes(ds, t) {
     g.id = generatedId("dynamodb_gsi", ds, idx.name);
     g.name = firstText(idx.name, idx.indexPurpose);
     g.indexName = pascalCase(firstText(idx.name, idx.indexPurpose)) + "Gsi";
-    g.keySchema.add(dynamoKey(idx.partitionKeyField, AWSPSMENUMS!DynamoDbKeyType#HASH));
+    var partitionField = fieldByStorageOrName(ds, idx.partitionKeyField);
+    if (partitionField.isDefined()) {
+      addDynamoAttribute(t, partitionField);
+      g.keySchema.add(dynamoKey(firstText(partitionField.storageName, partitionField.name), AWSPSMENUMS!DynamoDbKeyType#HASH));
+    }
+    else {
+      manualDecision("DYNAMO_INDEX_KEY_FIELD_REQUIRED",
+        "Resolve partition key field '" + idx.partitionKeyField + "' for DynamoDB index " + firstText(idx.name, idx.id) + ".",
+        KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
+        "Set IndexCandidate.partitionKeyField to a DataField.name or DataField.storageName.");
+    }
     if (hasText(idx.sortKeyField)) {
-      g.keySchema.add(dynamoKey(idx.sortKeyField, AWSPSMENUMS!DynamoDbKeyType#RANGE));
+      var sortField = fieldByStorageOrName(ds, idx.sortKeyField);
+      if (sortField.isDefined()) {
+        addDynamoAttribute(t, sortField);
+        g.keySchema.add(dynamoKey(firstText(sortField.storageName, sortField.name), AWSPSMENUMS!DynamoDbKeyType#RANGE));
+      }
+      else {
+        manualDecision("DYNAMO_INDEX_KEY_FIELD_REQUIRED",
+          "Resolve sort key field '" + idx.sortKeyField + "' for DynamoDB index " + firstText(idx.name, idx.id) + ".",
+          KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
+          "Set IndexCandidate.sortKeyField to a DataField.name or DataField.storageName.");
+      }
     }
     var p = new AWSPSMSTORAGE!DynamoDbProjection;
     p.id = generatedId("dynamodb_projection", ds, idx.name);
@@ -371,6 +398,19 @@ operation addDynamoIndexes(ds, t) {
     g.projection = p;
     t.globalSecondaryIndexes.add(g);
   }
+}
+
+operation fieldByStorageOrName(ds, fieldName : String) {
+  if (not hasText(fieldName)) {
+    return null;
+  }
+  for (dm in ds.ownedDataModels) {
+    var f = dm.storageFields.selectOne(x | x.storageName = fieldName or x.name = fieldName);
+    if (f.isDefined()) {
+      return f;
+    }
+  }
+  return null;
 }
 
 operation createS3Encryption(os) {
@@ -430,14 +470,40 @@ operation retentionDays(policy) {
     return 0;
   }
   var text = policy.retentionPeriod.toLowerCase();
+  var amount = extractLeadingInteger(text);
+  if (amount <= 0) {
+    return 0;
+  }
   if (text.contains("year")) {
-    return 365;
+    return amount * 365;
   }
   if (text.contains("month")) {
-    return 30;
+    return amount * 30;
+  }
+  if (text.contains("week")) {
+    return amount * 7;
   }
   if (text.contains("day")) {
-    return 1;
+    return amount;
+  }
+  return 0;
+}
+
+operation extractLeadingInteger(text : String) {
+  var digits = "";
+  for (i in Sequence{0..text.length() - 1}) {
+    var ch = text.substring(i, i + 1);
+    if (ch.matches("[0-9]")) {
+      digits = digits + ch;
+    }
+    else {
+      if (hasText(digits)) {
+        return digits.asInteger();
+      }
+    }
+  }
+  if (hasText(digits)) {
+    return digits.asInteger();
   }
   return 0;
 }

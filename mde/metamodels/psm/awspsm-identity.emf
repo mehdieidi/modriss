@@ -6,11 +6,10 @@ import "awspsm-enums.ecore";
 import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 
-@Ecore(constraints="MfaDecisionMadeForProductionCriticalPools")
 class CognitoUserPool extends awspsmcore.AwsResource {
   attr String userPoolName;
   attr awspsmenums.CognitoMfaConfiguration mfaConfiguration;
-  attr awspsmenums.Decision mfaDecision;
+  attr awspsmenums.Decision[1] mfaDecision;
   attr String mfaRationale;
   attr String[*] usernameAttributes;
   attr String[*] aliasAttributes;

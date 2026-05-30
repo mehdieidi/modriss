@@ -7,6 +7,12 @@ rule Function2AwsLambdaFunction
   l.functionName = l.physicalName;
   l.descriptionText = firstText(firstText(f.handlerResponsibility, f.responsibility), f.summary);
   l.code = createLambdaCodeConfig(f, pimRoot().implementationProfile);
+  if (l.code.eClass().getName() = "LambdaImageCodeConfig") {
+    l.packageType = AWSPSMENUMS!PackageType#IMAGE;
+  }
+  else {
+    l.packageType = AWSPSMENUMS!PackageType#ZIP;
+  }
   l.memorySizeMb = inferMemoryMb(f);
   l.timeoutSeconds = inferTimeoutSeconds(f);
   l.architecture = AWSPSMENUMS!LambdaArchitecture#ARM64;
@@ -118,8 +124,8 @@ rule Api2NativeUnsupportedApi
 
   copyAwsResource(api, n, "UnsupportedApi", "AWS::CloudFormation::CustomResource");
   n.id = idFor("native_api", api);
-  n.cloudFormationType = "AWS::CloudFormation::CustomResource";
-  n.samType = "UnsupportedApiStyle";
+  n.cloudFormationType = "Custom::UnsupportedApiStyle";
+  n.properties.add(nativeText("ServiceToken", "REVIEW_REQUIRED_SERVICE_TOKEN", KERNEL!StructuredFormat#TEXT, true, false));
   n.properties.add(nativeText("PimApiStyle", api.apiStyle.asString(), KERNEL!StructuredFormat#TEXT, true, false));
   manualDecision("API_STYLE_UNSUPPORTED_DIRECTLY",
     "Choose an AWS implementation for unsupported API style " + api.apiStyle.asString() + " on " + api.name + ".",
@@ -340,16 +346,24 @@ operation inferAuthorizationType(r) {
     if (r.api.auth.identityProvider.isDefined()) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
     }
-    if (r.api.auth.authScheme.toLowerCase().contains("jwt")) {
+    if (not hasText(r.api.auth.authScheme)) {
+      manualDecision("AUTH_SCHEME_REQUIRED",
+        "Choose an auth scheme for API " + r.api.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{r.api, r},
+        "Set AuthPolicy.authScheme to JWT/OIDC/OAuth, Cognito, IAM/SigV4, API key, or Lambda/custom.");
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
+    }
+    var scheme = r.api.auth.authScheme.toLowerCase();
+    if (scheme.contains("jwt")) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
     }
-    if (r.api.auth.authScheme.toLowerCase().contains("iam")) {
+    if (scheme.contains("iam")) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
     }
-    if (r.api.auth.authScheme.toLowerCase().contains("key")) {
+    if (scheme.contains("key")) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY;
     }
-    if (r.api.auth.authScheme.toLowerCase().contains("lambda") or r.api.auth.authScheme.toLowerCase().contains("custom")) {
+    if (scheme.contains("lambda") or scheme.contains("custom")) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#CUSTOM_LAMBDA;
     }
   }
@@ -490,7 +504,15 @@ operation createApiAuthorizer(api, g) {
       return c;
     }
   }
-  if (api.auth.authScheme.toLowerCase().contains("jwt") or api.auth.authScheme.toLowerCase().contains("oauth") or api.auth.authScheme.toLowerCase().contains("oidc")) {
+  if (not hasText(api.auth.authScheme)) {
+    manualDecision("AUTH_SCHEME_REQUIRED",
+      "Choose an auth scheme for API " + api.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{api, g},
+      "Set AuthPolicy.authScheme before generating an authorizer.");
+    return null;
+  }
+  var scheme = api.auth.authScheme.toLowerCase();
+  if (scheme.contains("jwt") or scheme.contains("oauth") or scheme.contains("oidc")) {
     var j = new AWSPSMAPI!JwtAuthorizer;
     copyAwsResource(api.auth, j, "JwtAuthorizer", "AWS::ApiGatewayV2::Authorizer");
     j.id = generatedId("jwt_authorizer", api, api.auth.name);

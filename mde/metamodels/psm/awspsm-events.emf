@@ -153,7 +153,6 @@ class EventBridgeHttpParameters extends kernel.TraceableElement {
   val HttpParameter[*] bodyParameters;
 }
 
-@Ecore(constraints="ConnectionAuthParametersMatchAuthorizationType")
 class EventBridgeConnection extends awspsmcore.AwsResource {
   attr String connectionName;
   attr awspsmenums.EventBridgeConnectionAuthorizationType[1] authorizationType;

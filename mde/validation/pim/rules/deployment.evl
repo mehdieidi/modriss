@@ -84,6 +84,16 @@ context PIM!ImplementationProfile {
   }
 }
 
+context PIM!ServiceElementMembership {
+  constraint MembershipMatchesServiceOwnership {
+    check : self.service.isDefined() and self.element.isDefined() and
+      (self.service.ownsFunctions.includes(self.element) or self.service.ownsApis.includes(self.element) or
+       self.service.ownsChannels.includes(self.element) or self.service.ownsStores.includes(self.element) or
+       self.service.ownsWorkflows.includes(self.element) or self.service.ownsAdapters.includes(self.element))
+    message : "[PIM-SVC-006] ServiceElementMembership does not match the service owned references. Fix: synchronize membership metadata with ServerlessService owns* references."
+  }
+}
+
 /*****************
  * Function rules
  *****************/

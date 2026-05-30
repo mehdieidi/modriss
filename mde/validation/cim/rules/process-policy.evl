@@ -13,11 +13,19 @@ context CIM!BusinessProcess {
 
   constraint ProcessHasTriggerAndCompletionCriterion {
     check :
-      (self.trigger.isDefined() or self.businessTriggerDescription.hasText()) and
+      (self.trigger.isDefined() or self.triggeringEvent.isDefined() or self.triggeringCommand.isDefined() or self.triggeringActor.isDefined() or self.businessTriggerDescription.hasText()) and
       self.completionCriterion.hasText()
     message :
       "Error [CIM-PROC-002] BusinessProcess '" + self.labelText() + "' lacks a trigger or completionCriterion. " +
       "Suggestion: specify what starts the process and the business condition that means the process is complete."
+  }
+
+  constraint ProcessTriggerIsTypedForProduction {
+    guard : self.trigger.isDefined()
+    check : self.trigger.isKindOf(CIM!BusinessEvent) or self.trigger.isKindOf(CIM!Command) or self.trigger.isKindOf(CIM!Actor)
+    message :
+      "Error [CIM-PROC-002A] BusinessProcess '" + self.labelText() + "' uses a generic trigger that is not a BusinessEvent, Command, or Actor. " +
+      "Suggestion: use triggeringEvent, triggeringCommand, triggeringActor, or describe the business trigger explicitly."
   }
 
   constraint LongRunningProcessHasTemporalConstraint {

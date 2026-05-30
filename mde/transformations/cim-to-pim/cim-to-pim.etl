@@ -6,8 +6,8 @@ import "process-policy.etl";
 import "integration-deployment.etl";
 
 pre ValidateInput {
-  if (CIM!CIMModel.all.isEmpty()) {
-    throw "CIM to PIM requires one CIMModel root.";
+  if (CIM!CIMModel.all.size() <> 1) {
+    throw "CIM to PIM requires exactly one CIMModel root; found " + CIM!CIMModel.all.size().asString() + ".";
   }
   initialiseCimToPimCaches();
 }

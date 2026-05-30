@@ -41,7 +41,9 @@ operation AWSPSM!AwsPsmModel allModeledResources() : Sequence {
   for (stackObj in self.stacks) {
     resSeq.addAll(stackObj.resources);
   }
-  resSeq.addAll(self.allResources);
+  for (stackObj in self.stacks) {
+    resSeq.addAll(stackObj.resources);
+  }
   return resSeq.sortBy(resObj | resObj.cfnLogicalId());
 }
 

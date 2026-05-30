@@ -208,7 +208,6 @@ class TraceModel extends TraceableElement {
   val TraceLink[*]#traceModel links;
 }
 
-@Ecore(constraints="TraceLinkHasReferenceOrExternalId")
 class TraceLink extends TraceableElement {
   attr TraceLinkType[1] linkType;
   attr String transformationRule;

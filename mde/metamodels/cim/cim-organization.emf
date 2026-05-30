@@ -95,7 +95,6 @@ class Role extends kernel.TraceableElement {
  * CIMModel.actors. Frontends can expose it through a filtered virtual
  * "external systems" register without duplicating containment.
  */
-@Ecore(constraints="ActorTypeMatchesSubclass")
 class ExternalSystem extends Actor {
   attr String owningOrganization;
   attr String businessPurpose;
