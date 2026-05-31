@@ -123,34 +123,36 @@ class EpsilonEvlValidatorTest {
     }
 
     @Test
-    void validatesRepositoryPsmSampleWithIntentionalManualBlockers() throws Exception {
+    void validatesRepositoryPsmSampleWithReadinessBacklog() throws Exception {
+        Path psmSample = REPOSITORY_ROOT.resolve("mde/samples/psm.xmi");
         EvlValidationReport report = new EpsilonEvlValidator().validate(
                 EvlValidationRequest.forRoot(
                         REPOSITORY_ROOT.resolve("mde/validation/psm/psm-semantic-validation.evl"),
                         List.of(FileEvlModelConfiguration.readOnly(
                                 "AWSPSM",
                                 List.of("AWSPSMENUMS", "KERNEL"),
-                                REPOSITORY_ROOT.resolve("mde/samples/psm.xmi"),
+                                psmSample,
                                 List.of(REPOSITORY_ROOT.resolve(
                                         "mde/metamodels/psm/psm-combined.ecore")))),
                         true));
 
         assertEquals(EvlValidationStatus.SUCCEEDED, report.status());
         assertTrue(report.diagnostics().isEmpty(), report.diagnostics().toString());
-        assertTrue(report.hasMandatoryViolations(),
-                "The sample still carries explicit manual review blockers.");
-        assertEquals(57, report.violations().stream()
+        assertFalse(report.hasMandatoryViolations(),
+                "The repository sample should pass mandatory PSM semantic validation.");
+        assertEquals(0, report.violations().stream()
                 .filter(v -> v.kind() == EvlConstraintKind.MANDATORY)
                 .count());
-        assertEquals(37, countViolations(report, "StatementHasActionAndResourceSide"));
+        assertEquals(0, countViolations(report, "StatementHasActionAndResourceSide"));
         assertEquals(0, countViolations(report, "ZipCodeHasRuntimeAndHandler"));
         assertEquals(0, countViolations(report, "IntegrationHasSingleTarget"));
         assertEquals(0, countViolations(report, "AccessLogStageRequiresGroupAndFormat"));
-        assertEquals(EvlConstraintKind.OPTIONAL, report.violations().stream()
-                .filter(v -> v.constraintName().equals("CriticalEventTargetsHaveRetryOrDlq"))
-                .findFirst()
-                .orElseThrow()
-                .kind());
+        String sampleXml = Files.readString(psmSample);
+        assertTrue(sampleXml.contains("<manualDecisions"),
+                "Readiness blockers should remain represented as manual decisions.");
+        assertTrue(sampleXml.contains("blocking=\"true\""),
+                "The sample should still carry explicit manual review blockers.");
+        assertEquals(0, countViolations(report, "CriticalEventTargetsHaveRetryOrDlq"));
     }
 
     @Test
