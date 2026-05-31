@@ -50,6 +50,7 @@ import {renderPimWorkbenchSurface} from './pim-workbench.js';
 import {renderPsmWorkbenchSurface} from './psm-workbench.js';
 import {
   addG6Edge,
+  addG6Node,
   beginG6InlineLabelEdit,
   focusG6CanvasPoint,
   focusG6Node,
@@ -5678,6 +5679,7 @@ export function syncDiagramRenderer({full = false, workbench = false} = {}) {
 export function syncRendererSelection() {
   if (ensureG6Canvas()) {
     updateG6Selection();
+    updateG6ContextBoxes();
   }
 }
 
@@ -6614,6 +6616,10 @@ export function setupDnD() {
       return;
     }
     pushDiagramUndoSnapshot();
+    const previousNodeIds = new Set(state.diagram.nodes.map((item) =>
+        item.id));
+    const previousEdgeIds = new Set(state.diagram.connections.map((item) =>
+        item.id));
     const pos = toCanvasCoordinates(e.clientX, e.clientY);
     const node = getDefaultNode(state.activeType, type, Math.round(pos.x),
         Math.round(pos.y));
@@ -6625,7 +6631,13 @@ export function setupDnD() {
     }
     syncCanvasIndexesFromState();
     if (ensureG6Canvas()) {
-      syncG6FromState({full: false});
+      state.diagram.nodes.filter((item) => !previousNodeIds.has(item.id))
+      .forEach((item) => addG6Node(item));
+      state.diagram.connections.filter((item) => !previousEdgeIds.has(item.id))
+      .forEach((item) => addG6Edge(item));
+      updateG6Node(node.id);
+      updateG6Selection();
+      updateG6ContextBoxes();
       workbenchSurfaces();
     } else {
       renderDiagram();

@@ -472,6 +472,31 @@ function rememberDataSnapshot(data) {
   };
 }
 
+function ensureDataSnapshot() {
+  if (!editor.dataSnapshot) {
+    rememberDataSnapshot({nodes: [], edges: []});
+  }
+  return editor.dataSnapshot;
+}
+
+function rememberNodeData(nodeData) {
+  if (!nodeData?.id) {
+    return;
+  }
+  const snapshot = ensureDataSnapshot();
+  snapshot.nodesById.set(nodeData.id, nodeData);
+  snapshot.nodeFingerprints.set(nodeData.id, fingerprintElement(nodeData));
+}
+
+function rememberEdgeData(edgeData) {
+  if (!edgeData?.id) {
+    return;
+  }
+  const snapshot = ensureDataSnapshot();
+  snapshot.edgesById.set(edgeData.id, edgeData);
+  snapshot.edgeFingerprints.set(edgeData.id, fingerprintElement(edgeData));
+}
+
 function applyDiff(data) {
   const diff = diffGraphData(editor.dataSnapshot, data);
   if (diff.removeEdgeIds.length) {
@@ -663,7 +688,7 @@ export function getG6Editor() {
 }
 
 export function renderG6Diagram() {
-  return syncG6FromState({full: true});
+  return syncG6FromState({full: !editor?.dataSnapshot});
 }
 
 export function setG6Data(nodes, edges) {
@@ -702,8 +727,7 @@ export function addG6Node(node) {
   }
   const mapped = mapNodeToG6(node, mapperOptions());
   editor.graph.addNodeData?.([mapped]);
-  const data = graphDataFromState();
-  rememberDataSnapshot(data);
+  rememberNodeData(mapped);
   scheduleGraphDraw(editor.graph);
 }
 
@@ -719,8 +743,7 @@ export function updateG6Node(nodeId, patch = {}) {
   Object.assign(node, patch);
   const mapped = mapNodeToG6(node, mapperOptions());
   editor.graph.updateNodeData?.([mapped]);
-  const data = graphDataFromState();
-  rememberDataSnapshot(data);
+  rememberNodeData(mapped);
   scheduleGraphDraw(editor.graph);
 }
 
@@ -743,6 +766,7 @@ export function updateG6NodePosition(nodeId, x, y) {
       y: node.y + size.height / 2
     }
   }]);
+  rememberNodeData(mapNodeToG6(node, mapperOptions()));
   scheduleGraphDraw(editor.graph);
 }
 
@@ -752,6 +776,7 @@ export function removeG6Node(nodeId) {
   }
   editor.graph.removeNodeData?.([nodeId]);
   editor.dataSnapshot?.nodesById?.delete(nodeId);
+  editor.dataSnapshot?.nodeFingerprints?.delete(nodeId);
   editor.nodeStateFlags.delete(nodeId);
   editor.connectStateIds.delete(nodeId);
   scheduleGraphDraw(editor.graph);
@@ -764,8 +789,7 @@ export function addG6Edge(edge) {
   const mapped = mapEdgeToG6(edge, mapperOptions());
   editor.graph.addEdgeData?.([mapped]);
   editor.adjacency = createAdjacencyIndex(state.diagram.connections);
-  const data = graphDataFromState();
-  rememberDataSnapshot(data);
+  rememberEdgeData(mapped);
   scheduleGraphDraw(editor.graph);
 }
 
@@ -778,9 +802,9 @@ export function updateG6Edge(edgeId, patch = {}) {
     return;
   }
   Object.assign(edge, patch);
-  editor.graph.updateEdgeData?.([mapEdgeToG6(edge, mapperOptions())]);
-  const data = graphDataFromState();
-  rememberDataSnapshot(data);
+  const mapped = mapEdgeToG6(edge, mapperOptions());
+  editor.graph.updateEdgeData?.([mapped]);
+  rememberEdgeData(mapped);
   scheduleGraphDraw(editor.graph);
 }
 
@@ -790,6 +814,7 @@ export function removeG6Edge(edgeId) {
   }
   editor.graph.removeEdgeData?.([edgeId]);
   editor.dataSnapshot?.edgesById?.delete(edgeId);
+  editor.dataSnapshot?.edgeFingerprints?.delete(edgeId);
   editor.edgeStateFlags.delete(edgeId);
   editor.adjacency = createAdjacencyIndex(state.diagram.connections);
   scheduleGraphDraw(editor.graph);
@@ -805,6 +830,7 @@ export function refreshG6Edges(edgeIds = []) {
       mapperOptions()));
   if (edges.length) {
     editor.graph.updateEdgeData?.(edges);
+    edges.forEach(rememberEdgeData);
     scheduleGraphDraw(editor.graph);
   }
 }
@@ -819,6 +845,9 @@ export function updateG6Selection() {
       state.selectedConnectionId ? [state.selectedConnectionId] : []);
   flushElementStates(changedNodes, editor.nodeStateFlags);
   flushElementStates(changedEdges, editor.edgeStateFlags);
+  if (changedEdges.size) {
+    refreshG6Edges([...changedEdges]);
+  }
   if (state.selectedNodeId && state.selectedNodeIds?.size === 1) {
     const node = state.nodesById.get(state.selectedNodeId);
     const isContainer = editor.mapperOptions?.isContainer?.(node);
@@ -986,6 +1015,7 @@ export function updateG6Viewport() {
   syncViewportStateFromGraph();
   updateG6Lod();
   updateG6ContextBoxes();
+  updateG6Selection();
 }
 
 export function getG6Viewport() {
@@ -1111,5 +1141,6 @@ export function onG6ViewportChanged() {
   el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
   updateG6Lod();
   updateG6ContextBoxes();
+  updateG6Selection();
   editor.callbacks?.onViewportSynced?.();
 }
