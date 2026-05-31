@@ -601,25 +601,25 @@ operation attachOpenApiModels(route, awsRoute) {
 }
 
 operation createRequestModel(route, schema) {
-  var model = new AWSPSMAPI!ApiGatewayRequestModel;
-  copyTraceable(schema, model);
-  model.id = generatedId("api_request_model", route, schema.id);
-  model.name = pascalCase(firstText(schema.name, schema.id)) + "RequestModel";
-  model.modelName = pascalCase(firstText(schema.name, schema.id));
-  model.contentType = "application/json";
-  model.schemaJson = schemaToOpenApiSchema(schema);
-  return model;
+  var apiModel = new AWSPSMAPI!ApiGatewayRequestModel;
+  copyTraceable(schema, apiModel);
+  apiModel.id = generatedId("api_request_model", route, schema.id);
+  apiModel.name = pascalCase(firstText(schema.name, schema.id)) + "RequestModel";
+  apiModel.modelName = pascalCase(firstText(schema.name, schema.id));
+  apiModel.contentType = "application/json";
+  apiModel.schemaJson = schemaToOpenApiSchema(schema);
+  return apiModel;
 }
 
 operation createResponseModel(route, schema, statusCode : String) {
-  var model = new AWSPSMAPI!ApiGatewayResponseModel;
-  copyTraceable(schema, model);
-  model.id = generatedId("api_response_model", route, statusCode + "_" + schema.id);
-  model.name = pascalCase(firstText(schema.name, schema.id));
-  model.statusCode = statusCode;
-  model.contentType = "application/json";
-  model.schemaJson = schemaToOpenApiSchema(schema);
-  return model;
+  var apiModel = new AWSPSMAPI!ApiGatewayResponseModel;
+  copyTraceable(schema, apiModel);
+  apiModel.id = generatedId("api_response_model", route, statusCode + "_" + schema.id);
+  apiModel.name = pascalCase(firstText(schema.name, schema.id));
+  apiModel.statusCode = statusCode;
+  apiModel.contentType = "application/json";
+  apiModel.schemaJson = schemaToOpenApiSchema(schema);
+  return apiModel;
 }
 
 operation generateOpenApi(api) {

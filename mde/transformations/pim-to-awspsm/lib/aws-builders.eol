@@ -81,6 +81,9 @@ operation ssmSecureReferenceValue(referenceText : String) {
 }
 
 operation refValue(resource) {
+  if (resource.isUndefined()) {
+    return literalValue("REVIEW_REQUIRED_RESOURCE_REF", false);
+  }
   var v = new AWSPSMCORE!ValueExpression;
   v.id = uniqueId("ref_" + slug(resource.logicalId));
   v.name = "Ref " + resource.logicalId;
@@ -90,6 +93,9 @@ operation refValue(resource) {
 }
 
 operation getAtt(resource, attributeName : String) {
+  if (resource.isUndefined()) {
+    return literalValue("REVIEW_REQUIRED_RESOURCE_GETATT_" + attributeName, false);
+  }
   var v = new AWSPSMCORE!ValueExpression;
   v.id = uniqueId("getatt_" + slug(resource.logicalId + "_" + attributeName));
   v.name = "GetAtt " + resource.logicalId + "." + attributeName;
@@ -291,8 +297,14 @@ operation annotationValue(text, key : String) {
 
 operation createLogGroupFor(source, logicalSeed : String, logName : String) {
   var g = new AWSPSMOBSERVABILITY!CloudWatchLogGroup;
+  if (not cachedAwsGeneratedResources.includes(g)) {
+    cachedAwsGeneratedResources.add(g);
+  }
   g.id = generatedId("log_group", source, logicalSeed);
   g.name = firstText(source.name, logicalSeed) + " Log Group";
+  g.generatedFrom = source.id;
+  g.generatedByTransformation = true;
+  g.manuallyMaintained = false;
   g.logicalId = uniqueLogicalId(pascalCase(logicalSeed) + "LogGroup");
   g.physicalName = logName;
   g.awsResourceType = "AWS::Logs::LogGroup";
@@ -503,4 +515,677 @@ operation normalizeExecuteApiPath(pathValue) : String {
     return "*";
   }
   return pathText.replaceAll("\\{[^/]+\\}", "*");
+}
+
+// Inlined AWS relationship resolution helpers.
+operation defaultStack() {
+  if (cachedDefaultStack.isUndefined() and AWSPSMCORE!SamStack.all.notEmpty()) {
+    cachedDefaultStack = AWSPSMCORE!SamStack.all.first();
+  }
+  return cachedDefaultStack;
+}
+
+operation placeUncontainedAwsResources() {
+  flagUnassignedDeployables();
+  var st = defaultStack();
+  for (r in cachedAwsGeneratedResources) {
+    if (r.stack.isUndefined()) {
+      var targetStack = stackForGeneratedResource(r);
+      if (targetStack.isUndefined()) {
+        targetStack = st;
+      }
+      if (targetStack.isDefined()) {
+        targetStack.resources.add(r);
+      }
+    }
+  }
+  if (st.isDefined()) {
+    for (p in AWSPSMCORE!CfnParameter.all) {
+      if (p.eContainer().isUndefined()) {
+        st.parameters.add(p);
+      }
+    }
+  }
+  for (doc in KERNEL!StructuredDocument.all) {
+    if (doc.eContainer().isUndefined() and not awsRoot().documents.includes(doc)) {
+      awsRoot().documents.add(doc);
+    }
+  }
+  for (stage in AWSPSMCORE!AwsStage.all) {
+    for (stack in AWSPSMCORE!SamStack.all) {
+      if (not stage.deploysStacks.includes(stack)) {
+        stage.deploysStacks.add(stack);
+      }
+    }
+  }
+}
+
+operation stackForGeneratedResource(resource) {
+  if (not hasText(resource.generatedFrom)) {
+    return null;
+  }
+  var unit = cachedPimDeploymentUnitByElementId.get(resource.generatedFrom);
+  if (unit.isDefined()) {
+    return awsEquivalent(unit);
+  }
+  return null;
+}
+
+operation resolveAwsRelationships() {
+  resolveTriggers();
+  resolveFlows();
+  resolveEventTargets();
+  resolveTopicSubscriptions();
+  applyCostPolicies();
+}
+
+operation generateIamStatements() {
+  for (f in COMPUTE!Function.all) {
+    var l = awsEquivalent(f);
+    if (l.isDefined() and l.role.isDefined()) {
+      var pol = new AWSPSMSECURITY!IamInlinePolicy;
+      pol.id = generatedId("inline_policy", f, "generated_access");
+      pol.name = f.name + " generated access";
+      pol.policyName = pascalCase(f.name) + "GeneratedAccess";
+      pol.document = policyDocument();
+      for (s in f.reads) {
+        addResourceStatement(pol.document, s, true, false);
+      }
+      for (s in f.writes) {
+        addResourceStatement(pol.document, s, false, true);
+      }
+      for (daRead in DATA!DataAccess.all.select(da | da.`function` = f and (da.mode = PIMTYPES!DataAccessMode#READ or da.mode = PIMTYPES!DataAccessMode#READ_WRITE))) {
+        addResourceStatement(pol.document, daRead.store, true, false);
+      }
+      for (daWrite in DATA!DataAccess.all.select(da | da.`function` = f and (da.mode = PIMTYPES!DataAccessMode#WRITE or da.mode = PIMTYPES!DataAccessMode#READ_WRITE or da.mode = PIMTYPES!DataAccessMode#APPEND or da.mode = PIMTYPES!DataAccessMode#DELETE))) {
+        addResourceStatement(pol.document, daWrite.store, false, true);
+      }
+      for (evt in f.publishes) {
+        addPublishStatement(pol.document, evt);
+      }
+      for (evt2 in f.subscribesTo) {
+        addSubscribeStatement(pol.document, evt2);
+      }
+      for (sec in f.usesSecrets) {
+        addSecretStatement(pol.document, sec);
+      }
+      if (pol.document.statements.isEmpty()) {
+        pol.document.statements.add(unresolvedAccessStatement(f));
+      }
+      if (pol.document.statements.notEmpty()) {
+        l.role.inlinePolicies.add(pol);
+      }
+    }
+  }
+}
+
+operation generateRelationshipViews() {
+  for (route in AWSPSMAPI!ApiGatewayRoute.all) {
+    if (route.integration.isDefined() and route.integration.lambdaTarget.isDefined()) {
+      var v = new AWSPSMINTEGRATIONS!ApiGatewayLambdaIntegrationView;
+      v.id = uniqueId("view_api_lambda_" + slug(route.logicalId + "_" + route.integration.lambdaTarget.logicalId));
+      v.name = route.name + " to " + route.integration.lambdaTarget.name;
+      v.generated = true;
+      v.source = route;
+      v.target = route.integration.lambdaTarget;
+      v.route = route;
+      setFeature(v, "function", route.integration.lambdaTarget);
+      v.integration = route.integration;
+      awsRoot().relationshipViews.add(v);
+    }
+  }
+  for (m in AWSPSMCOMPUTE!SqsLambdaEventSourceMapping.all) {
+    var mappedFunction = m.eGet(m.eClass().getEStructuralFeature("function"));
+    var sqsView = new AWSPSMINTEGRATIONS!SqsLambdaEventSourceView;
+    sqsView.id = uniqueId("view_sqs_lambda_" + slug(m.queue.logicalId + "_" + mappedFunction.logicalId));
+    sqsView.name = m.queue.name + " to " + mappedFunction.name;
+    sqsView.generated = true;
+    sqsView.source = m.queue;
+    sqsView.target = mappedFunction;
+    sqsView.queue = m.queue;
+    setFeature(sqsView, "function", mappedFunction);
+    sqsView.mapping = m;
+    awsRoot().relationshipViews.add(sqsView);
+  }
+  for (sub in AWSPSMMESSAGING!SnsSubscription.all) {
+    if (sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA and sub.endpointResource.isDefined()) {
+      var snsView = new AWSPSMINTEGRATIONS!SnsLambdaSubscriptionView;
+      snsView.id = uniqueId("view_sns_lambda_" + slug(sub.topic.logicalId + "_" + sub.endpointResource.logicalId));
+      snsView.name = sub.topic.name + " to " + sub.endpointResource.name;
+      snsView.generated = true;
+      snsView.source = sub.topic;
+      snsView.target = sub.endpointResource;
+      snsView.topic = sub.topic;
+      setFeature(snsView, "function", sub.endpointResource);
+      snsView.subscription = sub;
+      snsView.permission = cachedLambdaPermissionByKey.get("SnsInvoke::sns.amazonaws.com::" + sub.endpointResource.logicalId);
+      awsRoot().relationshipViews.add(snsView);
+    }
+  }
+  for (er in AWSPSMEVENTS!EventBridgeRule.all) {
+    for (targetRow in er.targets) {
+      if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#LAMBDA and targetRow.targetResource.isDefined()) {
+        var ebView = new AWSPSMINTEGRATIONS!EventBridgeLambdaTargetView;
+        ebView.id = uniqueId("view_event_lambda_" + slug(er.logicalId + "_" + targetRow.targetResource.logicalId));
+        ebView.name = er.name + " to " + targetRow.targetResource.name;
+        ebView.generated = true;
+        ebView.source = er;
+        ebView.target = targetRow.targetResource;
+        ebView.rule = er;
+        ebView.targetRow = targetRow;
+        setFeature(ebView, "function", targetRow.targetResource);
+        ebView.permission = cachedLambdaPermissionByKey.get("EventBridgeInvoke::events.amazonaws.com::" + targetRow.targetResource.logicalId);
+        awsRoot().relationshipViews.add(ebView);
+      }
+      if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#STEP_FUNCTIONS and targetRow.targetResource.isDefined()) {
+        var sfView = new AWSPSMINTEGRATIONS!StepFunctionEventBridgeTargetView;
+        sfView.id = uniqueId("view_event_sfn_" + slug(er.logicalId + "_" + targetRow.targetResource.logicalId));
+        sfView.name = er.name + " to " + targetRow.targetResource.name;
+        sfView.generated = true;
+        sfView.source = er;
+        sfView.target = targetRow.targetResource;
+        sfView.rule = er;
+        sfView.targetRow = targetRow;
+        sfView.stateMachine = targetRow.targetResource;
+        awsRoot().relationshipViews.add(sfView);
+      }
+    }
+  }
+}
+
+operation generateReadinessChecks() {
+  var r = readinessContainer();
+  if (r.isUndefined()) {
+    return;
+  }
+  check("AWS_PSM_RESOURCES_GENERATED", cachedAwsGeneratedResources.notEmpty(),
+    "AWS PSM generation produced deployable resources.",
+    KERNEL!Severity#INFO, Sequence{awsRoot()},
+    "Review the generated stacks and resources before deployment.");
+  check("AWS_PSM_MANUAL_DECISIONS_RECORDED", r.manualDecisions.notEmpty(),
+    "AWS PSM generation recorded deployment/design decisions for review.",
+    KERNEL!Severity#INFO, Sequence{awsRoot()},
+    "Resolve blocking manual decisions before production deployment.");
+  r.transformationReady = r.findings.none(f | f.blocking and f.findingType = KERNEL!FindingType#VALIDATION_ERROR);
+  r.deploymentReady = r.manualDecisions.none(d | d.blocking);
+  r.productionReady = isProductionRoot() and r.findings.none(f | f.severity = KERNEL!Severity#ERROR or f.severity = KERNEL!Severity#CRITICAL or f.severity = KERNEL!Severity#BLOCKER);
+  if (not r.transformationReady) {
+    r.readinessStatus = KERNEL!LifecycleStatus#BLOCKED;
+  }
+  else {
+    if (not r.deploymentReady) {
+      r.readinessStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
+    }
+    else {
+      r.readinessStatus = KERNEL!LifecycleStatus#TRANSFORMATION_READY;
+    }
+  }
+}
+
+operation validatePsmConstraints() {
+  // PSM EVL is the canonical source for structural and semantic PSM validation.
+  // Transformation-time checks stay in mapping helpers only when a generation
+  // decision is needed to continue producing a reviewable PSM model.
+}
+
+operation flagUnassignedDeployables() {
+  for (f in COMPUTE!Function.all) {
+    flagIfUnassigned(f);
+  }
+  for (a in API!Api.all) {
+    flagIfUnassigned(a);
+  }
+  for (d in DATA!DataStore.all) {
+    flagIfUnassigned(d);
+  }
+  for (o in DATA!ObjectStore.all) {
+    flagIfUnassigned(o);
+  }
+  for (q in INTEGRATION!Queue.all) {
+    flagIfUnassigned(q);
+  }
+  for (t in INTEGRATION!Topic.all) {
+    flagIfUnassigned(t);
+  }
+  for (b in INTEGRATION!EventBus.all) {
+    flagIfUnassigned(b);
+  }
+  for (w in WORKFLOW!Workflow.all) {
+    flagIfUnassigned(w);
+  }
+  for (e in EXTERNAL!ExternalAdapter.all) {
+    flagIfUnassigned(e);
+  }
+}
+
+operation flagIfUnassigned(element) {
+  if (not cachedPimDeploymentAssignedIds.includes(cacheKeyFor(element))) {
+    manualDecision("PACKAGING_UNASSIGNED",
+      "Choose a deployment unit/SAM stack for " + qualifiedName(element) + ".",
+      KERNEL!Severity#WARNING, false, Sequence{element},
+      "Add the element to a PIM DeploymentUnit or accept placement in the default stack.");
+  }
+}
+
+operation applyCostPolicies() {
+  for (p in POLICY!CostPolicy.all) {
+    for (target in p.attachedTo) {
+      var res = awsEquivalent(target);
+      if (res.isDefined()) {
+        if (hasText(p.costDriver)) {
+          res.tags.add(tag("CostDriver", p.costDriver));
+        }
+        res.costAllocationTagValue = firstText(p.budget, p.optimizationIntent);
+        if (isTrue(p.alarmsRequired)) {
+          manualDecision("COST_ALARM_ACCOUNT_SCOPE",
+            "Create account-level AWS budget/alarm for " + res.name + ".",
+            KERNEL!Severity#WARNING, false, Sequence{res},
+            "AWS Budgets is account-scoped and not represented as a first-class PSM resource.");
+        }
+      }
+    }
+  }
+}
+
+operation resolveTriggers() {
+  for (t in COMPUTE!Trigger.all) {
+    if (t.invokesFunction.isDefined() and t.source.isDefined()) {
+      var fn = awsEquivalent(t.invokesFunction);
+      if (t.source.eClass().getName() = "Queue") {
+        createSqsLambdaMapping(t, awsEquivalent(t.source), fn, t.batchPolicy, t.resilience);
+      }
+      else {
+        if (t.source.eClass().getName() = "Topic") {
+          createSnsLambdaSubscription(t, awsEquivalent(t.source), fn);
+        }
+        else {
+          if (t.source.eClass().getName() = "EventBus" or t.source.eClass().getName() = "EventRoutingRule" or t.source.eClass().getName() = "Schedule") {
+            var triggerPrincipal = "events.amazonaws.com";
+            if (t.source.eClass().getName() = "Schedule") {
+              triggerPrincipal = "scheduler.amazonaws.com";
+            }
+            createLambdaPermissionFor("EventBridgeInvoke", t, fn, triggerPrincipal);
+          }
+          else {
+            if (t.source.eClass().getName() = "ObjectStore") {
+              addS3LambdaNotification(t, awsEquivalent(t.source), fn);
+            }
+            else {
+              if (t.source.eClass().getName() = "DataStore") {
+                createDynamoLambdaMapping(t, awsEquivalent(t.source), fn, t.batchPolicy, t.resilience);
+              }
+              else {
+              if (t.source.eClass().getName() = "ApiRoute") {
+                  createLambdaPermissionFor("ApiGatewayInvoke", t, fn, "apigateway.amazonaws.com", apiGatewayRouteSourceArn(t.source));
+                }
+                else {
+                  manualDecision("TRIGGER_SOURCE_UNSUPPORTED",
+                    "Review trigger source " + qualifiedName(t.source) + " for " + t.name + ".",
+                    KERNEL!Severity#WARNING, false, Sequence{t},
+                    "Add source-specific PSM support or model it as EventBridge.");
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+operation resolveFlows() {
+  for (flow in INTEGRATION!RequestResponseFlow.all) {
+    if (flow.apiRoute.isDefined() and flow.target.isDefined() and flow.target.eClass().getName() = "Function") {
+      createLambdaPermissionFor("ApiGatewayInvoke", flow, awsEquivalent(flow.target), "apigateway.amazonaws.com", apiGatewayRouteSourceArn(flow.apiRoute));
+    }
+  }
+  for (flow in INTEGRATION!MessageFlow.all) {
+    if (flow.queue.isDefined() and flow.target.isDefined() and flow.target.eClass().getName() = "Function") {
+      createSqsLambdaMapping(flow, awsEquivalent(flow.queue), awsEquivalent(flow.target), flow.queue.batchPolicy, flow.resilience);
+    }
+  }
+  for (flow in INTEGRATION!EventFlow.all) {
+    if (flow.channel.isDefined() and flow.channel.eClass().getName() = "EventBus" and flow.target.isDefined()) {
+      var er = new AWSPSMEVENTS!EventBridgeRule;
+      copyAwsResource(flow, er, "EventRule", "AWS::Events::Rule");
+      er.id = generatedId("eventbridge_rule", flow, "flow");
+      er.ruleName = er.physicalName;
+      er.eventPatternJson = eventTypesPatternJson(Sequence{flow.eventType});
+      er.state = "ENABLED";
+      er.bus = awsEquivalent(flow.channel);
+      er.targets.add(createEventBridgeTarget(flow, flow.target));
+    }
+    if (flow.channel.isDefined() and flow.channel.eClass().getName() = "Topic" and flow.target.isDefined() and flow.target.eClass().getName() = "Function") {
+      createSnsLambdaSubscription(flow, awsEquivalent(flow.channel), awsEquivalent(flow.target));
+    }
+    if (flow.channel.isDefined() and flow.channel.eClass().getName() = "Queue" and flow.target.isDefined() and flow.target.eClass().getName() = "Function") {
+      createSqsLambdaMapping(flow, awsEquivalent(flow.channel), awsEquivalent(flow.target), flow.channel.batchPolicy, flow.resilience);
+    }
+  }
+}
+
+operation resolveEventTargets() {
+  for (er in AWSPSMEVENTS!EventBridgeRule.all) {
+    for (targetRow in er.targets) {
+      configureEventBridgeTargetInvoke(er, targetRow);
+    }
+  }
+  for (schedule in AWSPSMEVENTS!EventBridgeSchedule.all) {
+    configureEventBridgeTargetInvoke(schedule, schedule.target);
+  }
+}
+
+operation configureEventBridgeTargetInvoke(origin, targetRow) {
+  if (targetRow.isUndefined()) {
+    return;
+  }
+  if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#OTHER_AWS_RESOURCE or targetRow.targetResource.isUndefined()) {
+    manualDecision("EVENTBRIDGE_TARGET_INVOKE_ROLE_REQUIRED",
+      "Choose invoke permissions for EventBridge target " + firstText(targetRow.name, targetRow.targetId) + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{origin, targetRow},
+      "Set targetKind to a supported target or attach a target-specific IAM role and least-privilege action.");
+    return;
+  }
+  if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#LAMBDA) {
+    var lambdaPrincipal = "events.amazonaws.com";
+    if (origin.isDefined() and origin.eClass().getName() = "EventBridgeSchedule") {
+      lambdaPrincipal = "scheduler.amazonaws.com";
+    }
+    createLambdaPermissionFor("EventBridgeInvoke", origin, targetRow.targetResource, lambdaPrincipal);
+  }
+  if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#STEP_FUNCTIONS) {
+    targetRow.role = createEventInvokeRole(origin, targetRow.targetResource, "states:StartExecution");
+  }
+  if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#SQS) {
+    targetRow.role = createEventInvokeRole(origin, targetRow.targetResource, "sqs:SendMessage");
+  }
+  if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#SNS) {
+    targetRow.role = createEventInvokeRole(origin, targetRow.targetResource, "sns:Publish");
+  }
+  if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#EVENT_BUS) {
+    targetRow.role = createEventInvokeRole(origin, targetRow.targetResource, "events:PutEvents");
+  }
+  if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#API_DESTINATION) {
+    targetRow.role = createEventInvokeRole(origin, targetRow.targetResource, "events:InvokeApiDestination");
+  }
+  if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#LOG_GROUP) {
+    targetRow.role = createEventInvokeRole(origin, targetRow.targetResource, "logs:PutLogEvents");
+  }
+}
+
+operation resolveTopicSubscriptions() {
+  for (topic in INTEGRATION!Topic.all) {
+    var sns = awsEquivalent(topic);
+    if (sns.isDefined()) {
+      for (fn in topic.consumers) {
+        createSnsLambdaSubscription(topic, sns, awsEquivalent(fn));
+      }
+    }
+  }
+}
+
+operation createSqsLambdaMapping(origin, queue, fn, batchPolicy, resilience) {
+  if (queue.isUndefined() or fn.isUndefined()) {
+    return null;
+  }
+  var key = queue.logicalId + "::" + fn.logicalId;
+  if (cachedSqsLambdaMappingByKey.containsKey(key)) {
+    return cachedSqsLambdaMappingByKey.get(key);
+  }
+  var m = new AWSPSMCOMPUTE!SqsLambdaEventSourceMapping;
+  copyAwsResource(origin, m, "SqsLambdaMapping", "AWS::Lambda::EventSourceMapping");
+  m.id = generatedId("sqs_lambda_mapping", origin, queue.logicalId + "_" + fn.logicalId);
+  m.batchSize = ifDefinedInt(batchPolicy, "batchSize", 10);
+  m.maximumBatchingWindowSeconds = ifDefinedInt(batchPolicy, "maxBatchingWindowSeconds", 0);
+  m.maximumRetryAttempts = retryAttempts(resilience, 3);
+  m.bisectBatchOnFunctionError = batchPolicy.isDefined() and batchPolicy.bisectOnError = PIMTYPES!Decision#REQUIRED;
+  m.reportBatchItemFailures = batchPolicy.isUndefined() or batchPolicy.partialFailureHandling = PIMTYPES!Decision#REQUIRED;
+  if (m.reportBatchItemFailures) {
+    m.partialBatchFailureHandlingDecision = AWSPSMENUMS!Decision#REQUIRED;
+  }
+  else {
+    m.partialBatchFailureHandlingDecision = AWSPSMENUMS!Decision#NEEDS_REVIEW;
+  }
+  m.partialBatchFailureHandlingRationale = "Derived from PIM batch policy/resilience.";
+  m.queue = queue;
+  setFeature(m, "function", fn);
+  cachedSqsLambdaMappingByKey.put(key, m);
+  return m;
+}
+
+operation createDynamoLambdaMapping(origin, table, fn, batchPolicy, resilience) {
+  if (table.isUndefined() or fn.isUndefined()) {
+    return null;
+  }
+  var key = "dynamo::" + table.logicalId + "::" + fn.logicalId;
+  if (cachedSqsLambdaMappingByKey.containsKey(key)) {
+    return cachedSqsLambdaMappingByKey.get(key);
+  }
+  if (table.streamSpecification.isUndefined()) {
+    manualDecision("DYNAMO_STREAM_REQUIRED",
+      "Enable DynamoDB stream for " + table.name + " before using it as a Lambda event source.",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{table},
+      "Set DataStore.changeStreamRequired or remove the stream trigger.");
+  }
+  var m = new AWSPSMCOMPUTE!DynamoDbStreamLambdaEventSourceMapping;
+  copyAwsResource(origin, m, "DynamoStreamMapping", "AWS::Lambda::EventSourceMapping");
+  m.id = generatedId("dynamodb_lambda_mapping", origin, table.logicalId + "_" + fn.logicalId);
+  m.batchSize = ifDefinedInt(batchPolicy, "batchSize", 100);
+  m.maximumBatchingWindowSeconds = ifDefinedInt(batchPolicy, "maxBatchingWindowSeconds", 1);
+  m.startingPosition = AWSPSMENUMS!StartingPosition#LATEST;
+  m.maximumRetryAttempts = retryAttempts(resilience, 3);
+  m.bisectBatchOnFunctionError = true;
+  m.reportBatchItemFailures = true;
+  m.table = table;
+  setFeature(m, "function", fn);
+  cachedSqsLambdaMappingByKey.put(key, m);
+  return m;
+}
+
+operation createSnsLambdaSubscription(origin, topic, fn) {
+  if (topic.isUndefined() or fn.isUndefined()) {
+    return null;
+  }
+  var key = topic.logicalId + "::lambda::" + fn.logicalId;
+  if (cachedSnsSubscriptionByKey.containsKey(key)) {
+    return cachedSnsSubscriptionByKey.get(key);
+  }
+  var sub = new AWSPSMMESSAGING!SnsSubscription;
+  copyAwsResource(origin, sub, "Subscription", "AWS::SNS::Subscription");
+  sub.id = generatedId("sns_subscription", origin, topic.logicalId + "_" + fn.logicalId);
+  sub.topic = topic;
+  sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA;
+  sub.endpointResource = fn;
+  sub.endpoint = cfnArnExpression(fn);
+  sub.filterPolicyScope = AWSPSMENUMS!SnsFilterPolicyScope#MESSAGE_BODY;
+  sub.rawMessageDelivery = false;
+  createLambdaPermissionFor("SnsInvoke", origin, fn, "sns.amazonaws.com", cfnArnExpression(topic));
+  cachedSnsSubscriptionByKey.put(key, sub);
+  return sub;
+}
+
+operation createSnsQueueSubscription(origin, topic, queue) {
+  if (topic.isUndefined() or queue.isUndefined()) {
+    return null;
+  }
+  var key = topic.logicalId + "::sqs::" + queue.logicalId;
+  if (cachedSnsSubscriptionByKey.containsKey(key)) {
+    return cachedSnsSubscriptionByKey.get(key);
+  }
+  var sub = new AWSPSMMESSAGING!SnsSubscription;
+  copyAwsResource(origin, sub, "QueueSubscription", "AWS::SNS::Subscription");
+  sub.id = generatedId("sns_queue_subscription", origin, topic.logicalId + "_" + queue.logicalId);
+  sub.topic = topic;
+  sub.protocol = AWSPSMENUMS!SnsProtocol#SQS;
+  sub.endpointResource = queue;
+  sub.endpoint = cfnArnExpression(queue);
+  sub.filterPolicyScope = AWSPSMENUMS!SnsFilterPolicyScope#MESSAGE_BODY;
+  sub.rawMessageDelivery = true;
+  cachedSnsSubscriptionByKey.put(key, sub);
+  return sub;
+}
+
+operation addS3LambdaNotification(origin, bucket, fn) {
+  if (bucket.isUndefined() or fn.isUndefined()) {
+    return;
+  }
+  if (bucket.notificationConfiguration.isUndefined()) {
+    var cfg = new AWSPSMSTORAGE!S3NotificationConfiguration;
+    cfg.id = generatedId("s3_notification", origin, "lambda");
+    cfg.name = bucket.name + " notifications";
+    cfg.eventBridgeEnabled = false;
+    bucket.notificationConfiguration = cfg;
+  }
+  var rule = new AWSPSMSTORAGE!S3NotificationRule;
+  rule.id = generatedId("s3_notification_rule", origin, fn.logicalId);
+  rule.name = bucket.name + " to " + fn.name;
+  rule.eventTypes.add("s3:ObjectCreated:*");
+  rule.destination = fn;
+  bucket.notificationConfiguration.rules.add(rule);
+  createLambdaPermissionFor("S3Invoke", origin, fn, "s3.amazonaws.com", cfnArnExpression(bucket));
+}
+
+operation createEventInvokeRole(origin, targetResource, action : String) {
+  var role = new AWSPSMSECURITY!IamRole;
+  copyAwsResource(origin, role, "EventInvokeRole", "AWS::IAM::Role");
+  var targetSeed = "unresolved";
+  if (targetResource.isDefined()) {
+    targetSeed = firstText(targetResource.logicalId, firstText(targetResource.name, targetResource.id));
+  }
+  var roleSeed = "event_invoke_" + targetSeed + "_" + action;
+  role.id = generatedId("iam_role", origin, roleSeed);
+  role.roleName = physicalName(origin, "event-invoke-" + targetSeed, defaultStage());
+  role.path = "/";
+  var servicePrincipal = "events.amazonaws.com";
+  if (origin.isDefined() and origin.eClass().getName() = "EventBridgeSchedule") {
+    servicePrincipal = "scheduler.amazonaws.com";
+  }
+  role.assumeRolePolicy = serviceAssumeRolePolicy(servicePrincipal);
+  var pol = new AWSPSMSECURITY!IamInlinePolicy;
+  pol.id = generatedId("inline_policy", origin, roleSeed);
+  pol.name = "Event invoke";
+  pol.policyName = pascalCase("EventInvoke " + targetSeed);
+  pol.document = policyDocument();
+  var st = allowStatement("InvokeTarget");
+  st.actions.add(action);
+  if (targetResource.isDefined()) {
+    st.resources.add(cfnArnExpression(targetResource));
+  }
+  else {
+    st.resources.add("*");
+    st.wildcardResource = true;
+    st.wildcardJustification = "Target ARN is unresolved; replace with a concrete target ARN before production.";
+  }
+  pol.document.statements.add(st);
+  role.inlinePolicies.add(pol);
+  return role;
+}
+
+operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
+  var res = awsEquivalent(storage);
+  if (res.isUndefined()) {
+    return;
+  }
+  var st = allowStatement("Access" + res.logicalId);
+  if (res.eClass().getName() = "DynamoDbTable") {
+    if (read) {
+      st.actions.add("dynamodb:GetItem"); st.actions.add("dynamodb:BatchGetItem"); st.actions.add("dynamodb:Query"); st.actions.add("dynamodb:Scan");
+    }
+    if (write) {
+      st.actions.add("dynamodb:PutItem"); st.actions.add("dynamodb:UpdateItem"); st.actions.add("dynamodb:DeleteItem"); st.actions.add("dynamodb:BatchWriteItem");
+    }
+    st.resources.add(cfnArnExpression(res));
+    st.resources.add(cfnArnSubExpression(res, "/index/*"));
+  }
+  else {
+    if (res.eClass().getName() = "S3Bucket") {
+      if (read) {
+        st.actions.add("s3:GetObject"); st.actions.add("s3:ListBucket");
+      }
+      if (write) {
+        st.actions.add("s3:PutObject"); st.actions.add("s3:DeleteObject");
+      }
+      st.resources.add(cfnArnExpression(res));
+      st.resources.add(cfnArnSubExpression(res, "/*"));
+    }
+  }
+  if (st.actions.notEmpty()) {
+    doc.statements.add(st);
+  }
+}
+
+operation unresolvedAccessStatement(source) {
+  var st = allowStatement("ReviewGeneratedAccess" + pascalCase(firstText(source.name, source.id)));
+  st.effect = AWSPSMENUMS!IamEffect#DENY;
+  st.actions.add("*");
+  st.resources.add("*");
+  st.wildcardAction = true;
+  st.wildcardResource = true;
+  st.wildcardJustification = "The PIM dependency maps to an AWS-native placeholder or unresolved target; least-privilege actions/resources require review.";
+  manualDecision("IAM_WILDCARD_REVIEW",
+    "Review AWS access policy for " + source.name + " because at least one dependency maps to an unresolved AWS target.",
+    KERNEL!Severity#WARNING, isProductionRoot(), Sequence{source},
+    "Replace the placeholder statement with service-specific least-privilege permissions after selecting the AWS target service.");
+  return st;
+}
+
+operation addPublishStatement(doc, eventType) {
+  for (topic in indexedValues(cachedTopicsByEventTypeId, cacheKeyFor(eventType))) {
+    var sns = awsEquivalent(topic);
+    if (sns.isDefined()) {
+      var st = allowStatement("Publish" + sns.logicalId);
+      st.actions.add("sns:Publish");
+      st.resources.add(cfnArnExpression(sns));
+      doc.statements.add(st);
+    }
+  }
+  for (bus in indexedValues(cachedEventBusesByEventTypeId, cacheKeyFor(eventType))) {
+    var eb = awsEquivalent(bus);
+    if (eb.isDefined()) {
+      var st2 = allowStatement("PutEvents" + eb.logicalId);
+      st2.actions.add("events:PutEvents");
+      st2.resources.add(cfnArnExpression(eb));
+      doc.statements.add(st2);
+    }
+  }
+}
+
+operation addSubscribeStatement(doc, eventType) {
+  for (queue in indexedValues(cachedQueuesByEventTypeId, cacheKeyFor(eventType))) {
+    var sqs = awsEquivalent(queue);
+    if (sqs.isDefined()) {
+      var st = allowStatement("Consume" + sqs.logicalId);
+      st.actions.add("sqs:ReceiveMessage"); st.actions.add("sqs:DeleteMessage"); st.actions.add("sqs:GetQueueAttributes");
+      st.resources.add(cfnArnExpression(sqs));
+      doc.statements.add(st);
+    }
+  }
+}
+
+operation addSecretStatement(doc, secret) {
+  var sec = awsEquivalent(secret);
+  if (sec.isUndefined()) {
+    return;
+  }
+  var st = allowStatement("ReadSecret" + sec.logicalId);
+  st.actions.add("secretsmanager:GetSecretValue");
+  st.resources.add(cfnArnExpression(sec));
+  doc.statements.add(st);
+}
+
+operation ifDefinedInt(holder, feature : String, fallback : Integer) {
+  if (holder.isDefined()) {
+    var value = holder.eGet(holder.eClass().getEStructuralFeature(feature));
+    if (value.isDefined() and value > 0) {
+      return value;
+    }
+  }
+  return fallback;
+}
+
+operation retryAttempts(resilience, fallback : Integer) {
+  if (resilience.isDefined() and resilience.retry.isDefined() and resilience.retry.maxAttempts.isDefined() and resilience.retry.maxAttempts > 0) {
+    return resilience.retry.maxAttempts;
+  }
+  return fallback;
 }

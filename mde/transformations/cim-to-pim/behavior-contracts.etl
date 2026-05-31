@@ -358,7 +358,7 @@ rule Query2AccessPattern
   ap.id = idFor("access", q);
   ap.name = q.name + " Access Pattern";
   ap.patternName = q.name;
-  ap.operation = PIMTYPES!DataAccessMode#READ;
+  ap.`operation` = PIMTYPES!DataAccessMode#READ;
   if (q.input.notEmpty()) {
     ap.queryBy = joinText(q.input.collect(i | i.name), ", ");
   }

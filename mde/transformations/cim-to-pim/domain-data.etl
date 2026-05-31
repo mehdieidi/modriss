@@ -196,7 +196,7 @@ rule Aggregate2DataStore
   ap.id = idFor("access_identity", ag);
   ap.name = ag.name + " Identity Access Pattern";
   ap.patternName = "Get " + ag.root.name + " by identity";
-  ap.operation = PIMTYPES!DataAccessMode#READ;
+  ap.`operation` = PIMTYPES!DataAccessMode#READ;
   ap.queryBy = storageFieldNameFor(ag.root.primaryIdentityAttribute);
   if (ag.root.identityAttributes.excluding(ag.root.primaryIdentityAttribute).notEmpty()) {
     ap.sortBy = joinText(ag.root.identityAttributes.excluding(ag.root.primaryIdentityAttribute).collect(i | storageFieldNameFor(i)), ", ");

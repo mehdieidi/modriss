@@ -305,12 +305,13 @@ operation expressionLanguageText(element) : String {
   return "NATURAL_LANGUAGE";
 }
 
-operation KERNEL!Multiplicity hasMultiplicityBounds() : Boolean {
-  return self.isDefined() and self.lowerBound.isDefined() and
+operation Any hasMultiplicityBounds() : Boolean {
+  return self.isDefined() and self.eClass().getName() = "Multiplicity" and
+    self.lowerBound.isDefined() and
     (self.upperBound.isDefined() or self.unbounded = true);
 }
 
-operation KERNEL!Multiplicity isMany() : Boolean {
-  return self.isDefined() and
+operation Any isMany() : Boolean {
+  return self.isDefined() and self.eClass().getName() = "Multiplicity" and
     (self.unbounded = true or (self.upperBound.isDefined() and self.upperBound > 1));
 }

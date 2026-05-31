@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -66,7 +67,7 @@ final class PimToAwsPsmEtlRegressionTest {
         assertFalse(values(reference(root, "traceModel"), "links").isEmpty(),
                 "Expected generated trace links.");
 
-        List<EObject> resources = values(root, "allResources");
+        List<EObject> resources = containedAwsResources(root);
         assertFalse(resources.isEmpty(), "Expected generated AWS resources.");
         assertAny(resources, "AwsLambdaFunction", "Expected Lambda functions for PIM functions.");
         assertAnyOf(resources, List.of("HttpApi", "RestApi"),
@@ -166,5 +167,18 @@ final class PimToAwsPsmEtlRegressionTest {
         assertTrue(
                 objects.stream().anyMatch(object -> classNames.contains(object.eClass().getName())),
                 message);
+    }
+
+    private List<EObject> containedAwsResources(EObject root) {
+        List<EObject> resources = new java.util.ArrayList<>();
+        TreeIterator<EObject> contents = root.eAllContents();
+        while (contents.hasNext()) {
+            EObject object = contents.next();
+            if (object.eClass().getEAllSuperTypes().stream()
+                    .anyMatch(type -> "AwsResource".equals(type.getName()))) {
+                resources.add(object);
+            }
+        }
+        return resources;
     }
 }

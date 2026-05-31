@@ -57,12 +57,28 @@ operation addTrace(source, target, ruleId : String, linkType, confidence : Strin
   link.name = ruleId + " " + source.name + " -> " + target.name;
   link.linkType = linkType;
   link.transformationRule = ruleId;
-  link.confidence = confidence;
+  link.confidence = mapTraceConfidence(confidence);
   link.target = target;
   link.sourceElementId = source.id;
   link.targetElementId = target.id;
   link.generatedByTransformation = true;
   trace.links.add(link);
+}
+
+operation mapTraceConfidence(confidence : String) {
+  if (confidence = "VERIFIED") {
+    return KERNEL!TraceConfidence#VERIFIED;
+  }
+  if (confidence = "MANUAL") {
+    return KERNEL!TraceConfidence#MANUAL;
+  }
+  if (confidence = "HIGH") {
+    return KERNEL!TraceConfidence#HIGH;
+  }
+  if (confidence = "LOW") {
+    return KERNEL!TraceConfidence#LOW;
+  }
+  return KERNEL!TraceConfidence#MEDIUM;
 }
 
 operation traceGenerated(source, target, ruleId : String, confidence : String) {

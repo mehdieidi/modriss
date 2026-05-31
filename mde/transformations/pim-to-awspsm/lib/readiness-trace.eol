@@ -50,10 +50,18 @@ operation createTrace(source, target, transformName : String, confidence : Strin
   link.sourceElementId = source.id;
   link.targetElementId = target.id;
   link.transformationRule = transformName;
-  link.confidence = confidence;
+  link.confidence = mapTraceConfidence(confidence);
   link.generatedByTransformation = true;
   link.manuallyMaintained = false;
   tm.links.add(link);
+}
+
+operation mapTraceConfidence(confidence : String) {
+  if (confidence = "VERIFIED") return KERNEL!TraceConfidence#VERIFIED;
+  if (confidence = "MANUAL") return KERNEL!TraceConfidence#MANUAL;
+  if (confidence = "HIGH") return KERNEL!TraceConfidence#HIGH;
+  if (confidence = "LOW") return KERNEL!TraceConfidence#LOW;
+  return KERNEL!TraceConfidence#MEDIUM;
 }
 
 operation manualDecision(decisionId : String, question : String, severity, blocking : Boolean, affected, recommendation : String) {

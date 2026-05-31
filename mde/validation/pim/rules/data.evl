@@ -129,14 +129,14 @@ context PIM!DataAccess {
 
   constraint DataAccessConsistentWithFunctionRefs {
     check :
-      (self.mode = PIMTYPES!DataAccessMode#READ and self.function.reads.includes(self.store)) or
-      ((self.mode = PIMTYPES!DataAccessMode#WRITE or self.mode = PIMTYPES!DataAccessMode#APPEND or self.mode = PIMTYPES!DataAccessMode#DELETE) and self.function.writes.includes(self.store)) or
-      (self.mode = PIMTYPES!DataAccessMode#READ_WRITE and self.function.reads.includes(self.store) and self.function.writes.includes(self.store))
+      (self.mode = PIM!DataAccessMode#READ and self.`function`.reads.includes(self.store)) or
+      ((self.mode = PIM!DataAccessMode#WRITE or self.mode = PIM!DataAccessMode#APPEND or self.mode = PIM!DataAccessMode#DELETE) and self.`function`.writes.includes(self.store)) or
+      (self.mode = PIM!DataAccessMode#READ_WRITE and self.`function`.reads.includes(self.store) and self.`function`.writes.includes(self.store))
     message : "[PIM-DATA-015A] DataAccess '" + self.displayName() + "' is not reflected in Function.reads/writes. Fix: synchronize DataAccess.mode with the function shortcut references."
   }
 
   critique GeneratesOrReferencesPermission {
-    check : self.purpose.hasText() and self.function.isDefined() and self.store.isDefined()
+    check : self.purpose.hasText() and self.`function`.isDefined() and self.store.isDefined()
     message : "[PIM-DATA-015B] DataAccess '" + self.displayName() + "' lacks enough function/store/purpose information to generate or review permissions. Suggested fix: complete the access intent before PSM IAM generation."
   }
 

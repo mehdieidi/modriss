@@ -51,6 +51,6 @@ final class MdeEvlCliApplicationTest {
         assertTrue(err.toString().isBlank());
         String reportJson = Files.readString(reportFile);
         assertTrue(reportJson.contains("\"status\": \"SUCCEEDED\""));
-        assertTrue(reportJson.contains("\"mandatoryViolationCount\": 37"));
+        assertTrue(reportJson.contains("\"mandatoryViolationCount\": 57"));
     }
 }

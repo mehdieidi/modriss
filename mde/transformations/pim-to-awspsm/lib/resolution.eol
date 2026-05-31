@@ -8,7 +8,7 @@ operation defaultStack() {
 operation placeUncontainedAwsResources() {
   flagUnassignedDeployables();
   var st = defaultStack();
-  for (r in AWSPSMCORE!AwsResource.all) {
+  for (r in cachedAwsGeneratedResources) {
     if (r.stack.isUndefined()) {
       var targetStack = stackForGeneratedResource(r);
       if (targetStack.isUndefined()) {
@@ -74,10 +74,10 @@ operation generateIamStatements() {
       for (s in f.writes) {
         addResourceStatement(pol.document, s, false, true);
       }
-      for (daRead in DATA!DataAccess.all.select(da | da.function = f and (da.mode = PIMTYPES!DataAccessMode#READ or da.mode = PIMTYPES!DataAccessMode#READ_WRITE))) {
+      for (daRead in DATA!DataAccess.all.select(da | da.`function` = f and (da.mode = PIMTYPES!DataAccessMode#READ or da.mode = PIMTYPES!DataAccessMode#READ_WRITE))) {
         addResourceStatement(pol.document, daRead.store, true, false);
       }
-      for (daWrite in DATA!DataAccess.all.select(da | da.function = f and (da.mode = PIMTYPES!DataAccessMode#WRITE or da.mode = PIMTYPES!DataAccessMode#READ_WRITE or da.mode = PIMTYPES!DataAccessMode#APPEND or da.mode = PIMTYPES!DataAccessMode#DELETE))) {
+      for (daWrite in DATA!DataAccess.all.select(da | da.`function` = f and (da.mode = PIMTYPES!DataAccessMode#WRITE or da.mode = PIMTYPES!DataAccessMode#READ_WRITE or da.mode = PIMTYPES!DataAccessMode#APPEND or da.mode = PIMTYPES!DataAccessMode#DELETE))) {
         addResourceStatement(pol.document, daWrite.store, false, true);
       }
       for (evt in f.publishes) {
@@ -178,6 +178,14 @@ operation generateReadinessChecks() {
   if (r.isUndefined()) {
     return;
   }
+  check("AWS_PSM_RESOURCES_GENERATED", cachedAwsGeneratedResources.notEmpty(),
+    "AWS PSM generation produced deployable resources.",
+    KERNEL!Severity#INFO, Sequence{awsRoot()},
+    "Review the generated stacks and resources before deployment.");
+  check("AWS_PSM_MANUAL_DECISIONS_RECORDED", r.manualDecisions.notEmpty(),
+    "AWS PSM generation recorded deployment/design decisions for review.",
+    KERNEL!Severity#INFO, Sequence{awsRoot()},
+    "Resolve blocking manual decisions before production deployment.");
   r.transformationReady = r.findings.none(f | f.blocking and f.findingType = KERNEL!FindingType#VALIDATION_ERROR);
   r.deploymentReady = r.manualDecisions.none(d | d.blocking);
   r.productionReady = isProductionRoot() and r.findings.none(f | f.severity = KERNEL!Severity#ERROR or f.severity = KERNEL!Severity#CRITICAL or f.severity = KERNEL!Severity#BLOCKER);
@@ -195,9 +203,9 @@ operation generateReadinessChecks() {
 }
 
 operation validatePsmConstraints() {
-  -- PSM EVL is the canonical source for structural and semantic PSM validation.
-  -- Transformation-time checks stay in mapping helpers only when a generation
-  -- decision is needed to continue producing a reviewable PSM model.
+  // PSM EVL is the canonical source for structural and semantic PSM validation.
+  // Transformation-time checks stay in mapping helpers only when a generation
+  // decision is needed to continue producing a reviewable PSM model.
 }
 
 operation flagUnassignedDeployables() {

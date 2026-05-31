@@ -12,6 +12,8 @@ operation initialisePimToAwsPsmCaches() {
   cachedPimDeploymentAssignedIds = Set{};
   cachedPimDeploymentUnitByElementId = new Map;
   cachedAwsEquivalentBySourceId = new Map;
+  cachedAwsGeneratedResources = Sequence{};
+  cachedAwsResolvingRelationships = true;
   cachedAwsAuthorizerByApiId = new Map;
   cachedLambdaPermissionByKey = new Map;
   cachedSqsLambdaMappingByKey = new Map;
@@ -165,11 +167,14 @@ operation awsEquivalent(source) {
   if (cachedAwsEquivalentBySourceId.containsKey(key)) {
     return cachedAwsEquivalentBySourceId.get(key);
   }
-  var target = source.equivalent();
-  if (target.isDefined()) {
-    cachedAwsEquivalentBySourceId.put(key, target);
+  if (not cachedAwsResolvingRelationships) {
+    var target = source.equivalent();
+    if (target.isDefined()) {
+      cachedAwsEquivalentBySourceId.put(key, target);
+    }
+    return target;
   }
-  return target;
+  return null;
 }
 
 operation asText(value) {
@@ -324,6 +329,9 @@ operation copyTraceable(source, target) {
   target.generatedFrom = source.id;
   target.generatedByTransformation = true;
   target.manuallyMaintained = false;
+  if (hasText(source.id) and not cachedAwsEquivalentBySourceId.containsKey(source.id)) {
+    cachedAwsEquivalentBySourceId.put(source.id, target);
+  }
 }
 
 operation existingTargetFor(source, className : String) {
@@ -335,6 +343,9 @@ operation existingTargetFor(source, className : String) {
 
 operation copyAwsResource(source, target, kind : String, awsType : String) {
   copyTraceable(source, target);
+  if (not cachedAwsGeneratedResources.includes(target)) {
+    cachedAwsGeneratedResources.add(target);
+  }
   target.logicalId = logicalId(source, kind);
   target.physicalName = physicalName(source, kind.toLowerCase(), defaultStage());
   target.awsResourceType = awsType;
@@ -463,21 +474,34 @@ operation jsonStringArray(items) {
 }
 
 operation schemaToJsonSchema(schema) {
-  return schemaToObjectSchema(schema, true);
+  return schemaToObjectSchemaVisited(schema, true, Set{});
 }
 
 operation schemaToOpenApiSchema(schema) {
-  return schemaToObjectSchema(schema, false);
+  return schemaToObjectSchemaVisited(schema, false, Set{});
 }
 
 operation schemaToObjectSchema(schema, includeDialect : Boolean) {
+  return schemaToObjectSchemaVisited(schema, includeDialect, Set{});
+}
+
+operation schemaToObjectSchemaVisited(schema, includeDialect : Boolean, visited) {
+  var schemaKey = cacheKeyFor(schema);
+  if (hasText(schemaKey) and visited.includes(schemaKey)) {
+    return "{ \"$ref\": \"" + schemaReferenceFor(schema) + "\" }";
+  }
+  var nestedVisited = Set{};
+  nestedVisited.addAll(visited);
+  if (hasText(schemaKey)) {
+    nestedVisited.add(schemaKey);
+  }
   var required = "";
   var properties = "";
   for (field in schema.fields) {
     if (hasText(properties)) {
       properties = properties + ", ";
     }
-    properties = properties + "\"" + escapeJson(field.name) + "\": " + schemaFieldToJson(field);
+    properties = properties + "\"" + escapeJson(field.name) + "\": " + schemaFieldToJsonVisited(field, nestedVisited);
     if (isTrue(field.required)) {
       if (hasText(required)) {
         required = required + ", ";
@@ -495,22 +519,30 @@ operation schemaToObjectSchema(schema, includeDialect : Boolean) {
 }
 
 operation schemaFieldToJson(field) {
+  return schemaFieldToJsonVisited(field, Set{});
+}
+
+operation schemaFieldToJsonVisited(field, visited) {
   if (isTrue(field.array) or field.fieldType = PIMTYPES!FieldType#ARRAY) {
     var itemJson = "{ \"type\": \"string\" }";
     if (field.arrayItem.isDefined()) {
-      itemJson = schemaFieldToJson(field.arrayItem);
+      itemJson = schemaFieldToJsonVisited(field.arrayItem, visited);
     }
     else {
       if (field.objectSchema.isDefined()) {
-        itemJson = schemaToObjectSchema(field.objectSchema, false);
+        itemJson = schemaToObjectSchemaVisited(field.objectSchema, false, visited);
       }
     }
     return "{ \"type\": \"array\", \"items\": " + itemJson + schemaFieldConstraintJson(field) + " }";
   }
   if (field.objectSchema.isDefined()) {
-    return schemaToObjectSchema(field.objectSchema, false);
+    return schemaToObjectSchemaVisited(field.objectSchema, false, visited);
   }
   return "{ \"type\": \"" + jsonSchemaTypeForField(field) + "\"" + schemaFieldConstraintJson(field) + " }";
+}
+
+operation schemaReferenceFor(schema) {
+  return "#/components/schemas/" + escapeJson(pascalCase(firstText(schema.name, schema.id)));
 }
 
 operation schemaFieldConstraintJson(field) {

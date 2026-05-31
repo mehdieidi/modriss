@@ -107,17 +107,16 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
   }
 
   if (f.fieldType = PIMTYPES!FieldType#ENUM and item.allowedValues.notEmpty()) {
-    for (rawValue in item.allowedValues) {
-      if (hasText(rawValue)) {
-        var literal = new CONTRACTS!SchemaEnumLiteral;
-        literal.id = newId("enum_literal", ownerSeed + "_" + item.id + "_" + rawValue.trim());
-        literal.name = rawValue.trim();
-        literal.literal = rawValue.trim();
-        literal.displayName = rawValue.trim();
-        literal.generatedByTransformation = true;
-        literal.manuallyMaintained = false;
-        f.enumValues.add(literal);
-      }
+    var allowedValueText = joinText(item.allowedValues, " ");
+    for (rawValue in splitAllowedValues(allowedValueText)) {
+      var literal = new CONTRACTS!SchemaEnumLiteral;
+      literal.id = newId("enum_literal", ownerSeed + "_" + item.id + "_" + rawValue.trim());
+      literal.name = rawValue.trim();
+      literal.literal = rawValue.trim();
+      literal.displayName = rawValue.trim();
+      literal.generatedByTransformation = true;
+      literal.manuallyMaintained = false;
+      f.enumValues.add(literal);
     }
     if (f.enumValues.isEmpty()) {
       manualDecision("TR-040", "Parse allowed values for enumeration information item '" + item.name + "'.", KERNEL!Severity#WARNING, false, Sequence{item, f});

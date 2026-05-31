@@ -2,6 +2,16 @@ operation Any hasText() : Boolean {
   return self.isDefined() and self.asString().trim().size() > 0;
 }
 
+operation firstText(primary, fallback) : String {
+  if (primary.hasText()) {
+    return primary.asString();
+  }
+  if (fallback.hasText()) {
+    return fallback.asString();
+  }
+  return "";
+}
+
 operation KERNEL!ModelElement labelText() : String {
   if (self.name.hasText()) {
     return self.name;

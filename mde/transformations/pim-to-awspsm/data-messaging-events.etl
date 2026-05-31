@@ -141,21 +141,11 @@ rule Queue2SqsQueue
     qp.queues.add(sqs);
     qp.policyDocument = createDenyInsecureTransportPolicy(sqs);
   }
-  if (q.deadLetterChannel.isDefined()) {
-    var rd = new AWSPSMMESSAGING!SqsRedrivePolicy;
-    rd.id = generatedId("sqs_redrive", q, "dlq");
-    rd.name = q.name + " redrive";
-    rd.maxReceiveCount = positiveOr(q.maxReceiveAttempts, 5);
-    rd.deadLetterQueue = awsEquivalent(q.deadLetterChannel);
-    sqs.redrivePolicy = rd;
-  }
-  else {
-    if (isTrue(q.deadLetterRequired)) {
-      manualDecision("SQS_DLQ_REQUIRED",
-        "Choose a dead-letter queue for " + q.name + ".",
-        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{q, sqs},
-        "Set Queue.deadLetterChannel or relax deadLetterRequired.");
-    }
+  if (q.deadLetterChannel.isUndefined() and isTrue(q.deadLetterRequired)) {
+    manualDecision("SQS_DLQ_REQUIRED",
+      "Choose a dead-letter queue for " + q.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{q, sqs},
+      "Set Queue.deadLetterChannel or relax deadLetterRequired.");
   }
   if (isTrue(q.fifoRequired) and not hasText(q.partitionKeyExpression) and q.orderingRequirement <> PIMTYPES!OrderingRequirement#NONE) {
     manualDecision("FIFO_ORDERING_KEY_REQUIRED",
@@ -164,6 +154,27 @@ rule Queue2SqsQueue
       "Set Queue.partitionKeyExpression or an OrderingPolicy.orderingKey.");
   }
   createTrace(q, sqs, "Queue2SqsQueue", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+operation resolveSqsRedrivePolicies() {
+  for (q in INTEGRATION!Queue.all.select(queue | queue.deadLetterChannel.isDefined())) {
+    var sqs = awsEquivalent(q);
+    var dlq = awsEquivalent(q.deadLetterChannel);
+    if (sqs.isUndefined() or dlq.isUndefined()) {
+      manualDecision("SQS_DLQ_REQUIRED",
+        "Resolve dead-letter queue for " + q.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{q},
+        "Ensure Queue.deadLetterChannel points to a Queue that is transformed to an SQS queue.");
+    }
+    else if (sqs.redrivePolicy.isUndefined()) {
+      var rd = new AWSPSMMESSAGING!SqsRedrivePolicy;
+      rd.id = generatedId("sqs_redrive", q, "dlq");
+      rd.name = q.name + " redrive";
+      rd.maxReceiveCount = positiveOr(q.maxReceiveAttempts, 5);
+      rd.deadLetterQueue = dlq;
+      sqs.redrivePolicy = rd;
+    }
+  }
 }
 
 rule Topic2SnsTopic
@@ -369,46 +380,52 @@ operation dynamoType(ft) {
 
 operation addDynamoIndexes(ds, t) {
   for (idx in ds.indexCandidates) {
-    var g = new AWSPSMSTORAGE!DynamoDbGlobalSecondaryIndex;
-    g.id = generatedId("dynamodb_gsi", ds, idx.name);
-    g.name = firstText(idx.name, idx.indexPurpose);
-    g.indexName = pascalCase(firstText(idx.name, idx.indexPurpose)) + "Gsi";
-    var partitionField = fieldByStorageOrName(ds, idx.partitionKeyField);
-    if (partitionField.isDefined()) {
-      addDynamoAttribute(t, partitionField);
-      g.keySchema.add(dynamoKey(firstText(partitionField.storageName, partitionField.name), AWSPSMENUMS!DynamoDbKeyType#HASH));
-    }
-    else {
+    var keyFields = indexKeyFields(idx);
+    var partitionField = fieldByStorageOrName(ds, keyFields.first());
+    if (partitionField.isUndefined()) {
       manualDecision("DYNAMO_INDEX_KEY_FIELD_REQUIRED",
         "Resolve partition key field '" + idx.partitionKeyField + "' for DynamoDB index " + firstText(idx.name, idx.id) + ".",
         KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
         "Set IndexCandidate.partitionKeyField to a DataField.name or DataField.storageName.");
     }
-    if (hasText(idx.sortKeyField)) {
-      var sortField = fieldByStorageOrName(ds, idx.sortKeyField);
-      if (sortField.isDefined()) {
-        addDynamoAttribute(t, sortField);
-        g.keySchema.add(dynamoKey(firstText(sortField.storageName, sortField.name), AWSPSMENUMS!DynamoDbKeyType#RANGE));
+    else {
+      var g = new AWSPSMSTORAGE!DynamoDbGlobalSecondaryIndex;
+      g.id = generatedId("dynamodb_gsi", ds, idx.name);
+      g.name = firstText(idx.name, idx.indexPurpose);
+      g.indexName = pascalCase(firstText(idx.name, idx.indexPurpose)) + "Gsi";
+      addDynamoAttribute(t, partitionField);
+      g.keySchema.add(dynamoKey(firstText(partitionField.storageName, partitionField.name), AWSPSMENUMS!DynamoDbKeyType#HASH));
+
+      var sortKeyName = idx.sortKeyField;
+      if (not hasText(sortKeyName) and keyFields.size() > 1) {
+        sortKeyName = keyFields.at(1);
+      }
+      if (hasText(sortKeyName)) {
+        var sortField = fieldByStorageOrName(ds, sortKeyName);
+        if (sortField.isDefined()) {
+          addDynamoAttribute(t, sortField);
+          g.keySchema.add(dynamoKey(firstText(sortField.storageName, sortField.name), AWSPSMENUMS!DynamoDbKeyType#RANGE));
+        }
+        else {
+          manualDecision("DYNAMO_INDEX_KEY_FIELD_REQUIRED",
+            "Resolve sort key field '" + sortKeyName + "' for DynamoDB index " + firstText(idx.name, idx.id) + ".",
+            KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
+            "Set IndexCandidate.sortKeyField to a DataField.name or DataField.storageName.");
+        }
+      }
+      var p = new AWSPSMSTORAGE!DynamoDbProjection;
+      p.id = generatedId("dynamodb_projection", ds, idx.name);
+      p.name = g.indexName + " projection";
+      if (idx.projectionFields.isEmpty()) {
+        p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#ALL;
       }
       else {
-        manualDecision("DYNAMO_INDEX_KEY_FIELD_REQUIRED",
-          "Resolve sort key field '" + idx.sortKeyField + "' for DynamoDB index " + firstText(idx.name, idx.id) + ".",
-          KERNEL!Severity#ERROR, true, Sequence{ds, idx, t},
-          "Set IndexCandidate.sortKeyField to a DataField.name or DataField.storageName.");
+        p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#INCLUDE;
       }
+      p.nonKeyAttributes.addAll(idx.projectionFields);
+      g.projection = p;
+      t.globalSecondaryIndexes.add(g);
     }
-    var p = new AWSPSMSTORAGE!DynamoDbProjection;
-    p.id = generatedId("dynamodb_projection", ds, idx.name);
-    p.name = g.indexName + " projection";
-    if (idx.projectionFields.isEmpty()) {
-      p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#ALL;
-    }
-    else {
-      p.projectionType = AWSPSMENUMS!DynamoDbProjectionType#INCLUDE;
-    }
-    p.nonKeyAttributes.addAll(idx.projectionFields);
-    g.projection = p;
-    t.globalSecondaryIndexes.add(g);
   }
 }
 
@@ -416,13 +433,36 @@ operation fieldByStorageOrName(ds, fieldName : String) {
   if (not hasText(fieldName)) {
     return null;
   }
+  var normalizedFieldName = normalizedLookupKey(fieldName);
   for (dm in ds.ownedDataModels) {
-    var f = dm.storageFields.selectOne(x | x.storageName = fieldName or x.name = fieldName);
+    var f = dm.storageFields.selectOne(x |
+      normalizedLookupKey(x.storageName) = normalizedFieldName or
+      normalizedLookupKey(x.name) = normalizedFieldName or
+      normalizedLookupKey(x.generatedFrom).contains(normalizedFieldName) or
+      normalizedFieldName.contains(normalizedLookupKey(x.name)));
     if (f.isDefined()) {
       return f;
     }
   }
   return null;
+}
+
+operation indexKeyFields(idx) {
+  var fields = Sequence{};
+  for (candidate in asText(idx.partitionKeyField).split(",")) {
+    var name = candidate.trim();
+    if (hasText(name)) {
+      fields.add(name);
+    }
+  }
+  if (fields.isEmpty()) {
+    fields.add(idx.partitionKeyField);
+  }
+  return fields;
+}
+
+operation normalizedLookupKey(value) {
+  return asText(value).toLowerCase().replaceAll("[^a-z0-9]+", "");
 }
 
 operation createS3Encryption(os) {

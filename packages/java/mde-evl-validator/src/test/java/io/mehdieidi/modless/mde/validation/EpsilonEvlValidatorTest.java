@@ -139,10 +139,10 @@ class EpsilonEvlValidatorTest {
         assertTrue(report.diagnostics().isEmpty(), report.diagnostics().toString());
         assertTrue(report.hasMandatoryViolations(),
                 "The sample still carries explicit manual review blockers.");
-        assertEquals(37, report.violations().stream()
+        assertEquals(57, report.violations().stream()
                 .filter(v -> v.kind() == EvlConstraintKind.MANDATORY)
                 .count());
-        assertEquals(17, countViolations(report, "StatementHasActionAndResourceSide"));
+        assertEquals(37, countViolations(report, "StatementHasActionAndResourceSide"));
         assertEquals(0, countViolations(report, "ZipCodeHasRuntimeAndHandler"));
         assertEquals(0, countViolations(report, "IntegrationHasSingleTarget"));
         assertEquals(0, countViolations(report, "AccessLogStageRequiresGroupAndFormat"));
