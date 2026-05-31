@@ -29,6 +29,7 @@ import {
   exportActiveModel,
   generateForCurrentContext,
   importActiveModel,
+  saveCurrentModel,
   switchTab,
   undoLastEdit,
   validateCurrentModel
@@ -70,6 +71,7 @@ import {
   refreshGithubConnection
 } from './github.js';
 import {loadModelingConfig} from './modeling-config-data.js';
+import {updateModelSaveUi} from './model-save-ui.js';
 import {initViewWorkbench, renderViewWorkbench} from './view-explorer.js';
 import {initCimWorkbenchSurface} from './cim-workbench.js';
 import {initPimWorkbenchSurface} from './pim-workbench.js';
@@ -715,6 +717,13 @@ function bindEvents() {
 
   window.addEventListener("resize", syncResponsiveUi);
   document.addEventListener("click", (event) => {
+    if (getElementTarget(event)?.closest("#saveModelBtn")) {
+      event.preventDefault();
+      void saveCurrentModel({rethrow: true}).catch(() => {
+        // saveCurrentModel updates the visible save status.
+      });
+      return;
+    }
     if (getElementTarget(event)?.closest(".workspace-rail")) {
       return;
     }
@@ -726,22 +735,32 @@ function bindEvents() {
     }
   });
   document.addEventListener("keydown", async (event) => {
-    if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey
-        || event.key.toLowerCase() !== "z") {
+    if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) {
+      return;
+    }
+    const key = event.key.toLowerCase();
+    if (key !== "z" && key !== "s") {
       return;
     }
     const target = getElementTarget(event);
     if (
-        target?.closest('input, textarea, select, [contenteditable="true"]') ||
-        target?.isContentEditable
+        key === "z" && (target?.closest(
+                'input, textarea, select, [contenteditable="true"]')
+            || target?.isContentEditable)
     ) {
       return;
     }
     event.preventDefault();
     try {
-      await undoLastEdit();
+      if (key === "s") {
+        await saveCurrentModel({rethrow: true});
+      } else {
+        await undoLastEdit();
+      }
     } catch (error) {
-      setError(`Undo failed: ${error.message}`);
+      if (key === "z") {
+        setError(`Undo failed: ${error.message}`);
+      }
     }
   });
 
@@ -948,6 +967,7 @@ async function init() {
   renderPalette();
   renderDiagram();
   renderViewWorkbench();
+  updateModelSaveUi();
   applyViewport();
   await initArtifactEditor();
   updateChatAttachmentLabel();

@@ -149,7 +149,7 @@ export function commitWorkbenchModelChange({
   message,
   syncActiveViewFromVisibleGraph,
   saveCurrentTabGraphState,
-  scheduleAutoSave,
+  markModelDirty,
   publishDiagramUpdate,
   setStatus
 }) {
@@ -158,7 +158,7 @@ export function commitWorkbenchModelChange({
   renderWorkbench();
   renderDiagram?.();
   renderPalette?.();
-  scheduleAutoSave({delayMs: 250});
+  markModelDirty?.();
   publishDiagramUpdate({immediate: true});
   if (message) {
     setStatus(message);

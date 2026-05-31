@@ -57,6 +57,40 @@ export function captureDiagramUndoSnapshot(typeKey = state.activeType) {
   };
 }
 
+function positionSignature(positions) {
+  return JSON.stringify(positions.map((position) => [
+    position.id,
+    position.x,
+    position.y
+  ]));
+}
+
+export function captureNodePositionUndoSnapshot(nodeIds = [],
+    typeKey = state.activeType) {
+  if (!isModelingType(typeKey)) {
+    return null;
+  }
+  const ids = [...new Set(nodeIds.map(String).filter(Boolean))];
+  const positions = ids.map((id) => {
+    const node = state.nodesById.get(id) || state.diagram.nodes.find(
+        (candidate) => candidate.id === id);
+    return node ? {id, x: Math.round(node.x), y: Math.round(node.y)} : null;
+  }).filter(Boolean);
+  if (!positions.length) {
+    return null;
+  }
+  return {
+    kind: "node-position",
+    typeKey,
+    modelId: state.modelId,
+    modelRevision: state.modelRevision || 0,
+    modelName: state.tabs[typeKey]?.modelName || defaultModelName(typeKey),
+    activeViewId: state.views?.activeViewId || null,
+    positions,
+    signature: `node-position:${positionSignature(positions)}`
+  };
+}
+
 export function pushDiagramUndoSnapshot(snapshot = captureDiagramUndoSnapshot()) {
   if (!snapshot || !isModelingType(snapshot.typeKey)) {
     return false;
@@ -84,9 +118,56 @@ export function popDiagramUndoSnapshot(typeKey = state.activeType) {
   return historyStack(typeKey).pop() || null;
 }
 
+function applyNodePositionUndoSnapshot(snapshot) {
+  const positions = Array.isArray(snapshot.positions) ? snapshot.positions : [];
+  if (!positions.length) {
+    return false;
+  }
+  positions.forEach((position) => {
+    const id = String(position.id || "");
+    const x = Math.round(Number(position.x));
+    const y = Math.round(Number(position.y));
+    if (!id || !Number.isFinite(x) || !Number.isFinite(y)) {
+      return;
+    }
+    const node = state.nodesById.get(id) || state.diagram.nodes.find(
+        (candidate) => candidate.id === id);
+    if (node) {
+      node.x = x;
+      node.y = y;
+      node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
+      node.meta.x = x;
+      node.meta.y = y;
+    }
+    const element = state.graph?.elementsById?.get(id);
+    if (element) {
+      element.x = x;
+      element.y = y;
+    }
+  });
+  state.views?.byId?.forEach((view) => {
+    const byId = new Map(positions.map((position) => [
+      String(position.id),
+      position
+    ]));
+    (Array.isArray(view.nodes) ? view.nodes : []).forEach((viewNode) => {
+      const position = byId.get(String(viewNode.elementId || ""));
+      if (!position) {
+        return;
+      }
+      viewNode.x = Math.round(Number(position.x));
+      viewNode.y = Math.round(Number(position.y));
+    });
+  });
+  return true;
+}
+
 export function applyDiagramUndoSnapshot(snapshot) {
   if (!snapshot || !isModelingType(snapshot.typeKey)) {
     return false;
+  }
+  if (snapshot.kind === "node-position") {
+    return applyNodePositionUndoSnapshot(snapshot);
   }
   state.modelId = snapshot.modelId;
   state.modelRevision = snapshot.modelRevision || 0;

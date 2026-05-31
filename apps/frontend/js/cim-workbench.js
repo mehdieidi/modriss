@@ -14,7 +14,7 @@ import {
   modelingElementDefinition,
   modelingViewDefinition
 } from './modeling-config-data.js';
-import {scheduleAutoSave} from './autosave.js';
+import {markModelDirty} from './model-save-ui.js';
 import {publishDiagramUpdate} from './collaboration.js';
 import {setStatus} from './status.js';
 import {
@@ -1365,7 +1365,7 @@ function commitModelChange(message) {
     message,
     syncActiveViewFromVisibleGraph,
     saveCurrentTabGraphState,
-    scheduleAutoSave,
+    markModelDirty,
     publishDiagramUpdate,
     setStatus
   });

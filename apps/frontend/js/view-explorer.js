@@ -2,6 +2,7 @@ import {state} from './state.js';
 import {el} from './dom.js';
 import {escapeHtml} from './utils.js';
 import {setStatus} from './status.js';
+import {updateModelSaveUi} from './model-save-ui.js';
 import {
   activeView,
   ensureActiveGraphAndViews,
@@ -438,6 +439,15 @@ export function renderViewWorkbench() {
       </div>
     </div>
     ${boundedContextToolMarkup()}
+    <button class="sidebar-inline-action model-save-btn"
+            id="saveModelBtn"
+            type="button"
+            title="Save current model (Ctrl+S)">
+      <span class="model-save-btn-label" id="saveModelBtnLabel">Save</span>
+      <span class="model-save-btn-progress" aria-hidden="true">
+        <span class="model-save-btn-progress-bar"></span>
+      </span>
+    </button>
     <button class="sidebar-inline-action" id="workbenchAutoLayoutBtn" type="button">Auto Layout</button>
     <button class="sidebar-inline-action" id="modelTreeToggleBtn" type="button">Views</button>
     <div class="workbench-layer-menu">
@@ -449,6 +459,7 @@ export function renderViewWorkbench() {
             id="modelToolsMinimizeBtn"
             type="button"
             title="Minimize modeling tools">Minimize</button>`;
+  updateModelSaveUi();
   restoreLayerPanelState();
   renderModelTree();
 }

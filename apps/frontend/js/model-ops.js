@@ -54,6 +54,14 @@ import {
   hasDiagramUndoHistory,
   popDiagramUndoSnapshot
 } from './undo.js';
+import {
+  beginModelSave,
+  completeModelSave,
+  failModelSave,
+  markModelDirty,
+  resetModelSaveState,
+  updateModelSaveUi
+} from './model-save-ui.js';
 
 // ── Model list (sidebar select) ───────────────────────────────────────────────
 
@@ -135,6 +143,7 @@ async function applyModelReplacementSnapshot(
     state.tabs[snapshot.typeKey].activeViewId = snapshot.activeViewId;
     state.tabs[snapshot.typeKey].modelName = snapshot.modelName
         || defaultModelName(snapshot.typeKey);
+    state.tabs[snapshot.typeKey].dirty = !persist;
   }
   restoreTabGraphState(snapshot.typeKey);
   materializeActiveView();
@@ -146,6 +155,8 @@ async function applyModelReplacementSnapshot(
   if (persist) {
     await saveCurrentModel({quiet: true, rethrow: true});
     publishDiagramUpdate({immediate: true});
+  } else {
+    resetModelSaveState({dirty: true});
   }
   if (Array.isArray(snapshot.validationIssues)
       && snapshot.validationIssues.length) {
@@ -417,6 +428,12 @@ export async function reloadModels() {
 // ── Save / Load model ─────────────────────────────────────────────────────────
 
 export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
+  if (!isModelingType()) {
+    if (!quiet) {
+      setStatus("Switch to CIM, PIM, or PSM to save a model.");
+    }
+    return;
+  }
   const selectedName = getActiveModelName();
   setActiveModelName(selectedName);
   syncActiveViewFromVisibleGraph();
@@ -429,6 +446,9 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
 
   const doBusy = !quiet;
   try {
+    if (!quiet) {
+      beginModelSave();
+    }
     if (doBusy) {
       setBusy("Saving…");
     }
@@ -475,6 +495,7 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
       saveCurrentTabGraphState(state.activeType);
     }
     await syncProjectActiveModel(state.activeType, state.modelId);
+    completeModelSave();
     if (!quiet) {
       await reloadModels();
     }
@@ -483,7 +504,10 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
       applyValidationIssues(error.issues, {openOnFirst: !quiet});
     }
     if (!quiet) {
+      failModelSave(`Save failed: ${error.message}`);
       setError(`Save failed: ${error.message}`);
+    } else {
+      markModelDirty();
     }
     if (rethrow) {
       throw error;
@@ -517,6 +541,7 @@ export async function loadModelById(typeKey, id,
     state.tabs[typeKey].baseModel = structuredClone(record.modelJson);
     state.tabs[typeKey].diagram = state.diagram;
     state.tabs[typeKey].modelName = record.name || defaultModelName(typeKey);
+    state.tabs[typeKey].dirty = false;
     saveCurrentTabGraphState(typeKey);
   }
   clearDiagramUndoHistory(typeKey);
@@ -526,6 +551,7 @@ export async function loadModelById(typeKey, id,
   renderDiagram();
   renderViewWorkbench();
   centerCurrentDiagram();
+  resetModelSaveState();
   if (showManualGuidance) {
     applyManualGuidanceFromLoadedModel();
   }
@@ -553,6 +579,7 @@ async function loadModelRecord(typeKey, record,
     state.tabs[typeKey].baseModel = state.baseModel;
     state.tabs[typeKey].diagram = state.diagram;
     state.tabs[typeKey].modelName = record.name || defaultModelName(typeKey);
+    state.tabs[typeKey].dirty = false;
     saveCurrentTabGraphState(typeKey);
   }
   rememberModelSummary(typeKey, record);
@@ -563,6 +590,7 @@ async function loadModelRecord(typeKey, record,
   renderDiagram();
   renderViewWorkbench();
   centerCurrentDiagram();
+  resetModelSaveState();
   if (showManualGuidance) {
     applyManualGuidanceFromLoadedModel();
   }
@@ -1018,6 +1046,7 @@ export async function switchTab(type) {
 
   if (isArtifact) {
     el.modelWorkbenchPanel?.classList.add("hidden");
+    updateModelSaveUi();
     setStatus("Artifact Explorer");
     await Promise.all([
       loadCurrentProjectArtifact({collapseTree: true}),
@@ -1043,6 +1072,10 @@ export async function switchTab(type) {
   materializeActiveView();
   clearValidationIssues({keepPanelState: false});
   tabState.modelName = tabState.modelName || defaultModelName(type);
+  state.modelSave.dirty = Boolean(tabState.dirty);
+  state.modelSave.saving = false;
+  state.modelSave.error = "";
+  updateModelSaveUi();
 
   renderPalette();
   renderDiagram();
@@ -1067,6 +1100,8 @@ export async function validateCurrentModel() {
       });
       if (!patched) {
         await saveCurrentModel({quiet: true, rethrow: true});
+      } else {
+        completeModelSave();
       }
       result = await api(
           `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/validate`,
@@ -1258,6 +1293,8 @@ export async function exportActiveModel(format = "json") {
     });
     if (!patched) {
       await saveCurrentModel({quiet: true, rethrow: true});
+    } else {
+      completeModelSave();
     }
   }
   const exportPath = state.modelId
@@ -1362,6 +1399,7 @@ export async function importActiveModel(file, format = "json",
     state.tabs[state.activeType].diagram = structuredClone(state.diagram);
     state.tabs[state.activeType].modelName = String(
         body.name || defaultModelName()).trim();
+    state.tabs[state.activeType].dirty = true;
     saveCurrentTabGraphState(state.activeType);
   }
   setActiveModelName(body.name || defaultModelName());
@@ -1375,6 +1413,8 @@ export async function importActiveModel(file, format = "json",
   if (!hasErrorIssue) {
     await saveCurrentModel({rethrow: true, quiet: true});
     publishDiagramUpdate({immediate: true});
+  } else {
+    resetModelSaveState({dirty: true});
   }
   if (backendIssues.length) {
     const mergedIssues = mergeIssuesWithManualGuidance(backendIssues);

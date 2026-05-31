@@ -28,7 +28,7 @@ import {
 import {setStatus} from './status.js';
 // NOTE: These imports form intentional circular references (ES module live bindings).
 // All functions are only called at runtime (event handlers / async), never at module init.
-import {flushAutoSave, scheduleAutoSave} from './autosave.js';
+import {markModelDirty} from './model-save-ui.js';
 import {
   closeAttributePanel,
   openAttributePanel,
@@ -44,7 +44,11 @@ import {
   publishNodeRename,
   renderRemoteCursors
 } from './collaboration.js';
-import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
+import {
+  captureDiagramUndoSnapshot,
+  captureNodePositionUndoSnapshot,
+  pushDiagramUndoSnapshot
+} from './undo.js';
 import {renderCimWorkbenchSurface} from './cim-workbench.js';
 import {renderPimWorkbenchSurface} from './pim-workbench.js';
 import {renderPsmWorkbenchSurface} from './psm-workbench.js';
@@ -1287,8 +1291,9 @@ function commitUndoSnapshot(snapshot) {
   return pushDiagramUndoSnapshot(snapshot);
 }
 
-function dragUndoSnapshot() {
-  return captureDiagramUndoSnapshot();
+function dragUndoSnapshot(nodeIds = []) {
+  return nodeIds.length ? captureNodePositionUndoSnapshot(nodeIds)
+      : captureDiagramUndoSnapshot();
 }
 
 function getNodeWidth() {
@@ -2517,7 +2522,7 @@ export async function finalizeBoundedContextDraft() {
   state.selectedBoundedContextName = contextName;
   setContextCreateMode(false);
   renderDiagram();
-  scheduleAutoSave();
+  markModelDirty();
   publishDiagramUpdate();
   notifyModelToolsChanged();
   openBoundedContextPanel(contextName);
@@ -3179,7 +3184,7 @@ export function removeElementFromBoundedContext(elementId, contextName) {
     syncBoundedContextMembershipRefs(normalized);
   }
   syncDiagramRenderer({workbench: true});
-  scheduleAutoSave();
+  markModelDirty();
   publishDiagramUpdate();
   setStatus(`Removed ${node.label || node.id} from "${normalized}"`);
   return true;
@@ -4047,7 +4052,7 @@ function createModelingWizard(kind) {
   } else {
     renderDiagram();
   }
-  scheduleAutoSave({delayMs: 200});
+  markModelDirty();
   publishDiagramUpdate({immediate: true});
   setStatus(`Created ${spec.label}`);
 }
@@ -4798,7 +4803,7 @@ function ensureEdgeHoverHandleElement() {
     openConnectionPanel(edge.id);
     commitUndoSnapshot(undoSnapshot);
     renderEdges();
-    scheduleAutoSave({delayMs: 220});
+    markModelDirty();
     publishDiagramUpdate({immediate: true});
     setStatus("Edge pin added");
   });
@@ -4864,7 +4869,7 @@ function removeEdgePin(edgeId, pinIndex) {
   openConnectionPanel(edgeId);
   commitUndoSnapshot(undoSnapshot);
   renderEdges();
-  scheduleAutoSave({delayMs: 220});
+  markModelDirty();
   publishDiagramUpdate({immediate: true});
   setStatus(nextPins.length ? "Edge pin removed" : "Edge returned to straight");
 }
@@ -4949,7 +4954,7 @@ function finalizeEdgePinDrag() {
   persistEdgePinPoints(edge);
   setHoveredEdge(edge.id);
   renderEdges();
-  scheduleAutoSave({delayMs: 220});
+  markModelDirty();
   publishDiagramUpdate({immediate: true});
   setStatus("Edge pin moved");
   return true;
@@ -5028,7 +5033,7 @@ function updateEdgeKind(edgeId, nextKind) {
   } else {
     renderEdges();
   }
-  scheduleAutoSave({delayMs: 220});
+  markModelDirty();
   publishDiagramUpdate();
   setStatus(`Connection updated: ${kind}`);
 }
@@ -5346,7 +5351,7 @@ function handleG6NodeDoubleClick(nodeId, event = {}) {
       if (resolved !== startLabel) {
         commitUndoSnapshot(undoSnapshot);
         publishNodeRename(node.id, resolved);
-        scheduleAutoSave({delayMs: 250});
+        markModelDirty();
         publishDiagramUpdate({immediate: true});
       }
     }
@@ -5379,7 +5384,7 @@ function startG6NodeDrag(nodeId) {
     nodeX: node.x,
     nodeY: node.y,
     moved: false,
-    undoSnapshot: dragUndoSnapshot()
+    undoSnapshot: dragUndoSnapshot([nodeId])
   };
 }
 
@@ -5395,7 +5400,6 @@ function moveG6NodeDrag(nodeId, position) {
   node.meta.y = node.y;
   state.dragNode = state.dragNode || {id: nodeId};
   state.dragNode.moved = true;
-  updateG6ContextBoxes();
 }
 
 function endG6NodeDrag(nodeId, position, {moved = false} = {}) {
@@ -5415,8 +5419,7 @@ function endG6NodeDrag(nodeId, position, {moved = false} = {}) {
   if (moved || state.dragNode?.moved) {
     commitUndoSnapshot(state.dragNode?.undoSnapshot);
     publishNodeMove(node.id, node.x, node.y, {immediate: true});
-    publishDiagramUpdate({immediate: true});
-    scheduleAutoSave({delayMs: 400});
+    markModelDirty();
   }
   refreshG6Edges([...(edgeIdsByNodeId.get(node.id) || [])]);
   updateG6ContextBoxes();
@@ -5460,7 +5463,7 @@ export function onNodeMouseDown(event) {
     nodeX: node.x,
     nodeY: node.y,
     moved: false,
-    undoSnapshot: dragUndoSnapshot()
+    undoSnapshot: dragUndoSnapshot([nodeId])
   };
   event.stopPropagation();
 }
@@ -5631,7 +5634,7 @@ export function onNodeTouchStart(event) {
     nodeX: node.x,
     nodeY: node.y,
     moved: false,
-    undoSnapshot: dragUndoSnapshot()
+    undoSnapshot: dragUndoSnapshot([nodeId])
   };
   event.preventDefault();
   event.stopPropagation();
@@ -5690,7 +5693,7 @@ export function openBoundedContextOverview() {
   clearContextDraftSelection();
   renderDiagram();
   if (createdContextNodes) {
-    scheduleAutoSave({delayMs: 250});
+    markModelDirty();
     publishDiagramUpdate();
   }
   notifyModelToolsChanged();
@@ -5739,7 +5742,7 @@ function onBoundedContextMouseDown(event) {
     startX: event.clientX,
     startY: event.clientY,
     nodePositions: nodes.map((node) => ({id: node.id, x: node.x, y: node.y})),
-    undoSnapshot: dragUndoSnapshot()
+    undoSnapshot: dragUndoSnapshot(nodes.map((node) => node.id))
   };
 }
 
@@ -5762,7 +5765,7 @@ function onBoundedContextTouchStart(event) {
     startX: touch.clientX,
     startY: touch.clientY,
     nodePositions: nodes.map((node) => ({id: node.id, x: node.x, y: node.y})),
-    undoSnapshot: dragUndoSnapshot()
+    undoSnapshot: dragUndoSnapshot(nodes.map((node) => node.id))
   };
   event.preventDefault();
   event.stopPropagation();
@@ -6045,7 +6048,7 @@ export function onGlobalMouseUp(event) {
     }
   }
   if (state.dragNode || state.dragBoundedContext) {
-    scheduleAutoSave({delayMs: 400});
+    markModelDirty();
     if (dragSyncFrame) {
       window.cancelAnimationFrame(dragSyncFrame);
       dragSyncFrame = 0;
@@ -6082,9 +6085,6 @@ export function onGlobalMouseUp(event) {
       }
       publishNodeMove(node.id, node.x, node.y, {immediate: true});
     });
-  }
-  if (state.dragNode || state.dragBoundedContext || state.linkDrag) {
-    publishDiagramUpdate({immediate: true});
   }
   state.dragNode = null;
   state.dragBoundedContext = null;
@@ -6123,7 +6123,7 @@ export function onGlobalTouchEnd(event) {
   }
 
   if (state.dragNode || state.dragBoundedContext) {
-    scheduleAutoSave({delayMs: 400});
+    markModelDirty();
     if (dragSyncFrame) {
       window.cancelAnimationFrame(dragSyncFrame);
       dragSyncFrame = 0;
@@ -6157,10 +6157,6 @@ export function onGlobalTouchEnd(event) {
       publishNodeMove(node.id, node.x, node.y, {immediate: true});
     });
   }
-  if (state.dragNode || state.dragBoundedContext || state.linkDrag) {
-    publishDiagramUpdate({immediate: true});
-  }
-
   if (state.touchTap && !state.touchTap.moved) {
     activateNode(state.touchTap.nodeId);
   }
@@ -6233,11 +6229,7 @@ export function setupDnD() {
       renderDiagram();
     }
     setStatus(`Added ${type}`);
-    try {
-      await flushAutoSave();
-    } catch {
-      scheduleAutoSave({delayMs: 200});
-    }
+    markModelDirty();
     publishNodeAdd(node);
     publishDiagramUpdate({immediate: true});
   });
@@ -6307,7 +6299,7 @@ export function addConnection(sourceId, targetId,
   } else {
     renderEdges();
   }
-  scheduleAutoSave();
+  markModelDirty();
   publishDiagramUpdate();
   if (interactivePicker) {
     const nodeW = getNodeWidth();
@@ -6407,7 +6399,7 @@ function createShortcutConnection(source, target) {
   } else {
     renderDiagram();
   }
-  scheduleAutoSave({delayMs: 220});
+  markModelDirty();
   publishDiagramUpdate({immediate: true});
   setStatus(`Created ${rule.label || "PSM shortcut connector"}`);
   return true;

@@ -11,6 +11,12 @@ export const state = {
   modelId: null,
   modelRevision: 0,
   baseModel: null,
+  modelSave: {
+    dirty: false,
+    saving: false,
+    lastSavedAt: null,
+    error: ""
+  },
   diagram: emptyDiagram("cim"),
   nodesById: new Map(),
   graph: {
@@ -53,7 +59,8 @@ export const state = {
       graph: null,
       views: null,
       fragments: null,
-      activeViewId: null
+      activeViewId: null,
+      dirty: false
     },
     pim: {
       modelId: null,
@@ -64,7 +71,8 @@ export const state = {
       graph: null,
       views: null,
       fragments: null,
-      activeViewId: null
+      activeViewId: null,
+      dirty: false
     },
     psm: {
       modelId: null,
@@ -75,7 +83,8 @@ export const state = {
       graph: null,
       views: null,
       fragments: null,
-      activeViewId: null
+      activeViewId: null,
+      dirty: false
     }
   },
   modelsCache: {cim: [], pim: [], psm: []},
@@ -187,7 +196,6 @@ export const state = {
     pim: {},
     psm: {}
   },
-  autoSaveTimer: null,
   collaboration: {
     ws: null,
     projectId: null,

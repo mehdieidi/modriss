@@ -16,6 +16,7 @@ import {
   disconnectCollaboration
 } from './collaboration.js';
 import {confirmAction} from './confirm-action.js';
+import {resetModelSaveState, updateModelSaveUi} from './model-save-ui.js';
 
 function resolveProjectId(project) {
   return project?.id || project?.projectId || project?.uuid || null;
@@ -640,7 +641,8 @@ export async function loadProject(project) {
         graph: null,
         views: null,
         fragments: null,
-        activeViewId: null
+        activeViewId: null,
+        dirty: false
       };
     }
 
@@ -665,7 +667,8 @@ export async function loadProject(project) {
             graph: null,
             views: null,
             fragments: null,
-            activeViewId: null
+            activeViewId: null,
+            dirty: false
           };
         } catch (_) {
           // model not found or deleted – leave blank
@@ -702,10 +705,12 @@ export async function loadProject(project) {
     renderPalette();
     renderDiagram();
     renderViewWorkbench();
+    resetModelSaveState();
     resetCanvasView();
     hideProjectDialog();
     connectCollaboration(projectId);
     setStatus(`Project "${projectName}" loaded`);
+    updateModelSaveUi();
   } catch (error) {
     setError(`Failed to load project: ${error.message}`);
   }
@@ -758,21 +763,24 @@ export async function deleteCurrentProject() {
       modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("cim"),
-      modelName: "cim-model"
+      modelName: "cim-model",
+      dirty: false
     };
     state.tabs.pim = {
       modelId: null,
       modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("pim"),
-      modelName: "pim-model"
+      modelName: "pim-model",
+      dirty: false
     };
     state.tabs.psm = {
       modelId: null,
       modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("psm"),
-      modelName: "psm-model"
+      modelName: "psm-model",
+      dirty: false
     };
     state.diagram = state.tabs.cim.diagram;
     state.selectedNodeId = null;
@@ -793,6 +801,7 @@ export async function deleteCurrentProject() {
     renderPalette();
     renderDiagram();
     renderViewWorkbench();
+    resetModelSaveState();
     resetCanvasView();
     await showProjectDialog();
     setStatus(`Deleted project "${projectName}"`);

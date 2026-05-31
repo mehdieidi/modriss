@@ -12,7 +12,7 @@ import {
   syncDiagramRenderer,
   syncRendererSelection
 } from './canvas.js';
-import {scheduleAutoSave} from './autosave.js';
+import {markModelDirty} from './model-save-ui.js';
 import {isMobileViewport} from './responsive.js';
 import {publishDiagramUpdate} from './collaboration.js';
 import {
@@ -1491,7 +1491,7 @@ function addContainedChildFromDrawer(parentId, feature, childType) {
   addNodeToGraphAndActiveView(child);
   addReferenceValue(parentElement, feature, child.id, true);
   parentNode.meta[feature] = parentElement[feature];
-  scheduleAutoSave({delayMs: 250});
+  markModelDirty();
   publishDiagramUpdate({immediate: true});
   syncDiagramRenderer({workbench: true});
   openAttributePanel(parentId);
@@ -1757,7 +1757,7 @@ export function applyAttributePanel() {
     }
     state.selectedBoundedContextName = nextName;
     el.attrPanelTitle.textContent = nextName;
-    scheduleAutoSave();
+    markModelDirty();
     publishDiagramUpdate();
     setStatus(`Renamed bounded context to "${nextName}"`);
     return;
@@ -1827,7 +1827,7 @@ export function applyAttributePanel() {
   syncDiagramRenderer({workbench: true});
 
   el.attrPanelTitle.textContent = node.label;
-  scheduleAutoSave();
+  markModelDirty();
   publishDiagramUpdate();
   setStatus(`Attributes updated for ${node.id}`);
 }
@@ -1880,7 +1880,7 @@ function applyConnectionPanel() {
     return;
   }
   syncDiagramRenderer({workbench: true});
-  scheduleAutoSave({delayMs: 250});
+  markModelDirty();
   publishDiagramUpdate();
   setStatus(`Connection updated: ${edge.kind}`);
 }
@@ -1975,7 +1975,7 @@ export async function deleteSelection() {
       return;
     }
     closeAttributePanel();
-    scheduleAutoSave();
+    markModelDirty();
     publishDiagramUpdate();
     setStatus(`Deleted bounded context "${contextName}"`);
     return;
@@ -2012,7 +2012,7 @@ export async function deleteSelection() {
 
   closeAttributePanel();
   syncDiagramRenderer({workbench: true});
-  scheduleAutoSave();
+  markModelDirty();
   publishDiagramUpdate();
   setStatus(`Deleted ${node.type}: ${nodeId}`);
 }
@@ -2063,7 +2063,7 @@ export async function deleteSelectedConnection() {
 
   closeAttributePanel();
   syncDiagramRenderer({workbench: true});
-  scheduleAutoSave();
+  markModelDirty();
   publishDiagramUpdate();
   setStatus(`Deleted connection: ${connection.kind}`);
 }
