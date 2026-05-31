@@ -184,16 +184,16 @@ class Multiplicity extends TraceableElement {
   attr Integer[1] lowerBound;
   attr Integer upperBound;
   attr Boolean unbounded;
-  attr Boolean ordered;
-  attr Boolean unique = true;
+  attr Boolean ~ordered;
+  attr Boolean ~unique = true;
 }
 
 class Cardinality extends TraceableElement {
   attr Integer lowerBound;
   attr Integer upperBound;
   attr Boolean unbounded;
-  attr Boolean ordered;
-  attr Boolean unique = true;
+  attr Boolean ~ordered;
+  attr Boolean ~unique = true;
 }
 
 class Expression extends TraceableElement {
