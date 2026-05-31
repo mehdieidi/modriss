@@ -9,6 +9,11 @@ public record ModelRecord(
         ModelLevel level,
         String name,
         JsonNode modelJson,
+        String metamodelVersion,
+        String metamodelHash,
+        long revision,
+        String sourceXmiHash,
+        String migrationState,
         Instant createdAt,
         Instant updatedAt) {
 

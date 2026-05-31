@@ -9,6 +9,7 @@ export const state = {
   project: null,   // active Project object from backend
   activeType: "cim",
   modelId: null,
+  modelRevision: 0,
   baseModel: null,
   diagram: emptyDiagram("cim"),
   nodesById: new Map(),
@@ -45,6 +46,7 @@ export const state = {
   tabs: {
     cim: {
       modelId: null,
+      modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("cim"),
       modelName: "cim-model",
@@ -55,6 +57,7 @@ export const state = {
     },
     pim: {
       modelId: null,
+      modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("pim"),
       modelName: "pim-model",
@@ -65,6 +68,7 @@ export const state = {
     },
     psm: {
       modelId: null,
+      modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("psm"),
       modelName: "psm-model",

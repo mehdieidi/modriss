@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.PlatformException;
+import io.mehdieidi.modless.platform.core.model.ArtifactIndexRecord;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
@@ -72,6 +73,7 @@ public final class ArtifactService {
         ArtifactRecord artifact = new ArtifactRecord(id, projectId, name, modelJson,
                 normalizedFiles, now, now);
         store.write(artifactPath(projectId, id), artifact);
+        writeArtifactIndex(artifact);
         return artifact;
     }
 
@@ -98,6 +100,7 @@ public final class ArtifactService {
                 artifact.name(), modelJson,
                 files, artifact.createdAt(), Instant.now());
         store.write(artifactPath(artifact.projectId(), artifact.id()), updated);
+        writeArtifactIndex(updated);
         return updated;
     }
 
@@ -118,18 +121,12 @@ public final class ArtifactService {
     }
 
     public ArtifactRecord find(String id) {
-        try (Stream<Path> projectDirs = Files.list(store.resolve(Path.of("projects")))) {
-            return projectDirs.map(
-                            project -> store.read(Path.of("projects", project.getFileName().toString(),
-                                    "artifacts", id + ".json"), ArtifactRecord.class).orElse(null))
-                    .filter(artifact -> artifact != null)
-                    .findFirst()
-                    .orElseThrow(() -> new PlatformException(404, "Artifact not found."));
-        } catch (PlatformException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not read artifact store.");
+        var index = store.read(artifactIndexPath(id), ArtifactIndexRecord.class);
+        if (index.isPresent()) {
+            return store.require(artifactPath(index.get().projectId(), id), ArtifactRecord.class,
+                    "Artifact not found.");
         }
+        return findLegacyAndIndex(id);
     }
 
     public JsonNode filesNode(Map<String, String> files) {
@@ -138,6 +135,32 @@ public final class ArtifactService {
 
     private Path artifactPath(String projectId, String id) {
         return Path.of("projects", projectId, "artifacts", id + ".json");
+    }
+
+    private Path artifactIndexPath(String id) {
+        return Path.of("indexes", "artifacts", id + ".json");
+    }
+
+    private void writeArtifactIndex(ArtifactRecord artifact) {
+        store.write(artifactIndexPath(artifact.id()),
+                new ArtifactIndexRecord(artifact.id(), artifact.projectId()));
+    }
+
+    private ArtifactRecord findLegacyAndIndex(String id) {
+        try (Stream<Path> projectDirs = Files.list(store.resolve(Path.of("projects")))) {
+            ArtifactRecord artifact = projectDirs.map(project -> store.read(Path.of("projects",
+                                    project.getFileName().toString(), "artifacts", id + ".json"),
+                            ArtifactRecord.class).orElse(null))
+                    .filter(candidate -> candidate != null)
+                    .findFirst()
+                    .orElseThrow(() -> new PlatformException(404, "Artifact not found."));
+            writeArtifactIndex(artifact);
+            return artifact;
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not read artifact store.");
+        }
     }
 
     private ArtifactRecord readSummary(Path path) {
@@ -200,6 +223,7 @@ public final class ArtifactService {
                 artifact.name(), modelJson, artifact.files(), artifact.createdAt(),
                 artifact.updatedAt());
         store.write(artifactPath(artifact.projectId(), artifact.id()), repaired);
+        writeArtifactIndex(repaired);
         return repaired;
     }
 

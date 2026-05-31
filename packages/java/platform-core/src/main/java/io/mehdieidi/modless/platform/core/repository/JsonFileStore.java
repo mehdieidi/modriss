@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.mehdieidi.modless.platform.core.PlatformException;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -48,6 +49,8 @@ public final class JsonFileStore {
             Files.createDirectories(root.resolve("users"));
             Files.createDirectories(root.resolve("sessions"));
             Files.createDirectories(root.resolve("projects"));
+            Files.createDirectories(root.resolve("indexes"));
+            Files.createDirectories(root.resolve("model-imports"));
             log.info("Using Modless file repository at {}", root);
         } catch (IOException ex) {
             throw new PlatformException(500, "Could not initialize repository directory.");
@@ -73,6 +76,36 @@ public final class JsonFileStore {
 
     public void write(Path path, Object value) {
         Path resolved = resolve(path);
+        writeJsonResolved(resolved, value);
+    }
+
+    public void writeBytesAtomically(Path path, byte[] bytes) {
+        Path resolved = resolve(path);
+        writeBytesResolved(resolved, bytes == null ? new byte[0] : bytes);
+    }
+
+    public void moveAtomically(Path source, Path target) {
+        Path resolvedSource = resolve(source);
+        Path resolvedTarget = resolve(target);
+        try {
+            Files.createDirectories(resolvedTarget.getParent());
+            moveReplacing(resolvedSource, resolvedTarget);
+        } catch (IOException ex) {
+            log.error("Failed to move repository file {} to {}", resolvedSource, resolvedTarget,
+                    ex);
+            throw new PlatformException(500, "Could not persist data.");
+        }
+    }
+
+    public void deleteIfExists(Path path) {
+        try {
+            Files.deleteIfExists(resolve(path));
+        } catch (IOException ex) {
+            throw new PlatformException(500, "Could not delete stored data.");
+        }
+    }
+
+    private void writeJsonResolved(Path resolved, Object value) {
         try {
             Files.createDirectories(resolved.getParent());
             Path temp = resolved.resolveSibling(
@@ -83,6 +116,28 @@ public final class JsonFileStore {
         } catch (IOException ex) {
             log.error("Failed to write JSON file {}", resolved, ex);
             throw new PlatformException(500, "Could not persist data.");
+        }
+    }
+
+    private void writeBytesResolved(Path resolved, byte[] bytes) {
+        try {
+            Files.createDirectories(resolved.getParent());
+            Path temp = resolved.resolveSibling(
+                    resolved.getFileName() + "." + UUID.randomUUID() + ".tmp");
+            Files.write(temp, bytes);
+            moveReplacing(temp, resolved);
+        } catch (IOException ex) {
+            log.error("Failed to write repository file {}", resolved, ex);
+            throw new PlatformException(500, "Could not persist data.");
+        }
+    }
+
+    private void moveReplacing(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException ex) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

@@ -1,6 +1,5 @@
 package io.mehdieidi.modless.mde.validation;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +13,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
@@ -30,15 +34,35 @@ import org.eclipse.epsilon.evl.execute.UnsatisfiedConstraint;
 
 public final class EpsilonEvlValidator {
 
+    private static final Duration DEFAULT_EXECUTION_TIMEOUT = Duration.ofMinutes(5);
+    private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
+
+    private final Duration executionTimeout;
+    private final int maxCapturedOutputBytes;
+
+    public EpsilonEvlValidator() {
+        this(null, DEFAULT_MAX_CAPTURED_OUTPUT_BYTES);
+    }
+
+    public EpsilonEvlValidator(Duration executionTimeout, int maxCapturedOutputBytes) {
+        this.executionTimeout = executionTimeout == null || executionTimeout.isZero()
+                || executionTimeout.isNegative() ? null : executionTimeout;
+        this.maxCapturedOutputBytes = maxCapturedOutputBytes <= 0
+                ? DEFAULT_MAX_CAPTURED_OUTPUT_BYTES : maxCapturedOutputBytes;
+    }
+
     public EvlValidationReport validate(EvlValidationRequest request)
             throws EvlValidationException {
         Instant startedAt = Instant.now();
         List<EvlDiagnostic> diagnostics = new ArrayList<>();
         List<EvlModuleReport> moduleReports = new ArrayList<>();
         List<EvlConstraintViolation> violations = new ArrayList<>();
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream warnings = new ByteArrayOutputStream();
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        BoundedByteArrayOutputStream stdout = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
+        BoundedByteArrayOutputStream warnings = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
+        BoundedByteArrayOutputStream stderr = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
 
         try {
             validateRequest(request, diagnostics);
@@ -84,9 +108,9 @@ public final class EpsilonEvlValidator {
     private EvlModuleReport validateModule(
             Path moduleFile,
             EvlValidationRequest request,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr) throws EvlValidationException {
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr) throws EvlValidationException {
         Instant startedAt = Instant.now();
         List<EvlDiagnostic> diagnostics = new ArrayList<>();
         List<EvlConstraintViolation> violations = new ArrayList<>();
@@ -107,7 +131,7 @@ public final class EpsilonEvlValidator {
                 module.getContext().getModelRepository().addModel(model);
             }
 
-            Set<UnsatisfiedConstraint> unsatisfiedConstraints = module.execute();
+            Set<UnsatisfiedConstraint> unsatisfiedConstraints = executeModule(module);
             for (UnsatisfiedConstraint unsatisfiedConstraint : unsatisfiedConstraints) {
                 violations.add(toViolation(unsatisfiedConstraint));
             }
@@ -125,6 +149,17 @@ public final class EpsilonEvlValidator {
             return moduleReport(moduleFile, startedAt, violations, diagnostics);
         } catch (EolRuntimeException ex) {
             diagnostics.add(runtimeDiagnostic(ex, moduleFile));
+            return moduleReport(moduleFile, startedAt, violations, diagnostics);
+        } catch (EpsilonExecutionTimeoutException ex) {
+            diagnostics.add(EvlDiagnostic.error(
+                    ValidationPhase.EXECUTION,
+                    moduleFile,
+                    -1,
+                    -1,
+                    ex.getMessage(),
+                    "The EVL module exceeded the configured execution timeout.",
+                    "Reduce model size, inspect EVL rules for non-terminating logic, or increase the timeout deliberately.",
+                    ex));
             return moduleReport(moduleFile, startedAt, violations, diagnostics);
         } catch (Exception ex) {
             diagnostics.add(EvlDiagnostic.error(
@@ -375,12 +410,54 @@ public final class EpsilonEvlValidator {
         return values;
     }
 
+    private Set<UnsatisfiedConstraint> executeModule(EvlModule module) throws Exception {
+        if (executionTimeout == null) {
+            return module.execute();
+        }
+        Thread executingThread = Thread.currentThread();
+        AtomicBoolean timedOut = new AtomicBoolean(false);
+        ScheduledExecutorService watchdog = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "epsilon-evl-watchdog");
+            thread.setDaemon(true);
+            return thread;
+        });
+        ScheduledFuture<?> timeout = watchdog.schedule(() -> {
+            timedOut.set(true);
+            executingThread.interrupt();
+        }, executionTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        try {
+            try {
+                Set<UnsatisfiedConstraint> result = module.execute();
+                if (timedOut.get()) {
+                    throw timeoutException();
+                }
+                return result;
+            } catch (Exception ex) {
+                if (timedOut.get()) {
+                    throw timeoutException();
+                }
+                throw ex;
+            }
+        } finally {
+            timeout.cancel(true);
+            watchdog.shutdownNow();
+            if (timedOut.get()) {
+                Thread.interrupted();
+            }
+        }
+    }
+
+    private EpsilonExecutionTimeoutException timeoutException() {
+        return new EpsilonExecutionTimeoutException(
+                "EVL execution timed out after " + executionTimeout + ".", null);
+    }
+
     private void configureStreams(
             EvlModule module,
             boolean captureOutput,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr) {
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr) {
         if (!captureOutput) {
             return;
         }
@@ -433,9 +510,9 @@ public final class EpsilonEvlValidator {
             List<EvlModuleReport> moduleReports,
             List<EvlConstraintViolation> violations,
             List<EvlDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr,
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr,
             Throwable cause) throws EvlValidationException {
         if (diagnostics.stream().anyMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
             throw failure("EVL validation request is invalid.", request, startedAt, moduleReports,
@@ -450,9 +527,9 @@ public final class EpsilonEvlValidator {
             List<EvlModuleReport> moduleReports,
             List<EvlConstraintViolation> violations,
             List<EvlDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr,
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr,
             Throwable cause) {
         return new EvlValidationException(
                 message,
@@ -468,9 +545,9 @@ public final class EpsilonEvlValidator {
             List<EvlModuleReport> moduleReports,
             List<EvlConstraintViolation> violations,
             List<EvlDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr) {
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr) {
         Instant finishedAt = Instant.now();
         return new EvlValidationReport(
                 status,
@@ -481,8 +558,15 @@ public final class EpsilonEvlValidator {
                 moduleReports,
                 violations,
                 diagnostics,
-                stdout.toString(StandardCharsets.UTF_8),
-                warnings.toString(StandardCharsets.UTF_8),
-                stderr.toString(StandardCharsets.UTF_8));
+                stdout.asUtf8String(),
+                warnings.asUtf8String(),
+                stderr.asUtf8String());
+    }
+
+    private static final class EpsilonExecutionTimeoutException extends RuntimeException {
+
+        private EpsilonExecutionTimeoutException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

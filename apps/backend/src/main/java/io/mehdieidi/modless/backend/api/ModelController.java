@@ -63,8 +63,9 @@ public class ModelController {
             @PathVariable("level") String level,
             @PathVariable("id") String id,
             @Valid @RequestBody SaveModelRequest request) {
+        requireExpectedRevision(request.expectedRevision());
         ModelRecord updated = models.update(auth.user(token), ModelLevel.fromApiName(level), id,
-                request.name(), request.model());
+                request.name(), request.model(), request.expectedRevision());
         return models.summary(updated);
     }
 
@@ -73,9 +74,11 @@ public class ModelController {
             @PathVariable("level") String level,
             @PathVariable("id") String id,
             @RequestBody PatchModelRequest request) {
+        requireExpectedRevision(request == null ? null : request.expectedRevision());
         ModelRecord updated = models.patch(auth.user(token), ModelLevel.fromApiName(level), id,
                 request == null ? null : request.name(),
-                request == null ? List.of() : request.operations());
+                request == null ? List.of() : request.operations(),
+                request == null ? null : request.expectedRevision());
         return models.summary(updated);
     }
 
@@ -86,8 +89,10 @@ public class ModelController {
     }
 
     @PostMapping("/api/{level:cim|pim|psm}/validate")
-    ModelService.ValidationResult validate(@PathVariable("level") String level,
+    ModelService.ValidationResult validate(@RequestHeader("X-Auth-Token") String token,
+            @PathVariable("level") String level,
             @RequestBody SaveModelRequest request) {
+        auth.user(token);
         return models.validate(ModelLevel.fromApiName(level), request.model());
     }
 
@@ -99,12 +104,19 @@ public class ModelController {
     }
 
     @PostMapping("/api/{level:cim|pim|psm}/export")
-    ResponseEntity<byte[]> export(@PathVariable("level") String level,
+    ResponseEntity<byte[]> export(@RequestHeader("X-Auth-Token") String token,
+            @PathVariable("level") String level,
             @RequestBody ExportRequest request) {
-        byte[] bytes = models.exportModel(request.model(), request.format());
-        String fileName = (request.name() == null ? level + "-model" : request.name()) + ".json";
+        auth.user(token);
+        ModelLevel modelLevel = ModelLevel.fromApiName(level);
+        String format = request == null ? "json" : request.format();
+        byte[] bytes = models.exportModel(modelLevel, request == null ? null : request.model(),
+                format);
+        String extension = extension(format);
+        String fileName = ((request == null || request.name() == null) ? level + "-model"
+                : request.name()) + extension;
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(mediaType(format))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename(fileName, StandardCharsets.UTF_8)
                                 .build().toString())
@@ -118,10 +130,11 @@ public class ModelController {
             @RequestBody ExportRequest request) {
         byte[] bytes = models.exportModel(auth.user(token), ModelLevel.fromApiName(level), id,
                 request == null ? "json" : request.format());
+        String format = request == null ? "json" : request.format();
         String fileName = ((request == null || request.name() == null) ? level + "-model"
-                : request.name()) + ".json";
+                : request.name()) + extension(format);
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(mediaType(format))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename(fileName, StandardCharsets.UTF_8)
                                 .build().toString())
@@ -129,19 +142,47 @@ public class ModelController {
     }
 
     @PostMapping(value = "/api/{level:cim|pim|psm}/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    ModelService.ImportResult importModel(@PathVariable("level") String level,
+    ModelService.ImportResult importModel(@RequestHeader("X-Auth-Token") String token,
+            @PathVariable("level") String level,
+            @RequestParam("projectId") String projectId,
             @RequestParam(value = "format", defaultValue = "json") String format,
             @RequestParam("file") MultipartFile file) throws Exception {
-        return models.importModel(ModelLevel.fromApiName(level), file.getOriginalFilename(),
-                file.getBytes(), format);
+        if (file.getSize() > models.maxModelUploadBytes()) {
+            throw new io.mehdieidi.modless.platform.core.PlatformException(413,
+                    "Model file is too large.");
+        }
+        try (var input = file.getInputStream()) {
+            return models.importModelFromStream(auth.user(token), projectId,
+                    ModelLevel.fromApiName(level), file.getOriginalFilename(), input,
+                    file.getSize(), format);
+        }
     }
 
-    public record SaveModelRequest(@NotBlank String name, JsonNode model, String projectId) {
+    private void requireExpectedRevision(Long expectedRevision) {
+        if (expectedRevision == null) {
+            throw new io.mehdieidi.modless.platform.core.PlatformException(400,
+                    "expectedRevision is required.");
+        }
+    }
+
+    private MediaType mediaType(String format) {
+        return "xmi".equalsIgnoreCase(format)
+                ? MediaType.APPLICATION_XML
+                : MediaType.APPLICATION_JSON;
+    }
+
+    private String extension(String format) {
+        return "xmi".equalsIgnoreCase(format) ? ".xmi" : ".json";
+    }
+
+    public record SaveModelRequest(@NotBlank String name, JsonNode model, String projectId,
+                                   Long expectedRevision) {
 
     }
 
     public record PatchModelRequest(String name,
-                                    List<ModelService.ModelPatchOperation> operations) {
+                                    List<ModelService.ModelPatchOperation> operations,
+                                    Long expectedRevision) {
 
     }
 

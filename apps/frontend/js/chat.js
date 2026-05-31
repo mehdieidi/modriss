@@ -209,11 +209,14 @@ export async function sendChatMessage() {
         setStatus("Assistant response received; kept your newer canvas edits");
       } else {
         state.modelId = responseModelId || state.modelId;
+        state.modelRevision = Number(response.revision) || state.modelRevision
+            || 1;
         state.baseModel = structuredClone(response.model);
         state.diagram = toDiagram(state.activeType, response.model,
             state.tabs[state.activeType]?.modelName);
         if (state.tabs[state.activeType]) {
           state.tabs[state.activeType].modelId = state.modelId;
+          state.tabs[state.activeType].modelRevision = state.modelRevision;
           state.tabs[state.activeType].baseModel = state.baseModel;
           state.tabs[state.activeType].diagram = state.diagram;
           state.tabs[state.activeType].modelName = response.model.name

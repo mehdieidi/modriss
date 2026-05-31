@@ -132,12 +132,17 @@ export async function flushCurrentModelPatch({name, rethrow = false} = {}) {
           method: "PATCH",
           body: JSON.stringify({
             name,
-            operations
+            operations,
+            expectedRevision: state.modelRevision || 1
           })
         });
     state.baseModel = structuredClone(nextModel);
+    if (updated && typeof updated === "object") {
+      state.modelRevision = Number(updated.revision) || state.modelRevision;
+    }
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].modelId = state.modelId;
+      state.tabs[state.activeType].modelRevision = state.modelRevision;
       state.tabs[state.activeType].baseModel = state.baseModel;
       state.tabs[state.activeType].diagram = state.diagram;
       saveCurrentTabGraphState(state.activeType);

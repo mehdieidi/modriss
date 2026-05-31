@@ -81,6 +81,7 @@ function captureModelReplacementSnapshot(typeKey = state.activeType) {
   return {
     typeKey,
     modelId: state.modelId,
+    modelRevision: state.modelRevision || 0,
     modelName: tabState?.modelName || defaultModelName(typeKey),
     baseModel: serializedModel,
     diagram: structuredClone(state.diagram || emptyDiagram(typeKey)),
@@ -118,10 +119,12 @@ async function applyModelReplacementSnapshot(
     return;
   }
   state.modelId = snapshot.modelId;
+  state.modelRevision = snapshot.modelRevision || 0;
   state.baseModel = structuredClone(snapshot.baseModel);
   state.diagram = structuredClone(snapshot.diagram);
   if (state.tabs[snapshot.typeKey]) {
     state.tabs[snapshot.typeKey].modelId = snapshot.modelId;
+    state.tabs[snapshot.typeKey].modelRevision = snapshot.modelRevision || 0;
     state.tabs[snapshot.typeKey].baseModel = structuredClone(
         snapshot.baseModel);
     state.tabs[snapshot.typeKey].diagram = structuredClone(snapshot.diagram);
@@ -420,7 +423,8 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
   const payload = {
     name: selectedName,
     model: serializeModel(),
-    projectId: state.project?.id || null
+    projectId: state.project?.id || null,
+    expectedRevision: state.modelRevision || 1
   };
 
   const doBusy = !quiet;
@@ -440,6 +444,9 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
               body: JSON.stringify(payload)
             });
       }
+      if (updated && typeof updated === "object") {
+        state.modelRevision = Number(updated.revision) || state.modelRevision;
+      }
       state.baseModel = stripServerTransportFields(structuredClone(
           payload.model));
       setActiveModelName(updated?.name || payload.name);
@@ -452,6 +459,7 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
         body: JSON.stringify(payload)
       });
       state.modelId = created.id;
+      state.modelRevision = Number(created.revision) || 1;
       state.baseModel = stripServerTransportFields(structuredClone(
           payload.model));
       setActiveModelName(created.name || payload.name);
@@ -461,6 +469,7 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
     }
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].modelId = state.modelId;
+      state.tabs[state.activeType].modelRevision = state.modelRevision;
       state.tabs[state.activeType].baseModel = state.baseModel;
       state.tabs[state.activeType].diagram = state.diagram;
       saveCurrentTabGraphState(state.activeType);
@@ -489,6 +498,7 @@ export async function loadModelById(typeKey, id,
   }
   const record = await api(`/${MODEL_TYPES[typeKey].apiType}/${id}`);
   state.modelId = record.id;
+  state.modelRevision = Number(record.revision) || 1;
   state.baseModel = structuredClone(record.modelJson);
   state.diagram = toDiagram(typeKey, record.modelJson, record.name);
   installGraphAndViews(typeKey, record.modelJson, record.name
@@ -503,6 +513,7 @@ export async function loadModelById(typeKey, id,
   }
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
+    state.tabs[typeKey].modelRevision = state.modelRevision;
     state.tabs[typeKey].baseModel = structuredClone(record.modelJson);
     state.tabs[typeKey].diagram = state.diagram;
     state.tabs[typeKey].modelName = record.name || defaultModelName(typeKey);
@@ -530,6 +541,7 @@ async function loadModelRecord(typeKey, record,
     await switchTab(typeKey);
   }
   state.modelId = record.id;
+  state.modelRevision = Number(record.revision) || 1;
   state.baseModel = structuredClone(record.modelJson);
   state.diagram = toDiagram(typeKey, record.modelJson, record.name);
   installGraphAndViews(typeKey, record.modelJson, record.name
@@ -537,6 +549,7 @@ async function loadModelRecord(typeKey, record,
   materializeActiveView();
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
+    state.tabs[typeKey].modelRevision = state.modelRevision;
     state.tabs[typeKey].baseModel = state.baseModel;
     state.tabs[typeKey].diagram = state.diagram;
     state.tabs[typeKey].modelName = record.name || defaultModelName(typeKey);
@@ -558,10 +571,37 @@ async function loadModelRecord(typeKey, record,
 // ── Transformation / generation ───────────────────────────────────────────────
 
 async function runTransformation(path, sourceModelId) {
-  return api(`/transformations/${path}`, {
+  const job = await api(`/transformations/${path}`, {
     method: "POST",
-    body: JSON.stringify({sourceModelId})
+    body: JSON.stringify({
+      sourceModelId,
+      expectedRevision: state.modelRevision || 1
+    })
   });
+  return waitForTransformationJob(job?.id);
+}
+
+async function waitForTransformationJob(jobId) {
+  if (!jobId) {
+    throw new Error("Transformation did not return a job id.");
+  }
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < 10 * 60 * 1000) {
+    const job = await api(`/transformations/jobs/${jobId}`);
+    const status = String(job?.status || "").toUpperCase();
+    if (status === "SUCCEEDED") {
+      return job;
+    }
+    if (status === "FAILED" || status === "CANCELLED") {
+      const diagnostics = Array.isArray(job?.diagnostics)
+          ? job.diagnostics.join("; ")
+          : "";
+      throw new Error(
+          diagnostics || `Transformation job ${status.toLowerCase()}.`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new Error("Transformation job timed out.");
 }
 
 function isTransformationApiError(error, path) {
@@ -579,7 +619,8 @@ function rememberModelSummary(typeKey, record) {
     level: record.level,
     name: record.name,
     createdAt: record.createdAt,
-    updatedAt: record.updatedAt
+    updatedAt: record.updatedAt,
+    revision: Number(record.revision) || 1
   };
   state.modelsCache[typeKey] = [
     summary,
@@ -780,8 +821,8 @@ export async function generateCimToPim() {
     await saveCurrentModel({rethrow: true});
     setGenerationProgressPhase(
         "Translating the CIM into a draft PIM model…", 68);
-    const pim = await runTransformation("cim-to-pim", state.modelId);
-    await loadModelRecord("pim", pim, {showManualGuidance: true});
+    const job = await runTransformation("cim-to-pim", state.modelId);
+    await loadModelById("pim", job.resultModelId, {showManualGuidance: true});
     setGenerationProgressPhase("Opening the generated PIM model…", 92);
     await completeGenerationProgress("PIM ready.");
     if (!state.validation.issues.length) {
@@ -828,8 +869,8 @@ export async function generatePimToPsm() {
     await saveCurrentModel({rethrow: true});
     setGenerationProgressPhase(
         "Transforming the PIM into a platform-specific design…", 68);
-    const psm = await runTransformation("pim-to-psm", state.modelId);
-    await loadModelRecord("psm", psm, {showManualGuidance: true});
+    const job = await runTransformation("pim-to-psm", state.modelId);
+    await loadModelById("psm", job.resultModelId, {showManualGuidance: true});
     setGenerationProgressPhase("Opening the generated PSM model…", 92);
     await completeGenerationProgress("PSM ready.");
     if (!state.validation.issues.length) {
@@ -876,11 +917,11 @@ export async function generatePsmToArtifact() {
     await saveCurrentModel({rethrow: true});
     setGenerationProgressPhase(
         "Generating deployment-ready artifacts from the PSM…", 76);
-    const artifact = await runTransformation("psm-to-artifact", state.modelId);
+    const job = await runTransformation("psm-to-artifact", state.modelId);
     setStatus("Artifact generated — loading…");
     setGenerationProgressPhase(
         "Opening the generated project in the artifact explorer…", 94);
-    await loadArtifactById(artifact.id, {collapseTree: true});
+    await loadArtifactById(job.resultArtifactId, {collapseTree: true});
     await switchTab("artifact");
     await completeGenerationProgress("Artifacts ready.");
     setStatus("Artifact ready");
@@ -935,6 +976,7 @@ export async function switchTab(type) {
   if (state.activeType !== "artifact" && state.tabs[state.activeType]) {
     syncActiveViewFromVisibleGraph();
     state.tabs[state.activeType].modelId = state.modelId;
+    state.tabs[state.activeType].modelRevision = state.modelRevision || 0;
     state.tabs[state.activeType].baseModel = state.baseModel;
     state.tabs[state.activeType].diagram = state.diagram;
     saveCurrentTabGraphState(state.activeType);
@@ -987,6 +1029,7 @@ export async function switchTab(type) {
   // Restore tab state
   const tabState = state.tabs[type];
   state.modelId = tabState.modelId;
+  state.modelRevision = tabState.modelRevision || 0;
   state.baseModel = tabState.baseModel;
   state.diagram = tabState.diagram || emptyDiagram(type);
   if (type === "cim") {
@@ -1283,7 +1326,8 @@ export async function importActiveModel(file, format = "json",
   const response = await fetch(
       apiUrl(
           `/${MODEL_TYPES[state.activeType].apiType}/import?format=${encodeURIComponent(
-              normalizedFormat)}`), {
+              normalizedFormat)}&projectId=${encodeURIComponent(
+              state.project?.id || "")}`), {
         method: "POST",
         headers: apiAuthHeaders(),
         body: formData

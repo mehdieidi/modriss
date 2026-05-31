@@ -1,6 +1,5 @@
 package io.mehdieidi.modless.mde.generation;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -11,6 +10,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.eclipse.epsilon.common.module.ModuleElement;
 import org.eclipse.epsilon.common.parse.problem.ParseProblem;
@@ -24,13 +28,33 @@ import org.eclipse.epsilon.eol.models.Model;
 
 public final class EpsilonEgxGenerator {
 
+    private static final Duration DEFAULT_EXECUTION_TIMEOUT = Duration.ofMinutes(5);
+    private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
+
+    private final Duration executionTimeout;
+    private final int maxCapturedOutputBytes;
+
+    public EpsilonEgxGenerator() {
+        this(null, DEFAULT_MAX_CAPTURED_OUTPUT_BYTES);
+    }
+
+    public EpsilonEgxGenerator(Duration executionTimeout, int maxCapturedOutputBytes) {
+        this.executionTimeout = executionTimeout == null || executionTimeout.isZero()
+                || executionTimeout.isNegative() ? null : executionTimeout;
+        this.maxCapturedOutputBytes = maxCapturedOutputBytes <= 0
+                ? DEFAULT_MAX_CAPTURED_OUTPUT_BYTES : maxCapturedOutputBytes;
+    }
+
     public EgxGenerationReport generate(EgxGenerationRequest request)
             throws EgxGenerationException {
         Instant startedAt = Instant.now();
         List<GenerationDiagnostic> diagnostics = new ArrayList<>();
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream warnings = new ByteArrayOutputStream();
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        BoundedByteArrayOutputStream stdout = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
+        BoundedByteArrayOutputStream warnings = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
+        BoundedByteArrayOutputStream stderr = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
         List<IModel> loadedModels = new ArrayList<>();
         EgxModule module = null;
 
@@ -60,7 +84,7 @@ public final class EpsilonEgxGenerator {
                 module.getContext().getModelRepository().addModel(model);
             }
 
-            module.execute();
+            executeModule(module);
             finalizeGeneratedTraceFiles(request);
             return report(GenerationStatus.SUCCEEDED, request, startedAt, diagnostics, stdout,
                     warnings, stderr);
@@ -81,6 +105,18 @@ public final class EpsilonEgxGenerator {
         } catch (EolRuntimeException ex) {
             diagnostics.add(runtimeDiagnostic(ex, request.moduleFile()));
             throw failure("EGX generation failed.", request, startedAt, diagnostics, stdout,
+                    warnings, stderr, ex);
+        } catch (EpsilonExecutionTimeoutException ex) {
+            diagnostics.add(GenerationDiagnostic.error(
+                    GenerationPhase.EXECUTION,
+                    request.moduleFile(),
+                    -1,
+                    -1,
+                    ex.getMessage(),
+                    "The EGX module exceeded the configured execution timeout.",
+                    "Reduce model size, inspect EGX/EGL for non-terminating logic, or increase the timeout deliberately.",
+                    ex));
+            throw failure("EGX generation timed out.", request, startedAt, diagnostics, stdout,
                     warnings, stderr, ex);
         } catch (Exception ex) {
             diagnostics.add(GenerationDiagnostic.error(
@@ -253,12 +289,54 @@ public final class EpsilonEgxGenerator {
                 .orElse("");
     }
 
+    private void executeModule(EgxModule module) throws Exception {
+        if (executionTimeout == null) {
+            module.execute();
+            return;
+        }
+        Thread executingThread = Thread.currentThread();
+        AtomicBoolean timedOut = new AtomicBoolean(false);
+        ScheduledExecutorService watchdog = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "epsilon-egx-watchdog");
+            thread.setDaemon(true);
+            return thread;
+        });
+        ScheduledFuture<?> timeout = watchdog.schedule(() -> {
+            timedOut.set(true);
+            executingThread.interrupt();
+        }, executionTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        try {
+            try {
+                module.execute();
+            } catch (Exception ex) {
+                if (timedOut.get()) {
+                    throw timeoutException();
+                }
+                throw ex;
+            }
+            if (timedOut.get()) {
+                throw timeoutException();
+            }
+        } finally {
+            timeout.cancel(true);
+            watchdog.shutdownNow();
+            if (timedOut.get()) {
+                Thread.interrupted();
+            }
+        }
+    }
+
+    private EpsilonExecutionTimeoutException timeoutException() {
+        return new EpsilonExecutionTimeoutException(
+                "EGX execution timed out after " + executionTimeout + ".", null);
+    }
+
     private void configureStreams(
             EgxModule module,
             boolean captureOutput,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr) {
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr) {
         if (!captureOutput) {
             return;
         }
@@ -346,9 +424,9 @@ public final class EpsilonEgxGenerator {
             EgxGenerationRequest request,
             Instant startedAt,
             List<GenerationDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr,
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr,
             Throwable cause) throws EgxGenerationException {
         if (diagnostics.stream().anyMatch(d -> d.severity() == GenerationSeverity.ERROR)) {
             throw failure("EGX generation request is invalid.", request, startedAt, diagnostics,
@@ -361,9 +439,9 @@ public final class EpsilonEgxGenerator {
             EgxGenerationRequest request,
             Instant startedAt,
             List<GenerationDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr,
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr,
             Throwable cause) {
         return new EgxGenerationException(
                 message,
@@ -377,9 +455,9 @@ public final class EpsilonEgxGenerator {
             EgxGenerationRequest request,
             Instant startedAt,
             List<GenerationDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr) {
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr) {
         Instant finishedAt = Instant.now();
         return new EgxGenerationReport(
                 status,
@@ -390,9 +468,9 @@ public final class EpsilonEgxGenerator {
                 Duration.between(startedAt, finishedAt),
                 diagnostics,
                 listGeneratedFiles(request.outputDirectory()),
-                stdout.toString(StandardCharsets.UTF_8),
-                warnings.toString(StandardCharsets.UTF_8),
-                stderr.toString(StandardCharsets.UTF_8));
+                stdout.asUtf8String(),
+                warnings.asUtf8String(),
+                stderr.asUtf8String());
     }
 
     private List<Path> listGeneratedFiles(Path outputDirectory) {
@@ -406,6 +484,13 @@ public final class EpsilonEgxGenerator {
                     .toList();
         } catch (Exception ignored) {
             return List.of();
+        }
+    }
+
+    private static final class EpsilonExecutionTimeoutException extends RuntimeException {
+
+        private EpsilonExecutionTimeoutException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

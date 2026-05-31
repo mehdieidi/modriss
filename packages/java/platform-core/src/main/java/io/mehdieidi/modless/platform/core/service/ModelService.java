@@ -15,17 +15,23 @@ import io.mehdieidi.modless.mde.validation.EvlValidationRequest;
 import io.mehdieidi.modless.mde.validation.FileEvlModelConfiguration;
 import io.mehdieidi.modless.mde.validation.ValidationSeverity;
 import io.mehdieidi.modless.platform.core.PlatformException;
+import io.mehdieidi.modless.platform.core.model.ModelIndexRecord;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
+import io.mehdieidi.modless.platform.core.model.StagedImportRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
 import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +44,10 @@ public final class ModelService {
     private final JsonFileStore store;
     private final ProjectService projectService;
     private final ModelingConfigService modelingConfig;
+    private final MdeRuntimeOptions runtimeOptions;
+    private final MdeRuntimePaths mdePaths;
+    private final MetamodelResolver metamodelResolver;
+    private final ModelLockService modelLocks;
     private final XmiModelImportService xmiImportService;
     private final EpsilonEvlValidator evlValidator;
 
@@ -47,15 +57,46 @@ public final class ModelService {
 
     public ModelService(JsonFileStore store, ProjectService projectService,
             ModelingConfigService modelingConfig) {
+        this(store, projectService, modelingConfig, MdeRuntimeOptions.defaults(),
+                new ModelLockService());
+    }
+
+    public ModelService(JsonFileStore store, ProjectService projectService,
+            ModelingConfigService modelingConfig, MdeRuntimeOptions runtimeOptions,
+            ModelLockService modelLocks) {
+        this(store, projectService, modelingConfig, runtimeOptions,
+                new MdeRuntimePaths(runtimeOptions), null, modelLocks);
+    }
+
+    public ModelService(JsonFileStore store, ProjectService projectService,
+            ModelingConfigService modelingConfig, MdeRuntimeOptions runtimeOptions,
+            MdeRuntimePaths mdePaths, MetamodelResolver metamodelResolver,
+            ModelLockService modelLocks) {
         this.store = store;
         this.projectService = projectService;
         this.modelingConfig = modelingConfig;
-        this.xmiImportService = new XmiModelImportService(store.objectMapper());
-        this.evlValidator = new EpsilonEvlValidator();
+        this.runtimeOptions = runtimeOptions == null ? MdeRuntimeOptions.defaults()
+                : runtimeOptions;
+        this.mdePaths = mdePaths == null ? new MdeRuntimePaths(this.runtimeOptions) : mdePaths;
+        this.metamodelResolver = metamodelResolver == null
+                ? new FileMetamodelResolver(this.mdePaths) : metamodelResolver;
+        this.modelLocks = modelLocks == null ? new ModelLockService() : modelLocks;
+        this.xmiImportService = new XmiModelImportService(store.objectMapper(),
+                this.metamodelResolver);
+        this.evlValidator = new EpsilonEvlValidator(this.runtimeOptions.executionTimeout(),
+                this.runtimeOptions.maxCapturedOutputBytes());
     }
 
     private static ValidationIssue issue(String severity, String constraint, String message) {
         return new ValidationIssue(severity, constraint, "MODEL", message, null, null, null);
+    }
+
+    ModelLockService modelLocks() {
+        return modelLocks;
+    }
+
+    public long maxModelUploadBytes() {
+        return runtimeOptions.maxModelUploadBytes();
     }
 
     public List<ModelRecord> list(UserRecord user, ModelLevel level, String projectId) {
@@ -105,6 +146,14 @@ public final class ModelService {
         return clientRecord(model);
     }
 
+    public ModelRecord get(UserRecord user, ModelLevel level, String projectId, String id) {
+        projectService.get(user, projectId);
+        ModelRecord model = store.require(modelPath(projectId, level, id), ModelRecord.class,
+                "Model not found.");
+        writeModelIndex(model);
+        return clientRecord(repairMetadataIfNeeded(model));
+    }
+
     public ModelRecord create(UserRecord user, ModelLevel level, String projectId, String name,
             JsonNode modelJson) {
         ProjectRecord project = projectService.get(user, projectId);
@@ -112,63 +161,88 @@ public final class ModelService {
         Instant now = Instant.now();
         JsonNode normalizedModel = normalizeModel(name, level, modelJson);
         String sourceXmiToken = removeSourceXmiToken(normalizedModel);
+        SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, projectId, level,
+                sourceXmiToken);
+        MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
         ModelRecord model = new ModelRecord(UUID.randomUUID().toString(), projectId, level,
-                requireName(name, level), normalizedModel, now, now);
-        store.write(modelPath(projectId, level, model.id()), model);
-        consumeSourceXmiToken(sourceXmiToken, model);
+                requireName(name, level), normalizedModel, metamodel.version(),
+                metamodel.sha256(), 1, sourceXmi.hash(), "CURRENT", now, now);
+        persistModelAndSourceXmi(null, model, sourceXmi);
         return clientRecord(model);
     }
 
     public ModelRecord update(UserRecord user, ModelLevel level, String id, String name,
             JsonNode modelJson) {
-        ModelRecord existing = get(user, level, id);
-        ProjectRecord project = projectService.get(user, existing.projectId());
-        projectService.requireEditor(project, user.id());
-        JsonNode normalizedModel = normalizeModel(name, level, modelJson);
-        String sourceXmiToken = removeSourceXmiToken(normalizedModel);
-        ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
-                requireName(name, level),
-                normalizedModel, existing.createdAt(), Instant.now());
-        store.write(modelPath(existing.projectId(), level, id), updated);
-        consumeSourceXmiToken(sourceXmiToken, updated);
-        return clientRecord(updated);
+        return update(user, level, id, name, modelJson, null);
+    }
+
+    public ModelRecord update(UserRecord user, ModelLevel level, String id, String name,
+            JsonNode modelJson, Long expectedRevision) {
+        return modelLocks.withModelLock(id, Duration.ofSeconds(30), () -> {
+            ModelRecord existing = get(user, level, id);
+            requireExpectedRevision(existing, expectedRevision);
+            ProjectRecord project = projectService.get(user, existing.projectId());
+            projectService.requireEditor(project, user.id());
+            JsonNode normalizedModel = normalizeModel(name, level, modelJson);
+            String sourceXmiToken = removeSourceXmiToken(normalizedModel);
+            SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
+                    level, sourceXmiToken);
+            MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
+            ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
+                    requireName(name, level), normalizedModel, metamodel.version(),
+                    metamodel.sha256(), nextRevision(existing), sourceXmi.hash(), "CURRENT",
+                    existing.createdAt(), Instant.now());
+            persistModelAndSourceXmi(existing, updated, sourceXmi);
+            return clientRecord(updated);
+        });
     }
 
     public ModelRecord patch(UserRecord user, ModelLevel level, String id, String name,
             List<ModelPatchOperation> operations) {
-        ModelRecord existing = get(user, level, id);
-        ProjectRecord project = projectService.get(user, existing.projectId());
-        projectService.requireEditor(project, user.id());
-        if (operations == null || operations.isEmpty()) {
-            return clientRecord(existing);
-        }
-        ObjectNode patchedModel = existing.modelJson() instanceof ObjectNode objectNode
-                ? objectNode.deepCopy()
-                : store.objectMapper().createObjectNode();
-        for (ModelPatchOperation operation : operations) {
-            applyPatchOperation(patchedModel, operation);
-        }
-        JsonNode normalizedModel = normalizeModel(name == null ? existing.name() : name, level,
-                patchedModel);
-        String sourceXmiToken = removeSourceXmiToken(normalizedModel);
-        ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
-                requireName(name == null ? existing.name() : name, level), normalizedModel,
-                existing.createdAt(), Instant.now());
-        store.write(modelPath(existing.projectId(), level, id), updated);
-        consumeSourceXmiToken(sourceXmiToken, updated);
-        return clientRecord(updated);
+        return patch(user, level, id, name, operations, null);
+    }
+
+    public ModelRecord patch(UserRecord user, ModelLevel level, String id, String name,
+            List<ModelPatchOperation> operations, Long expectedRevision) {
+        return modelLocks.withModelLock(id, Duration.ofSeconds(30), () -> {
+            ModelRecord existing = get(user, level, id);
+            requireExpectedRevision(existing, expectedRevision);
+            ProjectRecord project = projectService.get(user, existing.projectId());
+            projectService.requireEditor(project, user.id());
+            if (operations == null || operations.isEmpty()) {
+                return clientRecord(existing);
+            }
+            ObjectNode patchedModel = existing.modelJson() instanceof ObjectNode objectNode
+                    ? objectNode.deepCopy()
+                    : store.objectMapper().createObjectNode();
+            for (ModelPatchOperation operation : operations) {
+                applyPatchOperation(patchedModel, operation);
+            }
+            JsonNode normalizedModel = normalizeModel(name == null ? existing.name() : name,
+                    level, patchedModel);
+            String sourceXmiToken = removeSourceXmiToken(normalizedModel);
+            SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
+                    level, sourceXmiToken);
+            MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
+            ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
+                    requireName(name == null ? existing.name() : name, level), normalizedModel,
+                    metamodel.version(), metamodel.sha256(), nextRevision(existing),
+                    sourceXmi.hash(), "CURRENT", existing.createdAt(), Instant.now());
+            persistModelAndSourceXmi(existing, updated, sourceXmi);
+            return clientRecord(updated);
+        });
     }
 
     public void delete(UserRecord user, ModelLevel level, String id) {
-        ModelRecord model = get(user, level, id);
-        ProjectRecord project = projectService.get(user, model.projectId());
-        projectService.requireEditor(project, user.id());
-        try {
-            Files.deleteIfExists(store.resolve(modelPath(model.projectId(), level, id)));
-            Files.deleteIfExists(store.resolve(sourceXmiPath(model.projectId(), level, id)));
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not delete model.");
-        }
+        modelLocks.withModelLock(id, Duration.ofSeconds(30), () -> {
+            ModelRecord model = get(user, level, id);
+            ProjectRecord project = projectService.get(user, model.projectId());
+            projectService.requireEditor(project, user.id());
+            store.deleteIfExists(modelPath(model.projectId(), level, id));
+            store.deleteIfExists(sourceXmiPath(model.projectId(), level, id));
+            store.deleteIfExists(modelIndexPath(id));
+            return null;
+        });
     }
 
     public ValidationResult validate(ModelLevel level, JsonNode modelJson) {
@@ -205,19 +279,18 @@ public final class ModelService {
     private List<ValidationIssue> validateWithEvl(ModelLevel level, JsonNode modelJson) {
         Path workDir = null;
         try {
-            Path repositoryRoot = findRepositoryRoot();
             workDir = Files.createTempDirectory("modless-" + level.apiName() + "-validation-");
             Path modelFile = workDir.resolve("model-" + level.apiName() + ".xmi");
             Files.write(modelFile, xmiImportService.exportModel(level,
                     hydrateSemanticReferences(modelJson)));
             EvlValidationReport report = evlValidator.validate(new EvlValidationRequest(
-                    validationRoot(repositoryRoot, level),
-                    List.of(Path.of(validationEntryFile(level))),
+                    mdePaths.validationRoot(level),
+                    List.of(mdePaths.validationEntryFile(level)),
                     List.of(FileEvlModelConfiguration.readOnly(
                             validationModelName(level),
                             validationModelAliases(level),
                             modelFile,
-                            List.of(metamodelFile(repositoryRoot, level)))),
+                            List.of(metamodelResolver.resolve(level).file()))),
                     true));
             return validationIssues(report);
         } catch (EvlValidationException ex) {
@@ -237,18 +310,17 @@ public final class ModelService {
     private List<ValidationIssue> validateWithEvl(ModelLevel level, byte[] xmiBytes) {
         Path workDir = null;
         try {
-            Path repositoryRoot = findRepositoryRoot();
             workDir = Files.createTempDirectory("modless-" + level.apiName() + "-validation-");
             Path modelFile = workDir.resolve("model-" + level.apiName() + ".xmi");
             Files.write(modelFile, xmiBytes);
             EvlValidationReport report = evlValidator.validate(new EvlValidationRequest(
-                    validationRoot(repositoryRoot, level),
-                    List.of(Path.of(validationEntryFile(level))),
+                    mdePaths.validationRoot(level),
+                    List.of(mdePaths.validationEntryFile(level)),
                     List.of(FileEvlModelConfiguration.readOnly(
                             validationModelName(level),
                             validationModelAliases(level),
                             modelFile,
-                            List.of(metamodelFile(repositoryRoot, level)))),
+                            List.of(metamodelResolver.resolve(level).file()))),
                     true));
             return validationIssues(report);
         } catch (EvlValidationException ex) {
@@ -405,41 +477,6 @@ public final class ModelService {
         }
     }
 
-    private Path findRepositoryRoot() {
-        Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
-        while (current != null) {
-            if (Files.isRegularFile(
-                    current.resolve("mde/validation/cim/cim-semantic-validation.evl"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/validation/pim/pim-semantic-validation.evl"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/validation/psm/psm-semantic-validation.evl"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/metamodels/cim/cim-combined.ecore"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/metamodels/pim/pim-combined.ecore"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/metamodels/psm/psm-combined.ecore"))) {
-                return current;
-            }
-            current = current.getParent();
-        }
-        throw new PlatformException(500,
-                "EVL validation files were not found from the backend working directory.");
-    }
-
-    private Path validationRoot(Path repositoryRoot, ModelLevel level) {
-        return repositoryRoot.resolve("mde/validation/" + level.apiName());
-    }
-
-    private String validationEntryFile(ModelLevel level) {
-        return switch (level) {
-            case CIM -> "cim-semantic-validation.evl";
-            case PIM -> "pim-semantic-validation.evl";
-            case PSM -> "psm-semantic-validation.evl";
-        };
-    }
-
     private String validationModelName(ModelLevel level) {
         return switch (level) {
             case CIM -> "CIM";
@@ -453,15 +490,6 @@ public final class ModelService {
             case CIM, PIM -> List.of("KERNEL");
             case PSM -> List.of("AWSPSMENUMS", "KERNEL");
         };
-    }
-
-    private Path metamodelFile(Path repositoryRoot, ModelLevel level) {
-        return repositoryRoot.resolve("mde/metamodels/" + level.apiName() + "/"
-                + switch (level) {
-            case CIM -> "cim-combined.ecore";
-            case PIM -> "pim-combined.ecore";
-            case PSM -> "psm-combined.ecore";
-        });
     }
 
     private void validateRequiredFeatures(JsonNode element, JsonNode fallbackElement,
@@ -592,6 +620,14 @@ public final class ModelService {
 
     public ImportResult importModel(ModelLevel level, String fileName, byte[] bytes,
             String format) {
+        return importModel(null, null, level, fileName, bytes, format);
+    }
+
+    public ImportResult importModel(UserRecord user, String projectId, ModelLevel level,
+            String fileName, byte[] bytes, String format) {
+        if (bytes != null && bytes.length > runtimeOptions.maxModelUploadBytes()) {
+            throw new PlatformException(413, "Model file is too large.");
+        }
         try {
             String normalizedFormat = String.valueOf(format).toLowerCase();
             JsonNode model = switch (normalizedFormat) {
@@ -602,7 +638,7 @@ public final class ModelService {
                         "Unsupported import format. Use JSON or XMI.");
             };
             if ("xmi".equals(normalizedFormat) && model instanceof ObjectNode objectModel) {
-                objectModel.put("_sourceXmiToken", stageSourceXmi(bytes));
+                objectModel.put("_sourceXmiToken", stageSourceXmi(user, projectId, level, bytes));
             }
             String name = fileName == null || fileName.isBlank() ? level.apiName() + "-model"
                     : fileName.replaceFirst("\\.[^.]+$", "");
@@ -620,38 +656,65 @@ public final class ModelService {
         }
     }
 
-    public byte[] exportModel(JsonNode modelJson, String format) {
-        if (!"json".equalsIgnoreCase(format)) {
-            throw new PlatformException(400, "Only JSON export is currently supported.");
+    public ImportResult importModelFromStream(UserRecord user, String projectId, ModelLevel level,
+            String fileName, InputStream input, long sizeBytes, String format) {
+        if (sizeBytes > runtimeOptions.maxModelUploadBytes()) {
+            throw new PlatformException(413, "Model file is too large.");
         }
         try {
-            return store.objectMapper().writerWithDefaultPrettyPrinter()
-                    .writeValueAsBytes(modelJson);
+            byte[] bytes = input.readNBytes(Math.toIntExact(runtimeOptions.maxModelUploadBytes()
+                    + 1));
+            if (bytes.length > runtimeOptions.maxModelUploadBytes()) {
+                throw new PlatformException(413, "Model file is too large.");
+            }
+            return importModel(user, projectId, level, fileName, bytes, format);
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (ArithmeticException ex) {
+            throw new PlatformException(500, "Configured upload limit is too large.");
+        } catch (Exception ex) {
+            throw new PlatformException(400, "Uploaded model could not be read.");
+        }
+    }
+
+    public byte[] exportModel(ModelLevel level, JsonNode modelJson, String format) {
+        try {
+            return switch (String.valueOf(format == null ? "json" : format).toLowerCase()) {
+                case "json" -> store.objectMapper().writerWithDefaultPrettyPrinter()
+                        .writeValueAsBytes(modelJson);
+                case "xmi" -> xmiImportService.exportModel(level,
+                        hydrateSemanticReferences(modelJson));
+                default -> throw new PlatformException(400,
+                        "Unsupported export format. Use JSON or XMI.");
+            };
+        } catch (PlatformException ex) {
+            throw ex;
         } catch (Exception ex) {
             throw new PlatformException(500, "Could not export model.");
         }
     }
 
+    public byte[] exportModel(JsonNode modelJson, String format) {
+        return exportModel(ModelLevel.CIM, modelJson, format);
+    }
+
     public byte[] exportModel(UserRecord user, ModelLevel level, String id, String format) {
         ModelRecord model = get(user, level, id);
-        return exportModel(model.modelJson(), format);
+        return exportModel(level, model.modelJson(), format);
     }
 
     public ModelRecord find(ModelLevel level, String id) {
-        Path projects = store.resolve(Path.of("projects"));
-        try (Stream<Path> projectDirs = Files.list(projects)) {
-            return projectDirs.map(
-                            project -> store.read(Path.of("projects", project.getFileName().toString(),
-                                            "models", level.apiName(), id + ".json"), ModelRecord.class)
-                                    .orElse(null))
-                    .filter(model -> model != null)
-                    .findFirst()
-                    .orElseThrow(() -> new PlatformException(404, "Model not found."));
-        } catch (PlatformException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not read model store.");
+        Optional<ModelIndexRecord> index = store.read(modelIndexPath(id), ModelIndexRecord.class);
+        if (index.isPresent()) {
+            ModelIndexRecord record = index.get();
+            if (record.level() != level) {
+                throw new PlatformException(404, "Model not found.");
+            }
+            return repairMetadataIfNeeded(store.require(
+                    modelPath(record.projectId(), level, id), ModelRecord.class,
+                    "Model not found."));
         }
+        return findLegacyAndIndex(level, id);
     }
 
     private JsonNode normalizeModel(String name, ModelLevel level, JsonNode modelJson) {
@@ -670,6 +733,7 @@ public final class ModelService {
 
     public ModelSummary summary(ModelRecord model) {
         return new ModelSummary(model.id(), model.projectId(), model.level(), model.name(),
+                Math.max(1, model.revision()), model.metamodelVersion(), model.migrationState(),
                 model.createdAt(), model.updatedAt());
     }
 
@@ -689,7 +753,19 @@ public final class ModelService {
         if (bytes == null || bytes.length == 0) {
             return;
         }
-        writeSourceXmi(sourceXmiPath(model.projectId(), model.level(), model.id()), bytes);
+        store.writeBytesAtomically(sourceXmiPath(model.projectId(), model.level(), model.id()),
+                bytes);
+        ModelRecord stored = store.read(modelPath(model.projectId(), model.level(), model.id()),
+                ModelRecord.class).orElse(model);
+        ModelRecord updated = new ModelRecord(stored.id(), stored.projectId(), stored.level(),
+                stored.name(), stored.modelJson(),
+                textOrDefault(stored.metamodelVersion(), currentVersion(stored.level())),
+                textOrDefault(stored.metamodelHash(), currentHash(stored.level())),
+                Math.max(1, stored.revision()), hashBytes(bytes),
+                textOrDefault(stored.migrationState(), "CURRENT"), stored.createdAt(),
+                stored.updatedAt());
+        store.write(modelPath(updated.projectId(), updated.level(), updated.id()), updated);
+        writeModelIndex(updated);
     }
 
     private ModelRecord clientRecord(ModelRecord model) {
@@ -701,7 +777,11 @@ public final class ModelService {
             modelJson = copy;
         }
         return new ModelRecord(model.id(), model.projectId(), model.level(), model.name(),
-                modelJson, model.createdAt(), model.updatedAt());
+                modelJson, textOrDefault(model.metamodelVersion(), currentVersion(model.level())),
+                textOrDefault(model.metamodelHash(), currentHash(model.level())),
+                Math.max(1, model.revision()), model.sourceXmiHash(),
+                textOrDefault(model.migrationState(), migrationState(model)),
+                model.createdAt(), model.updatedAt());
     }
 
     private void stripTransportOnlyFields(ObjectNode model) {
@@ -749,9 +829,21 @@ public final class ModelService {
         return true;
     }
 
-    private String stageSourceXmi(byte[] bytes) {
+    private String stageSourceXmi(UserRecord user, String projectId, ModelLevel level,
+            byte[] bytes) {
         String token = UUID.randomUUID().toString();
-        writeSourceXmi(stagedSourceXmiPath(token), bytes);
+        Instant now = Instant.now();
+        Path xmiPath = stagedSourceXmiPath(token);
+        store.writeBytesAtomically(xmiPath, bytes);
+        store.write(stagedSourceXmiRecordPath(token), new StagedImportRecord(
+                token,
+                user == null ? "" : user.id(),
+                projectId == null ? "" : projectId,
+                level,
+                xmiPath.toString().replace('\\', '/'),
+                bytes == null ? 0 : bytes.length,
+                now,
+                now.plus(runtimeOptions.stagedImportTtl())));
         return token;
     }
 
@@ -764,32 +856,202 @@ public final class ModelService {
         return "";
     }
 
-    private void consumeSourceXmiToken(String token, ModelRecord model) {
+    private SourceXmiUpdate resolveSourceXmiUpdate(UserRecord user, String projectId,
+            ModelLevel level, String token) {
         if (token == null || token.isBlank()) {
-            return;
+            return SourceXmiUpdate.deleteUpdate();
         }
-        Path stagedPath = stagedSourceXmiPath(token);
-        Path targetPath = sourceXmiPath(model.projectId(), model.level(), model.id());
-        Path staged = store.resolve(stagedPath);
-        if (!Files.isRegularFile(staged)) {
-            return;
+        StagedImportRecord record = store.require(stagedSourceXmiRecordPath(token),
+                StagedImportRecord.class, "Staged XMI import token was not found.");
+        if (record.expiresAt() != null && record.expiresAt().isBefore(Instant.now())) {
+            cleanupStagedImport(record);
+            throw new PlatformException(410, "Staged XMI import token has expired.");
+        }
+        if (record.level() != level) {
+            throw new PlatformException(400, "Staged XMI import token is for a different level.");
+        }
+        if (record.userId() != null && !record.userId().isBlank()
+                && (user == null || !record.userId().equals(user.id()))) {
+            throw new PlatformException(403, "Staged XMI import token belongs to another user.");
+        }
+        if (record.projectId() != null && !record.projectId().isBlank()
+                && !record.projectId().equals(projectId)) {
+            throw new PlatformException(403,
+                    "Staged XMI import token belongs to another project.");
+        }
+        Path xmiPath = Path.of(record.xmiPath());
+        Path resolved = store.resolve(xmiPath);
+        if (!Files.isRegularFile(resolved)) {
+            throw new PlatformException(410, "Staged XMI import file is no longer available.");
         }
         try {
-            Files.createDirectories(store.resolve(targetPath).getParent());
-            Files.move(staged, store.resolve(targetPath),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            byte[] bytes = Files.readAllBytes(resolved);
+            return new SourceXmiUpdate(bytes, hashBytes(bytes), record);
         } catch (Exception ex) {
-            throw new PlatformException(500, "Could not persist source XMI.");
+            throw new PlatformException(500, "Could not read staged source XMI.");
         }
     }
 
-    private void writeSourceXmi(Path path, byte[] bytes) {
+    private void persistModelAndSourceXmi(ModelRecord previous, ModelRecord model,
+            SourceXmiUpdate sourceXmi) {
+        Path modelPath = modelPath(model.projectId(), model.level(), model.id());
+        Path sourcePath = sourceXmiPath(model.projectId(), model.level(), model.id());
+        byte[] previousModelBytes = readBytesIfPresent(modelPath);
+        byte[] previousSourceBytes = readBytesIfPresent(sourcePath);
+        boolean hadPreviousModel = previous != null && previousModelBytes != null;
+        boolean hadPreviousSource = previousSourceBytes != null;
+        try {
+            store.write(modelPath, model);
+            writeModelIndex(model);
+            if (sourceXmi.shouldDelete()) {
+                store.deleteIfExists(sourcePath);
+            } else {
+                store.writeBytesAtomically(sourcePath, sourceXmi.bytes());
+                cleanupStagedImport(sourceXmi.record());
+            }
+        } catch (RuntimeException ex) {
+            rollback(modelPath, sourcePath, previousModelBytes, previousSourceBytes,
+                    hadPreviousModel, hadPreviousSource, previous == null ? model.id() : null);
+            throw ex;
+        }
+    }
+
+    private void rollback(Path modelPath, Path sourcePath, byte[] previousModelBytes,
+            byte[] previousSourceBytes, boolean hadPreviousModel, boolean hadPreviousSource,
+            String newModelId) {
+        try {
+            if (hadPreviousModel) {
+                store.writeBytesAtomically(modelPath, previousModelBytes);
+            } else {
+                store.deleteIfExists(modelPath);
+            }
+            if (hadPreviousSource) {
+                store.writeBytesAtomically(sourcePath, previousSourceBytes);
+            } else {
+                store.deleteIfExists(sourcePath);
+            }
+            if (newModelId != null) {
+                store.deleteIfExists(modelIndexPath(newModelId));
+            }
+        } catch (RuntimeException ignored) {
+            // Preserve the original persistence failure.
+        }
+    }
+
+    private byte[] readBytesIfPresent(Path path) {
         try {
             Path resolved = store.resolve(path);
-            Files.createDirectories(resolved.getParent());
-            Files.write(resolved, bytes);
+            return Files.isRegularFile(resolved) ? Files.readAllBytes(resolved) : null;
         } catch (Exception ex) {
-            throw new PlatformException(500, "Could not persist source XMI.");
+            throw new PlatformException(500, "Could not snapshot stored model state.");
+        }
+    }
+
+    private void writeModelIndex(ModelRecord model) {
+        store.write(modelIndexPath(model.id()),
+                new ModelIndexRecord(model.id(), model.projectId(), model.level()));
+    }
+
+    private ModelRecord findLegacyAndIndex(ModelLevel level, String id) {
+        Path projects = store.resolve(Path.of("projects"));
+        try (Stream<Path> projectDirs = Files.list(projects)) {
+            ModelRecord model = projectDirs.map(project -> store.read(Path.of("projects",
+                            project.getFileName().toString(), "models", level.apiName(),
+                            id + ".json"), ModelRecord.class).orElse(null))
+                    .filter(candidate -> candidate != null)
+                    .findFirst()
+                    .orElseThrow(() -> new PlatformException(404, "Model not found."));
+            writeModelIndex(model);
+            return repairMetadataIfNeeded(model);
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not read model store.");
+        }
+    }
+
+    private ModelRecord repairMetadataIfNeeded(ModelRecord model) {
+        if (model == null) {
+            return null;
+        }
+        MetamodelDescriptor metamodel = metamodelResolver.resolve(model.level());
+        long revision = Math.max(1, model.revision());
+        String migrationState = model.metamodelHash() == null || model.metamodelHash().isBlank()
+                || metamodel.sha256().equals(model.metamodelHash()) ? "CURRENT"
+                : "NEEDS_MIGRATION";
+        if (model.metamodelVersion() != null && !model.metamodelVersion().isBlank()
+                && model.metamodelHash() != null && !model.metamodelHash().isBlank()
+                && model.revision() > 0
+                && model.migrationState() != null && !model.migrationState().isBlank()) {
+            return model;
+        }
+        ModelRecord repaired = new ModelRecord(model.id(), model.projectId(), model.level(),
+                model.name(), model.modelJson(), metamodel.version(), metamodel.sha256(),
+                revision, model.sourceXmiHash(), migrationState, model.createdAt(),
+                model.updatedAt());
+        store.write(modelPath(model.projectId(), model.level(), model.id()), repaired);
+        writeModelIndex(repaired);
+        return repaired;
+    }
+
+    private void requireExpectedRevision(ModelRecord existing, Long expectedRevision) {
+        if (expectedRevision == null) {
+            return;
+        }
+        if (expectedRevision.longValue() != existing.revision()) {
+            throw new PlatformException(409, "Model was modified by another operation.");
+        }
+    }
+
+    private long nextRevision(ModelRecord existing) {
+        return Math.max(1, existing.revision()) + 1;
+    }
+
+    private String currentVersion(ModelLevel level) {
+        return metamodelResolver.resolve(level).version();
+    }
+
+    private String currentHash(ModelLevel level) {
+        return metamodelResolver.resolve(level).sha256();
+    }
+
+    private String migrationState(ModelRecord model) {
+        String hash = model.metamodelHash();
+        return hash == null || hash.isBlank() || hash.equals(currentHash(model.level()))
+                ? "CURRENT" : "NEEDS_MIGRATION";
+    }
+
+    private void cleanupStagedImport(StagedImportRecord record) {
+        if (record == null) {
+            return;
+        }
+        store.deleteIfExists(Path.of(record.xmiPath()));
+        store.deleteIfExists(stagedSourceXmiRecordPath(record.token()));
+    }
+
+    public void cleanupExpiredImports() {
+        Path imports = store.resolve(Path.of("model-imports"));
+        if (!Files.isDirectory(imports)) {
+            return;
+        }
+        try (Stream<Path> files = Files.list(imports)) {
+            files.filter(path -> path.getFileName().toString().endsWith(".json"))
+                    .map(path -> store.read(store.root().relativize(path),
+                            StagedImportRecord.class).orElse(null))
+                    .filter(record -> record != null && record.expiresAt() != null
+                            && record.expiresAt().isBefore(Instant.now()))
+                    .forEach(this::cleanupStagedImport);
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not clean up staged imports.");
+        }
+    }
+
+    private String hashBytes(byte[] bytes) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(bytes == null ? new byte[0] : bytes));
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not hash source XMI.");
         }
     }
 
@@ -803,6 +1065,9 @@ public final class ModelService {
             String projectId = null;
             ModelLevel level = fallbackLevel;
             String name = null;
+            long revision = 1;
+            String metamodelVersion = null;
+            String migrationState = null;
             Instant updatedAt = Files.getLastModifiedTime(path).toInstant();
             Instant createdAt = updatedAt;
             if (parser.nextToken() != JsonToken.START_OBJECT) {
@@ -819,6 +1084,12 @@ public final class ModelService {
                     level = ModelLevel.valueOf(parser.getValueAsString());
                 } else if ("name".equals(field)) {
                     name = parser.getValueAsString();
+                } else if ("revision".equals(field)) {
+                    revision = Math.max(1, parser.getLongValue());
+                } else if ("metamodelVersion".equals(field)) {
+                    metamodelVersion = parser.getValueAsString();
+                } else if ("migrationState".equals(field)) {
+                    migrationState = parser.getValueAsString();
                 } else if ("createdAt".equals(field)) {
                     createdAt = parseInstant(parser.getValueAsString(), createdAt);
                 } else if ("updatedAt".equals(field)) {
@@ -833,7 +1104,7 @@ public final class ModelService {
                 return null;
             }
             return new ModelSummary(id, projectId, level, name == null ? id : name,
-                    createdAt, updatedAt);
+                    revision, metamodelVersion, migrationState, createdAt, updatedAt);
         } catch (Exception ex) {
             return null;
         }
@@ -857,6 +1128,14 @@ public final class ModelService {
 
     private Path stagedSourceXmiPath(String token) {
         return Path.of("model-imports", token + ".xmi");
+    }
+
+    private Path stagedSourceXmiRecordPath(String token) {
+        return Path.of("model-imports", token + ".json");
+    }
+
+    private Path modelIndexPath(String id) {
+        return Path.of("indexes", "models", id + ".json");
     }
 
     private String requireName(String name, ModelLevel level) {
@@ -1011,8 +1290,22 @@ public final class ModelService {
             String projectId,
             ModelLevel level,
             String name,
+            long revision,
+            String metamodelVersion,
+            String migrationState,
             Instant createdAt,
             Instant updatedAt) {
 
+    }
+
+    private record SourceXmiUpdate(byte[] bytes, String hash, StagedImportRecord record) {
+
+        static SourceXmiUpdate deleteUpdate() {
+            return new SourceXmiUpdate(null, null, null);
+        }
+
+        boolean shouldDelete() {
+            return bytes == null;
+        }
     }
 }

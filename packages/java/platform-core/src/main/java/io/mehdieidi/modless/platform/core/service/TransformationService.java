@@ -23,7 +23,10 @@ import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -37,55 +40,112 @@ public final class TransformationService {
     private final JsonFileStore store;
     private final ModelService modelService;
     private final ArtifactService artifactService;
+    private final MdeRuntimeOptions runtimeOptions;
+    private final MdeRuntimePaths mdePaths;
+    private final MetamodelResolver metamodelResolver;
+    private final ModelLockService modelLocks;
     private final XmiModelImportService xmiModelIo;
     private final EpsilonEtlExecutor etlExecutor;
     private final EpsilonEgxGenerator artifactGenerator;
 
     public TransformationService(JsonFileStore store, ModelService modelService,
             ArtifactService artifactService) {
+        this(store, modelService, artifactService, MdeRuntimeOptions.defaults(),
+                modelService.modelLocks());
+    }
+
+    public TransformationService(JsonFileStore store, ModelService modelService,
+            ArtifactService artifactService, MdeRuntimeOptions runtimeOptions,
+            ModelLockService modelLocks) {
+        this(store, modelService, artifactService, runtimeOptions,
+                new MdeRuntimePaths(runtimeOptions), null, modelLocks);
+    }
+
+    public TransformationService(JsonFileStore store, ModelService modelService,
+            ArtifactService artifactService, MdeRuntimeOptions runtimeOptions,
+            MdeRuntimePaths mdePaths, MetamodelResolver metamodelResolver,
+            ModelLockService modelLocks) {
         this.store = store;
         this.modelService = modelService;
         this.artifactService = artifactService;
-        this.xmiModelIo = new XmiModelImportService(store.objectMapper());
-        this.etlExecutor = new EpsilonEtlExecutor();
-        this.artifactGenerator = new EpsilonEgxGenerator();
+        this.runtimeOptions = runtimeOptions == null ? MdeRuntimeOptions.defaults()
+                : runtimeOptions;
+        this.mdePaths = mdePaths == null ? new MdeRuntimePaths(this.runtimeOptions) : mdePaths;
+        this.metamodelResolver = metamodelResolver == null
+                ? new FileMetamodelResolver(this.mdePaths) : metamodelResolver;
+        this.modelLocks = modelLocks == null ? modelService.modelLocks() : modelLocks;
+        this.xmiModelIo = new XmiModelImportService(store.objectMapper(),
+                this.metamodelResolver);
+        this.etlExecutor = new EpsilonEtlExecutor(this.runtimeOptions.executionTimeout(),
+                this.runtimeOptions.maxCapturedOutputBytes());
+        this.artifactGenerator = new EpsilonEgxGenerator(this.runtimeOptions.executionTimeout(),
+                this.runtimeOptions.maxCapturedOutputBytes());
     }
 
     public ModelRecord cimToPim(UserRecord user, String sourceModelId) {
-        ModelRecord source = modelService.get(user, ModelLevel.CIM, sourceModelId);
-        GeneratedModel generated = formalCimToPimModel(source);
-        generated.model().put("sourceModelId", source.id());
-        mirrorReadinessToManualBacklog(generated.model());
-        ModelRecord target = modelService.create(user, ModelLevel.PIM, source.projectId(),
-                source.name() + "-pim", generated.model());
-        modelService.attachSourceXmi(target, generated.sourceXmi());
-        return target;
+        return cimToPim(user, sourceModelId, null);
+    }
+
+    public ModelRecord cimToPim(UserRecord user, String sourceModelId, Long expectedRevision) {
+        return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
+            ModelRecord source = modelService.get(user, ModelLevel.CIM, sourceModelId);
+            requireSourceRevision(source, expectedRevision);
+            GeneratedModel generated = formalCimToPimModel(source);
+            generated.model().put("sourceModelId", source.id());
+            generated.model().put("sourceModelRevision", source.revision());
+            generated.model().put("sourceModelHash", hash(source.modelJson()));
+            mirrorReadinessToManualBacklog(generated.model());
+            ModelRecord target = modelService.create(user, ModelLevel.PIM, source.projectId(),
+                    source.name() + "-pim", generated.model());
+            modelService.attachSourceXmi(target, generated.sourceXmi());
+            return modelService.get(user, ModelLevel.PIM, target.id());
+        });
     }
 
     public ModelRecord pimToPsm(UserRecord user, String sourceModelId) {
-        ModelRecord source = modelService.get(user, ModelLevel.PIM, sourceModelId);
-        GeneratedModel generated = formalPimToPsmModel(source);
-        generated.model().put("sourceModelId", source.id());
-        ModelRecord target = modelService.create(user, ModelLevel.PSM, source.projectId(),
-                source.name() + "-psm", generated.model());
-        modelService.attachSourceXmi(target, generated.sourceXmi());
-        return target;
+        return pimToPsm(user, sourceModelId, null);
+    }
+
+    public ModelRecord pimToPsm(UserRecord user, String sourceModelId, Long expectedRevision) {
+        return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
+            ModelRecord source = modelService.get(user, ModelLevel.PIM, sourceModelId);
+            requireSourceRevision(source, expectedRevision);
+            GeneratedModel generated = formalPimToPsmModel(source);
+            generated.model().put("sourceModelId", source.id());
+            generated.model().put("sourceModelRevision", source.revision());
+            generated.model().put("sourceModelHash", hash(source.modelJson()));
+            ModelRecord target = modelService.create(user, ModelLevel.PSM, source.projectId(),
+                    source.name() + "-psm", generated.model());
+            modelService.attachSourceXmi(target, generated.sourceXmi());
+            return modelService.get(user, ModelLevel.PSM, target.id());
+        });
     }
 
     public ArtifactRecord psmToArtifact(UserRecord user, String sourceModelId) {
-        ModelRecord source = modelService.get(user, ModelLevel.PSM, sourceModelId);
-        Map<String, String> files = formalPsmToArtifactFiles(source);
-        return artifactService.create(user, source.projectId(), source.name() + "-artifact", files);
+        return psmToArtifact(user, sourceModelId, null);
+    }
+
+    public ArtifactRecord psmToArtifact(UserRecord user, String sourceModelId,
+            Long expectedRevision) {
+        return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
+            ModelRecord source = modelService.get(user, ModelLevel.PSM, sourceModelId);
+            requireSourceRevision(source, expectedRevision);
+            Map<String, String> files = formalPsmToArtifactFiles(source);
+            return artifactService.create(user, source.projectId(), source.name() + "-artifact",
+                    files);
+        });
     }
 
     private GeneratedModel formalCimToPimModel(ModelRecord source) {
-        Path repositoryRoot = findRepositoryRoot();
+        Path repositoryRoot = mdePaths.repositoryRoot();
         Path workDir = null;
         try {
             workDir = Files.createTempDirectory("modless-cim-to-pim-");
             Path cimXmi = workDir.resolve("source-cim.xmi");
             Path pimXmi = workDir.resolve("target-pim.xmi");
-            Files.write(cimXmi, sourceCimXmi(source));
+            byte[] sourceBytes = sourceCimXmi(source);
+            requireExecutionInputBudget(sourceBytes, "CIM-to-PIM source model");
+            Files.write(cimXmi, sourceBytes);
 
             EtlExecutionReport report = etlExecutor.execute(CimToPimDefaults.request(
                     repositoryRoot, cimXmi, pimXmi, true, true));
@@ -118,13 +178,15 @@ public final class TransformationService {
     }
 
     private GeneratedModel formalPimToPsmModel(ModelRecord source) {
-        Path repositoryRoot = findRepositoryRoot();
+        Path repositoryRoot = mdePaths.repositoryRoot();
         Path workDir = null;
         try {
             workDir = Files.createTempDirectory("modless-pim-to-psm-");
             Path pimXmi = workDir.resolve("source-pim.xmi");
             Path psmXmi = workDir.resolve("target-awspsm.xmi");
-            Files.write(pimXmi, sourcePimXmi(source));
+            byte[] sourceBytes = sourcePimXmi(source);
+            requireExecutionInputBudget(sourceBytes, "PIM-to-PSM source model");
+            Files.write(pimXmi, sourceBytes);
 
             EtlExecutionReport report = etlExecutor.execute(PimToAwsPsmDefaults.request(
                     repositoryRoot, pimXmi, psmXmi, true, true));
@@ -158,13 +220,15 @@ public final class TransformationService {
     }
 
     private Map<String, String> formalPsmToArtifactFiles(ModelRecord source) {
-        Path repositoryRoot = findRepositoryRoot();
+        Path repositoryRoot = mdePaths.repositoryRoot();
         Path workDir = null;
         try {
             workDir = Files.createTempDirectory("modless-psm-to-artifact-");
             Path psmXmi = workDir.resolve("source-awspsm.xmi");
             Path outputDirectory = workDir.resolve("generated-artifacts");
-            Files.write(psmXmi, sourcePsmXmi(source));
+            byte[] sourceBytes = sourcePsmXmi(source);
+            requireExecutionInputBudget(sourceBytes, "PSM-to-artifact source model");
+            Files.write(psmXmi, sourceBytes);
 
             EgxGenerationReport report = artifactGenerator.generate(
                     AwsPsmToArtifactsDefaults.request(
@@ -192,29 +256,6 @@ public final class TransformationService {
                 deleteQuietly(workDir);
             }
         }
-    }
-
-    private Path findRepositoryRoot() {
-        Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
-        while (current != null) {
-            if (Files.isRegularFile(
-                    current.resolve("mde/transformations/cim-to-pim/cim-to-pim.etl"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/transformations/pim-to-awspsm/pim-to-awspsm.etl"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/generation/awspsm-to-artifacts/awspsm2artifacts.egx"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/metamodels/cim/cim-combined.ecore"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/metamodels/pim/pim-combined.ecore"))
-                    && Files.isRegularFile(current.resolve(
-                    "mde/metamodels/psm/psm-combined.ecore"))) {
-                return current;
-            }
-            current = current.getParent();
-        }
-        throw new PlatformException(500,
-                "ETL transformation files were not found from the backend working directory.");
     }
 
     private byte[] sourceCimXmi(ModelRecord model) {
@@ -261,14 +302,54 @@ public final class TransformationService {
 
     private Map<String, String> generatedFiles(Path outputDirectory) throws Exception {
         Map<String, String> files = new LinkedHashMap<>();
+        long totalBytes = 0;
         try (Stream<Path> paths = Files.walk(outputDirectory)) {
             for (Path path : paths.filter(Files::isRegularFile).sorted().toList()) {
                 Path relative = outputDirectory.relativize(path);
                 String artifactPath = relative.toString().replace('\\', '/');
+                if (files.size() + 1 > runtimeOptions.maxGeneratedFiles()) {
+                    throw new PlatformException(413, "Generated artifact contains too many files.");
+                }
+                long size = Files.size(path);
+                if (size > runtimeOptions.maxGeneratedFileBytes()) {
+                    throw new PlatformException(413,
+                            "Generated artifact file is too large: " + artifactPath);
+                }
+                totalBytes += size;
+                if (totalBytes > runtimeOptions.maxGeneratedArtifactBytes()) {
+                    throw new PlatformException(413,
+                            "Generated artifact exceeds the configured size limit.");
+                }
                 files.put(artifactPath, Files.readString(path, StandardCharsets.UTF_8));
             }
         }
         return files;
+    }
+
+    private void requireSourceRevision(ModelRecord source, Long expectedRevision) {
+        if (expectedRevision == null) {
+            return;
+        }
+        if (source.revision() != expectedRevision.longValue()) {
+            throw new PlatformException(409,
+                    "Source model changed before the MDE operation could run.");
+        }
+    }
+
+    private String hash(JsonNode modelJson) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(
+                    digest.digest(store.objectMapper().writeValueAsBytes(modelJson)));
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not hash source model.");
+        }
+    }
+
+    private void requireExecutionInputBudget(byte[] bytes, String label) {
+        if (bytes != null && bytes.length > runtimeOptions.maxModelUploadBytes()) {
+            throw new PlatformException(413, label + " exceeds the configured size limit.");
+        }
     }
 
     private JsonNode hydrateSemanticReferences(JsonNode modelJson) {

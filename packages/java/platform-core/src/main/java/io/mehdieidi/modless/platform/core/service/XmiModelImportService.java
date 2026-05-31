@@ -8,8 +8,6 @@ import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -41,11 +39,6 @@ import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
 final class XmiModelImportService {
-
-    private static final Map<ModelLevel, String> METAMODEL_RESOURCE_BY_LEVEL = Map.of(
-            ModelLevel.CIM, "modeling/metamodels/cim/cim-combined.ecore",
-            ModelLevel.PIM, "modeling/metamodels/pim/pim-combined.ecore",
-            ModelLevel.PSM, "modeling/metamodels/psm/psm-combined.ecore");
 
     private static final Map<String, String> CIM_REFERENCE_KINDS = Map.ofEntries(
             Map.entry("supportsGoals", "SUPPORTS"), Map.entry("supports", "SUPPORTS"),
@@ -181,9 +174,16 @@ final class XmiModelImportService {
             Map.entry("incomingTraces", "TRACE"), Map.entry("outgoingTraces", "TRACE"));
 
     private final ObjectMapper objectMapper;
+    private final MetamodelResolver metamodelResolver;
 
     XmiModelImportService(ObjectMapper objectMapper) {
+        this(objectMapper, new FileMetamodelResolver(new MdeRuntimePaths(
+                MdeRuntimeOptions.defaults())));
+    }
+
+    XmiModelImportService(ObjectMapper objectMapper, MetamodelResolver metamodelResolver) {
         this.objectMapper = objectMapper;
+        this.metamodelResolver = metamodelResolver;
     }
 
     JsonNode importModel(ModelLevel level, byte[] bytes) {
@@ -242,11 +242,6 @@ final class XmiModelImportService {
     }
 
     private ResourceSet newResourceSet() {
-        Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap()
-                .put("ecore", new EcoreResourceFactoryImpl());
-        Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap()
-                .put("xmi", new XMIResourceFactoryImpl());
-
         ResourceSet resourceSet = new ResourceSetImpl();
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
                 .put("ecore", new EcoreResourceFactoryImpl());
@@ -256,29 +251,14 @@ final class XmiModelImportService {
         return resourceSet;
     }
 
-    private void registerMetamodel(ResourceSet resourceSet, ModelLevel level) throws IOException {
-        String resourcePath = METAMODEL_RESOURCE_BY_LEVEL.get(level);
-        if (resourcePath == null) {
-            throw new PlatformException(400, "Unsupported model level for XMI import.");
-        }
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
-            if (stream == null) {
-                throw new PlatformException(500, "Could not load metamodel for XMI import.");
-            }
-            Resource ecore = resourceSet.createResource(URI.createURI("memory:/" + level.apiName()
-                    + "-metamodel.ecore"));
-            ecore.load(stream, Map.of());
-            ecore.getContents().stream()
-                    .filter(EPackage.class::isInstance)
-                    .map(EPackage.class::cast)
-                    .forEach(pkg -> registerPackage(resourceSet, pkg));
-        }
+    private void registerMetamodel(ResourceSet resourceSet, ModelLevel level) {
+        metamodelResolver.resolve(level).packages()
+                .forEach(ePackage -> registerPackage(resourceSet, ePackage));
     }
 
     private void registerPackage(ResourceSet resourceSet, EPackage ePackage) {
         if (ePackage.getNsURI() != null && !ePackage.getNsURI().isBlank()) {
             resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
-            EPackage.Registry.INSTANCE.put(ePackage.getNsURI(), ePackage);
         }
         ePackage.getESubpackages().forEach(child -> registerPackage(resourceSet, child));
     }

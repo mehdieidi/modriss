@@ -1,6 +1,5 @@
 package io.mehdieidi.modless.mde.etl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -9,6 +8,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.epsilon.common.module.ModuleElement;
 import org.eclipse.epsilon.common.parse.problem.ParseProblem;
@@ -23,12 +27,32 @@ import org.eclipse.epsilon.etl.EtlModule;
 
 public final class EpsilonEtlExecutor {
 
+    private static final Duration DEFAULT_EXECUTION_TIMEOUT = Duration.ofMinutes(5);
+    private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
+
+    private final Duration executionTimeout;
+    private final int maxCapturedOutputBytes;
+
+    public EpsilonEtlExecutor() {
+        this(null, DEFAULT_MAX_CAPTURED_OUTPUT_BYTES);
+    }
+
+    public EpsilonEtlExecutor(Duration executionTimeout, int maxCapturedOutputBytes) {
+        this.executionTimeout = executionTimeout == null || executionTimeout.isZero()
+                || executionTimeout.isNegative() ? null : executionTimeout;
+        this.maxCapturedOutputBytes = maxCapturedOutputBytes <= 0
+                ? DEFAULT_MAX_CAPTURED_OUTPUT_BYTES : maxCapturedOutputBytes;
+    }
+
     public EtlExecutionReport execute(EtlExecutionRequest request) throws EtlExecutionException {
         Instant startedAt = Instant.now();
         List<EtlDiagnostic> diagnostics = new ArrayList<>();
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream warnings = new ByteArrayOutputStream();
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        BoundedByteArrayOutputStream stdout = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
+        BoundedByteArrayOutputStream warnings = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
+        BoundedByteArrayOutputStream stderr = new BoundedByteArrayOutputStream(
+                maxCapturedOutputBytes);
         EtlModule module = new EtlModule();
         List<IModel> loadedModels = new ArrayList<>();
 
@@ -53,7 +77,7 @@ public final class EpsilonEtlExecutor {
             }
 
             configureTransformationState(module);
-            module.execute();
+            executeModule(module);
             storeModels(request, loadedModels, diagnostics);
             return report(
                     EtlExecutionStatus.SUCCEEDED,
@@ -80,6 +104,18 @@ public final class EpsilonEtlExecutor {
         } catch (EolRuntimeException ex) {
             diagnostics.add(runtimeDiagnostic(ex, request.moduleFile()));
             throw failure("ETL execution failed.", request, startedAt, diagnostics, stdout,
+                    warnings, stderr, ex);
+        } catch (EpsilonExecutionTimeoutException ex) {
+            diagnostics.add(EtlDiagnostic.error(
+                    ExecutionPhase.EXECUTION,
+                    request.moduleFile(),
+                    -1,
+                    -1,
+                    ex.getMessage(),
+                    "The ETL module exceeded the configured execution timeout.",
+                    "Reduce model size, inspect the ETL script for non-terminating logic, or increase the timeout deliberately.",
+                    ex));
+            throw failure("ETL execution timed out.", request, startedAt, diagnostics, stdout,
                     warnings, stderr, ex);
         } catch (Exception ex) {
             diagnostics.add(EtlDiagnostic.error(
@@ -329,6 +365,53 @@ public final class EpsilonEtlExecutor {
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance));
     }
 
+    private void executeModule(EtlModule module) throws Exception {
+        if (executionTimeout == null) {
+            module.execute();
+            return;
+        }
+        Thread executingThread = Thread.currentThread();
+        AtomicBoolean timedOut = new AtomicBoolean(false);
+        ScheduledExecutorService watchdog = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "epsilon-etl-watchdog");
+            thread.setDaemon(true);
+            return thread;
+        });
+        ScheduledFuture<?> timeout = watchdog.schedule(() -> {
+            timedOut.set(true);
+            executingThread.interrupt();
+        }, executionTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        try {
+            try {
+                module.execute();
+            } catch (Exception ex) {
+                if (timedOut.get()) {
+                    throw timeoutException();
+                }
+                throw ex;
+            }
+            throwIfTimedOut(timedOut);
+        } finally {
+            timeout.cancel(true);
+            watchdog.shutdownNow();
+            if (timedOut.get()) {
+                Thread.interrupted();
+            }
+        }
+    }
+
+    private EpsilonExecutionTimeoutException timeoutException() {
+        return new EpsilonExecutionTimeoutException(
+                "ETL execution timed out after " + executionTimeout + ".", null);
+    }
+
+    private void throwIfTimedOut(AtomicBoolean timedOut) {
+        if (timedOut.get()) {
+            throw new EpsilonExecutionTimeoutException(
+                    "ETL execution timed out after " + executionTimeout + ".", null);
+        }
+    }
+
     private void storeModels(
             EtlExecutionRequest request, List<IModel> loadedModels, List<EtlDiagnostic> diagnostics)
             throws EtlExecutionException {
@@ -370,9 +453,9 @@ public final class EpsilonEtlExecutor {
                             request,
                             Instant.now(),
                             diagnostics,
-                            new ByteArrayOutputStream(),
-                            new ByteArrayOutputStream(),
-                            new ByteArrayOutputStream()));
+                            new BoundedByteArrayOutputStream(maxCapturedOutputBytes),
+                            new BoundedByteArrayOutputStream(maxCapturedOutputBytes),
+                            new BoundedByteArrayOutputStream(maxCapturedOutputBytes)));
         }
     }
 
@@ -390,9 +473,9 @@ public final class EpsilonEtlExecutor {
     private void configureStreams(
             EtlModule module,
             boolean captureOutput,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr) {
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr) {
         if (!captureOutput) {
             return;
         }
@@ -430,9 +513,9 @@ public final class EpsilonEtlExecutor {
             EtlExecutionRequest request,
             Instant startedAt,
             List<EtlDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr,
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr,
             Throwable cause) throws EtlExecutionException {
         if (diagnostics.stream().anyMatch(d -> d.severity() == DiagnosticSeverity.ERROR)) {
             throw failure("ETL request is invalid.", request, startedAt, diagnostics, stdout,
@@ -445,9 +528,9 @@ public final class EpsilonEtlExecutor {
             EtlExecutionRequest request,
             Instant startedAt,
             List<EtlDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr,
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr,
             Throwable cause) {
         return new EtlExecutionException(
                 message,
@@ -461,9 +544,9 @@ public final class EpsilonEtlExecutor {
             EtlExecutionRequest request,
             Instant startedAt,
             List<EtlDiagnostic> diagnostics,
-            ByteArrayOutputStream stdout,
-            ByteArrayOutputStream warnings,
-            ByteArrayOutputStream stderr) {
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr) {
         Instant finishedAt = Instant.now();
         return new EtlExecutionReport(
                 status,
@@ -472,8 +555,15 @@ public final class EpsilonEtlExecutor {
                 finishedAt,
                 Duration.between(startedAt, finishedAt),
                 diagnostics,
-                stdout.toString(StandardCharsets.UTF_8),
-                warnings.toString(StandardCharsets.UTF_8),
-                stderr.toString(StandardCharsets.UTF_8));
+                stdout.asUtf8String(),
+                warnings.asUtf8String(),
+                stderr.asUtf8String());
+    }
+
+    private static final class EpsilonExecutionTimeoutException extends RuntimeException {
+
+        private EpsilonExecutionTimeoutException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

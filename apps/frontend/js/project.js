@@ -658,6 +658,7 @@ export async function loadProject(project) {
               `/${MODEL_TYPES[type].apiType}/${modelIdToLoad}`);
           state.tabs[type] = {
             modelId: record.id,
+            modelRevision: Number(record.revision) || 1,
             baseModel: structuredClone(record.modelJson),
             diagram: toDiagram(type, record.modelJson, record.name),
             modelName: record.name || `${type}-model`,
@@ -675,6 +676,7 @@ export async function loadProject(project) {
     // Apply CIM tab state (default start tab)
     state.activeType = "cim";
     state.modelId = state.tabs.cim.modelId;
+    state.modelRevision = state.tabs.cim.modelRevision || 0;
     state.baseModel = state.tabs.cim.baseModel;
     state.diagram = state.tabs.cim.diagram;
     state.boundedContextCreateMode = false;
@@ -748,22 +750,26 @@ export async function deleteCurrentProject() {
     state.project = null;
     clearArtifactState();
     state.modelId = null;
+    state.modelRevision = 0;
     state.baseModel = null;
     state.activeType = "cim";
     state.tabs.cim = {
       modelId: null,
+      modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("cim"),
       modelName: "cim-model"
     };
     state.tabs.pim = {
       modelId: null,
+      modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("pim"),
       modelName: "pim-model"
     };
     state.tabs.psm = {
       modelId: null,
+      modelRevision: 0,
       baseModel: null,
       diagram: emptyDiagram("psm"),
       modelName: "psm-model"

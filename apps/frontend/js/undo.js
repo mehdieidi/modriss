@@ -45,6 +45,7 @@ export function captureDiagramUndoSnapshot(typeKey = state.activeType) {
   return {
     typeKey,
     modelId: state.modelId,
+    modelRevision: state.modelRevision || 0,
     modelName: state.tabs[typeKey]?.modelName || defaultModelName(typeKey),
     baseModel: structuredClone(serializeModel()),
     diagram: structuredClone(state.diagram),
@@ -88,6 +89,7 @@ export function applyDiagramUndoSnapshot(snapshot) {
     return false;
   }
   state.modelId = snapshot.modelId;
+  state.modelRevision = snapshot.modelRevision || 0;
   state.baseModel = structuredClone(snapshot.baseModel);
   state.diagram = structuredClone(snapshot.diagram);
   state.selectedNodeId = null;
@@ -97,6 +99,7 @@ export function applyDiagramUndoSnapshot(snapshot) {
   state.inlineLabelEditNodeId = null;
   if (state.tabs[snapshot.typeKey]) {
     state.tabs[snapshot.typeKey].modelId = snapshot.modelId;
+    state.tabs[snapshot.typeKey].modelRevision = snapshot.modelRevision || 0;
     state.tabs[snapshot.typeKey].baseModel = structuredClone(
         snapshot.baseModel);
     state.tabs[snapshot.typeKey].diagram = structuredClone(snapshot.diagram);
