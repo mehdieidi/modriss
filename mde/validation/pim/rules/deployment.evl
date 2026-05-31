@@ -104,9 +104,3 @@ context PIM!ServiceElementMembership {
     message : "[PIM-SVC-006] ServiceElementMembership does not match the service owned references. Fix: synchronize membership metadata with ServerlessService owns* references."
   }
 }
-
-/*****************
- * Function rules
- *****************/
-
-

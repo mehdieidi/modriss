@@ -123,9 +123,3 @@ context PIM!CompensationPolicy {
     message : "[PIM-WF-014] CompensationPolicy '" + self.displayName() + "' has no compensation action. Fix: add compensation functions, compensation events or a clear strategy."
   }
 }
-
-/***********************************
- * External/configuration/security
- ***********************************/
-
-

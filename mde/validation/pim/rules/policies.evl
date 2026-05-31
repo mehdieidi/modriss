@@ -189,9 +189,3 @@ context PIM!DataQualityPolicy {
     message : "[PIM-POL-021A] DataQualityPolicy '" + self.displayName() + "' lacks quality checks, dimensions or measurementRule. Fix: model validation/completeness/freshness/duplicate requirements explicitly."
   }
 }
-
-/************************
- * Readiness/trace rules
- ************************/
-
-

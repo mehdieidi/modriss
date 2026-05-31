@@ -84,9 +84,3 @@ context PIM!ErrorMapping {
     message : "[PIM-ROUTE-008] ErrorMapping '" + self.displayName() + "' is missing domainErrorCode, abstractStatusClass or responseMessage. Suggested fix: define a stable domain error, map it to an abstract status class, and write a client-safe response message."
   }
 }
-
-/*****************************
- * Events and integration rules
- *****************************/
-
-

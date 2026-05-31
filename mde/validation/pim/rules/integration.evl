@@ -186,9 +186,3 @@ context PIM!Flow {
     message : "[PIM-FLOW-003] Flow '" + self.displayName() + "' contains personal data but has no DataProtectionPolicy. Suggested fix: attach data protection policy covering encryption, masking, auditing, retention and residency."
   }
 }
-
-/**********************
- * Data/storage rules
- **********************/
-
-

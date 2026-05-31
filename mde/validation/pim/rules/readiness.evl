@@ -52,5 +52,3 @@ context KERNEL!ManualDecision {
     message : "[PIM-READY-006] Generated blocking ManualDecision '" + self.displayName() + "' should identify an owner or affected PIM elements so it can be triaged."
   }
 }
-
-

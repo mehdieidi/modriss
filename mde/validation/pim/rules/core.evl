@@ -89,9 +89,3 @@ operation KERNEL!TraceableElement isGeneratedTraceSupportElement() : Boolean {
     "ResiliencePolicy"
   }.includes(self.eClass().getName());
 }
-
-/******************************
- * Service and deployment rules
- ******************************/
-
-

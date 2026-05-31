@@ -79,9 +79,3 @@ context PIM!Trigger {
     message : "[PIM-TRIGGER-002] Trigger '" + self.displayName() + "' is disabled without rationale. Suggested fix: explain whether it is intentionally disabled for draft, phased rollout, or deprecation."
   }
 }
-
-/************************
- * Contract/schema rules
- ************************/
-
-

@@ -145,9 +145,3 @@ context PIM!DataAccess {
     message : "[PIM-DATA-016] DataAccess '" + self.displayName() + "' has no purpose. Fix: explain why the function accesses this store and what business operation it supports."
   }
 }
-
-/******************
- * Workflow rules
- ******************/
-
-

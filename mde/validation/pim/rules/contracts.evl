@@ -97,9 +97,3 @@ context PIM!SchemaConstraint {
     message : "[PIM-SCHEMA-010] SchemaConstraint '" + self.displayName() + "' is incomplete. Fix: provide expressionLanguage, expression and a user-facing message."
   }
 }
-
-/************
- * API rules
- ************/
-
-

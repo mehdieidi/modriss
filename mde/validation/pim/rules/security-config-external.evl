@@ -149,9 +149,3 @@ context PIM!AuthorizationPolicy {
     message : "[PIM-SEC-007] Resource-level AuthorizationPolicy '" + self.displayName() + "' has no ruleExpression. Suggested fix: define the rule that binds principal, resource identity and permitted operation."
   }
 }
-
-/****************
- * Policy rules
- ****************/
-
-
