@@ -58,6 +58,7 @@ class Schedule extends IntegrationElement, kernel.DeployableElement, kernel.Invo
   attr String[1] scheduleExpression;
   attr Boolean enabled;
   attr String timeZone;
+  ref kernel.RoutingTarget[*] targets;
 }
 
 class Subscription extends kernel.TraceableElement {

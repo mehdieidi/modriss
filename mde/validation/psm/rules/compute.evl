@@ -4,9 +4,31 @@ import "../lib/psm-validation-helpers.eol";
 
 context AWSPSM!AwsLambdaFunction {
 
+  constraint LambdaHasExecutionRole {
+    check : self.role.isDefined()
+    message : 'Lambda ' + self.resourceLabel() + ' has no execution role. Fix: attach an IamRole that Lambda can assume.'
+  }
+
+  constraint LambdaHasLogGroup {
+    check : self.logGroup.isDefined()
+    message : 'Lambda ' + self.resourceLabel() + ' has no logGroup. Fix: attach the CloudWatchLogGroup used for function logs.'
+  }
+
+  constraint LambdaHasCodeConfig {
+    check : self.code.isDefined()
+    message : 'Lambda ' + self.resourceLabel() + ' has no code configuration. Fix: attach LambdaZipCodeConfig or LambdaImageCodeConfig.'
+  }
+
   constraint LambdaHasSupportedCodeConfig {
     check : self.code.isKindOf(AWSPSM!LambdaZipCodeConfig) or self.code.isKindOf(AWSPSM!LambdaImageCodeConfig)
     message : 'Lambda ' + self.resourceLabel() + ' uses an unsupported code configuration. Fix: use LambdaZipCodeConfig for ZIP functions or LambdaImageCodeConfig for container-image functions.'
+  }
+
+  constraint LambdaPackageTypeMatchesCodeConfig {
+    check : self.packageType.isUndefined() or self.code.isUndefined() or
+      (self.code.isKindOf(AWSPSM!LambdaZipCodeConfig) and self.packageType = AWSPSMENUMS!PackageType#ZIP) or
+      (self.code.isKindOf(AWSPSM!LambdaImageCodeConfig) and self.packageType = AWSPSMENUMS!PackageType#IMAGE)
+    message : 'Lambda ' + self.resourceLabel() + ' packageType does not match its code configuration. Fix: use ZIP for LambdaZipCodeConfig and IMAGE for LambdaImageCodeConfig, or omit packageType when it is derived by generators.'
   }
 
   constraint LambdaMemoryRange {

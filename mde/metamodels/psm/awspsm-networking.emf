@@ -11,6 +11,8 @@ class VpcAttachmentConfig extends kernel.TraceableElement {
   attr Boolean ipv6AllowedForDualStack;
   attr Boolean privateSubnetsRequireNatOrEndpoints;
   val VpcEndpointReference[*] requiredEndpoints;
+  ref Vpc[?] vpc;
+  ref Subnet[*] subnets;
   ref SecurityGroup[*] securityGroups;
 }
 

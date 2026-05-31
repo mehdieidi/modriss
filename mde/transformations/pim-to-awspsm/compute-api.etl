@@ -154,6 +154,7 @@ rule ApiRoute2HttpApiRoute
   gr.routeSettingsJson = "{ \"DetailedMetricsEnabled\": true }";
   gr.api = awsEquivalent(r.api);
   gr.integration = createApiIntegration(r, gr);
+  attachOpenApiModels(r, gr);
   if (routeNeedsAuth(r) and gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#NONE) {
     manualDecision("API_ROUTE_AUTHORIZER_MISSING",
       "Provide an authorizer for protected route " + r.pathTemplate + ".",
@@ -183,6 +184,7 @@ rule ApiRoute2RestApiRoute
   gr.routeSettingsJson = "{ \"DataTraceEnabled\": false, \"MetricsEnabled\": true }";
   gr.api = awsEquivalent(r.api);
   gr.integration = createApiIntegration(r, gr);
+  attachOpenApiModels(r, gr);
   gr.authorizer = findAuthorizerFor(r);
   if (routeNeedsAuth(r) and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY and gr.authorizer.isUndefined()) {
     manualDecision("API_ROUTE_AUTHORIZER_MISSING",
@@ -376,27 +378,27 @@ operation inferAuthorizationType(r) {
 
 operation mapHttpMethod(m) {
   if (m = PIMTYPES!HttpMethod#GET) {
-    return AWSPSMENUMS!HttpMethod#GET;
+    return AWSPSMENUMS!ApiGatewayHttpMethod#GET;
   }
   if (m = PIMTYPES!HttpMethod#POST) {
-    return AWSPSMENUMS!HttpMethod#POST;
+    return AWSPSMENUMS!ApiGatewayHttpMethod#POST;
   }
   if (m = PIMTYPES!HttpMethod#PUT) {
-    return AWSPSMENUMS!HttpMethod#PUT;
+    return AWSPSMENUMS!ApiGatewayHttpMethod#PUT;
   }
   if (m = PIMTYPES!HttpMethod#PATCH) {
-    return AWSPSMENUMS!HttpMethod#PATCH;
+    return AWSPSMENUMS!ApiGatewayHttpMethod#PATCH;
   }
   if (m = PIMTYPES!HttpMethod#DELETE) {
-    return AWSPSMENUMS!HttpMethod#DELETE;
+    return AWSPSMENUMS!ApiGatewayHttpMethod#DELETE;
   }
   if (m = PIMTYPES!HttpMethod#OPTIONS) {
-    return AWSPSMENUMS!HttpMethod#OPTIONS;
+    return AWSPSMENUMS!ApiGatewayHttpMethod#OPTIONS;
   }
   if (m = PIMTYPES!HttpMethod#HEAD) {
-    return AWSPSMENUMS!HttpMethod#HEAD;
+    return AWSPSMENUMS!ApiGatewayHttpMethod#HEAD;
   }
-  return AWSPSMENUMS!HttpMethod#ANY;
+  return AWSPSMENUMS!ApiGatewayHttpMethod#ANY;
 }
 
 operation inferRouteTimeoutMillis(r) {
@@ -416,13 +418,13 @@ operation createApiIntegration(r, gr) {
   i.timeoutInMillis = gr.timeoutInMillis;
   if (r.functionIntegration.isDefined()) {
     i.lambdaTarget = awsEquivalent(r.functionIntegration);
-    i.integrationUri = "${" + i.lambdaTarget.logicalId + ".Arn}";
-    createLambdaPermissionFor("ApiGatewayInvoke", r, i.lambdaTarget, "apigateway.amazonaws.com");
+    i.integrationUri = cfnArnExpression(i.lambdaTarget);
+    createLambdaPermissionFor("ApiGatewayInvoke", r, i.lambdaTarget, "apigateway.amazonaws.com", apiGatewayRouteSourceArn(gr));
   }
   else {
     if (r.workflowIntegration.isDefined()) {
       i.stateMachineTarget = awsEquivalent(r.workflowIntegration);
-      i.integrationUri = "${" + i.stateMachineTarget.logicalId + ".Arn}";
+      i.integrationUri = cfnArnExpression(i.stateMachineTarget);
     }
     else {
       manualDecision("API_ROUTE_TARGET_REQUIRED",
@@ -586,6 +588,40 @@ operation schemaRefJson(schema) {
   return "{ \"" + schema.name + "\": \"" + firstText(schema.externalSchemaUri, schema.id) + "\" }";
 }
 
+operation attachOpenApiModels(route, awsRoute) {
+  if (route.requestSchema.isDefined()) {
+    awsRoute.requestModels.add(createRequestModel(route, route.requestSchema));
+  }
+  if (route.responseSchema.isDefined()) {
+    awsRoute.responseModels.add(createResponseModel(route, route.responseSchema, positiveOr(route.expectedSuccessStatus, 200).asString()));
+  }
+  for (errorMapping in route.errorMappings.select(em | em.errorSchema.isDefined())) {
+    awsRoute.responseModels.add(createResponseModel(route, errorMapping.errorSchema, statusForError(errorMapping)));
+  }
+}
+
+operation createRequestModel(route, schema) {
+  var model = new AWSPSMAPI!ApiGatewayRequestModel;
+  copyTraceable(schema, model);
+  model.id = generatedId("api_request_model", route, schema.id);
+  model.name = pascalCase(firstText(schema.name, schema.id)) + "RequestModel";
+  model.modelName = pascalCase(firstText(schema.name, schema.id));
+  model.contentType = "application/json";
+  model.schemaJson = schemaToOpenApiSchema(schema);
+  return model;
+}
+
+operation createResponseModel(route, schema, statusCode : String) {
+  var model = new AWSPSMAPI!ApiGatewayResponseModel;
+  copyTraceable(schema, model);
+  model.id = generatedId("api_response_model", route, statusCode + "_" + schema.id);
+  model.name = pascalCase(firstText(schema.name, schema.id));
+  model.statusCode = statusCode;
+  model.contentType = "application/json";
+  model.schemaJson = schemaToOpenApiSchema(schema);
+  return model;
+}
+
 operation generateOpenApi(api) {
   var paths = "";
   for (r in api.routes) {
@@ -599,7 +635,32 @@ operation generateOpenApi(api) {
   }
   return "{ \"openapi\": \"3.0.3\", \"info\": { \"title\": \"" + escapeJson(firstText(api.publicName, api.name)) +
     "\", \"version\": \"" + escapeJson(firstText(api.version, "1.0.0")) + "\" }, \"paths\": { " + paths +
-    " }, \"components\": { \"securitySchemes\": " + openApiSecuritySchemes(api) + " } }";
+    " }, \"components\": { \"schemas\": " + openApiSchemas(api) + ", \"securitySchemes\": " + openApiSecuritySchemes(api) + " } }";
+}
+
+operation openApiSchemas(api) {
+  var schemas = Sequence{};
+  for (route in api.routes) {
+    addSchemaOnce(schemas, route.requestSchema);
+    addSchemaOnce(schemas, route.responseSchema);
+    for (err in route.errorMappings) {
+      addSchemaOnce(schemas, err.errorSchema);
+    }
+  }
+  var out = "";
+  for (schema in schemas) {
+    if (hasText(out)) {
+      out = out + ", ";
+    }
+    out = out + "\"" + escapeJson(pascalCase(schema.name)) + "\": " + schemaToOpenApiSchema(schema);
+  }
+  return "{ " + out + " }";
+}
+
+operation addSchemaOnce(schemas, schema) {
+  if (schema.isDefined() and not schemas.includes(schema)) {
+    schemas.add(schema);
+  }
 }
 
 operation openApiRequestBody(r) {
@@ -704,10 +765,17 @@ operation createApiKeyAndUsagePlan(api, g) {
 
 operation secretValue(secret) {
   var v = new AWSPSMSECURITY!SecretValueExpression;
-  v.id = uniqueId("secret_value_" + slug(secret.logicalId));
-  v.name = "Secret reference " + secret.logicalId;
+  var reference = "REVIEW_REQUIRED_SECRET_REFERENCE";
+  if (secret.isDefined()) {
+    reference = firstText(secret.secretName, firstText(secret.physicalName, secret.logicalId));
+  }
+  v.id = uniqueId("secret_value_" + slug(reference));
+  v.name = "Secret reference " + reference;
   v.sourceKind = AWSPSMENUMS!ValueSourceKind#SECRETS_MANAGER_REFERENCE;
+  v.expression = reference;
   v.secret = true;
-  v.secretRef = secret;
+  if (secret.isDefined()) {
+    v.secretRef = secret;
+  }
   return v;
 }

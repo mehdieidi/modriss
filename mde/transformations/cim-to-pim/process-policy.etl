@@ -51,6 +51,28 @@ operation secondsFromDurationExpression(value) {
   return amount;
 }
 
+operation cloneKernelExpression(expr, prefix : String, seed) {
+  if (expr.isUndefined()) {
+    return null;
+  }
+  var cloned = new KERNEL!Expression;
+  cloned.id = newId(prefix, firstText(expr.id, seed.id));
+  cloned.name = firstText(expr.name, firstText(seed.name, seed.id) + " Expression");
+  cloned.language = expr.language;
+  cloned.body = expr.body;
+  cloned.phase = expr.phase;
+  cloned.sideEffectFree = expr.sideEffectFree;
+  traceGenerated(expr, cloned, "TR-130", "HIGH");
+  return cloned;
+}
+
+operation cloneConditionExpression(condition : CIMBEHAVIOR!Condition, prefix : String, seed) {
+  if (condition.isUndefined() or condition.expressionModel.isUndefined()) {
+    return null;
+  }
+  return cloneKernelExpression(condition.expressionModel, prefix, seed);
+}
+
 operation createPolicyContextSchema(pol : CIMPROCESS!Policy) {
   var schema = new CONTRACTS!Schema;
   schema.id = newId("schema_policy_context", pol.id);
@@ -148,13 +170,13 @@ rule Policy2PolicyHandlerFunction
   var policyContext = fieldFor(inputSchema.id, "policyContext", PIMTYPES!FieldType#OBJECT, false);
   policyContext.objectSchema = createPolicyContextSchema(pol);
   inputSchema.fields.add(policyContext);
-  if (hasText(pol.expression) or hasText(pol.naturalLanguageRule)) {
+  if (hasText(expressionText(pol)) or hasText(pol.naturalLanguageRule)) {
     var constraint = new CONTRACTS!SchemaConstraint;
     constraint.id = idFor("constraint_policy", pol);
     constraint.name = pol.name + " Policy Constraint";
-    constraint.expressionLanguage = pol.expressionLanguage.orDefault("natural-language");
-    constraint.expression = firstText(pol.expression, pol.naturalLanguageRule);
-    constraint.message = pol.naturalLanguageRule;
+    constraint.expressionLanguage = expressionLanguageText(pol);
+    constraint.expression = firstText(expressionText(pol), pol.naturalLanguageRule);
+    constraint.message = firstText(pol.naturalLanguageRule, expressionText(pol));
     constraint.severity = mapSeverity(pol.violationSeverity);
     inputSchema.constraints.add(constraint);
     traceGenerated(pol, constraint, "TR-100", "MEDIUM");
@@ -315,7 +337,8 @@ rule ProcessStep2WorkflowState
     ws.invokesAdapter = adapterFor(s.externalSystem);
   }
   if (s.isKindOf(CIMPROCESS!DecisionStep) and s.condition.isDefined()) {
-    ws.conditionExpression = s.condition.expression;
+    ws.condition = cloneConditionExpression(s.condition, "state_condition", s);
+    ws.conditionExpression = expressionText(s.condition);
   }
   if (s.isKindOf(CIMPROCESS!DecisionStep) and s.decisionTable.isDefined()) {
     var decisionFn = cachedEquivalent(s.decisionTable, "DecisionTable2ChoiceLogic");
@@ -370,12 +393,15 @@ rule ProcessTransition2WorkflowTransition
   wt.name = t.name.orDefault(t.source.name + " -> " + t.target.name);
   wt.source = workflowStateFor(t.source);
   wt.target = workflowStateFor(t.target);
+  if (t.condition.isDefined()) {
+    wt.condition = cloneKernelExpression(t.condition, "wf_transition_condition", t);
+  }
   if (hasText(t.conditionExpression)) {
     wt.conditionExpression = t.conditionExpression;
   }
   else {
     if (t.condition.isDefined()) {
-      wt.conditionExpression = t.condition.expression;
+      wt.conditionExpression = expressionText(t.condition);
     }
     else {
       wt.conditionExpression = "";
@@ -543,21 +569,12 @@ rule SecurityConstraint2SecurityPolicies
     var principal = cachedEquivalent(actor, "Actor2Principal");
     if (principal.isDefined()) {
       authz.allowedPrincipals.add(principal);
-      for (target in protectedTargets) {
-        var perm = new SECURITY!Permission;
-        perm.id = newId("permission", sc.id + "_" + actor.id + "_" + target.id);
-        perm.name = actor.name + " access to " + target.name;
-        perm.effect = PIMTYPES!PermissionEffect#ALLOW;
-        perm.action = "invoke:review-required";
-        perm.resource = target.id;
-        perm.condition = sc.authorizationRule;
-        perm.leastPrivilegeConfirmed = hasText(sc.authorizationRule);
-        perm.targetResource = target;
-        principal.permissions.add(perm);
-        authz.permissions.add(perm);
-        traceGenerated(sc, perm, "TR-060", "MEDIUM");
-      }
     }
+  }
+  if (authz.allowedPrincipals.notEmpty() and protectedTargets.notEmpty()) {
+    manualDecision("TR-060",
+      "Translate security constraint '" + sc.name + "' into explicit provider-independent Permission action/resource entries.",
+      KERNEL!Severity#WARNING, true, Sequence{sc, authz});
   }
 
   pimRoot().policies.add(sec);
@@ -627,6 +644,15 @@ rule TemporalConstraint2TimeoutPolicy
     schedule.scheduleExpression = tc.deadlineExpression;
     schedule.enabled = true;
     schedule.timeZone = "UTC";
+    var routingTargets = policyTargetsForAll(tc.constrainedElements).select(target | target.isKindOf(KERNEL!RoutingTarget));
+    if (routingTargets.size() = 1) {
+      schedule.targets.add(routingTargets.first());
+    }
+    else {
+      manualDecision("TR-130",
+        "Choose exactly one Function, Workflow, adapter, channel, or other RoutingTarget for temporal constraint '" + tc.name + "'.",
+        KERNEL!Severity#ERROR, timeout.productionRequired, Sequence{tc, schedule});
+    }
     pimRoot().schedules.add(schedule);
     traceGenerated(tc, schedule, "TR-130", "MEDIUM");
   }
@@ -761,8 +787,6 @@ rule AuditOperabilityNfr2Observability
   var logging = new POLICY!LoggingPolicy;
   logging.id = idFor("logging_nfr", nfr);
   logging.name = nameFor(nfr, " Logging");
-  logging.policyScope = "structured logging";
-  logging.productionRequired = nfr.mandatory or nfr.productionBlocking;
   logging.logFormat = "structured-json";
   logging.logLevel = "INFO";
   logging.structuredLogging = true;
@@ -775,8 +799,6 @@ rule AuditOperabilityNfr2Observability
   var tracing = new POLICY!TracingPolicy;
   tracing.id = idFor("tracing_nfr", nfr);
   tracing.name = nameFor(nfr, " Tracing");
-  tracing.policyScope = "distributed tracing";
-  tracing.productionRequired = nfr.mandatory or nfr.productionBlocking;
   tracing.tracingRequired = true;
   tracing.samplingPolicy = "TBD";
   tracing.propagateTraceContext = true;
@@ -786,8 +808,6 @@ rule AuditOperabilityNfr2Observability
   var metric = new POLICY!MetricPolicy;
   metric.id = idFor("metric_nfr", nfr);
   metric.name = nameFor(nfr, " Metric");
-  metric.policyScope = "operational metric";
-  metric.productionRequired = nfr.mandatory or nfr.productionBlocking;
   metric.metricName = firstText(nfr.metric, nfr.name);
   metric.unit = "Count";
   metric.statistic = "Sum";
@@ -843,7 +863,7 @@ rule DataQualityNfr2SchemaConstraintAndReadiness
   pol.completenessCheckRequired = firstText(nfr.metric, nfr.name).toLowerCase().contains("complete");
   pol.freshnessCheckRequired = firstText(nfr.metric, nfr.name).toLowerCase().contains("fresh");
   pol.duplicateDetectionRequired = firstText(nfr.metric, nfr.name).toLowerCase().contains("duplicate");
-  pol.qualityDimensions = firstText(nfr.qualityAttribute, firstText(nfr.metric, nfr.name));
+  pol.qualityDimensions = firstText(nfr.metric, firstText(nfr.qualityType, nfr.name));
   pol.measurementRule = firstText(nfr.fitCriterion, nfr.description);
   pol.attachedTo.addAll(policyTargetsForAll(nfr.constrainedElements));
   pimRoot().policies.add(pol);

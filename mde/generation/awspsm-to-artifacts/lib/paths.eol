@@ -62,6 +62,29 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine aslPath() : String {
   return "asl/" + self.workflowSlug() + ".asl.json";
 }
 
+operation KERNEL!StructuredDocument documentPath() : String {
+  var baseName = firstText(self.name, self.id).toSlug();
+  if (self.id.isPresent() and self.id.startsWith("schema_doc_")) {
+    return "schemas/contracts/" + baseName + ".schema.json";
+  }
+  if (self.id.isPresent() and self.id.startsWith("event_contract_")) {
+    return "schemas/events/" + baseName + ".json";
+  }
+  if (self.id.isPresent() and self.id.startsWith("service_metadata_")) {
+    return "generated/documents/services/" + baseName + ".json";
+  }
+  if (self.format.isDefined() and self.format.asString() = "YAML") {
+    return "generated/documents/" + baseName + ".yaml";
+  }
+  if (self.format.isDefined() and self.format.asString() = "MARKDOWN") {
+    return "generated/documents/" + baseName + ".md";
+  }
+  if (self.format.isDefined() and (self.format.asString() = "JSON" or self.format.asString() = "ASL_JSON" or self.format.asString() = "IAM_POLICY_JSON")) {
+    return "generated/documents/" + baseName + ".json";
+  }
+  return "generated/documents/" + baseName + ".txt";
+}
+
 operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
   return "tests/workflows/" + self.workflowSlug() + ".workflow.test." + extText;
@@ -110,6 +133,10 @@ operation Any pathKind(pathText : String) : String {
     return "GO";
   }
   return "TEXT";
+}
+
+operation String pathKind() : String {
+  return pathKind(self);
 }
 
 operation Map goModulePath() : String {

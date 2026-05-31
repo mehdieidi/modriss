@@ -1,17 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-template_path="${1:-template.yaml}"
-
-if command -v sam >/dev/null 2>&1; then
-  sam validate --lint --template-file "$template_path"
+if [[ "$#" -gt 0 ]]; then
+  templates=("$@")
 else
-  echo "SAM CLI is not installed; skipping sam validate for $template_path" >&2
+  mapfile -t templates < <(find . -maxdepth 2 -type f \( -name 'template*.yaml' -o -name 'template*.yml' \) | sort)
+  if [[ "${#templates[@]}" -eq 0 ]]; then
+    templates=("template.yaml")
+  fi
 fi
 
-if command -v cfn-lint >/dev/null 2>&1; then
-  cfn-lint "$template_path"
-fi
+for template_path in "${templates[@]}"; do
+  if command -v sam >/dev/null 2>&1; then
+    sam validate --lint --template-file "$template_path"
+  else
+    echo "SAM CLI is not installed; skipping sam validate for $template_path" >&2
+  fi
+
+  if command -v cfn-lint >/dev/null 2>&1; then
+    cfn-lint "$template_path"
+  fi
+done
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("validate-template-customizations"), true)%]
 # Add organization-specific CloudFormation validation here.

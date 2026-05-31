@@ -167,7 +167,13 @@ rule SecretConfigParameter2SsmParameter
   s.dataType = "text";
   s.allowedPattern = p.validationPattern;
   s.descriptionText = firstText(p.summary, p.description);
-  s.value = literalValue(firstText(p.defaultValue, ""), true);
+  s.value = ssmSecureReferenceValue(firstText(p.defaultValue, ""));
+  if (not hasText(p.defaultValue)) {
+    manualDecision("SECRET_PARAMETER_VALUE_REQUIRED",
+      "Provide secure value source for secret configuration parameter " + p.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{p, s},
+      "Set ConfigParameter.defaultValue to an SSM secure parameter path/version or wire the value from a Secrets Manager/SSM deployment secret.");
+  }
   createTrace(p, s, "SecretConfigParameter2SsmParameter", "HIGH", KERNEL!TraceLinkType#MAPS_TO);
 }
 
@@ -195,7 +201,7 @@ operation createAslDocument(w) {
   }
   var stateByPimId = new Map;
   for (ws in w.states) {
-    var aslState = createAslState(w, ws, stateByPimId);
+    var aslState = createAslState(w, ws);
     d.states.add(aslState);
     stateByPimId.put(cacheKeyFor(ws), aslState);
   }
@@ -204,7 +210,7 @@ operation createAslDocument(w) {
   return d;
 }
 
-operation createAslState(w, ws, stateByPimId) {
+operation createAslState(w, ws) {
   var st = new AWSPSMWORKFLOW!AslState;
   st.id = generatedId("asl_state", ws, "state");
   st.name = ws.name;
@@ -227,14 +233,6 @@ operation createAslState(w, ws, stateByPimId) {
   if (ws.retry.isDefined()) {
     st.retry.add(createAslRetry(ws.retry));
   }
-  if (ws.stateKind = PIMTYPES!WorkflowStateKind#CHOICE) {
-    for (tr in out) {
-      var choiceRule = createAslChoice(tr, stateByPimId);
-      if (choiceRule.isDefined()) {
-        st.choices.add(choiceRule);
-      }
-    }
-  }
   if (ws.stateKind = PIMTYPES!WorkflowStateKind#PARALLEL) {
     manualDecision("WORKFLOW_PARALLEL_BRANCH_DESIGN",
       "Define ASL branch details for parallel state " + ws.name + ".",
@@ -247,14 +245,6 @@ operation createAslState(w, ws, stateByPimId) {
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
       "The PIM identifies a map state but does not carry full ASL item processor structure.");
   }
-  for (h in ws.catchHandlers) {
-    if (h.nextState.isDefined()) {
-      var catchRule = createAslCatch(h, stateByPimId);
-      if (catchRule.isDefined()) {
-        st.catch.add(catchRule);
-      }
-    }
-  }
   return st;
 }
 
@@ -262,9 +252,26 @@ operation completeAslStateTransitions(w, stateByPimId) {
   for (ws in w.states) {
     var st = stateByPimId.get(cacheKeyFor(ws));
     var out = w.transitions.select(x | x.source = ws);
-    if (st.isDefined() and out.size() = 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
-      st.nextState = stateByPimId.get(cacheKeyFor(out.first().target));
-      st.nextStateName = out.first().target.name;
+    if (st.isDefined() and st.type = AWSPSMENUMS!AslStateType#CHOICE) {
+      for (tr in out) {
+        var choiceRule = createAslChoice(tr, stateByPimId);
+        if (choiceRule.isDefined()) {
+          st.choices.add(choiceRule);
+        }
+      }
+    }
+    else if (st.isDefined() and out.size() = 1 and not st.end) {
+      var resolvedNextState = stateByPimId.get(cacheKeyFor(out.first().target));
+      if (resolvedNextState.isDefined()) {
+        st.nextState = resolvedNextState;
+        st.nextStateName = resolvedNextState.stateName;
+      }
+      else {
+        manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",
+          "Resolve target state for workflow transition " + firstText(out.first().name, out.first().id) + ".",
+          KERNEL!Severity#ERROR, true, Sequence{w, out.first()},
+          "Ensure WorkflowTransition.target references a state in the same transformed workflow.");
+      }
     }
     else {
       if (st.isDefined() and out.size() <> 1 and not st.end and st.type <> AWSPSMENUMS!AslStateType#CHOICE) {
@@ -272,6 +279,16 @@ operation completeAslStateTransitions(w, stateByPimId) {
           "Resolve outgoing transition for workflow state " + ws.name + ".",
           KERNEL!Severity#ERROR, true, Sequence{w, ws},
           "Non-choice states need exactly one outgoing transition unless terminal.");
+      }
+    }
+    if (st.isDefined()) {
+      for (h in ws.catchHandlers) {
+        if (h.nextState.isDefined()) {
+          var catchRule = createAslCatch(h, stateByPimId);
+          if (catchRule.isDefined()) {
+            st.catch.add(catchRule);
+          }
+        }
       }
     }
   }

@@ -1,12 +1,1 @@
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:modless:[%= emitCtx.get("projectSlug") %]:[%= schemaOwnerObj.stableKey().toSlug() %]:[%= schemaKindText.toSlug() %]",
-  "title": "[%= schemaOwnerObj.schemaTitle(schemaKindText).jsonEscape() %]",
-  "description": "[%= firstText(schemaOwnerObj.summary, "Permissive generated schema. Tighten this in the model before production export.").jsonEscape() %]",
-  "type": "object",
-  "additionalProperties": true,
-  "x-psm-trace": {
-    "sourceStableId": "[%= schemaOwnerObj.stableKey().jsonEscape() %]",
-    "generatorRule": "AWSPSM2ART_Contract_To_JsonSchema"
-  }
-}
+[%= schemaOwnerObj.localInputSchemaJson(emitCtx) %]

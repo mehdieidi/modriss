@@ -16,6 +16,13 @@ operation KERNEL!Multiplicity isMany() : Boolean {
     (self.unbounded = true or (self.upperBound.isDefined() and self.upperBound > 1));
 }
 
+operation Any hasExpressionBody() : Boolean {
+  if (self.isUndefined() or self.eClass().getName() <> "Expression") {
+    return false;
+  }
+  return self.language.isDefined() and self.body.hasText();
+}
+
 operation CIM!InformationItem transitiveSubItems() : Set {
   var result : Set = Set{};
   for (child in self.subItems) {

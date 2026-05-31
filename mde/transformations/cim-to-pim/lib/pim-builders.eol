@@ -165,12 +165,12 @@ operation createConditionConstraint(condition : CIMBEHAVIOR!Condition, ruleId : 
   var c = new CONTRACTS!SchemaConstraint;
   c.id = newId("constraint", ownerSeed + "_" + condition.id);
   c.name = nameFor(condition, " Constraint");
-  c.expressionLanguage = condition.expressionLanguage.orDefault("natural-language");
-  c.expression = firstText(condition.expression, condition.naturalLanguage);
+  c.expressionLanguage = expressionLanguageText(condition);
+  c.expression = expressionText(condition);
   c.message = condition.naturalLanguage.orDefault("Review business condition.");
   c.severity = KERNEL!Severity#WARNING;
   traceGenerated(condition, c, ruleId, "MEDIUM");
-  if (condition.mustBeAutomatable and not hasText(condition.expression)) {
+  if (condition.mustBeAutomatable and not hasText(expressionText(condition))) {
     manualDecision(ruleId, "Define automatable expression for condition '" + condition.name + "'.", KERNEL!Severity#ERROR, true, Sequence{condition, c});
   }
   return c;

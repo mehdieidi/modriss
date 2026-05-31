@@ -10,6 +10,20 @@ operation capabilityInBoundedContext(cap : CIMORG!BusinessCapability) {
   return CIMORG!BoundedContextCandidate.all.exists(bc | bc.capabilities.includes(cap));
 }
 
+operation inferExternalProtocolFamily(es : CIMORG!ExternalSystem) : String {
+  var evidence = firstText(es.businessPurpose, firstText(es.contractualSla, firstText(es.authenticationExpectation, es.summary))).toLowerCase();
+  if (evidence.contains("http") or evidence.contains("https") or evidence.contains("rest") or evidence.contains("api") or evidence.contains("webhook")) {
+    return "HTTP";
+  }
+  if (evidence.contains("event") or evidence.contains("stream") or evidence.contains("message") or evidence.contains("queue")) {
+    return "EVENT";
+  }
+  if (evidence.contains("file") or evidence.contains("sftp") or evidence.contains("ftp")) {
+    return "FILE";
+  }
+  return "REVIEW_REQUIRED_PROTOCOL";
+}
+
 rule BoundedContext2Service
   transform bc : CIMORG!BoundedContextCandidate
   to s : DEPLOY!ServerlessService {
@@ -98,8 +112,20 @@ rule Role2Principal
   pimRoot().principals.add(p);
   traceGenerated(r, p, "TR-020", "HIGH");
 
-  if (r.permissions.notEmpty()) {
-    manualDecision("TR-020", "Translate business permissions for role '" + r.name + "' into provider-independent AuthorizationPolicy and explicit Permission actions/resources.", KERNEL!Severity#WARNING, true, Sequence{r, p});
+  if (hasText(r.businessPermissionSummary)) {
+    var authz = new SECURITY!AuthorizationPolicy;
+    authz.id = idFor("authz_role", r);
+    authz.name = nameFor(r, " Authorization Policy");
+    authz.policyScope = "role business permission summary";
+    authz.productionRequired = isTrue(r.privileged);
+    authz.authorizationRequired = true;
+    authz.ruleExpression = r.businessPermissionSummary;
+    authz.roleOrScopeRequired = firstText(r.name, r.id);
+    authz.resourceLevelAuthorization = false;
+    authz.allowedPrincipals.add(p);
+    pimRoot().policies.add(authz);
+    traceGenerated(r, authz, "TR-020", "MEDIUM");
+    manualDecision("TR-020", "Translate business permissions for role '" + r.name + "' into explicit provider-independent Permission actions/resources only where action and target resource semantics are known.", KERNEL!Severity#WARNING, true, Sequence{r, p, authz});
   }
 }
 
@@ -115,7 +141,7 @@ rule ExternalSystem2Adapter
   ep.id = idFor("external_endpoint", es);
   ep.name = nameFor(es, " Endpoint");
   ep.externalSystemName = firstText(es.name, es.owningOrganization);
-  ep.protocolFamily = "TBD";
+  ep.protocolFamily = inferExternalProtocolFamily(es);
   ep.endpointDescription = firstText(es.summary, es.description);
   ep.expectedSla = es.contractualSla;
   ep.credentialsRequired = es.trustLevel.asString() <> "TRUSTED_INTERNAL";
@@ -145,7 +171,7 @@ rule ExternalSystem2Adapter
   if (not hasText(es.contractualSla)) {
     manualDecision("TR-030", "Confirm SLA and failure handling for external system '" + es.name + "'.", KERNEL!Severity#WARNING, false, Sequence{es, a});
   }
-  if (ep.credentialsRequired and not hasText(es.authenticationExpectation)) {
+  if ((ep.protocolFamily = "REVIEW_REQUIRED_PROTOCOL") or (ep.credentialsRequired and not hasText(es.authenticationExpectation))) {
     manualDecision("TR-030", "Confirm protocol, ExternalAdapter.endpoint, and credential type for external system '" + es.name + "'.", KERNEL!Severity#WARNING, true, Sequence{es, a, ep});
   }
 }

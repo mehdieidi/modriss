@@ -42,6 +42,12 @@ context AWSPSM!EventBridgeTarget {
     check : self.parameters.isDefined() and self.parameters.isKindOf(AWSPSM!EventBridgeSqsTargetParameters) and self.parameters.messageGroupId.hasText()
     message : 'EventBridge target ' + self.targetId + ' sends to a FIFO SQS queue without messageGroupId. Fix: add EventBridgeSqsTargetParameters.messageGroupId.'
   }
+
+  constraint NonLambdaTargetHasInvokeRole {
+    guard : self.targetKind <> AWSPSMENUMS!EventBridgeTargetKind#LAMBDA and self.targetKind <> AWSPSMENUMS!EventBridgeTargetKind#OTHER_AWS_RESOURCE
+    check : self.role.isDefined() or self.roleArn.hasText()
+    message : 'EventBridge target ' + self.targetId + ' has no invoke role. Fix: attach a target-specific IAM role or roleArn for Step Functions, SQS, SNS, EventBridge bus, API destination, or log group targets.'
+  }
 }
 
 context AWSPSM!AwsRetryPolicy {
@@ -56,6 +62,11 @@ context AWSPSM!EventBridgeSchedule {
   constraint ScheduleHasExpressionAndRole {
     check : self.scheduleExpression.hasText() and self.role.isDefined()
     message : 'EventBridge schedule ' + self.resourceLabel() + ' lacks scheduleExpression or role. Fix: set scheduleExpression and attach the IAM role used by the scheduler.'
+  }
+
+  constraint ScheduleHasTarget {
+    check : self.target.isDefined() and (self.target.targetResource.isDefined() or self.target.arnExpression.hasText())
+    message : 'EventBridge schedule ' + self.resourceLabel() + ' has no resolvable target. Fix: set EventBridgeSchedule.target with a targetResource or ARN expression.'
   }
 }
 

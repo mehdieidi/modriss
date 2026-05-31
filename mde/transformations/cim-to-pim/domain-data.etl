@@ -27,6 +27,10 @@ operation aggregateContainsPersonalData(ag : CIMDOMAIN!AggregateCandidate) {
   return aggregateItems(ag).exists(i | isPersonal(i));
 }
 
+operation storageFieldNameFor(item) {
+  return camelCase(firstText(item.businessName, item.name));
+}
+
 rule Entity2Schema
   transform e : CIMDOMAIN!DomainEntity
   to s : CONTRACTS!Schema {
@@ -49,8 +53,8 @@ rule Entity2Schema
     var c = new CONTRACTS!SchemaConstraint;
     c.id = idFor("constraint", inv);
     c.name = inv.name;
-    c.expressionLanguage = inv.expressionLanguage;
-    c.expression = inv.expression;
+    c.expressionLanguage = expressionLanguageText(inv);
+    c.expression = expressionText(inv);
     c.message = inv.naturalLanguageStatement;
     c.severity = mapSeverity(inv.violationSeverity);
     s.constraints.add(c);
@@ -179,6 +183,13 @@ rule Aggregate2DataStore
   for (item in aggregateItems(ag)) {
     dataModel.storageFields.add(createDataField(item, ag.root.primaryIdentityAttribute, dataModel.id));
   }
+  for (identityItem in ag.root.identityAttributes.excluding(ag.root.primaryIdentityAttribute)) {
+    var identityField = dataModel.storageFields.selectOne(f | f.name = storageFieldNameFor(identityItem) or f.storageName = storageFieldNameFor(identityItem));
+    if (identityField.isDefined()) {
+      identityField.identifier = true;
+      identityField.indexedCandidate = true;
+    }
+  }
   store.ownedDataModels.add(dataModel);
 
   var ap = new DATA!AccessPattern;
@@ -186,7 +197,10 @@ rule Aggregate2DataStore
   ap.name = ag.name + " Identity Access Pattern";
   ap.patternName = "Get " + ag.root.name + " by identity";
   ap.operation = PIMTYPES!DataAccessMode#READ;
-  ap.queryBy = ag.root.primaryIdentityAttribute.name;
+  ap.queryBy = storageFieldNameFor(ag.root.primaryIdentityAttribute);
+  if (ag.root.identityAttributes.excluding(ag.root.primaryIdentityAttribute).notEmpty()) {
+    ap.sortBy = joinText(ag.root.identityAttributes.excluding(ag.root.primaryIdentityAttribute).collect(i | storageFieldNameFor(i)), ", ");
+  }
   ap.highCardinality = true;
   ap.highFrequency = false;
   ap.stronglyConsistentReadRequired = store.consistencyNeed <> PIMTYPES!ConsistencyNeed#EVENTUAL;
@@ -197,7 +211,11 @@ rule Aggregate2DataStore
   ix.id = idFor("index_identity", ag);
   ix.name = ag.name + " Identity Index";
   ix.indexPurpose = "Identity lookup";
-  ix.partitionKeyField = ag.root.primaryIdentityAttribute.name;
+  ix.partitionKeyField = storageFieldNameFor(ag.root.primaryIdentityAttribute);
+  if (ag.root.identityAttributes.excluding(ag.root.primaryIdentityAttribute).notEmpty()) {
+    ix.sortKeyField = storageFieldNameFor(ag.root.identityAttributes.excluding(ag.root.primaryIdentityAttribute).first());
+    ix.projectionFields.addAll(ag.root.identityAttributes.excluding(ag.root.primaryIdentityAttribute).collect(i | storageFieldNameFor(i)));
+  }
   setFeature(ix, "unique", true);
   ix.requiredForProduction = true;
   ix.supportsAccessPatterns.add(ap);

@@ -250,6 +250,61 @@ operation setFeature(element, featureName : String, value) {
   element.eSet(feature, value);
 }
 
+operation featureValue(element, featureName : String) {
+  if (element.isUndefined()) {
+    return null;
+  }
+  var feature = element.eClass().getEStructuralFeature(featureName);
+  if (feature.isUndefined()) {
+    return null;
+  }
+  return element.eGet(feature);
+}
+
+operation expressionText(element) : String {
+  if (element.isUndefined()) {
+    return "";
+  }
+  if (element.eClass().getName() = "Expression") {
+    return element.body;
+  }
+  var expressionModel = featureValue(element, "expressionModel");
+  if (expressionModel.isDefined()) {
+    return expressionText(expressionModel);
+  }
+  var expressionValue = featureValue(element, "expression");
+  if (hasText(expressionValue)) {
+    return expressionValue.asString();
+  }
+  var naturalLanguageValue = featureValue(element, "naturalLanguage");
+  if (hasText(naturalLanguageValue)) {
+    return naturalLanguageValue.asString();
+  }
+  var naturalLanguageStatement = featureValue(element, "naturalLanguageStatement");
+  if (hasText(naturalLanguageStatement)) {
+    return naturalLanguageStatement.asString();
+  }
+  return "";
+}
+
+operation expressionLanguageText(element) : String {
+  if (element.isUndefined()) {
+    return "NATURAL_LANGUAGE";
+  }
+  if (element.eClass().getName() = "Expression" and element.language.isDefined()) {
+    return element.language.asString();
+  }
+  var expressionModel = featureValue(element, "expressionModel");
+  if (expressionModel.isDefined() and expressionModel.language.isDefined()) {
+    return expressionModel.language.asString();
+  }
+  var languageValue = featureValue(element, "expressionLanguage");
+  if (languageValue.isDefined()) {
+    return languageValue.asString();
+  }
+  return "NATURAL_LANGUAGE";
+}
+
 operation KERNEL!Multiplicity hasMultiplicityBounds() : Boolean {
   return self.isDefined() and self.lowerBound.isDefined() and
     (self.upperBound.isDefined() or self.unbounded = true);

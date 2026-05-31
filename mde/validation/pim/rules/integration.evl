@@ -75,7 +75,10 @@ context PIM!EventChannel {
   critique ChannelProducerConsumerLinksConsistent {
     check : self.producers.forAll(fn | self.eventTypes.exists(eventItem | eventItem.producedBy.includes(fn) or fn.publishes.includes(eventItem)))
       and self.consumers.forAll(fn | self.eventTypes.exists(eventItem | eventItem.consumedBy.includes(fn) or fn.subscribesTo.includes(eventItem)))
-    message : "[PIM-CHAN-006] Channel '" + self.displayName() + "' has producer/consumer links that are not reflected by event types or function publish/subscribe references. Suggested fix: keep EventChannel, EventType and Function event links synchronized."
+      and self.externalProducers.forAll(adapter | self.eventTypes.exists(eventItem | eventItem.producedBy.includes(adapter)))
+      and self.externalConsumers.forAll(adapter | self.eventTypes.exists(eventItem | eventItem.consumedBy.includes(adapter)))
+      and self.workflowConsumers.forAll(workflowItem | PIM!EventFlow.all.exists(flowItem | flowItem.channel = self and flowItem.target = workflowItem and self.eventTypes.includes(flowItem.eventType)))
+    message : "[PIM-CHAN-006] Channel '" + self.displayName() + "' has producer/consumer links that are not reflected by event types, functions, external adapters, workflows, or event flows. Suggested fix: keep EventChannel, EventType, Function and EventFlow references synchronized."
   }
 }
 
@@ -155,6 +158,12 @@ context PIM!Schedule {
   critique ScheduleShouldDeclareTimezone {
     check : self.timeZone.hasText()
     message : "[PIM-SCHED-002] Schedule '" + self.displayName() + "' has no timeZone. Suggested fix: set an IANA timezone or document why UTC/default timezone is intended."
+  }
+
+  constraint EnabledScheduleHasSingleTarget {
+    guard : self.enabled.isUndefined() or self.enabled.isTrue()
+    check : self.targets.size() = 1
+    message : "[PIM-SCHED-003] Enabled Schedule '" + self.displayName() + "' must have exactly one target. Fix: add one Function, Workflow, adapter, channel, or other RoutingTarget to Schedule.targets."
   }
 }
 

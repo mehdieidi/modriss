@@ -153,6 +153,7 @@ operation createEventChannelsAndFlows() {
       var adapterProducer = adapterFor(es);
       if (adapterProducer.isDefined()) {
         ch.externalProducers.add(adapterProducer);
+        et.producedBy.add(adapterProducer);
         var extProducedFlow = new INTEGRATION!EventFlow;
         extProducedFlow.id = newId("flow_event", adapterProducer.id + "_" + et.id);
         extProducedFlow.name = adapterProducer.name + " publishes " + et.name;
@@ -235,6 +236,7 @@ operation createEventChannelsAndFlows() {
       var adapterConsumer = adapterFor(esConsumer);
       if (adapterConsumer.isDefined()) {
         ch.externalConsumers.add(adapterConsumer);
+        et.consumedBy.add(adapterConsumer);
         if (topic.isDefined()) {
           topic.externalConsumers.add(adapterConsumer);
         }
@@ -338,7 +340,7 @@ operation createExternalIntegrationFlows() {
     }
   }
   for (adapter in EXTERNAL!ExternalAdapter.all) {
-    if (not hasText(adapter.expectedSla) and adapter.resilience.isDefined()) {
+    if (adapter.endpoint.isDefined() and not hasText(adapter.endpoint.expectedSla) and adapter.resilience.isDefined()) {
       adapter.resilience.reviewStatus = "review-required";
       adapter.resilience.lifecycleStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
     }
@@ -1062,33 +1064,30 @@ rule Assumption2ReadinessFinding
   readinessRoot().findings.add(f);
 }
 
-rule Hotspot2ManualDecision
-  transform h : CIMTRANSFORM!Hotspot
-  to d : KERNEL!ManualDecision {
-
-  d.id = idFor("hotspot_decision", h);
-  d.name = "Hotspot - " + h.name;
-  d.question = h.question;
-  d.decisionOwner = h.owner;
-  d.dueDate = h.dueDate;
-  d.blocking = h.blocksTransformation or h.blocksProduction;
+operation createHotspotManualDecision(h) {
+  var severity = KERNEL!Severity#WARNING;
   if (h.blocksTransformation) {
-    d.severity = KERNEL!Severity#ERROR;
+    severity = KERNEL!Severity#ERROR;
   }
-  else {
-    d.severity = KERNEL!Severity#WARNING;
+  var decision = manualDecision("TR-160",
+    firstText(h.question, "Resolve transformation hotspot '" + h.name + "'."),
+    severity, h.blocksTransformation or h.blocksProduction, Sequence{h, pimRoot()});
+  if (decision.isDefined()) {
+    decision.name = "Hotspot - " + h.name;
+    decision.decisionOwner = h.owner;
+    decision.dueDate = h.dueDate;
+    appendTargetAffectedElements(decision, h.attachedTo);
+    if (decision.affectedElements.isEmpty()) {
+      decision.affectedElements.add(pimRoot());
+    }
   }
-  d.generatedByTransformation = true;
-  d.manuallyMaintained = false;
-  d.reviewStatus = "review-required";
-  appendTargetAffectedElements(d, h.attachedTo);
-  if (d.affectedElements.isEmpty()) {
-    d.affectedElements.add(pimRoot());
-  }
-  readinessRoot().manualDecisions.add(d);
+  return decision;
 }
 
 post LinkAndDerive {
+  for (hotspot in CIMTRANSFORM!Hotspot.all) {
+    createHotspotManualDecision(hotspot);
+  }
   attachOwnedElements();
   createRequestResponseFlows();
   createEventChannelsAndFlows();

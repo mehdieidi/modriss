@@ -141,7 +141,7 @@ class EventBridgeBasicAuthParameters extends EventBridgeAuthParameters {
 
 class EventBridgeOAuthParameters extends EventBridgeAuthParameters {
   attr String[1] authorizationEndpoint;
-  attr awspsmenums.AwsHttpMethod[1] httpMethod;
+  attr awspsmenums.EventBridgeHttpMethod[1] httpMethod;
   val awspsmcore.ValueExpression[1] clientId;
   val awspsmcore.ValueExpression[1] clientSecret;
   val EventBridgeHttpParameters[?] oauthHttpParameters;
@@ -163,7 +163,7 @@ class EventBridgeConnection extends awspsmcore.AwsResource {
 class EventBridgeApiDestination extends awspsmcore.AwsResource {
   attr String destinationName;
   attr String invocationEndpoint;
-  attr awspsmenums.AwsHttpMethod[1] httpMethod;
+  attr awspsmenums.EventBridgeHttpMethod[1] httpMethod;
   attr Integer invocationRateLimitPerSecond;
   ref EventBridgeConnection[1] connection;
 }

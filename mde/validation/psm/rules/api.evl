@@ -51,6 +51,11 @@ context AWSPSM!WebSocketRoute {
 }
 
 context AWSPSM!ApiGatewayRoute {
+  constraint RouteHasApi {
+    check : self.api.isDefined()
+    message : 'API route ' + self.resourceLabel() + ' has no owning API. Fix: set ApiGatewayRoute.api to the HttpApi, RestApi, or WebSocketApi that contains the route.'
+  }
+
   constraint ProtectedRouteHasRequiredAuthConfiguration {
     check : (self.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#NONE) or
       (self.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM) or

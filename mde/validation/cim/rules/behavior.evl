@@ -51,7 +51,10 @@ context CIM!Command {
     guard : self.outcomes.notEmpty()
     check : self.outcomes.forAll(outcome |
       outcome.emittedEvents.forAll(eventItem | self.expectedEvents.includes(eventItem) or self.rejectionEvents.includes(eventItem)) and
-      outcome.errors.forAll(errorItem | self.possibleErrors.includes(errorItem)))
+      outcome.errors.forAll(errorItem | self.possibleErrors.includes(errorItem))) and
+      self.expectedEvents.forAll(eventItem | self.outcomes.exists(outcome | outcome.success = true and outcome.emittedEvents.includes(eventItem))) and
+      self.rejectionEvents.forAll(eventItem | self.outcomes.exists(outcome | outcome.success <> true and outcome.emittedEvents.includes(eventItem))) and
+      self.possibleErrors.forAll(errorItem | self.outcomes.exists(outcome | outcome.errors.includes(errorItem)))
     message :
       "Warning [CIM-CMD-007] Command '" + self.labelText() + "' has CommandOutcome event/error links that are not reflected in expectedEvents, rejectionEvents, or possibleErrors. " +
       "Suggestion: keep direct command collections and detailed outcomes consistent until outcome-derived helpers fully replace direct links."
@@ -142,12 +145,20 @@ context CIM!BusinessEvent {
       "Suggestion: connect it to a command, policy, process, or external system that produces or consumes it."
   }
 
-  critique ExternallyVisibleEventHasVersioningRationale {
-    guard : self.externallyVisible = true
-    check : self.versioningRationale.hasText()
+  constraint ProductionRelevantEventHasVersioningMetadata {
+    guard : self.externallyVisible = true or self.auditRelevant = true or self.retentionRelevant = true
+    check : self.semanticVersion.hasText() and self.versioningRationale.hasText()
     message :
-      "Warning [CIM-EVT-005] Externally visible BusinessEvent '" + self.labelText() + "' has no versioningRationale. " +
-      "Suggestion: describe how event meaning/payload changes will be managed for external consumers."
+      "Error [CIM-EVT-005] Production-relevant BusinessEvent '" + self.labelText() + "' lacks semanticVersion or versioningRationale. " +
+      "Suggestion: set an explicit semantic version and describe how event meaning/payload changes will be managed."
+  }
+
+  constraint EventSemanticVersionLooksLikeSemVer {
+    guard : self.semanticVersion.hasText()
+    check : self.semanticVersion.matches("^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$")
+    message :
+      "Error [CIM-EVT-005A] BusinessEvent '" + self.labelText() + "' has semanticVersion '" + self.semanticVersion + "' that is not SemVer-like. " +
+      "Suggestion: use MAJOR.MINOR.PATCH with optional prerelease/build metadata, for example 1.0.0."
   }
 
   constraint EventPayloadInformationIsTyped {
@@ -180,18 +191,18 @@ context CIM!BusinessError {
 context CIM!Condition {
 
   constraint ConditionIsSpecified {
-    check : self.naturalLanguage.hasText() or self.expression.hasText()
+    check : self.naturalLanguage.hasText() or self.expression.hasText() or self.expressionModel.hasExpressionBody()
     message :
-      "Error [CIM-COND-001] Condition '" + self.labelText() + "' has neither naturalLanguage nor expression. " +
-      "Suggestion: write the condition in business language and optionally add expressionLanguage/expression for automation."
+      "Error [CIM-COND-001] Condition '" + self.labelText() + "' has neither naturalLanguage, expression, nor expressionModel. " +
+      "Suggestion: write the condition in business language and optionally add expressionModel.body for automation."
   }
 
   constraint AutomatableConditionHasExpression {
     guard : self.mustBeAutomatable = true
-    check : self.expressionLanguage.hasText() and self.expression.hasText()
+    check : self.expressionModel.hasExpressionBody() or (self.expressionLanguage.isDefined() and self.expression.hasText())
     message :
-      "Error [CIM-COND-002] Condition '" + self.labelText() + "' must be automatable but lacks expressionLanguage or expression. " +
-      "Suggestion: provide a machine-evaluable expression and name the expression language."
+      "Error [CIM-COND-002] Condition '" + self.labelText() + "' must be automatable but lacks a typed expressionModel or expressionLanguage/expression pair. " +
+      "Suggestion: provide a machine-evaluable kernel.Expression with language and body."
   }
 
   critique ConditionReferencesInformationOrConcepts {

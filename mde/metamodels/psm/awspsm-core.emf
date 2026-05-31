@@ -89,7 +89,6 @@ abstract class TracingConfig extends kernel.TraceableElement {
 
 class AwsNativeResource extends AwsResource {
   attr String[1] cloudFormationType;
-  attr String samType;
   val NativeProperty[+] properties;
 }
 

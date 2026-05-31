@@ -396,6 +396,18 @@ rule DataSchemaCatalog {
   post { emitCtx().recordArtifact("schemas/data/generated-data.schema.json", "JSON_SCHEMA", "AWSPSM2ART_Data_Schema_Catalog", Sequence{awsRoot().stableKey()}, "OVERWRITE_GENERATED", Sequence{}); }
 }
 
+rule StructuredDocumentArtifact transform documentObj : KERNEL!StructuredDocument {
+  guard : documentObj.content.isPresent() and documentObj.eClass().getName() <> "AslDocument"
+  template : "docs/structured-document.egl"
+  target : documentObj.documentPath()
+  merge : false
+  overwrite : true
+  parameters : Map {"documentObj" = documentObj, "emitCtx" = emitCtx()}
+  post {
+    emitCtx().recordArtifact(documentObj.documentPath(), documentObj.documentPath().pathKind(), "AWSPSM2ART_StructuredDocument", Sequence{documentObj.stableKey()}, "OVERWRITE_GENERATED", Sequence{});
+  }
+}
+
 rule TestFixturesReadme {
   guard : emitCtx().get("enableTests") = true
   template : "tests/fixtures-readme.egl"

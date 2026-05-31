@@ -247,10 +247,12 @@ context CIM!DecisionTable {
 context CIM!DecisionRule {
 
   constraint DecisionRuleHasConditionAndOutcome {
-    check : self.condition.hasText() and self.outcome.hasText()
+    check :
+      (self.condition.hasText() or self.conditionExpression.hasExpressionBody()) and
+      (self.outcome.hasText() or self.outcomeExpression.hasExpressionBody())
     message :
       "Error [CIM-DT-004] DecisionRule '" + self.labelText() + "' lacks condition or outcome. " +
-      "Suggestion: specify when the rule applies and what business outcome it produces."
+      "Suggestion: specify when the rule applies and what business outcome it produces, using text fields or typed kernel.Expression objects."
   }
 
   critique DecisionRuleHasExecutableEffect {
@@ -276,11 +278,12 @@ context CIM!Policy {
   constraint PolicyHasRuleDefinition {
     check :
       self.naturalLanguageRule.hasText() or
-      (self.expressionLanguage.hasText() and self.expression.hasText()) or
+      self.expressionModel.hasExpressionBody() or
+      (self.expressionLanguage.isDefined() and self.expression.hasText()) or
       self.decisionTable.isDefined()
     message :
       "Error [CIM-POL-002] Policy '" + self.labelText() + "' has no naturalLanguageRule, executable expression, or decisionTable. " +
-      "Suggestion: define the rule in natural language and optionally provide expressionLanguage/expression or a DecisionTable."
+      "Suggestion: define the rule in natural language and optionally provide expressionModel.body or a DecisionTable."
   }
 
   constraint MandatoryOrBlockingPolicyHasSeverity {

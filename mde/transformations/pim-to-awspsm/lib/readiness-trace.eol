@@ -61,7 +61,7 @@ operation manualDecision(decisionId : String, question : String, severity, block
   if (r.isUndefined()) {
     return;
   }
-  var decisionBaseId = "decision_" + slug(decisionId + "_" + question);
+  var decisionBaseId = "decision_" + slug(decisionId + "_" + affectedStableKey(affected) + "_" + question);
   if (cachedAwsReadinessDecisionIds.includes(decisionBaseId)) {
     return;
   }
@@ -78,7 +78,7 @@ operation manualDecision(decisionId : String, question : String, severity, block
   addTargetAffected(d, affected);
   r.manualDecisions.add(d);
 
-  var findingBaseId = "finding_" + slug(decisionId + "_" + question);
+  var findingBaseId = "finding_" + slug(decisionId + "_" + affectedStableKey(affected) + "_" + question);
   if (cachedAwsReadinessFindingIds.includes(findingBaseId)) {
     return;
   }
@@ -103,7 +103,7 @@ operation finding(checkId : String, message : String, severity, blocking : Boole
   if (r.isUndefined()) {
     return;
   }
-  var findingBaseId = "finding_" + slug(checkId + "_" + message);
+  var findingBaseId = "finding_" + slug(checkId + "_" + affectedStableKey(affected) + "_" + message);
   if (cachedAwsReadinessFindingIds.includes(findingBaseId)) {
     return;
   }
@@ -128,7 +128,7 @@ operation check(checkId : String, passed : Boolean, message : String, severity, 
   if (r.isUndefined()) {
     return;
   }
-  var checkBaseId = "check_" + slug(checkId + "_" + message);
+  var checkBaseId = "check_" + slug(checkId + "_" + affectedStableKey(affected) + "_" + message);
   if (cachedAwsReadinessCheckIds.includes(checkBaseId)) {
     return;
   }
@@ -153,4 +153,24 @@ operation addTargetAffected(container, affected) {
       container.affectedElements.add(element);
     }
   }
+}
+
+operation affectedStableKey(affected) {
+  if (affected.isUndefined()) {
+    return "";
+  }
+  var key = "";
+  for (element in affected) {
+    if (element.isDefined()) {
+      var part = cacheKeyFor(element);
+      if (not hasText(part)) {
+        part = element.eClass().getName();
+      }
+      if (hasText(key)) {
+        key = key + "_";
+      }
+      key = key + part;
+    }
+  }
+  return key;
 }

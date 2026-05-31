@@ -101,12 +101,32 @@ operation appendTargetAffectedElements(owner, affected) {
   }
 }
 
+operation affectedStableKey(affected) {
+  if (affected.isUndefined()) {
+    return "";
+  }
+  var key = "";
+  for (element in affected) {
+    if (element.isDefined()) {
+      var part = cacheKeyFor(element);
+      if (not hasText(part)) {
+        part = element.eClass().getName();
+      }
+      if (hasText(key)) {
+        key = key + "_";
+      }
+      key = key + part;
+    }
+  }
+  return key;
+}
+
 operation manualDecision(ruleId : String, question : String, severity, blocking : Boolean, affected) {
   var readiness = readinessRoot();
   if (readiness.isUndefined()) {
     return null;
   }
-  var id = newId("decision", ruleId + "_" + question);
+  var id = newId("decision", ruleId + "_" + affectedStableKey(affected) + "_" + question);
   if (cachedReadinessManualDecisionsById.containsKey(id)) {
     var existing = cachedReadinessManualDecisionsById.get(id);
     appendTargetAffectedElements(existing, affected);
@@ -142,7 +162,7 @@ operation readinessFinding(ruleId : String, findingType, severity, message : Str
   if (readiness.isUndefined()) {
     return null;
   }
-  var id = newId("finding", ruleId + "_" + message);
+  var id = newId("finding", ruleId + "_" + affectedStableKey(affected) + "_" + message);
   if (cachedReadinessFindingsById.containsKey(id)) {
     var existing = cachedReadinessFindingsById.get(id);
     appendTargetAffectedElements(existing, affected);
@@ -170,7 +190,7 @@ operation readinessCheck(checkId : String, severity, passed : Boolean, message :
   if (readiness.isUndefined()) {
     return null;
   }
-  var id = newId("check", checkId);
+  var id = newId("check", checkId + "_" + affectedStableKey(affected));
   if (cachedReadinessChecksById.containsKey(id)) {
     var existing = cachedReadinessChecksById.get(id);
     appendTargetAffectedElements(existing, affected);

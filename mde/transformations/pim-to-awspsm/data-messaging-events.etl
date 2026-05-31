@@ -201,10 +201,11 @@ rule Subscription2SnsSubscription
   sub.protocol = subscriptionProtocol(s.target);
   sub.endpointResource = endpointResource(s.target);
   if (sub.endpointResource.isDefined()) {
-    sub.endpoint = "${" + sub.endpointResource.logicalId + ".Arn}";
+    sub.endpoint = cfnArnExpression(sub.endpointResource);
     cachedSnsSubscriptionByKey.put(sub.topic.logicalId + "::" + sub.protocol.asString().toLowerCase() + "::" + sub.endpointResource.logicalId, sub);
     if (sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA) {
       cachedSnsSubscriptionByKey.put(sub.topic.logicalId + "::lambda::" + sub.endpointResource.logicalId, sub);
+      createLambdaPermissionFor("SnsInvoke", s, sub.endpointResource, "sns.amazonaws.com", cfnArnExpression(sub.topic));
     }
     if (sub.protocol = AWSPSMENUMS!SnsProtocol#SQS) {
       cachedSnsSubscriptionByKey.put(sub.topic.logicalId + "::sqs::" + sub.endpointResource.logicalId, sub);
@@ -285,11 +286,16 @@ rule Schedule2EventBridgeSchedule
   }
   es.descriptionText = s.summary;
   es.role = createSchedulerRole(s);
-  es.target = createUnresolvedScheduleTarget(s);
-  manualDecision("SCHEDULE_TARGET_REQUIRED",
-    "Choose the target for schedule " + s.name + ".",
-    KERNEL!Severity#ERROR, true, Sequence{s, es},
-    "Create a Trigger or Flow from the schedule to a Lambda/function/workflow target.");
+  if (s.targets.size() = 1) {
+    es.target = createEventBridgeTarget(s, s.targets.first());
+  }
+  else {
+    es.target = createUnresolvedScheduleTarget(s);
+    manualDecision("SCHEDULE_TARGET_REQUIRED",
+      "Choose exactly one target for schedule " + s.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{s, es},
+      "Set Schedule.targets to one Function, Workflow, adapter, channel, or other RoutingTarget.");
+  }
   createTrace(s, es, "Schedule2EventBridgeSchedule", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }
 
@@ -312,6 +318,12 @@ operation addDynamoKeys(ds, t) {
       "Confirm DynamoDB HASH key inferred for " + ds.name + ".",
       KERNEL!Severity#ERROR, true, Sequence{ds, hashField},
       "Mark a DataField.partitionKeyCandidate or identifier in the PIM model.");
+  }
+  if (hashField.isUndefined()) {
+    manualDecision("DYNAMO_KEY_CONFIRMATION_REQUIRED",
+      "Choose a DynamoDB HASH key for " + ds.name + ".",
+      KERNEL!Severity#ERROR, true, Sequence{ds, dm, t},
+      "Add at least one DataField to the DataModel and mark it partitionKeyCandidate or identifier.");
   }
   if (hashField.isDefined()) {
     addDynamoAttribute(t, hashField);
@@ -543,9 +555,26 @@ operation createEventBridgeTarget(src, endpoint) {
   t.targetId = pascalCase(firstText(endpoint.name, endpoint.id));
   t.targetResource = endpointResource(endpoint);
   if (t.targetResource.isDefined()) {
-    t.arnExpression = "${" + t.targetResource.logicalId + ".Arn}";
+    t.arnExpression = cfnArnExpression(t.targetResource);
   }
   t.targetKind = eventBridgeTargetKind(endpoint);
+  if (t.targetKind = AWSPSMENUMS!EventBridgeTargetKind#SQS and t.targetResource.isDefined() and t.targetResource.queueType = AWSPSMENUMS!SqsQueueType#FIFO) {
+    var p = new AWSPSMEVENTS!EventBridgeSqsTargetParameters;
+    p.id = generatedId("eventbridge_sqs_target", src, firstText(endpoint.name, endpoint.id));
+    p.name = "SQS target parameters";
+    var messageGroupId = "default";
+    if (endpoint.isDefined() and endpoint.eClass().getEStructuralFeature("partitionKeyExpression").isDefined() and hasText(endpoint.partitionKeyExpression)) {
+      messageGroupId = endpoint.partitionKeyExpression;
+    }
+    p.messageGroupId = messageGroupId;
+    t.parameters = p;
+    if (messageGroupId = "default") {
+      manualDecision("EVENTBRIDGE_FIFO_MESSAGE_GROUP_REQUIRED",
+        "Choose EventBridge messageGroupId for FIFO SQS target " + endpoint.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{src, endpoint},
+        "Set Queue.partitionKeyExpression so EventBridge can route to the FIFO queue deterministically.");
+    }
+  }
   return t;
 }
 
@@ -591,8 +620,14 @@ operation eventBridgeTargetKind(endpoint) {
   if (res.eClass().getName() = "StepFunctionStateMachine") {
     return AWSPSMENUMS!EventBridgeTargetKind#STEP_FUNCTIONS;
   }
+  if (res.eClass().getName() = "EventBridgeApiDestination") {
+    return AWSPSMENUMS!EventBridgeTargetKind#API_DESTINATION;
+  }
   if (res.eClass().getName() = "EventBridgeBus") {
     return AWSPSMENUMS!EventBridgeTargetKind#EVENT_BUS;
+  }
+  if (res.eClass().getName() = "CloudWatchLogGroup") {
+    return AWSPSMENUMS!EventBridgeTargetKind#LOG_GROUP;
   }
   return AWSPSMENUMS!EventBridgeTargetKind#OTHER_AWS_RESOURCE;
 }
@@ -622,7 +657,7 @@ operation createStorageResourcePolicy(source, resource) {
   var st = allowStatement("DenyInsecureTransport");
   st.effect = AWSPSMENUMS!IamEffect#DENY;
   st.actions.add("*");
-  st.resources.add("${" + resource.logicalId + ".Arn}");
+  st.resources.add(cfnArnExpression(resource));
   st.wildcardAction = true;
   st.wildcardJustification = "Deny statement covers all actions only when aws:SecureTransport is false.";
   var cond = new AWSPSMSECURITY!IamCondition;
@@ -641,8 +676,8 @@ operation createDenyInsecureTransportPolicy(resource) {
   var st = allowStatement("DenyInsecureTransport");
   st.effect = AWSPSMENUMS!IamEffect#DENY;
   st.actions.add("*");
-  st.resources.add("${" + resource.logicalId + ".Arn}");
-  st.resources.add("${" + resource.logicalId + ".Arn}/*");
+  st.resources.add(cfnArnExpression(resource));
+  st.resources.add(cfnArnSubExpression(resource, "/*"));
   st.wildcardAction = true;
   st.wildcardJustification = "Deny statement covers all actions only when aws:SecureTransport is false.";
   var cond = new AWSPSMSECURITY!IamCondition;

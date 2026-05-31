@@ -3,6 +3,11 @@ import "../lib/psm-validation-helpers.eol";
 /* Workflow / Step Functions / ASL */
 
 context AWSPSM!StepFunctionStateMachine {
+  constraint StateMachineHasRole {
+    check : self.role.isDefined()
+    message : 'Step Functions state machine ' + self.resourceLabel() + ' has no execution role. Fix: attach an IamRole trusted by states.amazonaws.com.'
+  }
+
   constraint StateMachineHasDefinition {
     check : self.definitionCount() >= 1
     message : 'Step Functions state machine ' + self.resourceLabel() + ' has no definition. Fix: provide definitionUri, definitionString, or aslDocument.'
@@ -11,6 +16,12 @@ context AWSPSM!StepFunctionStateMachine {
   critique StateMachineShouldUseSingleDefinitionSource {
     check : self.definitionCount() <= 1
     message : 'Step Functions state machine ' + self.resourceLabel() + ' defines more than one definition source. Fix: keep exactly one of definitionUri, definitionString, or aslDocument to avoid ambiguity.'
+  }
+
+  constraint StateMachineAslHasStates {
+    guard : self.aslDocument.isDefined()
+    check : self.aslDocument.states.notEmpty()
+    message : 'Step Functions state machine ' + self.resourceLabel() + ' has an ASL document with no states. Fix: add AslState entries or remove the empty ASL document.'
   }
 
   constraint PublishAliasRequiresAliasName {

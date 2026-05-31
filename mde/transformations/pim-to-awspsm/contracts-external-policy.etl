@@ -32,20 +32,28 @@ rule ExternalAdapter2PsmMetadata
   n.cloudFormationType = "Custom::ExternalAdapterMetadata";
   n.properties.add(nativeText("ServiceToken", "REVIEW_REQUIRED_SERVICE_TOKEN", KERNEL!StructuredFormat#TEXT, true, false));
   var ep = endpointOf(a);
-  n.properties.add(nativeText("ExternalSystemName", ep.externalSystemName, KERNEL!StructuredFormat#TEXT, false, false));
-  n.properties.add(nativeText("ProtocolFamily", ep.protocolFamily, KERNEL!StructuredFormat#TEXT, false, false));
-  n.properties.add(nativeText("EndpointDescription", ep.endpointDescription, KERNEL!StructuredFormat#TEXT, false, false));
+  if (ep.isDefined()) {
+    n.properties.add(nativeText("ExternalSystemName", ep.externalSystemName, KERNEL!StructuredFormat#TEXT, false, false));
+    n.properties.add(nativeText("ProtocolFamily", ep.protocolFamily, KERNEL!StructuredFormat#TEXT, false, false));
+    n.properties.add(nativeText("EndpointDescription", ep.endpointDescription, KERNEL!StructuredFormat#TEXT, false, false));
+  }
+  else {
+    manualDecision("EXTERNAL_ADAPTER_ENDPOINT_REQUIRED",
+      "Model ExternalAdapter.endpoint for " + a.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, n},
+      "Create an ExternalEndpoint and set ExternalAdapter.endpoint before AWS PSM generation.");
+  }
   if (ep.isDefined() and isTrue(ep.credentialsRequired) and a.credentials.isEmpty()) {
     manualDecision("EXTERNAL_ADAPTER_CREDENTIALS_REQUIRED",
       "Model credentials for external adapter " + a.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, n},
-      "Add CredentialRequirement/Secret entries or mark credentialsRequired=false.");
+      "Add CredentialRequirement/Secret entries or mark ExternalAdapter.endpoint.credentialsRequired=false.");
   }
   if (ep.isDefined() and isTrue(ep.privateNetworkRequired)) {
     manualDecision("EXTERNAL_ADAPTER_NETWORK_REQUIRED",
       "Define private networking for external adapter " + a.name + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a, n},
-      "Provide VPC/subnet/security group/private endpoint details.");
+      "Provide VPC/subnet/security group/private endpoint details for ExternalAdapter.endpoint.privateNetworkRequired.");
   }
   if (isHttpAdapter(a)) {
     createEventBridgeConnectionAndApiDestination(a);
@@ -80,42 +88,7 @@ rule AlertPolicy2CloudWatchAlarm
 }
 
 operation renderJsonSchema(s) {
-  var required = "";
-  var properties = "";
-  for (f in s.fields) {
-    if (hasText(properties)) {
-      properties = properties + ", ";
-    }
-    properties = properties + "\"" + escapeJson(f.name) + "\": { \"type\": \"" + jsonSchemaType(f) + "\" }";
-    if (isTrue(f.required)) {
-      if (hasText(required)) {
-        required = required + ", ";
-      }
-      required = required + "\"" + escapeJson(f.name) + "\"";
-    }
-  }
-  return "{ \"$schema\": \"https://json-schema.org/draft/2020-12/schema\", \"title\": \"" + escapeJson(s.name) +
-    "\", \"type\": \"object\", \"additionalProperties\": " + isTrue(s.additionalPropertiesAllowed).asString() +
-    ", \"properties\": { " + properties + " }, \"required\": [ " + required + " ] }";
-}
-
-operation jsonSchemaType(f) {
-  if (isTrue(f.array) or f.fieldType = PIMTYPES!FieldType#ARRAY) {
-    return "array";
-  }
-  if (f.fieldType = PIMTYPES!FieldType#INTEGER) {
-    return "integer";
-  }
-  if (f.fieldType = PIMTYPES!FieldType#NUMBER or f.fieldType = PIMTYPES!FieldType#MONEY) {
-    return "number";
-  }
-  if (f.fieldType = PIMTYPES!FieldType#BOOLEAN) {
-    return "boolean";
-  }
-  if (f.fieldType = PIMTYPES!FieldType#OBJECT) {
-    return "object";
-  }
-  return "string";
+  return schemaToJsonSchema(s);
 }
 
 operation eventContractJson(e) {
@@ -282,7 +255,7 @@ operation createEventBridgeConnectionAndApiDestination(a) {
   dest.destinationName = physicalName(a, "api-destination", defaultStage());
   var ep = endpointOf(a);
   dest.invocationEndpoint = firstText(ep.endpointUri, endpointFromDescription(ep.endpointDescription));
-  dest.httpMethod = AWSPSMENUMS!AwsHttpMethod#POST;
+  dest.httpMethod = AWSPSMENUMS!EventBridgeHttpMethod#POST;
   if (ep.isDefined() and isTrue(ep.rateLimitedByProvider)) {
     dest.invocationRateLimitPerSecond = 10;
   }
@@ -310,26 +283,60 @@ operation createConnectionAuthParameters(a, authType) {
     var b = new AWSPSMEVENTS!EventBridgeBasicAuthParameters;
     b.id = generatedId("eventbridge_auth", a, "basic");
     b.name = a.name + " basic auth";
-    b.username = literalValue(firstCredentialName(a), true);
-    b.password = literalValue(firstCredentialValue(a), true);
+    b.username = credentialSecretValue(a, "username");
+    b.password = credentialSecretValue(a, "password");
     return b;
   }
   if (authType = AWSPSMENUMS!EventBridgeConnectionAuthorizationType#OAUTH_CLIENT_CREDENTIALS) {
     var o = new AWSPSMEVENTS!EventBridgeOAuthParameters;
     o.id = generatedId("eventbridge_auth", a, "oauth");
     o.name = a.name + " OAuth auth";
-    o.authorizationEndpoint = endpointOf(a).authorizationEndpoint;
-    o.httpMethod = AWSPSMENUMS!AwsHttpMethod#POST;
-    o.clientId = literalValue(firstCredentialName(a), true);
-    o.clientSecret = literalValue(firstCredentialValue(a), true);
+    var ep = endpointOf(a);
+    var authorizationEndpointText = "";
+    if (ep.isDefined()) {
+      authorizationEndpointText = firstText(ep.authorizationEndpoint, ep.endpointUri);
+    }
+    o.authorizationEndpoint = authorizationEndpointText;
+    if (not hasText(o.authorizationEndpoint)) {
+      o.authorizationEndpoint = "REVIEW_REQUIRED_AUTHORIZATION_ENDPOINT";
+      manualDecision("EVENTBRIDGE_CONNECTION_AUTH_ENDPOINT_REQUIRED",
+        "Provide OAuth authorization endpoint for EventBridge connection generated from adapter " + a.name + ".",
+        KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a},
+        "Set ExternalAdapter.endpoint.authorizationEndpoint for OAuth client credentials.");
+    }
+    o.httpMethod = AWSPSMENUMS!EventBridgeHttpMethod#POST;
+    o.clientId = credentialSecretValue(a, "client_id");
+    o.clientSecret = credentialSecretValue(a, "client_secret");
     return o;
   }
   var k = new AWSPSMEVENTS!EventBridgeApiKeyAuthParameters;
   k.id = generatedId("eventbridge_auth", a, "api_key");
   k.name = a.name + " API key auth";
   k.apiKeyName = firstCredentialName(a);
-  k.apiKeyValue = literalValue(firstCredentialValue(a), true);
+  k.apiKeyValue = credentialSecretValue(a, "api_key");
   return k;
+}
+
+operation credentialSecretValue(a, purpose : String) {
+  return secretReferenceValue(credentialReferenceName(a, purpose));
+}
+
+operation credentialReferenceName(a, purpose : String) {
+  var credential = a.credentials.selectOne(c |
+    asText(c.purpose).toLowerCase().contains(purpose.replace("_", " ")) or
+    asText(c.name).toLowerCase().contains(purpose.replace("_", " ")) or
+    asText(c.name).toLowerCase().contains(purpose));
+  if (credential.isUndefined() and a.credentials.notEmpty()) {
+    credential = a.credentials.first();
+  }
+  if (credential.isDefined()) {
+    return firstText(credential.externalId, "/" + kebab(rootName()) + "/external/" + kebab(a.name) + "/" + kebab(purpose));
+  }
+  manualDecision("EVENTBRIDGE_CONNECTION_CREDENTIAL_REQUIRED",
+    "Provide " + purpose + " credential reference for EventBridge connection generated from adapter " + a.name + ".",
+    KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a},
+    "Add ExternalAdapter.credentials entries whose externalId points to a Secrets Manager secret name/ARN, or mark ExternalAdapter.endpoint.credentialsRequired=false.");
+  return "REVIEW_REQUIRED_" + slug(firstText(a.name, a.id) + "_" + purpose).toUpperCase();
 }
 
 operation firstCredentialName(a) {
@@ -346,7 +353,7 @@ operation firstCredentialValue(a) {
   manualDecision("EVENTBRIDGE_CONNECTION_CREDENTIAL_REQUIRED",
     "Provide credentials for EventBridge connection generated from adapter " + a.name + ".",
     KERNEL!Severity#ERROR, isProductionRoot(), Sequence{a},
-    "Add ExternalAdapter.credentials entries or mark endpoint.credentialsRequired=false.");
+    "Add ExternalAdapter.credentials entries or mark ExternalAdapter.endpoint.credentialsRequired=false.");
   return "REVIEW_REQUIRED_SECRET_VALUE";
 }
 

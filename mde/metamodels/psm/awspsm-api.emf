@@ -71,13 +71,13 @@ abstract class ApiGatewayRoute extends awspsmcore.AwsResource {
 }
 
 class HttpApiRoute extends ApiGatewayRoute {
-  attr awspsmenums.HttpMethod[1] method;
+  attr awspsmenums.ApiGatewayHttpMethod[1] method;
   attr String[1] path;
   attr String routeKey;
 }
 
 class RestApiRoute extends ApiGatewayRoute {
-  attr awspsmenums.HttpMethod[1] method;
+  attr awspsmenums.ApiGatewayHttpMethod[1] method;
   attr String[1] path;
   attr String restApiResourcePath;
 }
@@ -90,7 +90,7 @@ class RestApiResource extends awspsmcore.AwsResource {
 }
 
 class RestApiMethod extends ApiGatewayRoute {
-  attr awspsmenums.HttpMethod[1] method;
+  attr awspsmenums.ApiGatewayHttpMethod[1] method;
   ref RestApiResource[1] resource;
   ref ApiGatewayRequestValidator[?] requestValidator;
 }

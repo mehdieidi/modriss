@@ -20,6 +20,192 @@ operation AWSPSMAPI!ApiGatewayRoute operationIdText() : String {
   return self.operationName.orElseText(self.stableKey()).toCamel();
 }
 
+operation AWSPSMAPI!ApiGatewayApi emitOpenApiDocument(routeSeq : Collection) : String {
+  var outText = "openapi: 3.0.3\n";
+  outText = outText + "info:\n";
+  outText = outText + "  title: " + self.apiName.orElseText(self.cfnLogicalId()).yamlScalar() + "\n";
+  outText = outText + "  version: '1.0.0'\n";
+  outText = outText + "  description: " + self.descriptionText.orElseText("Generated from AWS PSM API model.").yamlScalar() + "\n";
+  outText = outText + "paths:\n";
+  for (pathText in routeSeq.collect(routeObj | routeObj.routePath()).asSet().asSequence().sortBy(pathText | pathText)) {
+    outText = outText + "  " + pathText + ":\n";
+    for (routeObj in routeSeq.select(routeObj | routeObj.routePath() = pathText).sortBy(routeObj | routeObj.routeMethod())) {
+      outText = outText + routeObj.openApiOperation(4);
+    }
+  }
+  outText = outText + "components:\n";
+  outText = outText + "  responses:\n";
+  outText = outText + "    BadRequest:\n";
+  outText = outText + "      description: Invalid request\n";
+  outText = outText + "    InternalError:\n";
+  outText = outText + "      description: Internal error\n";
+  outText = outText + self.openApiSchemasYaml(routeSeq, 2);
+  outText = outText + self.openApiSecuritySchemesYaml(routeSeq, 2);
+  return outText;
+}
+
+operation AWSPSMAPI!ApiGatewayApi openApiSchemasYaml(routeSeq : Collection, indentCount : Integer) : String {
+  var schemaModels = self.collectOpenApiSchemaModels(routeSeq);
+  var outText = spaces(indentCount) + "schemas:\n";
+  if (schemaModels.isEmpty()) {
+    return outText + spaces(indentCount + 2) + "{}\n";
+  }
+  for (schemaModel in schemaModels.sortBy(schemaModel | schemaModel.openapiModelName())) {
+    outText = outText + spaces(indentCount + 2) + schemaModel.openapiModelName() + ": " + schemaModel.schemaJson + "\n";
+  }
+  return outText;
+}
+
+operation AWSPSMAPI!ApiGatewayApi collectOpenApiSchemaModels(routeSeq : Collection) : Sequence {
+  var schemaModels = Sequence{};
+  var seenNames = Set{};
+  for (routeObj in routeSeq) {
+    for (requestModel in routeObj.requestModels) {
+      if (not seenNames.includes(requestModel.modelName)) {
+        schemaModels.add(requestModel);
+        seenNames.add(requestModel.modelName);
+      }
+    }
+    for (responseModel in routeObj.responseModels) {
+      var responseModelName = responseModel.openapiSchemaName();
+      if (not seenNames.includes(responseModelName)) {
+        schemaModels.add(responseModel);
+        seenNames.add(responseModelName);
+      }
+    }
+  }
+  return schemaModels;
+}
+
+operation AWSPSMAPI!ApiGatewayApi openApiSecuritySchemesYaml(routeSeq : Collection, indentCount : Integer) : String {
+  var schemeNames = routeSeq.collect(routeObj | routeObj.openApiSecuritySchemeName())
+    .select(schemeName | schemeName.isPresent()).asSet().asSequence().sortBy(schemeName | schemeName);
+  var outText = spaces(indentCount) + "securitySchemes:\n";
+  if (schemeNames.isEmpty()) {
+    return outText + spaces(indentCount + 2) + "{}\n";
+  }
+  for (schemeName in schemeNames) {
+    outText = outText + spaces(indentCount + 2) + schemeName + ":\n";
+    if (schemeName = "aws_iam") {
+      outText = outText + spaces(indentCount + 4) + "type: apiKey\n";
+      outText = outText + spaces(indentCount + 4) + "name: Authorization\n";
+      outText = outText + spaces(indentCount + 4) + "in: header\n";
+      outText = outText + spaces(indentCount + 4) + "x-amazon-apigateway-authtype: awsSigv4\n";
+    }
+    else if (schemeName = "api_key") {
+      outText = outText + spaces(indentCount + 4) + "type: apiKey\n";
+      outText = outText + spaces(indentCount + 4) + "name: x-api-key\n";
+      outText = outText + spaces(indentCount + 4) + "in: header\n";
+    }
+    else if (schemeName = "jwt") {
+      outText = outText + spaces(indentCount + 4) + "type: http\n";
+      outText = outText + spaces(indentCount + 4) + "scheme: bearer\n";
+      outText = outText + spaces(indentCount + 4) + "bearerFormat: JWT\n";
+    }
+    else if (schemeName = "cognito_user_pools") {
+      outText = outText + spaces(indentCount + 4) + "type: openIdConnect\n";
+      outText = outText + spaces(indentCount + 4) + "openIdConnectUrl: " + "REVIEW_REQUIRED_OIDC_DISCOVERY_URL".yamlScalar() + "\n";
+    }
+    else {
+      outText = outText + spaces(indentCount + 4) + "type: apiKey\n";
+      outText = outText + spaces(indentCount + 4) + "name: Authorization\n";
+      outText = outText + spaces(indentCount + 4) + "in: header\n";
+    }
+  }
+  return outText;
+}
+
+operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : String {
+  var outText = spaces(indentCount) + self.routeMethod() + ":\n";
+  outText = outText + spaces(indentCount + 2) + "operationId: " + self.operationIdText().yamlScalar() + "\n";
+  outText = outText + spaces(indentCount + 2) + "tags:\n";
+  outText = outText + spaces(indentCount + 4) + "- " + self.api.apiName.orElseText("api").yamlScalar() + "\n";
+  if (self.openApiSecuritySchemeName().isPresent()) {
+    outText = outText + spaces(indentCount + 2) + "security:\n";
+    outText = outText + spaces(indentCount + 4) + "- " + self.openApiSecuritySchemeName() + ": []\n";
+  }
+  if (self.requestModels.notEmpty()) {
+    var requestModel = self.requestModels.first();
+    outText = outText + spaces(indentCount + 2) + "requestBody:\n";
+    outText = outText + spaces(indentCount + 4) + "required: true\n";
+    outText = outText + spaces(indentCount + 4) + "content:\n";
+    outText = outText + spaces(indentCount + 6) + requestModel.contentType.orElseText("application/json") + ":\n";
+    outText = outText + spaces(indentCount + 8) + "schema:\n";
+    outText = outText + spaces(indentCount + 10) + "$ref: " + ("#/components/schemas/" + requestModel.modelName).yamlScalar() + "\n";
+  }
+  outText = outText + spaces(indentCount + 2) + "responses:\n";
+  for (responseModel in self.sortedOpenApiResponseModels()) {
+    outText = outText + spaces(indentCount + 4) + "'" + responseModel.statusCode + "':\n";
+    outText = outText + spaces(indentCount + 6) + "description: " + self.openApiResponseDescription(responseModel.statusCode).yamlScalar() + "\n";
+    outText = outText + spaces(indentCount + 6) + "content:\n";
+    outText = outText + spaces(indentCount + 8) + responseModel.contentType.orElseText("application/json") + ":\n";
+    outText = outText + spaces(indentCount + 10) + "schema:\n";
+    outText = outText + spaces(indentCount + 12) + "$ref: " + ("#/components/schemas/" + responseModel.openapiSchemaName()).yamlScalar() + "\n";
+  }
+  if (self.sortedOpenApiResponseModels().isEmpty()) {
+    outText = outText + spaces(indentCount + 4) + "'200':\n";
+    outText = outText + spaces(indentCount + 6) + "description: Successful response\n";
+  }
+  if (not self.responseModels.exists(responseModel | responseModel.statusCode = "400")) {
+    outText = outText + spaces(indentCount + 4) + "'400':\n";
+    outText = outText + spaces(indentCount + 6) + "$ref: '#/components/responses/BadRequest'\n";
+  }
+  if (not self.responseModels.exists(responseModel | responseModel.statusCode = "500")) {
+    outText = outText + spaces(indentCount + 4) + "'500':\n";
+    outText = outText + spaces(indentCount + 6) + "$ref: '#/components/responses/InternalError'\n";
+  }
+  if (self.integration.isDefined()) {
+    outText = outText + spaces(indentCount + 2) + "x-amazon-apigateway-integration:\n";
+    outText = outText + spaces(indentCount + 4) + "type: " + self.integration.integrationType.asString().toLowerCase().yamlScalar() + "\n";
+    if (self.integration.lambdaTarget.isDefined()) {
+      outText = outText + spaces(indentCount + 4) + "uri: " + arnForResource(self.integration.lambdaTarget) + "\n";
+    }
+    else if (self.integration.integrationUri.isPresent()) {
+      outText = outText + spaces(indentCount + 4) + "uri: " + self.integration.integrationUri.yamlScalar() + "\n";
+    }
+    outText = outText + spaces(indentCount + 4) + "httpMethod: " + self.integration.integrationMethod.orElseText("POST").yamlScalar() + "\n";
+    outText = outText + spaces(indentCount + 4) + "payloadFormatVersion: " + self.integration.payloadFormatVersion.orElseText("2.0").yamlScalar() + "\n";
+  }
+  return outText;
+}
+
+operation AWSPSMAPI!ApiGatewayRoute sortedOpenApiResponseModels() : Sequence {
+  return self.responseModels.asSequence().sortBy(responseModel | responseModel.statusCode);
+}
+
+operation AWSPSMAPI!ApiGatewayRoute openApiResponseDescription(statusCode : String) : String {
+  if (statusCode.startsWith("2")) {
+    return "Successful response";
+  }
+  if (statusCode.startsWith("4")) {
+    return "Client error";
+  }
+  if (statusCode.startsWith("5")) {
+    return "Server error";
+  }
+  return "Response";
+}
+
+operation AWSPSMAPI!ApiGatewayRoute openApiSecuritySchemeName() : String {
+  var raw = self.authorizationType.asString().toLowerCase().replace(" ", "_");
+  if (raw = "none") {
+    return "";
+  }
+  return raw;
+}
+
+operation AWSPSMAPI!ApiGatewayResponseModel openapiSchemaName() : String {
+  return pascalCase(firstText(self.name, self.id));
+}
+
+operation AWSPSMAPI!ApiGatewayRequestModel openapiModelName() : String {
+  return self.modelName;
+}
+
+operation AWSPSMAPI!ApiGatewayResponseModel openapiModelName() : String {
+  return self.openapiSchemaName();
+}
+
 operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
   outText = outText + spaces(indentCount + 2) + "\"Type\": " + self.modelFeatureValue("type").asString().firstToUpperCase().toLowerCase().firstToUpperCase().jsonString();
@@ -145,6 +331,140 @@ operation AWSPSMWORKFLOW!AslChoiceRule emitAslChoiceJson(indentCount : Integer) 
 
 operation KERNEL!TraceableElement schemaTitle(schemaKindText : String) : String {
   return self.name.orElseText(self.eClass().getName()) + " " + schemaKindText;
+}
+
+operation indentJsonBlock(text : String, indentCount : Integer) : String {
+  var outText = "";
+  for (lineText in text.split("\n")) {
+    if (outText.isPresent()) {
+      outText = outText + "\n";
+    }
+    outText = outText + spaces(indentCount) + lineText;
+  }
+  return outText;
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction localInputSchemaJson(profileMap : Map) : String {
+  var variants = Sequence{};
+  if (self.hasApiGatewayInvocation()) {
+    variants.add(self.apiGatewayProxyEventSchemaJson());
+  }
+  if (self.eventSourceMappings.exists(mappingObj | mappingObj.eClass().getName() = "SqsLambdaEventSourceMapping")) {
+    variants.add(self.sqsEventSchemaJson());
+  }
+  if (self.eventSourceMappings.exists(mappingObj | mappingObj.eClass().getName() = "DynamoDbStreamLambdaEventSourceMapping")) {
+    variants.add(self.dynamoStreamEventSchemaJson());
+  }
+  if (self.permissions.exists(permissionObj | permissionObj.principal = "events.amazonaws.com" or permissionObj.principal = "scheduler.amazonaws.com")) {
+    variants.add(self.eventBridgeEventSchemaJson());
+  }
+
+  if (variants.isEmpty()) {
+    variants.add(self.genericJsonEventSchemaJson());
+  }
+  if (variants.size() = 1) {
+    return self.wrapLocalSchemaDocument(profileMap, variants.first());
+  }
+
+  var oneOfText = "";
+  for (variantText in variants) {
+    if (oneOfText.isPresent()) {
+      oneOfText = oneOfText + ",\n";
+    }
+    oneOfText = oneOfText + indentJsonBlock(variantText, 4);
+  }
+  return "{\n" +
+    "  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n" +
+    "  \"$id\": \"urn:modless:" + firstText(profileMap.get("projectSlug"), "modless") + ":" + self.stableKey().toSlug() + ":lambda-input\",\n" +
+    "  \"title\": " + self.schemaTitle("lambda-input").jsonString() + ",\n" +
+    "  \"description\": " + firstText(self.summary, "Generated Lambda input event schema.").jsonString() + ",\n" +
+    "  \"oneOf\": [\n" + oneOfText + "\n  ],\n" +
+    "  \"x-psm-trace\": { \"sourceStableId\": " + self.stableKey().jsonString() + ", \"generatorRule\": \"AWSPSM2ART_Contract_To_JsonSchema\" }\n" +
+    "}\n";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction wrapLocalSchemaDocument(profileMap : Map, bodyText : String) : String {
+  return "{\n" +
+    "  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n" +
+    "  \"$id\": \"urn:modless:" + firstText(profileMap.get("projectSlug"), "modless") + ":" + self.stableKey().toSlug() + ":lambda-input\",\n" +
+    "  \"title\": " + self.schemaTitle("lambda-input").jsonString() + ",\n" +
+    "  \"description\": " + firstText(self.summary, "Generated Lambda input event schema.").jsonString() + ",\n" +
+    "  \"allOf\": [\n" + indentJsonBlock(bodyText, 4) + "\n  ],\n" +
+    "  \"x-psm-trace\": { \"sourceStableId\": " + self.stableKey().jsonString() + ", \"generatorRule\": \"AWSPSM2ART_Contract_To_JsonSchema\" }\n" +
+    "}\n";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction hasApiGatewayInvocation() : Boolean {
+  return AWSPSMAPI!ApiGatewayIntegration.all.exists(integrationObj | integrationObj.lambdaTarget = self);
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction apiGatewayProxyEventSchemaJson() : String {
+  return "{\n" +
+    "  \"title\": \"API Gateway proxy event\",\n" +
+    "  \"type\": \"object\",\n" +
+    "  \"additionalProperties\": false,\n" +
+    "  \"required\": [ \"requestContext\" ],\n" +
+    "  \"properties\": {\n" +
+    "    \"version\": { \"type\": \"string\" },\n" +
+    "    \"routeKey\": { \"type\": \"string\" },\n" +
+    "    \"rawPath\": { \"type\": \"string\" },\n" +
+    "    \"headers\": { \"type\": \"object\", \"additionalProperties\": { \"type\": \"string\" } },\n" +
+    "    \"queryStringParameters\": { \"type\": [ \"object\", \"null\" ], \"additionalProperties\": { \"type\": \"string\" } },\n" +
+    "    \"pathParameters\": { \"type\": [ \"object\", \"null\" ], \"additionalProperties\": { \"type\": \"string\" } },\n" +
+    "    \"body\": { \"type\": [ \"string\", \"null\" ] },\n" +
+    "    \"isBase64Encoded\": { \"type\": \"boolean\" },\n" +
+    "    \"requestContext\": { \"type\": \"object\" }\n" +
+    "  }\n" +
+    "}";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction sqsEventSchemaJson() : String {
+  return "{\n" +
+    "  \"title\": \"SQS event\",\n" +
+    "  \"type\": \"object\",\n" +
+    "  \"additionalProperties\": false,\n" +
+    "  \"required\": [ \"Records\" ],\n" +
+    "  \"properties\": {\n" +
+    "    \"Records\": { \"type\": \"array\", \"items\": { \"type\": \"object\", \"required\": [ \"messageId\", \"body\" ], \"properties\": { \"messageId\": { \"type\": \"string\" }, \"receiptHandle\": { \"type\": \"string\" }, \"body\": { \"type\": \"string\" }, \"attributes\": { \"type\": \"object\" }, \"messageAttributes\": { \"type\": \"object\" }, \"eventSource\": { \"const\": \"aws:sqs\" }, \"awsRegion\": { \"type\": \"string\" } }, \"additionalProperties\": true } }\n" +
+    "  }\n" +
+    "}";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction dynamoStreamEventSchemaJson() : String {
+  return "{\n" +
+    "  \"title\": \"DynamoDB stream event\",\n" +
+    "  \"type\": \"object\",\n" +
+    "  \"additionalProperties\": false,\n" +
+    "  \"required\": [ \"Records\" ],\n" +
+    "  \"properties\": {\n" +
+    "    \"Records\": { \"type\": \"array\", \"items\": { \"type\": \"object\", \"required\": [ \"eventID\", \"eventName\", \"dynamodb\" ], \"properties\": { \"eventID\": { \"type\": \"string\" }, \"eventName\": { \"type\": \"string\" }, \"eventSource\": { \"const\": \"aws:dynamodb\" }, \"awsRegion\": { \"type\": \"string\" }, \"dynamodb\": { \"type\": \"object\" } }, \"additionalProperties\": true } }\n" +
+    "  }\n" +
+    "}";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction eventBridgeEventSchemaJson() : String {
+  return "{\n" +
+    "  \"title\": \"EventBridge event\",\n" +
+    "  \"type\": \"object\",\n" +
+    "  \"additionalProperties\": true,\n" +
+    "  \"required\": [ \"id\", \"source\", \"detail-type\", \"detail\" ],\n" +
+    "  \"properties\": {\n" +
+    "    \"version\": { \"type\": \"string\" },\n" +
+    "    \"id\": { \"type\": \"string\" },\n" +
+    "    \"source\": { \"type\": \"string\" },\n" +
+    "    \"detail-type\": { \"type\": \"string\" },\n" +
+    "    \"time\": { \"type\": \"string\", \"format\": \"date-time\" },\n" +
+    "    \"detail\": { \"type\": \"object\" }\n" +
+    "  }\n" +
+    "}";
+}
+
+operation AWSPSMCOMPUTE!AwsLambdaFunction genericJsonEventSchemaJson() : String {
+  return "{\n" +
+    "  \"title\": \"Generic JSON event\",\n" +
+    "  \"type\": \"object\",\n" +
+    "  \"additionalProperties\": true\n" +
+    "}";
 }
 
 operation AWSPSMCOMPUTE!AwsLambdaFunction requiresIdempotency() : Boolean {

@@ -15,7 +15,7 @@ public record EgxGenerationRequest(
     public EgxGenerationRequest {
         Objects.requireNonNull(moduleFile, "moduleFile");
         templateRoot = templateRoot == null ? moduleFile.toAbsolutePath().getParent()
-                                              .resolve("templates") : templateRoot;
+                .resolve("templates") : templateRoot;
         Objects.requireNonNull(outputDirectory, "outputDirectory");
         models = models == null ? List.of() : List.copyOf(models);
     }

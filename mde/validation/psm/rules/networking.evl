@@ -4,8 +4,14 @@ import "../lib/psm-validation-helpers.eol";
 
 context AWSPSM!VpcAttachmentConfig {
   constraint VpcAttachmentHasSubnetsAndSecurityGroups {
-    check : self.subnetIds.notEmpty() and (self.securityGroupIds.notEmpty() or self.securityGroups.notEmpty())
-    message : 'VPC attachment is missing subnetIds or security groups. Fix: provide at least one subnet and one security group for the attached Lambda/function resource.'
+    check : (self.subnetIds.notEmpty() or self.subnets.notEmpty()) and (self.securityGroupIds.notEmpty() or self.securityGroups.notEmpty())
+    message : 'VPC attachment is missing subnet IDs/references or security groups. Fix: provide at least one subnet and one security group for the attached Lambda/function resource.'
+  }
+
+  critique ModeledVpcAttachmentShouldNotContradictRawIds {
+    guard : self.vpc.isDefined() or self.subnets.notEmpty() or self.securityGroups.notEmpty()
+    check : (not self.vpcId.hasText()) and self.subnetIds.isEmpty() and self.securityGroupIds.isEmpty()
+    message : 'VPC attachment mixes modeled VPC/subnet/security-group references with raw IDs. Fix: use modeled references for generated infrastructure, or raw IDs for imported infrastructure with rationale.'
   }
 
   critique PrivateSubnetsRequireEndpointsWhenFlagged {

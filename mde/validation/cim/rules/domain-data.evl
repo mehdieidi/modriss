@@ -147,10 +147,10 @@ context CIM!AggregateCandidate {
 context CIM!BusinessInvariant {
 
   constraint BusinessInvariantIsExpressed {
-    check : self.naturalLanguageStatement.hasText() or self.expression.hasText()
+    check : self.naturalLanguageStatement.hasText() or self.expression.hasText() or self.expressionModel.hasExpressionBody()
     message :
-      "Error [CIM-INV-001] BusinessInvariant '" + self.labelText() + "' has no naturalLanguageStatement or expression. " +
-      "Suggestion: write the invariant as a business rule, optionally adding expressionLanguage/expression for automatable validation."
+      "Error [CIM-INV-001] BusinessInvariant '" + self.labelText() + "' has no naturalLanguageStatement, expression, or expressionModel. " +
+      "Suggestion: write the invariant as a business rule, optionally adding expressionModel.body for automatable validation."
   }
 
   critique BusinessInvariantConstrainsConcepts {

@@ -58,6 +58,28 @@ operation literalValue(value : String, secret : Boolean) {
   return v;
 }
 
+operation secretReferenceValue(referenceText : String) {
+  var resolvedReference = firstText(referenceText, "REVIEW_REQUIRED_SECRET_REFERENCE");
+  var v = new AWSPSMCORE!ValueExpression;
+  v.id = uniqueId("secret_ref_" + slug(resolvedReference));
+  v.name = "Secrets Manager reference";
+  v.sourceKind = AWSPSMENUMS!ValueSourceKind#SECRETS_MANAGER_REFERENCE;
+  v.expression = resolvedReference;
+  v.secret = true;
+  return v;
+}
+
+operation ssmSecureReferenceValue(referenceText : String) {
+  var resolvedReference = firstText(referenceText, "REVIEW_REQUIRED_SSM_SECURE_REFERENCE");
+  var v = new AWSPSMCORE!ValueExpression;
+  v.id = uniqueId("ssm_secure_ref_" + slug(resolvedReference));
+  v.name = "SSM secure reference";
+  v.sourceKind = AWSPSMENUMS!ValueSourceKind#SSM_SECURE_REFERENCE;
+  v.expression = resolvedReference;
+  v.secret = true;
+  return v;
+}
+
 operation refValue(resource) {
   var v = new AWSPSMCORE!ValueExpression;
   v.id = uniqueId("ref_" + slug(resource.logicalId));
@@ -364,8 +386,17 @@ operation createLambdaPermissionFor(prefix : String, origin, fn, principal : Str
   p.action = "lambda:InvokeFunction";
   p.principal = principal;
   p.sourceArn = sourceArnExpression;
+  if (not hasText(sourceArnExpression)) {
+    manualDecision("LAMBDA_PERMISSION_SOURCE_ARN_REQUIRED",
+      "Provide source ARN for " + principal + " invoking Lambda " + fn.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{origin, fn},
+      "Set the invoking API, EventBridge rule/schedule, SNS topic, S3 bucket, or other source so Lambda permission can be least-privilege scoped.");
+  }
   setFeature(p, "function", fn);
   cachedLambdaPermissionByKey.put(key, p);
+  if (not cachedLambdaPermissionByKey.containsKey(prefix + "::" + principal + "::" + fn.logicalId)) {
+    cachedLambdaPermissionByKey.put(prefix + "::" + principal + "::" + fn.logicalId, p);
+  }
   return p;
 }
 
@@ -373,12 +404,103 @@ operation sourceArnFor(origin) {
   if (origin.isUndefined()) {
     return "";
   }
+  if (isApiGatewayRoute(origin)) {
+    return apiGatewayRouteSourceArn(origin);
+  }
+  var apiRoute = featureValue(origin, "apiRoute");
+  if (apiRoute.isDefined()) {
+    return apiGatewayRouteSourceArn(apiRoute);
+  }
+  var source = featureValue(origin, "source");
+  if (source.isDefined()) {
+    return sourceArnFor(source);
+  }
+  var channel = featureValue(origin, "channel");
+  if (channel.isDefined()) {
+    return sourceArnFor(channel);
+  }
   var equivalent = awsEquivalent(origin);
   if (equivalent.isDefined() and equivalent.eClass().getEStructuralFeature("logicalId").isDefined()) {
-    return "${" + equivalent.logicalId + ".Arn}";
+    return cfnArnExpression(equivalent);
   }
   if (origin.eClass().getEStructuralFeature("logicalId").isDefined() and hasText(origin.logicalId)) {
-    return "${" + origin.logicalId + ".Arn}";
+    return cfnArnExpression(origin);
   }
   return "";
+}
+
+operation cfnArnExpression(resource) : String {
+  if (resource.isUndefined() or resource.eClass().getEStructuralFeature("logicalId").isUndefined() or not hasText(resource.logicalId)) {
+    return "";
+  }
+  return "!GetAtt " + resource.logicalId + ".Arn";
+}
+
+operation cfnArnSubExpression(resource, suffix : String) : String {
+  if (resource.isUndefined() or resource.eClass().getEStructuralFeature("logicalId").isUndefined() or not hasText(resource.logicalId)) {
+    return "";
+  }
+  return "!Sub '${" + resource.logicalId + ".Arn}" + suffix + "'";
+}
+
+operation isApiGatewayRoute(element) : Boolean {
+  if (element.isUndefined()) {
+    return false;
+  }
+  var className = element.eClass().getName();
+  return className = "ApiRoute" or className = "HttpApiRoute" or className = "RestApiRoute" or className = "RestApiMethod" or className = "WebSocketRoute";
+}
+
+operation apiGatewayRouteSourceArn(route) : String {
+  if (route.isUndefined()) {
+    return "";
+  }
+  var routeResource = awsEquivalent(route);
+  if (routeResource.isUndefined()) {
+    routeResource = route;
+  }
+  var apiResource = featureValue(routeResource, "api");
+  if (apiResource.isUndefined()) {
+    var sourceApi = featureValue(route, "api");
+    if (sourceApi.isDefined()) {
+      apiResource = awsEquivalent(sourceApi);
+    }
+  }
+  if (apiResource.isUndefined() or apiResource.eClass().getEStructuralFeature("logicalId").isUndefined() or not hasText(apiResource.logicalId)) {
+    return "";
+  }
+  var methodText = "*";
+  var methodValue = featureValue(routeResource, "method");
+  if (methodValue.isUndefined()) {
+    methodValue = featureValue(route, "method");
+  }
+  if (hasText(methodValue) and methodValue.asString() <> "ANY") {
+    methodText = methodValue.asString();
+  }
+  var pathValue = featureValue(routeResource, "path");
+  if (pathValue.isUndefined()) {
+    var resourceValue = featureValue(routeResource, "resource");
+    if (resourceValue.isDefined()) {
+      pathValue = featureValue(resourceValue, "fullPath");
+    }
+  }
+  if (pathValue.isUndefined()) {
+    pathValue = featureValue(route, "pathTemplate");
+  }
+  var pathText = normalizeExecuteApiPath(pathValue);
+  return "!Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${" + apiResource.logicalId + "}/*/" + methodText + "/" + pathText + "'";
+}
+
+operation normalizeExecuteApiPath(pathValue) : String {
+  var pathText = asText(pathValue).trim();
+  if (pathText.isEmpty()) {
+    return "*";
+  }
+  if (pathText.startsWith("/")) {
+    pathText = pathText.substring(1);
+  }
+  if (pathText.isEmpty()) {
+    return "*";
+  }
+  return pathText.replaceAll("\\{[^/]+\\}", "*");
 }

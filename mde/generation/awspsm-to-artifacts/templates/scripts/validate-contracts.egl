@@ -14,9 +14,9 @@ fi
 if [[ -d openapi ]]; then
   for openapi_path in openapi/*.openapi.yaml; do
     [[ -f "$openapi_path" ]] || continue
-    grep -q '^openapi:' "$openapi_path"
-    grep -q '^info:' "$openapi_path"
-    grep -q '^paths:' "$openapi_path"
+    grep -Eq '^[[:space:]]*openapi:|^[[:space:]]*"openapi"[[:space:]]*:' "$openapi_path"
+    grep -Eq '^[[:space:]]*info:|^[[:space:]]*"info"[[:space:]]*:' "$openapi_path"
+    grep -Eq '^[[:space:]]*paths:|^[[:space:]]*"paths"[[:space:]]*:' "$openapi_path"
   done
 fi
 

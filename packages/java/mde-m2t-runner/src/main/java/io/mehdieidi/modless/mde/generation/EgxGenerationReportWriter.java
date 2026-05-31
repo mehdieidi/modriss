@@ -107,6 +107,6 @@ public final class EgxGenerationReportWriter {
         return value == null
                 ? ""
                 : value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r")
-                  .replace("\n", "\\n");
+                        .replace("\n", "\\n");
     }
 }

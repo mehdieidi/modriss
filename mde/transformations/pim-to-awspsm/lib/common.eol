@@ -437,3 +437,139 @@ operation setFeature(element, featureName : String, value) {
   }
   element.eSet(feature, value);
 }
+
+operation featureValue(element, featureName : String) {
+  if (element.isUndefined()) {
+    return null;
+  }
+  var feature = element.eClass().getEStructuralFeature(featureName);
+  if (feature.isUndefined()) {
+    return null;
+  }
+  return element.eGet(feature);
+}
+
+operation jsonStringArray(items) {
+  var out = "";
+  for (item in items) {
+    if (hasText(item)) {
+      if (hasText(out)) {
+        out = out + ", ";
+      }
+      out = out + "\"" + escapeJson(item) + "\"";
+    }
+  }
+  return "[ " + out + " ]";
+}
+
+operation schemaToJsonSchema(schema) {
+  return schemaToObjectSchema(schema, true);
+}
+
+operation schemaToOpenApiSchema(schema) {
+  return schemaToObjectSchema(schema, false);
+}
+
+operation schemaToObjectSchema(schema, includeDialect : Boolean) {
+  var required = "";
+  var properties = "";
+  for (field in schema.fields) {
+    if (hasText(properties)) {
+      properties = properties + ", ";
+    }
+    properties = properties + "\"" + escapeJson(field.name) + "\": " + schemaFieldToJson(field);
+    if (isTrue(field.required)) {
+      if (hasText(required)) {
+        required = required + ", ";
+      }
+      required = required + "\"" + escapeJson(field.name) + "\"";
+    }
+  }
+  var prefix = "";
+  if (includeDialect) {
+    prefix = "\"$schema\": \"https://json-schema.org/draft/2020-12/schema\", ";
+  }
+  return "{ " + prefix + "\"title\": \"" + escapeJson(schema.name) +
+    "\", \"type\": \"object\", \"additionalProperties\": " + isTrue(schema.additionalPropertiesAllowed).asString() +
+    ", \"properties\": { " + properties + " }, \"required\": [ " + required + " ] }";
+}
+
+operation schemaFieldToJson(field) {
+  if (isTrue(field.array) or field.fieldType = PIMTYPES!FieldType#ARRAY) {
+    var itemJson = "{ \"type\": \"string\" }";
+    if (field.arrayItem.isDefined()) {
+      itemJson = schemaFieldToJson(field.arrayItem);
+    }
+    else {
+      if (field.objectSchema.isDefined()) {
+        itemJson = schemaToObjectSchema(field.objectSchema, false);
+      }
+    }
+    return "{ \"type\": \"array\", \"items\": " + itemJson + schemaFieldConstraintJson(field) + " }";
+  }
+  if (field.objectSchema.isDefined()) {
+    return schemaToObjectSchema(field.objectSchema, false);
+  }
+  return "{ \"type\": \"" + jsonSchemaTypeForField(field) + "\"" + schemaFieldConstraintJson(field) + " }";
+}
+
+operation schemaFieldConstraintJson(field) {
+  var out = "";
+  if (field.enumValues.notEmpty()) {
+    out = out + ", \"enum\": " + jsonStringArray(field.enumValues.collect(v | v.literal));
+  }
+  if (hasText(field.format)) {
+    out = out + ", \"format\": \"" + escapeJson(field.format) + "\"";
+  }
+  if (field.minLength.isDefined()) {
+    out = out + ", \"minLength\": " + field.minLength.asString();
+  }
+  if (field.maxLength.isDefined()) {
+    out = out + ", \"maxLength\": " + field.maxLength.asString();
+  }
+  if (hasText(field.pattern)) {
+    out = out + ", \"pattern\": \"" + escapeJson(field.pattern) + "\"";
+  }
+  if (hasText(field.minimum)) {
+    if (field.minimum.matches("^-?[0-9]+(\\.[0-9]+)?$")) {
+      out = out + ", \"minimum\": " + field.minimum;
+    }
+    else {
+      out = out + ", \"x-minimumText\": \"" + escapeJson(field.minimum) + "\"";
+    }
+  }
+  if (hasText(field.maximum)) {
+    if (field.maximum.matches("^-?[0-9]+(\\.[0-9]+)?$")) {
+      out = out + ", \"maximum\": " + field.maximum;
+    }
+    else {
+      out = out + ", \"x-maximumText\": \"" + escapeJson(field.maximum) + "\"";
+    }
+  }
+  if (hasText(field.defaultValue)) {
+    out = out + ", \"default\": \"" + escapeJson(field.defaultValue) + "\"";
+  }
+  if (hasText(field.descriptionForConsumers)) {
+    out = out + ", \"description\": \"" + escapeJson(field.descriptionForConsumers) + "\"";
+  }
+  if (isTrue(field.nullable)) {
+    out = out + ", \"nullable\": true";
+  }
+  return out;
+}
+
+operation jsonSchemaTypeForField(field) {
+  if (field.fieldType = PIMTYPES!FieldType#INTEGER) {
+    return "integer";
+  }
+  if (field.fieldType = PIMTYPES!FieldType#NUMBER or field.fieldType = PIMTYPES!FieldType#MONEY) {
+    return "number";
+  }
+  if (field.fieldType = PIMTYPES!FieldType#BOOLEAN) {
+    return "boolean";
+  }
+  if (field.fieldType = PIMTYPES!FieldType#OBJECT) {
+    return "object";
+  }
+  return "string";
+}

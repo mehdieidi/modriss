@@ -127,7 +127,7 @@ enum ApiGatewayIntegrationType {
   MOCK;
 }
 
-enum HttpMethod {
+enum ApiGatewayHttpMethod {
   GET;
   POST;
   PUT;
@@ -138,7 +138,7 @@ enum HttpMethod {
   ANY;
 }
 
-enum AwsHttpMethod {
+enum EventBridgeHttpMethod {
   GET;
   POST;
   PUT;
