@@ -8,8 +8,9 @@ import {
   deleteBoundedContext,
   removeElementFromBoundedContext,
   renameBoundedContext,
-  renderDiagram,
-  startConnectionFromNode
+  startConnectionFromNode,
+  syncDiagramRenderer,
+  syncRendererSelection
 } from './canvas.js';
 import {scheduleAutoSave} from './autosave.js';
 import {isMobileViewport} from './responsive.js';
@@ -51,7 +52,6 @@ import {
   refIds as pimRefIds
 } from './pim-model-utils.js';
 import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
-
 // Fields managed by canvas – shown read-only
 const READONLY_ATTR_KEYS = new Set(["id", "eClass", "x", "y"]);
 // Fields skipped entirely (rendered via canvas label editing)
@@ -170,6 +170,7 @@ export function openAttributePanel(nodeId) {
       el.mobileBackdrop.classList.remove("hidden");
     }
   }
+  syncRendererSelection();
 }
 
 export function closeAttributePanel() {
@@ -187,6 +188,7 @@ export function closeAttributePanel() {
   if (el.mobileBackdrop) {
     el.mobileBackdrop.classList.add("hidden");
   }
+  syncRendererSelection();
 }
 
 export function openConnectionPanel(connectionId) {
@@ -232,6 +234,7 @@ export function openConnectionPanel(connectionId) {
       el.mobileBackdrop.classList.remove("hidden");
     }
   }
+  syncRendererSelection();
 }
 
 function renderConnectionFields(connection, source, target) {
@@ -1509,7 +1512,7 @@ function addContainedChildFromDrawer(parentId, feature, childType) {
   parentNode.meta[feature] = parentElement[feature];
   scheduleAutoSave({delayMs: 250});
   publishDiagramUpdate({immediate: true});
-  renderDiagram();
+  syncDiagramRenderer({workbench: true});
   openAttributePanel(parentId);
   setStatus(`Added ${childType}`);
 }
@@ -1840,7 +1843,7 @@ export function applyAttributePanel() {
     pushDiagramUndoSnapshot(undoSnapshot);
   }
 
-  renderDiagram();
+  syncDiagramRenderer({workbench: true});
   const nodeEl = el.nodeLayer.querySelector(
       `[data-node-id="${state.selectedNodeId}"]`);
   if (nodeEl) {
@@ -1900,7 +1903,7 @@ function applyConnectionPanel() {
         "One connection property contains invalid JSON. Fix it before applying changes.");
     return;
   }
-  renderDiagram();
+  syncDiagramRenderer({workbench: true});
   scheduleAutoSave({delayMs: 250});
   publishDiagramUpdate();
   setStatus(`Connection updated: ${edge.kind}`);
@@ -2032,7 +2035,7 @@ export async function deleteSelection() {
   removeElementFromGraph(nodeId);
 
   closeAttributePanel();
-  renderDiagram();
+  syncDiagramRenderer({workbench: true});
   scheduleAutoSave();
   publishDiagramUpdate();
   setStatus(`Deleted ${node.type}: ${nodeId}`);
@@ -2083,7 +2086,7 @@ export async function deleteSelectedConnection() {
   pushDiagramUndoSnapshot(undoSnapshot);
 
   closeAttributePanel();
-  renderDiagram();
+  syncDiagramRenderer({workbench: true});
   scheduleAutoSave();
   publishDiagramUpdate();
   setStatus(`Deleted connection: ${connection.kind}`);

@@ -1,7 +1,7 @@
 import {state} from './state.js';
 import {el} from './dom.js';
 import {setStatus} from './status.js';
-import {renderDiagram} from './canvas.js';
+import {renderDiagram, syncDiagramRenderer} from './canvas.js';
 import {websocketUrl} from './config.js';
 
 const COLLABORATION_ENABLED = false;
@@ -384,7 +384,7 @@ function applyRemoteCanvasOperation(activeType, operation) {
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].diagram = state.diagram;
     }
-    renderDiagram();
+    syncDiagramRenderer({workbench: true});
     return;
   }
   const tab = state.tabs[activeType];

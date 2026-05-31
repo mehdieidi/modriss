@@ -1181,6 +1181,143 @@
   transform-origin: 0 0;
 }
 
+.g6-editor-host {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: none;
+  touch-action: none;
+}
+
+.g6-editor-host.is-mounted {
+  display: block;
+}
+
+.canvas-grid.g6-renderer-active .canvas-content {
+  display: none;
+}
+
+.g6-overlay-root {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.g6-inline-label-editor {
+  position: absolute;
+  z-index: 8;
+  min-height: 28px;
+  border: 1px solid color-mix(in srgb, var(--accent-select) 80%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 96%, #fff 4%);
+  color: var(--text-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-glow) 72%, transparent);
+  font: 700 12px/1.25 var(--font-ui);
+  padding: 4px 7px;
+  outline: none;
+  pointer-events: auto;
+}
+
+.g6-node-tools {
+  position: absolute;
+  z-index: 7;
+  display: inline-flex;
+  gap: 4px;
+  transform: translate(-100%, -100%);
+  pointer-events: auto;
+}
+
+.g6-node-tools button {
+  min-width: 22px;
+  min-height: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface-3) 86%, #000 14%);
+  color: var(--text);
+  cursor: pointer;
+  font: 800 9px/1 var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.g6-node-tools button:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-high) 82%);
+}
+
+.g6-connection-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.g6-connection-preview path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent-select) 86%, #fff 14%);
+  stroke-width: 2px;
+  stroke-dasharray: 6 4;
+  opacity: 0.78;
+}
+
+.g6-context-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.g6-bounded-context-box {
+  position: absolute;
+  border: 2px dashed color-mix(in srgb, var(--outline) 65%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-glow) 16%, transparent);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.g6-bounded-context-box:hover {
+  border-color: color-mix(in srgb, var(--accent) 76%, transparent);
+  background: color-mix(in srgb, var(--accent-glow) 22%, transparent);
+}
+
+.g6-bounded-context-box.selected {
+  border-color: color-mix(in srgb, var(--accent-select) 84%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-glow) 56%, transparent);
+}
+
+.g6-bounded-context-label {
+  position: absolute;
+  top: -13px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 2px 3px 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 90%, #fff 10%);
+  color: var(--text);
+  font: 700 10px/1.2 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.g6-bounded-context-label button {
+  min-height: 18px;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 44%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text-strong);
+  cursor: pointer;
+  font: 800 8px/1 var(--font-display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .edge-layer {
   position: absolute;
   inset: 0;

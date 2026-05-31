@@ -23,6 +23,7 @@ export const el = {
   validateModelBtn: document.getElementById("validateModelBtn"),
   canvasViewport: document.getElementById("canvasViewport"),
   canvasGrid: document.getElementById("canvasGrid"),
+  g6EditorHost: document.getElementById("g6EditorHost"),
   canvasContent: document.getElementById("canvasContent"),
   edgeLayer: document.getElementById("edgeLayer"),
   nodeLayer: document.getElementById("nodeLayer"),

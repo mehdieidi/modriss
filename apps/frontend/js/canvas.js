@@ -48,6 +48,29 @@ import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
 import {renderCimWorkbenchSurface} from './cim-workbench.js';
 import {renderPimWorkbenchSurface} from './pim-workbench.js';
 import {renderPsmWorkbenchSurface} from './psm-workbench.js';
+import {
+  addG6Edge,
+  beginG6InlineLabelEdit,
+  focusG6CanvasPoint,
+  focusG6Node,
+  getG6Editor,
+  isG6Available,
+  mountG6Editor,
+  onG6ViewportChanged,
+  refreshG6Edges,
+  renderG6Diagram,
+  setG6HoverEdge,
+  setG6HoverNode,
+  syncG6FromState,
+  toGraphCoordinates,
+  updateG6ConnectionState,
+  updateG6ContextBoxes,
+  updateG6Edge,
+  updateG6ImpactState,
+  updateG6Node,
+  updateG6Selection,
+  updateG6Viewport
+} from './graph-editor/g6-editor.js';
 
 const DEFAULT_NODE_W = 228;
 const DEFAULT_NODE_H = 112;
@@ -70,6 +93,43 @@ let hoveredEdgeId = null;
 let edgePinDrag = null;
 let inlineLabelEditStartLabel = "";
 let inlineLabelEditUndoSnapshot = null;
+let g6MountFailed = false;
+
+function useG6Renderer() {
+  return Boolean(state.useG6Renderer && !g6MountFailed);
+}
+
+function workbenchSurfaces() {
+  renderCimWorkbenchSurface();
+  renderPimWorkbenchSurface();
+  renderPsmWorkbenchSurface();
+}
+
+function syncCanvasIndexesFromState() {
+  state.nodesById.clear();
+  nodeElementsById.clear();
+  edgeElementsById.clear();
+  edgeIdsByNodeId.clear();
+  connectionsById.clear();
+  state.diagram.nodes.forEach((node) => {
+    if (nodeVisibleInCurrentCanvasMode(node)) {
+      state.nodesById.set(node.id, node);
+    }
+  });
+  state.diagram.connections.forEach((edge) => {
+    if (!state.nodesById.has(edge.sourceId)
+        || !state.nodesById.has(edge.targetId)) {
+      return;
+    }
+    connectionsById.set(edge.id, edge);
+    [edge.sourceId, edge.targetId].forEach((nodeId) => {
+      if (!edgeIdsByNodeId.has(nodeId)) {
+        edgeIdsByNodeId.set(nodeId, new Set());
+      }
+      edgeIdsByNodeId.get(nodeId).add(edge.id);
+    });
+  });
+}
 
 const CIM_NODE_NOTATION = {
   Actor: {
@@ -2069,6 +2129,125 @@ function notifyModelToolsChanged() {
   window.dispatchEvent(new Event("model-tools-state-change"));
 }
 
+function g6ContextBoxes() {
+  if (state.activeType !== "cim"
+      || state.boundedContextViewMode === "overview") {
+    return [];
+  }
+  const byContext = new Map();
+  state.diagram.nodes.forEach((node) => {
+    const contextName = contextNameFromNode(node);
+    if (!contextName) {
+      return;
+    }
+    if (state.boundedContextViewMode === "focus"
+        && normalizeContextName(state.activeBoundedContextName)
+        !== contextName) {
+      return;
+    }
+    if (!byContext.has(contextName)) {
+      byContext.set(contextName, []);
+    }
+    byContext.get(contextName).push(node);
+  });
+  const nodeW = getNodeWidth();
+  const nodeH = getNodeHeight();
+  const paddingX = 22;
+  const paddingY = 26;
+  const boxes = [];
+  byContext.forEach((nodes, name) => {
+    if (!nodes.length) {
+      return;
+    }
+    const minX = Math.min(...nodes.map((node) => node.x)) - paddingX;
+    const minY = Math.min(...nodes.map((node) => node.y)) - paddingY;
+    const maxX = Math.max(...nodes.map((node) => node.x + nodeW)) + paddingX;
+    const maxY = Math.max(...nodes.map((node) => node.y + nodeH)) + paddingY;
+    boxes.push({name, minX, minY, maxX, maxY});
+  });
+  return boxes;
+}
+
+function g6ConnectionTargetState(source, target) {
+  if (!source || !target || source.id === target.id) {
+    return "illegal";
+  }
+  const legal = legalKindsForConnection(source.type, target.type);
+  const preferred = state.preferredConnectionKind;
+  return preferred ? (legal.includes(preferred) ? "legal" : "illegal")
+      : (legal.length ? "legal" : "illegal");
+}
+
+function ensureG6Canvas() {
+  if (!useG6Renderer()) {
+    return false;
+  }
+  if (getG6Editor()) {
+    return true;
+  }
+  if (!isG6Available()) {
+    g6MountFailed = true;
+    state.useG6Renderer = false;
+    el.canvasGrid?.classList.remove("g6-renderer-active");
+    setStatus("AntV G6 failed to load; using fallback renderer");
+    return false;
+  }
+  try {
+    mountG6Editor(el.g6EditorHost, {
+      mapper: {
+        visibleNode: nodeVisibleInCurrentCanvasMode,
+        isContainer: isContainerElement,
+        isCollapsed: (node) => Boolean(node?.meta?.__collapsed),
+        contextNameFromNode,
+        viewProfile: activeCimViewProfile() || activePimViewProfile()
+            || activeView()?.viewpoint || ""
+      },
+      callbacks: {
+        onNodeClick: handleG6NodeClick,
+        onNodeDoubleClick: handleG6NodeDoubleClick,
+        onNodeHover: setHoveredNode,
+        onEdgeClick: (edgeId) => selectConnection(edgeId, {openPicker: true}),
+        onEdgeHover: setHoveredEdge,
+        onCanvasClick: handleG6CanvasClick,
+        onCanvasPointerMove: (clientX, clientY) =>
+            publishCursor(clientX, clientY, "ONLINE"),
+        onNodeDragStart: startG6NodeDrag,
+        onNodeDrag: moveG6NodeDrag,
+        onNodeDragEnd: endG6NodeDrag,
+        onConnectionDragStart: startG6ConnectionDrag,
+        onConnectionDragEnd: () => updateG6ConnectionState(),
+        onConnectionComplete: (sourceId, targetId) => addConnection(sourceId,
+            targetId, {
+              interactivePicker: true,
+              preferredKind: state.preferredConnectionKind
+            }),
+        onConnectionCancel: () => {
+          state.linkDrag = null;
+          updateG6ConnectionState();
+          setStatus("Connection canceled");
+        },
+        connectionTargetState: g6ConnectionTargetState,
+        contextBoxes: g6ContextBoxes,
+        onContextSelect: selectBoundedContext,
+        onContextOpen: openBoundedContextFocus,
+        onOpenContainer: openG6ContainerTool,
+        onToggleContainerCollapsed: toggleContainerCollapsed,
+        onViewportChange: onG6ViewportChanged,
+        onViewportSynced: renderRemoteCursors
+      }
+    });
+    el.canvasGrid?.classList.add("g6-renderer-active");
+    return true;
+  } catch (error) {
+    console.error("G6 editor mount failed", error);
+    g6MountFailed = true;
+    state.useG6Renderer = false;
+    el.canvasGrid?.classList.remove("g6-renderer-active");
+    setStatus("AntV G6 renderer failed; using fallback renderer");
+    return false;
+  }
+}
+
 export function setContextCreateMode(enabled) {
   const isEnabled = Boolean(enabled && state.activeType === "cim");
   state.boundedContextCreateMode = isEnabled;
@@ -2746,11 +2925,20 @@ function setNodeMultiSelection(ids) {
 
 function deselectEdges() {
   state.selectedConnectionId = null;
+  if (ensureG6Canvas()) {
+    updateG6Selection();
+    return;
+  }
   el.edgeLayer.querySelectorAll(".edge-path, .edge-label, .edge-pin").forEach(
       (edge) => edge.classList.remove("selected"));
 }
 
 function applyNodeSelectionStyles() {
+  if (ensureG6Canvas()) {
+    updateG6Selection();
+    updateG6ImpactState();
+    return;
+  }
   el.nodeLayer.querySelectorAll(".node").forEach((nodeEl) => {
     nodeEl.classList.toggle("selected",
         state.selectedNodeIds.has(nodeEl.dataset.nodeId));
@@ -2760,6 +2948,10 @@ function applyNodeSelectionStyles() {
 }
 
 function applyHoverFocusStyles() {
+  if (ensureG6Canvas()) {
+    setG6HoverNode(state.hoveredNodeId);
+    return;
+  }
   const hoveredNodeId = state.hoveredNodeId;
   const activeEdgeIds = hoveredNodeId ? edgeIdsByNodeId.get(hoveredNodeId)
       || new Set() : null;
@@ -2880,7 +3072,7 @@ export function renameBoundedContext(oldName, nextName) {
   ensureBaseBoundedContext(normalizedNext);
   syncBoundedContextMembershipRefs(normalizedNext);
   state.selectedBoundedContextName = normalizedNext;
-  renderDiagram();
+  syncDiagramRenderer({workbench: true});
   return true;
 }
 
@@ -2911,7 +3103,7 @@ export function removeElementFromBoundedContext(elementId, contextName) {
   } else {
     syncBoundedContextMembershipRefs(normalized);
   }
-  renderDiagram();
+  syncDiagramRenderer({workbench: true});
   scheduleAutoSave();
   publishDiagramUpdate();
   setStatus(`Removed ${node.label || node.id} from "${normalized}"`);
@@ -2953,13 +3145,16 @@ export function deleteBoundedContext(contextName) {
   }
   removeBaseBoundedContext(normalized);
   state.selectedBoundedContextName = null;
-  renderDiagram();
+  syncDiagramRenderer({workbench: true});
   return true;
 }
 
 // ── Viewport helpers ──────────────────────────────────────────────────────────
 
 export function toCanvasCoordinates(clientX, clientY) {
+  if (ensureG6Canvas()) {
+    return toGraphCoordinates(clientX, clientY);
+  }
   const rect = el.canvasViewport.getBoundingClientRect();
   const px = clientX - rect.left;
   const py = clientY - rect.top;
@@ -2972,6 +3167,23 @@ export function toCanvasCoordinates(clientX, clientY) {
 let viewportUpdateScheduled = false;
 
 export function applyViewport() {
+  if (ensureG6Canvas()) {
+    updateG6Viewport();
+    el.canvasGrid?.style.setProperty("--viewport-scale",
+        String(state.viewport.scale || 1));
+    el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
+    el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
+        && state.viewport.scale < 0.75);
+    el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
+    if (!viewportUpdateScheduled) {
+      viewportUpdateScheduled = true;
+      window.requestAnimationFrame(() => {
+        viewportUpdateScheduled = false;
+        renderRemoteCursors();
+      });
+    }
+    return;
+  }
   el.canvasContent.style.transform = `translate(${state.viewport.x}px, ${state.viewport.y}px) scale(${state.viewport.scale})`;
   el.canvasGrid?.style.setProperty("--viewport-scale",
       String(state.viewport.scale || 1));
@@ -3737,7 +3949,13 @@ function createModelingWizard(kind) {
   spec.edges.forEach(([sourceIndex, targetIndex, edgeKind]) => {
     createWizardEdge(nodes[sourceIndex].id, nodes[targetIndex].id, edgeKind);
   });
-  renderDiagram();
+  if (ensureG6Canvas()) {
+    syncCanvasIndexesFromState();
+    syncG6FromState({full: false});
+    workbenchSurfaces();
+  } else {
+    renderDiagram();
+  }
   scheduleAutoSave({delayMs: 200});
   publishDiagramUpdate({immediate: true});
   setStatus(`Created ${spec.label}`);
@@ -4337,6 +4555,13 @@ function groupPaletteTypes(types) {
 // ── Node rendering ────────────────────────────────────────────────────────────
 
 export function renderNodes() {
+  if (ensureG6Canvas()) {
+    syncCanvasIndexesFromState();
+    syncG6FromState({full: false});
+    updateG6Selection();
+    updateG6ImpactState();
+    return;
+  }
   state.nodesById.clear();
   nodeElementsById.clear();
   el.nodeLayer.innerHTML = "";
@@ -4620,6 +4845,11 @@ function clearEdgeHoverHideTimer() {
 }
 
 function setHoveredEdge(edgeId) {
+  if (ensureG6Canvas()) {
+    hoveredEdgeId = edgeId || null;
+    setG6HoverEdge(hoveredEdgeId);
+    return;
+  }
   hoveredEdgeId = edgeId || null;
   edgeElementsById.forEach((entry, currentEdgeId) => {
     const isVisible = hoveredEdgeId === currentEdgeId;
@@ -4908,7 +5138,12 @@ function updateEdgeKind(edgeId, nextKind) {
   edge.kind = kind;
   addConnectionToGraphAndActiveView(edge);
   commitUndoSnapshot(undoSnapshot);
-  renderEdges();
+  if (ensureG6Canvas()) {
+    updateG6Edge(edgeId);
+    updateG6Selection();
+  } else {
+    renderEdges();
+  }
   scheduleAutoSave({delayMs: 220});
   publishDiagramUpdate();
   setStatus(`Connection updated: ${kind}`);
@@ -4990,6 +5225,27 @@ function openEdgeKindPicker(edgeId, options, canvasX, canvasY) {
   el.edgeKindSelect.focus();
 }
 
+function openG6EdgeKindPicker(edgeId) {
+  const edge = state.diagram.connections.find((item) => item.id === edgeId);
+  if (!edge || edge.bundle) {
+    return;
+  }
+  const source = state.nodesById.get(edge.sourceId);
+  const target = state.nodesById.get(edge.targetId);
+  if (!source || !target) {
+    return;
+  }
+  const options = buildDirectedKindOptions(source, target);
+  if (!options.length) {
+    return;
+  }
+  const nodeW = getNodeWidth();
+  const nodeH = getNodeHeight();
+  openEdgeKindPicker(edge.id, options,
+      (source.x + nodeW / 2 + target.x + nodeW / 2) / 2,
+      (source.y + nodeH / 2 + target.y + nodeH / 2) / 2 - 18);
+}
+
 function renderBoundedContextOverviewEdges() {
   const contextNodeByName = new Map();
   state.diagram.nodes.filter(isBoundedContextNode).forEach((node) => {
@@ -5057,6 +5313,16 @@ function renderBoundedContextOverviewEdges() {
 }
 
 export function renderEdges() {
+  if (ensureG6Canvas()) {
+    if (state.selectedConnectionId && !state.diagram.connections.some(
+        (edge) => edge.id === state.selectedConnectionId)) {
+      state.selectedConnectionId = null;
+    }
+    syncCanvasIndexesFromState();
+    syncG6FromState({full: false});
+    updateG6Selection();
+    return;
+  }
   if (state.selectedConnectionId && !state.diagram.connections.some(
       (edge) => edge.id === state.selectedConnectionId)) {
     state.selectedConnectionId = null;
@@ -5335,11 +5601,34 @@ function hasModelArtifact(keys) {
 }
 
 export function renderDiagram() {
+  if (ensureG6Canvas()) {
+    syncCanvasIndexesFromState();
+    renderG6Diagram();
+    workbenchSurfaces();
+    el.canvasGrid?.style.setProperty("--viewport-scale",
+        String(state.viewport.scale || 1));
+    el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
+    el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
+        && state.viewport.scale < 0.75);
+    el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
+    el.workspace?.classList.toggle("cim-view-active",
+        state.activeType === "cim");
+    el.workspace?.classList.toggle("pim-view-active",
+        state.activeType === "pim");
+    el.workspace?.classList.toggle("psm-view-active",
+        state.activeType === "psm");
+    el.workspace?.setAttribute("data-cim-view-profile",
+        activeCimViewProfile() || "");
+    el.workspace?.setAttribute("data-pim-view-profile",
+        activePimViewProfile() || "");
+    el.workspace?.setAttribute("data-psm-view-profile",
+        state.activeType === "psm" ? (activeView()?.viewpoint || "") : "");
+    renderRemoteCursors();
+    return;
+  }
   renderNodes();
   renderEdges();
-  renderCimWorkbenchSurface();
-  renderPimWorkbenchSurface();
-  renderPsmWorkbenchSurface();
+  workbenchSurfaces();
   el.canvasGrid?.style.setProperty("--viewport-scale",
       String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
@@ -5358,7 +5647,206 @@ export function renderDiagram() {
   renderRemoteCursors();
 }
 
+// Compatibility helper for non-canvas modules that changed semantic state.
+// With G6 active this applies a diff to the graph instead of rebuilding the
+// whole renderer; with the fallback renderer it preserves the old render path.
+export function syncDiagramRenderer({full = false, workbench = false} = {}) {
+  if (ensureG6Canvas()) {
+    syncCanvasIndexesFromState();
+    syncG6FromState({full});
+    if (workbench) {
+      workbenchSurfaces();
+    }
+    el.canvasGrid?.style.setProperty("--viewport-scale",
+        String(state.viewport.scale || 1));
+    el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
+    el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
+        && state.viewport.scale < 0.75);
+    el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
+    el.workspace?.classList.toggle("cim-view-active",
+        state.activeType === "cim");
+    el.workspace?.classList.toggle("pim-view-active",
+        state.activeType === "pim");
+    el.workspace?.classList.toggle("psm-view-active",
+        state.activeType === "psm");
+    renderRemoteCursors();
+    return;
+  }
+  renderDiagram();
+}
+
+export function syncRendererSelection() {
+  if (ensureG6Canvas()) {
+    updateG6Selection();
+  }
+}
+
 // ── Canvas event handlers ─────────────────────────────────────────────────────
+
+function eventModifierState(event) {
+  return {
+    shiftKey: Boolean(event?.shiftKey),
+    ctrlKey: Boolean(event?.ctrlKey),
+    metaKey: Boolean(event?.metaKey)
+  };
+}
+
+function handleG6NodeClick(nodeId, event = {}) {
+  if (state.activeType === "cim" && state.boundedContextCreateMode) {
+    const node = state.nodesById.get(nodeId);
+    if (isBoundedContextNode(node)) {
+      return;
+    }
+    const next = new Set(state.boundedContextDraftNodeIds);
+    if (next.has(nodeId)) {
+      next.delete(nodeId);
+    } else {
+      next.add(nodeId);
+    }
+    state.boundedContextDraftNodeIds = next;
+    updateG6ImpactState();
+    setStatus(`${next.size} element${next.size !== 1 ? "s"
+        : ""} selected for bounded context`);
+    return;
+  }
+
+  const modifiers = eventModifierState(event);
+  if (modifiers.shiftKey || modifiers.ctrlKey || modifiers.metaKey) {
+    toggleNodeInSelection(nodeId);
+    return;
+  }
+  const node = state.nodesById.get(nodeId);
+  if (state.activeType === "cim" && isBoundedContextNode(node)) {
+    if (state.boundedContextViewMode === "overview") {
+      setNodeMultiSelection([nodeId]);
+      selectBoundedContext(boundedContextNameFromContextNode(node));
+      return;
+    }
+    startBoundedContextAssignment(boundedContextNameFromContextNode(node));
+    setNodeMultiSelection([nodeId]);
+    updateG6Selection();
+    return;
+  }
+  setNodeMultiSelection([nodeId]);
+  activateNode(nodeId);
+  updateG6Selection();
+}
+
+function handleG6NodeDoubleClick(nodeId, event = {}) {
+  const node = state.nodesById.get(nodeId);
+  if (!node) {
+    return;
+  }
+  event?.preventDefault?.();
+  if (state.activeType === "cim" && isBoundedContextNode(node)) {
+    openBoundedContextFocus(boundedContextNameFromContextNode(node));
+    return;
+  }
+  if (isContainerElement(node)) {
+    openContainerFocus(nodeId);
+    return;
+  }
+  const undoSnapshot = captureDiagramUndoSnapshot();
+  const startLabel = node.label;
+  beginG6InlineLabelEdit(node, {
+    onCommit: (rawText) => {
+      const resolved = commitNodeLabel(node, rawText);
+      syncNodeMetaToGraph(node);
+      updateG6Node(node.id);
+      if (resolved !== startLabel) {
+        commitUndoSnapshot(undoSnapshot);
+        publishNodeRename(node.id, resolved);
+        scheduleAutoSave({delayMs: 250});
+        publishDiagramUpdate({immediate: true});
+      }
+    }
+  });
+}
+
+function handleG6CanvasClick() {
+  hideEdgeHoverHandle();
+  closeEdgeKindPicker();
+  closeAttributePanel();
+  state.selectedNodeId = null;
+  state.selectedNodeIds = new Set();
+  state.selectedConnectionId = null;
+  state.selectedBoundedContextName = null;
+  updateG6Selection();
+}
+
+function startG6NodeDrag(nodeId) {
+  const node = state.nodesById.get(nodeId);
+  if (!node) {
+    return;
+  }
+  hideEdgeHoverHandle();
+  closeEdgeKindPicker();
+  clearTransientEdgeLayouts();
+  state.dragNode = {
+    id: nodeId,
+    startX: 0,
+    startY: 0,
+    nodeX: node.x,
+    nodeY: node.y,
+    moved: false,
+    undoSnapshot: dragUndoSnapshot()
+  };
+}
+
+function moveG6NodeDrag(nodeId, position) {
+  const node = state.nodesById.get(nodeId);
+  if (!node || !position) {
+    return;
+  }
+  node.x = Math.round(position.x);
+  node.y = Math.round(position.y);
+  node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
+  node.meta.x = node.x;
+  node.meta.y = node.y;
+  state.dragNode = state.dragNode || {id: nodeId};
+  state.dragNode.moved = true;
+  updateG6ContextBoxes();
+}
+
+function endG6NodeDrag(nodeId, position, {moved = false} = {}) {
+  const node = state.nodesById.get(nodeId);
+  if (!node) {
+    state.dragNode = null;
+    return;
+  }
+  if (position) {
+    node.x = Math.round(position.x);
+    node.y = Math.round(position.y);
+    node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
+    node.meta.x = node.x;
+    node.meta.y = node.y;
+  }
+  syncNodeMetaToGraph(node);
+  if (moved || state.dragNode?.moved) {
+    commitUndoSnapshot(state.dragNode?.undoSnapshot);
+    publishNodeMove(node.id, node.x, node.y, {immediate: true});
+    publishDiagramUpdate({immediate: true});
+    scheduleAutoSave({delayMs: 400});
+  }
+  refreshG6Edges([...(edgeIdsByNodeId.get(node.id) || [])]);
+  updateG6ContextBoxes();
+  state.dragNode = null;
+}
+
+function startG6ConnectionDrag(sourceId) {
+  state.linkDrag = {sourceId, pointerX: 0, pointerY: 0};
+  updateG6ConnectionState();
+  setStatus("Drag to another element to create a legal connection");
+}
+
+function openG6ContainerTool(nodeId) {
+  const node = state.nodesById.get(nodeId);
+  if (state.activeType === "cim" && isBoundedContextNode(node)) {
+    openBoundedContextFocus(boundedContextNameFromContextNode(node));
+    return;
+  }
+  openContainerFocus(nodeId);
+}
 
 export function onNodeMouseDown(event) {
   if (event.button !== 0) {
@@ -5447,17 +5935,30 @@ function onNodeDoubleClick(event) {
   }
 }
 
-function selectConnection(connectionId) {
+function selectConnection(connectionId, {openPicker = false} = {}) {
   if (!connectionId) {
     return;
   }
   if (state.selectedConnectionId === connectionId) {
     closeAttributePanel();
-    renderEdges();
+    if (ensureG6Canvas()) {
+      state.selectedConnectionId = null;
+      updateG6Selection();
+    } else {
+      renderEdges();
+    }
     return;
   }
   openConnectionPanel(connectionId);
-  renderEdges();
+  if (ensureG6Canvas()) {
+    updateG6Selection();
+    updateG6Edge(connectionId);
+    if (openPicker) {
+      openG6EdgeKindPicker(connectionId);
+    }
+  } else {
+    renderEdges();
+  }
   setStatus("Connection selected (press Delete to remove)");
 }
 
@@ -5466,7 +5967,11 @@ function activateNode(nodeId) {
     if (!state.connectSourceId) {
       state.connectSourceId = nodeId;
       setStatus(`Connection source: ${nodeId}. Select target.`);
-      renderNodes();
+      if (ensureG6Canvas()) {
+        updateG6ConnectionState();
+      } else {
+        renderNodes();
+      }
       return;
     }
     if (state.connectSourceId === nodeId) {
@@ -5478,7 +5983,11 @@ function activateNode(nodeId) {
       preferredKind: state.preferredConnectionKind
     });
     state.connectSourceId = null;
-    renderNodes();
+    if (ensureG6Canvas()) {
+      updateG6ConnectionState();
+    } else {
+      renderNodes();
+    }
     return;
   }
 
@@ -5549,7 +6058,12 @@ function selectBoundedContext(contextName) {
   state.selectedConnectionId = null;
   applyNodeSelectionStyles();
   openBoundedContextPanel(normalized);
-  renderEdges();
+  if (ensureG6Canvas()) {
+    updateG6ContextBoxes();
+    updateG6Selection();
+  } else {
+    renderEdges();
+  }
 }
 
 function openBoundedContextFocus(contextName) {
@@ -5708,6 +6222,9 @@ export function onLinkHandleTouchStart(event) {
 }
 
 export function onCanvasMouseDown(event) {
+  if (ensureG6Canvas()) {
+    return;
+  }
   if (event.target.closest(
       ".node, .edge-path, .edge-label, .edge-hit-pad, .edge-pin, .edge-hover-handle, .edge-kind-picker, .bounded-context-box")) {
     return;
@@ -5729,6 +6246,9 @@ export function onCanvasMouseDown(event) {
 }
 
 export function onCanvasTouchStart(event) {
+  if (ensureG6Canvas()) {
+    return;
+  }
   if (event.target.closest(
       ".node, .edge-path, .edge-label, .edge-hit-pad, .edge-pin, .edge-hover-handle, .edge-kind-picker, .bounded-context-box")) {
     return;
@@ -5751,6 +6271,13 @@ export function onCanvasTouchStart(event) {
 }
 
 export function onGlobalMouseMove(event) {
+  if (ensureG6Canvas()) {
+    if (!state.dragNode && !state.dragBoundedContext && !state.panDrag
+        && !state.linkDrag) {
+      publishCursor(event.clientX, event.clientY, "ONLINE");
+    }
+    return;
+  }
   if ((event.buttons & 1) === 0) {
     const hadPanDrag = Boolean(state.panDrag);
     if (state.linkDrag) {
@@ -5826,6 +6353,14 @@ export function onGlobalMouseMove(event) {
 }
 
 export function onGlobalTouchMove(event) {
+  if (ensureG6Canvas()) {
+    const touch = event.touches?.[0];
+    if (touch && !state.dragNode && !state.dragBoundedContext
+        && !state.panDrag && !state.linkDrag) {
+      publishCursor(touch.clientX, touch.clientY, "ONLINE");
+    }
+    return;
+  }
   if (event.touches.length !== 1) {
     return;
   }
@@ -5894,6 +6429,9 @@ export function onGlobalTouchMove(event) {
 }
 
 export function onGlobalMouseUp(event) {
+  if (ensureG6Canvas()) {
+    return;
+  }
   if (edgePinDrag) {
     finalizeEdgePinDrag();
     event.preventDefault();
@@ -5966,6 +6504,10 @@ export function onGlobalMouseUp(event) {
 }
 
 export function onGlobalTouchEnd(event) {
+  if (ensureG6Canvas()) {
+    state.touchTap = null;
+    return;
+  }
   const touch = event.changedTouches?.[0];
   if (edgePinDrag) {
     finalizeEdgePinDrag();
@@ -6042,6 +6584,10 @@ export function onGlobalTouchEnd(event) {
 }
 
 export function onCanvasWheel(event) {
+  if (ensureG6Canvas()) {
+    closeEdgeKindPicker();
+    return;
+  }
   closeEdgeKindPicker();
   event.preventDefault();
   const prev = state.viewport.scale;
@@ -6077,7 +6623,13 @@ export function setupDnD() {
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].diagram = state.diagram;
     }
-    renderDiagram();
+    syncCanvasIndexesFromState();
+    if (ensureG6Canvas()) {
+      syncG6FromState({full: false});
+      workbenchSurfaces();
+    } else {
+      renderDiagram();
+    }
     setStatus(`Added ${type}`);
     try {
       await flushAutoSave();
@@ -6140,7 +6692,19 @@ export function addConnection(sourceId, targetId,
   state.diagram.connections.push(edge);
   addConnectionToGraphAndActiveView(edge);
   state.selectedConnectionId = edge.id;
-  renderEdges();
+  if (ensureG6Canvas()) {
+    connectionsById.set(edge.id, edge);
+    [edge.sourceId, edge.targetId].forEach((nodeId) => {
+      if (!edgeIdsByNodeId.has(nodeId)) {
+        edgeIdsByNodeId.set(nodeId, new Set());
+      }
+      edgeIdsByNodeId.get(nodeId).add(edge.id);
+    });
+    addG6Edge(edge);
+    updateG6Selection();
+  } else {
+    renderEdges();
+  }
   scheduleAutoSave();
   publishDiagramUpdate();
   if (interactivePicker) {
@@ -6234,7 +6798,13 @@ function createShortcutConnection(source, target) {
     addConnectionToGraphAndActiveView(targetEdge);
   }
   syncActiveViewFromVisibleGraph();
-  renderDiagram();
+  if (ensureG6Canvas()) {
+    syncCanvasIndexesFromState();
+    syncG6FromState({full: false});
+    workbenchSurfaces();
+  } else {
+    renderDiagram();
+  }
   scheduleAutoSave({delayMs: 220});
   publishDiagramUpdate({immediate: true});
   setStatus(`Created ${rule.label || "PSM shortcut connector"}`);
@@ -6305,7 +6875,11 @@ export function setConnectMode(enabled) {
     state.preferredConnectionKind = null;
     closeEdgeKindPicker();
   }
-  renderNodes();
+  if (ensureG6Canvas()) {
+    updateG6ConnectionState();
+  } else {
+    renderNodes();
+  }
   setStatus(enabled ? "Connect mode enabled - click source then target"
       : "Connect mode disabled");
 }
@@ -6319,7 +6893,11 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
   state.connectMode = true;
   state.connectSourceId = nodeId;
   state.preferredConnectionKind = preferredKind || null;
-  renderNodes();
+  if (ensureG6Canvas()) {
+    updateG6ConnectionState();
+  } else {
+    renderNodes();
+  }
   setStatus(preferredKind
       ? `${preferredKind}: select a highlighted legal target`
       : "Select a highlighted legal target");
@@ -6329,6 +6907,10 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
 // ── Impact highlight (called by renderNodes and impact module) ────────────────
 
 export function highlightImpactedNodes() {
+  if (ensureG6Canvas()) {
+    updateG6ImpactState();
+    return;
+  }
   el.nodeLayer.querySelectorAll(".node").forEach((n) => {
     n.classList.remove("node-impact-focal", "node-impacted-upstream",
         "node-impacted-downstream", "node-impact-connected");
@@ -6380,6 +6962,25 @@ export function highlightImpactedNodes() {
 }
 
 export function scrollToNodeAndHighlight(elementId) {
+  if (ensureG6Canvas()) {
+    const node = state.nodesById.get(elementId)
+        || state.diagram.nodes.find((candidate) => candidate.id === elementId);
+    if (!node) {
+      return;
+    }
+    focusG6Node(elementId);
+    const previousImpact = state.impactData;
+    state.impactData = {
+      ...(state.impactData || {}),
+      focalElement: {elementId}
+    };
+    updateG6ImpactState();
+    setTimeout(() => {
+      state.impactData = previousImpact;
+      updateG6ImpactState();
+    }, 2500);
+    return;
+  }
   const nodeEl = el.nodeLayer.querySelector(`[data-node-id="${elementId}"]`);
   if (!nodeEl) {
     return;
@@ -6418,6 +7019,14 @@ export function scrollToConnectionAndHighlight(connectionId) {
   const nodeH = getNodeHeight();
   const midX = (source.x + nodeW / 2 + target.x + nodeW / 2) / 2;
   const midY = (source.y + nodeH / 2 + target.y + nodeH / 2) / 2;
+  if (ensureG6Canvas()) {
+    state.selectedConnectionId = connectionId;
+    focusG6CanvasPoint(midX, midY);
+    updateG6Selection();
+    updateG6Edge(connectionId);
+    setTimeout(() => updateG6Edge(connectionId), 1800);
+    return true;
+  }
   const vpRect = el.canvasViewport.getBoundingClientRect();
   state.viewport.x = vpRect.width / 2 - midX * state.viewport.scale;
   state.viewport.y = vpRect.height / 2 - midY * state.viewport.scale;

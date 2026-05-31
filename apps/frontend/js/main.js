@@ -70,6 +70,7 @@ import {initCimWorkbenchSurface} from './cim-workbench.js';
 import {initPimWorkbenchSurface} from './pim-workbench.js';
 import {initPsmWorkbenchSurface} from './psm-workbench.js';
 import {configureContainerCollapse} from './container-collapse.js';
+import {installG6LargeGraphDevHelper} from './graph-editor/g6-devtools.js';
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
 const CHAT_INPUT_MAX_HEIGHT = 132;
@@ -891,6 +892,8 @@ async function init() {
   setupIdeMenus();
   bindEvents();
   configureContainerCollapse(
+      {renderDiagram, renderWorkbench: renderViewWorkbench});
+  installG6LargeGraphDevHelper(
       {renderDiagram, renderWorkbench: renderViewWorkbench});
   initViewWorkbench({renderDiagram, renderPalette});
   initCimWorkbenchSurface({
