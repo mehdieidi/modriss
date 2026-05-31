@@ -28,11 +28,35 @@ operation KERNEL!ModelElement displayName() : String {
   return self.eClass().getName() + " instance";
 }
 
+@cached
 operation Any containsProviderToken() : Boolean {
   if (not self.hasText()) {
     return false;
   }
-  return self.asString().matches("(?i)(Lambda|DynamoDB|SQS|SNS|EventBridge|CloudWatch|XRay|IAM|Cognito|S3|AWS|ARN|SAM|CloudFormation|ApiGateway|Azure|GCP|PubSub|CloudRun|CloudFunctions|ServiceBus|CosmosDB|BigQuery)");
+  var text = self.asString().toLowerCase();
+  return text.contains("lambda")
+    or text.contains("dynamodb")
+    or text.contains("sqs")
+    or text.contains("sns")
+    or text.contains("eventbridge")
+    or text.contains("cloudwatch")
+    or text.contains("xray")
+    or text.contains("iam")
+    or text.contains("cognito")
+    or text.contains("s3")
+    or text.contains("aws")
+    or text.contains("arn")
+    or text.contains("sam")
+    or text.contains("cloudformation")
+    or text.contains("apigateway")
+    or text.contains("azure")
+    or text.contains("gcp")
+    or text.contains("pubsub")
+    or text.contains("cloudrun")
+    or text.contains("cloudfunctions")
+    or text.contains("servicebus")
+    or text.contains("cosmosdb")
+    or text.contains("bigquery");
 }
 
 @cached
@@ -46,6 +70,28 @@ operation PIM!Function hasAnyIncomingBinding() : Boolean {
       channelItem.producers.includes(self) or channelItem.consumers.includes(self))
     or PIM!EventType.all.exists(eventItem |
       eventItem.producedBy.includes(self) or eventItem.consumedBy.includes(self));
+}
+
+@cached
+operation PIM!ServerlessService ownedElements() : Sequence {
+  var elements = Sequence{};
+  elements.addAll(self.ownsFunctions);
+  elements.addAll(self.ownsApis);
+  elements.addAll(self.ownsChannels);
+  elements.addAll(self.ownsStores);
+  elements.addAll(self.ownsWorkflows);
+  elements.addAll(self.ownsAdapters);
+  return elements;
+}
+
+@cached
+operation PIM!ServerlessService serviceMemberships() : Sequence {
+  return PIM!ServiceElementMembership.all.select(membershipItem | membershipItem.service = self).asSequence();
+}
+
+@cached
+operation PIM!ServerlessService hasMembershipFor(element) : Boolean {
+  return self.serviceMemberships().exists(membershipItem | membershipItem.element = element);
 }
 
 @cached
@@ -175,4 +221,3 @@ operation PIM!ImplementationProfile packageManagerFitsLanguage() : Boolean {
 /***********************
  * Root and naming rules
  ***********************/
-

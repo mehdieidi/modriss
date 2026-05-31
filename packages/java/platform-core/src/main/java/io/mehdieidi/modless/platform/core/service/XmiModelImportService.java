@@ -351,7 +351,7 @@ final class XmiModelImportService {
 
             for (EStructuralFeature feature : object.eClass().getEAllStructuralFeatures()) {
                 if (feature instanceof EAttribute attribute) {
-                    if (!object.eIsSet(feature)) {
+                    if (!object.eIsSet(feature) && !isRequiredAttribute(attribute)) {
                         continue;
                     }
                     JsonNode value = attributeValueNode(object, attribute);
@@ -381,6 +381,10 @@ final class XmiModelImportService {
         } finally {
             context.endSerialization(object);
         }
+    }
+
+    private boolean isRequiredAttribute(EAttribute attribute) {
+        return attribute.getLowerBound() > 0 && !attribute.isMany();
     }
 
     private JsonNode containmentValueNode(EObject owner, EReference reference,

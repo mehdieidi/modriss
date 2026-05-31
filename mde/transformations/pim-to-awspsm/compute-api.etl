@@ -40,6 +40,9 @@ rule Function2AwsLambdaFunction
   l.tracing = createLambdaTracing(f);
   l.logging = createLambdaLogging(l);
   l.environment.addAll(createLambdaEnvironment(f));
+  if (isProductionRoot()) {
+    l.deadLetterConfig = createLambdaDeadLetterConfig(f);
+  }
 
   if (isTrue(f.requiresNetworkAccess)) {
     l.vpcConfig = createVpcAttachmentDecision(f);
@@ -154,8 +157,13 @@ rule ApiRoute2HttpApiRoute
   gr.routeSettingsJson = "{ \"DetailedMetricsEnabled\": true }";
   gr.api = awsEquivalent(r.api);
   gr.integration = createApiIntegration(r, gr);
+  gr.authorizer = findAuthorizerFor(r);
+  applyAuthorizerFallback(r, gr);
   attachOpenApiModels(r, gr);
-  if (routeNeedsAuth(r) and gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#NONE) {
+  if (routeNeedsAuth(r)
+      and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM
+      and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY
+      and gr.authorizer.isUndefined()) {
     manualDecision("API_ROUTE_AUTHORIZER_MISSING",
       "Provide an authorizer for protected route " + r.pathTemplate + ".",
       KERNEL!Severity#ERROR, isProductionRoot(), Sequence{r, gr},
@@ -186,6 +194,7 @@ rule ApiRoute2RestApiRoute
   gr.integration = createApiIntegration(r, gr);
   attachOpenApiModels(r, gr);
   gr.authorizer = findAuthorizerFor(r);
+  applyAuthorizerFallback(r, gr);
   if (routeNeedsAuth(r) and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY and gr.authorizer.isUndefined()) {
     manualDecision("API_ROUTE_AUTHORIZER_MISSING",
       "Provide an authorizer for protected route " + r.pathTemplate + ".",
@@ -212,7 +221,7 @@ operation inferMemoryMb(f) {
 }
 
 operation inferTimeoutSeconds(f) {
-  var t = 30;
+  var t = 29;
   if (f.timeout.isDefined() and f.timeout.timeoutSeconds.isDefined() and f.timeout.timeoutSeconds > 0) {
     t = f.timeout.timeoutSeconds;
   }
@@ -342,9 +351,12 @@ operation inferAuthorizationType(r) {
     return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
   }
   if (r.authorization.isDefined() and hasText(r.authorization.roleOrScopeRequired)) {
-    return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
+    if (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined()) {
+      return AWSPSMENUMS!ApiGatewayAuthorizationType#JWT;
+    }
+    return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
   }
-  if (r.api.auth.isDefined()) {
+  if (r.api.isDefined() and isTrue(r.api.authRequired) and r.api.auth.isDefined()) {
     if (r.api.auth.identityProvider.isDefined()) {
       return AWSPSMENUMS!ApiGatewayAuthorizationType#COGNITO_USER_POOLS;
     }
@@ -373,7 +385,20 @@ operation inferAuthorizationType(r) {
     "Choose an AWS API authorization scheme for route " + r.pathTemplate + ".",
     KERNEL!Severity#WARNING, isProductionRoot(), Sequence{r},
     "Set AuthPolicy.authScheme to JWT/OIDC/OAuth, Cognito, IAM/SigV4, API key, or Lambda/custom.");
-  return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
+  return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
+}
+
+operation applyAuthorizerFallback(r, gr) {
+  if (routeNeedsAuth(r)
+      and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM
+      and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY
+      and gr.authorizer.isUndefined()) {
+    gr.authorizationType = AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
+    manualDecision("API_ROUTE_AUTHORIZER_MISSING",
+      "Confirm AWS API authorization for protected route " + r.pathTemplate + ".",
+      KERNEL!Severity#WARNING, isProductionRoot(), Sequence{r, gr},
+      "Generated AWS_IAM as a safe provider-specific fallback because no concrete authorizer is available.");
+  }
 }
 
 operation mapHttpMethod(m) {
@@ -482,6 +507,10 @@ operation fillApiStage(apiStage, stage, api, g) {
         KERNEL!Severity#WARNING, false, Sequence{api, g},
         "Use RestApi usage plans or implement client-specific throttling externally.");
     }
+  }
+  else if (isProductionRoot()) {
+    apiStage.throttlingBurstLimit = 100;
+    apiStage.throttlingRateLimit = 50.0d;
   }
   apiStage.api = g;
 }

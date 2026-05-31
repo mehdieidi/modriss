@@ -644,11 +644,12 @@ rule TemporalConstraint2TimeoutPolicy
     schedule.scheduleExpression = tc.deadlineExpression;
     schedule.enabled = true;
     schedule.timeZone = "UTC";
-    var routingTargets = policyTargetsForAll(tc.constrainedElements).select(target | target.isKindOf(KERNEL!RoutingTarget));
-    if (routingTargets.size() = 1) {
-      schedule.targets.add(routingTargets.first());
+    var routingTarget = preferredTemporalRoutingTarget(policyTargetsForAll(tc.constrainedElements));
+    if (routingTarget.isDefined()) {
+      schedule.targets.add(routingTarget);
     }
     else {
+      schedule.enabled = false;
       manualDecision("TR-130",
         "Choose exactly one Function, Workflow, adapter, channel, or other RoutingTarget for temporal constraint '" + tc.name + "'.",
         KERNEL!Severity#ERROR, timeout.productionRequired, Sequence{tc, schedule});
@@ -664,6 +665,27 @@ rule TemporalConstraint2TimeoutPolicy
   if (hasText(tc.orderingExpression)) {
     manualDecision("TR-130", "Confirm ordering semantics and idempotency strategy for temporal constraint '" + tc.name + "'.", KERNEL!Severity#WARNING, ordering.strictOrderingRequired, Sequence{tc, ordering});
   }
+}
+
+operation preferredTemporalRoutingTarget(targets) {
+  var routingTargets = Sequence{};
+  for (target in targets.select(t | t.isKindOf(KERNEL!RoutingTarget))) {
+    if (not routingTargets.includes(target)) {
+      routingTargets.add(target);
+    }
+  }
+  var workflows = routingTargets.select(t | t.isKindOf(WORKFLOW!Workflow));
+  if (workflows.size() = 1) {
+    return workflows.first();
+  }
+  var functions = routingTargets.select(t | t.isKindOf(COMPUTE!Function));
+  if (functions.size() = 1) {
+    return functions.first();
+  }
+  if (routingTargets.size() = 1) {
+    return routingTargets.first();
+  }
+  return null;
 }
 
 rule AvailabilityReliabilityNfr2ResiliencePolicy

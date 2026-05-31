@@ -62,6 +62,29 @@ class ModelServiceXmiImportTest {
     }
 
     @Test
+    void importsRequiredCimEnumValuesThatMatchMetamodelDefaults() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+
+        ModelService.ImportResult result = service.importModel(ModelLevel.CIM,
+                "required-enums.xmi", sampleCimRequiredEnumXmi().getBytes(StandardCharsets.UTF_8),
+                "xmi");
+
+        JsonNode item = result.modelJson().path("informationItems").path(0);
+        JsonNode classification = result.modelJson().path("classifications").path(0);
+
+        assertEquals("TEXT", item.path("type").asText());
+        assertEquals("PUBLIC", classification.path("kind").asText());
+        assertTrue(result.issues().stream().noneMatch(issue ->
+                "RequiredAttribute".equals(issue.constraint())
+                        && ("type".equals(missingFeature(issue))
+                        || "kind".equals(missingFeature(issue)))));
+    }
+
+    @Test
     void stripsTransportOnlyFieldsWhenSavingModel() {
         JsonFileStore store = new JsonFileStore(tempDir);
         store.initialize();
@@ -202,6 +225,11 @@ class ModelServiceXmiImportTest {
         return null;
     }
 
+    private String missingFeature(ModelService.ValidationIssue issue) {
+        String prefix = "Required CIM feature is missing: ";
+        return issue.message().startsWith(prefix) ? issue.message().substring(prefix.length()) : "";
+    }
+
     private String sampleCimXmi() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -217,6 +245,30 @@ class ModelServiceXmiImportTest {
                   <goals xmi:id="goal-1" id="goal-1" name="Protect residents"/>
                   <actors xmi:id="actor-1" id="actor-1" name="Resident"/>
                   <capabilities xmi:id="cap-1" id="cap-1" name="Review applications" supports="goal-1"/>
+                </cim:CIMModel>
+                """;
+    }
+
+    private String sampleCimRequiredEnumXmi() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <cim:CIMModel xmi:version="2.0"
+                    xmlns:xmi="http://www.omg.org/XMI"
+                    xmlns:cim="https://modless.org/cim/1.0"
+                    id="cim-root"
+                    name="Required Enum Model"
+                    domainName="Required Enum Test">
+                  <informationItems id="info-public-text"
+                      name="PublicText"
+                      businessName="Public text"
+                      type="TEXT"
+                      required="true"
+                      collection="false"
+                      classification="class-public"/>
+                  <classifications id="class-public"
+                      name="Public"
+                      kind="PUBLIC"
+                      identifiability="NON_PERSONAL"/>
                 </cim:CIMModel>
                 """;
     }

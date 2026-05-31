@@ -88,8 +88,12 @@ class TransformationServiceTest {
         assertEquals("PSM", psm.modelJson().path("modelLevel").asText());
         assertEquals("AwsPsmModel", psm.modelJson().path("eClass").asText());
         assertEquals("GENERATED_BY_ETL", psm.modelJson().path("transformationStatus").asText());
-        assertFalse(psm.modelJson().path("allResources").isEmpty(),
-                "Generated PSM should expose AWS resources, not copied PIM elements.");
+        assertTrue(psm.modelJson().path("stacks").findValues("resources").stream()
+                        .anyMatch(resources -> resources.isArray() && !resources.isEmpty()),
+                "Generated PSM JSON should preserve stack-contained resources.");
+        assertTrue(psm.modelJson().path("stages").findValues("deploysStacks").stream()
+                        .anyMatch(stacks -> stacks.isArray() && !stacks.isEmpty()),
+                "Generated PSM JSON should preserve stage-to-stack deployment references.");
         assertFalse(psm.modelJson().path("relationshipViews").isEmpty(),
                 "Generated PSM should include relationship view elements for integrations.");
         assertTrue(psm.modelJson().path("graph").path("elements").findValuesAsText("eClass")
@@ -98,6 +102,15 @@ class TransformationServiceTest {
                 "Imported AWS PSM graph should include reference and relationship edges.");
         assertTrue(psm.modelJson().path("commands").isMissingNode(),
                 "Generated PSM must not retain PIM/CIM root containments.");
+        ModelService.ValidationResult validation = modelService.validate(ModelLevel.PSM,
+                psm.modelJson());
+        assertTrue(validation.issues().stream().noneMatch(issue ->
+                        "StackResourcesExist".equals(issue.constraint())
+                                || "StageDeploysAtLeastOneStack".equals(issue.constraint())
+                                || "StackHasResources".equals(issue.constraint())
+                                || "DeployableStackHasResources".equals(issue.constraint())),
+                "PSM validation should not lose stack resources or stage deployment references: "
+                        + validation.issues());
     }
 
     @Test

@@ -30,7 +30,6 @@ class ServerlessService extends kernel.TraceableElement, kernel.PolicyTarget, ke
 
 class ServiceElementMembership extends kernel.TraceableElement {
   attr pimtypes.OwnershipKind[1] ownershipKind;
-  attr String rationale;
   ref ServerlessService[1] service;
   ref kernel.DeployableElement[1] element;
 }

@@ -483,9 +483,8 @@ public final class ModelService {
         if (modelJson == null || !modelJson.isObject()) {
             return modelJson;
         }
-        ObjectNode copy = (ObjectNode) modelJson.deepCopy();
         Map<String, JsonNode> graphRelationships = new LinkedHashMap<>();
-        JsonNode relationships = copy.path("graph").path("relationships");
+        JsonNode relationships = modelJson.path("graph").path("relationships");
         if (relationships.isArray()) {
             relationships.forEach(relationship -> {
                 String id = text(relationship, "id", "");
@@ -494,10 +493,17 @@ public final class ModelService {
                 }
             });
         }
+        ObjectNode copy = (ObjectNode) modelJson.deepCopy();
+        stripValidationExportOnlyFields(copy);
         if (!graphRelationships.isEmpty()) {
             hydrateSemanticReferences(copy, graphRelationships);
         }
         return copy;
+    }
+
+    private void stripValidationExportOnlyFields(ObjectNode model) {
+        model.remove(List.of("graph", "diagram", "views", "manualBacklog",
+                "validationIssues", "assumptions"));
     }
 
     private void hydrateSemanticReferences(JsonNode node,

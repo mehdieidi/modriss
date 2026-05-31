@@ -20,7 +20,6 @@ rule Workflow2StepFunctionStateMachine
   }
   sm.role = createStateMachineRole(w);
   sm.aslDocument = createAslDocument(w);
-  sm.definitionString = renderAsl(sm.aslDocument);
   sm.logging = createStepFunctionLogging(w, sm);
   sm.tracing = createStepFunctionTracing(w);
   if (isTrue(w.humanApprovalRequired)) {
@@ -100,7 +99,7 @@ rule Secret2SecretsManagerSecret
   sec.secretName = sec.physicalName;
   sec.descriptionText = firstText(s.summary, "Secret reference generated from PIM.");
   if (isTrue(s.generatedReferenceOnly)) {
-    sec.generateSecretStringJson = "";
+    sec.secretValue = secretReferenceValue(firstText(s.externalId, sec.secretName));
   }
   else {
     sec.generateSecretStringJson = "{ \"GenerateStringKey\": \"value\", \"PasswordLength\": 32 }";
@@ -228,6 +227,11 @@ operation createAslState(w, ws) {
     if (ws.nestedWorkflow.isDefined()) {
       st.invokedResource = awsEquivalent(ws.nestedWorkflow);
       st.resource = "arn:aws:states:::states:startExecution.sync";
+    }
+    else {
+      if (st.type = AWSPSMENUMS!AslStateType#TASK) {
+        st.resource = "arn:aws:states:::aws-sdk:executeAwsApi";
+      }
     }
   }
   if (ws.retry.isDefined()) {

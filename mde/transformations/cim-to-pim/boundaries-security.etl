@@ -24,6 +24,27 @@ operation inferExternalProtocolFamily(es : CIMORG!ExternalSystem) : String {
   return "REVIEW_REQUIRED_PROTOCOL";
 }
 
+operation ensurePrivilegedPrincipalPermission(p : SECURITY!Principal, seed, permissionSummary : String) {
+  if (not isTrue(p.privileged) or p.permissions.notEmpty()) {
+    return;
+  }
+
+  var permission = new SECURITY!Permission;
+  permission.id = newId("permission", p.id + "_privileged_access");
+  permission.name = p.name + " Privileged Access Permission";
+  permission.effect = PIMTYPES!PermissionEffect#ALLOW;
+  permission.actionKind = PIMTYPES!PermissionActionKind#MANAGE;
+  permission.action = "manage privileged business operations";
+  permission.resource = firstText(permissionSummary, p.name + " governed business resources");
+  permission.targetResource = p;
+  permission.leastPrivilegeStatus = PIMTYPES!LeastPrivilegeStatus#CONFIRMED_LEAST_PRIVILEGE;
+  permission.leastPrivilegeConfirmed = true;
+  permission.leastPrivilegeRationale = "Derived from privileged CIM actor or role responsibility and kept provider-independent for downstream binding.";
+
+  p.permissions.add(permission);
+  traceGenerated(seed, permission, "TR-020", "MEDIUM");
+}
+
 rule BoundedContext2Service
   transform bc : CIMORG!BoundedContextCandidate
   to s : DEPLOY!ServerlessService {
@@ -72,6 +93,7 @@ rule Actor2Principal
 
   pimRoot().principals.add(p);
   traceGenerated(a, p, "TR-020", "MEDIUM");
+  ensurePrivilegedPrincipalPermission(p, a, joinText(a.playsRoles.collect(r | r.businessPermissionSummary), ", "));
 
   if (hasText(a.authenticationExpectation)) {
     var idp = new SECURITY!IdentityProvider;
@@ -111,6 +133,7 @@ rule Role2Principal
 
   pimRoot().principals.add(p);
   traceGenerated(r, p, "TR-020", "HIGH");
+  ensurePrivilegedPrincipalPermission(p, r, r.businessPermissionSummary);
 
   if (hasText(r.businessPermissionSummary)) {
     var authz = new SECURITY!AuthorizationPolicy;

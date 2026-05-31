@@ -228,7 +228,7 @@ operation defaultRuntime(profile) {
   if (profile.primaryLanguage = PIMTYPES!RuntimeLanguage#RUST) {
     return "provided.al2023";
   }
-  return "";
+  return "nodejs22.x";
 }
 
 operation inferHandler(f) {
@@ -729,41 +729,45 @@ operation validatePsmConstraints() {
 }
 
 operation flagUnassignedDeployables() {
+  var unassigned = Sequence{};
   for (f in COMPUTE!Function.all) {
-    flagIfUnassigned(f);
+    collectIfUnassigned(f, unassigned);
   }
   for (a in API!Api.all) {
-    flagIfUnassigned(a);
+    collectIfUnassigned(a, unassigned);
   }
   for (d in DATA!DataStore.all) {
-    flagIfUnassigned(d);
+    collectIfUnassigned(d, unassigned);
   }
   for (o in DATA!ObjectStore.all) {
-    flagIfUnassigned(o);
+    collectIfUnassigned(o, unassigned);
   }
   for (q in INTEGRATION!Queue.all) {
-    flagIfUnassigned(q);
+    collectIfUnassigned(q, unassigned);
   }
   for (t in INTEGRATION!Topic.all) {
-    flagIfUnassigned(t);
+    collectIfUnassigned(t, unassigned);
   }
   for (b in INTEGRATION!EventBus.all) {
-    flagIfUnassigned(b);
+    collectIfUnassigned(b, unassigned);
   }
   for (w in WORKFLOW!Workflow.all) {
-    flagIfUnassigned(w);
+    collectIfUnassigned(w, unassigned);
   }
   for (e in EXTERNAL!ExternalAdapter.all) {
-    flagIfUnassigned(e);
+    collectIfUnassigned(e, unassigned);
+  }
+  if (unassigned.notEmpty()) {
+    manualDecision("PACKAGING_UNASSIGNED",
+      "Review default stack placement for " + unassigned.size() + " PIM deployables that are not assigned to deployment units.",
+      KERNEL!Severity#WARNING, false, Sequence{},
+      "Add the deployables to PIM DeploymentUnit.contains when they require explicit stack boundaries, or accept placement in the default stack.");
   }
 }
 
-operation flagIfUnassigned(element) {
+operation collectIfUnassigned(element, unassigned) {
   if (not cachedPimDeploymentAssignedIds.includes(cacheKeyFor(element))) {
-    manualDecision("PACKAGING_UNASSIGNED",
-      "Choose a deployment unit/SAM stack for " + qualifiedName(element) + ".",
-      KERNEL!Severity#WARNING, false, Sequence{element},
-      "Add the element to a PIM DeploymentUnit or accept placement in the default stack.");
+    unassigned.add(element);
   }
 }
 
@@ -1086,8 +1090,8 @@ operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
   if (res.isUndefined()) {
     return;
   }
-  var st = allowStatement("Access" + res.logicalId);
   if (res.eClass().getName() = "DynamoDbTable") {
+    var st = allowStatement("Access" + res.logicalId);
     if (read) {
       st.actions.add("dynamodb:GetItem"); st.actions.add("dynamodb:BatchGetItem"); st.actions.add("dynamodb:Query"); st.actions.add("dynamodb:Scan");
     }
@@ -1096,21 +1100,24 @@ operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
     }
     st.resources.add(cfnArnExpression(res));
     st.resources.add(cfnArnSubExpression(res, "/index/*"));
-  }
-  else {
-    if (res.eClass().getName() = "S3Bucket") {
-      if (read) {
-        st.actions.add("s3:GetObject"); st.actions.add("s3:ListBucket");
-      }
-      if (write) {
-        st.actions.add("s3:PutObject"); st.actions.add("s3:DeleteObject");
-      }
-      st.resources.add(cfnArnExpression(res));
-      st.resources.add(cfnArnSubExpression(res, "/*"));
+    if (st.actions.notEmpty()) {
+      doc.statements.add(st);
     }
+    return;
   }
-  if (st.actions.notEmpty()) {
-    doc.statements.add(st);
+  if (res.eClass().getName() = "S3Bucket") {
+    var s3st = allowStatement("Access" + res.logicalId);
+    if (read) {
+      s3st.actions.add("s3:GetObject"); s3st.actions.add("s3:ListBucket");
+    }
+    if (write) {
+      s3st.actions.add("s3:PutObject"); s3st.actions.add("s3:DeleteObject");
+    }
+    s3st.resources.add(cfnArnExpression(res));
+    s3st.resources.add(cfnArnSubExpression(res, "/*"));
+    if (s3st.actions.notEmpty()) {
+      doc.statements.add(s3st);
+    }
   }
 }
 

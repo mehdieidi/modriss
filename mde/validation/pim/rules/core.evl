@@ -27,9 +27,14 @@ context PIM!PIMModel {
     message : "[PIM-ROOT-004] The model contains provider-specific wording in a name or description. Fix: replace cloud/vendor service names with provider-independent domain terms such as function, queue, topic, object store, identity provider, event bus, trace, metric or deployment unit."
   }
 
+  constraint ModelElementIdsMustBeUnique {
+    check : KERNEL!ModelElement.all.collect(elementItem | elementItem.`id`).asSet().size() = KERNEL!ModelElement.all.size()
+    message : "[PIM-ROOT-005] ModelElement ids must be globally unique. Fix: assign a distinct stable id to each element in the PIM model."
+  }
+
   critique DefaultCorrelationIdShouldBeNamed {
     check : self.defaultCorrelationIdName.hasText()
-    message : "[PIM-ROOT-005] No defaultCorrelationIdName is defined. Suggested fix: set a portable name such as correlationId so APIs, events, workflows and logs can share the same correlation convention."
+    message : "[PIM-ROOT-006] No defaultCorrelationIdName is defined. Suggested fix: set a portable name such as correlationId so APIs, events, workflows and logs can share the same correlation convention."
   }
 
   critique ArchitectureStyleShouldMatchContents {
@@ -37,15 +42,15 @@ context PIM!PIMModel {
       (not self.architectureStyle.enumIs("API_FIRST_SERVERLESS") or self.apis.notEmpty()) and
       (not self.architectureStyle.enumIs("EVENT_DRIVEN_SERVERLESS") or self.eventTypes.notEmpty() or self.channels.notEmpty()) and
       (not self.architectureStyle.enumIs("WORKFLOW_ORCHESTRATED_SERVERLESS") or self.workflows.notEmpty())
-    message : "[PIM-ROOT-006] The selected architectureStyle does not match the model contents. Suggested fix: add the matching APIs/events/workflows or choose HYBRID_SERVERLESS if multiple styles are intentionally combined."
+    message : "[PIM-ROOT-007] The selected architectureStyle does not match the model contents. Suggested fix: add the matching APIs/events/workflows or choose HYBRID_SERVERLESS if multiple styles are intentionally combined."
   }
 }
 
 context KERNEL!ModelElement {
 
-  constraint UniqueModelElementId {
-    check : self.`id`.hasText() and KERNEL!ModelElement.all.one(elementItem | elementItem.`id` = self.`id`)
-    message : "[PIM-NAME-001] Element id '" + self.`id`.ifUndefined("<missing>") + "' is missing or duplicated. Fix: assign a globally unique stable id to '" + self.displayName() + "'."
+  constraint ModelElementIdRequired {
+    check : self.`id`.hasText()
+    message : "[PIM-NAME-001] Element id is missing. Fix: assign a globally unique stable id to '" + self.displayName() + "'."
   }
 
   critique PortableNameRecommended {

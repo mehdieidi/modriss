@@ -223,7 +223,7 @@ rule Subscription2SnsSubscription
     }
   }
   else {
-    sub.endpoint = "";
+    sub.endpoint = externalEndpointForSubscription(s.target);
   }
   sub.filterPolicyScope = AWSPSMENUMS!SnsFilterPolicyScope#MESSAGE_BODY;
   sub.rawMessageDelivery = isTrue(s.rawDelivery);
@@ -236,7 +236,26 @@ rule Subscription2SnsSubscription
       KERNEL!Severity#WARNING, isProductionRoot(), Sequence{s, sub},
       "Add an SQS DLQ resource and connect it to this subscription.");
   }
+  if (isProductionRoot() and ((sub.protocol = AWSPSMENUMS!SnsProtocol#HTTP) or (sub.protocol = AWSPSMENUMS!SnsProtocol#HTTPS)) and sub.deadLetterQueue.isUndefined()) {
+    sub.deadLetterQueue = createSnsSubscriptionDlq(s);
+  }
   createTrace(s, sub, "Subscription2SnsSubscription", "HIGH", KERNEL!TraceLinkType#REALIZES);
+}
+
+operation createSnsSubscriptionDlq(s) {
+  var q = new AWSPSMMESSAGING!SqsQueue;
+  copyAwsResource(s, q, "SubscriptionDlq", "AWS::SQS::Queue");
+  q.id = generatedId("sqs_queue_subscription_dlq", s, "failure");
+  q.queueName = physicalName(s, "subscription-dlq", defaultStage());
+  q.queueType = AWSPSMENUMS!SqsQueueType#STANDARD;
+  q.delaySeconds = 0;
+  q.maximumMessageSize = 262144;
+  q.messageRetentionPeriodSeconds = 1209600;
+  q.receiveMessageWaitTimeSeconds = 0;
+  q.visibilityTimeoutSeconds = 60;
+  q.kmsDataKeyReusePeriodSeconds = 300;
+  q.sqsManagedSseEnabled = true;
+  return q;
 }
 
 rule EventBus2EventBridgeBus
@@ -597,7 +616,13 @@ operation createEventBridgeTarget(src, endpoint) {
   if (t.targetResource.isDefined()) {
     t.arnExpression = cfnArnExpression(t.targetResource);
   }
+  else {
+    t.arnExpression = unresolvedTargetArn(endpoint);
+  }
   t.targetKind = eventBridgeTargetKind(endpoint);
+  if (isProductionRoot() and t.targetResource.isDefined()) {
+    t.retryPolicy = defaultEventBridgeRetryPolicy(src, endpoint);
+  }
   if (t.targetKind = AWSPSMENUMS!EventBridgeTargetKind#SQS and t.targetResource.isDefined() and t.targetResource.queueType = AWSPSMENUMS!SqsQueueType#FIFO) {
     var p = new AWSPSMEVENTS!EventBridgeSqsTargetParameters;
     p.id = generatedId("eventbridge_sqs_target", src, firstText(endpoint.name, endpoint.id));
@@ -618,6 +643,15 @@ operation createEventBridgeTarget(src, endpoint) {
   return t;
 }
 
+operation defaultEventBridgeRetryPolicy(src, endpoint) {
+  var p = new AWSPSMEVENTS!AwsRetryPolicy;
+  p.id = generatedId("eventbridge_retry", src, firstText(endpoint.name, endpoint.id));
+  p.name = "Default retry policy";
+  p.maximumRetryAttempts = 24;
+  p.maximumEventAgeInSeconds = 86400;
+  return p;
+}
+
 operation endpointResource(endpoint) {
   if (endpoint.isUndefined()) {
     return null;
@@ -627,6 +661,17 @@ operation endpointResource(endpoint) {
     return eq;
   }
   return null;
+}
+
+operation externalEndpointForSubscription(endpoint) : String {
+  if (endpoint.isDefined() and endpoint.eClass().getName() = "ExternalAdapter" and endpoint.endpoint.isDefined()) {
+    return firstText(endpoint.endpoint.endpointUri, endpoint.endpoint.endpointDescription);
+  }
+  return "REVIEW_REQUIRED_SUBSCRIPTION_ENDPOINT";
+}
+
+operation unresolvedTargetArn(endpoint) : String {
+  return "REVIEW_REQUIRED_TARGET_ARN_" + slug(firstText(endpoint.name, endpoint.id)).toUpperCase();
 }
 
 operation subscriptionProtocol(endpoint) {

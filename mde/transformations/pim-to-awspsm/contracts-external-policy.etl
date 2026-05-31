@@ -78,6 +78,9 @@ rule AlertPolicy2CloudWatchAlarm
   alarm.threshold = parseThreshold(a.threshold);
   alarm.comparisonOperator = parseComparison(a.condition);
   alarm.treatMissingData = "notBreaching";
+  if (isProductionRoot()) {
+    alarm.alarmActionResources.add(defaultAlarmTopic());
+  }
   if (not hasText(a.threshold)) {
     manualDecision("ALARM_THRESHOLD_REQUIRED",
       "Provide threshold for alert policy " + a.name + ".",
@@ -197,6 +200,9 @@ operation createPolicyAlarm(source, resource, alert) {
   alarm.comparisonOperator = parseComparison(alert.condition);
   alarm.treatMissingData = "notBreaching";
   alarm.monitoredResource = resource;
+  if (isProductionRoot()) {
+    alarm.alarmActionResources.add(defaultAlarmTopic());
+  }
 }
 
 operation applySecurityPolicies(source, resource) {
@@ -229,7 +235,31 @@ operation createLambdaAlarm(f, l, suffix : String, metric : String, threshold : 
   a.comparisonOperator = AWSPSMENUMS!CloudWatchComparisonOperator#GREATER_THAN_OR_EQUAL_TO_THRESHOLD;
   a.treatMissingData = "notBreaching";
   a.monitoredResource = l;
+  if (isProductionRoot()) {
+    a.alarmActionResources.add(defaultAlarmTopic());
+  }
   return a;
+}
+
+operation createLambdaDeadLetterConfig(f) {
+  var q = new AWSPSMMESSAGING!SqsQueue;
+  copyAwsResource(f, q, "LambdaDlq", "AWS::SQS::Queue");
+  q.id = generatedId("sqs_queue_lambda_dlq", f, "failure");
+  q.queueName = physicalName(f, "lambda-dlq", defaultStage());
+  q.queueType = AWSPSMENUMS!SqsQueueType#STANDARD;
+  q.delaySeconds = 0;
+  q.maximumMessageSize = 262144;
+  q.messageRetentionPeriodSeconds = 1209600;
+  q.receiveMessageWaitTimeSeconds = 0;
+  q.visibilityTimeoutSeconds = 60;
+  q.kmsDataKeyReusePeriodSeconds = 300;
+  q.sqsManagedSseEnabled = true;
+
+  var cfg = new AWSPSMCOMPUTE!LambdaDeadLetterConfig;
+  cfg.id = generatedId("lambda_dlq_config", f, "failure");
+  cfg.name = firstText(f.name, f.id) + " failure DLQ";
+  cfg.targetQueue = q;
+  return cfg;
 }
 
 operation isHttpAdapter(a) {

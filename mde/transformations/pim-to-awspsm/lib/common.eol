@@ -93,6 +93,24 @@ operation cachePimOwnership() {
   for (unit in cachedPimRoot.deploymentUnits) {
     for (service in unit.services) {
       cacheDeploymentAssignment(service, unit);
+      for (fn in service.ownsFunctions) {
+        cacheDeploymentAssignment(fn, unit);
+      }
+      for (api in service.ownsApis) {
+        cacheDeploymentAssignment(api, unit);
+      }
+      for (channel in service.ownsChannels) {
+        cacheDeploymentAssignment(channel, unit);
+      }
+      for (store in service.ownsStores) {
+        cacheDeploymentAssignment(store, unit);
+      }
+      for (workflow in service.ownsWorkflows) {
+        cacheDeploymentAssignment(workflow, unit);
+      }
+      for (adapter in service.ownsAdapters) {
+        cacheDeploymentAssignment(adapter, unit);
+      }
     }
     for (element in unit.contains) {
       cacheDeploymentAssignment(element, unit);
@@ -365,6 +383,94 @@ operation copyAwsResource(source, target, kind : String, awsType : String) {
   target.tags.add(tag("Service", owningServiceName(source)));
   target.tags.add(tag("Owner", owningOwnerTeam(source)));
   target.tags.add(tag("Environment", defaultStageName()));
+  applyProductionDefaults(target);
+}
+
+operation applyProductionDefaults(resource) {
+  if (not isProductionRoot()) {
+    return;
+  }
+  if (resource.eClass().getEStructuralFeature("kmsKey").isDefined()
+      and resource.eGet(resource.eClass().getEStructuralFeature("kmsKey")).isUndefined()) {
+    resource.eSet(resource.eClass().getEStructuralFeature("kmsKey"), defaultKmsKey());
+  }
+  if (resource.eClass().getName() = "IamRole" and not hasText(resource.permissionsBoundaryArn)) {
+    resource.permissionsBoundaryArn = "REVIEW_REQUIRED_PERMISSIONS_BOUNDARY_ARN";
+  }
+}
+
+operation defaultKmsKey() {
+  var cacheKey = "__platform_default_kms_key__";
+  if (cachedAwsEquivalentBySourceId.containsKey(cacheKey)) {
+    return cachedAwsEquivalentBySourceId.get(cacheKey);
+  }
+  var key = new AWSPSMSECURITY!KmsKey;
+  cachedAwsEquivalentBySourceId.put(cacheKey, key);
+  if (not cachedAwsGeneratedResources.includes(key)) {
+    cachedAwsGeneratedResources.add(key);
+  }
+  key.id = uniqueId("kms_key_platform_default");
+  key.name = "Platform default KMS key";
+  key.generatedFrom = firstText(pimRoot().id, pimRoot().name);
+  key.generatedByTransformation = true;
+  key.manuallyMaintained = false;
+  key.logicalId = uniqueLogicalId("PlatformDefaultKmsKey");
+  key.physicalName = physicalName(pimRoot(), "kms-key", defaultStage());
+  key.awsResourceType = "AWS::KMS::Key";
+  key.resourceDescription = "Generated customer-managed key for production encryption defaults.";
+  key.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#RETAIN;
+  key.updateReplacePolicy = AWSPSMENUMS!CloudFormationUpdateReplacePolicy#RETAIN;
+  key.retainInProduction = true;
+  key.productionCritical = true;
+  key.importedResource = false;
+  key.descriptionText = "Default generated CMK for logs, topics, secrets, and Lambda encryption.";
+  key.keyUsage = "ENCRYPT_DECRYPT";
+  key.keySpec = "SYMMETRIC_DEFAULT";
+  key.enabled = true;
+  key.enableKeyRotation = true;
+  key.multiRegion = false;
+  key.pendingWindowInDays = 30;
+  key.tags.add(tag("GeneratedFromPIM", firstText(pimRoot().name, pimRoot().id)));
+  key.tags.add(tag("Service", "Application"));
+  key.tags.add(tag("Owner", "REVIEW_REQUIRED_OWNER"));
+  key.tags.add(tag("Environment", defaultStageName()));
+  return key;
+}
+
+operation defaultAlarmTopic() {
+  var cacheKey = "__platform_alarm_topic__";
+  if (cachedAwsEquivalentBySourceId.containsKey(cacheKey)) {
+    return cachedAwsEquivalentBySourceId.get(cacheKey);
+  }
+  var topic = new AWSPSMMESSAGING!SnsTopic;
+  cachedAwsEquivalentBySourceId.put(cacheKey, topic);
+  if (not cachedAwsGeneratedResources.includes(topic)) {
+    cachedAwsGeneratedResources.add(topic);
+  }
+  topic.id = uniqueId("sns_topic_platform_alarm_notifications");
+  topic.name = "Platform Alarm Notifications Topic";
+  topic.generatedFrom = firstText(pimRoot().id, pimRoot().name);
+  topic.generatedByTransformation = true;
+  topic.manuallyMaintained = false;
+  topic.logicalId = uniqueLogicalId("PlatformAlarmNotificationsTopic");
+  topic.physicalName = physicalName(pimRoot(), "alarm-topic", defaultStage());
+  topic.awsResourceType = "AWS::SNS::Topic";
+  topic.resourceDescription = "Generated notification topic for production CloudWatch alarm actions.";
+  topic.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#RETAIN;
+  topic.updateReplacePolicy = AWSPSMENUMS!CloudFormationUpdateReplacePolicy#RETAIN;
+  topic.retainInProduction = true;
+  topic.productionCritical = true;
+  topic.importedResource = false;
+  topic.topicName = topic.physicalName;
+  topic.fifoTopic = false;
+  topic.contentBasedDeduplication = false;
+  topic.displayName = "Platform alarm notifications";
+  topic.kmsKey = defaultKmsKey();
+  topic.tags.add(tag("GeneratedFromPIM", firstText(pimRoot().name, pimRoot().id)));
+  topic.tags.add(tag("Service", "Application"));
+  topic.tags.add(tag("Owner", "REVIEW_REQUIRED_OWNER"));
+  topic.tags.add(tag("Environment", defaultStageName()));
+  return topic;
 }
 
 operation logicalId(source, awsKind : String) {

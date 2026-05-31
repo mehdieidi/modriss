@@ -565,8 +565,28 @@ operation createCapabilityDependencyArtifacts() {
     pimRoot().channels.add(queue);
     traceGenerated(dep, queue, "TR-140", "MEDIUM");
 
+    var dependencyEventType = new CONTRACTS!EventType;
+    dependencyEventType.id = newId("eventtype_capability_dependency", dep.id);
+    dependencyEventType.name = dep.source.name + " to " + dep.target.name + " Dependency Message";
+    dependencyEventType.semanticName = pascalCase(dependencyEventType.name);
+    dependencyEventType.version = "1.0.0";
+    dependencyEventType.sourceDomain = sourceService.name;
+    dependencyEventType.subjectExpression = "correlationId";
+    dependencyEventType.externalEvent = false;
+    dependencyEventType.auditEvent = dep.criticalPath;
+    dependencyEventType.replayable = false;
+    dependencyEventType.containsPersonalData = false;
+    dependencyEventType.schema = messageSchema;
+    dependencyEventType.envelope = defaultEventEnvelope(dep.id);
+    queue.eventTypes.add(dependencyEventType);
+    pimRoot().eventTypes.add(dependencyEventType);
+    traceGenerated(dep, dependencyEventType, "TR-140", "MEDIUM");
+
     var sourceFn = firstOwnedFunction(sourceService);
     if (sourceFn.isDefined()) {
+      sourceFn.publishes.add(dependencyEventType);
+      queue.producers.add(sourceFn);
+      dependencyEventType.producedBy.add(sourceFn);
       var producerFlow = new INTEGRATION!MessageFlow;
       producerFlow.id = newId("flow_message", dep.id + "_" + sourceFn.id + "_" + queue.id);
       producerFlow.name = sourceFn.name + " sends " + queue.name;
@@ -585,7 +605,9 @@ operation createCapabilityDependencyArtifacts() {
 
     var targetFn = firstOwnedFunction(targetService);
     if (targetFn.isDefined()) {
+      targetFn.subscribesTo.add(dependencyEventType);
       queue.consumers.add(targetFn);
+      dependencyEventType.consumedBy.add(targetFn);
       var trigger = new COMPUTE!Trigger;
       trigger.id = newId("trigger_queue", dep.id + "_" + targetFn.id);
       trigger.name = targetFn.name + " Dependency Queue Trigger";

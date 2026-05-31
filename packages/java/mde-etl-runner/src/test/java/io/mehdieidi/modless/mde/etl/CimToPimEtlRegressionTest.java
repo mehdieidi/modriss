@@ -335,7 +335,11 @@ final class CimToPimEtlRegressionTest {
         set(entity, "name", "Order");
         set(entity, "identityDescription", "Order identity.");
         set(entity, "auditRelevant", true);
-        set(entity, "identityAttribute", orderId);
+        set(entity, "identityStrategy",
+                enumValue(metamodelResource, "IdentityStrategy", "SURROGATE_KEY"));
+        add(entity, "identityAttributes", orderId);
+        set(entity, "primaryIdentityAttribute", orderId);
+        add(entity, "attributes", orderId);
         add(entity, "attributes", customerId);
         add(entity, "attributes", status);
         add(entity, "attributes", total);
@@ -491,7 +495,8 @@ final class CimToPimEtlRegressionTest {
         set(partnerEmail, "classification", emailClassification);
         EObject productStatus = informationItem(metamodelResource, "item_product_status",
                 "productStatus", "ENUMERATION", true);
-        set(productStatus, "allowedValues", "ACTIVE, DISCONTINUED");
+        addValue(productStatus, "allowedValues", "ACTIVE");
+        addValue(productStatus, "allowedValues", "DISCONTINUED");
         EObject inventoryId = informationItem(metamodelResource, "item_inventory_id",
                 "inventoryId", "IDENTIFIER", true);
         EObject available = informationItem(metamodelResource, "item_available", "available",
@@ -502,7 +507,11 @@ final class CimToPimEtlRegressionTest {
         set(product, "name", "Product");
         set(product, "identityDescription", "Product identity.");
         set(product, "auditRelevant", true);
-        set(product, "identityAttribute", productId);
+        set(product, "identityStrategy",
+                enumValue(metamodelResource, "IdentityStrategy", "SURROGATE_KEY"));
+        add(product, "identityAttributes", productId);
+        set(product, "primaryIdentityAttribute", productId);
+        add(product, "attributes", productId);
         add(product, "attributes", sku);
         add(product, "attributes", partnerEmail);
         add(product, "attributes", productStatus);
@@ -513,7 +522,11 @@ final class CimToPimEtlRegressionTest {
         set(inventory, "name", "Inventory");
         set(inventory, "identityDescription", "Inventory identity.");
         set(inventory, "auditRelevant", true);
-        set(inventory, "identityAttribute", inventoryId);
+        set(inventory, "identityStrategy",
+                enumValue(metamodelResource, "IdentityStrategy", "SURROGATE_KEY"));
+        add(inventory, "identityAttributes", inventoryId);
+        set(inventory, "primaryIdentityAttribute", inventoryId);
+        add(inventory, "attributes", inventoryId);
         add(inventory, "attributes", available);
         set(inventory, "owningCapability", inventoryCap);
 
@@ -524,8 +537,12 @@ final class CimToPimEtlRegressionTest {
                 enumValue(metamodelResource, "DomainRelationshipType", "ASSOCIATION"));
         set(relationship, "sourceRole", "product");
         set(relationship, "targetRole", "inventory");
-        set(relationship, "sourceMultiplicity", "1");
-        set(relationship, "targetMultiplicity", "0..*");
+        set(relationship, "sourceMultiplicity",
+                multiplicity(metamodelResource, "mult_rel_product_inventory_source", 1, 1,
+                        false));
+        set(relationship, "targetMultiplicity",
+                multiplicity(metamodelResource, "mult_rel_product_inventory_target", 0, null,
+                        true));
         set(relationship, "ownership", false);
         set(relationship, "navigableFromSource", true);
         set(relationship, "navigableFromTarget", false);
@@ -719,6 +736,21 @@ final class CimToPimEtlRegressionTest {
         return item;
     }
 
+    private EObject multiplicity(Resource metamodelResource, String id, int lowerBound,
+            Integer upperBound, boolean unbounded) {
+        EObject multiplicity = create(metamodelResource, "Multiplicity");
+        set(multiplicity, "id", id);
+        set(multiplicity, "name", id);
+        set(multiplicity, "lowerBound", lowerBound);
+        if (upperBound != null) {
+            set(multiplicity, "upperBound", upperBound);
+        }
+        set(multiplicity, "unbounded", unbounded);
+        set(multiplicity, "ordered", false);
+        set(multiplicity, "unique", true);
+        return multiplicity;
+    }
+
     private Resource loadModel(Path metamodel, Path modelFile) {
         ResourceSet resourceSet = new ResourceSetImpl();
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
@@ -791,6 +823,11 @@ final class CimToPimEtlRegressionTest {
     @SuppressWarnings("unchecked")
     private void add(EObject object, String featureName, EObject value) {
         ((List<EObject>) object.eGet(feature(object, featureName))).add(value);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addValue(EObject object, String featureName, Object value) {
+        ((List<Object>) object.eGet(feature(object, featureName))).add(value);
     }
 
     @SuppressWarnings("unchecked")

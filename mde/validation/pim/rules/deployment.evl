@@ -8,19 +8,12 @@ context PIM!ServerlessService {
   }
 
   constraint ServiceOwnsAtLeastOneElement {
-    check : self.ownsFunctions.notEmpty() or self.ownsApis.notEmpty() or self.ownsChannels.notEmpty()
-      or self.ownsStores.notEmpty() or self.ownsWorkflows.notEmpty() or self.ownsAdapters.notEmpty()
+    check : self.ownedElements().notEmpty()
     message : "[PIM-SVC-002] Service '" + self.displayName() + "' does not own any PIM elements. Fix: attach owned functions, APIs, channels, stores, workflows or adapters, or remove the empty service."
   }
 
   constraint OwnedElementsHaveMembershipRecords {
-    check :
-      self.ownsFunctions.forAll(elementItem | PIM!ServiceElementMembership.all.exists(membershipItem | membershipItem.service = self and membershipItem.element = elementItem)) and
-      self.ownsApis.forAll(elementItem | PIM!ServiceElementMembership.all.exists(membershipItem | membershipItem.service = self and membershipItem.element = elementItem)) and
-      self.ownsChannels.forAll(elementItem | PIM!ServiceElementMembership.all.exists(membershipItem | membershipItem.service = self and membershipItem.element = elementItem)) and
-      self.ownsStores.forAll(elementItem | PIM!ServiceElementMembership.all.exists(membershipItem | membershipItem.service = self and membershipItem.element = elementItem)) and
-      self.ownsWorkflows.forAll(elementItem | PIM!ServiceElementMembership.all.exists(membershipItem | membershipItem.service = self and membershipItem.element = elementItem)) and
-      self.ownsAdapters.forAll(elementItem | PIM!ServiceElementMembership.all.exists(membershipItem | membershipItem.service = self and membershipItem.element = elementItem))
+    check : self.ownedElements().forAll(elementItem | self.hasMembershipFor(elementItem))
     message : "[PIM-SVC-002A] Service '" + self.displayName() + "' has owned elements without ServiceElementMembership records. Fix: generate one membership for every owns* reference."
   }
 
