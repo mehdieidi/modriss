@@ -9,6 +9,9 @@ import {
 } from './theme.js';
 import {
   applyViewport,
+  centerViewportOnDiagram,
+  getModelingRendererDebug,
+  initializeModelingRenderer,
   onCanvasMouseDown,
   onCanvasTouchStart,
   onCanvasWheel,
@@ -18,7 +21,9 @@ import {
   onGlobalTouchMove,
   renderDiagram,
   renderPalette,
+  resetCanvasView,
   setupDnD,
+  zoomCanvasBy,
 } from './canvas.js';
 import {
   exportActiveModel,
@@ -76,6 +81,16 @@ const TOPBAR_MENU_BREAKPOINT = 1100;
 const CHAT_INPUT_MAX_HEIGHT = 132;
 const getElementTarget = (event) => (event.target instanceof Element
     ? event.target : null);
+
+window.modlessFrontendBoot = {
+  ...(window.modlessFrontendBoot || {}),
+  mainModuleLoaded: true,
+  mainBuild: "g6-wired-2026-05-31-02"
+};
+window.modlessG6Debug = window.modlessG6Debug || (() => ({
+  bootstrap: window.modlessFrontendBoot || null,
+  ...getModelingRendererDebug()
+}));
 
 function refreshCurrentUserLabel() {
   if (!el.currentUserLabel) {
@@ -737,6 +752,17 @@ function bindEvents() {
   el.canvasViewport?.addEventListener("wheel", onCanvasWheel, {passive: false});
   el.canvasViewport?.addEventListener("touchstart", onCanvasTouchStart,
       {passive: false});
+  el.canvasZoomControl?.addEventListener("mousedown",
+      (event) => event.stopPropagation());
+  el.canvasZoomControl?.addEventListener("pointerdown",
+      (event) => event.stopPropagation());
+  el.canvasZoomControl?.addEventListener("touchstart",
+      (event) => event.stopPropagation(), {passive: true});
+  el.canvasZoomOutBtn?.addEventListener("click", () => zoomCanvasBy(0.85));
+  el.canvasZoomInBtn?.addEventListener("click", () => zoomCanvasBy(1.18));
+  el.canvasZoomResetBtn?.addEventListener("click", resetCanvasView);
+  el.canvasZoomFitBtn?.addEventListener("click", () =>
+      centerViewportOnDiagram({fit: true}));
   window.addEventListener("touchmove", onGlobalTouchMove, {passive: false});
   window.addEventListener("touchend", onGlobalTouchEnd, {passive: false});
   window.addEventListener("touchcancel", onGlobalTouchEnd, {passive: false});
@@ -917,6 +943,7 @@ async function init() {
   syncPaletteRailToggleState();
   initTheme();
   syncResponsiveUi();
+  initializeModelingRenderer();
   setupDnD();
   renderPalette();
   renderDiagram();

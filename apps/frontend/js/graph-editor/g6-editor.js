@@ -4,6 +4,8 @@ import {mapDiagramToG6, mapEdgeToG6, mapNodeToG6} from './g6-mapper.js';
 import {
   canvasBackgroundColor,
   cssVar,
+  G6_BASE_EDGE_TYPE,
+  G6_BASE_NODE_TYPE,
   MODLESS_EDGE_TYPE,
   MODLESS_NODE_TYPE,
   nodeSizeForDiagram
@@ -29,6 +31,7 @@ import {
 
 let editor = null;
 let extensionsRegistered = false;
+let pendingViewportFrame = 0;
 
 function g6() {
   return window.G6 || null;
@@ -36,7 +39,52 @@ function g6() {
 
 export function isG6Available() {
   const api = g6();
-  return Boolean(api?.Graph && api?.register && api?.ExtensionCategory);
+  return Boolean(api?.Graph);
+}
+
+function updateDebugState(patch = {}) {
+  window.modlessG6State = {
+    ...(window.modlessG6State || {}),
+    ...patch,
+    available: isG6Available(),
+    mounted: Boolean(editor?.graph),
+    renderer: "antv-g6"
+  };
+}
+
+function installDebugProbe() {
+  window.modlessG6Debug = () => {
+    const host = el.g6EditorHost;
+    const graph = editor?.graph || null;
+    const hostRect = host?.getBoundingClientRect?.();
+    let graphSize = null;
+    try {
+      graphSize = graph?.getSize?.() || null;
+    } catch (error) {
+      graphSize = `getSize failed: ${error.message}`;
+    }
+    return {
+      ...(window.modlessG6State || {}),
+      activeType: state.activeType,
+      stateNodes: state.diagram.nodes.length,
+      stateEdges: state.diagram.connections.length,
+      mappedNodes: editor?.dataSnapshot?.nodesById?.size || 0,
+      mappedEdges: editor?.dataSnapshot?.edgesById?.size || 0,
+      graphSize,
+      hostRect: hostRect ? {
+        width: Math.round(hostRect.width),
+        height: Math.round(hostRect.height)
+      } : null,
+      hostChildren: [...(host?.children || [])].map((child) =>
+          child.tagName),
+      hasCanvasDescendant: Boolean(host?.querySelector?.("canvas")),
+      canvasGridRenderer: el.canvasGrid?.dataset?.renderer || "",
+      g6Version: g6()?.version || "",
+      g6Keys: Object.keys(g6() || {}).slice(0, 40),
+      unavailable: el.canvasGrid?.classList.contains(
+          "g6-renderer-unavailable")
+    };
+  };
 }
 
 function truncate(text, max = 44) {
@@ -84,7 +132,11 @@ function registerModlessG6Extensions() {
   const api = g6();
   if (!api?.register || !api?.ExtensionCategory || !api?.Rect
       || !api?.BaseEdge) {
-    throw new Error("AntV G6 5.x was not loaded");
+    updateDebugState({
+      customExtensions: "skipped",
+      lastExtensionError: "G6 custom extension API unavailable"
+    });
+    return;
   }
   const {register, ExtensionCategory, Rect, BaseEdge} = api;
 
@@ -118,6 +170,15 @@ function registerModlessG6Extensions() {
 
       if (diagramType === "cim") {
         const fill = attributes.sticky || "#fde68a";
+        super.render({
+          ...attributes,
+          fill,
+          stroke: selected ? cssVar("--accent-select", "#5ecbff")
+              : "rgba(21, 28, 40, 0.24)",
+          lineWidth: selected ? 2.4 : 1,
+          radius: attributes.notation === "context" ? 8 : 6,
+          labelText: ""
+        }, container);
         this.upsert("key", "rect", {
           x: left,
           y: top,
@@ -140,7 +201,7 @@ function registerModlessG6Extensions() {
               ? "rgba(8, 14, 24, 0.36)" : "rgba(12, 18, 28, 0.28)",
           shadowBlur: selected || hovered || connectLegal ? 18 : 10,
           opacity: dimmed || connectIllegal ? 0.48 : 1,
-          cursor: "move"
+          cursor: "pointer"
         }, container);
         this.upsert("corner", "path", {
           path: [
@@ -190,6 +251,14 @@ function registerModlessG6Extensions() {
       } else {
         const fill = cssVar("--node-bg", "#131923");
         const border = cssVar("--node-border", "#3d495f");
+        super.render({
+          ...attributes,
+          fill,
+          stroke: selected ? cssVar("--accent-select", "#5ecbff") : border,
+          lineWidth: selected ? 2.4 : 1,
+          radius: 2,
+          labelText: ""
+        }, container);
         this.upsert("key", "rect", {
           x: left,
           y: top,
@@ -208,7 +277,7 @@ function registerModlessG6Extensions() {
               ? "rgba(8, 14, 24, 0.44)" : "rgba(6, 11, 20, 0.32)",
           shadowBlur: selected || hovered || connectLegal ? 18 : 8,
           opacity: dimmed || connectIllegal ? 0.48 : 1,
-          cursor: "move"
+          cursor: "pointer"
         }, container);
         this.upsert("header", "rect", low ? false : {
           x: left,
@@ -430,8 +499,45 @@ function createHost(container) {
   return next;
 }
 
+function hostSize(host) {
+  const rect = host?.getBoundingClientRect?.();
+  const parentRect = host?.parentElement?.getBoundingClientRect?.();
+  const width = Math.max(1, Math.round(rect?.width || parentRect?.width || 1));
+  const height = Math.max(1,
+      Math.round(rect?.height || parentRect?.height || 1));
+  return {width, height};
+}
+
+function resizeGraphToHost() {
+  if (!editor?.graph || !editor.host) {
+    return;
+  }
+  const {width, height} = hostSize(editor.host);
+  editor.graph.setSize?.(width, height);
+  editor.graph.resize?.(width, height);
+}
+
+function readGraphZoom(fallback = state.viewport.scale || 1) {
+  try {
+    const zoom = editor?.graph?.getZoom?.();
+    return Number.isFinite(zoom) ? zoom : fallback;
+  } catch (error) {
+    updateDebugState({lastViewportReadError: error.message || String(error)});
+    return fallback;
+  }
+}
+
+function readGraphPosition() {
+  try {
+    return editor?.graph?.getPosition?.() || null;
+  } catch (error) {
+    updateDebugState({lastViewportReadError: error.message || String(error)});
+    return null;
+  }
+}
+
 function currentZoom() {
-  return editor?.graph?.getZoom?.() || state.viewport.scale || 1;
+  return readGraphZoom();
 }
 
 function mapperOptions() {
@@ -479,6 +585,55 @@ function ensureDataSnapshot() {
   return editor.dataSnapshot;
 }
 
+function hasKnownElement(id, map) {
+  return Boolean(id && map?.has?.(id));
+}
+
+function isElementMounted(id) {
+  if (!id || !editor?.graph?.getElementType) {
+    return true;
+  }
+  try {
+    return Boolean(editor.graph.getElementType(id));
+  } catch {
+    return false;
+  }
+}
+
+function hasKnownNode(id) {
+  return hasKnownElement(id, editor?.dataSnapshot?.nodesById)
+      && isElementMounted(id);
+}
+
+function hasKnownEdge(id) {
+  return hasKnownElement(id, editor?.dataSnapshot?.edgesById)
+      && isElementMounted(id);
+}
+
+function setCanvasZoomIndicator() {
+  const label = document.getElementById("canvasZoomValue");
+  if (label) {
+    label.textContent = `${Math.round((state.viewport.scale || 1) * 100)}%`;
+  }
+}
+
+function settleNativeViewport() {
+  syncViewportStateFromGraph();
+  updateG6Lod();
+  updateG6ContextBoxes();
+  updateG6Selection();
+  editor?.callbacks?.onViewportSynced?.();
+}
+
+function afterGraphViewport(result) {
+  result?.then?.(settleNativeViewport)?.catch?.((error) => updateDebugState({
+    lastViewportError: error.message || String(error)
+  }));
+  if (!result?.then) {
+    window.requestAnimationFrame(settleNativeViewport);
+  }
+}
+
 function rememberNodeData(nodeData) {
   if (!nodeData?.id) {
     return;
@@ -520,7 +675,14 @@ function applyDiff(data) {
     editor.graph.updateNodeData?.(diff.updateNodes);
   }
   if (diff.updateEdges.length) {
-    editor.graph.updateEdgeData?.(diff.updateEdges);
+    try {
+      const result = editor.graph.updateEdgeData?.(diff.updateEdges);
+      result?.catch?.((error) => updateDebugState({
+        lastEdgeUpdateError: error.message || String(error)
+      }));
+    } catch (error) {
+      updateDebugState({lastEdgeUpdateError: error.message || String(error)});
+    }
   }
   if (diff.addNodes.length || diff.updateNodes.length
       || diff.removeNodeIds.length) {
@@ -528,7 +690,12 @@ function applyDiff(data) {
   }
   editor.dataSnapshot = diff.snapshot;
   editor.adjacency = createAdjacencyIndex(state.diagram.connections);
-  scheduleGraphDraw(editor.graph);
+  if (diff.addNodes.length || diff.addEdges.length || diff.removeNodeIds.length
+      || diff.removeEdgeIds.length) {
+    scheduleGraphRender(editor.graph);
+  } else {
+    scheduleGraphDraw(editor.graph);
+  }
 }
 
 function setFlag(map, id, flag, enabled) {
@@ -553,10 +720,23 @@ function setFlag(map, id, flag, enabled) {
 function flushElementStates(ids, map) {
   const batch = {};
   ids.forEach((id) => {
+    const isNodeState = map === editor.nodeStateFlags;
+    const exists = isNodeState ? hasKnownNode(id) : hasKnownEdge(id);
+    if (!exists) {
+      map.delete(id);
+      return;
+    }
     batch[id] = [...(map.get(id) || [])];
   });
   if (Object.keys(batch).length) {
-    editor.graph.setElementState?.(batch, false);
+    try {
+      const result = editor.graph.setElementState?.(batch, false);
+      result?.catch?.((error) => updateDebugState({
+        lastStateError: error.message || String(error)
+      }));
+    } catch (error) {
+      updateDebugState({lastStateError: error.message || String(error)});
+    }
   }
 }
 
@@ -582,8 +762,8 @@ function syncViewportStateFromGraph() {
   if (!editor?.graph) {
     return;
   }
-  const position = editor.graph.getPosition?.();
-  const zoom = editor.graph.getZoom?.();
+  const position = readGraphPosition();
+  const zoom = readGraphZoom();
   if (position) {
     const x = Array.isArray(position) ? position[0] : position.x;
     const y = Array.isArray(position) ? position[1] : position.y;
@@ -595,34 +775,49 @@ function syncViewportStateFromGraph() {
   if (Number.isFinite(zoom)) {
     state.viewport.scale = zoom;
   }
+  setCanvasZoomIndicator();
 }
 
 export function mountG6Editor(container, {
   callbacks = {},
   mapper = {}
 } = {}) {
+  installDebugProbe();
   if (editor?.graph) {
     editor.callbacks = callbacks;
     editor.mapperOptions = mapper;
+    updateDebugState({lastMount: "reused"});
     return editor;
   }
   if (!isG6Available()) {
+    updateDebugState({lastError: "AntV G6 is not available"});
     throw new Error("AntV G6 is not available");
   }
-  registerModlessG6Extensions();
+  try {
+    registerModlessG6Extensions();
+  } catch (error) {
+    console.warn(
+        "Modless G6 custom extensions unavailable; using built-in G6 shapes",
+        error);
+    updateDebugState({
+      lastExtensionError: error.message || String(error)
+    });
+  }
   const api = g6();
   const host = createHost(container);
   host.classList.add("is-mounted");
+  const {width, height} = hostSize(host);
   const graph = new api.Graph({
     container: host,
+    width,
+    height,
     autoResize: true,
     animation: false,
-    theme: false,
-    zoomRange: [0.2, 2.5],
+    theme: "dark",
+    zoomRange: [0.01, 2.5],
     cursor: "grab",
     data: {nodes: [], edges: []},
     behaviors: [
-      "drag-canvas",
       "zoom-canvas",
       {
         type: "drag-element",
@@ -631,7 +826,7 @@ export function mountG6Editor(container, {
       }
     ],
     node: {
-      type: MODLESS_NODE_TYPE,
+      type: G6_BASE_NODE_TYPE,
       state: {
         selected: {selected: true},
         hover: {hover: true},
@@ -647,7 +842,7 @@ export function mountG6Editor(container, {
       }
     },
     edge: {
-      type: MODLESS_EDGE_TYPE,
+      type: G6_BASE_EDGE_TYPE,
       state: {
         selected: {selected: true},
         hover: {hovered: true},
@@ -669,15 +864,25 @@ export function mountG6Editor(container, {
     hoveredEdgeId: null,
     adjacency: createAdjacencyIndex(state.diagram.connections),
     lastLod: detailLevelForZoom(state.viewport.scale),
-    lastShowLabels: true
+    lastShowLabels: true,
+    viewportReady: false,
+    viewportRetryCount: 0
   };
   bindG6Interactions(editor, callbacks);
+  resizeGraphToHost();
+  updateDebugState(
+      {lastError: "", lastMount: "mounted", hostSize: {width, height}});
   return editor;
 }
 
 export function destroyG6Editor() {
   cancelScheduledDraw();
+  if (pendingViewportFrame) {
+    window.cancelAnimationFrame(pendingViewportFrame);
+    pendingViewportFrame = 0;
+  }
   clearG6Overlays();
+  editor?.disposeInteractions?.();
   editor?.graph?.destroy?.();
   editor?.host?.classList.remove("is-mounted");
   editor = null;
@@ -693,9 +898,12 @@ export function renderG6Diagram() {
 
 export function setG6Data(nodes, edges) {
   if (!editor?.graph) {
+    updateDebugState({lastError: "setG6Data before mount"});
     return;
   }
   const data = {nodes, edges};
+  updateDebugState({lastSetData: {nodes: nodes.length, edges: edges.length}});
+  resizeGraphToHost();
   editor.graph.setData?.(data);
   rememberDataSnapshot(data);
   scheduleGraphRender(editor.graph);
@@ -703,9 +911,13 @@ export function setG6Data(nodes, edges) {
 
 export function syncG6FromState({full = false} = {}) {
   if (!editor?.graph) {
+    updateDebugState({lastError: "syncG6FromState before mount"});
     return;
   }
   const data = graphDataFromState();
+  updateDebugState(
+      {lastSync: {full, nodes: data.nodes.length, edges: data.edges.length}});
+  resizeGraphToHost();
   if (full || !editor.dataSnapshot) {
     editor.graph.setData?.(data);
     rememberDataSnapshot(data);
@@ -728,7 +940,7 @@ export function addG6Node(node) {
   const mapped = mapNodeToG6(node, mapperOptions());
   editor.graph.addNodeData?.([mapped]);
   rememberNodeData(mapped);
-  scheduleGraphDraw(editor.graph);
+  scheduleGraphRender(editor.graph);
 }
 
 export function updateG6Node(nodeId, patch = {}) {
@@ -779,7 +991,7 @@ export function removeG6Node(nodeId) {
   editor.dataSnapshot?.nodeFingerprints?.delete(nodeId);
   editor.nodeStateFlags.delete(nodeId);
   editor.connectStateIds.delete(nodeId);
-  scheduleGraphDraw(editor.graph);
+  scheduleGraphRender(editor.graph);
 }
 
 export function addG6Edge(edge) {
@@ -790,7 +1002,7 @@ export function addG6Edge(edge) {
   editor.graph.addEdgeData?.([mapped]);
   editor.adjacency = createAdjacencyIndex(state.diagram.connections);
   rememberEdgeData(mapped);
-  scheduleGraphDraw(editor.graph);
+  scheduleGraphRender(editor.graph);
 }
 
 export function updateG6Edge(edgeId, patch = {}) {
@@ -817,7 +1029,7 @@ export function removeG6Edge(edgeId) {
   editor.dataSnapshot?.edgeFingerprints?.delete(edgeId);
   editor.edgeStateFlags.delete(edgeId);
   editor.adjacency = createAdjacencyIndex(state.diagram.connections);
-  scheduleGraphDraw(editor.graph);
+  scheduleGraphRender(editor.graph);
 }
 
 export function refreshG6Edges(edgeIds = []) {
@@ -829,8 +1041,20 @@ export function refreshG6Edges(edgeIds = []) {
       !ids || ids.has(edge.id)).map((edge) => mapEdgeToG6(edge,
       mapperOptions()));
   if (edges.length) {
-    editor.graph.updateEdgeData?.(edges);
-    edges.forEach(rememberEdgeData);
+    const existingEdges = edges.filter((edge) => hasKnownEdge(edge.id));
+    if (!existingEdges.length) {
+      return;
+    }
+    try {
+      const result = editor.graph.updateEdgeData?.(existingEdges);
+      result?.catch?.((error) => updateDebugState({
+        lastEdgeUpdateError: error.message || String(error)
+      }));
+    } catch (error) {
+      updateDebugState({lastEdgeUpdateError: error.message || String(error)});
+      return;
+    }
+    existingEdges.forEach(rememberEdgeData);
     scheduleGraphDraw(editor.graph);
   }
 }
@@ -1010,8 +1234,33 @@ export function updateG6Viewport() {
   if (!editor?.graph) {
     return;
   }
-  editor.graph.zoomTo?.(state.viewport.scale, false);
-  editor.graph.translateTo?.([state.viewport.x, state.viewport.y], false);
+  const retryViewport = (error) => {
+    updateDebugState({lastViewportError: error.message || String(error)});
+    if (editor.viewportRetryCount < 3 && !pendingViewportFrame) {
+      editor.viewportRetryCount += 1;
+      pendingViewportFrame = window.requestAnimationFrame(() => {
+        pendingViewportFrame = 0;
+        updateG6Viewport();
+      });
+    }
+  };
+  const applyTransform = () => {
+    if (!editor?.graph) {
+      return;
+    }
+    try {
+      const zoomResult = editor.graph.zoomTo?.(state.viewport.scale, false);
+      zoomResult?.catch?.(retryViewport);
+      const translateResult = editor.graph.translateTo?.(
+          [state.viewport.x, state.viewport.y], false);
+      translateResult?.catch?.(retryViewport);
+    } catch (error) {
+      retryViewport(error);
+      return;
+    }
+    editor.viewportReady = true;
+  };
+  applyTransform();
   syncViewportStateFromGraph();
   updateG6Lod();
   updateG6ContextBoxes();
@@ -1021,6 +1270,78 @@ export function updateG6Viewport() {
 export function getG6Viewport() {
   syncViewportStateFromGraph();
   return {...state.viewport};
+}
+
+export function zoomG6CanvasBy(multiplier = 1) {
+  if (!editor?.graph) {
+    return false;
+  }
+  const prev = readGraphZoom();
+  const next = Math.max(0.01, Math.min(2.5, prev * multiplier));
+  state.viewport.scale = next;
+  setCanvasZoomIndicator();
+  try {
+    afterGraphViewport(editor.graph.zoomTo?.(next, false));
+  } catch (error) {
+    updateDebugState({lastViewportError: error.message || String(error)});
+  }
+  return true;
+}
+
+export function resetG6CanvasView() {
+  if (!editor?.graph) {
+    return false;
+  }
+  state.viewport.scale = 1;
+  setCanvasZoomIndicator();
+  try {
+    afterGraphViewport(editor.graph.zoomTo?.(1, false));
+  } catch (error) {
+    updateDebugState({lastViewportError: error.message || String(error)});
+  }
+  return true;
+}
+
+export function fitG6CanvasToDiagram(bounds = null, {fit = false} = {}) {
+  if (!editor?.graph) {
+    return false;
+  }
+  const nodes = [...(editor.dataSnapshot?.nodesById?.keys?.() || [])];
+  if (!nodes.length) {
+    return false;
+  }
+  let result = null;
+  try {
+    if (fit && bounds) {
+      const rect = el.canvasViewport?.getBoundingClientRect?.();
+      const padding = 96;
+      const fitScale = Math.min(
+          ((rect?.width || 0) - padding) / bounds.width,
+          ((rect?.height || 0) - padding) / bounds.height);
+      const next = Math.max(0.01, Math.min(1, fitScale || 1));
+      state.viewport.scale = next;
+      setCanvasZoomIndicator();
+      result = editor.graph.zoomTo?.(next, false);
+    }
+    const centerX = bounds ? bounds.minX + bounds.width / 2 : null;
+    const centerY = bounds ? bounds.minY + bounds.height / 2 : null;
+    const focusNodeId = bounds ? nodes.reduce((bestId, nodeId) => {
+      const node = state.nodesById.get(nodeId)
+          || state.diagram.nodes.find((candidate) => candidate.id === nodeId);
+      const best = state.nodesById.get(bestId)
+          || state.diagram.nodes.find((candidate) => candidate.id === bestId);
+      const nodeDistance = node ? Math.hypot(node.x - centerX, node.y - centerY)
+          : Number.POSITIVE_INFINITY;
+      const bestDistance = best ? Math.hypot(best.x - centerX, best.y - centerY)
+          : Number.POSITIVE_INFINITY;
+      return nodeDistance < bestDistance ? nodeId : bestId;
+    }, nodes[0]) : nodes[0];
+    const focusResult = editor.graph.focusElement?.(focusNodeId, {duration: 0});
+    afterGraphViewport(focusResult || result);
+  } catch (error) {
+    updateDebugState({lastViewportError: error.message || String(error)});
+  }
+  return true;
 }
 
 export function toGraphCoordinates(clientX, clientY) {
@@ -1089,7 +1410,7 @@ export function focusG6CanvasPoint(x, y) {
     return;
   }
   const rect = el.canvasViewport?.getBoundingClientRect();
-  const scale = state.viewport.scale || editor.graph.getZoom?.() || 1;
+  const scale = state.viewport.scale || readGraphZoom();
   state.viewport.x = Math.round((rect?.width || 0) / 2 - x * scale);
   state.viewport.y = Math.round((rect?.height || 0) / 2 - y * scale);
   state.viewport.scale = scale;
@@ -1133,6 +1454,7 @@ export function updateG6ContextBoxes(boxes = null) {
 
 export function onG6ViewportChanged() {
   syncViewportStateFromGraph();
+  setCanvasZoomIndicator();
   el.canvasGrid?.style.setProperty("--viewport-scale",
       String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);

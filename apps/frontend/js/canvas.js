@@ -52,6 +52,7 @@ import {
   addG6Edge,
   addG6Node,
   beginG6InlineLabelEdit,
+  fitG6CanvasToDiagram,
   focusG6CanvasPoint,
   focusG6Node,
   getG6Editor,
@@ -60,6 +61,7 @@ import {
   onG6ViewportChanged,
   refreshG6Edges,
   renderG6Diagram,
+  resetG6CanvasView,
   setG6HoverEdge,
   setG6HoverNode,
   syncG6FromState,
@@ -70,7 +72,8 @@ import {
   updateG6ImpactState,
   updateG6Node,
   updateG6Selection,
-  updateG6Viewport
+  updateG6Viewport,
+  zoomG6CanvasBy
 } from './graph-editor/g6-editor.js';
 
 const DEFAULT_NODE_W = 228;
@@ -97,7 +100,7 @@ let inlineLabelEditUndoSnapshot = null;
 let g6MountFailed = false;
 
 function useG6Renderer() {
-  return Boolean(state.useG6Renderer && !g6MountFailed);
+  return state.useG6Renderer !== false;
 }
 
 function workbenchSurfaces() {
@@ -2180,18 +2183,36 @@ function g6ConnectionTargetState(source, target) {
 }
 
 function ensureG6Canvas() {
+  window.modlessEnsureG6Canvas = ensureG6Canvas;
+  window.modlessG6State = {
+    ...(window.modlessG6State || {}),
+    ensureCalled: true,
+    rendererRequested: "antv-g6",
+    legacyFallback: false,
+    activeType: state.activeType,
+    stateNodes: Array.isArray(state.diagram?.nodes)
+        ? state.diagram.nodes.length : 0,
+    stateEdges: Array.isArray(state.diagram?.connections)
+        ? state.diagram.connections.length : 0
+  };
   if (!useG6Renderer()) {
-    return false;
+    state.useG6Renderer = true;
   }
   if (getG6Editor()) {
     return true;
   }
+  el.canvasGrid?.classList.add("g6-renderer-active");
   if (!isG6Available()) {
     g6MountFailed = true;
-    state.useG6Renderer = false;
-    el.canvasGrid?.classList.remove("g6-renderer-active");
-    setStatus("AntV G6 failed to load; using fallback renderer");
-    return false;
+    el.canvasGrid?.setAttribute("data-renderer", "antv-g6-unavailable");
+    window.modlessG6State = {
+      ...(window.modlessG6State || {}),
+      available: false,
+      mounted: false,
+      lastError: "AntV G6 failed to load"
+    };
+    setStatus("AntV G6 failed to load; model canvas renderer unavailable");
+    return true;
   }
   try {
     mountG6Editor(el.g6EditorHost, {
@@ -2238,15 +2259,68 @@ function ensureG6Canvas() {
       }
     });
     el.canvasGrid?.classList.add("g6-renderer-active");
+    el.canvasGrid?.classList.remove("g6-renderer-unavailable");
+    el.canvasGrid?.setAttribute("data-renderer", "antv-g6");
     return true;
   } catch (error) {
     console.error("G6 editor mount failed", error);
     g6MountFailed = true;
-    state.useG6Renderer = false;
-    el.canvasGrid?.classList.remove("g6-renderer-active");
-    setStatus("AntV G6 renderer failed; using fallback renderer");
-    return false;
+    el.canvasGrid?.classList.add("g6-renderer-unavailable");
+    el.canvasGrid?.setAttribute("data-renderer", "antv-g6-unavailable");
+    window.modlessG6State = {
+      ...(window.modlessG6State || {}),
+      available: isG6Available(),
+      mounted: false,
+      lastError: error.message || String(error)
+    };
+    setStatus("AntV G6 renderer failed; model canvas renderer unavailable");
+    return true;
   }
+}
+
+export function initializeModelingRenderer() {
+  const mountedOrUnavailable = ensureG6Canvas();
+  if (mountedOrUnavailable && getG6Editor()) {
+    syncCanvasIndexesFromState();
+    syncG6FromState({full: true});
+    renderG6Diagram();
+  }
+  return mountedOrUnavailable;
+}
+
+export function getModelingRendererDebug() {
+  const editor = getG6Editor();
+  const host = el.g6EditorHost;
+  const hostRect = host?.getBoundingClientRect?.();
+  const canvasGrid = el.canvasGrid;
+  return {
+    renderer: canvasGrid?.dataset?.renderer || "",
+    legacyFallback: false,
+    useG6Renderer: state.useG6Renderer,
+    ensureCalled: Boolean(window.modlessG6State?.ensureCalled),
+    g6Available: isG6Available(),
+    mounted: Boolean(editor),
+    graphReady: Boolean(editor?.graph),
+    activeType: state.activeType,
+    stateNodes: Array.isArray(state.diagram?.nodes)
+        ? state.diagram.nodes.length : 0,
+    stateEdges: Array.isArray(state.diagram?.connections)
+        ? state.diagram.connections.length : 0,
+    hostExists: Boolean(host),
+    hostMountedClass: Boolean(host?.classList?.contains("is-mounted")),
+    hostRect: hostRect ? {
+      width: Math.round(hostRect.width),
+      height: Math.round(hostRect.height),
+      top: Math.round(hostRect.top),
+      left: Math.round(hostRect.left)
+    } : null,
+    hostChildren: host?.children?.length || 0,
+    hasCanvasDescendant: Boolean(host?.querySelector?.("canvas")),
+    nodeLayerNodes: document.querySelectorAll("#nodeLayer .node").length,
+    edgeLayerEdges: document.querySelectorAll("#edgeLayer .edge-path").length,
+    lastError: window.modlessG6State?.lastError || "",
+    g6State: window.modlessG6State || null
+  };
 }
 
 export function setContextCreateMode(enabled) {
@@ -3167,25 +3241,17 @@ export function toCanvasCoordinates(clientX, clientY) {
 
 let viewportUpdateScheduled = false;
 
-export function applyViewport() {
-  if (ensureG6Canvas()) {
-    updateG6Viewport();
-    el.canvasGrid?.style.setProperty("--viewport-scale",
-        String(state.viewport.scale || 1));
-    el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
-    el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
-        && state.viewport.scale < 0.75);
-    el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-    if (!viewportUpdateScheduled) {
-      viewportUpdateScheduled = true;
-      window.requestAnimationFrame(() => {
-        viewportUpdateScheduled = false;
-        renderRemoteCursors();
-      });
-    }
-    return;
+function updateZoomControlLabel() {
+  if (el.canvasZoomValue) {
+    el.canvasZoomValue.textContent = `${Math.round(
+        (state.viewport.scale || 1) * 100)}%`;
   }
-  el.canvasContent.style.transform = `translate(${state.viewport.x}px, ${state.viewport.y}px) scale(${state.viewport.scale})`;
+}
+
+export function applyViewport() {
+  ensureG6Canvas();
+  updateG6Viewport();
+  updateZoomControlLabel();
   el.canvasGrid?.style.setProperty("--viewport-scale",
       String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
@@ -3203,7 +3269,27 @@ export function applyViewport() {
 }
 
 export function resetCanvasView() {
+  if (ensureG6Canvas() && getG6Editor()) {
+    resetG6CanvasView();
+    return;
+  }
   state.viewport = {x: 0, y: 0, scale: 1};
+  applyViewport();
+}
+
+export function zoomCanvasBy(multiplier = 1) {
+  if (ensureG6Canvas() && getG6Editor()) {
+    zoomG6CanvasBy(multiplier);
+    return;
+  }
+  const prev = Number(state.viewport.scale) || 1;
+  const next = Math.max(0.01, Math.min(2.5, prev * multiplier));
+  const rect = el.canvasViewport?.getBoundingClientRect?.();
+  const px = (rect?.width || 0) / 2;
+  const py = (rect?.height || 0) / 2;
+  state.viewport.x = px - ((px - state.viewport.x) * (next / prev));
+  state.viewport.y = py - ((py - state.viewport.y) * (next / prev));
+  state.viewport.scale = next;
   applyViewport();
 }
 
@@ -3256,13 +3342,17 @@ export function centerViewportOnDiagram({fit = false} = {}) {
   if (!bounds || !viewportRect) {
     return;
   }
+  if (ensureG6Canvas() && getG6Editor()) {
+    fitG6CanvasToDiagram(bounds, {fit});
+    return;
+  }
   const padding = 96;
   let scale = state.viewport.scale || 1;
   if (fit) {
     const fitScale = Math.min(
         (viewportRect.width - padding) / bounds.width,
         (viewportRect.height - padding) / bounds.height);
-    scale = Math.max(0.2, Math.min(1, fitScale || 1));
+    scale = Math.max(0.01, Math.min(1, fitScale || 1));
   }
   const centerX = bounds.minX + bounds.width / 2;
   const centerY = bounds.minY + bounds.height / 2;
@@ -4556,221 +4646,14 @@ function groupPaletteTypes(types) {
 // ── Node rendering ────────────────────────────────────────────────────────────
 
 export function renderNodes() {
-  if (ensureG6Canvas()) {
-    syncCanvasIndexesFromState();
-    syncG6FromState({full: false});
-    updateG6Selection();
-    updateG6ImpactState();
-    return;
-  }
-  state.nodesById.clear();
-  nodeElementsById.clear();
-  el.nodeLayer.innerHTML = "";
-  renderBoundedContextBoxes();
-  state.diagram.nodes.forEach((node) => {
-    if (!nodeVisibleInCurrentCanvasMode(node)) {
-      return;
-    }
-    state.nodesById.set(node.id, node);
-    const n = document.createElement("div");
-    n.className = "node";
-    n.style.left = `${node.x}px`;
-    n.style.top = `${node.y}px`;
-    n.dataset.nodeId = node.id;
-    n.dataset.nodeType = node.type;
-    n.dataset.diagramType = state.activeType;
-    const notation = cimNodeNotation(node);
-    if (notation) {
-      n.dataset.cimNotation = notation.tag;
-    }
-    applyConnectTargetClass(n, node);
-
-    n.innerHTML = `
-      <div class="node-link-handle node-link-handle-left" title="Drag to connect"></div>
-      <div class="node-header">
-        <span aria-hidden="true" class="node-icon icon-svg icon-mask" style="--icon-src: url('${PLACEHOLDER_ICON}');"></span>
-        <span class="node-title">${escapeHtml(node.type)}</span>
-        <span aria-hidden="true" class="node-menu-dot"></span>
-      </div>
-      <div class="node-body">
-        <div class="node-label" contenteditable="true" spellcheck="false">${escapeHtml(
-        node.label)}</div>
-      </div>
-      <div class="node-link-handle node-link-handle-right" title="Drag to connect"></div>`;
-
-    const nodeIcon = n.querySelector(".node-icon");
-    const definition = modelingElementDefinition(state.activeType, node.type);
-    setMaskIconSource(nodeIcon,
-        definitionUi(definition).icon || PLACEHOLDER_ICON);
-    applyDefinitionAccent(n, definition);
-    const nodeBody = n.querySelector(".node-body");
-    if (notation) {
-      const notationLine = document.createElement("div");
-      notationLine.className = "node-notation-line";
-      notationLine.textContent = notation.line?.(node.meta || {}) || "";
-      nodeBody?.appendChild(notationLine);
-    }
-    const detailsHtml = cimNodeDetailsHtml(node);
-    if (detailsHtml) {
-      nodeBody?.insertAdjacentHTML("beforeend", detailsHtml);
-    }
-
-    if (state.activeType === "cim"
-        && state.boundedContextViewMode === "overview"
-        && isBoundedContextNode(node)) {
-      const members = contextNodes(boundedContextNameFromContextNode(node));
-      const summaryEl = document.createElement("div");
-      summaryEl.className = "node-collapse-summary";
-      summaryEl.textContent = `${members.length} member${members.length === 1
-          ? "" : "s"}`;
-      n.querySelector(".node-body")?.appendChild(summaryEl);
-    }
-
-    if (isContainerElement(node)) {
-      const containerTools = document.createElement("div");
-      containerTools.className = "node-container-tools";
-      const focusBtn = document.createElement("button");
-      focusBtn.type = "button";
-      focusBtn.className = "node-container-tool";
-      focusBtn.title = state.activeType === "cim" && isBoundedContextNode(node)
-          ? "Open bounded context"
-          : "Open contained canvas";
-      focusBtn.textContent = "Open";
-      focusBtn.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (state.activeType === "cim" && isBoundedContextNode(node)) {
-          openBoundedContextFocus(boundedContextNameFromContextNode(node));
-          return;
-        }
-        openContainerFocus(node.id);
-      });
-      focusBtn.addEventListener("mousedown",
-          (event) => event.stopPropagation());
-      focusBtn.addEventListener("touchstart",
-          (event) => event.stopPropagation(),
-          {passive: true});
-      containerTools.appendChild(focusBtn);
-      const collapseBtn = document.createElement("button");
-      collapseBtn.type = "button";
-      collapseBtn.className = "node-container-tool";
-      collapseBtn.title = node.meta?.__collapsed ? "Expand container"
-          : "Collapse container";
-      collapseBtn.textContent = node.meta?.__collapsed ? "+" : "-";
-      collapseBtn.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        toggleContainerCollapsed(node.id);
-      });
-      collapseBtn.addEventListener("mousedown",
-          (event) => event.stopPropagation());
-      collapseBtn.addEventListener("touchstart",
-          (event) => event.stopPropagation(), {passive: true});
-      if (!(state.activeType === "cim" && isBoundedContextNode(node))) {
-        containerTools.appendChild(collapseBtn);
-      }
-      n.appendChild(containerTools);
-    }
-
-    if (node.meta?.__collapsedSummary) {
-      n.classList.add("node-collapsed-container");
-      const summary = node.meta.__collapsedSummary;
-      const summaryEl = document.createElement("div");
-      summaryEl.className = "node-collapse-summary";
-      const counts = Object.entries(summary.elementCounts || {})
-      .slice(0, 3)
-      .map(([type, count]) => `${count} ${type}`)
-      .join(", ");
-      summaryEl.textContent = `${summary.hiddenNodes || 0} elements, ${
-          summary.hiddenEdges || 0} relationships${counts ? `: ${counts}`
-          : ""}`;
-      n.querySelector(".node-body")?.appendChild(summaryEl);
-    }
-
-    n.addEventListener("mousedown", onNodeMouseDown);
-    n.addEventListener("click", onNodeClick);
-    n.addEventListener("dblclick", onNodeDoubleClick);
-    n.addEventListener("touchstart", onNodeTouchStart, {passive: false});
-    n.addEventListener("mouseenter", () => setHoveredNode(node.id));
-    n.addEventListener("mouseleave", () => setHoveredNode(null));
-
-    // Both handles trigger link drag
-    n.querySelectorAll(".node-link-handle").forEach((handle) => {
-      handle.addEventListener("mousedown", onLinkHandleMouseDown);
-      handle.addEventListener("touchstart", onLinkHandleTouchStart,
-          {passive: false});
-    });
-
-    const nodeLabelEl = n.querySelector(".node-label");
-    nodeLabelEl.addEventListener("mousedown", (e) => {
-      // Prevent accidental label text selection when initiating node drag.
-      // Keep bubbling so the node drag handler still runs.
-      if (!nodeLabelEl.classList.contains("is-editing")) {
-        e.preventDefault();
-      }
-    });
-    nodeLabelEl.addEventListener("dblclick", (e) => {
-      if (isContainerElement(node) && !nodeLabelEl.classList.contains(
-          "is-editing")) {
-        e.preventDefault();
-        return;
-      }
-      // Explicit user intent to edit/select label text.
-      e.preventDefault();
-      e.stopPropagation();
-      nodeLabelEl.focus();
-      const selection = window.getSelection?.();
-      if (!selection) {
-        return;
-      }
-      selection.removeAllRanges();
-      const range = document.createRange();
-      range.selectNodeContents(nodeLabelEl);
-      selection.addRange(range);
-    });
-    nodeLabelEl.addEventListener("focus", () => {
-      nodeLabelEl.classList.add("is-editing");
-      state.inlineLabelEditNodeId = node.id;
-      inlineLabelEditStartLabel = node.label;
-      inlineLabelEditUndoSnapshot = captureDiagramUndoSnapshot();
-    });
-    nodeLabelEl.addEventListener("input", (e) => {
-      const resolved = commitNodeLabel(node, e.target.textContent);
-      publishNodeRename(node.id, resolved);
-    });
-    nodeLabelEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        e.currentTarget.blur();
-      }
-    });
-    nodeLabelEl.addEventListener("blur", (e) => {
-      const resolved = commitNodeLabel(node, e.target.textContent);
-      e.target.textContent = resolved;
-      nodeLabelEl.classList.remove("is-editing");
-      if (state.inlineLabelEditNodeId === node.id) {
-        state.inlineLabelEditNodeId = null;
-      }
-      if (resolved !== inlineLabelEditStartLabel) {
-        commitUndoSnapshot(inlineLabelEditUndoSnapshot);
-      }
-      inlineLabelEditStartLabel = "";
-      inlineLabelEditUndoSnapshot = null;
-      publishNodeRename(node.id, resolved);
-      scheduleAutoSave({delayMs: 250});
-      publishDiagramUpdate({immediate: true});
-    });
-
-    el.nodeLayer.appendChild(n);
-    nodeElementsById.set(node.id, n);
-  });
-
-  // Re-apply selected class if a node is still selected
-  applyNodeSelectionStyles();
-  applyHoverFocusStyles();
-
-  // Apply impact analysis highlights
-  highlightImpactedNodes();
+  // Compatibility wrapper: callers still use the old name, but node rendering
+  // is handled exclusively by the G6 adapter.
+  ensureG6Canvas();
+  syncCanvasIndexesFromState();
+  syncG6FromState({full: false});
+  updateG6Selection();
+  updateG6ImpactState();
+  return;
 }
 
 function applyConnectTargetClass(element, node) {
@@ -5314,282 +5197,14 @@ function renderBoundedContextOverviewEdges() {
 }
 
 export function renderEdges() {
-  if (ensureG6Canvas()) {
-    if (state.selectedConnectionId && !state.diagram.connections.some(
-        (edge) => edge.id === state.selectedConnectionId)) {
-      state.selectedConnectionId = null;
-    }
-    syncCanvasIndexesFromState();
-    syncG6FromState({full: false});
-    updateG6Selection();
-    return;
-  }
+  ensureG6Canvas();
   if (state.selectedConnectionId && !state.diagram.connections.some(
       (edge) => edge.id === state.selectedConnectionId)) {
     state.selectedConnectionId = null;
   }
-
-  el.edgeLayer.innerHTML = `<defs>
-    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 7">
-      <path d="M0,0 L0,7 L10,3.5 z" class="arrow-head"/>
-    </marker>
-    <marker id="arrow-preview" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 7">
-      <path d="M0,0 L0,7 L10,3.5 z" class="arrow-head-preview"/>
-    </marker>
-    <marker id="diamond-filled" markerWidth="12" markerHeight="8" refX="1" refY="4" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 12 8">
-      <path d="M1,4 L6,0 L11,4 L6,8 z" class="edge-marker-filled"/>
-    </marker>
-    <marker id="diamond-hollow" markerWidth="12" markerHeight="8" refX="1" refY="4" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 12 8">
-      <path d="M1,4 L6,0 L11,4 L6,8 z" class="edge-marker-hollow"/>
-    </marker>
-    <marker id="triangle-hollow" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 12 10">
-      <path d="M1,1 L11,5 L1,9 z" class="edge-marker-hollow"/>
-    </marker>
-    <marker id="conflict-cross" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 12 12">
-      <path d="M2,2 L10,10 M10,2 L2,10" class="edge-marker-conflict"/>
-    </marker>
-  </defs>`;
-  edgeElementsById.clear();
-  edgeGeometryCache.clear();
-  edgeIdsByNodeId.clear();
-  connectionsById.clear();
-  let pickerAnchor = null;
-
-  state.diagram.connections.forEach((edge) => {
-    const nodeW = getNodeWidth();
-    const nodeH = getNodeHeight();
-    const source = state.nodesById.get(edge.sourceId);
-    const target = state.nodesById.get(edge.targetId);
-    if (!source || !target) {
-      return;
-    }
-
-    const geometry = edgePathGeometry(edge, source, target, nodeW, nodeH);
-    const d = geometry.d;
-    const midX = geometry.midX;
-    const midY = geometry.midY;
-    const openPickerForEdge = () => {
-      if (edge.bundle) {
-        return;
-      }
-      const kinds = buildDirectedKindOptions(source, target);
-      if (kinds.length) {
-        openEdgeKindPicker(edge.id, kinds, midX, midY - 18);
-      }
-    };
-
-    // Wide invisible hit-pad so the user can click near (not exactly on) the edge
-    const hitPad = document.createElementNS("http://www.w3.org/2000/svg",
-        "path");
-    hitPad.setAttribute("class", "edge-hit-pad");
-    hitPad.setAttribute("d", d);
-    hitPad.dataset.edgeId = edge.id;
-    hitPad.dataset.edgeKind = edge.kind;
-    hitPad.addEventListener("mousedown", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-    });
-    hitPad.addEventListener("touchstart", (event) => event.stopPropagation(),
-        {passive: true});
-    hitPad.addEventListener("mousemove",
-        (event) => updateEdgeHoverHandle(edge.id, event.clientX,
-            event.clientY));
-    hitPad.addEventListener("mouseenter",
-        (event) => updateEdgeHoverHandle(edge.id, event.clientX,
-            event.clientY));
-    hitPad.addEventListener("mouseleave", scheduleHideEdgeHoverHandle);
-    hitPad.addEventListener("click", (event) => {
-      event.stopPropagation();
-      selectConnection(edge.id);
-      openPickerForEdge();
-    });
-    el.edgeLayer.appendChild(hitPad);
-
-    const presentation = cimEdgePresentation(edge);
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("class",
-        `edge-path${presentation.className}${state.selectedConnectionId
-        === edge.id ? " selected" : ""}`);
-    path.setAttribute("d", d);
-    path.dataset.edgeId = edge.id;
-    path.dataset.edgeKind = edge.kind;
-    if (presentation.markerStart) {
-      path.setAttribute("marker-start", `url(#${presentation.markerStart})`);
-      path.style.markerStart = `url(#${presentation.markerStart})`;
-    }
-    if (presentation.markerEnd) {
-      path.setAttribute("marker-end", `url(#${presentation.markerEnd})`);
-      path.style.markerEnd = `url(#${presentation.markerEnd})`;
-    } else {
-      path.removeAttribute("marker-end");
-      path.style.markerEnd = "none";
-    }
-    path.addEventListener("mousedown", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-    });
-    path.addEventListener("touchstart", (event) => event.stopPropagation(),
-        {passive: true});
-    path.addEventListener("mousemove",
-        (event) => updateEdgeHoverHandle(edge.id, event.clientX,
-            event.clientY));
-    path.addEventListener("mouseenter",
-        (event) => updateEdgeHoverHandle(edge.id, event.clientX,
-            event.clientY));
-    path.addEventListener("mouseleave", scheduleHideEdgeHoverHandle);
-    path.addEventListener("click", (event) => {
-      event.stopPropagation();
-      selectConnection(edge.id);
-      openPickerForEdge();
-    });
-    el.edgeLayer.appendChild(path);
-
-    const label = document.createElementNS("http://www.w3.org/2000/svg",
-        "text");
-    label.setAttribute("class",
-        `edge-label${state.selectedConnectionId === edge.id ? " selected"
-            : ""}`);
-    label.setAttribute("x", String(midX));
-    label.setAttribute("y", String(midY - 8));
-    label.setAttribute("text-anchor", "middle");
-    label.dataset.edgeId = edge.id;
-    label.dataset.edgeKind = edge.kind;
-    label.textContent = cimEdgeLabel(edge);
-    label.addEventListener("mousedown", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-    });
-    label.addEventListener("touchstart", (event) => event.stopPropagation(),
-        {passive: true});
-    label.addEventListener("click", (event) => {
-      event.stopPropagation();
-      selectConnection(edge.id);
-      openPickerForEdge();
-    });
-    el.edgeLayer.appendChild(label);
-    const pinHandles = pinPointsForEdge(edge).map((pin, pinIndex) => {
-      const pinHandle = document.createElementNS("http://www.w3.org/2000/svg",
-          "circle");
-      pinHandle.setAttribute("class",
-          `edge-pin${state.selectedConnectionId === edge.id ? " selected"
-              : ""}`);
-      pinHandle.setAttribute("cx", String(pin.x));
-      pinHandle.setAttribute("cy", String(pin.y));
-      pinHandle.setAttribute("r", "6");
-      pinHandle.dataset.edgeId = edge.id;
-      pinHandle.dataset.pinIndex = String(pinIndex);
-      pinHandle.addEventListener("mouseenter", () => {
-        clearEdgeHoverHideTimer();
-        setHoveredEdge(edge.id);
-        if (edgeHoverHandleEl) {
-          edgeHoverHandleEl.style.display = "none";
-        }
-      });
-      pinHandle.addEventListener("mouseleave", scheduleHideEdgeHoverHandle);
-      pinHandle.addEventListener("mousedown", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        startEdgePinDrag(edge.id, pinIndex, event.clientX, event.clientY);
-      });
-      pinHandle.addEventListener("touchstart", (event) => {
-        if (event.touches.length !== 1) {
-          return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        const touch = event.touches[0];
-        startEdgePinDrag(edge.id, pinIndex, touch.clientX, touch.clientY);
-      }, {passive: false});
-      el.edgeLayer.appendChild(pinHandle);
-      return pinHandle;
-    });
-    edgeElementsById.set(edge.id,
-        {hitPad, path, label, pinHandles, geometry});
-    // register connection and adjacency for quick updates
-    connectionsById.set(edge.id, edge);
-    [edge.sourceId, edge.targetId].forEach((nodeId) => {
-      let set = edgeIdsByNodeId.get(nodeId);
-      if (!set) {
-        set = new Set();
-        edgeIdsByNodeId.set(nodeId, set);
-      }
-      set.add(edge.id);
-    });
-
-    if (state.edgeKindPicker.open && state.edgeKindPicker.edgeId === edge.id) {
-      pickerAnchor = {source, target, x: midX, y: midY - 18};
-    }
-  });
-
-  if (state.activeType === "cim"
-      && state.boundedContextViewMode === "overview") {
-    renderBoundedContextOverviewEdges();
-  }
-
-  if (state.linkDrag) {
-    const source = state.nodesById.get(state.linkDrag.sourceId);
-    if (!source) {
-      return;
-    }
-    const nodeW = getNodeWidth();
-    const nodeH = getNodeHeight();
-    const pointer = toCanvasCoordinates(state.linkDrag.pointerX,
-        state.linkDrag.pointerY);
-    const sx = source.x + nodeW;
-    const sy = source.y + nodeH / 2;
-    const tx = pointer.x;
-    const ty = pointer.y;
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("class", "edge-path preview");
-    path.setAttribute("d", `M ${sx} ${sy} L ${tx} ${ty}`);
-    el.edgeLayer.appendChild(path);
-  }
-
-  if (pickerAnchor && state.edgeKindPicker.open) {
-    const kinds = buildDirectedKindOptions(pickerAnchor.source,
-        pickerAnchor.target);
-    if (kinds.length) {
-      openEdgeKindPicker(state.edgeKindPicker.edgeId, kinds, pickerAnchor.x,
-          pickerAnchor.y);
-    } else {
-      closeEdgeKindPicker();
-    }
-  } else if (state.edgeKindPicker.open) {
-    closeEdgeKindPicker();
-  }
-
-  if (edgeHoverHandleState?.edgeId && connectionsById.has(
-      edgeHoverHandleState.edgeId)) {
-    const handle = ensureEdgeHoverHandleElement();
-    if (handle) {
-      setHoveredEdge(edgeHoverHandleState.edgeId);
-      handle.setAttribute("cx", String(edgeHoverHandleState.x));
-      handle.setAttribute("cy", String(edgeHoverHandleState.y));
-      handle.style.display = "block";
-      el.edgeLayer.appendChild(handle);
-    }
-  } else {
-    if (edgeHoverHandleEl) {
-      edgeHoverHandleEl.style.display = "none";
-    }
-    edgeHoverHandleState = null;
-    if (hoveredEdgeId && !connectionsById.has(hoveredEdgeId)) {
-      setHoveredEdge(null);
-    }
-  }
-
-  applyHoverFocusStyles();
-}
-
-function modelRootValue(keys) {
-  const root = state.baseModel && typeof state.baseModel === "object"
-      ? state.baseModel : {};
-  for (const key of keys) {
-    if (hasOwnValue(root, key)) {
-      return root[key];
-    }
-  }
-  return "";
+  syncCanvasIndexesFromState();
+  syncG6FromState({full: false});
+  updateG6Selection();
 }
 
 function hasModelArtifact(keys) {
@@ -5602,33 +5217,9 @@ function hasModelArtifact(keys) {
 }
 
 export function renderDiagram() {
-  if (ensureG6Canvas()) {
-    syncCanvasIndexesFromState();
-    renderG6Diagram();
-    workbenchSurfaces();
-    el.canvasGrid?.style.setProperty("--viewport-scale",
-        String(state.viewport.scale || 1));
-    el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
-    el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
-        && state.viewport.scale < 0.75);
-    el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-    el.workspace?.classList.toggle("cim-view-active",
-        state.activeType === "cim");
-    el.workspace?.classList.toggle("pim-view-active",
-        state.activeType === "pim");
-    el.workspace?.classList.toggle("psm-view-active",
-        state.activeType === "psm");
-    el.workspace?.setAttribute("data-cim-view-profile",
-        activeCimViewProfile() || "");
-    el.workspace?.setAttribute("data-pim-view-profile",
-        activePimViewProfile() || "");
-    el.workspace?.setAttribute("data-psm-view-profile",
-        state.activeType === "psm" ? (activeView()?.viewpoint || "") : "");
-    renderRemoteCursors();
-    return;
-  }
-  renderNodes();
-  renderEdges();
+  ensureG6Canvas();
+  syncCanvasIndexesFromState();
+  renderG6Diagram();
   workbenchSurfaces();
   el.canvasGrid?.style.setProperty("--viewport-scale",
       String(state.viewport.scale || 1));
@@ -5649,31 +5240,28 @@ export function renderDiagram() {
 }
 
 // Compatibility helper for non-canvas modules that changed semantic state.
-// With G6 active this applies a diff to the graph instead of rebuilding the
-// whole renderer; with the fallback renderer it preserves the old render path.
+// The public name is kept for existing callers, but the modeling surface is
+// G6-only: this applies a diff to the graph instead of rebuilding DOM/SVG.
 export function syncDiagramRenderer({full = false, workbench = false} = {}) {
-  if (ensureG6Canvas()) {
-    syncCanvasIndexesFromState();
-    syncG6FromState({full});
-    if (workbench) {
-      workbenchSurfaces();
-    }
-    el.canvasGrid?.style.setProperty("--viewport-scale",
-        String(state.viewport.scale || 1));
-    el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
-    el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
-        && state.viewport.scale < 0.75);
-    el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-    el.workspace?.classList.toggle("cim-view-active",
-        state.activeType === "cim");
-    el.workspace?.classList.toggle("pim-view-active",
-        state.activeType === "pim");
-    el.workspace?.classList.toggle("psm-view-active",
-        state.activeType === "psm");
-    renderRemoteCursors();
-    return;
+  ensureG6Canvas();
+  syncCanvasIndexesFromState();
+  syncG6FromState({full});
+  if (workbench) {
+    workbenchSurfaces();
   }
-  renderDiagram();
+  el.canvasGrid?.style.setProperty("--viewport-scale",
+      String(state.viewport.scale || 1));
+  el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
+  el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
+      && state.viewport.scale < 0.75);
+  el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
+  el.workspace?.classList.toggle("cim-view-active",
+      state.activeType === "cim");
+  el.workspace?.classList.toggle("pim-view-active",
+      state.activeType === "pim");
+  el.workspace?.classList.toggle("psm-view-active",
+      state.activeType === "psm");
+  renderRemoteCursors();
 }
 
 export function syncRendererSelection() {
@@ -6594,7 +6182,7 @@ export function onCanvasWheel(event) {
   event.preventDefault();
   const prev = state.viewport.scale;
   const delta = event.deltaY < 0 ? 1.1 : 0.9;
-  const next = Math.max(0.2, Math.min(2.5, prev * delta));
+  const next = Math.max(0.01, Math.min(2.5, prev * delta));
 
   const rect = el.canvasViewport.getBoundingClientRect();
   const px = event.clientX - rect.left;
@@ -6608,6 +6196,8 @@ export function onCanvasWheel(event) {
 // ── Drag-and-drop from palette ────────────────────────────────────────────────
 
 export function setupDnD() {
+  ensureG6Canvas();
+  renderG6Diagram();
   el.canvasViewport.addEventListener("dragover", (e) => e.preventDefault());
   el.canvasViewport.addEventListener("drop", async (e) => {
     e.preventDefault();

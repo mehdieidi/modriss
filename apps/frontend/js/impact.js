@@ -68,10 +68,7 @@ export function closeImpactPanel() {
   if (el.mobileBackdrop) {
     el.mobileBackdrop.classList.add('hidden');
   }
-  el.nodeLayer.querySelectorAll('.node').forEach((n) => {
-    n.classList.remove('node-impact-focal', 'node-impacted-upstream',
-        'node-impacted-downstream', 'node-impact-connected');
-  });
+  highlightImpactedNodes();
   renderImpactPanel(null);
 }
 

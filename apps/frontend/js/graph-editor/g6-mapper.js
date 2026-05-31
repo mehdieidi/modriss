@@ -4,9 +4,11 @@ import {
   modelingRelationshipKindLabel
 } from '../modeling-config-data.js';
 import {
+  canvasBackgroundColor,
+  cssVar,
   edgeStyleForKind,
-  MODLESS_EDGE_TYPE,
-  MODLESS_NODE_TYPE,
+  G6_BASE_EDGE_TYPE,
+  G6_BASE_NODE_TYPE,
   nodeAccent,
   nodeSizeForDiagram,
   stickyColor
@@ -350,7 +352,7 @@ export function mapNodeToG6(node, {
   const notationLine = notation?.line?.(node.meta || {}) || "";
   return {
     id: node.id,
-    type: MODLESS_NODE_TYPE,
+    type: G6_BASE_NODE_TYPE,
     data: {
       source: node,
       nodeType: node.type,
@@ -376,11 +378,26 @@ export function mapNodeToG6(node, {
       diagramType: typeKey,
       nodeType: node.type,
       labelText: node.label || node.id,
+      labelFill: typeKey === "cim" ? "rgba(24, 20, 14, 0.92)"
+          : "rgba(227, 232, 242, 0.96)",
+      labelFontSize: 12,
+      labelFontWeight: 700,
+      labelPlacement: "center",
+      labelWordWrap: true,
+      labelMaxWidth: Math.max(80, size.width - 24),
       typeText: node.type,
       notationText: notationLine,
       notation: notation?.tag || "",
       accent,
       sticky,
+      fill: typeKey === "cim" ? sticky : "rgba(19, 25, 35, 0.98)",
+      stroke: typeKey === "cim" ? "rgba(21, 28, 40, 0.24)"
+          : "rgba(61, 73, 95, 0.92)",
+      lineWidth: typeKey === "cim" ? 1.2 : 1,
+      radius: typeKey === "cim" ? 6 : 2,
+      shadowColor: typeKey === "cim" ? "rgba(12, 18, 28, 0.28)"
+          : "rgba(6, 11, 20, 0.32)",
+      shadowBlur: typeKey === "cim" ? 10 : 8,
       detailLevel,
       isContainer: isContainer(node),
       isCollapsed: isCollapsed(node)
@@ -399,7 +416,7 @@ export function mapEdgeToG6(edge, {
   const label = edgeLabel(edge, typeKey);
   return {
     id: edge.id,
-    type: MODLESS_EDGE_TYPE,
+    type: G6_BASE_EDGE_TYPE,
     source: edge.sourceId,
     target: edge.targetId,
     data: {
@@ -420,9 +437,40 @@ export function mapEdgeToG6(edge, {
       opacity: style.opacity,
       endArrow: presentation.markerEnd !== "",
       startArrow: Boolean(presentation.markerStart),
+      router: {
+        type: "orth"
+      },
       pinPoints: Array.isArray(edge.pinPoints) ? edge.pinPoints : [],
       showPins: showLabels || selected || hovered,
       labelText: showLabels || selected || hovered ? label : "",
+      labelPlacement: "center",
+      labelOffsetY: -14,
+      labelTextAlign: "center",
+      labelTextBaseline: "middle",
+      labelFontFamily: cssVar("--font-ui", "sans-serif"),
+      labelFontSize: selected || hovered ? 12 : 11,
+      labelFontWeight: selected || hovered ? 800 : 750,
+      labelFill: selected
+          ? cssVar("--accent-light", "#7bd0ff")
+          : cssVar("--text-strong", "#e7ecf5"),
+      labelBackground: Boolean(showLabels || selected || hovered),
+      labelBackgroundFill: cssVar("--surface-high", canvasBackgroundColor()),
+      labelBackgroundFillOpacity: 0.96,
+      labelBackgroundStroke: selected
+          ? cssVar("--accent-select", "#5ecbff")
+          : cssVar("--border", "#344055"),
+      labelBackgroundLineWidth: selected ? 1.4 : 1,
+      labelBackgroundRadius: 6,
+      labelBackgroundShadowBlur: selected || hovered ? 10 : 5,
+      labelBackgroundShadowColor: selected || hovered
+          ? cssVar("--accent-glow", "rgba(0, 166, 224, 0.28)")
+          : "rgba(8, 14, 24, 0.24)",
+      labelPadding: [4, 8],
+      labelMaxWidth: 160,
+      labelMaxLines: 1,
+      labelTextOverflow: "ellipsis",
+      labelZIndex: 2,
+      labelBackgroundZIndex: 1,
       edgeKind: edge.kind,
       selected,
       hovered

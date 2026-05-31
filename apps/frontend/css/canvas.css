@@ -584,6 +584,89 @@
   cursor: grabbing;
 }
 
+.canvas-viewport.canvas-cursor-grab,
+.canvas-grid.canvas-cursor-grab,
+.g6-editor-host.canvas-cursor-grab,
+.g6-editor-host.canvas-cursor-grab canvas {
+  cursor: grab !important;
+}
+
+.canvas-viewport.canvas-cursor-grabbing,
+.canvas-grid.canvas-cursor-grabbing,
+.g6-editor-host.canvas-cursor-grabbing,
+.g6-editor-host.canvas-cursor-grabbing canvas {
+  cursor: grabbing !important;
+}
+
+.canvas-viewport.canvas-cursor-pointer,
+.canvas-grid.canvas-cursor-pointer,
+.g6-editor-host.canvas-cursor-pointer,
+.g6-editor-host.canvas-cursor-pointer canvas {
+  cursor: pointer !important;
+}
+
+.canvas-zoom-control {
+  position: absolute;
+  left: var(--workbench-left);
+  right: auto;
+  bottom: 14px;
+  z-index: 132;
+  display: inline-grid;
+  grid-template-columns: 30px 54px 30px 42px;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--glass-pane-bg) 94%, var(--surface-2) 6%);
+  box-shadow: var(--glass-pane-highlight), var(--shadow-sm);
+  backdrop-filter: var(--glass-pane-blur);
+  -webkit-backdrop-filter: var(--glass-pane-blur);
+  cursor: default;
+}
+
+.canvas-zoom-control button {
+  min-width: 0;
+  min-height: 28px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: 800 11px/1 var(--font-display);
+}
+
+.canvas-zoom-control button:hover,
+.canvas-zoom-control button:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-3) 86%);
+  color: var(--text-strong);
+}
+
+.canvas-zoom-value {
+  color: var(--text-strong);
+  font-size: 10px;
+}
+
+.canvas-zoom-fit {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 720px) {
+  .canvas-zoom-control {
+    left: 10px;
+    right: auto;
+    bottom: 10px;
+    grid-template-columns: 28px 50px 28px;
+  }
+
+  .canvas-zoom-fit {
+    display: none;
+  }
+}
+
 .canvas-grid {
   position: relative;
   width: 100%;
@@ -1185,7 +1268,11 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  display: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 1px;
+  min-height: 1px;
   touch-action: none;
 }
 
@@ -1193,8 +1280,17 @@
   display: block;
 }
 
-.canvas-grid.g6-renderer-active .canvas-content {
-  display: none;
+.canvas-grid.g6-renderer-unavailable::after {
+  content: "AntV G6 renderer unavailable";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 4;
+  color: var(--text);
+  background: color-mix(in srgb, var(--canvas-bg) 88%, #000 12%);
+  font: 700 13px/1.4 var(--font-ui);
+  letter-spacing: 0;
 }
 
 .g6-overlay-root {
@@ -2599,8 +2695,9 @@
 }
 
 .edge-label {
-  fill: var(--muted);
-  font-size: 10px;
+  fill: var(--text-strong);
+  font-size: 11px;
+  font-weight: 750;
   transform-box: fill-box;
   transform-origin: center;
   transform: scale(calc(1 / max(var(--viewport-scale, 1), 0.85)));
@@ -2658,11 +2755,12 @@
 }
 
 .edge-label[data-edge-kind] {
-  fill: color-mix(in srgb, var(--text-strong) 80%, #334155 20%);
+  fill: color-mix(in srgb, var(--text-strong) 92%, var(--accent-light) 8%);
   paint-order: stroke;
-  stroke: color-mix(in srgb, var(--canvas-custom-bg, var(--canvas-bg)) 90%, #fff 10%);
-  stroke-width: 4px;
+  stroke: color-mix(in srgb, var(--surface-high) 94%, var(--canvas-custom-bg, var(--canvas-bg)) 6%);
+  stroke-width: 6px;
   stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 .canvas-grid.lod-low .node:not(.node-collapsed-container) .node-body,
@@ -2680,7 +2778,7 @@
 }
 
 .canvas-grid.lod-high .edge-label {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .edge-pin.hover-focus-edge-pin {

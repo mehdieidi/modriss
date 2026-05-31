@@ -1,4 +1,5 @@
 import {state} from '../state.js';
+import {el} from '../dom.js';
 import {nodeSizeForDiagram} from './g6-style.js';
 import {
   clearConnectionPreview,
@@ -24,6 +25,28 @@ function eventClientPoint(event) {
 
 function targetId(event) {
   return event?.target?.id || event?.target?.idOf?.() || "";
+}
+
+function setCanvasCursor(mode) {
+  const classes = [
+    "canvas-cursor-grab",
+    "canvas-cursor-grabbing",
+    "canvas-cursor-pointer"
+  ];
+  const targets = [el.canvasViewport, el.canvasGrid, el.g6EditorHost]
+  .filter(Boolean);
+  targets.forEach((target) => {
+    target.classList.remove(...classes);
+    if (mode) {
+      target.classList.add(`canvas-cursor-${mode}`);
+    }
+  });
+  const cursor = mode === "grabbing" ? "grabbing"
+      : mode === "pointer" ? "pointer" : "grab";
+  el.g6EditorHost?.style.setProperty("cursor", cursor);
+  el.g6EditorHost?.querySelectorAll("canvas").forEach((canvas) => {
+    canvas.style.cursor = cursor;
+  });
 }
 
 function graphCanvasPoint(graph, clientX, clientY) {
@@ -121,7 +144,112 @@ export function bindG6Interactions(editor, callbacks = {}) {
   let dragged = false;
   let linkDrag = null;
   let hoveredNodeId = null;
+  let hoveredInteractive = false;
+  let canvasDragging = false;
+  let canvasPan = null;
+  let canvasPanFrame = 0;
+  let canvasPanDx = 0;
+  let canvasPanDy = 0;
   let lastClickSuppressedNodeId = null;
+
+  setCanvasCursor("grab");
+
+  const flushCanvasPan = () => {
+    canvasPanFrame = 0;
+    const dx = canvasPanDx;
+    const dy = canvasPanDy;
+    canvasPanDx = 0;
+    canvasPanDy = 0;
+    if (!dx && !dy) {
+      return;
+    }
+    state.viewport.x += dx;
+    state.viewport.y += dy;
+    try {
+      const result = graph.translateBy?.([dx, dy], false);
+      result?.then?.(() => graph.draw?.())?.catch?.(() => graph.draw?.());
+      if (!result?.then) {
+        graph.draw?.();
+      }
+    } catch {
+      graph.draw?.();
+    }
+  };
+
+  const queueCanvasPan = (dx, dy) => {
+    canvasPanDx += dx;
+    canvasPanDy += dy;
+    if (!canvasPanFrame) {
+      canvasPanFrame = window.requestAnimationFrame(flushCanvasPan);
+    }
+  };
+
+  const finishCanvasPan = () => {
+    if (!canvasPan) {
+      return;
+    }
+    flushCanvasPan();
+    try {
+      el.g6EditorHost?.releasePointerCapture?.(canvasPan.pointerId);
+    } catch {
+      // Capture may already be released after pointerup outside the host.
+    }
+    canvasPan = null;
+    canvasDragging = false;
+    setCanvasCursor(hoveredInteractive ? "pointer" : "grab");
+  };
+
+  const hostPointerDown = (event) => {
+    if (event.button !== 0 || hoveredInteractive || linkDrag) {
+      return;
+    }
+    if (findNodeAtClientPoint(graph, null, event.clientX, event.clientY)) {
+      return;
+    }
+    canvasPan = {
+      pointerId: event.pointerId,
+      lastX: event.clientX,
+      lastY: event.clientY
+    };
+    canvasDragging = true;
+    setCanvasCursor("grabbing");
+    try {
+      event.currentTarget?.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Pointer capture is a firmness upgrade; panning still works without it.
+    }
+    event.preventDefault();
+  };
+
+  const hostPointerMove = (event) => {
+    if (!canvasPan || event.pointerId !== canvasPan.pointerId) {
+      return;
+    }
+    const dx = event.clientX - canvasPan.lastX;
+    const dy = event.clientY - canvasPan.lastY;
+    canvasPan.lastX = event.clientX;
+    canvasPan.lastY = event.clientY;
+    if (dx || dy) {
+      queueCanvasPan(dx, dy);
+    }
+    event.preventDefault();
+  };
+
+  el.g6EditorHost?.addEventListener("pointerdown", hostPointerDown);
+  el.g6EditorHost?.addEventListener("pointermove", hostPointerMove);
+  window.addEventListener("pointerup", finishCanvasPan);
+  window.addEventListener("pointercancel", finishCanvasPan);
+  editor.disposeInteractions?.();
+  editor.disposeInteractions = () => {
+    if (canvasPanFrame) {
+      window.cancelAnimationFrame(canvasPanFrame);
+      canvasPanFrame = 0;
+    }
+    el.g6EditorHost?.removeEventListener("pointerdown", hostPointerDown);
+    el.g6EditorHost?.removeEventListener("pointermove", hostPointerMove);
+    window.removeEventListener("pointerup", finishCanvasPan);
+    window.removeEventListener("pointercancel", finishCanvasPan);
+  };
 
   const clearLinkDrag = () => {
     if (!linkDrag) {
@@ -156,6 +284,8 @@ export function bindG6Interactions(editor, callbacks = {}) {
       return;
     }
     const id = targetId(event);
+    hoveredNodeId = id || hoveredNodeId;
+    hoveredInteractive = true;
     const point = eventClientPoint(event);
     if (id && isLinkHandleHit(graph, id, point.x, point.y)) {
       const sourceNode = state.nodesById.get(id);
@@ -169,6 +299,10 @@ export function bindG6Interactions(editor, callbacks = {}) {
 
   graph.on("node:pointerover", (event) => {
     hoveredNodeId = targetId(event) || null;
+    hoveredInteractive = true;
+    if (!canvasDragging) {
+      setCanvasCursor("pointer");
+    }
     callbacks.onNodeHover?.(hoveredNodeId);
   });
 
@@ -177,6 +311,10 @@ export function bindG6Interactions(editor, callbacks = {}) {
     if (hoveredNodeId === id) {
       hoveredNodeId = null;
       callbacks.onNodeHover?.(null);
+    }
+    hoveredInteractive = false;
+    if (!canvasDragging) {
+      setCanvasCursor("grab");
     }
   });
 
@@ -236,10 +374,18 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("edge:pointerover", (event) => {
+    hoveredInteractive = true;
+    if (!canvasDragging) {
+      setCanvasCursor("pointer");
+    }
     callbacks.onEdgeHover?.(targetId(event) || null);
   });
 
   graph.on("edge:pointerleave", () => {
+    hoveredInteractive = false;
+    if (!canvasDragging) {
+      setCanvasCursor("grab");
+    }
     callbacks.onEdgeHover?.(null);
   });
 
@@ -257,6 +403,17 @@ export function bindG6Interactions(editor, callbacks = {}) {
     callbacks.onCanvasClick?.(originalEvent(event));
   });
 
+  graph.on("canvas:pointerdown", (event) => {
+    if (eventButton(event) !== 0 || linkDrag) {
+      return;
+    }
+    hoveredInteractive = false;
+  });
+
+  graph.on("canvas:pointerup", () => {
+    finishCanvasPan();
+  });
+
   graph.on("canvas:pointermove", (event) => {
     const point = eventClientPoint(event);
     if (linkDrag) {
@@ -266,6 +423,9 @@ export function bindG6Interactions(editor, callbacks = {}) {
           point.x, point.y);
       callbacks.onConnectionPointerMove?.(linkDrag.sourceId, hoveredNodeId);
       return;
+    }
+    if (!canvasDragging && !hoveredInteractive) {
+      setCanvasCursor("grab");
     }
     callbacks.onCanvasPointerMove?.(point.x, point.y);
   });

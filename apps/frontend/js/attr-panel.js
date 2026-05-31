@@ -140,12 +140,6 @@ export function openAttributePanel(nodeId) {
   state.selectedBoundedContextName = null;
   state.selectedConnectionId = null;
 
-  el.nodeLayer.querySelectorAll(".node").forEach((n) => {
-    n.classList.toggle("selected", n.dataset.nodeId === nodeId);
-  });
-  el.edgeLayer.querySelectorAll(".edge-path, .edge-label").forEach(
-      (edge) => edge.classList.remove("selected"));
-
   el.attrPanelType.textContent = node.type;
   el.attrPanelTitle.textContent = node.label;
   if (el.attrPanelApplyBtn) {
@@ -178,10 +172,6 @@ export function closeAttributePanel() {
   state.selectedNodeIds = new Set();
   state.selectedBoundedContextName = null;
   state.selectedConnectionId = null;
-  el.nodeLayer.querySelectorAll(".node").forEach(
-      (n) => n.classList.remove("selected"));
-  el.edgeLayer.querySelectorAll(".edge-path, .edge-label").forEach(
-      (edge) => edge.classList.remove("selected"));
   el.attributePanel.classList.add("hidden");
   el.workspace.classList.remove("attr-open");
   el.workspace.classList.remove("mobile-right-open");
@@ -201,11 +191,6 @@ export function openConnectionPanel(connectionId) {
   state.selectedNodeIds = new Set();
   state.selectedBoundedContextName = null;
   state.selectedConnectionId = connectionId;
-  el.nodeLayer.querySelectorAll(".node").forEach(
-      (n) => n.classList.remove("selected"));
-  el.edgeLayer.querySelectorAll(".edge-path, .edge-label").forEach((edge) => {
-    edge.classList.toggle("selected", edge.dataset.edgeId === connectionId);
-  });
 
   const source = state.nodesById.get(connection.sourceId);
   const target = state.nodesById.get(connection.targetId);
@@ -379,10 +364,6 @@ export function openBoundedContextPanel(contextName) {
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
   state.selectedBoundedContextName = contextName;
-  el.nodeLayer.querySelectorAll(".node").forEach(
-      (n) => n.classList.remove("selected"));
-  el.edgeLayer.querySelectorAll(".edge-path, .edge-label").forEach(
-      (edge) => edge.classList.remove("selected"));
   el.attrPanelType.textContent = "BoundedContext";
   el.attrPanelTitle.textContent = contextName;
   if (el.attrPanelApplyBtn) {
@@ -1844,11 +1825,6 @@ export function applyAttributePanel() {
   }
 
   syncDiagramRenderer({workbench: true});
-  const nodeEl = el.nodeLayer.querySelector(
-      `[data-node-id="${state.selectedNodeId}"]`);
-  if (nodeEl) {
-    nodeEl.classList.add("selected");
-  }
 
   el.attrPanelTitle.textContent = node.label;
   scheduleAutoSave();

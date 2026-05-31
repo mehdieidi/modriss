@@ -379,7 +379,11 @@ export const CIM_NESTED_CONTAINMENTS = Object.freeze({
     {feature: "rules", types: ["DecisionRule"]}
   ],
   TransformationProfile: [
-    {feature: "requiredDecisions", types: ["ManualDecision"]}
+    {
+      feature: "requiredDecisions",
+      types: ["ManualDecision"],
+      referenceOnly: true
+    }
   ],
   TraceModel: [
     {feature: "links", types: ["TraceLink"], relationshipOnly: true}
@@ -654,6 +658,8 @@ function nestedContainmentsForType(elementType) {
       ...(entry.types || [])])];
     existing.relationshipOnly = Boolean(
         existing.relationshipOnly || entry.relationshipOnly);
+    existing.referenceOnly = Boolean(
+        existing.referenceOnly || entry.referenceOnly);
   });
   return [...byFeature.values()];
 }
@@ -739,6 +745,10 @@ function graphElementOwner(graph, elementId) {
 
 function attachNestedContainments(copy, elementId, elementType, graph) {
   nestedContainmentsForType(elementType).forEach((entry) => {
+    if (entry.referenceOnly) {
+      copy[entry.feature] = refIds(copy[entry.feature]);
+      return;
+    }
     copy[entry.feature] = nestedContainmentCopies(elementId, elementType,
         graph, entry.feature);
   });
@@ -848,6 +858,9 @@ function collectNestedSemanticElements(parent, result) {
   const containments = nestedContainmentsForType(type);
   containments.forEach((entry) => {
     if (entry.relationshipOnly) {
+      return;
+    }
+    if (entry.referenceOnly) {
       return;
     }
     const values = Array.isArray(parent?.[entry.feature])

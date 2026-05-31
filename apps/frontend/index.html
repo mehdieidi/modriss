@@ -15,6 +15,18 @@
   <link href="/css/artifact.css" rel="stylesheet"/>
   <link href="/css/panels.css" rel="stylesheet"/>
   <link href="/css/project.css" rel="stylesheet"/>
+  <script>
+    window.modlessFrontendBoot = {
+      renderer: "antv-g6",
+      legacyFallback: false,
+      build: "g6-wired-2026-05-31-02"
+    };
+  </script>
+  <script src="/vendor/antv/g6.min.js?v=g6wired-20260531c"></script>
+  <script>
+    window.modlessFrontendBoot.g6GlobalAfterScript = Boolean(window.G6?.Graph);
+    window.modlessFrontendBoot.g6Version = window.G6?.version || "";
+  </script>
   <script
       src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js"></script>
 </head>
@@ -347,10 +359,22 @@
           <div class="canvas-viewport" id="canvasViewport">
             <div class="canvas-grid" id="canvasGrid">
               <div class="g6-editor-host" id="g6EditorHost"></div>
-              <div class="canvas-content" id="canvasContent">
-                <svg class="edge-layer" id="edgeLayer"></svg>
-                <div class="node-layer" id="nodeLayer"></div>
-              </div>
+            </div>
+            <div aria-label="Canvas zoom controls" class="canvas-zoom-control"
+                 id="canvasZoomControl">
+              <button aria-label="Zoom out" class="canvas-zoom-btn"
+                      id="canvasZoomOutBtn" title="Zoom out" type="button">-
+              </button>
+              <button class="canvas-zoom-value" id="canvasZoomResetBtn"
+                      title="Reset zoom" type="button">
+                <span id="canvasZoomValue">100%</span>
+              </button>
+              <button aria-label="Zoom in" class="canvas-zoom-btn"
+                      id="canvasZoomInBtn" title="Zoom in" type="button">+
+              </button>
+              <button class="canvas-zoom-fit" id="canvasZoomFitBtn"
+                      title="Fit to canvas" type="button">Fit
+              </button>
             </div>
             <div class="edge-kind-picker hidden" id="edgeKindPicker">
               <label class="edge-kind-picker-label" for="edgeKindSelect">Relationship</label>
@@ -760,8 +784,7 @@
 
 </div>
 
-<script src="/backend-config.js"></script>
-<script src="/vendor/antv/g6.min.js"></script>
-<script src="/js/main.js" type="module"></script>
+<script src="/backend-config.js?v=g6wired-20260531c"></script>
+<script src="/js/main.js?v=g6wired-20260531c" type="module"></script>
 </body>
 </html>

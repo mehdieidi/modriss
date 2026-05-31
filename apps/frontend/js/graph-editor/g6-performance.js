@@ -1,5 +1,6 @@
 let drawFrame = 0;
 let pendingRender = false;
+let renderAgain = false;
 
 export function detailLevelForZoom(zoom = 1) {
   if (zoom < 0.35) {
@@ -124,18 +125,40 @@ export function scheduleGraphDraw(graph) {
   }
   drawFrame = window.requestAnimationFrame(() => {
     drawFrame = 0;
-    graph.draw?.();
+    const result = graph.draw?.();
+    result?.catch?.((error) => {
+      console.error("G6 draw failed", error);
+      window.modlessG6State = {
+        ...(window.modlessG6State || {}),
+        lastError: error.message || String(error)
+      };
+    });
   });
 }
 
 export function scheduleGraphRender(graph) {
-  if (!graph || pendingRender) {
+  if (!graph) {
+    return;
+  }
+  if (pendingRender) {
+    renderAgain = true;
     return;
   }
   pendingRender = true;
   window.requestAnimationFrame(() => {
     pendingRender = false;
-    graph.render?.();
+    const result = graph.render?.();
+    result?.catch?.((error) => {
+      console.error("G6 render failed", error);
+      window.modlessG6State = {
+        ...(window.modlessG6State || {}),
+        lastError: error.message || String(error)
+      };
+    });
+    if (renderAgain) {
+      renderAgain = false;
+      scheduleGraphRender(graph);
+    }
   });
 }
 
@@ -145,4 +168,5 @@ export function cancelScheduledDraw() {
     drawFrame = 0;
   }
   pendingRender = false;
+  renderAgain = false;
 }
