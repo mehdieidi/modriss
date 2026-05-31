@@ -2,6 +2,7 @@ import {apiUrl, MODEL_TYPES} from './config.js';
 import {state} from './state.js';
 import {el} from './dom.js';
 import {api, apiAuthHeaders} from './api.js';
+import {flushCurrentModelPatch} from './model-patch.js';
 import {setBusy, setError, setStatus} from './status.js';
 import {emptyDiagram} from './utils.js';
 import {saveStoredEdgeLayout, serializeModel, toDiagram} from './diagram.js';
@@ -428,14 +429,20 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
       setBusy("Saving…");
     }
     if (state.modelId) {
-      const updated = await api(
-          `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`, {
-            method: "PUT",
-            body: JSON.stringify(payload)
-          });
+      let updated = await flushCurrentModelPatch({
+        name: payload.name,
+        rethrow: true
+      });
+      if (!updated) {
+        updated = await api(
+            `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`, {
+              method: "PUT",
+              body: JSON.stringify(payload)
+            });
+      }
       state.baseModel = stripServerTransportFields(structuredClone(
           payload.model));
-      setActiveModelName(updated.name || payload.name);
+      setActiveModelName(updated?.name || payload.name);
       if (!quiet) {
         setStatus(`Model saved`);
       }
@@ -1006,18 +1013,30 @@ export async function validateCurrentModel() {
     setStatus("Validation is available for CIM, PIM, and PSM.");
     return;
   }
-  const payload = {
-    name: getActiveModelName(),
-    model: serializeModel()
-  };
   try {
     setBusy("Validating…");
     setValidationInProgress(true);
-    const result = await api(
-        `/${MODEL_TYPES[state.activeType].apiType}/validate`, {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
+    let result;
+    if (state.modelId) {
+      const patched = await flushCurrentModelPatch({
+        name: getActiveModelName(),
+        rethrow: true
+      });
+      if (!patched) {
+        await saveCurrentModel({quiet: true, rethrow: true});
+      }
+      result = await api(
+          `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/validate`,
+          {method: "POST"});
+    } else {
+      result = await api(`/${MODEL_TYPES[state.activeType].apiType}/validate`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: getActiveModelName(),
+          model: serializeModel()
+        })
+      });
+    }
     const backendIssues = Array.isArray(result?.issues) ? result.issues : [];
     if (backendIssues.length) {
       const mergedIssues = mergeIssuesWithManualGuidance(backendIssues);
@@ -1189,19 +1208,30 @@ export async function exportActiveModel(format = "json") {
     return;
   }
   const normalizedFormat = String(format || "json").toLowerCase();
-  const response = await fetch(
-      apiUrl(`/${MODEL_TYPES[state.activeType].apiType}/export`), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...apiAuthHeaders()
-        },
-        body: JSON.stringify({
-          name: getActiveModelName(),
-          model: serializeModel(),
-          format: normalizedFormat
-        })
-      });
+  if (state.modelId) {
+    const patched = await flushCurrentModelPatch({
+      name: getActiveModelName(),
+      rethrow: true
+    });
+    if (!patched) {
+      await saveCurrentModel({quiet: true, rethrow: true});
+    }
+  }
+  const exportPath = state.modelId
+      ? `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/export`
+      : `/${MODEL_TYPES[state.activeType].apiType}/export`;
+  const response = await fetch(apiUrl(exportPath), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...apiAuthHeaders()
+    },
+    body: JSON.stringify({
+      name: getActiveModelName(),
+      model: state.modelId ? null : serializeModel(),
+      format: normalizedFormat
+    })
+  });
   if (!response.ok) {
     let message = `Export failed (${response.status})`;
     try {
@@ -1477,5 +1507,3 @@ if (!locateIssueTargetBound) {
     }
   });
 }
-
-

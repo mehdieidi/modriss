@@ -117,6 +117,51 @@ class ModelServiceXmiImportTest {
     }
 
     @Test
+    void patchesStoredModelWithoutReplacingWholeJson() throws Exception {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        UserRecord user = authService.register("patch-owner@example.com", "password123",
+                "Owner").user();
+        ProjectRecord project = projectService.create(user, "Patch Project", "");
+
+        ObjectNode model = store.objectMapper().createObjectNode();
+        model.put("eClass", "CIMModel");
+        model.put("id", "cim-root");
+        model.put("name", "Before");
+        ObjectNode diagram = model.putObject("diagram");
+        var elements = diagram.putArray("elements");
+        ObjectNode element = elements.addObject();
+        element.put("eClass", "BusinessGoal");
+        element.put("id", "goal-1");
+        element.put("name", "Before goal");
+        ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "patch", model);
+
+        service.patch(user, ModelLevel.CIM, created.id(), "patch",
+                java.util.List.of(
+                        new ModelService.ModelPatchOperation("replace",
+                                "/diagram/elements/0/name",
+                                store.objectMapper().getNodeFactory().textNode("After goal")),
+                        new ModelService.ModelPatchOperation("add",
+                                "/diagram/elements/-",
+                                store.objectMapper().readTree(
+                                        """
+                                                {"eClass":"Actor","id":"actor-1","name":"Actor"}
+                                                """))));
+
+        ModelRecord updated = service.get(user, ModelLevel.CIM, created.id());
+        assertEquals("After goal",
+                updated.modelJson().path("diagram").path("elements").path(0).path("name")
+                        .asText());
+        assertEquals("Actor",
+                updated.modelJson().path("diagram").path("elements").path(1).path("name")
+                        .asText());
+        assertEquals("CIM", updated.modelJson().path("modelLevel").asText());
+    }
+
+    @Test
     void importsPsmRelationshipViewsAsFilterableEdges() {
         JsonFileStore store = new JsonFileStore(tempDir);
         store.initialize();

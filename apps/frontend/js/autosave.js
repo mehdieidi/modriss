@@ -2,6 +2,7 @@ import {state} from './state.js';
 import {saveCurrentModel} from './model-ops.js';
 import {updateProjectActiveModel} from './project.js';
 import {publishDiagramUpdate} from './collaboration.js';
+import {flushCurrentModelPatch} from './model-patch.js';
 
 const DEFAULT_AUTOSAVE_DELAY_MS = 700;
 let autoSaveInFlight = null;
@@ -67,7 +68,17 @@ async function performAutoSave() {
   }
   try {
     const previousModelId = state.modelId;
-    await saveCurrentModel({quiet: true});
+    if (state.modelId) {
+      const patched = await flushCurrentModelPatch({
+        name: state.tabs[state.activeType]?.modelName
+            || `${state.activeType}-model`
+      });
+      if (!patched) {
+        await saveCurrentModel({quiet: true});
+      }
+    } else {
+      await saveCurrentModel({quiet: true});
+    }
     await updateProjectActiveModel(state.activeType, state.modelId);
     if (state.modelId && state.modelId !== previousModelId) {
       publishDiagramUpdate({immediate: true});

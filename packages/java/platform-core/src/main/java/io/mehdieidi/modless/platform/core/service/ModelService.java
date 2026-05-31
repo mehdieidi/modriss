@@ -3,6 +3,7 @@ package io.mehdieidi.modless.platform.core.service;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.mde.validation.EpsilonEvlValidator;
 import io.mehdieidi.modless.mde.validation.EvlConstraintKind;
@@ -133,6 +134,31 @@ public final class ModelService {
         return clientRecord(updated);
     }
 
+    public ModelRecord patch(UserRecord user, ModelLevel level, String id, String name,
+            List<ModelPatchOperation> operations) {
+        ModelRecord existing = get(user, level, id);
+        ProjectRecord project = projectService.get(user, existing.projectId());
+        projectService.requireEditor(project, user.id());
+        if (operations == null || operations.isEmpty()) {
+            return clientRecord(existing);
+        }
+        ObjectNode patchedModel = existing.modelJson() instanceof ObjectNode objectNode
+                ? objectNode.deepCopy()
+                : store.objectMapper().createObjectNode();
+        for (ModelPatchOperation operation : operations) {
+            applyPatchOperation(patchedModel, operation);
+        }
+        JsonNode normalizedModel = normalizeModel(name == null ? existing.name() : name, level,
+                patchedModel);
+        String sourceXmiToken = removeSourceXmiToken(normalizedModel);
+        ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
+                requireName(name == null ? existing.name() : name, level), normalizedModel,
+                existing.createdAt(), Instant.now());
+        store.write(modelPath(existing.projectId(), level, id), updated);
+        consumeSourceXmiToken(sourceXmiToken, updated);
+        return clientRecord(updated);
+    }
+
     public void delete(UserRecord user, ModelLevel level, String id) {
         ModelRecord model = get(user, level, id);
         ProjectRecord project = projectService.get(user, model.projectId());
@@ -156,6 +182,11 @@ public final class ModelService {
         }
         boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
         return new ValidationResult(valid, issues);
+    }
+
+    public ValidationResult validate(UserRecord user, ModelLevel level, String id) {
+        ModelRecord model = get(user, level, id);
+        return validate(level, model.modelJson());
     }
 
     private ValidationResult validateImportedXmi(ModelLevel level, JsonNode modelJson,
@@ -601,6 +632,11 @@ public final class ModelService {
         }
     }
 
+    public byte[] exportModel(UserRecord user, ModelLevel level, String id, String format) {
+        ModelRecord model = get(user, level, id);
+        return exportModel(model.modelJson(), format);
+    }
+
     public ModelRecord find(ModelLevel level, String id) {
         Path projects = store.resolve(Path.of("projects"));
         try (Stream<Path> projectDirs = Files.list(projects)) {
@@ -827,6 +863,126 @@ public final class ModelService {
         return name == null || name.trim().isEmpty() ? level.apiName() + "-model" : name.trim();
     }
 
+    private void applyPatchOperation(ObjectNode root, ModelPatchOperation operation) {
+        if (operation == null || operation.op() == null || operation.path() == null) {
+            throw new PlatformException(400, "Patch operations require op and path.");
+        }
+        String op = operation.op().trim().toLowerCase();
+        String path = operation.path().trim();
+        if (!path.startsWith("/")) {
+            throw new PlatformException(400, "Patch paths must be JSON Pointer paths.");
+        }
+        switch (op) {
+            case "add" -> addPatchValue(root, path, operation.value());
+            case "replace" -> replacePatchValue(root, path, operation.value());
+            case "remove" -> removePatchValue(root, path);
+            default -> throw new PlatformException(400,
+                    "Unsupported patch operation: " + operation.op());
+        }
+    }
+
+    private void addPatchValue(ObjectNode root, String path, JsonNode value) {
+        JsonNode parent = patchParent(root, path);
+        String key = lastPointerSegment(path);
+        JsonNode copy = value == null ? store.objectMapper().nullNode() : value.deepCopy();
+        if (parent instanceof ObjectNode objectNode) {
+            objectNode.set(key, copy);
+            return;
+        }
+        if (parent instanceof ArrayNode arrayNode) {
+            if ("-".equals(key)) {
+                arrayNode.add(copy);
+                return;
+            }
+            int index = arrayIndex(key, arrayNode.size());
+            arrayNode.insert(index, copy);
+            return;
+        }
+        throw new PlatformException(400, "Patch parent is not writable.");
+    }
+
+    private void replacePatchValue(ObjectNode root, String path, JsonNode value) {
+        JsonNode parent = patchParent(root, path);
+        String key = lastPointerSegment(path);
+        JsonNode copy = value == null ? store.objectMapper().nullNode() : value.deepCopy();
+        if (parent instanceof ObjectNode objectNode) {
+            if (!objectNode.has(key)) {
+                throw new PlatformException(400, "Patch replace path does not exist: " + path);
+            }
+            objectNode.set(key, copy);
+            return;
+        }
+        if (parent instanceof ArrayNode arrayNode) {
+            int index = arrayIndex(key, arrayNode.size() - 1);
+            arrayNode.set(index, copy);
+            return;
+        }
+        throw new PlatformException(400, "Patch parent is not writable.");
+    }
+
+    private void removePatchValue(ObjectNode root, String path) {
+        JsonNode parent = patchParent(root, path);
+        String key = lastPointerSegment(path);
+        if (parent instanceof ObjectNode objectNode) {
+            objectNode.remove(key);
+            return;
+        }
+        if (parent instanceof ArrayNode arrayNode) {
+            arrayNode.remove(arrayIndex(key, arrayNode.size() - 1));
+            return;
+        }
+        throw new PlatformException(400, "Patch parent is not writable.");
+    }
+
+    private JsonNode patchParent(ObjectNode root, String path) {
+        String[] segments = pointerSegments(path);
+        if (segments.length == 0) {
+            throw new PlatformException(400, "Root model replacement is not supported by patch.");
+        }
+        JsonNode current = root;
+        for (int i = 0; i < segments.length - 1; i++) {
+            if (current instanceof ObjectNode objectNode) {
+                current = objectNode.get(segments[i]);
+            } else if (current instanceof ArrayNode arrayNode) {
+                current = arrayNode.get(arrayIndex(segments[i], arrayNode.size() - 1));
+            } else {
+                current = null;
+            }
+            if (current == null || current.isMissingNode() || current.isNull()) {
+                throw new PlatformException(400, "Patch parent path does not exist: " + path);
+            }
+        }
+        return current;
+    }
+
+    private String[] pointerSegments(String path) {
+        if ("/".equals(path)) {
+            return new String[]{""};
+        }
+        String[] raw = path.substring(1).split("/", -1);
+        for (int i = 0; i < raw.length; i++) {
+            raw[i] = raw[i].replace("~1", "/").replace("~0", "~");
+        }
+        return raw;
+    }
+
+    private String lastPointerSegment(String path) {
+        String[] segments = pointerSegments(path);
+        return segments[segments.length - 1];
+    }
+
+    private int arrayIndex(String value, int maxInclusive) {
+        try {
+            int index = Integer.parseInt(value);
+            if (index < 0 || index > maxInclusive) {
+                throw new PlatformException(400, "Patch array index is out of bounds.");
+            }
+            return index;
+        } catch (NumberFormatException ex) {
+            throw new PlatformException(400, "Patch array index must be numeric.");
+        }
+    }
+
     public record ValidationResult(boolean valid, List<ValidationIssue> issues) {
 
     }
@@ -843,6 +999,10 @@ public final class ModelService {
     }
 
     public record ImportResult(String name, JsonNode modelJson, List<ValidationIssue> issues) {
+
+    }
+
+    public record ModelPatchOperation(String op, String path, JsonNode value) {
 
     }
 

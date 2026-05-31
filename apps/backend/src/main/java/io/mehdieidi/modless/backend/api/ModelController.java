@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -67,6 +68,17 @@ public class ModelController {
         return models.summary(updated);
     }
 
+    @PatchMapping("/api/{level:cim|pim|psm}/{id}")
+    ModelService.ModelSummary patch(@RequestHeader("X-Auth-Token") String token,
+            @PathVariable("level") String level,
+            @PathVariable("id") String id,
+            @RequestBody PatchModelRequest request) {
+        ModelRecord updated = models.patch(auth.user(token), ModelLevel.fromApiName(level), id,
+                request == null ? null : request.name(),
+                request == null ? List.of() : request.operations());
+        return models.summary(updated);
+    }
+
     @DeleteMapping("/api/{level:cim|pim|psm}/{id}")
     void delete(@RequestHeader("X-Auth-Token") String token, @PathVariable("level") String level,
             @PathVariable("id") String id) {
@@ -79,11 +91,35 @@ public class ModelController {
         return models.validate(ModelLevel.fromApiName(level), request.model());
     }
 
+    @PostMapping("/api/{level:cim|pim|psm}/{id}/validate")
+    ModelService.ValidationResult validateStored(@RequestHeader("X-Auth-Token") String token,
+            @PathVariable("level") String level,
+            @PathVariable("id") String id) {
+        return models.validate(auth.user(token), ModelLevel.fromApiName(level), id);
+    }
+
     @PostMapping("/api/{level:cim|pim|psm}/export")
     ResponseEntity<byte[]> export(@PathVariable("level") String level,
             @RequestBody ExportRequest request) {
         byte[] bytes = models.exportModel(request.model(), request.format());
         String fileName = (request.name() == null ? level + "-model" : request.name()) + ".json";
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(fileName, StandardCharsets.UTF_8)
+                                .build().toString())
+                .body(bytes);
+    }
+
+    @PostMapping("/api/{level:cim|pim|psm}/{id}/export")
+    ResponseEntity<byte[]> exportStored(@RequestHeader("X-Auth-Token") String token,
+            @PathVariable("level") String level,
+            @PathVariable("id") String id,
+            @RequestBody ExportRequest request) {
+        byte[] bytes = models.exportModel(auth.user(token), ModelLevel.fromApiName(level), id,
+                request == null ? "json" : request.format());
+        String fileName = ((request == null || request.name() == null) ? level + "-model"
+                : request.name()) + ".json";
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -101,6 +137,11 @@ public class ModelController {
     }
 
     public record SaveModelRequest(@NotBlank String name, JsonNode model, String projectId) {
+
+    }
+
+    public record PatchModelRequest(String name,
+                                    List<ModelService.ModelPatchOperation> operations) {
 
     }
 
