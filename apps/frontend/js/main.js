@@ -12,13 +12,6 @@ import {
   centerViewportOnDiagram,
   getModelingRendererDebug,
   initializeModelingRenderer,
-  onCanvasMouseDown,
-  onCanvasTouchStart,
-  onCanvasWheel,
-  onGlobalMouseMove,
-  onGlobalMouseUp,
-  onGlobalTouchEnd,
-  onGlobalTouchMove,
   renderDiagram,
   renderPalette,
   resetCanvasView,
@@ -765,12 +758,6 @@ function bindEvents() {
   });
 
   // Canvas interaction
-  el.canvasViewport?.addEventListener("mousedown", onCanvasMouseDown);
-  window.addEventListener("mousemove", onGlobalMouseMove);
-  window.addEventListener("mouseup", onGlobalMouseUp);
-  el.canvasViewport?.addEventListener("wheel", onCanvasWheel, {passive: false});
-  el.canvasViewport?.addEventListener("touchstart", onCanvasTouchStart,
-      {passive: false});
   el.canvasZoomControl?.addEventListener("mousedown",
       (event) => event.stopPropagation());
   el.canvasZoomControl?.addEventListener("pointerdown",
@@ -782,9 +769,6 @@ function bindEvents() {
   el.canvasZoomResetBtn?.addEventListener("click", resetCanvasView);
   el.canvasZoomFitBtn?.addEventListener("click", () =>
       centerViewportOnDiagram({fit: true}));
-  window.addEventListener("touchmove", onGlobalTouchMove, {passive: false});
-  window.addEventListener("touchend", onGlobalTouchEnd, {passive: false});
-  window.addEventListener("touchcancel", onGlobalTouchEnd, {passive: false});
 
   const collapseChatInput = () => {
     el.chatInputRow?.classList.remove("chat-input-expanded");

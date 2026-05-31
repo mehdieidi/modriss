@@ -175,7 +175,6 @@ export function installG6LargeGraphDevHelper({
     state.viewport.x = 0;
     state.viewport.y = 0;
     state.viewport.scale = 0.55;
-    state.useG6Renderer = true;
     renderDiagram();
     renderWorkbench();
     setStatus(

@@ -44,9 +44,6 @@ export const state = {
   },
   visibleGraph: emptyDiagram("cim"),
   modelingStrictness: "methodology",
-  // G6 is the default graph renderer. The semantic model in state.diagram stays
-  // authoritative; G6 is only the canvas projection.
-  useG6Renderer: true,
   modelingToolsMinimized: false,
   // Per-tab persisted state (save/restore on tab switch)
   tabs: {

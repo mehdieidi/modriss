@@ -1,4 +1,4 @@
-import {MODEL_TYPES, TOUCH_MOVE_THRESHOLD} from './config.js';
+import {MODEL_TYPES} from './config.js';
 import {state} from './state.js';
 import {el} from './dom.js';
 import {api} from './api.js';
@@ -86,26 +86,11 @@ const CIM_NODE_W = 176;
 const CIM_NODE_H = 96;
 const DEFAULT_BOUNDED_CONTEXT_NAME = "Core";
 const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
-const EDGE_SIDE_CORNER_PADDING = 14;
-const nodeElementsById = new Map();
-const edgeElementsById = new Map();
-const edgeGeometryCache = new Map(); // Cache: edgeId -> {d, x, y, selected}
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
-let dragSyncFrame = 0;
 const connectionsById = new Map();
-let suppressNextNodeClickId = null;
-let edgeHoverHandleEl = null;
-let edgeHoverHandleState = null;
-let edgeHoverHideTimer = 0;
 let hoveredEdgeId = null;
-let edgePinDrag = null;
 let inlineLabelEditStartLabel = "";
 let inlineLabelEditUndoSnapshot = null;
-let g6MountFailed = false;
-
-function useG6Renderer() {
-  return state.useG6Renderer !== false;
-}
 
 function workbenchSurfaces() {
   renderCimWorkbenchSurface();
@@ -115,8 +100,6 @@ function workbenchSurfaces() {
 
 function syncCanvasIndexesFromState() {
   state.nodesById.clear();
-  nodeElementsById.clear();
-  edgeElementsById.clear();
   edgeIdsByNodeId.clear();
   connectionsById.clear();
   state.diagram.nodes.forEach((node) => {
@@ -1333,12 +1316,6 @@ function normalizeEdgeAnchor(anchor) {
   return {side, offsetY};
 }
 
-function clampEdgeAnchorOffset(offsetY, nodeH) {
-  const min = EDGE_SIDE_CORNER_PADDING;
-  const max = Math.max(min, nodeH - EDGE_SIDE_CORNER_PADDING);
-  return Math.max(min, Math.min(max, Math.round(Number(offsetY) || 0)));
-}
-
 export function edgePresentationFromLayout(layout, sourceNode, targetNode) {
   const pinPoints = Array.isArray(layout?.bendPoints)
       ? layout.bendPoints.map(normalizePinPoint).filter(Boolean)
@@ -1397,250 +1374,6 @@ function clearTransientEdgeLayouts() {
     }
     delete edge.layout;
   });
-}
-
-function nodeCenter(node, nodeW, nodeH) {
-  return {
-    x: node.x + nodeW / 2,
-    y: node.y + nodeH / 2
-  };
-}
-
-function pointOnNodeBoundary(node, nodeW, nodeH, toward, anchor = null) {
-  const center = nodeCenter(node, nodeW, nodeH);
-  const normalizedAnchor = normalizeEdgeAnchor(anchor);
-  if (normalizedAnchor) {
-    return {
-      x: normalizedAnchor.side === "right" ? node.x + nodeW : node.x,
-      y: node.y + clampEdgeAnchorOffset(normalizedAnchor.offsetY, nodeH)
-    };
-  }
-  const towardX = Number(toward?.x);
-  const towardY = Number(toward?.y);
-  const useRightSide = !Number.isFinite(towardX) || towardX >= center.x;
-  const clampedY = Math.max(node.y + EDGE_SIDE_CORNER_PADDING,
-      Math.min(node.y + nodeH - EDGE_SIDE_CORNER_PADDING,
-          Number.isFinite(towardY) ? towardY : center.y));
-  return {
-    x: useRightSide ? node.x + nodeW : node.x,
-    y: clampedY
-  };
-}
-
-function pinPointsForEdge(edge) {
-  return Array.isArray(edge?.pinPoints)
-      ? edge.pinPoints.map(normalizePinPoint).filter(Boolean)
-      : [];
-}
-
-function edgeObstacleRect(node, nodeW, nodeH, padding = 18) {
-  return {
-    minX: node.x - padding,
-    minY: node.y - padding,
-    maxX: node.x + nodeW + padding,
-    maxY: node.y + nodeH + padding
-  };
-}
-
-function axisSegmentIntersectsRect(start, end, rect) {
-  if (start.x === end.x) {
-    const x = start.x;
-    const minY = Math.min(start.y, end.y);
-    const maxY = Math.max(start.y, end.y);
-    return x > rect.minX && x < rect.maxX && maxY > rect.minY
-        && minY < rect.maxY;
-  }
-  if (start.y === end.y) {
-    const y = start.y;
-    const minX = Math.min(start.x, end.x);
-    const maxX = Math.max(start.x, end.x);
-    return y > rect.minY && y < rect.maxY && maxX > rect.minX
-        && minX < rect.maxX;
-  }
-  return false;
-}
-
-function compressPolyline(points) {
-  const compact = [];
-  points.forEach((point) => {
-    const normalized = normalizePinPoint(point);
-    if (!normalized) {
-      return;
-    }
-    const previous = compact[compact.length - 1];
-    if (previous && previous.x === normalized.x && previous.y
-        === normalized.y) {
-      return;
-    }
-    compact.push(normalized);
-  });
-  for (let index = 1; index < compact.length - 1;) {
-    const prev = compact[index - 1];
-    const current = compact[index];
-    const next = compact[index + 1];
-    if ((prev.x === current.x && current.x === next.x)
-        || (prev.y === current.y && current.y === next.y)) {
-      compact.splice(index, 1);
-      continue;
-    }
-    index += 1;
-  }
-  return compact;
-}
-
-function defaultOrthogonalPoints(edge, source, target, nodeW, nodeH,
-    startPoint, endPoint) {
-  const sourceSide = normalizeEdgeAnchor(edge.sourceAnchor)?.side
-      || (startPoint.x >= source.x + nodeW / 2 ? "right" : "left");
-  const targetSide = normalizeEdgeAnchor(edge.targetAnchor)?.side
-      || (endPoint.x >= target.x + nodeW / 2 ? "right" : "left");
-  const stub = 34;
-  const startStubX = startPoint.x + (sourceSide === "right" ? stub : -stub);
-  const endStubX = endPoint.x + (targetSide === "right" ? stub : -stub);
-  const midpointX = Math.round((startStubX + endStubX) / 2);
-  const primaryCandidates = [];
-  if (sourceSide === "right" && targetSide === "left") {
-    primaryCandidates.push(midpointX, Math.max(startStubX, endStubX) + 42);
-  } else if (sourceSide === "left" && targetSide === "right") {
-    primaryCandidates.push(midpointX, Math.min(startStubX, endStubX) - 42);
-  } else if (sourceSide === "right") {
-    primaryCandidates.push(Math.max(startStubX, endStubX) + 68, midpointX);
-  } else {
-    primaryCandidates.push(Math.min(startStubX, endStubX) - 68, midpointX);
-  }
-  const fallbackDistance = 108;
-  primaryCandidates.push(startStubX + (sourceSide === "right"
-      ? fallbackDistance : -fallbackDistance));
-  primaryCandidates.push(endStubX + (targetSide === "right"
-      ? fallbackDistance : -fallbackDistance));
-
-  const obstacleRects = state.diagram.nodes.filter((node) =>
-      node.id !== source.id && node.id !== target.id).map((node) =>
-      edgeObstacleRect(node, nodeW, nodeH));
-  const uniqueCandidates = [...new Set(primaryCandidates.map((value) =>
-      Math.round(value)))];
-  let trunkX = uniqueCandidates[0] || midpointX;
-  candidateLoop:
-      for (const candidate of uniqueCandidates) {
-        const segments = [
-          [{x: startPoint.x, y: startPoint.y},
-            {x: startStubX, y: startPoint.y}],
-          [{x: startStubX, y: startPoint.y}, {x: candidate, y: startPoint.y}],
-          [{x: candidate, y: startPoint.y}, {x: candidate, y: endPoint.y}],
-          [{x: candidate, y: endPoint.y}, {x: endStubX, y: endPoint.y}],
-          [{x: endStubX, y: endPoint.y}, {x: endPoint.x, y: endPoint.y}]
-        ];
-        for (const rect of obstacleRects) {
-          if (segments.some(([segmentStart, segmentEnd]) =>
-              axisSegmentIntersectsRect(segmentStart, segmentEnd, rect))) {
-            continue candidateLoop;
-          }
-        }
-        trunkX = candidate;
-        break;
-      }
-
-  return compressPolyline([
-    startPoint,
-    {x: startStubX, y: startPoint.y},
-    {x: trunkX, y: startPoint.y},
-    {x: trunkX, y: endPoint.y},
-    {x: endStubX, y: endPoint.y},
-    endPoint
-  ]);
-}
-
-function polylineMidpoint(points) {
-  if (!Array.isArray(points) || points.length < 2) {
-    const point = points?.[0] || {x: 0, y: 0};
-    return {x: point.x, y: point.y};
-  }
-  const lengths = [];
-  let total = 0;
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const from = points[i];
-    const to = points[i + 1];
-    const length = Math.hypot(to.x - from.x, to.y - from.y);
-    lengths.push(length);
-    total += length;
-  }
-  if (!total) {
-    const point = points[Math.floor(points.length / 2)];
-    return {x: point.x, y: point.y};
-  }
-  let traversed = 0;
-  const targetLength = total / 2;
-  for (let i = 0; i < lengths.length; i += 1) {
-    const segmentLength = lengths[i];
-    if (traversed + segmentLength >= targetLength) {
-      const from = points[i];
-      const to = points[i + 1];
-      const ratio = (targetLength - traversed) / segmentLength;
-      return {
-        x: from.x + (to.x - from.x) * ratio,
-        y: from.y + (to.y - from.y) * ratio
-      };
-    }
-    traversed += segmentLength;
-  }
-  const last = points[points.length - 1];
-  return {x: last.x, y: last.y};
-}
-
-function closestPointOnSegment(point, start, end) {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const lengthSquared = dx * dx + dy * dy;
-  if (!lengthSquared) {
-    return {
-      x: start.x, y: start.y, distance: Math.hypot(point.x - start.x,
-          point.y - start.y), t: 0
-    };
-  }
-  const rawT = ((point.x - start.x) * dx + (point.y - start.y) * dy)
-      / lengthSquared;
-  const t = Math.max(0, Math.min(1, rawT));
-  const x = start.x + dx * t;
-  const y = start.y + dy * t;
-  return {x, y, distance: Math.hypot(point.x - x, point.y - y), t};
-}
-
-function closestPointOnPolyline(points, point) {
-  let best = null;
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const candidate = closestPointOnSegment(point, points[i], points[i + 1]);
-    if (!best || candidate.distance < best.distance) {
-      best = {...candidate, segmentIndex: i};
-    }
-  }
-  return best;
-}
-
-function edgePathGeometry(edge, source, target, nodeW, nodeH) {
-  const sourceCenter = nodeCenter(source, nodeW, nodeH);
-  const targetCenter = nodeCenter(target, nodeW, nodeH);
-  const explicitPins = pinPointsForEdge(edge);
-  const startReference = explicitPins[0] || targetCenter;
-  const endReference = explicitPins[explicitPins.length - 1] || sourceCenter;
-  const startPoint = pointOnNodeBoundary(source, nodeW, nodeH, startReference,
-      edge.sourceAnchor);
-  const endPoint = pointOnNodeBoundary(target, nodeW, nodeH, endReference,
-      edge.targetAnchor);
-  const points = explicitPins.length
-      ? [startPoint, ...explicitPins, endPoint]
-      : defaultOrthogonalPoints(edge, source, target, nodeW, nodeH, startPoint,
-          endPoint);
-  const pathParts = [];
-  points.forEach((point, index) => {
-    pathParts.push(`${index === 0 ? "M" : "L"} ${point.x} ${point.y}`);
-  });
-  const midpoint = polylineMidpoint(points);
-  return {
-    d: pathParts.join(" "),
-    midX: midpoint.x,
-    midY: midpoint.y,
-    points
-  };
 }
 
 function normalizeContextName(value) {
@@ -2119,17 +1852,6 @@ function nodeVisibleInCurrentCanvasMode(node) {
       && nodeVisibleInContainerMode(node);
 }
 
-function setCanvasPanSelectionGuard(active) {
-  document.body?.classList.toggle("canvas-panning", active);
-  el.canvasViewport?.classList.toggle("is-panning", active);
-  if (active) {
-    const selection = window.getSelection?.();
-    if (selection && selection.rangeCount) {
-      selection.removeAllRanges();
-    }
-  }
-}
-
 function clearContextDraftSelection() {
   state.boundedContextDraftNodeIds = new Set();
 }
@@ -2193,22 +1915,17 @@ function ensureG6Canvas() {
     ...(window.modlessG6State || {}),
     ensureCalled: true,
     rendererRequested: "antv-g6",
-    legacyFallback: false,
     activeType: state.activeType,
     stateNodes: Array.isArray(state.diagram?.nodes)
         ? state.diagram.nodes.length : 0,
     stateEdges: Array.isArray(state.diagram?.connections)
         ? state.diagram.connections.length : 0
   };
-  if (!useG6Renderer()) {
-    state.useG6Renderer = true;
-  }
   if (getG6Editor()) {
     return true;
   }
   el.canvasGrid?.classList.add("g6-renderer-active");
   if (!isG6Available()) {
-    g6MountFailed = true;
     el.canvasGrid?.setAttribute("data-renderer", "antv-g6-unavailable");
     window.modlessG6State = {
       ...(window.modlessG6State || {}),
@@ -2269,7 +1986,6 @@ function ensureG6Canvas() {
     return true;
   } catch (error) {
     console.error("G6 editor mount failed", error);
-    g6MountFailed = true;
     el.canvasGrid?.classList.add("g6-renderer-unavailable");
     el.canvasGrid?.setAttribute("data-renderer", "antv-g6-unavailable");
     window.modlessG6State = {
@@ -2300,8 +2016,6 @@ export function getModelingRendererDebug() {
   const canvasGrid = el.canvasGrid;
   return {
     renderer: canvasGrid?.dataset?.renderer || "",
-    legacyFallback: false,
-    useG6Renderer: state.useG6Renderer,
     ensureCalled: Boolean(window.modlessG6State?.ensureCalled),
     g6Available: isG6Available(),
     mounted: Boolean(editor),
@@ -2321,8 +2035,6 @@ export function getModelingRendererDebug() {
     } : null,
     hostChildren: host?.children?.length || 0,
     hasCanvasDescendant: Boolean(host?.querySelector?.("canvas")),
-    nodeLayerNodes: document.querySelectorAll("#nodeLayer .node").length,
-    edgeLayerEdges: document.querySelectorAll("#edgeLayer .edge-path").length,
     lastError: window.modlessG6State?.lastError || "",
     g6State: window.modlessG6State || null
   };
@@ -2530,450 +2242,6 @@ export async function finalizeBoundedContextDraft() {
       : ""} to bounded context "${contextName}"`);
 }
 
-function createBoundedContextBoxLabel(contextName) {
-  const label = document.createElement("div");
-  label.className = "bounded-context-label";
-  const name = document.createElement("span");
-  name.textContent = contextName;
-  const openBtn = document.createElement("button");
-  openBtn.type = "button";
-  openBtn.className = "bounded-context-open-btn";
-  openBtn.textContent = "Open";
-  openBtn.title = `Open ${contextName}`;
-  openBtn.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    openBoundedContextFocus(contextName);
-  });
-  openBtn.addEventListener("mousedown", (event) => event.stopPropagation());
-  openBtn.addEventListener("touchstart", (event) => event.stopPropagation(),
-      {passive: true});
-  label.append(name, openBtn);
-  return label;
-}
-
-function renderBoundedContextBoxes() {
-  if (state.activeType !== "cim"
-      || state.boundedContextViewMode === "overview") {
-    return;
-  }
-  const byContext = new Map();
-  state.diagram.nodes.forEach((node) => {
-    const contextName = contextNameFromNode(node);
-    if (!contextName) {
-      return;
-    }
-    if (state.boundedContextViewMode === "focus"
-        && normalizeContextName(state.activeBoundedContextName)
-        !== contextName) {
-      return;
-    }
-    if (!byContext.has(contextName)) {
-      byContext.set(contextName, []);
-    }
-    byContext.get(contextName).push(node);
-  });
-  const PADDING_X = 22;
-  const PADDING_Y = 26;
-  byContext.forEach((nodes, contextName) => {
-    if (!nodes.length) {
-      return;
-    }
-    const nodeW = getNodeWidth();
-    const nodeH = getNodeHeight();
-    const minX = Math.min(...nodes.map((node) => node.x));
-    const minY = Math.min(...nodes.map((node) => node.y));
-    const maxX = Math.max(...nodes.map((node) => node.x + nodeW));
-    const maxY = Math.max(...nodes.map((node) => node.y + nodeH));
-    const box = document.createElement("div");
-    box.className = "bounded-context-box";
-    box.dataset.contextName = contextName;
-    box.classList.toggle("selected",
-        state.selectedBoundedContextName === contextName);
-    box.style.left = `${minX - PADDING_X}px`;
-    box.style.top = `${minY - PADDING_Y}px`;
-    box.style.width = `${maxX - minX + PADDING_X * 2}px`;
-    box.style.height = `${maxY - minY + PADDING_Y * 2}px`;
-    box.addEventListener("mousedown", onBoundedContextMouseDown);
-    box.addEventListener("click", onBoundedContextClick);
-    box.addEventListener("dblclick", onBoundedContextDoubleClick);
-    box.addEventListener("touchstart", onBoundedContextTouchStart,
-        {passive: false});
-    box.appendChild(createBoundedContextBoxLabel(contextName));
-    el.nodeLayer.appendChild(box);
-  });
-}
-
-function syncBoundedContextBoxes() {
-  if (state.activeType !== "cim"
-      || state.boundedContextViewMode === "overview") {
-    return;
-  }
-  // Update existing boxes instead of recreating them
-  const byContext = new Map();
-  state.diagram.nodes.forEach((node) => {
-    const contextName = contextNameFromNode(node);
-    if (!contextName) {
-      return;
-    }
-    if (state.boundedContextViewMode === "focus"
-        && normalizeContextName(state.activeBoundedContextName)
-        !== contextName) {
-      return;
-    }
-    if (!byContext.has(contextName)) {
-      byContext.set(contextName, []);
-    }
-    byContext.get(contextName).push(node);
-  });
-  const PADDING_X = 22;
-  const PADDING_Y = 26;
-  byContext.forEach((nodes, contextName) => {
-    if (!nodes.length) {
-      return;
-    }
-    const nodeW = getNodeWidth();
-    const nodeH = getNodeHeight();
-    const minX = Math.min(...nodes.map((node) => node.x));
-    const minY = Math.min(...nodes.map((node) => node.y));
-    const maxX = Math.max(...nodes.map((node) => node.x + nodeW));
-    const maxY = Math.max(...nodes.map((node) => node.y + nodeH));
-    const box = el.nodeLayer.querySelector(
-        `[data-context-name="${CSS.escape(contextName)}"]`);
-    if (box && box.classList.contains("bounded-context-box")) {
-      // Update existing box position and size
-      box.style.left = `${minX - PADDING_X}px`;
-      box.style.top = `${minY - PADDING_Y}px`;
-      box.style.width = `${maxX - minX + PADDING_X * 2}px`;
-      box.style.height = `${maxY - minY + PADDING_Y * 2}px`;
-    } else {
-      // Create if missing
-      const newBox = document.createElement("div");
-      newBox.className = "bounded-context-box";
-      newBox.dataset.contextName = contextName;
-      newBox.classList.toggle("selected",
-          state.selectedBoundedContextName === contextName);
-      newBox.style.left = `${minX - PADDING_X}px`;
-      newBox.style.top = `${minY - PADDING_Y}px`;
-      newBox.style.width = `${maxX - minX + PADDING_X * 2}px`;
-      newBox.style.height = `${maxY - minY + PADDING_Y * 2}px`;
-      newBox.addEventListener("mousedown", onBoundedContextMouseDown);
-      newBox.addEventListener("click", onBoundedContextClick);
-      newBox.addEventListener("dblclick", onBoundedContextDoubleClick);
-      newBox.addEventListener("touchstart", onBoundedContextTouchStart,
-          {passive: false});
-      newBox.appendChild(createBoundedContextBoxLabel(contextName));
-      el.nodeLayer.appendChild(newBox);
-    }
-  });
-  // Remove boxes for contexts that no longer exist
-  el.nodeLayer.querySelectorAll(".bounded-context-box").forEach((box) => {
-    const contextName = box.dataset.contextName;
-    if (!byContext.has(contextName)) {
-      box.remove();
-    }
-  });
-}
-
-function syncNodeElementPosition(node) {
-  const nodeEl = nodeElementsById.get(node.id);
-  if (!nodeEl) {
-    return;
-  }
-  const left = `${node.x}px`;
-  const top = `${node.y}px`;
-  if (nodeEl.style.left !== left) {
-    nodeEl.style.left = left;
-  }
-  if (nodeEl.style.top !== top) {
-    nodeEl.style.top = top;
-  }
-}
-
-function removeEdgeEntry(edgeId) {
-  const entry = edgeElementsById.get(edgeId);
-  if (!entry) {
-    return;
-  }
-  entry.hitPad?.remove();
-  entry.path?.remove();
-  entry.label?.remove();
-  entry.pinHandles?.forEach((pin) => pin.remove());
-  edgeElementsById.delete(edgeId);
-  edgeGeometryCache.delete(edgeId);
-  // remove from adjacency and connections maps
-  edgeIdsByNodeId.forEach((set) => set.delete(edgeId));
-  connectionsById.delete(edgeId);
-  if (edgeHoverHandleState?.edgeId === edgeId) {
-    edgeHoverHandleState = null;
-    edgeHoverHandleEl?.remove();
-    edgeHoverHandleEl = null;
-  }
-}
-
-function syncEdgeGeometryImmediate(changedNodeIds = null) {
-  if (!edgeElementsById.size) {
-    renderEdges();
-    return;
-  }
-  const changedSet = changedNodeIds instanceof Set ? changedNodeIds : null;
-  const nodeW = getNodeWidth();
-  const nodeH = getNodeHeight();
-  if (changedSet) {
-    // collect affected edge ids from adjacency map
-    const edgesToProcess = new Set();
-    changedSet.forEach((nodeId) => {
-      const set = edgeIdsByNodeId.get(nodeId);
-      if (set) {
-        set.forEach((eid) => edgesToProcess.add(eid));
-      }
-    });
-    edgesToProcess.forEach((eid) => {
-      const edge = connectionsById.get(eid);
-      if (!edge) {
-        return;
-      }
-      const entry = edgeElementsById.get(edge.id);
-      if (!entry) {
-        return;
-      }
-      const source = state.nodesById.get(edge.sourceId);
-      const target = state.nodesById.get(edge.targetId);
-      if (!source || !target) {
-        removeEdgeEntry(edge.id);
-        return;
-      }
-
-      const geometry = edgePathGeometry(edge, source, target, nodeW, nodeH);
-      const d = geometry.d;
-      const midX = geometry.midX;
-      const midY = geometry.midY;
-      const isSelected = state.selectedConnectionId === edge.id;
-
-      // Check cache to avoid redundant DOM updates
-      const cached = edgeGeometryCache.get(edge.id) || {};
-
-      // Only update path geometry if changed
-      if (cached.d !== d) {
-        entry.hitPad?.setAttribute("d", d);
-        entry.path?.setAttribute("d", d);
-      }
-
-      // Only update label position if changed
-      if (cached.x !== midX || cached.y !== midY) {
-        entry.label?.setAttribute("x", String(midX));
-        entry.label?.setAttribute("y", String(midY - 8));
-      }
-
-      // Only toggle selected state if changed
-      if (cached.selected !== isSelected) {
-        entry.path?.classList.toggle("selected", isSelected);
-        entry.label?.classList.toggle("selected", isSelected);
-        entry.pinHandles?.forEach(
-            (pinHandle) => pinHandle.classList.toggle("selected", isSelected));
-      }
-
-      // Update cache
-      edgeGeometryCache.set(edge.id,
-          {d, x: midX, y: midY, selected: isSelected, points: geometry.points});
-      entry.geometry = geometry;
-    });
-    return;
-  }
-
-  // No changedSet provided -> process all connections
-  connectionsById.forEach((edge) => {
-    const entry = edgeElementsById.get(edge.id);
-    if (!entry) {
-      return;
-    }
-    const source = state.nodesById.get(edge.sourceId);
-    const target = state.nodesById.get(edge.targetId);
-    if (!source || !target) {
-      removeEdgeEntry(edge.id);
-      return;
-    }
-
-    const geometry = edgePathGeometry(edge, source, target, nodeW, nodeH);
-    const d = geometry.d;
-    const midX = geometry.midX;
-    const midY = geometry.midY;
-    const isSelected = state.selectedConnectionId === edge.id;
-
-    // Check cache to avoid redundant DOM updates
-    const cached = edgeGeometryCache.get(edge.id) || {};
-
-    // Only update path geometry if changed
-    if (cached.d !== d) {
-      entry.hitPad?.setAttribute("d", d);
-      entry.path?.setAttribute("d", d);
-    }
-
-    // Only update label position if changed
-    if (cached.x !== midX || cached.y !== midY) {
-      entry.label?.setAttribute("x", String(midX));
-      entry.label?.setAttribute("y", String(midY - 8));
-    }
-
-    // Only toggle selected state if changed
-    if (cached.selected !== isSelected) {
-      entry.path?.classList.toggle("selected", isSelected);
-      entry.label?.classList.toggle("selected", isSelected);
-      entry.pinHandles?.forEach(
-          (pinHandle) => pinHandle.classList.toggle("selected", isSelected));
-    }
-
-    // Update cache
-    edgeGeometryCache.set(edge.id,
-        {d, x: midX, y: midY, selected: isSelected, points: geometry.points});
-    entry.geometry = geometry;
-  });
-}
-
-function syncEdgeGeometry(changedNodeIds = null) {
-  // Call immediately with caching to skip redundant DOM updates
-  syncEdgeGeometryImmediate(changedNodeIds);
-}
-
-function syncDraggedDiagram() {
-  if (state.dragNode) {
-    const node = state.nodesById.get(state.dragNode.id);
-    if (!node) {
-      return;
-    }
-    syncNodeElementPosition(node);
-    syncEdgeGeometry(new Set([node.id]));
-    if (state.activeType === "cim") {
-      syncBoundedContextBoxes();
-    }
-    return;
-  }
-
-  if (state.dragBoundedContext) {
-    const changedNodeIds = new Set();
-    state.dragBoundedContext.nodePositions.forEach((entry) => {
-      const node = state.nodesById.get(entry.id);
-      if (!node) {
-        return;
-      }
-      changedNodeIds.add(node.id);
-      syncNodeElementPosition(node);
-    });
-    syncEdgeGeometry(changedNodeIds);
-    if (state.activeType === "cim") {
-      syncBoundedContextBoxes();
-    }
-  }
-}
-
-function dragCollisionRect(x, y, nodeW, nodeH, padding = 10) {
-  return {
-    minX: x - padding,
-    minY: y - padding,
-    maxX: x + nodeW + padding,
-    maxY: y + nodeH + padding
-  };
-}
-
-function dragRectsOverlap(a, b) {
-  return a.minX < b.maxX && a.maxX > b.minX
-      && a.minY < b.maxY && a.maxY > b.minY;
-}
-
-function movingSelectionOverlaps(nextPositionsById) {
-  const nodeW = getNodeWidth();
-  const nodeH = getNodeHeight();
-  const movingIds = new Set(nextPositionsById.keys());
-  const movingRects = [...nextPositionsById.entries()].map(
-      ([nodeId, position]) => ({
-        nodeId,
-        rect: dragCollisionRect(position.x, position.y, nodeW, nodeH)
-      }));
-  for (let index = 0; index < movingRects.length; index += 1) {
-    for (let compareIndex = index + 1; compareIndex < movingRects.length;
-        compareIndex += 1) {
-      if (dragRectsOverlap(movingRects[index].rect,
-          movingRects[compareIndex].rect)) {
-        return true;
-      }
-    }
-  }
-  for (const {rect} of movingRects) {
-    for (const node of state.diagram.nodes) {
-      if (movingIds.has(node.id)) {
-        continue;
-      }
-      if (dragRectsOverlap(rect, dragCollisionRect(node.x, node.y, nodeW,
-          nodeH))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function applyBlockedDragPositions(desiredPositionsById) {
-  if (!desiredPositionsById?.size) {
-    return;
-  }
-  const currentPositionsById = new Map();
-  desiredPositionsById.forEach((_, nodeId) => {
-    const node = state.nodesById.get(nodeId);
-    if (!node) {
-      return;
-    }
-    currentPositionsById.set(nodeId, {x: node.x, y: node.y});
-  });
-
-  const xAttempt = new Map();
-  currentPositionsById.forEach((position, nodeId) => {
-    const desired = desiredPositionsById.get(nodeId) || position;
-    xAttempt.set(nodeId, {x: desired.x, y: position.y});
-  });
-  const allowX = !movingSelectionOverlaps(xAttempt);
-
-  const xyAttempt = new Map();
-  currentPositionsById.forEach((position, nodeId) => {
-    const desired = desiredPositionsById.get(nodeId) || position;
-    xyAttempt.set(nodeId, {
-      x: allowX ? desired.x : position.x,
-      y: desired.y
-    });
-  });
-  const allowY = !movingSelectionOverlaps(xyAttempt);
-
-  currentPositionsById.forEach((position, nodeId) => {
-    const node = state.nodesById.get(nodeId);
-    const desired = desiredPositionsById.get(nodeId) || position;
-    if (!node) {
-      return;
-    }
-    node.x = allowX ? desired.x : position.x;
-    node.y = allowY ? desired.y : position.y;
-    if (node.meta) {
-      node.meta.x = node.x;
-      node.meta.y = node.y;
-    }
-  });
-}
-
-let lastPublishMoveTime = 0;
-const PUBLISH_THROTTLE_MS = 100;
-
-function scheduleDraggedDiagramSync() {
-  if (dragSyncFrame) {
-    return;
-  }
-  dragSyncFrame = window.requestAnimationFrame(() => {
-    dragSyncFrame = 0;
-    syncDraggedDiagram();
-  });
-}
-
-function throttledPublishNodeMove(nodeId, x, y) {
-  // Deprecated: sending during drag caused UI churn; keep final publish on mouseup only.
-}
-
 function clearNodeMultiSelection() {
   state.selectedNodeIds = new Set();
 }
@@ -3005,57 +2273,19 @@ function setNodeMultiSelection(ids) {
 
 function deselectEdges() {
   state.selectedConnectionId = null;
-  if (ensureG6Canvas()) {
-    updateG6Selection();
-    return;
-  }
-  el.edgeLayer.querySelectorAll(".edge-path, .edge-label, .edge-pin").forEach(
-      (edge) => edge.classList.remove("selected"));
+  ensureG6Canvas();
+  updateG6Selection();
 }
 
 function applyNodeSelectionStyles() {
-  if (ensureG6Canvas()) {
-    updateG6Selection();
-    updateG6ImpactState();
-    return;
-  }
-  el.nodeLayer.querySelectorAll(".node").forEach((nodeEl) => {
-    nodeEl.classList.toggle("selected",
-        state.selectedNodeIds.has(nodeEl.dataset.nodeId));
-    nodeEl.classList.toggle("context-draft-selected",
-        state.boundedContextDraftNodeIds.has(nodeEl.dataset.nodeId));
-  });
+  ensureG6Canvas();
+  updateG6Selection();
+  updateG6ImpactState();
 }
 
 function applyHoverFocusStyles() {
-  if (ensureG6Canvas()) {
-    setG6HoverNode(state.hoveredNodeId);
-    return;
-  }
-  const hoveredNodeId = state.hoveredNodeId;
-  const activeEdgeIds = hoveredNodeId ? edgeIdsByNodeId.get(hoveredNodeId)
-      || new Set() : null;
-
-  el.canvasGrid?.classList.toggle("hover-focus-active", !!hoveredNodeId);
-
-  nodeElementsById.forEach((nodeEl, nodeId) => {
-    const isTarget = hoveredNodeId === nodeId;
-    nodeEl.classList.toggle("hover-focus-target", isTarget);
-    nodeEl.classList.toggle("hover-dimmed", !!hoveredNodeId && !isTarget);
-  });
-
-  edgeElementsById.forEach((entry, edgeId) => {
-    const isActive = !!hoveredNodeId && activeEdgeIds?.has(edgeId);
-    const isDimmed = !!hoveredNodeId && !isActive;
-    entry.path?.classList.toggle("hover-focus-edge", isActive);
-    entry.path?.classList.toggle("edge-dimmed", isDimmed);
-    entry.label?.classList.toggle("hover-focus-edge-label", isActive);
-    entry.label?.classList.toggle("edge-dimmed", isDimmed);
-    entry.pinHandles?.forEach((pinHandle) => {
-      pinHandle.classList.toggle("hover-focus-edge-pin", isActive);
-      pinHandle.classList.toggle("edge-dimmed", isDimmed);
-    });
-  });
+  ensureG6Canvas();
+  setG6HoverNode(state.hoveredNodeId);
 }
 
 function setHoveredNode(nodeId) {
@@ -3232,16 +2462,8 @@ export function deleteBoundedContext(contextName) {
 // ── Viewport helpers ──────────────────────────────────────────────────────────
 
 export function toCanvasCoordinates(clientX, clientY) {
-  if (ensureG6Canvas()) {
-    return toGraphCoordinates(clientX, clientY);
-  }
-  const rect = el.canvasViewport.getBoundingClientRect();
-  const px = clientX - rect.left;
-  const py = clientY - rect.top;
-  return {
-    x: (px - state.viewport.x) / state.viewport.scale,
-    y: (py - state.viewport.y) / state.viewport.scale
-  };
+  ensureG6Canvas();
+  return toGraphCoordinates(clientX, clientY);
 }
 
 let viewportUpdateScheduled = false;
@@ -3274,28 +2496,13 @@ export function applyViewport() {
 }
 
 export function resetCanvasView() {
-  if (ensureG6Canvas() && getG6Editor()) {
-    resetG6CanvasView();
-    return;
-  }
-  state.viewport = {x: 0, y: 0, scale: 1};
-  applyViewport();
+  ensureG6Canvas();
+  resetG6CanvasView();
 }
 
 export function zoomCanvasBy(multiplier = 1) {
-  if (ensureG6Canvas() && getG6Editor()) {
-    zoomG6CanvasBy(multiplier);
-    return;
-  }
-  const prev = Number(state.viewport.scale) || 1;
-  const next = Math.max(0.01, Math.min(2.5, prev * multiplier));
-  const rect = el.canvasViewport?.getBoundingClientRect?.();
-  const px = (rect?.width || 0) / 2;
-  const py = (rect?.height || 0) / 2;
-  state.viewport.x = px - ((px - state.viewport.x) * (next / prev));
-  state.viewport.y = py - ((py - state.viewport.y) * (next / prev));
-  state.viewport.scale = next;
-  applyViewport();
+  ensureG6Canvas();
+  zoomG6CanvasBy(multiplier);
 }
 
 function diagramBounds({includeContexts = true} = {}) {
@@ -3343,30 +2550,11 @@ function diagramBounds({includeContexts = true} = {}) {
 
 export function centerViewportOnDiagram({fit = false} = {}) {
   const bounds = diagramBounds();
-  const viewportRect = el.canvasViewport?.getBoundingClientRect();
-  if (!bounds || !viewportRect) {
+  if (!bounds) {
     return;
   }
-  if (ensureG6Canvas() && getG6Editor()) {
-    fitG6CanvasToDiagram(bounds, {fit});
-    return;
-  }
-  const padding = 96;
-  let scale = state.viewport.scale || 1;
-  if (fit) {
-    const fitScale = Math.min(
-        (viewportRect.width - padding) / bounds.width,
-        (viewportRect.height - padding) / bounds.height);
-    scale = Math.max(0.01, Math.min(1, fitScale || 1));
-  }
-  const centerX = bounds.minX + bounds.width / 2;
-  const centerY = bounds.minY + bounds.height / 2;
-  state.viewport = {
-    x: Math.round(viewportRect.width / 2 - centerX * scale),
-    y: Math.round(viewportRect.height / 2 - centerY * scale),
-    scale
-  };
-  applyViewport();
+  ensureG6Canvas();
+  fitG6CanvasToDiagram(bounds, {fit});
 }
 
 function createMaskIcon(className, src, {ariaHidden = true} = {}) {
@@ -4045,13 +3233,10 @@ function createModelingWizard(kind) {
   spec.edges.forEach(([sourceIndex, targetIndex, edgeKind]) => {
     createWizardEdge(nodes[sourceIndex].id, nodes[targetIndex].id, edgeKind);
   });
-  if (ensureG6Canvas()) {
-    syncCanvasIndexesFromState();
-    syncG6FromState({full: false});
-    workbenchSurfaces();
-  } else {
-    renderDiagram();
-  }
+  ensureG6Canvas();
+  syncCanvasIndexesFromState();
+  syncG6FromState({full: false});
+  workbenchSurfaces();
   markModelDirty();
   publishDiagramUpdate({immediate: true});
   setStatus(`Created ${spec.label}`);
@@ -4661,63 +3846,9 @@ export function renderNodes() {
   return;
 }
 
-function applyConnectTargetClass(element, node) {
-  element.classList.remove("node-connect-source", "node-connect-legal-target",
-      "node-connect-illegal-target");
-  const sourceId = state.connectSourceId || state.linkDrag?.sourceId || "";
-  if ((!state.connectMode && !state.linkDrag) || !sourceId) {
-    return;
-  }
-  if (node.id === sourceId) {
-    element.classList.add("node-connect-source");
-    return;
-  }
-  const source = state.diagram.nodes.find((candidate) => candidate.id
-      === sourceId);
-  if (!source) {
-    return;
-  }
-  const legal = legalKindsForConnection(source.type, node.type);
-  const preferred = state.preferredConnectionKind;
-  const allowed = preferred ? legal.includes(preferred) : legal.length > 0;
-  element.classList.add(allowed ? "node-connect-legal-target"
-      : "node-connect-illegal-target");
-}
-
 // ── Edge rendering ────────────────────────────────────────────────────────────
 
 let edgeKindPickerBound = false;
-
-function renderLinkPreview() {
-  // Only render the edges layer with preview, not the full edge graph
-  if (!el.edgeLayer) {
-    return;
-  }
-  // Keep existing edges, just update/add preview
-  const existingPreview = el.edgeLayer.querySelector(".edge-path.preview");
-  if (existingPreview) {
-    existingPreview.remove();
-  }
-
-  if (state.linkDrag) {
-    const source = state.nodesById.get(state.linkDrag.sourceId);
-    if (!source) {
-      return;
-    }
-    const nodeW = getNodeWidth();
-    const nodeH = getNodeHeight();
-    const pointer = toCanvasCoordinates(state.linkDrag.pointerX,
-        state.linkDrag.pointerY);
-    const sx = source.x + nodeW;
-    const sy = source.y + nodeH / 2;
-    const tx = pointer.x;
-    const ty = pointer.y;
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("class", "edge-path preview");
-    path.setAttribute("d", `M ${sx} ${sy} L ${tx} ${ty}`);
-    el.edgeLayer.appendChild(path);
-  }
-}
 
 function canvasToViewportPoint(x, y) {
   return {
@@ -4726,238 +3857,14 @@ function canvasToViewportPoint(x, y) {
   };
 }
 
-function clearEdgeHoverHideTimer() {
-  if (edgeHoverHideTimer) {
-    window.clearTimeout(edgeHoverHideTimer);
-    edgeHoverHideTimer = 0;
-  }
-}
-
 function setHoveredEdge(edgeId) {
-  if (ensureG6Canvas()) {
-    hoveredEdgeId = edgeId || null;
-    setG6HoverEdge(hoveredEdgeId);
-    return;
-  }
   hoveredEdgeId = edgeId || null;
-  edgeElementsById.forEach((entry, currentEdgeId) => {
-    const isVisible = hoveredEdgeId === currentEdgeId;
-    entry.pinHandles?.forEach((pinHandle) => pinHandle.classList.toggle(
-        "visible", isVisible));
-  });
+  ensureG6Canvas();
+  setG6HoverEdge(hoveredEdgeId);
 }
 
-function hideEdgeHoverHandle() {
-  clearEdgeHoverHideTimer();
+function clearHoveredEdge() {
   setHoveredEdge(null);
-  edgeHoverHandleState = null;
-  if (edgeHoverHandleEl) {
-    edgeHoverHandleEl.style.display = "none";
-  }
-}
-
-function scheduleHideEdgeHoverHandle() {
-  clearEdgeHoverHideTimer();
-  edgeHoverHideTimer = window.setTimeout(() => {
-    hideEdgeHoverHandle();
-  }, 30);
-}
-
-function ensureEdgeHoverHandleElement() {
-  if (!el.edgeLayer) {
-    return null;
-  }
-  if (edgeHoverHandleEl?.isConnected) {
-    return edgeHoverHandleEl;
-  }
-  edgeHoverHandleEl = document.createElementNS(
-      "http://www.w3.org/2000/svg", "circle");
-  edgeHoverHandleEl.setAttribute("class", "edge-hover-handle");
-  edgeHoverHandleEl.setAttribute("r", "7");
-  edgeHoverHandleEl.style.display = "none";
-  edgeHoverHandleEl.addEventListener("mouseenter", clearEdgeHoverHideTimer);
-  edgeHoverHandleEl.addEventListener("mouseleave", scheduleHideEdgeHoverHandle);
-  edgeHoverHandleEl.addEventListener("mousedown", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-  });
-  edgeHoverHandleEl.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!edgeHoverHandleState?.edgeId) {
-      return;
-    }
-    const edge = connectionsById.get(edgeHoverHandleState.edgeId);
-    if (!edge) {
-      return;
-    }
-    const nextPins = pinPointsForEdge(edge);
-    const undoSnapshot = captureDiagramUndoSnapshot();
-    nextPins.splice(edgeHoverHandleState.segmentIndex, 0, {
-      x: Math.round(edgeHoverHandleState.x),
-      y: Math.round(edgeHoverHandleState.y)
-    });
-    edge.pinPoints = nextPins;
-    persistEdgePinPoints(edge);
-    state.selectedConnectionId = edge.id;
-    openConnectionPanel(edge.id);
-    commitUndoSnapshot(undoSnapshot);
-    renderEdges();
-    markModelDirty();
-    publishDiagramUpdate({immediate: true});
-    setStatus("Edge pin added");
-  });
-  el.edgeLayer.appendChild(edgeHoverHandleEl);
-  return edgeHoverHandleEl;
-}
-
-function updateEdgeHoverHandle(edgeId, clientX, clientY) {
-  const entry = edgeElementsById.get(edgeId);
-  const geometry = entry?.geometry;
-  if (!geometry?.points?.length) {
-    hideEdgeHoverHandle();
-    return;
-  }
-  setHoveredEdge(edgeId);
-  const pointer = toCanvasCoordinates(clientX, clientY);
-  const pins = pinPointsForEdge(connectionsById.get(edgeId));
-  const hoveredPin = pins.find((pin) => Math.hypot(pointer.x - pin.x,
-      pointer.y - pin.y) <= 10);
-  if (hoveredPin) {
-    edgeHoverHandleState = null;
-    if (edgeHoverHandleEl) {
-      edgeHoverHandleEl.style.display = "none";
-    }
-    return;
-  }
-  const closest = closestPointOnPolyline(geometry.points, pointer);
-  if (!closest) {
-    hideEdgeHoverHandle();
-    return;
-  }
-  const handle = ensureEdgeHoverHandleElement();
-  if (!handle) {
-    return;
-  }
-  clearEdgeHoverHideTimer();
-  edgeHoverHandleState = {
-    edgeId,
-    x: closest.x,
-    y: closest.y,
-    segmentIndex: closest.segmentIndex
-  };
-  handle.setAttribute("cx", String(closest.x));
-  handle.setAttribute("cy", String(closest.y));
-  handle.style.display = "block";
-  el.edgeLayer.appendChild(handle);
-}
-
-function removeEdgePin(edgeId, pinIndex) {
-  const edge = connectionsById.get(edgeId);
-  if (!edge) {
-    return;
-  }
-  const nextPins = pinPointsForEdge(edge);
-  if (pinIndex < 0 || pinIndex >= nextPins.length) {
-    return;
-  }
-  const undoSnapshot = captureDiagramUndoSnapshot();
-  nextPins.splice(pinIndex, 1);
-  edge.pinPoints = nextPins;
-  persistEdgePinPoints(edge);
-  state.selectedConnectionId = edgeId;
-  openConnectionPanel(edgeId);
-  commitUndoSnapshot(undoSnapshot);
-  renderEdges();
-  markModelDirty();
-  publishDiagramUpdate({immediate: true});
-  setStatus(nextPins.length ? "Edge pin removed" : "Edge returned to straight");
-}
-
-function startEdgePinDrag(edgeId, pinIndex, clientX, clientY) {
-  const edge = connectionsById.get(edgeId);
-  if (!edge) {
-    return;
-  }
-  const pins = pinPointsForEdge(edge);
-  const pin = pins[pinIndex];
-  if (!pin) {
-    return;
-  }
-  hideEdgeHoverHandle();
-  closeEdgeKindPicker();
-  state.selectedConnectionId = edgeId;
-  openConnectionPanel(edgeId);
-  edgePinDrag = {
-    edgeId,
-    pinIndex,
-    startX: clientX,
-    startY: clientY,
-    pinX: pin.x,
-    pinY: pin.y,
-    moved: false,
-    undoSnapshot: dragUndoSnapshot()
-  };
-  setHoveredEdge(edgeId);
-  renderEdges();
-}
-
-function updateEdgePinDrag(clientX, clientY) {
-  if (!edgePinDrag) {
-    return false;
-  }
-  const edge = connectionsById.get(edgePinDrag.edgeId);
-  if (!edge) {
-    edgePinDrag = null;
-    return false;
-  }
-  const pins = pinPointsForEdge(edge);
-  if (!pins[edgePinDrag.pinIndex]) {
-    edgePinDrag = null;
-    return false;
-  }
-  const dx = (clientX - edgePinDrag.startX) / state.viewport.scale;
-  const dy = (clientY - edgePinDrag.startY) / state.viewport.scale;
-  if (Math.hypot(clientX - edgePinDrag.startX,
-      clientY - edgePinDrag.startY) > TOUCH_MOVE_THRESHOLD) {
-    edgePinDrag.moved = true;
-  }
-  if (!edgePinDrag.moved) {
-    return true;
-  }
-  pins[edgePinDrag.pinIndex] = normalizePinPoint({
-    x: edgePinDrag.pinX + dx,
-    y: edgePinDrag.pinY + dy
-  });
-  edge.pinPoints = pins;
-  persistEdgePinPoints(edge);
-  setHoveredEdge(edge.id);
-  renderEdges();
-  return true;
-}
-
-function finalizeEdgePinDrag() {
-  if (!edgePinDrag) {
-    return false;
-  }
-  const drag = edgePinDrag;
-  edgePinDrag = null;
-  if (!drag.moved) {
-    removeEdgePin(drag.edgeId, drag.pinIndex);
-    return true;
-  }
-  const edge = connectionsById.get(drag.edgeId);
-  if (!edge) {
-    return true;
-  }
-  commitUndoSnapshot(drag.undoSnapshot);
-  persistEdgePinPoints(edge);
-  setHoveredEdge(edge.id);
-  renderEdges();
-  markModelDirty();
-  publishDiagramUpdate({immediate: true});
-  setStatus("Edge pin moved");
-  return true;
 }
 
 function closeEdgeKindPicker() {
@@ -5027,12 +3934,9 @@ function updateEdgeKind(edgeId, nextKind) {
   edge.kind = kind;
   addConnectionToGraphAndActiveView(edge);
   commitUndoSnapshot(undoSnapshot);
-  if (ensureG6Canvas()) {
-    updateG6Edge(edgeId);
-    updateG6Selection();
-  } else {
-    renderEdges();
-  }
+  ensureG6Canvas();
+  updateG6Edge(edgeId);
+  updateG6Selection();
   markModelDirty();
   publishDiagramUpdate();
   setStatus(`Connection updated: ${kind}`);
@@ -5056,8 +3960,7 @@ function ensureEdgeKindPickerBindings() {
       closeEdgeKindPicker();
       return;
     }
-    if (target.closest(
-        ".edge-kind-picker, .edge-label, .edge-path, .edge-hit-pad, .edge-pin, .edge-hover-handle")) {
+    if (target.closest(".edge-kind-picker")) {
       return;
     }
     closeEdgeKindPicker();
@@ -5071,8 +3974,7 @@ function ensureEdgeKindPickerBindings() {
       closeEdgeKindPicker();
       return;
     }
-    if (target.closest(
-        ".edge-kind-picker, .edge-label, .edge-path, .edge-hit-pad, .edge-pin, .edge-hover-handle")) {
+    if (target.closest(".edge-kind-picker")) {
       return;
     }
     closeEdgeKindPicker();
@@ -5135,72 +4037,6 @@ function openG6EdgeKindPicker(edgeId) {
       (source.y + nodeH / 2 + target.y + nodeH / 2) / 2 - 18);
 }
 
-function renderBoundedContextOverviewEdges() {
-  const contextNodeByName = new Map();
-  state.diagram.nodes.filter(isBoundedContextNode).forEach((node) => {
-    contextNodeByName.set(boundedContextNameFromContextNode(node), node);
-  });
-  const overviewContextNameForNode = (node) => {
-    if (isBoundedContextNode(node)) {
-      return boundedContextNameFromContextNode(node);
-    }
-    return contextNameFromNode(node);
-  };
-  const relationCounts = new Map();
-  state.diagram.connections.forEach((edge) => {
-    const sourceNode = state.diagram.nodes.find((node) => node.id
-        === edge.sourceId);
-    const targetNode = state.diagram.nodes.find((node) => node.id
-        === edge.targetId);
-    const sourceContext = normalizeContextName(
-        overviewContextNameForNode(sourceNode));
-    const targetContext = normalizeContextName(
-        overviewContextNameForNode(targetNode));
-    if (!sourceContext || !targetContext || sourceContext === targetContext
-        || !contextNodeByName.has(sourceContext)
-        || !contextNodeByName.has(targetContext)) {
-      return;
-    }
-    const key = `${sourceContext}|${targetContext}`;
-    const entry = relationCounts.get(key) || {count: 0, kinds: new Set()};
-    entry.count += 1;
-    if (edge.kind) {
-      entry.kinds.add(edge.kind);
-    }
-    relationCounts.set(key, entry);
-  });
-  const nodeW = getNodeWidth();
-  const nodeH = getNodeHeight();
-  relationCounts.forEach((entry, key) => {
-    const [sourceContext, targetContext] = key.split("|");
-    const source = contextNodeByName.get(sourceContext);
-    const target = contextNodeByName.get(targetContext);
-    if (!source || !target) {
-      return;
-    }
-    const sx = source.x + nodeW / 2;
-    const sy = source.y + nodeH / 2;
-    const tx = target.x + nodeW / 2;
-    const ty = target.y + nodeH / 2;
-    const path = document.createElementNS("http://www.w3.org/2000/svg",
-        "path");
-    path.setAttribute("class", "edge-path edge-context-overview");
-    path.setAttribute("d", `M ${sx} ${sy} L ${tx} ${ty}`);
-    path.setAttribute("marker-end", "url(#arrow)");
-    el.edgeLayer.appendChild(path);
-    const label = document.createElementNS("http://www.w3.org/2000/svg",
-        "text");
-    label.setAttribute("class", "edge-label edge-context-overview-label");
-    label.setAttribute("x", String((sx + tx) / 2));
-    label.setAttribute("y", String((sy + ty) / 2 - 8));
-    label.setAttribute("text-anchor", "middle");
-    const kinds = [...entry.kinds].slice(0, 2).join(", ");
-    label.textContent = kinds || `${entry.count} relation${entry.count === 1
-        ? "" : "s"}`;
-    el.edgeLayer.appendChild(label);
-  });
-}
-
 export function renderEdges() {
   ensureG6Canvas();
   if (state.selectedConnectionId && !state.diagram.connections.some(
@@ -5246,7 +4082,7 @@ export function renderDiagram() {
 
 // Compatibility helper for non-canvas modules that changed semantic state.
 // The public name is kept for existing callers, but the modeling surface is
-// G6-only: this applies a diff to the graph instead of rebuilding DOM/SVG.
+// G6-only: this applies a diff to the graph renderer.
 export function syncDiagramRenderer({full = false, workbench = false} = {}) {
   ensureG6Canvas();
   syncCanvasIndexesFromState();
@@ -5270,10 +4106,9 @@ export function syncDiagramRenderer({full = false, workbench = false} = {}) {
 }
 
 export function syncRendererSelection() {
-  if (ensureG6Canvas()) {
-    updateG6Selection();
-    updateG6ContextBoxes();
-  }
+  ensureG6Canvas();
+  updateG6Selection();
+  updateG6ContextBoxes();
 }
 
 // ── Canvas event handlers ─────────────────────────────────────────────────────
@@ -5359,7 +4194,7 @@ function handleG6NodeDoubleClick(nodeId, event = {}) {
 }
 
 function handleG6CanvasClick() {
-  hideEdgeHoverHandle();
+  clearHoveredEdge();
   closeEdgeKindPicker();
   closeAttributePanel();
   state.selectedNodeId = null;
@@ -5374,7 +4209,7 @@ function startG6NodeDrag(nodeId) {
   if (!node) {
     return;
   }
-  hideEdgeHoverHandle();
+  clearHoveredEdge();
   closeEdgeKindPicker();
   clearTransientEdgeLayouts();
   state.dragNode = {
@@ -5441,116 +4276,23 @@ function openG6ContainerTool(nodeId) {
   openContainerFocus(nodeId);
 }
 
-export function onNodeMouseDown(event) {
-  if (event.button !== 0) {
-    return;
-  }
-  hideEdgeHoverHandle();
-  closeEdgeKindPicker();
-  clearTransientEdgeLayouts();
-  if (state.activeType === "cim" && state.boundedContextCreateMode) {
-    return;
-  }
-  const nodeId = event.currentTarget.dataset.nodeId;
-  const node = state.nodesById.get(nodeId);
-  if (!node) {
-    return;
-  }
-  state.dragNode = {
-    id: nodeId,
-    startX: event.clientX,
-    startY: event.clientY,
-    nodeX: node.x,
-    nodeY: node.y,
-    moved: false,
-    undoSnapshot: dragUndoSnapshot([nodeId])
-  };
-  event.stopPropagation();
-}
-
-export function onNodeClick(event) {
-  event.stopPropagation();
-  const nodeId = event.currentTarget.dataset.nodeId;
-  if (suppressNextNodeClickId && suppressNextNodeClickId === nodeId) {
-    suppressNextNodeClickId = null;
-    return;
-  }
-  if (state.activeType === "cim" && state.boundedContextCreateMode) {
-    const node = state.nodesById.get(nodeId);
-    if (isBoundedContextNode(node)) {
-      return;
-    }
-    const next = new Set(state.boundedContextDraftNodeIds);
-    if (next.has(nodeId)) {
-      next.delete(nodeId);
-    } else {
-      next.add(nodeId);
-    }
-    state.boundedContextDraftNodeIds = next;
-    applyNodeSelectionStyles();
-    setStatus(`${next.size} element${next.size !== 1 ? "s"
-        : ""} selected for bounded context`);
-    return;
-  }
-  if (event.shiftKey || event.ctrlKey || event.metaKey) {
-    toggleNodeInSelection(nodeId);
-    return;
-  }
-  const node = state.nodesById.get(nodeId);
-  if (state.activeType === "cim" && isBoundedContextNode(node)) {
-    if (state.boundedContextViewMode === "overview") {
-      setNodeMultiSelection([nodeId]);
-      selectBoundedContext(boundedContextNameFromContextNode(node));
-      return;
-    }
-    startBoundedContextAssignment(boundedContextNameFromContextNode(node));
-    setNodeMultiSelection([nodeId]);
-    return;
-  }
-  setNodeMultiSelection([nodeId]);
-  activateNode(nodeId);
-}
-
-function onNodeDoubleClick(event) {
-  const nodeId = event.currentTarget.dataset.nodeId;
-  const node = state.nodesById.get(nodeId);
-  if (!node) {
-    return;
-  }
-  event.preventDefault();
-  event.stopPropagation();
-  if (state.activeType === "cim" && isBoundedContextNode(node)) {
-    openBoundedContextFocus(boundedContextNameFromContextNode(node));
-    return;
-  }
-  if (isContainerElement(node)) {
-    openContainerFocus(nodeId);
-  }
-}
-
 function selectConnection(connectionId, {openPicker = false} = {}) {
   if (!connectionId) {
     return;
   }
   if (state.selectedConnectionId === connectionId) {
     closeAttributePanel();
-    if (ensureG6Canvas()) {
-      state.selectedConnectionId = null;
-      updateG6Selection();
-    } else {
-      renderEdges();
-    }
+    ensureG6Canvas();
+    state.selectedConnectionId = null;
+    updateG6Selection();
     return;
   }
   openConnectionPanel(connectionId);
-  if (ensureG6Canvas()) {
-    updateG6Selection();
-    updateG6Edge(connectionId);
-    if (openPicker) {
-      openG6EdgeKindPicker(connectionId);
-    }
-  } else {
-    renderEdges();
+  ensureG6Canvas();
+  updateG6Selection();
+  updateG6Edge(connectionId);
+  if (openPicker) {
+    openG6EdgeKindPicker(connectionId);
   }
   setStatus("Connection selected (press Delete to remove)");
 }
@@ -5560,11 +4302,8 @@ function activateNode(nodeId) {
     if (!state.connectSourceId) {
       state.connectSourceId = nodeId;
       setStatus(`Connection source: ${nodeId}. Select target.`);
-      if (ensureG6Canvas()) {
-        updateG6ConnectionState();
-      } else {
-        renderNodes();
-      }
+      ensureG6Canvas();
+      updateG6ConnectionState();
       return;
     }
     if (state.connectSourceId === nodeId) {
@@ -5576,11 +4315,8 @@ function activateNode(nodeId) {
       preferredKind: state.preferredConnectionKind
     });
     state.connectSourceId = null;
-    if (ensureG6Canvas()) {
-      updateG6ConnectionState();
-    } else {
-      renderNodes();
-    }
+    ensureG6Canvas();
+    updateG6ConnectionState();
     return;
   }
 
@@ -5605,41 +4341,6 @@ function activateNode(nodeId) {
   openAttributePanel(nodeId);
 }
 
-export function onNodeTouchStart(event) {
-  if (event.touches.length !== 1) {
-    return;
-  }
-  hideEdgeHoverHandle();
-  closeEdgeKindPicker();
-  clearTransientEdgeLayouts();
-  if (state.activeType === "cim" && state.boundedContextCreateMode) {
-    return;
-  }
-  const nodeId = event.currentTarget.dataset.nodeId;
-  const node = state.nodesById.get(nodeId);
-  if (!node) {
-    return;
-  }
-  const touch = event.touches[0];
-  state.touchTap = {
-    nodeId,
-    startX: touch.clientX,
-    startY: touch.clientY,
-    moved: false
-  };
-  state.dragNode = {
-    id: nodeId,
-    startX: touch.clientX,
-    startY: touch.clientY,
-    nodeX: node.x,
-    nodeY: node.y,
-    moved: false,
-    undoSnapshot: dragUndoSnapshot([nodeId])
-  };
-  event.preventDefault();
-  event.stopPropagation();
-}
-
 function selectBoundedContext(contextName) {
   const normalized = normalizeContextName(contextName);
   if (!normalized) {
@@ -5651,12 +4352,9 @@ function selectBoundedContext(contextName) {
   state.selectedConnectionId = null;
   applyNodeSelectionStyles();
   openBoundedContextPanel(normalized);
-  if (ensureG6Canvas()) {
-    updateG6ContextBoxes();
-    updateG6Selection();
-  } else {
-    renderEdges();
-  }
+  ensureG6Canvas();
+  updateG6ContextBoxes();
+  updateG6Selection();
 }
 
 function openBoundedContextFocus(contextName) {
@@ -5708,487 +4406,6 @@ export function closeBoundedContextSpecialView() {
   setStatus("Returned to full model view");
 }
 
-function onBoundedContextClick(event) {
-  event.preventDefault();
-  event.stopPropagation();
-  const contextName = event.currentTarget?.dataset?.contextName;
-  selectBoundedContext(contextName);
-}
-
-function onBoundedContextDoubleClick(event) {
-  event.preventDefault();
-  event.stopPropagation();
-  const contextName = event.currentTarget?.dataset?.contextName;
-  openBoundedContextFocus(contextName);
-}
-
-function onBoundedContextMouseDown(event) {
-  if (event.button !== 0) {
-    return;
-  }
-  event.preventDefault();
-  event.stopPropagation();
-  hideEdgeHoverHandle();
-  clearTransientEdgeLayouts();
-  const contextName = event.currentTarget?.dataset?.contextName;
-  const normalized = normalizeContextName(contextName);
-  if (!normalized) {
-    return;
-  }
-  selectBoundedContext(normalized);
-  const nodes = contextNodes(normalized);
-  state.dragBoundedContext = {
-    name: normalized,
-    startX: event.clientX,
-    startY: event.clientY,
-    nodePositions: nodes.map((node) => ({id: node.id, x: node.x, y: node.y})),
-    undoSnapshot: dragUndoSnapshot(nodes.map((node) => node.id))
-  };
-}
-
-function onBoundedContextTouchStart(event) {
-  if (event.touches.length !== 1) {
-    return;
-  }
-  hideEdgeHoverHandle();
-  clearTransientEdgeLayouts();
-  const touch = event.touches[0];
-  const contextName = event.currentTarget?.dataset?.contextName;
-  const normalized = normalizeContextName(contextName);
-  if (!normalized) {
-    return;
-  }
-  selectBoundedContext(normalized);
-  const nodes = contextNodes(normalized);
-  state.dragBoundedContext = {
-    name: normalized,
-    startX: touch.clientX,
-    startY: touch.clientY,
-    nodePositions: nodes.map((node) => ({id: node.id, x: node.x, y: node.y})),
-    undoSnapshot: dragUndoSnapshot(nodes.map((node) => node.id))
-  };
-  event.preventDefault();
-  event.stopPropagation();
-}
-
-export function onLinkHandleMouseDown(event) {
-  if (event.button !== 0) {
-    return;
-  }
-  hideEdgeHoverHandle();
-  const nodeEl = event.currentTarget.closest(".node");
-  if (!nodeEl) {
-    return;
-  }
-  state.linkDrag = {
-    sourceId: nodeEl.dataset.nodeId,
-    pointerX: event.clientX,
-    pointerY: event.clientY
-  };
-  renderNodes();
-  renderLinkPreview();
-  setStatus("Drag to another element to create a legal connection");
-  event.preventDefault();
-  event.stopPropagation();
-}
-
-export function onLinkHandleTouchStart(event) {
-  if (event.touches.length !== 1) {
-    return;
-  }
-  hideEdgeHoverHandle();
-  const nodeEl = event.currentTarget.closest(".node");
-  if (!nodeEl) {
-    return;
-  }
-  const touch = event.touches[0];
-  state.linkDrag = {
-    sourceId: nodeEl.dataset.nodeId,
-    pointerX: touch.clientX,
-    pointerY: touch.clientY
-  };
-  renderNodes();
-  renderLinkPreview();
-  setStatus("Drag to another element to create a legal connection");
-  event.preventDefault();
-  event.stopPropagation();
-}
-
-export function onCanvasMouseDown(event) {
-  if (ensureG6Canvas()) {
-    return;
-  }
-  if (event.target.closest(
-      ".node, .edge-path, .edge-label, .edge-hit-pad, .edge-pin, .edge-hover-handle, .edge-kind-picker, .bounded-context-box")) {
-    return;
-  }
-  if (event.button !== 0) {
-    return;
-  }
-  hideEdgeHoverHandle();
-  closeEdgeKindPicker();
-  closeAttributePanel();
-  state.panDrag = {
-    startX: event.clientX,
-    startY: event.clientY,
-    viewX: state.viewport.x,
-    viewY: state.viewport.y
-  };
-  setCanvasPanSelectionGuard(true);
-  event.preventDefault();
-}
-
-export function onCanvasTouchStart(event) {
-  if (ensureG6Canvas()) {
-    return;
-  }
-  if (event.target.closest(
-      ".node, .edge-path, .edge-label, .edge-hit-pad, .edge-pin, .edge-hover-handle, .edge-kind-picker, .bounded-context-box")) {
-    return;
-  }
-  if (event.touches.length !== 1) {
-    return;
-  }
-  const touch = event.touches[0];
-  hideEdgeHoverHandle();
-  closeEdgeKindPicker();
-  closeAttributePanel();
-  state.panDrag = {
-    startX: touch.clientX,
-    startY: touch.clientY,
-    viewX: state.viewport.x,
-    viewY: state.viewport.y
-  };
-  setCanvasPanSelectionGuard(true);
-  event.preventDefault();
-}
-
-export function onGlobalMouseMove(event) {
-  if (ensureG6Canvas()) {
-    if (!state.dragNode && !state.dragBoundedContext && !state.panDrag
-        && !state.linkDrag) {
-      publishCursor(event.clientX, event.clientY, "ONLINE");
-    }
-    return;
-  }
-  if ((event.buttons & 1) === 0) {
-    const hadPanDrag = Boolean(state.panDrag);
-    if (state.linkDrag) {
-      state.linkDrag = null;
-      renderEdges();
-      setStatus("Connection canceled");
-    }
-    state.dragNode = null;
-    state.dragBoundedContext = null;
-    if (hadPanDrag) {
-      setCanvasPanSelectionGuard(false);
-    }
-    state.panDrag = null;
-  }
-
-  if (state.linkDrag) {
-    state.linkDrag.pointerX = event.clientX;
-    state.linkDrag.pointerY = event.clientY;
-    renderLinkPreview();
-    return;
-  }
-
-  if (edgePinDrag) {
-    updateEdgePinDrag(event.clientX, event.clientY);
-    event.preventDefault();
-    return;
-  }
-
-  if (state.dragNode) {
-    const node = state.nodesById.get(state.dragNode.id);
-    const dx = (event.clientX - state.dragNode.startX) / state.viewport.scale;
-    const dy = (event.clientY - state.dragNode.startY) / state.viewport.scale;
-    if (Math.hypot(event.clientX - state.dragNode.startX,
-        event.clientY - state.dragNode.startY) > TOUCH_MOVE_THRESHOLD) {
-      state.dragNode.moved = true;
-    }
-    applyBlockedDragPositions(new Map([[node.id, {
-      x: Math.round(state.dragNode.nodeX + dx),
-      y: Math.round(state.dragNode.nodeY + dy)
-    }]]));
-    scheduleDraggedDiagramSync();
-    return;
-  }
-
-  if (state.dragBoundedContext) {
-    const dx = (event.clientX - state.dragBoundedContext.startX)
-        / state.viewport.scale;
-    const dy = (event.clientY - state.dragBoundedContext.startY)
-        / state.viewport.scale;
-    const desiredPositions = new Map(state.dragBoundedContext.nodePositions.map(
-        (entry) => [entry.id, {
-          x: Math.round(entry.x + dx),
-          y: Math.round(entry.y + dy)
-        }]));
-    applyBlockedDragPositions(desiredPositions);
-    scheduleDraggedDiagramSync();
-    return;
-  }
-
-  if (state.panDrag) {
-    state.viewport.x = state.panDrag.viewX + (event.clientX
-        - state.panDrag.startX);
-    state.viewport.y = state.panDrag.viewY + (event.clientY
-        - state.panDrag.startY);
-    applyViewport();
-    event.preventDefault();
-  }
-  // Only publish cursor when not performing a drag/pan/link operation
-  if (!state.dragNode && !state.dragBoundedContext && !state.panDrag
-      && !state.linkDrag) {
-    publishCursor(event.clientX, event.clientY, "ONLINE");
-  }
-}
-
-export function onGlobalTouchMove(event) {
-  if (ensureG6Canvas()) {
-    const touch = event.touches?.[0];
-    if (touch && !state.dragNode && !state.dragBoundedContext
-        && !state.panDrag && !state.linkDrag) {
-      publishCursor(touch.clientX, touch.clientY, "ONLINE");
-    }
-    return;
-  }
-  if (event.touches.length !== 1) {
-    return;
-  }
-  const touch = event.touches[0];
-
-  if (state.linkDrag) {
-    state.linkDrag.pointerX = touch.clientX;
-    state.linkDrag.pointerY = touch.clientY;
-    renderLinkPreview();
-    event.preventDefault();
-    return;
-  }
-
-  if (edgePinDrag) {
-    updateEdgePinDrag(touch.clientX, touch.clientY);
-    event.preventDefault();
-    return;
-  }
-
-  if (state.dragNode) {
-    const node = state.nodesById.get(state.dragNode.id);
-    const dx = (touch.clientX - state.dragNode.startX) / state.viewport.scale;
-    const dy = (touch.clientY - state.dragNode.startY) / state.viewport.scale;
-    if (state.touchTap && Math.hypot(touch.clientX - state.touchTap.startX,
-        touch.clientY - state.touchTap.startY) > TOUCH_MOVE_THRESHOLD) {
-      state.touchTap.moved = true;
-    }
-    applyBlockedDragPositions(new Map([[node.id, {
-      x: Math.round(state.dragNode.nodeX + dx),
-      y: Math.round(state.dragNode.nodeY + dy)
-    }]]));
-    scheduleDraggedDiagramSync();
-    event.preventDefault();
-    return;
-  }
-
-  if (state.dragBoundedContext) {
-    const dx = (touch.clientX - state.dragBoundedContext.startX)
-        / state.viewport.scale;
-    const dy = (touch.clientY - state.dragBoundedContext.startY)
-        / state.viewport.scale;
-    const desiredPositions = new Map(state.dragBoundedContext.nodePositions.map(
-        (entry) => [entry.id, {
-          x: Math.round(entry.x + dx),
-          y: Math.round(entry.y + dy)
-        }]));
-    applyBlockedDragPositions(desiredPositions);
-    scheduleDraggedDiagramSync();
-    event.preventDefault();
-    return;
-  }
-
-  if (state.panDrag) {
-    state.viewport.x = state.panDrag.viewX + (touch.clientX
-        - state.panDrag.startX);
-    state.viewport.y = state.panDrag.viewY + (touch.clientY
-        - state.panDrag.startY);
-    applyViewport();
-    event.preventDefault();
-  }
-  // Only publish cursor when not performing a drag/pan/link operation
-  if (!state.dragNode && !state.dragBoundedContext && !state.panDrag
-      && !state.linkDrag) {
-    publishCursor(touch.clientX, touch.clientY, "ONLINE");
-  }
-}
-
-export function onGlobalMouseUp(event) {
-  if (ensureG6Canvas()) {
-    return;
-  }
-  if (edgePinDrag) {
-    finalizeEdgePinDrag();
-    event.preventDefault();
-    return;
-  }
-  if (state.linkDrag) {
-    const sourceId = state.linkDrag.sourceId;
-    const dropTarget = document.elementFromPoint(event.clientX,
-        event.clientY)?.closest(".node");
-    state.linkDrag = null;
-    renderNodes();
-    renderEdges();
-    if (dropTarget) {
-      addConnection(sourceId, dropTarget.dataset.nodeId,
-          {
-            interactivePicker: true,
-            preferredKind: state.preferredConnectionKind
-          });
-    } else {
-      setStatus("Connection canceled");
-    }
-  }
-  if (state.dragNode || state.dragBoundedContext) {
-    markModelDirty();
-    if (dragSyncFrame) {
-      window.cancelAnimationFrame(dragSyncFrame);
-      dragSyncFrame = 0;
-    }
-    // Force immediate edge sync on drag end for final accurate state
-    syncDraggedDiagram();
-  }
-  if (state.dragNode?.moved) {
-    commitUndoSnapshot(state.dragNode.undoSnapshot);
-  }
-  if (state.dragBoundedContext && state.dragBoundedContext.nodePositions.some(
-      (entry) => {
-        const node = state.nodesById.get(entry.id);
-        return node && (node.x !== entry.x || node.y !== entry.y);
-      })) {
-    commitUndoSnapshot(state.dragBoundedContext.undoSnapshot);
-  }
-  if (state.dragNode) {
-    const draggedNode = state.nodesById.get(state.dragNode.id);
-    if (state.dragNode.moved) {
-      suppressNextNodeClickId = state.dragNode.id;
-    }
-    if (draggedNode) {
-      // Always publish final position with immediate flag
-      publishNodeMove(draggedNode.id, draggedNode.x, draggedNode.y,
-          {immediate: true});
-    }
-  }
-  if (state.dragBoundedContext) {
-    state.dragBoundedContext.nodePositions.forEach((entry) => {
-      const node = state.nodesById.get(entry.id);
-      if (!node) {
-        return;
-      }
-      publishNodeMove(node.id, node.x, node.y, {immediate: true});
-    });
-  }
-  state.dragNode = null;
-  state.dragBoundedContext = null;
-  state.panDrag = null;
-  lastPublishMoveTime = 0;
-  setCanvasPanSelectionGuard(false);
-}
-
-export function onGlobalTouchEnd(event) {
-  if (ensureG6Canvas()) {
-    state.touchTap = null;
-    return;
-  }
-  const touch = event.changedTouches?.[0];
-  if (edgePinDrag) {
-    finalizeEdgePinDrag();
-    event.preventDefault();
-    return;
-  }
-  if (state.linkDrag) {
-    const sourceId = state.linkDrag.sourceId;
-    const dropTarget = touch ? document.elementFromPoint(touch.clientX,
-        touch.clientY)?.closest(".node") : null;
-    state.linkDrag = null;
-    renderNodes();
-    renderEdges();
-    if (dropTarget) {
-      addConnection(sourceId, dropTarget.dataset.nodeId,
-          {
-            interactivePicker: true,
-            preferredKind: state.preferredConnectionKind
-          });
-    } else {
-      setStatus("Connection canceled");
-    }
-  }
-
-  if (state.dragNode || state.dragBoundedContext) {
-    markModelDirty();
-    if (dragSyncFrame) {
-      window.cancelAnimationFrame(dragSyncFrame);
-      dragSyncFrame = 0;
-    }
-    // Force immediate edge sync on drag end for final accurate state
-    syncDraggedDiagram();
-  }
-  if (state.dragNode?.moved) {
-    commitUndoSnapshot(state.dragNode.undoSnapshot);
-  }
-  if (state.dragBoundedContext && state.dragBoundedContext.nodePositions.some(
-      (entry) => {
-        const node = state.nodesById.get(entry.id);
-        return node && (node.x !== entry.x || node.y !== entry.y);
-      })) {
-    commitUndoSnapshot(state.dragBoundedContext.undoSnapshot);
-  }
-  if (state.dragNode) {
-    const draggedNode = state.nodesById.get(state.dragNode.id);
-    if (draggedNode) {
-      publishNodeMove(draggedNode.id, draggedNode.x, draggedNode.y,
-          {immediate: true});
-    }
-  }
-  if (state.dragBoundedContext) {
-    state.dragBoundedContext.nodePositions.forEach((entry) => {
-      const node = state.nodesById.get(entry.id);
-      if (!node) {
-        return;
-      }
-      publishNodeMove(node.id, node.x, node.y, {immediate: true});
-    });
-  }
-  if (state.touchTap && !state.touchTap.moved) {
-    activateNode(state.touchTap.nodeId);
-  }
-
-  state.touchTap = null;
-  state.dragNode = null;
-  state.dragBoundedContext = null;
-  state.panDrag = null;
-  lastPublishMoveTime = 0;
-  setCanvasPanSelectionGuard(false);
-}
-
-export function onCanvasWheel(event) {
-  if (ensureG6Canvas()) {
-    closeEdgeKindPicker();
-    return;
-  }
-  closeEdgeKindPicker();
-  event.preventDefault();
-  const prev = state.viewport.scale;
-  const delta = event.deltaY < 0 ? 1.1 : 0.9;
-  const next = Math.max(0.01, Math.min(2.5, prev * delta));
-
-  const rect = el.canvasViewport.getBoundingClientRect();
-  const px = event.clientX - rect.left;
-  const py = event.clientY - rect.top;
-  state.viewport.x = px - ((px - state.viewport.x) * (next / prev));
-  state.viewport.y = py - ((py - state.viewport.y) * (next / prev));
-  state.viewport.scale = next;
-  applyViewport();
-}
-
 // ── Drag-and-drop from palette ────────────────────────────────────────────────
 
 export function setupDnD() {
@@ -6216,18 +4433,15 @@ export function setupDnD() {
       state.tabs[state.activeType].diagram = state.diagram;
     }
     syncCanvasIndexesFromState();
-    if (ensureG6Canvas()) {
-      state.diagram.nodes.filter((item) => !previousNodeIds.has(item.id))
-      .forEach((item) => addG6Node(item));
-      state.diagram.connections.filter((item) => !previousEdgeIds.has(item.id))
-      .forEach((item) => addG6Edge(item));
-      updateG6Node(node.id);
-      updateG6Selection();
-      updateG6ContextBoxes();
-      workbenchSurfaces();
-    } else {
-      renderDiagram();
-    }
+    ensureG6Canvas();
+    state.diagram.nodes.filter((item) => !previousNodeIds.has(item.id))
+    .forEach((item) => addG6Node(item));
+    state.diagram.connections.filter((item) => !previousEdgeIds.has(item.id))
+    .forEach((item) => addG6Edge(item));
+    updateG6Node(node.id);
+    updateG6Selection();
+    updateG6ContextBoxes();
+    workbenchSurfaces();
     setStatus(`Added ${type}`);
     markModelDirty();
     publishNodeAdd(node);
@@ -6286,19 +4500,16 @@ export function addConnection(sourceId, targetId,
   state.diagram.connections.push(edge);
   addConnectionToGraphAndActiveView(edge);
   state.selectedConnectionId = edge.id;
-  if (ensureG6Canvas()) {
-    connectionsById.set(edge.id, edge);
-    [edge.sourceId, edge.targetId].forEach((nodeId) => {
-      if (!edgeIdsByNodeId.has(nodeId)) {
-        edgeIdsByNodeId.set(nodeId, new Set());
-      }
-      edgeIdsByNodeId.get(nodeId).add(edge.id);
-    });
-    addG6Edge(edge);
-    updateG6Selection();
-  } else {
-    renderEdges();
-  }
+  ensureG6Canvas();
+  connectionsById.set(edge.id, edge);
+  [edge.sourceId, edge.targetId].forEach((nodeId) => {
+    if (!edgeIdsByNodeId.has(nodeId)) {
+      edgeIdsByNodeId.set(nodeId, new Set());
+    }
+    edgeIdsByNodeId.get(nodeId).add(edge.id);
+  });
+  addG6Edge(edge);
+  updateG6Selection();
   markModelDirty();
   publishDiagramUpdate();
   if (interactivePicker) {
@@ -6392,13 +4603,10 @@ function createShortcutConnection(source, target) {
     addConnectionToGraphAndActiveView(targetEdge);
   }
   syncActiveViewFromVisibleGraph();
-  if (ensureG6Canvas()) {
-    syncCanvasIndexesFromState();
-    syncG6FromState({full: false});
-    workbenchSurfaces();
-  } else {
-    renderDiagram();
-  }
+  ensureG6Canvas();
+  syncCanvasIndexesFromState();
+  syncG6FromState({full: false});
+  workbenchSurfaces();
   markModelDirty();
   publishDiagramUpdate({immediate: true});
   setStatus(`Created ${rule.label || "PSM shortcut connector"}`);
@@ -6469,11 +4677,8 @@ export function setConnectMode(enabled) {
     state.preferredConnectionKind = null;
     closeEdgeKindPicker();
   }
-  if (ensureG6Canvas()) {
-    updateG6ConnectionState();
-  } else {
-    renderNodes();
-  }
+  ensureG6Canvas();
+  updateG6ConnectionState();
   setStatus(enabled ? "Connect mode enabled - click source then target"
       : "Connect mode disabled");
 }
@@ -6487,11 +4692,8 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
   state.connectMode = true;
   state.connectSourceId = nodeId;
   state.preferredConnectionKind = preferredKind || null;
-  if (ensureG6Canvas()) {
-    updateG6ConnectionState();
-  } else {
-    renderNodes();
-  }
+  ensureG6Canvas();
+  updateG6ConnectionState();
   setStatus(preferredKind
       ? `${preferredKind}: select a highlighted legal target`
       : "Select a highlighted legal target");
@@ -6501,99 +4703,27 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
 // ── Impact highlight (called by renderNodes and impact module) ────────────────
 
 export function highlightImpactedNodes() {
-  if (ensureG6Canvas()) {
-    updateG6ImpactState();
-    return;
-  }
-  el.nodeLayer.querySelectorAll(".node").forEach((n) => {
-    n.classList.remove("node-impact-focal", "node-impacted-upstream",
-        "node-impacted-downstream", "node-impact-connected");
-  });
-
-  if (!state.impactMode || !state.impactData) {
-    return;
-  }
-
-  const data = state.impactData;
-
-  if (data.focalElement?.elementId) {
-    const focalEl = el.nodeLayer.querySelector(
-        `[data-node-id="${data.focalElement.elementId}"]`);
-    if (focalEl) {
-      focalEl.classList.add("node-impact-focal");
-    }
-  }
-
-  (data.upstream || []).forEach((item) => {
-    if (item.elementId) {
-      const nodeEl = el.nodeLayer.querySelector(
-          `[data-node-id="${item.elementId}"]`);
-      if (nodeEl) {
-        nodeEl.classList.add("node-impacted-upstream");
-      }
-    }
-  });
-
-  (data.downstream || []).forEach((item) => {
-    if (item.elementId) {
-      const nodeEl = el.nodeLayer.querySelector(
-          `[data-node-id="${item.elementId}"]`);
-      if (nodeEl) {
-        nodeEl.classList.add("node-impacted-downstream");
-      }
-    }
-  });
-
-  (data.connectedElements || []).forEach((item) => {
-    if (item.elementId) {
-      const nodeEl = el.nodeLayer.querySelector(
-          `[data-node-id="${item.elementId}"]`);
-      if (nodeEl) {
-        nodeEl.classList.add("node-impact-connected");
-      }
-    }
-  });
+  ensureG6Canvas();
+  updateG6ImpactState();
 }
 
 export function scrollToNodeAndHighlight(elementId) {
-  if (ensureG6Canvas()) {
-    const node = state.nodesById.get(elementId)
-        || state.diagram.nodes.find((candidate) => candidate.id === elementId);
-    if (!node) {
-      return;
-    }
-    focusG6Node(elementId);
-    const previousImpact = state.impactData;
-    state.impactData = {
-      ...(state.impactData || {}),
-      focalElement: {elementId}
-    };
-    updateG6ImpactState();
-    setTimeout(() => {
-      state.impactData = previousImpact;
-      updateG6ImpactState();
-    }, 2500);
-    return;
-  }
-  const nodeEl = el.nodeLayer.querySelector(`[data-node-id="${elementId}"]`);
-  if (!nodeEl) {
-    return;
-  }
-
-  const node = state.nodesById.get(elementId);
+  ensureG6Canvas();
+  const node = state.nodesById.get(elementId)
+      || state.diagram.nodes.find((candidate) => candidate.id === elementId);
   if (!node) {
     return;
   }
-
-  const vpRect = el.canvasViewport.getBoundingClientRect();
-  state.viewport.x = vpRect.width / 2 - node.x * state.viewport.scale - 70;
-  state.viewport.y = vpRect.height / 2 - node.y * state.viewport.scale - 28;
-  applyViewport();
-
-  nodeEl.classList.add("node-impact-focal");
+  focusG6Node(elementId);
+  const previousImpact = state.impactData;
+  state.impactData = {
+    ...(state.impactData || {}),
+    focalElement: {elementId}
+  };
+  updateG6ImpactState();
   setTimeout(() => {
-    nodeEl.classList.remove("node-impact-focal");
-    highlightImpactedNodes();
+    state.impactData = previousImpact;
+    updateG6ImpactState();
   }, 2500);
 }
 
@@ -6613,26 +4743,11 @@ export function scrollToConnectionAndHighlight(connectionId) {
   const nodeH = getNodeHeight();
   const midX = (source.x + nodeW / 2 + target.x + nodeW / 2) / 2;
   const midY = (source.y + nodeH / 2 + target.y + nodeH / 2) / 2;
-  if (ensureG6Canvas()) {
-    state.selectedConnectionId = connectionId;
-    focusG6CanvasPoint(midX, midY);
-    updateG6Selection();
-    updateG6Edge(connectionId);
-    setTimeout(() => updateG6Edge(connectionId), 1800);
-    return true;
-  }
-  const vpRect = el.canvasViewport.getBoundingClientRect();
-  state.viewport.x = vpRect.width / 2 - midX * state.viewport.scale;
-  state.viewport.y = vpRect.height / 2 - midY * state.viewport.scale;
+  ensureG6Canvas();
   state.selectedConnectionId = connectionId;
-  applyViewport();
-  renderEdges();
-
-  const focused = el.edgeLayer.querySelectorAll(
-      `[data-edge-id="${connectionId}"]`);
-  focused.forEach((item) => item.classList.add("edge-focus-flash"));
-  setTimeout(() => {
-    focused.forEach((item) => item.classList.remove("edge-focus-flash"));
-  }, 1800);
+  focusG6CanvasPoint(midX, midY);
+  updateG6Selection();
+  updateG6Edge(connectionId);
+  setTimeout(() => updateG6Edge(connectionId), 1800);
   return true;
 }
