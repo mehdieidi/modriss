@@ -1653,18 +1653,28 @@ function collectNeighborhoodElementIds(elementId, maxDepth = 1) {
     if (!current || current.depth >= normalizedDepth) {
       continue;
     }
-    state.graph?.relationshipsById?.forEach((relationship) => {
-      const sourceId = relationship.sourceElementId || relationship.source;
-      const targetId = relationship.targetElementId || relationship.target;
-      if (!sourceId || !targetId) {
-        return;
-      }
-      let nextId = "";
-      if (sourceId === current.id) {
-        nextId = targetId;
-      } else if (targetId === current.id) {
-        nextId = sourceId;
-      }
+    const connected = new Set();
+    state.graph?.relationshipsBySource?.get(current.id)?.forEach(
+        (relationshipId) => {
+          const relationship = state.graph.relationshipsById.get(
+              relationshipId);
+          const targetId = relationship?.targetElementId
+              || relationship?.target;
+          if (targetId) {
+            connected.add(targetId);
+          }
+        });
+    state.graph?.relationshipsByTarget?.get(current.id)?.forEach(
+        (relationshipId) => {
+          const relationship = state.graph.relationshipsById.get(
+              relationshipId);
+          const sourceId = relationship?.sourceElementId
+              || relationship?.source;
+          if (sourceId) {
+            connected.add(sourceId);
+          }
+        });
+    connected.forEach((nextId) => {
       if (!nextId || visited.has(nextId)
           || !state.graph.elementsById.has(nextId)) {
         return;
@@ -1674,6 +1684,42 @@ function collectNeighborhoodElementIds(elementId, maxDepth = 1) {
     });
   }
   return visited;
+}
+
+function relationshipsWithinElementSet(elementSet) {
+  const relationships = [];
+  const seen = new Set();
+  if (!elementSet?.size) {
+    return relationships;
+  }
+  if (!state.graph?.relationshipsBySource?.size) {
+    state.graph?.relationshipsById?.forEach((relationship) => {
+      const sourceId = relationship.sourceElementId || relationship.source;
+      const targetId = relationship.targetElementId || relationship.target;
+      if (elementSet.has(sourceId) && elementSet.has(targetId)) {
+        relationships.push(relationship);
+      }
+    });
+    return relationships;
+  }
+  elementSet.forEach((sourceId) => {
+    state.graph.relationshipsBySource.get(sourceId)?.forEach(
+        (relationshipId) => {
+          if (seen.has(relationshipId)) {
+            return;
+          }
+          const relationship = state.graph.relationshipsById.get(
+              relationshipId);
+          const targetId = relationship?.targetElementId
+              || relationship?.target;
+          if (!relationship || !elementSet.has(targetId)) {
+            return;
+          }
+          seen.add(relationshipId);
+          relationships.push(relationship);
+        });
+  });
+  return relationships;
 }
 
 function viewNodesByElement(view) {
@@ -1734,20 +1780,17 @@ function createContainerFocusView(node) {
   const descendantIds = [...collectContainedDescendantIds(node.id)];
   const descendantSet = new Set(descendantIds);
   const viewNodePositions = viewNodesByElement(previousView);
-  const edges = [];
-  state.graph.relationshipsById.forEach((relationship) => {
-    const sourceId = relationship.sourceElementId || relationship.source;
-    const targetId = relationship.targetElementId || relationship.target;
-    if (!descendantSet.has(sourceId) || !descendantSet.has(targetId)) {
-      return;
-    }
-    edges.push({
-      relationshipId: relationship.id,
-      sourceId,
-      targetId,
-      visible: true
-    });
-  });
+  const edges = relationshipsWithinElementSet(descendantSet).map(
+      (relationship) => {
+        const sourceId = relationship.sourceElementId || relationship.source;
+        const targetId = relationship.targetElementId || relationship.target;
+        return {
+          relationshipId: relationship.id,
+          sourceId,
+          targetId,
+          visible: true
+        };
+      });
   const focusNodes = descendantIds.map((elementId) => ({
     elementId,
     ...(viewNodePositions.get(elementId) || {})
@@ -1804,20 +1847,17 @@ function createNeighborhoodFocusView(node, depth = 1) {
   const elementIds = [...neighborhoodSet];
   const viewNodePositions = viewNodesByElement(previousView);
   const edgePositions = viewEdgesByRelationship(previousView);
-  const edges = [];
-  state.graph.relationshipsById.forEach((relationship) => {
-    const sourceId = relationship.sourceElementId || relationship.source;
-    const targetId = relationship.targetElementId || relationship.target;
-    if (!neighborhoodSet.has(sourceId) || !neighborhoodSet.has(targetId)) {
-      return;
-    }
-    edges.push({
-      relationshipId: relationship.id,
-      sourceId,
-      targetId,
-      visible: true
-    });
-  });
+  const edges = relationshipsWithinElementSet(neighborhoodSet).map(
+      (relationship) => {
+        const sourceId = relationship.sourceElementId || relationship.source;
+        const targetId = relationship.targetElementId || relationship.target;
+        return {
+          relationshipId: relationship.id,
+          sourceId,
+          targetId,
+          visible: true
+        };
+      });
   const focusNodes = elementIds.map((elementId) => ({
     elementId,
     ...(viewNodePositions.get(elementId) || {})

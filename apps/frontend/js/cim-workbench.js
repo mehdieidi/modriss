@@ -43,6 +43,17 @@ let renderDiagramCallback = null;
 let renderPaletteCallback = null;
 let openAttributePanelCallback = null;
 let openConnectionPanelCallback = null;
+let searchRenderTimer = 0;
+
+function scheduleSearchRender() {
+  if (searchRenderTimer) {
+    window.clearTimeout(searchRenderTimer);
+  }
+  searchRenderTimer = window.setTimeout(() => {
+    searchRenderTimer = 0;
+    renderCimWorkbenchSurface();
+  }, 90);
+}
 
 const DEFAULT_REPRESENTATION_BY_PROFILE = {
   dashboard: "dashboard",
@@ -1560,7 +1571,7 @@ function bindSurfaceEvents() {
         : null;
     if (target?.dataset?.cimSearch !== undefined) {
       state.cimWorkbench.search = target.value;
-      renderCimWorkbenchSurface();
+      scheduleSearchRender();
     }
   });
 }

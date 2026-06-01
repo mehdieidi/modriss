@@ -33,6 +33,17 @@ let renderDiagramCallback = null;
 let renderPaletteCallback = null;
 let openAttributePanelCallback = null;
 let openConnectionPanelCallback = null;
+let searchRenderTimer = 0;
+
+function scheduleSearchRender() {
+  if (searchRenderTimer) {
+    window.clearTimeout(searchRenderTimer);
+  }
+  searchRenderTimer = window.setTimeout(() => {
+    searchRenderTimer = 0;
+    renderPsmWorkbenchSurface();
+  }, 90);
+}
 
 const DEFAULT_REPRESENTATION_BY_PROFILE = {
   governance: "matrix",
@@ -896,7 +907,7 @@ function bindSurfaceEvents() {
         : null;
     if (target?.dataset?.psmSearch !== undefined) {
       state.psmWorkbench.search = target.value;
-      renderPsmWorkbenchSurface();
+      scheduleSearchRender();
     }
   });
 }

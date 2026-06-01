@@ -7,6 +7,7 @@ let labelInput = null;
 let previewSvg = null;
 let contextLayer = null;
 let nodeIconLayer = null;
+let contextBoxItems = new Map();
 
 function ensureOverlayRoot() {
   if (overlayRoot?.isConnected) {
@@ -174,50 +175,72 @@ export function renderContextBoxes(graph, boxes = [], {
   if (!boxes.length) {
     contextLayer?.remove();
     contextLayer = null;
+    contextBoxItems.clear();
     return;
   }
   const layer = ensureContextLayer();
-  layer.innerHTML = "";
+  const keep = new Set();
   boxes.forEach((box) => {
+    const key = String(box.name || "");
+    if (!key) {
+      return;
+    }
+    keep.add(key);
     const min = graphClientPoint(graph, box.minX, box.minY);
     const max = graphClientPoint(graph, box.maxX, box.maxY);
     const a = viewportPointFromClient(min.x, min.y);
     const b = viewportPointFromClient(max.x, max.y);
-    const item = document.createElement("div");
-    item.className = "g6-bounded-context-box";
-    item.classList.toggle("selected", selectedContextName === box.name);
-    item.dataset.contextName = box.name;
-    item.style.left = `${Math.round(Math.min(a.x, b.x))}px`;
-    item.style.top = `${Math.round(Math.min(a.y, b.y))}px`;
-    item.style.width = `${Math.max(1, Math.round(Math.abs(b.x - a.x)))}px`;
-    item.style.height = `${Math.max(1, Math.round(Math.abs(b.y - a.y)))}px`;
-    item.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onSelect(box.name);
-    });
-    item.addEventListener("dblclick", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onOpen(box.name);
-    });
-
-    const label = document.createElement("div");
-    label.className = "g6-bounded-context-label";
-    const name = document.createElement("span");
-    name.textContent = box.name;
-    const open = document.createElement("button");
-    open.type = "button";
-    open.textContent = "Open";
-    open.title = `Open ${box.name}`;
-    open.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onOpen(box.name);
-    });
-    label.append(name, open);
-    item.appendChild(label);
-    layer.appendChild(item);
+    let record = contextBoxItems.get(key);
+    if (!record) {
+      const item = document.createElement("div");
+      item.className = "g6-bounded-context-box";
+      const label = document.createElement("div");
+      label.className = "g6-bounded-context-label";
+      const name = document.createElement("span");
+      const open = document.createElement("button");
+      open.type = "button";
+      open.textContent = "Open";
+      label.append(name, open);
+      item.appendChild(label);
+      record = {item, name, open, contextName: key, onSelect, onOpen};
+      item.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        record.onSelect(record.contextName);
+      });
+      item.addEventListener("dblclick", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        record.onOpen(record.contextName);
+      });
+      open.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        record.onOpen(record.contextName);
+      });
+      contextBoxItems.set(key, record);
+      layer.appendChild(item);
+    }
+    record.contextName = key;
+    record.onSelect = onSelect;
+    record.onOpen = onOpen;
+    record.name.textContent = key;
+    record.open.title = `Open ${key}`;
+    record.item.classList.toggle("selected", selectedContextName === key);
+    record.item.dataset.contextName = key;
+    record.item.style.left = `${Math.round(Math.min(a.x, b.x))}px`;
+    record.item.style.top = `${Math.round(Math.min(a.y, b.y))}px`;
+    record.item.style.width = `${Math.max(1,
+        Math.round(Math.abs(b.x - a.x)))}px`;
+    record.item.style.height = `${Math.max(1,
+        Math.round(Math.abs(b.y - a.y)))}px`;
+  });
+  contextBoxItems.forEach((record, key) => {
+    if (keep.has(key)) {
+      return;
+    }
+    record.item.remove();
+    contextBoxItems.delete(key);
   });
 }
 
@@ -228,4 +251,5 @@ export function clearG6Overlays() {
   nodeIconLayer = null;
   contextLayer?.remove();
   contextLayer = null;
+  contextBoxItems.clear();
 }

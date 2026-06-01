@@ -1,6 +1,7 @@
 let drawFrame = 0;
 let pendingRender = false;
 let renderAgain = false;
+const DEFAULT_SPATIAL_CELL_SIZE = 256;
 
 export function detailLevelForZoom(zoom = 1) {
   if (zoom < 0.35) {
@@ -44,6 +45,163 @@ export function createAdjacencyIndex(edges = []) {
     });
   });
   return {byNode, byId};
+}
+
+function finiteNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function nodeBoundsForIndex(node, fallbackSize = {}) {
+  if (!node?.id) {
+    return null;
+  }
+  const style = node.style && typeof node.style === "object" ? node.style : {};
+  const size = Array.isArray(style.size) ? style.size : [];
+  const width = Math.max(1,
+      finiteNumber(style.width, finiteNumber(size[0],
+          finiteNumber(node.width, fallbackSize.width || 1))));
+  const height = Math.max(1,
+      finiteNumber(style.height, finiteNumber(size[1],
+          finiteNumber(node.height, fallbackSize.height || 1))));
+  const centerX = Number(style.x);
+  const centerY = Number(style.y);
+  const x = Number.isFinite(centerX)
+      ? centerX - width / 2
+      : finiteNumber(node.x, 0);
+  const y = Number.isFinite(centerY)
+      ? centerY - height / 2
+      : finiteNumber(node.y, 0);
+  return {
+    id: node.id,
+    x,
+    y,
+    width,
+    height,
+    maxX: x + width,
+    maxY: y + height
+  };
+}
+
+export function createSpatialIndex(nodes = [], {
+  cellSize = DEFAULT_SPATIAL_CELL_SIZE,
+  fallbackSize = {}
+} = {}) {
+  const cells = new Map();
+  const entries = new Map();
+  let orderCounter = 0;
+
+  const keyFor = (x, y) =>
+      `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
+
+  const cellKeysForBounds = (bounds) => {
+    const minCellX = Math.floor(bounds.x / cellSize);
+    const minCellY = Math.floor(bounds.y / cellSize);
+    const maxCellX = Math.floor(bounds.maxX / cellSize);
+    const maxCellY = Math.floor(bounds.maxY / cellSize);
+    const keys = [];
+    for (let cellX = minCellX; cellX <= maxCellX; cellX += 1) {
+      for (let cellY = minCellY; cellY <= maxCellY; cellY += 1) {
+        keys.push(`${cellX}:${cellY}`);
+      }
+    }
+    return keys;
+  };
+
+  const remove = (id) => {
+    const entry = entries.get(id);
+    if (!entry) {
+      return false;
+    }
+    entry.cells.forEach((key) => {
+      const bucket = cells.get(key);
+      if (!bucket) {
+        return;
+      }
+      bucket.delete(id);
+      if (!bucket.size) {
+        cells.delete(key);
+      }
+    });
+    entries.delete(id);
+    return true;
+  };
+
+  const add = (node, nextFallbackSize = fallbackSize, order = null) => {
+    const bounds = nodeBoundsForIndex(node, nextFallbackSize);
+    if (!bounds) {
+      return false;
+    }
+    const keys = cellKeysForBounds(bounds);
+    keys.forEach((key) => {
+      if (!cells.has(key)) {
+        cells.set(key, new Set());
+      }
+      cells.get(key).add(bounds.id);
+    });
+    entries.set(bounds.id, {
+      ...bounds,
+      cells: keys,
+      order: Number.isFinite(order) ? order : orderCounter
+    });
+    if (!Number.isFinite(order)) {
+      orderCounter += 1;
+    }
+    return true;
+  };
+
+  const index = {
+    rebuild(nextNodes = [], options = {}) {
+      cells.clear();
+      entries.clear();
+      orderCounter = 0;
+      const nextFallbackSize = options.fallbackSize || fallbackSize;
+      nextNodes.forEach((node) => add(node, nextFallbackSize));
+      return index;
+    },
+    update(node, options = {}) {
+      if (!node?.id) {
+        return false;
+      }
+      const previous = entries.get(node.id);
+      remove(node.id);
+      return add(node, options.fallbackSize || fallbackSize, previous?.order);
+    },
+    remove,
+    has(id) {
+      return entries.has(id);
+    },
+    size() {
+      return entries.size;
+    },
+    findAt(x, y, {excludeId = ""} = {}) {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        return null;
+      }
+      const bucket = cells.get(keyFor(x, y));
+      if (!bucket?.size) {
+        return null;
+      }
+      let best = null;
+      let bestOrder = -1;
+      bucket.forEach((id) => {
+        if (id === excludeId) {
+          return;
+        }
+        const entry = entries.get(id);
+        if (!entry || x < entry.x || x > entry.maxX || y < entry.y
+            || y > entry.maxY) {
+          return;
+        }
+        if (entry.order >= bestOrder) {
+          best = id;
+          bestOrder = entry.order;
+        }
+      });
+      return best;
+    }
+  };
+  return index.rebuild(nodes, {fallbackSize});
 }
 
 export function fingerprintElement(element) {

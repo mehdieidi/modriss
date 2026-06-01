@@ -40,6 +40,17 @@ let renderDiagramCallback = null;
 let renderPaletteCallback = null;
 let openAttributePanelCallback = null;
 let openConnectionPanelCallback = null;
+let searchRenderTimer = 0;
+
+function scheduleSearchRender() {
+  if (searchRenderTimer) {
+    window.clearTimeout(searchRenderTimer);
+  }
+  searchRenderTimer = window.setTimeout(() => {
+    searchRenderTimer = 0;
+    renderPimWorkbenchSurface();
+  }, 90);
+}
 
 const DEFAULT_REPRESENTATION_BY_PROFILE = {
   architecture: "diagram",
@@ -1333,7 +1344,7 @@ function bindSurfaceEvents() {
         : null;
     if (target?.dataset?.pimSearch !== undefined) {
       state.pimWorkbench.search = target.value;
-      renderPimWorkbenchSurface();
+      scheduleSearchRender();
     }
   });
 }

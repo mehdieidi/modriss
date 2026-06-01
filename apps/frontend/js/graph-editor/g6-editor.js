@@ -13,6 +13,7 @@ import {
 import {
   cancelScheduledDraw,
   createAdjacencyIndex,
+  createSpatialIndex,
   detailLevelForZoom,
   diffGraphData,
   fingerprintElement,
@@ -31,6 +32,8 @@ import {
 let editor = null;
 let extensionsRegistered = false;
 let pendingViewportFrame = 0;
+let pendingViewportSyncFrame = 0;
+const CONNECT_ILLEGAL_STATE_NODE_LIMIT = 800;
 
 function g6() {
   return window.G6 || null;
@@ -772,6 +775,10 @@ function mapperOptions() {
   };
 }
 
+function spatialIndexFallbackSize() {
+  return nodeSizeForDiagram(state.activeType);
+}
+
 function graphDataFromState() {
   return mapDiagramToG6({
     nodes: state.diagram.nodes,
@@ -795,6 +802,22 @@ function rememberDataSnapshot(data) {
     nodesById, edgesById, nodeFingerprints,
     edgeFingerprints
   };
+}
+
+function rebuildSpatialIndex(nodes = null) {
+  if (!editor) {
+    return;
+  }
+  if (!editor.spatialIndex) {
+    editor.spatialIndex = createSpatialIndex([], {
+      fallbackSize: spatialIndexFallbackSize()
+    });
+  }
+  const source = nodes || [...(editor.dataSnapshot?.nodesById?.values?.()
+      || [])];
+  editor.spatialIndex.rebuild(source, {
+    fallbackSize: spatialIndexFallbackSize()
+  });
 }
 
 function ensureDataSnapshot() {
@@ -836,13 +859,39 @@ function setCanvasZoomIndicator() {
   }
 }
 
-function settleNativeViewport() {
+function updateViewportChrome() {
+  el.canvasGrid?.style.setProperty("--viewport-scale",
+      String(state.viewport.scale || 1));
+  el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
+  el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
+      && state.viewport.scale < 0.75);
+  el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
+}
+
+function runViewportSync({syncSelection = false} = {}) {
   syncViewportStateFromGraph();
+  setCanvasZoomIndicator();
+  updateViewportChrome();
   updateG6Lod();
-  updateG6NodeIcons();
-  updateG6ContextBoxes();
-  updateG6Selection();
+  updateG6ContextBoxes(null, {useCache: true});
+  if (syncSelection) {
+    updateG6Selection();
+  }
   editor?.callbacks?.onViewportSynced?.();
+}
+
+function settleNativeViewport() {
+  runViewportSync({syncSelection: true});
+}
+
+function scheduleViewportSync() {
+  if (pendingViewportSyncFrame) {
+    return;
+  }
+  pendingViewportSyncFrame = window.requestAnimationFrame(() => {
+    pendingViewportSyncFrame = 0;
+    runViewportSync();
+  });
 }
 
 function afterGraphViewport(result) {
@@ -861,6 +910,9 @@ function rememberNodeData(nodeData) {
   const snapshot = ensureDataSnapshot();
   snapshot.nodesById.set(nodeData.id, nodeData);
   snapshot.nodeFingerprints.set(nodeData.id, fingerprintElement(nodeData));
+  editor.spatialIndex?.update?.(nodeData, {
+    fallbackSize: spatialIndexFallbackSize()
+  });
 }
 
 function rememberEdgeData(edgeData) {
@@ -883,6 +935,7 @@ function applyDiff(data) {
     diff.removeNodeIds.forEach((id) => {
       editor.nodeStateFlags.delete(id);
       editor.connectStateIds.delete(id);
+      editor.spatialIndex?.remove?.(id);
     });
   }
   if (diff.addNodes.length) {
@@ -907,7 +960,12 @@ function applyDiff(data) {
   if (diff.addNodes.length || diff.updateNodes.length
       || diff.removeNodeIds.length) {
     editor.connectStateKey = "";
+    editor.contextBoxesDirty = true;
   }
+  [...diff.addNodes, ...diff.updateNodes].forEach((node) =>
+    editor.spatialIndex?.update?.(node, {
+      fallbackSize: spatialIndexFallbackSize()
+    }));
   editor.dataSnapshot = diff.snapshot;
   editor.adjacency = createAdjacencyIndex(state.diagram.connections);
   if (diff.addNodes.length || diff.addEdges.length || diff.removeNodeIds.length
@@ -1076,6 +1134,11 @@ export function mountG6Editor(container, {
     hoveredNodeId: null,
     hoveredEdgeId: null,
     adjacency: createAdjacencyIndex(state.diagram.connections),
+    spatialIndex: createSpatialIndex([], {
+      fallbackSize: spatialIndexFallbackSize()
+    }),
+    contextBoxesCache: [],
+    contextBoxesDirty: true,
     lastLod: detailLevelForZoom(state.viewport.scale),
     lastShowLabels: true,
     viewportReady: false,
@@ -1093,6 +1156,10 @@ export function destroyG6Editor() {
   if (pendingViewportFrame) {
     window.cancelAnimationFrame(pendingViewportFrame);
     pendingViewportFrame = 0;
+  }
+  if (pendingViewportSyncFrame) {
+    window.cancelAnimationFrame(pendingViewportSyncFrame);
+    pendingViewportSyncFrame = 0;
   }
   clearG6Overlays();
   editor?.disposeInteractions?.();
@@ -1119,6 +1186,8 @@ export function setG6Data(nodes, edges) {
   resizeGraphToHost();
   editor.graph.setData?.(data);
   rememberDataSnapshot(data);
+  rebuildSpatialIndex(data.nodes);
+  editor.contextBoxesDirty = true;
   scheduleGraphRender(editor.graph);
   updateG6NodeIcons();
 }
@@ -1135,8 +1204,10 @@ export function syncG6FromState({full = false} = {}) {
   if (full || !editor.dataSnapshot) {
     editor.graph.setData?.(data);
     rememberDataSnapshot(data);
+    rebuildSpatialIndex(data.nodes);
     editor.adjacency = createAdjacencyIndex(state.diagram.connections);
     editor.connectStateKey = "";
+    editor.contextBoxesDirty = true;
     scheduleGraphRender(editor.graph);
   } else {
     applyDiff(data);
@@ -1155,6 +1226,7 @@ export function addG6Node(node) {
   const mapped = mapNodeToG6(node, mapperOptions());
   editor.graph.addNodeData?.([mapped]);
   rememberNodeData(mapped);
+  editor.contextBoxesDirty = true;
   scheduleGraphRender(editor.graph);
   updateG6NodeIcons();
 }
@@ -1172,6 +1244,7 @@ export function updateG6Node(nodeId, patch = {}) {
   const mapped = mapNodeToG6(node, mapperOptions());
   editor.graph.updateNodeData?.([mapped]);
   rememberNodeData(mapped);
+  editor.contextBoxesDirty = true;
   scheduleGraphDraw(editor.graph);
   updateG6NodeIcons();
 }
@@ -1196,6 +1269,14 @@ export function updateG6NodePosition(nodeId, x, y) {
     }
   }]);
   rememberNodeData(mapNodeToG6(node, mapperOptions()));
+  editor.spatialIndex?.update?.({
+    id: nodeId,
+    x: node.x,
+    y: node.y,
+    width: size.width,
+    height: size.height
+  }, {fallbackSize: size});
+  editor.contextBoxesDirty = true;
   scheduleGraphDraw(editor.graph);
   updateG6NodeIcons();
 }
@@ -1225,6 +1306,8 @@ export function removeG6Node(nodeId) {
   editor.dataSnapshot?.nodeFingerprints?.delete(nodeId);
   editor.nodeStateFlags.delete(nodeId);
   editor.connectStateIds.delete(nodeId);
+  editor.spatialIndex?.remove?.(nodeId);
+  editor.contextBoxesDirty = true;
   scheduleGraphRender(editor.graph);
   updateG6NodeIcons();
 }
@@ -1244,7 +1327,8 @@ export function updateG6Edge(edgeId, patch = {}) {
   if (!editor?.graph || !edgeId) {
     return;
   }
-  const edge = state.diagram.connections.find((item) => item.id === edgeId);
+  const edge = editor.adjacency?.byId?.get(edgeId)
+      || state.diagram.connections.find((item) => item.id === edgeId);
   if (!edge) {
     return;
   }
@@ -1271,10 +1355,10 @@ export function refreshG6Edges(edgeIds = []) {
   if (!editor?.graph) {
     return;
   }
-  const ids = edgeIds?.length ? new Set(edgeIds) : null;
-  const edges = state.diagram.connections.filter((edge) =>
-      !ids || ids.has(edge.id)).map((edge) => mapEdgeToG6(edge,
-      mapperOptions()));
+  const sourceEdges = edgeIds?.length
+      ? edgeIds.map((id) => editor.adjacency?.byId?.get(id)).filter(Boolean)
+      : state.diagram.connections;
+  const edges = sourceEdges.map((edge) => mapEdgeToG6(edge, mapperOptions()));
   if (edges.length) {
     const existingEdges = edges.filter((edge) => hasKnownEdge(edge.id));
     if (!existingEdges.length) {
@@ -1335,14 +1419,17 @@ export function updateG6ConnectionState() {
   editor.connectStateIds.clear();
   if (sourceId) {
     const source = state.nodesById.get(sourceId);
+    const showIllegalStates = state.nodesById.size
+        <= CONNECT_ILLEGAL_STATE_NODE_LIMIT;
     state.nodesById.forEach((node, id) => {
       let flag = "";
       if (id === sourceId) {
         flag = "connect-source";
       } else if (source) {
-        flag = editor.callbacks?.connectionTargetState?.(source, node)
-        === "legal"
-            ? "connect-legal" : "connect-illegal";
+        const legal = editor.callbacks?.connectionTargetState?.(source, node)
+            === "legal";
+        flag = legal ? "connect-legal"
+            : showIllegalStates ? "connect-illegal" : "";
       }
       if (flag) {
         editor.connectStateIds.add(id);
@@ -1483,10 +1570,7 @@ export function updateG6Viewport() {
     editor.viewportReady = true;
   };
   applyTransform();
-  syncViewportStateFromGraph();
-  updateG6Lod();
-  updateG6ContextBoxes();
-  updateG6Selection();
+  runViewportSync({syncSelection: true});
 }
 
 export function getG6Viewport() {
@@ -1622,8 +1706,7 @@ export function focusG6Node(nodeId) {
   }
   editor.graph.focusElement?.(nodeId, {duration: 280});
   window.setTimeout(() => {
-    syncViewportStateFromGraph();
-    updateG6ContextBoxes();
+    runViewportSync();
   }, 320);
 }
 
@@ -1662,11 +1745,21 @@ export function updateG6Lod() {
   syncG6FromState({full: false});
 }
 
-export function updateG6ContextBoxes(boxes = null) {
+export function updateG6ContextBoxes(boxes = null, {useCache = false} = {}) {
   if (!editor?.graph) {
     return;
   }
-  const resolved = boxes || editor.callbacks?.contextBoxes?.() || [];
+  let resolved = boxes;
+  if (resolved) {
+    editor.contextBoxesCache = resolved;
+    editor.contextBoxesDirty = false;
+  } else if (useCache && !editor.contextBoxesDirty) {
+    resolved = editor.contextBoxesCache || [];
+  } else {
+    resolved = editor.callbacks?.contextBoxes?.() || [];
+    editor.contextBoxesCache = resolved;
+    editor.contextBoxesDirty = false;
+  }
   renderContextBoxes(editor.graph, resolved, {
     selectedContextName: state.selectedBoundedContextName,
     onSelect: editor.callbacks?.onContextSelect,
@@ -1684,17 +1777,8 @@ export function updateG6NodeIcons() {
 }
 
 export function onG6ViewportChanged() {
-  syncViewportStateFromGraph();
-  setCanvasZoomIndicator();
-  el.canvasGrid?.style.setProperty("--viewport-scale",
-      String(state.viewport.scale || 1));
-  el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
-  el.canvasGrid?.classList.toggle("lod-medium", state.viewport.scale >= 0.35
-      && state.viewport.scale < 0.75);
-  el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-  updateG6Lod();
-  updateG6NodeIcons();
-  updateG6ContextBoxes();
-  updateG6Selection();
-  editor.callbacks?.onViewportSynced?.();
+  if (!editor?.graph) {
+    return;
+  }
+  scheduleViewportSync();
 }
