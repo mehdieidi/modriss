@@ -3701,7 +3701,7 @@ export function renderPalette() {
       allTypes = [];
     }
   } else {
-    allTypes = config.palette;
+    allTypes = Array.isArray(config.palette) ? config.palette : [];
   }
   const query = ((state.paletteSearch[state.activeType] || "") + "").trim()
   .toLowerCase();

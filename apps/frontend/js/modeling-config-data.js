@@ -229,26 +229,6 @@ export function modelingTypeMatches(typeKey, expected, actual) {
   if (expected === actual) {
     return true;
   }
-  const supertypes = {
-    ExternalSystem: ["Actor"],
-    NonFunctionalRequirement: ["Requirement"],
-    SecurityConstraint: ["NonFunctionalRequirement", "Requirement"],
-    PrivacyConstraint: ["NonFunctionalRequirement", "Requirement"],
-    ComplianceConstraint: ["NonFunctionalRequirement", "Requirement"],
-    DomainEntity: ["DomainConcept"],
-    ValueObject: ["DomainConcept"],
-    AggregateCandidate: ["DomainConcept"],
-    StartStep: ["ProcessStep"],
-    EndStep: ["ProcessStep"],
-    CommandStep: ["ProcessStep"],
-    QueryStep: ["ProcessStep"],
-    EventStep: ["ProcessStep"],
-    PolicyStep: ["ProcessStep"],
-    HumanTaskStep: ["ProcessStep"],
-    ExternalInteractionStep: ["ProcessStep"],
-    DecisionStep: ["ProcessStep"],
-    WaitStep: ["ProcessStep"]
-  };
   try {
     const definition = modelingElementDefinition(typeKey, actual);
     const configured = Array.isArray(definition?.supertypes)
@@ -257,9 +237,9 @@ export function modelingTypeMatches(typeKey, expected, actual) {
       return true;
     }
   } catch {
-    // fall through to the bundled CIM compatibility table
+    return false;
   }
-  return (supertypes[actual] || []).includes(expected);
+  return false;
 }
 
 function ruleSpecificity(rule) {
@@ -295,93 +275,6 @@ function normalizeKinds(kinds) {
   return [...deduped];
 }
 
-const CIM_REFERENCE_RULES = Object.freeze([
-  ["Actor", "Command", ["ISSUES"]],
-  ["Actor", "Query", ["ISSUES"]],
-  ["Actor", "BusinessEvent", ["OBSERVES"]],
-  ["Actor", "Role", ["PLAYS_ROLE"]],
-  ["Role", "Actor", ["ASSIGNED_TO"]],
-  ["Stakeholder", "BusinessGoal", ["OWNS"]],
-  ["BusinessGoal", "KPI", ["MEASURED_BY"]],
-  ["BusinessGoal", "BusinessCapability", ["REFINED_BY"]],
-  ["ExternalSystem", "BusinessEvent", ["PRODUCES"]],
-  ["BusinessEvent", "ExternalSystem", ["CONSUMED_BY"]],
-  ["ExternalSystem", "InformationItem", ["EXCHANGES_INFORMATION"]],
-  ["BusinessCapability", "BusinessGoal", ["SUPPORTS"]],
-  ["BusinessCapability", "Requirement", ["REALIZES"]],
-  ["BusinessCapability", "Command", ["CONTAINS_COMMAND"]],
-  ["BusinessCapability", "Query", ["CONTAINS_QUERY"]],
-  ["BusinessCapability", "BusinessEvent", ["CONTAINS_EVENT"]],
-  ["BusinessCapability", "DomainEntity", ["MANAGES"]],
-  ["BusinessCapability", "BusinessCapability", ["DEPENDS_ON"]],
-  ["BusinessCapability", "BusinessProcess", ["OWNS_PROCESS"]],
-  ["BoundedContextCandidate", "BusinessCapability", ["CONTAINS"]],
-  ["BoundedContextCandidate", "DomainEntity", ["CONTAINS"]],
-  ["BoundedContextCandidate", "Command", ["CONTAINS"]],
-  ["BoundedContextCandidate", "Query", ["CONTAINS"]],
-  ["BoundedContextCandidate", "BusinessEvent", ["CONTAINS"]],
-  ["BoundedContextCandidate", "Policy", ["CONTAINS"]],
-  ["DomainConcept", "DomainConcept", ["DOMAIN_RELATIONSHIP"]],
-  ["DomainEntity", "InformationItem", ["HAS_ATTRIBUTE"]],
-  ["ValueObject", "InformationItem", ["HAS_ATTRIBUTE"]],
-  ["AggregateCandidate", "DomainEntity", ["ROOT", "MEMBER"]],
-  ["AggregateCandidate", "Command", ["HANDLES"]],
-  ["AggregateCandidate", "BusinessEvent", ["EMITS_EVENT"]],
-  ["Command", "InformationItem", ["INPUT"]],
-  ["Command", "BusinessEvent", ["EXPECTS", "REJECTS_WITH"]],
-  ["Command", "BusinessError", ["MAY_FAIL_WITH"]],
-  ["Command", "Condition", ["PRECONDITION"]],
-  ["Command", "AggregateCandidate", ["TARGETS"]],
-  ["Command", "BusinessCapability", ["HANDLED_BY"]],
-  ["Query", "InformationItem", ["INPUT", "OUTPUT"]],
-  ["Query", "DomainEntity", ["READS"]],
-  ["Query", "BusinessCapability", ["HANDLED_BY"]],
-  ["BusinessEvent", "InformationItem", ["PAYLOAD"]],
-  ["BusinessEvent", "DomainEntity", ["AFFECTS"]],
-  ["BusinessError", "BusinessEvent", ["EMITS_EVENT"]],
-  ["Condition", "InformationItem", ["REFERENCES"]],
-  ["Condition", "DomainConcept", ["REFERENCES"]],
-  ["BusinessEvent", "Policy", ["TRIGGERS"]],
-  ["BusinessEvent", "BusinessProcess", ["FEEDS"]],
-  ["Policy", "Command", ["EMITS_COMMAND", "GUARDS"]],
-  ["Policy", "BusinessEvent", ["EMITS_EVENT"]],
-  ["Policy", "Query", ["CONSTRAINS"]],
-  ["Policy", "DecisionTable", ["USES"]],
-  ["BusinessProcess", "ProcessStep", ["CONTAINS"]],
-  ["StartStep", "ProcessStep", ["TRANSITION"]],
-  ["ProcessStep", "ProcessStep", ["TRANSITION"]],
-  ["ProcessStep", "EndStep", ["TRANSITION"]],
-  ["CommandStep", "Command", ["USES"]],
-  ["QueryStep", "Query", ["USES"]],
-  ["EventStep", "BusinessEvent", ["USES"]],
-  ["PolicyStep", "Policy", ["USES"]],
-  ["ExternalInteractionStep", "ExternalSystem", ["USES"]],
-  ["DecisionStep", "DecisionTable", ["USES"]],
-  ["DecisionRule", "Command", ["RESULTS_IN"]],
-  ["DecisionRule", "BusinessEvent", ["RESULTS_IN"]],
-  ["Requirement", "Requirement", ["DEPENDS_ON", "CONFLICTS_WITH"]],
-  ["Requirement", "*", ["CONSTRAINS"]],
-  ["NonFunctionalRequirement", "*", ["CONSTRAINS"]],
-  ["SecurityConstraint", "*", ["CONSTRAINS"]],
-  ["PrivacyConstraint", "*", ["CONSTRAINS"]],
-  ["ComplianceConstraint", "*", ["CONSTRAINS"]],
-  ["Risk", "*", ["ATTACHED_TO"]],
-  ["Assumption", "*", ["ATTACHED_TO"]],
-  ["Hotspot", "*", ["ATTACHED_TO"]]
-]);
-
-function cimReferenceKinds(sourceType, targetType) {
-  const kinds = [];
-  for (const [source, target, ruleKinds] of CIM_REFERENCE_RULES) {
-    if (modelingTypeMatches("cim", source, sourceType) && modelingTypeMatches(
-        "cim", target,
-        targetType)) {
-      kinds.push(...ruleKinds);
-    }
-  }
-  return normalizeKinds(kinds);
-}
-
 export function modelingLegalKinds(typeKey, sourceType, targetType) {
   const rules = modelingLevelConfig(typeKey).relationshipRules || [];
   const strictness = state.modelingStrictness || "methodology";
@@ -398,27 +291,15 @@ export function modelingLegalKinds(typeKey, sourceType, targetType) {
     }
   }
   if (!matched.length) {
-    if (typeKey === "cim") {
-      const semanticKinds = cimReferenceKinds(sourceType, targetType);
-      if (semanticKinds.length) {
-        return semanticKinds;
-      }
-    }
     if (strictness === "exploration") {
-      return normalizeKinds([
-        ...modelingLevelConfig(typeKey).relationshipKinds,
-        ...(typeKey === "cim" ? cimReferenceKinds(sourceType, targetType) : [])
-      ]);
+      return normalizeKinds(modelingLevelConfig(typeKey).relationshipKinds);
     }
     return [];
   }
   const bestSpecificity = Math.max(...matched.map(ruleSpecificity));
   const winners = matched.filter(
       (rule) => ruleSpecificity(rule) === bestSpecificity);
-  return normalizeKinds([
-    ...winners.flatMap((rule) => rule.allowedKinds),
-    ...(typeKey === "cim" ? cimReferenceKinds(sourceType, targetType) : [])
-  ]);
+  return normalizeKinds(winners.flatMap((rule) => rule.allowedKinds));
 }
 
 export function modelingRootTemplate(typeKey, modelName) {

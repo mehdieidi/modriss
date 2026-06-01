@@ -1,5 +1,462 @@
 {
   "displayName": "PIM",
+  "relationshipKinds": [
+    "CONTAINS",
+    "OWNS",
+    "DEPLOYS",
+    "DEPLOYS_TO",
+    "ROUTES_TO",
+    "INVOKES",
+    "TRIGGERS",
+    "READS",
+    "WRITES",
+    "CALLS",
+    "USES",
+    "USES_SECRET",
+    "HAS_ENV",
+    "AUTHORIZED_BY",
+    "ATTACHED_TO",
+    "FLOW",
+    "REQUEST_RESPONSE",
+    "EVENT_FLOW",
+    "MESSAGE_FLOW",
+    "PUB_SUB",
+    "ORCHESTRATES",
+    "EXTERNAL_CALL",
+    "DATA_ACCESS",
+    "PERMISSION",
+    "TRANSITION",
+    "CONSTRAINS",
+    "PUBLISHES",
+    "SUBSCRIBES_TO",
+    "TRACE"
+  ],
+  "relationshipKindLabels": {
+    "CONTAINS": "contains",
+    "OWNS": "owns",
+    "DEPLOYS": "deploys",
+    "DEPLOYS_TO": "deploys to",
+    "ROUTES_TO": "routes to",
+    "INVOKES": "invokes",
+    "TRIGGERS": "triggers",
+    "READS": "reads",
+    "WRITES": "writes",
+    "CALLS": "calls",
+    "USES": "uses",
+    "USES_SECRET": "uses secret",
+    "HAS_ENV": "has env",
+    "AUTHORIZED_BY": "authorized by",
+    "ATTACHED_TO": "attached to",
+    "FLOW": "flow",
+    "REQUEST_RESPONSE": "request/response",
+    "EVENT_FLOW": "event flow",
+    "MESSAGE_FLOW": "message flow",
+    "PUB_SUB": "pub/sub",
+    "ORCHESTRATES": "orchestrates",
+    "EXTERNAL_CALL": "external call",
+    "DATA_ACCESS": "data access",
+    "PERMISSION": "permission",
+    "TRANSITION": "transition",
+    "CONSTRAINS": "constrains",
+    "PUBLISHES": "publishes",
+    "SUBSCRIBES_TO": "subscribes to",
+    "TRACE": "trace"
+  },
+  "relationshipRules": [
+    {
+      "sourceType": "*",
+      "targetType": "*",
+      "allowedKinds": [
+        "CONTAINS",
+        "OWNS",
+        "DEPLOYS",
+        "INVOKES",
+        "READS",
+        "WRITES",
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "TRACE"
+      ]
+    }
+  ],
+  "viewDefinitions": [
+    {
+      "id": "pim-architecture-overview",
+      "displayName": "PIM Overview",
+      "viewType": "ARCHITECTURE_OVERVIEW",
+      "viewpoint": "architecture",
+      "elementTypes": [
+        "ServerlessService",
+        "Api",
+        "Function",
+        "Workflow",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "DataStore",
+        "ObjectStore",
+        "ExternalEndpoint",
+        "ExternalAdapter",
+        "IdentityProvider",
+        "Secret",
+        "BusinessRule",
+        "DecisionModel",
+        "HumanTask",
+        "RequestResponseFlow",
+        "EventFlow",
+        "MessageFlow",
+        "PubSubFlow",
+        "OrchestrationFlow",
+        "ExternalIntegrationFlow"
+      ],
+      "palette": [
+        "ServerlessService",
+        "Api",
+        "Function",
+        "Workflow",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "DataStore",
+        "ObjectStore",
+        "ExternalEndpoint",
+        "ExternalAdapter",
+        "IdentityProvider",
+        "Secret",
+        "BusinessRule",
+        "DecisionModel",
+        "HumanTask"
+      ],
+      "relationshipKinds": [
+        "OWNS",
+        "ROUTES_TO",
+        "INVOKES",
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "READS",
+        "WRITES",
+        "CALLS",
+        "FLOW",
+        "REQUEST_RESPONSE",
+        "EVENT_FLOW",
+        "MESSAGE_FLOW",
+        "PUB_SUB",
+        "ORCHESTRATES",
+        "EXTERNAL_CALL"
+      ],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "id": "pim-service-landscape",
+      "displayName": "Service Landscape",
+      "viewType": "SERVICE_LANDSCAPE",
+      "viewpoint": "service",
+      "elementTypes": [
+        "ServerlessService",
+        "ServiceElementMembership",
+        "DeploymentUnit",
+        "Environment",
+        "Function",
+        "Api",
+        "Workflow",
+        "DataStore",
+        "ObjectStore",
+        "Queue",
+        "Topic",
+        "EventBus"
+      ],
+      "palette": [
+        "ServerlessService",
+        "DeploymentUnit",
+        "Environment",
+        "Function",
+        "Api",
+        "Workflow",
+        "DataStore",
+        "ObjectStore",
+        "Queue",
+        "Topic",
+        "EventBus"
+      ],
+      "relationshipKinds": [
+        "OWNS",
+        "DEPLOYS",
+        "DEPLOYS_TO",
+        "CONTAINS"
+      ],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "id": "pim-api-surface",
+      "displayName": "API Surface",
+      "viewType": "API_SURFACE",
+      "viewpoint": "api",
+      "elementTypes": [
+        "Api",
+        "ApiRoute",
+        "ApiContract",
+        "Function",
+        "Workflow",
+        "Schema",
+        "ErrorMapping",
+        "CorsPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy"
+      ],
+      "palette": [
+        "Api",
+        "Function",
+        "Workflow",
+        "Schema",
+        "CorsPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy"
+      ],
+      "relationshipKinds": [
+        "ROUTES_TO",
+        "INVOKES",
+        "AUTHORIZED_BY",
+        "USES",
+        "CONTAINS"
+      ],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "pim-event-integration",
+      "displayName": "Event and Integration Flows",
+      "viewType": "EVENT_INTEGRATION",
+      "viewpoint": "integration",
+      "elementTypes": [
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "Subscription",
+        "EventRoutingRule",
+        "EventType",
+        "Function",
+        "Workflow",
+        "ExternalAdapter",
+        "RequestResponseFlow",
+        "EventFlow",
+        "MessageFlow",
+        "PubSubFlow",
+        "OrchestrationFlow",
+        "ExternalIntegrationFlow"
+      ],
+      "palette": [
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "EventType",
+        "Function",
+        "Workflow",
+        "ExternalAdapter"
+      ],
+      "relationshipKinds": [
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "TRIGGERS",
+        "EVENT_FLOW",
+        "MESSAGE_FLOW",
+        "PUB_SUB",
+        "ORCHESTRATES",
+        "EXTERNAL_CALL",
+        "INVOKES"
+      ],
+      "layoutHint": "EVENT_FLOW"
+    },
+    {
+      "id": "pim-data-design",
+      "displayName": "Data Design",
+      "viewType": "DATA_DESIGN",
+      "viewpoint": "data",
+      "elementTypes": [
+        "DataStore",
+        "ObjectStore",
+        "DataModel",
+        "DataField",
+        "AccessPattern",
+        "IndexCandidate",
+        "DataAccess",
+        "Schema",
+        "Function"
+      ],
+      "palette": [
+        "DataStore",
+        "ObjectStore",
+        "Schema",
+        "Function"
+      ],
+      "relationshipKinds": [
+        "READS",
+        "WRITES",
+        "DATA_ACCESS",
+        "USES",
+        "CONTAINS"
+      ],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "pim-workflow-designer",
+      "displayName": "Workflow Designer",
+      "viewType": "WORKFLOW_DESIGNER",
+      "viewpoint": "workflow",
+      "elementTypes": [
+        "Workflow",
+        "WorkflowState",
+        "WorkflowTransition",
+        "ParallelBranch",
+        "MapStateConfig",
+        "CallbackTaskConfig",
+        "ErrorHandler",
+        "CompensationPolicy",
+        "HumanTask",
+        "ApprovalTask",
+        "Function",
+        "ExternalAdapter"
+      ],
+      "palette": [
+        "Workflow",
+        "HumanTask",
+        "ApprovalTask",
+        "Function",
+        "ExternalAdapter"
+      ],
+      "relationshipKinds": [
+        "TRANSITION",
+        "INVOKES",
+        "ORCHESTRATES",
+        "EXTERNAL_CALL",
+        "CONTAINS"
+      ],
+      "layoutHint": "PROCESS"
+    },
+    {
+      "id": "pim-security-policy",
+      "displayName": "Security and Policies",
+      "viewType": "SECURITY_POLICY",
+      "viewpoint": "security",
+      "elementTypes": [
+        "IdentityProvider",
+        "Principal",
+        "Permission",
+        "SecurityPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy",
+        "DataProtectionPolicy",
+        "CompliancePolicy",
+        "Secret",
+        "Function",
+        "Api",
+        "DataStore"
+      ],
+      "palette": [
+        "IdentityProvider",
+        "Principal",
+        "SecurityPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy",
+        "DataProtectionPolicy",
+        "CompliancePolicy",
+        "Secret"
+      ],
+      "relationshipKinds": [
+        "AUTHORIZED_BY",
+        "PERMISSION",
+        "USES_SECRET",
+        "CONSTRAINS",
+        "ATTACHED_TO"
+      ],
+      "layoutHint": "GOVERNANCE"
+    },
+    {
+      "id": "pim-configuration-secrets",
+      "displayName": "Configuration and Secrets",
+      "viewType": "CONFIGURATION_SECRETS",
+      "viewpoint": "configuration",
+      "elementTypes": [
+        "ConfigurationSet",
+        "ConfigParameter",
+        "EnvironmentVariable",
+        "Secret",
+        "CredentialRequirement",
+        "Environment",
+        "Function",
+        "ExternalAdapter",
+        "AuthPolicy"
+      ],
+      "palette": [
+        "ConfigurationSet",
+        "Secret",
+        "Environment",
+        "Function",
+        "ExternalAdapter"
+      ],
+      "relationshipKinds": [
+        "HAS_ENV",
+        "USES_SECRET",
+        "ATTACHED_TO",
+        "DEPLOYS_TO"
+      ],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "pim-readiness-traceability",
+      "displayName": "Trace and Readiness Overlay",
+      "viewType": "READINESS_TRACEABILITY",
+      "viewpoint": "readiness",
+      "elementTypes": [
+        "TraceModel",
+        "TraceLink",
+        "ProductionReadinessAssessment",
+        "ReadinessFinding",
+        "ReadinessCheck",
+        "ManualDecision",
+        "ServerlessService",
+        "Function",
+        "Api",
+        "Workflow",
+        "DataStore",
+        "Queue",
+        "ArchitecturePolicy"
+      ],
+      "palette": [
+        "TraceModel",
+        "ProductionReadinessAssessment"
+      ],
+      "relationshipKinds": [
+        "TRACE",
+        "ATTACHED_TO",
+        "CONSTRAINS"
+      ],
+      "layoutHint": "MATRIX"
+    }
+  ],
+  "rootTemplate": {
+    "eClass": "PIMModel",
+    "modelLevel": "PIM",
+    "name": "",
+    "architectureStyle": "EVENT_DRIVEN_SERVERLESS",
+    "providerIndependent": true,
+    "diagram": {
+      "elements": [],
+      "relationships": []
+    },
+    "graph": {
+      "elements": [],
+      "relationships": [],
+      "traceLinks": [],
+      "assumptions": [],
+      "validationIssues": [],
+      "manualBacklog": []
+    },
+    "views": [],
+    "fragments": []
+  },
   "elements": [
     {
       "type": "Function",

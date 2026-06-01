@@ -1,5 +1,748 @@
 {
   "displayName": "PSM",
+  "relationshipKinds": [
+    "CONTAINS",
+    "DEPENDS_ON",
+    "DEPLOYS",
+    "DEPLOYS_TO",
+    "ROUTES_TO",
+    "INVOKES",
+    "EVENT_FLOW",
+    "MESSAGE_FLOW",
+    "TARGETS",
+    "PERMISSION",
+    "NETWORKS_WITH",
+    "OBSERVES",
+    "WRITES_LOGS_TO",
+    "TRANSITION",
+    "CONSTRAINS",
+    "ATTACHED_TO",
+    "READS",
+    "WRITES",
+    "USES_ROLE",
+    "USES_SECRET",
+    "AUTHORIZED_BY",
+    "TRACE"
+  ],
+  "relationshipKindLabels": {
+    "CONTAINS": "contains",
+    "DEPENDS_ON": "depends on",
+    "DEPLOYS": "deploys",
+    "DEPLOYS_TO": "deploys to",
+    "ROUTES_TO": "routes to",
+    "INVOKES": "invokes",
+    "EVENT_FLOW": "event flow",
+    "MESSAGE_FLOW": "message flow",
+    "TARGETS": "targets",
+    "PERMISSION": "permission",
+    "NETWORKS_WITH": "networks with",
+    "OBSERVES": "observes",
+    "WRITES_LOGS_TO": "writes logs to",
+    "TRANSITION": "transition",
+    "CONSTRAINS": "constrains",
+    "ATTACHED_TO": "attached to",
+    "READS": "reads",
+    "WRITES": "writes",
+    "USES_ROLE": "uses role",
+    "USES_SECRET": "uses secret",
+    "AUTHORIZED_BY": "authorized by",
+    "TRACE": "trace"
+  },
+  "relationshipRules": [
+    {
+      "sourceType": "*",
+      "targetType": "*",
+      "allowedKinds": [
+        "CONTAINS",
+        "DEPENDS_ON",
+        "DEPLOYS",
+        "INVOKES",
+        "READS",
+        "WRITES",
+        "USES_ROLE",
+        "USES_SECRET",
+        "AUTHORIZED_BY",
+        "TRACE"
+      ]
+    }
+  ],
+  "shortcutConnectorRules": [
+    {
+      "sourceType": "ApiGatewayRoute",
+      "targetType": "AwsLambdaFunction",
+      "label": "API route invokes Lambda",
+      "viewType": "ApiGatewayLambdaIntegrationView",
+      "intermediateTypes": [
+        "ApiGatewayIntegration"
+      ],
+      "edgeKinds": [
+        "ROUTES_TO",
+        "INVOKES"
+      ]
+    },
+    {
+      "sourceType": "SnsTopic",
+      "targetType": "AwsLambdaFunction",
+      "label": "SNS invokes Lambda",
+      "viewType": "SnsLambdaSubscriptionView",
+      "intermediateTypes": [
+        "SnsSubscription",
+        "LambdaPermission"
+      ],
+      "edgeKinds": [
+        "EVENT_FLOW",
+        "PERMISSION",
+        "INVOKES"
+      ]
+    },
+    {
+      "sourceType": "SqsQueue",
+      "targetType": "AwsLambdaFunction",
+      "label": "SQS event source invokes Lambda",
+      "viewType": "SqsLambdaEventSourceView",
+      "intermediateTypes": [
+        "SqsLambdaEventSourceMapping"
+      ],
+      "edgeKinds": [
+        "EVENT_FLOW",
+        "INVOKES"
+      ]
+    },
+    {
+      "sourceType": "EventBridgeRule",
+      "targetType": "AwsLambdaFunction",
+      "label": "EventBridge targets Lambda",
+      "viewType": "EventBridgeLambdaTargetView",
+      "intermediateTypes": [
+        "EventBridgeTarget",
+        "LambdaPermission"
+      ],
+      "edgeKinds": [
+        "TARGETS",
+        "PERMISSION",
+        "INVOKES"
+      ]
+    },
+    {
+      "sourceType": "EventBridgeRule",
+      "targetType": "StepFunctionStateMachine",
+      "label": "EventBridge starts state machine",
+      "viewType": "StepFunctionEventBridgeTargetView",
+      "intermediateTypes": [
+        "EventBridgeTarget"
+      ],
+      "edgeKinds": [
+        "TARGETS",
+        "INVOKES"
+      ]
+    }
+  ],
+  "viewDefinitions": [
+    {
+      "id": "psm-portfolio-governance",
+      "displayName": "AWS PSM Overview",
+      "viewType": "PORTFOLIO_GOVERNANCE",
+      "viewpoint": "governance",
+      "elementTypes": [
+        "AwsPsmModel",
+        "AwsStage",
+        "SamStack",
+        "AwsNamingPolicy",
+        "AwsTaggingPolicy",
+        "AwsSecurityBaseline",
+        "SamGlobals",
+        "AwsTag",
+        "CfnParameter",
+        "CfnOutput"
+      ],
+      "palette": [
+        "AwsStage",
+        "SamStack",
+        "AwsNamingPolicy",
+        "AwsTaggingPolicy",
+        "AwsSecurityBaseline"
+      ],
+      "relationshipKinds": [
+        "CONTAINS",
+        "DEPLOYS",
+        "DEPLOYS_TO",
+        "TRACE"
+      ],
+      "layoutHint": "MATRIX"
+    },
+    {
+      "id": "psm-resource-topology",
+      "displayName": "Stage and Stack View",
+      "viewType": "RESOURCE_TOPOLOGY",
+      "viewpoint": "topology",
+      "elementTypes": [
+        "SamStack",
+        "AwsStage",
+        "AwsResource",
+        "AwsNativeResource",
+        "HttpApi",
+        "RestApi",
+        "WebSocketApi",
+        "AwsLambdaFunction",
+        "EventBridgeBus",
+        "EventBridgeRule",
+        "SqsQueue",
+        "SnsTopic",
+        "DynamoDbTable",
+        "S3Bucket",
+        "StepFunctionStateMachine",
+        "IamRole",
+        "KmsKey",
+        "Vpc",
+        "Subnet",
+        "SecurityGroup",
+        "CloudWatchLogGroup"
+      ],
+      "palette": [
+        "SamStack",
+        "AwsLambdaFunction",
+        "HttpApi",
+        "RestApi",
+        "EventBridgeBus",
+        "SqsQueue",
+        "SnsTopic",
+        "DynamoDbTable",
+        "S3Bucket",
+        "StepFunctionStateMachine",
+        "IamRole",
+        "CloudWatchLogGroup"
+      ],
+      "relationshipKinds": [
+        "DEPENDS_ON",
+        "CONTAINS",
+        "INVOKES",
+        "EVENT_FLOW",
+        "USES_ROLE",
+        "USES_SECRET",
+        "OBSERVES",
+        "NETWORKS_WITH"
+      ],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "id": "psm-api-edge",
+      "displayName": "API Gateway View",
+      "viewType": "API_EDGE",
+      "viewpoint": "api",
+      "elementTypes": [
+        "HttpApi",
+        "RestApi",
+        "WebSocketApi",
+        "HttpApiRoute",
+        "RestApiRoute",
+        "WebSocketRoute",
+        "ApiGatewayIntegration",
+        "HttpApiStage",
+        "RestApiStage",
+        "WebSocketStage",
+        "JwtAuthorizer",
+        "CognitoAuthorizer",
+        "LambdaAuthorizer",
+        "ApiGatewayDomainName",
+        "ApiGatewayBasePathMapping",
+        "ApiGatewayApiKey",
+        "ApiGatewayUsagePlan",
+        "ApiGatewayUsagePlanKey",
+        "ApiGatewayDeployment",
+        "WafWebAclAssociation",
+        "AwsLambdaFunction",
+        "StepFunctionStateMachine",
+        "CloudWatchLogGroup"
+      ],
+      "palette": [
+        "HttpApi",
+        "RestApi",
+        "WebSocketApi",
+        "ApiGatewayIntegration",
+        "JwtAuthorizer",
+        "CognitoAuthorizer",
+        "LambdaAuthorizer",
+        "ApiGatewayDomainName",
+        "ApiGatewayApiKey",
+        "ApiGatewayUsagePlan",
+        "WafWebAclAssociation",
+        "AwsLambdaFunction",
+        "StepFunctionStateMachine"
+      ],
+      "relationshipKinds": [
+        "ROUTES_TO",
+        "INVOKES",
+        "AUTHORIZED_BY",
+        "OBSERVES",
+        "CONTAINS"
+      ],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "psm-lambda-compute",
+      "displayName": "Lambda Detail View",
+      "viewType": "LAMBDA_COMPUTE",
+      "viewpoint": "compute",
+      "elementTypes": [
+        "AwsLambdaFunction",
+        "LambdaZipCodeConfig",
+        "LambdaImageCodeConfig",
+        "LambdaEnvironmentVariable",
+        "SqsLambdaEventSourceMapping",
+        "DynamoDbStreamLambdaEventSourceMapping",
+        "GenericLambdaEventSourceMapping",
+        "LambdaDeadLetterConfig",
+        "LambdaEventInvokeConfig",
+        "LambdaDestinationConfig",
+        "LambdaLayerVersion",
+        "LambdaVersion",
+        "LambdaAlias",
+        "LambdaPermission",
+        "LambdaFunctionUrl",
+        "CodeSigningConfig",
+        "IamRole",
+        "CloudWatchLogGroup",
+        "SqsQueue",
+        "SnsTopic",
+        "DynamoDbTable"
+      ],
+      "palette": [
+        "AwsLambdaFunction",
+        "LambdaLayerVersion",
+        "LambdaVersion",
+        "LambdaAlias",
+        "LambdaPermission",
+        "LambdaFunctionUrl",
+        "CodeSigningConfig",
+        "IamRole",
+        "CloudWatchLogGroup",
+        "SqsQueue",
+        "SnsTopic",
+        "DynamoDbTable"
+      ],
+      "relationshipKinds": [
+        "INVOKES",
+        "EVENT_FLOW",
+        "USES_ROLE",
+        "USES_SECRET",
+        "OBSERVES",
+        "CONTAINS"
+      ],
+      "layoutHint": "DEFAULT_LAYERED"
+    },
+    {
+      "id": "psm-eventing-messaging",
+      "displayName": "EventBridge and Messaging View",
+      "viewType": "EVENTING_MESSAGING",
+      "viewpoint": "eventing",
+      "elementTypes": [
+        "EventBridgeBus",
+        "EventBridgeBusPolicy",
+        "EventBridgeRule",
+        "EventBridgeTarget",
+        "EventPattern",
+        "EventBridgeArchive",
+        "EventBridgeSchedule",
+        "EventBridgePipe",
+        "EventBridgeConnection",
+        "EventBridgeApiDestination",
+        "AwsRetryPolicy",
+        "SqsQueue",
+        "SqsQueuePolicy",
+        "SnsTopic",
+        "SnsSubscription",
+        "SnsTopicPolicy",
+        "AwsLambdaFunction",
+        "StepFunctionStateMachine"
+      ],
+      "palette": [
+        "EventBridgeBus",
+        "EventBridgeRule",
+        "EventBridgeSchedule",
+        "EventBridgePipe",
+        "SqsQueue",
+        "SnsTopic",
+        "AwsLambdaFunction",
+        "StepFunctionStateMachine"
+      ],
+      "relationshipKinds": [
+        "EVENT_FLOW",
+        "MESSAGE_FLOW",
+        "INVOKES",
+        "TARGETS",
+        "CONTAINS"
+      ],
+      "layoutHint": "EVENT_FLOW"
+    },
+    {
+      "id": "psm-workflow-asl",
+      "displayName": "Step Functions / ASL View",
+      "viewType": "WORKFLOW_ASL",
+      "viewpoint": "workflow",
+      "elementTypes": [
+        "StepFunctionStateMachine",
+        "AslDocument",
+        "AslState",
+        "AslRetryRule",
+        "AslCatchRule",
+        "AslChoiceRule",
+        "StepFunctionLoggingConfig",
+        "StepFunctionTracingConfig",
+        "SamStateMachineEvent",
+        "AwsLambdaFunction",
+        "EventBridgeRule"
+      ],
+      "palette": [
+        "StepFunctionStateMachine",
+        "AwsLambdaFunction",
+        "EventBridgeRule"
+      ],
+      "relationshipKinds": [
+        "TRANSITION",
+        "INVOKES",
+        "EVENT_FLOW",
+        "CONTAINS",
+        "OBSERVES"
+      ],
+      "layoutHint": "PROCESS"
+    },
+    {
+      "id": "psm-data-persistence",
+      "displayName": "Storage View",
+      "viewType": "DATA_PERSISTENCE",
+      "viewpoint": "data",
+      "elementTypes": [
+        "DynamoDbTable",
+        "DynamoDbAttributeDefinition",
+        "DynamoDbKeySchemaElement",
+        "DynamoDbProjection",
+        "DynamoDbProvisionedThroughput",
+        "DynamoDbGlobalSecondaryIndex",
+        "DynamoDbLocalSecondaryIndex",
+        "DynamoDbStreamSpecification",
+        "DynamoDbTimeToLiveSpecification",
+        "DynamoDbSseSpecification",
+        "DynamoDbBackupPolicy",
+        "S3Bucket",
+        "S3BucketEncryption",
+        "S3LifecycleConfiguration",
+        "S3NotificationConfiguration",
+        "S3ReplicationConfiguration",
+        "S3BucketPolicy",
+        "KmsKey",
+        "IamRole",
+        "AwsLambdaFunction"
+      ],
+      "palette": [
+        "DynamoDbTable",
+        "S3Bucket",
+        "S3BucketPolicy",
+        "KmsKey",
+        "IamRole",
+        "AwsLambdaFunction"
+      ],
+      "relationshipKinds": [
+        "READS",
+        "WRITES",
+        "EVENT_FLOW",
+        "USES_SECRET",
+        "PERMISSION",
+        "CONTAINS"
+      ],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "psm-security-access",
+      "displayName": "Security, IAM, and Secrets View",
+      "viewType": "SECURITY_ACCESS",
+      "viewpoint": "security",
+      "elementTypes": [
+        "IamRole",
+        "IamPolicy",
+        "IamManagedPolicy",
+        "IamStatement",
+        "KmsKey",
+        "KmsAlias",
+        "SecretsManagerSecret",
+        "SecretRotationSchedule",
+        "SecretsManagerResourcePolicy",
+        "SsmParameter",
+        "CognitoUserPool",
+        "CognitoUserPoolClient",
+        "CognitoUserPoolGroup",
+        "CognitoUserPoolDomain",
+        "CognitoIdentityPool",
+        "AwsLambdaFunction",
+        "HttpApi",
+        "RestApi",
+        "S3Bucket",
+        "DynamoDbTable"
+      ],
+      "palette": [
+        "IamRole",
+        "IamPolicy",
+        "IamManagedPolicy",
+        "KmsKey",
+        "KmsAlias",
+        "SecretsManagerSecret",
+        "SecretRotationSchedule",
+        "SsmParameter",
+        "CognitoUserPool",
+        "CognitoUserPoolClient",
+        "AwsLambdaFunction",
+        "HttpApi",
+        "RestApi"
+      ],
+      "relationshipKinds": [
+        "PERMISSION",
+        "AUTHORIZED_BY",
+        "USES_ROLE",
+        "USES_SECRET",
+        "CONTAINS"
+      ],
+      "layoutHint": "GOVERNANCE"
+    },
+    {
+      "id": "psm-cognito-identity",
+      "displayName": "Cognito Identity View",
+      "viewType": "COGNITO_IDENTITY",
+      "viewpoint": "identity",
+      "elementTypes": [
+        "CognitoUserPool",
+        "CognitoUserPoolClient",
+        "CognitoUserPoolGroup",
+        "CognitoUserPoolDomain",
+        "CognitoIdentityPool",
+        "JwtAuthorizer",
+        "CognitoAuthorizer",
+        "HttpApi",
+        "RestApi",
+        "AwsLambdaFunction",
+        "IamRole"
+      ],
+      "palette": [
+        "CognitoUserPool",
+        "CognitoUserPoolClient",
+        "CognitoUserPoolGroup",
+        "CognitoIdentityPool",
+        "JwtAuthorizer",
+        "CognitoAuthorizer",
+        "HttpApi",
+        "RestApi"
+      ],
+      "relationshipKinds": [
+        "AUTHORIZED_BY",
+        "PERMISSION",
+        "CONTAINS",
+        "USES_ROLE"
+      ],
+      "layoutHint": "GOVERNANCE"
+    },
+    {
+      "id": "psm-networking",
+      "displayName": "Networking Detail View",
+      "viewType": "NETWORKING",
+      "viewpoint": "networking",
+      "elementTypes": [
+        "VpcAttachmentConfig",
+        "VpcEndpointReference",
+        "Vpc",
+        "Subnet",
+        "VpcEndpoint",
+        "SecurityGroup",
+        "SecurityGroupRule",
+        "AwsLambdaFunction"
+      ],
+      "palette": [
+        "Vpc",
+        "Subnet",
+        "VpcEndpoint",
+        "SecurityGroup",
+        "AwsLambdaFunction"
+      ],
+      "relationshipKinds": [
+        "NETWORKS_WITH",
+        "CONTAINS"
+      ],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "id": "psm-observability-operations",
+      "displayName": "Observability and Networking View",
+      "viewType": "OBSERVABILITY_OPERATIONS",
+      "viewpoint": "observability",
+      "elementTypes": [
+        "CloudWatchLogGroup",
+        "CloudWatchMetricFilter",
+        "CloudWatchLogSubscriptionFilter",
+        "CloudWatchAlarm",
+        "MetricDimension",
+        "CloudWatchCompositeAlarm",
+        "CloudWatchDashboard",
+        "AwsLambdaFunction",
+        "HttpApi",
+        "SqsQueue",
+        "DynamoDbTable",
+        "VpcAttachmentConfig",
+        "VpcEndpointReference",
+        "Vpc",
+        "Subnet",
+        "VpcEndpoint",
+        "SecurityGroup",
+        "SecurityGroupRule"
+      ],
+      "palette": [
+        "CloudWatchLogGroup",
+        "CloudWatchMetricFilter",
+        "CloudWatchLogSubscriptionFilter",
+        "CloudWatchAlarm",
+        "CloudWatchCompositeAlarm",
+        "CloudWatchDashboard",
+        "AwsLambdaFunction",
+        "HttpApi",
+        "Vpc",
+        "Subnet",
+        "SecurityGroup"
+      ],
+      "relationshipKinds": [
+        "OBSERVES",
+        "WRITES_LOGS_TO",
+        "NETWORKS_WITH",
+        "CONTAINS"
+      ],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "psm-configuration-cfn",
+      "displayName": "SAM and CloudFormation View",
+      "viewType": "CONFIGURATION_CFN",
+      "viewpoint": "configuration",
+      "elementTypes": [
+        "CfnParameter",
+        "CfnMapping",
+        "CfnCondition",
+        "CfnOutput",
+        "SamGlobals",
+        "NativeProperty",
+        "ValueExpression",
+        "NamedValueExpression",
+        "AwsNativeResource",
+        "ResourceImport",
+        "StructuredDocument",
+        "KeyValue"
+      ],
+      "palette": [
+        "CfnParameter",
+        "CfnMapping",
+        "CfnCondition",
+        "CfnOutput",
+        "SamGlobals",
+        "AwsNativeResource"
+      ],
+      "relationshipKinds": [
+        "CONTAINS",
+        "DEPLOYS",
+        "TRACE"
+      ],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "psm-traceability-readiness",
+      "displayName": "Trace and Readiness Overlay",
+      "viewType": "TRACEABILITY_READINESS",
+      "viewpoint": "readiness",
+      "elementTypes": [
+        "TraceLink",
+        "ProductionReadinessAssessment",
+        "ReadinessFinding",
+        "ReadinessCheck",
+        "ManualDecision",
+        "StructuredDocument",
+        "AwsLambdaFunction",
+        "HttpApi",
+        "DynamoDbTable",
+        "S3Bucket",
+        "IamRole"
+      ],
+      "palette": [
+        "ProductionReadinessAssessment",
+        "StructuredDocument"
+      ],
+      "relationshipKinds": [
+        "TRACE",
+        "CONSTRAINS",
+        "ATTACHED_TO"
+      ],
+      "layoutHint": "MATRIX"
+    },
+    {
+      "id": "psm-integration-shortcuts",
+      "displayName": "Integration Shortcut View",
+      "viewType": "INTEGRATION_SHORTCUTS",
+      "viewpoint": "shortcuts",
+      "elementTypes": [
+        "AwsRelationshipView",
+        "ApiGatewayLambdaIntegrationView",
+        "EventBridgeLambdaTargetView",
+        "SnsLambdaSubscriptionView",
+        "SqsLambdaEventSourceView",
+        "StepFunctionEventBridgeTargetView",
+        "ApiGatewayIntegration",
+        "EventBridgeTarget",
+        "SnsSubscription",
+        "SqsLambdaEventSourceMapping",
+        "LambdaPermission",
+        "AwsLambdaFunction",
+        "StepFunctionStateMachine",
+        "HttpApiRoute",
+        "RestApiRoute",
+        "WebSocketRoute",
+        "EventBridgeRule",
+        "SnsTopic",
+        "SqsQueue"
+      ],
+      "palette": [
+        "ApiGatewayLambdaIntegrationView",
+        "EventBridgeLambdaTargetView",
+        "SnsLambdaSubscriptionView",
+        "SqsLambdaEventSourceView",
+        "StepFunctionEventBridgeTargetView"
+      ],
+      "relationshipKinds": [
+        "ROUTES_TO",
+        "EVENT_FLOW",
+        "TARGETS",
+        "PERMISSION",
+        "INVOKES",
+        "CONTAINS"
+      ],
+      "layoutHint": "EVENT_FLOW"
+    }
+  ],
+  "rootTemplate": {
+    "eClass": "AwsPsmModel",
+    "modelLevel": "AWS_PSM",
+    "platform": "AWS",
+    "defaultRegion": "us-east-1",
+    "name": "",
+    "stages": [],
+    "stacks": [],
+    "relationshipViews": [],
+    "diagram": {
+      "elements": [],
+      "relationships": []
+    },
+    "graph": {
+      "elements": [],
+      "relationships": [],
+      "traceLinks": [],
+      "assumptions": [],
+      "validationIssues": [],
+      "manualBacklog": []
+    },
+    "views": [],
+    "fragments": []
+  },
   "elements": [
     {
       "type": "AwsLambdaFunction",

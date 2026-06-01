@@ -963,9 +963,9 @@ function applyDiff(data) {
     editor.contextBoxesDirty = true;
   }
   [...diff.addNodes, ...diff.updateNodes].forEach((node) =>
-    editor.spatialIndex?.update?.(node, {
-      fallbackSize: spatialIndexFallbackSize()
-    }));
+      editor.spatialIndex?.update?.(node, {
+        fallbackSize: spatialIndexFallbackSize()
+      }));
   editor.dataSnapshot = diff.snapshot;
   editor.adjacency = createAdjacencyIndex(state.diagram.connections);
   if (diff.addNodes.length || diff.addEdges.length || diff.removeNodeIds.length

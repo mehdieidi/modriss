@@ -5,9 +5,9 @@ import {
   modelingElementDefinition,
   modelingLabelField,
   modelingLegalKinds,
+  modelingLevelConfig,
   modelingRootTemplate
 } from './modeling-config-data.js';
-import {MODEL_TYPES} from './config.js';
 import {
   installGraphAndViews,
   persistEdgeLayoutInActiveView,
@@ -84,11 +84,18 @@ export function relationshipIdsFromModel(modelType, modelJson) {
         : connection?.source?.$ref;
     const targetId = typeof connection?.target === "string" ? connection.target
         : connection?.target?.$ref;
-    const fallbackKind = MODEL_TYPES[modelType]?.connectionKinds?.[0]
-        || "DEPENDS_ON";
+    const fallbackKind = defaultRelationshipKind(modelType);
     return connectionIdFor(modelType, index, sourceId, targetId,
         connection?.kind || fallbackKind);
   });
+}
+
+function defaultRelationshipKind(modelType) {
+  try {
+    return modelingLevelConfig(modelType).relationshipKinds?.[0] || "";
+  } catch {
+    return "";
+  }
 }
 
 function applyAttributes(meta, definition) {
@@ -130,73 +137,6 @@ export function legalKinds(typeKey, sourceType, targetType) {
   return modelingLegalKinds(typeKey, sourceType, targetType);
 }
 
-function genericRootTemplate(typeKey, modelName) {
-  if (typeKey === "cim") {
-    return {
-      name: modelName,
-      version: "1.0.0",
-      domainName: "CoreDomain",
-      boundedContexts: [{name: "Core", rationale: "Initial context"}],
-      traceLinks: [],
-      assumptions: [],
-      validationIssues: [],
-      manualBacklog: [],
-      graph: {
-        elements: [],
-        relationships: [],
-        traceLinks: [],
-        assumptions: [],
-        validationIssues: [],
-        manualBacklog: []
-      },
-      fragments: [],
-      views: [],
-      diagram: {elements: [], relationships: []}
-    };
-  }
-  if (typeKey === "pim") {
-    return {
-      name: modelName,
-      architectureStyle: "EVENT_DRIVEN_SERVERLESS",
-      traceLinks: [],
-      assumptions: [],
-      validationIssues: [],
-      manualBacklog: [],
-      graph: {
-        elements: [],
-        relationships: [],
-        traceLinks: [],
-        assumptions: [],
-        validationIssues: [],
-        manualBacklog: []
-      },
-      fragments: [],
-      views: [],
-      diagram: {elements: [], relationships: []}
-    };
-  }
-  return {
-    name: modelName,
-    platform: "AWS",
-    defaultRegion: "us-east-1",
-    traceLinks: [],
-    assumptions: [],
-    validationIssues: [],
-    manualBacklog: [],
-    graph: {
-      elements: [],
-      relationships: [],
-      traceLinks: [],
-      assumptions: [],
-      validationIssues: [],
-      manualBacklog: []
-    },
-    fragments: [],
-    views: [],
-    diagram: {elements: [], relationships: []}
-  };
-}
-
 function sanitizeRootForType(typeKey, root) {
   if (!root || typeof root !== "object") {
     return root;
@@ -220,24 +160,25 @@ function sanitizeRootForType(typeKey, root) {
 
 export function defaultRootModel(typeKey, modelName) {
   const configured = modelingRootTemplate(typeKey, modelName);
-  if (configured && Object.keys(configured).length) {
-    configured.name = modelName;
-    configured.diagram ??= {elements: [], relationships: []};
-    configured.diagram.elements ??= [];
-    configured.diagram.relationships ??= [];
-    configured.graph ??= {
-      elements: [],
-      relationships: [],
-      traceLinks: [],
-      assumptions: [],
-      validationIssues: [],
-      manualBacklog: []
-    };
-    configured.fragments ??= [];
-    configured.views ??= [];
-    return configured;
+  if (!configured || !Object.keys(configured).length) {
+    throw new Error(
+        `Missing backend rootTemplate for ${typeKey.toUpperCase()}.`);
   }
-  return genericRootTemplate(typeKey, modelName);
+  configured.name = modelName;
+  configured.diagram ??= {elements: [], relationships: []};
+  configured.diagram.elements ??= [];
+  configured.diagram.relationships ??= [];
+  configured.graph ??= {
+    elements: [],
+    relationships: [],
+    traceLinks: [],
+    assumptions: [],
+    validationIssues: [],
+    manualBacklog: []
+  };
+  configured.fragments ??= [];
+  configured.views ??= [];
+  return configured;
 }
 
 export function serializeModel() {
@@ -353,15 +294,13 @@ export function toDiagram(modelType, modelJson, fallbackName) {
                   : relation.source?.$ref,
               typeof relation.target === "string" ? relation.target
                   : relation.target?.$ref,
-              relation.kind || (MODEL_TYPES[modelType]?.connectionKinds?.[0]
-                  || "DEPENDS_ON")
+              relation.kind || defaultRelationshipKind(modelType)
           ),
       sourceId: typeof relation.source === "string" ? relation.source
           : relation.source?.$ref,
       targetId: typeof relation.target === "string" ? relation.target
           : relation.target?.$ref,
-      kind: relation.kind || (MODEL_TYPES[modelType]?.connectionKinds?.[0]
-          || "DEPENDS_ON")
+      kind: relation.kind || defaultRelationshipKind(modelType)
     };
     // Restore frontend-only edge presentation data (not persisted to backend).
     // Newer versions store explicit pin points; older versions may still have ELK bend points.

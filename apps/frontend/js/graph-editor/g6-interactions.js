@@ -278,7 +278,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     try {
       const result = graph.translateBy?.([dx, dy], false);
       result?.then?.(() => scheduleGraphDraw(graph))?.catch?.(() =>
-        scheduleGraphDraw(graph));
+          scheduleGraphDraw(graph));
       if (!result?.then) {
         scheduleGraphDraw(graph);
       }
