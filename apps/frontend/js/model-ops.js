@@ -1154,13 +1154,25 @@ export async function validateCurrentModel() {
   }
 }
 
-export async function autoLayoutCurrentDiagram() {
+export async function autoLayoutCurrentDiagram({
+  progress = true,
+  save = true,
+  publish = true,
+  status = true,
+  busy = true,
+  rethrow = false,
+  preserveExistingPositions = true
+} = {}) {
   if (!isModelingType()) {
-    setStatus("Auto layout is available for CIM, PIM, and PSM.");
+    if (status) {
+      setStatus("Auto layout is available for CIM, PIM, and PSM.");
+    }
     return;
   }
   if (!state.diagram.nodes.length) {
-    setStatus("Add elements to the diagram first.");
+    if (status) {
+      setStatus("Add elements to the diagram first.");
+    }
     return;
   }
 
@@ -1169,7 +1181,7 @@ export async function autoLayoutCurrentDiagram() {
   const payload = {
     viewId: state.views.activeViewId,
     profile: view?.layoutProfile || "DEFAULT_LAYERED",
-    preserveExistingPositions: true,
+    preserveExistingPositions,
     options: {
       nodeSpacing: state.activeType === "cim" ? 96 : 112,
       layerSpacing: state.activeType === "cim" ? 164 : 188,
@@ -1195,14 +1207,20 @@ export async function autoLayoutCurrentDiagram() {
   };
 
   try {
-    showGenerationProgress({
-      kicker: "Auto Layout in Progress",
-      title: "Arranging current view",
-      subtitle: "Computing positions for the elements visible in this view.",
-      label: "Preparing diagram elements…"
-    });
-    setBusy("Auto layout…");
-    setGenerationProgressPhase("Computing layout…", 46);
+    if (progress) {
+      showGenerationProgress({
+        kicker: "Auto Layout in Progress",
+        title: "Arranging current view",
+        subtitle: "Computing positions for the elements visible in this view.",
+        label: "Preparing diagram elements…"
+      });
+    }
+    if (busy) {
+      setBusy("Auto layout…");
+    }
+    if (progress) {
+      setGenerationProgressPhase("Computing layout…", 46);
+    }
     const response = await api("/layout", {
       method: "POST",
       body: JSON.stringify(payload)
@@ -1256,26 +1274,47 @@ export async function autoLayoutCurrentDiagram() {
         targetAnchor: presentation.targetAnchor
       });
     });
-    setGenerationProgressPhase("Refreshing the canvas…", 76);
+    if (progress) {
+      setGenerationProgressPhase("Refreshing the canvas…", 76);
+    }
     syncActiveViewFromVisibleGraph();
 
     renderDiagram();
     renderViewWorkbench();
     centerViewportOnDiagram({fit: true});
-    setGenerationProgressPhase("Saving layout…", 92);
-    await saveCurrentModel({quiet: true, rethrow: true});
-    publishDiagramUpdate({immediate: true});
-    await completeGenerationProgress("Layout applied.");
+    if (save) {
+      if (progress) {
+        setGenerationProgressPhase("Saving layout…", 92);
+      }
+      await saveCurrentModel({quiet: true, rethrow: true});
+    }
+    if (publish) {
+      publishDiagramUpdate({immediate: true});
+    }
+    if (progress) {
+      await completeGenerationProgress("Layout applied.");
+    }
     const warnings = Array.isArray(response.warnings) ? response.warnings : [];
     if (warnings.length) {
-      setStatus(`Auto layout applied with ${warnings.length} warning(s).`);
+      if (status) {
+        setStatus(`Auto layout applied with ${warnings.length} warning(s).`);
+      }
       return;
     }
-    setStatus("Auto layout applied.");
+    if (status) {
+      setStatus("Auto layout applied.");
+    }
   } catch (error) {
-    setError(`Auto layout failed: ${error.message}`);
+    if (rethrow) {
+      throw error;
+    }
+    if (status) {
+      setError(`Auto layout failed: ${error.message}`);
+    }
   } finally {
-    hideGenerationProgress();
+    if (progress) {
+      hideGenerationProgress();
+    }
   }
 }
 
@@ -1360,73 +1399,112 @@ export async function importActiveModel(file, format = "json",
   const normalizedFormat = String(format || "json").toLowerCase();
   const formData = new FormData();
   formData.append("file", file);
-  const response = await fetch(
-      apiUrl(
-          `/${MODEL_TYPES[state.activeType].apiType}/import?format=${encodeURIComponent(
-              normalizedFormat)}&projectId=${encodeURIComponent(
-              state.project?.id || "")}`), {
-        method: "POST",
-        headers: apiAuthHeaders(),
-        body: formData
-      });
-  const contentType = response.headers.get("content-type") || "";
-  const body = contentType.includes("application/json") ? await response.json()
-      : null;
-  if (!response.ok) {
-    const issues = Array.isArray(body?.issues) ? body.issues : [];
-    if (issues.length) {
-      applyValidationIssues(issues, {openOnFirst: true});
-      toggleValidationDrawer(true);
+  let layoutWarning = "";
+  try {
+    showGenerationProgress({
+      kicker: "Import in Progress",
+      title: "Importing model",
+      subtitle: "Loading the file, arranging the diagram, and preparing the canvas.",
+      label: "Uploading model file…"
+    });
+    setBusy("Importing model…");
+    const response = await fetch(
+        apiUrl(
+            `/${MODEL_TYPES[state.activeType].apiType}/import?format=${encodeURIComponent(
+                normalizedFormat)}&projectId=${encodeURIComponent(
+                state.project?.id || "")}`), {
+          method: "POST",
+          headers: apiAuthHeaders(),
+          body: formData
+        });
+    setGenerationProgressPhase("Reading imported model…", 34);
+    const contentType = response.headers.get("content-type") || "";
+    const body = contentType.includes("application/json")
+        ? await response.json()
+        : null;
+    if (!response.ok) {
+      const issues = Array.isArray(body?.issues) ? body.issues : [];
+      if (issues.length) {
+        applyValidationIssues(issues, {openOnFirst: true});
+        toggleValidationDrawer(true);
+      }
+      throw new Error(body?.message || `Import failed (${response.status})`);
     }
-    throw new Error(body?.message || `Import failed (${response.status})`);
-  }
 
-  pushModelReplacementSnapshot();
-  clearDiagramUndoHistory(state.activeType);
-  state.baseModel = structuredClone(body.modelJson);
-  installGraphAndViews(state.activeType, body.modelJson,
-      body.name || defaultModelName());
-  state.diagram = materializeActiveView();
-  if (state.activeType === "cim") {
-    state.boundedContextCreateMode = false;
-    state.boundedContextDraftNodeIds = new Set();
-    state.boundedContextDraftName = "";
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
-  }
-  if (state.tabs[state.activeType]) {
-    state.tabs[state.activeType].baseModel = structuredClone(state.baseModel);
-    state.tabs[state.activeType].diagram = structuredClone(state.diagram);
-    state.tabs[state.activeType].modelName = String(
-        body.name || defaultModelName()).trim();
-    state.tabs[state.activeType].dirty = true;
-    saveCurrentTabGraphState(state.activeType);
-  }
-  setActiveModelName(body.name || defaultModelName());
-  renderDiagram();
-  renderViewWorkbench();
-  centerCurrentDiagram();
+    setGenerationProgressPhase("Materializing imported graph…", 52);
+    pushModelReplacementSnapshot();
+    clearDiagramUndoHistory(state.activeType);
+    state.baseModel = structuredClone(body.modelJson);
+    installGraphAndViews(state.activeType, body.modelJson,
+        body.name || defaultModelName());
+    state.diagram = materializeActiveView();
+    if (state.activeType === "cim") {
+      state.boundedContextCreateMode = false;
+      state.boundedContextDraftNodeIds = new Set();
+      state.boundedContextDraftName = "";
+      state.boundedContextViewMode = "normal";
+      state.activeBoundedContextName = "";
+    }
+    if (state.tabs[state.activeType]) {
+      state.tabs[state.activeType].baseModel = structuredClone(
+          state.baseModel);
+      state.tabs[state.activeType].diagram = structuredClone(state.diagram);
+      state.tabs[state.activeType].modelName = String(
+          body.name || defaultModelName()).trim();
+      state.tabs[state.activeType].dirty = true;
+      saveCurrentTabGraphState(state.activeType);
+    }
+    setActiveModelName(body.name || defaultModelName());
 
-  const backendIssues = Array.isArray(body?.issues) ? body.issues : [];
-  const hasErrorIssue = backendIssues.some(
-      (issue) => String(issue?.severity || "").toUpperCase() === "ERROR");
-  if (!hasErrorIssue) {
-    await saveCurrentModel({rethrow: true, quiet: true});
-    publishDiagramUpdate({immediate: true});
-  } else {
-    resetModelSaveState({dirty: true});
+    setGenerationProgressPhase("Arranging imported model…", 68);
+    try {
+      await autoLayoutCurrentDiagram({
+        progress: false,
+        save: false,
+        publish: false,
+        status: false,
+        busy: false,
+        rethrow: true,
+        preserveExistingPositions: false
+      });
+    } catch (error) {
+      layoutWarning = error.message;
+    }
+    renderDiagram();
+    renderViewWorkbench();
+    centerCurrentDiagram();
+    if (state.tabs[state.activeType]) {
+      state.tabs[state.activeType].diagram = structuredClone(state.diagram);
+      state.tabs[state.activeType].dirty = true;
+      saveCurrentTabGraphState(state.activeType);
+    }
+
+    const backendIssues = Array.isArray(body?.issues) ? body.issues : [];
+    const hasErrorIssue = backendIssues.some(
+        (issue) => String(issue?.severity || "").toUpperCase() === "ERROR");
+    if (!hasErrorIssue) {
+      setGenerationProgressPhase("Saving imported model…", 88);
+      await saveCurrentModel({rethrow: true, quiet: true});
+      publishDiagramUpdate({immediate: true});
+    } else {
+      resetModelSaveState({dirty: true});
+    }
+    await completeGenerationProgress("Imported model ready.");
+    if (backendIssues.length) {
+      const mergedIssues = mergeIssuesWithManualGuidance(backendIssues);
+      applyValidationIssues(mergedIssues, {openOnFirst: true});
+      toggleValidationDrawer(true);
+      setStatus(
+          `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()} with ${backendIssues.length} issue(s).`);
+      return;
+    }
+    clearValidationIssues({keepPanelState: false});
+    setStatus(layoutWarning
+        ? `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}, but auto layout failed: ${layoutWarning}`
+        : `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}`);
+  } finally {
+    hideGenerationProgress();
   }
-  if (backendIssues.length) {
-    const mergedIssues = mergeIssuesWithManualGuidance(backendIssues);
-    applyValidationIssues(mergedIssues, {openOnFirst: true});
-    toggleValidationDrawer(true);
-    setStatus(
-        `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()} with ${backendIssues.length} issue(s).`);
-    return;
-  }
-  clearValidationIssues({keepPanelState: false});
-  setStatus(
-      `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}`);
 }
 
 export async function undoLastModelReplacement() {

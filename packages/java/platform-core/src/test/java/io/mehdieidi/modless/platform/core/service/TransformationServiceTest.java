@@ -41,6 +41,7 @@ class TransformationServiceTest {
                 "climate-relief-grants-cim-sample.xmi", sample, "xmi");
         ModelRecord cim = modelService.create(user, ModelLevel.CIM, project.id(), "climate-cim",
                 imported.modelJson());
+        modelService.update(user, ModelLevel.CIM, cim.id(), cim.name(), cim.modelJson());
 
         ModelRecord pim = transformations.cimToPim(user, cim.id());
 
@@ -81,6 +82,7 @@ class TransformationServiceTest {
         ModelRecord cim = modelService.create(user, ModelLevel.CIM, project.id(), "climate-cim",
                 imported.modelJson());
         ModelRecord pim = transformations.cimToPim(user, cim.id());
+        modelService.update(user, ModelLevel.PIM, pim.id(), pim.name(), pim.modelJson());
 
         ModelRecord psm = transformations.pimToPsm(user, pim.id());
 
@@ -134,6 +136,11 @@ class TransformationServiceTest {
                 imported.modelJson());
         ModelRecord pim = transformations.cimToPim(user, cim.id());
         ModelRecord psm = transformations.pimToPsm(user, pim.id());
+        modelService.update(user, ModelLevel.PSM, psm.id(), psm.name(), psm.modelJson());
+        modelService.patch(user, ModelLevel.PSM, psm.id(), psm.name(), java.util.List.of(
+                new ModelService.ModelPatchOperation("replace", "/summary",
+                        store.objectMapper().getNodeFactory().textNode(
+                                "Saved before artifact generation."))));
 
         ArtifactRecord artifact = transformations.psmToArtifact(user, psm.id());
 
@@ -146,6 +153,10 @@ class TransformationServiceTest {
         assertTrue(artifact.files().containsKey("generated/reports/generation-report.md"));
         assertTrue(artifact.files().keySet().stream().anyMatch(path -> path.startsWith("src/")),
                 "Formal generation should produce source files, not only a placeholder scaffold.");
+        assertTrue(artifact.files().keySet().stream()
+                        .anyMatch(path -> path.startsWith("src/functions/")
+                                && path.endsWith("/handler.go")),
+                "Formal generation should preserve generated PSM XMI and emit Lambda handlers.");
         String samTemplate = artifact.files().entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith("template-")
                         && entry.getKey().endsWith(".yaml"))

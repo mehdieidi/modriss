@@ -9,10 +9,10 @@ import "lib/protected-regions.eol";
 import "lib/trace.eol";
 import "lib/validation.eol";
 
-var cachedAwsRoot;
-var cachedEmitCtx;
-
 pre {
+  var cachedAwsRoot;
+  var cachedEmitCtx;
+
   if (AWSPSM!AwsPsmModel.all.size() <> 1) {
     throw "AWS PSM artifact generation requires exactly one AWSPSM!AwsPsmModel root; found " + AWSPSM!AwsPsmModel.all.size().asString() + ".";
   }

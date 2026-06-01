@@ -242,6 +242,7 @@ public final class TransformationService {
                 throw new PlatformException(500,
                         "PSM-to-artifact generation did not produce files.");
             }
+            validateGeneratedArtifactCompleteness(source, files);
             return files;
         } catch (PlatformException ex) {
             throw ex;
@@ -324,6 +325,45 @@ public final class TransformationService {
             }
         }
         return files;
+    }
+
+    private void validateGeneratedArtifactCompleteness(ModelRecord source,
+            Map<String, String> files) {
+        JsonNode elements = source.modelJson().path("graph").path("elements");
+        long lambdaCount = countElementsByClass(elements, "AwsLambdaFunction");
+        long stackCount = countElementsByClass(elements, "SamStack");
+        boolean hasLambdaHandlers = files.keySet().stream()
+                .anyMatch(path -> path.startsWith("src/functions/")
+                        && path.endsWith("/handler.go"));
+        boolean hasSamTemplates = files.keySet().stream()
+                .anyMatch(path -> path.startsWith("template") && path.endsWith(".yaml"));
+        if (lambdaCount > 0 && !hasLambdaHandlers) {
+            throw new PlatformException(500,
+                    "PSM-to-artifact generation produced no Lambda handlers even though the "
+                            + "source PSM contains " + lambdaCount
+                            + " Lambda function(s). Regenerate the PSM from PIM so its source "
+                            + "XMI sidecar is restored, then generate artifacts again.");
+        }
+        if (stackCount > 0 && !hasSamTemplates) {
+            throw new PlatformException(500,
+                    "PSM-to-artifact generation produced no SAM templates even though the "
+                            + "source PSM contains " + stackCount
+                            + " stack(s). Regenerate the PSM from PIM so its source XMI sidecar "
+                            + "is restored, then generate artifacts again.");
+        }
+    }
+
+    private long countElementsByClass(JsonNode elements, String eClass) {
+        if (!elements.isArray()) {
+            return 0;
+        }
+        long count = 0;
+        for (JsonNode element : elements) {
+            if (eClass.equals(text(element, "eClass", ""))) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private void requireSourceRevision(ModelRecord source, Long expectedRevision) {

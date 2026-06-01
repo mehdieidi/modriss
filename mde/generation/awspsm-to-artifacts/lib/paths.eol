@@ -136,7 +136,22 @@ operation Any pathKind(pathText : String) : String {
 }
 
 operation String pathKind() : String {
-  return pathKind(self);
+  if (self.endsWith(".yaml") or self.endsWith(".yml")) {
+    return "YAML";
+  }
+  if (self.endsWith(".json")) {
+    return "JSON";
+  }
+  if (self.endsWith(".md")) {
+    return "MARKDOWN";
+  }
+  if (self.endsWith(".sh")) {
+    return "SHELL";
+  }
+  if (self.endsWith(".go")) {
+    return "GO";
+  }
+  return "TEXT";
 }
 
 operation Map goModulePath() : String {

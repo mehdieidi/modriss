@@ -162,7 +162,7 @@ public final class ModelService {
         JsonNode normalizedModel = normalizeModel(name, level, modelJson);
         String sourceXmiToken = removeSourceXmiToken(normalizedModel);
         SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, projectId, level,
-                sourceXmiToken);
+                sourceXmiToken, false);
         MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
         ModelRecord model = new ModelRecord(UUID.randomUUID().toString(), projectId, level,
                 requireName(name, level), normalizedModel, metamodel.version(),
@@ -186,11 +186,12 @@ public final class ModelService {
             JsonNode normalizedModel = normalizeModel(name, level, modelJson);
             String sourceXmiToken = removeSourceXmiToken(normalizedModel);
             SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
-                    level, sourceXmiToken);
+                    level, sourceXmiToken, true);
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
             ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
                     requireName(name, level), normalizedModel, metamodel.version(),
-                    metamodel.sha256(), nextRevision(existing), sourceXmi.hash(), "CURRENT",
+                    metamodel.sha256(), nextRevision(existing),
+                    sourceXmi.effectiveHash(existing.sourceXmiHash()), "CURRENT",
                     existing.createdAt(), Instant.now());
             persistModelAndSourceXmi(existing, updated, sourceXmi);
             return clientRecord(updated);
@@ -222,12 +223,13 @@ public final class ModelService {
                     level, patchedModel);
             String sourceXmiToken = removeSourceXmiToken(normalizedModel);
             SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
-                    level, sourceXmiToken);
+                    level, sourceXmiToken, true);
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
             ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
                     requireName(name == null ? existing.name() : name, level), normalizedModel,
                     metamodel.version(), metamodel.sha256(), nextRevision(existing),
-                    sourceXmi.hash(), "CURRENT", existing.createdAt(), Instant.now());
+                    sourceXmi.effectiveHash(existing.sourceXmiHash()), "CURRENT",
+                    existing.createdAt(), Instant.now());
             persistModelAndSourceXmi(existing, updated, sourceXmi);
             return clientRecord(updated);
         });
@@ -857,9 +859,10 @@ public final class ModelService {
     }
 
     private SourceXmiUpdate resolveSourceXmiUpdate(UserRecord user, String projectId,
-            ModelLevel level, String token) {
+            ModelLevel level, String token, boolean preserveExistingWhenMissing) {
         if (token == null || token.isBlank()) {
-            return SourceXmiUpdate.deleteUpdate();
+            return preserveExistingWhenMissing ? SourceXmiUpdate.preserveUpdate()
+                    : SourceXmiUpdate.deleteUpdate();
         }
         StagedImportRecord record = store.require(stagedSourceXmiRecordPath(token),
                 StagedImportRecord.class, "Staged XMI import token was not found.");
@@ -903,6 +906,9 @@ public final class ModelService {
         try {
             store.write(modelPath, model);
             writeModelIndex(model);
+            if (sourceXmi.shouldPreserve()) {
+                return;
+            }
             if (sourceXmi.shouldDelete()) {
                 store.deleteIfExists(sourcePath);
             } else {
@@ -1300,12 +1306,24 @@ public final class ModelService {
 
     private record SourceXmiUpdate(byte[] bytes, String hash, StagedImportRecord record) {
 
-        static SourceXmiUpdate deleteUpdate() {
+        static SourceXmiUpdate preserveUpdate() {
             return new SourceXmiUpdate(null, null, null);
         }
 
+        static SourceXmiUpdate deleteUpdate() {
+            return new SourceXmiUpdate(null, "", null);
+        }
+
+        boolean shouldPreserve() {
+            return bytes == null && hash == null;
+        }
+
         boolean shouldDelete() {
-            return bytes == null;
+            return bytes == null && hash != null;
+        }
+
+        String effectiveHash(String previousHash) {
+            return shouldPreserve() ? previousHash : hash;
         }
     }
 }
