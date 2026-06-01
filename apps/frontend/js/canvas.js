@@ -113,170 +113,6 @@ function syncCanvasIndexesFromState() {
   });
 }
 
-const CIM_NODE_NOTATION = {
-  Actor: {
-    tag: "participant",
-    line: (meta) => meta.actorType || meta.trustLevel
-  },
-  ExternalSystem: {
-    tag: "external",
-    line: (meta) => meta.owningOrganization || meta.trustLevel
-  },
-  Command: {tag: "command", line: (meta) => meta.intent || meta.commandType},
-  Query: {tag: "query", line: (meta) => meta.intent || meta.queryType},
-  BusinessEvent: {
-    tag: "event",
-    line: (meta) => meta.occurredInPastTenseName || meta.semanticName
-  },
-  Policy: {
-    tag: "policy",
-    line: (meta) => meta.triggeringCondition || meta.policyType
-  },
-  BusinessError: {
-    tag: "error",
-    line: (meta) => meta.errorCode || meta.userVisibleMessage
-  },
-  Condition: {
-    tag: "condition",
-    line: (meta) => meta.naturalLanguage || meta.expression
-  },
-  BusinessCapability: {
-    tag: "capability",
-    line: (meta) => meta.criticality || meta.maturity
-  },
-  BoundedContextCandidate: {
-    tag: "context",
-    line: (meta) => meta.languageBoundary || meta.ownershipBoundary
-  },
-  DomainEntity: {
-    tag: "entity",
-    line: (meta) => meta.identityDescription || meta.businessOwner
-  },
-  ValueObject: {
-    tag: "value object",
-    line: (meta) => meta.valueType || (meta.immutable ? "immutable" : "")
-  },
-  AggregateCandidate: {
-    tag: "aggregate",
-    line: (meta) => meta.consistencyExpectation
-        || meta.consistencyBoundaryRationale
-  },
-  InformationItem: {
-    tag: "data",
-    line: (meta) => meta.businessName || meta.type
-  },
-  DataClassification: {
-    tag: "classification",
-    line: (meta) => meta.kind || meta.confidentialityLevel
-  },
-  BusinessProcess: {
-    tag: "process",
-    line: (meta) => meta.processKind || meta.completionCriterion
-  },
-  StartStep: {tag: "start", line: () => "process entry"},
-  EndStep: {tag: "end", line: () => "process completion"},
-  CommandStep: {tag: "command step", line: (meta) => refLabel(meta.command)},
-  QueryStep: {tag: "query step", line: (meta) => refLabel(meta.query)},
-  EventStep: {tag: "event step", line: (meta) => refLabel(meta.event)},
-  PolicyStep: {tag: "policy step", line: (meta) => refLabel(meta.policy)},
-  HumanTaskStep: {tag: "human task", line: (meta) => meta.taskDescription},
-  ExternalInteractionStep: {
-    tag: "external task",
-    line: (meta) => refLabel(meta.externalSystem) || meta.interactionPurpose
-  },
-  DecisionStep: {
-    tag: "decision",
-    line: (meta) => refLabel(meta.condition) || refLabel(meta.decisionTable)
-  },
-  WaitStep: {
-    tag: "wait",
-    line: (meta) => meta.durationExpression || meta.waitReason
-  },
-  Requirement: {
-    tag: "requirement",
-    line: (meta) => meta.requirementType || meta.priority
-  },
-  BusinessGoal: {
-    tag: "goal",
-    line: (meta) => meta.successCriterion || meta.priority
-  },
-  KPI: {tag: "kpi", line: (meta) => meta.metricName || meta.targetValue},
-  Stakeholder: {
-    tag: "stakeholder",
-    line: (meta) => meta.stakeholderType || meta.influenceLevel
-  },
-  NonFunctionalRequirement: {
-    tag: "quality",
-    line: (meta) => meta.qualityType || meta.metric
-  },
-  SecurityConstraint: {
-    tag: "security",
-    line: (meta) => meta.authenticationNeed || meta.authorizationRule
-  },
-  PrivacyConstraint: {tag: "privacy", line: (meta) => meta.law || meta.purpose},
-  ComplianceConstraint: {
-    tag: "compliance",
-    line: (meta) => meta.regulation || meta.controlId
-  },
-  Risk: {tag: "risk", line: (meta) => meta.impact || meta.probability},
-  Assumption: {
-    tag: "assumption",
-    line: (meta) => meta.sourceRule || meta.value
-  },
-  Hotspot: {tag: "hotspot", line: (meta) => meta.severity || meta.rationale}
-};
-
-const CIM_EDGE_LABELS = {
-  ISSUES: "issues",
-  OBSERVES: "observes",
-  PLAYS_ROLE: "plays role",
-  ASSIGNED_TO: "assigned to",
-  PRODUCES: "produces",
-  CONSUMED_BY: "consumed by",
-  EXCHANGES_INFORMATION: "exchanges information",
-  SUPPORTS: "supports",
-  OWNS: "owns",
-  MEASURED_BY: "measured by",
-  REFINED_BY: "refined by",
-  REALIZES: "realizes",
-  CONTAINS_COMMAND: "contains command",
-  CONTAINS_QUERY: "contains query",
-  CONTAINS_EVENT: "contains event",
-  MANAGES: "manages",
-  OWNS_PROCESS: "owns process",
-  DEPENDS_ON: "depends on",
-  CONTAINS: "contains",
-  DOMAIN_RELATIONSHIP: "relationship",
-  ROOT: "root",
-  MEMBER: "member",
-  HAS_ATTRIBUTE: "has attribute",
-  HANDLES: "handles",
-  EXPECTS: "expects",
-  REJECTS_WITH: "rejects with",
-  MAY_FAIL_WITH: "may fail with",
-  TARGETS: "targets",
-  HANDLED_BY: "handled by",
-  INPUT: "input",
-  OUTPUT: "output",
-  READS: "reads",
-  PAYLOAD: "payload",
-  AFFECTS: "affects",
-  PRECONDITION: "precondition",
-  REFERENCES: "references",
-  TRIGGERS: "triggers",
-  FEEDS: "starts/feeds",
-  EMITS_COMMAND: "emits command",
-  EMITS_EVENT: "emits event",
-  GUARDS: "guards",
-  CONSTRAINS: "constrains",
-  TRANSITION: "transition",
-  USES: "uses",
-  RESULTS_IN: "results in",
-  CONFLICTS_WITH: "conflicts with",
-  ATTACHED_TO: "attached to",
-  TRACE: "trace"
-};
-
 const CIM_PROVIDER_TERMS = [
   "aws", "amazon", "lambda", "dynamodb", "dynamo", "s3", "sns", "sqs",
   "eventbridge", "cognito", "apigateway", "api gateway", "azure", "gcp",
@@ -288,80 +124,6 @@ const CIM_TABLE_LIKE_TYPES = new Set([
   "AcceptanceCriterion", "DecisionRule", "QualityScenario",
   "DataClassification"
 ]);
-
-const CIM_VIEW_PALETTES = {
-  dashboard: [
-    "BusinessGoal", "Actor", "BusinessCapability", "Requirement",
-    "DomainEntity", "Command", "BusinessEvent", "Policy", "Risk", "Hotspot",
-    "TransformationProfile", "ProductionReadinessAssessment", "TraceModel",
-    "StructuredDocument"
-  ],
-  requirements: [
-    "Requirement", "BusinessGoal", "KPI", "Stakeholder",
-    "NonFunctionalRequirement", "SecurityConstraint", "PrivacyConstraint",
-    "ComplianceConstraint", "AcceptanceCriterion", "QualityScenario", "Risk",
-    "Assumption", "Hotspot"
-  ],
-  capability: [
-    "BusinessCapability", "BoundedContextCandidate",
-    "UbiquitousLanguageTerm", "Requirement", "BusinessGoal", "Stakeholder",
-    "Actor", "Command", "Query", "BusinessEvent", "DomainEntity",
-    "BusinessProcess"
-  ],
-  actor: [
-    "Actor", "ExternalSystem", "Role", "Command", "Query", "BusinessEvent",
-    "InformationItem"
-  ],
-  "bounded-context": [
-    "BoundedContextCandidate", "BusinessCapability", "DomainEntity",
-    "Command", "Query", "BusinessEvent", "Policy", "UbiquitousLanguageTerm"
-  ],
-  domain: [
-    "DomainEntity", "ValueObject", "AggregateCandidate",
-    "BusinessInvariant", "LifecycleStateDefinition", "InformationItem",
-    "DataClassification"
-  ],
-  aggregate: [
-    "AggregateCandidate", "DomainEntity", "BusinessInvariant", "Command",
-    "BusinessEvent"
-  ],
-  data: [
-    "InformationItem", "DataClassification", "PrivacyConstraint",
-    "ComplianceConstraint", "SecurityConstraint", "NonFunctionalRequirement"
-  ],
-  eventstorming: [
-    "Actor", "ExternalSystem", "Command", "Query", "BusinessEvent",
-    "Policy", "BusinessError", "Condition", "Hotspot", "InformationItem",
-    "AggregateCandidate", "BusinessCapability"
-  ],
-  process: [
-    "BusinessProcess", "StartStep", "EndStep", "CommandStep", "QueryStep",
-    "EventStep", "PolicyStep", "HumanTaskStep", "ExternalInteractionStep",
-    "DecisionStep", "WaitStep", "ExceptionScenario", "TemporalConstraint",
-    "Condition", "Role"
-  ],
-  decision: [
-    "DecisionTable", "InformationItem", "Command", "BusinessEvent", "Policy",
-    "Condition", "DecisionRule", "Query", "BusinessError"
-  ],
-  governance: [
-    "InformationItem", "DataClassification", "PrivacyConstraint",
-    "ComplianceConstraint", "SecurityConstraint", "NonFunctionalRequirement",
-    "QualityScenario", "Actor", "Command", "Query", "ExternalSystem"
-  ],
-  readiness: [
-    "Risk", "Assumption", "Hotspot", "Requirement", "BusinessCapability",
-    "Command", "Query", "BusinessEvent", "BusinessProcess",
-    "AggregateCandidate", "TransformationProfile",
-    "ProductionReadinessAssessment", "ReadinessFinding", "ReadinessCheck",
-    "ManualDecision"
-  ],
-  traceability: [
-    "TraceModel", "Requirement", "BusinessGoal", "Command", "Query",
-    "BusinessEvent", "DomainEntity", "Policy", "Risk", "ReadinessFinding",
-    "StructuredDocument"
-  ]
-};
 
 const CIM_PROFILE_LABELS = {
   dashboard: "Model dashboard",
@@ -417,8 +179,7 @@ function cimEdgeLabel(edge) {
     configuredLabel = "";
   }
   return edge.bundle ? (edge.label || "Bundled relations")
-      : (configuredLabel || CIM_EDGE_LABELS[key] || key.toLowerCase()
-      .replaceAll("_", " "));
+      : (configuredLabel || key.toLowerCase().replaceAll("_", " "));
 }
 
 function cimEdgePresentation(edge) {
@@ -533,8 +294,7 @@ function cimNodeNotation(node) {
       }
     };
   }
-  return state.activeType === "cim" ? (CIM_NODE_NOTATION[node.type] || null)
-      : null;
+  return null;
 }
 
 function normalizeViewText(value) {
@@ -3511,8 +3271,31 @@ function isActionableScopedPaletteType(typeKey, type, creatableTypes) {
 
 function filterScopedPaletteTypes(typeKey, scopedTypes, allTypes) {
   const creatableTypes = new Set(allTypes);
-  return scopedTypes.filter((type) => isActionableScopedPaletteType(typeKey,
-      type, creatableTypes));
+  const result = [];
+  const seen = new Set();
+  const add = (type) => {
+    if (!type || seen.has(type)) {
+      return;
+    }
+    seen.add(type);
+    result.push(type);
+  };
+  scopedTypes.forEach((type) => {
+    if (isActionableScopedPaletteType(typeKey, type, creatableTypes)) {
+      add(type);
+      return;
+    }
+    allTypes.forEach((candidate) => {
+      try {
+        if (modelingTypeMatches(typeKey, type, candidate)) {
+          add(candidate);
+        }
+      } catch {
+        // Ignore stale metadata entries; missing types cannot be created.
+      }
+    });
+  });
+  return result;
 }
 
 function availableCimPaletteTypes(allTypes) {
@@ -3527,10 +3310,11 @@ function availableCimPaletteTypes(allTypes) {
   } catch {
     viewDefinition = null;
   }
-  const profile = activeCimViewProfile();
   const scoped = Array.isArray(viewDefinition?.palette)
   && viewDefinition.palette.length ? viewDefinition.palette
-      : (CIM_VIEW_PALETTES[profile] || CIM_VIEW_PALETTES.eventstorming);
+      : Array.isArray(viewDefinition?.elementTypes)
+          ? viewDefinition.elementTypes
+          : [];
   const filtered = filterScopedPaletteTypes("cim", scoped, allTypes);
   if (filtered.length) {
     return filtered;

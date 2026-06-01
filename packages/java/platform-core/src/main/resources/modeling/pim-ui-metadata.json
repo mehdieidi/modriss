@@ -1,5 +1,468 @@
 {
   "displayName": "PIM",
+  "elementVisualDefaults": {
+    "icon": "category",
+    "color": "#475569",
+    "category": "PIM",
+    "notation": {
+      "tag": "PIM",
+      "shape": "concept-card",
+      "lineFields": [
+        "summary",
+        "description",
+        "lifecycleStatus"
+      ]
+    }
+  },
+  "elementVisualRules": [
+    {
+      "match": {
+        "packages": [
+          "pim"
+        ]
+      },
+      "metadata": {
+        "icon": "dashboard",
+        "color": "#334155",
+        "category": "Root",
+        "notation": {
+          "tag": "ROOT",
+          "shape": "workspace-container",
+          "lineFields": [
+            "architectureStyle",
+            "validationProfile",
+            "domainName"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "deployment"
+        ]
+      },
+      "metadata": {
+        "icon": "inventory_2",
+        "color": "#0F766E",
+        "category": "Deployment",
+        "notation": {
+          "tag": "DPL",
+          "shape": "container-card",
+          "lineFields": [
+            "unitType",
+            "environmentClass",
+            "ownerTeam",
+            "supportLevel"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "api"
+        ]
+      },
+      "metadata": {
+        "icon": "api",
+        "color": "#7C3AED",
+        "category": "API",
+        "notation": {
+          "tag": "API",
+          "shape": "api-card",
+          "lineFields": [
+            "apiStyle",
+            "method",
+            "pathTemplate",
+            "operationId"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "compute"
+        ]
+      },
+      "metadata": {
+        "icon": "functions",
+        "color": "#2563EB",
+        "category": "Compute",
+        "notation": {
+          "tag": "FN",
+          "shape": "function-card",
+          "lineFields": [
+            "functionKind",
+            "handlerResponsibility",
+            "computeProfile"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "contracts"
+        ]
+      },
+      "metadata": {
+        "icon": "description",
+        "color": "#4F46E5",
+        "category": "Contracts",
+        "notation": {
+          "tag": "SCHEMA",
+          "shape": "table-tree",
+          "lineFields": [
+            "schemaKind",
+            "semanticVersion",
+            "fieldType",
+            "contractVersion"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "data"
+        ]
+      },
+      "metadata": {
+        "icon": "database",
+        "color": "#0891B2",
+        "category": "Data",
+        "notation": {
+          "tag": "DATA",
+          "shape": "data-card",
+          "lineFields": [
+            "storeKind",
+            "dataModelKind",
+            "operation",
+            "fieldType"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "integration"
+        ]
+      },
+      "metadata": {
+        "icon": "hub",
+        "color": "#DB2777",
+        "category": "Eventing",
+        "notation": {
+          "tag": "FLOW",
+          "shape": "event-flow",
+          "lineFields": [
+            "channelKind",
+            "deliverySemantics",
+            "flowPurpose",
+            "scheduleExpression"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "workflow"
+        ]
+      },
+      "metadata": {
+        "icon": "schema",
+        "color": "#EA580C",
+        "category": "Workflow",
+        "notation": {
+          "tag": "WF",
+          "shape": "workflow-node",
+          "lineFields": [
+            "workflowKind",
+            "stateKind",
+            "taskDescription",
+            "conditionExpression"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "external"
+        ]
+      },
+      "metadata": {
+        "icon": "language",
+        "color": "#0D9488",
+        "category": "External Integration",
+        "notation": {
+          "tag": "EXT",
+          "shape": "external-boundary",
+          "lineFields": [
+            "externalSystemName",
+            "protocolFamily",
+            "endpointDescription"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "security"
+        ]
+      },
+      "metadata": {
+        "icon": "security",
+        "color": "#CA8A04",
+        "category": "Security",
+        "notation": {
+          "tag": "SEC",
+          "shape": "security-card",
+          "lineFields": [
+            "identityKind",
+            "principalKind",
+            "effect",
+            "authScheme"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "policy"
+        ]
+      },
+      "metadata": {
+        "icon": "policy",
+        "color": "#64748B",
+        "category": "Operations / Policy",
+        "notation": {
+          "tag": "POL",
+          "shape": "policy-badge-card",
+          "lineFields": [
+            "policyScope",
+            "productionRequired",
+            "timeoutSeconds",
+            "retentionPeriod"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "config"
+        ]
+      },
+      "metadata": {
+        "icon": "tune",
+        "color": "#64748B",
+        "category": "Configuration",
+        "notation": {
+          "tag": "CFG",
+          "shape": "table-row-card",
+          "lineFields": [
+            "scope",
+            "variableName",
+            "secretKind",
+            "valueKind"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "kernel"
+        ]
+      },
+      "metadata": {
+        "icon": "tag",
+        "color": "#475569",
+        "category": "Kernel / Trace",
+        "notation": {
+          "tag": "META",
+          "shape": "metadata-chip",
+          "lineFields": [
+            "linkType",
+            "reviewStatus",
+            "sourceReference"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "supertypes": [
+          "SemanticRelationship"
+        ]
+      },
+      "metadata": {
+        "relationshipElement": true,
+        "icon": "link",
+        "notation": {
+          "tag": "REL",
+          "shape": "relationship-edge",
+          "lineFields": [
+            "kind",
+            "flowPurpose",
+            "ownershipKind",
+            "effect"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "ModelElement",
+          "TraceableElement",
+          "SemanticRelationship",
+          "TransformationAssumption",
+          "ComputeElement",
+          "StorageElement",
+          "IntegrationElement",
+          "EventChannel",
+          "Flow",
+          "ArchitecturePolicy",
+          "DeployableElement",
+          "InvocationSource",
+          "InvocationTarget",
+          "FunctionTarget",
+          "WorkflowTarget",
+          "SubscriptionTarget",
+          "RoutingTarget",
+          "FlowEndpoint",
+          "ProtectedResource",
+          "PolicyTarget",
+          "DataAccessTarget",
+          "ExternalCallTarget",
+          "EnvironmentTarget",
+          "RouteEndpoint",
+          "EventCarrier"
+        ]
+      },
+      "metadata": {
+        "supportOnly": true,
+        "creatable": false
+      }
+    }
+  ],
+  "universalSyntax": [
+    {
+      "primitive": "Container",
+      "notation": "Rounded large frame with title bar and optional swimlane/header.",
+      "interaction": "Spatial containment changes containment or membership only when valid."
+    },
+    {
+      "primitive": "Primary concept card",
+      "notation": "Rounded card with title, stereotype token, badges, and collapsible compartments.",
+      "interaction": "Primary attributes are inline; secondary attributes remain editable in the inspector."
+    },
+    {
+      "primitive": "Attached policy/constraint badge",
+      "notation": "Small labeled pin attached to a target node border.",
+      "interaction": "Click opens the policy object; pinning creates a full policy card."
+    },
+    {
+      "primitive": "Relationship edge",
+      "notation": "Labeled line with arrowheads and optional endpoint roles.",
+      "interaction": "Dense edge layers are hidden, bundled, or exposed through focus mode."
+    },
+    {
+      "primitive": "Reference chip",
+      "notation": "Compact linked-element chip inside a table row, card compartment, or inspector row.",
+      "interaction": "Clicking a chip navigates to or highlights the referenced element."
+    }
+  ],
+  "kernelSyntax": [
+    {
+      "element": "ModelElement / TraceableElement",
+      "notation": "Hidden metadata layer with lifecycle, generated, rationale, review, and trace badges.",
+      "surfaces": [
+        "inspector",
+        "search",
+        "trace overlay",
+        "status badges"
+      ]
+    },
+    {
+      "element": "Annotation / KeyValue",
+      "notation": "Key-value chips attached to a card or listed in an annotations tab.",
+      "surfaces": [
+        "inspector",
+        "detail projection"
+      ]
+    },
+    {
+      "element": "TraceModel / TraceLink",
+      "notation": "Separate traceability overlay with dashed labeled links and confidence filtering.",
+      "surfaces": [
+        "trace view",
+        "relationship matrix"
+      ]
+    },
+    {
+      "element": "Expression / StructuredDocument",
+      "notation": "Expandable expression or document editor with compact card badge.",
+      "surfaces": [
+        "inspector",
+        "detail modal"
+      ]
+    },
+    {
+      "element": "ProductionReadinessAssessment / findings / checks / decisions",
+      "notation": "Readiness board and severity markers on affected elements.",
+      "surfaces": [
+        "readiness board",
+        "validation overlay"
+      ]
+    }
+  ],
+  "complexityManagement": [
+    {
+      "technique": "View decomposition",
+      "behavior": "Use named synchronized views scoped by service, API, function, event, data, workflow, security, configuration, policy, trace, and readiness concerns."
+    },
+    {
+      "technique": "Containment and collapse",
+      "behavior": "Service, deployment, API, workflow, store, and channel containers support collapsed, summary, and expanded modes."
+    },
+    {
+      "technique": "Semantic zoom",
+      "behavior": "Far zoom shows containers and counts; mid zoom shows cards and ports; near zoom shows compartments and edge labels."
+    },
+    {
+      "technique": "Layered edge visibility",
+      "behavior": "Service membership, flow, invocation, data access, security, policy, trace, deployment, and generated edges are independently filterable."
+    },
+    {
+      "technique": "Edge bundling and ports",
+      "behavior": "Repeated links between containers are bundled and exposed through named ports such as in, out, read, write, publish, subscribe, invoke, auth, config."
+    },
+    {
+      "technique": "Table/tree editors",
+      "behavior": "Route tables, schema fields, decision rules, permissions, access patterns, and configuration variables render primarily as tables or trees."
+    },
+    {
+      "technique": "Validation overlays",
+      "behavior": "EVL/readiness findings appear as markers and sortable issue lists that highlight affected elements."
+    },
+    {
+      "technique": "Trace overlay",
+      "behavior": "Trace links remain a separate layer with confidence filters."
+    },
+    {
+      "technique": "Saved viewpoints",
+      "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
+    }
+  ],
   "relationshipKinds": [
     "CONTAINS",
     "OWNS",
@@ -190,7 +653,7 @@
     },
     {
       "id": "pim-api-surface",
-      "displayName": "API Surface",
+      "displayName": "API and Contract View",
       "viewType": "API_SURFACE",
       "viewpoint": "api",
       "elementTypes": [
@@ -224,8 +687,67 @@
       "layoutHint": "TABLE"
     },
     {
+      "id": "pim-function-trigger",
+      "displayName": "Function and Trigger View",
+      "viewType": "FUNCTION_TRIGGER",
+      "viewpoint": "compute",
+      "elementTypes": [
+        "Function",
+        "ComputeElement",
+        "Trigger",
+        "FunctionContract",
+        "Schedule",
+        "EventChannel",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "ApiRoute",
+        "Workflow",
+        "WorkflowState",
+        "DataStore",
+        "ObjectStore",
+        "DataAccess",
+        "ExternalAdapter",
+        "Secret",
+        "ConfigurationSet",
+        "ArchitecturePolicy",
+        "ObservabilityConfig"
+      ],
+      "palette": [
+        "Function",
+        "Trigger",
+        "Schedule",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Workflow",
+        "WorkflowState",
+        "DataStore",
+        "ObjectStore",
+        "ExternalAdapter",
+        "Secret",
+        "ConfigurationSet",
+        "ArchitecturePolicy",
+        "ObservabilityConfig"
+      ],
+      "relationshipKinds": [
+        "TRIGGERS",
+        "INVOKES",
+        "READS",
+        "WRITES",
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "CALLS_ADAPTERS",
+        "USES_SECRETS",
+        "ENVIRONMENT_VARIABLES",
+        "ATTACHED_TO",
+        "CONTAINS"
+      ],
+      "layoutHint": "DEFAULT_LAYERED"
+    },
+    {
       "id": "pim-event-integration",
-      "displayName": "Event and Integration Flows",
+      "displayName": "Event and Flow View",
       "viewType": "EVENT_INTEGRATION",
       "viewpoint": "integration",
       "elementTypes": [
@@ -299,6 +821,85 @@
         "CONTAINS"
       ],
       "layoutHint": "TABLE"
+    },
+    {
+      "id": "pim-policy-observability",
+      "displayName": "Policy and Observability View",
+      "viewType": "POLICY_OBSERVABILITY",
+      "viewpoint": "policy",
+      "elementTypes": [
+        "ArchitecturePolicy",
+        "PolicySetting",
+        "DataProtectionPolicy",
+        "DataQualityPolicy",
+        "CompliancePolicy",
+        "BusinessRule",
+        "DecisionModel",
+        "DecisionRule",
+        "ResiliencePolicy",
+        "RetryPolicy",
+        "DeadLetterPolicy",
+        "TimeoutPolicy",
+        "IdempotencyPolicy",
+        "ConcurrencyPolicy",
+        "RateLimitPolicy",
+        "BatchPolicy",
+        "OrderingPolicy",
+        "CachePolicy",
+        "BackupPolicy",
+        "RetentionPolicy",
+        "CostPolicy",
+        "ObservabilityConfig",
+        "LoggingPolicy",
+        "MetricPolicy",
+        "MetricDimension",
+        "TracingPolicy",
+        "AlertPolicy",
+        "Slo",
+        "CorsPolicy",
+        "PolicyTarget",
+        "ProtectedResource"
+      ],
+      "palette": [
+        "ArchitecturePolicy",
+        "DataProtectionPolicy",
+        "DataQualityPolicy",
+        "CompliancePolicy",
+        "BusinessRule",
+        "DecisionModel",
+        "ResiliencePolicy",
+        "RetryPolicy",
+        "DeadLetterPolicy",
+        "TimeoutPolicy",
+        "IdempotencyPolicy",
+        "ConcurrencyPolicy",
+        "RateLimitPolicy",
+        "BatchPolicy",
+        "OrderingPolicy",
+        "CachePolicy",
+        "BackupPolicy",
+        "RetentionPolicy",
+        "CostPolicy",
+        "ObservabilityConfig",
+        "LoggingPolicy",
+        "MetricPolicy",
+        "TracingPolicy",
+        "AlertPolicy",
+        "Slo",
+        "CorsPolicy"
+      ],
+      "relationshipKinds": [
+        "ATTACHED_TO",
+        "CONSTRAINS",
+        "INPUT_SCHEMAS",
+        "OUTPUT_SCHEMAS",
+        "RESULTING_COMMANDS",
+        "RESULTING_EVENTS",
+        "USED_BY_FUNCTIONS",
+        "EXPOSED_BY_ROUTES",
+        "TRACE"
+      ],
+      "layoutHint": "GOVERNANCE"
     },
     {
       "id": "pim-workflow-designer",

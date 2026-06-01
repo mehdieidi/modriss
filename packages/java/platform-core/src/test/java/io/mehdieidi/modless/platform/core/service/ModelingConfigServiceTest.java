@@ -42,15 +42,23 @@ class ModelingConfigServiceTest {
     }
 
     @Test
-    void exposesTypesMissingUiMetadataAsNonCreatableStructuralTypes() {
-        Map<String, Object> pim = level("pim");
-        Map<String, Object> modelElement = element(listOfMaps(pim.get("elements")),
-                "ModelElement");
+    void appliesJsonOwnedVisualRulesToEveryEcoreType() {
+        for (String key : List.of("cim", "pim", "psm")) {
+            Map<String, Object> level = level(key);
+            for (Map<String, Object> element : listOfMaps(level.get("elements"))) {
+                assertFalse(Boolean.TRUE.equals(element.get("uiMetadataMissing")));
+                assertFalse(String.valueOf(element.get("label")).isBlank());
+                assertFalse(String.valueOf(element.get("icon")).isBlank());
+                assertFalse(String.valueOf(element.get("color")).isBlank());
+                assertFalse(String.valueOf(element.get("category")).isBlank());
+                assertNotNull(element.get("notation"));
+            }
+        }
 
-        assertEquals(Boolean.TRUE, modelElement.get("uiMetadataMissing"));
+        Map<String, Object> modelElement = element(listOfMaps(level("pim").get("elements")),
+                "ModelElement");
+        assertEquals(Boolean.TRUE, modelElement.get("supportOnly"));
         assertEquals(Boolean.FALSE, modelElement.get("creatable"));
-        assertNotNull(modelElement.get("attributes"));
-        assertNotNull(modelElement.get("references"));
     }
 
     @Test

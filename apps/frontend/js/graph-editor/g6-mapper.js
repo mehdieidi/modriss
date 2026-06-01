@@ -14,170 +14,6 @@ import {
   stickyColor
 } from './g6-style.js';
 
-const CIM_NODE_NOTATION = {
-  Actor: {
-    tag: "participant",
-    line: (meta) => meta.actorType || meta.trustLevel
-  },
-  ExternalSystem: {
-    tag: "external",
-    line: (meta) => meta.owningOrganization || meta.trustLevel
-  },
-  Command: {tag: "command", line: (meta) => meta.intent || meta.commandType},
-  Query: {tag: "query", line: (meta) => meta.intent || meta.queryType},
-  BusinessEvent: {
-    tag: "event",
-    line: (meta) => meta.occurredInPastTenseName || meta.semanticName
-  },
-  Policy: {
-    tag: "policy",
-    line: (meta) => meta.triggeringCondition || meta.policyType
-  },
-  BusinessError: {
-    tag: "error",
-    line: (meta) => meta.errorCode || meta.userVisibleMessage
-  },
-  Condition: {
-    tag: "condition",
-    line: (meta) => meta.naturalLanguage || meta.expression
-  },
-  BusinessCapability: {
-    tag: "capability",
-    line: (meta) => meta.criticality || meta.maturity
-  },
-  BoundedContextCandidate: {
-    tag: "context",
-    line: (meta) => meta.languageBoundary || meta.ownershipBoundary
-  },
-  DomainEntity: {
-    tag: "entity",
-    line: (meta) => meta.identityDescription || meta.businessOwner
-  },
-  ValueObject: {
-    tag: "value object",
-    line: (meta) => meta.valueType || (meta.immutable ? "immutable" : "")
-  },
-  AggregateCandidate: {
-    tag: "aggregate",
-    line: (meta) => meta.consistencyExpectation
-        || meta.consistencyBoundaryRationale
-  },
-  InformationItem: {
-    tag: "data",
-    line: (meta) => meta.businessName || meta.type
-  },
-  DataClassification: {
-    tag: "classification",
-    line: (meta) => meta.kind || meta.confidentialityLevel
-  },
-  BusinessProcess: {
-    tag: "process",
-    line: (meta) => meta.processKind || meta.completionCriterion
-  },
-  StartStep: {tag: "start", line: () => "process entry"},
-  EndStep: {tag: "end", line: () => "process completion"},
-  CommandStep: {tag: "command step", line: (meta) => refLabel(meta.command)},
-  QueryStep: {tag: "query step", line: (meta) => refLabel(meta.query)},
-  EventStep: {tag: "event step", line: (meta) => refLabel(meta.event)},
-  PolicyStep: {tag: "policy step", line: (meta) => refLabel(meta.policy)},
-  HumanTaskStep: {tag: "human task", line: (meta) => meta.taskDescription},
-  ExternalInteractionStep: {
-    tag: "external task",
-    line: (meta) => refLabel(meta.externalSystem) || meta.interactionPurpose
-  },
-  DecisionStep: {
-    tag: "decision",
-    line: (meta) => refLabel(meta.condition) || refLabel(meta.decisionTable)
-  },
-  WaitStep: {
-    tag: "wait",
-    line: (meta) => meta.durationExpression || meta.waitReason
-  },
-  Requirement: {
-    tag: "requirement",
-    line: (meta) => meta.requirementType || meta.priority
-  },
-  BusinessGoal: {
-    tag: "goal",
-    line: (meta) => meta.successCriterion || meta.priority
-  },
-  KPI: {tag: "kpi", line: (meta) => meta.metricName || meta.targetValue},
-  Stakeholder: {
-    tag: "stakeholder",
-    line: (meta) => meta.stakeholderType || meta.influenceLevel
-  },
-  NonFunctionalRequirement: {
-    tag: "quality",
-    line: (meta) => meta.qualityType || meta.metric
-  },
-  SecurityConstraint: {
-    tag: "security",
-    line: (meta) => meta.authenticationNeed || meta.authorizationRule
-  },
-  PrivacyConstraint: {tag: "privacy", line: (meta) => meta.law || meta.purpose},
-  ComplianceConstraint: {
-    tag: "compliance",
-    line: (meta) => meta.regulation || meta.controlId
-  },
-  Risk: {tag: "risk", line: (meta) => meta.impact || meta.probability},
-  Assumption: {
-    tag: "assumption",
-    line: (meta) => meta.sourceRule || meta.value
-  },
-  Hotspot: {tag: "hotspot", line: (meta) => meta.severity || meta.rationale}
-};
-
-const CIM_EDGE_LABELS = {
-  ISSUES: "issues",
-  OBSERVES: "observes",
-  PLAYS_ROLE: "plays role",
-  ASSIGNED_TO: "assigned to",
-  PRODUCES: "produces",
-  CONSUMED_BY: "consumed by",
-  EXCHANGES_INFORMATION: "exchanges information",
-  SUPPORTS: "supports",
-  OWNS: "owns",
-  MEASURED_BY: "measured by",
-  REFINED_BY: "refined by",
-  REALIZES: "realizes",
-  CONTAINS_COMMAND: "contains command",
-  CONTAINS_QUERY: "contains query",
-  CONTAINS_EVENT: "contains event",
-  MANAGES: "manages",
-  OWNS_PROCESS: "owns process",
-  DEPENDS_ON: "depends on",
-  CONTAINS: "contains",
-  DOMAIN_RELATIONSHIP: "relationship",
-  ROOT: "root",
-  MEMBER: "member",
-  HAS_ATTRIBUTE: "has attribute",
-  HANDLES: "handles",
-  EXPECTS: "expects",
-  REJECTS_WITH: "rejects with",
-  MAY_FAIL_WITH: "may fail with",
-  TARGETS: "targets",
-  HANDLED_BY: "handled by",
-  INPUT: "input",
-  OUTPUT: "output",
-  READS: "reads",
-  PAYLOAD: "payload",
-  AFFECTS: "affects",
-  PRECONDITION: "precondition",
-  REFERENCES: "references",
-  TRIGGERS: "triggers",
-  FEEDS: "starts/feeds",
-  EMITS_COMMAND: "emits command",
-  EMITS_EVENT: "emits event",
-  GUARDS: "guards",
-  CONSTRAINS: "constrains",
-  TRANSITION: "transition",
-  USES: "uses",
-  RESULTS_IN: "results in",
-  CONFLICTS_WITH: "conflicts with",
-  ATTACHED_TO: "attached to",
-  TRACE: "trace"
-};
-
 function refLabel(value) {
   if (!value) {
     return "";
@@ -230,8 +66,7 @@ export function nodeNotation(typeKey, node) {
   } catch {
     definition = null;
   }
-  return notationFromDefinition(typeKey, node, definition)
-      || (typeKey === "cim" ? CIM_NODE_NOTATION[node.type] || null : null);
+  return notationFromDefinition(typeKey, node, definition);
 }
 
 function nodeToken(typeKey, node, notation) {
@@ -338,8 +173,7 @@ export function edgeLabel(edge, typeKey = state.activeType) {
   if (edge?.bundle) {
     return edge.label || "Bundled relations";
   }
-  return configured || (typeKey === "cim" ? CIM_EDGE_LABELS[key] : "")
-      || key.toLowerCase().replaceAll("_", " ");
+  return configured || key.toLowerCase().replaceAll("_", " ");
 }
 
 export function edgePresentation(edge, typeKey = state.activeType) {

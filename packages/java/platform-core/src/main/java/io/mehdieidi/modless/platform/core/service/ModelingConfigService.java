@@ -78,19 +78,25 @@ public final class ModelingConfigService {
         Map<String, Object> merged = new LinkedHashMap<>(metadata);
         CimMetamodel metamodel = readEcoreMetamodel(key);
         merged.put("elements", mergeElements(key, metamodel.elements(),
-                requireList(metadata, "elements", key)));
-        if (!merged.containsKey("semanticReferenceRules")) {
-            merged.put("semanticReferenceRules", metamodel.semanticReferenceRules());
-        }
-        requireList(merged, "relationshipRules", key);
+                requireList(metadata, "elements", key), metadata));
+        merged.put("relationshipRules", mergeRelationshipRules(
+                optionalList(metadata, "relationshipRules"), metamodel.relationshipRules()));
+        merged.put("semanticReferenceRules", mergeSemanticReferenceRules(
+                optionalList(metadata, "semanticReferenceRules"),
+                metamodel.semanticReferenceRules()));
+        merged.put("relationshipKinds", mergeRelationshipKinds(metadata,
+                requireList(merged, "relationshipRules", key)));
+        merged.put("relationshipKindLabels", relationshipKindLabels(
+                requireMap(metadata, "relationshipKindLabels", key),
+                requireList(merged, "relationshipKinds", key)));
         requireList(merged, "viewDefinitions", key);
-        requireMap(merged, "relationshipKindLabels", key);
         requireMap(merged, "rootTemplate", key);
         return merged;
     }
 
     private List<Map<String, Object>> mergeElements(String key,
-            List<Map<String, Object>> structuralElements, List<?> uiElements) {
+            List<Map<String, Object>> structuralElements, List<?> uiElements,
+            Map<String, Object> metadata) {
         Map<String, Map<String, Object>> uiByType = new LinkedHashMap<>();
         for (Object item : uiElements) {
             if (!(item instanceof Map<?, ?> raw)) {
@@ -105,21 +111,134 @@ public final class ModelingConfigService {
             uiByType.put(String.valueOf(type), stringKeyMap(raw));
         }
 
+        Map<String, Object> visualDefaults = optionalMap(metadata,
+                "elementVisualDefaults");
+        List<Map<String, Object>> visualRules = optionalList(metadata,
+                "elementVisualRules").stream().map(item -> {
+            if (item instanceof Map<?, ?> raw) {
+                return stringKeyMap(raw);
+            }
+            throw new PlatformException(500,
+                    "Modeling UI metadata visual rules must be objects for "
+                            + key + ".");
+        }).toList();
         List<Map<String, Object>> elements = new ArrayList<>();
         for (Map<String, Object> structural : structuralElements) {
             String type = String.valueOf(structural.get("type"));
             Map<String, Object> ui = uiByType.get(type);
             Map<String, Object> merged = new LinkedHashMap<>(structural);
-            if (ui != null) {
-                merged.putAll(ui);
-                requireElementVisualMetadata(key, type, merged);
-            } else {
-                merged.put("creatable", false);
-                merged.put("uiMetadataMissing", true);
+            mergeInto(merged, visualDefaults);
+            for (Map<String, Object> rule : visualRules) {
+                if (visualRuleMatches(rule, structural)) {
+                    mergeInto(merged, optionalMap(rule, "metadata"));
+                }
             }
+            if (ui != null) {
+                mergeInto(merged, ui);
+            }
+            completeElementVisualMetadata(type, merged);
+            requireElementVisualMetadata(key, type, merged);
             elements.add(merged);
         }
         return elements;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mergeInto(Map<String, Object> target, Map<String, Object> source) {
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            Object value = entry.getValue();
+            Object existing = target.get(entry.getKey());
+            if (existing instanceof Map<?, ?> existingMap && value instanceof Map<?, ?> valueMap) {
+                Map<String, Object> nested = new LinkedHashMap<>();
+                existingMap.forEach((key, nestedValue) ->
+                        nested.put(String.valueOf(key), nestedValue));
+                valueMap.forEach((key, nestedValue) ->
+                        nested.put(String.valueOf(key), nestedValue));
+                target.put(entry.getKey(), nested);
+            } else {
+                target.put(entry.getKey(), value);
+            }
+        }
+    }
+
+    private boolean visualRuleMatches(Map<String, Object> rule, Map<String, Object> element) {
+        Map<String, Object> match = optionalMap(rule, "match");
+        if (match.isEmpty()) {
+            return false;
+        }
+        String type = String.valueOf(element.getOrDefault("type", ""));
+        String packageName = String.valueOf(element.getOrDefault("package", ""));
+        List<String> supertypes = objectStringList(element.get("supertypes"));
+        if (!matchesAny(match.get("packages"), packageName)) {
+            return false;
+        }
+        if (!matchesAny(match.get("types"), type)) {
+            return false;
+        }
+        if (!matchesAny(match.get("supertypes"), supertypes)) {
+            return false;
+        }
+        if (!matchesTypeAffixes(match, type)) {
+            return false;
+        }
+        Object abstractMatch = match.get("abstract");
+        return !(abstractMatch instanceof Boolean expected)
+                || expected.equals(element.get("abstract"));
+    }
+
+    private boolean matchesAny(Object expected, String actual) {
+        List<String> values = objectStringList(expected);
+        return values.isEmpty() || values.contains(actual);
+    }
+
+    private boolean matchesAny(Object expected, List<String> actual) {
+        List<String> values = objectStringList(expected);
+        return values.isEmpty() || actual.stream().anyMatch(values::contains);
+    }
+
+    private boolean matchesTypeAffixes(Map<String, Object> match, String type) {
+        List<String> prefixes = objectStringList(match.get("typePrefixes"));
+        if (!prefixes.isEmpty() && prefixes.stream().noneMatch(type::startsWith)) {
+            return false;
+        }
+        List<String> suffixes = objectStringList(match.get("typeSuffixes"));
+        if (!suffixes.isEmpty() && suffixes.stream().noneMatch(type::endsWith)) {
+            return false;
+        }
+        List<String> contains = objectStringList(match.get("typeContains"));
+        return contains.isEmpty() || contains.stream().anyMatch(type::contains);
+    }
+
+    private void completeElementVisualMetadata(String type, Map<String, Object> element) {
+        element.putIfAbsent("label", humanize(type));
+        element.putIfAbsent("displayName", element.get("label"));
+        element.putIfAbsent("icon", "category");
+        element.putIfAbsent("color", "#475569");
+        element.putIfAbsent("category", "Metamodel");
+        if (!element.containsKey("notation")) {
+            element.put("notation", Map.of("tag", stereotypeToken(type),
+                    "shape", "concept-card",
+                    "lineFields", element.getOrDefault("visibleFields", List.of())));
+        }
+        if (!element.containsKey("creatable")) {
+            element.put("creatable", !Boolean.TRUE.equals(element.get("abstract")));
+        }
+        element.putIfAbsent("relationshipElement", Boolean.FALSE);
+        element.putIfAbsent("containedOnly", Boolean.FALSE);
+        element.putIfAbsent("supportOnly", Boolean.FALSE);
+    }
+
+    private String stereotypeToken(String type) {
+        StringBuilder token = new StringBuilder();
+        for (String word : type.split("(?=[A-Z])")) {
+            if (!word.isBlank()) {
+                token.append(Character.toUpperCase(word.charAt(0)));
+            }
+            if (token.length() == 4) {
+                break;
+            }
+        }
+        return token.isEmpty() ? type.toUpperCase() : token.toString();
     }
 
     private void requireElementVisualMetadata(String key, String type, Map<String, Object> item) {
@@ -136,6 +255,119 @@ public final class ModelingConfigService {
         Map<String, Object> result = new LinkedHashMap<>();
         raw.forEach((key, value) -> result.put(String.valueOf(key), value));
         return result;
+    }
+
+    private List<?> optionalList(Map<String, Object> metadata, String field) {
+        Object value = metadata.get(field);
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof List<?> list) {
+            return list;
+        }
+        throw new PlatformException(500,
+                "Modeling UI metadata field '" + field + "' must be a list.");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> optionalMap(Map<String, Object> metadata, String field) {
+        Object value = metadata.get(field);
+        if (value == null) {
+            return Map.of();
+        }
+        if (value instanceof Map<?, ?> map) {
+            return (Map<String, Object>) stringKeyMap(map);
+        }
+        throw new PlatformException(500,
+                "Modeling UI metadata field '" + field + "' must be an object.");
+    }
+
+    private List<String> objectStringList(Object value) {
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(String::valueOf).filter(item -> !item.isBlank())
+                    .toList();
+        }
+        String text = String.valueOf(value);
+        return text.isBlank() ? List.of() : List.of(text);
+    }
+
+    private List<Map<String, Object>> mergeRelationshipRules(List<?> configuredRules,
+            List<Map<String, Object>> ecoreRules) {
+        Map<String, Map<String, Object>> byKey = new LinkedHashMap<>();
+        for (Object item : configuredRules) {
+            if (!(item instanceof Map<?, ?> raw)) {
+                throw new PlatformException(500,
+                        "Modeling relationshipRules entries must be objects.");
+            }
+            Map<String, Object> rule = stringKeyMap(raw);
+            byKey.put(relationshipRuleKey(rule), rule);
+        }
+        for (Map<String, Object> rule : ecoreRules) {
+            byKey.putIfAbsent(relationshipRuleKey(rule), rule);
+        }
+        return new ArrayList<>(byKey.values());
+    }
+
+    private String relationshipRuleKey(Map<String, Object> rule) {
+        return String.join("|",
+                String.valueOf(rule.getOrDefault("sourceType", "")),
+                String.valueOf(rule.getOrDefault("targetType", "")),
+                String.valueOf(rule.getOrDefault("feature", "")),
+                String.join(",", objectStringList(rule.get("allowedKinds"))));
+    }
+
+    private List<Map<String, Object>> mergeSemanticReferenceRules(List<?> configuredRules,
+            List<Map<String, Object>> ecoreRules) {
+        Map<String, Map<String, Object>> byKey = new LinkedHashMap<>();
+        for (Object item : configuredRules) {
+            if (!(item instanceof Map<?, ?> raw)) {
+                throw new PlatformException(500,
+                        "Modeling semanticReferenceRules entries must be objects.");
+            }
+            Map<String, Object> rule = stringKeyMap(raw);
+            byKey.put(semanticReferenceRuleKey(rule), rule);
+        }
+        for (Map<String, Object> rule : ecoreRules) {
+            byKey.putIfAbsent(semanticReferenceRuleKey(rule), rule);
+        }
+        return new ArrayList<>(byKey.values());
+    }
+
+    private String semanticReferenceRuleKey(Map<String, Object> rule) {
+        return String.join("|",
+                String.valueOf(rule.getOrDefault("sourceType", "")),
+                String.valueOf(rule.getOrDefault("targetType", "")),
+                String.valueOf(rule.getOrDefault("feature", "")),
+                String.valueOf(rule.getOrDefault("kind", "")));
+    }
+
+    private List<String> mergeRelationshipKinds(Map<String, Object> metadata,
+            List<?> relationshipRules) {
+        LinkedHashSet<String> result = new LinkedHashSet<>(
+                objectStringList(metadata.get("relationshipKinds")));
+        for (Object item : relationshipRules) {
+            if (item instanceof Map<?, ?> raw) {
+                result.addAll(objectStringList(raw.get("allowedKinds")));
+            }
+        }
+        if (result.isEmpty()) {
+            throw new PlatformException(500,
+                    "Modeling UI metadata must define relationshipKinds.");
+        }
+        return new ArrayList<>(result);
+    }
+
+    private Map<String, Object> relationshipKindLabels(Map<String, Object> configured,
+            List<?> relationshipKinds) {
+        Map<String, Object> labels = new LinkedHashMap<>(configured);
+        for (Object kind : relationshipKinds) {
+            String key = String.valueOf(kind);
+            labels.putIfAbsent(key, humanize(key));
+        }
+        return labels;
     }
 
     private List<?> requireList(Map<String, Object> metadata, String field, String key) {
@@ -333,15 +565,16 @@ public final class ModelingConfigService {
         inheritedEcoreFeatures(modelClass, classByType, false).forEach(feature ->
                 references.add(cimReference(feature)));
         boolean abstractType = modelClass.abstractType();
+        List<String> supertypes = allEcoreSuperTypes(modelClass, classByType);
         Map<String, Object> element = new LinkedHashMap<>();
         element.put("type", type);
         element.put("package", modelClass.packageName());
         element.put("visibleFields", defaultVisibleFields(type, attributes, references));
         element.put("attributes", attributes);
         element.put("references", references);
-        element.put("supertypes", allEcoreSuperTypes(modelClass, classByType));
+        element.put("supertypes", supertypes);
         element.put("abstract", abstractType);
-        element.put("relationshipElement", false);
+        element.put("relationshipElement", supertypes.contains("SemanticRelationship"));
         element.put("containedOnly", false);
         element.put("supportOnly", false);
         element.put("creatable", !abstractType);
@@ -690,7 +923,7 @@ public final class ModelingConfigService {
     }
 
     private String humanize(String type) {
-        return type.replaceAll("([a-z])([A-Z])", "$1 $2");
+        return type.replace('_', ' ').replaceAll("([a-z])([A-Z])", "$1 $2");
     }
 
     private record CimMetamodel(List<Map<String, Object>> elements,

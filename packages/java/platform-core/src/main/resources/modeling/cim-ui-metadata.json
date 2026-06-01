@@ -1,5 +1,361 @@
 {
   "displayName": "CIM",
+  "elementVisualDefaults": {
+    "icon": "category",
+    "color": "#475569",
+    "category": "CIM",
+    "notation": {
+      "tag": "CIM",
+      "shape": "concept-card",
+      "lineFields": [
+        "summary",
+        "description",
+        "lifecycleStatus"
+      ]
+    }
+  },
+  "elementVisualRules": [
+    {
+      "match": {
+        "packages": [
+          "cim"
+        ]
+      },
+      "metadata": {
+        "icon": "dashboard",
+        "color": "#334155",
+        "category": "Root",
+        "notation": {
+          "tag": "ROOT",
+          "shape": "workspace-container",
+          "lineFields": [
+            "domainName",
+            "businessScope",
+            "organizationName"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "cimorg"
+        ]
+      },
+      "metadata": {
+        "icon": "groups",
+        "color": "#7C3AED",
+        "category": "People",
+        "notation": {
+          "tag": "ACT",
+          "shape": "participant-card",
+          "lineFields": [
+            "actorType",
+            "stakeholderType",
+            "trustLevel",
+            "concern"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "cimdomain"
+        ]
+      },
+      "metadata": {
+        "icon": "database",
+        "color": "#0891B2",
+        "category": "Domain",
+        "notation": {
+          "tag": "DOM",
+          "shape": "class-card",
+          "lineFields": [
+            "businessName",
+            "type",
+            "identityDescription",
+            "valueType"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "cimbehavior"
+        ]
+      },
+      "metadata": {
+        "icon": "bolt",
+        "color": "#DC2626",
+        "category": "Behavior",
+        "notation": {
+          "tag": "BEH",
+          "shape": "behavior-node",
+          "lineFields": [
+            "intent",
+            "semanticName",
+            "occurredInPastTenseName",
+            "errorCode"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "cimprocess"
+        ]
+      },
+      "metadata": {
+        "icon": "schema",
+        "color": "#EA580C",
+        "category": "Process / Policy",
+        "notation": {
+          "tag": "PROC",
+          "shape": "process-node",
+          "lineFields": [
+            "processKind",
+            "stepKind",
+            "policyType",
+            "hitPolicy"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "cimgov"
+        ]
+      },
+      "metadata": {
+        "icon": "shield",
+        "color": "#CA8A04",
+        "category": "Governance",
+        "notation": {
+          "tag": "GOV",
+          "shape": "constraint-badge-card",
+          "lineFields": [
+            "qualityType",
+            "severity",
+            "law",
+            "regulation",
+            "riskStatement"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "cimtransform"
+        ]
+      },
+      "metadata": {
+        "icon": "fact_check",
+        "color": "#64748B",
+        "category": "Readiness",
+        "notation": {
+          "tag": "RDY",
+          "shape": "dashboard-row",
+          "lineFields": [
+            "readinessStatus",
+            "severity",
+            "question",
+            "decision"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": [
+          "kernel"
+        ]
+      },
+      "metadata": {
+        "icon": "tag",
+        "color": "#475569",
+        "category": "Kernel / Trace",
+        "notation": {
+          "tag": "META",
+          "shape": "metadata-chip",
+          "lineFields": [
+            "linkType",
+            "reviewStatus",
+            "sourceReference"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "supertypes": [
+          "SemanticRelationship"
+        ]
+      },
+      "metadata": {
+        "relationshipElement": true,
+        "icon": "link",
+        "notation": {
+          "tag": "REL",
+          "shape": "relationship-edge",
+          "lineFields": [
+            "kind",
+            "relationshipType",
+            "linkType",
+            "rationale"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "typeSuffixes": [
+          "Step"
+        ]
+      },
+      "metadata": {
+        "icon": "input",
+        "category": "Process / Policy",
+        "notation": {
+          "tag": "STEP",
+          "shape": "process-step",
+          "lineFields": [
+            "stepKind",
+            "responsibility",
+            "taskDescription"
+          ]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "ModelElement",
+          "TraceableElement",
+          "DomainConcept",
+          "ProcessStep",
+          "TransformationAssumption"
+        ]
+      },
+      "metadata": {
+        "supportOnly": true,
+        "creatable": false
+      }
+    }
+  ],
+  "universalSyntax": [
+    {
+      "primitive": "Container",
+      "notation": "Rounded large frame with title bar and optional swimlane/header.",
+      "interaction": "Spatial containment changes containment or membership only when valid."
+    },
+    {
+      "primitive": "Primary concept card",
+      "notation": "Rounded card with title, stereotype token, badges, and collapsible compartments.",
+      "interaction": "Primary attributes are shown inline; secondary attributes remain editable in the inspector."
+    },
+    {
+      "primitive": "Behavioral node",
+      "notation": "Meaning-specific CMD, QRY, EVT, ERR, condition, state, and process-step shapes.",
+      "interaction": "Shape and token carry meaning without relying on color alone."
+    },
+    {
+      "primitive": "Relationship edge",
+      "notation": "Labeled line with arrowheads, endpoint roles, and multiplicity where available.",
+      "interaction": "Dense edge layers are hidden, bundled, or exposed through focus mode."
+    },
+    {
+      "primitive": "Reference chip",
+      "notation": "Compact linked-element chip inside a card compartment or inspector row.",
+      "interaction": "Clicking a chip navigates to or highlights the referenced element."
+    }
+  ],
+  "kernelSyntax": [
+    {
+      "element": "ModelElement / TraceableElement",
+      "notation": "Hidden metadata layer with lifecycle, generated, rationale, review, and trace badges.",
+      "surfaces": [
+        "inspector",
+        "search",
+        "trace overlay",
+        "status badges"
+      ]
+    },
+    {
+      "element": "Annotation / KeyValue",
+      "notation": "Key-value chips attached to a card or listed in an annotations tab.",
+      "surfaces": [
+        "inspector",
+        "detail projection"
+      ]
+    },
+    {
+      "element": "TraceModel / TraceLink",
+      "notation": "Separate traceability overlay with dashed labeled links and confidence filtering.",
+      "surfaces": [
+        "trace view",
+        "relationship matrix"
+      ]
+    },
+    {
+      "element": "Expression / StructuredDocument",
+      "notation": "Expandable expression or document editor with compact card badge.",
+      "surfaces": [
+        "inspector",
+        "detail modal"
+      ]
+    },
+    {
+      "element": "ProductionReadinessAssessment / findings / checks / decisions",
+      "notation": "Readiness board and severity markers on affected elements.",
+      "surfaces": [
+        "readiness board",
+        "validation overlay"
+      ]
+    }
+  ],
+  "complexityManagement": [
+    {
+      "technique": "View decomposition",
+      "behavior": "Use named synchronized views scoped by semantic purpose instead of a single all-elements canvas."
+    },
+    {
+      "technique": "Containment and collapse",
+      "behavior": "Major containers support collapsed, summary, and expanded modes with counts and exposed ports."
+    },
+    {
+      "technique": "Semantic zoom",
+      "behavior": "Far zoom shows containers and counts; mid zoom shows cards and ports; near zoom shows compartments and edge labels."
+    },
+    {
+      "technique": "Layered edge visibility",
+      "behavior": "Containment, structural, behavioral, policy, trace, readiness, and generated edges are independently filterable."
+    },
+    {
+      "technique": "Focus mode",
+      "behavior": "Selecting an element can focus a depth-1 or depth-2 neighborhood and fade unrelated nodes."
+    },
+    {
+      "technique": "Model explorer and search",
+      "behavior": "Search indexes names, ids, tags, source refs, routes, event names, logical ids, and AWS types where present."
+    },
+    {
+      "technique": "Validation overlays",
+      "behavior": "EVL/readiness findings appear as markers and sortable issue lists that highlight affected elements."
+    },
+    {
+      "technique": "Trace overlay",
+      "behavior": "Trace links remain a separate layer with confidence filters."
+    },
+    {
+      "technique": "Saved viewpoints",
+      "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
+    }
+  ],
   "relationshipKinds": [
     "CONTAINS",
     "CONTAINS_COMMAND",
@@ -227,6 +583,233 @@
         "TRIGGERS"
       ],
       "layoutHint": "PROCESS"
+    },
+    {
+      "id": "stakeholder-actor-map",
+      "displayName": "Stakeholder and Actor Map",
+      "viewType": "STAKEHOLDER_ACTOR_MAP",
+      "viewpoint": "actor",
+      "elementTypes": [
+        "Stakeholder",
+        "Actor",
+        "ExternalSystem",
+        "Role",
+        "BusinessGoal",
+        "Requirement",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "InformationItem",
+        "SecurityConstraint",
+        "PrivacyConstraint"
+      ],
+      "palette": [
+        "Stakeholder",
+        "Actor",
+        "ExternalSystem",
+        "Role",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "InformationItem",
+        "SecurityConstraint",
+        "PrivacyConstraint"
+      ],
+      "relationshipKinds": [
+        "PLAYS_ROLES",
+        "OWNS_GOALS",
+        "PROVIDES_REQUIREMENTS",
+        "ISSUES_COMMANDS",
+        "ISSUES_QUERIES",
+        "OBSERVES_EVENTS",
+        "PRODUCED_EVENTS",
+        "CONSUMED_EVENTS",
+        "EXCHANGED_INFORMATION",
+        "CONSTRAINS"
+      ],
+      "layoutHint": "DEFAULT_LAYERED"
+    },
+    {
+      "id": "aggregate-lifecycle",
+      "displayName": "Aggregate and Lifecycle",
+      "viewType": "AGGREGATE_LIFECYCLE",
+      "viewpoint": "aggregate",
+      "elementTypes": [
+        "AggregateCandidate",
+        "DomainEntity",
+        "ValueObject",
+        "LifecycleStateDefinition",
+        "BusinessInvariant",
+        "Command",
+        "BusinessEvent",
+        "BusinessError",
+        "Condition"
+      ],
+      "palette": [
+        "AggregateCandidate",
+        "DomainEntity",
+        "ValueObject",
+        "LifecycleStateDefinition",
+        "BusinessInvariant",
+        "Command",
+        "BusinessEvent",
+        "BusinessError",
+        "Condition"
+      ],
+      "relationshipKinds": [
+        "ROOT",
+        "MEMBER",
+        "HANDLED_COMMANDS",
+        "EMITTED_EVENTS",
+        "CONSTRAINED_CONCEPTS",
+        "CONTAINS"
+      ],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "id": "behavior-event-storming",
+      "displayName": "Behavior/Event Storming",
+      "viewType": "BEHAVIOR_EVENT_STORMING",
+      "viewpoint": "eventstorming",
+      "elementTypes": [
+        "Actor",
+        "ExternalSystem",
+        "Command",
+        "CommandOutcome",
+        "Query",
+        "BusinessEvent",
+        "BusinessError",
+        "Condition",
+        "InformationItem",
+        "AggregateCandidate",
+        "BusinessCapability",
+        "Policy",
+        "Hotspot"
+      ],
+      "palette": [
+        "Actor",
+        "ExternalSystem",
+        "Command",
+        "CommandOutcome",
+        "Query",
+        "BusinessEvent",
+        "BusinessError",
+        "Condition",
+        "InformationItem",
+        "AggregateCandidate",
+        "BusinessCapability",
+        "Policy",
+        "Hotspot"
+      ],
+      "relationshipKinds": [
+        "ISSUED_BY",
+        "TARGET_CAPABILITY",
+        "TARGET_AGGREGATE",
+        "INPUT",
+        "OUTPUT",
+        "PRECONDITIONS",
+        "EXPECTED_EVENTS",
+        "REJECTION_EVENTS",
+        "POSSIBLE_ERRORS",
+        "OUTCOMES",
+        "READS",
+        "PAYLOAD",
+        "AFFECTS",
+        "TRIGGERS"
+      ],
+      "layoutHint": "EVENT_FLOW"
+    },
+    {
+      "id": "policy-decision",
+      "displayName": "Policy and Decision",
+      "viewType": "POLICY_DECISION",
+      "viewpoint": "decision",
+      "elementTypes": [
+        "Policy",
+        "DecisionTable",
+        "DecisionRule",
+        "Condition",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "BusinessError",
+        "InformationItem"
+      ],
+      "palette": [
+        "Policy",
+        "DecisionTable",
+        "DecisionRule",
+        "Condition",
+        "Command",
+        "Query",
+        "BusinessEvent",
+        "BusinessError",
+        "InformationItem"
+      ],
+      "relationshipKinds": [
+        "TRIGGERED_BY",
+        "GUARDS",
+        "CONSTRAINS_QUERIES",
+        "EMITS_COMMANDS",
+        "EMITS_EVENTS",
+        "DECISION_TABLE",
+        "REFERENCED_INFORMATION",
+        "REFERENCED_CONCEPTS"
+      ],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "governance-risk",
+      "displayName": "Governance and Risk",
+      "viewType": "GOVERNANCE_RISK",
+      "viewpoint": "governance",
+      "elementTypes": [
+        "Requirement",
+        "NonFunctionalRequirement",
+        "QualityScenario",
+        "SecurityConstraint",
+        "PrivacyConstraint",
+        "ComplianceConstraint",
+        "DataClassification",
+        "Risk",
+        "Assumption",
+        "Hotspot",
+        "TransformationProfile",
+        "ProductionReadinessAssessment",
+        "ReadinessFinding",
+        "ReadinessCheck",
+        "ManualDecision",
+        "TraceLink"
+      ],
+      "palette": [
+        "NonFunctionalRequirement",
+        "QualityScenario",
+        "SecurityConstraint",
+        "PrivacyConstraint",
+        "ComplianceConstraint",
+        "DataClassification",
+        "Risk",
+        "Assumption",
+        "Hotspot",
+        "TransformationProfile",
+        "ProductionReadinessAssessment",
+        "ReadinessFinding",
+        "ReadinessCheck",
+        "ManualDecision"
+      ],
+      "relationshipKinds": [
+        "CONSTRAINED_ELEMENTS",
+        "CONSTRAINED_ACTORS",
+        "CONSTRAINED_COMMANDS",
+        "CONSTRAINED_QUERIES",
+        "CONSTRAINED_INFORMATION",
+        "DATA_ITEMS",
+        "SCOPED_ELEMENTS",
+        "AFFECTED_ELEMENTS",
+        "ATTACHED_TO",
+        "TRACE"
+      ],
+      "layoutHint": "GOVERNANCE"
     },
     {
       "id": "traceability",
