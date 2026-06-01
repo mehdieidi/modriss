@@ -82,7 +82,7 @@ class EventRoutingRule extends kernel.TraceableElement, kernel.InvocationSource 
   ref policy.ResiliencePolicy[?] resilience;
 }
 
-abstract class Flow extends kernel.TraceableElement {
+abstract class Flow extends kernel.TraceableElement, kernel.PolicyTarget {
   attr String flowPurpose;
   attr Boolean criticalPath;
   attr Boolean containsPersonalData;

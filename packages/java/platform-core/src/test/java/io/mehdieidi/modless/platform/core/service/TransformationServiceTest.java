@@ -89,7 +89,9 @@ class TransformationServiceTest {
         assertEquals(ModelLevel.PSM, psm.level());
         assertEquals("PSM", psm.modelJson().path("modelLevel").asText());
         assertEquals("AwsPsmModel", psm.modelJson().path("eClass").asText());
-        assertEquals("GENERATED_BY_ETL", psm.modelJson().path("transformationStatus").asText());
+        assertEquals("GENERATED_REVIEW_REQUIRED",
+                psm.modelJson().path("transformationStatus").asText());
+        assertFalse(psm.modelJson().path("validationIssues").isEmpty());
         assertTrue(psm.modelJson().path("stacks").findValues("resources").stream()
                         .anyMatch(resources -> resources.isArray() && !resources.isEmpty()),
                 "Generated PSM JSON should preserve stack-contained resources.");

@@ -7,7 +7,6 @@ let labelInput = null;
 let previewSvg = null;
 let contextLayer = null;
 let nodeIconLayer = null;
-const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 
 function ensureOverlayRoot() {
   if (overlayRoot?.isConnected) {
@@ -158,46 +157,11 @@ function ensureContextLayer() {
   return contextLayer;
 }
 
-function ensureNodeIconLayer() {
-  if (nodeIconLayer?.isConnected) {
-    return nodeIconLayer;
-  }
-  nodeIconLayer = document.createElement("div");
-  nodeIconLayer.className = "g6-node-icon-layer";
-  ensureOverlayRoot().appendChild(nodeIconLayer);
-  return nodeIconLayer;
-}
-
 export function renderNodeIcons(graph, nodes = [], {
   visibleNode = () => true
 } = {}) {
-  if (!nodes.length) {
-    nodeIconLayer?.remove();
-    nodeIconLayer = null;
-    return;
-  }
-  const layer = ensureNodeIconLayer();
-  layer.innerHTML = "";
-  nodes.filter((node) => visibleNode(node)).forEach((node) => {
-    const low = state.viewport.scale < 0.35;
-    const canvasSize = low ? 18 : 22;
-    const origin = canvasToViewportPoint(graph, node.x + 10, node.y + 9);
-    const opposite = canvasToViewportPoint(graph, node.x + 10 + canvasSize,
-        node.y + 9 + canvasSize);
-    const width = Math.max(10, Math.round(Math.abs(opposite.x - origin.x)));
-    const height = Math.max(10, Math.round(Math.abs(opposite.y - origin.y)));
-    const icon = document.createElement("span");
-    icon.className = "g6-node-corner-icon icon-svg icon-mask";
-    icon.setAttribute("aria-hidden", "true");
-    icon.dataset.nodeId = node.id || "";
-    icon.dataset.nodeType = node.type || "";
-    icon.style.setProperty("--icon-src", `url('${PLACEHOLDER_ICON}')`);
-    icon.style.left = `${Math.round(origin.x)}px`;
-    icon.style.top = `${Math.round(origin.y)}px`;
-    icon.style.width = `${width}px`;
-    icon.style.height = `${height}px`;
-    layer.appendChild(icon);
-  });
+  nodeIconLayer?.remove();
+  nodeIconLayer = null;
 }
 
 export function renderContextBoxes(graph, boxes = [], {

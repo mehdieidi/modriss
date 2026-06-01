@@ -105,7 +105,7 @@ export const PIM_ROOT_CONTAINMENTS = Object.freeze([
     feature: "policies",
     types: [
       "DataProtectionPolicy", "CompliancePolicy", "ResiliencePolicy",
-      "DataQualityPolicy",
+      "DataQualityPolicy", "CompensationPolicy",
       "TimeoutPolicy", "IdempotencyPolicy", "ConcurrencyPolicy",
       "RateLimitPolicy", "BatchPolicy", "OrderingPolicy", "CachePolicy",
       "BackupPolicy", "RetentionPolicy", "CostPolicy", "ObservabilityConfig",
@@ -636,6 +636,10 @@ export function populatePimRootContainments(root, graph) {
   if (!root || !graph?.elementsById) {
     return root;
   }
+  const existingTraceModel = root.traceModel
+  && typeof root.traceModel === "object"
+      ? structuredClone(root.traceModel)
+      : null;
   root.eClass ||= "PIMModel";
   root.modelLevel ||= "PIM";
   root.architectureStyle ||= "EVENT_DRIVEN_SERVERLESS";
@@ -643,6 +647,16 @@ export function populatePimRootContainments(root, graph) {
   PIM_ROOT_CONTAINMENTS.forEach((entry) => {
     root[entry.feature] = entry.singleton ? null : [];
   });
+  if (Array.isArray(existingTraceModel?.links)
+      && existingTraceModel.links.length) {
+    root.traceModel = {
+      eClass: existingTraceModel.eClass || "TraceModel",
+      id: existingTraceModel.id || "trace-model",
+      name: existingTraceModel.name || "Trace Model",
+      ...existingTraceModel,
+      links: existingTraceModel.links
+    };
+  }
 
   graph.elementsById.forEach((element) => {
     if (element.__ownerId) {

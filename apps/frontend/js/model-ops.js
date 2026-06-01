@@ -57,6 +57,7 @@ import {
   beginModelSave,
   completeModelSave,
   failModelSave,
+  hasUnsavedModelChanges,
   markModelDirty,
   resetModelSaveState,
   updateModelSaveUi
@@ -607,6 +608,24 @@ async function runTransformation(path, sourceModelId) {
   return waitForTransformationJob(job?.id);
 }
 
+async function ensureStoredModelForBackendOperation(operationLabel) {
+  if (state.modelId && !hasUnsavedModelChanges()) {
+    return true;
+  }
+  const level = String(state.activeType || "model").toUpperCase();
+  const confirmed = await confirmAction({
+    title: "Save Model First",
+    message: `${operationLabel} uses the stored backend ${level} model. Save the current model first, then continue?`,
+    confirmLabel: "Save and Continue"
+  });
+  if (!confirmed) {
+    setStatus(`${operationLabel} canceled`);
+    return false;
+  }
+  await saveCurrentModel({quiet: true, rethrow: true});
+  return Boolean(state.modelId);
+}
+
 async function waitForTransformationJob(jobId) {
   if (!jobId) {
     throw new Error("Transformation did not return a job id.");
@@ -838,13 +857,15 @@ export async function generateCimToPim() {
     }
   }
   try {
+    if (!await ensureStoredModelForBackendOperation("Generate PIM")) {
+      return;
+    }
     showGenerationProgress({
       title: "Generating PIM",
       subtitle: "Turning the current CIM into a platform-independent model.",
-      label: "Saving your latest CIM edits…"
+      label: "Starting backend transformation…"
     });
     setBusy("Generating PIM…");
-    await saveCurrentModel({rethrow: true});
     setGenerationProgressPhase(
         "Translating the CIM into a draft PIM model…", 68);
     const job = await runTransformation("cim-to-pim", state.modelId);
@@ -886,13 +907,15 @@ export async function generatePimToPsm() {
     }
   }
   try {
+    if (!await ensureStoredModelForBackendOperation("Generate PSM")) {
+      return;
+    }
     showGenerationProgress({
       title: "Generating PSM",
       subtitle: "Converting the current PIM into a platform-specific model.",
-      label: "Saving your latest PIM edits…"
+      label: "Starting backend transformation…"
     });
     setBusy("Generating PSM…");
-    await saveCurrentModel({rethrow: true});
     setGenerationProgressPhase(
         "Transforming the PIM into a platform-specific design…", 68);
     const job = await runTransformation("pim-to-psm", state.modelId);
@@ -934,13 +957,15 @@ export async function generatePsmToArtifact() {
     }
   }
   try {
+    if (!await ensureStoredModelForBackendOperation("Generate Artifacts")) {
+      return;
+    }
     showGenerationProgress({
       title: "Generating Artifacts",
       subtitle: "Building deployable project files from the current PSM.",
-      label: "Saving your latest PSM edits…"
+      label: "Starting backend generation…"
     });
     setBusy("Generating Artifact…");
-    await saveCurrentModel({rethrow: true});
     setGenerationProgressPhase(
         "Generating deployment-ready artifacts from the PSM…", 76);
     const job = await runTransformation("psm-to-artifact", state.modelId);
@@ -1088,31 +1113,14 @@ export async function validateCurrentModel() {
     return;
   }
   try {
+    if (!await ensureStoredModelForBackendOperation("Validate Model")) {
+      return;
+    }
     setBusy("Validating…");
     setValidationInProgress(true);
-    let result;
-    if (state.modelId) {
-      const patched = await flushCurrentModelPatch({
-        name: getActiveModelName(),
-        rethrow: true
-      });
-      if (!patched) {
-        await saveCurrentModel({quiet: true, rethrow: true});
-      } else {
-        completeModelSave();
-      }
-      result = await api(
-          `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/validate`,
-          {method: "POST"});
-    } else {
-      result = await api(`/${MODEL_TYPES[state.activeType].apiType}/validate`, {
-        method: "POST",
-        body: JSON.stringify({
-          name: getActiveModelName(),
-          model: serializeModel()
-        })
-      });
-    }
+    const result = await api(
+        `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/validate`,
+        {method: "POST"});
     const backendIssues = Array.isArray(result?.issues) ? result.issues : [];
     if (backendIssues.length) {
       const mergedIssues = mergeIssuesWithManualGuidance(backendIssues);

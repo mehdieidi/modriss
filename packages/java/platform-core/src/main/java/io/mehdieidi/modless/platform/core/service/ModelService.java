@@ -13,6 +13,7 @@ import io.mehdieidi.modless.mde.validation.EvlValidationException;
 import io.mehdieidi.modless.mde.validation.EvlValidationReport;
 import io.mehdieidi.modless.mde.validation.EvlValidationRequest;
 import io.mehdieidi.modless.mde.validation.FileEvlModelConfiguration;
+import io.mehdieidi.modless.mde.validation.ResourceEvlModelConfiguration;
 import io.mehdieidi.modless.mde.validation.ValidationSeverity;
 import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ModelIndexRecord;
@@ -262,7 +263,17 @@ public final class ModelService {
 
     public ValidationResult validate(UserRecord user, ModelLevel level, String id) {
         ModelRecord model = get(user, level, id);
+        Optional<byte[]> xmiBytes = sourceXmi(model);
+        if (xmiBytes.isPresent()) {
+            return validateGeneratedXmi(level, xmiBytes.get());
+        }
         return validate(level, model.modelJson());
+    }
+
+    public ValidationResult validateGeneratedXmi(ModelLevel level, byte[] xmiBytes) {
+        List<ValidationIssue> issues = validateWithEvl(level, xmiBytes);
+        boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
+        return new ValidationResult(valid, issues);
     }
 
     private ValidationResult validateImportedXmi(ModelLevel level, JsonNode modelJson,
@@ -279,22 +290,21 @@ public final class ModelService {
     }
 
     private List<ValidationIssue> validateWithEvl(ModelLevel level, JsonNode modelJson) {
-        Path workDir = null;
         try {
-            workDir = Files.createTempDirectory("modless-" + level.apiName() + "-validation-");
-            Path modelFile = workDir.resolve("model-" + level.apiName() + ".xmi");
-            Files.write(modelFile, xmiImportService.exportModel(level,
-                    hydrateSemanticReferences(modelJson)));
+            MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
             EvlValidationReport report = evlValidator.validate(new EvlValidationRequest(
                     mdePaths.validationRoot(level),
                     List.of(mdePaths.validationEntryFile(level)),
-                    List.of(FileEvlModelConfiguration.readOnly(
+                    List.of(ResourceEvlModelConfiguration.readOnly(
                             validationModelName(level),
                             validationModelAliases(level),
-                            modelFile,
-                            List.of(metamodelResolver.resolve(level).file()))),
+                            xmiImportService.exportResource(level,
+                                    hydrateSemanticReferences(modelJson)),
+                            metamodel.packages())),
                     true));
             return validationIssues(report);
+        } catch (PlatformException ex) {
+            return List.of(issue("ERROR", "XmiExport", ex.getMessage()));
         } catch (EvlValidationException ex) {
             return validationIssues(ex.getReport());
         } catch (Exception ex) {
@@ -302,10 +312,6 @@ public final class ModelService {
                     "EVL validation could not run: "
                             + (ex.getMessage() == null ? ex.getClass().getSimpleName()
                             : ex.getMessage())));
-        } finally {
-            if (workDir != null) {
-                deleteQuietly(workDir);
-            }
         }
     }
 
@@ -564,7 +570,7 @@ public final class ModelService {
 
     private void stripValidationExportOnlyFields(ObjectNode model) {
         model.remove(List.of("graph", "diagram", "views", "manualBacklog",
-                "validationIssues", "assumptions"));
+                "validationIssues"));
     }
 
     private void hydrateSemanticReferences(JsonNode node,

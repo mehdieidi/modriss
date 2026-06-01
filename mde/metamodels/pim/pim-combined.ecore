@@ -761,7 +761,8 @@
       <eStructuralFeatures eType="#/11/SecurityPolicy" name="securityPolicies" upperBound="-1"
         xsi:type="ecore:EReference"/>
     </eClassifiers>
-    <eClassifiers eSuperTypes="#/1/TraceableElement" name="Trigger" xsi:type="ecore:EClass">
+    <eClassifiers eSuperTypes="#/1/TraceableElement #/1/PolicyTarget" name="Trigger"
+      xsi:type="ecore:EClass">
       <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
         name="triggerKind"
         xsi:type="ecore:EAttribute"/>
@@ -1885,7 +1886,7 @@
       <eStructuralFeatures eType="#/10/ResiliencePolicy" name="resilience"
         xsi:type="ecore:EReference"/>
     </eClassifiers>
-    <eClassifiers abstract="true" eSuperTypes="#/1/TraceableElement" name="Flow"
+    <eClassifiers abstract="true" eSuperTypes="#/1/TraceableElement #/1/PolicyTarget" name="Flow"
       xsi:type="ecore:EClass">
       <eStructuralFeatures eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
         name="flowPurpose"

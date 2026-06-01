@@ -32,7 +32,7 @@ public record EtlModelConfiguration(
     public static EtlModelConfiguration target(
             String name, List<String> aliases, Path modelFile, List<Path> metamodelFiles,
             boolean readOnLoad) {
-        return new EtlModelConfiguration(name, aliases, modelFile, metamodelFiles, readOnLoad, true,
-                false, false);
+        return new EtlModelConfiguration(name, aliases, modelFile, metamodelFiles, readOnLoad,
+                false, false, false);
     }
 }

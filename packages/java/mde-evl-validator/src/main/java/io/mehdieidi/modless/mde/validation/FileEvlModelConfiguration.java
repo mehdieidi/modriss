@@ -3,11 +3,7 @@ package io.mehdieidi.modless.mde.validation;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
-import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.epsilon.common.util.StringProperties;
 import org.eclipse.epsilon.emc.emf.EmfModel;
 import org.eclipse.epsilon.eol.exceptions.models.EolModelLoadingException;
@@ -48,47 +44,15 @@ public record FileEvlModelConfiguration(
         properties.put(EmfModel.PROPERTY_FILE_BASED_METAMODEL_URI, joinFileUris(metamodelFiles));
         properties.put(EmfModel.PROPERTY_VALIDATE, "false");
         model.load(properties);
-        if (validate) {
-            validateModelResource(model);
-        }
         return model;
     }
 
-    private void validateModelResource(EmfModel model) throws EolModelLoadingException {
-        Resource resource = model.getResource();
-        if (resource == null) {
-            return;
+    @Override
+    public List<EvlDiagnostic> validateLoadedModel(IModel model) {
+        if (!validate || !(model instanceof EmfModel emfModel)) {
+            return List.of();
         }
-        if (!resource.getErrors().isEmpty() || !resource.getWarnings().isEmpty()) {
-            List<Resource.Diagnostic> diagnostics = new java.util.ArrayList<>();
-            diagnostics.addAll(resource.getErrors());
-            diagnostics.addAll(resource.getWarnings());
-            Resource.Diagnostic diagnostic = diagnostics.get(0);
-            throw new EolModelLoadingException(new Exception(
-                    diagnostic.getMessage() + " (" + diagnostic.getLocation() + "@"
-                            + diagnostic.getLine() + ")"),
-                    model);
-        }
-        for (EObject root : resource.getContents()) {
-            Diagnostic problem = firstProblem(Diagnostician.INSTANCE.validate(root));
-            if (problem != null) {
-                throw new EolModelLoadingException(new Exception(problem.getMessage()), model);
-            }
-        }
-    }
-
-    private Diagnostic firstProblem(Diagnostic diagnostic) {
-        if (diagnostic == null || diagnostic.getSeverity() == Diagnostic.OK
-                || diagnostic.getSeverity() == Diagnostic.INFO) {
-            return null;
-        }
-        for (Diagnostic child : diagnostic.getChildren()) {
-            Diagnostic childProblem = firstProblem(child);
-            if (childProblem != null) {
-                return childProblem;
-            }
-        }
-        return diagnostic;
+        return EvlModelResourceDiagnostics.validate(emfModel.getResource(), modelFile);
     }
 
     private String joinFileUris(List<Path> paths) {

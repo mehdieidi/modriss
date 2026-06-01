@@ -153,15 +153,16 @@ public final class TransformationService {
                 throw new PlatformException(500, "CIM-to-PIM ETL failed: "
                         + summarizeDiagnostics(report));
             }
-            JsonNode imported = xmiModelIo.importModel(ModelLevel.PIM, Files.readAllBytes(pimXmi));
+            byte[] targetBytes = Files.readAllBytes(pimXmi);
+            JsonNode imported = xmiModelIo.importModel(ModelLevel.PIM, targetBytes);
             if (!imported.isObject()) {
                 throw new PlatformException(500, "CIM-to-PIM ETL did not produce a PIM model.");
             }
             ObjectNode target = (ObjectNode) imported;
             target.put("transformedFrom", ModelLevel.CIM.name());
             target.put("transformedFromModelId", source.id());
-            target.put("transformationStatus", "GENERATED_BY_ETL");
-            return new GeneratedModel(target, Files.readAllBytes(pimXmi));
+            applyGeneratedTargetValidation(ModelLevel.PIM, target, targetBytes, "CIM-to-PIM");
+            return new GeneratedModel(target, targetBytes);
         } catch (PlatformException ex) {
             throw ex;
         } catch (EtlExecutionException ex) {
@@ -194,16 +195,17 @@ public final class TransformationService {
                 throw new PlatformException(500, "PIM-to-PSM ETL failed: "
                         + summarizeDiagnostics(report));
             }
-            JsonNode imported = xmiModelIo.importModel(ModelLevel.PSM, Files.readAllBytes(psmXmi));
+            byte[] targetBytes = Files.readAllBytes(psmXmi);
+            JsonNode imported = xmiModelIo.importModel(ModelLevel.PSM, targetBytes);
             if (!imported.isObject()) {
                 throw new PlatformException(500, "PIM-to-PSM ETL did not produce a PSM model.");
             }
             ObjectNode target = (ObjectNode) imported;
             target.put("transformedFrom", ModelLevel.PIM.name());
             target.put("transformedFromModelId", source.id());
-            target.put("transformationStatus", "GENERATED_BY_ETL");
+            applyGeneratedTargetValidation(ModelLevel.PSM, target, targetBytes, "PIM-to-PSM");
             mirrorReadinessToManualBacklog(target);
-            return new GeneratedModel(target, Files.readAllBytes(psmXmi));
+            return new GeneratedModel(target, targetBytes);
         } catch (PlatformException ex) {
             throw ex;
         } catch (EtlExecutionException ex) {
@@ -298,6 +300,49 @@ public final class TransformationService {
                 .map(diagnostic -> diagnostic.phase() + " "
                         + diagnostic.file() + ":" + diagnostic.line() + ":"
                         + diagnostic.column() + " " + diagnostic.reason())
+                .collect(java.util.stream.Collectors.joining("; "));
+    }
+
+    private void applyGeneratedTargetValidation(
+            ModelLevel targetLevel, ObjectNode target, byte[] xmiBytes, String operation) {
+        ModelService.ValidationResult validation = modelService.validateGeneratedXmi(targetLevel,
+                xmiBytes);
+        if (validation.issues().isEmpty()) {
+            target.put("transformationStatus", "GENERATED_BY_ETL");
+            return;
+        }
+        target.set("validationIssues", store.objectMapper().valueToTree(validation.issues()));
+        if (hasInfrastructureValidationError(validation)) {
+            throw new PlatformException(500, operation
+                    + " generated a target model that could not be validated: "
+                    + summarizeValidationIssues(validation.issues()));
+        }
+        if (hasError(validation)) {
+            target.put("transformationStatus", "GENERATED_BLOCKED_BY_VALIDATION");
+            return;
+        }
+        target.put("transformationStatus", "GENERATED_REVIEW_REQUIRED");
+    }
+
+    private boolean hasInfrastructureValidationError(ModelService.ValidationResult validation) {
+        return validation.issues().stream()
+                .anyMatch(issue -> "ERROR".equals(issue.severity())
+                        && issue.constraint().startsWith("EVL_"));
+    }
+
+    private boolean hasError(ModelService.ValidationResult validation) {
+        return validation.issues().stream()
+                .anyMatch(issue -> "ERROR".equals(issue.severity()));
+    }
+
+    private String summarizeValidationIssues(List<ModelService.ValidationIssue> issues) {
+        if (issues == null || issues.isEmpty()) {
+            return "no validation issues were reported";
+        }
+        return issues.stream()
+                .limit(3)
+                .map(issue -> issue.constraint() + " " + issue.issueClass() + ": "
+                        + issue.message())
                 .collect(java.util.stream.Collectors.joining("; "));
     }
 

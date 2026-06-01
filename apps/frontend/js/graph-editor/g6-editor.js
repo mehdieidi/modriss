@@ -120,6 +120,11 @@ function lineBreak(text, maxLine = 23, maxLines = 2) {
   }).join("\n");
 }
 
+function lineCount(text) {
+  const value = String(text || "");
+  return value ? value.split("\n").length : 0;
+}
+
 function pathMidpoint(points) {
   const segments = [];
   let total = 0;
@@ -175,7 +180,21 @@ function badgeTextFill(diagramType) {
       : "rgba(226, 232, 240, 0.82)";
 }
 
-function renderPlaceholderIcon(shape, container) {
+function renderPlaceholderIcon(shape, container, {
+  left,
+  top,
+  low = false
+} = {}) {
+  const size = low ? 18 : 22;
+  shape.upsert("placeholderIcon", "image", {
+    x: left + 10,
+    y: top + 9,
+    width: size,
+    height: size,
+    src: "/assets/icons/placeholder.svg",
+    opacity: 0.9,
+    pointerEvents: "none"
+  }, container);
   shape.upsert("iconTile", "rect", false, container);
   shape.upsert("iconSky", "circle", false, container);
   shape.upsert("iconMark", "path", false, container);
@@ -340,13 +359,19 @@ function registerModlessG6Extensions() {
           textBaseline: "middle",
           pointerEvents: "none"
         }, container);
+        const labelText = lineBreak(attributes.labelText || "", low ? 20 : 24,
+            low ? 1 : 2);
+        const labelLineHeight = low ? 12 : 14;
+        const notationY = low ? height - 14
+            : Math.min(height - 15,
+                48 + lineCount(labelText) * labelLineHeight + 12);
         this.upsert("label", "text", {
           x: left + 10,
           y: top + (low ? 24 : 48),
-          text: lineBreak(attributes.labelText || "", low ? 20 : 24,
-              low ? 1 : 2),
+          text: labelText,
           fontFamily: cssVar("--font-ui", "sans-serif"),
           fontSize: low ? 10 : 12,
+          lineHeight: labelLineHeight,
           fontWeight: 700,
           fill: "rgba(24, 20, 14, 0.92)",
           textBaseline: "top",
@@ -380,7 +405,7 @@ function registerModlessG6Extensions() {
         }
         this.upsert("notation", "text", low ? false : {
           x: left + 10,
-          y: top + height - 15,
+          y: top + notationY,
           text: truncate(attributes.notationText || "",
               containerNode ? 21 : 29),
           fontFamily: cssVar("--font-ui", "sans-serif"),
@@ -467,13 +492,18 @@ function registerModlessG6Extensions() {
         }, container);
         this.upsert("dot", "circle", false, container);
         this.upsert("semanticShape", "path", false, container);
+        const labelText = lineBreak(attributes.labelText || "", low ? 28 : 30,
+            low ? 1 : 2);
+        const labelLineHeight = low ? 12.5 : 14;
+        const notationY = top + Math.min(height - 20,
+            (low ? 18 : 53) + lineCount(labelText) * labelLineHeight + 13);
         this.upsert("label", "text", {
           x: left + 11,
           y: top + (low ? 18 : 53),
-          text: lineBreak(attributes.labelText || "", low ? 28 : 30,
-              low ? 1 : 2),
+          text: labelText,
           fontFamily: cssVar("--font-ui", "sans-serif"),
           fontSize: low ? 10.5 : 12,
+          lineHeight: labelLineHeight,
           fontWeight: 700,
           fill: cssVar("--text", "#e3e8f2"),
           textBaseline: "top",
@@ -508,7 +538,7 @@ function registerModlessG6Extensions() {
         this.upsert("notation", "text", !high || !attributes.notationText
             ? false : {
               x: left + 11,
-              y: top + height - 20,
+              y: notationY,
               text: truncate(attributes.notationText || "",
                   containerNode ? 24 : 34),
               fontFamily: cssVar("--font-ui", "sans-serif"),

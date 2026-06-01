@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
@@ -16,8 +17,12 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EcoreFactory;
 import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -69,6 +74,7 @@ class EpsilonEvlValidatorTest {
         EObject person = testModel.newPerson();
         person.eSet(testModel.age, 12);
         person.eSet(testModel.name, "");
+        person.eSet(testModel.secretToken, "secret-token-value");
         testModel.resource.getContents().add(person);
 
         EvlValidationReport report = new EpsilonEvlValidator().validate(
@@ -82,11 +88,15 @@ class EpsilonEvlValidatorTest {
         assertTrue(report.diagnostics().isEmpty());
         assertEquals(2, report.violations().size());
         assertTrue(report.hasMandatoryViolations());
-        assertTrue(report.violations().stream()
-                .anyMatch(v -> v.kind() == EvlConstraintKind.MANDATORY
+        EvlConstraintViolation mandatory = report.violations().stream()
+                .filter(v -> v.kind() == EvlConstraintKind.MANDATORY
                         && v.constraintName().equals("PersonMustBeAdult")
-                        && v.contextType().equals("M!Person")
-                        && v.element().attributes().get("age").equals("12")));
+                        && v.contextType().equals("M!Person"))
+                .findFirst()
+                .orElseThrow();
+        assertTrue(mandatory.element().attributes().containsKey("name"));
+        assertFalse(mandatory.element().attributes().containsKey("age"));
+        assertFalse(mandatory.element().attributes().containsKey("secretToken"));
         assertTrue(report.violations().stream()
                 .anyMatch(v -> v.kind() == EvlConstraintKind.OPTIONAL
                         && v.constraintName().equals("PersonShouldHaveName")));
@@ -177,6 +187,44 @@ class EpsilonEvlValidatorTest {
     }
 
     @Test
+    void continuesIndependentModulesAfterModuleDiagnostics() throws Exception {
+        Path evlRoot = tempDir.resolve("evl-continue");
+        Files.createDirectories(evlRoot);
+        Files.writeString(evlRoot.resolve("broken.evl"),
+                "context M!Person { constraint Broken { check : } }");
+        Files.writeString(evlRoot.resolve("valid.evl"), """
+                context M!Person {
+                  constraint PersonMustBeAdult {
+                    check : self.age >= 18
+                    message : "Person must be at least 18."
+                  }
+                }
+                """);
+
+        TestModel testModel = testModel();
+        EObject person = testModel.newPerson();
+        person.eSet(testModel.age, 12);
+        person.eSet(testModel.name, "Ada");
+        testModel.resource.getContents().add(person);
+
+        EvlValidationException exception = assertThrows(
+                EvlValidationException.class,
+                () -> new EpsilonEvlValidator().validate(new EvlValidationRequest(
+                        evlRoot,
+                        List.of(Path.of("broken.evl"), Path.of("valid.evl")),
+                        List.of(ResourceEvlModelConfiguration.readOnly(
+                                "M", testModel.resource, List.of(testModel.ePackage))),
+                        true)));
+
+        assertEquals(EvlValidationStatus.FAILED, exception.getReport().status());
+        assertEquals(2, exception.getReport().moduleReports().size());
+        assertTrue(exception.getReport().diagnostics().stream()
+                .anyMatch(d -> d.phase() == ValidationPhase.PARSE));
+        assertTrue(exception.getReport().violations().stream()
+                .anyMatch(v -> "PersonMustBeAdult".equals(v.constraintName())));
+    }
+
+    @Test
     void runtimeFailuresCarryLocationAndReason() throws Exception {
         Path evlFile = tempDir.resolve("runtime.evl");
         Files.writeString(evlFile, """
@@ -208,6 +256,67 @@ class EpsilonEvlValidatorTest {
         assertTrue(diagnostic.reason().contains("MissingType"));
     }
 
+    @Test
+    void fileModelValidationReportsAllStructuralDiagnostics() throws Exception {
+        Path evlFile = tempDir.resolve("structural.evl");
+        Files.writeString(evlFile, """
+                context M!Person {
+                  constraint AlwaysPasses {
+                    check : true
+                  }
+                }
+                """);
+        EcoreFactory factory = EcoreFactory.eINSTANCE;
+        EPackage ePackage = factory.createEPackage();
+        ePackage.setName("requiredmodel");
+        ePackage.setNsPrefix("requiredmodel");
+        ePackage.setNsURI("urn:test:requiredmodel");
+        EClass person = factory.createEClass();
+        person.setName("Person");
+        EAttribute firstName = factory.createEAttribute();
+        firstName.setName("firstName");
+        firstName.setEType(EcorePackage.Literals.ESTRING);
+        firstName.setLowerBound(1);
+        EAttribute lastName = factory.createEAttribute();
+        lastName.setName("lastName");
+        lastName.setEType(EcorePackage.Literals.ESTRING);
+        lastName.setLowerBound(1);
+        person.getEStructuralFeatures().add(firstName);
+        person.getEStructuralFeatures().add(lastName);
+        ePackage.getEClassifiers().add(person);
+
+        Path metamodelFile = tempDir.resolve("required.ecore");
+        Path modelFile = tempDir.resolve("required.xmi");
+        ResourceSet resourceSet = new ResourceSetImpl();
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
+                .put("ecore", new EcoreResourceFactoryImpl());
+        resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
+                .put("xmi", new XMIResourceFactoryImpl());
+        Resource metamodelResource = resourceSet.createResource(
+                URI.createFileURI(metamodelFile.toString()));
+        metamodelResource.getContents().add(ePackage);
+        metamodelResource.save(Map.of());
+        Resource modelResource = resourceSet.createResource(
+                URI.createFileURI(modelFile.toString()));
+        modelResource.getContents().add(EcoreUtil.create(person));
+        modelResource.save(Map.of());
+
+        EvlValidationException exception = assertThrows(
+                EvlValidationException.class,
+                () -> new EpsilonEvlValidator().validate(
+                        EvlValidationRequest.forRoot(
+                                evlFile,
+                                List.of(FileEvlModelConfiguration.readOnly(
+                                        "M", List.of(), modelFile, List.of(metamodelFile))),
+                                true)));
+
+        long structuralErrors = exception.getReport().diagnostics().stream()
+                .filter(d -> d.phase() == ValidationPhase.MODEL_LOADING
+                        && d.severity() == ValidationSeverity.ERROR)
+                .count();
+        assertTrue(structuralErrors >= 2, exception.getReport().diagnostics().toString());
+    }
+
     private TestModel testModel() {
         EcoreFactory factory = EcoreFactory.eINSTANCE;
         EPackage ePackage = factory.createEPackage();
@@ -228,9 +337,14 @@ class EpsilonEvlValidatorTest {
         age.setEType(EcorePackage.Literals.EINT);
         person.getEStructuralFeatures().add(age);
 
+        EAttribute secretToken = factory.createEAttribute();
+        secretToken.setName("secretToken");
+        secretToken.setEType(EcorePackage.Literals.ESTRING);
+        person.getEStructuralFeatures().add(secretToken);
+
         ePackage.getEClassifiers().add(person);
         Resource resource = new ResourceImpl(URI.createURI("memory:/people.xmi"));
-        return new TestModel(ePackage, resource, person, name, age);
+        return new TestModel(ePackage, resource, person, name, age, secretToken);
     }
 
     private record TestModel(
@@ -238,7 +352,8 @@ class EpsilonEvlValidatorTest {
             Resource resource,
             EClass person,
             EAttribute name,
-            EAttribute age) {
+            EAttribute age,
+            EAttribute secretToken) {
 
         EObject newPerson() {
             return EcoreUtil.create(person);

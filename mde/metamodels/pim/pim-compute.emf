@@ -51,7 +51,7 @@ class Function extends ComputeElement, kernel.DeployableElement, kernel.Invocati
   ref security.SecurityPolicy[*] securityPolicies;
 }
 
-class Trigger extends kernel.TraceableElement {
+class Trigger extends kernel.TraceableElement, kernel.PolicyTarget {
   attr String triggerKind;
   attr pimtypes.InvocationMode[1] invocationMode;
   attr Boolean enabled;

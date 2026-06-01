@@ -54,7 +54,7 @@ public final class EpsilonEtlExecutor {
         BoundedByteArrayOutputStream stderr = new BoundedByteArrayOutputStream(
                 maxCapturedOutputBytes);
         EtlModule module = new EtlModule();
-        List<IModel> loadedModels = new ArrayList<>();
+        List<LoadedEtlModel> loadedModels = new ArrayList<>();
 
         try {
             validateRequest(request, diagnostics);
@@ -72,7 +72,7 @@ public final class EpsilonEtlExecutor {
             configureStreams(module, request.captureOutput(), stdout, warnings, stderr);
             for (EtlModelConfiguration modelConfiguration : request.models()) {
                 IModel model = loadModel(modelConfiguration);
-                loadedModels.add(model);
+                loadedModels.add(new LoadedEtlModel(modelConfiguration, model));
                 module.getContext().getModelRepository().addModel(model);
             }
 
@@ -130,9 +130,9 @@ public final class EpsilonEtlExecutor {
             throw failure("ETL execution failed unexpectedly.", request, startedAt, diagnostics,
                     stdout, warnings, stderr, ex);
         } finally {
-            for (IModel model : loadedModels) {
+            for (LoadedEtlModel loadedModel : loadedModels) {
                 try {
-                    model.dispose();
+                    loadedModel.model().dispose();
                 } catch (RuntimeException ignored) {
                     // Disposal should not mask the primary execution diagnostic.
                 }
@@ -413,12 +413,14 @@ public final class EpsilonEtlExecutor {
     }
 
     private void storeModels(
-            EtlExecutionRequest request, List<IModel> loadedModels, List<EtlDiagnostic> diagnostics)
+            EtlExecutionRequest request, List<LoadedEtlModel> loadedModels,
+            List<EtlDiagnostic> diagnostics)
             throws EtlExecutionException {
-        for (IModel model : loadedModels) {
-            if (!model.isStoredOnDisposal()) {
+        for (LoadedEtlModel loadedModel : loadedModels) {
+            if (loadedModel.configuration().readOnly()) {
                 continue;
             }
+            IModel model = loadedModel.model();
             try {
                 if (!model.store()) {
                     diagnostics.add(EtlDiagnostic.error(
@@ -558,6 +560,10 @@ public final class EpsilonEtlExecutor {
                 stdout.asUtf8String(),
                 warnings.asUtf8String(),
                 stderr.asUtf8String());
+    }
+
+    private record LoadedEtlModel(EtlModelConfiguration configuration, IModel model) {
+
     }
 
     private static final class EpsilonExecutionTimeoutException extends RuntimeException {

@@ -196,16 +196,25 @@ final class XmiModelImportService {
                 resource.load(input, Map.of());
             }
             EcoreUtil.resolveAll(resourceSet);
-            EObject root = resource.getContents().stream()
+            List<EObject> roots = resource.getContents().stream()
                     .filter(EObject.class::isInstance)
                     .map(EObject.class::cast)
-                    .findFirst()
-                    .orElseThrow(() -> new PlatformException(400,
-                            "Uploaded XMI does not contain a model root."));
+                    .toList();
+            if (roots.isEmpty()) {
+                throw new PlatformException(400,
+                        "Uploaded XMI does not contain a model root.");
+            }
+            if (roots.size() > 1) {
+                throw new PlatformException(400,
+                        "Uploaded XMI must contain exactly one model root.");
+            }
+            EObject root = roots.get(0);
+            validateRoot(level, root);
             SerializationContext context = new SerializationContext(level);
             ObjectNode rootJson = serializeContainedObject(root, context);
             rootJson.set("graph", context.graphNode(objectMapper));
             restoreRelationshipEndpoints(rootJson);
+            restoreDerivedPsmAllResources(level, rootJson);
             return rootJson;
         } catch (PlatformException ex) {
             throw ex;
@@ -219,20 +228,39 @@ final class XmiModelImportService {
 
     byte[] exportModel(ModelLevel level, JsonNode modelJson) {
         try {
+            Resource resource = exportResource(level, modelJson, XmiExportOptions.strict());
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            resource.save(output, Map.of());
+            return output.toByteArray();
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new PlatformException(400, "Model JSON cannot be exported as XMI: "
+                    + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()));
+        }
+    }
+
+    Resource exportResource(ModelLevel level, JsonNode modelJson) {
+        return exportResource(level, modelJson, XmiExportOptions.strict());
+    }
+
+    Resource exportResource(ModelLevel level, JsonNode modelJson, XmiExportOptions options) {
+        try {
             ResourceSet resourceSet = newResourceSet();
             registerMetamodel(resourceSet, level);
             Resource resource = resourceSet.createResource(URI.createURI(
                     "memory:/export-" + level.apiName() + ".xmi"));
-            ExportContext context = new ExportContext(resourceSet);
+            ExportDiagnostics diagnostics = new ExportDiagnostics(options);
+            ExportContext context = new ExportContext(resourceSet, diagnostics);
             EObject root = context.createContainedObject(modelJson, null);
             if (root == null) {
                 throw new PlatformException(400, "Model JSON does not contain a valid root.");
             }
+            validateRoot(level, root);
             resource.getContents().add(root);
             context.resolveReferences();
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            resource.save(output, Map.of());
-            return output.toByteArray();
+            diagnostics.throwIfErrors();
+            return resource;
         } catch (PlatformException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -261,6 +289,23 @@ final class XmiModelImportService {
             resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
         }
         ePackage.getESubpackages().forEach(child -> registerPackage(resourceSet, child));
+    }
+
+    private void validateRoot(ModelLevel level, EObject root) {
+        String expected = expectedRootEClass(level);
+        String actual = root.eClass().getName();
+        if (!expected.equals(actual)) {
+            throw new PlatformException(400, "Expected " + expected + " root for "
+                    + level.name() + " model but found " + actual + ".");
+        }
+    }
+
+    private String expectedRootEClass(ModelLevel level) {
+        return switch (level) {
+            case CIM -> "CIMModel";
+            case PIM -> "PIMModel";
+            case PSM -> "AwsPsmModel";
+        };
     }
 
     private String scalarText(JsonNode value) {
@@ -317,6 +362,28 @@ final class XmiModelImportService {
         if (!value.isBlank()) {
             target.put(fieldName, value);
         }
+    }
+
+    private void restoreDerivedPsmAllResources(ModelLevel level, ObjectNode rootJson) {
+        if (level != ModelLevel.PSM || !rootJson.path("allResources").isEmpty()) {
+            return;
+        }
+        ArrayNode allResources = objectMapper.createArrayNode();
+        JsonNode stacks = rootJson.path("stacks");
+        if (stacks.isArray()) {
+            stacks.forEach(stack -> {
+                JsonNode resources = stack.path("resources");
+                if (resources.isArray()) {
+                    resources.forEach(resource -> {
+                        String id = scalarText(resource.get("id"));
+                        if (!id.isBlank()) {
+                            allResources.add(id);
+                        }
+                    });
+                }
+            });
+        }
+        rootJson.set("allResources", allResources);
     }
 
     private ObjectNode serializeContainedObject(EObject object, SerializationContext context) {
@@ -438,18 +505,92 @@ final class XmiModelImportService {
         return value;
     }
 
+    private record ExportDiagnostic(String ownerType, String ownerId, String feature,
+                                    String message) {
+
+    }
+
     private record PendingReference(EObject owner, EReference reference, JsonNode value) {
 
+    }
+
+    private final class ExportDiagnostics {
+
+        private final XmiExportOptions options;
+        private final List<ExportDiagnostic> errors = new ArrayList<>();
+
+        ExportDiagnostics(XmiExportOptions options) {
+            this.options = options == null ? XmiExportOptions.strict() : options;
+        }
+
+        void attributeError(EObject owner, EAttribute attribute, String message) {
+            if (options.strictAttributes()) {
+                error(owner, attribute.getName(), message);
+            }
+        }
+
+        void referenceError(EObject owner, EReference reference, String message) {
+            if (options.strictReferences()) {
+                error(owner, reference.getName(), message);
+            }
+        }
+
+        void error(EObject owner, String feature, String message) {
+            errors.add(new ExportDiagnostic(
+                    owner == null ? "" : owner.eClass().getName(),
+                    ownerId(owner),
+                    feature == null ? "" : feature,
+                    message == null ? "" : message));
+        }
+
+        void throwIfErrors() {
+            if (errors.isEmpty()) {
+                return;
+            }
+            String details = errors.stream()
+                    .limit(5)
+                    .map(this::message)
+                    .collect(java.util.stream.Collectors.joining("; "));
+            if (errors.size() > 5) {
+                details = details + "; and " + (errors.size() - 5) + " more";
+            }
+            throw new PlatformException(400, "Model JSON cannot be exported as XMI: "
+                    + details);
+        }
+
+        private String message(ExportDiagnostic diagnostic) {
+            String owner = diagnostic.ownerType();
+            if (!diagnostic.ownerId().isBlank()) {
+                owner = owner + "[" + diagnostic.ownerId() + "]";
+            }
+            String feature = diagnostic.feature().isBlank() ? "" : "."
+                                                                   + diagnostic.feature();
+            return owner + feature + ": " + diagnostic.message();
+        }
+
+        private String ownerId(EObject owner) {
+            if (owner == null) {
+                return "";
+            }
+            EStructuralFeature idFeature = owner.eClass().getEStructuralFeature("id");
+            if (idFeature instanceof EAttribute && owner.eIsSet(idFeature)) {
+                Object value = owner.eGet(idFeature);
+                return value == null ? "" : String.valueOf(value);
+            }
+            return "";
+        }
     }
 
     private final class ExportContext {
 
         private final ResourceSet resourceSet;
+        private final ExportDiagnostics diagnostics;
         private final Map<String, EObject> objectsById = new java.util.LinkedHashMap<>();
         private final List<PendingReference> pendingReferences = new ArrayList<>();
 
-        ExportContext(ResourceSet resourceSet) {
+        ExportContext(ResourceSet resourceSet, ExportDiagnostics diagnostics) {
             this.resourceSet = resourceSet;
+            this.diagnostics = diagnostics;
         }
 
         EObject createContainedObject(JsonNode node, EClass expectedType) {
@@ -461,6 +602,10 @@ final class XmiModelImportService {
             EObject object = eClass.getEPackage().getEFactoryInstance().create(eClass);
             String objectId = scalarText(node.get("id"));
             if (!objectId.isBlank()) {
+                if (objectsById.containsKey(objectId)) {
+                    diagnostics.error(object, "id",
+                            "Duplicate model element id '" + objectId + "'.");
+                }
                 objectsById.put(objectId, object);
             }
             for (EStructuralFeature feature : eClass.getEAllStructuralFeatures()) {
@@ -478,7 +623,8 @@ final class XmiModelImportService {
                 if (feature instanceof EReference reference) {
                     if (reference.isContainment()) {
                         setContainment(object, reference, value);
-                    } else if (!reference.isContainer()) {
+                    } else if (!reference.isContainer()
+                            && !isInverseTraceReference(reference)) {
                         pendingReferences.add(new PendingReference(object, reference, value));
                     }
                 }
@@ -496,6 +642,12 @@ final class XmiModelImportService {
                     object.eSet(attribute, attribute.getDefaultValue());
                 }
             }
+        }
+
+        private boolean isInverseTraceReference(EReference reference) {
+            String name = reference.getName();
+            return ("incomingTraces".equals(name) || "outgoingTraces".equals(name))
+                    && "TraceLink".equals(reference.getEReferenceType().getName());
         }
 
         private void setContainment(EObject owner, EReference reference, JsonNode value) {
@@ -523,9 +675,14 @@ final class XmiModelImportService {
             if (attribute.isMany()) {
                 @SuppressWarnings("unchecked")
                 List<Object> target = (List<Object>) object.eGet(attribute);
+                if (!value.isArray()) {
+                    diagnostics.attributeError(object, attribute,
+                            "Expected an array for multi-valued attribute.");
+                    return;
+                }
                 if (value.isArray()) {
                     value.forEach(item -> {
-                        Object converted = attributeValue(attribute, item);
+                        Object converted = attributeValue(object, attribute, item);
                         if (converted != null) {
                             target.add(converted);
                         }
@@ -533,13 +690,18 @@ final class XmiModelImportService {
                 }
                 return;
             }
-            Object converted = attributeValue(attribute, value);
+            Object converted = attributeValue(object, attribute, value);
             if (converted != null) {
                 object.eSet(attribute, converted);
             }
         }
 
-        private Object attributeValue(EAttribute attribute, JsonNode value) {
+        private Object attributeValue(EObject owner, EAttribute attribute, JsonNode value) {
+            if (value != null && value.isContainerNode()) {
+                diagnostics.attributeError(owner, attribute,
+                        "Expected a scalar value but found " + value.getNodeType() + ".");
+                return null;
+            }
             EDataType type = attribute.getEAttributeType();
             if (type instanceof EEnum eEnum) {
                 String literal = scalarText(value);
@@ -548,6 +710,8 @@ final class XmiModelImportService {
                     enumLiteral = eEnum.getEEnumLiteralByLiteral(literal);
                 }
                 if (enumLiteral == null) {
+                    diagnostics.attributeError(owner, attribute,
+                            "Unknown enum literal '" + literal + "'.");
                     return null;
                 }
                 return enumLiteral.getInstance();
@@ -559,6 +723,8 @@ final class XmiModelImportService {
             try {
                 return type.getEPackage().getEFactoryInstance().createFromString(type, text);
             } catch (RuntimeException ex) {
+                diagnostics.attributeError(owner, attribute,
+                        "Invalid value '" + text + "': " + ex.getMessage());
                 return null;
             }
         }
@@ -570,17 +736,34 @@ final class XmiModelImportService {
                     List<EObject> target = (List<EObject>) pending.owner().eGet(
                             pending.reference());
                     referenceIds(pending.value()).stream()
-                            .map(objectsById::get)
+                            .map(id -> resolveReference(pending, id))
                             .filter(candidate -> candidate != null)
                             .forEach(target::add);
                     continue;
                 }
                 referenceIds(pending.value()).stream()
-                        .map(objectsById::get)
+                        .map(id -> resolveReference(pending, id))
                         .filter(candidate -> candidate != null)
                         .findFirst()
                         .ifPresent(target -> pending.owner().eSet(pending.reference(), target));
             }
+        }
+
+        private EObject resolveReference(PendingReference pending, String id) {
+            EObject target = objectsById.get(id);
+            if (target == null) {
+                diagnostics.referenceError(pending.owner(), pending.reference(),
+                        "Unresolved reference id '" + id + "'.");
+                return null;
+            }
+            if (!pending.reference().getEReferenceType().isInstance(target)) {
+                diagnostics.referenceError(pending.owner(), pending.reference(),
+                        "Reference id '" + id + "' resolves to "
+                                + target.eClass().getName() + ", which is not valid for "
+                                + pending.reference().getEReferenceType().getName() + ".");
+                return null;
+            }
+            return target;
         }
 
         private List<String> referenceIds(JsonNode value) {
@@ -616,14 +799,20 @@ final class XmiModelImportService {
         private EClass eClassFor(String requestedType, EClass expectedType) {
             if (requestedType != null && !requestedType.isBlank()) {
                 EClass found = findEClass(requestedType);
-                if (found != null) {
-                    return found;
+                if (found == null) {
+                    throw new PlatformException(400,
+                            "Unknown model element type: " + requestedType);
                 }
+                if (expectedType != null && !expectedType.isSuperTypeOf(found)) {
+                    throw new PlatformException(400, "Element type " + requestedType
+                            + " is not valid for containment " + expectedType.getName() + ".");
+                }
+                return found;
             }
             if (expectedType != null) {
                 return expectedType;
             }
-            throw new PlatformException(400, "Unknown model element type: " + requestedType);
+            throw new PlatformException(400, "Missing model element type.");
         }
 
         private EClass findEClass(String name) {

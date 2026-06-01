@@ -1,12 +1,15 @@
 package io.mehdieidi.modless.platform.core.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
@@ -82,6 +85,81 @@ class ModelServiceXmiImportTest {
                 "RequiredAttribute".equals(issue.constraint())
                         && ("type".equals(missingFeature(issue))
                         || "kind".equals(missingFeature(issue)))));
+    }
+
+    @Test
+    void rejectsInvalidEnumValuesDuringXmiExport() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        ObjectNode model = minimalCimModel(store);
+        ObjectNode item = model.putArray("informationItems").addObject();
+        item.put("eClass", "InformationItem");
+        item.put("id", "info-1");
+        item.put("name", "Postal code");
+        item.put("businessName", "Postal code");
+        item.put("type", "NOT_A_PRIMITIVE_TYPE");
+
+        PlatformException exception = assertThrows(PlatformException.class,
+                () -> service.exportModel(ModelLevel.CIM, model, "xmi"));
+
+        assertTrue(exception.getMessage().contains("Unknown enum literal"));
+    }
+
+    @Test
+    void rejectsUnresolvedReferencesDuringXmiExport() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        ObjectNode model = minimalCimModel(store);
+        ObjectNode capability = model.putArray("capabilities").addObject();
+        capability.put("eClass", "BusinessCapability");
+        capability.put("id", "cap-1");
+        capability.put("name", "Review applications");
+        capability.putArray("supports").add("missing-goal");
+
+        PlatformException exception = assertThrows(PlatformException.class,
+                () -> service.exportModel(ModelLevel.CIM, model, "xmi"));
+
+        assertTrue(exception.getMessage().contains("Unresolved reference id 'missing-goal'"));
+    }
+
+    @Test
+    void rejectsWrongContainedChildTypeDuringXmiExport() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        ObjectNode model = minimalCimModel(store);
+        ObjectNode actor = model.putArray("goals").addObject();
+        actor.put("eClass", "Actor");
+        actor.put("id", "actor-1");
+        actor.put("name", "Resident");
+
+        PlatformException exception = assertThrows(PlatformException.class,
+                () -> service.exportModel(ModelLevel.CIM, model, "xmi"));
+
+        assertTrue(exception.getMessage().contains("is not valid for containment BusinessGoal"));
+    }
+
+    @Test
+    void rejectsMultiRootXmiImports() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+
+        PlatformException exception = assertThrows(PlatformException.class,
+                () -> service.importModel(ModelLevel.CIM, "multi-root.xmi",
+                        multiRootCimXmi().getBytes(StandardCharsets.UTF_8), "xmi"));
+
+        assertTrue(exception.getMessage().contains("exactly one model root"));
     }
 
     @Test
@@ -258,6 +336,55 @@ class ModelServiceXmiImportTest {
                         || issue.constraint().startsWith("PSM-")));
     }
 
+    @Test
+    void exportsPimWhenOnlyInverseTraceReferencesRemain() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+
+        ObjectNode pim = (ObjectNode) service.importModel(ModelLevel.PIM, "pim.xmi",
+                        samplePimXmi().getBytes(StandardCharsets.UTF_8), "xmi").modelJson()
+                .deepCopy();
+        pim.remove("traceModel");
+
+        byte[] exported = assertDoesNotThrow(() -> service.exportModel(ModelLevel.PIM, pim,
+                "xmi"));
+
+        assertTrue(exported.length > 0);
+    }
+
+    @Test
+    void validatesStoredXmiByIdWhenJsonHasStaleReferences() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        UserRecord user = authService.register("xmi-owner@example.com", "password123",
+                "Owner").user();
+        ProjectRecord project = projectService.create(user, "XMI Project", "");
+        byte[] xmi = samplePimXmi().getBytes(StandardCharsets.UTF_8);
+        JsonNode imported = service.importModel(ModelLevel.PIM, "pim.xmi", xmi, "xmi")
+                .modelJson();
+        ModelRecord created = service.create(user, ModelLevel.PIM, project.id(), "pim",
+                imported);
+        service.attachSourceXmi(created, xmi);
+
+        ObjectNode staleJson = (ObjectNode) imported.deepCopy();
+        staleJson.remove("_sourceXmiToken");
+        ((ObjectNode) staleJson.path("workflows").path(0).path("states").path(0))
+                .put("compensation", "missing-compensation");
+        service.update(user, ModelLevel.PIM, created.id(), "pim", staleJson);
+
+        ModelService.ValidationResult validation = service.validate(user, ModelLevel.PIM,
+                created.id());
+
+        assertFalse(validation.issues().stream()
+                .anyMatch(issue -> "XmiExport".equals(issue.constraint())));
+    }
+
     private JsonNode relationship(JsonNode relationships, String source, String target,
             String kind) {
         for (JsonNode relationship : relationships) {
@@ -273,6 +400,15 @@ class ModelServiceXmiImportTest {
     private String missingFeature(ModelService.ValidationIssue issue) {
         String prefix = "Required CIM feature is missing: ";
         return issue.message().startsWith(prefix) ? issue.message().substring(prefix.length()) : "";
+    }
+
+    private ObjectNode minimalCimModel(JsonFileStore store) {
+        ObjectNode model = store.objectMapper().createObjectNode();
+        model.put("eClass", "CIMModel");
+        model.put("id", "cim-root");
+        model.put("name", "Strict Export");
+        model.put("domainName", "Strict Export");
+        return model;
     }
 
     private String sampleCimXmi() {
@@ -315,6 +451,18 @@ class ModelServiceXmiImportTest {
                       kind="PUBLIC"
                       identifiability="NON_PERSONAL"/>
                 </cim:CIMModel>
+                """;
+    }
+
+    private String multiRootCimXmi() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <xmi:XMI xmi:version="2.0"
+                    xmlns:xmi="http://www.omg.org/XMI"
+                    xmlns:cim="https://modless.org/cim/1.0">
+                  <cim:CIMModel id="cim-root-1" name="One" domainName="One"/>
+                  <cim:CIMModel id="cim-root-2" name="Two" domainName="Two"/>
+                </xmi:XMI>
                 """;
     }
 

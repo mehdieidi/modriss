@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -36,6 +37,15 @@ public final class EpsilonEvlValidator {
 
     private static final Duration DEFAULT_EXECUTION_TIMEOUT = Duration.ofMinutes(5);
     private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
+    private static final Set<String> SAFE_DIAGNOSTIC_ATTRIBUTES = Set.of(
+            "id",
+            "name",
+            "eclass",
+            "logicalid",
+            "stackname",
+            "stagename",
+            "pathtemplate",
+            "method");
 
     private final Duration executionTimeout;
     private final int maxCapturedOutputBytes;
@@ -79,11 +89,11 @@ public final class EpsilonEvlValidator {
                 moduleReports.add(moduleReport);
                 violations.addAll(moduleReport.violations());
                 diagnostics.addAll(moduleReport.diagnostics());
-                if (moduleReport.diagnostics().stream()
-                        .anyMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
-                    throw failure("EVL validation failed.", request, startedAt, moduleReports,
-                            violations, diagnostics, stdout, warnings, stderr, null);
-                }
+            }
+
+            if (diagnostics.stream().anyMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
+                throw failure("EVL validation failed.", request, startedAt, moduleReports,
+                        violations, diagnostics, stdout, warnings, stderr, null);
             }
 
             return report(EvlValidationStatus.SUCCEEDED, request, startedAt, moduleReports,
@@ -128,7 +138,11 @@ public final class EpsilonEvlValidator {
             for (EvlModelConfiguration modelConfiguration : request.models()) {
                 IModel model = modelConfiguration.load();
                 loadedModels.add(model);
+                diagnostics.addAll(modelConfiguration.validateLoadedModel(model));
                 module.getContext().getModelRepository().addModel(model);
+            }
+            if (diagnostics.stream().anyMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
+                return moduleReport(moduleFile, startedAt, violations, diagnostics);
             }
 
             Set<UnsatisfiedConstraint> unsatisfiedConstraints = executeModule(module);
@@ -363,9 +377,10 @@ public final class EpsilonEvlValidator {
             String fragment = resource == null ? "" : resource.getURIFragment(eObject);
             Map<String, String> attributes = new LinkedHashMap<>();
             for (EAttribute attribute : eObject.eClass().getEAllAttributes()) {
-                if (!attribute.isMany() && eObject.eIsSet(attribute)) {
+                if (!attribute.isMany() && eObject.eIsSet(attribute)
+                        && isSafeDiagnosticAttribute(attribute)) {
                     Object value = eObject.eGet(attribute);
-                    attributes.put(attribute.getName(), value == null ? "" : value.toString());
+                    attributes.put(attribute.getName(), safeDiagnosticValue(value));
                 }
             }
             String summary = eObject.eClass().getName();
@@ -381,6 +396,32 @@ public final class EpsilonEvlValidator {
                 "",
                 Map.of(),
                 instance == null ? "" : instance.toString());
+    }
+
+    private boolean isSafeDiagnosticAttribute(EAttribute attribute) {
+        String name = attribute.getName() == null ? ""
+                : attribute.getName().toLowerCase(Locale.ROOT);
+        if (isSensitiveAttributeName(name)) {
+            return false;
+        }
+        return attribute.isID() || SAFE_DIAGNOSTIC_ATTRIBUTES.contains(name);
+    }
+
+    private boolean isSensitiveAttributeName(String name) {
+        return name.contains("secret")
+                || name.contains("password")
+                || name.contains("token")
+                || name.contains("key")
+                || name.contains("value")
+                || name.contains("email");
+    }
+
+    private String safeDiagnosticValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+        String text = value.toString();
+        return text.length() <= 256 ? text : text.substring(0, 256) + "...";
     }
 
     private List<EvlFixSuggestion> fixSuggestions(List<FixInstance> fixes) {

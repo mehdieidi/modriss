@@ -359,13 +359,14 @@ export function bindG6Interactions(editor, callbacks = {}) {
     const nodeId = nodeDrag.nodeId;
     const position = nodePositionFromGraph(graph, nodeId);
     callbacks.onNodeDragEnd?.(nodeId, position, {moved: dragged});
-    if (dragged) {
-      lastClickSuppressedNodeId = nodeId;
-      window.setTimeout(() => {
-        if (lastClickSuppressedNodeId === nodeId) {
-          lastClickSuppressedNodeId = null;
-        }
-      }, 120);
+    lastClickSuppressedNodeId = nodeId;
+    window.setTimeout(() => {
+      if (lastClickSuppressedNodeId === nodeId) {
+        lastClickSuppressedNodeId = null;
+      }
+    }, 120);
+    if (!dragged) {
+      callbacks.onNodeClick?.(nodeId, nodeDrag.startEvent);
     }
     if (nodeDrag.pointerId) {
       try {
@@ -454,6 +455,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
         nodeDrag = {
           nodeId: id,
           pointerId: originalEvent(event)?.pointerId,
+          startEvent: originalEvent(event),
           startX: canvasPoint.x,
           startY: canvasPoint.y,
           nodeX: topLeft.x,
