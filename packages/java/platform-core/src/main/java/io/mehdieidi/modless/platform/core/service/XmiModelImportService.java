@@ -795,7 +795,7 @@ final class XmiModelImportService {
             ObjectNode relationship = objectMapper.createObjectNode();
             relationship.put("id", semanticNode.path("id").asText());
             relationship.put("eClass", object.eClass().getName());
-            relationship.put("kind", relationshipKind(object.eClass().getName()));
+            relationship.put("kind", relationshipKindForObject(object));
             relationship.put("source", ensureId((EObject) object.eGet(
                     object.eClass().getEStructuralFeature("source"))));
             relationship.put("target", ensureId((EObject) object.eGet(
@@ -807,6 +807,14 @@ final class XmiModelImportService {
             copyScalarIfPresent(semanticNode, relationship, "relationshipType");
             graphRelationships.add(relationship);
             graphRelationshipKeys.add(graphEdgeKey(relationship));
+        }
+
+        private String relationshipKindForObject(EObject object) {
+            String eClassName = object.eClass().getName();
+            if (level == ModelLevel.PSM && eClassName.endsWith("View")) {
+                return psmRelationshipViewKind(eClassName);
+            }
+            return relationshipClassKind(eClassName);
         }
 
         private void captureReferenceEdges(EObject object) {
@@ -838,7 +846,10 @@ final class XmiModelImportService {
         private void addReferenceEdge(String sourceId, EObject sourceObject, EReference reference,
                 EObject targetObject) {
             String targetId = ensureId(targetObject);
-            String kind = relationshipKind(reference.getName());
+            String kind = referenceFeatureKind(reference.getName());
+            if (kind.isBlank()) {
+                kind = relationshipKind(reference.getName());
+            }
             String key = sourceId + "|" + targetId + "|" + kind;
             if (!graphRelationshipKeys.add(key)) {
                 return;
@@ -920,7 +931,23 @@ final class XmiModelImportService {
         }
 
         private String referenceFeatureKind(String value) {
-            return "";
+            return switch (String.valueOf(value)) {
+                case "functionIntegration" -> "ROUTES_TO";
+                case "reads" -> "READS";
+                case "writes" -> "WRITES";
+                case "publishes" -> "PUBLISHES";
+                case "subscribesTo" -> "SUBSCRIBES_TO";
+                case "invokesFunction" -> "INVOKES";
+                case "startState" -> "STARTS_AT";
+                case "endStates" -> "ENDS_AT";
+                case "targetResource" -> "PERMISSION_TARGET";
+                case "permissions" -> "PERMISSION";
+                case "deploysStacks" -> "DEPLOYS";
+                case "resources", "allResources" -> "CONTAINS";
+                case "route" -> "USES_ROUTE";
+                case "function" -> "INVOKES";
+                default -> "";
+            };
         }
 
         private String containmentRelationshipKind(String featureName) {
@@ -929,11 +956,19 @@ final class XmiModelImportService {
         }
 
         private String relationshipClassKind(String value) {
-            return "";
+            return switch (String.valueOf(value)) {
+                case "WorkflowTransition" -> "TRANSITION";
+                case "TraceLink" -> "TRACE";
+                case "ApiGatewayLambdaIntegrationView" -> "INVOKES";
+                default -> relationshipKind(value);
+            };
         }
 
         private String psmRelationshipViewKind(String value) {
-            return "";
+            return switch (String.valueOf(value)) {
+                case "ApiGatewayLambdaIntegrationView" -> "INVOKES";
+                default -> relationshipClassKind(value);
+            };
         }
 
         private String sanitizeId(String value) {

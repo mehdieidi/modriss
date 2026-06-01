@@ -456,16 +456,13 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
       setBusy("Saving…");
     }
     if (state.modelId) {
-      let updated = await flushCurrentModelPatch({
+      const updated = await flushCurrentModelPatch({
         name: payload.name,
         rethrow: true
       });
       if (!updated) {
-        updated = await api(
-            `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`, {
-              method: "PUT",
-              body: JSON.stringify(payload)
-            });
+        throw new Error(
+            "Model changes could not be represented as patch operations.");
       }
       if (updated && typeof updated === "object") {
         state.modelRevision = Number(updated.revision) || state.modelRevision;

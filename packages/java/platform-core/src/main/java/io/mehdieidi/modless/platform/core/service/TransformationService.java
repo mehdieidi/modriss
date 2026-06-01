@@ -94,8 +94,7 @@ public final class TransformationService {
             generated.model().put("sourceModelHash", hash(source.modelJson()));
             mirrorReadinessToManualBacklog(generated.model());
             ModelRecord target = modelService.create(user, ModelLevel.PIM, source.projectId(),
-                    source.name() + "-pim", generated.model());
-            modelService.attachSourceXmi(target, generated.sourceXmi());
+                    source.name() + "-pim", generated.model(), generated.sourceXmi());
             return modelService.get(user, ModelLevel.PIM, target.id());
         });
     }
@@ -113,8 +112,7 @@ public final class TransformationService {
             generated.model().put("sourceModelRevision", source.revision());
             generated.model().put("sourceModelHash", hash(source.modelJson()));
             ModelRecord target = modelService.create(user, ModelLevel.PSM, source.projectId(),
-                    source.name() + "-psm", generated.model());
-            modelService.attachSourceXmi(target, generated.sourceXmi());
+                    source.name() + "-psm", generated.model(), generated.sourceXmi());
             return modelService.get(user, ModelLevel.PSM, target.id());
         });
     }

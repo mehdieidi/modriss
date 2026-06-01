@@ -157,13 +157,20 @@ public final class ModelService {
 
     public ModelRecord create(UserRecord user, ModelLevel level, String projectId, String name,
             JsonNode modelJson) {
+        return create(user, level, projectId, name, modelJson, null);
+    }
+
+    public ModelRecord create(UserRecord user, ModelLevel level, String projectId, String name,
+            JsonNode modelJson, byte[] sourceXmiBytes) {
         ProjectRecord project = projectService.get(user, projectId);
         projectService.requireEditor(project, user.id());
         Instant now = Instant.now();
         JsonNode normalizedModel = normalizeModel(name, level, modelJson);
         String sourceXmiToken = removeSourceXmiToken(normalizedModel);
-        SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, projectId, level,
-                sourceXmiToken, false);
+        SourceXmiUpdate sourceXmi = sourceXmiBytes == null || sourceXmiBytes.length == 0
+                ? resolveSourceXmiUpdate(user, projectId, level, sourceXmiToken, false)
+                : new SourceXmiUpdate(sourceXmiBytes, hashBytes(sourceXmiBytes), null);
+        sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
         MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
         ModelRecord model = new ModelRecord(UUID.randomUUID().toString(), projectId, level,
                 requireName(name, level), normalizedModel, metamodel.version(),
@@ -188,6 +195,9 @@ public final class ModelService {
             String sourceXmiToken = removeSourceXmiToken(normalizedModel);
             SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
                     level, sourceXmiToken, true);
+            if (!(sourceXmi.shouldPreserve() && sourceXmi(existing).isPresent())) {
+                sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
+            }
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
             ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
                     requireName(name, level), normalizedModel, metamodel.version(),
@@ -225,6 +235,7 @@ public final class ModelService {
             String sourceXmiToken = removeSourceXmiToken(normalizedModel);
             SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
                     level, sourceXmiToken, true);
+            sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
             ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
                     requireName(name == null ? existing.name() : name, level), normalizedModel,
@@ -267,6 +278,7 @@ public final class ModelService {
         if (xmiBytes.isPresent()) {
             return validateGeneratedXmi(level, xmiBytes.get());
         }
+        // Legacy JSON-only records are converted in memory so existing projects remain usable.
         return validate(level, model.modelJson());
     }
 
@@ -297,7 +309,6 @@ public final class ModelService {
                     List.of(mdePaths.validationEntryFile(level)),
                     List.of(ResourceEvlModelConfiguration.readOnly(
                             validationModelName(level),
-                            validationModelAliases(level),
                             xmiImportService.exportResource(level,
                                     hydrateSemanticReferences(modelJson)),
                             metamodel.packages())),
@@ -708,6 +719,12 @@ public final class ModelService {
 
     public byte[] exportModel(UserRecord user, ModelLevel level, String id, String format) {
         ModelRecord model = get(user, level, id);
+        if ("xmi".equalsIgnoreCase(String.valueOf(format))) {
+            Optional<byte[]> xmiBytes = sourceXmi(model);
+            if (xmiBytes.isPresent()) {
+                return xmiBytes.get();
+            }
+        }
         return exportModel(level, model.modelJson(), format);
     }
 
@@ -774,6 +791,15 @@ public final class ModelService {
                 stored.updatedAt());
         store.write(modelPath(updated.projectId(), updated.level(), updated.id()), updated);
         writeModelIndex(updated);
+    }
+
+    private SourceXmiUpdate canonicalSourceXmi(ModelLevel level, JsonNode modelJson,
+            SourceXmiUpdate requestedSourceXmi) {
+        if (requestedSourceXmi != null && requestedSourceXmi.bytes() != null) {
+            return requestedSourceXmi;
+        }
+        byte[] bytes = xmiImportService.exportModel(level, hydrateSemanticReferences(modelJson));
+        return new SourceXmiUpdate(bytes, hashBytes(bytes), null);
     }
 
     private ModelRecord clientRecord(ModelRecord model) {
