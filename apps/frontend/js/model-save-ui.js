@@ -18,6 +18,14 @@ function activeTab() {
   return isModelingType() ? state.tabs[state.activeType] : null;
 }
 
+export function hasUnsavedModelChanges() {
+  if (!isModelingType()) {
+    return false;
+  }
+  const tab = activeTab();
+  return Boolean(tab?.dirty || saveState().dirty);
+}
+
 export function updateModelSaveUi() {
   const current = saveState();
   const tab = activeTab();

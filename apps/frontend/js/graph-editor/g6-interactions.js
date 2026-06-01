@@ -24,7 +24,27 @@ function eventClientPoint(event) {
 }
 
 function targetId(event) {
-  return event?.target?.id || event?.target?.idOf?.() || "";
+  const target = event?.target;
+  const candidates = [
+    target?.idOf?.(),
+    target?.owner?.id,
+    target?.parentElement?.id,
+    target?.parentNode?.id,
+    target?.id,
+    event?.item?.id,
+    event?.element?.id
+  ];
+  return candidates.find((id) => state.nodesById.has(id)
+      || state.diagram.connections.some((edge) => edge.id === id)) || "";
+}
+
+function nodeIdFromEvent(event, graph, sourceId = null) {
+  const id = targetId(event);
+  if (state.nodesById.has(id)) {
+    return id;
+  }
+  const point = eventClientPoint(event);
+  return findNodeAtClientPoint(graph, sourceId, point.x, point.y) || "";
 }
 
 function setCanvasCursor(mode) {
@@ -122,9 +142,38 @@ function nodePositionFromGraph(graph, nodeId) {
   };
 }
 
-function isLinkHandleHit(graph, nodeId, clientX, clientY) {
+function moveGraphNode(graph, nodeId, x, y) {
+  const data = graph?.getNodeData?.(nodeId);
+  if (!data) {
+    return;
+  }
+  const width = Number(data?.style?.width) || nodeSizeForDiagram(
+      state.activeType).width;
+  const height = Number(data?.style?.height) || nodeSizeForDiagram(
+      state.activeType).height;
+  graph.updateNodeData?.([{
+    ...data,
+    style: {
+      ...(data.style || {}),
+      x: Math.round(x + width / 2),
+      y: Math.round(y + height / 2)
+    }
+  }]);
+  graph.draw?.();
+}
+
+function isLinkHandleVisible(editor, nodeId) {
+  return editor?.hoveredNodeId === nodeId
+      || state.hoveredNodeId === nodeId
+      || state.selectedNodeIds?.has?.(nodeId)
+      || state.selectedNodeId === nodeId
+      || state.connectSourceId === nodeId
+      || state.linkDrag?.sourceId === nodeId;
+}
+
+function isLinkHandleHit(graph, nodeId, clientX, clientY, editor) {
   const topLeft = graphNodeTopLeft(graph, nodeId);
-  if (!topLeft) {
+  if (!topLeft || !isLinkHandleVisible(editor, nodeId)) {
     return false;
   }
   const point = graphCanvasPoint(graph, clientX, clientY);
@@ -135,6 +184,23 @@ function isLinkHandleHit(graph, nodeId, clientX, clientY) {
   return Math.min(leftDistance, rightDistance) <= 16;
 }
 
+function isOpenControlHit(graph, nodeId, clientX, clientY, editor) {
+  const topLeft = graphNodeTopLeft(graph, nodeId);
+  const node = state.nodesById.get(nodeId);
+  if (!topLeft || !node || !editor?.mapperOptions?.isContainer?.(node)) {
+    return false;
+  }
+  const point = graphCanvasPoint(graph, clientX, clientY);
+  const zoom = Number(state.viewport.scale) || 1;
+  const low = zoom < 0.35;
+  const controlWidth = low ? 30 : 38;
+  const controlHeight = low ? 14 : 16;
+  const x = topLeft.x + topLeft.width - controlWidth - 9;
+  const y = topLeft.y + (low ? 8 : 12);
+  return point.x >= x && point.x <= x + controlWidth
+      && point.y >= y && point.y <= y + controlHeight;
+}
+
 export function bindG6Interactions(editor, callbacks = {}) {
   const graph = editor.graph;
   if (!graph) {
@@ -143,6 +209,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
   let draggedNodeId = null;
   let dragged = false;
   let linkDrag = null;
+  let nodeDrag = null;
   let hoveredNodeId = null;
   let hoveredInteractive = false;
   let canvasDragging = false;
@@ -206,6 +273,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     if (findNodeAtClientPoint(graph, null, event.clientX, event.clientY)) {
       return;
     }
+    callbacks.onCanvasPointerDown?.(event);
     canvasPan = {
       pointerId: event.pointerId,
       lastX: event.clientX,
@@ -222,7 +290,42 @@ export function bindG6Interactions(editor, callbacks = {}) {
   };
 
   const hostPointerMove = (event) => {
+    if (nodeDrag && (!nodeDrag.pointerId
+        || event.pointerId === nodeDrag.pointerId)) {
+      const point = graphCanvasPoint(graph, event.clientX, event.clientY);
+      const nextX = Math.round(nodeDrag.nodeX + point.x - nodeDrag.startX);
+      const nextY = Math.round(nodeDrag.nodeY + point.y - nodeDrag.startY);
+      const moved = Math.abs(nextX - nodeDrag.nodeX) > 1
+          || Math.abs(nextY - nodeDrag.nodeY) > 1;
+      if (moved) {
+        dragged = true;
+      }
+      moveGraphNode(graph, nodeDrag.nodeId, nextX, nextY);
+      callbacks.onNodeDrag?.(nodeDrag.nodeId, {x: nextX, y: nextY});
+      event.preventDefault();
+      return;
+    }
+    if (linkDrag) {
+      const point = eventClientPoint(event);
+      linkDrag.clientX = point.x;
+      linkDrag.clientY = point.y;
+      hoveredNodeId = findNodeAtClientPoint(graph, linkDrag.sourceId,
+          point.x, point.y);
+      updateConnectionPreview(graph, state.nodesById.get(linkDrag.sourceId),
+          point.x, point.y);
+      callbacks.onConnectionPointerMove?.(linkDrag.sourceId, hoveredNodeId);
+      event.preventDefault();
+      return;
+    }
     if (!canvasPan || event.pointerId !== canvasPan.pointerId) {
+      const hoveredId = findNodeAtClientPoint(graph, null, event.clientX,
+          event.clientY);
+      if (hoveredId !== hoveredNodeId) {
+        hoveredNodeId = hoveredId || null;
+        hoveredInteractive = Boolean(hoveredNodeId);
+        callbacks.onNodeHover?.(hoveredNodeId);
+        setCanvasCursor(hoveredNodeId ? "pointer" : "grab");
+      }
       return;
     }
     const dx = event.clientX - canvasPan.lastX;
@@ -235,10 +338,48 @@ export function bindG6Interactions(editor, callbacks = {}) {
     event.preventDefault();
   };
 
+  const hostPointerLeave = () => {
+    if (!linkDrag && !nodeDrag && !canvasPan) {
+      hoveredNodeId = null;
+      hoveredInteractive = false;
+      callbacks.onNodeHover?.(null);
+      setCanvasCursor("grab");
+    }
+  };
+
   el.g6EditorHost?.addEventListener("pointerdown", hostPointerDown);
   el.g6EditorHost?.addEventListener("pointermove", hostPointerMove);
+  el.g6EditorHost?.addEventListener("pointerleave", hostPointerLeave);
   window.addEventListener("pointerup", finishCanvasPan);
   window.addEventListener("pointercancel", finishCanvasPan);
+  const finishNodeDrag = () => {
+    if (!nodeDrag) {
+      return;
+    }
+    const nodeId = nodeDrag.nodeId;
+    const position = nodePositionFromGraph(graph, nodeId);
+    callbacks.onNodeDragEnd?.(nodeId, position, {moved: dragged});
+    if (dragged) {
+      lastClickSuppressedNodeId = nodeId;
+      window.setTimeout(() => {
+        if (lastClickSuppressedNodeId === nodeId) {
+          lastClickSuppressedNodeId = null;
+        }
+      }, 120);
+    }
+    if (nodeDrag.pointerId) {
+      try {
+        el.g6EditorHost?.releasePointerCapture?.(nodeDrag.pointerId);
+      } catch {
+        // Pointer capture may already be released.
+      }
+    }
+    nodeDrag = null;
+    draggedNodeId = null;
+    dragged = false;
+  };
+  window.addEventListener("pointerup", finishNodeDrag);
+  window.addEventListener("pointercancel", finishNodeDrag);
   editor.disposeInteractions?.();
   editor.disposeInteractions = () => {
     if (canvasPanFrame) {
@@ -247,8 +388,11 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
     el.g6EditorHost?.removeEventListener("pointerdown", hostPointerDown);
     el.g6EditorHost?.removeEventListener("pointermove", hostPointerMove);
+    el.g6EditorHost?.removeEventListener("pointerleave", hostPointerLeave);
     window.removeEventListener("pointerup", finishCanvasPan);
     window.removeEventListener("pointercancel", finishCanvasPan);
+    window.removeEventListener("pointerup", finishNodeDrag);
+    window.removeEventListener("pointercancel", finishNodeDrag);
   };
 
   const clearLinkDrag = () => {
@@ -283,22 +427,54 @@ export function bindG6Interactions(editor, callbacks = {}) {
     if (eventButton(event) !== 0) {
       return;
     }
-    const id = targetId(event);
+    const id = nodeIdFromEvent(event, graph);
     hoveredNodeId = id || hoveredNodeId;
     hoveredInteractive = true;
     const point = eventClientPoint(event);
-    if (id && isLinkHandleHit(graph, id, point.x, point.y)) {
+    if (id && isOpenControlHit(graph, id, point.x, point.y, editor)) {
+      originalEvent(event)?.preventDefault?.();
+      originalEvent(event)?.stopPropagation?.();
+      return;
+    }
+    if (id && isLinkHandleHit(graph, id, point.x, point.y, editor)) {
       const sourceNode = state.nodesById.get(id);
-      linkDrag = {sourceId: id};
+      linkDrag = {sourceId: id, clientX: point.x, clientY: point.y};
       updateConnectionPreview(graph, sourceNode, point.x, point.y);
       callbacks.onConnectionDragStart?.(id);
       originalEvent(event)?.preventDefault?.();
       originalEvent(event)?.stopPropagation?.();
+      return;
+    }
+    if (id) {
+      const canvasPoint = graphCanvasPoint(graph, point.x, point.y);
+      const topLeft = graphNodeTopLeft(graph, id);
+      if (topLeft) {
+        draggedNodeId = id;
+        dragged = false;
+        nodeDrag = {
+          nodeId: id,
+          pointerId: originalEvent(event)?.pointerId,
+          startX: canvasPoint.x,
+          startY: canvasPoint.y,
+          nodeX: topLeft.x,
+          nodeY: topLeft.y
+        };
+        callbacks.onNodeDragStart?.(id);
+        if (nodeDrag.pointerId) {
+          try {
+            el.g6EditorHost?.setPointerCapture?.(nodeDrag.pointerId);
+          } catch {
+            // Drag still works without capture inside the canvas.
+          }
+        }
+        originalEvent(event)?.preventDefault?.();
+        originalEvent(event)?.stopPropagation?.();
+      }
     }
   });
 
   graph.on("node:pointerover", (event) => {
-    hoveredNodeId = targetId(event) || null;
+    hoveredNodeId = nodeIdFromEvent(event, graph) || null;
     hoveredInteractive = true;
     if (!canvasDragging) {
       setCanvasCursor("pointer");
@@ -307,11 +483,8 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:pointerleave", (event) => {
-    const id = targetId(event);
-    if (hoveredNodeId === id) {
-      hoveredNodeId = null;
-      callbacks.onNodeHover?.(null);
-    }
+    hoveredNodeId = null;
+    callbacks.onNodeHover?.(null);
     hoveredInteractive = false;
     if (!canvasDragging) {
       setCanvasCursor("grab");
@@ -319,7 +492,22 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:dragstart", (event) => {
-    draggedNodeId = targetId(event);
+    if (nodeDrag) {
+      return;
+    }
+    if (linkDrag) {
+      draggedNodeId = null;
+      dragged = false;
+      return;
+    }
+    draggedNodeId = nodeIdFromEvent(event, graph);
+    const point = eventClientPoint(event);
+    if (draggedNodeId && isOpenControlHit(graph, draggedNodeId, point.x,
+        point.y, editor)) {
+      draggedNodeId = null;
+      dragged = false;
+      return;
+    }
     dragged = false;
     if (draggedNodeId) {
       callbacks.onNodeDragStart?.(draggedNodeId);
@@ -327,7 +515,10 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:drag", (event) => {
-    const id = targetId(event) || draggedNodeId;
+    if (linkDrag || nodeDrag) {
+      return;
+    }
+    const id = draggedNodeId || nodeIdFromEvent(event, graph);
     if (!id) {
       return;
     }
@@ -339,7 +530,10 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:dragend", (event) => {
-    const id = targetId(event) || draggedNodeId;
+    if (linkDrag || nodeDrag) {
+      return;
+    }
+    const id = draggedNodeId || nodeIdFromEvent(event, graph);
     const position = id ? nodePositionFromGraph(graph, id) : null;
     if (id && position) {
       callbacks.onNodeDragEnd?.(id, position, {moved: dragged});
@@ -357,16 +551,36 @@ export function bindG6Interactions(editor, callbacks = {}) {
   });
 
   graph.on("node:click", (event) => {
-    const id = targetId(event);
+    const id = nodeIdFromEvent(event, graph);
     if (!id || lastClickSuppressedNodeId === id) {
       lastClickSuppressedNodeId = null;
+      return;
+    }
+    const point = eventClientPoint(event);
+    if (isOpenControlHit(graph, id, point.x, point.y, editor)) {
+      originalEvent(event)?.preventDefault?.();
+      originalEvent(event)?.stopPropagation?.();
+      callbacks.onOpenContainer?.(id);
       return;
     }
     callbacks.onNodeClick?.(id, originalEvent(event));
   });
 
+  graph.on("node:pointermove", (event) => {
+    if (!linkDrag) {
+      return;
+    }
+    const point = eventClientPoint(event);
+    linkDrag.clientX = point.x;
+    linkDrag.clientY = point.y;
+    hoveredNodeId = nodeIdFromEvent(event, graph, linkDrag.sourceId) || null;
+    updateConnectionPreview(graph, state.nodesById.get(linkDrag.sourceId),
+        point.x, point.y);
+    callbacks.onConnectionPointerMove?.(linkDrag.sourceId, hoveredNodeId);
+  });
+
   graph.on("node:dblclick", (event) => {
-    const id = targetId(event);
+    const id = nodeIdFromEvent(event, graph);
     if (!id) {
       return;
     }
@@ -408,6 +622,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
       return;
     }
     hoveredInteractive = false;
+    callbacks.onCanvasPointerDown?.(originalEvent(event));
   });
 
   graph.on("canvas:pointerup", () => {

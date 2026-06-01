@@ -275,7 +275,7 @@ body {
 }
 
 .workspace.views-open .workspace-main {
-  grid-template-columns: 248px 1fr 360px;
+  grid-template-columns: 248px 1fr;
 }
 
 .workspace.impact-open .workspace-main {
@@ -298,7 +298,7 @@ body {
 }
 
 .workspace.palette-collapsed.views-open .workspace-main {
-  grid-template-columns: 64px 1fr 360px;
+  grid-template-columns: 64px 1fr;
 }
 
 .workspace.palette-collapsed.impact-open .workspace-main {
@@ -320,7 +320,7 @@ body {
 }
 
 .workspace.palette-hidden.views-open .workspace-main {
-  grid-template-columns: 0 1fr 360px;
+  grid-template-columns: 0 1fr;
 }
 
 .workspace.palette-hidden.impact-open .workspace-main {
@@ -370,7 +370,7 @@ body {
   }
 
   .workspace.views-open .workspace-main {
-    grid-template-columns: 228px 1fr 340px;
+    grid-template-columns: 228px 1fr;
   }
 
   .workspace.impact-open .workspace-main {
@@ -393,7 +393,7 @@ body {
   }
 
   .workspace.palette-collapsed.views-open .workspace-main {
-    grid-template-columns: 60px 1fr 340px;
+    grid-template-columns: 60px 1fr;
   }
 
   .workspace.palette-collapsed.impact-open .workspace-main {
@@ -416,7 +416,7 @@ body {
   }
 
   .workspace.palette-hidden.views-open .workspace-main {
-    grid-template-columns: 0 1fr 340px;
+    grid-template-columns: 0 1fr;
   }
 
   .workspace.palette-hidden.impact-open .workspace-main {

@@ -234,6 +234,96 @@ export function nodeNotation(typeKey, node) {
       || (typeKey === "cim" ? CIM_NODE_NOTATION[node.type] || null : null);
 }
 
+function nodeToken(typeKey, node, notation) {
+  const token = String(notation?.tag || "").trim();
+  if (token) {
+    return token;
+  }
+  return String(node?.type || "element").replaceAll(/([a-z])([A-Z])/g,
+      "$1 $2").toLowerCase();
+}
+
+function humanizeType(value) {
+  return String(value || "Element")
+  .replaceAll("_", " ")
+  .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
+  .replace(/\s+/g, " ")
+  .trim();
+}
+
+function nodeDetailLine(node, notation, definition) {
+  const meta = node?.meta || {};
+  const candidates = [
+    notation?.line?.(meta),
+    meta.lifecycleStatus,
+    meta.lifecycle,
+    meta.status,
+    meta.reviewStatus,
+    definition?.category
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+  return candidates.find((value) => value !== node?.label) || "";
+}
+
+function badgeText(value) {
+  return String(value || "").trim().replaceAll("_", " ");
+}
+
+function addBadge(badges, text) {
+  const value = badgeText(text);
+  if (!value || badges.includes(value) || badges.length >= 4) {
+    return;
+  }
+  badges.push(value);
+}
+
+function nodeBadges(typeKey, node, definition) {
+  const meta = node?.meta || {};
+  const badges = [];
+  if (meta.generated || meta.generatedFrom || meta.transformationRuleId) {
+    addBadge(badges, "generated");
+  }
+  if (meta.manual || meta.manualReviewRequired || meta.requiresManualReview
+      || meta.reviewStatus === "NEEDS_REVIEW") {
+    addBadge(badges, "review");
+  }
+  if (meta.productionBlocking || meta.blocksTransformation
+      || meta.blocking === true) {
+    addBadge(badges, "blocking");
+  }
+  if (meta.severity) {
+    addBadge(badges, meta.severity);
+  }
+  if (meta.lifecycle || meta.lifecycleStatus || meta.status) {
+    addBadge(badges, meta.lifecycle || meta.lifecycleStatus || meta.status);
+  }
+  if (meta.required || meta.productionRequired || meta.authRequired
+      || meta.authenticationRequired || meta.authorizationRequired) {
+    addBadge(badges, "required");
+  }
+  if (meta.encryptionRequired || meta.encryption || meta.sseEnabled) {
+    addBadge(badges, "encrypted");
+  }
+  if (meta.rotationRequired) {
+    addBadge(badges, "rotation");
+  }
+  if (meta.tracingEnabled || meta.xrayTracingEnabled) {
+    addBadge(badges, "tracing");
+  }
+  if (meta.retentionDays || meta.retentionPolicy) {
+    addBadge(badges, "retention");
+  }
+  if (meta.imported || meta.resourceImport || meta.importMode) {
+    addBadge(badges, "import");
+  }
+  if (meta.deletionPolicy) {
+    addBadge(badges, meta.deletionPolicy);
+  }
+  if (typeKey === "psm" && definition?.category) {
+    addBadge(badges, definition.category);
+  }
+  return badges;
+}
+
 export function edgeLabel(edge, typeKey = state.activeType) {
   if (edge?.label) {
     return edge.label;
@@ -335,7 +425,6 @@ export function mapNodeToG6(node, {
   typeKey = state.activeType,
   detailLevel = "normal",
   isContainer = () => false,
-  isCollapsed = () => false,
   contextNameFromNode = () => "",
   viewProfile = ""
 } = {}) {
@@ -349,7 +438,10 @@ export function mapNodeToG6(node, {
   const notation = nodeNotation(typeKey, node);
   const accent = nodeAccent(node, definition);
   const sticky = typeKey === "cim" ? stickyColor(node, notation) : "";
-  const notationLine = notation?.line?.(node.meta || {}) || "";
+  const kindText = humanizeType(node.type);
+  const detailText = nodeDetailLine(node, notation, definition);
+  const token = nodeToken(typeKey, node, notation);
+  const badges = nodeBadges(typeKey, node, definition);
   return {
     id: node.id,
     type: G6_BASE_NODE_TYPE,
@@ -360,12 +452,15 @@ export function mapNodeToG6(node, {
       meta: node.meta || {},
       diagramType: typeKey,
       notation: notation?.tag || "",
-      notationLine,
+      kindText,
+      detailText,
+      tokenText: token,
+      badges,
+      showHandles: Boolean(node.showHandles),
       accent,
       sticky,
       viewProfile,
       contextName: contextNameFromNode(node),
-      collapsed: isCollapsed(node),
       container: isContainer(node),
       detailLevel
     },
@@ -385,22 +480,25 @@ export function mapNodeToG6(node, {
       labelPlacement: "center",
       labelWordWrap: true,
       labelMaxWidth: Math.max(80, size.width - 24),
-      typeText: node.type,
-      notationText: notationLine,
+      typeText: token,
+      kindText,
+      fullTypeText: node.type,
+      notationText: detailText,
       notation: notation?.tag || "",
+      badges,
+      showHandles: Boolean(node.showHandles),
       accent,
       sticky,
       fill: typeKey === "cim" ? sticky : "rgba(19, 25, 35, 0.98)",
       stroke: typeKey === "cim" ? "rgba(21, 28, 40, 0.24)"
           : "rgba(61, 73, 95, 0.92)",
-      lineWidth: typeKey === "cim" ? 1.2 : 1,
-      radius: typeKey === "cim" ? 6 : 2,
+      lineWidth: 1,
+      radius: 2,
       shadowColor: typeKey === "cim" ? "rgba(12, 18, 28, 0.28)"
           : "rgba(6, 11, 20, 0.32)",
       shadowBlur: typeKey === "cim" ? 10 : 8,
       detailLevel,
-      isContainer: isContainer(node),
-      isCollapsed: isCollapsed(node)
+      isContainer: isContainer(node)
     }
   };
 }

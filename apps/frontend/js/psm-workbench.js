@@ -16,7 +16,6 @@ import {
   modelingViewDefinition
 } from './modeling-config-data.js';
 import {markModelDirty} from './model-save-ui.js';
-import {publishDiagramUpdate} from './collaboration.js';
 import {setStatus} from './status.js';
 import {
   activeWorkbenchRepresentation,
@@ -663,20 +662,6 @@ function renderControls(profile, representation) {
       <label class="cim-check-label"><input data-psm-missing-only type="checkbox" ${
       state.psmWorkbench.missingOnly ? "checked" : ""}> Missing required</label>
     </div>
-    <div class="cim-guidance">${escapeHtml(representation === "diagram"
-      ? "Use the palette to add concrete AWS resources. Select an element to draw legal outgoing relationships from the inspector, or drag a node handle."
-      : "Edit this projection directly. Open rows for full details, use matrices for references, and switch back to Diagram for spatial modeling.")}</div>
-    <div class="cim-quick-help">${(representation === "diagram"
-      ? [
-        "Add concrete AWS resources from the palette.",
-        "Select an element to draw legal relationships; valid targets turn green.",
-        "Open Register/Matrix when the view gets dense."
-      ]
-      : [
-        "The palette is hidden so this editor has room.",
-        "Use Register for bulk AWS fields and CSV export, Matrix for references, Board for readiness.",
-        "Use Open on any row to edit the full detail drawer."
-      ]).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>
   </div>`;
 }
 
@@ -746,7 +731,6 @@ function commitModelChange(message) {
     syncActiveViewFromVisibleGraph,
     saveCurrentTabGraphState,
     markModelDirty,
-    publishDiagramUpdate,
     setStatus
   });
 }

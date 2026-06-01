@@ -35,8 +35,7 @@ export const state = {
     activeViewId: null,
     visibleNodeIds: new Set(),
     visibleRelationshipIds: new Set(),
-    expandedContainers: new Set(),
-    collapsedContainers: new Set()
+    expandedContainers: new Set()
   },
   fragments: {
     byId: new Map(),
@@ -192,22 +191,6 @@ export const state = {
     cim: {},
     pim: {},
     psm: {}
-  },
-  collaboration: {
-    ws: null,
-    projectId: null,
-    sessionId: null,
-    isReady: false,
-    pendingDiagramUpdate: false,
-    reconnectTimer: null,
-    reconnectAttempts: 0,
-    intentionalDisconnect: false,
-    revision: 0,
-    remoteApplying: false,
-    lastDiagramPublishAt: 0,
-    cursorThrottleAt: 0,
-    diagramThrottleTimer: null,
-    participants: []
   },
   validation: {
     issues: [],

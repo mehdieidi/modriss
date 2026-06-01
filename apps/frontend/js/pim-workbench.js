@@ -15,7 +15,6 @@ import {
   modelingViewDefinition
 } from './modeling-config-data.js';
 import {markModelDirty} from './model-save-ui.js';
-import {publishDiagramUpdate} from './collaboration.js';
 import {setStatus} from './status.js';
 import {
   activeWorkbenchRepresentation,
@@ -915,20 +914,6 @@ function renderControls(profile, representation) {
       <label class="cim-check-label"><input data-pim-missing-only type="checkbox" ${
       state.pimWorkbench.missingOnly ? "checked" : ""}> Missing required</label>
     </div>
-    <div class="cim-guidance">${escapeHtml(representation === "diagram"
-      ? "Use the palette to add PIM elements. Select an element to draw legal outgoing relationships from the inspector, or drag a node handle."
-      : "Edit this projection directly. Open rows for full details, use matrices for references, and switch back to Diagram for spatial modeling.")}</div>
-    <div class="cim-quick-help">${(representation === "diagram"
-      ? [
-        "Add concrete PIM elements from the palette.",
-        "Select an element to draw legal relationships; valid targets turn green.",
-        "Open Dashboard/Register/Matrix when the diagram gets too dense."
-      ]
-      : [
-        "The palette is hidden so this editor has room.",
-        "Use Register for bulk fields, Matrix for references, Board for readiness.",
-        "Use Open on any row to edit the full detail drawer."
-      ]).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>
   </div>`;
 }
 
@@ -1207,7 +1192,6 @@ function commitModelChange(message) {
     syncActiveViewFromVisibleGraph,
     saveCurrentTabGraphState,
     markModelDirty,
-    publishDiagramUpdate,
     setStatus
   });
 }

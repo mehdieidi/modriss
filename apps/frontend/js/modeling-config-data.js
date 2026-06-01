@@ -40,6 +40,10 @@ function emptyLevel(displayName) {
     elements: [],
     relationshipRules: [],
     viewDefinitions: [],
+    universalSyntax: [],
+    kernelSyntax: [],
+    kernelNotation: [],
+    complexityManagement: [],
     strictnessModes: ["exploration", "methodology", "production"],
     constraints: [],
     rootTemplate: {
@@ -107,6 +111,15 @@ function ensureConfigShape(raw) {
           ? incoming.shortcutConnectorRules : [],
       viewDefinitions: Array.isArray(incoming.viewDefinitions)
           ? incoming.viewDefinitions : [],
+      universalSyntax: Array.isArray(incoming.universalSyntax)
+          ? incoming.universalSyntax : [],
+      kernelSyntax: Array.isArray(incoming.kernelSyntax)
+          ? incoming.kernelSyntax : [],
+      kernelNotation: Array.isArray(incoming.kernelNotation)
+          ? incoming.kernelNotation : (Array.isArray(incoming.kernelSyntax)
+              ? incoming.kernelSyntax : []),
+      complexityManagement: Array.isArray(incoming.complexityManagement)
+          ? incoming.complexityManagement : [],
       strictnessModes: Array.isArray(incoming.strictnessModes)
           ? incoming.strictnessModes : ["exploration", "methodology",
             "production"],

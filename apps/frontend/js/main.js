@@ -57,19 +57,17 @@ import {setError, setStatus} from './status.js';
 import {CHAT_ATTACHMENT_MAX_BYTES} from './config.js';
 import {isMobileViewport} from './responsive.js';
 import {ensureAuthenticated, logout, updateDisplayName} from './auth.js';
-import {disconnectCollaboration} from './collaboration.js';
 import {initSvgIconMasks} from './icons.js';
 import {
   deployToGithubFromArtifacts,
   refreshGithubConnection
 } from './github.js';
 import {loadModelingConfig} from './modeling-config-data.js';
-import {updateModelSaveUi} from './model-save-ui.js';
+import {hasUnsavedModelChanges, updateModelSaveUi} from './model-save-ui.js';
 import {initViewWorkbench, renderViewWorkbench} from './view-explorer.js';
 import {initCimWorkbenchSurface} from './cim-workbench.js';
 import {initPimWorkbenchSurface} from './pim-workbench.js';
 import {initPsmWorkbenchSurface} from './psm-workbench.js';
-import {configureContainerCollapse} from './container-collapse.js';
 import {installG6LargeGraphDevHelper} from './graph-editor/g6-devtools.js';
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
@@ -93,6 +91,57 @@ function refreshCurrentUserLabel() {
   }
   el.currentUserLabel.textContent = state.auth.user?.displayName
       || state.auth.user?.email || "User";
+}
+
+function showUnsavedModelDialog() {
+  if (!el.unsavedModelOverlay || !el.unsavedModelSaveBtn
+      || !el.unsavedModelDismissBtn) {
+    return;
+  }
+  el.unsavedModelOverlay.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  el.unsavedModelSaveBtn.disabled = false;
+  el.unsavedModelSaveBtn.textContent = "Save Model";
+  el.unsavedModelSaveBtn.focus();
+}
+
+function hideUnsavedModelDialog() {
+  el.unsavedModelOverlay?.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+  if (el.unsavedModelSaveBtn) {
+    el.unsavedModelSaveBtn.disabled = false;
+    el.unsavedModelSaveBtn.textContent = "Save Model";
+  }
+}
+
+function bindUnsavedModelGuard() {
+  window.addEventListener("beforeunload", (event) => {
+    if (!hasUnsavedModelChanges()) {
+      return;
+    }
+    showUnsavedModelDialog();
+    event.preventDefault();
+    event.returnValue = "";
+  });
+
+  el.unsavedModelDismissBtn?.addEventListener("click",
+      hideUnsavedModelDialog);
+  el.unsavedModelOverlay?.addEventListener("click", (event) => {
+    if (event.target === el.unsavedModelOverlay) {
+      hideUnsavedModelDialog();
+    }
+  });
+  el.unsavedModelSaveBtn?.addEventListener("click", async () => {
+    try {
+      el.unsavedModelSaveBtn.disabled = true;
+      el.unsavedModelSaveBtn.textContent = "Saving...";
+      await saveCurrentModel({rethrow: true});
+      hideUnsavedModelDialog();
+    } catch {
+      el.unsavedModelSaveBtn.disabled = false;
+      el.unsavedModelSaveBtn.textContent = "Try Saving Again";
+    }
+  });
 }
 
 function showProfileDialog() {
@@ -176,7 +225,6 @@ function bindUserMenuActions() {
     try {
       await logout();
     } finally {
-      disconnectCollaboration();
       window.location.reload();
     }
   });
@@ -916,14 +964,12 @@ async function init() {
   await loadModelingConfig();
   initSvgIconMasks();
   refreshCurrentUserLabel();
-  disconnectCollaboration();
   bindProjectDialogActions();
   setupIdeMenus();
   bindEvents();
-  configureContainerCollapse(
-      {renderDiagram, renderWorkbench: renderViewWorkbench});
   installG6LargeGraphDevHelper(
       {renderDiagram, renderWorkbench: renderViewWorkbench});
+  bindUnsavedModelGuard();
   initViewWorkbench({renderDiagram, renderPalette});
   initCimWorkbenchSurface({
     renderDiagram,

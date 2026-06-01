@@ -62,7 +62,7 @@ function setAuthMode(mode) {
   }
   if (el.authSubtitle) {
     el.authSubtitle.textContent = registerMode
-        ? "Register to create and collaborate on projects."
+        ? "Register to create and manage projects."
         : "Use your account to continue.";
   }
   if (el.authPasswordInput) {

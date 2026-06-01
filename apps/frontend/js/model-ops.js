@@ -32,7 +32,6 @@ import {closeImpactPanel} from './impact.js';
 import {refreshGithubConnection} from './github.js';
 import {loadArtifactById, loadCurrentProjectArtifact} from './artifact.js';
 import {confirmAction} from './confirm-action.js';
-import {publishDiagramUpdate} from './collaboration.js';
 import {
   completeGenerationProgress,
   hideGenerationProgress,
@@ -154,7 +153,6 @@ async function applyModelReplacementSnapshot(
   centerCurrentDiagram();
   if (persist) {
     await saveCurrentModel({quiet: true, rethrow: true});
-    publishDiagramUpdate({immediate: true});
   } else {
     resetModelSaveState({dirty: true});
   }
@@ -1289,7 +1287,6 @@ export async function autoLayoutCurrentDiagram({
       await saveCurrentModel({quiet: true, rethrow: true});
     }
     if (publish) {
-      publishDiagramUpdate({immediate: true});
     }
     if (progress) {
       await completeGenerationProgress("Layout applied.");
@@ -1485,7 +1482,6 @@ export async function importActiveModel(file, format = "json",
     if (!hasErrorIssue) {
       setGenerationProgressPhase("Saving imported model…", 88);
       await saveCurrentModel({rethrow: true, quiet: true});
-      publishDiagramUpdate({immediate: true});
     } else {
       resetModelSaveState({dirty: true});
     }
@@ -1542,7 +1538,6 @@ export async function undoLastEdit() {
     renderDiagram();
     renderViewWorkbench();
     await saveCurrentModel({quiet: true, rethrow: true});
-    publishDiagramUpdate({immediate: true});
     setStatus("Undid last canvas edit.");
     return;
   }

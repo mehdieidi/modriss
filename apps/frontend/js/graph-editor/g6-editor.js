@@ -23,10 +23,9 @@ import {
 import {bindG6Interactions} from './g6-interactions.js';
 import {
   clearG6Overlays,
-  hideNodeTools,
   renderContextBoxes,
-  showInlineLabelEditor,
-  showNodeTools
+  renderNodeIcons,
+  showInlineLabelEditor
 } from './g6-overlays.js';
 
 let editor = null;
@@ -121,6 +120,109 @@ function lineBreak(text, maxLine = 23, maxLines = 2) {
   }).join("\n");
 }
 
+function pathMidpoint(points) {
+  const segments = [];
+  let total = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    const length = Math.hypot(end.x - start.x, end.y - start.y);
+    if (!Number.isFinite(length) || length <= 0) {
+      continue;
+    }
+    segments.push({start, end, length});
+    total += length;
+  }
+  if (!segments.length) {
+    return points[0] || {x: 0, y: 0};
+  }
+  let remaining = total / 2;
+  for (const segment of segments) {
+    if (remaining <= segment.length) {
+      const ratio = remaining / segment.length;
+      return {
+        x: segment.start.x + (segment.end.x - segment.start.x) * ratio,
+        y: segment.start.y + (segment.end.y - segment.start.y) * ratio
+      };
+    }
+    remaining -= segment.length;
+  }
+  return segments[segments.length - 1].end;
+}
+
+function badgeFill(text, diagramType) {
+  const value = String(text || "").toLowerCase();
+  if (value.includes("block") || value.includes("critical")
+      || value.includes("error") || value.includes("high")) {
+    return diagramType === "cim" ? "rgba(220, 38, 38, 0.16)"
+        : "rgba(248, 113, 113, 0.17)";
+  }
+  if (value.includes("generated") || value.includes("trace")) {
+    return diagramType === "cim" ? "rgba(79, 70, 229, 0.14)"
+        : "rgba(129, 140, 248, 0.16)";
+  }
+  if (value.includes("encrypt") || value.includes("auth")
+      || value.includes("security")) {
+    return diagramType === "cim" ? "rgba(22, 163, 74, 0.14)"
+        : "rgba(74, 222, 128, 0.15)";
+  }
+  return diagramType === "cim" ? "rgba(15, 23, 42, 0.09)"
+      : "rgba(148, 163, 184, 0.14)";
+}
+
+function badgeTextFill(diagramType) {
+  return diagramType === "cim" ? "rgba(31, 41, 55, 0.82)"
+      : "rgba(226, 232, 240, 0.82)";
+}
+
+function renderPlaceholderIcon(shape, container) {
+  shape.upsert("iconTile", "rect", false, container);
+  shape.upsert("iconSky", "circle", false, container);
+  shape.upsert("iconMark", "path", false, container);
+}
+
+function renderOpenControl(shape, container, {
+  left,
+  top,
+  width,
+  height,
+  diagramType,
+  selected = false,
+  low = false
+}) {
+  const controlWidth = low ? 30 : 38;
+  const controlHeight = low ? 14 : 16;
+  const x = left + width - controlWidth - 9;
+  const y = top + (low ? 8 : 12);
+  const isCim = diagramType === "cim";
+  shape.upsert("openControl", "rect", {
+    x,
+    y,
+    width: controlWidth,
+    height: controlHeight,
+    radius: 2,
+    fill: isCim ? "rgba(24, 20, 14, 0.76)"
+        : "rgba(226, 232, 240, 0.14)",
+    stroke: selected ? cssVar("--accent-select", "#5ecbff")
+        : isCim ? "rgba(24, 20, 14, 0.22)" : "rgba(226, 232, 240, 0.22)",
+    lineWidth: selected ? 1.4 : 1,
+    cursor: "pointer"
+  }, container);
+  shape.upsert("openControlText", "text", {
+    x: x + controlWidth / 2,
+    y: y + controlHeight / 2 + 0.5,
+    text: "OPEN",
+    fontFamily: cssVar("--font-display", "sans-serif"),
+    fontSize: low ? 6.5 : 7.5,
+    fontWeight: 800,
+    fill: isCim ? "rgba(255, 255, 255, 0.94)"
+        : cssVar("--text-strong", "#e3e8f2"),
+    textAlign: "center",
+    textBaseline: "middle",
+    cursor: "pointer"
+  }, container);
+}
+
 function states(attributes) {
   return new Set(Array.isArray(attributes?.states) ? attributes.states : []);
 }
@@ -167,6 +269,10 @@ function registerModlessG6Extensions() {
       const draft = attributes.contextDraft || stateSet.has("context-draft");
       const low = attributes.detailLevel === "low";
       const high = attributes.detailLevel === "high";
+      const containerNode = Boolean(attributes.isContainer);
+      const handleVisible = Boolean(attributes.showHandles) || connectSource;
+      const badges = Array.isArray(attributes.badges) ? attributes.badges
+      .slice(0, 3) : [];
 
       if (diagramType === "cim") {
         const fill = attributes.sticky || "#fde68a";
@@ -176,7 +282,7 @@ function registerModlessG6Extensions() {
           stroke: selected ? cssVar("--accent-select", "#5ecbff")
               : "rgba(21, 28, 40, 0.24)",
           lineWidth: selected ? 2.4 : 1,
-          radius: attributes.notation === "context" ? 8 : 6,
+          radius: 2,
           labelText: ""
         }, container);
         this.upsert("key", "rect", {
@@ -184,7 +290,7 @@ function registerModlessG6Extensions() {
           y: top,
           width,
           height,
-          radius: attributes.notation === "context" ? 8 : 6,
+          radius: 2,
           fill,
           stroke: connectLegal ? "#16a34a"
               : connectSource ? cssVar("--accent-select", "#5ecbff")
@@ -193,31 +299,40 @@ function registerModlessG6Extensions() {
                           : impact ? "#f97316"
                               : "rgba(21, 28, 40, 0.24)",
           lineWidth: selected || connectLegal || connectSource || draft ? 2.4
-              : (attributes.notation === "aggregate"
-              || attributes.notation === "context" ? 2 : 1),
-          lineDash: attributes.notation === "external"
-          || attributes.notation === "context" || draft ? [6, 4] : undefined,
+              : 1,
+          lineDash: draft ? [6, 4] : undefined,
           shadowColor: selected || hovered || connectLegal
               ? "rgba(8, 14, 24, 0.36)" : "rgba(12, 18, 28, 0.28)",
           shadowBlur: selected || hovered || connectLegal ? 18 : 10,
           opacity: dimmed || connectIllegal ? 0.48 : 1,
           cursor: "pointer"
         }, container);
-        this.upsert("corner", "path", {
-          path: [
-            ["M", left + width - 18, top],
-            ["L", left + width, top],
-            ["L", left + width, top + 18],
-            ["Z"]
-          ],
-          fill: "rgba(255,255,255,0.58)",
-          opacity: 0.62,
+        this.upsert("header", "rect", low ? false : {
+          x: left,
+          y: top,
+          width,
+          height: 40,
+          radius: [2, 2, 0, 0],
+          fill: "rgba(255,255,255,0.34)",
+          stroke: "transparent",
           pointerEvents: "none"
         }, container);
+        this.upsert("semanticShape", "path", false, container);
+        this.upsert("corner", "path", false, container);
+        this.upsert("icon", "rect", false, container);
+        this.upsert("dot", "circle", false, container);
+        renderPlaceholderIcon(this, container, {
+          left,
+          top,
+          accent,
+          diagramType,
+          low
+        });
         this.upsert("type", "text", low ? false : {
-          x: left + 10,
-          y: top + 15,
-          text: truncate(attributes.typeText || "Element", 26).toUpperCase(),
+          x: left + 40,
+          y: top + 21,
+          text: truncate(attributes.kindText || attributes.typeText
+              || "Element", containerNode ? 14 : 21).toUpperCase(),
           fontFamily: cssVar("--font-display", "sans-serif"),
           fontSize: 9,
           fontWeight: 800,
@@ -227,8 +342,8 @@ function registerModlessG6Extensions() {
         }, container);
         this.upsert("label", "text", {
           x: left + 10,
-          y: top + (low ? 24 : 38),
-          text: lineBreak(attributes.labelText || "", low ? 18 : 21,
+          y: top + (low ? 24 : 48),
+          text: lineBreak(attributes.labelText || "", low ? 20 : 24,
               low ? 1 : 2),
           fontFamily: cssVar("--font-ui", "sans-serif"),
           fontSize: low ? 10 : 12,
@@ -237,10 +352,37 @@ function registerModlessG6Extensions() {
           textBaseline: "top",
           pointerEvents: "none"
         }, container);
+        for (let index = 0; index < 4; index++) {
+          const text = badges[index];
+          const badgeWidth = Math.min(68, 18 + String(text || "").length * 5);
+          this.upsert(`badge${index}`, "rect", low || !text ? false : {
+            x: left + width - 10 - badgeWidth,
+            y: top + height - 17 - index * 16,
+            width: badgeWidth,
+            height: 13,
+            radius: 4,
+            fill: badgeFill(text, diagramType),
+            stroke: "rgba(15, 23, 42, 0.08)",
+            pointerEvents: "none"
+          }, container);
+          this.upsert(`badgeText${index}`, "text", low || !text ? false : {
+            x: left + width - 10 - badgeWidth / 2,
+            y: top + height - 10.5 - index * 16,
+            text: truncate(text, 11).toUpperCase(),
+            fontFamily: cssVar("--font-ui", "sans-serif"),
+            fontSize: 7,
+            fontWeight: 800,
+            fill: badgeTextFill(diagramType),
+            textAlign: "center",
+            textBaseline: "middle",
+            pointerEvents: "none"
+          }, container);
+        }
         this.upsert("notation", "text", low ? false : {
           x: left + 10,
-          y: top + height - (high ? 22 : 16),
-          text: truncate(attributes.notationText || "", 29),
+          y: top + height - 15,
+          text: truncate(attributes.notationText || "",
+              containerNode ? 21 : 29),
           fontFamily: cssVar("--font-ui", "sans-serif"),
           fontSize: 9.5,
           fontWeight: 600,
@@ -248,6 +390,20 @@ function registerModlessG6Extensions() {
           textBaseline: "middle",
           pointerEvents: "none"
         }, container);
+        if (containerNode) {
+          renderOpenControl(this, container, {
+            left,
+            top,
+            width,
+            height,
+            diagramType,
+            selected,
+            low
+          });
+        } else {
+          this.upsert("openControl", "rect", false, container);
+          this.upsert("openControlText", "text", false, container);
+        }
       } else {
         const fill = cssVar("--node-bg", "#131923");
         const border = cssVar("--node-border", "#3d495f");
@@ -272,7 +428,7 @@ function registerModlessG6Extensions() {
                       : impact ? "#f97316" : border,
           lineWidth: selected || connectLegal || connectSource || draft ? 2.4
               : 1,
-          lineDash: attributes.isCollapsed || draft ? [6, 4] : undefined,
+          lineDash: draft ? [6, 4] : undefined,
           shadowColor: selected || hovered || connectLegal
               ? "rgba(8, 14, 24, 0.44)" : "rgba(6, 11, 20, 0.32)",
           shadowBlur: selected || hovered || connectLegal ? 18 : 8,
@@ -289,20 +445,19 @@ function registerModlessG6Extensions() {
           stroke: "transparent",
           pointerEvents: "none"
         }, container);
-        this.upsert("icon", "rect", low ? false : {
-          x: left + 11,
-          y: top + 9,
-          width: 22,
-          height: 22,
-          radius: 5,
-          fill: accent,
-          opacity: 0.78,
-          pointerEvents: "none"
-        }, container);
+        this.upsert("icon", "rect", false, container);
+        renderPlaceholderIcon(this, container, {
+          left,
+          top,
+          accent,
+          diagramType,
+          low
+        });
         this.upsert("type", "text", low ? false : {
           x: left + 42,
           y: top + 21,
-          text: truncate(attributes.typeText || "Element", 27).toUpperCase(),
+          text: truncate(attributes.kindText || attributes.typeText
+              || "Element", containerNode ? 22 : 27).toUpperCase(),
           fontFamily: cssVar("--font-display", "sans-serif"),
           fontSize: 10,
           fontWeight: 800,
@@ -310,14 +465,8 @@ function registerModlessG6Extensions() {
           textBaseline: "middle",
           pointerEvents: "none"
         }, container);
-        this.upsert("dot", "circle", low ? false : {
-          cx: left + width - 15,
-          cy: top + 20,
-          r: 4,
-          fill: accent,
-          opacity: 0.9,
-          pointerEvents: "none"
-        }, container);
+        this.upsert("dot", "circle", false, container);
+        this.upsert("semanticShape", "path", false, container);
         this.upsert("label", "text", {
           x: left + 11,
           y: top + (low ? 18 : 53),
@@ -330,11 +479,38 @@ function registerModlessG6Extensions() {
           textBaseline: "top",
           pointerEvents: "none"
         }, container);
+        for (let index = 0; index < 4; index++) {
+          const text = badges[index];
+          const badgeWidth = Math.min(78, 18 + String(text || "").length * 5);
+          this.upsert(`badge${index}`, "rect", low || !text ? false : {
+            x: left + width - 11 - badgeWidth,
+            y: top + height - 16 - index * 16,
+            width: badgeWidth,
+            height: 13,
+            radius: 4,
+            fill: badgeFill(text, diagramType),
+            stroke: "rgba(148, 163, 184, 0.12)",
+            pointerEvents: "none"
+          }, container);
+          this.upsert(`badgeText${index}`, "text", low || !text ? false : {
+            x: left + width - 11 - badgeWidth / 2,
+            y: top + height - 9.5 - index * 16,
+            text: truncate(text, 11).toUpperCase(),
+            fontFamily: cssVar("--font-ui", "sans-serif"),
+            fontSize: 7,
+            fontWeight: 800,
+            fill: badgeTextFill(diagramType),
+            textAlign: "center",
+            textBaseline: "middle",
+            pointerEvents: "none"
+          }, container);
+        }
         this.upsert("notation", "text", !high || !attributes.notationText
             ? false : {
               x: left + 11,
               y: top + height - 20,
-              text: truncate(attributes.notationText || "", 34),
+              text: truncate(attributes.notationText || "",
+                  containerNode ? 24 : 34),
               fontFamily: cssVar("--font-ui", "sans-serif"),
               fontSize: 10,
               fontWeight: 600,
@@ -342,9 +518,23 @@ function registerModlessG6Extensions() {
               textBaseline: "middle",
               pointerEvents: "none"
             }, container);
+        if (containerNode) {
+          renderOpenControl(this, container, {
+            left,
+            top,
+            width,
+            height,
+            diagramType,
+            selected,
+            low
+          });
+        } else {
+          this.upsert("openControl", "rect", false, container);
+          this.upsert("openControlText", "text", false, container);
+        }
       }
 
-      this.upsert("leftHandle", "circle", {
+      this.upsert("leftHandle", "circle", handleVisible ? {
         cx: left,
         cy: 0,
         r: 7,
@@ -353,8 +543,8 @@ function registerModlessG6Extensions() {
         lineWidth: 2,
         opacity: low ? 0.75 : 1,
         cursor: "crosshair"
-      }, container);
-      this.upsert("rightHandle", "circle", {
+      } : false, container);
+      this.upsert("rightHandle", "circle", handleVisible ? {
         cx: left + width,
         cy: 0,
         r: 7,
@@ -363,7 +553,7 @@ function registerModlessG6Extensions() {
         lineWidth: 2,
         opacity: low ? 0.75 : 1,
         cursor: "crosshair"
-      }, container);
+      } : false, container);
       this.upsert("legalBadge", "text", connectLegal ? {
         x: left + width - 8,
         y: top + height - 10,
@@ -460,8 +650,7 @@ function registerModlessG6Extensions() {
       const path = this.getKeyPath(attributes);
       const points = path.filter((entry) => entry[0] === "M" || entry[0]
           === "L").map((entry) => ({x: Number(entry[1]), y: Number(entry[2])}));
-      const midpoint = points[Math.floor(points.length / 2)] || points[0]
-          || {x: 0, y: 0};
+      const midpoint = pathMidpoint(points);
       this.upsert("label", "text", {
         x: midpoint.x,
         y: midpoint.y - 8,
@@ -620,6 +809,7 @@ function setCanvasZoomIndicator() {
 function settleNativeViewport() {
   syncViewportStateFromGraph();
   updateG6Lod();
+  updateG6NodeIcons();
   updateG6ContextBoxes();
   updateG6Selection();
   editor?.callbacks?.onViewportSynced?.();
@@ -817,14 +1007,7 @@ export function mountG6Editor(container, {
     zoomRange: [0.01, 2.5],
     cursor: "grab",
     data: {nodes: [], edges: []},
-    behaviors: [
-      "zoom-canvas",
-      {
-        type: "drag-element",
-        key: "modless-drag-element",
-        enable: (event) => event?.targetType === "node"
-      }
-    ],
+    behaviors: ["zoom-canvas"],
     node: {
       type: G6_BASE_NODE_TYPE,
       state: {
@@ -907,6 +1090,7 @@ export function setG6Data(nodes, edges) {
   editor.graph.setData?.(data);
   rememberDataSnapshot(data);
   scheduleGraphRender(editor.graph);
+  updateG6NodeIcons();
 }
 
 export function syncG6FromState({full = false} = {}) {
@@ -930,6 +1114,7 @@ export function syncG6FromState({full = false} = {}) {
   updateG6Selection();
   updateG6ConnectionState();
   updateG6ImpactState();
+  updateG6NodeIcons();
   updateG6ContextBoxes();
 }
 
@@ -941,6 +1126,7 @@ export function addG6Node(node) {
   editor.graph.addNodeData?.([mapped]);
   rememberNodeData(mapped);
   scheduleGraphRender(editor.graph);
+  updateG6NodeIcons();
 }
 
 export function updateG6Node(nodeId, patch = {}) {
@@ -957,6 +1143,7 @@ export function updateG6Node(nodeId, patch = {}) {
   editor.graph.updateNodeData?.([mapped]);
   rememberNodeData(mapped);
   scheduleGraphDraw(editor.graph);
+  updateG6NodeIcons();
 }
 
 export function updateG6NodePosition(nodeId, x, y) {
@@ -980,6 +1167,23 @@ export function updateG6NodePosition(nodeId, x, y) {
   }]);
   rememberNodeData(mapNodeToG6(node, mapperOptions()));
   scheduleGraphDraw(editor.graph);
+  updateG6NodeIcons();
+}
+
+function setG6NodeHandleVisibility(nodeId, visible) {
+  if (!editor?.graph || !nodeId) {
+    return;
+  }
+  const node = state.nodesById.get(nodeId) || state.diagram.nodes.find(
+      (candidate) => candidate.id === nodeId);
+  if (!node) {
+    return;
+  }
+  const mapped = mapNodeToG6({...node, showHandles: Boolean(visible)},
+      mapperOptions());
+  editor.graph.updateNodeData?.([mapped]);
+  rememberNodeData(mapped);
+  scheduleGraphDraw(editor.graph);
 }
 
 export function removeG6Node(nodeId) {
@@ -992,6 +1196,7 @@ export function removeG6Node(nodeId) {
   editor.nodeStateFlags.delete(nodeId);
   editor.connectStateIds.delete(nodeId);
   scheduleGraphRender(editor.graph);
+  updateG6NodeIcons();
 }
 
 export function addG6Edge(edge) {
@@ -1072,21 +1277,6 @@ export function updateG6Selection() {
   if (changedEdges.size) {
     refreshG6Edges([...changedEdges]);
   }
-  if (state.selectedNodeId && state.selectedNodeIds?.size === 1) {
-    const node = state.nodesById.get(state.selectedNodeId);
-    const isContainer = editor.mapperOptions?.isContainer?.(node);
-    const isBoundedContext = node?.type === "BoundedContextCandidate"
-        && state.activeType === "cim";
-    showNodeTools(editor.graph, node, {
-      isContainer,
-      isBoundedContext,
-      collapsed: Boolean(node?.meta?.__collapsed),
-      onOpen: editor.callbacks?.onOpenContainer,
-      onCollapseToggle: editor.callbacks?.onToggleContainerCollapsed
-    });
-  } else {
-    hideNodeTools();
-  }
 }
 
 export function updateG6ConnectionState() {
@@ -1147,6 +1337,7 @@ export function setG6HoverNode(nodeId) {
     if (setFlag(editor.nodeStateFlags, previous, "hover", false)) {
       changedNodes.add(previous);
     }
+    setG6NodeHandleVisibility(previous, false);
     const activeEdges = editor.adjacency?.byNode?.get(previous) || new Set();
     activeEdges.forEach((edgeId) => {
       if (setFlag(editor.edgeStateFlags, edgeId, "hover", false)) {
@@ -1158,6 +1349,7 @@ export function setG6HoverNode(nodeId) {
     if (setFlag(editor.nodeStateFlags, nodeId, "hover", true)) {
       changedNodes.add(nodeId);
     }
+    setG6NodeHandleVisibility(nodeId, true);
     const activeEdges = editor.adjacency?.byNode?.get(nodeId) || new Set();
     activeEdges.forEach((edgeId) => {
       if (setFlag(editor.edgeStateFlags, edgeId, "hover", true)) {
@@ -1452,6 +1644,15 @@ export function updateG6ContextBoxes(boxes = null) {
   });
 }
 
+export function updateG6NodeIcons() {
+  if (!editor?.graph) {
+    return;
+  }
+  renderNodeIcons(editor.graph, state.diagram.nodes, {
+    visibleNode: editor.mapperOptions?.visibleNode || (() => true)
+  });
+}
+
 export function onG6ViewportChanged() {
   syncViewportStateFromGraph();
   setCanvasZoomIndicator();
@@ -1462,6 +1663,7 @@ export function onG6ViewportChanged() {
       && state.viewport.scale < 0.75);
   el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
   updateG6Lod();
+  updateG6NodeIcons();
   updateG6ContextBoxes();
   updateG6Selection();
   editor.callbacks?.onViewportSynced?.();

@@ -16,7 +16,6 @@ import {
   isContainerElement,
   materializeActiveView
 } from './view-materializer.js';
-import {toggleContainerCollapsed} from './container-collapse.js';
 import {
   modelingElementDefinition,
   modelingPalette,
@@ -37,14 +36,6 @@ import {
 } from './attr-panel.js';
 import {fetchImpact} from './impact.js';
 import {
-  publishCursor,
-  publishDiagramUpdate,
-  publishNodeAdd,
-  publishNodeMove,
-  publishNodeRename,
-  renderRemoteCursors
-} from './collaboration.js';
-import {
   captureDiagramUndoSnapshot,
   captureNodePositionUndoSnapshot,
   pushDiagramUndoSnapshot
@@ -54,7 +45,6 @@ import {renderPimWorkbenchSurface} from './pim-workbench.js';
 import {renderPsmWorkbenchSurface} from './psm-workbench.js';
 import {
   addG6Edge,
-  addG6Node,
   beginG6InlineLabelEdit,
   fitG6CanvasToDiagram,
   focusG6CanvasPoint,
@@ -75,6 +65,7 @@ import {
   updateG6Edge,
   updateG6ImpactState,
   updateG6Node,
+  updateG6NodeIcons,
   updateG6Selection,
   updateG6Viewport,
   zoomG6CanvasBy
@@ -1653,6 +1644,38 @@ function collectContainedDescendantIds(elementId, into = new Set()) {
   return into;
 }
 
+function collectNeighborhoodElementIds(elementId, maxDepth = 1) {
+  const normalizedDepth = Math.max(1, Math.min(2, Number(maxDepth) || 1));
+  const visited = new Set([elementId]);
+  const queue = [{id: elementId, depth: 0}];
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || current.depth >= normalizedDepth) {
+      continue;
+    }
+    state.graph?.relationshipsById?.forEach((relationship) => {
+      const sourceId = relationship.sourceElementId || relationship.source;
+      const targetId = relationship.targetElementId || relationship.target;
+      if (!sourceId || !targetId) {
+        return;
+      }
+      let nextId = "";
+      if (sourceId === current.id) {
+        nextId = targetId;
+      } else if (targetId === current.id) {
+        nextId = sourceId;
+      }
+      if (!nextId || visited.has(nextId)
+          || !state.graph.elementsById.has(nextId)) {
+        return;
+      }
+      visited.add(nextId);
+      queue.push({id: nextId, depth: current.depth + 1});
+    });
+  }
+  return visited;
+}
+
 function viewNodesByElement(view) {
   return new Map(safeArray(view?.nodes).map((node) => [node.elementId, node]));
 }
@@ -1762,7 +1785,6 @@ function createContainerFocusView(node) {
         ...entry,
         x: Number(position.x) || 0,
         y: Number(position.y) || 0,
-        collapsed: false
       };
     }),
     edges: edges.map((edge) => ({
@@ -1772,8 +1794,77 @@ function createContainerFocusView(node) {
       visible: true,
       ...(edgePositions.get(edge.relationshipId) || {})
     })),
-    hidden: {elementIds: [], relationshipIds: []},
-    collapsedElementIds: []
+    hidden: {elementIds: [], relationshipIds: []}
+  };
+}
+
+function createNeighborhoodFocusView(node, depth = 1) {
+  const previousView = activeView();
+  const neighborhoodSet = collectNeighborhoodElementIds(node.id, depth);
+  const elementIds = [...neighborhoodSet];
+  const viewNodePositions = viewNodesByElement(previousView);
+  const edgePositions = viewEdgesByRelationship(previousView);
+  const edges = [];
+  state.graph.relationshipsById.forEach((relationship) => {
+    const sourceId = relationship.sourceElementId || relationship.source;
+    const targetId = relationship.targetElementId || relationship.target;
+    if (!neighborhoodSet.has(sourceId) || !neighborhoodSet.has(targetId)) {
+      return;
+    }
+    edges.push({
+      relationshipId: relationship.id,
+      sourceId,
+      targetId,
+      visible: true
+    });
+  });
+  const focusNodes = elementIds.map((elementId) => ({
+    elementId,
+    ...(viewNodePositions.get(elementId) || {})
+  }));
+  const fakeNodes = focusNodes.map((entry, index) => {
+    const element = state.graph.elementsById.get(entry.elementId) || {};
+    return {
+      id: entry.elementId,
+      x: Number.isFinite(Number(entry.x)) ? Number(entry.x)
+          : Number.isFinite(Number(element.x)) ? Number(element.x)
+              : 80 + (index % 4) * 250,
+      y: Number.isFinite(Number(entry.y)) ? Number(entry.y)
+          : Number.isFinite(Number(element.y)) ? Number(element.y)
+              : 80 + Math.floor(index / 4) * 170
+    };
+  });
+  ensureReadableLayout(fakeNodes, edges, getCurrentDiagramNodeSize());
+  const positionById = new Map(fakeNodes.map((entry) => [entry.id, entry]));
+  const normalizedDepth = Math.max(1, Math.min(2, Number(depth) || 1));
+  return {
+    id: focusViewIdFor(`${node.id}-n${normalizedDepth}`),
+    name: `${node.label || node.id} Neighborhood ${normalizedDepth}`,
+    level: String(state.activeType || "").toUpperCase(),
+    kind: "FOCUS",
+    scope: {
+      rootElementId: node.id,
+      scopeKind: "NEIGHBORHOOD",
+      depth: normalizedDepth
+    },
+    filters: {elementTypes: [], relationshipKinds: []},
+    layoutProfile: "FOCUS_NEIGHBORHOOD",
+    nodes: focusNodes.map((entry) => {
+      const position = positionById.get(entry.elementId) || entry;
+      return {
+        ...entry,
+        x: Number(position.x) || 0,
+        y: Number(position.y) || 0,
+      };
+    }),
+    edges: edges.map((edge) => ({
+      relationshipId: edge.relationshipId,
+      sourceId: edge.sourceId,
+      targetId: edge.targetId,
+      visible: true,
+      ...(edgePositions.get(edge.relationshipId) || {})
+    })),
+    hidden: {elementIds: [], relationshipIds: []}
   };
 }
 
@@ -1808,6 +1899,43 @@ export function openContainerFocus(elementId) {
   renderDiagram();
   notifyModelToolsChanged();
   setStatus(`Opened ${node.label || node.id}. Use Back to return.`);
+  return true;
+}
+
+export function openNeighborhoodFocus(elementId, depth = 1) {
+  const node = state.nodesById.get(elementId)
+      || state.diagram.nodes.find((candidate) => candidate.id === elementId);
+  if (!node) {
+    setStatus("Select an element before opening a neighborhood focus.");
+    return false;
+  }
+  const neighborhood = collectNeighborhoodElementIds(node.id, depth);
+  if (neighborhood.size <= 1) {
+    setStatus("This element has no connected neighbors in the current model.");
+    return false;
+  }
+  syncActiveViewFromVisibleGraph();
+  const previousViewId = state.views.activeViewId;
+  const normalizedDepth = Math.max(1, Math.min(2, Number(depth) || 1));
+  const focusView = createNeighborhoodFocusView(node, normalizedDepth);
+  state.views.byId.set(focusView.id, focusView);
+  state.views.activeViewId = focusView.id;
+  focusStack().push({
+    typeKey: state.activeType,
+    elementId: node.id,
+    elementType: node.type,
+    label: `${node.label || node.id} depth ${normalizedDepth}`,
+    previousViewId,
+    focusViewId: focusView.id
+  });
+  state.selectedNodeId = null;
+  state.selectedNodeIds = new Set();
+  state.selectedConnectionId = null;
+  materializeActiveView();
+  renderDiagram();
+  notifyModelToolsChanged();
+  setStatus(
+      `Opened ${node.label || node.id} neighborhood depth ${normalizedDepth}.`);
   return true;
 }
 
@@ -1941,7 +2069,6 @@ function ensureG6Canvas() {
       mapper: {
         visibleNode: nodeVisibleInCurrentCanvasMode,
         isContainer: isContainerElement,
-        isCollapsed: (node) => Boolean(node?.meta?.__collapsed),
         contextNameFromNode,
         viewProfile: activeCimViewProfile() || activePimViewProfile()
             || activeView()?.viewpoint || ""
@@ -1953,13 +2080,17 @@ function ensureG6Canvas() {
         onEdgeClick: (edgeId) => selectConnection(edgeId, {openPicker: true}),
         onEdgeHover: setHoveredEdge,
         onCanvasClick: handleG6CanvasClick,
-        onCanvasPointerMove: (clientX, clientY) =>
-            publishCursor(clientX, clientY, "ONLINE"),
+        onCanvasPointerDown: closeEdgeKindPicker,
+        onCanvasPointerMove: () => {
+        },
         onNodeDragStart: startG6NodeDrag,
         onNodeDrag: moveG6NodeDrag,
         onNodeDragEnd: endG6NodeDrag,
         onConnectionDragStart: startG6ConnectionDrag,
-        onConnectionDragEnd: () => updateG6ConnectionState(),
+        onConnectionDragEnd: () => {
+          state.linkDrag = null;
+          updateG6ConnectionState();
+        },
         onConnectionComplete: (sourceId, targetId) => addConnection(sourceId,
             targetId, {
               interactivePicker: true,
@@ -1975,9 +2106,9 @@ function ensureG6Canvas() {
         onContextSelect: selectBoundedContext,
         onContextOpen: openBoundedContextFocus,
         onOpenContainer: openG6ContainerTool,
-        onToggleContainerCollapsed: toggleContainerCollapsed,
         onViewportChange: onG6ViewportChanged,
-        onViewportSynced: renderRemoteCursors
+        onViewportSynced: () => {
+        }
       }
     });
     el.canvasGrid?.classList.add("g6-renderer-active");
@@ -2235,7 +2366,6 @@ export async function finalizeBoundedContextDraft() {
   setContextCreateMode(false);
   renderDiagram();
   markModelDirty();
-  publishDiagramUpdate();
   notifyModelToolsChanged();
   openBoundedContextPanel(contextName);
   setStatus(`Assigned ${updated} element${updated !== 1 ? "s"
@@ -2415,7 +2545,6 @@ export function removeElementFromBoundedContext(elementId, contextName) {
   }
   syncDiagramRenderer({workbench: true});
   markModelDirty();
-  publishDiagramUpdate();
   setStatus(`Removed ${node.label || node.id} from "${normalized}"`);
   return true;
 }
@@ -2490,7 +2619,6 @@ export function applyViewport() {
     viewportUpdateScheduled = true;
     window.requestAnimationFrame(() => {
       viewportUpdateScheduled = false;
-      renderRemoteCursors();
     });
   }
 }
@@ -2555,6 +2683,20 @@ export function centerViewportOnDiagram({fit = false} = {}) {
   }
   ensureG6Canvas();
   fitG6CanvasToDiagram(bounds, {fit});
+}
+
+export function restoreCanvasCamera(camera = null) {
+  if (!camera || typeof camera !== "object") {
+    return false;
+  }
+  const scale = Number(camera.scale);
+  state.viewport = {
+    x: Number(camera.x) || 0,
+    y: Number(camera.y) || 0,
+    scale: Number.isFinite(scale) && scale > 0 ? scale : 1
+  };
+  applyViewport();
+  return true;
 }
 
 function createMaskIcon(className, src, {ariaHidden = true} = {}) {
@@ -3238,7 +3380,6 @@ function createModelingWizard(kind) {
   syncG6FromState({full: false});
   workbenchSurfaces();
   markModelDirty();
-  publishDiagramUpdate({immediate: true});
   setStatus(`Created ${spec.label}`);
 }
 
@@ -3873,6 +4014,9 @@ function closeEdgeKindPicker() {
   state.edgeKindPicker.options = [];
   if (el.edgeKindPicker) {
     el.edgeKindPicker.classList.add("hidden");
+    el.edgeKindPicker.classList.remove("edge-kind-picker-below");
+    el.edgeKindPicker.style.removeProperty("left");
+    el.edgeKindPicker.style.removeProperty("top");
   }
 }
 
@@ -3938,7 +4082,6 @@ function updateEdgeKind(edgeId, nextKind) {
   updateG6Edge(edgeId);
   updateG6Selection();
   markModelDirty();
-  publishDiagramUpdate();
   setStatus(`Connection updated: ${kind}`);
 }
 
@@ -4010,9 +4153,24 @@ function openEdgeKindPicker(edgeId, options, canvasX, canvasY) {
       (option) => option.value === selectedValue);
   el.edgeKindSelect.value = selectedExists ? selectedValue : options[0].value;
   const pos = canvasToViewportPoint(canvasX, canvasY);
-  el.edgeKindPicker.style.left = `${Math.round(pos.x)}px`;
-  el.edgeKindPicker.style.top = `${Math.round(pos.y)}px`;
   el.edgeKindPicker.classList.remove("hidden");
+  const viewportRect = el.canvasViewport?.getBoundingClientRect?.();
+  const pickerRect = el.edgeKindPicker.getBoundingClientRect();
+  const margin = 12;
+  const width = pickerRect?.width || 220;
+  const height = pickerRect?.height || 64;
+  const viewportWidth = viewportRect?.width || window.innerWidth;
+  const viewportHeight = viewportRect?.height || window.innerHeight;
+  const x = Math.min(Math.max(pos.x, width / 2 + margin),
+      viewportWidth - width / 2 - margin);
+  const enoughSpaceAbove = pos.y - height - margin >= 0;
+  const y = enoughSpaceAbove
+      ? Math.max(pos.y - margin, height + margin)
+      : Math.min(pos.y + margin, viewportHeight - height - margin);
+  el.edgeKindPicker.classList.toggle("edge-kind-picker-below",
+      !enoughSpaceAbove);
+  el.edgeKindPicker.style.left = `${Math.round(x)}px`;
+  el.edgeKindPicker.style.top = `${Math.round(y)}px`;
   el.edgeKindSelect.focus();
 }
 
@@ -4034,7 +4192,7 @@ function openG6EdgeKindPicker(edgeId) {
   const nodeH = getNodeHeight();
   openEdgeKindPicker(edge.id, options,
       (source.x + nodeW / 2 + target.x + nodeW / 2) / 2,
-      (source.y + nodeH / 2 + target.y + nodeH / 2) / 2 - 18);
+      (source.y + nodeH / 2 + target.y + nodeH / 2) / 2);
 }
 
 export function renderEdges() {
@@ -4077,7 +4235,6 @@ export function renderDiagram() {
       activePimViewProfile() || "");
   el.workspace?.setAttribute("data-psm-view-profile",
       state.activeType === "psm" ? (activeView()?.viewpoint || "") : "");
-  renderRemoteCursors();
 }
 
 // Compatibility helper for non-canvas modules that changed semantic state.
@@ -4102,7 +4259,6 @@ export function syncDiagramRenderer({full = false, workbench = false} = {}) {
       state.activeType === "pim");
   el.workspace?.classList.toggle("psm-view-active",
       state.activeType === "psm");
-  renderRemoteCursors();
 }
 
 export function syncRendererSelection() {
@@ -4185,9 +4341,7 @@ function handleG6NodeDoubleClick(nodeId, event = {}) {
       updateG6Node(node.id);
       if (resolved !== startLabel) {
         commitUndoSnapshot(undoSnapshot);
-        publishNodeRename(node.id, resolved);
         markModelDirty();
-        publishDiagramUpdate({immediate: true});
       }
     }
   });
@@ -4235,6 +4389,7 @@ function moveG6NodeDrag(nodeId, position) {
   node.meta.y = node.y;
   state.dragNode = state.dragNode || {id: nodeId};
   state.dragNode.moved = true;
+  updateG6NodeIcons();
 }
 
 function endG6NodeDrag(nodeId, position, {moved = false} = {}) {
@@ -4253,11 +4408,11 @@ function endG6NodeDrag(nodeId, position, {moved = false} = {}) {
   syncNodeMetaToGraph(node);
   if (moved || state.dragNode?.moved) {
     commitUndoSnapshot(state.dragNode?.undoSnapshot);
-    publishNodeMove(node.id, node.x, node.y, {immediate: true});
     markModelDirty();
   }
   refreshG6Edges([...(edgeIdsByNodeId.get(node.id) || [])]);
   updateG6ContextBoxes();
+  updateG6Selection();
   state.dragNode = null;
 }
 
@@ -4392,7 +4547,6 @@ export function openBoundedContextOverview() {
   renderDiagram();
   if (createdContextNodes) {
     markModelDirty();
-    publishDiagramUpdate();
   }
   notifyModelToolsChanged();
   setStatus("Bounded context overview");
@@ -4419,33 +4573,24 @@ export function setupDnD() {
       return;
     }
     pushDiagramUndoSnapshot();
-    const previousNodeIds = new Set(state.diagram.nodes.map((item) =>
-        item.id));
-    const previousEdgeIds = new Set(state.diagram.connections.map((item) =>
-        item.id));
     const pos = toCanvasCoordinates(e.clientX, e.clientY);
     const node = getDefaultNode(state.activeType, type, Math.round(pos.x),
         Math.round(pos.y));
     state.diagram.nodes.push(node);
     addNodeToGraphAndActiveView(node);
     createRequiredCimCompanions(node);
+    materializeActiveView();
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].diagram = state.diagram;
     }
     syncCanvasIndexesFromState();
     ensureG6Canvas();
-    state.diagram.nodes.filter((item) => !previousNodeIds.has(item.id))
-    .forEach((item) => addG6Node(item));
-    state.diagram.connections.filter((item) => !previousEdgeIds.has(item.id))
-    .forEach((item) => addG6Edge(item));
-    updateG6Node(node.id);
+    renderG6Diagram();
     updateG6Selection();
     updateG6ContextBoxes();
     workbenchSurfaces();
     setStatus(`Added ${type}`);
     markModelDirty();
-    publishNodeAdd(node);
-    publishDiagramUpdate({immediate: true});
   });
 }
 
@@ -4511,7 +4656,6 @@ export function addConnection(sourceId, targetId,
   addG6Edge(edge);
   updateG6Selection();
   markModelDirty();
-  publishDiagramUpdate();
   if (interactivePicker) {
     const nodeW = getNodeWidth();
     const nodeH = getNodeHeight();
@@ -4521,7 +4665,7 @@ export function addConnection(sourceId, targetId,
     const ty = resolvedTarget.y + nodeH / 2;
     const options = buildDirectedKindOptions(source, target);
     if (options.length) {
-      openEdgeKindPicker(edge.id, options, (sx + tx) / 2, (sy + ty) / 2 - 18);
+      openEdgeKindPicker(edge.id, options, (sx + tx) / 2, (sy + ty) / 2);
     }
   }
   if (!forwardKinds.length && reverseKinds.length) {
@@ -4608,7 +4752,6 @@ function createShortcutConnection(source, target) {
   syncG6FromState({full: false});
   workbenchSurfaces();
   markModelDirty();
-  publishDiagramUpdate({immediate: true});
   setStatus(`Created ${rule.label || "PSM shortcut connector"}`);
   return true;
 }

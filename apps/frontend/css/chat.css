@@ -1,42 +1,38 @@
 .chat-toggle {
   position: absolute;
   right: 22px;
-  bottom: 20px;
+  bottom: 14px;
   z-index: 190;
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  box-sizing: border-box;
+  height: 38px;
   min-height: 38px;
   padding: 4px 8px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
-  background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-3) 86%, #000 14%),
-      color-mix(in srgb, var(--surface-2) 90%, #000 10%)
-  );
-  color: var(--text-strong);
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--glass-pane-bg) 94%, var(--surface-2) 6%);
+  box-shadow: var(--glass-pane-highlight), var(--shadow-sm);
+  backdrop-filter: var(--glass-pane-blur);
+  -webkit-backdrop-filter: var(--glass-pane-blur);
+  color: var(--text);
   font: 600 12px/1.2 var(--font-ui);
   cursor: pointer;
   transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background var(--transition);
 }
 
 .chat-toggle:hover {
-  border-color: color-mix(in srgb, var(--accent) 65%, transparent);
-  box-shadow: 0 14px 28px rgba(9, 14, 24, 0.3);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-3) 86%);
+  box-shadow: var(--glass-pane-highlight), var(--shadow-sm);
+  color: var(--text-strong);
 }
 
-.chat-toggle-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.chat-toggle-icon.icon-svg.icon-mask {
   width: 26px;
   height: 26px;
-  border-radius: 6px;
-  background: color-mix(in srgb, rgb(0 0 0 / 20%) 70%, #0d0808);
-  padding: 2px;
-  object-fit: contain;
+  color: inherit;
 }
 
 .chat-toggle-label {
@@ -450,7 +446,6 @@
 @media (max-width: 920px) {
   .chat-toggle {
     right: 12px;
-    bottom: 12px;
   }
 
   .workspace.artifact-mode .chat-toggle {
@@ -472,6 +467,12 @@
     border-right: none;
     border-bottom: none;
     border-left: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .chat-toggle {
+    bottom: 10px;
   }
 }
 

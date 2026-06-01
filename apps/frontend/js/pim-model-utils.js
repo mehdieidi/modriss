@@ -11,6 +11,12 @@ export const PIM_ROOT_CONTAINMENTS = Object.freeze([
     title: "Services"
   },
   {
+    feature: "serviceMemberships",
+    types: ["ServiceElementMembership"],
+    title: "Service Memberships",
+    relationshipOnly: true
+  },
+  {
     feature: "deploymentUnits",
     types: ["DeploymentUnit"],
     required: true,
@@ -28,7 +34,23 @@ export const PIM_ROOT_CONTAINMENTS = Object.freeze([
     singleton: true,
     title: "Implementation Profile"
   },
+  {
+    feature: "platformCapabilities",
+    types: ["PlatformCapability"],
+    title: "Platform Capabilities"
+  },
+  {
+    feature: "platformMappingAssessments",
+    types: ["PlatformMappingAssessment"],
+    title: "Platform Mapping Assessments"
+  },
   {feature: "schemas", types: ["Schema"], title: "Schemas"},
+  {feature: "businessRules", types: ["BusinessRule"], title: "Business Rules"},
+  {
+    feature: "decisionModels",
+    types: ["DecisionModel"],
+    title: "Decision Models"
+  },
   {
     feature: "functions",
     types: ["Function"],
@@ -59,6 +81,16 @@ export const PIM_ROOT_CONTAINMENTS = Object.freeze([
   },
   {feature: "workflows", types: ["Workflow"], title: "Workflows"},
   {
+    feature: "humanTasks",
+    types: ["HumanTask", "ApprovalTask"],
+    title: "Human Tasks"
+  },
+  {
+    feature: "externalEndpoints",
+    types: ["ExternalEndpoint"],
+    title: "External Endpoints"
+  },
+  {
     feature: "externalAdapters",
     types: ["ExternalAdapter"],
     title: "External Adapters"
@@ -73,6 +105,7 @@ export const PIM_ROOT_CONTAINMENTS = Object.freeze([
     feature: "policies",
     types: [
       "DataProtectionPolicy", "CompliancePolicy", "ResiliencePolicy",
+      "DataQualityPolicy",
       "TimeoutPolicy", "IdempotencyPolicy", "ConcurrencyPolicy",
       "RateLimitPolicy", "BatchPolicy", "OrderingPolicy", "CachePolicy",
       "BackupPolicy", "RetentionPolicy", "CostPolicy", "ObservabilityConfig",
@@ -139,6 +172,7 @@ export const PIM_ABSTRACT_TYPES = Object.freeze([
 ]);
 
 export const PIM_RELATIONSHIP_TYPES = Object.freeze([
+  "ServiceElementMembership",
   "Trigger",
   "DataAccess",
   "RequestResponseFlow",
@@ -151,6 +185,7 @@ export const PIM_RELATIONSHIP_TYPES = Object.freeze([
   "Permission",
   "Subscription",
   "EventRoutingRule",
+  "PlatformMappingAssessment",
   "TraceLink"
 ]);
 
@@ -165,7 +200,13 @@ export const PIM_NESTED_CONTAINMENTS = Object.freeze({
     {feature: "fields", types: ["SchemaField"]},
     {feature: "constraints", types: ["SchemaConstraint"]}
   ],
-  SchemaField: [{feature: "enumValues", types: ["SchemaEnumLiteral"]}],
+  SchemaField: [
+    {feature: "enumValues", types: ["SchemaEnumLiteral"]},
+    {feature: "constraints", types: ["SchemaValidationConstraint"]},
+    {feature: "cardinality", types: ["Cardinality"], singleton: true},
+    {feature: "arrayItem", types: ["SchemaField"], singleton: true},
+    {feature: "mapValue", types: ["SchemaField"], singleton: true}
+  ],
   EventType: [{feature: "envelope", types: ["EventEnvelope"], singleton: true}],
   Api: [
     {feature: "routes", types: ["ApiRoute"]},
@@ -175,9 +216,13 @@ export const PIM_NESTED_CONTAINMENTS = Object.freeze({
   DataStore: [
     {feature: "ownedDataModels", types: ["DataModel"]},
     {feature: "accessPatterns", types: ["AccessPattern"]},
-    {feature: "indexCandidates", types: ["IndexCandidate"]}
+    {feature: "indexCandidates", types: ["IndexCandidate"]},
+    {feature: "changeStream", types: ["DataChangeStream"], singleton: true}
   ],
   DataModel: [{feature: "storageFields", types: ["DataField"]}],
+  ObjectStore: [
+    {feature: "notificationRules", types: ["ObjectNotificationRule"]}
+  ],
   Topic: [{
     feature: "subscriptions",
     types: ["Subscription"],
@@ -197,10 +242,38 @@ export const PIM_NESTED_CONTAINMENTS = Object.freeze({
     }
   ],
   WorkflowState: [
+    {feature: "condition", types: ["Expression"], singleton: true},
+    {feature: "humanTask", types: ["HumanTask"], singleton: true},
+    {feature: "branches", types: ["ParallelBranch"]},
+    {feature: "mapConfig", types: ["MapStateConfig"], singleton: true},
+    {feature: "callbackConfig", types: ["CallbackTaskConfig"], singleton: true},
     {feature: "retry", types: ["RetryPolicy"], singleton: true},
     {feature: "catchHandlers", types: ["ErrorHandler"]},
     {feature: "compensation", types: ["CompensationPolicy"], singleton: true}
   ],
+  ParallelBranch: [
+    {feature: "states", types: ["WorkflowState"]},
+    {
+      feature: "transitions",
+      types: ["WorkflowTransition"],
+      relationshipOnly: true
+    }
+  ],
+  BusinessRule: [{
+    feature: "expression",
+    types: ["Expression"],
+    singleton: true
+  }],
+  DecisionModel: [{feature: "rules", types: ["DecisionRule"]}],
+  DecisionRule: [
+    {feature: "condition", types: ["Expression"], singleton: true},
+    {feature: "outcome", types: ["Expression"], singleton: true}
+  ],
+  HumanTask: [{
+    feature: "escalation",
+    types: ["EscalationPolicy"],
+    singleton: true
+  }],
   Principal: [{
     feature: "permissions",
     types: ["Permission"],
@@ -240,6 +313,12 @@ const PIM_REQUIRED_FEATURES = Object.freeze({
   ModelElement: ["id", "name"],
   PIMModel: ["architectureStyle", "services", "deploymentUnits", "environments",
     "functions"],
+  ServiceElementMembership: ["service", "element", "ownershipKind"],
+  PlatformCapability: ["platform", "providerService", "supportLevel"],
+  PlatformMappingAssessment: ["source", "supportLevel"],
+  BusinessRule: ["naturalLanguageRule"],
+  DecisionModel: ["hitPolicy", "rules"],
+  DecisionRule: ["condition", "outcome"],
   Function: ["functionKind", "contract"],
   Trigger: ["invocationMode", "source"],
   Api: ["apiStyle", "routes"],
@@ -250,6 +329,8 @@ const PIM_REQUIRED_FEATURES = Object.freeze({
   EventType: ["semanticName", "schema"],
   DataStore: ["storeKind", "consistencyNeed", "ownedDataModels",
     "accessPatterns"],
+  DataChangeStream: ["enabled"],
+  ObjectNotificationRule: ["eventTypes", "targets"],
   DataModel: ["dataModelKind", "schema"],
   DataField: ["fieldType"],
   DataAccess: ["mode", "function", "store"],
@@ -267,6 +348,13 @@ const PIM_REQUIRED_FEATURES = Object.freeze({
   Workflow: ["workflowKind", "states", "startState", "endStates"],
   WorkflowState: ["stateKind"],
   WorkflowTransition: ["source", "target"],
+  ParallelBranch: ["states", "startState", "endStates"],
+  MapStateConfig: ["itemsPath"],
+  CallbackTaskConfig: ["taskTokenPath"],
+  HumanTask: ["taskDescription", "assignees"],
+  ApprovalTask: ["taskDescription"],
+  EscalationPolicy: ["escalationRule", "afterSeconds"],
+  ExternalEndpoint: ["externalSystemName", "protocolFamily"],
   IdentityProvider: ["identityKind"],
   Principal: ["principalKind"],
   Permission: ["effect", "targetResource"],
@@ -280,6 +368,7 @@ const PIM_REQUIRED_FEATURES = Object.freeze({
   ReadinessCheck: ["checkId", "severity"],
   ManualDecision: ["question"],
   StructuredDocument: ["format"],
+  Expression: ["language", "body"],
   Annotation: ["key"]
 });
 
@@ -423,8 +512,7 @@ function stripRuntimeFields(element) {
   const copy = clone(element) || {};
   const type = pimTypeOf(copy);
   [
-    "x", "y", "label", "status", "tags", "__collapsed",
-    "__collapsedSummary", "visualOnly", "bundle", "countsByKind",
+    "x", "y", "label", "status", "tags", "visualOnly", "bundle", "countsByKind",
     "underlyingRelationshipIds", "sourceType", "targetType",
     "semanticFeature", "semanticSourceElementId", "semanticTargetElementId",
     "semanticDirection", "rootFeature", "kind"

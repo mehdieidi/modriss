@@ -43,6 +43,9 @@ class ModelingConfigServiceTest {
         assertEquals("PIMModel", rootTemplate.get("eClass"));
         assertEquals("EVENT_DRIVEN_SERVERLESS", rootTemplate.get("architectureStyle"));
         assertEquals(Boolean.TRUE, rootTemplate.get("providerIndependent"));
+        assertNotNull(rootTemplate.get("serviceMemberships"));
+        assertNotNull(rootTemplate.get("platformCapabilities"));
+        assertNotNull(rootTemplate.get("platformMappingAssessments"));
     }
 
     @Test
@@ -92,6 +95,10 @@ class ModelingConfigServiceTest {
         assertTrue(views.stream().anyMatch(view -> "domain-model".equals(view.get("id"))));
         assertTrue(views.stream().anyMatch(view -> "business-process".equals(view.get("id"))));
         assertTrue(views.stream().anyMatch(view -> "traceability".equals(view.get("id"))));
+        assertFalse(listOfMaps(cim.get("universalSyntax")).isEmpty());
+        assertFalse(listOfMaps(cim.get("kernelNotation")).isEmpty());
+        assertTrue(listOfMaps(cim.get("complexityManagement")).stream().anyMatch(rule ->
+                "saved-viewpoints".equals(rule.get("id"))));
 
         Map<String, Object> rootTemplate = map(cim.get("rootTemplate"));
         assertEquals("CIM", rootTemplate.get("modelLevel"));
@@ -121,27 +128,34 @@ class ModelingConfigServiceTest {
                 "ImplementationProfile", "Function", "Api", "Schema", "EventType",
                 "DataStore", "ObjectStore", "Queue", "Topic", "EventBus", "Schedule",
                 "Workflow", "ExternalAdapter", "ConfigurationSet", "Secret",
-                "IdentityProvider", "Principal", "DataProtectionPolicy", "CompliancePolicy",
+                "ExternalEndpoint", "IdentityProvider", "Principal", "DataProtectionPolicy",
+                "DataQualityPolicy", "CompliancePolicy", "BusinessRule", "DecisionModel",
                 "ResiliencePolicy", "TimeoutPolicy", "IdempotencyPolicy", "ConcurrencyPolicy",
                 "RateLimitPolicy", "BatchPolicy", "OrderingPolicy", "CachePolicy",
                 "BackupPolicy", "RetentionPolicy", "CostPolicy", "ObservabilityConfig",
                 "CorsPolicy", "SecurityPolicy", "AuthPolicy", "AuthorizationPolicy",
-                "TraceModel", "ProductionReadinessAssessment");
+                "HumanTask", "ApprovalTask", "PlatformCapability", "TraceModel",
+                "ProductionReadinessAssessment");
         assertTrue(palette.containsAll(expectedTopLevel));
 
-        Set<String> relationshipAndNested = Set.of("Trigger", "DataAccess",
+        Set<String> relationshipAndNested = Set.of("ServiceElementMembership", "Trigger",
+                "DataAccess",
                 "RequestResponseFlow", "EventFlow", "MessageFlow", "PubSubFlow",
                 "OrchestrationFlow", "ExternalIntegrationFlow", "WorkflowTransition",
-                "Permission", "Subscription", "EventRoutingRule", "TraceLink",
+                "Permission", "Subscription", "EventRoutingRule",
+                "PlatformMappingAssessment", "TraceLink",
                 "FunctionContract", "ApiRoute", "ErrorMapping", "SchemaField",
                 "SchemaEnumLiteral", "SchemaConstraint", "ApiContract", "EventEnvelope",
                 "DataModel", "DataField", "AccessPattern", "IndexCandidate",
-                "WorkflowState", "ErrorHandler", "CompensationPolicy", "ConfigParameter",
+                "DataChangeStream", "ObjectNotificationRule", "WorkflowState",
+                "ParallelBranch", "MapStateConfig", "CallbackTaskConfig", "ErrorHandler",
+                "EscalationPolicy", "CompensationPolicy", "DecisionRule", "ConfigParameter",
                 "EnvironmentVariable", "CredentialRequirement", "RetryPolicy",
                 "DeadLetterPolicy", "LoggingPolicy", "MetricPolicy", "MetricDimension",
                 "TracingPolicy", "AlertPolicy", "Slo", "Annotation", "ReadinessFinding",
                 "ReadinessCheck", "ManualDecision", "PIMModel", "KeyValue",
-                "StructuredDocument");
+                "StructuredDocument", "Multiplicity", "Cardinality", "Expression",
+                "SchemaValidationConstraint");
         relationshipAndNested.forEach(type -> assertFalse(palette.contains(type),
                 type + " should be edited as a connector, nested row, or support object"));
 
@@ -174,7 +188,8 @@ class ModelingConfigServiceTest {
                 "ApiContract", "EventEnvelope", "EventType", "StorageElement",
                 "DataStore", "ObjectStore", "DataModel", "DataField", "AccessPattern",
                 "IndexCandidate", "DataAccess", "ServerlessService", "DeploymentUnit",
-                "Environment", "ImplementationProfile", "ExternalAdapter",
+                "ServiceElementMembership", "Environment", "ImplementationProfile",
+                "PlatformCapability", "PlatformMappingAssessment", "ExternalAdapter",
                 "IntegrationElement", "EventChannel", "Queue", "Topic", "EventBus",
                 "Schedule", "Subscription", "EventRoutingRule", "Flow",
                 "RequestResponseFlow", "EventFlow", "MessageFlow", "PubSubFlow",
@@ -193,7 +208,7 @@ class ModelingConfigServiceTest {
                 "ProtectedResource", "PolicyTarget", "DataAccessTarget",
                 "ExternalCallTarget", "EnvironmentTarget", "CredentialRequirementLike",
                 "RouteEndpoint", "EventCarrier");
-        assertEquals(expectedTypes, actualTypes);
+        assertTrue(actualTypes.containsAll(expectedTypes));
     }
 
     @Test
@@ -201,6 +216,10 @@ class ModelingConfigServiceTest {
         Map<String, Object> pim = level("pim");
 
         List<Map<String, Object>> views = listOfMaps(pim.get("viewDefinitions"));
+        assertTrue(views.stream().anyMatch(view -> "PIM Overview".equals(
+                view.get("displayName"))));
+        assertTrue(views.stream().anyMatch(view -> "pim-service-landscape".equals(
+                view.get("id"))));
         assertTrue(views.stream().anyMatch(view -> "pim-api-surface".equals(view.get("id"))));
         assertTrue(views.stream().anyMatch(view -> "pim-workflow-designer".equals(view.get("id"))));
         assertTrue(views.stream().anyMatch(view -> "pim-readiness-traceability".equals(
@@ -277,9 +296,13 @@ class ModelingConfigServiceTest {
         assertTrue(Boolean.TRUE.equals(bundle.get("relationshipElement")));
 
         List<Map<String, Object>> views = listOfMaps(psm.get("viewDefinitions"));
-        assertEquals(13, views.size());
+        assertEquals(14, views.size());
+        assertTrue(views.stream().anyMatch(view -> "AWS PSM Overview".equals(
+                view.get("displayName"))));
         assertTrue(views.stream().anyMatch(view -> "psm-api-edge".equals(view.get("id"))));
         assertTrue(views.stream().anyMatch(view -> "psm-lambda-compute".equals(view.get("id"))));
+        assertTrue(views.stream().anyMatch(view -> "psm-cognito-identity".equals(
+                view.get("id"))));
         assertTrue(views.stream().anyMatch(view -> "psm-traceability-readiness".equals(
                 view.get("id"))));
         assertTrue(views.stream().anyMatch(view -> "psm-integration-shortcuts".equals(

@@ -14,7 +14,6 @@ import {
 } from './canvas.js';
 import {markModelDirty} from './model-save-ui.js';
 import {isMobileViewport} from './responsive.js';
-import {publishDiagramUpdate} from './collaboration.js';
 import {
   getDefaultNode,
   relationshipIdsFromModel,
@@ -1492,7 +1491,6 @@ function addContainedChildFromDrawer(parentId, feature, childType) {
   addReferenceValue(parentElement, feature, child.id, true);
   parentNode.meta[feature] = parentElement[feature];
   markModelDirty();
-  publishDiagramUpdate({immediate: true});
   syncDiagramRenderer({workbench: true});
   openAttributePanel(parentId);
   setStatus(`Added ${childType}`);
@@ -1758,7 +1756,6 @@ export function applyAttributePanel() {
     state.selectedBoundedContextName = nextName;
     el.attrPanelTitle.textContent = nextName;
     markModelDirty();
-    publishDiagramUpdate();
     setStatus(`Renamed bounded context to "${nextName}"`);
     return;
   }
@@ -1828,7 +1825,6 @@ export function applyAttributePanel() {
 
   el.attrPanelTitle.textContent = node.label;
   markModelDirty();
-  publishDiagramUpdate();
   setStatus(`Attributes updated for ${node.id}`);
 }
 
@@ -1881,7 +1877,6 @@ function applyConnectionPanel() {
   }
   syncDiagramRenderer({workbench: true});
   markModelDirty();
-  publishDiagramUpdate();
   setStatus(`Connection updated: ${edge.kind}`);
 }
 
@@ -1976,7 +1971,6 @@ export async function deleteSelection() {
     }
     closeAttributePanel();
     markModelDirty();
-    publishDiagramUpdate();
     setStatus(`Deleted bounded context "${contextName}"`);
     return;
   }
@@ -2013,7 +2007,6 @@ export async function deleteSelection() {
   closeAttributePanel();
   syncDiagramRenderer({workbench: true});
   markModelDirty();
-  publishDiagramUpdate();
   setStatus(`Deleted ${node.type}: ${nodeId}`);
 }
 
@@ -2064,6 +2057,5 @@ export async function deleteSelectedConnection() {
   closeAttributePanel();
   syncDiagramRenderer({workbench: true});
   markModelDirty();
-  publishDiagramUpdate();
   setStatus(`Deleted connection: ${connection.kind}`);
 }

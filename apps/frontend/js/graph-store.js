@@ -1144,8 +1144,7 @@ function layoutNodesForElements(
       x,
       y,
       width: existing?.width,
-      height: existing?.height,
-      collapsed: Boolean(existing?.collapsed)
+      height: existing?.height
     };
   });
   const fakeNodes = nodes.map((node) => ({
@@ -1230,8 +1229,7 @@ function buildViewFromDefinition(typeKey, graph, definition,
     defaultDepth: definition.defaultDepth ?? 1,
     nodes: [],
     edges: [],
-    hidden: {elementIds: [], relationshipIds: []},
-    collapsedElementIds: []
+    hidden: {elementIds: [], relationshipIds: []}
   };
   const elementIds = selectElementIdsForView(graph, view, typeKey);
   const relationshipIds = selectRelationshipIdsForView(graph, view, elementIds);
@@ -1263,8 +1261,7 @@ function defaultMainView(typeKey, graph, modelName) {
       relationshipId,
       visible: true
     })),
-    hidden: {elementIds: [], relationshipIds: []},
-    collapsedElementIds: []
+    hidden: {elementIds: [], relationshipIds: []}
   };
 }
 
@@ -1305,6 +1302,16 @@ function normalizeView(view, graph, typeKey, modelName) {
     definitionId: String(view?.definitionId || view?.sourceDefinitionId || ""),
     viewpoint: String(view?.viewpoint || ""),
     description: String(view?.description || ""),
+    sourceViewId: String(view?.sourceViewId || ""),
+    savedAt: String(view?.savedAt || ""),
+    camera: view?.camera && typeof view.camera === "object"
+        ? {
+          x: Number(view.camera.x) || 0,
+          y: Number(view.camera.y) || 0,
+          scale: Number.isFinite(Number(view.camera.scale))
+              ? Number(view.camera.scale) : 1
+        }
+        : null,
     palette: safeArray(view?.palette).map(String),
     edgeLayers: safeArray(view?.edgeLayers).map(String),
     layoutProfile: String(view?.layoutProfile || "DEFAULT_LAYERED"),
@@ -1316,8 +1323,7 @@ function normalizeView(view, graph, typeKey, modelName) {
       width: Number.isFinite(Number(node?.width)) ? Number(node.width)
           : undefined,
       height: Number.isFinite(Number(node?.height)) ? Number(node.height)
-          : undefined,
-      collapsed: Boolean(node?.collapsed)
+          : undefined
     })).filter((node) => graph.elementsById.has(node.elementId)),
     edges: safeArray(view?.edges).map((edge) => ({
       ...clone(edge),
@@ -1326,8 +1332,7 @@ function normalizeView(view, graph, typeKey, modelName) {
     hidden: {
       elementIds: safeArray(view?.hidden?.elementIds).map(String),
       relationshipIds: safeArray(view?.hidden?.relationshipIds).map(String)
-    },
-    collapsedElementIds: safeArray(view?.collapsedElementIds).map(String)
+    }
   };
   if (!normalized.filters || typeof normalized.filters !== "object") {
     normalized.filters = {};
@@ -1478,8 +1483,7 @@ function installViews(views, activeViewId, typeKey = state.activeType,
     activeViewId: resolvedActive,
     visibleNodeIds: new Set(),
     visibleRelationshipIds: new Set(),
-    expandedContainers: new Set(),
-    collapsedContainers: new Set()
+    expandedContainers: new Set()
   };
 }
 
@@ -1680,8 +1684,6 @@ export function syncActiveViewFromVisibleGraph() {
     element.name = node.label || element.name;
     element.label = node.label || element.label;
     const meta = clone(node.meta || {});
-    delete meta.__collapsed;
-    delete meta.__collapsedSummary;
     Object.assign(element, meta, {
       id: node.id,
       eClass: node.type || element.eClass,
@@ -1694,7 +1696,6 @@ export function syncActiveViewFromVisibleGraph() {
     const viewNode = viewNodesById.get(node.id) || {elementId: node.id};
     viewNode.x = node.x;
     viewNode.y = node.y;
-    viewNode.collapsed = Boolean(node.meta?.__collapsed);
     viewNodesById.set(node.id, viewNode);
   });
   view.nodes = [...viewNodesById.values()].filter(
@@ -1738,7 +1739,6 @@ export function syncActiveViewFromVisibleGraph() {
   });
   view.edges = [...viewEdgesById.values()].filter(
       (edge) => state.graph.relationshipsById.has(edge.relationshipId));
-  view.collapsedElementIds = safeArray(view.collapsedElementIds);
   rebuildGraphIndexes(state.graph);
 }
 
@@ -1789,8 +1789,6 @@ function psmMatches(type, expected) {
 
 function psmCloneElement(element) {
   const copyElement = clone(element);
-  delete copyElement.__collapsed;
-  delete copyElement.__collapsedSummary;
   return copyElement;
 }
 
@@ -1890,8 +1888,6 @@ export function removeElementFromGraph(elementId) {
     view.hidden.relationshipIds = safeArray(
         view.hidden.relationshipIds).filter(
         (item) => !relationshipIds.includes(item));
-    view.collapsedElementIds = safeArray(view.collapsedElementIds).filter(
-        (item) => item !== id);
   });
   rebuildGraphIndexes(state.graph);
 }

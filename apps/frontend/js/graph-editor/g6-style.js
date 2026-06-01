@@ -2,8 +2,8 @@ import {state} from '../state.js';
 
 export const MODLESS_NODE_TYPE = "modless-node";
 export const MODLESS_EDGE_TYPE = "modless-edge";
-export const G6_BASE_NODE_TYPE = "rect";
-export const G6_BASE_EDGE_TYPE = "polyline";
+export const G6_BASE_NODE_TYPE = MODLESS_NODE_TYPE;
+export const G6_BASE_EDGE_TYPE = MODLESS_EDGE_TYPE;
 export const NODE_SIZE = {
   default: {width: 228, height: 112},
   cim: {width: 176, height: 96}

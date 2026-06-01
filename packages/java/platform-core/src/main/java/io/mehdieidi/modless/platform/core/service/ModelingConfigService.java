@@ -147,6 +147,8 @@ public final class ModelingConfigService {
                     List.of("architectureStyle", "domainName", "providerIndependent")),
             visual("ServerlessService", "Architecture Overview", "box", "#0F766E", "service",
                     List.of("boundaryType", "responsibility", "ownerTeam")),
+            visual("ServiceElementMembership", "Architecture Overview", "link", "#0F766E",
+                    "membership", List.of("service", "element", "ownershipKind")),
             visual("DeploymentUnit", "Deployment and Environment", "package", "#0F766E",
                     "deployment unit", List.of("unitType", "independentlyDeployable",
                             "targetEnvironments")),
@@ -156,6 +158,12 @@ public final class ModelingConfigService {
             visual("ImplementationProfile", "Deployment and Environment", "settings",
                     "#64748B", "implementation",
                     List.of("primaryLanguage", "packageManager", "sourceLayout")),
+            visual("PlatformCapability", "Deployment and Environment", "cloud-cog",
+                    "#64748B", "capability",
+                    List.of("platform", "providerService", "supportLevel")),
+            visual("PlatformMappingAssessment", "Deployment and Environment",
+                    "clipboard-check", "#64748B", "mapping",
+                    List.of("source", "supportLevel", "suggestedProviderService")),
             visual("Function", "Compute and Triggers", "braces", "#2563EB", "function",
                     List.of("functionKind", "handlerResponsibility", "executionModel")),
             visual("FunctionContract", "Contracts and Events", "file-text", "#2563EB",
@@ -174,6 +182,9 @@ public final class ModelingConfigService {
                     List.of("fieldType", "required", "classification")),
             visual("SchemaEnumLiteral", "Contracts and Events", "list-checks", "#0891B2",
                     "enum", List.of("literal", "displayName", "deprecationReason")),
+            visual("SchemaValidationConstraint", "Contracts and Events", "badge-alert",
+                    "#0891B2", "schema validation",
+                    List.of("keyword", "value", "severity")),
             visual("SchemaConstraint", "Contracts and Events", "badge-alert", "#0891B2",
                     "constraint", List.of("expressionLanguage", "severity", "message")),
             visual("ApiContract", "Contracts and Events", "file-text", "#7C3AED",
@@ -184,8 +195,13 @@ public final class ModelingConfigService {
                     List.of("semanticName", "version", "schema")),
             visual("DataStore", "Data Design", "database", "#0891B2", "data store",
                     List.of("storeKind", "consistencyNeed", "expectedAccessRate")),
+            visual("DataChangeStream", "Data Design", "git-branch", "#0891B2",
+                    "change stream",
+                    List.of("enabled", "orderingRequirement", "deliverySemantics")),
             visual("ObjectStore", "Data Design", "folder-archive", "#0891B2", "object store",
                     List.of("objectTypes", "versioningRequired", "eventNotificationRequired")),
+            visual("ObjectNotificationRule", "Data Design", "bell-ring", "#0891B2",
+                    "notification", List.of("eventTypes", "filterPrefix", "targets")),
             visual("DataModel", "Data Design", "table", "#0891B2", "data model",
                     List.of("dataModelKind", "schema", "sourceOfTruth")),
             visual("DataField", "Data Design", "columns", "#0891B2", "data field",
@@ -226,6 +242,18 @@ public final class ModelingConfigService {
                     List.of("stateKind", "orderIndex", "terminal")),
             visual("WorkflowTransition", "Workflow", "arrow-right", "#EA580C", "transition",
                     List.of("conditionExpression", "defaultTransition")),
+            visual("ParallelBranch", "Workflow", "split", "#EA580C", "parallel branch",
+                    List.of("startState", "endStates")),
+            visual("MapStateConfig", "Workflow", "list-tree", "#EA580C", "map config",
+                    List.of("itemsPath", "maxConcurrency", "distributed")),
+            visual("CallbackTaskConfig", "Workflow", "message-square-reply", "#EA580C",
+                    "callback", List.of("taskTokenPath", "callbackRoute")),
+            visual("EscalationPolicy", "Workflow", "bell-plus", "#DC2626", "escalation",
+                    List.of("escalationRule", "afterSeconds", "escalateTo")),
+            visual("HumanTask", "Workflow", "user-check", "#DB2777", "human task",
+                    List.of("taskDescription", "assignees", "completionEvidence")),
+            visual("ApprovalTask", "Workflow", "clipboard-check", "#DB2777", "approval",
+                    List.of("explicitApprovalRequired", "approvalOutcomeField")),
             visual("ErrorHandler", "Workflow", "octagon-alert", "#DC2626", "catch",
                     List.of("errorSelector", "recoveryAction", "nextState")),
             visual("CompensationPolicy", "Workflow", "rotate-ccw", "#EA580C", "compensation",
@@ -233,6 +261,9 @@ public final class ModelingConfigService {
             visual("ExternalAdapter", "External Integration", "server", "#64748B",
                     "external adapter", List.of("externalSystemName", "protocolFamily",
                             "endpointDescription")),
+            visual("ExternalEndpoint", "External Integration", "plug-zap", "#64748B",
+                    "external endpoint",
+                    List.of("externalSystemName", "protocolFamily", "privateNetworkRequired")),
             visual("ConfigurationSet", "Configuration and Secrets", "settings", "#CA8A04",
                     "configuration", List.of("scope", "parameters", "environmentVariables")),
             visual("ConfigParameter", "Configuration and Secrets", "sliders-horizontal",
@@ -251,6 +282,15 @@ public final class ModelingConfigService {
                     "permission", List.of("effect", "action", "targetResource")),
             visual("ArchitecturePolicy", "Policies and Operations", "gavel", "#64748B",
                     "policy", List.of("policyScope", "productionRequired", "attachedTo")),
+            visual("DataQualityPolicy", "Policies and Operations", "badge-check",
+                    "#16A34A", "quality policy",
+                    List.of("validationRequired", "qualityDimensions", "measurementRule")),
+            visual("BusinessRule", "Policies and Operations", "scroll-text", "#7C3AED",
+                    "business rule", List.of("naturalLanguageRule", "enforcedBy")),
+            visual("DecisionModel", "Policies and Operations", "table-properties",
+                    "#CA8A04", "decision model", List.of("hitPolicy", "inputs", "outputs")),
+            visual("DecisionRule", "Policies and Operations", "list-checks", "#CA8A04",
+                    "decision rule", List.of("condition", "outcome")),
             visual("SecurityPolicy", "Security and Access", "shield", "#DC2626",
                     "security policy", List.of("authenticationRequired", "authorizationRequired")),
             visual("AuthPolicy", "Security and Access", "lock", "#DC2626", "auth policy",
@@ -512,27 +552,32 @@ public final class ModelingConfigService {
             "CIMModel", "DiagramModel", "DiagramView", "DiagramNode", "DiagramEdge",
             "KeyValue", "StructuredDocument");
     private static final Set<String> ABSTRACT_PIM_TYPES = Set.of("ModelElement",
-            "TraceableElement", "SemanticRelationship", "TransformationAssumption",
-            "ComputeElement", "StorageElement", "IntegrationElement", "EventChannel", "Flow",
-            "ArchitecturePolicy", "DeployableElement", "InvocationSource", "InvocationTarget",
-            "FunctionTarget", "WorkflowTarget", "SubscriptionTarget", "RoutingTarget",
-            "FlowEndpoint", "ProtectedResource", "PolicyTarget", "DataAccessTarget",
-            "ExternalCallTarget", "EnvironmentTarget", "CredentialRequirementLike",
-            "RouteEndpoint", "EventCarrier");
-    private static final Set<String> RELATIONSHIP_ONLY_PIM_TYPES = Set.of("Trigger",
-            "DataAccess", "RequestResponseFlow", "EventFlow", "MessageFlow", "PubSubFlow",
-            "OrchestrationFlow", "ExternalIntegrationFlow", "WorkflowTransition", "Permission",
-            "Subscription", "EventRoutingRule", "TraceLink");
+            "NamedModelElement", "TraceableElement", "SemanticRelationship",
+            "TransformationAssumption", "ConfigurableElement", "ComputeElement",
+            "StorageElement", "IntegrationElement", "EventChannel", "Flow",
+            "ArchitecturePolicy", "PolicySetting", "DeployableElement", "InvocationSource",
+            "InvocationTarget", "FunctionTarget", "WorkflowTarget", "SubscriptionTarget",
+            "RoutingTarget", "FlowEndpoint", "ProtectedResource", "PolicyTarget",
+            "DataAccessTarget", "ExternalCallTarget", "EnvironmentTarget",
+            "CredentialRequirementLike", "RouteEndpoint", "EventCarrier");
+    private static final Set<String> RELATIONSHIP_ONLY_PIM_TYPES = Set.of(
+            "ServiceElementMembership", "Trigger", "DataAccess", "RequestResponseFlow",
+            "EventFlow", "MessageFlow", "PubSubFlow", "OrchestrationFlow",
+            "ExternalIntegrationFlow", "WorkflowTransition", "Permission", "Subscription",
+            "EventRoutingRule", "PlatformMappingAssessment", "TraceLink");
     private static final Set<String> CONTAINED_ONLY_PIM_TYPES = Set.of("FunctionContract",
-            "ApiRoute", "ErrorMapping", "SchemaField", "SchemaEnumLiteral", "SchemaConstraint",
-            "ApiContract", "EventEnvelope", "DataModel", "DataField", "AccessPattern",
-            "IndexCandidate", "WorkflowState", "ErrorHandler", "CompensationPolicy",
+            "ApiRoute", "ErrorMapping", "SchemaField", "SchemaEnumLiteral",
+            "SchemaValidationConstraint", "SchemaConstraint", "ApiContract", "EventEnvelope",
+            "DataChangeStream", "ObjectNotificationRule", "DataModel", "DataField",
+            "AccessPattern", "IndexCandidate", "WorkflowState", "ParallelBranch",
+            "MapStateConfig", "CallbackTaskConfig", "ErrorHandler", "EscalationPolicy",
+            "CompensationPolicy", "DecisionRule",
             "ConfigParameter", "EnvironmentVariable", "CredentialRequirement", "RetryPolicy",
             "DeadLetterPolicy", "LoggingPolicy", "MetricPolicy", "MetricDimension",
             "TracingPolicy", "AlertPolicy", "Slo", "Annotation", "ReadinessFinding",
             "ReadinessCheck", "ManualDecision");
     private static final Set<String> NON_CREATABLE_PIM_TYPES = Set.of("PIMModel", "KeyValue",
-            "StructuredDocument");
+            "StructuredDocument", "Multiplicity", "Cardinality", "Expression");
     private static final Set<String> PSM_ROOT_CREATABLE_TYPES = Set.of("AwsPsmModel",
             "AwsStage", "SamStack");
     private static final Set<String> PSM_SUPPORT_TYPES = Set.of("KeyValue", "StructuredDocument",
@@ -547,7 +592,7 @@ public final class ModelingConfigService {
 
     public Map<String, Object> config() {
         return Map.of(
-                "version", 1,
+                "version", 2,
                 "dynamicPersistenceEnabled", true,
                 "levels", Map.of(
                         "cim", level("cim"),
@@ -592,10 +637,82 @@ public final class ModelingConfigService {
                 Map.entry("shortcutConnectorRules",
                         metadata.getOrDefault("shortcutConnectorRules", List.of())),
                 Map.entry("viewDefinitions", metadata.getOrDefault("viewDefinitions", List.of())),
+                Map.entry("universalSyntax", universalSyntax()),
+                Map.entry("kernelSyntax", kernelSyntax()),
+                Map.entry("kernelNotation", kernelSyntax()),
+                Map.entry("complexityManagement", complexityManagementRules()),
                 Map.entry("strictnessModes", List.of("exploration", "methodology", "production")),
                 Map.entry("constraints", metadata.getOrDefault("constraints", List.of())),
                 Map.entry("rootTemplate", metadata.getOrDefault("rootTemplate",
                         defaultRootTemplate())));
+    }
+
+    private List<Map<String, Object>> universalSyntax() {
+        return List.of(
+                syntax("container", "Container",
+                        "Rounded frame with a title bar for root models, bounded contexts, services, deployment units, stacks, workflows, processes, aggregates, APIs, and stages."),
+                syntax("concept-card", "Primary concept card",
+                        "Typed card with title, stereotype token, badges, and collapsible detail compartments."),
+                syntax("behavior-node", "Behavioral node",
+                        "Shape-coded command, query, event, condition, state, or error node with a visible semantic token."),
+                syntax("constraint-badge", "Attached policy/constraint badge",
+                        "Small badge pinned to a target element for policies, governance, security, retries, retention, observability, and assumptions."),
+                syntax("relationship-edge", "Relationship edge",
+                        "Labeled edge with semantic line style, arrowheads, endpoint role or multiplicity where useful, and bundle support."),
+                syntax("reference-chip", "Reference chip",
+                        "Compact linked element chip for low-value references that should not become canvas edges."),
+                syntax("properties-inspector", "Properties inspector",
+                        "Generated right-side editor for every metamodel attribute and reference."),
+                syntax("palette-token", "Palette token",
+                        "Short, view-scoped creation item grouped by modeling task instead of package name."));
+    }
+
+    private List<Map<String, Object>> kernelSyntax() {
+        return List.of(
+                syntax("metadata", "ModelElement / TraceableElement",
+                        "Identity, lifecycle, traceability, generation, rationale, and review fields are shown as inspector fields, search terms, and node badges."),
+                syntax("annotation", "Annotation / KeyValue",
+                        "Small key-value chips or nested rows under the owning element."),
+                syntax("trace", "TraceModel / TraceLink",
+                        "Trace links are separate overlay edges with confidence and transformation-rule filtering."),
+                syntax("expression", "Expression / StructuredDocument",
+                        "Embedded code/document editor rows with exact text preservation and referenced-element chips."),
+                syntax("readiness", "ProductionReadinessAssessment",
+                        "Readiness findings, checks, and manual decisions appear in dashboards, issue lists, and severity badges."),
+                syntax("multiplicity", "Multiplicity / Cardinality",
+                        "Endpoint labels and inspector rows render lower/upper bounds, ordering, and uniqueness."));
+    }
+
+    private List<Map<String, Object>> complexityManagementRules() {
+        return List.of(
+                complexity("view-decomposition",
+                        "Named synchronized views scoped by semantic purpose."),
+                complexity("containment-collapse",
+                        "Containers support expanded, collapsed, and summary modes."),
+                complexity("semantic-zoom",
+                        "Zoom controls switch between container counts, cards, and detailed compartments."),
+                complexity("layered-edges",
+                        "Relationship layers can be filtered independently."),
+                complexity("focus-neighborhood",
+                        "A selected element can open a depth-one or depth-two dependency neighborhood."),
+                complexity("edge-bundling",
+                        "Collapsed containers bundle many relationships into bus edges."),
+                complexity("model-explorer-search",
+                        "Explorer and workbench searches index model names, ids, tags, source refs, routes, logical ids, event names, and AWS types."),
+                complexity("validation-overlays",
+                        "Validation and readiness findings are surfaced as issue panels and element badges."),
+                complexity("trace-overlay",
+                        "Trace links are separated from normal editing edges."),
+                complexity("saved-viewpoints",
+                        "Named filters, layouts, and camera positions can be saved as model views."));
+    }
+
+    private Map<String, Object> syntax(String id, String label, String behavior) {
+        return Map.of("id", id, "label", label, "behavior", behavior);
+    }
+
+    private Map<String, Object> complexity(String id, String behavior) {
+        return Map.of("id", id, "behavior", behavior);
     }
 
     private Map<String, Object> defaultRootTemplate() {
@@ -1838,13 +1955,13 @@ public final class ModelingConfigService {
 
     private List<Map<String, Object>> cimViewDefinitions() {
         return List.of(
-                view("dashboard", "Model Dashboard", "DASHBOARD", "dashboard",
+                view("dashboard", "CIM Overview", "DASHBOARD", "dashboard",
                         List.of("CIMModel", "BusinessGoal", "Actor", "BusinessCapability",
                                 "Requirement", "DomainEntity", "Command", "BusinessEvent",
                                 "Policy", "Risk", "Hotspot", "ProductionReadinessAssessment",
                                 "TransformationProfile", "TraceModel"), List.of(), List.of(),
                         "DASHBOARD"),
-                view("strategy-goals", "Strategy Goals Requirements and KPIs",
+                view("strategy-goals", "Goals and Requirements",
                         "REQUIREMENTS_GOALS", "requirements",
                         List.of("Requirement", "NonFunctionalRequirement", "SecurityConstraint",
                                 "PrivacyConstraint", "ComplianceConstraint", "AcceptanceCriterion",
@@ -1867,7 +1984,7 @@ public final class ModelingConfigService {
                         List.of("SUPPORTS", "OWNS", "REALIZES", "CONTAINS_COMMAND",
                                 "CONTAINS_QUERY", "CONTAINS_EVENT", "MANAGES", "DEPENDS_ON"),
                         "CONTAINER"),
-                view("actor-interactions", "Actor Role and External System Interactions",
+                view("actor-interactions", "Stakeholder and Actor Map",
                         "ACTOR_INTERACTION", "actor",
                         List.of("Actor", "ExternalSystem", "Role", "Command", "Query",
                                 "BusinessEvent", "InformationItem"),
@@ -1885,7 +2002,7 @@ public final class ModelingConfigService {
                                 "Command", "Query", "BusinessEvent", "Policy",
                                 "UbiquitousLanguageTerm"),
                         List.of("CONTAINS", "MANAGES", "HANDLED_BY", "TRIGGERS"), "CONTAINER"),
-                view("domain-model", "Domain Model View", "DOMAIN_MODEL", "domain",
+                view("domain-model", "Domain Model", "DOMAIN_MODEL", "domain",
                         List.of("DomainEntity", "ValueObject", "DomainRelationship",
                                 "InformationItem", "AggregateCandidate",
                                 "LifecycleStateDefinition", "BusinessInvariant",
@@ -1896,7 +2013,7 @@ public final class ModelingConfigService {
                                 "DataClassification", "UbiquitousLanguageTerm"),
                         List.of("DOMAIN_RELATIONSHIP", "ROOT", "MEMBER", "CONTAINS", "MANAGES"),
                         "CLASS_DIAGRAM"),
-                view("aggregate-consistency", "Aggregate and Consistency View",
+                view("aggregate-consistency", "Aggregate and Lifecycle",
                         "AGGREGATE", "aggregate",
                         List.of("AggregateCandidate", "DomainEntity", "BusinessInvariant",
                                 "Command", "BusinessEvent"),
@@ -1904,7 +2021,7 @@ public final class ModelingConfigService {
                                 "Command", "BusinessEvent"),
                         List.of("ROOT", "MEMBER", "TARGETS", "EXPECTS", "CONTAINS"),
                         "CONTAINER"),
-                view("data-dictionary", "Data Dictionary and Classification",
+                view("data-dictionary", "Domain Data and Classification",
                         "DATA_DICTIONARY", "data",
                         List.of("InformationItem", "DataClassification", "PrivacyConstraint",
                                 "ComplianceConstraint", "SecurityConstraint",
@@ -1915,7 +2032,7 @@ public final class ModelingConfigService {
                                 "NonFunctionalRequirement"),
                         List.of("CONSTRAINS", "READS", "PRODUCES", "CONSUMED_BY"),
                         "TABLE"),
-                view("event-storming", "Behavior Event Storming View", "EVENT_STORMING",
+                view("event-storming", "Behavior/Event Storming", "EVENT_STORMING",
                         "eventstorming",
                         List.of("Actor", "ExternalSystem", "Command", "Query", "BusinessEvent",
                                 "BusinessError", "Condition", "Policy", "AggregateCandidate",
@@ -1927,7 +2044,7 @@ public final class ModelingConfigService {
                                 "REJECTS_WITH", "MAY_FAIL_WITH", "TARGETS", "READS",
                                 "TRIGGERS", "EMITS_COMMAND", "EMITS_EVENT", "GUARDS"),
                         "EVENT_STORMING"),
-                view("business-process", "Business Process View", "BUSINESS_PROCESS",
+                view("business-process", "Business Process", "BUSINESS_PROCESS",
                         "process",
                         List.of("BusinessProcess", "StartStep", "EndStep", "CommandStep",
                                 "QueryStep", "EventStep", "PolicyStep", "HumanTaskStep",
@@ -1940,7 +2057,7 @@ public final class ModelingConfigService {
                                 "ProcessTransition", "ExceptionScenario", "TemporalConstraint",
                                 "Role"),
                         List.of("TRANSITION", "USES", "CONSTRAINS", "CONTAINS"), "PROCESS"),
-                view("decision", "Policy and Decision View", "DECISION", "decision",
+                view("decision", "Policy and Decision", "DECISION", "decision",
                         List.of("Policy", "DecisionTable", "DecisionRule", "Condition",
                                 "Command", "Query", "BusinessEvent", "InformationItem",
                                 "BusinessError"),
@@ -1948,7 +2065,7 @@ public final class ModelingConfigService {
                                 "Query", "BusinessEvent", "InformationItem", "BusinessError"),
                         List.of("TRIGGERS", "GUARDS", "CONSTRAINS", "EMITS_COMMAND",
                                 "EMITS_EVENT", "USES", "RESULTS_IN"), "DECISION"),
-                view("governance-matrix", "Governance Constraint Matrix",
+                view("governance-matrix", "Governance and Risk",
                         "GOVERNANCE_MATRIX", "governance",
                         List.of("InformationItem", "DataClassification", "PrivacyConstraint",
                                 "SecurityConstraint", "ComplianceConstraint",
@@ -1971,7 +2088,7 @@ public final class ModelingConfigService {
                                 "ManualDecision", "ProductionReadinessAssessment",
                                 "ReadinessFinding", "TraceLink"),
                         List.of("ATTACHED_TO", "CONSTRAINS"), "KANBAN"),
-                view("traceability", "Traceability Matrix", "CUSTOM", "traceability",
+                view("traceability", "Trace Overlay", "CUSTOM", "traceability",
                         List.of("TraceModel", "TraceLink", "Requirement", "BusinessGoal",
                                 "Command", "Query", "BusinessEvent", "DomainEntity", "Policy",
                                 "Risk", "ReadinessFinding"),
@@ -1984,11 +2101,49 @@ public final class ModelingConfigService {
     private Map<String, Object> view(String id, String displayName, String type, String viewpoint,
             List<String> elementTypes, List<String> palette, List<String> relationshipKinds,
             String layoutProfile) {
-        return Map.of("id", id, "displayName", displayName, "viewType", type, "viewpoint",
-                viewpoint, "elementTypes", elementTypes, "palette", palette, "relationshipKinds",
-                relationshipKinds, "layoutProfile", layoutProfile, "defaultDepth", 1,
-                "edgeLayers", List.of("core", "data", "constraint", "trace", "readiness",
-                        "containment", "derived"));
+        Map<String, Object> view = new LinkedHashMap<>();
+        view.put("id", id);
+        view.put("displayName", displayName);
+        view.put("viewType", type);
+        view.put("viewpoint", viewpoint);
+        view.put("elementTypes", elementTypes);
+        view.put("palette", palette);
+        view.put("relationshipKinds", relationshipKinds);
+        view.put("layoutProfile", layoutProfile);
+        view.put("defaultDepth", 1);
+        view.put("edgeLayers", List.of("core", "data", "security", "policy", "trace",
+                "readiness", "containment", "deployment", "generated"));
+        view.putAll(viewSpecMetadata(id, displayName, viewpoint, elementTypes, relationshipKinds));
+        return view;
+    }
+
+    private Map<String, Object> viewSpecMetadata(String id, String displayName, String viewpoint,
+            List<String> elementTypes, List<String> relationshipKinds) {
+        return Map.of(
+                "purpose", displayName,
+                "defaultContents", elementTypes,
+                "defaultVisibleRelations", relationshipKinds,
+                "largeModelBehavior", largeModelBehavior(viewpoint),
+                "defaultRepresentation", defaultRepresentation(viewpoint));
+    }
+
+    private String largeModelBehavior(String viewpoint) {
+        return switch (viewpoint) {
+            case "dashboard", "architecture", "governance", "readiness" -> "dashboard-summary";
+            case "api", "data", "security", "configuration", "observability" -> "table-first";
+            case "workflow", "process" -> "focused-canvas";
+            case "eventstorming", "integration", "eventing", "shortcuts" -> "bundled-flows";
+            default -> "collapsed-containers";
+        };
+    }
+
+    private String defaultRepresentation(String viewpoint) {
+        return switch (viewpoint) {
+            case "dashboard", "architecture" -> "dashboard";
+            case "api", "data", "configuration", "observability" -> "register";
+            case "security", "governance", "deployment", "readiness", "traceability" -> "matrix";
+            default -> "diagram";
+        };
     }
 
     private List<Map<String, Object>> cimConstraints() {
@@ -2047,21 +2202,36 @@ public final class ModelingConfigService {
 
     private List<Map<String, Object>> pimViewDefinitions() {
         return List.of(
-                view("pim-architecture-overview", "Architecture Overview",
+                view("pim-architecture-overview", "PIM Overview",
                         "ARCHITECTURE_OVERVIEW", "architecture",
                         List.of("ServerlessService", "Api", "Function", "Workflow", "Queue",
                                 "Topic", "EventBus", "Schedule", "DataStore", "ObjectStore",
-                                "ExternalAdapter", "IdentityProvider", "Secret",
+                                "ExternalEndpoint", "ExternalAdapter", "IdentityProvider",
+                                "Secret", "BusinessRule", "DecisionModel", "HumanTask",
                                 "RequestResponseFlow", "EventFlow", "MessageFlow", "PubSubFlow",
                                 "OrchestrationFlow", "ExternalIntegrationFlow"),
                         List.of("ServerlessService", "Api", "Function", "Workflow", "Queue",
                                 "Topic", "EventBus", "Schedule", "DataStore", "ObjectStore",
-                                "ExternalAdapter", "IdentityProvider", "Secret"),
+                                "ExternalEndpoint", "ExternalAdapter", "IdentityProvider",
+                                "Secret", "BusinessRule", "DecisionModel", "HumanTask"),
                         List.of("OWNS", "ROUTES_TO", "INVOKES", "PUBLISHES", "SUBSCRIBES_TO",
                                 "READS", "WRITES", "CALLS", "FLOW", "REQUEST_RESPONSE",
                                 "EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB", "ORCHESTRATES",
                                 "EXTERNAL_CALL"), "CONTAINER"),
-                view("pim-api-surface", "API Surface", "API_SURFACE", "api",
+                view("pim-service-landscape", "Service Landscape",
+                        "SERVICE_LANDSCAPE", "service",
+                        List.of("ServerlessService", "ServiceElementMembership",
+                                "DeploymentUnit", "Environment", "ImplementationProfile",
+                                "PlatformCapability", "PlatformMappingAssessment", "Function",
+                                "Api", "Workflow", "DataStore", "ObjectStore", "Queue",
+                                "Topic", "EventBus", "ExternalEndpoint", "ExternalAdapter"),
+                        List.of("ServerlessService", "ServiceElementMembership",
+                                "DeploymentUnit", "Environment", "ImplementationProfile",
+                                "PlatformCapability", "PlatformMappingAssessment", "Function",
+                                "Api", "Workflow", "ExternalEndpoint"),
+                        List.of("OWNS", "DEPLOYS", "DEPLOYS_TO", "SUPPORTS",
+                                "ATTACHED_TO", "TRACE"), "CONTAINER"),
+                view("pim-api-surface", "API and Contract View", "API_SURFACE", "api",
                         List.of("Api", "ApiRoute", "ApiContract", "ErrorMapping", "Schema",
                                 "Function", "Workflow", "AuthPolicy", "AuthorizationPolicy",
                                 "CorsPolicy", "RateLimitPolicy", "TimeoutPolicy",
@@ -2071,7 +2241,8 @@ public final class ModelingConfigService {
                                 "TimeoutPolicy", "ObservabilityConfig"),
                         List.of("CONTAINS", "ROUTES_TO", "AUTHORIZED_BY", "USES",
                                 "ATTACHED_TO"), "TABLE"),
-                view("pim-compute-trigger", "Compute and Trigger", "COMPUTE_TRIGGER", "compute",
+                view("pim-compute-trigger", "Function and Trigger View",
+                        "COMPUTE_TRIGGER", "compute",
                         List.of("Function", "FunctionContract", "Trigger", "Schedule",
                                 "ApiRoute", "Queue", "Topic", "EventBus", "ObjectStore",
                                 "Workflow", "Schema", "EventType", "Secret",
@@ -2084,45 +2255,50 @@ public final class ModelingConfigService {
                         List.of("INVOKES", "TRIGGERS", "ROUTES_TO", "PUBLISHES",
                                 "SUBSCRIBES_TO", "READS", "WRITES", "CALLS", "USES_SECRET",
                                 "HAS_ENV", "ATTACHED_TO"), "DEFAULT_LAYERED"),
-                view("pim-contract-schema-event", "Contract Schema and Event",
+                view("pim-contract-schema-event", "Schema and Event Contract View",
                         "CONTRACT_SCHEMA_EVENT", "contracts",
-                        List.of("Schema", "SchemaField", "SchemaEnumLiteral", "SchemaConstraint",
+                        List.of("Schema", "SchemaField", "SchemaEnumLiteral",
+                                "SchemaValidationConstraint", "SchemaConstraint",
                                 "FunctionContract", "ApiContract", "EventType",
                                 "EventEnvelope", "Function", "Api"),
                         List.of("Schema", "EventType", "Function", "Api"),
                         List.of("CONTAINS", "USES", "PUBLISHES", "SUBSCRIBES_TO"), "TABLE"),
-                view("pim-data-design", "Data Design", "DATA_DESIGN", "data",
+                view("pim-data-design", "Data and Storage View", "DATA_DESIGN", "data",
                         List.of("DataStore", "ObjectStore", "DataModel", "DataField",
-                                "AccessPattern", "IndexCandidate", "DataAccess", "Schema",
-                                "Function", "ApiRoute", "DataProtectionPolicy", "RetentionPolicy",
+                                "AccessPattern", "IndexCandidate", "DataChangeStream",
+                                "ObjectNotificationRule", "DataAccess", "Schema", "Function",
+                                "ApiRoute", "DataProtectionPolicy", "RetentionPolicy",
                                 "BackupPolicy"),
                         List.of("DataStore", "ObjectStore", "Schema", "Function",
                                 "DataProtectionPolicy", "RetentionPolicy", "BackupPolicy"),
                         List.of("READS", "WRITES", "DATA_ACCESS", "CONTAINS", "USES",
                                 "ATTACHED_TO"), "TABLE"),
-                view("pim-integration-events", "Integration and Event Channels",
+                view("pim-integration-events", "Event and Flow View",
                         "INTEGRATION_EVENTS", "integration",
                         List.of("Queue", "Topic", "EventBus", "Schedule", "Subscription",
                                 "EventRoutingRule", "RequestResponseFlow", "EventFlow",
                                 "MessageFlow", "PubSubFlow", "OrchestrationFlow",
                                 "ExternalIntegrationFlow", "EventType", "Function", "Workflow",
-                                "ExternalAdapter"),
+                                "ExternalEndpoint", "ExternalAdapter"),
                         List.of("Queue", "Topic", "EventBus", "Schedule", "EventType",
-                                "Function", "Workflow", "ExternalAdapter"),
+                                "Function", "Workflow", "ExternalEndpoint", "ExternalAdapter"),
                         List.of("PUBLISHES", "SUBSCRIBES_TO", "ROUTES_TO", "INVOKES",
                                 "EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB", "ORCHESTRATES",
                                 "EXTERNAL_CALL", "DEAD_LETTER"), "EVENT_FLOW"),
-                view("pim-workflow-designer", "Workflow Designer", "WORKFLOW_DESIGNER",
+                view("pim-workflow-designer", "Workflow View", "WORKFLOW_DESIGNER",
                         "workflow",
                         List.of("Workflow", "WorkflowState", "WorkflowTransition",
-                                "ErrorHandler", "CompensationPolicy", "Function",
+                                "ParallelBranch", "MapStateConfig", "CallbackTaskConfig",
+                                "ErrorHandler", "HumanTask", "ApprovalTask",
+                                "EscalationPolicy", "CompensationPolicy", "Function",
                                 "ExternalAdapter", "RetryPolicy", "ResiliencePolicy",
                                 "ObservabilityConfig", "IdempotencyPolicy"),
-                        List.of("Workflow", "Function", "ExternalAdapter", "ResiliencePolicy",
-                                "ObservabilityConfig", "IdempotencyPolicy"),
+                        List.of("Workflow", "Function", "ExternalAdapter", "HumanTask",
+                                "ApprovalTask", "ResiliencePolicy", "ObservabilityConfig",
+                                "IdempotencyPolicy"),
                         List.of("TRANSITION", "INVOKES", "EXTERNAL_CALL", "ORCHESTRATES",
                                 "CONTAINS", "ATTACHED_TO"), "PROCESS"),
-                view("pim-security-access", "Security and Access", "SECURITY_ACCESS",
+                view("pim-security-access", "Security View", "SECURITY_ACCESS",
                         "security",
                         List.of("IdentityProvider", "Principal", "Permission", "Api",
                                 "ApiRoute", "Function", "Secret", "DataStore", "ObjectStore",
@@ -2134,21 +2310,25 @@ public final class ModelingConfigService {
                                 "AuthPolicy", "AuthorizationPolicy"),
                         List.of("PERMISSION", "AUTHORIZED_BY", "ATTACHED_TO", "CONSTRAINS",
                                 "USES_SECRET"), "GOVERNANCE"),
-                view("pim-deployment-environment", "Deployment and Environment",
+                view("pim-deployment-environment", "Deployment and Environment View",
                         "DEPLOYMENT_ENVIRONMENT", "deployment",
                         List.of("DeploymentUnit", "ServerlessService", "Environment",
                                 "ImplementationProfile", "Function", "Api", "Workflow",
                                 "ConfigurationSet", "ConfigParameter", "EnvironmentVariable",
                                 "Secret", "Queue", "Topic", "EventBus", "Schedule",
-                                "DataStore", "ObjectStore", "ExternalAdapter"),
+                                "DataStore", "ObjectStore", "ExternalEndpoint",
+                                "ExternalAdapter"),
                         List.of("DeploymentUnit", "ServerlessService", "Environment",
                                 "ImplementationProfile", "ConfigurationSet", "Secret"),
                         List.of("DEPLOYS", "DEPLOYS_TO", "OWNS", "HAS_ENV", "ATTACHED_TO"),
                         "MATRIX"),
-                view("pim-policy-operations", "Policy and Operations", "POLICY_OPERATIONS",
+                view("pim-policy-operations", "Policy and Observability View",
+                        "POLICY_OPERATIONS",
                         "policy",
-                        List.of("ArchitecturePolicy", "DataProtectionPolicy", "CompliancePolicy",
-                                "ResiliencePolicy", "RetryPolicy", "DeadLetterPolicy",
+                        List.of("ArchitecturePolicy", "DataProtectionPolicy",
+                                "DataQualityPolicy", "CompliancePolicy", "BusinessRule",
+                                "DecisionModel", "DecisionRule", "ResiliencePolicy",
+                                "RetryPolicy", "DeadLetterPolicy",
                                 "TimeoutPolicy", "IdempotencyPolicy", "ConcurrencyPolicy",
                                 "RateLimitPolicy", "BatchPolicy", "OrderingPolicy",
                                 "CachePolicy", "BackupPolicy", "RetentionPolicy", "CostPolicy",
@@ -2156,9 +2336,11 @@ public final class ModelingConfigService {
                                 "MetricDimension", "TracingPolicy", "AlertPolicy", "Slo",
                                 "CorsPolicy", "Api", "Function", "DataStore", "Queue",
                                 "Workflow"),
-                        List.of("DataProtectionPolicy", "CompliancePolicy", "ResiliencePolicy",
-                                "TimeoutPolicy", "IdempotencyPolicy", "ConcurrencyPolicy",
-                                "RateLimitPolicy", "BatchPolicy", "OrderingPolicy",
+                        List.of("DataProtectionPolicy", "DataQualityPolicy",
+                                "CompliancePolicy", "BusinessRule", "DecisionModel",
+                                "ResiliencePolicy", "TimeoutPolicy", "IdempotencyPolicy",
+                                "ConcurrencyPolicy", "RateLimitPolicy", "BatchPolicy",
+                                "OrderingPolicy",
                                 "CachePolicy", "BackupPolicy", "RetentionPolicy", "CostPolicy",
                                 "ObservabilityConfig", "CorsPolicy"),
                         List.of("ATTACHED_TO", "CONSTRAINS", "DEAD_LETTER", "CONTAINS"),
@@ -2172,7 +2354,7 @@ public final class ModelingConfigService {
                                 "ExternalAdapter"),
                         List.of("HAS_ENV", "USES_SECRET", "ATTACHED_TO", "DEPLOYS_TO"),
                         "TABLE"),
-                view("pim-readiness-traceability", "Readiness and Traceability",
+                view("pim-readiness-traceability", "Trace and Readiness Overlay",
                         "READINESS_TRACEABILITY", "readiness",
                         List.of("TraceModel", "TraceLink", "ProductionReadinessAssessment",
                                 "ReadinessFinding", "ReadinessCheck", "ManualDecision",
@@ -2223,9 +2405,14 @@ public final class ModelingConfigService {
         root.put("defaultCorrelationIdName", "correlationId");
         root.put("providerIndependent", true);
         root.put("services", List.of());
+        root.put("serviceMemberships", List.of());
         root.put("deploymentUnits", List.of());
         root.put("environments", List.of());
+        root.put("platformCapabilities", List.of());
+        root.put("platformMappingAssessments", List.of());
         root.put("schemas", List.of());
+        root.put("businessRules", List.of());
+        root.put("decisionModels", List.of());
         root.put("functions", List.of());
         root.put("apis", List.of());
         root.put("eventTypes", List.of());
@@ -2236,6 +2423,8 @@ public final class ModelingConfigService {
         root.put("objectStores", List.of());
         root.put("dataAccesses", List.of());
         root.put("workflows", List.of());
+        root.put("humanTasks", List.of());
+        root.put("externalEndpoints", List.of());
         root.put("externalAdapters", List.of());
         root.put("identityProviders", List.of());
         root.put("principals", List.of());
@@ -2266,7 +2455,7 @@ public final class ModelingConfigService {
 
     private List<Map<String, Object>> psmViewDefinitions() {
         return List.of(
-                view("psm-portfolio-governance", "Portfolio, Stages, and Governance",
+                view("psm-portfolio-governance", "AWS PSM Overview",
                         "PORTFOLIO_GOVERNANCE", "governance",
                         List.of("AwsPsmModel", "AwsStage", "SamStack", "AwsNamingPolicy",
                                 "AwsTaggingPolicy", "AwsSecurityBaseline", "SamGlobals",
@@ -2274,7 +2463,7 @@ public final class ModelingConfigService {
                         List.of("AwsStage", "SamStack", "AwsNamingPolicy", "AwsTaggingPolicy",
                                 "AwsSecurityBaseline"),
                         List.of("CONTAINS", "DEPLOYS", "DEPLOYS_TO", "TRACE"), "MATRIX"),
-                view("psm-resource-topology", "Deployable Resource Topology",
+                view("psm-resource-topology", "Stage and Stack View",
                         "RESOURCE_TOPOLOGY", "topology",
                         List.of("SamStack", "AwsStage", "AwsResource", "AwsNativeResource",
                                 "HttpApi", "RestApi", "WebSocketApi", "AwsLambdaFunction",
@@ -2289,7 +2478,7 @@ public final class ModelingConfigService {
                         List.of("DEPENDS_ON", "CONTAINS", "INVOKES", "EVENT_FLOW",
                                 "USES_ROLE", "USES_SECRET", "OBSERVES", "NETWORKS_WITH"),
                         "CONTAINER"),
-                view("psm-api-edge", "API and Edge Access", "API_EDGE", "api",
+                view("psm-api-edge", "API Gateway View", "API_EDGE", "api",
                         List.of("HttpApi", "RestApi", "WebSocketApi", "HttpApiRoute",
                                 "RestApiRoute", "WebSocketRoute", "ApiGatewayIntegration",
                                 "HttpApiStage", "RestApiStage", "WebSocketStage",
@@ -2306,7 +2495,7 @@ public final class ModelingConfigService {
                                 "AwsLambdaFunction", "StepFunctionStateMachine"),
                         List.of("ROUTES_TO", "INVOKES", "AUTHORIZED_BY", "OBSERVES",
                                 "CONTAINS"), "TABLE"),
-                view("psm-lambda-compute", "Lambda Compute Runtime", "LAMBDA_COMPUTE",
+                view("psm-lambda-compute", "Lambda Detail View", "LAMBDA_COMPUTE",
                         "compute",
                         List.of("AwsLambdaFunction", "LambdaZipCodeConfig",
                                 "LambdaImageCodeConfig", "LambdaEnvironmentVariable",
@@ -2324,7 +2513,7 @@ public final class ModelingConfigService {
                                 "SqsQueue", "SnsTopic", "DynamoDbTable"),
                         List.of("INVOKES", "EVENT_FLOW", "USES_ROLE", "USES_SECRET",
                                 "OBSERVES", "CONTAINS"), "DEFAULT_LAYERED"),
-                view("psm-eventing-messaging", "Eventing and Messaging",
+                view("psm-eventing-messaging", "EventBridge and Messaging View",
                         "EVENTING_MESSAGING", "eventing",
                         List.of("EventBridgeBus", "EventBridgeBusPolicy", "EventBridgeRule",
                                 "EventBridgeTarget", "EventPattern", "EventBridgeArchive",
@@ -2338,7 +2527,7 @@ public final class ModelingConfigService {
                                 "StepFunctionStateMachine"),
                         List.of("EVENT_FLOW", "MESSAGE_FLOW", "INVOKES", "TARGETS",
                                 "CONTAINS"), "EVENT_FLOW"),
-                view("psm-workflow-asl", "Workflow and ASL State Machine",
+                view("psm-workflow-asl", "Step Functions / ASL View",
                         "WORKFLOW_ASL", "workflow",
                         List.of("StepFunctionStateMachine", "AslDocument", "AslState",
                                 "AslRetryRule", "AslCatchRule", "AslChoiceRule",
@@ -2348,7 +2537,7 @@ public final class ModelingConfigService {
                                 "EventBridgeRule"),
                         List.of("TRANSITION", "INVOKES", "EVENT_FLOW", "CONTAINS",
                                 "OBSERVES"), "PROCESS"),
-                view("psm-data-persistence", "Data Persistence", "DATA_PERSISTENCE", "data",
+                view("psm-data-persistence", "Storage View", "DATA_PERSISTENCE", "data",
                         List.of("DynamoDbTable", "DynamoDbAttributeDefinition",
                                 "DynamoDbKeySchemaElement", "DynamoDbProjection",
                                 "DynamoDbProvisionedThroughput", "DynamoDbGlobalSecondaryIndex",
@@ -2362,7 +2551,7 @@ public final class ModelingConfigService {
                                 "IamRole", "AwsLambdaFunction"),
                         List.of("READS", "WRITES", "EVENT_FLOW", "USES_SECRET",
                                 "PERMISSION", "CONTAINS"), "TABLE"),
-                view("psm-security-access", "Security, Identity, Secrets, and Access",
+                view("psm-security-access", "Security, IAM, and Secrets View",
                         "SECURITY_ACCESS", "security",
                         List.of("IamRole", "IamPolicy", "IamManagedPolicy", "IamStatement",
                                 "KmsKey", "KmsAlias", "SecretsManagerSecret",
@@ -2377,7 +2566,18 @@ public final class ModelingConfigService {
                                 "AwsLambdaFunction", "HttpApi", "RestApi"),
                         List.of("PERMISSION", "AUTHORIZED_BY", "USES_ROLE", "USES_SECRET",
                                 "CONTAINS"), "GOVERNANCE"),
-                view("psm-networking", "Networking and Private Connectivity", "NETWORKING",
+                view("psm-cognito-identity", "Cognito Identity View", "COGNITO_IDENTITY",
+                        "identity",
+                        List.of("CognitoUserPool", "CognitoUserPoolClient",
+                                "CognitoUserPoolGroup", "CognitoUserPoolDomain",
+                                "CognitoIdentityPool", "JwtAuthorizer", "CognitoAuthorizer",
+                                "HttpApi", "RestApi", "AwsLambdaFunction", "IamRole"),
+                        List.of("CognitoUserPool", "CognitoUserPoolClient",
+                                "CognitoUserPoolGroup", "CognitoIdentityPool",
+                                "JwtAuthorizer", "CognitoAuthorizer", "HttpApi", "RestApi"),
+                        List.of("AUTHORIZED_BY", "PERMISSION", "CONTAINS", "USES_ROLE"),
+                        "GOVERNANCE"),
+                view("psm-networking", "Networking Detail View", "NETWORKING",
                         "networking",
                         List.of("VpcAttachmentConfig", "VpcEndpointReference", "Vpc", "Subnet",
                                 "VpcEndpoint", "SecurityGroup", "SecurityGroupRule",
@@ -2385,19 +2585,23 @@ public final class ModelingConfigService {
                         List.of("Vpc", "Subnet", "VpcEndpoint", "SecurityGroup",
                                 "AwsLambdaFunction"),
                         List.of("NETWORKS_WITH", "CONTAINS"), "CONTAINER"),
-                view("psm-observability-operations", "Observability and Operations",
+                view("psm-observability-operations", "Observability and Networking View",
                         "OBSERVABILITY_OPERATIONS", "observability",
                         List.of("CloudWatchLogGroup", "CloudWatchMetricFilter",
                                 "CloudWatchLogSubscriptionFilter", "CloudWatchAlarm",
                                 "MetricDimension", "CloudWatchCompositeAlarm",
                                 "CloudWatchDashboard", "AwsLambdaFunction", "HttpApi",
-                                "SqsQueue", "DynamoDbTable"),
+                                "SqsQueue", "DynamoDbTable", "VpcAttachmentConfig",
+                                "VpcEndpointReference", "Vpc", "Subnet", "VpcEndpoint",
+                                "SecurityGroup", "SecurityGroupRule"),
                         List.of("CloudWatchLogGroup", "CloudWatchMetricFilter",
                                 "CloudWatchLogSubscriptionFilter", "CloudWatchAlarm",
                                 "CloudWatchCompositeAlarm", "CloudWatchDashboard",
-                                "AwsLambdaFunction", "HttpApi"),
-                        List.of("OBSERVES", "WRITES_LOGS_TO", "CONTAINS"), "TABLE"),
-                view("psm-configuration-cfn", "Configuration, CloudFormation, and SAM",
+                                "AwsLambdaFunction", "HttpApi", "Vpc", "Subnet",
+                                "SecurityGroup"),
+                        List.of("OBSERVES", "WRITES_LOGS_TO", "NETWORKS_WITH", "CONTAINS"),
+                        "TABLE"),
+                view("psm-configuration-cfn", "SAM and CloudFormation View",
                         "CONFIGURATION_CFN", "configuration",
                         List.of("CfnParameter", "CfnMapping", "CfnCondition", "CfnOutput",
                                 "SamGlobals", "NativeProperty", "ValueExpression",
@@ -2406,7 +2610,7 @@ public final class ModelingConfigService {
                         List.of("CfnParameter", "CfnMapping", "CfnCondition", "CfnOutput",
                                 "SamGlobals", "AwsNativeResource"),
                         List.of("CONTAINS", "DEPLOYS", "TRACE"), "TABLE"),
-                view("psm-traceability-readiness", "Traceability, Readiness, and Review",
+                view("psm-traceability-readiness", "Trace and Readiness Overlay",
                         "TRACEABILITY_READINESS", "readiness",
                         List.of("TraceLink", "ProductionReadinessAssessment",
                                 "ReadinessFinding", "ReadinessCheck", "ManualDecision",
@@ -2414,7 +2618,7 @@ public final class ModelingConfigService {
                                 "DynamoDbTable", "S3Bucket", "IamRole"),
                         List.of("ProductionReadinessAssessment", "StructuredDocument"),
                         List.of("TRACE", "CONSTRAINS", "ATTACHED_TO"), "MATRIX"),
-                view("psm-integration-shortcuts", "Integration Shortcut Views",
+                view("psm-integration-shortcuts", "Integration Shortcut View",
                         "INTEGRATION_SHORTCUTS", "shortcuts",
                         List.of("AwsRelationshipView", "ApiGatewayLambdaIntegrationView",
                                 "EventBridgeLambdaTargetView", "SnsLambdaSubscriptionView",

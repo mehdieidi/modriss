@@ -613,8 +613,6 @@ function stripRuntimeFields(element) {
   delete copy.label;
   delete copy.status;
   delete copy.tags;
-  delete copy.__collapsed;
-  delete copy.__collapsedSummary;
   delete copy.visualOnly;
   delete copy.bundle;
   delete copy.countsByKind;

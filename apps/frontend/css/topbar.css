@@ -236,8 +236,7 @@ html.light .app-logo-img {
   display: flex;
 }
 
-.user-menu .ide-menu-items,
-.collaboration-menu .ide-menu-items {
+.user-menu .ide-menu-items {
   position: absolute;
   left: 0;
   top: calc(100% + 8px);
@@ -385,42 +384,12 @@ html.light .tab.active {
   min-width: 0;
 }
 
-.collaboration-menu-trigger,
 .user-menu-trigger {
   display: inline-flex;
   align-items: center;
   text-transform: none;
   letter-spacing: 0;
   font: 600 12px/1.2 var(--font-ui);
-}
-
-.collaboration-menu-trigger {
-  gap: 6px;
-  min-width: 0;
-  padding-inline: 7px;
-  background: transparent;
-  border: none;
-}
-
-.collaboration-menu-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  color: var(--accent);
-}
-
-.collaboration-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background: color-mix(in srgb, var(--surface-high) 74%, #000 26%);
-  color: var(--text);
-  font-size: 9px;
-  font-weight: 700;
 }
 
 .user-menu-trigger {
@@ -443,53 +412,6 @@ html.light .tab.active {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.collaboration-menu-items {
-  min-width: 270px;
-  max-width: 330px;
-}
-
-.collaboration-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.collaboration-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
-  padding: 7px 8px;
-}
-
-.collaboration-list-name {
-  min-width: 0;
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text);
-}
-
-.collaboration-list-status {
-  flex-shrink: 0;
-  border-radius: 999px;
-  padding: 2px 7px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #fff;
-  background: var(--presence-color, #64748b);
-}
-
-.collaboration-list-empty {
-  font-size: 12px;
-  color: var(--muted);
-  padding: 8px 6px;
 }
 
 @media (max-width: 1260px) {

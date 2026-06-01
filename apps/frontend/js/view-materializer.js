@@ -57,21 +57,6 @@ function viewEdgeByRelationship(view) {
   ]));
 }
 
-function descendantsOf(elementId, into = new Set()) {
-  const children = state.graph.containmentByParent.get(elementId);
-  if (!children) {
-    return into;
-  }
-  children.forEach((childId) => {
-    if (into.has(childId)) {
-      return;
-    }
-    into.add(childId);
-    descendantsOf(childId, into);
-  });
-  return into;
-}
-
 function selectedElementIds(view) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
   const filterTypes = new Set(safeArray(view?.filters?.elementTypes));
@@ -144,45 +129,7 @@ export function isContainerElement(elementOrType, typeKey = state.activeType) {
   }
 }
 
-function collapsedContainerIds(view, elementIds) {
-  const visible = new Set(elementIds);
-  const collapsed = new Set(safeArray(view?.collapsedElementIds));
-  safeArray(view?.nodes).forEach((node) => {
-    if (node?.collapsed) {
-      collapsed.add(node.elementId);
-    }
-  });
-  return [...collapsed].filter((elementId) => {
-    const element = state.graph.elementsById.get(elementId);
-    return visible.has(elementId) && isContainerElement(element);
-  });
-}
-
-function summaryForCollapsed(containerId, visibleIds) {
-  const descendants = [...descendantsOf(containerId)].filter(
-      (id) => visibleIds.has(
-          id));
-  const descendantSet = new Set(descendants);
-  const counts = {};
-  descendants.forEach((elementId) => {
-    const type = elementType(state.graph.elementsById.get(elementId));
-    counts[type] = (counts[type] || 0) + 1;
-  });
-  let hiddenEdges = 0;
-  state.graph.relationshipsById.forEach((relationship) => {
-    if (descendantSet.has(relationship.sourceElementId) || descendantSet.has(
-        relationship.targetElementId)) {
-      hiddenEdges += 1;
-    }
-  });
-  return {
-    hiddenNodes: descendants.length,
-    hiddenEdges,
-    elementCounts: counts
-  };
-}
-
-function runtimeNode(elementId, viewNode, collapsed = false, summary = null) {
+function runtimeNode(elementId, viewNode) {
   const element = state.graph.elementsById.get(elementId);
   if (!element) {
     return null;
@@ -197,11 +144,7 @@ function runtimeNode(elementId, viewNode, collapsed = false, summary = null) {
     label: elementLabel(element),
     x,
     y,
-    meta: {
-      ...clone(element),
-      __collapsed: collapsed,
-      __collapsedSummary: summary
-    }
+    meta: clone(element)
   };
 }
 
@@ -222,89 +165,14 @@ function runtimeEdge(relationship, viewEdge = null) {
   };
 }
 
-function bundleKey(sourceId, targetId) {
-  return `${sourceId}->${targetId}`;
-}
-
-function materializeCollapsedGraph(view, elementIds, relationshipIds) {
-  const visibleIds = new Set(elementIds);
+function materializeViewGraph(view, elementIds, relationshipIds) {
   const viewNodes = viewNodeByElement(view);
   const viewEdges = viewEdgeByRelationship(view);
-  const collapsedIds = collapsedContainerIds(view, elementIds);
-  const ownerByDescendant = new Map();
-  const descendantsByOwner = new Map();
-
-  collapsedIds.forEach((containerId) => {
-    const descendants = [...descendantsOf(containerId)].filter(
-        (id) => visibleIds.has(id));
-    descendantsByOwner.set(containerId, new Set(descendants));
-    descendants.forEach((descendantId) => {
-      ownerByDescendant.set(descendantId, containerId);
-    });
-  });
-
-  const hiddenDescendants = new Set(ownerByDescendant.keys());
-  const nodes = [];
-  elementIds.forEach((elementId) => {
-    if (hiddenDescendants.has(elementId)) {
-      return;
-    }
-    const summary = descendantsByOwner.has(elementId)
-        ? summaryForCollapsed(elementId, visibleIds)
-        : null;
-    const node = runtimeNode(elementId, viewNodes.get(elementId),
-        Boolean(summary), summary);
-    if (node) {
-      nodes.push(node);
-    }
-  });
-
-  const bundles = new Map();
-  const connections = [];
-  relationshipIds.forEach((relationshipId) => {
-    const relationship = state.graph.relationshipsById.get(relationshipId);
-    if (!relationship) {
-      return;
-    }
-    const sourceProxy = ownerByDescendant.get(relationship.sourceElementId)
-        || relationship.sourceElementId;
-    const targetProxy = ownerByDescendant.get(relationship.targetElementId)
-        || relationship.targetElementId;
-    if (sourceProxy === targetProxy) {
-      return;
-    }
-    const sourceWasCollapsed = sourceProxy !== relationship.sourceElementId;
-    const targetWasCollapsed = targetProxy !== relationship.targetElementId;
-    if (sourceWasCollapsed || targetWasCollapsed) {
-      const key = bundleKey(sourceProxy, targetProxy);
-      let bundle = bundles.get(key);
-      if (!bundle) {
-        bundle = {
-          id: `bundle-${sourceProxy}-${targetProxy}`,
-          sourceId: sourceProxy,
-          targetId: targetProxy,
-          kind: "EDGE_BUNDLE",
-          bundle: true,
-          countsByKind: {},
-          underlyingRelationshipIds: []
-        };
-        bundles.set(key, bundle);
-      }
-      bundle.countsByKind[relationship.kind] = (bundle.countsByKind[relationship.kind]
-          || 0) + 1;
-      bundle.underlyingRelationshipIds.push(relationship.id);
-      return;
-    }
-    const edge = runtimeEdge(relationship, viewEdges.get(relationship.id));
-    if (edge) {
-      connections.push(edge);
-    }
-  });
-
-  bundles.forEach((bundle) => {
-    bundle.label = `${bundle.underlyingRelationshipIds.length} relations`;
-    connections.push(bundle);
-  });
+  const nodes = elementIds.map((elementId) =>
+      runtimeNode(elementId, viewNodes.get(elementId))).filter(Boolean);
+  const connections = relationshipIds.map((relationshipId) =>
+      runtimeEdge(state.graph.relationshipsById.get(relationshipId),
+          viewEdges.get(relationshipId))).filter(Boolean);
   return {nodes, connections};
 }
 
@@ -317,23 +185,19 @@ export function materializeActiveView() {
   }
   const elementIds = selectedElementIds(view);
   const relationshipIds = selectedRelationshipIds(view, elementIds);
-  const collapsed = materializeCollapsedGraph(view, elementIds,
-      relationshipIds);
-  state.views.visibleNodeIds = new Set(collapsed.nodes.map((node) => node.id));
+  const visible = materializeViewGraph(view, elementIds, relationshipIds);
+  state.views.visibleNodeIds = new Set(visible.nodes.map((node) => node.id));
   state.views.visibleRelationshipIds = new Set(
-      collapsed.connections.map((edge) => edge.id));
-  state.views.collapsedContainers = new Set(collapsed.nodes.filter(
-      (node) => node.meta?.__collapsed).map((node) => node.id));
+      visible.connections.map((edge) => edge.id));
   state.views.expandedContainers = new Set(elementIds.filter((elementId) => {
     const element = state.graph.elementsById.get(elementId);
-    return isContainerElement(element) && !state.views.collapsedContainers.has(
-        elementId);
+    return isContainerElement(element);
   }));
   state.visibleGraph = {
     type: state.activeType,
     name: view.name || `${state.activeType}-view`,
-    nodes: collapsed.nodes,
-    connections: collapsed.connections
+    nodes: visible.nodes,
+    connections: visible.connections
   };
   state.diagram = state.visibleGraph;
   return state.visibleGraph;

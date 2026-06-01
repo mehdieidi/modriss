@@ -22,6 +22,7 @@
 }
 
 #attributePanel,
+#modelTreePanel,
 #impactPanel {
   display: flex;
   flex-direction: column;
@@ -55,19 +56,45 @@
 }
 
 .model-tree-pane {
-  width: 360px;
-  padding: 0;
-  border-radius: 7px;
-  border: var(--glass-pane-border);
-  background: var(--glass-pane-bg);
-  box-shadow: var(--glass-pane-highlight);
-  backdrop-filter: var(--glass-pane-blur);
-  -webkit-backdrop-filter: var(--glass-pane-blur);
+  width: 380px;
+  min-width: 380px;
+  max-width: 380px;
 }
 
 .model-tree-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   padding: 10px;
+}
+
+.model-tree-filter-row {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding-bottom: 10px;
+  background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--glass-pane-bg) 96%, transparent),
+      color-mix(in srgb, var(--glass-pane-bg) 82%, transparent) 72%,
+      transparent);
+}
+
+.model-tree-filter-input {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--input-bg) 88%, var(--surface-contrast) 12%);
+  color: var(--text);
+  font: 500 12px/1.3 var(--font-ui);
+  padding: 6px 8px;
+}
+
+.model-tree-filter-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-glow) 60%, transparent);
 }
 
 .model-tree-section {
@@ -94,53 +121,6 @@
 .model-tree-panel-list {
   display: grid;
   gap: 5px;
-}
-
-.model-tree-layer-list {
-  display: grid;
-  gap: 5px;
-  max-height: 190px;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.model-tree-view {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 6px 7px;
-  border-radius: 7px;
-  border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 74%, #000 26%);
-  color: var(--text);
-}
-
-.model-tree-view.is-active {
-  border-color: color-mix(in srgb, var(--accent) 58%, transparent);
-  background: color-mix(in srgb, var(--accent) 14%, var(--surface-3) 86%);
-}
-
-.model-tree-view input {
-  width: 15px;
-  height: 15px;
-  accent-color: var(--accent);
-}
-
-.model-tree-view-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 700 11px/1.2 var(--font-ui);
-}
-
-.model-tree-view-kind {
-  color: var(--muted);
-  font: 700 9px/1 var(--font-display);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .model-tree-node {
@@ -179,6 +159,58 @@
   font: 700 9px/1 var(--font-display);
   letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+.model-tree-relationship {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 74%, #000 26%);
+  color: var(--text);
+}
+
+.model-tree-relationship-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.model-tree-relationship-label,
+.model-tree-relationship-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-tree-relationship-label {
+  color: var(--text-strong);
+  font: 700 11px/1.2 var(--font-ui);
+}
+
+.model-tree-relationship-name {
+  color: var(--muted);
+  font: 600 10px/1.2 var(--font-ui);
+}
+
+.model-tree-relationship-kind {
+  max-width: 116px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-glow) 18%, var(--surface-3) 82%);
+  color: var(--accent-light);
+  font: 800 8px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  padding: 4px 6px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .attr-panel-header {
@@ -250,7 +282,8 @@
 }
 
 @media (max-width: 1200px) {
-  #attributePanel {
+  #attributePanel,
+  #modelTreePanel {
     width: 350px;
     min-width: 350px;
     max-width: 350px;
@@ -1047,6 +1080,7 @@ html.light .tier-badge-artifact {
 
 @media (max-width: 920px) {
   #attributePanel,
+  #modelTreePanel,
   #impactPanel {
     position: absolute;
     top: 0;

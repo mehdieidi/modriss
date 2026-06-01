@@ -29,13 +29,23 @@ function syncValidationFabAnchor(surface) {
 }
 
 export function ensureWorkbenchSurface(existingSurface, surfaceId) {
-  if (existingSurface) {
+  const panel = el.modelWorkbenchPanel || document.getElementById(
+      "modelWorkbenchPanel");
+  if (!panel) {
     return existingSurface;
   }
-  const surface = document.createElement("div");
-  surface.id = surfaceId;
-  surface.className = "cim-workbench-surface hidden";
-  el.canvasGrid?.appendChild(surface);
+  let surface = panel.querySelector("#modelWorkbenchSurface");
+  if (!surface) {
+    surface = document.createElement("div");
+    surface.id = "modelWorkbenchSurface";
+    surface.dataset.sharedWorkbenchSurface = "true";
+    surface.className = "cim-workbench-surface hidden";
+    panel.appendChild(surface);
+  }
+  if (existingSurface && existingSurface !== surface) {
+    existingSurface.remove();
+  }
+  surface.dataset.surfaceId = surfaceId;
   return surface;
 }
 
@@ -112,13 +122,28 @@ export function renderWorkbenchSurfaceLayout({
   hasLevelConfig = true
 }) {
   const canvasStage = el.canvasGrid?.closest(".canvas-stage");
+  const isSharedSurface = host?.dataset?.sharedWorkbenchSurface === "true";
   if (activeType !== expectedType || minimized || !hasLevelConfig) {
+    const ownsSharedSurface = host?.dataset?.workbenchType === expectedType
+        || !host?.dataset?.workbenchType;
+    if (isSharedSurface && !ownsSharedSurface) {
+      el.canvasGrid?.classList.remove(surfaceActiveClass, surfaceDockClass);
+      canvasStage?.classList.remove(surfaceActiveClass, surfaceDockClass);
+      restoreWorkbenchPalette(workbenchState);
+      return;
+    }
     host.className = "cim-workbench-surface hidden";
+    if (host?.dataset) {
+      delete host.dataset.workbenchType;
+    }
     el.canvasGrid?.classList.remove(surfaceActiveClass, surfaceDockClass);
     canvasStage?.classList.remove(surfaceActiveClass, surfaceDockClass);
     syncValidationFabAnchor(host);
     restoreWorkbenchPalette(workbenchState);
     return;
+  }
+  if (host?.dataset) {
+    host.dataset.workbenchType = expectedType;
   }
   if (representation === "diagram") {
     host.className = "cim-workbench-surface cim-workbench-dock";
@@ -150,7 +175,6 @@ export function commitWorkbenchModelChange({
   syncActiveViewFromVisibleGraph,
   saveCurrentTabGraphState,
   markModelDirty,
-  publishDiagramUpdate,
   setStatus
 }) {
   syncActiveViewFromVisibleGraph();
@@ -159,7 +183,6 @@ export function commitWorkbenchModelChange({
   renderDiagram?.();
   renderPalette?.();
   markModelDirty?.();
-  publishDiagramUpdate({immediate: true});
   if (message) {
     setStatus(message);
   }

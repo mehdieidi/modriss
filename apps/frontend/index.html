@@ -103,21 +103,6 @@
             Inspector
           </button>
 
-          <div class="ide-menu collaboration-menu">
-            <button
-                class="ide-menu-trigger collaboration-menu-trigger"
-                id="collaborationMenuTrigger"
-                title="Connected collaborators" type="button">
-              <span aria-hidden="true" class="collaboration-menu-icon icon-svg icon-mask"
-                    style="--icon-src: url('/assets/icons/user_groups.svg');"></span>
-              <span class="collaboration-count" id="collaborationCount">0</span>
-            </button>
-            <div class="ide-menu-items collaboration-menu-items">
-              <div aria-label="Connected collaborators" class="collaboration-list"
-                   id="presenceList" role="menu"></div>
-            </div>
-          </div>
-
           <div class="ide-menu user-menu">
             <button class="ide-menu-trigger user-menu-trigger"
                     id="userMenuTrigger" title="User menu" type="button">
@@ -225,14 +210,6 @@
         <button class="ide-menu-item" id="editProjectNameBtn" title="Edit project name"
                 type="button">Edit Project Name
         </button>
-        <button class="ide-menu-item" id="manageProjectAccessBtn" title="Manage project access"
-                type="button">Manage Access
-        </button>
-        <div class="ide-menu-separator"></div>
-        <button class="ide-menu-item" id="inviteUserBtn" title="Invite collaborator"
-                type="button">Invite User
-        </button>
-        <div class="ide-menu-separator"></div>
         <button class="ide-menu-item" id="deleteProjectBtn"
                 title="Delete current project" type="button">Delete Project
         </button>
@@ -437,8 +414,8 @@
         </div>
 
         <button class="chat-toggle" id="chatToggle" title="Open modeling assistant" type="button">
-          <img alt="" aria-hidden="true" class="chat-toggle-icon icon-svg"
-               src="/assets/icons/chatbot.svg"/>
+          <span aria-hidden="true" class="chat-toggle-icon icon-svg icon-mask"
+                style="--icon-src: url('/assets/icons/chatbot.svg');"></span>
           <span class="chat-toggle-label">AI Assistant</span>
         </button>
 
@@ -504,16 +481,18 @@
       </section>
 
       <aside class="right-pane model-tree-pane hidden" id="modelTreePanel">
-        <div class="attr-panel-header">
-          <div>
-            <div class="attr-panel-type">Views & Layers</div>
-            <div class="attr-panel-title" id="modelTreeTitle">Current view</div>
+        <div class="right-pane-shell">
+          <div class="attr-panel-header">
+            <div>
+              <div class="attr-panel-type">Model Tree</div>
+              <div class="attr-panel-title" id="modelTreeTitle">Current view</div>
+            </div>
+            <button class="attr-panel-close" id="modelTreeCloseBtn" title="Close" type="button">
+              Close
+            </button>
           </div>
-          <button class="attr-panel-close" id="modelTreeCloseBtn" title="Close" type="button">
-            Close
-          </button>
+          <div class="model-tree-panel-body" id="modelTreeBody"></div>
         </div>
-        <div class="model-tree-panel-body" id="modelTreeBody"></div>
       </aside>
 
       <aside class="right-pane hidden" id="attributePanel">
@@ -719,27 +698,6 @@
     </div>
   </div>
 
-  <div aria-labelledby="collaboratorTitle" aria-modal="true" class="modal-overlay hidden"
-       id="collaboratorOverlay" role="dialog">
-    <div class="modal-dialog">
-      <h3 class="modal-title" id="collaboratorTitle">Add Collaborator</h3>
-      <p class="modal-subtitle">Add an existing registered user by email.</p>
-      <div class="auth-message auth-message-error hidden" id="collaboratorError"></div>
-      <div class="project-create-form">
-        <input autocomplete="email" class="project-input" id="collaboratorEmailInput"
-               placeholder="user@example.com" type="email"/>
-        <select class="project-input" id="collaboratorRoleSelect">
-          <option value="EDITOR">Editor</option>
-          <option value="VIEWER">Viewer</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="collaboratorCancelBtn" type="button">Cancel</button>
-        <button class="btn btn-primary" id="collaboratorAddBtn" type="button">Add</button>
-      </div>
-    </div>
-  </div>
-
   <div aria-labelledby="projectNameTitle" aria-modal="true" class="modal-overlay hidden"
        id="projectNameOverlay" role="dialog">
     <div class="modal-dialog">
@@ -755,19 +713,6 @@
     </div>
   </div>
 
-  <div aria-labelledby="projectAccessTitle" aria-modal="true" class="modal-overlay hidden"
-       id="projectAccessOverlay" role="dialog">
-    <div class="modal-dialog project-access-dialog">
-      <h3 class="modal-title" id="projectAccessTitle">Project Access</h3>
-      <p class="modal-subtitle">Review users who can access this project and revoke access.</p>
-      <div class="auth-message auth-message-error hidden" id="projectAccessError"></div>
-      <div class="project-access-list" id="projectAccessList"></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="projectAccessCloseBtn" type="button">Close</button>
-      </div>
-    </div>
-  </div>
-
   <div aria-labelledby="confirmActionTitle" aria-modal="true" class="modal-overlay hidden"
        id="confirmActionOverlay" role="dialog">
     <div class="modal-dialog">
@@ -777,6 +722,21 @@
         <button class="btn btn-secondary" id="confirmActionCancelBtn" type="button">Cancel
         </button>
         <button class="btn btn-danger" id="confirmActionConfirmBtn" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div aria-labelledby="unsavedModelTitle" aria-modal="true" class="modal-overlay hidden"
+       id="unsavedModelOverlay" role="dialog">
+    <div class="modal-dialog">
+      <h3 class="modal-title" id="unsavedModelTitle">Model Not Saved</h3>
+      <p class="modal-subtitle">
+        Your current model has unsaved changes. Save it before closing this browser tab.
+      </p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="unsavedModelDismissBtn" type="button">Keep Editing
+        </button>
+        <button class="btn btn-primary" id="unsavedModelSaveBtn" type="button">Save Model</button>
       </div>
     </div>
   </div>

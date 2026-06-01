@@ -11,19 +11,11 @@ import {restoreTabGraphState} from './graph-store.js';
 import {materializeActiveView} from './view-materializer.js';
 import {clearArtifactState} from './artifact.js';
 import {MODEL_TYPES} from './config.js';
-import {
-  connectCollaboration,
-  disconnectCollaboration
-} from './collaboration.js';
 import {confirmAction} from './confirm-action.js';
 import {resetModelSaveState, updateModelSaveUi} from './model-save-ui.js';
 
 function resolveProjectId(project) {
   return project?.id || project?.projectId || project?.uuid || null;
-}
-
-function normalizeId(value) {
-  return String(value || "").trim().toLowerCase();
 }
 
 const getElementTarget = (event) => (event.target instanceof Element
@@ -51,15 +43,6 @@ function clearLastProjectId() {
 }
 
 export function bindProjectDialogActions() {
-  if (el.inviteUserBtn && el.inviteUserBtn.dataset.boundInviteUser !== "true") {
-    el.inviteUserBtn.dataset.boundInviteUser = "true";
-    el.inviteUserBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      showCollaboratorDialog();
-    });
-  }
-
   if (el.createProjectBtn && el.createProjectBtn.dataset.boundProjectCreate
       !== "true") {
     el.createProjectBtn.dataset.boundProjectCreate = "true";
@@ -98,41 +81,6 @@ export function bindProjectDialogActions() {
     });
   }
 
-  if (el.collaboratorCancelBtn
-      && el.collaboratorCancelBtn.dataset.boundCollaboratorCancel !== "true") {
-    el.collaboratorCancelBtn.dataset.boundCollaboratorCancel = "true";
-    el.collaboratorCancelBtn.addEventListener("click", hideCollaboratorDialog);
-  }
-
-  if (el.collaboratorOverlay
-      && el.collaboratorOverlay.dataset.boundCollaboratorOverlay !== "true") {
-    el.collaboratorOverlay.dataset.boundCollaboratorOverlay = "true";
-    el.collaboratorOverlay.addEventListener("click", (event) => {
-      if (event.target === el.collaboratorOverlay) {
-        hideCollaboratorDialog();
-      }
-    });
-  }
-
-  if (el.collaboratorAddBtn
-      && el.collaboratorAddBtn.dataset.boundCollaboratorAdd !== "true") {
-    el.collaboratorAddBtn.dataset.boundCollaboratorAdd = "true";
-    el.collaboratorAddBtn.addEventListener("click", addCollaborator);
-  }
-
-  if (el.collaboratorEmailInput
-      && el.collaboratorEmailInput.dataset.boundCollaboratorEnter !== "true") {
-    el.collaboratorEmailInput.dataset.boundCollaboratorEnter = "true";
-    el.collaboratorEmailInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        addCollaborator();
-      }
-      if (event.key === "Escape") {
-        hideCollaboratorDialog();
-      }
-    });
-  }
-
   if (el.editProjectNameBtn
       && el.editProjectNameBtn.dataset.boundEditProjectName !== "true") {
     el.editProjectNameBtn.dataset.boundEditProjectName = "true";
@@ -140,17 +88,6 @@ export function bindProjectDialogActions() {
       event.preventDefault();
       event.stopPropagation();
       showProjectNameDialog();
-    });
-  }
-
-  if (el.manageProjectAccessBtn
-      && el.manageProjectAccessBtn.dataset.boundManageProjectAccess
-      !== "true") {
-    el.manageProjectAccessBtn.dataset.boundManageProjectAccess = "true";
-    el.manageProjectAccessBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      showProjectAccessDialog();
     });
   }
 
@@ -190,21 +127,6 @@ export function bindProjectDialogActions() {
     });
   }
 
-  if (el.projectAccessCloseBtn
-      && el.projectAccessCloseBtn.dataset.boundProjectAccessClose !== "true") {
-    el.projectAccessCloseBtn.dataset.boundProjectAccessClose = "true";
-    el.projectAccessCloseBtn.addEventListener("click", hideProjectAccessDialog);
-  }
-
-  if (el.projectAccessOverlay
-      && el.projectAccessOverlay.dataset.boundProjectAccessOverlay !== "true") {
-    el.projectAccessOverlay.dataset.boundProjectAccessOverlay = "true";
-    el.projectAccessOverlay.addEventListener("click", (event) => {
-      if (event.target === el.projectAccessOverlay) {
-        hideProjectAccessDialog();
-      }
-    });
-  }
 }
 
 // ── Show / hide project dialog ────────────────────────────────────────────────
@@ -216,43 +138,6 @@ export async function showProjectDialog() {
 
 export function hideProjectDialog() {
   el.projectOverlay.classList.add("hidden");
-}
-
-export function showCollaboratorDialog() {
-  if (!state.auth?.user?.id) {
-    setError("You need to sign in first");
-    return;
-  }
-  if (!el.collaboratorOverlay) {
-    setError("Collaborator dialog is unavailable");
-    return;
-  }
-  if (el.collaboratorError) {
-    if (!state.project?.id) {
-      el.collaboratorError.textContent = "Load a project first";
-      el.collaboratorError.classList.remove("hidden");
-    } else {
-      el.collaboratorError.textContent = "";
-      el.collaboratorError.classList.add("hidden");
-    }
-  }
-  el.collaboratorEmailInput.value = "";
-  if (el.collaboratorRoleSelect) {
-    el.collaboratorRoleSelect.value = "EDITOR";
-  }
-  el.collaboratorOverlay.classList.remove("hidden");
-  el.collaboratorOverlay.setAttribute("aria-hidden", "false");
-  document.body.classList.add("modal-open");
-  el.collaboratorEmailInput?.focus();
-}
-
-export function hideCollaboratorDialog() {
-  if (!el.collaboratorOverlay) {
-    return;
-  }
-  el.collaboratorOverlay.classList.add("hidden");
-  el.collaboratorOverlay.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("modal-open");
 }
 
 export function showProjectNameDialog() {
@@ -335,202 +220,6 @@ async function saveProjectName() {
   }
 }
 
-export async function showProjectAccessDialog() {
-  if (!state.project?.id) {
-    setStatus("Load a project first.");
-    return;
-  }
-  if (!el.projectAccessOverlay || !el.projectAccessList) {
-    setError("Project access dialog is unavailable");
-    return;
-  }
-  if (el.projectAccessError) {
-    el.projectAccessError.classList.add("hidden");
-    el.projectAccessError.textContent = "";
-  }
-  el.projectAccessList.innerHTML = '<div class="project-access-empty">Loading members...</div>';
-  el.projectAccessOverlay.classList.remove("hidden");
-  el.projectAccessOverlay.setAttribute("aria-hidden", "false");
-  document.body.classList.add("modal-open");
-  await refreshProjectAccessList();
-}
-
-export function hideProjectAccessDialog() {
-  if (!el.projectAccessOverlay) {
-    return;
-  }
-  el.projectAccessOverlay.classList.add("hidden");
-  el.projectAccessOverlay.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("modal-open");
-}
-
-async function refreshProjectAccessList() {
-  if (!state.project?.id || !el.projectAccessList) {
-    return;
-  }
-  try {
-    const members = await api(`/projects/${state.project.id}/members`);
-    state.project.members = Array.isArray(members) ? members : [];
-    renderProjectAccessList();
-  } catch (error) {
-    if (el.projectAccessError) {
-      el.projectAccessError.textContent = error.message;
-      el.projectAccessError.classList.remove("hidden");
-    }
-    el.projectAccessList.innerHTML = '<div class="project-access-empty">Could not load members.</div>';
-  }
-}
-
-function renderProjectAccessList() {
-  if (!el.projectAccessList) {
-    return;
-  }
-  const members = Array.isArray(state.project?.members) ? state.project.members
-      : [];
-  if (!members.length) {
-    el.projectAccessList.innerHTML = '<div class="project-access-empty">No members found.</div>';
-    return;
-  }
-  const currentUserId = normalizeId(state.auth?.user?.id);
-  const ownerUserId = normalizeId(state.project?.ownerUserId);
-  el.projectAccessList.innerHTML = members.map((member) => {
-    const memberUserId = normalizeId(member?.userId);
-    const displayName = member?.displayName || member?.email || "Unknown user";
-    const role = String(member?.role || "VIEWER").toUpperCase();
-    const canRevoke = role !== "OWNER" && memberUserId !== ownerUserId
-        && memberUserId !== currentUserId;
-    const badgeClass = role === "OWNER" ? "project-access-role-owner"
-        : "project-access-role";
-    return `
-      <div class="project-access-row" data-user-id="${escapeHtml(memberUserId)}">
-        <div class="project-access-user">
-          <div class="project-access-name">${escapeHtml(displayName)}</div>
-          <div class="project-access-email">${escapeHtml(member?.email || "")}</div>
-        </div>
-        <div class="project-access-actions">
-          <span class="${badgeClass}">${escapeHtml(role)}</span>
-          ${canRevoke
-        ? `<button class="btn btn-danger btn-sm revoke-member-btn" data-user-id="${escapeHtml(
-            memberUserId)}" type="button">Revoke</button>`
-        : `<span class="project-access-static">${role === "OWNER" ? "Owner"
-            : "Active"}</span>`}
-        </div>
-      </div>`;
-  }).join("");
-
-  Array.from(
-      el.projectAccessList.querySelectorAll(".revoke-member-btn")).forEach(
-      (button) => {
-        button.addEventListener("click", async (event) => {
-          const target = getElementTarget(event);
-          const userId = target?.getAttribute("data-user-id");
-          if (!userId) {
-            return;
-          }
-          await revokeProjectMember(userId, target);
-        });
-      });
-}
-
-async function revokeProjectMember(userId, triggerBtn) {
-  if (!state.project?.id || !userId) {
-    return;
-  }
-  const member = (state.project.members || []).find(
-      (item) => normalizeId(item?.userId) === normalizeId(userId));
-  const memberLabel = member?.displayName || member?.email || "this user";
-  const confirmed = await confirmAction({
-    title: "Revoke Access",
-    message: `Revoke project access for "${memberLabel}"?`,
-    confirmLabel: "Revoke Access",
-    danger: true
-  });
-  if (!confirmed) {
-    return;
-  }
-  if (triggerBtn instanceof HTMLButtonElement) {
-    triggerBtn.disabled = true;
-  }
-  try {
-    await api(`/projects/${state.project.id}/members/${userId}`,
-        {method: "DELETE"});
-    state.project.members = (state.project.members || []).filter(
-        (item) => normalizeId(item?.userId) !== normalizeId(userId));
-    renderProjectAccessList();
-    setStatus(`Access revoked for ${memberLabel}`);
-  } catch (error) {
-    if (el.projectAccessError) {
-      el.projectAccessError.textContent = error.message;
-      el.projectAccessError.classList.remove("hidden");
-    }
-  } finally {
-    if (triggerBtn instanceof HTMLButtonElement) {
-      triggerBtn.disabled = false;
-    }
-  }
-}
-
-async function addCollaborator() {
-  if (!state.project?.id) {
-    if (el.collaboratorError) {
-      el.collaboratorError.textContent = "Load a project before inviting users";
-      el.collaboratorError.classList.remove("hidden");
-    }
-    return;
-  }
-  const email = (el.collaboratorEmailInput?.value || "").trim().toLowerCase();
-  const role = (el.collaboratorRoleSelect?.value || "EDITOR").toUpperCase();
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!emailRegex.test(email)) {
-    if (el.collaboratorError) {
-      el.collaboratorError.textContent = "Enter a valid email address";
-      el.collaboratorError.classList.remove("hidden");
-    }
-    return;
-  }
-
-  const setBusy = (busy) => {
-    if (el.collaboratorAddBtn) {
-      el.collaboratorAddBtn.disabled = busy;
-    }
-    if (el.collaboratorCancelBtn) {
-      el.collaboratorCancelBtn.disabled = busy;
-    }
-    if (el.collaboratorEmailInput) {
-      el.collaboratorEmailInput.disabled = busy;
-    }
-    if (el.collaboratorRoleSelect) {
-      el.collaboratorRoleSelect.disabled = busy;
-    }
-  };
-
-  try {
-    setBusy(true);
-    const added = await api(`/projects/${state.project.id}/invite`, {
-      method: "POST",
-      body: JSON.stringify({email, role})
-    });
-    if (!Array.isArray(state.project.members)) {
-      state.project.members = [];
-    }
-    const exists = state.project.members.some(
-        (member) => normalizeId(member?.email) === normalizeId(added?.email));
-    if (!exists) {
-      state.project.members.push(added);
-    }
-    hideCollaboratorDialog();
-    setStatus(`${email} added as ${role.toLowerCase()}`);
-  } catch (error) {
-    if (el.collaboratorError) {
-      el.collaboratorError.textContent = error.message;
-      el.collaboratorError.classList.remove("hidden");
-    }
-  } finally {
-    setBusy(false);
-  }
-}
-
 // ── Project list ──────────────────────────────────────────────────────────────
 
 export async function refreshProjectList() {
@@ -605,7 +294,6 @@ export async function loadProject(project) {
   const projectName = project?.name || "Unnamed project";
   setBusy(`Loading project "${projectName}"…`);
   try {
-    disconnectCollaboration();
     state.project = normalizedProject;
     saveLastProjectId(projectId);
     clearArtifactState();
@@ -708,7 +396,6 @@ export async function loadProject(project) {
     resetModelSaveState();
     resetCanvasView();
     hideProjectDialog();
-    connectCollaboration(projectId);
     setStatus(`Project "${projectName}" loaded`);
     updateModelSaveUi();
   } catch (error) {
@@ -751,7 +438,6 @@ export async function deleteCurrentProject() {
 
   try {
     await api(`/projects/${projectId}`, {method: "DELETE"});
-    disconnectCollaboration();
     state.project = null;
     clearArtifactState();
     state.modelId = null;
