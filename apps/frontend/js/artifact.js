@@ -508,24 +508,30 @@ export function toggleArtifactTreeCollapsed() {
   setArtifactTreeCollapsed(!state.artifact.treeCollapsed);
 }
 
+export async function loadArtifactRecord(record, {collapseTree = true} = {}) {
+  await initArtifactEditor();
+  state.artifact.id = record.id;
+  state.artifact.name = record.name || "artifact";
+  setArtifactDirty(false);
+
+  const files = record.files || record.modelJson?.files || {};
+  state.artifact.files = Object.keys(files).map((path) => ({path}));
+  if (typeof collapseTree === "boolean") {
+    state.artifact.treeCollapsed = collapseTree;
+  }
+
+  setExplorerRootLabel(state.artifact.name);
+  updateTreeToggleButton();
+  resetArtifactEditor();
+  renderFileTree(state.artifact.files);
+  setStatus(
+      `Loaded artifact: ${state.artifact.name} (${state.artifact.files.length} files)`);
+}
+
 export async function loadArtifactById(id, {collapseTree = true} = {}) {
   try {
-    await initArtifactEditor();
     const record = await api(`/artifact/${id}`);
-    state.artifact.id = record.id;
-    state.artifact.name = record.name || "artifact";
-    setArtifactDirty(false);
-
-    const files = record.files || record.modelJson?.files || {};
-    state.artifact.files = Object.keys(files).map((path) => ({path}));
-    if (typeof collapseTree === "boolean") {
-      state.artifact.treeCollapsed = collapseTree;
-    }
-
-    setExplorerRootLabel(state.artifact.name);
-    updateTreeToggleButton();
-    resetArtifactEditor();
-    renderFileTree(state.artifact.files);
+    await loadArtifactRecord(record, {collapseTree});
     if (state.project?.id) {
       try {
         const activeModelIds = {
@@ -545,8 +551,6 @@ export async function loadArtifactById(id, {collapseTree = true} = {}) {
         console.warn("Failed to sync active artifact on project.", error);
       }
     }
-    setStatus(
-        `Loaded artifact: ${state.artifact.name} (${state.artifact.files.length} files)`);
   } catch (error) {
     setStatus(`Failed to load artifact: ${error.message}`);
   }

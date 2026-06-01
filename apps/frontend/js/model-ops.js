@@ -30,7 +30,11 @@ import {resolveNodeOverlaps} from './layout-engine.js';
 import {closeAttributePanel} from './attr-panel.js';
 import {closeImpactPanel} from './impact.js';
 import {refreshGithubConnection} from './github.js';
-import {loadArtifactById, loadCurrentProjectArtifact} from './artifact.js';
+import {
+  loadArtifactById,
+  loadArtifactRecord,
+  loadCurrentProjectArtifact
+} from './artifact.js';
 import {confirmAction} from './confirm-action.js';
 import {
   completeGenerationProgress,
@@ -598,14 +602,21 @@ async function loadModelRecord(typeKey, record,
 // ── Transformation / generation ───────────────────────────────────────────────
 
 async function runTransformation(path, sourceModelId) {
-  const job = await api(`/transformations/${path}`, {
+  const result = await api(`/transformations/${path}`, {
     method: "POST",
     body: JSON.stringify({
       sourceModelId,
       expectedRevision: state.modelRevision || 1
     })
   });
-  return waitForTransformationJob(job?.id);
+  const status = String(result?.status || "").toUpperCase();
+  if (status === "SUCCEEDED" || result?.success === true) {
+    return result;
+  }
+  if (result?.id) {
+    return waitForTransformationJob(result.id);
+  }
+  return result;
 }
 
 async function ensureStoredModelForBackendOperation(operationLabel) {
@@ -868,8 +879,13 @@ export async function generateCimToPim() {
     setBusy("Generating PIM…");
     setGenerationProgressPhase(
         "Translating the CIM into a draft PIM model…", 68);
-    const job = await runTransformation("cim-to-pim", state.modelId);
-    await loadModelById("pim", job.resultModelId, {showManualGuidance: true});
+    const result = await runTransformation("cim-to-pim", state.modelId);
+    if (result.model) {
+      await loadModelRecord("pim", result.model, {showManualGuidance: true});
+    } else {
+      await loadModelById("pim", result.resultModelId,
+          {showManualGuidance: true});
+    }
     setGenerationProgressPhase("Opening the generated PIM model…", 92);
     await completeGenerationProgress("PIM ready.");
     if (!state.validation.issues.length) {
@@ -918,8 +934,13 @@ export async function generatePimToPsm() {
     setBusy("Generating PSM…");
     setGenerationProgressPhase(
         "Transforming the PIM into a platform-specific design…", 68);
-    const job = await runTransformation("pim-to-psm", state.modelId);
-    await loadModelById("psm", job.resultModelId, {showManualGuidance: true});
+    const result = await runTransformation("pim-to-psm", state.modelId);
+    if (result.model) {
+      await loadModelRecord("psm", result.model, {showManualGuidance: true});
+    } else {
+      await loadModelById("psm", result.resultModelId,
+          {showManualGuidance: true});
+    }
     setGenerationProgressPhase("Opening the generated PSM model…", 92);
     await completeGenerationProgress("PSM ready.");
     if (!state.validation.issues.length) {
@@ -968,11 +989,15 @@ export async function generatePsmToArtifact() {
     setBusy("Generating Artifact…");
     setGenerationProgressPhase(
         "Generating deployment-ready artifacts from the PSM…", 76);
-    const job = await runTransformation("psm-to-artifact", state.modelId);
+    const result = await runTransformation("psm-to-artifact", state.modelId);
     setStatus("Artifact generated — loading…");
     setGenerationProgressPhase(
         "Opening the generated project in the artifact explorer…", 94);
-    await loadArtifactById(job.resultArtifactId, {collapseTree: true});
+    if (result.artifact) {
+      await loadArtifactRecord(result.artifact, {collapseTree: true});
+    } else {
+      await loadArtifactById(result.resultArtifactId, {collapseTree: true});
+    }
     await switchTab("artifact");
     await completeGenerationProgress("Artifacts ready.");
     setStatus("Artifact ready");

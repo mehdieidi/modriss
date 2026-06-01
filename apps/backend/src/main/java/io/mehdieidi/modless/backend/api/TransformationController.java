@@ -1,10 +1,14 @@
 package io.mehdieidi.modless.backend.api;
 
+import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobStatus;
+import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.service.MdeJobService;
+import io.mehdieidi.modless.platform.core.service.TransformationService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,35 +23,40 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransformationController {
 
     private final MdeJobService jobs;
+    private final TransformationService transformations;
     private final AuthSupport auth;
 
-    public TransformationController(MdeJobService jobs, AuthSupport auth) {
+    public TransformationController(MdeJobService jobs, TransformationService transformations,
+            AuthSupport auth) {
         this.jobs = jobs;
+        this.transformations = transformations;
         this.auth = auth;
     }
 
     @PostMapping("/cim-to-pim")
-    ResponseEntity<JobResponse> cimToPim(@RequestHeader("X-Auth-Token") String token,
+    ResponseEntity<TransformationResponse> cimToPim(@RequestHeader("X-Auth-Token") String token,
             @Valid @RequestBody TransformRequest request) {
-        MdeJobRecord job = jobs.submitCimToPim(auth.user(token), request.sourceModelId(),
+        ModelRecord model = transformations.cimToPim(auth.user(token), request.sourceModelId(),
                 request.expectedRevision());
-        return ResponseEntity.accepted().body(new JobResponse(job.id(), job.status()));
+        return ResponseEntity.ok(TransformationResponse.model(model));
     }
 
     @PostMapping("/pim-to-psm")
-    ResponseEntity<JobResponse> pimToPsm(@RequestHeader("X-Auth-Token") String token,
+    ResponseEntity<TransformationResponse> pimToPsm(@RequestHeader("X-Auth-Token") String token,
             @Valid @RequestBody TransformRequest request) {
-        MdeJobRecord job = jobs.submitPimToPsm(auth.user(token), request.sourceModelId(),
+        ModelRecord model = transformations.pimToPsm(auth.user(token), request.sourceModelId(),
                 request.expectedRevision());
-        return ResponseEntity.accepted().body(new JobResponse(job.id(), job.status()));
+        return ResponseEntity.ok(TransformationResponse.model(model));
     }
 
     @PostMapping("/psm-to-artifact")
-    ResponseEntity<JobResponse> psmToArtifact(@RequestHeader("X-Auth-Token") String token,
+    ResponseEntity<TransformationResponse> psmToArtifact(
+            @RequestHeader("X-Auth-Token") String token,
             @Valid @RequestBody TransformRequest request) {
-        MdeJobRecord job = jobs.submitPsmToArtifact(auth.user(token), request.sourceModelId(),
+        ArtifactRecord artifact = transformations.psmToArtifact(auth.user(token),
+                request.sourceModelId(),
                 request.expectedRevision());
-        return ResponseEntity.accepted().body(new JobResponse(job.id(), job.status()));
+        return ResponseEntity.ok(TransformationResponse.artifact(artifact));
     }
 
     @GetMapping("/jobs/{id}")
@@ -68,5 +77,25 @@ public class TransformationController {
 
     public record JobResponse(String id, MdeJobStatus status) {
 
+    }
+
+    public record TransformationResponse(
+            boolean success,
+            String status,
+            String resultModelId,
+            String resultArtifactId,
+            ModelRecord model,
+            ArtifactRecord artifact,
+            List<String> diagnostics) {
+
+        static TransformationResponse model(ModelRecord model) {
+            return new TransformationResponse(true, "SUCCEEDED", model.id(), null, model, null,
+                    List.of());
+        }
+
+        static TransformationResponse artifact(ArtifactRecord artifact) {
+            return new TransformationResponse(true, "SUCCEEDED", null, artifact.id(), null,
+                    artifact, List.of());
+        }
     }
 }
