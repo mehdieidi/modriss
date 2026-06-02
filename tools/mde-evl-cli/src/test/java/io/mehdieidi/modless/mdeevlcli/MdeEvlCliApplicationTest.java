@@ -7,8 +7,18 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import picocli.CommandLine;
 
 final class MdeEvlCliApplicationTest {
@@ -33,6 +43,7 @@ final class MdeEvlCliApplicationTest {
     @Test
     void psmCommandReturnsViolationExitCodeAndWritesReport() throws Exception {
         Path reportFile = tempDir.resolve("psm-validation-report.json");
+        Path invalidPsm = psmWithProdApprovalDisabled();
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
 
@@ -42,7 +53,7 @@ final class MdeEvlCliApplicationTest {
                 .execute(
                         "psm",
                         "--repo-root", REPOSITORY_ROOT.toString(),
-                        "--model", REPOSITORY_ROOT.resolve("mde/samples/psm.xmi").toString(),
+                        "--model", invalidPsm.toString(),
                         "--log-file", reportFile.toString(),
                         "--fail-on-mandatory-violations");
 
@@ -51,6 +62,47 @@ final class MdeEvlCliApplicationTest {
         assertTrue(err.toString().isBlank());
         String reportJson = Files.readString(reportFile);
         assertTrue(reportJson.contains("\"status\": \"SUCCEEDED\""));
-        assertTrue(reportJson.contains("\"mandatoryViolationCount\": 57"));
+        assertTrue(Pattern.compile("\"mandatoryViolationCount\"\\s*:\\s*[1-9][0-9]*")
+                .matcher(reportJson)
+                .find());
+        assertTrue(reportJson.contains("\"constraintName\": \"ProdRequiresApproval\""));
+    }
+
+    private Path psmWithProdApprovalDisabled() throws Exception {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        documentBuilderFactory.setNamespaceAware(true);
+        documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl",
+                true);
+        documentBuilderFactory.setFeature(
+                "http://xml.org/sax/features/external-general-entities", false);
+        documentBuilderFactory.setFeature(
+                "http://xml.org/sax/features/external-parameter-entities", false);
+        documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+
+        Document document = documentBuilderFactory.newDocumentBuilder()
+                .parse(REPOSITORY_ROOT.resolve("mde/samples/psm.xmi").toFile());
+        NodeList stages = document.getDocumentElement().getElementsByTagName("stages");
+        boolean changed = false;
+        for (int i = 0; i < stages.getLength(); i++) {
+            Element stage = (Element) stages.item(i);
+            if ("PROD".equals(stage.getAttribute("environmentClass"))) {
+                stage.setAttribute("requiresManualApproval", "false");
+                changed = true;
+            }
+        }
+        if (!changed) {
+            throw new IllegalStateException("PSM sample does not contain a PROD stage.");
+        }
+
+        Path invalidPsm = tempDir.resolve("psm-prod-approval-disabled.xmi");
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+        var transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.ENCODING, "ASCII");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.transform(new DOMSource(document), new StreamResult(invalidPsm.toFile()));
+        return invalidPsm;
     }
 }
