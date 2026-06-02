@@ -46,6 +46,7 @@ import {renderPimWorkbenchSurface} from './pim-workbench.js';
 import {renderPsmWorkbenchSurface} from './psm-workbench.js';
 import {
   addG6Edge,
+  addG6Node,
   beginG6InlineLabelEdit,
   fitG6CanvasToDiagram,
   focusG6CanvasPoint,
@@ -1755,10 +1756,40 @@ function g6ConnectionTargetState(source, target) {
   if (!source || !target || source.id === target.id) {
     return "illegal";
   }
-  const legal = legalKindsForConnection(source.type, target.type);
+  const forward = legalKindsForConnection(source.type, target.type);
+  const reverse = legalKindsForConnection(target.type, source.type);
+  const legal = forward.length ? forward : reverse;
   const preferred = state.preferredConnectionKind;
   return preferred ? (legal.includes(preferred) ? "legal" : "illegal")
       : (legal.length ? "legal" : "illegal");
+}
+
+function g6ConnectionTargetTypes(source, {availableTypes = []} = {}) {
+  if (!source) {
+    return [];
+  }
+  return availableTypes.filter((targetType) => {
+    if (!targetType) {
+      return false;
+    }
+    const forward = legalKindsForConnection(source.type, targetType);
+    const reverse = legalKindsForConnection(targetType, source.type);
+    const legal = forward.length ? forward : reverse;
+    const preferred = state.preferredConnectionKind;
+    return preferred ? legal.includes(preferred) : legal.length > 0;
+  });
+}
+
+function moveG6ConnectionDrag(sourceId, targetId) {
+  if (!state.linkDrag || state.linkDrag.sourceId !== sourceId) {
+    return;
+  }
+  const nextTargetId = targetId || null;
+  if (state.linkDrag.hoveredTargetId === nextTargetId) {
+    return;
+  }
+  state.linkDrag.hoveredTargetId = nextTargetId;
+  updateG6ConnectionState();
 }
 
 function ensureG6Canvas() {
@@ -1811,6 +1842,7 @@ function ensureG6Canvas() {
         onNodeDrag: moveG6NodeDrag,
         onNodeDragEnd: endG6NodeDrag,
         onConnectionDragStart: startG6ConnectionDrag,
+        onConnectionPointerMove: moveG6ConnectionDrag,
         onConnectionDragEnd: () => {
           state.linkDrag = null;
           updateG6ConnectionState();
@@ -1826,6 +1858,7 @@ function ensureG6Canvas() {
           setStatus("Connection canceled");
         },
         connectionTargetState: g6ConnectionTargetState,
+        connectionTargetTypes: g6ConnectionTargetTypes,
         contextBoxes: g6ContextBoxes,
         onContextSelect: selectBoundedContext,
         onContextOpen: openBoundedContextFocus,
@@ -1859,7 +1892,6 @@ export function initializeModelingRenderer() {
   if (mountedOrUnavailable && getG6Editor()) {
     syncCanvasIndexesFromState();
     syncG6FromState({full: true});
-    renderG6Diagram();
   }
   return mountedOrUnavailable;
 }
@@ -2150,6 +2182,9 @@ function setHoveredNode(nodeId) {
   }
   state.hoveredNodeId = nextHoveredNodeId;
   applyHoverFocusStyles();
+  if (state.connectSourceId) {
+    updateG6ConnectionState();
+  }
 }
 
 function toggleNodeInSelection(nodeId) {
@@ -4161,7 +4196,7 @@ function endG6NodeDrag(nodeId, position, {moved = false} = {}) {
 }
 
 function startG6ConnectionDrag(sourceId) {
-  state.linkDrag = {sourceId, pointerX: 0, pointerY: 0};
+  state.linkDrag = {sourceId, pointerX: 0, pointerY: 0, hoveredTargetId: null};
   updateG6ConnectionState();
   setStatus("Drag to another element to create a legal connection");
 }
@@ -4318,6 +4353,9 @@ export function setupDnD() {
     }
     pushDiagramUndoSnapshot();
     const pos = toCanvasCoordinates(e.clientX, e.clientY);
+    const beforeNodeIds = new Set(state.diagram.nodes.map((item) => item.id));
+    const beforeEdgeIds = new Set(
+        state.diagram.connections.map((item) => item.id));
     const node = getDefaultNode(state.activeType, type, Math.round(pos.x),
         Math.round(pos.y));
     state.diagram.nodes.push(node);
@@ -4329,7 +4367,15 @@ export function setupDnD() {
     }
     syncCanvasIndexesFromState();
     ensureG6Canvas();
-    renderG6Diagram();
+    const addedVisibleNodes = state.diagram.nodes.filter(
+        (item) => !beforeNodeIds.has(item.id));
+    const addedVisibleEdges = state.diagram.connections.filter(
+        (item) => !beforeEdgeIds.has(item.id));
+    if (addedVisibleNodes.length === 1 && !addedVisibleEdges.length) {
+      addG6Node(addedVisibleNodes[0]);
+    } else {
+      syncG6FromState({full: false});
+    }
     updateG6Selection();
     updateG6ContextBoxes();
     workbenchSurfaces();

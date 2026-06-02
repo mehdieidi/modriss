@@ -33,7 +33,12 @@ let editor = null;
 let extensionsRegistered = false;
 let pendingViewportFrame = 0;
 let pendingViewportSyncFrame = 0;
+let pendingLodFrame = 0;
+let pendingLodTimer = 0;
+let pendingLodState = null;
+const CONNECT_GLOBAL_TARGET_NODE_LIMIT = 240;
 const CONNECT_ILLEGAL_STATE_NODE_LIMIT = 800;
+const LOD_UPDATE_IDLE_DELAY_MS = 140;
 
 function g6() {
   return window.G6 || null;
@@ -779,11 +784,11 @@ function spatialIndexFallbackSize() {
   return nodeSizeForDiagram(state.activeType);
 }
 
-function graphDataFromState() {
+function graphDataFromState(options = mapperOptions()) {
   return mapDiagramToG6({
     nodes: state.diagram.nodes,
     edges: state.diagram.connections,
-    ...mapperOptions()
+    ...options
   });
 }
 
@@ -802,6 +807,7 @@ function rememberDataSnapshot(data) {
     nodesById, edgesById, nodeFingerprints,
     edgeFingerprints
   };
+  rebuildNodeTypeIndex(data.nodes);
 }
 
 function rebuildSpatialIndex(nodes = null) {
@@ -825,6 +831,57 @@ function ensureDataSnapshot() {
     rememberDataSnapshot({nodes: [], edges: []});
   }
   return editor.dataSnapshot;
+}
+
+function nodeTypeFromData(nodeData) {
+  return String(nodeData?.style?.nodeType || nodeData?.data?.nodeType
+      || nodeData?.data?.source?.type || nodeData?.data?.source?.eClass || "")
+  .trim();
+}
+
+function forgetNodeType(nodeId) {
+  if (!editor || !nodeId) {
+    return;
+  }
+  const previousType = editor.nodeTypeById?.get?.(nodeId) || "";
+  if (!previousType) {
+    return;
+  }
+  const ids = editor.nodeIdsByType?.get?.(previousType);
+  ids?.delete?.(nodeId);
+  if (ids && !ids.size) {
+    editor.nodeIdsByType.delete(previousType);
+  }
+  editor.nodeTypeById.delete(nodeId);
+}
+
+function rememberNodeType(nodeData) {
+  if (!editor || !nodeData?.id) {
+    return;
+  }
+  const nextType = nodeTypeFromData(nodeData);
+  const previousType = editor.nodeTypeById?.get?.(nodeData.id) || "";
+  if (previousType && previousType !== nextType) {
+    forgetNodeType(nodeData.id);
+    editor.connectStateKey = "";
+  }
+  if (!nextType) {
+    return;
+  }
+  if (!editor.nodeIdsByType.has(nextType)) {
+    editor.nodeIdsByType.set(nextType, new Set());
+  }
+  editor.nodeIdsByType.get(nextType).add(nodeData.id);
+  editor.nodeTypeById.set(nodeData.id, nextType);
+}
+
+function rebuildNodeTypeIndex(nodes = []) {
+  if (!editor) {
+    return;
+  }
+  editor.nodeIdsByType.clear();
+  editor.nodeTypeById.clear();
+  nodes.forEach(rememberNodeType);
 }
 
 function hasKnownElement(id, map) {
@@ -872,7 +929,7 @@ function runViewportSync({syncSelection = false} = {}) {
   syncViewportStateFromGraph();
   setCanvasZoomIndicator();
   updateViewportChrome();
-  updateG6Lod();
+  updateG6Lod({defer: true});
   updateG6ContextBoxes(null, {useCache: true});
   if (syncSelection) {
     updateG6Selection();
@@ -910,6 +967,7 @@ function rememberNodeData(nodeData) {
   const snapshot = ensureDataSnapshot();
   snapshot.nodesById.set(nodeData.id, nodeData);
   snapshot.nodeFingerprints.set(nodeData.id, fingerprintElement(nodeData));
+  rememberNodeType(nodeData);
   editor.spatialIndex?.update?.(nodeData, {
     fallbackSize: spatialIndexFallbackSize()
   });
@@ -935,6 +993,7 @@ function applyDiff(data) {
     diff.removeNodeIds.forEach((id) => {
       editor.nodeStateFlags.delete(id);
       editor.connectStateIds.delete(id);
+      forgetNodeType(id);
       editor.spatialIndex?.remove?.(id);
     });
   }
@@ -967,6 +1026,7 @@ function applyDiff(data) {
         fallbackSize: spatialIndexFallbackSize()
       }));
   editor.dataSnapshot = diff.snapshot;
+  rebuildNodeTypeIndex([...diff.snapshot.nodesById.values()]);
   editor.adjacency = createAdjacencyIndex(state.diagram.connections);
   if (diff.addNodes.length || diff.addEdges.length || diff.removeNodeIds.length
       || diff.removeEdgeIds.length) {
@@ -1095,7 +1155,7 @@ export function mountG6Editor(container, {
     zoomRange: [0.01, 2.5],
     cursor: "grab",
     data: {nodes: [], edges: []},
-    behaviors: ["zoom-canvas"],
+    behaviors: ["zoom-canvas", "optimize-viewport-transform"],
     node: {
       type: G6_BASE_NODE_TYPE,
       state: {
@@ -1129,6 +1189,8 @@ export function mountG6Editor(container, {
     dataSnapshot: null,
     nodeStateFlags: new Map(),
     edgeStateFlags: new Map(),
+    nodeIdsByType: new Map(),
+    nodeTypeById: new Map(),
     connectStateIds: new Set(),
     connectStateKey: "",
     hoveredNodeId: null,
@@ -1161,6 +1223,7 @@ export function destroyG6Editor() {
     window.cancelAnimationFrame(pendingViewportSyncFrame);
     pendingViewportSyncFrame = 0;
   }
+  cancelPendingLodUpdate();
   clearG6Overlays();
   editor?.disposeInteractions?.();
   editor?.graph?.destroy?.();
@@ -1197,7 +1260,11 @@ export function syncG6FromState({full = false} = {}) {
     updateDebugState({lastError: "syncG6FromState before mount"});
     return;
   }
-  const data = graphDataFromState();
+  const options = mapperOptions();
+  const data = graphDataFromState(options);
+  cancelPendingLodUpdate();
+  editor.lastLod = options.detailLevel;
+  editor.lastShowLabels = options.showLabels;
   updateDebugState(
       {lastSync: {full, nodes: data.nodes.length, edges: data.edges.length}});
   resizeGraphToHost();
@@ -1306,6 +1373,7 @@ export function removeG6Node(nodeId) {
   editor.dataSnapshot?.nodeFingerprints?.delete(nodeId);
   editor.nodeStateFlags.delete(nodeId);
   editor.connectStateIds.delete(nodeId);
+  forgetNodeType(nodeId);
   editor.spatialIndex?.remove?.(nodeId);
   editor.contextBoxesDirty = true;
   scheduleGraphRender(editor.graph);
@@ -1393,13 +1461,56 @@ export function updateG6Selection() {
   }
 }
 
+function idsByTypes(types = [], {
+  excludeId = "",
+  limit = Number.POSITIVE_INFINITY
+} = {}) {
+  const ids = [];
+  let overflow = false;
+  for (const type of types) {
+    const bucket = editor?.nodeIdsByType?.get?.(type);
+    if (!bucket?.size) {
+      continue;
+    }
+    for (const id of bucket) {
+      if (id === excludeId) {
+        continue;
+      }
+      if (ids.length >= limit) {
+        overflow = true;
+        return {ids, overflow};
+      }
+      ids.push(id);
+    }
+  }
+  return {ids, overflow};
+}
+
+function connectionStateForNode(source, node) {
+  if (!source || !node) {
+    return "";
+  }
+  return editor.callbacks?.connectionTargetState?.(source, node) === "legal"
+      ? "connect-legal" : "connect-illegal";
+}
+
+function legalConnectionTargetTypes(source) {
+  const availableTypes = [...(editor?.nodeIdsByType?.keys?.() || [])];
+  const result = editor.callbacks?.connectionTargetTypes?.(source,
+      {availableTypes});
+  return Array.isArray(result) ? result.filter(Boolean) : null;
+}
+
 export function updateG6ConnectionState() {
   if (!editor?.graph) {
     return;
   }
   const sourceId = state.connectSourceId || state.linkDrag?.sourceId || "";
+  const hoverTargetId = state.linkDrag?.hoveredTargetId
+      || (state.connectSourceId ? state.hoveredNodeId || "" : "");
   const nextKey = sourceId ? [
     sourceId,
+    hoverTargetId,
     state.preferredConnectionKind || "",
     state.activeType,
     state.nodesById.size
@@ -1419,25 +1530,56 @@ export function updateG6ConnectionState() {
   editor.connectStateIds.clear();
   if (sourceId) {
     const source = state.nodesById.get(sourceId);
+    editor.connectStateIds.add(sourceId);
+    if (setFlag(editor.nodeStateFlags, sourceId, "connect-source", true)) {
+      changed.add(sourceId);
+    }
+    const targetTypes = source ? legalConnectionTargetTypes(source) : null;
+    let globallyMarkedTargetIds = new Set();
+    if (targetTypes) {
+      const {ids, overflow} = idsByTypes(targetTypes, {
+        excludeId: sourceId,
+        limit: CONNECT_GLOBAL_TARGET_NODE_LIMIT + 1
+      });
+      if (!overflow && ids.length <= CONNECT_GLOBAL_TARGET_NODE_LIMIT) {
+        globallyMarkedTargetIds = new Set(ids);
+        ids.forEach((id) => {
+          editor.connectStateIds.add(id);
+          if (setFlag(editor.nodeStateFlags, id, "connect-legal", true)) {
+            changed.add(id);
+          }
+        });
+      }
+    }
     const showIllegalStates = state.nodesById.size
         <= CONNECT_ILLEGAL_STATE_NODE_LIMIT;
-    state.nodesById.forEach((node, id) => {
-      let flag = "";
-      if (id === sourceId) {
-        flag = "connect-source";
-      } else if (source) {
-        const legal = editor.callbacks?.connectionTargetState?.(source, node)
-            === "legal";
-        flag = legal ? "connect-legal"
-            : showIllegalStates ? "connect-illegal" : "";
-      }
-      if (flag) {
-        editor.connectStateIds.add(id);
-        if (setFlag(editor.nodeStateFlags, id, flag, true)) {
-          changed.add(id);
+    if (!targetTypes && showIllegalStates) {
+      state.nodesById.forEach((node, id) => {
+        let flag = "";
+        if (id === sourceId) {
+          flag = "connect-source";
+        } else if (source) {
+          flag = connectionStateForNode(source, node);
+        }
+        if (flag) {
+          editor.connectStateIds.add(id);
+          if (setFlag(editor.nodeStateFlags, id, flag, true)) {
+            changed.add(id);
+          }
+        }
+      });
+    }
+    if (hoverTargetId && hoverTargetId !== sourceId
+        && !globallyMarkedTargetIds.has(hoverTargetId)) {
+      const hoverNode = state.nodesById.get(hoverTargetId);
+      const hoverFlag = connectionStateForNode(source, hoverNode);
+      if (hoverFlag) {
+        editor.connectStateIds.add(hoverTargetId);
+        if (setFlag(editor.nodeStateFlags, hoverTargetId, hoverFlag, true)) {
+          changed.add(hoverTargetId);
         }
       }
-    });
+    }
   }
   flushElementStates(changed, editor.nodeStateFlags);
 }
@@ -1729,7 +1871,50 @@ export function beginG6InlineLabelEdit(node, handlers) {
   showInlineLabelEditor(editor.graph, node, handlers);
 }
 
-export function updateG6Lod() {
+function cancelPendingLodUpdate() {
+  if (pendingLodTimer) {
+    window.clearTimeout(pendingLodTimer);
+    pendingLodTimer = 0;
+  }
+  if (pendingLodFrame) {
+    window.cancelAnimationFrame(pendingLodFrame);
+    pendingLodFrame = 0;
+  }
+  pendingLodState = null;
+}
+
+function applyG6Lod(nextLod, showLabels) {
+  if (!editor?.graph) {
+    return;
+  }
+  cancelPendingLodUpdate();
+  editor.lastLod = nextLod;
+  editor.lastShowLabels = showLabels;
+  syncG6FromState({full: false});
+}
+
+function scheduleG6LodUpdate(nextLod, showLabels) {
+  pendingLodState = {nextLod, showLabels};
+  if (pendingLodTimer) {
+    window.clearTimeout(pendingLodTimer);
+  }
+  pendingLodTimer = window.setTimeout(() => {
+    pendingLodTimer = 0;
+    if (pendingLodFrame) {
+      return;
+    }
+    pendingLodFrame = window.requestAnimationFrame(() => {
+      pendingLodFrame = 0;
+      const pending = pendingLodState;
+      pendingLodState = null;
+      if (pending) {
+        applyG6Lod(pending.nextLod, pending.showLabels);
+      }
+    });
+  }, LOD_UPDATE_IDLE_DELAY_MS);
+}
+
+export function updateG6Lod({defer = false} = {}) {
   if (!editor?.graph) {
     return;
   }
@@ -1740,9 +1925,11 @@ export function updateG6Lod() {
   if (nextLod === editor.lastLod && showLabels === editor.lastShowLabels) {
     return;
   }
-  editor.lastLod = nextLod;
-  editor.lastShowLabels = showLabels;
-  syncG6FromState({full: false});
+  if (defer) {
+    scheduleG6LodUpdate(nextLod, showLabels);
+  } else {
+    applyG6Lod(nextLod, showLabels);
+  }
 }
 
 export function updateG6ContextBoxes(boxes = null, {useCache = false} = {}) {

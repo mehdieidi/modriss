@@ -205,11 +205,37 @@ export function createSpatialIndex(nodes = [], {
 }
 
 export function fingerprintElement(element) {
+  const data = element?.data && typeof element.data === "object"
+      ? element.data : {};
+  const renderData = {
+    nodeType: data.nodeType,
+    label: data.label,
+    diagramType: data.diagramType,
+    notation: data.notation,
+    kindText: data.kindText,
+    detailText: data.detailText,
+    tokenText: data.tokenText,
+    badges: data.badges,
+    showHandles: data.showHandles,
+    accent: data.accent,
+    sticky: data.sticky,
+    viewProfile: data.viewProfile,
+    contextName: data.contextName,
+    container: data.container,
+    detailLevel: data.detailLevel,
+    kind: data.kind,
+    presentationClass: data.presentationClass,
+    markerStart: data.markerStart,
+    markerEnd: data.markerEnd,
+    pinPoints: data.pinPoints,
+    sourceAnchor: data.sourceAnchor,
+    targetAnchor: data.targetAnchor
+  };
   return JSON.stringify({
     id: element.id,
     source: element.source,
     target: element.target,
-    data: element.data,
+    data: renderData,
     style: element.style,
     type: element.type
   });

@@ -15,6 +15,23 @@ import {
   stickyColor
 } from './g6-style.js';
 
+const elementDefinitionCache = new Map();
+
+function cachedElementDefinition(typeKey, type) {
+  const key = `${typeKey || ""}:${type || ""}`;
+  if (elementDefinitionCache.has(key)) {
+    return elementDefinitionCache.get(key);
+  }
+  let definition = null;
+  try {
+    definition = modelingElementDefinition(typeKey, type);
+  } catch {
+    definition = null;
+  }
+  elementDefinitionCache.set(key, definition);
+  return definition;
+}
+
 function refLabel(value) {
   if (!value) {
     return "";
@@ -61,12 +78,7 @@ function notationFromDefinition(typeKey, node, definition) {
 }
 
 export function nodeNotation(typeKey, node) {
-  let definition = null;
-  try {
-    definition = modelingElementDefinition(typeKey, node.type);
-  } catch {
-    definition = null;
-  }
+  const definition = cachedElementDefinition(typeKey, node.type);
   return notationFromDefinition(typeKey, node, definition);
 }
 
@@ -189,19 +201,16 @@ export function mapNodeToG6(node, {
   viewProfile = ""
 } = {}) {
   const size = nodeSizeForDiagram(typeKey);
-  let definition = null;
-  try {
-    definition = modelingElementDefinition(typeKey, node.type);
-  } catch {
-    definition = null;
-  }
-  const notation = nodeNotation(typeKey, node);
+  const definition = cachedElementDefinition(typeKey, node.type);
+  const notation = notationFromDefinition(typeKey, node, definition);
   const accent = nodeAccent(node, definition);
   const sticky = typeKey === "cim" ? stickyColor(node, notation) : "";
   const kindText = humanizeType(node.type);
   const detailText = nodeDetailLine(node, notation, definition);
   const token = nodeToken(typeKey, node, notation);
   const badges = nodeBadges(typeKey, node, definition);
+  const container = Boolean(isContainer(node));
+  const contextName = contextNameFromNode(node);
   return {
     id: node.id,
     type: G6_BASE_NODE_TYPE,
@@ -220,8 +229,8 @@ export function mapNodeToG6(node, {
       accent,
       sticky,
       viewProfile,
-      contextName: contextNameFromNode(node),
-      container: isContainer(node),
+      contextName,
+      container,
       detailLevel
     },
     style: {
@@ -258,7 +267,7 @@ export function mapNodeToG6(node, {
           : "rgba(6, 11, 20, 0.32)",
       shadowBlur: typeKey === "cim" ? 10 : 8,
       detailLevel,
-      isContainer: isContainer(node)
+      isContainer: container
     }
   };
 }

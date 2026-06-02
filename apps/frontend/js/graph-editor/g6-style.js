@@ -111,15 +111,34 @@ const STICKY_BY_TYPE = {
   Assumption: "#ddd6fe"
 };
 
+let cssVarCacheKey = "";
+const cssVarCache = new Map();
+
+function currentCssVarCacheKey() {
+  const root = document.documentElement;
+  return `${root?.className || ""}|${root?.getAttribute?.("style") || ""}`;
+}
+
 export function nodeSizeForDiagram(typeKey = state.activeType) {
   return typeKey === "cim" ? NODE_SIZE.cim : NODE_SIZE.default;
 }
 
 export function cssVar(name, fallback = "") {
+  const nextCacheKey = currentCssVarCacheKey();
+  if (nextCacheKey !== cssVarCacheKey) {
+    cssVarCacheKey = nextCacheKey;
+    cssVarCache.clear();
+  }
+  const cacheKey = `${name}\u0000${fallback}`;
+  if (cssVarCache.has(cacheKey)) {
+    return cssVarCache.get(cacheKey);
+  }
   const root = document.documentElement;
   const value = root ? getComputedStyle(root).getPropertyValue(name).trim()
       : "";
-  return value || fallback;
+  const resolved = value || fallback;
+  cssVarCache.set(cacheKey, resolved);
+  return resolved;
 }
 
 export function normalizeColor(value, fallback) {
