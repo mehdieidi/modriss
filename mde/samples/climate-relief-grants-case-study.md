@@ -270,7 +270,7 @@ This case study is appropriate for:
 ## Deliverables In This Sample
 
 - [`mde/samples/climate-relief-grants-case-study.md`](./climate-relief-grants-case-study.md)
-- [`mde/samples/climate-relief-grants-cim-sample.xmi`](./climate-relief-grants-cim-sample.xmi)
+- [`mde/samples/cim.xmi`](./cim.xmi)
 
 ## Coverage Note
 

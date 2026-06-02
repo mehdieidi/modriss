@@ -36,9 +36,9 @@ class TransformationServiceTest {
         ProjectRecord project = projectService.create(user, "Climate", "");
 
         byte[] sample = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
-                "climate-relief-grants-cim-sample.xmi").normalize());
+                "cim.xmi").normalize());
         ModelService.ImportResult imported = modelService.importModel(ModelLevel.CIM,
-                "climate-relief-grants-cim-sample.xmi", sample, "xmi");
+                "cim.xmi", sample, "xmi");
         ModelRecord cim = modelService.create(user, ModelLevel.CIM, project.id(), "climate-cim",
                 imported.modelJson());
         modelService.update(user, ModelLevel.CIM, cim.id(), cim.name(), cim.modelJson());
@@ -76,9 +76,9 @@ class TransformationServiceTest {
         ProjectRecord project = projectService.create(user, "Climate", "");
 
         byte[] sample = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
-                "climate-relief-grants-cim-sample.xmi").normalize());
+                "cim.xmi").normalize());
         ModelService.ImportResult imported = modelService.importModel(ModelLevel.CIM,
-                "climate-relief-grants-cim-sample.xmi", sample, "xmi");
+                "cim.xmi", sample, "xmi");
         ModelRecord cim = modelService.create(user, ModelLevel.CIM, project.id(), "climate-cim",
                 imported.modelJson());
         ModelRecord pim = transformations.cimToPim(user, cim.id());
@@ -131,9 +131,9 @@ class TransformationServiceTest {
         ProjectRecord project = projectService.create(user, "Climate", "");
 
         byte[] sample = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
-                "climate-relief-grants-cim-sample.xmi").normalize());
+                "cim.xmi").normalize());
         ModelService.ImportResult imported = modelService.importModel(ModelLevel.CIM,
-                "climate-relief-grants-cim-sample.xmi", sample, "xmi");
+                "cim.xmi", sample, "xmi");
         ModelRecord cim = modelService.create(user, ModelLevel.CIM, project.id(), "climate-cim",
                 imported.modelJson());
         ModelRecord pim = transformations.cimToPim(user, cim.id());

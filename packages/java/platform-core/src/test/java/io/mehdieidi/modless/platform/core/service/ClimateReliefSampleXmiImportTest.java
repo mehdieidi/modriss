@@ -36,10 +36,10 @@ class ClimateReliefSampleXmiImportTest {
         ModelService service = new ModelService(store, projectService);
 
         byte[] bytes = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
-                "climate-relief-grants-cim-sample.xmi").normalize());
+                "cim.xmi").normalize());
 
         ModelService.ImportResult result = service.importModel(ModelLevel.CIM,
-                "climate-relief-grants-cim-sample.xmi", bytes, "xmi");
+                "cim.xmi", bytes, "xmi");
 
         assertFalse(result.modelJson().path("goals").isEmpty());
         assertFalse(result.modelJson().path("actors").isEmpty());
@@ -55,10 +55,10 @@ class ClimateReliefSampleXmiImportTest {
         ModelService service = new ModelService(store, projectService);
 
         byte[] bytes = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
-                "climate-relief-grants-cim-sample.xmi").normalize());
+                "cim.xmi").normalize());
 
         ModelService.ImportResult result = service.importModel(ModelLevel.CIM,
-                "climate-relief-grants-cim-sample.xmi", bytes, "xmi");
+                "cim.xmi", bytes, "xmi");
 
         assertTrue(result.issues().isEmpty(),
                 () -> "Expected no validation issues, found: " + result.issues());
@@ -134,7 +134,7 @@ class ClimateReliefSampleXmiImportTest {
     @Test
     void rawEmfLoadOfClimateReliefSample() throws Exception {
         Path sample = Path.of("..", "..", "..", "mde", "samples",
-                "climate-relief-grants-cim-sample.xmi").normalize().toAbsolutePath();
+                "cim.xmi").normalize().toAbsolutePath();
         Path metamodel = Path.of("..", "..", "..", "mde", "metamodels", "cim",
                 "cim-combined.ecore").normalize().toAbsolutePath();
 

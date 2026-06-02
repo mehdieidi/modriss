@@ -98,7 +98,7 @@ final class CimToPimEtlRegressionTest {
             throws Exception {
         Path pimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/pim/pim-combined.ecore");
         Path sampleModel = REPOSITORY_ROOT.resolve(
-                "mde/samples/climate-relief-grants-cim-sample.xmi");
+                "mde/samples/cim.xmi");
         Path pimModel = tempDir.resolve("climate-relief-grants-pim.xmi");
 
         EtlExecutionReport report = executeOrFail(CimToPimDefaults.request(
