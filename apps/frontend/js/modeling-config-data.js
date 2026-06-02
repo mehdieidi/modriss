@@ -105,6 +105,8 @@ function ensureConfigShape(raw) {
       relationshipKindLabels: incoming.relationshipKindLabels
       && typeof incoming.relationshipKindLabels === "object"
           ? incoming.relationshipKindLabels : {},
+      relationshipVisualRules: Array.isArray(incoming.relationshipVisualRules)
+          ? incoming.relationshipVisualRules : [],
       semanticReferenceRules: Array.isArray(incoming.semanticReferenceRules)
           ? incoming.semanticReferenceRules : [],
       shortcutConnectorRules: Array.isArray(incoming.shortcutConnectorRules)
@@ -214,12 +216,198 @@ export function modelingRelationshipKindLabel(typeKey, kind) {
   return labels[key] || key.toLowerCase().replaceAll("_", " ");
 }
 
+function appendClassName(existing, addition) {
+  const current = String(existing || "").trim();
+  const next = String(addition || "").trim();
+  if (!next) {
+    return current;
+  }
+  return current ? `${current} ${next}` : next;
+}
+
+function readRuleValue(edge, field) {
+  const key = String(field || "");
+  if (!key) {
+    return undefined;
+  }
+  return key.split(".").reduce((value, part) =>
+      value && typeof value === "object" ? value[part] : undefined, edge);
+}
+
+function stringListMatches(values, actual) {
+  if (!Array.isArray(values) || !values.length) {
+    return false;
+  }
+  const text = String(actual || "").toUpperCase();
+  return values.map((value) => String(value || "").toUpperCase())
+  .includes(text);
+}
+
+function fieldMatcherMatches(matcher, edge) {
+  if (!matcher || typeof matcher !== "object") {
+    return false;
+  }
+  const actual = readRuleValue(edge, matcher.field);
+  if (Array.isArray(matcher.values)) {
+    return stringListMatches(matcher.values, actual);
+  }
+  if (Object.hasOwn(matcher, "equals")) {
+    return String(actual || "").toUpperCase()
+        === String(matcher.equals || "").toUpperCase();
+  }
+  if (matcher.exists) {
+    return actual !== undefined && actual !== null && actual !== "";
+  }
+  return false;
+}
+
+function visualRuleMatches(rule, edge, kind) {
+  if (!rule || typeof rule !== "object") {
+    return false;
+  }
+  if (stringListMatches(rule.matchKinds, kind)) {
+    return true;
+  }
+  if (stringListMatches(rule.matchEClasses, edge?.eClass)) {
+    return true;
+  }
+  return Array.isArray(rule.matchFields)
+      && rule.matchFields.some((matcher) => fieldMatcherMatches(matcher, edge));
+}
+
+function applyVisualRule(presentation, rule) {
+  presentation.className = appendClassName(presentation.className,
+      rule.className);
+  if (Object.hasOwn(rule, "markerStart")) {
+    presentation.markerStart = String(rule.markerStart || "");
+  }
+  if (Object.hasOwn(rule, "markerEnd")) {
+    presentation.markerEnd = String(rule.markerEnd || "");
+  }
+  const style = {};
+  ["stroke", "lineWidth", "opacity", "lineDash"].forEach((field) => {
+    if (Object.hasOwn(rule, field)) {
+      style[field] = rule[field];
+    }
+  });
+  presentation.style = {...presentation.style, ...style};
+}
+
+export function modelingRelationshipPresentation(typeKey, edge) {
+  const kind = String(edge?.kind || "").toUpperCase();
+  const relationship = state.graph?.relationshipsById?.get(edge?.id) || edge
+      || {};
+  const presentation = {
+    className: "",
+    markerStart: "",
+    markerEnd: "arrow",
+    style: {}
+  };
+  const rules = modelingLevelConfig(typeKey).relationshipVisualRules || [];
+  for (const rule of rules) {
+    if (!visualRuleMatches(rule, relationship, kind)) {
+      continue;
+    }
+    applyVisualRule(presentation, rule);
+    (rule.variants || []).forEach((variant) => {
+      if (fieldMatcherMatches(variant, relationship)) {
+        applyVisualRule(presentation, variant);
+      }
+    });
+    break;
+  }
+  return presentation;
+}
+
 export function modelingSemanticReferenceRules(typeKey = state.activeType) {
   return modelingLevelConfig(typeKey).semanticReferenceRules || [];
 }
 
 export function modelingShortcutConnectorRules(typeKey = state.activeType) {
   return modelingLevelConfig(typeKey).shortcutConnectorRules || [];
+}
+
+export function modelingRootType(typeKey = state.activeType) {
+  const root = modelingLevelConfig(typeKey).rootTemplate || {};
+  return String(root.eClass || root.type || ({
+    cim: "CIMModel",
+    pim: "PIMModel",
+    psm: "AwsPsmModel"
+  })[typeKey] || "");
+}
+
+export function modelingConcreteTypesFor(typeKey, expectedType) {
+  const level = modelingLevelConfig(typeKey);
+  return (level.elements || []).filter((entry) => {
+    if (!entry?.type || entry.abstract || entry.supportOnly) {
+      return false;
+    }
+    return modelingTypeMatches(typeKey, expectedType, entry.type);
+  }).map((entry) => entry.type);
+}
+
+export function modelingRelationshipElementTypes(typeKey = state.activeType) {
+  return (modelingLevelConfig(typeKey).elements || []).filter((entry) =>
+      entry?.relationshipElement).map((entry) => entry.type);
+}
+
+function containmentTitle(feature) {
+  return String(feature || "").replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
+  .replaceAll(/[-_]+/g, " ").replace(/\b\w/g, (letter) =>
+      letter.toUpperCase());
+}
+
+export function modelingContainmentsForType(typeKey, ownerType) {
+  const definition = modelingElementDefinition(typeKey, ownerType);
+  const relationshipTypes = new Set(modelingRelationshipElementTypes(typeKey));
+  return (definition?.references || []).filter((reference) =>
+      reference?.containment && !reference.readonly && reference.name
+      && reference.targetType).map((reference) => {
+    const concreteTypes = modelingConcreteTypesFor(typeKey,
+        reference.targetType);
+    const types = concreteTypes.length ? concreteTypes : [reference.targetType];
+    return {
+      feature: reference.name,
+      targetType: reference.targetType,
+      types,
+      required: Boolean(reference.required),
+      many: reference.many !== false,
+      singleton: reference.many === false,
+      title: containmentTitle(reference.name),
+      relationshipOnly: types.length > 0 && types.every((type) =>
+          relationshipTypes.has(type))
+    };
+  });
+}
+
+export function modelingRootContainments(typeKey = state.activeType) {
+  return modelingContainmentsForType(typeKey, modelingRootType(typeKey));
+}
+
+export function modelingViewLenses(typeKey = state.activeType) {
+  const byKey = new Map([["all", {key: "all", label: "All", types: []}]]);
+  (modelingLevelConfig(typeKey).viewDefinitions || []).forEach(
+      (definition, index) => {
+        const types = Array.isArray(definition?.elementTypes)
+            ? definition.elementTypes.map(String).filter(Boolean) : [];
+        if (!types.length) {
+          return;
+        }
+        const rawKey = String(definition.viewpoint || definition.id
+            || `view-${index}`);
+        const key = rawKey.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")
+        .replaceAll(/^-|-$/g, "") || `view-${index}`;
+        const label = String(definition.displayName || definition.name
+            || definition.viewpoint || key).replaceAll(/[-_]+/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+        const existing = byKey.get(key);
+        byKey.set(key, {
+          key,
+          label: existing?.label || label,
+          types: [...new Set([...(existing?.types || []), ...types])]
+        });
+      });
+  return [...byKey.values()];
 }
 
 export function modelingTypeMatches(typeKey, expected, actual) {

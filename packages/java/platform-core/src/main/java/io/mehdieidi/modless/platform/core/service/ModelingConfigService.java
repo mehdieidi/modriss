@@ -57,6 +57,8 @@ public final class ModelingConfigService {
                 Map.entry("relationshipRules", requireList(metadata, "relationshipRules", key)),
                 Map.entry("relationshipKindLabels",
                         requireMap(metadata, "relationshipKindLabels", key)),
+                Map.entry("relationshipVisualRules",
+                        metadata.getOrDefault("relationshipVisualRules", List.of())),
                 Map.entry("semanticReferenceRules", metadata.getOrDefault(
                         "semanticReferenceRules", List.of())),
                 Map.entry("shortcutConnectorRules",

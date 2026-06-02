@@ -2,8 +2,12 @@ import {state} from './state.js';
 import {emptyDiagram, genId} from './utils.js';
 import {ensureReadableLayout, nodeSizeForType} from './layout-engine.js';
 import {
+  modelingContainmentsForType,
   modelingElementDefinition,
   modelingLevelConfig,
+  modelingRelationshipElementTypes,
+  modelingRootContainments,
+  modelingRootType,
   modelingSemanticReferenceRules,
   modelingTypeMatches
 } from './modeling-config-data.js';
@@ -95,482 +99,6 @@ const FRAGMENT_KIND_BY_TYPE = {
 
 const CONTAINMENT_KINDS = new Set(["CONTAINS", "OWNS", "DEPLOYS"]);
 
-const CIM_REF_EDGE_RULES = Object.freeze([
-  {
-    sourceType: "Actor",
-    feature: "issuesCommands",
-    targetType: "Command",
-    kind: "ISSUES"
-  },
-  {
-    sourceType: "Actor",
-    feature: "issuesQueries",
-    targetType: "Query",
-    kind: "ISSUES"
-  },
-  {
-    sourceType: "Actor",
-    feature: "observesEvents",
-    targetType: "BusinessEvent",
-    kind: "OBSERVES"
-  },
-  {
-    sourceType: "Actor",
-    feature: "playsRoles",
-    targetType: "Role",
-    kind: "PLAYS_ROLE"
-  },
-  {
-    sourceType: "Role",
-    feature: "assignedTo",
-    targetType: "Actor",
-    kind: "ASSIGNED_TO"
-  },
-  {
-    sourceType: "Stakeholder",
-    feature: "ownsGoals",
-    targetType: "BusinessGoal",
-    kind: "OWNS"
-  },
-  {
-    sourceType: "BusinessGoal",
-    feature: "measuredBy",
-    targetType: "KPI",
-    kind: "MEASURED_BY"
-  },
-  {
-    sourceType: "BusinessGoal",
-    feature: "refinedBy",
-    targetType: "BusinessCapability",
-    kind: "REFINED_BY"
-  },
-  {
-    sourceType: "ExternalSystem",
-    feature: "producedEvents",
-    targetType: "BusinessEvent",
-    kind: "PRODUCES"
-  },
-  {
-    sourceType: "ExternalSystem",
-    feature: "consumedEvents",
-    targetType: "BusinessEvent",
-    kind: "CONSUMED_BY",
-    reverse: true
-  },
-  {
-    sourceType: "ExternalSystem",
-    feature: "exchangedInformation",
-    targetType: "InformationItem",
-    kind: "EXCHANGES_INFORMATION"
-  },
-  {
-    sourceType: "BusinessCapability",
-    feature: "supports",
-    targetType: "BusinessGoal",
-    kind: "SUPPORTS"
-  },
-  {
-    sourceType: "BusinessCapability",
-    feature: "realizesRequirements",
-    targetType: "Requirement",
-    kind: "REALIZES"
-  },
-  {
-    sourceType: "BusinessCapability",
-    feature: "containsCommands",
-    targetType: "Command",
-    kind: "CONTAINS_COMMAND"
-  },
-  {
-    sourceType: "BusinessCapability",
-    feature: "containsQueries",
-    targetType: "Query",
-    kind: "CONTAINS_QUERY"
-  },
-  {
-    sourceType: "BusinessCapability",
-    feature: "containsEvents",
-    targetType: "BusinessEvent",
-    kind: "CONTAINS_EVENT"
-  },
-  {
-    sourceType: "BusinessCapability",
-    feature: "managesEntities",
-    targetType: "DomainEntity",
-    kind: "MANAGES"
-  },
-  {
-    sourceType: "BusinessCapability",
-    feature: "ownsProcesses",
-    targetType: "BusinessProcess",
-    kind: "OWNS_PROCESS"
-  },
-  {
-    sourceType: "BoundedContextCandidate",
-    feature: "capabilities",
-    targetType: "BusinessCapability",
-    kind: "CONTAINS"
-  },
-  {
-    sourceType: "BoundedContextCandidate",
-    feature: "entities",
-    targetType: "DomainEntity",
-    kind: "CONTAINS"
-  },
-  {
-    sourceType: "BoundedContextCandidate",
-    feature: "commands",
-    targetType: "Command",
-    kind: "CONTAINS"
-  },
-  {
-    sourceType: "BoundedContextCandidate",
-    feature: "queries",
-    targetType: "Query",
-    kind: "CONTAINS"
-  },
-  {
-    sourceType: "BoundedContextCandidate",
-    feature: "events",
-    targetType: "BusinessEvent",
-    kind: "CONTAINS"
-  },
-  {
-    sourceType: "BoundedContextCandidate",
-    feature: "policies",
-    targetType: "Policy",
-    kind: "CONTAINS"
-  },
-  {
-    sourceType: "DomainEntity",
-    feature: "attributes",
-    targetType: "InformationItem",
-    kind: "HAS_ATTRIBUTE"
-  },
-  {
-    sourceType: "ValueObject",
-    feature: "attributes",
-    targetType: "InformationItem",
-    kind: "HAS_ATTRIBUTE"
-  },
-  {
-    sourceType: "AggregateCandidate",
-    feature: "root",
-    targetType: "DomainEntity",
-    kind: "ROOT"
-  },
-  {
-    sourceType: "AggregateCandidate",
-    feature: "members",
-    targetType: "DomainEntity",
-    kind: "MEMBER"
-  },
-  {
-    sourceType: "AggregateCandidate",
-    feature: "handledCommands",
-    targetType: "Command",
-    kind: "HANDLES"
-  },
-  {
-    sourceType: "AggregateCandidate",
-    feature: "emittedEvents",
-    targetType: "BusinessEvent",
-    kind: "EMITS_EVENT"
-  },
-  {
-    sourceType: "Command",
-    feature: "issuedBy",
-    targetType: "Actor",
-    kind: "ISSUES",
-    reverse: true
-  },
-  {
-    sourceType: "Command",
-    feature: "expectedEvents",
-    targetType: "BusinessEvent",
-    kind: "EXPECTS"
-  },
-  {
-    sourceType: "Command",
-    feature: "input",
-    targetType: "InformationItem",
-    kind: "INPUT"
-  },
-  {
-    sourceType: "Command",
-    feature: "preconditions",
-    targetType: "Condition",
-    kind: "PRECONDITION"
-  },
-  {
-    sourceType: "Command",
-    feature: "rejectionEvents",
-    targetType: "BusinessEvent",
-    kind: "REJECTS_WITH"
-  },
-  {
-    sourceType: "Command",
-    feature: "possibleErrors",
-    targetType: "BusinessError",
-    kind: "MAY_FAIL_WITH"
-  },
-  {
-    sourceType: "Command",
-    feature: "targetAggregate",
-    targetType: "AggregateCandidate",
-    kind: "TARGETS"
-  },
-  {
-    sourceType: "Command",
-    feature: "targetCapability",
-    targetType: "BusinessCapability",
-    kind: "HANDLED_BY"
-  },
-  {
-    sourceType: "Query",
-    feature: "issuedBy",
-    targetType: "Actor",
-    kind: "ISSUES",
-    reverse: true
-  },
-  {
-    sourceType: "Query",
-    feature: "reads",
-    targetType: "DomainEntity",
-    kind: "READS"
-  },
-  {
-    sourceType: "Query",
-    feature: "input",
-    targetType: "InformationItem",
-    kind: "INPUT"
-  },
-  {
-    sourceType: "Query",
-    feature: "output",
-    targetType: "InformationItem",
-    kind: "OUTPUT"
-  },
-  {
-    sourceType: "Query",
-    feature: "targetCapability",
-    targetType: "BusinessCapability",
-    kind: "HANDLED_BY"
-  },
-  {
-    sourceType: "BusinessEvent",
-    feature: "payload",
-    targetType: "InformationItem",
-    kind: "PAYLOAD"
-  },
-  {
-    sourceType: "BusinessEvent",
-    feature: "affects",
-    targetType: "DomainEntity",
-    kind: "AFFECTS"
-  },
-  {
-    sourceType: "BusinessError",
-    feature: "emittedEvents",
-    targetType: "BusinessEvent",
-    kind: "EMITS_EVENT"
-  },
-  {
-    sourceType: "Condition",
-    feature: "referencedInformation",
-    targetType: "InformationItem",
-    kind: "REFERENCES"
-  },
-  {
-    sourceType: "Condition",
-    feature: "referencedConcepts",
-    targetType: "DomainConcept",
-    kind: "REFERENCES"
-  },
-  {
-    sourceType: "BusinessEvent",
-    feature: "causedByExternalSystems",
-    targetType: "ExternalSystem",
-    kind: "PRODUCES",
-    reverse: true
-  },
-  {
-    sourceType: "BusinessEvent",
-    feature: "consumedByPolicies",
-    targetType: "Policy",
-    kind: "TRIGGERS"
-  },
-  {
-    sourceType: "BusinessEvent",
-    feature: "consumedByProcesses",
-    targetType: "BusinessProcess",
-    kind: "FEEDS"
-  },
-  {
-    sourceType: "BusinessEvent",
-    feature: "consumedByExternalSystems",
-    targetType: "ExternalSystem",
-    kind: "CONSUMED_BY"
-  },
-  {
-    sourceType: "Policy",
-    feature: "triggeredBy",
-    targetType: "BusinessEvent",
-    kind: "TRIGGERS",
-    reverse: true
-  },
-  {
-    sourceType: "Policy",
-    feature: "emitsCommands",
-    targetType: "Command",
-    kind: "EMITS_COMMAND"
-  },
-  {
-    sourceType: "Policy",
-    feature: "emitsEvents",
-    targetType: "BusinessEvent",
-    kind: "EMITS_EVENT"
-  },
-  {
-    sourceType: "Policy",
-    feature: "guards",
-    targetType: "Command",
-    kind: "GUARDS"
-  },
-  {
-    sourceType: "Policy",
-    feature: "constrainsQueries",
-    targetType: "Query",
-    kind: "CONSTRAINS"
-  },
-  {
-    sourceType: "Policy",
-    feature: "decisionTable",
-    targetType: "DecisionTable",
-    kind: "USES"
-  },
-  {
-    sourceType: "CommandStep",
-    feature: "command",
-    targetType: "Command",
-    kind: "USES"
-  },
-  {
-    sourceType: "QueryStep",
-    feature: "query",
-    targetType: "Query",
-    kind: "USES"
-  },
-  {
-    sourceType: "EventStep",
-    feature: "event",
-    targetType: "BusinessEvent",
-    kind: "USES"
-  },
-  {
-    sourceType: "PolicyStep",
-    feature: "policy",
-    targetType: "Policy",
-    kind: "USES"
-  },
-  {
-    sourceType: "ExternalInteractionStep",
-    feature: "externalSystem",
-    targetType: "ExternalSystem",
-    kind: "USES"
-  },
-  {
-    sourceType: "DecisionRule",
-    feature: "resultingCommands",
-    targetType: "Command",
-    kind: "RESULTS_IN"
-  },
-  {
-    sourceType: "DecisionRule",
-    feature: "resultingEvents",
-    targetType: "BusinessEvent",
-    kind: "RESULTS_IN"
-  },
-  {
-    sourceType: "DecisionStep",
-    feature: "decisionTable",
-    targetType: "DecisionTable",
-    kind: "USES"
-  },
-  {
-    sourceType: "Requirement",
-    feature: "dependsOn",
-    targetType: "Requirement",
-    kind: "DEPENDS_ON"
-  },
-  {
-    sourceType: "Requirement",
-    feature: "conflictsWith",
-    targetType: "Requirement",
-    kind: "CONFLICTS_WITH"
-  },
-  {
-    sourceType: "Requirement",
-    feature: "constrains",
-    targetType: "*",
-    kind: "CONSTRAINS"
-  },
-  {
-    sourceType: "NonFunctionalRequirement",
-    feature: "constrainedElements",
-    targetType: "*",
-    kind: "CONSTRAINS"
-  },
-  {
-    sourceType: "SecurityConstraint",
-    feature: "constrainedCommands",
-    targetType: "Command",
-    kind: "CONSTRAINS"
-  },
-  {
-    sourceType: "SecurityConstraint",
-    feature: "constrainedQueries",
-    targetType: "Query",
-    kind: "CONSTRAINS"
-  },
-  {
-    sourceType: "SecurityConstraint",
-    feature: "constrainedInformation",
-    targetType: "InformationItem",
-    kind: "CONSTRAINS"
-  },
-  {
-    sourceType: "PrivacyConstraint",
-    feature: "dataItems",
-    targetType: "InformationItem",
-    kind: "CONSTRAINS"
-  },
-  {
-    sourceType: "ComplianceConstraint",
-    feature: "scopedElements",
-    targetType: "*",
-    kind: "CONSTRAINS"
-  },
-  {
-    sourceType: "Risk",
-    feature: "affectedElements",
-    targetType: "*",
-    kind: "ATTACHED_TO"
-  },
-  {
-    sourceType: "Assumption",
-    feature: "affectedElements",
-    targetType: "*",
-    kind: "ATTACHED_TO"
-  },
-  {
-    sourceType: "Hotspot",
-    feature: "attachedTo",
-    targetType: "*",
-    kind: "ATTACHED_TO"
-  }
-]);
-
 function clone(value) {
   return value == null ? value : structuredClone(value);
 }
@@ -602,7 +130,9 @@ function isFocusView(view) {
 function elementRecords(modelJson, typeKey = state.activeType) {
   const semanticElements = typeKey === "cim"
       ? cimSemanticElementsFromRoot(modelJson)
-      : typeKey === "pim" ? pimSemanticElementsFromRoot(modelJson) : [];
+      : typeKey === "pim" ? pimSemanticElementsFromRoot(modelJson)
+          : typeKey === "psm" ? semanticElementsFromConfiguredRoot(typeKey,
+              modelJson) : [];
   if (semanticElements.length) {
     const graphElements = Array.isArray(modelJson?.graph?.elements)
         ? modelJson.graph.elements : [];
@@ -685,6 +215,111 @@ function relationshipRecords(modelJson, typeKey = state.activeType) {
     return modelJson.connectors;
   }
   return [];
+}
+
+function relationshipElementTypes(typeKey) {
+  try {
+    return new Set(modelingRelationshipElementTypes(typeKey));
+  } catch {
+    return new Set();
+  }
+}
+
+function configuredContainments(typeKey, ownerType) {
+  try {
+    return modelingContainmentsForType(typeKey, ownerType);
+  } catch {
+    return [];
+  }
+}
+
+function normalizedSemanticId(type, index, owner = null) {
+  const ownerPrefix = owner?.id ? `${sanitizeIdPart(owner.id)}-` : "";
+  return `${ownerPrefix}${sanitizeIdPart(type || "element")}-${index + 1}`;
+}
+
+function normalizeConfiguredSemanticElement(typeKey, raw, fallbackType, index,
+    owner = null) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const type = String(raw.eClass || raw.type || fallbackType || "");
+  if (!type || relationshipElementTypes(typeKey).has(type)) {
+    return null;
+  }
+  const id = String(raw.id || normalizedSemanticId(type, index, owner));
+  return {
+    eClass: type,
+    id,
+    name: String(raw.name || raw.label || raw.logicalId || raw.physicalName
+        || raw.stackName || raw.stageName || id),
+    label: String(raw.name || raw.label || raw.logicalId || raw.physicalName
+        || raw.stackName || raw.stageName || id),
+    ...clone(raw),
+    id,
+    eClass: type,
+    __ownerId: owner?.id || raw.__ownerId,
+    __containmentFeature: owner?.feature || raw.__containmentFeature
+  };
+}
+
+function collectConfiguredNestedElements(typeKey, parent, result, seen) {
+  const parentType = semanticType(parent);
+  configuredContainments(typeKey, parentType).forEach((entry) => {
+    if (entry.relationshipOnly) {
+      return;
+    }
+    const values = entry.singleton
+        ? (parent?.[entry.feature] ? [parent[entry.feature]] : [])
+        : safeArray(parent?.[entry.feature]);
+    values.forEach((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        return;
+      }
+      const child = normalizeConfiguredSemanticElement(typeKey, raw,
+          raw.eClass || raw.type || entry.types?.[0], index, {
+            id: parent.id,
+            feature: entry.feature
+          });
+      if (!child || seen.has(child.id)) {
+        return;
+      }
+      seen.add(child.id);
+      result.push(child);
+      collectConfiguredNestedElements(typeKey, child, result, seen);
+    });
+  });
+}
+
+function semanticElementsFromConfiguredRoot(typeKey, modelJson) {
+  const result = [];
+  const seen = new Set();
+  if (!modelJson || typeof modelJson !== "object") {
+    return result;
+  }
+  const rootContainments = modelingRootContainments(typeKey);
+  rootContainments.forEach((entry) => {
+    if (entry.relationshipOnly) {
+      return;
+    }
+    const values = entry.singleton
+        ? (modelJson?.[entry.feature] ? [modelJson[entry.feature]] : [])
+        : safeArray(modelJson?.[entry.feature]);
+    values.forEach((raw, index) => {
+      if (!raw || typeof raw !== "object") {
+        return;
+      }
+      const element = normalizeConfiguredSemanticElement(typeKey, raw,
+          raw.eClass || raw.type || entry.types?.[0], index);
+      if (!element || seen.has(element.id)) {
+        return;
+      }
+      seen.add(element.id);
+      result.push(element);
+      collectConfiguredNestedElements(typeKey, element, result, seen);
+    });
+  });
+  return result;
 }
 
 function refId(value) {
@@ -793,14 +428,14 @@ function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
         `${relationship.sourceElementId}|${relationship.targetElementId}|${relationship.kind}`);
   });
 
-  let rules = typeKey === "cim" ? CIM_REF_EDGE_RULES : [];
+  let rules = [];
   try {
     const configured = modelingSemanticReferenceRules(typeKey);
     if (configured.length) {
       rules = configured;
     }
   } catch {
-    rules = typeKey === "cim" ? CIM_REF_EDGE_RULES : [];
+    rules = [];
   }
 
   graph.elementsById.forEach((element) => {
@@ -946,7 +581,7 @@ function buildGraph(typeKey, modelJson) {
     graph.relationshipsById.set(normalized.id, normalized);
   });
 
-  if (typeKey === "cim" || typeKey === "pim") {
+  if (typeKey === "cim" || typeKey === "pim" || typeKey === "psm") {
     synthesizeSemanticRefRelationships(graph, typeKey);
   }
 
@@ -1775,69 +1410,119 @@ export function serializeGraphAndViewsInto(root) {
   return root;
 }
 
-function psmElementType(element) {
-  return String(element?.eClass || element?.type || "");
+function populatePsmRootContainments(root, graph) {
+  populateConfiguredRootContainments("psm", root, graph);
 }
 
-function psmMatches(type, expected) {
+function stripConfiguredRuntimeFields(element, typeKey) {
+  const copyElement = clone(element) || {};
+  const type = semanticType(copyElement);
+  [
+    "x", "y", "label", "status", "tags", "visualOnly", "bundle",
+    "countsByKind", "underlyingRelationshipIds", "sourceType", "targetType",
+    "semanticFeature", "semanticSourceElementId", "semanticTargetElementId",
+    "semanticDirection", "rootFeature", "kind"
+  ].forEach((key) => delete copyElement[key]);
   try {
-    return modelingTypeMatches("psm", expected, type);
+    (modelingElementDefinition(typeKey, type)?.references || [])
+    .filter((reference) => reference?.readonly)
+    .forEach((reference) => delete copyElement[reference.name]);
   } catch {
-    return type === expected;
+    // keep best-effort serialization when config is unavailable
   }
-}
-
-function psmCloneElement(element) {
-  const copyElement = clone(element);
+  delete copyElement.__ownerId;
+  delete copyElement.__containmentFeature;
   return copyElement;
 }
 
-function populatePsmRootContainments(root, graph) {
-  const elements = [...graph.elementsById.values()].map(psmCloneElement);
-  const byId = new Map(elements.map((element) => [element.id, element]));
-  const resources = elements.filter((element) =>
-      psmMatches(psmElementType(element), "AwsResource"));
-  const stacks = elements.filter((element) => psmElementType(element)
-      === "SamStack");
-  const stages = elements.filter((element) => psmElementType(element)
-      === "AwsStage");
-  root.stages = stages;
-  root.stacks = stacks;
-  root.allResources = resources.map((resource) => resource.id);
-  root.relationshipViews = elements.filter((element) =>
-      psmMatches(psmElementType(element), "AwsRelationshipView"));
-  root.samGlobals = elements.find((element) => psmElementType(element)
-      === "SamGlobals") || root.samGlobals || null;
-  root.namingPolicy = elements.find((element) => psmElementType(element)
-      === "AwsNamingPolicy") || root.namingPolicy || null;
-  root.taggingPolicy = elements.find((element) => psmElementType(element)
-      === "AwsTaggingPolicy") || root.taggingPolicy || null;
-  root.securityBaseline = elements.find((element) => psmElementType(element)
-      === "AwsSecurityBaseline") || root.securityBaseline || null;
-  const stackIds = new Set(stacks.map((stack) => stack.id));
-  stacks.forEach((stack) => {
-    const ownedIds = referenceIds(stack.resources);
-    const contained = resources.filter((resource) => {
-      const stackRef = refId(resource.stack);
-      return stackRef === stack.id || ownedIds.includes(resource.id);
-    });
-    stack.resources = contained;
+function elementMatchesAnyType(typeKey, element, types) {
+  return safeArray(types).some((type) => {
+    try {
+      return modelingTypeMatches(typeKey, type, semanticType(element));
+    } catch {
+      return type === semanticType(element);
+    }
   });
-  resources.forEach((resource) => {
-    const stackId = refId(resource.stack);
-    if (stackId && stackIds.has(stackId)) {
-      resource.stack = stackId;
+}
+
+function elementReferencesId(element, id) {
+  return Object.values(element || {}).some((value) =>
+      referenceIds(value).includes(id));
+}
+
+function configuredChildren(parent, entry, elements, typeKey) {
+  const explicitIds = new Set(referenceIds(parent?.[entry.feature]));
+  return elements.filter((candidate) => {
+    if (candidate.id === parent.id || !elementMatchesAnyType(typeKey,
+        candidate, entry.types)) {
+      return false;
+    }
+    if (candidate.__ownerId === parent.id
+        && candidate.__containmentFeature === entry.feature) {
+      return true;
+    }
+    if (explicitIds.has(candidate.id)) {
+      return true;
+    }
+    return elementReferencesId(candidate, parent.id);
+  });
+}
+
+function attachConfiguredContainments(copyElement, sourceElement, elements,
+    typeKey, visited = new Set()) {
+  const key = `${sourceElement.id}:${semanticType(sourceElement)}`;
+  if (visited.has(key)) {
+    return;
+  }
+  visited.add(key);
+  configuredContainments(typeKey, semanticType(sourceElement)).forEach(
+      (entry) => {
+        if (entry.relationshipOnly) {
+          return;
+        }
+        let children = configuredChildren(sourceElement, entry, elements,
+            typeKey);
+        if (!children.length && entry.required && sourceElement.id
+            && entry.many !== false) {
+          children = elements.filter((candidate) =>
+              !candidate.__ownerId && elementMatchesAnyType(typeKey,
+                  candidate, entry.types));
+        }
+        const copies = children.map((child) => {
+          const childCopy = stripConfiguredRuntimeFields(child, typeKey);
+          attachConfiguredContainments(childCopy, child, elements, typeKey,
+              visited);
+          return childCopy;
+        });
+        copyElement[entry.feature] = entry.singleton
+            ? (copies[0] || null) : copies;
+      });
+}
+
+function populateConfiguredRootContainments(typeKey, root, graph) {
+  const elements = [...graph.elementsById.values()];
+  const rootType = modelingRootType(typeKey);
+  root.eClass ||= rootType;
+  try {
+    (modelingElementDefinition(typeKey, rootType)?.references || [])
+    .filter((reference) => reference?.readonly)
+    .forEach((reference) => delete root[reference.name]);
+  } catch {
+    // keep serialization best-effort when metadata cannot be resolved
+  }
+  modelingRootContainments(typeKey).forEach((entry) => {
+    if (entry.relationshipOnly) {
       return;
     }
-    const owner = stacks.find((stack) => safeArray(stack.resources).some(
-        (owned) => refId(owned) === resource.id || owned?.id === resource.id));
-    if (owner) {
-      resource.stack = owner.id;
-    }
-  });
-  stages.forEach((stage) => {
-    stage.deploysStacks = referenceIds(stage.deploysStacks).filter((id) =>
-        byId.has(id));
+    const owned = elements.filter((element) =>
+        !element.__ownerId && elementMatchesAnyType(typeKey, element,
+            entry.types));
+    const copies = owned.map((element) => {
+      const copyElement = stripConfiguredRuntimeFields(element, typeKey);
+      attachConfiguredContainments(copyElement, element, elements, typeKey);
+      return copyElement;
+    });
+    root[entry.feature] = entry.singleton ? (copies[0] || null) : copies;
   });
 }
 
@@ -1943,9 +1628,9 @@ function configuredSemanticReferenceRules(typeKey = state.activeType) {
       return configured;
     }
   } catch {
-    // fall through
+    return [];
   }
-  return typeKey === "cim" ? CIM_REF_EDGE_RULES : [];
+  return [];
 }
 
 function ruleMatchesForward(rule, sourceElement, targetElement, kind,

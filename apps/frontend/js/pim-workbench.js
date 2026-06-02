@@ -12,7 +12,10 @@ import {
 import {materializeActiveView} from './view-materializer.js';
 import {
   modelingElementDefinition,
-  modelingViewDefinition
+  modelingLevelConfig,
+  modelingTypeMatches,
+  modelingViewDefinition,
+  modelingViewLenses
 } from './modeling-config-data.js';
 import {markModelDirty} from './model-save-ui.js';
 import {setStatus} from './status.js';
@@ -22,6 +25,7 @@ import {
   commitWorkbenchModelChange,
   downloadWorkbenchCsv,
   ensureWorkbenchSurface,
+  renderLevelGuidePanel,
   renderWorkbenchSurfaceLayout,
   setWorkbenchRepresentation
 } from './workbench-common.js';
@@ -159,61 +163,6 @@ const PROTECTED_RESOURCE_TYPES = [
   "IdentityProvider", "Principal", "Workflow", "WorkflowState"
 ];
 
-const PIM_LENSES = {
-  all: {
-    label: "All",
-    types: []
-  },
-  structure: {
-    label: "Structure",
-    types: ["ServerlessService", "DeploymentUnit", "Function", "Api",
-      "Workflow", "Queue", "Topic", "EventBus", "Schedule", "DataStore",
-      "ObjectStore", "ExternalAdapter"]
-  },
-  invocation: {
-    label: "Invocation",
-    types: ["Api", "ApiRoute", "Function", "Workflow", "Trigger",
-      "Schedule", "Queue", "Topic", "EventBus", "WorkflowState"]
-  },
-  event: {
-    label: "Event",
-    types: ["EventType", "Queue", "Topic", "EventBus", "Schedule",
-      "Subscription", "EventRoutingRule", "EventFlow", "MessageFlow",
-      "PubSubFlow", "ExternalIntegrationFlow"]
-  },
-  data: {
-    label: "Data",
-    types: ["DataStore", "ObjectStore", "DataModel", "DataField",
-      "AccessPattern", "IndexCandidate", "DataAccess", "Schema"]
-  },
-  security: {
-    label: "Security",
-    types: ["IdentityProvider", "Principal", "Permission", "SecurityPolicy",
-      "AuthPolicy", "AuthorizationPolicy", "Secret",
-      ...PROTECTED_RESOURCE_TYPES]
-  },
-  policy: {
-    label: "Policy",
-    types: POLICY_REGISTER_TYPES
-  },
-  deployment: {
-    label: "Deployment",
-    types: ["DeploymentUnit", "Environment", "ImplementationProfile",
-      "ConfigurationSet", "ConfigParameter", "EnvironmentVariable", "Secret",
-      "ServerlessService"]
-  },
-  trace: {
-    label: "Trace",
-    types: ["TraceModel", "TraceLink", "ProductionReadinessAssessment",
-      "ReadinessFinding", "ReadinessCheck", "ManualDecision"]
-  }
-};
-
-const PIM_FLOW_RELATIONSHIP_KINDS = [
-  "FLOW", "REQUEST_RESPONSE", "EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB",
-  "ORCHESTRATES", "EXTERNAL_CALL"
-];
-
 const PIM_EDGE_MODES = {
   both: {label: "Both"},
   flows: {label: "Flows"},
@@ -321,6 +270,28 @@ function elementsMatchingTypes(types) {
   return elements().filter((element) => allowed.has(element.eClass));
 }
 
+function pimLensEntries() {
+  try {
+    return modelingViewLenses("pim");
+  } catch {
+    return [{key: "all", label: "All", types: []}];
+  }
+}
+
+function pimLens(lensKey) {
+  return pimLensEntries().find((entry) => entry.key === lensKey) || null;
+}
+
+function typeInPimLens(type, lens) {
+  return safeArray(lens?.types).some((expected) => {
+    try {
+      return modelingTypeMatches("pim", expected, type);
+    } catch {
+      return expected === type;
+    }
+  });
+}
+
 function rootContainment(feature) {
   return PIM_ROOT_CONTAINMENTS.find((entry) => entry.feature === feature)
       || null;
@@ -422,25 +393,26 @@ function rowInSlice(row) {
 
 function rowInActiveLens(row) {
   const lensKey = state.pimWorkbench.activeLens || "all";
-  const lens = PIM_LENSES[lensKey];
+  const lens = pimLens(lensKey);
   if (!lens || !lens.types.length) {
     return true;
   }
   const type = row?.eClass || row?.type;
-  if (lens.types.includes(type)) {
+  if (typeInPimLens(type, lens)) {
     return true;
   }
   return Object.values(row || {}).some((value) => {
     const ids = refIds(value);
     return ids.some((id) => {
       const target = state.graph?.elementsById?.get(id);
-      return lens.types.includes(target?.eClass);
+      return typeInPimLens(target?.eClass, lens);
     });
   });
 }
 
 function applyPimLens(lensKey) {
-  if (!PIM_LENSES[lensKey]) {
+  const lens = pimLens(lensKey);
+  if (!lens) {
     return;
   }
   state.pimWorkbench.activeLens = lensKey;
@@ -455,10 +427,17 @@ function applyPimLens(lensKey) {
         String);
   }
   const baseTypes = safeArray(view.__pimBaseElementTypes);
-  const lensTypes = safeArray(PIM_LENSES[lensKey].types);
+  const lensTypes = safeArray(lens.types);
   view.filters.elementTypes = lensTypes.length
       ? (baseTypes.length
-          ? lensTypes.filter((type) => baseTypes.includes(type))
+          ? lensTypes.filter((type) => baseTypes.some((baseType) => {
+            try {
+              return modelingTypeMatches("pim", baseType, type)
+                  || modelingTypeMatches("pim", type, baseType);
+            } catch {
+              return baseType === type;
+            }
+          }))
           : lensTypes)
       : baseTypes;
   if (lensTypes.length && !view.filters.elementTypes.length) {
@@ -469,7 +448,21 @@ function applyPimLens(lensKey) {
   renderPimWorkbenchSurface();
   renderDiagramCallback?.();
   renderPaletteCallback?.();
-  setStatus(`${PIM_LENSES[lensKey].label} lens applied`);
+  setStatus(`${lens.label} lens applied`);
+}
+
+function pimFlowRelationshipKinds(allKinds) {
+  let labels = {};
+  try {
+    labels = modelingLevelConfig("pim").relationshipKindLabels || {};
+  } catch {
+    labels = {};
+  }
+  return safeArray(allKinds).filter((kind) => {
+    const text = `${kind} ${labels[kind] || ""}`.toLowerCase();
+    return /flow|invoke|route|target|transition|subscription|event|message|request|response|data access|external/.test(
+        text);
+  });
 }
 
 function applyPimEdgeMode(mode) {
@@ -483,8 +476,7 @@ function applyPimEdgeMode(mode) {
   }
   syncActiveViewFromVisibleGraph();
   const allKinds = [...state.graph.relationshipsByKind.keys()].sort();
-  const flowKinds = allKinds.filter((kind) =>
-      PIM_FLOW_RELATIONSHIP_KINDS.includes(kind));
+  const flowKinds = pimFlowRelationshipKinds(allKinds);
   view.filters ??= {};
   if (mode === "both") {
     view.filters.relationshipKinds = [];
@@ -492,8 +484,8 @@ function applyPimEdgeMode(mode) {
     view.filters.relationshipKinds = flowKinds.length ? flowKinds
         : ["__PIM_NO_FLOW_EDGES__"];
   } else {
-    const referenceKinds = allKinds.filter((kind) =>
-        !PIM_FLOW_RELATIONSHIP_KINDS.includes(kind));
+    const flowKindSet = new Set(flowKinds);
+    const referenceKinds = allKinds.filter((kind) => !flowKindSet.has(kind));
     view.filters.relationshipKinds = referenceKinds.length ? referenceKinds
         : ["__PIM_NO_REFERENCE_EDGES__"];
   }
@@ -878,7 +870,8 @@ function renderControls(profile, representation) {
     ["register", "Register"],
     ["matrix", "Matrix"],
     ["board", "Board"],
-    ["detail", "Detail"]
+    ["detail", "Detail"],
+    ["guide", "Guide"]
   ];
   return `<div class="cim-surface-header">
     <div class="cim-surface-title">
@@ -894,10 +887,10 @@ function renderControls(profile, representation) {
     <div class="pim-lens-toolbar" aria-label="PIM lens">
       <span>Lens</span>
       <div class="pim-lens-buttons">
-        ${Object.entries(PIM_LENSES).map(([key, lens]) =>
-      `<button class="${(state.pimWorkbench.activeLens || "all") === key
+        ${pimLensEntries().map((lens) =>
+      `<button class="${(state.pimWorkbench.activeLens || "all") === lens.key
           ? "is-active" : ""}"
-              data-pim-lens="${key}" type="button">${escapeHtml(
+              data-pim-lens="${lens.key}" type="button">${escapeHtml(
           lens.label)}</button>`).join("")}
       </div>
     </div>
@@ -967,6 +960,9 @@ function renderBody(profile, representation) {
   }
   if (representation === "detail") {
     return renderDetailProjection(profile);
+  }
+  if (representation === "guide") {
+    return renderLevelGuidePanel("pim");
   }
   return "";
 }

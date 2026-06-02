@@ -398,6 +398,123 @@
     "MANAGES": "manages",
     "TRACE": "trace"
   },
+  "relationshipVisualRules": [
+    {
+      "matchKinds": [
+        "CONTAINS",
+        "CONTAINS_COMMAND",
+        "CONTAINS_QUERY",
+        "CONTAINS_EVENT",
+        "ROOT",
+        "MEMBER"
+      ],
+      "className": "edge-domain-ownership",
+      "stroke": "#475569",
+      "lineDash": [
+        4,
+        3
+      ],
+      "lineWidth": 2.2
+    },
+    {
+      "matchKinds": [
+        "DOMAIN_RELATIONSHIP"
+      ],
+      "className": "edge-domain-relationship",
+      "markerEnd": "",
+      "stroke": "#2563eb",
+      "variants": [
+        {
+          "field": "relationshipType",
+          "equals": "COMPOSITION",
+          "className": "edge-domain-composition",
+          "markerStart": "diamond-filled"
+        },
+        {
+          "field": "relationshipType",
+          "equals": "AGGREGATION",
+          "className": "edge-domain-aggregation",
+          "markerStart": "diamond-hollow"
+        },
+        {
+          "field": "relationshipType",
+          "equals": "GENERALIZATION",
+          "className": "edge-domain-generalization",
+          "markerEnd": "triangle-hollow"
+        },
+        {
+          "field": "relationshipType",
+          "values": [
+            "DEPENDENCY",
+            "OWNERSHIP"
+          ],
+          "className": "edge-domain-dependency",
+          "markerEnd": "arrow",
+          "lineDash": [
+            7,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "matchKinds": [
+        "DEPENDS_ON",
+        "USES",
+        "SUPPORTS",
+        "REFINES",
+        "MANAGES"
+      ],
+      "matchEClasses": [
+        "CapabilityDependency"
+      ],
+      "className": "edge-domain-dependency",
+      "stroke": "#0f766e",
+      "lineDash": [
+        7,
+        4
+      ]
+    },
+    {
+      "matchKinds": [
+        "TRANSITION",
+        "TRIGGERS",
+        "RESULTS_IN"
+      ],
+      "className": "edge-process-transition",
+      "stroke": "#0f766e"
+    },
+    {
+      "matchKinds": [
+        "TRACE"
+      ],
+      "matchEClasses": [
+        "TraceLink"
+      ],
+      "className": "edge-trace-link",
+      "stroke": "#7c3aed",
+      "lineDash": [
+        2,
+        5
+      ]
+    },
+    {
+      "matchKinds": [
+        "CONFLICTS_WITH",
+        "CONSTRAINS",
+        "ATTACHED_TO"
+      ],
+      "className": "edge-conflict",
+      "markerEnd": "conflict-cross",
+      "stroke": "#dc2626",
+      "lineDash": [
+        8,
+        3,
+        2,
+        3
+      ]
+    }
+  ],
   "relationshipRules": [
     {
       "sourceType": "*",

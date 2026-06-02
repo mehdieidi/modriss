@@ -22,6 +22,7 @@ import {
 import {confirmAction} from './confirm-action.js';
 import {escapeHtml} from './utils.js';
 import {
+  modelingContainmentsForType,
   modelingElementDefinition,
   modelingLegalKinds,
   modelingLevelConfig,
@@ -1161,27 +1162,22 @@ function appendLegalOutgoingRelationships(node, host = el.attrPanelBody) {
   host.appendChild(section);
 }
 
-function cimContainmentEntriesForType(type) {
-  if (state.activeType === "psm") {
-    let definition = null;
-    try {
-      definition = modelingElementDefinition("psm", type);
-    } catch {
-      definition = null;
+function containmentEntriesForType(type) {
+  try {
+    const configured = modelingContainmentsForType(state.activeType, type);
+    if (configured.length) {
+      return configured.filter((entry) => !entry.relationshipOnly
+          && entry.types?.length);
     }
-    return (definition?.references || []).filter((reference) =>
-        reference.containment && reference.name && reference.targetType
-        && !reference.readonly).map((reference) => ({
-      feature: reference.name,
-      types: [reference.targetType]
-    }));
+  } catch {
+    // fall back to legacy local containment catalogs below
   }
   if (state.activeType === "pim") {
     return pimNestedContainmentsForType(type).map((entry) => ({
       ...entry,
       types: (entry.types || []).filter((childType) => childType
           && !PIM_ABSTRACT_TYPES.includes(childType))
-    })).filter((entry) => entry.types.length);
+    })).filter((entry) => entry.types.length && !entry.relationshipOnly);
   }
   if (state.activeType !== "cim") {
     return [];
@@ -1235,7 +1231,7 @@ function containmentChildren(parent, feature) {
 }
 
 function appendContainmentSections(node, host = el.attrPanelBody) {
-  const entries = cimContainmentEntriesForType(node.type);
+  const entries = containmentEntriesForType(node.type);
   if (!entries.length) {
     return;
   }
@@ -1253,17 +1249,104 @@ function appendContainmentSections(node, host = el.attrPanelBody) {
         escapeAttr(type)}</button>`).join("")}
       </div>
       <div class="attr-contained-list">
-        ${children.length ? children.map((child) => `
-          <button class="attr-contained-row"
-                  data-open-contained-child="${escapeAttr(child.id)}"
-                  type="button">
-            <span>${escapeAttr(elementLabel(child))}</span>
-            <em>${escapeAttr(child.eClass || child.type || "Element")}</em>
-          </button>`).join("")
+        ${children.length ? containmentTableMarkup(children)
         : `<div class="attr-field-hint">No contained children.</div>`}
       </div>`;
     host.appendChild(section);
   });
+}
+
+function containmentTableMarkup(children) {
+  const columns = containmentColumns(children);
+  return `<div class="attr-contained-table-wrap">
+    <table class="attr-contained-table">
+      <thead>
+        <tr><th>Element</th>${columns.map((column) => `<th>${escapeAttr(
+      column)}</th>`).join("")}<th></th></tr>
+      </thead>
+      <tbody>
+        ${children.map((child) => `<tr>
+          <td>
+            <button class="attr-contained-link"
+                    data-open-contained-child="${escapeAttr(child.id)}"
+                    type="button">${escapeAttr(elementLabel(child))}</button>
+            <span>${escapeAttr(child.eClass || child.type || "Element")}</span>
+          </td>
+          ${columns.map((column) => `<td>${containedCellMarkup(child,
+      column)}</td>`).join("")}
+          <td>
+            <button class="btn btn-secondary btn-sm"
+                    data-delete-contained-child="${escapeAttr(child.id)}"
+                    type="button">Delete</button>
+          </td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function containmentColumns(children) {
+  const preferred = ["name", "logicalId", "stageName", "stackName",
+    "method", "pathTemplate", "fieldType", "literal", "stateKind", "effect",
+    "targetResource", "propertyName", "key", "value", "lifecycleStatus"];
+  const configured = children.flatMap((child) => {
+    try {
+      return modelingElementDefinition(state.activeType, child.eClass)
+          ?.visibleFields || [];
+    } catch {
+      return [];
+    }
+  });
+  return [...new Set([...preferred, ...configured])].filter((column) =>
+      children.some((child) => child[column] !== undefined)).slice(0, 6);
+}
+
+function containedFieldDefinition(child, fieldName) {
+  try {
+    const definition = modelingElementDefinition(state.activeType,
+        child.eClass || child.type);
+    return [...(definition?.attributes || []), ...(definition?.references
+        || []).map((reference) => ({...reference, fieldType: "reference"}))]
+    .find((field) => field.name === fieldName) || null;
+  } catch {
+    return null;
+  }
+}
+
+function containedCellMarkup(child, fieldName) {
+  const field = containedFieldDefinition(child, fieldName) || {};
+  const value = child[fieldName];
+  if (field.readonly || READONLY_ATTR_KEYS.has(fieldName)) {
+    return `<span class="attr-contained-readonly">${escapeAttr(
+        overviewValueText(value))}</span>`;
+  }
+  if (field.kind === "reference" || field.fieldType === "reference") {
+    return `<span class="attr-contained-readonly">${escapeAttr(
+        overviewValueText(value))}</span>`;
+  }
+  if (field.fieldType === "select" && Array.isArray(field.options)
+      && field.options.length) {
+    return `<select class="attr-contained-input"
+                    data-contained-edit="${escapeAttr(child.id)}"
+                    data-contained-field="${escapeAttr(fieldName)}">
+      <option value=""></option>
+      ${field.options.map((option) => `<option value="${escapeAttr(option)}" ${
+        String(value ?? "") === String(option) ? "selected" : ""}>${
+        escapeAttr(option)}</option>`).join("")}
+    </select>`;
+  }
+  if (field.fieldType === "boolean" || typeof value === "boolean") {
+    return `<input class="attr-contained-check"
+                   data-contained-edit="${escapeAttr(child.id)}"
+                   data-contained-field="${escapeAttr(fieldName)}"
+                   type="checkbox" ${value ? "checked" : ""}>`;
+  }
+  const inputType = field.fieldType === "number" || typeof value === "number"
+      ? "number" : "text";
+  return `<input class="attr-contained-input"
+                 data-contained-edit="${escapeAttr(child.id)}"
+                 data-contained-field="${escapeAttr(fieldName)}"
+                 type="${inputType}" value="${escapeAttr(value ?? "")}">`;
 }
 
 function appendPimValidationSummary(section, element, type) {
@@ -1496,6 +1579,70 @@ function addContainedChildFromDrawer(parentId, feature, childType) {
   setStatus(`Added ${childType}`);
 }
 
+function updateContainedChildField(childId, fieldName, rawValue, inputType) {
+  const child = state.graph?.elementsById?.get(childId);
+  const node = state.nodesById.get(childId);
+  if (!child || !fieldName) {
+    return;
+  }
+  const definition = containedFieldDefinition(child, fieldName);
+  let value = rawValue;
+  if (inputType === "checkbox") {
+    value = Boolean(rawValue);
+  } else if (definition?.fieldType === "number") {
+    value = Number(rawValue);
+  }
+  child[fieldName] = value;
+  if (node?.meta) {
+    node.meta[fieldName] = value;
+    if (fieldName === "name" || fieldName === "logicalId"
+        || fieldName === "stageName" || fieldName === "stackName") {
+      node.label = String(value || node.label);
+      node.meta.name = node.label;
+      node.meta.label = node.label;
+      child.name = node.label;
+      child.label = node.label;
+    }
+  }
+  markModelDirty();
+  syncDiagramRenderer({workbench: true});
+  setStatus(`Updated ${fieldName}`);
+}
+
+function deleteContainedChild(childId) {
+  const child = state.graph?.elementsById?.get(childId);
+  if (!child) {
+    return;
+  }
+  const parentId = child.__ownerId;
+  const feature = child.__containmentFeature;
+  const parent = parentId ? state.graph?.elementsById?.get(parentId) : null;
+  const parentNode = parentId ? state.nodesById.get(parentId) : null;
+  if (parent && feature) {
+    const nextIds = (state.activeType === "pim" ? pimRefIds : refIds)(
+        parent[feature]).filter((id) => id !== childId);
+    parent[feature] = nextIds;
+    if (parentNode?.meta) {
+      parentNode.meta[feature] = nextIds;
+    }
+  }
+  removeElementFromGraph(childId);
+  const diagramNode = state.diagram?.nodes?.find((node) => node.id
+      === childId);
+  if (diagramNode) {
+    state.diagram.nodes = state.diagram.nodes.filter((node) => node.id
+        !== childId);
+    state.diagram.connections = state.diagram.connections.filter((edge) =>
+        edge.sourceId !== childId && edge.targetId !== childId);
+  }
+  markModelDirty();
+  syncDiagramRenderer({workbench: true});
+  if (parentId && state.nodesById.has(parentId)) {
+    openAttributePanel(parentId);
+  }
+  setStatus(`Deleted ${child.eClass || child.type || "contained child"}`);
+}
+
 function bindContainmentSectionActions() {
   el.attrPanelBody.querySelectorAll("[data-add-contained-child]").forEach(
       (button) => {
@@ -1509,6 +1656,32 @@ function bindContainmentSectionActions() {
       (button) => {
         button.addEventListener("click", () => {
           openAttributePanel(button.dataset.openContainedChild);
+        });
+      });
+  el.attrPanelBody.querySelectorAll("[data-delete-contained-child]").forEach(
+      (button) => {
+        button.addEventListener("click", async () => {
+          const childId = button.dataset.deleteContainedChild;
+          const child = state.graph?.elementsById?.get(childId);
+          const label = child ? elementLabel(child) : childId;
+          const confirmed = await confirmAction({
+            title: "Delete Contained Element",
+            message: `Delete contained element "${label}"?`,
+            confirmLabel: "Delete",
+            danger: true
+          });
+          if (confirmed) {
+            deleteContainedChild(childId);
+          }
+        });
+      });
+  el.attrPanelBody.querySelectorAll("[data-contained-edit]").forEach(
+      (input) => {
+        input.addEventListener("change", () => {
+          updateContainedChildField(input.dataset.containedEdit,
+              input.dataset.containedField,
+              input.type === "checkbox" ? input.checked : input.value,
+              input.type);
         });
       });
 }

@@ -98,12 +98,19 @@ function defaultRelationshipKind(modelType) {
   }
 }
 
-function applyAttributes(meta, definition) {
-  for (const attribute of definition?.attributes || []) {
-    if (!attribute?.name) {
+function cloneDefault(value) {
+  return value == null ? value : structuredClone(value);
+}
+
+function applyDefinitionDefaults(meta, definition) {
+  for (const field of [
+    ...(definition?.attributes || []),
+    ...(definition?.references || [])
+  ]) {
+    if (!field?.name || field.readonly) {
       continue;
     }
-    meta[attribute.name] = attribute.defaultValue ?? null;
+    meta[field.name] = cloneDefault(field.defaultValue);
   }
 }
 
@@ -121,7 +128,7 @@ export function getDefaultNode(typeKey, nodeType, x, y) {
     tags: []
   };
   const definition = modelingElementDefinition(typeKey, nodeType);
-  applyAttributes(meta, definition);
+  applyDefinitionDefaults(meta, definition);
   meta.lifecycleStatus ||= "INCOMPLETE";
   if (labelField === "label") {
     meta.label = label;

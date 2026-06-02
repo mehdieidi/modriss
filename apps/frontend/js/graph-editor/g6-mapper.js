@@ -1,7 +1,8 @@
 import {state} from '../state.js';
 import {
   modelingElementDefinition,
-  modelingRelationshipKindLabel
+  modelingRelationshipKindLabel,
+  modelingRelationshipPresentation
 } from '../modeling-config-data.js';
 import {
   canvasBackgroundColor,
@@ -177,82 +178,7 @@ export function edgeLabel(edge, typeKey = state.activeType) {
 }
 
 export function edgePresentation(edge, typeKey = state.activeType) {
-  const kind = String(edge?.kind || "").toUpperCase();
-  const relationship = state.graph?.relationshipsById?.get(edge?.id) || edge
-      || {};
-  const presentation = {className: "", markerStart: "", markerEnd: "arrow"};
-  if (typeKey === "pim") {
-    if (kind === "TRACE" || relationship.eClass === "TraceLink") {
-      presentation.className = " edge-trace-link";
-    } else if (kind === "TRANSITION" || relationship.eClass
-        === "WorkflowTransition") {
-      presentation.className = " edge-process-transition";
-    } else if (kind === "PERMISSION" || kind === "AUTHORIZED_BY") {
-      presentation.className = " edge-conflict";
-    } else if (["EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB", "PUBLISHES",
-      "SUBSCRIBES_TO"].includes(kind)) {
-      presentation.className = " edge-pim-event";
-    } else if (["READS", "WRITES", "READ_WRITE", "DATA_ACCESS", "APPEND",
-      "DELETE"].includes(kind)) {
-      presentation.className = " edge-pim-data";
-    } else if (["EXTERNAL_CALL", "CALLS"].includes(kind)) {
-      presentation.className = " edge-domain-dependency";
-    } else if (["DEPLOYS", "DEPLOYS_TO", "OWNS", "CONTAINS"].includes(kind)) {
-      presentation.className = " edge-domain-ownership";
-    }
-    return presentation;
-  }
-  if (typeKey === "psm") {
-    if (["CONTAINS", "DEPLOYS", "DEPLOYS_TO"].includes(kind)) {
-      presentation.className = " edge-domain-ownership";
-    } else if (["EVENT_FLOW", "MESSAGE_FLOW"].includes(kind)) {
-      presentation.className = " edge-pim-event";
-    } else if (["READS", "WRITES", "DATA_ACCESS"].includes(kind)) {
-      presentation.className = " edge-pim-data";
-    } else if (["USES_ROLE", "PERMISSION", "AUTHORIZED_BY",
-      "USES_SECRET"].includes(kind)) {
-      presentation.className = " edge-conflict";
-    } else if (["OBSERVES", "WRITES_LOGS_TO"].includes(kind)) {
-      presentation.className = " edge-trace-link";
-    } else if (kind === "TRANSITION") {
-      presentation.className = " edge-process-transition";
-    }
-    return presentation;
-  }
-  const relationshipType = String(relationship.relationshipType
-      || "").toUpperCase();
-  if (kind === "DOMAIN_RELATIONSHIP") {
-    presentation.markerEnd = "";
-    presentation.className = " edge-domain-relationship";
-    if (relationshipType === "COMPOSITION") {
-      presentation.markerStart = "diamond-filled";
-      presentation.className += " edge-domain-composition";
-    } else if (relationshipType === "AGGREGATION") {
-      presentation.markerStart = "diamond-hollow";
-      presentation.className += " edge-domain-aggregation";
-    } else if (relationshipType === "GENERALIZATION") {
-      presentation.markerEnd = "triangle-hollow";
-      presentation.className += " edge-domain-generalization";
-    } else if (relationshipType === "DEPENDENCY") {
-      presentation.markerEnd = "arrow";
-      presentation.className += " edge-domain-dependency";
-    } else if (relationshipType === "OWNERSHIP") {
-      presentation.markerEnd = "arrow";
-      presentation.className += " edge-domain-ownership";
-    }
-  } else if (kind === "TRACE" || relationship.eClass === "TraceLink") {
-    presentation.className = " edge-trace-link";
-  } else if (kind === "CONFLICTS_WITH" || relationship.linkType
-      === "CONFLICTS_WITH") {
-    presentation.className = " edge-conflict";
-    presentation.markerEnd = "conflict-cross";
-  } else if (kind === "TRANSITION") {
-    presentation.className = " edge-process-transition";
-  } else if (relationship.eClass === "CapabilityDependency") {
-    presentation.className = relationship.criticalPath
-        ? " edge-critical-dependency" : " edge-capability-dependency";
-  }
-  return presentation;
+  return modelingRelationshipPresentation(typeKey, edge);
 }
 
 export function mapNodeToG6(node, {

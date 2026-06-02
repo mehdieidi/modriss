@@ -1,4 +1,6 @@
 import {el} from './dom.js';
+import {escapeHtml} from './utils.js';
+import {modelingLevelConfig} from './modeling-config-data.js';
 
 const WORKBENCH_EVENT_TYPES = [
   "mousedown",
@@ -186,4 +188,119 @@ export function commitWorkbenchModelChange({
   if (message) {
     setStatus(message);
   }
+}
+
+function compactList(values, fallback = "Any") {
+  const items = Array.isArray(values) ? values.map(String).filter(Boolean) : [];
+  if (!items.length) {
+    return fallback;
+  }
+  if (items.length <= 6) {
+    return items.join(", ");
+  }
+  return `${items.slice(0, 6).join(", ")} +${items.length - 6}`;
+}
+
+function renderGuideCard(title, body, meta = "") {
+  return `<section class="cim-guide-card">
+    <div>
+      <strong>${escapeHtml(title)}</strong>
+      ${meta ? `<span>${escapeHtml(meta)}</span>` : ""}
+    </div>
+    <p>${escapeHtml(body)}</p>
+  </section>`;
+}
+
+function renderNotationCards(level) {
+  const universal = Array.isArray(level.universalSyntax)
+      ? level.universalSyntax : [];
+  const kernel = Array.isArray(level.kernelNotation)
+      ? level.kernelNotation : [];
+  const cards = [
+    ...universal.map((entry) => renderGuideCard(
+        entry.element || entry.name || "Syntax element",
+        entry.notation || entry.behavior || entry.description || "",
+        compactList(entry.surfaces, ""))),
+    ...kernel.map((entry) => renderGuideCard(
+        entry.element || entry.name || "Kernel notation",
+        entry.notation || entry.behavior || entry.description || "",
+        compactList(entry.surfaces, "")))
+  ];
+  return cards.join("");
+}
+
+function renderComplexityCards(level) {
+  return (level.complexityManagement || []).map((entry) => renderGuideCard(
+      entry.technique || "Technique",
+      entry.behavior || entry.description || "",
+      compactList(entry.surfaces, ""))).join("");
+}
+
+function renderRelationshipLegend(level) {
+  const labels = level.relationshipKindLabels || {};
+  const rules = Array.isArray(level.relationshipVisualRules)
+      ? level.relationshipVisualRules : [];
+  if (!rules.length) {
+    return "";
+  }
+  return rules.map((rule, index) => {
+    const kinds = (rule.matchKinds || []).map((kind) =>
+        labels[kind] || String(kind).toLowerCase().replaceAll("_", " "));
+    const swatchStyle = [
+      rule.stroke ? `--guide-edge-color:${escapeHtml(rule.stroke)}` : "",
+      Array.isArray(rule.lineDash) ? "--guide-edge-dash:6px" : ""
+    ].filter(Boolean).join(";");
+    return `<div class="cim-guide-legend-row">
+      <span class="cim-guide-edge-swatch ${Array.isArray(rule.lineDash)
+        ? "is-dashed" : ""}" style="${swatchStyle}"></span>
+      <div>
+        <strong>${escapeHtml(rule.label || kinds[0]
+        || `Relationship style ${index + 1}`)}</strong>
+        <span>${escapeHtml(compactList(kinds, "Configured by eClass/field"))}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderViewCards(level) {
+  return (level.viewDefinitions || []).map((view) => renderGuideCard(
+      view.displayName || view.name || view.id || "View",
+      view.description || `Viewpoint ${view.viewpoint || view.viewType
+      || view.id || "model"}`,
+      `${view.viewType || "view"} | ${compactList(view.elementTypes,
+          "configured elements")}`)).join("");
+}
+
+export function renderLevelGuidePanel(typeKey) {
+  const level = modelingLevelConfig(typeKey);
+  return `<div class="cim-guide-panel">
+    <section class="cim-guide-section">
+      <div class="cim-guide-heading">
+        <strong>Concrete Syntax</strong>
+        <span>${escapeHtml(level.displayName || typeKey.toUpperCase())}</span>
+      </div>
+      <div class="cim-guide-grid">${renderNotationCards(level)}</div>
+    </section>
+    <section class="cim-guide-section">
+      <div class="cim-guide-heading">
+        <strong>Relationship Legend</strong>
+        <span>${escapeHtml(String((level.relationshipKinds || []).length))} kinds</span>
+      </div>
+      <div class="cim-guide-legend">${renderRelationshipLegend(level)}</div>
+    </section>
+    <section class="cim-guide-section">
+      <div class="cim-guide-heading">
+        <strong>Complexity Management</strong>
+        <span>${escapeHtml(String((level.complexityManagement || []).length))} techniques</span>
+      </div>
+      <div class="cim-guide-grid">${renderComplexityCards(level)}</div>
+    </section>
+    <section class="cim-guide-section">
+      <div class="cim-guide-heading">
+        <strong>Views</strong>
+        <span>${escapeHtml(String((level.viewDefinitions || []).length))} definitions</span>
+      </div>
+      <div class="cim-guide-grid">${renderViewCards(level)}</div>
+    </section>
+  </div>`;
 }

@@ -1159,6 +1159,117 @@
   padding: 12px;
 }
 
+.cim-guide-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.cim-guide-section {
+  display: grid;
+  gap: 9px;
+}
+
+.cim-guide-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cim-guide-heading strong {
+  color: var(--text);
+  font: 800 13px/1.2 var(--font-display);
+}
+
+.cim-guide-heading span {
+  color: var(--muted);
+  font: 700 10px/1.2 var(--font-ui);
+  text-transform: uppercase;
+}
+
+.cim-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.cim-guide-card {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+}
+
+.cim-guide-card div {
+  display: grid;
+  gap: 3px;
+}
+
+.cim-guide-card strong {
+  color: var(--text);
+  font: 800 12px/1.2 var(--font-display);
+}
+
+.cim-guide-card span {
+  color: var(--muted);
+  font: 700 10px/1.2 var(--font-ui);
+}
+
+.cim-guide-card p {
+  margin: 0;
+  color: var(--text-soft);
+  font: 500 11px/1.4 var(--font-ui);
+}
+
+.cim-guide-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.cim-guide-legend-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+}
+
+.cim-guide-edge-swatch {
+  width: 38px;
+  height: 0;
+  border-top: 2px solid var(--guide-edge-color, var(--accent));
+}
+
+.cim-guide-edge-swatch.is-dashed {
+  border-top-style: dashed;
+}
+
+.cim-guide-legend-row div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cim-guide-legend-row strong {
+  color: var(--text);
+  font: 800 11px/1.2 var(--font-display);
+}
+
+.cim-guide-legend-row span {
+  overflow: hidden;
+  color: var(--muted);
+  font: 600 10px/1.25 var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cim-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1669,4 +1780,79 @@
   color: #fff;
   font-size: 10px;
   white-space: nowrap;
+}
+
+.attr-contained-table-wrap {
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 94%, #fff 6%);
+}
+
+.attr-contained-table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font: 500 12px/1.35 var(--font-ui);
+}
+
+.attr-contained-table th,
+.attr-contained-table td {
+  padding: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.attr-contained-table th {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.attr-contained-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.attr-contained-link {
+  display: block;
+  max-width: 180px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text-strong);
+  font: 700 12px/1.3 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.attr-contained-table td span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.attr-contained-input,
+.attr-contained-table select {
+  width: 100%;
+  min-width: 88px;
+  min-height: 30px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 6px;
+  padding: 5px 7px;
+  background: var(--surface);
+  color: var(--text);
+  font: 500 12px/1.2 var(--font-ui);
+}
+
+.attr-contained-check {
+  width: 16px;
+  height: 16px;
+}
+
+.attr-contained-readonly {
+  color: var(--text-muted);
+  font-size: 11px;
 }

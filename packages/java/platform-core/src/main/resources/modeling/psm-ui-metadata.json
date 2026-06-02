@@ -552,6 +552,94 @@
     "AUTHORIZED_BY": "authorized by",
     "TRACE": "trace"
   },
+  "relationshipVisualRules": [
+    {
+      "matchKinds": [
+        "CONTAINS",
+        "DEPLOYS",
+        "DEPLOYS_TO"
+      ],
+      "className": "edge-domain-ownership",
+      "stroke": "#475569",
+      "lineWidth": 2.6
+    },
+    {
+      "matchKinds": [
+        "DEPENDS_ON",
+        "NETWORKS_WITH",
+        "TARGETS"
+      ],
+      "className": "edge-domain-dependency",
+      "stroke": "#0f766e",
+      "lineDash": [
+        7,
+        4
+      ]
+    },
+    {
+      "matchKinds": [
+        "ROUTES_TO",
+        "INVOKES",
+        "EVENT_FLOW",
+        "MESSAGE_FLOW"
+      ],
+      "className": "edge-pim-event",
+      "stroke": "#0891b2"
+    },
+    {
+      "matchKinds": [
+        "READS",
+        "WRITES"
+      ],
+      "className": "edge-pim-data",
+      "stroke": "#15803d",
+      "lineDash": [
+        4,
+        3
+      ]
+    },
+    {
+      "matchKinds": [
+        "USES_ROLE",
+        "USES_SECRET",
+        "PERMISSION",
+        "AUTHORIZED_BY",
+        "CONSTRAINS",
+        "ATTACHED_TO"
+      ],
+      "className": "edge-conflict",
+      "stroke": "#dc2626",
+      "lineDash": [
+        8,
+        3,
+        2,
+        3
+      ]
+    },
+    {
+      "matchKinds": [
+        "OBSERVES",
+        "WRITES_LOGS_TO",
+        "TRACE"
+      ],
+      "matchEClasses": [
+        "TraceLink"
+      ],
+      "className": "edge-trace-link",
+      "stroke": "#7c3aed",
+      "lineDash": [
+        2,
+        5
+      ]
+    },
+    {
+      "matchKinds": [
+        "TRANSITION"
+      ],
+      "className": "edge-process-transition",
+      "stroke": "#0f766e"
+    }
+  ],
   "relationshipRules": [
     {
       "sourceType": "*",
@@ -582,6 +670,20 @@
       "edgeKinds": [
         "ROUTES_TO",
         "INVOKES"
+      ],
+      "viewReferences": [
+        {
+          "feature": "route",
+          "role": "source"
+        },
+        {
+          "feature": "function",
+          "role": "target"
+        },
+        {
+          "feature": "integration",
+          "type": "ApiGatewayIntegration"
+        }
       ]
     },
     {
@@ -597,6 +699,24 @@
         "EVENT_FLOW",
         "PERMISSION",
         "INVOKES"
+      ],
+      "viewReferences": [
+        {
+          "feature": "topic",
+          "role": "source"
+        },
+        {
+          "feature": "function",
+          "role": "target"
+        },
+        {
+          "feature": "subscription",
+          "type": "SnsSubscription"
+        },
+        {
+          "feature": "permission",
+          "type": "LambdaPermission"
+        }
       ]
     },
     {
@@ -610,6 +730,20 @@
       "edgeKinds": [
         "EVENT_FLOW",
         "INVOKES"
+      ],
+      "viewReferences": [
+        {
+          "feature": "queue",
+          "role": "source"
+        },
+        {
+          "feature": "function",
+          "role": "target"
+        },
+        {
+          "feature": "mapping",
+          "type": "SqsLambdaEventSourceMapping"
+        }
       ]
     },
     {
@@ -625,6 +759,24 @@
         "TARGETS",
         "PERMISSION",
         "INVOKES"
+      ],
+      "viewReferences": [
+        {
+          "feature": "rule",
+          "role": "source"
+        },
+        {
+          "feature": "function",
+          "role": "target"
+        },
+        {
+          "feature": "targetRow",
+          "type": "EventBridgeTarget"
+        },
+        {
+          "feature": "permission",
+          "type": "LambdaPermission"
+        }
       ]
     },
     {
@@ -638,6 +790,20 @@
       "edgeKinds": [
         "TARGETS",
         "INVOKES"
+      ],
+      "viewReferences": [
+        {
+          "feature": "rule",
+          "role": "source"
+        },
+        {
+          "feature": "stateMachine",
+          "role": "target"
+        },
+        {
+          "feature": "targetRow",
+          "type": "EventBridgeTarget"
+        }
       ]
     },
     {
@@ -653,6 +819,24 @@
         "EVENT_FLOW",
         "PERMISSION",
         "INVOKES"
+      ],
+      "viewReferences": [
+        {
+          "feature": "bucket",
+          "role": "source"
+        },
+        {
+          "feature": "function",
+          "role": "target"
+        },
+        {
+          "feature": "rule",
+          "type": "S3NotificationRule"
+        },
+        {
+          "feature": "permission",
+          "type": "LambdaPermission"
+        }
       ]
     },
     {
@@ -668,6 +852,24 @@
         "EVENT_FLOW",
         "PERMISSION",
         "MESSAGE_FLOW"
+      ],
+      "viewReferences": [
+        {
+          "feature": "bucket",
+          "role": "source"
+        },
+        {
+          "feature": "queue",
+          "role": "target"
+        },
+        {
+          "feature": "rule",
+          "type": "S3NotificationRule"
+        },
+        {
+          "feature": "queuePolicy",
+          "type": "SqsQueuePolicy"
+        }
       ]
     },
     {
@@ -683,6 +885,24 @@
         "EVENT_FLOW",
         "PERMISSION",
         "TARGETS"
+      ],
+      "viewReferences": [
+        {
+          "feature": "bucket",
+          "role": "source"
+        },
+        {
+          "feature": "topic",
+          "role": "target"
+        },
+        {
+          "feature": "rule",
+          "type": "S3NotificationRule"
+        },
+        {
+          "feature": "topicPolicy",
+          "type": "SnsTopicPolicy"
+        }
       ]
     }
   ],

@@ -35,6 +35,7 @@ class ModelingConfigServiceTest {
             Map<String, Object> level = level(key);
             assertFalse(stringList(level.get("relationshipKinds")).isEmpty());
             assertNotNull(level.get("relationshipKindLabels"));
+            assertFalse(listOfMaps(level.get("relationshipVisualRules")).isEmpty());
             assertNotNull(level.get("relationshipRules"));
             assertNotNull(level.get("viewDefinitions"));
             assertNotNull(level.get("rootTemplate"));

@@ -23,6 +23,7 @@ import {
   commitWorkbenchModelChange,
   downloadWorkbenchCsv,
   ensureWorkbenchSurface,
+  renderLevelGuidePanel,
   renderWorkbenchSurfaceLayout,
   setWorkbenchRepresentation
 } from './workbench-common.js';
@@ -624,7 +625,8 @@ function renderControls(profile, representation) {
     ["register", "Register"],
     ["matrix", "Matrix"],
     ["board", "Board"],
-    ["detail", "Detail"]
+    ["detail", "Detail"],
+    ["guide", "Guide"]
   ];
   const definition = activeDefinition();
   return `<div class="cim-surface-header">
@@ -702,6 +704,9 @@ function renderBody(representation) {
   }
   if (representation === "detail") {
     return renderDetail();
+  }
+  if (representation === "guide") {
+    return renderLevelGuidePanel("psm");
   }
   return "";
 }

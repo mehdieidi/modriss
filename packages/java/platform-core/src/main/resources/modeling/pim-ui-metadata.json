@@ -525,6 +525,105 @@
     "SUBSCRIBES_TO": "subscribes to",
     "TRACE": "trace"
   },
+  "relationshipVisualRules": [
+    {
+      "matchKinds": [
+        "CONTAINS",
+        "OWNS",
+        "DEPLOYS",
+        "DEPLOYS_TO"
+      ],
+      "className": "edge-domain-ownership",
+      "stroke": "#475569",
+      "lineWidth": 2.6
+    },
+    {
+      "matchKinds": [
+        "EXTERNAL_CALL",
+        "CALLS",
+        "FLOW",
+        "REQUEST_RESPONSE",
+        "ORCHESTRATES"
+      ],
+      "className": "edge-domain-dependency",
+      "stroke": "#0f766e",
+      "lineDash": [
+        7,
+        4
+      ]
+    },
+    {
+      "matchKinds": [
+        "EVENT_FLOW",
+        "MESSAGE_FLOW",
+        "PUB_SUB",
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "ROUTES_TO",
+        "INVOKES",
+        "TRIGGERS"
+      ],
+      "className": "edge-pim-event",
+      "stroke": "#0891b2"
+    },
+    {
+      "matchKinds": [
+        "READS",
+        "WRITES",
+        "READ_WRITE",
+        "DATA_ACCESS",
+        "APPEND",
+        "DELETE"
+      ],
+      "className": "edge-pim-data",
+      "stroke": "#15803d",
+      "lineDash": [
+        4,
+        3
+      ]
+    },
+    {
+      "matchKinds": [
+        "PERMISSION",
+        "AUTHORIZED_BY",
+        "USES_SECRET",
+        "CONSTRAINS",
+        "ATTACHED_TO"
+      ],
+      "className": "edge-conflict",
+      "stroke": "#dc2626",
+      "lineDash": [
+        8,
+        3,
+        2,
+        3
+      ]
+    },
+    {
+      "matchKinds": [
+        "TRANSITION"
+      ],
+      "matchEClasses": [
+        "WorkflowTransition"
+      ],
+      "className": "edge-process-transition",
+      "stroke": "#0f766e"
+    },
+    {
+      "matchKinds": [
+        "TRACE"
+      ],
+      "matchEClasses": [
+        "TraceLink"
+      ],
+      "className": "edge-trace-link",
+      "stroke": "#7c3aed",
+      "lineDash": [
+        2,
+        5
+      ]
+    }
+  ],
   "relationshipRules": [
     {
       "sourceType": "*",

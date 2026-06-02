@@ -20,6 +20,7 @@ import {
   modelingElementDefinition,
   modelingPalette,
   modelingRelationshipKindLabel,
+  modelingRelationshipPresentation,
   modelingShortcutConnectorRules,
   modelingTypeMatches,
   modelingViewDefinition
@@ -183,87 +184,10 @@ function cimEdgeLabel(edge) {
 }
 
 function cimEdgePresentation(edge) {
-  if (state.activeType === "psm") {
-    const kind = String(edge.kind || "").toUpperCase();
-    const presentation = {className: "", markerStart: "", markerEnd: "arrow"};
-    if (["CONTAINS", "DEPLOYS", "DEPLOYS_TO"].includes(kind)) {
-      presentation.className = " edge-domain-ownership";
-    } else if (["EVENT_FLOW", "MESSAGE_FLOW"].includes(kind)) {
-      presentation.className = " edge-pim-event";
-    } else if (["READS", "WRITES", "DATA_ACCESS"].includes(kind)) {
-      presentation.className = " edge-pim-data";
-    } else if (["USES_ROLE", "PERMISSION", "AUTHORIZED_BY",
-      "USES_SECRET"].includes(kind)) {
-      presentation.className = " edge-conflict";
-    } else if (["OBSERVES", "WRITES_LOGS_TO"].includes(kind)) {
-      presentation.className = " edge-trace-link";
-    } else if (kind === "TRANSITION") {
-      presentation.className = " edge-process-transition";
-    }
-    return presentation;
-  }
-  if (state.activeType !== "cim" && state.activeType !== "pim") {
+  if (!["cim", "pim", "psm"].includes(state.activeType)) {
     return {className: "", markerStart: "", markerEnd: "arrow"};
   }
-  const relationship = state.graph?.relationshipsById?.get(edge.id) || edge;
-  const kind = String(edge.kind || "").toUpperCase();
-  if (state.activeType === "pim") {
-    const presentation = {className: "", markerStart: "", markerEnd: "arrow"};
-    if (kind === "TRACE" || relationship.eClass === "TraceLink") {
-      presentation.className = " edge-trace-link";
-    } else if (kind === "TRANSITION" || relationship.eClass
-        === "WorkflowTransition") {
-      presentation.className = " edge-process-transition";
-    } else if (kind === "PERMISSION" || kind === "AUTHORIZED_BY") {
-      presentation.className = " edge-conflict";
-    } else if (["EVENT_FLOW", "MESSAGE_FLOW", "PUB_SUB", "PUBLISHES",
-      "SUBSCRIBES_TO"].includes(kind)) {
-      presentation.className = " edge-pim-event";
-    } else if (["READS", "WRITES", "READ_WRITE", "DATA_ACCESS", "APPEND",
-      "DELETE"].includes(kind)) {
-      presentation.className = " edge-pim-data";
-    } else if (["EXTERNAL_CALL", "CALLS"].includes(kind)) {
-      presentation.className = " edge-domain-dependency";
-    } else if (["DEPLOYS", "DEPLOYS_TO", "OWNS", "CONTAINS"].includes(kind)) {
-      presentation.className = " edge-domain-ownership";
-    }
-    return presentation;
-  }
-  const relationshipType = String(
-      relationship.relationshipType || "").toUpperCase();
-  const presentation = {className: "", markerStart: "", markerEnd: "arrow"};
-  if (kind === "DOMAIN_RELATIONSHIP") {
-    presentation.markerEnd = "";
-    presentation.className = " edge-domain-relationship";
-    if (relationshipType === "COMPOSITION") {
-      presentation.markerStart = "diamond-filled";
-      presentation.className += " edge-domain-composition";
-    } else if (relationshipType === "AGGREGATION") {
-      presentation.markerStart = "diamond-hollow";
-      presentation.className += " edge-domain-aggregation";
-    } else if (relationshipType === "GENERALIZATION") {
-      presentation.markerEnd = "triangle-hollow";
-      presentation.className += " edge-domain-generalization";
-    } else if (relationshipType === "DEPENDENCY") {
-      presentation.markerEnd = "arrow";
-      presentation.className += " edge-domain-dependency";
-    } else if (relationshipType === "OWNERSHIP") {
-      presentation.markerEnd = "arrow";
-      presentation.className += " edge-domain-ownership";
-    }
-  } else if (kind === "TRACE" || relationship.eClass === "TraceLink") {
-    presentation.className = " edge-trace-link";
-  } else if (kind === "CONFLICTS_WITH" || relationship.linkType
-      === "CONFLICTS_WITH") {
-    presentation.className = " edge-conflict";
-    presentation.markerEnd = "conflict-cross";
-  } else if (kind === "TRANSITION") {
-    presentation.className = " edge-process-transition";
-  } else if (relationship.eClass === "CapabilityDependency") {
-    presentation.className = relationship.criticalPath
-        ? " edge-critical-dependency" : " edge-capability-dependency";
-  }
-  return presentation;
+  return modelingRelationshipPresentation(state.activeType, edge);
 }
 
 function cimNodeNotation(node) {
@@ -4590,37 +4514,38 @@ function createShortcutViewNode(rule, source, target, intermediates) {
   node.meta.generated = true;
   node.meta.source = source.id;
   node.meta.target = target.id;
-  const byType = new Map(intermediates.map((item) => [item.type, item.id]));
-  if (modelingTypeMatchesSafe("ApiGatewayRoute", source.type)) {
-    node.meta.route = source.id;
-  }
-  if (source.type === "EventBridgeRule") {
-    node.meta.rule = source.id;
-  }
-  if (source.type === "SnsTopic") {
-    node.meta.topic = source.id;
-  }
-  if (source.type === "SqsQueue") {
-    node.meta.queue = source.id;
-  }
-  if (target.type === "AwsLambdaFunction") {
-    node.meta.function = target.id;
-  }
-  if (target.type === "StepFunctionStateMachine") {
-    node.meta.stateMachine = target.id;
-  }
-  node.meta.integration = byType.get("ApiGatewayIntegration")
-      || node.meta.integration;
-  node.meta.targetRow = byType.get("EventBridgeTarget")
-      || node.meta.targetRow;
-  node.meta.subscription = byType.get("SnsSubscription")
-      || node.meta.subscription;
-  node.meta.mapping = byType.get("SqsLambdaEventSourceMapping")
-      || node.meta.mapping;
-  node.meta.permission = byType.get("LambdaPermission") || null;
+  applyShortcutViewReferences(node, rule, source, target, intermediates);
   state.diagram.nodes.push(node);
   addNodeToGraphAndActiveView(node);
   return node;
+}
+
+function applyShortcutViewReferences(node, rule, source, target,
+    intermediates) {
+  const bindings = Array.isArray(rule.viewReferences) ? rule.viewReferences
+      : [];
+  bindings.forEach((binding) => {
+    const feature = String(binding?.feature || "").trim();
+    if (!feature) {
+      return;
+    }
+    if (binding.role === "source") {
+      node.meta[feature] = source.id;
+      return;
+    }
+    if (binding.role === "target") {
+      node.meta[feature] = target.id;
+      return;
+    }
+    const expectedType = String(binding?.type || "").trim();
+    const match = intermediates.find((item) =>
+        modelingTypeMatchesSafe(expectedType, item.type));
+    if (match) {
+      node.meta[feature] = match.id;
+    } else if (binding.required === false) {
+      node.meta[feature] = null;
+    }
+  });
 }
 
 function modelingTypeMatchesSafe(expected, actual) {

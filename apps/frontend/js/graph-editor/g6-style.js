@@ -111,39 +111,6 @@ const STICKY_BY_TYPE = {
   Assumption: "#ddd6fe"
 };
 
-const EDGE_KIND_STYLE = {
-  EXPECTS: {stroke: "#d97706"},
-  CAUSES: {stroke: "#d97706"},
-  EMITS_EVENT: {stroke: "#d97706"},
-  TRIGGERS: {stroke: "#d97706"},
-  REJECTS_WITH: {stroke: "#dc2626", lineDash: [7, 4]},
-  MAY_FAIL_WITH: {stroke: "#dc2626", lineDash: [7, 4]},
-  CONSTRAINS: {stroke: "#dc2626", lineDash: [7, 4]},
-  ATTACHED_TO: {stroke: "#dc2626", lineDash: [7, 4]},
-  CONTAINS: {stroke: "#475569", lineDash: [4, 3]},
-  CONTAINS_COMMAND: {stroke: "#475569", lineDash: [4, 3]},
-  CONTAINS_QUERY: {stroke: "#475569", lineDash: [4, 3]},
-  CONTAINS_EVENT: {stroke: "#475569", lineDash: [4, 3]},
-  ROOT: {stroke: "#475569", lineDash: [4, 3]},
-  MEMBER: {stroke: "#475569", lineDash: [4, 3]},
-  DOMAIN_RELATIONSHIP: {stroke: "#2563eb"},
-  DEPENDS_ON: {stroke: "#0f766e"},
-  TRANSITION: {stroke: "#0f766e"},
-  PRECEDES: {stroke: "#0f766e"},
-  TRACE: {stroke: "#7c3aed", lineDash: [2, 5]},
-  CONFLICTS_WITH: {stroke: "#dc2626", lineDash: [8, 3, 2, 3]},
-  EVENT_FLOW: {stroke: "#0891b2"},
-  MESSAGE_FLOW: {stroke: "#0891b2"},
-  PUB_SUB: {stroke: "#0891b2"},
-  PUBLISHES: {stroke: "#0891b2"},
-  SUBSCRIBES_TO: {stroke: "#0891b2"},
-  READS: {stroke: "#15803d", lineDash: [4, 3]},
-  WRITES: {stroke: "#15803d", lineDash: [4, 3]},
-  DATA_ACCESS: {stroke: "#15803d", lineDash: [4, 3]},
-  PERMISSION: {stroke: "#dc2626", lineDash: [8, 3, 2, 3]},
-  AUTHORIZED_BY: {stroke: "#dc2626", lineDash: [8, 3, 2, 3]}
-};
-
 export function nodeSizeForDiagram(typeKey = state.activeType) {
   return typeKey === "cim" ? NODE_SIZE.cim : NODE_SIZE.default;
 }
@@ -173,35 +140,13 @@ export function stickyColor(node, notation = null) {
 }
 
 export function edgeStyleForKind(kind, presentation = {}) {
-  const key = String(kind || "").toUpperCase();
   const base = {
     stroke: cssVar("--accent", "#00a6e0"),
     lineWidth: 1.7,
     opacity: 0.9,
     lineDash: undefined
   };
-  const byKind = EDGE_KIND_STYLE[key] || {};
-  const className = String(presentation.className || "");
-  let byClass = {};
-  if (className.includes("edge-domain-ownership")
-      || className.includes("edge-critical-dependency")) {
-    byClass = {lineWidth: 2.8};
-  } else if (className.includes("edge-domain-dependency")) {
-    byClass = {lineDash: [7, 4]};
-  } else if (className.includes("edge-domain-generalization")) {
-    byClass = {stroke: "#2563eb"};
-  } else if (className.includes("edge-process-transition")) {
-    byClass = {stroke: "#0f766e"};
-  } else if (className.includes("edge-pim-event")) {
-    byClass = {stroke: "#0891b2"};
-  } else if (className.includes("edge-pim-data")) {
-    byClass = {stroke: "#15803d", lineDash: [4, 3]};
-  } else if (className.includes("edge-trace-link")) {
-    byClass = {stroke: "#7c3aed", lineDash: [2, 5]};
-  } else if (className.includes("edge-conflict")) {
-    byClass = {stroke: "#dc2626", lineDash: [8, 3, 2, 3]};
-  }
-  return {...base, ...byKind, ...byClass};
+  return {...base, ...(presentation.style || {})};
 }
 
 export function isLightTheme() {
