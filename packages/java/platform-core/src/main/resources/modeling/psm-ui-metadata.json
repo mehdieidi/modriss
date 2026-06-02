@@ -704,13 +704,7 @@
         "CfnParameter",
         "CfnOutput"
       ],
-      "palette": [
-        "AwsStage",
-        "SamStack",
-        "AwsNamingPolicy",
-        "AwsTaggingPolicy",
-        "AwsSecurityBaseline"
-      ],
+      "palette": [],
       "relationshipKinds": [
         "CONTAINS",
         "DEPLOYS",
@@ -807,6 +801,9 @@
         "HttpApi",
         "RestApi",
         "WebSocketApi",
+        "HttpApiRoute",
+        "RestApiRoute",
+        "WebSocketRoute",
         "ApiGatewayIntegration",
         "JwtAuthorizer",
         "CognitoAuthorizer",
@@ -814,7 +811,6 @@
         "ApiGatewayDomainName",
         "ApiGatewayApiKey",
         "ApiGatewayUsagePlan",
-        "WafWebAclAssociation",
         "AwsLambdaFunction",
         "StepFunctionStateMachine"
       ],
@@ -857,17 +853,18 @@
       ],
       "palette": [
         "AwsLambdaFunction",
+        "LambdaZipCodeConfig",
+        "LambdaImageCodeConfig",
+        "LambdaEnvironmentVariable",
+        "SqsLambdaEventSourceMapping",
+        "DynamoDbStreamLambdaEventSourceMapping",
+        "GenericLambdaEventSourceMapping",
         "LambdaLayerVersion",
         "LambdaVersion",
         "LambdaAlias",
         "LambdaPermission",
         "LambdaFunctionUrl",
-        "CodeSigningConfig",
-        "IamRole",
-        "CloudWatchLogGroup",
-        "SqsQueue",
-        "SnsTopic",
-        "DynamoDbTable"
+        "CodeSigningConfig"
       ],
       "relationshipKinds": [
         "INVOKES",
@@ -909,10 +906,11 @@
         "EventBridgeRule",
         "EventBridgeSchedule",
         "EventBridgePipe",
+        "EventBridgeConnection",
+        "EventBridgeApiDestination",
         "SqsQueue",
         "SnsTopic",
-        "AwsLambdaFunction",
-        "StepFunctionStateMachine"
+        "SnsSubscription"
       ],
       "relationshipKinds": [
         "EVENT_FLOW",
@@ -943,8 +941,10 @@
       ],
       "palette": [
         "StepFunctionStateMachine",
-        "AwsLambdaFunction",
-        "EventBridgeRule"
+        "AslState",
+        "AslRetryRule",
+        "AslCatchRule",
+        "AslChoiceRule"
       ],
       "relationshipKinds": [
         "TRANSITION",
@@ -985,11 +985,11 @@
       ],
       "palette": [
         "DynamoDbTable",
+        "DynamoDbGlobalSecondaryIndex",
+        "DynamoDbLocalSecondaryIndex",
         "S3Bucket",
-        "S3BucketPolicy",
-        "KmsKey",
-        "IamRole",
-        "AwsLambdaFunction"
+        "S3NotificationRule",
+        "S3BucketPolicy"
       ],
       "relationshipKinds": [
         "READS",
@@ -1032,16 +1032,12 @@
         "IamRole",
         "IamPolicy",
         "IamManagedPolicy",
+        "IamStatement",
         "KmsKey",
         "KmsAlias",
         "SecretsManagerSecret",
         "SecretRotationSchedule",
-        "SsmParameter",
-        "CognitoUserPool",
-        "CognitoUserPoolClient",
-        "AwsLambdaFunction",
-        "HttpApi",
-        "RestApi"
+        "SsmParameter"
       ],
       "relationshipKinds": [
         "PERMISSION",
@@ -1074,11 +1070,8 @@
         "CognitoUserPool",
         "CognitoUserPoolClient",
         "CognitoUserPoolGroup",
-        "CognitoIdentityPool",
-        "JwtAuthorizer",
-        "CognitoAuthorizer",
-        "HttpApi",
-        "RestApi"
+        "CognitoUserPoolDomain",
+        "CognitoIdentityPool"
       ],
       "relationshipKinds": [
         "AUTHORIZED_BY",
@@ -1306,227 +1299,4061 @@
   "elements": [
     {
       "type": "AwsLambdaFunction",
-      "label": "AWS Lambda Function",
-      "icon": "functions",
+      "label": "Aws Lambda Function",
+      "icon": "category",
       "color": "#2563EB",
-      "category": "Compute"
+      "category": "Lambda Detail View",
+      "displayName": "Aws Lambda Function",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
     },
     {
       "type": "ApiGatewayTrigger",
       "label": "API Gateway Trigger",
       "icon": "link",
       "color": "#7C3AED",
-      "category": "API"
+      "category": "API",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "SqsLambdaEventSourceMapping",
-      "label": "SQS Lambda Event Source Mapping",
-      "icon": "link",
-      "color": "#DB2777",
-      "category": "Eventing"
+      "label": "Sqs Lambda Event Source Mapping",
+      "icon": "category",
+      "color": "#2563EB",
+      "category": "Lambda Detail View",
+      "displayName": "Sqs Lambda Event Source Mapping",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
     },
     {
       "type": "EventBridgeLambdaTarget",
       "label": "EventBridge Lambda Target",
       "icon": "track_changes",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Eventing",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "ApiGatewayApi",
-      "label": "API Gateway API",
-      "icon": "api",
+      "label": "Api Gateway Api",
+      "icon": "category",
       "color": "#7C3AED",
-      "category": "API"
+      "category": "API Gateway View",
+      "displayName": "Api Gateway Api",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
     },
     {
       "type": "ApiGatewayRoute",
-      "label": "API Gateway Route",
-      "icon": "route",
+      "label": "Api Gateway Route",
+      "icon": "category",
       "color": "#7C3AED",
-      "category": "API"
+      "category": "API Gateway View",
+      "displayName": "Api Gateway Route",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
     },
     {
       "type": "EventBridgeBus",
-      "label": "EventBridge Bus",
-      "icon": "hub",
+      "label": "Event Bridge Bus",
+      "icon": "category",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "EventBridge and Messaging View",
+      "displayName": "Event Bridge Bus",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      }
     },
     {
       "type": "EventBridgeRule",
-      "label": "EventBridge Rule",
-      "icon": "rule",
+      "label": "Event Bridge Rule",
+      "icon": "category",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "EventBridge and Messaging View",
+      "displayName": "Event Bridge Rule",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      }
     },
     {
       "type": "SqsQueue",
-      "label": "SQS Queue",
-      "icon": "queue",
+      "label": "Sqs Queue",
+      "icon": "category",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "EventBridge and Messaging View",
+      "displayName": "Sqs Queue",
+      "notation": {
+        "tag": "MSG",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "queueName",
+          "topicName",
+          "protocol"
+        ]
+      }
     },
     {
       "type": "SnsTopic",
-      "label": "SNS Topic",
-      "icon": "campaign",
+      "label": "Sns Topic",
+      "icon": "category",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "EventBridge and Messaging View",
+      "displayName": "Sns Topic",
+      "notation": {
+        "tag": "MSG",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "queueName",
+          "topicName",
+          "protocol"
+        ]
+      }
     },
     {
       "type": "EventSchema",
       "label": "Event Schema",
       "icon": "rule",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Eventing",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "StepFunctionStateMachine",
       "label": "Step Function State Machine",
-      "icon": "alt_route",
+      "icon": "category",
       "color": "#EA580C",
-      "category": "Workflow"
+      "category": "Step Functions / ASL View",
+      "displayName": "Step Function State Machine",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      }
     },
     {
       "type": "DynamoDbTable",
-      "label": "DynamoDB Table",
-      "icon": "table_rows",
+      "label": "Dynamo Db Table",
+      "icon": "category",
       "color": "#0891B2",
-      "category": "Data"
+      "category": "Storage View",
+      "displayName": "Dynamo Db Table",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      }
     },
     {
       "type": "DynamoDbAttributeDefinition",
-      "label": "DynamoDB Attribute Definition",
-      "icon": "list_alt",
+      "label": "Dynamo Db Attribute Definition",
+      "icon": "category",
       "color": "#0891B2",
-      "category": "Data"
+      "category": "Storage View",
+      "displayName": "Dynamo Db Attribute Definition",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "DynamoDbGlobalSecondaryIndex",
-      "label": "DynamoDB Global Secondary Index",
-      "icon": "view_list",
+      "label": "Dynamo Db Global Secondary Index",
+      "icon": "category",
       "color": "#0891B2",
-      "category": "Data"
+      "category": "Storage View",
+      "displayName": "Dynamo Db Global Secondary Index",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "S3Bucket",
       "label": "S3 Bucket",
-      "icon": "folder_zip",
+      "icon": "category",
       "color": "#0891B2",
-      "category": "Data"
+      "category": "Storage View",
+      "displayName": "S3 Bucket",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      }
     },
     {
       "type": "SamStack",
-      "label": "SAM Stack",
-      "icon": "inventory",
+      "label": "Sam Stack",
+      "icon": "category",
       "color": "#0F766E",
-      "category": "Deployment"
+      "category": "CloudFormation / SAM",
+      "displayName": "Sam Stack",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
     },
     {
       "type": "AwsStage",
-      "label": "AWS Stage",
-      "icon": "layers",
+      "label": "Aws Stage",
+      "icon": "category",
       "color": "#0F766E",
-      "category": "Deployment"
+      "category": "CloudFormation / SAM",
+      "displayName": "Aws Stage",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
     },
     {
       "type": "LambdaEventSourceMapping",
       "label": "Lambda Event Source Mapping",
-      "icon": "link",
-      "color": "#DB2777",
-      "category": "Eventing"
+      "icon": "category",
+      "color": "#2563EB",
+      "category": "Lambda Detail View",
+      "displayName": "Lambda Event Source Mapping",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "CognitoUserPool",
       "label": "Cognito User Pool",
-      "icon": "supervised_user_circle",
+      "icon": "category",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Cognito Identity View",
+      "displayName": "Cognito User Pool",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      }
     },
     {
       "type": "IamPolicy",
-      "label": "IAM Policy",
-      "icon": "policy",
+      "label": "Iam Policy",
+      "icon": "category",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security, IAM, and Secrets View",
+      "displayName": "Iam Policy",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
     },
     {
       "type": "IamStatement",
-      "label": "IAM Statement",
-      "icon": "gavel",
+      "label": "Iam Statement",
+      "icon": "category",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security, IAM, and Secrets View",
+      "displayName": "Iam Statement",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
     },
     {
       "type": "IamRole",
-      "label": "IAM Role",
-      "icon": "verified_user",
+      "label": "Iam Role",
+      "icon": "category",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security, IAM, and Secrets View",
+      "displayName": "Iam Role",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
     },
     {
       "type": "SecretsManagerSecret",
       "label": "Secrets Manager Secret",
-      "icon": "key",
+      "icon": "category",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security, IAM, and Secrets View",
+      "displayName": "Secrets Manager Secret",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
     },
     {
       "type": "SsmParameter",
-      "label": "SSM Parameter",
-      "icon": "tune",
+      "label": "Ssm Parameter",
+      "icon": "category",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security, IAM, and Secrets View",
+      "displayName": "Ssm Parameter",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
     },
     {
       "type": "KmsKey",
-      "label": "KMS Key",
-      "icon": "vpn_key",
+      "label": "Kms Key",
+      "icon": "category",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security, IAM, and Secrets View",
+      "displayName": "Kms Key",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
     },
     {
       "type": "VpcConfig",
       "label": "VPC Config",
       "icon": "lan",
       "color": "#0F766E",
-      "category": "Networking"
+      "category": "Networking",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "EnvironmentConfig",
       "label": "Environment Config",
       "icon": "settings",
       "color": "#0F766E",
-      "category": "Deployment"
+      "category": "Deployment",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "LambdaEnvironmentVariable",
       "label": "Lambda Environment Variable",
-      "icon": "settings_input_component",
-      "color": "#0F766E",
-      "category": "Deployment"
+      "icon": "category",
+      "color": "#2563EB",
+      "category": "Lambda Detail View",
+      "displayName": "Lambda Environment Variable",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "CloudWatchAlarm",
-      "label": "CloudWatch Alarm",
-      "icon": "notifications",
+      "label": "Cloud Watch Alarm",
+      "icon": "category",
       "color": "#64748B",
-      "category": "Operations"
+      "category": "Observability and Networking View",
+      "displayName": "Cloud Watch Alarm",
+      "notation": {
+        "tag": "OBS",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "logGroupName",
+          "alarmName",
+          "metricName"
+        ]
+      }
     },
     {
       "type": "CloudWatchLogGroup",
-      "label": "CloudWatch Log Group",
-      "icon": "article",
+      "label": "Cloud Watch Log Group",
+      "icon": "category",
       "color": "#64748B",
-      "category": "Operations"
+      "category": "Observability and Networking View",
+      "displayName": "Cloud Watch Log Group",
+      "notation": {
+        "tag": "OBS",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "logGroupName",
+          "alarmName",
+          "metricName"
+        ]
+      }
     },
     {
       "type": "XRayTracingConfig",
       "label": "X-Ray Tracing Config",
       "icon": "timeline",
       "color": "#64748B",
-      "category": "Operations"
+      "category": "Operations",
+      "supportOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "AwsPsmModel",
+      "label": "Aws Psm Model",
+      "displayName": "Aws Psm Model",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "AwsResource",
+      "label": "Aws Resource",
+      "displayName": "Aws Resource",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "AwsTag",
+      "label": "Aws Tag",
+      "displayName": "Aws Tag",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ResourceImport",
+      "label": "Resource Import",
+      "displayName": "Resource Import",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "NativeProperty",
+      "label": "Native Property",
+      "displayName": "Native Property",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ValueExpression",
+      "label": "Value Expression",
+      "displayName": "Value Expression",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "NamedValueExpression",
+      "label": "Named Value Expression",
+      "displayName": "Named Value Expression",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CorsConfiguration",
+      "label": "Cors Configuration",
+      "displayName": "Cors Configuration",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "TracingConfig",
+      "label": "Tracing Config",
+      "displayName": "Tracing Config",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "AwsNativeResource",
+      "label": "Aws Native Resource",
+      "displayName": "Aws Native Resource",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "CfnParameter",
+      "label": "Cfn Parameter",
+      "displayName": "Cfn Parameter",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "CfnMapping",
+      "label": "Cfn Mapping",
+      "displayName": "Cfn Mapping",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "CfnCondition",
+      "label": "Cfn Condition",
+      "displayName": "Cfn Condition",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "CfnOutput",
+      "label": "Cfn Output",
+      "displayName": "Cfn Output",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "SamGlobals",
+      "label": "Sam Globals",
+      "displayName": "Sam Globals",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "AwsNamingPolicy",
+      "label": "Aws Naming Policy",
+      "displayName": "Aws Naming Policy",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "AwsTaggingPolicy",
+      "label": "Aws Tagging Policy",
+      "displayName": "Aws Tagging Policy",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "AwsSecurityBaseline",
+      "label": "Aws Security Baseline",
+      "displayName": "Aws Security Baseline",
+      "category": "CloudFormation / SAM",
+      "icon": "category",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "CFN",
+        "shape": "structured-property-row",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "IamInlinePolicy",
+      "label": "Iam Inline Policy",
+      "displayName": "Iam Inline Policy",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "IamManagedPolicy",
+      "label": "Iam Managed Policy",
+      "displayName": "Iam Managed Policy",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "IamPolicyDocument",
+      "label": "Iam Policy Document",
+      "displayName": "Iam Policy Document",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "IamPrincipal",
+      "label": "Iam Principal",
+      "displayName": "Iam Principal",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "IamCondition",
+      "label": "Iam Condition",
+      "displayName": "Iam Condition",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "KmsAlias",
+      "label": "Kms Alias",
+      "displayName": "Kms Alias",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "GenerateSecretStringConfig",
+      "label": "Generate Secret String Config",
+      "displayName": "Generate Secret String Config",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "SecretRotationRules",
+      "label": "Secret Rotation Rules",
+      "displayName": "Secret Rotation Rules",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "SecretRotationSchedule",
+      "label": "Secret Rotation Schedule",
+      "displayName": "Secret Rotation Schedule",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "SecretsManagerResourcePolicy",
+      "label": "Secrets Manager Resource Policy",
+      "displayName": "Secrets Manager Resource Policy",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "SsmParameterValueExpression",
+      "label": "Ssm Parameter Value Expression",
+      "displayName": "Ssm Parameter Value Expression",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "roleName",
+          "policyName",
+          "secretName",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "SecretValueExpression",
+      "label": "Secret Value Expression",
+      "displayName": "Secret Value Expression",
+      "category": "Security, IAM, and Secrets View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "CloudWatchMetricFilter",
+      "label": "Cloud Watch Metric Filter",
+      "displayName": "Cloud Watch Metric Filter",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#64748B",
+      "notation": {
+        "tag": "OBS",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "logGroupName",
+          "alarmName",
+          "metricName"
+        ]
+      }
+    },
+    {
+      "type": "CloudWatchMetricTransformation",
+      "label": "Cloud Watch Metric Transformation",
+      "displayName": "Cloud Watch Metric Transformation",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#64748B",
+      "notation": {
+        "tag": "OBS",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "logGroupName",
+          "alarmName",
+          "metricName"
+        ]
+      }
+    },
+    {
+      "type": "CloudWatchLogSubscriptionFilter",
+      "label": "Cloud Watch Log Subscription Filter",
+      "displayName": "Cloud Watch Log Subscription Filter",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#64748B",
+      "notation": {
+        "tag": "OBS",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "logGroupName",
+          "alarmName",
+          "metricName"
+        ]
+      }
+    },
+    {
+      "type": "MetricDimension",
+      "label": "Metric Dimension",
+      "displayName": "Metric Dimension",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#64748B",
+      "notation": {
+        "tag": "OBS",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "logGroupName",
+          "alarmName",
+          "metricName"
+        ]
+      }
+    },
+    {
+      "type": "CloudWatchCompositeAlarm",
+      "label": "Cloud Watch Composite Alarm",
+      "displayName": "Cloud Watch Composite Alarm",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#64748B",
+      "notation": {
+        "tag": "OBS",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "logGroupName",
+          "alarmName",
+          "metricName"
+        ]
+      }
+    },
+    {
+      "type": "CloudWatchDashboard",
+      "label": "Cloud Watch Dashboard",
+      "displayName": "Cloud Watch Dashboard",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#64748B",
+      "notation": {
+        "tag": "OBS",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "logGroupName",
+          "alarmName",
+          "metricName"
+        ]
+      }
+    },
+    {
+      "type": "VpcAttachmentConfig",
+      "label": "Vpc Attachment Config",
+      "displayName": "Vpc Attachment Config",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "NET",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "vpcId",
+          "subnetId",
+          "securityGroupId"
+        ]
+      }
+    },
+    {
+      "type": "VpcEndpointReference",
+      "label": "Vpc Endpoint Reference",
+      "displayName": "Vpc Endpoint Reference",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "NET",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "vpcId",
+          "subnetId",
+          "securityGroupId"
+        ]
+      }
+    },
+    {
+      "type": "Vpc",
+      "label": "Vpc",
+      "displayName": "Vpc",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "NET",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "vpcId",
+          "subnetId",
+          "securityGroupId"
+        ]
+      }
+    },
+    {
+      "type": "Subnet",
+      "label": "Subnet",
+      "displayName": "Subnet",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "NET",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "vpcId",
+          "subnetId",
+          "securityGroupId"
+        ]
+      }
+    },
+    {
+      "type": "VpcEndpoint",
+      "label": "Vpc Endpoint",
+      "displayName": "Vpc Endpoint",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "NET",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "vpcId",
+          "subnetId",
+          "securityGroupId"
+        ]
+      }
+    },
+    {
+      "type": "SecurityGroup",
+      "label": "Security Group",
+      "displayName": "Security Group",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "NET",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "vpcId",
+          "subnetId",
+          "securityGroupId"
+        ]
+      }
+    },
+    {
+      "type": "SecurityGroupRule",
+      "label": "Security Group Rule",
+      "displayName": "Security Group Rule",
+      "category": "Observability and Networking View",
+      "icon": "category",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "NET",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "vpcId",
+          "subnetId",
+          "securityGroupId"
+        ]
+      }
+    },
+    {
+      "type": "SqsRedrivePolicy",
+      "label": "Sqs Redrive Policy",
+      "displayName": "Sqs Redrive Policy",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "MSG",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "queueName",
+          "topicName",
+          "protocol"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "SqsRedriveAllowPolicy",
+      "label": "Sqs Redrive Allow Policy",
+      "displayName": "Sqs Redrive Allow Policy",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "MSG",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "queueName",
+          "topicName",
+          "protocol"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "SqsQueuePolicy",
+      "label": "Sqs Queue Policy",
+      "displayName": "Sqs Queue Policy",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "MSG",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "queueName",
+          "topicName",
+          "protocol"
+        ]
+      }
+    },
+    {
+      "type": "SnsSubscription",
+      "label": "Sns Subscription",
+      "displayName": "Sns Subscription",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "MSG",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "queueName",
+          "topicName",
+          "protocol"
+        ]
+      }
+    },
+    {
+      "type": "SnsFilterRule",
+      "label": "Sns Filter Rule",
+      "displayName": "Sns Filter Rule",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "MSG",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "queueName",
+          "topicName",
+          "protocol"
+        ]
+      }
+    },
+    {
+      "type": "SnsTopicPolicy",
+      "label": "Sns Topic Policy",
+      "displayName": "Sns Topic Policy",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "MSG",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "queueName",
+          "topicName",
+          "protocol"
+        ]
+      }
+    },
+    {
+      "type": "DynamoDbKeySchemaElement",
+      "label": "Dynamo Db Key Schema Element",
+      "displayName": "Dynamo Db Key Schema Element",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbProjection",
+      "label": "Dynamo Db Projection",
+      "displayName": "Dynamo Db Projection",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbProvisionedThroughput",
+      "label": "Dynamo Db Provisioned Throughput",
+      "displayName": "Dynamo Db Provisioned Throughput",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbOnDemandThroughput",
+      "label": "Dynamo Db On Demand Throughput",
+      "displayName": "Dynamo Db On Demand Throughput",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbLocalSecondaryIndex",
+      "label": "Dynamo Db Local Secondary Index",
+      "displayName": "Dynamo Db Local Secondary Index",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbReplicaSpecification",
+      "label": "Dynamo Db Replica Specification",
+      "displayName": "Dynamo Db Replica Specification",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbStreamSpecification",
+      "label": "Dynamo Db Stream Specification",
+      "displayName": "Dynamo Db Stream Specification",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbTimeToLiveSpecification",
+      "label": "Dynamo Db Time To Live Specification",
+      "displayName": "Dynamo Db Time To Live Specification",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbSseSpecification",
+      "label": "Dynamo Db Sse Specification",
+      "displayName": "Dynamo Db Sse Specification",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbBackupPolicy",
+      "label": "Dynamo Db Backup Policy",
+      "displayName": "Dynamo Db Backup Policy",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3BucketEncryption",
+      "label": "S3 Bucket Encryption",
+      "displayName": "S3 Bucket Encryption",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3OwnershipControls",
+      "label": "S3 Ownership Controls",
+      "displayName": "S3 Ownership Controls",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3OwnershipRule",
+      "label": "S3 Ownership Rule",
+      "displayName": "S3 Ownership Rule",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3LifecycleConfiguration",
+      "label": "S3 Lifecycle Configuration",
+      "displayName": "S3 Lifecycle Configuration",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3LifecycleRule",
+      "label": "S3 Lifecycle Rule",
+      "displayName": "S3 Lifecycle Rule",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3LifecycleFilter",
+      "label": "S3 Lifecycle Filter",
+      "displayName": "S3 Lifecycle Filter",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3TagFilter",
+      "label": "S3 Tag Filter",
+      "displayName": "S3 Tag Filter",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3Transition",
+      "label": "S3 Transition",
+      "displayName": "S3 Transition",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3PublicAccessBlockConfiguration",
+      "label": "S3 Public Access Block Configuration",
+      "displayName": "S3 Public Access Block Configuration",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3NotificationConfiguration",
+      "label": "S3 Notification Configuration",
+      "displayName": "S3 Notification Configuration",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3NotificationRule",
+      "label": "S3 Notification Rule",
+      "displayName": "S3 Notification Rule",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3ReplicationConfiguration",
+      "label": "S3 Replication Configuration",
+      "displayName": "S3 Replication Configuration",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3ReplicationRule",
+      "label": "S3 Replication Rule",
+      "displayName": "S3 Replication Rule",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3ReplicationDestination",
+      "label": "S3 Replication Destination",
+      "displayName": "S3 Replication Destination",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "S3BucketPolicy",
+      "label": "S3 Bucket Policy",
+      "displayName": "S3 Bucket Policy",
+      "category": "Storage View",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      }
+    },
+    {
+      "type": "CognitoPasswordPolicy",
+      "label": "Cognito Password Policy",
+      "displayName": "Cognito Password Policy",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CognitoSchemaAttribute",
+      "label": "Cognito Schema Attribute",
+      "displayName": "Cognito Schema Attribute",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CognitoEmailConfiguration",
+      "label": "Cognito Email Configuration",
+      "displayName": "Cognito Email Configuration",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CognitoAccountRecoverySetting",
+      "label": "Cognito Account Recovery Setting",
+      "displayName": "Cognito Account Recovery Setting",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CognitoRecoveryMechanism",
+      "label": "Cognito Recovery Mechanism",
+      "displayName": "Cognito Recovery Mechanism",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CognitoLambdaConfig",
+      "label": "Cognito Lambda Config",
+      "displayName": "Cognito Lambda Config",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CognitoUserPoolClient",
+      "label": "Cognito User Pool Client",
+      "displayName": "Cognito User Pool Client",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      }
+    },
+    {
+      "type": "CognitoOAuthConfiguration",
+      "label": "Cognito OAuth Configuration",
+      "displayName": "Cognito OAuth Configuration",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CognitoUserPoolGroup",
+      "label": "Cognito User Pool Group",
+      "displayName": "Cognito User Pool Group",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      }
+    },
+    {
+      "type": "CognitoUserPoolDomain",
+      "label": "Cognito User Pool Domain",
+      "displayName": "Cognito User Pool Domain",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      }
+    },
+    {
+      "type": "CognitoIdentityPool",
+      "label": "Cognito Identity Pool",
+      "displayName": "Cognito Identity Pool",
+      "category": "Cognito Identity View",
+      "icon": "category",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ID",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      }
+    },
+    {
+      "type": "AslDocument",
+      "label": "Asl Document",
+      "displayName": "Asl Document",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "AslState",
+      "label": "Asl State",
+      "displayName": "Asl State",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "AslBranch",
+      "label": "Asl Branch",
+      "displayName": "Asl Branch",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "AslMapConfig",
+      "label": "Asl Map Config",
+      "displayName": "Asl Map Config",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "AslRetryRule",
+      "label": "Asl Retry Rule",
+      "displayName": "Asl Retry Rule",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "AslCatchRule",
+      "label": "Asl Catch Rule",
+      "displayName": "Asl Catch Rule",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "AslChoiceRule",
+      "label": "Asl Choice Rule",
+      "displayName": "Asl Choice Rule",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "StepFunctionLoggingConfig",
+      "label": "Step Function Logging Config",
+      "displayName": "Step Function Logging Config",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      }
+    },
+    {
+      "type": "StepFunctionTracingConfig",
+      "label": "Step Function Tracing Config",
+      "displayName": "Step Function Tracing Config",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      }
+    },
+    {
+      "type": "SamStateMachineEvent",
+      "label": "Sam State Machine Event",
+      "displayName": "Sam State Machine Event",
+      "category": "Step Functions / ASL View",
+      "icon": "category",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "SFN",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaCodeConfig",
+      "label": "Lambda Code Config",
+      "displayName": "Lambda Code Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "LambdaZipCodeConfig",
+      "label": "Lambda Zip Code Config",
+      "displayName": "Lambda Zip Code Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaImageCodeConfig",
+      "label": "Lambda Image Code Config",
+      "displayName": "Lambda Image Code Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaImageConfig",
+      "label": "Lambda Image Config",
+      "displayName": "Lambda Image Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaInvocationBinding",
+      "label": "Lambda Invocation Binding",
+      "displayName": "Lambda Invocation Binding",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "SamFunctionEvent",
+      "label": "Sam Function Event",
+      "displayName": "Sam Function Event",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DynamoDbStreamLambdaEventSourceMapping",
+      "label": "Dynamo Db Stream Lambda Event Source Mapping",
+      "displayName": "Dynamo Db Stream Lambda Event Source Mapping",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "GenericLambdaEventSourceMapping",
+      "label": "Generic Lambda Event Source Mapping",
+      "displayName": "Generic Lambda Event Source Mapping",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "LambdaDeadLetterConfig",
+      "label": "Lambda Dead Letter Config",
+      "displayName": "Lambda Dead Letter Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaEventInvokeConfig",
+      "label": "Lambda Event Invoke Config",
+      "displayName": "Lambda Event Invoke Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaDestinationConfig",
+      "label": "Lambda Destination Config",
+      "displayName": "Lambda Destination Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaTracingConfig",
+      "label": "Lambda Tracing Config",
+      "displayName": "Lambda Tracing Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaLoggingConfig",
+      "label": "Lambda Logging Config",
+      "displayName": "Lambda Logging Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaLayerVersion",
+      "label": "Lambda Layer Version",
+      "displayName": "Lambda Layer Version",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "LambdaLayerPermission",
+      "label": "Lambda Layer Permission",
+      "displayName": "Lambda Layer Permission",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaVersion",
+      "label": "Lambda Version",
+      "displayName": "Lambda Version",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "LambdaAlias",
+      "label": "Lambda Alias",
+      "displayName": "Lambda Alias",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "LambdaProvisionedConcurrencyConfig",
+      "label": "Lambda Provisioned Concurrency Config",
+      "displayName": "Lambda Provisioned Concurrency Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaPermission",
+      "label": "Lambda Permission",
+      "displayName": "Lambda Permission",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "LambdaFunctionUrl",
+      "label": "Lambda Function Url",
+      "displayName": "Lambda Function Url",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "LambdaUrlCorsConfiguration",
+      "label": "Lambda Url Cors Configuration",
+      "displayName": "Lambda Url Cors Configuration",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LambdaFileSystemConfig",
+      "label": "Lambda File System Config",
+      "displayName": "Lambda File System Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CodeSigningConfig",
+      "label": "Code Signing Config",
+      "displayName": "Code Signing Config",
+      "category": "Lambda Detail View",
+      "icon": "category",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "LAMBDA",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "HttpApi",
+      "label": "Http Api",
+      "displayName": "Http Api",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "RestApi",
+      "label": "Rest Api",
+      "displayName": "Rest Api",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "WebSocketApi",
+      "label": "Web Socket Api",
+      "displayName": "Web Socket Api",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "HttpApiRoute",
+      "label": "Http Api Route",
+      "displayName": "Http Api Route",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "RestApiRoute",
+      "label": "Rest Api Route",
+      "displayName": "Rest Api Route",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "RestApiResource",
+      "label": "Rest Api Resource",
+      "displayName": "Rest Api Resource",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "RestApiMethod",
+      "label": "Rest Api Method",
+      "displayName": "Rest Api Method",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "WebSocketRoute",
+      "label": "Web Socket Route",
+      "displayName": "Web Socket Route",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "ApiGatewayRequestModel",
+      "label": "Api Gateway Request Model",
+      "displayName": "Api Gateway Request Model",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayResponseModel",
+      "label": "Api Gateway Response Model",
+      "displayName": "Api Gateway Response Model",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayRequestValidator",
+      "label": "Api Gateway Request Validator",
+      "displayName": "Api Gateway Request Validator",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayRouteSetting",
+      "label": "Api Gateway Route Setting",
+      "displayName": "Api Gateway Route Setting",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayAccessLogSetting",
+      "label": "Api Gateway Access Log Setting",
+      "displayName": "Api Gateway Access Log Setting",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayIntegration",
+      "label": "Api Gateway Integration",
+      "displayName": "Api Gateway Integration",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "ApiGatewayIntegrationRequestTemplate",
+      "label": "Api Gateway Integration Request Template",
+      "displayName": "Api Gateway Integration Request Template",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayIntegrationResponseParameter",
+      "label": "Api Gateway Integration Response Parameter",
+      "displayName": "Api Gateway Integration Response Parameter",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayStage",
+      "label": "Api Gateway Stage",
+      "displayName": "Api Gateway Stage",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "HttpApiStage",
+      "label": "Http Api Stage",
+      "displayName": "Http Api Stage",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "RestApiStage",
+      "label": "Rest Api Stage",
+      "displayName": "Rest Api Stage",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "WebSocketStage",
+      "label": "Web Socket Stage",
+      "displayName": "Web Socket Stage",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "ApiGatewayAuthorizer",
+      "label": "Api Gateway Authorizer",
+      "displayName": "Api Gateway Authorizer",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "JwtAuthorizer",
+      "label": "Jwt Authorizer",
+      "displayName": "Jwt Authorizer",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "CognitoAuthorizer",
+      "label": "Cognito Authorizer",
+      "displayName": "Cognito Authorizer",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "userPoolName",
+          "clientName",
+          "groupName"
+        ]
+      }
+    },
+    {
+      "type": "LambdaAuthorizer",
+      "label": "Lambda Authorizer",
+      "displayName": "Lambda Authorizer",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "ApiGatewayDomainName",
+      "label": "Api Gateway Domain Name",
+      "displayName": "Api Gateway Domain Name",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "ApiGatewayBasePathMapping",
+      "label": "Api Gateway Base Path Mapping",
+      "displayName": "Api Gateway Base Path Mapping",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayApiKey",
+      "label": "Api Gateway Api Key",
+      "displayName": "Api Gateway Api Key",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "ApiGatewayUsagePlan",
+      "label": "Api Gateway Usage Plan",
+      "displayName": "Api Gateway Usage Plan",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      }
+    },
+    {
+      "type": "ApiGatewayUsagePlanKey",
+      "label": "Api Gateway Usage Plan Key",
+      "displayName": "Api Gateway Usage Plan Key",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayDeployment",
+      "label": "Api Gateway Deployment",
+      "displayName": "Api Gateway Deployment",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiGatewayTracingConfig",
+      "label": "Api Gateway Tracing Config",
+      "displayName": "Api Gateway Tracing Config",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "WafWebAclAssociation",
+      "label": "Waf Web Acl Association",
+      "displayName": "Waf Web Acl Association",
+      "category": "API Gateway View",
+      "icon": "category",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      }
+    },
+    {
+      "type": "EventBridgeBusPolicy",
+      "label": "Event Bridge Bus Policy",
+      "displayName": "Event Bridge Bus Policy",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventPattern",
+      "label": "Event Pattern",
+      "displayName": "Event Pattern",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeTarget",
+      "label": "Event Bridge Target",
+      "displayName": "Event Bridge Target",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeTargetParameters",
+      "label": "Event Bridge Target Parameters",
+      "displayName": "Event Bridge Target Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "EventBridgeSqsTargetParameters",
+      "label": "Event Bridge Sqs Target Parameters",
+      "displayName": "Event Bridge Sqs Target Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeHttpTargetParameters",
+      "label": "Event Bridge Http Target Parameters",
+      "displayName": "Event Bridge Http Target Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "HttpParameter",
+      "label": "Http Parameter",
+      "displayName": "Http Parameter",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "apiName",
+          "method",
+          "path",
+          "routeKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeBatchTargetParameters",
+      "label": "Event Bridge Batch Target Parameters",
+      "displayName": "Event Bridge Batch Target Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeInputTransformer",
+      "label": "Event Bridge Input Transformer",
+      "displayName": "Event Bridge Input Transformer",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeArchive",
+      "label": "Event Bridge Archive",
+      "displayName": "Event Bridge Archive",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      }
+    },
+    {
+      "type": "EventBridgeSchedule",
+      "label": "Event Bridge Schedule",
+      "displayName": "Event Bridge Schedule",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      }
+    },
+    {
+      "type": "EventBridgeFlexibleTimeWindow",
+      "label": "Event Bridge Flexible Time Window",
+      "displayName": "Event Bridge Flexible Time Window",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgePipe",
+      "label": "Event Bridge Pipe",
+      "displayName": "Event Bridge Pipe",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      }
+    },
+    {
+      "type": "EventBridgeAuthParameters",
+      "label": "Event Bridge Auth Parameters",
+      "displayName": "Event Bridge Auth Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "EventBridgeApiKeyAuthParameters",
+      "label": "Event Bridge Api Key Auth Parameters",
+      "displayName": "Event Bridge Api Key Auth Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeBasicAuthParameters",
+      "label": "Event Bridge Basic Auth Parameters",
+      "displayName": "Event Bridge Basic Auth Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeOAuthParameters",
+      "label": "Event Bridge OAuth Parameters",
+      "displayName": "Event Bridge OAuth Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventBridgeHttpParameters",
+      "label": "Event Bridge Http Parameters",
+      "displayName": "Event Bridge Http Parameters",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true
+    },
+    {
+      "type": "EventBridgeConnection",
+      "label": "Event Bridge Connection",
+      "displayName": "Event Bridge Connection",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      }
+    },
+    {
+      "type": "EventBridgeApiDestination",
+      "label": "Event Bridge Api Destination",
+      "displayName": "Event Bridge Api Destination",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "busName",
+          "ruleName",
+          "scheduleExpression"
+        ]
+      }
+    },
+    {
+      "type": "AwsRetryPolicy",
+      "label": "Aws Retry Policy",
+      "displayName": "Aws Retry Policy",
+      "category": "EventBridge and Messaging View",
+      "icon": "category",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVB",
+        "shape": "resource-card",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "AwsRelationshipView",
+      "label": "Aws Relationship View",
+      "displayName": "Aws Relationship View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "physicalName",
+          "awsResourceType",
+          "name"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "ApiGatewayLambdaIntegrationView",
+      "label": "Api Gateway Lambda Integration View",
+      "displayName": "Api Gateway Lambda Integration View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "EventBridgeLambdaTargetView",
+      "label": "Event Bridge Lambda Target View",
+      "displayName": "Event Bridge Lambda Target View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "SnsLambdaSubscriptionView",
+      "label": "Sns Lambda Subscription View",
+      "displayName": "Sns Lambda Subscription View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "SqsLambdaEventSourceView",
+      "label": "Sqs Lambda Event Source View",
+      "displayName": "Sqs Lambda Event Source View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "StepFunctionEventBridgeTargetView",
+      "label": "Step Function Event Bridge Target View",
+      "displayName": "Step Function Event Bridge Target View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "stateMachineName",
+          "stateName",
+          "stateType"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "S3LambdaNotificationView",
+      "label": "S3 Lambda Notification View",
+      "displayName": "S3 Lambda Notification View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "functionName",
+          "runtimeIdentifier",
+          "timeoutSeconds"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "S3QueueNotificationView",
+      "label": "S3 Queue Notification View",
+      "displayName": "S3 Queue Notification View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "S3TopicNotificationView",
+      "label": "S3 Topic Notification View",
+      "displayName": "S3 Topic Notification View",
+      "category": "Generated Relationship Views",
+      "icon": "category",
+      "color": "#475569",
+      "notation": {
+        "tag": "VIEW",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "logicalId",
+          "tableName",
+          "bucketName",
+          "billingMode"
+        ]
+      },
+      "relationshipElement": true
+    },
+    {
+      "type": "WafAssociableResource",
+      "containedOnly": true,
+      "creatable": false,
+      "supportOnly": true,
+      "label": "Waf Associable Resource",
+      "displayName": "Waf Associable Resource",
+      "icon": "category",
+      "color": "#475569",
+      "category": "Model",
+      "notation": {
+        "tag": "WAR",
+        "shape": "concept-card",
+        "lineFields": [
+          "summary",
+          "description"
+        ]
+      }
+    },
+    {
+      "type": "DynamoTable",
+      "label": "Dynamo Table",
+      "icon": "block",
+      "color": "#64748B",
+      "category": "Support",
+      "supportOnly": true,
+      "creatable": false
     }
   ]
 }

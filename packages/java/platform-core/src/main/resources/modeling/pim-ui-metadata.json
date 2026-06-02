@@ -670,12 +670,13 @@
       ],
       "palette": [
         "Api",
-        "Function",
-        "Workflow",
+        "ApiRoute",
+        "ApiContract",
         "Schema",
-        "CorsPolicy",
+        "ErrorMapping",
         "AuthPolicy",
-        "AuthorizationPolicy"
+        "CorsPolicy",
+        "RateLimitPolicy"
       ],
       "relationshipKinds": [
         "ROUTES_TO",
@@ -720,15 +721,8 @@
         "Queue",
         "Topic",
         "EventBus",
-        "Workflow",
-        "WorkflowState",
-        "DataStore",
-        "ObjectStore",
-        "ExternalAdapter",
-        "Secret",
-        "ConfigurationSet",
-        "ArchitecturePolicy",
-        "ObservabilityConfig"
+        "ApiRoute",
+        "WorkflowState"
       ],
       "relationshipKinds": [
         "TRIGGERS",
@@ -769,14 +763,19 @@
         "ExternalIntegrationFlow"
       ],
       "palette": [
+        "EventType",
         "Queue",
         "Topic",
         "EventBus",
         "Schedule",
-        "EventType",
-        "Function",
-        "Workflow",
-        "ExternalAdapter"
+        "Subscription",
+        "EventRoutingRule",
+        "RequestResponseFlow",
+        "EventFlow",
+        "MessageFlow",
+        "PubSubFlow",
+        "OrchestrationFlow",
+        "ExternalIntegrationFlow"
       ],
       "relationshipKinds": [
         "PUBLISHES",
@@ -793,7 +792,7 @@
     },
     {
       "id": "pim-data-design",
-      "displayName": "Data Design",
+      "displayName": "Data and Storage View",
       "viewType": "DATA_DESIGN",
       "viewpoint": "data",
       "elementTypes": [
@@ -810,8 +809,10 @@
       "palette": [
         "DataStore",
         "ObjectStore",
-        "Schema",
-        "Function"
+        "DataModel",
+        "DataField",
+        "AccessPattern",
+        "IndexCandidate"
       ],
       "relationshipKinds": [
         "READS",
@@ -903,7 +904,7 @@
     },
     {
       "id": "pim-workflow-designer",
-      "displayName": "Workflow Designer",
+      "displayName": "Workflow View",
       "viewType": "WORKFLOW_DESIGNER",
       "viewpoint": "workflow",
       "elementTypes": [
@@ -922,10 +923,9 @@
       ],
       "palette": [
         "Workflow",
+        "WorkflowState",
         "HumanTask",
-        "ApprovalTask",
-        "Function",
-        "ExternalAdapter"
+        "ApprovalTask"
       ],
       "relationshipKinds": [
         "TRANSITION",
@@ -938,7 +938,7 @@
     },
     {
       "id": "pim-security-policy",
-      "displayName": "Security and Policies",
+      "displayName": "Security View",
       "viewType": "SECURITY_POLICY",
       "viewpoint": "security",
       "elementTypes": [
@@ -958,12 +958,10 @@
       "palette": [
         "IdentityProvider",
         "Principal",
+        "Permission",
         "SecurityPolicy",
         "AuthPolicy",
-        "AuthorizationPolicy",
-        "DataProtectionPolicy",
-        "CompliancePolicy",
-        "Secret"
+        "AuthorizationPolicy"
       ],
       "relationshipKinds": [
         "AUTHORIZED_BY",
@@ -976,7 +974,7 @@
     },
     {
       "id": "pim-configuration-secrets",
-      "displayName": "Configuration and Secrets",
+      "displayName": "Configuration and Secrets View",
       "viewType": "CONFIGURATION_SECRETS",
       "viewpoint": "configuration",
       "elementTypes": [
@@ -992,10 +990,11 @@
       ],
       "palette": [
         "ConfigurationSet",
+        "ConfigParameter",
+        "EnvironmentVariable",
         "Secret",
-        "Environment",
-        "Function",
-        "ExternalAdapter"
+        "CredentialRequirement",
+        "Environment"
       ],
       "relationshipKinds": [
         "HAS_ENV",
@@ -1064,238 +1063,1700 @@
       "label": "Function",
       "icon": "functions",
       "color": "#2563EB",
-      "category": "Compute"
+      "category": "Compute",
+      "displayName": "Function",
+      "notation": {
+        "tag": "FN",
+        "shape": "function-card",
+        "lineFields": [
+          "functionKind",
+          "handlerResponsibility",
+          "sourceNameSuggestion"
+        ]
+      }
     },
     {
       "type": "FunctionContract",
       "label": "Function Contract",
       "icon": "description",
-      "color": "#2563EB",
-      "category": "Compute"
+      "color": "#4F46E5",
+      "category": "API and Contract View",
+      "displayName": "Function Contract",
+      "notation": {
+        "tag": "CON",
+        "shape": "contract-row",
+        "lineFields": [
+          "contractVersion",
+          "inputSchema",
+          "outputSchema"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "Api",
-      "label": "API",
+      "label": "Api",
       "icon": "api",
       "color": "#7C3AED",
-      "category": "API"
+      "category": "API and Contract View",
+      "displayName": "Api",
+      "notation": {
+        "tag": "API",
+        "shape": "api-container",
+        "lineFields": [
+          "apiStyle",
+          "publicName",
+          "version",
+          "basePath"
+        ]
+      }
     },
     {
       "type": "ApiRoute",
-      "label": "API Route",
+      "label": "Api Route",
       "icon": "route",
       "color": "#7C3AED",
-      "category": "API"
+      "category": "API and Contract View",
+      "displayName": "Api Route",
+      "notation": {
+        "tag": "ROUTE",
+        "shape": "route-row",
+        "lineFields": [
+          "method",
+          "pathTemplate",
+          "operationId"
+        ]
+      }
     },
     {
       "type": "EventSource",
       "label": "Event Source",
       "icon": "input",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Eventing",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "Trigger",
       "label": "Trigger",
-      "icon": "play_lesson",
+      "icon": "bolt",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Function and Trigger View",
+      "displayName": "Trigger",
+      "notation": {
+        "tag": "TRG",
+        "shape": "trigger-connector",
+        "lineFields": [
+          "triggerKind",
+          "invocationMode",
+          "enabled"
+        ]
+      }
     },
     {
       "type": "EventChannel",
       "label": "Event Channel",
-      "icon": "alt_route",
+      "icon": "hub",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Event and Flow View",
+      "displayName": "Event Channel",
+      "notation": {
+        "tag": "CH",
+        "shape": "event-channel-card",
+        "lineFields": [
+          "channelKind",
+          "deliverySemantics"
+        ]
+      },
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "EventRoutingRule",
       "label": "Event Routing Rule",
-      "icon": "account_tree",
+      "icon": "rule",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Event and Flow View",
+      "displayName": "Event Routing Rule",
+      "notation": {
+        "tag": "RULE",
+        "shape": "routing-rule-row",
+        "lineFields": [
+          "eventPattern",
+          "enabled"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "Queue",
       "label": "Queue",
-      "icon": "queue",
+      "icon": "inbox",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Event and Flow View",
+      "displayName": "Queue",
+      "notation": {
+        "tag": "QUEUE",
+        "shape": "queue-card",
+        "lineFields": [
+          "fifoRequired",
+          "deadLetterRequired",
+          "maxReceiveAttempts"
+        ]
+      }
     },
     {
       "type": "Topic",
       "label": "Topic",
-      "icon": "campaign",
+      "icon": "rss_feed",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Event and Flow View",
+      "displayName": "Topic",
+      "notation": {
+        "tag": "TOPIC",
+        "shape": "topic-card",
+        "lineFields": [
+          "subscriptionMode",
+          "filteringRequired"
+        ]
+      }
     },
     {
       "type": "EventBus",
       "label": "Event Bus",
       "icon": "hub",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Event and Flow View",
+      "displayName": "Event Bus",
+      "notation": {
+        "tag": "BUS",
+        "shape": "event-bus-card",
+        "lineFields": [
+          "routingExpressionLanguage"
+        ]
+      }
     },
     {
       "type": "EventType",
       "label": "Event Type",
-      "icon": "description",
+      "icon": "event",
       "color": "#DB2777",
-      "category": "Eventing"
+      "category": "Event and Flow View",
+      "displayName": "Event Type",
+      "notation": {
+        "tag": "EVT",
+        "shape": "event-type-card",
+        "lineFields": [
+          "semanticName",
+          "version"
+        ]
+      }
     },
     {
       "type": "ServerlessService",
       "label": "Serverless Service",
-      "icon": "domain",
+      "icon": "account_tree",
       "color": "#0F766E",
-      "category": "Deployment"
+      "category": "Service Landscape",
+      "displayName": "Serverless Service",
+      "notation": {
+        "tag": "SVC",
+        "shape": "service-container",
+        "lineFields": [
+          "boundaryType",
+          "responsibility",
+          "ownerTeam"
+        ]
+      }
     },
     {
       "type": "DeploymentUnit",
       "label": "Deployment Unit",
       "icon": "inventory_2",
       "color": "#0F766E",
-      "category": "Deployment"
+      "category": "Service Landscape",
+      "displayName": "Deployment Unit",
+      "notation": {
+        "tag": "DPL",
+        "shape": "deployment-container",
+        "lineFields": [
+          "unitType",
+          "lifecycle",
+          "releaseStrategy"
+        ]
+      }
     },
     {
       "type": "Workflow",
       "label": "Workflow",
       "icon": "schema",
       "color": "#EA580C",
-      "category": "Workflow"
+      "category": "Workflow View",
+      "displayName": "Workflow",
+      "notation": {
+        "tag": "WF",
+        "shape": "workflow-container",
+        "lineFields": [
+          "workflowKind",
+          "executionSemantics",
+          "longRunning"
+        ]
+      }
     },
     {
       "type": "WorkflowState",
       "label": "Workflow State",
-      "icon": "timeline",
+      "icon": "radio_button_checked",
       "color": "#EA580C",
-      "category": "Workflow"
+      "category": "Workflow View",
+      "displayName": "Workflow State",
+      "notation": {
+        "tag": "STATE",
+        "shape": "workflow-state-node",
+        "lineFields": [
+          "stateKind",
+          "orderIndex",
+          "terminal"
+        ]
+      }
     },
     {
       "type": "Flow",
       "label": "Flow",
-      "icon": "east",
-      "color": "#EA580C",
-      "category": "Workflow"
+      "icon": "arrow_forward",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "displayName": "Flow",
+      "notation": {
+        "tag": "FLOW",
+        "shape": "flow-edge",
+        "lineFields": [
+          "flowPurpose",
+          "criticalPath"
+        ]
+      },
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "RequestResponseFlow",
       "label": "Request Response Flow",
       "icon": "sync_alt",
-      "color": "#EA580C",
-      "category": "Workflow"
+      "color": "#7C3AED",
+      "category": "Event and Flow View",
+      "displayName": "Request Response Flow",
+      "notation": {
+        "tag": "REQ/RES",
+        "shape": "request-response-edge",
+        "lineFields": [
+          "synchronous",
+          "flowPurpose"
+        ]
+      }
     },
     {
       "type": "EventFlow",
       "label": "Event Flow",
-      "icon": "shuffle",
-      "color": "#EA580C",
-      "category": "Workflow"
+      "icon": "event",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "displayName": "Event Flow",
+      "notation": {
+        "tag": "EVT FLOW",
+        "shape": "event-flow-edge",
+        "lineFields": [
+          "eventType",
+          "channel"
+        ]
+      }
     },
     {
       "type": "MessageFlow",
       "label": "Message Flow",
       "icon": "mail",
-      "color": "#EA580C",
-      "category": "Workflow"
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "displayName": "Message Flow",
+      "notation": {
+        "tag": "MSG",
+        "shape": "message-flow-edge",
+        "lineFields": [
+          "messageSchema",
+          "queue"
+        ]
+      }
     },
     {
       "type": "OrchestrationFlow",
       "label": "Orchestration Flow",
-      "icon": "account_tree",
+      "icon": "schema",
       "color": "#EA580C",
-      "category": "Workflow"
+      "category": "Event and Flow View",
+      "displayName": "Orchestration Flow",
+      "notation": {
+        "tag": "ORCH",
+        "shape": "orchestration-flow-edge",
+        "lineFields": [
+          "workflow"
+        ]
+      }
     },
     {
       "type": "DataStore",
       "label": "Data Store",
       "icon": "database",
       "color": "#0891B2",
-      "category": "Data"
+      "category": "Data and Storage View",
+      "displayName": "Data Store",
+      "notation": {
+        "tag": "STORE",
+        "shape": "data-store-card",
+        "lineFields": [
+          "storeKind",
+          "consistencyModel"
+        ]
+      }
     },
     {
       "type": "ObjectStore",
       "label": "Object Store",
-      "icon": "folder_zip",
+      "icon": "folder",
       "color": "#0891B2",
-      "category": "Data"
+      "category": "Data and Storage View",
+      "displayName": "Object Store",
+      "notation": {
+        "tag": "OBJ",
+        "shape": "object-store-card",
+        "lineFields": [
+          "objectStoreKind",
+          "versioningRequired"
+        ]
+      }
     },
     {
       "type": "IdentityProvider",
       "label": "Identity Provider",
-      "icon": "verified_user",
+      "icon": "security",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security View",
+      "displayName": "Identity Provider",
+      "notation": {
+        "tag": "IDP",
+        "shape": "identity-card",
+        "lineFields": [
+          "providerType",
+          "issuer"
+        ]
+      }
     },
     {
       "type": "Principal",
       "label": "Principal",
-      "icon": "group",
+      "icon": "person",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security View",
+      "displayName": "Principal",
+      "notation": {
+        "tag": "PRN",
+        "shape": "principal-card",
+        "lineFields": [
+          "principalKind",
+          "external"
+        ]
+      }
     },
     {
       "type": "Permission",
       "label": "Permission",
-      "icon": "policy",
+      "icon": "lock",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Security View",
+      "displayName": "Permission",
+      "notation": {
+        "tag": "PERM",
+        "shape": "permission-row",
+        "lineFields": [
+          "effect",
+          "action",
+          "targetResource"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "Secret",
       "label": "Secret",
       "icon": "key",
       "color": "#CA8A04",
-      "category": "Security"
+      "category": "Configuration and Secrets View",
+      "displayName": "Secret",
+      "notation": {
+        "tag": "SECRET",
+        "shape": "secret-card",
+        "lineFields": [
+          "secretKind",
+          "rotationRequired"
+        ]
+      }
     },
     {
       "type": "ConfigParameter",
       "label": "Config Parameter",
       "icon": "tune",
-      "color": "#CA8A04",
-      "category": "Security"
+      "color": "#64748B",
+      "category": "Configuration and Secrets View",
+      "displayName": "Config Parameter",
+      "notation": {
+        "tag": "PARAM",
+        "shape": "config-row",
+        "lineFields": [
+          "parameterName",
+          "valueKind"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "EnvironmentVariable",
       "label": "Environment Variable",
-      "icon": "settings",
-      "color": "#CA8A04",
-      "category": "Security"
+      "icon": "terminal",
+      "color": "#64748B",
+      "category": "Configuration and Secrets View",
+      "displayName": "Environment Variable",
+      "notation": {
+        "tag": "ENV",
+        "shape": "config-row",
+        "lineFields": [
+          "variableName",
+          "valueKind"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
     },
     {
       "type": "ResiliencePolicy",
       "label": "Resilience Policy",
-      "icon": "shield",
+      "icon": "health_and_safety",
       "color": "#64748B",
-      "category": "Operations"
+      "category": "Policy and Observability View",
+      "displayName": "Resilience Policy",
+      "notation": {
+        "tag": "RES",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "failureMode",
+          "productionRequired"
+        ]
+      }
     },
     {
       "type": "ObservabilityConfig",
       "label": "Observability Config",
       "icon": "monitoring",
       "color": "#64748B",
-      "category": "Operations"
+      "category": "Policy and Observability View",
+      "displayName": "Observability Config",
+      "notation": {
+        "tag": "OBS",
+        "shape": "ops-card",
+        "lineFields": [
+          "loggingEnabled",
+          "metricsEnabled",
+          "tracingEnabled"
+        ]
+      }
     },
     {
       "type": "IdempotencyPolicy",
       "label": "Idempotency Policy",
-      "icon": "repeat",
+      "icon": "fingerprint",
       "color": "#64748B",
-      "category": "Operations"
+      "category": "Policy and Observability View",
+      "displayName": "Idempotency Policy",
+      "notation": {
+        "tag": "IDEM",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "idempotencyKeyExpression"
+        ]
+      }
     },
     {
       "type": "ConcurrencyPolicy",
       "label": "Concurrency Policy",
-      "icon": "groups",
+      "icon": "speed",
       "color": "#64748B",
-      "category": "Operations"
+      "category": "Policy and Observability View",
+      "displayName": "Concurrency Policy",
+      "notation": {
+        "tag": "CONC",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "reservedConcurrency",
+          "maxConcurrency"
+        ]
+      }
     },
     {
       "type": "CostPolicy",
       "label": "Cost Policy",
-      "icon": "savings",
+      "icon": "paid",
       "color": "#64748B",
-      "category": "Operations"
+      "category": "Policy and Observability View",
+      "displayName": "Cost Policy",
+      "notation": {
+        "tag": "COST",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "costCenter",
+          "budgetLimit"
+        ]
+      }
+    },
+    {
+      "type": "PIMModel",
+      "label": "PIMModel",
+      "displayName": "PIMModel",
+      "category": "Overview",
+      "icon": "dashboard",
+      "color": "#334155",
+      "notation": {
+        "tag": "PIM",
+        "shape": "workspace-container",
+        "lineFields": [
+          "architectureStyle",
+          "validationProfile",
+          "domainName"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ServiceElementMembership",
+      "label": "Service Element Membership",
+      "displayName": "Service Element Membership",
+      "category": "Service Landscape",
+      "icon": "link",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "MEM",
+        "shape": "membership-row",
+        "lineFields": [
+          "ownershipKind"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "Environment",
+      "label": "Environment",
+      "displayName": "Environment",
+      "category": "Service Landscape",
+      "icon": "public",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "ENV",
+        "shape": "environment-card",
+        "lineFields": [
+          "environmentClass",
+          "regionStrategy",
+          "supportLevel"
+        ]
+      }
+    },
+    {
+      "type": "ImplementationProfile",
+      "label": "Implementation Profile",
+      "displayName": "Implementation Profile",
+      "category": "Service Landscape",
+      "icon": "settings",
+      "color": "#64748B",
+      "notation": {
+        "tag": "IMPL",
+        "shape": "settings-panel",
+        "lineFields": [
+          "runtimeProfile",
+          "packagingProfile"
+        ]
+      }
+    },
+    {
+      "type": "PlatformCapability",
+      "label": "Platform Capability",
+      "displayName": "Platform Capability",
+      "category": "Service Landscape",
+      "icon": "extension",
+      "color": "#64748B",
+      "notation": {
+        "tag": "CAP",
+        "shape": "capability-badge",
+        "lineFields": [
+          "capabilityKind",
+          "required"
+        ]
+      }
+    },
+    {
+      "type": "PlatformMappingAssessment",
+      "label": "Platform Mapping Assessment",
+      "displayName": "Platform Mapping Assessment",
+      "category": "Service Landscape",
+      "icon": "fact_check",
+      "color": "#64748B",
+      "notation": {
+        "tag": "MAP",
+        "shape": "assessment-row",
+        "lineFields": [
+          "mappingStatus",
+          "manualDecisionRequired"
+        ]
+      }
+    },
+    {
+      "type": "Schema",
+      "label": "Schema",
+      "displayName": "Schema",
+      "category": "API and Contract View",
+      "icon": "description",
+      "color": "#4F46E5",
+      "notation": {
+        "tag": "SCHEMA",
+        "shape": "schema-tree",
+        "lineFields": [
+          "schemaKind",
+          "semanticVersion"
+        ]
+      }
+    },
+    {
+      "type": "SchemaField",
+      "label": "Schema Field",
+      "displayName": "Schema Field",
+      "category": "API and Contract View",
+      "icon": "short_text",
+      "color": "#4F46E5",
+      "notation": {
+        "tag": "FIELD",
+        "shape": "field-row",
+        "lineFields": [
+          "fieldType",
+          "required",
+          "nullable"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "SchemaEnumLiteral",
+      "label": "Schema Enum Literal",
+      "displayName": "Schema Enum Literal",
+      "category": "API and Contract View",
+      "icon": "list",
+      "color": "#4F46E5",
+      "notation": {
+        "tag": "ENUM",
+        "shape": "enum-row",
+        "lineFields": [
+          "value",
+          "description"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "SchemaValidationConstraint",
+      "label": "Schema Validation Constraint",
+      "displayName": "Schema Validation Constraint",
+      "category": "API and Contract View",
+      "icon": "rule",
+      "color": "#4F46E5",
+      "notation": {
+        "tag": "VAL",
+        "shape": "constraint-row",
+        "lineFields": [
+          "constraintKind",
+          "value"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "SchemaConstraint",
+      "label": "Schema Constraint",
+      "displayName": "Schema Constraint",
+      "category": "API and Contract View",
+      "icon": "rule",
+      "color": "#4F46E5",
+      "notation": {
+        "tag": "VAL",
+        "shape": "constraint-row",
+        "lineFields": [
+          "constraintKind",
+          "value"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ApiContract",
+      "label": "Api Contract",
+      "displayName": "Api Contract",
+      "category": "API and Contract View",
+      "icon": "description",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "API CON",
+        "shape": "contract-row",
+        "lineFields": [
+          "contractVersion",
+          "basePath"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EventEnvelope",
+      "label": "Event Envelope",
+      "displayName": "Event Envelope",
+      "category": "Event and Flow View",
+      "icon": "event",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "ENV",
+        "shape": "event-envelope",
+        "lineFields": [
+          "eventTypeField",
+          "correlationIdField"
+        ]
+      }
+    },
+    {
+      "type": "ArchitecturePolicy",
+      "label": "Architecture Policy",
+      "displayName": "Architecture Policy",
+      "category": "Policy and Observability View",
+      "icon": "policy",
+      "color": "#64748B",
+      "notation": {
+        "tag": "POL",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "policyScope",
+          "productionRequired"
+        ]
+      }
+    },
+    {
+      "type": "PolicySetting",
+      "label": "Policy Setting",
+      "displayName": "Policy Setting",
+      "category": "Policy and Observability View",
+      "icon": "tune",
+      "color": "#64748B",
+      "notation": {
+        "tag": "SET",
+        "shape": "policy-row",
+        "lineFields": [
+          "key",
+          "value"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DataProtectionPolicy",
+      "label": "Data Protection Policy",
+      "displayName": "Data Protection Policy",
+      "category": "Policy and Observability View",
+      "icon": "privacy_tip",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "DATA POL",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "encryptionRequired",
+          "retentionPeriod"
+        ]
+      }
+    },
+    {
+      "type": "DataQualityPolicy",
+      "label": "Data Quality Policy",
+      "displayName": "Data Quality Policy",
+      "category": "Policy and Observability View",
+      "icon": "verified",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "QUAL",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "qualityRule",
+          "severity"
+        ]
+      }
+    },
+    {
+      "type": "CompliancePolicy",
+      "label": "Compliance Policy",
+      "displayName": "Compliance Policy",
+      "category": "Policy and Observability View",
+      "icon": "gavel",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "COMP",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "regulation",
+          "controlId"
+        ]
+      }
+    },
+    {
+      "type": "BusinessRule",
+      "label": "Business Rule",
+      "displayName": "Business Rule",
+      "category": "Policy and Observability View",
+      "icon": "rule",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "RULE",
+        "shape": "rule-card",
+        "lineFields": [
+          "naturalLanguage",
+          "expressionLanguage"
+        ]
+      }
+    },
+    {
+      "type": "DecisionModel",
+      "label": "Decision Model",
+      "displayName": "Decision Model",
+      "category": "Policy and Observability View",
+      "icon": "table",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "DEC",
+        "shape": "decision-table",
+        "lineFields": [
+          "hitPolicy",
+          "defaultOutcome"
+        ]
+      }
+    },
+    {
+      "type": "DecisionRule",
+      "label": "Decision Rule",
+      "displayName": "Decision Rule",
+      "category": "Policy and Observability View",
+      "icon": "rule",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "RULE",
+        "shape": "decision-rule-row",
+        "lineFields": [
+          "priorityOrder",
+          "condition",
+          "outcome"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "RetryPolicy",
+      "label": "Retry Policy",
+      "displayName": "Retry Policy",
+      "category": "Policy and Observability View",
+      "icon": "replay",
+      "color": "#64748B",
+      "notation": {
+        "tag": "RETRY",
+        "shape": "policy-row",
+        "lineFields": [
+          "maxAttempts",
+          "backoffStrategy"
+        ]
+      }
+    },
+    {
+      "type": "DeadLetterPolicy",
+      "label": "Dead Letter Policy",
+      "displayName": "Dead Letter Policy",
+      "category": "Policy and Observability View",
+      "icon": "move_to_inbox",
+      "color": "#64748B",
+      "notation": {
+        "tag": "DLQ",
+        "shape": "policy-row",
+        "lineFields": [
+          "enabled",
+          "maxReceiveCount"
+        ]
+      }
+    },
+    {
+      "type": "TimeoutPolicy",
+      "label": "Timeout Policy",
+      "displayName": "Timeout Policy",
+      "category": "Policy and Observability View",
+      "icon": "timer",
+      "color": "#64748B",
+      "notation": {
+        "tag": "TIME",
+        "shape": "clock-badge-card",
+        "lineFields": [
+          "timeoutSeconds"
+        ]
+      }
+    },
+    {
+      "type": "RateLimitPolicy",
+      "label": "Rate Limit Policy",
+      "displayName": "Rate Limit Policy",
+      "category": "Policy and Observability View",
+      "icon": "speed",
+      "color": "#64748B",
+      "notation": {
+        "tag": "RATE",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "rateLimit",
+          "burstLimit"
+        ]
+      }
+    },
+    {
+      "type": "BatchPolicy",
+      "label": "Batch Policy",
+      "displayName": "Batch Policy",
+      "category": "Policy and Observability View",
+      "icon": "inventory_2",
+      "color": "#64748B",
+      "notation": {
+        "tag": "BATCH",
+        "shape": "policy-row",
+        "lineFields": [
+          "batchSize",
+          "maximumBatchingWindowSeconds"
+        ]
+      }
+    },
+    {
+      "type": "OrderingPolicy",
+      "label": "Ordering Policy",
+      "displayName": "Ordering Policy",
+      "category": "Policy and Observability View",
+      "icon": "sort",
+      "color": "#64748B",
+      "notation": {
+        "tag": "ORDER",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "orderingKeyExpression"
+        ]
+      }
+    },
+    {
+      "type": "CachePolicy",
+      "label": "Cache Policy",
+      "displayName": "Cache Policy",
+      "category": "Policy and Observability View",
+      "icon": "cached",
+      "color": "#64748B",
+      "notation": {
+        "tag": "CACHE",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "ttlSeconds"
+        ]
+      }
+    },
+    {
+      "type": "BackupPolicy",
+      "label": "Backup Policy",
+      "displayName": "Backup Policy",
+      "category": "Policy and Observability View",
+      "icon": "backup",
+      "color": "#64748B",
+      "notation": {
+        "tag": "BAK",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "frequency",
+          "retentionPeriod"
+        ]
+      }
+    },
+    {
+      "type": "RetentionPolicy",
+      "label": "Retention Policy",
+      "displayName": "Retention Policy",
+      "category": "Policy and Observability View",
+      "icon": "event_repeat",
+      "color": "#64748B",
+      "notation": {
+        "tag": "RET",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "retentionPeriod"
+        ]
+      }
+    },
+    {
+      "type": "LoggingPolicy",
+      "label": "Logging Policy",
+      "displayName": "Logging Policy",
+      "category": "Policy and Observability View",
+      "icon": "article",
+      "color": "#64748B",
+      "notation": {
+        "tag": "LOG",
+        "shape": "policy-row",
+        "lineFields": [
+          "logLevel",
+          "retentionPeriod"
+        ]
+      }
+    },
+    {
+      "type": "MetricPolicy",
+      "label": "Metric Policy",
+      "displayName": "Metric Policy",
+      "category": "Policy and Observability View",
+      "icon": "monitoring",
+      "color": "#64748B",
+      "notation": {
+        "tag": "MET",
+        "shape": "metric-row",
+        "lineFields": [
+          "metricName",
+          "namespace"
+        ]
+      }
+    },
+    {
+      "type": "MetricDimension",
+      "label": "Metric Dimension",
+      "displayName": "Metric Dimension",
+      "category": "Policy and Observability View",
+      "icon": "sell",
+      "color": "#64748B",
+      "notation": {
+        "tag": "DIM",
+        "shape": "metric-row",
+        "lineFields": [
+          "name",
+          "value"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "TracingPolicy",
+      "label": "Tracing Policy",
+      "displayName": "Tracing Policy",
+      "category": "Policy and Observability View",
+      "icon": "timeline",
+      "color": "#64748B",
+      "notation": {
+        "tag": "TRACE",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "enabled",
+          "samplingRate"
+        ]
+      }
+    },
+    {
+      "type": "AlertPolicy",
+      "label": "Alert Policy",
+      "displayName": "Alert Policy",
+      "category": "Policy and Observability View",
+      "icon": "notifications",
+      "color": "#64748B",
+      "notation": {
+        "tag": "ALERT",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "severity",
+          "threshold"
+        ]
+      }
+    },
+    {
+      "type": "Slo",
+      "label": "Slo",
+      "displayName": "Slo",
+      "category": "Policy and Observability View",
+      "icon": "track_changes",
+      "color": "#64748B",
+      "notation": {
+        "tag": "SLO",
+        "shape": "slo-card",
+        "lineFields": [
+          "objective",
+          "target"
+        ]
+      }
+    },
+    {
+      "type": "CorsPolicy",
+      "label": "Cors Policy",
+      "displayName": "Cors Policy",
+      "category": "API and Contract View",
+      "icon": "policy",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "CORS",
+        "shape": "policy-badge-card",
+        "lineFields": [
+          "allowedOrigins",
+          "allowedMethods"
+        ]
+      }
+    },
+    {
+      "type": "ConfigurationSet",
+      "label": "Configuration Set",
+      "displayName": "Configuration Set",
+      "category": "Configuration and Secrets View",
+      "icon": "tune",
+      "color": "#64748B",
+      "notation": {
+        "tag": "CFG",
+        "shape": "config-set-card",
+        "lineFields": [
+          "scope",
+          "environment"
+        ]
+      }
+    },
+    {
+      "type": "CredentialRequirement",
+      "label": "Credential Requirement",
+      "displayName": "Credential Requirement",
+      "category": "Configuration and Secrets View",
+      "icon": "vpn_key",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "CRED",
+        "shape": "credential-row",
+        "lineFields": [
+          "credentialKind",
+          "usedForCredentials"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "SecurityPolicy",
+      "label": "Security Policy",
+      "displayName": "Security Policy",
+      "category": "Security View",
+      "icon": "security",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "SEC",
+        "shape": "security-card",
+        "lineFields": [
+          "policyScope",
+          "enforcementStrength"
+        ]
+      }
+    },
+    {
+      "type": "AuthPolicy",
+      "label": "Auth Policy",
+      "displayName": "Auth Policy",
+      "category": "Security View",
+      "icon": "verified_user",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "AUTH",
+        "shape": "auth-badge-card",
+        "lineFields": [
+          "authScheme",
+          "required"
+        ]
+      }
+    },
+    {
+      "type": "AuthorizationPolicy",
+      "label": "Authorization Policy",
+      "displayName": "Authorization Policy",
+      "category": "Security View",
+      "icon": "lock",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "AUTHZ",
+        "shape": "authz-card",
+        "lineFields": [
+          "authorizationRule",
+          "effect"
+        ]
+      }
+    },
+    {
+      "type": "StorageElement",
+      "label": "Storage Element",
+      "displayName": "Storage Element",
+      "category": "Data and Storage View",
+      "icon": "database",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "STORE",
+        "shape": "storage-card",
+        "lineFields": [
+          "storeKind"
+        ]
+      }
+    },
+    {
+      "type": "DataChangeStream",
+      "label": "Data Change Stream",
+      "displayName": "Data Change Stream",
+      "category": "Data and Storage View",
+      "icon": "waterfall_chart",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "STREAM",
+        "shape": "stream-badge",
+        "lineFields": [
+          "enabled",
+          "eventType"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ObjectNotificationRule",
+      "label": "Object Notification Rule",
+      "displayName": "Object Notification Rule",
+      "category": "Data and Storage View",
+      "icon": "notifications",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "NOTIF",
+        "shape": "notification-row",
+        "lineFields": [
+          "eventPattern",
+          "prefix",
+          "suffix"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DataModel",
+      "label": "Data Model",
+      "displayName": "Data Model",
+      "category": "Data and Storage View",
+      "icon": "table",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "MODEL",
+        "shape": "data-model-table",
+        "lineFields": [
+          "dataModelKind",
+          "primaryKey"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DataField",
+      "label": "Data Field",
+      "displayName": "Data Field",
+      "category": "Data and Storage View",
+      "icon": "short_text",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "FIELD",
+        "shape": "field-row",
+        "lineFields": [
+          "fieldType",
+          "required"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "AccessPattern",
+      "label": "Access Pattern",
+      "displayName": "Access Pattern",
+      "category": "Data and Storage View",
+      "icon": "manage_search",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "ACCESS",
+        "shape": "access-row",
+        "lineFields": [
+          "operation",
+          "purpose"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "IndexCandidate",
+      "label": "Index Candidate",
+      "displayName": "Index Candidate",
+      "category": "Data and Storage View",
+      "icon": "view_column",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "INDEX",
+        "shape": "index-row",
+        "lineFields": [
+          "indexPurpose",
+          "partitionKeyField"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "DataAccess",
+      "label": "Data Access",
+      "displayName": "Data Access",
+      "category": "Data and Storage View",
+      "icon": "link",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "ACCESS",
+        "shape": "data-access-edge",
+        "lineFields": [
+          "mode",
+          "transactional",
+          "purpose"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ComputeElement",
+      "label": "Compute Element",
+      "displayName": "Compute Element",
+      "category": "Function and Trigger View",
+      "icon": "memory",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "CMP",
+        "shape": "compute-card",
+        "lineFields": [
+          "computeProfile",
+          "executionModel"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ErrorMapping",
+      "label": "Error Mapping",
+      "displayName": "Error Mapping",
+      "category": "API and Contract View",
+      "icon": "warning",
+      "color": "#DC2626",
+      "notation": {
+        "tag": "ERR MAP",
+        "shape": "error-mapping-row",
+        "lineFields": [
+          "domainErrorCode",
+          "abstractStatusClass"
+        ]
+      }
+    },
+    {
+      "type": "ExternalEndpoint",
+      "label": "External Endpoint",
+      "displayName": "External Endpoint",
+      "category": "Function and Trigger View",
+      "icon": "language",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "EXT",
+        "shape": "external-boundary",
+        "lineFields": [
+          "externalSystemName",
+          "protocolFamily"
+        ]
+      }
+    },
+    {
+      "type": "ExternalAdapter",
+      "label": "External Adapter",
+      "displayName": "External Adapter",
+      "category": "Function and Trigger View",
+      "icon": "sync_alt",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "ADAPT",
+        "shape": "adapter-card",
+        "lineFields": [
+          "responsibility"
+        ]
+      }
+    },
+    {
+      "type": "WorkflowTransition",
+      "label": "Workflow Transition",
+      "displayName": "Workflow Transition",
+      "category": "Workflow View",
+      "icon": "arrow_forward",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "FLOW",
+        "shape": "state-transition-edge",
+        "lineFields": [
+          "conditionExpression",
+          "defaultTransition"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ErrorHandler",
+      "label": "Error Handler",
+      "displayName": "Error Handler",
+      "category": "Workflow View",
+      "icon": "warning",
+      "color": "#DC2626",
+      "notation": {
+        "tag": "CATCH",
+        "shape": "catch-row",
+        "lineFields": [
+          "errorSelector",
+          "recoveryAction"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "ParallelBranch",
+      "label": "Parallel Branch",
+      "displayName": "Parallel Branch",
+      "category": "Workflow View",
+      "icon": "call_split",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "BRANCH",
+        "shape": "branch-container",
+        "lineFields": [
+          "name"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "MapStateConfig",
+      "label": "Map State Config",
+      "displayName": "Map State Config",
+      "category": "Workflow View",
+      "icon": "map",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "MAP",
+        "shape": "map-config-panel",
+        "lineFields": [
+          "itemsPath",
+          "maxConcurrency"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "CallbackTaskConfig",
+      "label": "Callback Task Config",
+      "displayName": "Callback Task Config",
+      "category": "Workflow View",
+      "icon": "pending_actions",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "CALLBACK",
+        "shape": "callback-config-panel",
+        "lineFields": [
+          "taskTokenPath"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "EscalationPolicy",
+      "label": "Escalation Policy",
+      "displayName": "Escalation Policy",
+      "category": "Workflow View",
+      "icon": "priority_high",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "ESC",
+        "shape": "escalation-row",
+        "lineFields": [
+          "escalationRule",
+          "afterSeconds"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "HumanTask",
+      "label": "Human Task",
+      "displayName": "Human Task",
+      "category": "Workflow View",
+      "icon": "person",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "TASK",
+        "shape": "human-task-card",
+        "lineFields": [
+          "taskDescription",
+          "completionEvidence"
+        ]
+      }
+    },
+    {
+      "type": "ApprovalTask",
+      "label": "Approval Task",
+      "displayName": "Approval Task",
+      "category": "Workflow View",
+      "icon": "approval",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "APPROVE",
+        "shape": "approval-task-card",
+        "lineFields": [
+          "explicitApprovalRequired",
+          "approvalOutcomeField"
+        ]
+      }
+    },
+    {
+      "type": "CompensationPolicy",
+      "label": "Compensation Policy",
+      "displayName": "Compensation Policy",
+      "category": "Workflow View",
+      "icon": "undo",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "COMP",
+        "shape": "compensation-badge-card",
+        "lineFields": [
+          "compensationStrategy",
+          "automatic"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "IntegrationElement",
+      "label": "Integration Element",
+      "displayName": "Integration Element",
+      "category": "Event and Flow View",
+      "icon": "hub",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "INT",
+        "shape": "integration-card",
+        "lineFields": [
+          "integrationPurpose"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "Schedule",
+      "label": "Schedule",
+      "displayName": "Schedule",
+      "category": "Function and Trigger View",
+      "icon": "schedule",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "SCHED",
+        "shape": "schedule-card",
+        "lineFields": [
+          "scheduleExpression",
+          "enabled",
+          "timeZone"
+        ]
+      }
+    },
+    {
+      "type": "Subscription",
+      "label": "Subscription",
+      "displayName": "Subscription",
+      "category": "Event and Flow View",
+      "icon": "link",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "SUB",
+        "shape": "subscription-row",
+        "lineFields": [
+          "filterExpression",
+          "rawDelivery"
+        ]
+      },
+      "containedOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "PubSubFlow",
+      "label": "Pub Sub Flow",
+      "displayName": "Pub Sub Flow",
+      "category": "Event and Flow View",
+      "icon": "rss_feed",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "PUB/SUB",
+        "shape": "pubsub-flow-edge",
+        "lineFields": [
+          "topic"
+        ]
+      }
+    },
+    {
+      "type": "ExternalIntegrationFlow",
+      "label": "External Integration Flow",
+      "displayName": "External Integration Flow",
+      "category": "Event and Flow View",
+      "icon": "language",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "EXT FLOW",
+        "shape": "external-flow-edge",
+        "lineFields": [
+          "adapter"
+        ]
+      }
     }
   ]
 }

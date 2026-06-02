@@ -458,13 +458,8 @@
         "Requirement",
         "BusinessGoal",
         "KPI",
-        "Stakeholder",
-        "NonFunctionalRequirement",
-        "SecurityConstraint",
-        "PrivacyConstraint",
-        "ComplianceConstraint",
         "AcceptanceCriterion",
-        "TraceLink"
+        "Stakeholder"
       ],
       "relationshipKinds": [
         "SUPPORTS",
@@ -493,12 +488,9 @@
       ],
       "palette": [
         "BusinessCapability",
+        "CapabilityDependency",
         "BoundedContextCandidate",
-        "AggregateCandidate",
-        "DomainEntity",
-        "Command",
-        "Query",
-        "BusinessEvent"
+        "UbiquitousLanguageTerm"
       ],
       "relationshipKinds": [
         "SUPPORTS",
@@ -527,10 +519,9 @@
       "palette": [
         "DomainEntity",
         "ValueObject",
-        "AggregateCandidate",
         "InformationItem",
-        "DataClassification",
-        "DomainRelationship"
+        "DomainRelationship",
+        "DataClassification"
       ],
       "relationshipKinds": [
         "DOMAIN_RELATIONSHIP",
@@ -574,7 +565,8 @@
         "ExternalInteractionStep",
         "DecisionStep",
         "WaitStep",
-        "DecisionTable"
+        "TemporalConstraint",
+        "ExceptionScenario"
       ],
       "relationshipKinds": [
         "TRANSITION",
@@ -607,13 +599,7 @@
         "Stakeholder",
         "Actor",
         "ExternalSystem",
-        "Role",
-        "Command",
-        "Query",
-        "BusinessEvent",
-        "InformationItem",
-        "SecurityConstraint",
-        "PrivacyConstraint"
+        "Role"
       ],
       "relationshipKinds": [
         "PLAYS_ROLES",
@@ -647,14 +633,8 @@
       ],
       "palette": [
         "AggregateCandidate",
-        "DomainEntity",
-        "ValueObject",
         "LifecycleStateDefinition",
-        "BusinessInvariant",
-        "Command",
-        "BusinessEvent",
-        "BusinessError",
-        "Condition"
+        "BusinessInvariant"
       ],
       "relationshipKinds": [
         "ROOT",
@@ -687,19 +667,13 @@
         "Hotspot"
       ],
       "palette": [
-        "Actor",
-        "ExternalSystem",
         "Command",
-        "CommandOutcome",
         "Query",
         "BusinessEvent",
         "BusinessError",
         "Condition",
-        "InformationItem",
-        "AggregateCandidate",
-        "BusinessCapability",
-        "Policy",
-        "Hotspot"
+        "CommandOutcome",
+        "Actor"
       ],
       "relationshipKinds": [
         "ISSUED_BY",
@@ -738,13 +712,7 @@
       "palette": [
         "Policy",
         "DecisionTable",
-        "DecisionRule",
-        "Condition",
-        "Command",
-        "Query",
-        "BusinessEvent",
-        "BusinessError",
-        "InformationItem"
+        "Condition"
       ],
       "relationshipKinds": [
         "TRIGGERED_BY",
@@ -783,19 +751,14 @@
       ],
       "palette": [
         "NonFunctionalRequirement",
-        "QualityScenario",
         "SecurityConstraint",
         "PrivacyConstraint",
         "ComplianceConstraint",
-        "DataClassification",
         "Risk",
         "Assumption",
         "Hotspot",
-        "TransformationProfile",
-        "ProductionReadinessAssessment",
-        "ReadinessFinding",
-        "ReadinessCheck",
-        "ManualDecision"
+        "DataClassification",
+        "TransformationProfile"
       ],
       "relationshipKinds": [
         "CONSTRAINED_ELEMENTS",
@@ -871,280 +834,1065 @@
       "label": "Business Goal",
       "icon": "flag",
       "color": "#2563EB",
-      "category": "Intent"
+      "category": "Goals and Requirements",
+      "displayName": "Business Goal",
+      "notation": {
+        "tag": "GOAL",
+        "shape": "goal-card",
+        "lineFields": [
+          "priority",
+          "successCriterion",
+          "businessValue"
+        ]
+      }
     },
     {
       "type": "Objective",
       "label": "Objective",
       "icon": "track_changes",
       "color": "#2563EB",
-      "category": "Intent"
+      "category": "Intent",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "KPI",
       "label": "KPI",
       "icon": "analytics",
       "color": "#2563EB",
-      "category": "Intent"
+      "category": "Goals and Requirements",
+      "displayName": "KPI",
+      "notation": {
+        "tag": "KPI",
+        "shape": "metric-card",
+        "lineFields": [
+          "metricName",
+          "operator",
+          "targetValue",
+          "unit"
+        ]
+      }
     },
     {
       "type": "StakeholderConcern",
       "label": "Stakeholder Concern",
       "icon": "report",
       "color": "#2563EB",
-      "category": "Intent"
+      "category": "Intent",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "Actor",
       "label": "Actor",
       "icon": "person",
       "color": "#7C3AED",
-      "category": "People"
+      "category": "Stakeholder and Actor Map",
+      "displayName": "Actor",
+      "notation": {
+        "tag": "ACT",
+        "shape": "participant-card",
+        "lineFields": [
+          "actorType",
+          "trustLevel",
+          "authenticationExpectation"
+        ]
+      }
     },
     {
       "type": "Role",
       "label": "Role",
       "icon": "badge",
       "color": "#7C3AED",
-      "category": "People"
+      "category": "Stakeholder and Actor Map",
+      "displayName": "Role",
+      "notation": {
+        "tag": "ROLE",
+        "shape": "role-badge-card",
+        "lineFields": [
+          "roleType",
+          "authorizationScope"
+        ]
+      }
     },
     {
       "type": "Persona",
       "label": "Persona",
       "icon": "face",
       "color": "#7C3AED",
-      "category": "People"
+      "category": "People",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "ExternalSystem",
       "label": "External System",
       "icon": "language",
-      "color": "#7C3AED",
-      "category": "People"
+      "color": "#0D9488",
+      "category": "Stakeholder and Actor Map",
+      "displayName": "External System",
+      "notation": {
+        "tag": "EXT",
+        "shape": "external-boundary",
+        "lineFields": [
+          "systemType",
+          "trustLevel",
+          "integrationExpectation"
+        ]
+      }
     },
     {
       "type": "BusinessCapability",
       "label": "Business Capability",
-      "icon": "track_changes",
+      "icon": "account_tree",
       "color": "#0F766E",
-      "category": "Capability"
+      "category": "Capability Map",
+      "displayName": "Business Capability",
+      "notation": {
+        "tag": "CAP",
+        "shape": "capability-container",
+        "lineFields": [
+          "criticality",
+          "maturity",
+          "businessValue"
+        ]
+      }
     },
     {
       "type": "CapabilityDependency",
       "label": "Capability Dependency",
       "icon": "link",
       "color": "#0F766E",
-      "category": "Capability"
+      "category": "Capability Map",
+      "displayName": "Capability Dependency",
+      "notation": {
+        "tag": "DEP",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "dependencyType",
+          "criticalPath",
+          "rationale"
+        ]
+      },
+      "relationshipElement": true,
+      "creatable": false
     },
     {
       "type": "BoundedContextCandidate",
       "label": "Bounded Context Candidate",
-      "icon": "hub",
+      "icon": "select_window",
       "color": "#0F766E",
-      "category": "Capability"
+      "category": "Capability Map",
+      "displayName": "Bounded Context Candidate",
+      "notation": {
+        "tag": "CTX",
+        "shape": "context-container",
+        "lineFields": [
+          "boundaryRationale",
+          "ownershipBoundary",
+          "languageBoundary"
+        ]
+      }
     },
     {
       "type": "AggregateCandidate",
       "label": "Aggregate Candidate",
-      "icon": "account_tree",
+      "icon": "hub",
       "color": "#0F766E",
-      "category": "Capability"
+      "category": "Aggregate and Lifecycle",
+      "displayName": "Aggregate Candidate",
+      "notation": {
+        "tag": "AGG",
+        "shape": "aggregate-container",
+        "lineFields": [
+          "consistencyBoundaryRationale",
+          "transactionBoundary",
+          "root"
+        ]
+      }
     },
     {
       "type": "Command",
       "label": "Command",
-      "icon": "play_arrow",
+      "icon": "bolt",
       "color": "#DC2626",
-      "category": "Behavior"
+      "category": "Behavior/Event Storming",
+      "displayName": "Command",
+      "notation": {
+        "tag": "CMD",
+        "shape": "command-lozenge",
+        "lineFields": [
+          "intent",
+          "commandType",
+          "priority",
+          "idempotencyBusinessKey"
+        ]
+      }
     },
     {
       "type": "Query",
       "label": "Query",
       "icon": "search",
-      "color": "#DC2626",
-      "category": "Behavior"
+      "color": "#2563EB",
+      "category": "Behavior/Event Storming",
+      "displayName": "Query",
+      "notation": {
+        "tag": "QRY",
+        "shape": "query-trapezoid",
+        "lineFields": [
+          "intent",
+          "queryType",
+          "freshnessNeed",
+          "confidentiality"
+        ]
+      }
     },
     {
       "type": "BusinessEvent",
       "label": "Business Event",
-      "icon": "bolt",
-      "color": "#DC2626",
-      "category": "Behavior"
+      "icon": "event",
+      "color": "#DB2777",
+      "category": "Behavior/Event Storming",
+      "displayName": "Business Event",
+      "notation": {
+        "tag": "EVT",
+        "shape": "event-hexagon",
+        "lineFields": [
+          "semanticName",
+          "occurredInPastTenseName",
+          "semanticVersion"
+        ]
+      }
     },
     {
       "type": "BusinessProcess",
       "label": "Business Process",
       "icon": "schema",
-      "color": "#DC2626",
-      "category": "Behavior"
+      "color": "#EA580C",
+      "category": "Business Process",
+      "displayName": "Business Process",
+      "notation": {
+        "tag": "PROC",
+        "shape": "process-container",
+        "lineFields": [
+          "processKind",
+          "criticality",
+          "longRunning"
+        ]
+      }
     },
     {
       "type": "ProcessStep",
       "label": "Process Step",
-      "icon": "stairs",
-      "color": "#DC2626",
-      "category": "Behavior"
+      "icon": "input",
+      "color": "#EA580C",
+      "category": "Business Process",
+      "displayName": "Process Step",
+      "notation": {
+        "tag": "STEP",
+        "shape": "process-step",
+        "lineFields": [
+          "stepKind",
+          "responsibility",
+          "orderIndex"
+        ]
+      },
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "Decision",
       "label": "Decision",
       "icon": "alt_route",
       "color": "#DC2626",
-      "category": "Behavior"
+      "category": "Behavior",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "Precondition",
       "label": "Precondition",
       "icon": "rule",
       "color": "#DC2626",
-      "category": "Behavior"
+      "category": "Behavior",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "Postcondition",
       "label": "Postcondition",
       "icon": "check_circle",
       "color": "#DC2626",
-      "category": "Behavior"
+      "category": "Behavior",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "ExceptionScenario",
       "label": "Exception Scenario",
-      "icon": "error",
+      "icon": "warning",
       "color": "#DC2626",
-      "category": "Behavior"
+      "category": "Business Process",
+      "displayName": "Exception Scenario",
+      "notation": {
+        "tag": "EXC",
+        "shape": "exception-row",
+        "lineFields": [
+          "scenario",
+          "businessImpact",
+          "recoverable"
+        ]
+      }
     },
     {
       "type": "TemporalConstraint",
       "label": "Temporal Constraint",
       "icon": "schedule",
-      "color": "#DC2626",
-      "category": "Behavior"
+      "color": "#64748B",
+      "category": "Business Process",
+      "displayName": "Temporal Constraint",
+      "notation": {
+        "tag": "TIME",
+        "shape": "clock-badge-card",
+        "lineFields": [
+          "deadlineExpression",
+          "durationExpression",
+          "violationSeverity"
+        ]
+      }
     },
     {
       "type": "Policy",
       "label": "Policy",
-      "icon": "gavel",
+      "icon": "policy",
       "color": "#CA8A04",
-      "category": "Constraint"
+      "category": "Policy and Decision",
+      "displayName": "Policy",
+      "notation": {
+        "tag": "POL",
+        "shape": "policy-card",
+        "lineFields": [
+          "policyType",
+          "enforcementStrength",
+          "violationSeverity"
+        ]
+      }
     },
     {
       "type": "DomainEntity",
       "label": "Domain Entity",
-      "icon": "category",
+      "icon": "database",
       "color": "#0891B2",
-      "category": "Domain"
+      "category": "Domain Model",
+      "displayName": "Domain Entity",
+      "notation": {
+        "tag": "ENT",
+        "shape": "class-card",
+        "lineFields": [
+          "businessName",
+          "identityDescription",
+          "lifecycleDescription"
+        ]
+      }
     },
     {
       "type": "ValueObject",
       "label": "Value Object",
       "icon": "data_object",
       "color": "#0891B2",
-      "category": "Domain"
+      "category": "Domain Model",
+      "displayName": "Value Object",
+      "notation": {
+        "tag": "VO",
+        "shape": "value-object-card",
+        "lineFields": [
+          "businessName",
+          "valueType",
+          "validationRule"
+        ]
+      }
     },
     {
       "type": "DomainRelationship",
       "label": "Domain Relationship",
-      "icon": "join_full",
+      "icon": "link",
       "color": "#0891B2",
-      "category": "Domain"
+      "category": "Domain Model",
+      "displayName": "Domain Relationship",
+      "notation": {
+        "tag": "REL",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "relationshipType",
+          "sourceRole",
+          "targetRole"
+        ]
+      },
+      "relationshipElement": true
     },
     {
       "type": "InformationItem",
       "label": "Information Item",
-      "icon": "description",
+      "icon": "database",
       "color": "#0891B2",
-      "category": "Domain"
+      "category": "Domain Model",
+      "displayName": "Information Item",
+      "notation": {
+        "tag": "INFO",
+        "shape": "field-row",
+        "lineFields": [
+          "businessName",
+          "dataType",
+          "required",
+          "personalData"
+        ]
+      }
     },
     {
       "type": "DataClassification",
       "label": "Data Classification",
-      "icon": "privacy_tip",
-      "color": "#0891B2",
-      "category": "Domain"
+      "icon": "shield",
+      "color": "#CA8A04",
+      "category": "Governance and Risk",
+      "displayName": "Data Classification",
+      "notation": {
+        "tag": "CLASS",
+        "shape": "classification-badge",
+        "lineFields": [
+          "kind",
+          "identifiability",
+          "confidentialityLevel"
+        ]
+      }
     },
     {
       "type": "ConsentRequirement",
       "label": "Consent Requirement",
       "icon": "task_alt",
       "color": "#0891B2",
-      "category": "Domain"
+      "category": "Domain",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "NonFunctionalRequirement",
       "label": "Non Functional Requirement",
-      "icon": "rule",
+      "icon": "speed",
       "color": "#CA8A04",
-      "category": "Constraint"
+      "category": "Governance and Risk",
+      "displayName": "Non Functional Requirement",
+      "notation": {
+        "tag": "NFR",
+        "shape": "constraint-card",
+        "lineFields": [
+          "qualityType",
+          "metric",
+          "target"
+        ]
+      }
     },
     {
       "type": "QualityScenario",
       "label": "Quality Scenario",
-      "icon": "monitor_heart",
+      "icon": "checklist",
       "color": "#CA8A04",
-      "category": "Constraint"
+      "category": "Governance and Risk",
+      "displayName": "Quality Scenario",
+      "notation": {
+        "tag": "QS",
+        "shape": "quality-scenario-row",
+        "lineFields": [
+          "qualityType",
+          "source",
+          "stimulus",
+          "responseMeasure"
+        ]
+      },
+      "containedOnly": true
     },
     {
       "type": "SecurityConstraint",
       "label": "Security Constraint",
       "icon": "security",
       "color": "#CA8A04",
-      "category": "Constraint"
+      "category": "Governance and Risk",
+      "displayName": "Security Constraint",
+      "notation": {
+        "tag": "SEC",
+        "shape": "security-badge-card",
+        "lineFields": [
+          "authenticationNeed",
+          "authorizationRule",
+          "auditAccessRequired"
+        ]
+      }
     },
     {
       "type": "PrivacyConstraint",
       "label": "Privacy Constraint",
-      "icon": "shield",
+      "icon": "privacy_tip",
       "color": "#CA8A04",
-      "category": "Constraint"
+      "category": "Governance and Risk",
+      "displayName": "Privacy Constraint",
+      "notation": {
+        "tag": "PII",
+        "shape": "privacy-badge-card",
+        "lineFields": [
+          "law",
+          "jurisdiction",
+          "legalBasis",
+          "retentionPeriod"
+        ]
+      }
     },
     {
       "type": "RegulatoryConstraint",
       "label": "Regulatory Constraint",
       "icon": "balance",
       "color": "#CA8A04",
-      "category": "Constraint"
+      "category": "Constraint",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "Hotspot",
       "label": "Hotspot",
-      "icon": "local_fire_department",
-      "color": "#64748B",
-      "category": "Knowledge"
+      "icon": "help",
+      "color": "#DB2777",
+      "category": "Governance and Risk",
+      "displayName": "Hotspot",
+      "notation": {
+        "tag": "?",
+        "shape": "question-pin",
+        "lineFields": [
+          "question",
+          "impact",
+          "blocksTransformation"
+        ]
+      }
     },
     {
       "type": "OpenQuestion",
       "label": "Open Question",
       "icon": "help",
       "color": "#64748B",
-      "category": "Knowledge"
+      "category": "Knowledge",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "Risk",
       "label": "Risk",
       "icon": "warning",
-      "color": "#64748B",
-      "category": "Knowledge"
+      "color": "#DC2626",
+      "category": "Governance and Risk",
+      "displayName": "Risk",
+      "notation": {
+        "tag": "RISK",
+        "shape": "risk-triangle-card",
+        "lineFields": [
+          "riskStatement",
+          "probability",
+          "impact"
+        ]
+      }
     },
     {
       "type": "RequirementLink",
       "label": "Requirement Link",
       "icon": "link",
       "color": "#64748B",
-      "category": "Knowledge"
+      "category": "Knowledge",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "GoalSatisfactionLink",
       "label": "Goal Satisfaction Link",
       "icon": "done_all",
       "color": "#64748B",
-      "category": "Knowledge"
+      "category": "Knowledge",
+      "supportOnly": true,
+      "creatable": false
     },
     {
       "type": "Assumption",
       "label": "Assumption",
-      "icon": "help",
+      "icon": "lightbulb",
       "color": "#64748B",
-      "category": "Knowledge"
+      "category": "Governance and Risk",
+      "displayName": "Assumption",
+      "notation": {
+        "tag": "ASM",
+        "shape": "assumption-note",
+        "lineFields": [
+          "assumptionStatement",
+          "accepted",
+          "businessArea"
+        ]
+      }
+    },
+    {
+      "type": "CIMModel",
+      "label": "CIM Model",
+      "displayName": "CIM Model",
+      "category": "Overview",
+      "icon": "dashboard",
+      "color": "#334155",
+      "notation": {
+        "tag": "CIM",
+        "shape": "workspace-container",
+        "lineFields": [
+          "domainName",
+          "businessScope",
+          "organizationName"
+        ]
+      },
+      "creatable": false
+    },
+    {
+      "type": "Requirement",
+      "label": "Requirement",
+      "displayName": "Requirement",
+      "category": "Goals and Requirements",
+      "icon": "fact_check",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "REQ",
+        "shape": "requirement-card",
+        "lineFields": [
+          "requirementType",
+          "priority",
+          "fitCriterion"
+        ]
+      }
+    },
+    {
+      "type": "RequirementRelationship",
+      "label": "Requirement Relationship",
+      "displayName": "Requirement Relationship",
+      "category": "Goals and Requirements",
+      "icon": "link",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "REL",
+        "shape": "relationship-edge",
+        "lineFields": [
+          "kind",
+          "blocking",
+          "rationale"
+        ]
+      },
+      "relationshipElement": true,
+      "creatable": false
+    },
+    {
+      "type": "AcceptanceCriterion",
+      "label": "Acceptance Criterion",
+      "displayName": "Acceptance Criterion",
+      "category": "Goals and Requirements",
+      "icon": "checklist",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "GWT",
+        "shape": "checklist-row",
+        "lineFields": [
+          "givenContext",
+          "whenAction",
+          "thenOutcome",
+          "measurableTarget"
+        ]
+      },
+      "containedOnly": true
+    },
+    {
+      "type": "Stakeholder",
+      "label": "Stakeholder",
+      "displayName": "Stakeholder",
+      "category": "Stakeholder and Actor Map",
+      "icon": "groups",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "STK",
+        "shape": "participant-card",
+        "lineFields": [
+          "stakeholderType",
+          "concern",
+          "influence"
+        ]
+      }
+    },
+    {
+      "type": "UbiquitousLanguageTerm",
+      "label": "Ubiquitous Language Term",
+      "displayName": "Ubiquitous Language Term",
+      "category": "Capability Map",
+      "icon": "translate",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "TERM",
+        "shape": "glossary-row",
+        "lineFields": [
+          "term",
+          "definition",
+          "aliases"
+        ]
+      },
+      "containedOnly": true
+    },
+    {
+      "type": "DomainConcept",
+      "label": "Domain Concept",
+      "displayName": "Domain Concept",
+      "category": "Domain Model",
+      "icon": "category",
+      "color": "#0891B2",
+      "notation": {
+        "tag": "DOM",
+        "shape": "class-card",
+        "lineFields": [
+          "businessName",
+          "definition"
+        ]
+      },
+      "supportOnly": true,
+      "creatable": false
+    },
+    {
+      "type": "LifecycleStateDefinition",
+      "label": "Lifecycle State",
+      "displayName": "Lifecycle State",
+      "category": "Aggregate and Lifecycle",
+      "icon": "radio_button_checked",
+      "color": "#0F766E",
+      "notation": {
+        "tag": "STATE",
+        "shape": "state-node",
+        "lineFields": [
+          "stateName",
+          "terminal",
+          "initial"
+        ]
+      },
+      "containedOnly": true
+    },
+    {
+      "type": "BusinessInvariant",
+      "label": "Business Invariant",
+      "displayName": "Business Invariant",
+      "category": "Aggregate and Lifecycle",
+      "icon": "gavel",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "INV",
+        "shape": "constraint-note",
+        "lineFields": [
+          "naturalLanguage",
+          "severity",
+          "automatable"
+        ]
+      }
+    },
+    {
+      "type": "CommandOutcome",
+      "label": "Command Outcome",
+      "displayName": "Command Outcome",
+      "category": "Behavior/Event Storming",
+      "icon": "done",
+      "color": "#DC2626",
+      "notation": {
+        "tag": "OUT",
+        "shape": "outcome-row",
+        "lineFields": [
+          "success",
+          "resultDescription"
+        ]
+      },
+      "containedOnly": true
+    },
+    {
+      "type": "BusinessError",
+      "label": "Business Error",
+      "displayName": "Business Error",
+      "category": "Behavior/Event Storming",
+      "icon": "warning",
+      "color": "#DC2626",
+      "notation": {
+        "tag": "ERR",
+        "shape": "error-octagon",
+        "lineFields": [
+          "errorCode",
+          "businessMeaning",
+          "recoverable"
+        ]
+      }
+    },
+    {
+      "type": "Condition",
+      "label": "Condition",
+      "displayName": "Condition",
+      "category": "Policy and Decision",
+      "icon": "rule",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "COND",
+        "shape": "condition-diamond",
+        "lineFields": [
+          "naturalLanguage",
+          "expressionLanguage",
+          "mustBeAutomatable"
+        ]
+      }
+    },
+    {
+      "type": "StartStep",
+      "label": "Start Step",
+      "displayName": "Start Step",
+      "category": "Business Process",
+      "icon": "play_circle",
+      "color": "#16A34A",
+      "notation": {
+        "tag": "START",
+        "shape": "start-circle",
+        "lineFields": [
+          "orderIndex"
+        ]
+      }
+    },
+    {
+      "type": "EndStep",
+      "label": "End Step",
+      "displayName": "End Step",
+      "category": "Business Process",
+      "icon": "stop_circle",
+      "color": "#475569",
+      "notation": {
+        "tag": "END",
+        "shape": "end-double-circle",
+        "lineFields": [
+          "orderIndex"
+        ]
+      }
+    },
+    {
+      "type": "CommandStep",
+      "label": "Command Step",
+      "displayName": "Command Step",
+      "category": "Business Process",
+      "icon": "bolt",
+      "color": "#DC2626",
+      "notation": {
+        "tag": "CMD",
+        "shape": "process-command-step",
+        "lineFields": [
+          "stepKind",
+          "command",
+          "responsibility"
+        ]
+      }
+    },
+    {
+      "type": "QueryStep",
+      "label": "Query Step",
+      "displayName": "Query Step",
+      "category": "Business Process",
+      "icon": "search",
+      "color": "#2563EB",
+      "notation": {
+        "tag": "QRY",
+        "shape": "process-query-step",
+        "lineFields": [
+          "stepKind",
+          "query",
+          "responsibility"
+        ]
+      }
+    },
+    {
+      "type": "EventStep",
+      "label": "Event Step",
+      "displayName": "Event Step",
+      "category": "Business Process",
+      "icon": "event",
+      "color": "#DB2777",
+      "notation": {
+        "tag": "EVT",
+        "shape": "process-event-step",
+        "lineFields": [
+          "stepKind",
+          "event",
+          "responsibility"
+        ]
+      }
+    },
+    {
+      "type": "PolicyStep",
+      "label": "Policy Step",
+      "displayName": "Policy Step",
+      "category": "Business Process",
+      "icon": "policy",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "RULE",
+        "shape": "process-policy-step",
+        "lineFields": [
+          "stepKind",
+          "policy",
+          "responsibility"
+        ]
+      }
+    },
+    {
+      "type": "HumanTaskStep",
+      "label": "Human Task Step",
+      "displayName": "Human Task Step",
+      "category": "Business Process",
+      "icon": "person",
+      "color": "#7C3AED",
+      "notation": {
+        "tag": "TASK",
+        "shape": "human-task-card",
+        "lineFields": [
+          "taskDescription",
+          "completionEvidence",
+          "responsibility"
+        ]
+      }
+    },
+    {
+      "type": "ExternalInteractionStep",
+      "label": "External Interaction Step",
+      "displayName": "External Interaction Step",
+      "category": "Business Process",
+      "icon": "language",
+      "color": "#0D9488",
+      "notation": {
+        "tag": "EXT",
+        "shape": "external-task-card",
+        "lineFields": [
+          "interactionPurpose",
+          "externalSystem"
+        ]
+      }
+    },
+    {
+      "type": "DecisionStep",
+      "label": "Decision Step",
+      "displayName": "Decision Step",
+      "category": "Business Process",
+      "icon": "rule",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "DEC",
+        "shape": "decision-diamond",
+        "lineFields": [
+          "condition",
+          "decisionTable"
+        ]
+      }
+    },
+    {
+      "type": "WaitStep",
+      "label": "Wait Step",
+      "displayName": "Wait Step",
+      "category": "Business Process",
+      "icon": "schedule",
+      "color": "#64748B",
+      "notation": {
+        "tag": "WAIT",
+        "shape": "timer-node",
+        "lineFields": [
+          "waitReason",
+          "durationExpression"
+        ]
+      }
+    },
+    {
+      "type": "ProcessTransition",
+      "label": "Process Transition",
+      "displayName": "Process Transition",
+      "category": "Business Process",
+      "icon": "arrow_forward",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "FLOW",
+        "shape": "control-flow-edge",
+        "lineFields": [
+          "label",
+          "conditionExpression",
+          "probabilityHint"
+        ]
+      },
+      "relationshipElement": true,
+      "creatable": false
+    },
+    {
+      "type": "DecisionTable",
+      "label": "Decision Table",
+      "displayName": "Decision Table",
+      "category": "Policy and Decision",
+      "icon": "table",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "TABLE",
+        "shape": "decision-table",
+        "lineFields": [
+          "hitPolicy",
+          "defaultOutcome",
+          "complete"
+        ]
+      }
+    },
+    {
+      "type": "DecisionRule",
+      "label": "Decision Rule",
+      "displayName": "Decision Rule",
+      "category": "Policy and Decision",
+      "icon": "rule",
+      "color": "#EA580C",
+      "notation": {
+        "tag": "RULE",
+        "shape": "decision-rule-row",
+        "lineFields": [
+          "priorityOrder",
+          "condition",
+          "outcome"
+        ]
+      },
+      "containedOnly": true
+    },
+    {
+      "type": "ComplianceConstraint",
+      "label": "Compliance Constraint",
+      "displayName": "Compliance Constraint",
+      "category": "Governance and Risk",
+      "icon": "verified",
+      "color": "#CA8A04",
+      "notation": {
+        "tag": "COMP",
+        "shape": "compliance-card",
+        "lineFields": [
+          "regulation",
+          "controlId",
+          "auditFrequency"
+        ]
+      }
+    },
+    {
+      "type": "TransformationProfile",
+      "label": "Transformation Profile",
+      "displayName": "Transformation Profile",
+      "category": "Governance and Risk",
+      "icon": "settings",
+      "color": "#64748B",
+      "notation": {
+        "tag": "XFORM",
+        "shape": "settings-panel",
+        "lineFields": [
+          "preferCapabilityAsServiceBoundary",
+          "preferEventDrivenCollaboration"
+        ]
+      }
     }
   ]
 }

@@ -3315,11 +3315,7 @@ function availableCimPaletteTypes(allTypes) {
       : Array.isArray(viewDefinition?.elementTypes)
           ? viewDefinition.elementTypes
           : [];
-  const filtered = filterScopedPaletteTypes("cim", scoped, allTypes);
-  if (filtered.length) {
-    return filtered;
-  }
-  return allTypes;
+  return filterScopedPaletteTypes("cim", scoped, allTypes);
 }
 
 function availablePimPaletteTypes(allTypes) {
@@ -3338,7 +3334,7 @@ function availablePimPaletteTypes(allTypes) {
   && viewDefinition.palette.length ? viewDefinition.palette
       : [...activeViewElementTypeFilter()];
   const filtered = filterScopedPaletteTypes("pim", scoped, allTypes);
-  return filtered.length ? filtered : allTypes;
+  return viewDefinition || scoped.length ? filtered : allTypes;
 }
 
 function availablePsmPaletteTypes(allTypes) {
@@ -3357,7 +3353,7 @@ function availablePsmPaletteTypes(allTypes) {
   && viewDefinition.palette.length ? viewDefinition.palette
       : [...activeViewElementTypeFilter()];
   const filtered = filterScopedPaletteTypes("psm", scoped, allTypes);
-  return filtered.length ? filtered : allTypes;
+  return viewDefinition || scoped.length ? filtered : allTypes;
 }
 
 function renderWizardActions() {
