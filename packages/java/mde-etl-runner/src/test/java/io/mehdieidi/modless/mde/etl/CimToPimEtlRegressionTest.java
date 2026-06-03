@@ -144,6 +144,10 @@ final class CimToPimEtlRegressionTest {
                 "Expected generated external adapters.");
         assertFalse(values(root, "policies").isEmpty(),
                 "Expected generated governance, security, resilience, and data policies.");
+        assertFalse(values(root, "businessRules").isEmpty(),
+                "Expected requirements, goals, and glossary terms to be retained as business rules.");
+        assertFalse(values(root, "decisionModels").isEmpty(),
+                "Expected CIM decision tables to be retained as PIM decision models.");
         assertTrue(values(root, "deploymentUnits").stream()
                         .allMatch(unit -> !values(unit, "contains").isEmpty()),
                 "Every deployment unit should contain deployable elements.");

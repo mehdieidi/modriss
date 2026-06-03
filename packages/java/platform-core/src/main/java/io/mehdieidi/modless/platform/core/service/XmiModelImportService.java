@@ -938,7 +938,9 @@ final class XmiModelImportService {
                 case "publishes" -> "PUBLISHES";
                 case "subscribesTo" -> "SUBSCRIBES_TO";
                 case "invokesFunction" -> "INVOKES";
+                case "invokedResource" -> "INVOKES";
                 case "startState" -> "STARTS_AT";
+                case "nextState" -> "TRANSITION";
                 case "endStates" -> "ENDS_AT";
                 case "targetResource" -> "PERMISSION_TARGET";
                 case "permissions" -> "PERMISSION";
@@ -946,6 +948,8 @@ final class XmiModelImportService {
                 case "resources", "allResources" -> "CONTAINS";
                 case "route" -> "USES_ROUTE";
                 case "function" -> "INVOKES";
+                case "role" -> "USES_ROLE";
+                case "logGroup" -> "WRITES_LOGS_TO";
                 default -> "";
             };
         }
@@ -967,6 +971,11 @@ final class XmiModelImportService {
         private String psmRelationshipViewKind(String value) {
             return switch (String.valueOf(value)) {
                 case "ApiGatewayLambdaIntegrationView" -> "INVOKES";
+                case "EventBridgeLambdaTargetView" -> "TARGETS";
+                case "SnsLambdaSubscriptionView", "SqsLambdaEventSourceView",
+                        "S3LambdaNotificationView", "S3TopicNotificationView" -> "EVENT_FLOW";
+                case "S3QueueNotificationView" -> "MESSAGE_FLOW";
+                case "StepFunctionEventBridgeTargetView" -> "INVOKES";
                 default -> relationshipClassKind(value);
             };
         }

@@ -23,6 +23,34 @@ operation buildArchitectureRationale(c : CIM!CIMModel) {
     c.processes.size() + " processes.";
 }
 
+operation requirementRuleText(r : CIMORG!Requirement) {
+  var text = firstText(r.fitCriterion, r.description);
+  if (not hasText(text) and r.acceptanceCriteria.notEmpty()) {
+    var ac = r.acceptanceCriteria.first();
+    text = "Given " + firstText(ac.givenContext, "the stated context") +
+      ", when " + firstText(ac.whenAction, "the action occurs") +
+      ", then " + firstText(ac.thenOutcome, "the expected outcome must hold") + ".";
+  }
+  if (not hasText(text)) {
+    text = "Satisfy " + firstText(r.name, r.id) + ".";
+  }
+  return text;
+}
+
+operation goalRuleText(g : CIMORG!BusinessGoal) {
+  return firstText(g.successCriterion,
+    firstText(g.businessValue, "Preserve business goal '" + firstText(g.name, g.id) + "'."));
+}
+
+operation glossaryRuleText(t : CIMORG!UbiquitousLanguageTerm) {
+  var definition = firstText(t.definition, "definition requires review");
+  var text = "Use business term '" + t.term + "' consistently: " + definition + ".";
+  if (hasText(t.forbiddenSynonyms)) {
+    text = text + " Avoid forbidden synonyms: " + t.forbiddenSynonyms + ".";
+  }
+  return text;
+}
+
 rule CIMModel2PIMModel
   transform c : CIM!CIMModel
   to p : PIM!PIMModel {
@@ -106,6 +134,81 @@ rule DefaultEnvironmentsAndImplementationProfile
   copyCommonTrace(c, prod, "TR-003", "HIGH");
   traceGenerated(c, profile, "TR-003", "LOW");
   manualDecision("TR-003", "Choose runtime language, package manager, test framework, source layout, lint, format, and build commands.", KERNEL!Severity#WARNING, false, Sequence{profile});
+}
+
+rule Requirement2BusinessRule
+  transform r : CIMORG!Requirement
+  to b : POLICY!BusinessRule {
+
+  b.id = idFor("business_rule_requirement", r);
+  b.name = nameFor(r, " Requirement Rule");
+  b.naturalLanguageRule = requirementRuleText(r);
+
+  pimRoot().businessRules.add(b);
+  traceGenerated(r, b, "TR-004", "MEDIUM");
+
+  if (r.productionBlocking or r.mandatory) {
+    manualDecision("TR-004",
+      "Confirm implementation and test coverage for requirement '" + r.name + "'.",
+      KERNEL!Severity#WARNING, false, Sequence{r, b});
+  }
+}
+
+rule BusinessGoal2BusinessRule
+  transform g : CIMORG!BusinessGoal
+  to b : POLICY!BusinessRule {
+
+  b.id = idFor("business_rule_goal", g);
+  b.name = nameFor(g, " Goal Rule");
+  b.naturalLanguageRule = goalRuleText(g);
+
+  pimRoot().businessRules.add(b);
+  traceGenerated(g, b, "TR-004", "LOW");
+}
+
+rule UbiquitousLanguageTerm2BusinessRule
+  transform t : CIMORG!UbiquitousLanguageTerm
+  to b : POLICY!BusinessRule {
+
+  b.id = idFor("business_rule_glossary", t);
+  b.name = t.term + " Glossary Rule";
+  b.naturalLanguageRule = glossaryRuleText(t);
+
+  pimRoot().businessRules.add(b);
+  traceGenerated(t, b, "TR-004", "LOW");
+}
+
+rule KPI2ReadinessCheck
+  transform k : CIMORG!KPI
+  to c : KERNEL!ReadinessCheck {
+
+  c.id = idFor("readiness_kpi", k);
+  c.name = nameFor(k, " KPI Coverage");
+  c.checkId = "KPI_" + slug(firstText(k.metricName, k.name));
+  c.severity = KERNEL!Severity#WARNING;
+  c.passed = hasText(k.metricName) and hasText(k.targetValue) and hasText(k.dataSource);
+  c.message = "KPI '" + firstText(k.metricName, k.name) + "' is captured for production readiness review.";
+  c.remediation = "Define metricName, targetValue, unit/frequency, and dataSource before production rollout.";
+  c.affectedElements.add(pimRoot());
+
+  readinessRoot().checks.add(c);
+  traceGenerated(k, c, "TR-004", "LOW");
+}
+
+rule Stakeholder2ManualDecision
+  transform s : CIMORG!Stakeholder
+  to d : KERNEL!ManualDecision {
+
+  d.id = idFor("stakeholder_decision", s);
+  d.name = nameFor(s, " Stakeholder Review");
+  d.question = "Confirm stakeholder concern for '" + s.name + "': " + firstText(s.concern, "concern requires review") + ".";
+  d.decisionOwner = firstText(s.contactRole, s.name);
+  d.blocking = false;
+  d.severity = KERNEL!Severity#INFO;
+  d.affectedElements.add(pimRoot());
+
+  readinessRoot().manualDecisions.add(d);
+  traceGenerated(s, d, "TR-004", "LOW");
 }
 
 post InitialReadinessChecks {

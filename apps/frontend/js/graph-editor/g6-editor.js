@@ -1758,34 +1758,32 @@ export function fitG6CanvasToDiagram(bounds = null, {fit = false} = {}) {
   if (!nodes.length) {
     return false;
   }
-  let result = null;
   try {
+    const rect = el.canvasViewport?.getBoundingClientRect?.();
+    const scale = fit && bounds
+        ? Math.max(0.01, Math.min(1, Math.min(
+            ((rect?.width || 0) - 96) / bounds.width,
+            ((rect?.height || 0) - 96) / bounds.height) || 1))
+        : (state.viewport.scale || readGraphZoom() || 1);
     if (fit && bounds) {
-      const rect = el.canvasViewport?.getBoundingClientRect?.();
-      const padding = 96;
-      const fitScale = Math.min(
-          ((rect?.width || 0) - padding) / bounds.width,
-          ((rect?.height || 0) - padding) / bounds.height);
-      const next = Math.max(0.01, Math.min(1, fitScale || 1));
-      state.viewport.scale = next;
+      state.viewport.scale = scale;
       setCanvasZoomIndicator();
-      result = editor.graph.zoomTo?.(next, false);
     }
-    const centerX = bounds ? bounds.minX + bounds.width / 2 : null;
-    const centerY = bounds ? bounds.minY + bounds.height / 2 : null;
-    const focusNodeId = bounds ? nodes.reduce((bestId, nodeId) => {
-      const node = state.nodesById.get(nodeId)
-          || state.diagram.nodes.find((candidate) => candidate.id === nodeId);
-      const best = state.nodesById.get(bestId)
-          || state.diagram.nodes.find((candidate) => candidate.id === bestId);
-      const nodeDistance = node ? Math.hypot(node.x - centerX, node.y - centerY)
-          : Number.POSITIVE_INFINITY;
-      const bestDistance = best ? Math.hypot(best.x - centerX, best.y - centerY)
-          : Number.POSITIVE_INFINITY;
-      return nodeDistance < bestDistance ? nodeId : bestId;
-    }, nodes[0]) : nodes[0];
-    const focusResult = editor.graph.focusElement?.(focusNodeId, {duration: 0});
-    afterGraphViewport(focusResult || result);
+    if (bounds && rect?.width && rect?.height) {
+      const centerX = bounds.minX + bounds.width / 2;
+      const centerY = bounds.minY + bounds.height / 2;
+      state.viewport.x = Math.round(rect.width / 2 - centerX * scale);
+      state.viewport.y = Math.round(rect.height / 2 - centerY * scale);
+      const zoomResult = fit ? editor.graph.zoomTo?.(scale, false) : null;
+      const translateResult = editor.graph.translateTo?.(
+          [state.viewport.x, state.viewport.y], false);
+      const results = [zoomResult, translateResult].filter(Boolean);
+      afterGraphViewport(results.some((result) => result?.then)
+          ? Promise.all(results) : translateResult || zoomResult);
+    } else {
+      const focusResult = editor.graph.focusElement?.(nodes[0], {duration: 0});
+      afterGraphViewport(focusResult);
+    }
   } catch (error) {
     updateDebugState({lastViewportError: error.message || String(error)});
   }

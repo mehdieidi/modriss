@@ -385,6 +385,60 @@ class ModelServiceXmiImportTest {
                 .anyMatch(issue -> "XmiExport".equals(issue.constraint())));
     }
 
+    @Test
+    void patchPreservesStoredXmiWhenJsonHasStaleReferences() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        UserRecord user = authService.register("xmi-patch-owner@example.com", "password123",
+                "Owner").user();
+        ProjectRecord project = projectService.create(user, "XMI Patch Project", "");
+        JsonNode imported = service.importModel(ModelLevel.PIM, "pim.xmi",
+                samplePimXmi().getBytes(StandardCharsets.UTF_8), "xmi").modelJson();
+        ModelRecord created = service.create(user, ModelLevel.PIM, project.id(), "pim",
+                imported);
+
+        assertDoesNotThrow(() -> service.patch(user, ModelLevel.PIM, created.id(), "pim",
+                java.util.List.of(new ModelService.ModelPatchOperation("add",
+                        "/workflows/0/states/0/compensation",
+                        store.objectMapper().getNodeFactory().textNode("missing-compensation")))));
+
+        ModelService.ValidationResult validation = service.validate(user, ModelLevel.PIM,
+                created.id());
+
+        assertFalse(validation.issues().stream()
+                .anyMatch(issue -> "XmiExport".equals(issue.constraint())));
+    }
+
+    @Test
+    void patchPreservesStoredPsmXmiWhenJsonHasStaleReferences() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        UserRecord user = authService.register("psm-xmi-patch-owner@example.com", "password123",
+                "Owner").user();
+        ProjectRecord project = projectService.create(user, "PSM XMI Patch Project", "");
+        JsonNode imported = service.importModel(ModelLevel.PSM, "psm.xmi",
+                samplePsmXmi().getBytes(StandardCharsets.UTF_8), "xmi").modelJson();
+        ModelRecord created = service.create(user, ModelLevel.PSM, project.id(), "psm",
+                imported);
+
+        assertDoesNotThrow(() -> service.patch(user, ModelLevel.PSM, created.id(), "psm",
+                java.util.List.of(new ModelService.ModelPatchOperation("replace",
+                        "/relationshipViews/0/source",
+                        store.objectMapper().getNodeFactory().textNode("missing-source")))));
+
+        ModelService.ValidationResult validation = service.validate(user, ModelLevel.PSM,
+                created.id());
+
+        assertFalse(validation.issues().stream()
+                .anyMatch(issue -> "XmiExport".equals(issue.constraint())));
+    }
+
     private JsonNode relationship(JsonNode relationships, String source, String target,
             String kind) {
         for (JsonNode relationship : relationships) {

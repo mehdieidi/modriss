@@ -920,18 +920,36 @@
         "AwsTaggingPolicy",
         "AwsSecurityBaseline",
         "SamGlobals",
-        "AwsTag",
         "CfnParameter",
-        "CfnOutput"
+        "CfnOutput",
+        "HttpApi",
+        "RestApi",
+        "AwsLambdaFunction",
+        "StepFunctionStateMachine",
+        "EventBridgeBus",
+        "EventBridgeRule",
+        "SqsQueue",
+        "SnsTopic",
+        "DynamoDbTable",
+        "S3Bucket",
+        "IamRole",
+        "CloudWatchLogGroup"
       ],
       "palette": [],
       "relationshipKinds": [
         "CONTAINS",
         "DEPLOYS",
         "DEPLOYS_TO",
+        "ROUTES_TO",
+        "INVOKES",
+        "EVENT_FLOW",
+        "MESSAGE_FLOW",
+        "TARGETS",
+        "USES_ROLE",
+        "OBSERVES",
         "TRACE"
       ],
-      "layoutHint": "MATRIX"
+      "layoutHint": "CONTAINER"
     },
     {
       "id": "psm-resource-topology",
@@ -1484,6 +1502,7 @@
       "relationshipKinds": [
         "ROUTES_TO",
         "EVENT_FLOW",
+        "MESSAGE_FLOW",
         "TARGETS",
         "PERMISSION",
         "INVOKES",

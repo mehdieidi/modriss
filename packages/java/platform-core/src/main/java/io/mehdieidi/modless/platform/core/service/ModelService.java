@@ -235,7 +235,9 @@ public final class ModelService {
             String sourceXmiToken = removeSourceXmiToken(normalizedModel);
             SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
                     level, sourceXmiToken, true);
-            sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
+            if (!(sourceXmi.shouldPreserve() && sourceXmi(existing).isPresent())) {
+                sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
+            }
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
             ModelRecord updated = new ModelRecord(existing.id(), existing.projectId(), level,
                     requireName(name == null ? existing.name() : name, level), normalizedModel,

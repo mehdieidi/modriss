@@ -23,6 +23,35 @@ rule EventType2StructuredDocument
   createTrace(e, d, "EventType2StructuredDocument", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+rule BusinessRule2StructuredDocument
+  transform b : POLICY!BusinessRule
+  to d : KERNEL!StructuredDocument {
+
+  copyTraceable(b, d);
+  d.id = idFor("business_rule_doc", b);
+  d.name = firstText(b.name, "BusinessRule") + "Document";
+  d.format = KERNEL!StructuredFormat#JSON;
+  d.content = businessRuleDocumentJson(b);
+  createTrace(b, d, "BusinessRule2StructuredDocument", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
+}
+
+rule DecisionModel2PsmMetadata
+  transform dm : POLICY!DecisionModel
+  to n : AWSPSMCORE!AwsNativeResource {
+
+  copyAwsResource(dm, n, "DecisionModel", "AWS::CloudFormation::CustomResource");
+  n.id = idFor("decision_model", dm);
+  n.cloudFormationType = "Custom::DecisionModelMetadata";
+  n.properties.add(nativeText("ServiceToken", "REVIEW_REQUIRED_SERVICE_TOKEN", KERNEL!StructuredFormat#TEXT, true, false));
+  n.properties.add(nativeText("HitPolicy", firstText(dm.hitPolicy, "UNSPECIFIED"), KERNEL!StructuredFormat#TEXT, false, false));
+  n.properties.add(nativeText("RuleCount", dm.rules.size().asString(), KERNEL!StructuredFormat#TEXT, false, false));
+  manualDecision("DECISION_MODEL_IMPLEMENTATION_REQUIRED",
+    "Choose AWS implementation for decision model " + dm.name + ".",
+    KERNEL!Severity#WARNING, isProductionRoot(), Sequence{dm, n},
+    "Implement as Lambda logic, Step Functions choice states, EventBridge rules, or a managed decision service integration.");
+  createTrace(dm, n, "DecisionModel2PsmMetadata", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
+}
+
 rule ExternalAdapter2PsmMetadata
   transform a : EXTERNAL!ExternalAdapter
   to n : AWSPSMCORE!AwsNativeResource {
@@ -101,6 +130,14 @@ operation eventContractJson(e) {
     "\", \"subjectExpression\": \"" + escapeJson(e.subjectExpression) +
     "\", \"orderingKey\": \"" + escapeJson(e.orderingKey) +
     "\", \"schema\": \"" + escapeJson(e.schema.name) + "\" }";
+}
+
+operation businessRuleDocumentJson(b) {
+  return "{ \"name\": \"" + escapeJson(b.name) +
+    "\", \"naturalLanguageRule\": \"" + escapeJson(b.naturalLanguageRule) +
+    "\", \"inputSchemaCount\": " + b.inputSchemas.size().asString() +
+    ", \"outputSchemaCount\": " + b.outputSchemas.size().asString() +
+    ", \"enforcedByCount\": " + b.enforcedBy.size().asString() + " }";
 }
 
 operation applyFunctionPolicies(f, l) {

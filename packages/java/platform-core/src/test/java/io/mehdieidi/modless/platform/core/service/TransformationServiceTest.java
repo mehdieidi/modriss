@@ -89,9 +89,10 @@ class TransformationServiceTest {
         assertEquals(ModelLevel.PSM, psm.level());
         assertEquals("PSM", psm.modelJson().path("modelLevel").asText());
         assertEquals("AwsPsmModel", psm.modelJson().path("eClass").asText());
-        assertEquals("GENERATED_REVIEW_REQUIRED",
+        assertEquals("GENERATED_BY_ETL",
                 psm.modelJson().path("transformationStatus").asText());
-        assertFalse(psm.modelJson().path("validationIssues").isEmpty());
+        assertTrue(psm.modelJson().path("validationIssues").isMissingNode()
+                || psm.modelJson().path("validationIssues").isEmpty());
         assertTrue(psm.modelJson().path("stacks").findValues("resources").stream()
                         .anyMatch(resources -> resources.isArray() && !resources.isEmpty()),
                 "Generated PSM JSON should preserve stack-contained resources.");
@@ -100,14 +101,32 @@ class TransformationServiceTest {
                 "Generated PSM JSON should preserve stage-to-stack deployment references.");
         assertFalse(psm.modelJson().path("relationshipViews").isEmpty(),
                 "Generated PSM should include relationship view elements for integrations.");
+        assertEquals(psm.modelJson().path("manualBacklog").size(),
+                psm.modelJson().path("graph").path("manualBacklog").size(),
+                "Root and graph manual backlog counts should stay in sync.");
         assertTrue(psm.modelJson().path("graph").path("elements").findValuesAsText("eClass")
                 .contains("AwsLambdaFunction"));
+        assertTrue(psm.modelJson().path("graph").path("elements").size() > 10,
+                "Generated PSM graph should expose enough elements for frontend views.");
         assertFalse(psm.modelJson().path("graph").path("relationships").isEmpty(),
                 "Imported AWS PSM graph should include reference and relationship edges.");
+        var relationshipKinds = psm.modelJson().path("graph").path("relationships")
+                .findValuesAsText("kind");
+        assertFalse(relationshipKinds.stream().anyMatch(kind -> kind.endsWith("_VIEW")),
+                "Generated PSM relationship views should be rendered as canonical edge kinds.");
+        assertTrue(relationshipKinds.contains("EVENT_FLOW"),
+                "Generated event/messaging shortcuts should be visible in PSM views.");
+        assertTrue(relationshipKinds.contains("TARGETS"),
+                "Generated EventBridge targets should be visible in PSM views.");
         assertTrue(psm.modelJson().path("commands").isMissingNode(),
                 "Generated PSM must not retain PIM/CIM root containments.");
         ModelService.ValidationResult validation = modelService.validate(ModelLevel.PSM,
                 psm.modelJson());
+        assertTrue(validation.issues().stream().noneMatch(issue ->
+                        "ProductionLogGroupShouldUseKms".equals(issue.constraint())
+                                || "ApiLambdaPermissionRecommended".equals(issue.constraint())),
+                "Generated PSM should satisfy production log group KMS and API Lambda permission links: "
+                        + validation.issues());
         assertTrue(validation.issues().stream().noneMatch(issue ->
                         "StackResourcesExist".equals(issue.constraint())
                                 || "StageDeploysAtLeastOneStack".equals(issue.constraint())

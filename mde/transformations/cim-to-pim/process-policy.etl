@@ -285,6 +285,64 @@ rule DecisionTable2ChoiceLogic
   }
 }
 
+rule DecisionTable2DecisionModel
+  transform dt : CIMPROCESS!DecisionTable
+  to dm : POLICY!DecisionModel {
+
+  dm.id = idFor("decision_model", dt);
+  dm.name = nameFor(dt, " Decision Model");
+  dm.hitPolicy = firstText(dt.hitPolicy, "UNSPECIFIED");
+
+  for (item in dt.inputs) {
+    var inputSchema = item.equivalent("InformationItem2Schema");
+    if (inputSchema.isDefined()) {
+      dm.inputs.add(inputSchema);
+    }
+  }
+  for (item in dt.outputs) {
+    var outputSchema = item.equivalent("InformationItem2Schema");
+    if (outputSchema.isDefined()) {
+      dm.outputs.add(outputSchema);
+    }
+  }
+
+  for (sourceRule in dt.rules) {
+    var decisionRuleTarget = new POLICY!DecisionRule;
+    decisionRuleTarget.id = idFor("decision_rule", sourceRule);
+    decisionRuleTarget.name = nameFor(sourceRule, " Decision Rule");
+
+    var condition = new KERNEL!Expression;
+    condition.id = idFor("expr_decision_condition", sourceRule);
+    condition.name = sourceRule.name + " Condition";
+    condition.language = KERNEL!ExpressionLanguage#NATURAL_LANGUAGE;
+    condition.body = firstText(sourceRule.condition, "REVIEW_REQUIRED_CONDITION");
+    condition.phase = KERNEL!ExpressionPhase#DESIGN_TIME;
+    condition.sideEffectFree = true;
+    decisionRuleTarget.condition = condition;
+
+    var outcome = new KERNEL!Expression;
+    outcome.id = idFor("expr_decision_outcome", sourceRule);
+    outcome.name = sourceRule.name + " Outcome";
+    outcome.language = KERNEL!ExpressionLanguage#NATURAL_LANGUAGE;
+    outcome.body = firstText(sourceRule.outcome, firstText(dt.defaultOutcome, "REVIEW_REQUIRED_OUTCOME"));
+    outcome.phase = KERNEL!ExpressionPhase#DESIGN_TIME;
+    outcome.sideEffectFree = true;
+    decisionRuleTarget.outcome = outcome;
+
+    dm.rules.add(decisionRuleTarget);
+    traceGenerated(sourceRule, decisionRuleTarget, "TR-100", "MEDIUM");
+  }
+
+  pimRoot().decisionModels.add(dm);
+  traceGenerated(dt, dm, "TR-100", "MEDIUM");
+
+  if (not dt.complete and not hasText(dt.defaultOutcome)) {
+    manualDecision("TR-100",
+      "Confirm default outcome for incomplete decision table '" + dt.name + "'.",
+      KERNEL!Severity#WARNING, false, Sequence{dt, dm});
+  }
+}
+
 rule BusinessProcess2Workflow
   transform bp : CIMPROCESS!BusinessProcess
   to wf : WORKFLOW!Workflow {

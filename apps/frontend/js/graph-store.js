@@ -133,9 +133,9 @@ function elementRecords(modelJson, typeKey = state.activeType) {
       : typeKey === "pim" ? pimSemanticElementsFromRoot(modelJson)
           : typeKey === "psm" ? semanticElementsFromConfiguredRoot(typeKey,
               modelJson) : [];
+  const graphElements = Array.isArray(modelJson?.graph?.elements)
+      ? modelJson.graph.elements : [];
   if (semanticElements.length) {
-    const graphElements = Array.isArray(modelJson?.graph?.elements)
-        ? modelJson.graph.elements : [];
     if (!graphElements.length) {
       return semanticElements;
     }
@@ -143,7 +143,7 @@ function elementRecords(modelJson, typeKey = state.activeType) {
       String(element?.id || "").trim(),
       element
     ]).filter(([id]) => id));
-    return semanticElements.map((element) => {
+    const mergedSemantic = semanticElements.map((element) => {
       const graphElement = graphById.get(String(element?.id || "").trim());
       return graphElement ? {
         ...clone(graphElement),
@@ -154,9 +154,16 @@ function elementRecords(modelJson, typeKey = state.activeType) {
             : element.y
       } : element;
     });
+    const semanticIds = new Set(semanticElements.map((element) =>
+        String(element?.id || "").trim()).filter(Boolean));
+    return [
+      ...mergedSemantic,
+      ...graphElements.filter((element) =>
+          !semanticIds.has(String(element?.id || "").trim()))
+    ];
   }
-  if (Array.isArray(modelJson?.graph?.elements)) {
-    return modelJson.graph.elements;
+  if (graphElements.length) {
+    return graphElements;
   }
   if (Array.isArray(modelJson?.diagram?.elements)) {
     return modelJson.diagram.elements;
@@ -644,6 +651,41 @@ function edgeIdsForElementIds(graph, elementIds, relationshipKinds = []) {
   return result;
 }
 
+function withRelationshipEndpoints(graph, elementIds, relationshipIds = []) {
+  const expanded = new Set(elementIds);
+  safeArray(relationshipIds).forEach((relationshipId) => {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (!relationship) {
+      return;
+    }
+    if (relationship.sourceElementId) {
+      expanded.add(relationship.sourceElementId);
+    }
+    if (relationship.targetElementId) {
+      expanded.add(relationship.targetElementId);
+    }
+  });
+  return [...expanded];
+}
+
+function relationshipIdsTouchingElements(graph, elementIds,
+    relationshipKinds = []) {
+  const ids = new Set(elementIds);
+  const allowedKinds = new Set(relationshipKinds || []);
+  const result = [];
+  graph.relationshipsById.forEach((relationship) => {
+    if (allowedKinds.size && !allowedKinds.has(relationship.kind)
+        && relationship.containment !== true) {
+      return;
+    }
+    if (!ids.size || ids.has(relationship.sourceElementId) || ids.has(
+        relationship.targetElementId)) {
+      result.push(relationship.id);
+    }
+  });
+  return result;
+}
+
 function neighborhoodElementIds(graph, rootElementId, depth) {
   const rootId = String(rootElementId || "").trim();
   if (!rootId || !graph.elementsById.has(rootId)) {
@@ -866,7 +908,12 @@ function buildViewFromDefinition(typeKey, graph, definition,
     edges: [],
     hidden: {elementIds: [], relationshipIds: []}
   };
-  const elementIds = selectElementIdsForView(graph, view, typeKey);
+  let elementIds = selectElementIdsForView(graph, view, typeKey);
+  const relationshipKinds = safeArray(definition.relationshipKinds);
+  if (relationshipKinds.length) {
+    elementIds = withRelationshipEndpoints(graph, elementIds,
+        relationshipIdsTouchingElements(graph, elementIds, relationshipKinds));
+  }
   const relationshipIds = selectRelationshipIdsForView(graph, view, elementIds);
   view.nodes = layoutNodesForElements(graph, elementIds, [], typeKey);
   view.edges = relationshipIds.map((relationshipId) => ({
@@ -877,8 +924,18 @@ function buildViewFromDefinition(typeKey, graph, definition,
 }
 
 function defaultMainView(typeKey, graph, modelName) {
-  const elementIds = [...graph.elementsById.entries()].filter(([, element]) =>
+  let elementIds = [...graph.elementsById.entries()].filter(([, element]) =>
       isMainSurfaceElement(typeKey, element)).map(([elementId]) => elementId);
+  if (typeKey === "psm") {
+    elementIds = withRelationshipEndpoints(graph, elementIds,
+        relationshipIdsTouchingElements(graph, elementIds).filter(
+            (relationshipId) => {
+              const relationship = graph.relationshipsById.get(relationshipId);
+              return relationship && relationship.containment !== true
+                  && !CONTAINMENT_KINDS.has(
+                      String(relationship.kind || "").toUpperCase());
+            }));
+  }
   const relationshipIds = edgeIdsForElementIds(graph, elementIds);
   return {
     id: `view-${typeKey}-main`,
@@ -977,9 +1034,16 @@ function normalizeView(view, graph, typeKey, modelName) {
   normalized.filters.relationshipKinds = safeArray(
       normalized.filters.relationshipKinds).map(String);
   if (graph.elementsById.size) {
-    const elementIds = normalized.nodes.length
+    let elementIds = normalized.nodes.length
         ? normalized.nodes.map((node) => node.elementId)
         : selectElementIdsForView(graph, normalized, typeKey);
+    const explicitRelationshipIds = normalized.edges.map(
+        (edge) => edge.relationshipId);
+    elementIds = withRelationshipEndpoints(graph, elementIds, [
+      ...explicitRelationshipIds,
+      ...relationshipIdsTouchingElements(graph, elementIds,
+          normalized.filters.relationshipKinds)
+    ]);
     normalized.nodes = layoutNodesForElements(graph, elementIds,
         normalized.nodes, typeKey);
   }
@@ -1100,6 +1164,27 @@ function installGraph(graph) {
   rebuildGraphIndexes(state.graph);
 }
 
+function mainViewId(typeKey) {
+  return `view-${typeKey}-main`;
+}
+
+function preferredDefaultViewId(byId, typeKey) {
+  const mainId = mainViewId(typeKey);
+  const views = [...byId.values()];
+  const contentfulNonMain = views.find((view) => view.id !== mainId
+      && !view.scope?.rootElementId
+      && (safeArray(view.nodes).length || safeArray(view.edges).length));
+  if (contentfulNonMain) {
+    return contentfulNonMain.id;
+  }
+  const anyNonMain = views.find((view) => view.id !== mainId
+      && !view.scope?.rootElementId);
+  if (anyNonMain) {
+    return anyNonMain.id;
+  }
+  return byId.has(mainId) ? mainId : byId.keys().next().value || null;
+}
+
 function installViews(views, activeViewId, typeKey = state.activeType,
     modelName = "") {
   const byId = new Map();
@@ -1111,8 +1196,7 @@ function installViews(views, activeViewId, typeKey = state.activeType,
         (view) => byId.set(view.id, view));
   }
   const resolvedActive = byId.has(activeViewId) ? activeViewId
-      : byId.has(`view-${typeKey}-main`) ? `view-${typeKey}-main`
-          : byId.keys().next().value || null;
+      : preferredDefaultViewId(byId, typeKey);
   state.views = {
     byId,
     activeViewId: resolvedActive,
@@ -1143,7 +1227,7 @@ export function installGraphAndViews(typeKey, modelJson = {},
   const views = buildViews(typeKey, graph, modelJson || {}, fallbackName);
   const fragments = buildFragments(typeKey, graph, views, modelJson || {});
   installGraph(graph);
-  installViews(views, modelJson?.activeViewId || views[0]?.id || null, typeKey,
+  installViews(views, modelJson?.activeViewId || null, typeKey,
       fallbackName);
   installFragments(fragments);
   return {
@@ -1264,7 +1348,8 @@ function manualBacklogKey(task, index) {
   const elementId = String(task?.elementId || task?.relatedElementId
       || task?.targetElementId || task?.sourceElementId || "").trim()
   .toLowerCase();
-  return `fallback:${index}:${title}:${elementId}`;
+  const category = String(task?.category || "").trim().toLowerCase();
+  return `fallback:${category}:${title}:${elementId}`;
 }
 
 function mergeManualBacklog(primary, secondary) {
@@ -1383,7 +1468,9 @@ export function serializeGraphAndViewsInto(root) {
   const manualBacklog = mergeManualBacklog(root.manualBacklog,
       graph.manualBacklog);
   graph.manualBacklog = manualBacklog.map(clone);
+  graph.validationIssues = [];
   state.graph.manualBacklog = manualBacklog.map(clone);
+  state.graph.validationIssues = [];
   root.graph = graph;
   root.fragments = serializeRuntimeFragments();
   const views = serializeRuntimeViews();
@@ -1397,7 +1484,7 @@ export function serializeGraphAndViewsInto(root) {
       : state.views.activeViewId;
   root.traceLinks = graph.traceLinks;
   root.assumptions = graph.assumptions;
-  root.validationIssues = graph.validationIssues;
+  root.validationIssues = [];
   root.manualBacklog = manualBacklog;
   delete root.diagram;
   if (state.activeType === "cim") {

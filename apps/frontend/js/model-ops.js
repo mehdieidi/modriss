@@ -189,8 +189,7 @@ async function downloadBlobFromResponse(response, fallbackFilename) {
 }
 
 function manualGuidanceIssuesFromModel(modelJson) {
-  const backlog = Array.isArray(modelJson?.manualBacklog)
-      ? modelJson.manualBacklog : [];
+  const backlog = mergedManualBacklogFromModel(modelJson);
   return backlog.map((task, index) => {
     const manualTaskId = manualTaskIdentity(task, index);
     const resolved = String(task?.status || "").toUpperCase() === "DONE";
@@ -226,6 +225,37 @@ function manualGuidanceIssuesFromModel(modelJson) {
           || "Review and complete this manual methodology step before promotion.")
     };
   });
+}
+
+function manualBacklogIdentity(task, index) {
+  const explicitId = String(task?.id || "").trim();
+  if (explicitId) {
+    return `id:${explicitId}`;
+  }
+  const title = String(task?.name || task?.title || "").trim().toLowerCase();
+  const elementId = String(task?.elementId || task?.relatedElementId
+      || task?.targetElementId || task?.sourceElementId || "").trim()
+  .toLowerCase();
+  const category = String(task?.category || "").trim().toLowerCase();
+  return `fallback:${category}:${title}:${elementId}`;
+}
+
+function mergedManualBacklogFromModel(modelJson) {
+  const merged = [];
+  const seen = new Set();
+  [
+    ...(Array.isArray(modelJson?.manualBacklog) ? modelJson.manualBacklog : []),
+    ...(Array.isArray(modelJson?.graph?.manualBacklog)
+        ? modelJson.graph.manualBacklog : [])
+  ].forEach((task, index) => {
+    const key = manualBacklogIdentity(task, index);
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    merged.push(task);
+  });
+  return merged;
 }
 
 function manualTaskIdentity(task, index) {
@@ -275,9 +305,13 @@ function sanitizeManualTaskKey(value) {
 }
 
 function ensureManualBacklogIdentity(model) {
-  if (!model || !Array.isArray(model.manualBacklog)) {
+  if (!model) {
     return;
   }
+  const backlog = mergedManualBacklogFromModel(model);
+  model.manualBacklog = backlog;
+  model.graph ??= {};
+  model.graph.manualBacklog = backlog.map((task) => structuredClone(task));
   model.manualBacklog.forEach((task, index) => {
     if (!task || typeof task !== "object") {
       return;
@@ -303,6 +337,17 @@ function stripServerTransportFields(model) {
 function manualGuidanceIssuesFromCurrentModel() {
   ensureManualBacklogIdentity(state.baseModel);
   return manualGuidanceIssuesFromModel(state.baseModel || {});
+}
+
+function storedValidationIssuesFromCurrentModel() {
+  const model = state.baseModel || {};
+  if (Array.isArray(model.validationIssues)) {
+    return structuredClone(model.validationIssues);
+  }
+  if (Array.isArray(model.graph?.validationIssues)) {
+    return structuredClone(model.graph.validationIssues);
+  }
+  return [];
 }
 
 function mergeIssuesWithManualGuidance(issues) {
@@ -362,19 +407,23 @@ async function setManualTaskResolved(manualTaskId, resolved) {
 
 function applyManualGuidanceFromLoadedModel() {
   const modelJson = state.baseModel;
+  const backendIssues = storedValidationIssuesFromCurrentModel();
   const allGuidanceIssues = manualGuidanceIssuesFromModel(modelJson);
-  if (!allGuidanceIssues.length) {
+  const mergedIssues = mergeIssuesWithManualGuidance(backendIssues);
+  if (!mergedIssues.length) {
     return;
   }
   const openGuidanceIssues = allGuidanceIssues.filter((item) => !item.resolved);
-  applyValidationIssues([...openGuidanceIssues,
-    ...allGuidanceIssues.filter((item) => item.resolved)], {openOnFirst: true});
+  applyValidationIssues(mergedIssues, {openOnFirst: true});
   toggleValidationDrawer(true);
+  const warningCount = mergedIssues.filter(
+      (item) => String(item?.severity || "").toUpperCase()
+          === "WARNING").length;
   const requiredCount = openGuidanceIssues.filter(
       (item) => item.severity === "ERROR").length;
   const optionalCount = openGuidanceIssues.length - requiredCount;
   setStatus(
-      `Generated model includes ${requiredCount} required and ${optionalCount} optional manual task(s).`);
+      `Generated model includes ${warningCount} warning(s), ${requiredCount} required and ${optionalCount} optional manual task(s).`);
 }
 
 export function getActiveModelName() {
@@ -428,6 +477,46 @@ export async function reloadModels() {
   }
 }
 
+async function updateExistingModelWithPayload(payload) {
+  const updated = await api(
+      `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`, {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      });
+  state.modelRevision = Number(updated?.revision) || state.modelRevision;
+  return updated;
+}
+
+function waitForSaveIndicatorPaint() {
+  if (typeof window === "undefined"
+      || typeof window.requestAnimationFrame !== "function") {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => window.setTimeout(resolve, 0));
+  });
+}
+
+async function waitForCanvasPaint(frames = 2) {
+  if (typeof window === "undefined"
+      || typeof window.requestAnimationFrame !== "function") {
+    return;
+  }
+  for (let index = 0; index < frames; index += 1) {
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  }
+}
+
+function buildSavePayload(selectedName) {
+  syncActiveViewFromVisibleGraph();
+  return {
+    name: selectedName,
+    model: serializeModel(),
+    projectId: state.project?.id || null,
+    expectedRevision: state.modelRevision || 1
+  };
+}
+
 // ── Save / Load model ─────────────────────────────────────────────────────────
 
 export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
@@ -439,13 +528,6 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
   }
   const selectedName = getActiveModelName();
   setActiveModelName(selectedName);
-  syncActiveViewFromVisibleGraph();
-  const payload = {
-    name: selectedName,
-    model: serializeModel(),
-    projectId: state.project?.id || null,
-    expectedRevision: state.modelRevision || 1
-  };
 
   const doBusy = !quiet;
   try {
@@ -454,26 +536,32 @@ export async function saveCurrentModel({rethrow = false, quiet = false} = {}) {
     }
     if (doBusy) {
       setBusy("Saving…");
+      await waitForSaveIndicatorPaint();
     }
     if (state.modelId) {
-      const updated = await flushCurrentModelPatch({
-        name: payload.name,
+      let updated = await flushCurrentModelPatch({
+        name: selectedName,
         rethrow: true
       });
+      let savedModel = null;
       if (!updated) {
-        throw new Error(
-            "Model changes could not be represented as patch operations.");
+        const payload = buildSavePayload(selectedName);
+        savedModel = payload.model;
+        updated = await updateExistingModelWithPayload(payload);
       }
       if (updated && typeof updated === "object") {
         state.modelRevision = Number(updated.revision) || state.modelRevision;
       }
-      state.baseModel = stripServerTransportFields(structuredClone(
-          payload.model));
-      setActiveModelName(updated?.name || payload.name);
+      if (savedModel) {
+        state.baseModel = stripServerTransportFields(structuredClone(
+            savedModel));
+      }
+      setActiveModelName(updated?.name || selectedName);
       if (!quiet) {
         setStatus(`Model saved`);
       }
     } else {
+      const payload = buildSavePayload(selectedName);
       const created = await api(`/${MODEL_TYPES[state.activeType].apiType}`, {
         method: "POST",
         body: JSON.stringify(payload)
@@ -857,6 +945,26 @@ export function updateGenerateButtonState() {
   el.generateContextBtn.title = buttonConfig.title;
 }
 
+async function autoLayoutGeneratedModel(label) {
+  try {
+    await autoLayoutCurrentDiagram({
+      progress: false,
+      save: false,
+      publish: false,
+      status: false,
+      busy: false,
+      rethrow: true,
+      preserveExistingPositions: false
+    });
+    renderDiagram();
+    await waitForCanvasPaint();
+    centerViewportOnDiagram({fit: true});
+    return "";
+  } catch (error) {
+    return error.message || `${label} auto layout failed.`;
+  }
+}
+
 export async function generateCimToPim() {
   if (state.activeType !== "cim" || !state.modelId) {
     if (state.activeType !== "cim") {
@@ -883,9 +991,14 @@ export async function generateCimToPim() {
       await loadModelById("pim", result.resultModelId,
           {showManualGuidance: true});
     }
-    setGenerationProgressPhase("Opening the generated PIM model…", 92);
+    setGenerationProgressPhase("Arranging and fitting the generated PIM…", 84);
+    const layoutWarning = await autoLayoutGeneratedModel("PIM");
+    setGenerationProgressPhase("Opening the generated PIM model…", 94);
     await completeGenerationProgress("PIM ready.");
-    if (!state.validation.issues.length) {
+    if (layoutWarning) {
+      setStatus(
+          `PIM generated and loaded, but auto layout failed: ${layoutWarning}`);
+    } else if (!state.validation.issues.length) {
       setStatus("PIM generated and loaded");
     }
   } catch (error) {
@@ -938,9 +1051,14 @@ export async function generatePimToPsm() {
       await loadModelById("psm", result.resultModelId,
           {showManualGuidance: true});
     }
-    setGenerationProgressPhase("Opening the generated PSM model…", 92);
+    setGenerationProgressPhase("Arranging and fitting the generated PSM…", 84);
+    const layoutWarning = await autoLayoutGeneratedModel("PSM");
+    setGenerationProgressPhase("Opening the generated PSM model…", 94);
     await completeGenerationProgress("PSM ready.");
-    if (!state.validation.issues.length) {
+    if (layoutWarning) {
+      setStatus(
+          `PSM generated and loaded, but auto layout failed: ${layoutWarning}`);
+    } else if (!state.validation.issues.length) {
       setStatus("PSM generated and loaded");
     }
   } catch (error) {
@@ -1309,6 +1427,7 @@ export async function autoLayoutCurrentDiagram({
 
     renderDiagram();
     renderViewWorkbench();
+    await waitForCanvasPaint();
     centerViewportOnDiagram({fit: true});
     if (save) {
       if (progress) {

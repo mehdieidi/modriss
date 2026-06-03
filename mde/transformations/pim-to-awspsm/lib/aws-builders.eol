@@ -318,6 +318,7 @@ operation createLogGroupFor(source, logicalSeed : String, logName : String) {
   g.tags.add(tag("Service", owningServiceName(source)));
   g.tags.add(tag("Owner", owningOwnerTeam(source)));
   g.tags.add(tag("Environment", defaultStageName()));
+  applyProductionDefaults(g);
   if (isProductionRoot()) {
     g.retentionDays = 90;
   }
@@ -631,6 +632,7 @@ operation generateRelationshipViews() {
       v.route = route;
       setFeature(v, "function", route.integration.lambdaTarget);
       v.integration = route.integration;
+      v.permission = cachedLambdaPermissionByKey.get("ApiGatewayInvoke::apigateway.amazonaws.com::" + route.integration.lambdaTarget.logicalId);
       awsRoot().relationshipViews.add(v);
     }
   }
