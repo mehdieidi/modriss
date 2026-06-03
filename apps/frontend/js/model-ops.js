@@ -26,7 +26,12 @@ import {
   scrollToConnectionAndHighlight,
   scrollToNodeAndHighlight
 } from './canvas.js';
-import {resolveNodeOverlaps} from './layout-engine.js';
+import {
+  deterministicLayoutResponse,
+  isBrowserElkAvailable,
+  layoutWithBrowserElk,
+  resolveNodeOverlaps
+} from './layout-engine.js';
 import {closeAttributePanel} from './attr-panel.js';
 import {closeImpactPanel} from './impact.js';
 import {refreshGithubConnection} from './github.js';
@@ -359,11 +364,15 @@ function mergeIssuesWithManualGuidance(issues) {
   const seen = new Set();
   const merged = [];
   [...baseIssues, ...manualIssues].forEach((issue) => {
-    const key = [
-      String(issue?.constraint || issue?.code || ""),
-      String(issue?.elementId || ""),
-      String(issue?.message || "")
-    ].join("::");
+    const manualTaskId = String(issue?.manualTaskId || "").trim();
+    const issueClass = String(issue?.issueClass || "");
+    const key = manualTaskId && issueClass.startsWith("MANUAL_")
+        ? `manual::${manualTaskId}`
+        : [
+          String(issue?.constraint || issue?.code || ""),
+          String(issue?.elementId || ""),
+          String(issue?.message || "")
+        ].join("::");
     if (seen.has(key)) {
       return;
     }
@@ -1365,12 +1374,21 @@ export async function autoLayoutCurrentDiagram({
       setBusy("Auto layout…");
     }
     if (progress) {
-      setGenerationProgressPhase("Computing layout…", 46);
+      setGenerationProgressPhase(isBrowserElkAvailable()
+          ? "Computing browser layout…" : "Preparing fallback layout…", 46);
     }
-    const response = await api("/layout", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
+    let response;
+    try {
+      response = isBrowserElkAvailable()
+          ? await layoutWithBrowserElk(payload)
+          : deterministicLayoutResponse(payload, nodeSize);
+    } catch (layoutError) {
+      response = deterministicLayoutResponse(payload, nodeSize);
+      response.warnings = [
+        ...(Array.isArray(response.warnings) ? response.warnings : []),
+        `Browser elkjs layout failed: ${layoutError.message}`
+      ];
+    }
     const nodesById = new Map(
         (response.nodes || []).map((node) => [node.id, node]));
     const edgesById = new Map(
@@ -1410,12 +1428,12 @@ export async function autoLayoutCurrentDiagram({
       const targetNode = layoutNodesById.get(edge.targetId);
       const presentation = edgePresentationFromLayout(layoutData, sourceNode,
           targetNode);
-      edge.pinPoints = [];
+      edge.pinPoints = presentation.pinPoints;
       edge.sourceAnchor = presentation.sourceAnchor;
       edge.targetAnchor = presentation.targetAnchor;
       delete edge.layout;
       saveStoredEdgeLayout(state.activeType, edge.id, {
-        pinPoints: [],
+        pinPoints: presentation.pinPoints,
         sourceAnchor: presentation.sourceAnchor,
         targetAnchor: presentation.targetAnchor
       });
@@ -1545,12 +1563,11 @@ export async function importActiveModel(file, format = "json",
   const normalizedFormat = String(format || "json").toLowerCase();
   const formData = new FormData();
   formData.append("file", file);
-  let layoutWarning = "";
   try {
     showGenerationProgress({
       kicker: "Import in Progress",
       title: "Importing model",
-      subtitle: "Loading the file, arranging the diagram, and preparing the canvas.",
+      subtitle: "Loading the file and preparing the canvas.",
       label: "Uploading model file…"
     });
     setBusy("Importing model…");
@@ -1602,20 +1619,7 @@ export async function importActiveModel(file, format = "json",
     }
     setActiveModelName(body.name || defaultModelName());
 
-    setGenerationProgressPhase("Arranging imported model…", 68);
-    try {
-      await autoLayoutCurrentDiagram({
-        progress: false,
-        save: false,
-        publish: false,
-        status: false,
-        busy: false,
-        rethrow: true,
-        preserveExistingPositions: false
-      });
-    } catch (error) {
-      layoutWarning = error.message;
-    }
+    setGenerationProgressPhase("Preparing imported model…", 68);
     renderDiagram();
     renderViewWorkbench();
     centerCurrentDiagram();
@@ -1644,9 +1648,8 @@ export async function importActiveModel(file, format = "json",
       return;
     }
     clearValidationIssues({keepPanelState: false});
-    setStatus(layoutWarning
-        ? `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}, but auto layout failed: ${layoutWarning}`
-        : `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}`);
+    setStatus(
+        `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}`);
   } finally {
     hideGenerationProgress();
   }

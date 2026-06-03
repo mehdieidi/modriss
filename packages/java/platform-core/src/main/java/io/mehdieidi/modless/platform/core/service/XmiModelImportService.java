@@ -62,7 +62,9 @@ final class XmiModelImportService {
             try (ByteArrayInputStream input = new ByteArrayInputStream(bytes)) {
                 resource.load(input, Map.of());
             }
+            assertNoLoadErrors(resource);
             EcoreUtil.resolveAll(resourceSet);
+            assertNoLoadErrors(resource);
             List<EObject> roots = resource.getContents().stream()
                     .filter(EObject.class::isInstance)
                     .map(EObject.class::cast)
@@ -156,6 +158,18 @@ final class XmiModelImportService {
             resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
         }
         ePackage.getESubpackages().forEach(child -> registerPackage(resourceSet, child));
+    }
+
+    private void assertNoLoadErrors(Resource resource) {
+        if (resource.getErrors().isEmpty()) {
+            return;
+        }
+        Resource.Diagnostic diagnostic = resource.getErrors().get(0);
+        String location = diagnostic.getLine() > 0
+                ? " at line " + diagnostic.getLine() + ", column " + diagnostic.getColumn()
+                : "";
+        throw new PlatformException(400, "Uploaded XMI does not conform to the metamodel"
+                + location + ": " + diagnostic.getMessage());
     }
 
     private void validateRoot(ModelLevel level, EObject root) {
@@ -788,7 +802,23 @@ final class XmiModelImportService {
             if (!element.has("label") && element.hasNonNull("name")) {
                 element.set("label", element.get("name").deepCopy());
             }
+            copyLayoutAnnotation(semanticNode, element, "modless.layout.x", "x");
+            copyLayoutAnnotation(semanticNode, element, "modless.layout.y", "y");
             return element;
+        }
+
+        private void copyLayoutAnnotation(ObjectNode semanticNode, ObjectNode element,
+                String key, String fieldName) {
+            JsonNode annotations = semanticNode.path("annotations");
+            if (!annotations.isArray()) {
+                return;
+            }
+            for (JsonNode annotation : annotations) {
+                if (key.equals(annotation.path("key").asText())) {
+                    element.put(fieldName, annotation.path("value").asDouble());
+                    return;
+                }
+            }
         }
 
         private void captureGraphRelationship(EObject object, ObjectNode semanticNode) {
@@ -973,7 +1003,7 @@ final class XmiModelImportService {
                 case "ApiGatewayLambdaIntegrationView" -> "INVOKES";
                 case "EventBridgeLambdaTargetView" -> "TARGETS";
                 case "SnsLambdaSubscriptionView", "SqsLambdaEventSourceView",
-                        "S3LambdaNotificationView", "S3TopicNotificationView" -> "EVENT_FLOW";
+                     "S3LambdaNotificationView", "S3TopicNotificationView" -> "EVENT_FLOW";
                 case "S3QueueNotificationView" -> "MESSAGE_FLOW";
                 case "StepFunctionEventBridgeTargetView" -> "INVOKES";
                 default -> relationshipClassKind(value);

@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.backend.config;
 
+import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
 import io.mehdieidi.modless.platform.core.service.ArtifactService;
 import io.mehdieidi.modless.platform.core.service.AuthService;
@@ -51,7 +52,11 @@ public class CoreServicesConfig {
 
     @Bean
     MetamodelResolver metamodelResolver(MdeRuntimePaths paths) {
-        return new FileMetamodelResolver(paths);
+        FileMetamodelResolver resolver = new FileMetamodelResolver(paths);
+        for (ModelLevel level : ModelLevel.values()) {
+            resolver.resolve(level);
+        }
+        return resolver;
     }
 
     @Bean

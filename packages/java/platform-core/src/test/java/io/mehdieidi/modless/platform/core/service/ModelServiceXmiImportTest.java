@@ -44,8 +44,8 @@ class ModelServiceXmiImportTest {
         assertEquals("goal-1", result.modelJson().path("capabilities").path(0).path("supports")
                 .path(0).asText());
         assertEquals("CIM", result.modelJson().path("modelLevel").asText());
-        assertTrue(result.modelJson().path("_sourceXmiBase64").isMissingNode());
-        assertFalse(result.modelJson().path("_sourceXmiToken").asText().isBlank());
+        assertFalse(result.modelJson().path("_sourceXmiBase64").asText().isBlank());
+        assertTrue(result.modelJson().path("_sourceXmiToken").isMissingNode());
         assertTrue(result.modelJson().path("diagram").isMissingNode());
 
         assertFalse(result.modelJson().path("graph").path("elements").isEmpty());
@@ -372,8 +372,7 @@ class ModelServiceXmiImportTest {
                 imported);
         service.attachSourceXmi(created, xmi);
 
-        ObjectNode staleJson = (ObjectNode) imported.deepCopy();
-        staleJson.remove("_sourceXmiToken");
+        ObjectNode staleJson = (ObjectNode) created.modelJson().deepCopy();
         ((ObjectNode) staleJson.path("workflows").path(0).path("states").path(0))
                 .put("compensation", "missing-compensation");
         service.update(user, ModelLevel.PIM, created.id(), "pim", staleJson);

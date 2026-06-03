@@ -31,6 +31,7 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -166,9 +167,8 @@ public final class ModelService {
         projectService.requireEditor(project, user.id());
         Instant now = Instant.now();
         JsonNode normalizedModel = normalizeModel(name, level, modelJson);
-        String sourceXmiToken = removeSourceXmiToken(normalizedModel);
         SourceXmiUpdate sourceXmi = sourceXmiBytes == null || sourceXmiBytes.length == 0
-                ? resolveSourceXmiUpdate(user, projectId, level, sourceXmiToken, false)
+                ? resolveSourceXmiUpdate(user, projectId, level, normalizedModel, false)
                 : new SourceXmiUpdate(sourceXmiBytes, hashBytes(sourceXmiBytes), null);
         sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
         MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
@@ -192,10 +192,10 @@ public final class ModelService {
             ProjectRecord project = projectService.get(user, existing.projectId());
             projectService.requireEditor(project, user.id());
             JsonNode normalizedModel = normalizeModel(name, level, modelJson);
-            String sourceXmiToken = removeSourceXmiToken(normalizedModel);
             SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
-                    level, sourceXmiToken, true);
-            if (!(sourceXmi.shouldPreserve() && sourceXmi(existing).isPresent())) {
+                    level, normalizedModel, true);
+            if (!(sourceXmi.shouldPreserve() && sourceXmi(existing).isPresent()
+                    && !hasDiagramLayout(normalizedModel))) {
                 sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
             }
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
@@ -232,10 +232,10 @@ public final class ModelService {
             }
             JsonNode normalizedModel = normalizeModel(name == null ? existing.name() : name,
                     level, patchedModel);
-            String sourceXmiToken = removeSourceXmiToken(normalizedModel);
             SourceXmiUpdate sourceXmi = resolveSourceXmiUpdate(user, existing.projectId(),
-                    level, sourceXmiToken, true);
-            if (!(sourceXmi.shouldPreserve() && sourceXmi(existing).isPresent())) {
+                    level, normalizedModel, true);
+            if (!(sourceXmi.shouldPreserve() && sourceXmi(existing).isPresent()
+                    && !hasDiagramLayout(normalizedModel))) {
                 sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
             }
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
@@ -286,19 +286,6 @@ public final class ModelService {
 
     public ValidationResult validateGeneratedXmi(ModelLevel level, byte[] xmiBytes) {
         List<ValidationIssue> issues = validateWithEvl(level, xmiBytes);
-        boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
-        return new ValidationResult(valid, issues);
-    }
-
-    private ValidationResult validateImportedXmi(ModelLevel level, JsonNode modelJson,
-            byte[] xmiBytes) {
-        if (xmiBytes == null || xmiBytes.length == 0) {
-            return validate(level, modelJson);
-        }
-        List<ValidationIssue> issues = new ArrayList<>(validateWithEvl(level, xmiBytes));
-        if (level == ModelLevel.CIM) {
-            issues.addAll(validateCimModel(modelJson));
-        }
         boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
         return new ValidationResult(valid, issues);
     }
@@ -658,14 +645,15 @@ public final class ModelService {
                 default -> throw new PlatformException(400,
                         "Unsupported import format. Use JSON or XMI.");
             };
-            if ("xmi".equals(normalizedFormat) && model instanceof ObjectNode objectModel) {
-                objectModel.put("_sourceXmiToken", stageSourceXmi(user, projectId, level, bytes));
-            }
             String name = fileName == null || fileName.isBlank() ? level.apiName() + "-model"
                     : fileName.replaceFirst("\\.[^.]+$", "");
             JsonNode normalizedModel = normalizeModel(name, level, model);
+            if ("xmi".equals(normalizedFormat)
+                    && normalizedModel instanceof ObjectNode objectModel) {
+                objectModel.put("_sourceXmiBase64", Base64.getEncoder().encodeToString(bytes));
+            }
             ValidationResult validation = "xmi".equals(normalizedFormat)
-                    ? validateImportedXmi(level, normalizedModel, bytes)
+                    ? new ValidationResult(true, List.of())
                     : validate(level, normalizedModel);
             return new ImportResult(name, normalizedModel, validation.issues());
         } catch (PlatformException ex) {
@@ -754,7 +742,6 @@ public final class ModelService {
         if (!copy.hasNonNull("modelLevel")) {
             copy.put("modelLevel", level.name());
         }
-        stripTransportOnlyFields(copy);
         return copy;
     }
 
@@ -797,11 +784,95 @@ public final class ModelService {
 
     private SourceXmiUpdate canonicalSourceXmi(ModelLevel level, JsonNode modelJson,
             SourceXmiUpdate requestedSourceXmi) {
-        if (requestedSourceXmi != null && requestedSourceXmi.bytes() != null) {
+        if (requestedSourceXmi != null && requestedSourceXmi.bytes() != null
+                && !hasDiagramLayout(modelJson)) {
             return requestedSourceXmi;
         }
-        byte[] bytes = xmiImportService.exportModel(level, hydrateSemanticReferences(modelJson));
+        byte[] bytes = xmiImportService.exportModel(level,
+                hydrateSemanticReferences(withLayoutAnnotations(modelJson)));
         return new SourceXmiUpdate(bytes, hashBytes(bytes), null);
+    }
+
+    private boolean hasDiagramLayout(JsonNode modelJson) {
+        JsonNode elements = modelJson == null ? null : modelJson.path("diagram").path("elements");
+        if (elements == null || !elements.isArray()) {
+            return false;
+        }
+        for (JsonNode element : elements) {
+            if ((element.hasNonNull("x") || element.hasNonNull("y"))
+                    && !text(element, "id", "").isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private JsonNode withLayoutAnnotations(JsonNode modelJson) {
+        if (!(modelJson instanceof ObjectNode)) {
+            return modelJson;
+        }
+        Map<String, JsonNode> layoutById = new LinkedHashMap<>();
+        JsonNode elements = modelJson.path("diagram").path("elements");
+        if (elements.isArray()) {
+            elements.forEach(element -> {
+                String id = text(element, "id", "");
+                if (!id.isBlank() && (element.hasNonNull("x") || element.hasNonNull("y"))) {
+                    layoutById.put(id, element);
+                }
+            });
+        }
+        if (layoutById.isEmpty()) {
+            return modelJson;
+        }
+        ObjectNode copy = (ObjectNode) modelJson.deepCopy();
+        applyLayoutAnnotations(copy, layoutById);
+        return copy;
+    }
+
+    private void applyLayoutAnnotations(JsonNode node, Map<String, JsonNode> layoutById) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node instanceof ObjectNode objectNode) {
+            String id = text(objectNode, "id", "");
+            JsonNode layout = layoutById.get(id);
+            if (layout != null && !"Annotation".equals(text(objectNode, "eClass", ""))) {
+                mergeLayoutAnnotations(objectNode, layout);
+            }
+            objectNode.fields().forEachRemaining(entry ->
+                    applyLayoutAnnotations(entry.getValue(), layoutById));
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(child -> applyLayoutAnnotations(child, layoutById));
+        }
+    }
+
+    private void mergeLayoutAnnotations(ObjectNode element, JsonNode layout) {
+        ArrayNode annotations = element.withArray("annotations");
+        ArrayNode retained = store.objectMapper().createArrayNode();
+        annotations.forEach(annotation -> {
+            String key = text(annotation, "key", "");
+            if (!"modless.layout.x".equals(key) && !"modless.layout.y".equals(key)) {
+                retained.add(annotation.deepCopy());
+            }
+        });
+        if (layout.hasNonNull("x")) {
+            retained.add(layoutAnnotation("modless.layout.x", layout.path("x").asText()));
+        }
+        if (layout.hasNonNull("y")) {
+            retained.add(layoutAnnotation("modless.layout.y", layout.path("y").asText()));
+        }
+        element.set("annotations", retained);
+    }
+
+    private ObjectNode layoutAnnotation(String key, String value) {
+        ObjectNode annotation = store.objectMapper().createObjectNode();
+        annotation.put("eClass", "Annotation");
+        annotation.put("key", key);
+        annotation.put("value", value);
+        annotation.put("source", "modless.ui");
+        return annotation;
     }
 
     private ModelRecord clientRecord(ModelRecord model) {
@@ -893,7 +964,12 @@ public final class ModelService {
     }
 
     private SourceXmiUpdate resolveSourceXmiUpdate(UserRecord user, String projectId,
-            ModelLevel level, String token, boolean preserveExistingWhenMissing) {
+            ModelLevel level, JsonNode modelJson, boolean preserveExistingWhenMissing) {
+        byte[] inlineBytes = removeSourceXmiBase64(modelJson);
+        if (inlineBytes != null && inlineBytes.length > 0) {
+            return new SourceXmiUpdate(inlineBytes, hashBytes(inlineBytes), null);
+        }
+        String token = removeSourceXmiToken(modelJson);
         if (token == null || token.isBlank()) {
             return preserveExistingWhenMissing ? SourceXmiUpdate.preserveUpdate()
                     : SourceXmiUpdate.deleteUpdate();
@@ -926,6 +1002,22 @@ public final class ModelService {
             return new SourceXmiUpdate(bytes, hashBytes(bytes), record);
         } catch (Exception ex) {
             throw new PlatformException(500, "Could not read staged source XMI.");
+        }
+    }
+
+    private byte[] removeSourceXmiBase64(JsonNode modelJson) {
+        if (!(modelJson instanceof ObjectNode objectNode)) {
+            return null;
+        }
+        String encoded = text(objectNode, "_sourceXmiBase64", "");
+        objectNode.remove("_sourceXmiBase64");
+        if (encoded.isBlank()) {
+            return null;
+        }
+        try {
+            return Base64.getDecoder().decode(encoded);
+        } catch (IllegalArgumentException ex) {
+            throw new PlatformException(400, "Imported source XMI payload is not valid base64.");
         }
     }
 

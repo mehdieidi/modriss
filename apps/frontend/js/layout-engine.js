@@ -5,6 +5,9 @@ const CIM_NODE_H = 96;
 const LAYOUT_MARGIN = 48;
 const GAP_X = 72;
 const GAP_Y = 56;
+const ELK_ALGORITHM_LAYERED = "layered";
+
+let elkInstance = null;
 
 function numeric(value, fallback = 0) {
   const parsed = Number(value);
@@ -75,6 +78,180 @@ function clampPosition(position, options = {}) {
     x: Math.max(numeric(options.minX, LAYOUT_MARGIN), Math.round(position.x)),
     y: Math.max(numeric(options.minY, LAYOUT_MARGIN), Math.round(position.y))
   };
+}
+
+function browserElk() {
+  if (elkInstance) {
+    return elkInstance;
+  }
+  const ElkConstructor = window.ELK || window.Elk;
+  if (!ElkConstructor) {
+    return null;
+  }
+  elkInstance = new ElkConstructor();
+  return elkInstance;
+}
+
+function normalizeLayoutPoint(point) {
+  const x = Number(point?.x);
+  const y = Number(point?.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return null;
+  }
+  return {x: Math.round(x), y: Math.round(y)};
+}
+
+function portId(nodeId, localPortId) {
+  return `${nodeId}:${localPortId}`;
+}
+
+function elkDirection(profile = "") {
+  const normalized = String(profile || "").toUpperCase();
+  if (normalized.includes("DOWN")) {
+    return "DOWN";
+  }
+  if (normalized.includes("UP")) {
+    return "UP";
+  }
+  if (normalized.includes("LEFT")) {
+    return "LEFT";
+  }
+  return "RIGHT";
+}
+
+function elkLayoutOptions({
+  profile = "",
+  nodeSpacing = DEFAULT_NODE_SPACING,
+  layerSpacing = DEFAULT_LAYER_SPACING
+} = {}) {
+  return {
+    "elk.algorithm": ELK_ALGORITHM_LAYERED,
+    "elk.direction": elkDirection(profile),
+    "elk.edgeRouting": "ORTHOGONAL",
+    "elk.padding": `[top=${LAYOUT_MARGIN},left=${LAYOUT_MARGIN},bottom=${LAYOUT_MARGIN},right=${LAYOUT_MARGIN}]`,
+    "elk.spacing.nodeNode": String(Math.max(96, numeric(nodeSpacing, 112))),
+    "elk.spacing.edgeEdge": "28",
+    "elk.spacing.edgeNode": "36",
+    "elk.spacing.portPort": "18",
+    "elk.layered.spacing.nodeNodeBetweenLayers": String(
+        Math.max(172, numeric(layerSpacing, 188))),
+    "elk.layered.spacing.edgeNodeBetweenLayers": "42",
+    "elk.layered.spacing.edgeEdgeBetweenLayers": "32",
+    "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
+    "elk.layered.crossingMinimization.greedySwitch.type": "TWO_SIDED",
+    "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+    "elk.layered.nodePlacement.favorStraightEdges": "true",
+    "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",
+    "elk.layered.thoroughness": "12",
+    "elk.layered.mergeEdges": "false",
+    "elk.separateConnectedComponents": "true",
+    "elk.portConstraints": "FIXED_SIDE",
+    "elk.portAlignment.default": "JUSTIFIED",
+    "elk.hierarchyHandling": "INCLUDE_CHILDREN"
+  };
+}
+
+function semanticPortSide(port) {
+  const normalized = String(port?.id || "").toLowerCase();
+  if (normalized.endsWith("-in") || normalized.startsWith("in-")
+      || normalized.includes("input") || normalized === "flow-in"
+      || normalized === "resource-in") {
+    return "WEST";
+  }
+  return "EAST";
+}
+
+function toElkGraph({
+  viewId = "modless-view",
+  profile = "DEFAULT_LAYERED",
+  options = {},
+  nodes = [],
+  edges = []
+} = {}) {
+  const nodeIds = new Set(nodes.map((node) => String(node.id || "")));
+  return {
+    id: viewId || "modless-view",
+    layoutOptions: elkLayoutOptions({
+      profile,
+      nodeSpacing: options.nodeSpacing,
+      layerSpacing: options.layerSpacing
+    }),
+    children: nodes.map((node) => ({
+      id: node.id,
+      width: Math.max(1, numeric(node.width, DEFAULT_NODE_W)),
+      height: Math.max(1, numeric(node.height, DEFAULT_NODE_H)),
+      labels: node.label ? [{text: String(node.label)}] : [],
+      ports: (Array.isArray(node.ports) ? node.ports : []).map((port) => ({
+        id: portId(node.id, port.id),
+        width: Math.max(1, numeric(port.width, 10)),
+        height: Math.max(1, numeric(port.height, 10)),
+        labels: port.label ? [{text: String(port.label)}] : [],
+        layoutOptions: {
+          "elk.port.side": semanticPortSide(port)
+        }
+      }))
+    })),
+    edges: edges.filter((edge) => nodeIds.has(edge.sourceNodeId)
+        && nodeIds.has(edge.targetNodeId)
+        && edge.sourceNodeId !== edge.targetNodeId).map((edge) => ({
+      id: edge.id,
+      sources: [edge.sourcePortId
+          ? portId(edge.sourceNodeId, edge.sourcePortId)
+          : edge.sourceNodeId],
+      targets: [edge.targetPortId
+          ? portId(edge.targetNodeId, edge.targetPortId)
+          : edge.targetNodeId],
+      labels: edge.label ? [{text: String(edge.label)}] : []
+    }))
+  };
+}
+
+function normalizeElkResponse(layout) {
+  const children = Array.isArray(layout?.children) ? layout.children : [];
+  const minX = Math.min(...children.map((node) => numeric(node.x,
+      LAYOUT_MARGIN)), LAYOUT_MARGIN);
+  const minY = Math.min(...children.map((node) => numeric(node.y,
+      LAYOUT_MARGIN)), LAYOUT_MARGIN);
+  const shiftX = Math.round(LAYOUT_MARGIN - minX);
+  const shiftY = Math.round(LAYOUT_MARGIN - minY);
+  const shiftPoint = (point) => point ? {
+    x: Math.round(point.x + shiftX),
+    y: Math.round(point.y + shiftY)
+  } : null;
+
+  const nodes = children.map((node) => ({
+    id: node.id,
+    x: Math.round(numeric(node.x) + shiftX),
+    y: Math.round(numeric(node.y) + shiftY),
+    width: numeric(node.width, DEFAULT_NODE_W),
+    height: numeric(node.height, DEFAULT_NODE_H)
+  }));
+  const edges = (Array.isArray(layout?.edges) ? layout.edges : []).map(
+      (edge) => {
+        const sections = (Array.isArray(edge.sections) ? edge.sections : [])
+        .map((section) => {
+          const startPoint = shiftPoint(normalizeLayoutPoint(
+              section.startPoint));
+          const endPoint = shiftPoint(normalizeLayoutPoint(section.endPoint));
+          if (!startPoint || !endPoint) {
+            return null;
+          }
+          const bendPoints = (Array.isArray(section.bendPoints)
+              ? section.bendPoints : []).map(normalizeLayoutPoint)
+          .filter(Boolean).map(shiftPoint);
+          return {startPoint, endPoint, bendPoints};
+        }).filter(Boolean);
+        return {
+          id: edge.id,
+          sections,
+          bendPoints: sections.flatMap((section) => section.bendPoints)
+        };
+      });
+  return {nodes, edges, warnings: []};
+}
+
+export function isBrowserElkAvailable() {
+  return Boolean(browserElk()?.layout);
 }
 
 function candidateScore(dx, dy, preferDx, preferDy) {
@@ -342,6 +519,73 @@ export function applyDeterministicLayout(nodes, edges = [], nodeSize,
   resolveNodeOverlaps(nodes, size, options).forEach((id) => movedNodeIds.add(
       id));
   return movedNodeIds;
+}
+
+export async function layoutWithBrowserElk(request = {}) {
+  const elk = browserElk();
+  if (!elk?.layout) {
+    throw new Error("elkjs is not loaded in the browser.");
+  }
+  const graph = toElkGraph(request);
+  const layout = await elk.layout(graph);
+  return normalizeElkResponse(layout);
+}
+
+export function deterministicLayoutResponse(request = {}, nodeSize) {
+  const nodes = (Array.isArray(request.nodes) ? request.nodes : []).map(
+      (node) => ({
+        id: node.id,
+        label: node.label,
+        x: numeric(node.x, LAYOUT_MARGIN),
+        y: numeric(node.y, LAYOUT_MARGIN)
+      }));
+  const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
+  const edges = (Array.isArray(request.edges) ? request.edges : []).map(
+      (edge) => ({
+        id: edge.id,
+        sourceId: edge.sourceNodeId,
+        targetId: edge.targetNodeId
+      })).filter((edge) => nodeLookup.has(edge.sourceId)
+      && nodeLookup.has(edge.targetId));
+  applyDeterministicLayout(nodes, edges, nodeSize, {
+    gapX: numeric(request.options?.nodeSpacing, GAP_X),
+    gapY: numeric(request.options?.layerSpacing, GAP_Y)
+  });
+  const size = normalizeNodeSize(nodeSize);
+  return {
+    nodes: nodes.map((node) => ({
+      id: node.id,
+      x: node.x,
+      y: node.y,
+      width: size.width,
+      height: size.height
+    })),
+    edges: edges.map((edge) => {
+      const source = nodeLookup.get(edge.sourceId);
+      const target = nodeLookup.get(edge.targetId);
+      const startPoint = {
+        x: Math.round(source.x + size.width),
+        y: Math.round(source.y + size.height / 2)
+      };
+      const endPoint = {
+        x: Math.round(target.x),
+        y: Math.round(target.y + size.height / 2)
+      };
+      const midX = Math.round((startPoint.x + endPoint.x) / 2);
+      const needsBends = Math.abs(endPoint.x - startPoint.x) > 80
+          && Math.abs(endPoint.y - startPoint.y) > 30;
+      const bendPoints = needsBends ? [
+        {x: midX, y: startPoint.y},
+        {x: midX, y: endPoint.y}
+      ] : [];
+      return {
+        id: edge.id,
+        sections: [{startPoint, endPoint, bendPoints}],
+        bendPoints
+      };
+    }),
+    warnings: ["Browser elkjs was unavailable; used deterministic fallback layout."]
+  };
 }
 
 export function ensureReadableLayout(nodes, edges = [], nodeSize,

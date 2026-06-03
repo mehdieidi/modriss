@@ -542,8 +542,6 @@ public final class TransformationService {
         ArrayNode backlog = store.objectMapper().createArrayNode();
         JsonNode readiness = model.path("readiness");
         appendManualDecisionTasks(backlog, readiness.path("manualDecisions"));
-        appendFindingTasks(backlog, readiness.path("findings"));
-        appendFailedCheckTasks(backlog, readiness.path("checks"));
         if (backlog.isEmpty()) {
             backlog.add(manualTask("review-generated-pim",
                     "Review generated PIM responsibilities and integration contracts.",
@@ -567,58 +565,6 @@ public final class TransformationService {
                 decision.path("blocking").asBoolean(true),
                 "ETL_MANUAL_DECISION",
                 "OPEN")));
-    }
-
-    private void appendFindingTasks(ArrayNode backlog, JsonNode findings) {
-        if (!findings.isArray()) {
-            return;
-        }
-        findings.forEach(finding -> {
-            boolean required = finding.path("blocking").asBoolean(false)
-                    || isBlockingSeverity(text(finding, "severity", ""));
-            if (!required) {
-                return;
-            }
-            backlog.add(manualTask(
-                    "finding-" + text(finding, "id", UUID.randomUUID().toString()),
-                    text(finding, "name", "Readiness finding"),
-                    firstNonBlank(text(finding, "recommendation", ""), text(finding, "message", ""),
-                            "Review the readiness finding before promotion."),
-                    finding.path("blocking").asBoolean(false),
-                    "ETL_READINESS_FINDING",
-                    "OPEN"));
-        });
-    }
-
-    private void appendFailedCheckTasks(ArrayNode backlog, JsonNode checks) {
-        if (!checks.isArray()) {
-            return;
-        }
-        checks.forEach(check -> {
-            if (check.path("passed").asBoolean(true)) {
-                return;
-            }
-            backlog.add(manualTask(
-                    "check-" + text(check, "id", UUID.randomUUID().toString()),
-                    text(check, "name", text(check, "checkId", "Readiness check")),
-                    firstNonBlank(text(check, "remediation", ""), text(check, "message", ""),
-                            "Resolve the failed readiness check."),
-                    isAtLeastWarning(text(check, "severity", "")),
-                    "ETL_READINESS_CHECK",
-                    "OPEN"));
-        });
-    }
-
-    private boolean isAtLeastWarning(String severity) {
-        String normalized = String.valueOf(severity).toUpperCase(Locale.ROOT);
-        return "WARNING".equals(normalized) || "ERROR".equals(normalized)
-                || "CRITICAL".equals(normalized) || "BLOCKER".equals(normalized);
-    }
-
-    private boolean isBlockingSeverity(String severity) {
-        String normalized = String.valueOf(severity).toUpperCase(Locale.ROOT);
-        return "ERROR".equals(normalized) || "CRITICAL".equals(normalized)
-                || "BLOCKER".equals(normalized);
     }
 
     private ObjectNode manualTask(String id, String title, String rationale, boolean required,
