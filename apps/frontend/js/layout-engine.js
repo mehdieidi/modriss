@@ -6,6 +6,9 @@ const LAYOUT_MARGIN = 48;
 const GAP_X = 72;
 const GAP_Y = 56;
 const ELK_ALGORITHM_LAYERED = "layered";
+const DEFAULT_NODE_SPACING = 112;
+const DEFAULT_LAYER_SPACING = 188;
+const ELK_PORT_SIZE = 10;
 
 let elkInstance = null;
 
@@ -105,6 +108,11 @@ function portId(nodeId, localPortId) {
   return `${nodeId}:${localPortId}`;
 }
 
+function layoutPortId(edgeId, endpoint) {
+  return `${endpoint}-${String(edgeId || "").replaceAll(/[^a-zA-Z0-9_-]+/g,
+      "_")}`;
+}
+
 function elkDirection(profile = "") {
   const normalized = String(profile || "").toUpperCase();
   if (normalized.includes("DOWN")) {
@@ -132,20 +140,21 @@ function elkLayoutOptions({
     "elk.spacing.nodeNode": String(Math.max(96, numeric(nodeSpacing, 112))),
     "elk.spacing.edgeEdge": "28",
     "elk.spacing.edgeNode": "36",
-    "elk.spacing.portPort": "18",
+    "elk.spacing.portPort": "22",
     "elk.layered.spacing.nodeNodeBetweenLayers": String(
         Math.max(172, numeric(layerSpacing, 188))),
-    "elk.layered.spacing.edgeNodeBetweenLayers": "42",
-    "elk.layered.spacing.edgeEdgeBetweenLayers": "32",
+    "elk.layered.spacing.edgeNodeBetweenLayers": "52",
+    "elk.layered.spacing.edgeEdgeBetweenLayers": "42",
     "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
     "elk.layered.crossingMinimization.greedySwitch.type": "TWO_SIDED",
     "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
     "elk.layered.nodePlacement.favorStraightEdges": "true",
     "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",
-    "elk.layered.thoroughness": "12",
+    "elk.layered.thoroughness": "24",
     "elk.layered.mergeEdges": "false",
+    "elk.layered.unnecessaryBendpoints": "true",
     "elk.separateConnectedComponents": "true",
-    "elk.portConstraints": "FIXED_SIDE",
+    "elk.portConstraints": "FIXED_ORDER",
     "elk.portAlignment.default": "JUSTIFIED",
     "elk.hierarchyHandling": "INCLUDE_CHILDREN"
   };
@@ -161,6 +170,52 @@ function semanticPortSide(port) {
   return "EAST";
 }
 
+function collectLayoutPorts(nodes, edges, nodeIds) {
+  const portsByNodeId = new Map(nodes.map((node) => [node.id, []]));
+  const validEdges = edges.filter((edge) => nodeIds.has(edge.sourceNodeId)
+      && nodeIds.has(edge.targetNodeId)
+      && edge.sourceNodeId !== edge.targetNodeId);
+  const sortedEdges = [...validEdges].sort((left, right) => {
+    const sourceDiff = String(left.sourceNodeId || "").localeCompare(
+        String(right.sourceNodeId || ""));
+    if (sourceDiff) {
+      return sourceDiff;
+    }
+    const targetDiff = String(left.targetNodeId || "").localeCompare(
+        String(right.targetNodeId || ""));
+    if (targetDiff) {
+      return targetDiff;
+    }
+    return String(left.id || "").localeCompare(String(right.id || ""));
+  });
+  sortedEdges.forEach((edge) => {
+    portsByNodeId.get(edge.sourceNodeId)?.push({
+      id: layoutPortId(edge.id, "source"),
+      side: semanticPortSide({id: edge.sourcePortId || "flow-out"}),
+      edgeId: edge.id
+    });
+    portsByNodeId.get(edge.targetNodeId)?.push({
+      id: layoutPortId(edge.id, "target"),
+      side: semanticPortSide({id: edge.targetPortId || "flow-in"}),
+      edgeId: edge.id
+    });
+  });
+  portsByNodeId.forEach((ports) => {
+    ports.sort((left, right) => {
+      const sideDiff = left.side.localeCompare(right.side);
+      if (sideDiff) {
+        return sideDiff;
+      }
+      return String(left.edgeId || "").localeCompare(
+          String(right.edgeId || ""));
+    });
+    ports.forEach((port, index) => {
+      port.index = index;
+    });
+  });
+  return portsByNodeId;
+}
+
 function toElkGraph({
   viewId = "modless-view",
   profile = "DEFAULT_LAYERED",
@@ -169,6 +224,7 @@ function toElkGraph({
   edges = []
 } = {}) {
   const nodeIds = new Set(nodes.map((node) => String(node.id || "")));
+  const layoutPortsByNodeId = collectLayoutPorts(nodes, edges, nodeIds);
   return {
     id: viewId || "modless-view",
     layoutOptions: elkLayoutOptions({
@@ -181,13 +237,13 @@ function toElkGraph({
       width: Math.max(1, numeric(node.width, DEFAULT_NODE_W)),
       height: Math.max(1, numeric(node.height, DEFAULT_NODE_H)),
       labels: node.label ? [{text: String(node.label)}] : [],
-      ports: (Array.isArray(node.ports) ? node.ports : []).map((port) => ({
+      ports: (layoutPortsByNodeId.get(node.id) || []).map((port) => ({
         id: portId(node.id, port.id),
-        width: Math.max(1, numeric(port.width, 10)),
-        height: Math.max(1, numeric(port.height, 10)),
-        labels: port.label ? [{text: String(port.label)}] : [],
+        width: ELK_PORT_SIZE,
+        height: ELK_PORT_SIZE,
         layoutOptions: {
-          "elk.port.side": semanticPortSide(port)
+          "elk.port.side": port.side,
+          "elk.port.index": String(port.index)
         }
       }))
     })),
@@ -195,12 +251,8 @@ function toElkGraph({
         && nodeIds.has(edge.targetNodeId)
         && edge.sourceNodeId !== edge.targetNodeId).map((edge) => ({
       id: edge.id,
-      sources: [edge.sourcePortId
-          ? portId(edge.sourceNodeId, edge.sourcePortId)
-          : edge.sourceNodeId],
-      targets: [edge.targetPortId
-          ? portId(edge.targetNodeId, edge.targetPortId)
-          : edge.targetNodeId],
+      sources: [portId(edge.sourceNodeId, layoutPortId(edge.id, "source"))],
+      targets: [portId(edge.targetNodeId, layoutPortId(edge.id, "target"))],
       labels: edge.label ? [{text: String(edge.label)}] : []
     }))
   };

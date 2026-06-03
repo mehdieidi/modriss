@@ -292,7 +292,8 @@ function registerModlessG6Extensions() {
           || attributes.impactUpstream || stateSet.has("impact-upstream")
           || attributes.impactDownstream || stateSet.has("impact-downstream")
           || attributes.impactConnected || stateSet.has("impact-connected");
-      const dimmed = attributes.dimmed || stateSet.has("dimmed");
+      const focused = attributes.focused || stateSet.has("focus");
+      const dimmed = !focused && (attributes.dimmed || stateSet.has("dimmed"));
       const draft = attributes.contextDraft || stateSet.has("context-draft");
       const low = attributes.detailLevel === "low";
       const high = attributes.detailLevel === "high";
@@ -610,8 +611,16 @@ function registerModlessG6Extensions() {
   class ModlessEdge extends BaseEdge {
     getKeyPath(attributes) {
       const [sourcePoint, targetPoint] = this.getEndpoints(attributes);
-      const source = sourcePoint || [0, 0];
-      const target = targetPoint || [0, 0];
+      const routeStart = attributes.routeStart;
+      const routeEnd = attributes.routeEnd;
+      const source = Number.isFinite(Number(routeStart?.x))
+      && Number.isFinite(Number(routeStart?.y))
+          ? [Number(routeStart.x), Number(routeStart.y)]
+          : (sourcePoint || [0, 0]);
+      const target = Number.isFinite(Number(routeEnd?.x))
+      && Number.isFinite(Number(routeEnd?.y))
+          ? [Number(routeEnd.x), Number(routeEnd.y)]
+          : (targetPoint || [0, 0]);
       const pins = Array.isArray(attributes.pinPoints)
           ? attributes.pinPoints : [];
       const path = [["M", source[0], source[1]]];
@@ -641,7 +650,8 @@ function registerModlessG6Extensions() {
       const selected = attributes.selected || stateSet.has("selected");
       const hovered = attributes.hovered || attributes.hover
           || stateSet.has("hover");
-      const dimmed = attributes.dimmed || stateSet.has("dimmed");
+      const focused = attributes.focused || stateSet.has("focus");
+      const dimmed = !focused && (attributes.dimmed || stateSet.has("dimmed"));
       return {
         ...super.getKeyStyle(attributes),
         stroke: attributes.stroke || cssVar("--accent", "#00a6e0"),
@@ -1064,7 +1074,7 @@ function flushElementStates(ids, map) {
       map.delete(id);
       return;
     }
-    batch[id] = [...(map.get(id) || [])];
+    batch[id] = ["normal", ...(map.get(id) || [])];
   });
   if (Object.keys(batch).length) {
     try {
@@ -1094,6 +1104,130 @@ function replaceFlagSet(map, flag, ids) {
     }
   });
   return changed;
+}
+
+function symmetricDifference(left = new Set(), right = new Set()) {
+  const changed = new Set();
+  left.forEach((value) => {
+    if (!right.has(value)) {
+      changed.add(value);
+    }
+  });
+  right.forEach((value) => {
+    if (!left.has(value)) {
+      changed.add(value);
+    }
+  });
+  return changed;
+}
+
+function hoverFocusSets(nodeId) {
+  const nodeIds = new Set();
+  const edgeIds = new Set();
+  if (!nodeId) {
+    return {nodeIds, edgeIds};
+  }
+  nodeIds.add(nodeId);
+  (editor.adjacency?.byNode?.get(nodeId) || new Set()).forEach((edgeId) => {
+    edgeIds.add(edgeId);
+    const edge = editor.adjacency?.byId?.get(edgeId)
+        || state.diagram.connections.find((item) => item.id === edgeId);
+    if (edge?.sourceId) {
+      nodeIds.add(edge.sourceId);
+    }
+    if (edge?.targetId) {
+      nodeIds.add(edge.targetId);
+    }
+  });
+  return {nodeIds, edgeIds};
+}
+
+function setGraphDimmed(enabled, changedNodes, changedEdges) {
+  if (editor.hoverDimmedActive === enabled) {
+    return;
+  }
+  editor.hoverDimmedActive = enabled;
+  (editor.dataSnapshot?.nodesById?.keys?.() || []).forEach((id) => {
+    if (setFlag(editor.nodeStateFlags, id, "dimmed", enabled)) {
+      changedNodes.add(id);
+    }
+  });
+  (editor.dataSnapshot?.edgesById?.keys?.() || []).forEach((id) => {
+    if (setFlag(editor.edgeStateFlags, id, "dimmed", enabled)) {
+      changedEdges.add(id);
+    }
+  });
+}
+
+function clearHoverFlagSet(map, id, flags) {
+  let changed = false;
+  flags.forEach((flag) => {
+    if (setFlag(map, id, flag, false)) {
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function clearG6HoverFocusState() {
+  if (!editor?.graph) {
+    return;
+  }
+  const changedNodes = new Set();
+  const changedEdges = new Set();
+  const previous = editor.hoveredNodeId;
+  const nodeIds = new Set();
+  const edgeIds = new Set();
+  if (previous) {
+    nodeIds.add(previous);
+    setG6NodeHandleVisibility(previous, false);
+  }
+  (editor.hoverFocusNodeIds || new Set()).forEach((id) => nodeIds.add(id));
+  (editor.hoverFocusEdgeIds || new Set()).forEach((id) => edgeIds.add(id));
+  editor.nodeStateFlags.forEach((flags, id) => {
+    if (flags.has("hover") || flags.has("focus") || flags.has("dimmed")) {
+      nodeIds.add(id);
+    }
+  });
+  editor.edgeStateFlags.forEach((flags, id) => {
+    if (flags.has("hover") || flags.has("focus") || flags.has("dimmed")) {
+      edgeIds.add(id);
+    }
+  });
+  (editor.dataSnapshot?.nodesById?.keys?.() || []).forEach((id) => {
+    if (editor.hoverDimmedActive) {
+      nodeIds.add(id);
+    }
+  });
+  (editor.dataSnapshot?.edgesById?.keys?.() || []).forEach((id) => {
+    if (editor.hoverDimmedActive) {
+      edgeIds.add(id);
+    }
+  });
+  nodeIds.forEach((id) => {
+    if (clearHoverFlagSet(editor.nodeStateFlags, id,
+        ["hover", "focus", "dimmed"])) {
+      changedNodes.add(id);
+    }
+  });
+  edgeIds.forEach((id) => {
+    if (clearHoverFlagSet(editor.edgeStateFlags, id,
+        ["hover", "focus", "dimmed"])) {
+      changedEdges.add(id);
+    }
+  });
+  editor.hoveredNodeId = null;
+  editor.hoverFocusNodeIds = new Set();
+  editor.hoverFocusEdgeIds = new Set();
+  editor.hoverDimmedActive = false;
+  flushElementStates(changedNodes, editor.nodeStateFlags);
+  flushElementStates(changedEdges, editor.edgeStateFlags);
+  if (changedEdges.size) {
+    refreshG6Edges([...changedEdges]);
+  }
+  if (changedNodes.size || changedEdges.size) {
+    scheduleGraphDraw(editor.graph);
+  }
 }
 
 function syncViewportStateFromGraph() {
@@ -1159,8 +1293,10 @@ export function mountG6Editor(container, {
     node: {
       type: G6_BASE_NODE_TYPE,
       state: {
+        normal: {hover: false, focused: false, dimmed: false},
         selected: {selected: true},
         hover: {hover: true},
+        focus: {focused: true},
         dimmed: {dimmed: true},
         "connect-source": {connectSource: true},
         "connect-legal": {connectLegal: true},
@@ -1175,8 +1311,10 @@ export function mountG6Editor(container, {
     edge: {
       type: G6_BASE_EDGE_TYPE,
       state: {
+        normal: {hovered: false, focused: false, dimmed: false},
         selected: {selected: true},
         hover: {hovered: true},
+        focus: {focused: true},
         dimmed: {dimmed: true}
       }
     }
@@ -1195,6 +1333,9 @@ export function mountG6Editor(container, {
     connectStateKey: "",
     hoveredNodeId: null,
     hoveredEdgeId: null,
+    hoverFocusNodeIds: new Set(),
+    hoverFocusEdgeIds: new Set(),
+    hoverDimmedActive: false,
     adjacency: createAdjacencyIndex(state.diagram.connections),
     spatialIndex: createSpatialIndex([], {
       fallbackSize: spatialIndexFallbackSize()
@@ -1585,39 +1726,66 @@ export function updateG6ConnectionState() {
 }
 
 export function setG6HoverNode(nodeId) {
-  if (!editor?.graph || editor.hoveredNodeId === nodeId) {
+  const normalizedNodeId = nodeId || null;
+  if (!editor?.graph) {
+    return;
+  }
+  if (!normalizedNodeId) {
+    clearG6HoverFocusState();
+    return;
+  }
+  if (editor.hoveredNodeId === normalizedNodeId
+      && (normalizedNodeId || (!editor.hoverDimmedActive
+          && !editor.hoverFocusNodeIds?.size
+          && !editor.hoverFocusEdgeIds?.size))) {
     return;
   }
   const changedNodes = new Set();
   const changedEdges = new Set();
   const previous = editor.hoveredNodeId;
-  editor.hoveredNodeId = nodeId || null;
+  const previousFocusNodeIds = editor.hoverFocusNodeIds || new Set();
+  const previousFocusEdgeIds = editor.hoverFocusEdgeIds || new Set();
+  editor.hoveredNodeId = normalizedNodeId;
   if (previous) {
     if (setFlag(editor.nodeStateFlags, previous, "hover", false)) {
       changedNodes.add(previous);
     }
     setG6NodeHandleVisibility(previous, false);
-    const activeEdges = editor.adjacency?.byNode?.get(previous) || new Set();
-    activeEdges.forEach((edgeId) => {
-      if (setFlag(editor.edgeStateFlags, edgeId, "hover", false)) {
-        changedEdges.add(edgeId);
-      }
-    });
   }
-  if (nodeId) {
-    if (setFlag(editor.nodeStateFlags, nodeId, "hover", true)) {
-      changedNodes.add(nodeId);
+  const nextFocus = hoverFocusSets(normalizedNodeId);
+  if (normalizedNodeId && !editor.hoverDimmedActive) {
+    setGraphDimmed(true, changedNodes, changedEdges);
+  } else if (!normalizedNodeId) {
+    setGraphDimmed(false, changedNodes, changedEdges);
+  }
+  symmetricDifference(previousFocusNodeIds, nextFocus.nodeIds).forEach((id) => {
+    if (setFlag(editor.nodeStateFlags, id, "focus",
+        nextFocus.nodeIds.has(id))) {
+      changedNodes.add(id);
     }
-    setG6NodeHandleVisibility(nodeId, true);
-    const activeEdges = editor.adjacency?.byNode?.get(nodeId) || new Set();
-    activeEdges.forEach((edgeId) => {
-      if (setFlag(editor.edgeStateFlags, edgeId, "hover", true)) {
-        changedEdges.add(edgeId);
-      }
-    });
+  });
+  symmetricDifference(previousFocusEdgeIds, nextFocus.edgeIds).forEach((id) => {
+    const focused = nextFocus.edgeIds.has(id);
+    if (setFlag(editor.edgeStateFlags, id, "focus", focused)) {
+      changedEdges.add(id);
+    }
+    if (setFlag(editor.edgeStateFlags, id, "hover", focused)) {
+      changedEdges.add(id);
+    }
+  });
+  editor.hoverFocusNodeIds = nextFocus.nodeIds;
+  editor.hoverFocusEdgeIds = nextFocus.edgeIds;
+  if (normalizedNodeId) {
+    if (setFlag(editor.nodeStateFlags, normalizedNodeId, "hover", true)) {
+      changedNodes.add(normalizedNodeId);
+    }
+    setG6NodeHandleVisibility(normalizedNodeId, true);
   }
   flushElementStates(changedNodes, editor.nodeStateFlags);
   flushElementStates(changedEdges, editor.edgeStateFlags);
+  if (changedEdges.size) {
+    refreshG6Edges([...changedEdges]);
+  }
 }
 
 export function setG6HoverEdge(edgeId) {

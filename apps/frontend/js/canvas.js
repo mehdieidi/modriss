@@ -10,6 +10,7 @@ import {
   addConnectionToGraphAndActiveView,
   addNodeToGraphAndActiveView,
   removeElementFromGraph,
+  saveCurrentTabGraphState,
   syncActiveViewFromVisibleGraph
 } from './graph-store.js';
 import {
@@ -84,6 +85,9 @@ const connectionsById = new Map();
 let hoveredEdgeId = null;
 let inlineLabelEditStartLabel = "";
 let inlineLabelEditUndoSnapshot = null;
+let layoutAutosaveTimer = 0;
+let layoutAutosaveInFlight = false;
+let layoutAutosaveQueued = false;
 
 function workbenchSurfaces() {
   renderCimWorkbenchSurface();
@@ -2178,12 +2182,51 @@ function setHoveredNode(nodeId) {
   const nextHoveredNodeId = typeof nodeId === "string" && nodeId.trim()
       ? nodeId : null;
   if (state.hoveredNodeId === nextHoveredNodeId) {
+    if (!nextHoveredNodeId) {
+      applyHoverFocusStyles();
+    }
     return;
   }
   state.hoveredNodeId = nextHoveredNodeId;
   applyHoverFocusStyles();
   if (state.connectSourceId) {
     updateG6ConnectionState();
+  }
+}
+
+function scheduleLayoutAutosave() {
+  if (!["cim", "pim", "psm"].includes(state.activeType)
+      || typeof window === "undefined") {
+    return;
+  }
+  syncActiveViewFromVisibleGraph();
+  saveCurrentTabGraphState(state.activeType);
+  if (layoutAutosaveTimer) {
+    window.clearTimeout(layoutAutosaveTimer);
+  }
+  layoutAutosaveTimer = window.setTimeout(() => {
+    layoutAutosaveTimer = 0;
+    void flushLayoutAutosave();
+  }, 120);
+}
+
+async function flushLayoutAutosave() {
+  if (layoutAutosaveInFlight) {
+    layoutAutosaveQueued = true;
+    return;
+  }
+  layoutAutosaveInFlight = true;
+  try {
+    const {saveCurrentModel} = await import('./model-ops.js');
+    await saveCurrentModel({quiet: true, rethrow: true});
+  } catch (error) {
+    console.warn("Layout autosave failed", error);
+  } finally {
+    layoutAutosaveInFlight = false;
+    if (layoutAutosaveQueued) {
+      layoutAutosaveQueued = false;
+      scheduleLayoutAutosave();
+    }
   }
 }
 
@@ -4188,6 +4231,7 @@ function endG6NodeDrag(nodeId, position, {moved = false} = {}) {
   if (moved || state.dragNode?.moved) {
     commitUndoSnapshot(state.dragNode?.undoSnapshot);
     markModelDirty();
+    scheduleLayoutAutosave();
   }
   refreshG6Edges([...(edgeIdsByNodeId.get(node.id) || [])]);
   updateG6ContextBoxes();

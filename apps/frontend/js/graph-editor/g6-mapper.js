@@ -193,6 +193,23 @@ export function edgePresentation(edge, typeKey = state.activeType) {
   return modelingRelationshipPresentation(typeKey, edge);
 }
 
+function routeEndpoint(node, anchor, typeKey) {
+  if (!node || !anchor) {
+    return null;
+  }
+  const size = nodeSizeForDiagram(typeKey);
+  const side = anchor.side === "left" ? "left"
+      : anchor.side === "right" ? "right" : null;
+  const offsetY = Number(anchor.offsetY);
+  if (!side || !Number.isFinite(offsetY)) {
+    return null;
+  }
+  return {
+    x: Math.round(node.x + (side === "right" ? size.width : 0)),
+    y: Math.round(node.y + Math.max(8, Math.min(size.height - 8, offsetY)))
+  };
+}
+
 export function mapNodeToG6(node, {
   typeKey = state.activeType,
   detailLevel = "normal",
@@ -281,6 +298,12 @@ export function mapEdgeToG6(edge, {
   const presentation = edgePresentation(edge, typeKey);
   const style = edgeStyleForKind(edge.kind, presentation);
   const label = edgeLabel(edge, typeKey);
+  const sourceNode = state.diagram.nodes.find((node) =>
+      node.id === edge.sourceId);
+  const targetNode = state.diagram.nodes.find((node) =>
+      node.id === edge.targetId);
+  const routeStart = routeEndpoint(sourceNode, edge.sourceAnchor, typeKey);
+  const routeEnd = routeEndpoint(targetNode, edge.targetAnchor, typeKey);
   return {
     id: edge.id,
     type: G6_BASE_EDGE_TYPE,
@@ -295,7 +318,9 @@ export function mapEdgeToG6(edge, {
       markerEnd: presentation.markerEnd,
       pinPoints: Array.isArray(edge.pinPoints) ? edge.pinPoints : [],
       sourceAnchor: edge.sourceAnchor || null,
-      targetAnchor: edge.targetAnchor || null
+      targetAnchor: edge.targetAnchor || null,
+      routeStart,
+      routeEnd
     },
     style: {
       stroke: style.stroke,
@@ -308,6 +333,8 @@ export function mapEdgeToG6(edge, {
         type: "orth"
       },
       pinPoints: Array.isArray(edge.pinPoints) ? edge.pinPoints : [],
+      routeStart,
+      routeEnd,
       showPins: showLabels || selected || hovered,
       labelText: showLabels || selected || hovered ? label : "",
       labelPlacement: "center",

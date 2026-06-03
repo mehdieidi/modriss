@@ -45,7 +45,8 @@ import {
   completeGenerationProgress,
   hideGenerationProgress,
   setGenerationProgressPhase,
-  showGenerationProgress
+  showGenerationProgress,
+  waitForGenerationProgress
 } from './generation-progress.js';
 import {
   applyValidationIssues,
@@ -915,6 +916,150 @@ function separateBoundedContextOverlaps(nodeSize) {
   return movedNodeIds;
 }
 
+function spreadEdgeAnchorsForNode(node, edges, nodeSize) {
+  const byEndpoint = [
+    {
+      items: edges.filter((edge) => edge.sourceId === node.id
+          && edge.sourceAnchor),
+      anchorKey: "sourceAnchor",
+      pinIndex: 0
+    },
+    {
+      items: edges.filter((edge) => edge.targetId === node.id
+          && edge.targetAnchor),
+      anchorKey: "targetAnchor",
+      pinIndex: -1
+    }
+  ];
+  byEndpoint.forEach(({items, anchorKey, pinIndex}) => {
+    const bySide = new Map();
+    items.forEach((edge) => {
+      const side = edge[anchorKey]?.side;
+      if (!side) {
+        return;
+      }
+      if (!bySide.has(side)) {
+        bySide.set(side, []);
+      }
+      bySide.get(side).push(edge);
+    });
+    bySide.forEach((sideEdges) => {
+      if (sideEdges.length < 2) {
+        return;
+      }
+      sideEdges.sort((left, right) => {
+        const leftOther = left.sourceId === node.id ? left.targetId
+            : left.sourceId;
+        const rightOther = right.sourceId === node.id ? right.targetId
+            : right.sourceId;
+        return String(leftOther || "").localeCompare(String(rightOther || ""))
+            || String(left.id || "").localeCompare(String(right.id || ""));
+      });
+      const step = Math.max(10, Math.min(24,
+          (nodeSize.height - 20) / Math.max(1, sideEdges.length - 1)));
+      const start = Math.max(10,
+          (nodeSize.height - step * (sideEdges.length - 1)) / 2);
+      sideEdges.forEach((edge, index) => {
+        const offsetY = Math.round(Math.min(nodeSize.height - 10,
+            start + index * step));
+        edge[anchorKey].offsetY = offsetY;
+        if (!Array.isArray(edge.pinPoints) || !edge.pinPoints.length) {
+          return;
+        }
+        const targetIndex = pinIndex < 0 ? edge.pinPoints.length - 1
+            : pinIndex;
+        const pin = edge.pinPoints[targetIndex];
+        if (pin && typeof pin === "object") {
+          pin.y = Math.round(node.y + offsetY);
+        }
+      });
+    });
+  });
+}
+
+function spreadEdgeAnchors(nodes, edges, nodeSize) {
+  const visibleEdges = edges.filter((edge) => !edge.bundle);
+  nodes.forEach((node) => spreadEdgeAnchorsForNode(node, visibleEdges,
+      nodeSize));
+}
+
+function routePointForAnchor(node, anchor, nodeSize) {
+  if (!node || !anchor) {
+    return null;
+  }
+  const side = anchor.side === "left" ? "left"
+      : anchor.side === "right" ? "right" : null;
+  const offsetY = Number(anchor.offsetY);
+  if (!side || !Number.isFinite(offsetY)) {
+    return null;
+  }
+  return {
+    x: Math.round(node.x + (side === "right" ? nodeSize.width : 0)),
+    y: Math.round(node.y + Math.max(8, Math.min(nodeSize.height - 8,
+        offsetY)))
+  };
+}
+
+function samePoint(left, right) {
+  return Math.round(Number(left?.x)) === Math.round(Number(right?.x))
+      && Math.round(Number(left?.y)) === Math.round(Number(right?.y));
+}
+
+function pushRoutePoint(points, point) {
+  if (!point || !Number.isFinite(Number(point.x))
+      || !Number.isFinite(Number(point.y))) {
+    return;
+  }
+  const normalized = {x: Math.round(point.x), y: Math.round(point.y)};
+  if (!points.length || !samePoint(points[points.length - 1], normalized)) {
+    points.push(normalized);
+  }
+}
+
+function orthogonalizeEdgePinPoints(edge, sourceNode, targetNode, nodeSize) {
+  const start = routePointForAnchor(sourceNode, edge.sourceAnchor, nodeSize);
+  const end = routePointForAnchor(targetNode, edge.targetAnchor, nodeSize);
+  if (!start || !end) {
+    return;
+  }
+  const rawPins = (Array.isArray(edge.pinPoints) ? edge.pinPoints : [])
+  .map((point) => ({
+    x: Math.round(Number(point?.x)),
+    y: Math.round(Number(point?.y))
+  }))
+  .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+  const sourceSide = edge.sourceAnchor?.side;
+  const path = [start, ...rawPins, end];
+  const orthogonal = [start];
+  for (let index = 1; index < path.length; index += 1) {
+    const previous = orthogonal[orthogonal.length - 1];
+    const next = path[index];
+    if (samePoint(previous, next)) {
+      continue;
+    }
+    const diagonal = previous.x !== next.x && previous.y !== next.y;
+    if (diagonal) {
+      const horizontalFirst = index === 1
+          ? sourceSide !== "left" && sourceSide !== "right"
+              ? Math.abs(next.x - previous.x) >= Math.abs(next.y - previous.y)
+              : true
+          : Math.abs(next.x - previous.x) >= Math.abs(next.y - previous.y);
+      pushRoutePoint(orthogonal, horizontalFirst
+          ? {x: next.x, y: previous.y}
+          : {x: previous.x, y: next.y});
+    }
+    pushRoutePoint(orthogonal, next);
+  }
+  edge.pinPoints = orthogonal.slice(1, -1);
+}
+
+function orthogonalizeEdgeRoutes(nodes, edges, nodeSize) {
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
+  edges.filter((edge) => !edge.bundle).forEach((edge) =>
+      orthogonalizeEdgePinPoints(edge, nodesById.get(edge.sourceId),
+          nodesById.get(edge.targetId), nodeSize));
+}
+
 export function updateGenerateButtonState() {
   if (!el.generateContextBtn) {
     return;
@@ -958,7 +1103,7 @@ async function autoLayoutGeneratedModel(label) {
   try {
     await autoLayoutCurrentDiagram({
       progress: false,
-      save: false,
+      save: true,
       publish: false,
       status: false,
       busy: false,
@@ -1217,6 +1362,9 @@ export async function switchTab(type) {
   }
 
   if (isArtifact) {
+    state.validation.panelOpen = false;
+    el.validationFab?.classList.add("hidden");
+    el.validationDrawer?.classList.add("hidden");
     el.modelWorkbenchPanel?.classList.add("hidden");
     updateModelSaveUi();
     setStatus("Artifact Explorer");
@@ -1374,8 +1522,11 @@ export async function autoLayoutCurrentDiagram({
       setBusy("Auto layout…");
     }
     if (progress) {
+      setGenerationProgressPhase("Analyzing diagram topology…", 32);
+      await waitForGenerationProgress(24, {timeoutMs: 360});
       setGenerationProgressPhase(isBrowserElkAvailable()
-          ? "Computing browser layout…" : "Preparing fallback layout…", 46);
+          ? "Computing browser layout…" : "Preparing fallback layout…", 78);
+      await waitForGenerationProgress(58, {timeoutMs: 760});
     }
     let response;
     try {
@@ -1393,6 +1544,9 @@ export async function autoLayoutCurrentDiagram({
         (response.nodes || []).map((node) => [node.id, node]));
     const edgesById = new Map(
         (response.edges || []).map((edge) => [edge.id, edge]));
+    if (progress) {
+      setGenerationProgressPhase("Routing and spacing edges…", 84);
+    }
 
     state.diagram.nodes.forEach((node) => {
       const positioned = nodesById.get(node.id);
@@ -1438,6 +1592,19 @@ export async function autoLayoutCurrentDiagram({
         targetAnchor: presentation.targetAnchor
       });
     });
+    spreadEdgeAnchors(state.diagram.nodes, state.diagram.connections, nodeSize);
+    orthogonalizeEdgeRoutes(state.diagram.nodes, state.diagram.connections,
+        nodeSize);
+    const activeLayoutView = activeView();
+    if (activeLayoutView) {
+      activeLayoutView.autoLayoutApplied = true;
+    }
+    state.diagram.connections.filter((edge) => !edge.bundle).forEach((edge) =>
+        saveStoredEdgeLayout(state.activeType, edge.id, {
+          pinPoints: edge.pinPoints,
+          sourceAnchor: edge.sourceAnchor,
+          targetAnchor: edge.targetAnchor
+        }));
     if (progress) {
       setGenerationProgressPhase("Refreshing the canvas…", 76);
     }

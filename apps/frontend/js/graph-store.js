@@ -996,6 +996,7 @@ function normalizeView(view, graph, typeKey, modelName) {
     description: String(view?.description || ""),
     sourceViewId: String(view?.sourceViewId || ""),
     savedAt: String(view?.savedAt || ""),
+    autoLayoutApplied: Boolean(view?.autoLayoutApplied),
     camera: view?.camera && typeof view.camera === "object"
         ? {
           x: Number(view.camera.x) || 0,

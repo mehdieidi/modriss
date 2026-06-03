@@ -218,6 +218,14 @@ function renderValidationCenter() {
   if (!el.validationFab) {
     return;
   }
+  const validationVisible = state.activeType !== "artifact";
+  el.validationFab.classList.toggle("hidden", !validationVisible);
+  if (!validationVisible) {
+    el.validationDrawer?.classList.add("hidden");
+    el.validationFabProgress?.classList.add("hidden");
+    el.validationDrawerProgress?.classList.add("hidden");
+    return;
+  }
   const issues = state.validation.issues || [];
   const status = statusFromIssues(issues);
   el.validationFab.classList.remove("validation-state-ok",

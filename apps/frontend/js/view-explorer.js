@@ -599,15 +599,34 @@ function saveCurrentViewpoint() {
 async function openWorkbenchView(viewId) {
   viewMenuOpen = false;
   const targetView = state.views.byId.get(viewId);
+  const needsInitialLayout = targetView && !targetView.autoLayoutApplied;
   if (setActiveViewId(viewId)) {
     materializeActiveView();
     renderPaletteCallback?.();
     renderDiagramCallback?.();
+    renderViewWorkbench();
+    saveCurrentTabGraphState();
+    if (needsInitialLayout) {
+      try {
+        const {autoLayoutCurrentDiagram} = await import('./model-ops.js');
+        await autoLayoutCurrentDiagram({
+          progress: true,
+          save: true,
+          status: false
+        });
+        setStatus("View selected and arranged.");
+      } catch (error) {
+        console.warn("Initial view auto layout failed", error);
+        if (!restoreCanvasCamera(targetView?.camera)) {
+          centerViewportOnDiagram({fit: true});
+        }
+        setStatus("View selected. Auto layout failed.");
+      }
+      return;
+    }
     if (!restoreCanvasCamera(targetView?.camera)) {
       centerViewportOnDiagram({fit: true});
     }
-    renderViewWorkbench();
-    saveCurrentTabGraphState();
     setStatus("View selected.");
   }
 }
