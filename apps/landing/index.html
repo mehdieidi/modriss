@@ -47,23 +47,59 @@
             <stop offset="0.48" stop-color="#ef5b5b"></stop>
             <stop offset="1" stop-color="#7c3aed"></stop>
           </linearGradient>
+          <marker id="hero-arrow" markerHeight="8" markerWidth="8" orient="auto"
+                  refX="7" refY="4">
+            <path d="M0 0 L8 4 L0 8 Z"></path>
+          </marker>
         </defs>
-        <path class="hero-path"
-              d="M118 430 C 242 280, 356 532, 474 354 S 732 190, 856 340 S 1042 540, 1120 284"></path>
-        <g class="hero-node hero-node--a" transform="translate(168 392)">
-          <rect height="64" rx="8" width="154"></rect>
-          <text x="18" y="27">CIMModel</text>
-          <text x="18" y="47">intent + language</text>
+        <g class="hero-board" transform="translate(68 120)">
+          <rect height="408" rx="8" width="1064"></rect>
+          <path d="M48 106 H1016"></path>
+          <path d="M48 208 H1016"></path>
+          <path d="M48 310 H1016"></path>
         </g>
-        <g class="hero-node hero-node--b" transform="translate(496 244)">
-          <rect height="64" rx="8" width="176"></rect>
-          <text x="18" y="27">ETL trace</text>
-          <text x="18" y="47">rules + readiness</text>
+        <path class="hero-path hero-path--main"
+              d="M180 352 H326 C390 352 404 224 468 224 H614 C678 224 684 394 748 394 H1002"
+              marker-end="url(#hero-arrow)"></path>
+        <path class="hero-path hero-path--assist"
+              d="M606 146 C704 116 784 154 826 222"></path>
+        <g class="hero-node hero-node--cim" transform="translate(126 306)">
+          <rect height="92" rx="8" width="184"></rect>
+          <text x="18" y="30">CIMModel</text>
+          <text x="18" y="51">BusinessGoal</text>
+          <text x="18" y="70">Command + Policy</text>
         </g>
-        <g class="hero-node hero-node--c" transform="translate(826 376)">
-          <rect height="64" rx="8" width="174"></rect>
-          <text x="18" y="27">AWS PSM</text>
-          <text x="18" y="47">SAM + artifacts</text>
+        <g class="hero-transform" transform="translate(404 182)">
+          <rect height="86" rx="8" width="170"></rect>
+          <text x="18" y="31">ETL rules</text>
+          <text x="18" y="53">trace + readiness</text>
+          <path d="M132 20 l18 18 -18 18"></path>
+        </g>
+        <g class="hero-node hero-node--pim" transform="translate(600 180)">
+          <rect height="96" rx="8" width="196"></rect>
+          <text x="18" y="30">PIMModel</text>
+          <text x="18" y="51">Function + ApiRoute</text>
+          <text x="18" y="70">DataStore + Workflow</text>
+        </g>
+        <g class="hero-chatbot" transform="translate(734 88)">
+          <rect height="74" rx="8" width="230"></rect>
+          <text x="18" y="29">AI modeling assistant</text>
+          <text x="18" y="50">"Add appeal review"</text>
+          <circle cx="196" cy="36" r="18"></circle>
+          <path d="M188 35 h16 M196 27 v16"></path>
+        </g>
+        <g class="hero-node hero-node--psm" transform="translate(760 348)">
+          <rect height="98" rx="8" width="206"></rect>
+          <text x="18" y="31">AwsPsmModel</text>
+          <text x="18" y="52">Lambda + HTTP API</text>
+          <text x="18" y="71">DynamoDB + IAM</text>
+        </g>
+        <g class="hero-code" transform="translate(962 306)">
+          <rect height="122" rx="8" width="166"></rect>
+          <text x="18" y="31">template.yaml</text>
+          <text x="18" y="54">handler.go</text>
+          <text x="18" y="77">openapi.yaml</text>
+          <text x="18" y="100">tests/*</text>
         </g>
       </svg>
     </div>
@@ -229,6 +265,27 @@
               </g>
             </g>
 
+            <g class="machine-layer layer-cim-refine" id="layer-cim-refine">
+              <g class="manual-note manual-note--cim" transform="translate(348 214)">
+                <rect height="94" rx="8" width="204"></rect>
+                <text x="16" y="28">Manual CIM refinement</text>
+                <text x="16" y="52">+ appeal policy</text>
+                <text x="16" y="72">+ identity evidence risk</text>
+              </g>
+              <g class="model-node model-node--approved" transform="translate(330 340)">
+                <rect height="64" rx="8" width="190"></rect>
+                <text x="18" y="27">ManualDecision</text>
+                <text x="18" y="47">owner: case worker</text>
+              </g>
+              <path class="refine-edge"
+                    d="M254 382 H306 V372 H330"></path>
+              <path class="refine-edge refine-edge--alt"
+                    d="M304 572 H330 V404"></path>
+              <g class="cursor-hand" transform="translate(486 298)">
+                <path d="M0 0 L34 18 L18 24 L26 44 L16 48 L8 28 L-8 36 Z"></path>
+              </g>
+            </g>
+
             <g class="machine-layer layer-transform" id="layer-transform">
               <g class="trace-chip" transform="translate(414 112)">
                 <rect height="46" rx="8" width="258"></rect>
@@ -272,6 +329,61 @@
               </g>
             </g>
 
+            <g class="machine-layer layer-pim-assistant" id="layer-pim-assistant">
+              <g class="chat-window" transform="translate(92 108)">
+                <rect height="286" rx="8" width="366"></rect>
+                <text class="chat-title" x="22" y="36">PIM modeling assistant</text>
+                <g class="chat-line chat-line--user" transform="translate(22 62)">
+                  <rect height="74" rx="8" width="322"></rect>
+                  <text x="16" y="24">Add appeal review for missing</text>
+                  <text x="16" y="44">identity evidence. Route low</text>
+                  <text x="16" y="64">confidence approvals to humans.</text>
+                </g>
+                <g class="chat-line chat-line--bot" transform="translate(22 150)">
+                  <rect height="94" rx="8" width="322"></rect>
+                  <text x="16" y="24">Applying metamodel-safe edits:</text>
+                  <text x="16" y="48">+ HumanTask + WorkflowState</text>
+                  <text x="16" y="68">+ AccessPolicy + ReadinessCheck</text>
+                </g>
+              </g>
+              <path class="assistant-edit-edge"
+                    d="M458 272 C552 218 646 220 724 294"></path>
+              <g class="live-edit live-edit--one" transform="translate(688 386)">
+                <rect height="46" rx="8" width="220"></rect>
+                <text x="16" y="29">+ HumanTask: ReviewAppeal</text>
+              </g>
+              <g class="live-edit live-edit--two" transform="translate(724 558)">
+                <rect height="46" rx="8" width="246"></rect>
+                <text x="16" y="29">+ ReadinessCheck: SLA + PII</text>
+              </g>
+            </g>
+
+            <g class="machine-layer layer-pim-refine" id="layer-pim-refine">
+              <g class="manual-note manual-note--pim" transform="translate(506 482)">
+                <rect height="104" rx="8" width="204"></rect>
+                <text x="16" y="29">Manual PIM refinement</text>
+                <text x="16" y="53">auth: case-worker role</text>
+                <text x="16" y="73">data access: by applicantId</text>
+              </g>
+              <path class="refine-edge refine-edge--pim"
+                    d="M710 532 H744 V506"></path>
+              <g class="validation-badge" transform="translate(544 296)">
+                <rect height="50" rx="8" width="176"></rect>
+                <text x="18" y="31">EVL: draft valid</text>
+              </g>
+            </g>
+
+            <g class="machine-layer layer-transform-psm" id="layer-transform-psm">
+              <g class="trace-chip trace-chip--aws" transform="translate(594 92)">
+                <rect height="46" rx="8" width="342"></rect>
+                <text x="18" y="29">PIM to AWS PSM: resource realization</text>
+              </g>
+              <path class="resource-map-path"
+                    d="M806 356 C872 324 894 250 882 190"></path>
+              <path class="resource-map-path resource-map-path--two"
+                    d="M835 506 C920 488 950 410 944 320"></path>
+            </g>
+
             <g class="machine-layer layer-psm" id="layer-psm">
               <g class="aws-stack" transform="translate(760 120)">
                 <rect height="390" rx="8" width="250"></rect>
@@ -309,6 +421,22 @@
                 <rect height="58" rx="8" width="254"></rect>
                 <text x="16" y="25">AI assistant checks AWS choices</text>
                 <text x="16" y="43">authorizers, regions, IAM, alarms</text>
+              </g>
+            </g>
+
+            <g class="machine-layer layer-psm-refine" id="layer-psm-refine">
+              <g class="manual-note manual-note--psm" transform="translate(488 126)">
+                <rect height="118" rx="8" width="218"></rect>
+                <text x="16" y="29">Manual AWS refinement</text>
+                <text x="16" y="53">region: eu-central-1</text>
+                <text x="16" y="73">IAM wildcard review</text>
+                <text x="16" y="93">DLQ + CloudWatch alarm</text>
+              </g>
+              <path class="refine-edge refine-edge--psm"
+                    d="M706 180 H760"></path>
+              <g class="validation-badge validation-badge--psm" transform="translate(528 360)">
+                <rect height="50" rx="8" width="202"></rect>
+                <text x="18" y="31">readiness: deployable</text>
               </g>
             </g>
 
@@ -350,16 +478,28 @@
                 <text x="22" y="31">review, test, package, deploy</text>
                 <text x="22" y="53">make validate -> make deploy</text>
               </g>
+              <g class="code-editor" transform="translate(520 120)">
+                <rect height="282" rx="8" width="416"></rect>
+                <text class="code-title" x="22" y="38">handler.go protected region</text>
+                <text x="24" y="78">func handleAppeal(ctx context.Context, req Request) {</text>
+                <text x="42" y="106">// protected: business logic</text>
+                <text x="42" y="134">decision := verifyIdentityEvidence(req)</text>
+                <text x="42" y="162">if decision.NeedsHumanReview {</text>
+                <text x="60" y="190">return enqueueManualTask(req)</text>
+                <text x="42" y="218">}</text>
+                <text x="42" y="246">return approveGrant(req)</text>
+              </g>
             </g>
 
             <g aria-hidden="true" class="stage-markers">
               <circle class="stage-marker" cx="138" cy="374" data-stage-marker="0" r="9"></circle>
-              <circle class="stage-marker" cx="448" cy="286" data-stage-marker="1" r="9"></circle>
-              <circle class="stage-marker" cx="744" cy="292" data-stage-marker="2" r="9"></circle>
-              <circle class="stage-marker" cx="812" cy="474" data-stage-marker="3" r="9"></circle>
-              <circle class="stage-marker" cx="906" cy="256" data-stage-marker="4" r="9"></circle>
-              <circle class="stage-marker" cx="300" cy="448" data-stage-marker="5" r="9"></circle>
+              <circle class="stage-marker" cx="380" cy="372" data-stage-marker="1" r="9"></circle>
+              <circle class="stage-marker" cx="552" cy="362" data-stage-marker="2" r="9"></circle>
+              <circle class="stage-marker" cx="744" cy="292" data-stage-marker="3" r="9"></circle>
+              <circle class="stage-marker" cx="812" cy="474" data-stage-marker="4" r="9"></circle>
+              <circle class="stage-marker" cx="906" cy="256" data-stage-marker="5" r="9"></circle>
               <circle class="stage-marker" cx="830" cy="534" data-stage-marker="6" r="9"></circle>
+              <circle class="stage-marker" cx="660" cy="244" data-stage-marker="7" r="9"></circle>
             </g>
           </svg>
         </div>
@@ -385,45 +525,71 @@
         </article>
 
         <article class="evolution__step reveal" data-stage="1"
-                 data-stage-name="CIM to PIM transformation">
+                 data-stage-name="CIM manual refinement">
           <p class="step-index">02</p>
+          <h3>Refine the CIM by hand before automation makes architecture decisions.</h3>
+          <p>
+            Analysts and domain owners can add the details that a transformation should not
+            invent: appeal policy, human review ownership, identity evidence risk, KPIs,
+            assumptions, hotspots, readiness findings, and manual decisions. The visual shows
+            those changes being attached to real CIM concepts instead of floating as generic
+            notes.
+          </p>
+        </article>
+
+        <article class="evolution__step reveal" data-stage="2"
+                 data-stage-name="CIM to PIM transformation">
+          <p class="step-index">03</p>
           <h3>Transform CIM intent into a provider-independent serverless draft.</h3>
           <p>
             The CIM-to-PIM ETL pipeline is split by concern: root scaffolding, boundaries and
             security, domain data, behavior and contracts, process and policy, and integration
-            and deployment. It creates trace links, readiness checks, and manual decisions so
-            uncertain mappings are visible instead of silently baked into architecture.
+            and deployment. It creates trace links, readiness checks, generated markers, and
+            manual decisions so uncertain mappings are visible instead of silently baked into
+            architecture.
           </p>
         </article>
 
-        <article class="evolution__step reveal" data-stage="2" data-stage-name="PIM draft review">
-          <p class="step-index">03</p>
-          <h3>Review the generated PIM with the AI modeling assistant beside the canvas.</h3>
-          <p>
-            The PIM draft contains provider-independent serverless services, deployment units,
-            environments, schemas, functions, APIs, event channels, schedules, data stores,
-            object stores, workflows, human tasks, external adapters, principals, policies,
-            configuration, secrets, and flows. The assistant can help complete missing contracts,
-            clarify authorization, refine access patterns, and keep changes aligned with the
-            metamodel and validation rules.
-          </p>
-        </article>
-
-        <article class="evolution__step reveal" data-stage="3" data-stage-name="PIM to AWS PSM">
+        <article class="evolution__step reveal" data-stage="3"
+                 data-stage-name="PIM AI-assisted refinement">
           <p class="step-index">04</p>
+          <h3>Use the AI modeling assistant to edit the PIM in real time.</h3>
+          <p>
+            The demo prompt asks for an appeal review path when identity evidence is missing.
+            The assistant applies metamodel-safe edits by adding a HumanTask, WorkflowState,
+            AccessPolicy, and ReadinessCheck to the PIM. The animation shows the prompt, the
+            assistant response, and the live edits appearing on the model canvas.
+          </p>
+        </article>
+
+        <article class="evolution__step reveal" data-stage="4"
+                 data-stage-name="PIM manual refinement">
+          <p class="step-index">05</p>
+          <h3>Review the PIM manually before selecting AWS resources.</h3>
+          <p>
+            Architects can refine authorization, data access patterns, workflow semantics,
+            retries, idempotency, retention, cost hints, observability, and validation results
+            while the model is still provider-independent. That is where service shape and
+            contracts should be reviewed before they harden into AWS resources.
+          </p>
+        </article>
+
+        <article class="evolution__step reveal" data-stage="5"
+                 data-stage-name="PIM to AWS PSM transformation">
+          <p class="step-index">06</p>
           <h3>Move from provider-independent architecture to concrete AWS design.</h3>
           <p>
             The PIM-to-AWS-PSM transformation realizes functions as Lambda resources, APIs as
-            API Gateway structures, data stores as DynamoDB or AWS-native placeholders, object
-            stores as S3 buckets, queues as SQS, topics as SNS, event channels as EventBridge,
-            workflows as Step Functions and ASL, identities as Cognito, and policies as IAM,
-            KMS, Secrets Manager, SSM, and CloudWatch concerns.
+            API Gateway structures, data stores as DynamoDB, object stores as S3 buckets,
+            queues as SQS, topics as SNS, event channels as EventBridge, workflows as Step
+            Functions and ASL, identities as Cognito, and policies as IAM, KMS, Secrets
+            Manager, SSM, and CloudWatch concerns.
           </p>
         </article>
 
-        <article class="evolution__step reveal" data-stage="4" data-stage-name="AWS PSM review">
-          <p class="step-index">05</p>
-          <h3>Review AWS-specific risk before generation.</h3>
+        <article class="evolution__step reveal" data-stage="6" data-stage-name="AWS PSM review">
+          <p class="step-index">07</p>
+          <h3>Review AWS-specific risk before artifact generation.</h3>
           <p>
             The AWS PSM is not treated as a black-box output. It has stages, SAM stacks,
             naming and tagging policy, security baseline, relationship views, documents, trace
@@ -433,27 +599,16 @@
           </p>
         </article>
 
-        <article class="evolution__step reveal" data-stage="5" data-stage-name="PSM to artifacts">
-          <p class="step-index">06</p>
-          <h3>Generate a project that is structured for real engineering work.</h3>
+        <article class="evolution__step reveal" data-stage="7"
+                 data-stage-name="Artifacts and code refinement">
+          <p class="step-index">08</p>
+          <h3>Generate artifacts, then refine the code regions humans should own.</h3>
           <p>
-            The EGX/EGL generator plans artifacts before writing them: SAM and CloudFormation,
-            Go Lambda handlers, local schemas, OpenAPI, ASL, sample events, shared runtime
-            support, contract tests, unit tests, integration tests, event tests, security tests,
-            validation scripts, build/test/deploy scripts, CI workflows, runbooks, trace JSON,
-            generation reports, security review reports, and manual-action reports.
-          </p>
-        </article>
-
-        <article class="evolution__step reveal" data-stage="6" data-stage-name="Review and deploy">
-          <p class="step-index">07</p>
-          <h3>Finish the parts only humans should own, then deploy.</h3>
-          <p>
-            Generated handlers include protected regions for imports, types, custom validation,
-            business logic, error mapping, tests, and environment-specific scripts. The artifact
-            explorer behaves like a lightweight IDE: browse files, open and edit generated
-            artifacts, save changes, package the project, and deploy through the generated
-            scripts once validation gates are satisfied.
+            The EGX/EGL generator emits SAM templates, Go Lambda handlers, OpenAPI, ASL,
+            schemas, fixtures, tests, CI workflows, runbooks, trace JSON, security reports,
+            and manual-action reports. Generated handlers include protected regions for custom
+            validation, business logic, error mapping, tests, and deployment notes, so final
+            code refinement remains deliberate instead of being overwritten.
           </p>
         </article>
       </div>

@@ -1,28 +1,118 @@
+.hero-board rect {
+  fill: rgba(255, 255, 255, 0.66);
+  stroke: rgba(21, 21, 21, 0.1);
+  filter: drop-shadow(0 30px 80px rgba(18, 24, 22, 0.12));
+}
+
+.hero-board path {
+  fill: none;
+  stroke: rgba(21, 21, 21, 0.06);
+  stroke-width: 1;
+}
+
 .hero-path {
   fill: none;
   stroke: url("#hero-line-gradient");
-  stroke-width: 3;
   stroke-linecap: round;
-  stroke-dasharray: 10 14;
+  stroke-linejoin: round;
+  stroke-width: 4;
+  opacity: 0.52;
+}
+
+.hero-path--assist {
+  stroke-width: 2.5;
+  stroke-dasharray: 8 12;
   opacity: 0.42;
 }
 
-.hero-node rect {
-  fill: rgba(255, 255, 255, 0.76);
-  stroke: rgba(21, 21, 21, 0.14);
-  filter: drop-shadow(0 18px 34px rgba(21, 21, 21, 0.12));
+.hero-network marker path {
+  fill: #4f46e5;
 }
 
-.hero-node text {
+.hero-node rect,
+.hero-transform rect,
+.hero-chatbot rect,
+.hero-code rect {
+  fill: rgba(255, 255, 255, 0.82);
+  stroke: rgba(21, 21, 21, 0.13);
+  filter: drop-shadow(0 20px 38px rgba(21, 21, 21, 0.13));
+}
+
+.hero-node--cim rect {
+  fill: #effcf9;
+  stroke: rgba(20, 184, 166, 0.32);
+}
+
+.hero-node--pim rect {
+  fill: #fff6ef;
+  stroke: rgba(239, 91, 91, 0.28);
+}
+
+.hero-node--psm rect {
+  fill: #f5f4ff;
+  stroke: rgba(79, 70, 229, 0.28);
+}
+
+.hero-transform rect {
+  fill: #151716;
+}
+
+.hero-chatbot rect {
+  fill: #202322;
+  stroke: rgba(255, 255, 255, 0.16);
+}
+
+.hero-chatbot circle {
+  fill: rgba(20, 184, 166, 0.16);
+  stroke: rgba(20, 184, 166, 0.5);
+}
+
+.hero-chatbot path,
+.hero-transform path {
+  fill: none;
+  stroke: #9fe8df;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.hero-code rect {
+  fill: #151716;
+  stroke: rgba(255, 255, 255, 0.16);
+}
+
+.hero-node text,
+.hero-transform text,
+.hero-chatbot text,
+.hero-code text {
   fill: var(--ink);
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 850;
 }
 
-.hero-node text + text {
+.hero-node text + text,
+.hero-node text + text + text {
   fill: var(--muted);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
+}
+
+.hero-transform text,
+.hero-chatbot text,
+.hero-code text {
+  fill: #f5f7f4;
+}
+
+.hero-transform text + text,
+.hero-chatbot text + text {
+  fill: #bddbd5;
+  font-size: 12px;
+}
+
+.hero-code text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .evolution {
@@ -49,7 +139,7 @@
 .machine-shell {
   border: 1px solid rgba(21, 21, 21, 0.13);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 248, 245, 0.88)),
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 248, 245, 0.9)),
   var(--paper-strong);
   box-shadow: var(--shadow-md);
   overflow: hidden;
@@ -91,8 +181,10 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 0%;
+  height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--teal), var(--coral), var(--amber), var(--indigo));
+  transform-origin: left center;
 }
 
 #model-machine {
@@ -106,10 +198,17 @@
   stroke-width: 1;
 }
 
-.story-path {
+.story-path,
+.refine-edge,
+.assistant-edit-edge,
+.resource-map-path {
   fill: none;
-  stroke: url("#flow-gradient");
   stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.story-path {
+  stroke: url("#flow-gradient");
   stroke-width: 9;
   opacity: 0.72;
   stroke-dasharray: 1;
@@ -124,7 +223,54 @@
   opacity: 0.55;
 }
 
-.engine-core {
+.refine-edge {
+  stroke: var(--amber);
+  stroke-width: 3;
+  stroke-dasharray: 7 8;
+}
+
+.refine-edge--alt {
+  stroke: var(--teal);
+}
+
+.refine-edge--pim {
+  stroke: var(--coral);
+}
+
+.refine-edge--psm {
+  stroke: var(--indigo);
+}
+
+.assistant-edit-edge {
+  stroke: #72d8cc;
+  stroke-width: 4;
+  stroke-dasharray: 10 12;
+}
+
+.resource-map-path {
+  stroke: var(--indigo);
+  stroke-width: 4;
+  stroke-dasharray: 11 10;
+  opacity: 0.74;
+}
+
+.resource-map-path--two {
+  stroke: var(--amber);
+}
+
+.engine-core,
+.gear-spokes,
+.engine-ring,
+.machine-layer,
+.model-node,
+.manual-note,
+.chat-window,
+.live-edit,
+.validation-badge,
+.aws-stack,
+.file-tree,
+.deploy-ribbon,
+.code-editor {
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -147,16 +293,11 @@
   stroke-dasharray: 4 8;
 }
 
-.gear-spokes {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
 .gear-spokes path {
   fill: none;
   stroke: rgba(21, 21, 21, 0.42);
-  stroke-width: 5;
   stroke-linecap: round;
+  stroke-width: 5;
 }
 
 .engine-dot {
@@ -178,8 +319,6 @@
 
 .machine-layer {
   opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
 }
 
 .layer-cim {
@@ -191,7 +330,12 @@
 .assistant-bubble,
 .deploy-ribbon,
 .file-tree,
-.aws-stack {
+.aws-stack,
+.manual-note,
+.chat-window,
+.live-edit,
+.validation-badge,
+.code-editor {
   filter: url("#soft-shadow");
 }
 
@@ -199,6 +343,11 @@
   fill: #ffffff;
   stroke: rgba(21, 21, 21, 0.18);
   stroke-width: 1.5;
+}
+
+.model-node--approved rect {
+  fill: #fff7e0;
+  stroke: rgba(245, 184, 75, 0.48);
 }
 
 .layer-cim .model-node rect {
@@ -216,7 +365,12 @@
 .assistant-bubble text,
 .deploy-ribbon text,
 .aws-stack text,
-.file-tree text {
+.file-tree text,
+.manual-note text,
+.chat-window text,
+.live-edit text,
+.validation-badge text,
+.code-editor text {
   fill: var(--ink);
   font-size: 15px;
   font-weight: 850;
@@ -224,7 +378,10 @@
 
 .model-node text + text,
 .assistant-bubble text + text,
-.deploy-ribbon text + text {
+.deploy-ribbon text + text,
+.manual-note text + text,
+.manual-note text + text + text,
+.manual-note text + text + text + text {
   fill: var(--muted);
   font-size: 12px;
   font-weight: 750;
@@ -243,6 +400,10 @@
   stroke: rgba(255, 255, 255, 0.18);
 }
 
+.trace-chip--aws rect {
+  fill: #27224a;
+}
+
 .trace-chip text {
   fill: #f4f7f4;
   font-size: 13px;
@@ -251,27 +412,93 @@
 .trace-pulse circle {
   fill: none;
   stroke: rgba(239, 91, 91, 0.35);
-  stroke-width: 2;
   stroke-dasharray: 8 12;
+  stroke-width: 2;
 }
 
-.assistant-bubble rect {
+.manual-note rect {
+  fill: #fff7df;
+  stroke: rgba(245, 184, 75, 0.54);
+}
+
+.manual-note--cim rect {
+  fill: #f4fbfa;
+  stroke: rgba(20, 184, 166, 0.44);
+}
+
+.manual-note--pim rect {
+  fill: #fff8f4;
+  stroke: rgba(239, 91, 91, 0.38);
+}
+
+.manual-note--psm rect {
+  fill: #f5f4ff;
+  stroke: rgba(79, 70, 229, 0.36);
+}
+
+.cursor-hand path {
+  fill: #151716;
+  stroke: rgba(255, 255, 255, 0.62);
+  stroke-width: 1;
+}
+
+.assistant-bubble rect,
+.chat-window rect,
+.chat-line rect {
   fill: #171a18;
   stroke: rgba(255, 255, 255, 0.14);
 }
 
-.assistant-bubble text {
+.assistant-bubble text,
+.chat-window text {
   fill: #f4f7f4;
   font-size: 13px;
 }
 
-.assistant-bubble text + text {
+.assistant-bubble text + text,
+.chat-window .chat-line text {
   fill: #b8d8d2;
   font-size: 11px;
 }
 
 .assistant-bubble--psm rect {
   fill: #263029;
+}
+
+.chat-title,
+.code-title {
+  fill: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.chat-line--user rect {
+  fill: rgba(20, 184, 166, 0.18);
+  stroke: rgba(20, 184, 166, 0.32);
+}
+
+.chat-line--bot rect {
+  fill: rgba(255, 255, 255, 0.08);
+}
+
+.live-edit rect,
+.validation-badge rect {
+  fill: #ffffff;
+  stroke: rgba(20, 184, 166, 0.34);
+}
+
+.live-edit text,
+.validation-badge text {
+  fill: #0f766e;
+  font-size: 13px;
+}
+
+.validation-badge--psm rect {
+  stroke: rgba(79, 70, 229, 0.36);
+}
+
+.validation-badge--psm text {
+  fill: #4338ca;
 }
 
 .aws-stack rect:first-child {
@@ -295,12 +522,14 @@
   font-size: 13px;
 }
 
-.file-tree rect:first-child {
+.file-tree rect:first-child,
+.code-editor rect {
   fill: #151716;
   stroke: rgba(255, 255, 255, 0.16);
 }
 
-.file-tree-title {
+.file-tree-title,
+.code-title {
   fill: #ffffff;
 }
 
@@ -309,9 +538,12 @@
   stroke: rgba(255, 255, 255, 0.12);
 }
 
-.file-row text {
+.file-row text,
+.code-editor text {
   fill: #edf7f4;
+  font-family: var(--font-mono);
   font-size: 13px;
+  font-weight: 750;
 }
 
 .file-row--owned rect {
@@ -336,9 +568,9 @@
 
 .stage-marker {
   fill: var(--paper-strong);
+  opacity: 0.34;
   stroke: var(--ink);
   stroke-width: 3;
-  opacity: 0.34;
 }
 
 .stage-marker.is-active {
@@ -447,7 +679,10 @@
     opacity: 1;
   }
 
-  .story-path {
+  .story-path,
+  .refine-edge,
+  .assistant-edit-edge,
+  .resource-map-path {
     stroke-dasharray: none;
   }
 }
