@@ -215,6 +215,7 @@ function renderOpenControl(shape, container, {
   height,
   diagramType,
   selected = false,
+  openControlHover = false,
   low = false
 }) {
   const controlWidth = low ? 30 : 38;
@@ -222,17 +223,26 @@ function renderOpenControl(shape, container, {
   const x = left + width - controlWidth - 9;
   const y = top + (low ? 8 : 12);
   const isCim = diagramType === "cim";
+  const fill = openControlHover
+      ? (isCim ? "rgba(24, 20, 14, 0.92)"
+          : "rgba(94, 203, 255, 0.26)")
+      : (isCim ? "rgba(24, 20, 14, 0.76)"
+          : "rgba(226, 232, 240, 0.14)");
+  const stroke = openControlHover ? cssVar("--accent-select", "#5ecbff")
+      : selected ? cssVar("--accent-select", "#5ecbff")
+          : isCim ? "rgba(24, 20, 14, 0.22)"
+              : "rgba(226, 232, 240, 0.22)";
   shape.upsert("openControl", "rect", {
     x,
-    y,
+    y: openControlHover ? y - 1 : y,
     width: controlWidth,
-    height: controlHeight,
+    height: openControlHover ? controlHeight + 2 : controlHeight,
     radius: 2,
-    fill: isCim ? "rgba(24, 20, 14, 0.76)"
-        : "rgba(226, 232, 240, 0.14)",
-    stroke: selected ? cssVar("--accent-select", "#5ecbff")
-        : isCim ? "rgba(24, 20, 14, 0.22)" : "rgba(226, 232, 240, 0.22)",
-    lineWidth: selected ? 1.4 : 1,
+    fill,
+    stroke,
+    lineWidth: openControlHover || selected ? 1.4 : 1,
+    shadowColor: openControlHover ? "rgba(94, 203, 255, 0.38)" : "transparent",
+    shadowBlur: openControlHover ? 8 : 0,
     cursor: "pointer"
   }, container);
   shape.upsert("openControlText", "text", {
@@ -295,6 +305,8 @@ function registerModlessG6Extensions() {
       const focused = attributes.focused || stateSet.has("focus");
       const dimmed = !focused && (attributes.dimmed || stateSet.has("dimmed"));
       const draft = attributes.contextDraft || stateSet.has("context-draft");
+      const openControlHover = attributes.openControlHover
+          || stateSet.has("open-control-hover");
       const low = attributes.detailLevel === "low";
       const high = attributes.detailLevel === "high";
       const containerNode = Boolean(attributes.isContainer);
@@ -432,6 +444,7 @@ function registerModlessG6Extensions() {
             height,
             diagramType,
             selected,
+            openControlHover,
             low
           });
         } else {
@@ -565,6 +578,7 @@ function registerModlessG6Extensions() {
             height,
             diagramType,
             selected,
+            openControlHover,
             low
           });
         } else {
@@ -1293,7 +1307,12 @@ export function mountG6Editor(container, {
     node: {
       type: G6_BASE_NODE_TYPE,
       state: {
-        normal: {hover: false, focused: false, dimmed: false},
+        normal: {
+          hover: false,
+          focused: false,
+          dimmed: false,
+          openControlHover: false
+        },
         selected: {selected: true},
         hover: {hover: true},
         focus: {focused: true},
@@ -1301,6 +1320,7 @@ export function mountG6Editor(container, {
         "connect-source": {connectSource: true},
         "connect-legal": {connectLegal: true},
         "connect-illegal": {connectIllegal: true},
+        "open-control-hover": {openControlHover: true},
         "context-draft": {contextDraft: true},
         "impact-focal": {impactFocal: true},
         "impact-upstream": {impactUpstream: true},
@@ -1346,6 +1366,27 @@ export function mountG6Editor(container, {
     lastShowLabels: true,
     viewportReady: false,
     viewportRetryCount: 0
+  };
+  editor.setOpenControlHover = (nodeId) => {
+    const previous = editor.openControlHoverNodeId || null;
+    const next = nodeId || null;
+    if (previous === next) {
+      return;
+    }
+    const changed = new Set();
+    if (previous && setFlag(editor.nodeStateFlags, previous,
+        "open-control-hover", false)) {
+      changed.add(previous);
+    }
+    editor.openControlHoverNodeId = next;
+    if (next && setFlag(editor.nodeStateFlags, next, "open-control-hover",
+        true)) {
+      changed.add(next);
+    }
+    flushElementStates(changed, editor.nodeStateFlags);
+    if (changed.size) {
+      scheduleGraphDraw(editor.graph);
+    }
   };
   bindG6Interactions(editor, callbacks);
   resizeGraphToHost();

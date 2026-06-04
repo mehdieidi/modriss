@@ -73,6 +73,8 @@ import {
   updateModelSaveUi
 } from './model-save-ui.js';
 
+let autoLayoutPromise = null;
+
 // ── Model list (sidebar select) ───────────────────────────────────────────────
 
 function defaultModelName(typeKey = state.activeType) {
@@ -1473,7 +1475,25 @@ export async function validateCurrentModel() {
   }
 }
 
-export async function autoLayoutCurrentDiagram({
+export async function autoLayoutCurrentDiagram(options = {}) {
+  if (autoLayoutPromise) {
+    if (options.status !== false) {
+      setStatus("Auto layout is already running.");
+    }
+    return autoLayoutPromise;
+  }
+  const promise = runAutoLayoutCurrentDiagram(options);
+  autoLayoutPromise = promise;
+  try {
+    return await promise;
+  } finally {
+    if (autoLayoutPromise === promise) {
+      autoLayoutPromise = null;
+    }
+  }
+}
+
+async function runAutoLayoutCurrentDiagram({
   progress = true,
   save = true,
   publish = true,
@@ -1540,14 +1560,19 @@ export async function autoLayoutCurrentDiagram({
     if (busy) {
       setBusy("Auto layout…");
     }
+    if (progress || busy) {
+      await waitForCanvasPaint(1);
+    }
+    const useBrowserElk = shouldUseBrowserElk(payload);
     if (progress) {
       setGenerationProgressPhase("Analyzing diagram topology…", 32);
-      setGenerationProgressPhase(shouldUseBrowserElk(payload)
+      setGenerationProgressPhase(useBrowserElk
           ? "Computing ELK layout…" : "Preparing fallback layout…", 78);
+      await waitForCanvasPaint(1);
     }
     let response;
     try {
-      response = shouldUseBrowserElk(payload)
+      response = useBrowserElk
           ? await layoutWithBrowserElk(payload)
           : deterministicLayoutResponse(payload, nodeSize);
     } catch (layoutError) {

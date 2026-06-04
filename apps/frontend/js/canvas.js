@@ -1508,6 +1508,7 @@ function createContainerFocusView(node) {
     },
     filters: {elementTypes: [], relationshipKinds: []},
     layoutProfile: "CONTAINER_FOCUS",
+    autoLayoutApplied: false,
     nodes: focusNodes.map((entry) => {
       const position = positionById.get(entry.elementId) || entry;
       return {
@@ -1575,6 +1576,7 @@ function createNeighborhoodFocusView(node, depth = 1) {
     },
     filters: {elementTypes: [], relationshipKinds: []},
     layoutProfile: "FOCUS_NEIGHBORHOOD",
+    autoLayoutApplied: false,
     nodes: focusNodes.map((entry) => {
       const position = positionById.get(entry.elementId) || entry;
       return {
@@ -1592,6 +1594,28 @@ function createNeighborhoodFocusView(node, depth = 1) {
     })),
     hidden: {elementIds: [], relationshipIds: []}
   };
+}
+
+function scheduleInitialFocusAutoLayout(focusView) {
+  if (!focusView || focusView.autoLayoutApplied) {
+    return;
+  }
+  window.setTimeout(() => {
+    if (state.views?.activeViewId !== focusView.id
+        || focusView.autoLayoutApplied) {
+      return;
+    }
+    void import('./model-ops.js').then(({autoLayoutCurrentDiagram}) =>
+        autoLayoutCurrentDiagram({
+          progress: true,
+          save: false,
+          status: false
+        }).then(() => {
+          setStatus(`Opened ${focusView.name || "view"} and arranged it.`);
+        })).catch((error) => {
+      console.warn("Initial focus auto layout failed", error);
+    });
+  }, 0);
 }
 
 export function openContainerFocus(elementId) {
@@ -1623,6 +1647,7 @@ export function openContainerFocus(elementId) {
   state.selectedConnectionId = null;
   materializeActiveView();
   renderDiagram();
+  scheduleInitialFocusAutoLayout(focusView);
   notifyModelToolsChanged();
   setStatus(`Opened ${node.label || node.id}. Use Back to return.`);
   return true;
@@ -1659,6 +1684,7 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
   state.selectedConnectionId = null;
   materializeActiveView();
   renderDiagram();
+  scheduleInitialFocusAutoLayout(focusView);
   notifyModelToolsChanged();
   setStatus(
       `Opened ${node.label || node.id} neighborhood depth ${normalizedDepth}.`);
@@ -1686,19 +1712,7 @@ export function closeCanvasFocus() {
 }
 
 function nodeVisibleInContainerMode(node) {
-  if (activeCanvasFocus()) {
-    return true;
-  }
-  const parentId = state.graph?.parentByChild?.get(node.id);
-  if (!parentId) {
-    return true;
-  }
-  const parent = state.graph?.elementsById?.get(parentId);
-  if (state.activeType === "cim" && elementType(parent)
-      === "BoundedContextCandidate") {
-    return true;
-  }
-  return !state.diagram.nodes.some((candidate) => candidate.id === parentId);
+  return Boolean(node);
 }
 
 function nodeVisibleInCurrentCanvasMode(node) {
@@ -1824,7 +1838,8 @@ function ensureG6Canvas() {
     mountG6Editor(el.g6EditorHost, {
       mapper: {
         visibleNode: nodeVisibleInCurrentCanvasMode,
-        isContainer: isContainerElement,
+        isContainer: (node) => isContainerElement(node)
+            && !(state.activeType === "cim" && isBoundedContextNode(node)),
         contextNameFromNode,
         viewProfile: activeCimViewProfile() || activePimViewProfile()
             || activeView()?.viewpoint || ""

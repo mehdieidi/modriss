@@ -9,11 +9,13 @@ const ELK_ALGORITHM_LAYERED = "layered";
 const DEFAULT_NODE_SPACING = 112;
 const DEFAULT_LAYER_SPACING = 188;
 const ELK_PORT_SIZE = 10;
-const ELK_SMALL_GRAPH_NODE_LIMIT = 120;
-const ELK_SMALL_GRAPH_EDGE_LIMIT = 260;
-const ELK_PORT_NODE_LIMIT = 300;
-const ELK_PORT_EDGE_LIMIT = 1200;
-const ELK_ROUTE_EDGE_LIMIT = 1400;
+const ELK_SMALL_GRAPH_NODE_LIMIT = 80;
+const ELK_SMALL_GRAPH_EDGE_LIMIT = 180;
+const ELK_MEDIUM_GRAPH_NODE_LIMIT = 260;
+const ELK_MEDIUM_GRAPH_EDGE_LIMIT = 700;
+const ELK_PORT_NODE_LIMIT = 90;
+const ELK_PORT_EDGE_LIMIT = 240;
+const ELK_ROUTE_EDGE_LIMIT = 900;
 
 let elkInstance = null;
 
@@ -135,20 +137,22 @@ function elkLayoutOptions({
   nodeSpacing = DEFAULT_NODE_SPACING,
   layerSpacing = DEFAULT_LAYER_SPACING,
   nodeCount = 0,
-  edgeCount = 0
+  edgeCount = 0,
+  usePorts = false
 } = {}) {
   const smallGraph = nodeCount <= ELK_SMALL_GRAPH_NODE_LIMIT
       && edgeCount <= ELK_SMALL_GRAPH_EDGE_LIMIT;
-  const largeGraph = nodeCount > 450 || edgeCount > 1200;
-  const veryLargeGraph = nodeCount > 1500 || edgeCount > 2400;
+  const mediumGraph = nodeCount <= ELK_MEDIUM_GRAPH_NODE_LIMIT
+      && edgeCount <= ELK_MEDIUM_GRAPH_EDGE_LIMIT;
+  const largeGraph = !mediumGraph;
   const resolvedNodeSpacing = Math.max(largeGraph ? 132 : 96,
       numeric(nodeSpacing, 112));
   const resolvedLayerSpacing = Math.max(largeGraph ? 228 : 172,
       numeric(layerSpacing, 188));
-  return {
+  const options = {
     "elk.algorithm": ELK_ALGORITHM_LAYERED,
     "elk.direction": elkDirection(profile),
-    "elk.edgeRouting": veryLargeGraph ? "POLYLINE" : "ORTHOGONAL",
+    "elk.edgeRouting": smallGraph ? "ORTHOGONAL" : "POLYLINE",
     "elk.padding": `[top=${LAYOUT_MARGIN},left=${LAYOUT_MARGIN},bottom=${LAYOUT_MARGIN},right=${LAYOUT_MARGIN}]`,
     "elk.spacing.nodeNode": String(resolvedNodeSpacing),
     "elk.spacing.edgeEdge": largeGraph ? "38" : "28",
@@ -160,20 +164,24 @@ function elkLayoutOptions({
     "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
     "elk.layered.crossingMinimization.greedySwitch.type": smallGraph
         ? "TWO_SIDED" : "ONE_SIDED",
-    "elk.layered.nodePlacement.strategy": smallGraph
-        ? "NETWORK_SIMPLEX" : "BRANDES_KOEPF",
+    "elk.layered.nodePlacement.strategy": largeGraph
+        ? "LINEAR_SEGMENTS" : "BRANDES_KOEPF",
     "elk.layered.nodePlacement.favorStraightEdges": "true",
     "elk.layered.considerModelOrder.strategy": largeGraph
         ? "NONE" : "NODES_AND_EDGES",
     "elk.layered.cycleBreaking.strategy": largeGraph ? "GREEDY" : "MODEL_ORDER",
-    "elk.layered.thoroughness": smallGraph ? "18" : largeGraph ? "4" : "8",
+    "elk.layered.thoroughness": smallGraph ? "10" : largeGraph ? "2" : "5",
     "elk.layered.mergeEdges": "false",
     "elk.layered.unnecessaryBendpoints": "true",
     "elk.separateConnectedComponents": "true",
-    "elk.portConstraints": "FIXED_ORDER",
-    "elk.portAlignment.default": "JUSTIFIED",
+    "elk.omitNodeMicroLayout": usePorts && smallGraph ? "false" : "true",
     "elk.hierarchyHandling": "INCLUDE_CHILDREN"
   };
+  if (usePorts) {
+    options["elk.portConstraints"] = "FIXED_ORDER";
+    options["elk.portAlignment.default"] = "JUSTIFIED";
+  }
+  return options;
 }
 
 function semanticPortSide(port) {
@@ -294,7 +302,8 @@ function toElkGraph({
       nodeSpacing: options.nodeSpacing,
       layerSpacing: options.layerSpacing,
       nodeCount: nodes.length,
-      edgeCount: elkEdges.length
+      edgeCount: elkEdges.length,
+      usePorts
     }),
     children: nodes.map((node) => ({
       id: node.id,

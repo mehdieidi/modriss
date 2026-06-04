@@ -168,8 +168,6 @@ export function renderNodeIcons(graph, nodes = [], {
 export function renderContextBoxes(graph, boxes = [], {
   selectedContextName = "",
   onSelect = () => {
-  },
-  onOpen = () => {
   }
 } = {}) {
   if (!boxes.length) {
@@ -197,35 +195,18 @@ export function renderContextBoxes(graph, boxes = [], {
       const label = document.createElement("div");
       label.className = "g6-bounded-context-label";
       const name = document.createElement("span");
-      const open = document.createElement("button");
-      open.type = "button";
-      open.textContent = "Open";
-      label.append(name, open);
+      label.append(name);
       item.appendChild(label);
-      record = {item, name, open, contextName: key, onSelect, onOpen};
+      record = {item, name, contextName: key, onSelect};
       item.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
         record.onSelect(record.contextName);
-      });
-      item.addEventListener("dblclick", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        record.onOpen(record.contextName);
-      });
-      open.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        record.onOpen(record.contextName);
       });
       contextBoxItems.set(key, record);
       layer.appendChild(item);
     }
     record.contextName = key;
     record.onSelect = onSelect;
-    record.onOpen = onOpen;
     record.name.textContent = key;
-    record.open.title = `Open ${key}`;
     record.item.classList.toggle("selected", selectedContextName === key);
     record.item.dataset.contextName = key;
     record.item.style.left = `${Math.round(Math.min(a.x, b.x))}px`;

@@ -1711,16 +1711,15 @@
 
 .g6-bounded-context-box {
   position: absolute;
-  border: 2px dashed color-mix(in srgb, var(--outline) 65%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--accent-glow) 16%, transparent);
-  pointer-events: auto;
-  cursor: pointer;
+  border: 1px dashed color-mix(in srgb, var(--outline) 62%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent-glow) 8%, transparent);
+  pointer-events: none;
 }
 
 .g6-bounded-context-box:hover {
-  border-color: color-mix(in srgb, var(--accent) 76%, transparent);
-  background: color-mix(in srgb, var(--accent-glow) 22%, transparent);
+  border-color: color-mix(in srgb, var(--outline) 62%, transparent);
+  background: color-mix(in srgb, var(--accent-glow) 8%, transparent);
 }
 
 .g6-bounded-context-box.selected {
@@ -1730,32 +1729,22 @@
 
 .g6-bounded-context-label {
   position: absolute;
-  top: -13px;
-  left: 12px;
+  top: -11px;
+  left: 10px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 2px 3px 2px 8px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: color-mix(in srgb, var(--surface) 90%, #fff 10%);
-  color: var(--text);
-  font: 700 10px/1.2 var(--font-display);
-  letter-spacing: 0.06em;
+  max-width: min(220px, calc(100% - 20px));
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 54%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: color-mix(in srgb, var(--text) 88%, var(--muted) 12%);
+  font: 700 9px/1.2 var(--font-display);
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: uppercase;
-}
-
-.g6-bounded-context-label button {
-  min-height: 18px;
-  padding: 2px 6px;
-  border: 1px solid color-mix(in srgb, var(--accent) 44%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--text-strong);
-  cursor: pointer;
-  font: 800 8px/1 var(--font-display);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .remote-cursor {
