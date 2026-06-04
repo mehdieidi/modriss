@@ -26,6 +26,13 @@ public final class EtlExecutionReportWriter {
         appendProperty(json, "startedAt", report.startedAt().toString(), true);
         appendProperty(json, "finishedAt", report.finishedAt().toString(), true);
         appendProperty(json, "durationMillis", Long.toString(report.duration().toMillis()), false);
+        json.append("  \"phaseTiming\": {\n");
+        int timingIndex = 0;
+        for (var timing : report.phaseTiming().asMap().entrySet()) {
+            appendProperty(json, timing.getKey(), Long.toString(timing.getValue()), false, 4,
+                    ++timingIndex < report.phaseTiming().asMap().size());
+        }
+        json.append("  },\n");
         json.append("  \"diagnostics\": [\n");
         for (int i = 0; i < report.diagnostics().size(); i++) {
             EtlDiagnostic diagnostic = report.diagnostics().get(i);

@@ -12,6 +12,7 @@ public record EtlExecutionReport(
         Instant startedAt,
         Instant finishedAt,
         Duration duration,
+        EtlPhaseTiming phaseTiming,
         List<EtlDiagnostic> diagnostics,
         String standardOutput,
         String warningOutput,
@@ -23,6 +24,7 @@ public record EtlExecutionReport(
         Objects.requireNonNull(startedAt, "startedAt");
         Objects.requireNonNull(finishedAt, "finishedAt");
         Objects.requireNonNull(duration, "duration");
+        phaseTiming = phaseTiming == null ? new EtlPhaseTiming() : phaseTiming;
         diagnostics = diagnostics == null ? List.of() : List.copyOf(diagnostics);
         standardOutput = standardOutput == null ? "" : standardOutput;
         warningOutput = warningOutput == null ? "" : warningOutput;

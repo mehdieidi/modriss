@@ -8,11 +8,16 @@ operation serviceFor(source) {
   }
   var key = cacheKeyFor(source);
   if (cachedCimServiceBySourceId.containsKey(key)) {
-    return cachedCimServiceBySourceId.get(key);
+    var cached = cachedCimServiceBySourceId.get(key);
+    if (cached = "__NONE__") return null;
+    return cached;
   }
   var service = resolveServiceFor(source);
   if (service.isDefined()) {
     cachedCimServiceBySourceId.put(key, service);
+  }
+  else {
+    cachedCimServiceBySourceId.put(key, "__NONE__");
   }
   return service;
 }
@@ -41,9 +46,6 @@ operation resolveServiceFor(source) {
       var capSvc = cachedEquivalent(source, "Capability2Service");
       if (capSvc.isDefined()) return capSvc;
       var context = cachedContextForCapability(source);
-      if (context.isUndefined()) {
-        context = CIMORG!BoundedContextCandidate.all.selectOne(bc | bc.capabilities.includes(source));
-      }
       if (context.isDefined()) return serviceFor(context);
     }
     if (source.isKindOf(CIMBEHAVIOR!Command) and source.targetCapability.isDefined()) {
@@ -71,14 +73,13 @@ operation resolveServiceFor(source) {
       return serviceFor(source.owningCapability);
     }
     var ownerContext = cachedOwnerContextFor(source);
-    if (ownerContext.isUndefined()) {
-      ownerContext = CIMORG!BoundedContextCandidate.all.selectOne(bc |
-        bc.commands.includes(source) or bc.queries.includes(source) or bc.events.includes(source) or bc.entities.includes(source) or bc.policies.includes(source));
-    }
     if (ownerContext.isDefined()) {
       return serviceFor(ownerContext);
     }
-    return pimRoot().services.first();
+    if (cachedCimFallbackService.isUndefined()) {
+      cachedCimFallbackService = pimRoot().services.first();
+    }
+    return cachedCimFallbackService;
   }
   return null;
 }

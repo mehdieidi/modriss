@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
@@ -88,6 +89,7 @@ final class PimToAwsPsmEtlRegressionTest {
 
         assertFalse(values(root, "relationshipViews").isEmpty(),
                 "Expected generated relationship views for API/event/message integrations.");
+        assertGeneratedIdsAreUnique(root);
 
         EObject readiness = reference(root, "readiness");
         assertTrue(readiness != null, "Expected readiness assessment.");
@@ -180,5 +182,22 @@ final class PimToAwsPsmEtlRegressionTest {
             }
         }
         return resources;
+    }
+
+    private void assertGeneratedIdsAreUnique(EObject root) {
+        List<String> ids = new java.util.ArrayList<>();
+        if (feature(root, "id") != null && get(root, "id") != null) {
+            ids.add(get(root, "id").toString());
+        }
+        TreeIterator<EObject> contents = root.eAllContents();
+        while (contents.hasNext()) {
+            EObject object = contents.next();
+            EStructuralFeature id = object.eClass().getEStructuralFeature("id");
+            if (id != null && object.eGet(id) != null) {
+                ids.add(object.eGet(id).toString());
+            }
+        }
+        assertEquals(ids.size(), new HashSet<>(ids).size(),
+                "Generated AWS PSM model element IDs must remain unique.");
     }
 }

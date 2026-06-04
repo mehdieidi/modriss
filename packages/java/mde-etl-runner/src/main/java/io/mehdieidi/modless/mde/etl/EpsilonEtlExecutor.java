@@ -46,6 +46,8 @@ public final class EpsilonEtlExecutor {
 
     public EtlExecutionReport execute(EtlExecutionRequest request) throws EtlExecutionException {
         Instant startedAt = Instant.now();
+        long startedNanos = System.nanoTime();
+        EtlPhaseTiming phaseTiming = new EtlPhaseTiming();
         List<EtlDiagnostic> diagnostics = new ArrayList<>();
         BoundedByteArrayOutputStream stdout = new BoundedByteArrayOutputStream(
                 maxCapturedOutputBytes);
@@ -57,32 +59,51 @@ public final class EpsilonEtlExecutor {
         List<LoadedEtlModel> loadedModels = new ArrayList<>();
 
         try {
+            long phaseStarted = System.nanoTime();
             validateRequest(request, diagnostics);
-            failIfDiagnostics(request, startedAt, diagnostics, stdout, warnings, stderr, null);
+            phaseTiming.addValidation(System.nanoTime() - phaseStarted);
+            failIfDiagnostics(request, startedAt, phaseTiming, diagnostics, stdout, warnings,
+                    stderr, null);
 
+            phaseStarted = System.nanoTime();
             prepareOutputs(request);
+            phaseTiming.addPrepareOutputs(System.nanoTime() - phaseStarted);
 
+            phaseStarted = System.nanoTime();
             boolean parsed = parseModule(request, module, diagnostics);
+            phaseTiming.addParse(System.nanoTime() - phaseStarted);
             if (!parsed || diagnostics.stream()
                     .anyMatch(d -> d.severity() == DiagnosticSeverity.ERROR)) {
-                throw failure("ETL module could not be parsed.", request, startedAt, diagnostics,
-                        stdout, warnings, stderr, null);
+                throw failure("ETL module could not be parsed.", request, startedAt, phaseTiming,
+                        diagnostics, stdout, warnings, stderr, null);
             }
 
             configureStreams(module, request.captureOutput(), stdout, warnings, stderr);
             for (EtlModelConfiguration modelConfiguration : request.models()) {
+                phaseStarted = System.nanoTime();
                 IModel model = loadModel(modelConfiguration);
+                phaseTiming.addModelLoad(modelConfiguration.readOnly(),
+                        System.nanoTime() - phaseStarted);
                 loadedModels.add(new LoadedEtlModel(modelConfiguration, model));
                 module.getContext().getModelRepository().addModel(model);
             }
 
             configureTransformationState(module);
+            phaseStarted = System.nanoTime();
             executeModule(module);
-            storeModels(request, loadedModels, diagnostics);
+            phaseTiming.addExecute(System.nanoTime() - phaseStarted);
+            phaseStarted = System.nanoTime();
+            try {
+                storeModels(request, startedAt, phaseTiming, loadedModels, diagnostics, stdout,
+                        warnings, stderr);
+            } finally {
+                phaseTiming.addStore(System.nanoTime() - phaseStarted);
+            }
             return report(
                     EtlExecutionStatus.SUCCEEDED,
                     request,
                     startedAt,
+                    phaseTiming,
                     diagnostics,
                     stdout,
                     warnings,
@@ -99,12 +120,12 @@ public final class EpsilonEtlExecutor {
                     "An EMF model or metamodel could not be loaded.",
                     "Check model paths, metamodel paths, namespace aliases, and that referenced Ecore files exist.",
                     ex));
-            throw failure("ETL model loading failed.", request, startedAt, diagnostics, stdout,
-                    warnings, stderr, ex);
+            throw failure("ETL model loading failed.", request, startedAt, phaseTiming, diagnostics,
+                    stdout, warnings, stderr, ex);
         } catch (EolRuntimeException ex) {
             diagnostics.add(runtimeDiagnostic(ex, request.moduleFile()));
-            throw failure("ETL execution failed.", request, startedAt, diagnostics, stdout,
-                    warnings, stderr, ex);
+            throw failure("ETL execution failed.", request, startedAt, phaseTiming, diagnostics,
+                    stdout, warnings, stderr, ex);
         } catch (EpsilonExecutionTimeoutException ex) {
             diagnostics.add(EtlDiagnostic.error(
                     ExecutionPhase.EXECUTION,
@@ -115,8 +136,8 @@ public final class EpsilonEtlExecutor {
                     "The ETL module exceeded the configured execution timeout.",
                     "Reduce model size, inspect the ETL script for non-terminating logic, or increase the timeout deliberately.",
                     ex));
-            throw failure("ETL execution timed out.", request, startedAt, diagnostics, stdout,
-                    warnings, stderr, ex);
+            throw failure("ETL execution timed out.", request, startedAt, phaseTiming, diagnostics,
+                    stdout, warnings, stderr, ex);
         } catch (Exception ex) {
             diagnostics.add(EtlDiagnostic.error(
                     ExecutionPhase.UNEXPECTED,
@@ -127,9 +148,10 @@ public final class EpsilonEtlExecutor {
                     "An unexpected exception interrupted ETL execution.",
                     "Inspect the exception type and stack trace, then verify module/model/metamodel compatibility.",
                     ex));
-            throw failure("ETL execution failed unexpectedly.", request, startedAt, diagnostics,
-                    stdout, warnings, stderr, ex);
+            throw failure("ETL execution failed unexpectedly.", request, startedAt, phaseTiming,
+                    diagnostics, stdout, warnings, stderr, ex);
         } finally {
+            long disposeStarted = System.nanoTime();
             for (LoadedEtlModel loadedModel : loadedModels) {
                 try {
                     loadedModel.model().dispose();
@@ -138,6 +160,8 @@ public final class EpsilonEtlExecutor {
                 }
             }
             module.getContext().dispose();
+            phaseTiming.addDispose(System.nanoTime() - disposeStarted);
+            phaseTiming.setTotal(System.nanoTime() - startedNanos);
         }
     }
 
@@ -270,6 +294,8 @@ public final class EpsilonEtlExecutor {
         properties.put(EmfModel.PROPERTY_MODEL_URI, fileUri(modelConfiguration.modelFile()));
         properties.put(EmfModel.PROPERTY_FILE_BASED_METAMODEL_URI,
                 joinFileUris(modelConfiguration.metamodelFiles()));
+        properties.put(EmfModel.PROPERTY_REUSE_UNMODIFIED_FILE_BASED_METAMODELS,
+                Boolean.TRUE.toString());
         properties.put(EmfModel.PROPERTY_VALIDATE, Boolean.toString(modelConfiguration.validate()));
         model.load(properties);
         return model;
@@ -303,6 +329,8 @@ public final class EpsilonEtlExecutor {
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedCimEquivalentByRule", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedCimFallbackService", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedCimPolicyTargetsBySourceId", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedPimObservabilityById", null,
@@ -318,6 +346,16 @@ public final class EpsilonEtlExecutor {
                 new Variable("cachedPimExternalFlowIds", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedPimQueueById", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimServiceOwnedKeys", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimServiceMembershipKeys", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimRetentionPolicyById", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimBackupPolicyById", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimSchemasByItemId", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedReadinessManualDecisionsById", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
@@ -341,6 +379,26 @@ public final class EpsilonEtlExecutor {
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedAwsGeneratedResources", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedAwsGeneratedResourceObjects", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedGeneratedIdByKey", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedNextUniqueIdIndexBySeed", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedNextLogicalIdIndexBySeed", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedDataAccessesByFunctionId", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedStageStackLinks", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedApiGatewayRoutesWithLambdaIntegration", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedSqsLambdaMappings", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedSnsLambdaSubscriptions", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedEventBridgeRules", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedAwsResolvingRelationships", false,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedAwsAuthorizerByApiId", null,
@@ -362,6 +420,12 @@ public final class EpsilonEtlExecutor {
                 new Variable("cachedAwsReadinessFindingIds", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedAwsReadinessCheckIds", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedSlugByText", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedCamelByText", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPascalByText", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance));
     }
 
@@ -413,8 +477,14 @@ public final class EpsilonEtlExecutor {
     }
 
     private void storeModels(
-            EtlExecutionRequest request, List<LoadedEtlModel> loadedModels,
-            List<EtlDiagnostic> diagnostics)
+            EtlExecutionRequest request,
+            Instant startedAt,
+            EtlPhaseTiming phaseTiming,
+            List<LoadedEtlModel> loadedModels,
+            List<EtlDiagnostic> diagnostics,
+            BoundedByteArrayOutputStream stdout,
+            BoundedByteArrayOutputStream warnings,
+            BoundedByteArrayOutputStream stderr)
             throws EtlExecutionException {
         for (LoadedEtlModel loadedModel : loadedModels) {
             if (loadedModel.configuration().readOnly()) {
@@ -453,11 +523,12 @@ public final class EpsilonEtlExecutor {
                     report(
                             EtlExecutionStatus.FAILED,
                             request,
-                            Instant.now(),
+                            startedAt,
+                            phaseTiming,
                             diagnostics,
-                            new BoundedByteArrayOutputStream(maxCapturedOutputBytes),
-                            new BoundedByteArrayOutputStream(maxCapturedOutputBytes),
-                            new BoundedByteArrayOutputStream(maxCapturedOutputBytes)));
+                            stdout,
+                            warnings,
+                            stderr));
         }
     }
 
@@ -514,14 +585,15 @@ public final class EpsilonEtlExecutor {
     private void failIfDiagnostics(
             EtlExecutionRequest request,
             Instant startedAt,
+            EtlPhaseTiming phaseTiming,
             List<EtlDiagnostic> diagnostics,
             BoundedByteArrayOutputStream stdout,
             BoundedByteArrayOutputStream warnings,
             BoundedByteArrayOutputStream stderr,
             Throwable cause) throws EtlExecutionException {
         if (diagnostics.stream().anyMatch(d -> d.severity() == DiagnosticSeverity.ERROR)) {
-            throw failure("ETL request is invalid.", request, startedAt, diagnostics, stdout,
-                    warnings, stderr, cause);
+            throw failure("ETL request is invalid.", request, startedAt, phaseTiming, diagnostics,
+                    stdout, warnings, stderr, cause);
         }
     }
 
@@ -529,6 +601,7 @@ public final class EpsilonEtlExecutor {
             String message,
             EtlExecutionRequest request,
             Instant startedAt,
+            EtlPhaseTiming phaseTiming,
             List<EtlDiagnostic> diagnostics,
             BoundedByteArrayOutputStream stdout,
             BoundedByteArrayOutputStream warnings,
@@ -536,8 +609,8 @@ public final class EpsilonEtlExecutor {
             Throwable cause) {
         return new EtlExecutionException(
                 message,
-                report(EtlExecutionStatus.FAILED, request, startedAt, diagnostics, stdout, warnings,
-                        stderr),
+                report(EtlExecutionStatus.FAILED, request, startedAt, phaseTiming, diagnostics,
+                        stdout, warnings, stderr),
                 cause);
     }
 
@@ -545,6 +618,7 @@ public final class EpsilonEtlExecutor {
             EtlExecutionStatus status,
             EtlExecutionRequest request,
             Instant startedAt,
+            EtlPhaseTiming phaseTiming,
             List<EtlDiagnostic> diagnostics,
             BoundedByteArrayOutputStream stdout,
             BoundedByteArrayOutputStream warnings,
@@ -556,6 +630,7 @@ public final class EpsilonEtlExecutor {
                 startedAt,
                 finishedAt,
                 Duration.between(startedAt, finishedAt),
+                phaseTiming,
                 diagnostics,
                 stdout.asUtf8String(),
                 warnings.asUtf8String(),

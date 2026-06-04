@@ -297,9 +297,7 @@ operation annotationValue(text, key : String) {
 
 operation createLogGroupFor(source, logicalSeed : String, logName : String) {
   var g = new AWSPSMOBSERVABILITY!CloudWatchLogGroup;
-  if (not cachedAwsGeneratedResources.includes(g)) {
-    cachedAwsGeneratedResources.add(g);
-  }
+  registerAwsGeneratedResource(g);
   g.id = generatedId("log_group", source, logicalSeed);
   g.name = firstText(source.name, logicalSeed) + " Log Group";
   g.generatedFrom = source.id;
@@ -554,11 +552,21 @@ operation placeUncontainedAwsResources() {
   }
   for (stage in AWSPSMCORE!AwsStage.all) {
     for (stack in AWSPSMCORE!SamStack.all) {
-      if (not stage.deploysStacks.includes(stack)) {
-        stage.deploysStacks.add(stack);
-      }
+      addStageStackOnce(stage, stack);
     }
   }
+}
+
+operation addStageStackOnce(stage, stack) {
+  if (stage.isUndefined() or stack.isUndefined()) {
+    return;
+  }
+  var key = cacheKeyFor(stage) + "::" + cacheKeyFor(stack);
+  if (cachedStageStackLinks.includes(key)) {
+    return;
+  }
+  cachedStageStackLinks.add(key);
+  stage.deploysStacks.add(stack);
 }
 
 operation stackForGeneratedResource(resource) {
@@ -595,11 +603,13 @@ operation generateIamStatements() {
       for (s in f.writes) {
         addResourceStatement(pol.document, s, false, true);
       }
-      for (daRead in DATA!DataAccess.all.select(da | da.`function` = f and (da.mode = PIMTYPES!DataAccessMode#READ or da.mode = PIMTYPES!DataAccessMode#READ_WRITE))) {
-        addResourceStatement(pol.document, daRead.store, true, false);
-      }
-      for (daWrite in DATA!DataAccess.all.select(da | da.`function` = f and (da.mode = PIMTYPES!DataAccessMode#WRITE or da.mode = PIMTYPES!DataAccessMode#READ_WRITE or da.mode = PIMTYPES!DataAccessMode#APPEND or da.mode = PIMTYPES!DataAccessMode#DELETE))) {
-        addResourceStatement(pol.document, daWrite.store, false, true);
+      for (access in indexedValues(cachedDataAccessesByFunctionId, cacheKeyFor(f))) {
+        if (access.mode = PIMTYPES!DataAccessMode#READ or access.mode = PIMTYPES!DataAccessMode#READ_WRITE) {
+          addResourceStatement(pol.document, access.store, true, false);
+        }
+        if (access.mode = PIMTYPES!DataAccessMode#WRITE or access.mode = PIMTYPES!DataAccessMode#READ_WRITE or access.mode = PIMTYPES!DataAccessMode#APPEND or access.mode = PIMTYPES!DataAccessMode#DELETE) {
+          addResourceStatement(pol.document, access.store, false, true);
+        }
       }
       for (evt in f.publishes) {
         addPublishStatement(pol.document, evt);
@@ -621,7 +631,7 @@ operation generateIamStatements() {
 }
 
 operation generateRelationshipViews() {
-  for (route in AWSPSMAPI!ApiGatewayRoute.all) {
+  for (route in cachedApiGatewayRoutesWithLambdaIntegration) {
     if (route.integration.isDefined() and route.integration.lambdaTarget.isDefined()) {
       var v = new AWSPSMINTEGRATIONS!ApiGatewayLambdaIntegrationView;
       v.id = uniqueId("view_api_lambda_" + slug(route.logicalId + "_" + route.integration.lambdaTarget.logicalId));
@@ -636,7 +646,7 @@ operation generateRelationshipViews() {
       awsRoot().relationshipViews.add(v);
     }
   }
-  for (m in AWSPSMCOMPUTE!SqsLambdaEventSourceMapping.all) {
+  for (m in cachedSqsLambdaMappings) {
     var mappedFunction = m.eGet(m.eClass().getEStructuralFeature("function"));
     var sqsView = new AWSPSMINTEGRATIONS!SqsLambdaEventSourceView;
     sqsView.id = uniqueId("view_sqs_lambda_" + slug(m.queue.logicalId + "_" + mappedFunction.logicalId));
@@ -649,7 +659,7 @@ operation generateRelationshipViews() {
     sqsView.mapping = m;
     awsRoot().relationshipViews.add(sqsView);
   }
-  for (sub in AWSPSMMESSAGING!SnsSubscription.all) {
+  for (sub in cachedSnsLambdaSubscriptions) {
     if (sub.protocol = AWSPSMENUMS!SnsProtocol#LAMBDA and sub.endpointResource.isDefined()) {
       var snsView = new AWSPSMINTEGRATIONS!SnsLambdaSubscriptionView;
       snsView.id = uniqueId("view_sns_lambda_" + slug(sub.topic.logicalId + "_" + sub.endpointResource.logicalId));
@@ -664,7 +674,7 @@ operation generateRelationshipViews() {
       awsRoot().relationshipViews.add(snsView);
     }
   }
-  for (er in AWSPSMEVENTS!EventBridgeRule.all) {
+  for (er in cachedEventBridgeRules) {
     for (targetRow in er.targets) {
       if (targetRow.targetKind = AWSPSMENUMS!EventBridgeTargetKind#LAMBDA and targetRow.targetResource.isDefined()) {
         var ebView = new AWSPSMINTEGRATIONS!EventBridgeLambdaTargetView;

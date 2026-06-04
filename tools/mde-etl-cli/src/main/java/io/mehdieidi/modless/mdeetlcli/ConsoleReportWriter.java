@@ -10,6 +10,7 @@ final class ConsoleReportWriter {
         out.printf("ETL execution succeeded in %d ms.%n", report.duration().toMillis());
         out.printf("Module: %s%n", report.moduleFile());
         if (verbose) {
+            writeTiming(out, report);
             writeCaptured(out, report);
         }
     }
@@ -44,8 +45,18 @@ final class ConsoleReportWriter {
             }
         }
         if (verbose) {
+            writeTiming(err, report);
             writeCaptured(err, report);
         }
+    }
+
+    private void writeTiming(PrintWriter writer, EtlExecutionReport report) {
+        var timing = report.phaseTiming();
+        writer.printf(
+                "ETL timing: validation=%dms, prepare=%dms, parse=%dms, sourceLoad=%dms, targetLoad=%dms, execute=%dms, store=%dms, dispose=%dms, total=%dms%n",
+                timing.validationMs(), timing.prepareOutputsMs(), timing.parseMs(),
+                timing.sourceModelLoadMs(), timing.targetModelLoadMs(), timing.etlExecuteMs(),
+                timing.modelStoreMs(), timing.disposeMs(), timing.totalMs());
     }
 
     private void writeCaptured(PrintWriter writer, EtlExecutionReport report) {

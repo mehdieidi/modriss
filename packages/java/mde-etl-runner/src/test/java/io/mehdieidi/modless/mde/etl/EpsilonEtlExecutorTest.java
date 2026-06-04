@@ -28,6 +28,7 @@ final class EpsilonEtlExecutorTest {
         assertTrue(exception.getReport().diagnostics().stream()
                 .anyMatch(d -> d.phase() == ExecutionPhase.VALIDATION
                         && d.reason().contains("ETL module does not exist")));
+        assertTrue(exception.getReport().phaseTiming().totalMs() >= 0);
     }
 
     @Test
@@ -37,5 +38,27 @@ final class EpsilonEtlExecutorTest {
 
         assertFalse(target.readOnly());
         assertFalse(target.storeOnDisposal());
+    }
+
+    @Test
+    void serializesPhaseTimingsInReports() {
+        EtlPhaseTiming timing = new EtlPhaseTiming();
+        timing.addParse(2_000_000);
+        EtlExecutionReport report = new EtlExecutionReport(
+                EtlExecutionStatus.SUCCEEDED,
+                Path.of("module.etl"),
+                java.time.Instant.EPOCH,
+                java.time.Instant.EPOCH,
+                java.time.Duration.ZERO,
+                timing,
+                List.of(),
+                "",
+                "",
+                "");
+
+        String json = new EtlExecutionReportWriter().toJson(report);
+
+        assertTrue(json.contains("\"phaseTiming\""));
+        assertTrue(json.contains("\"parseMs\": 2"));
     }
 }

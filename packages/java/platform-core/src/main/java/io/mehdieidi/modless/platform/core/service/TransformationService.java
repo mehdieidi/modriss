@@ -144,7 +144,7 @@ public final class TransformationService {
             Files.write(cimXmi, sourceBytes);
 
             EtlExecutionReport report = etlExecutor.execute(CimToPimDefaults.request(
-                    repositoryRoot, cimXmi, pimXmi, true, true));
+                    repositoryRoot, cimXmi, pimXmi, true, false));
             if (report.status() != EtlExecutionStatus.SUCCEEDED) {
                 throw new PlatformException(500, "CIM-to-PIM ETL failed: "
                         + summarizeDiagnostics(report));
@@ -186,7 +186,7 @@ public final class TransformationService {
             Files.write(pimXmi, sourceBytes);
 
             EtlExecutionReport report = etlExecutor.execute(PimToAwsPsmDefaults.request(
-                    repositoryRoot, pimXmi, psmXmi, true, true));
+                    repositoryRoot, pimXmi, psmXmi, true, false));
             if (report.status() != EtlExecutionStatus.SUCCEEDED) {
                 throw new PlatformException(500, "PIM-to-PSM ETL failed: "
                         + summarizeDiagnostics(report));

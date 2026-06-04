@@ -65,7 +65,9 @@ rule Environment2AwsStage
   s.stackNamePrefix = kebab(firstText(pimRoot().domainName, pimRoot().name)) + "-" + kebab(s.stageName);
   s.stageTags.add(tag("Environment", s.stageName));
   s.stageTags.add(tag("GeneratedFromPIM", pimRoot().name));
-  s.deploysStacks.addAll(AWSPSMCORE!SamStack.all);
+  for (stack in AWSPSMCORE!SamStack.all) {
+    addStageStackOnce(s, stack);
+  }
   createTrace(e, s, "Environment2AwsStage", "HIGH", KERNEL!TraceLinkType#DEPLOYS_TO);
 }
 

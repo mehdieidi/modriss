@@ -5,47 +5,60 @@ import "lib/pim-builders.eol";
 import "lib/resolution.eol";
 
 operation attachOwnedElements() {
+  for (service in pimRoot().services) {
+    for (fn in service.ownsFunctions) { cacheOwnedKey(service, "ownsFunctions", fn); }
+    for (api in service.ownsApis) { cacheOwnedKey(service, "ownsApis", api); }
+    for (store in service.ownsStores) { cacheOwnedKey(service, "ownsStores", store); }
+    for (workflow in service.ownsWorkflows) { cacheOwnedKey(service, "ownsWorkflows", workflow); }
+    for (adapter in service.ownsAdapters) { cacheOwnedKey(service, "ownsAdapters", adapter); }
+  }
   for (cmd in CIMBEHAVIOR!Command.all) {
     var svc = serviceFor(cmd);
     var fn = commandFunction(cmd);
-    if (fn.isDefined() and not svc.ownsFunctions.includes(fn)) {
-      svc.ownsFunctions.add(fn);
-    }
+    addOwnedOnce(svc, "ownsFunctions", fn);
   }
   for (q in CIMBEHAVIOR!Query.all) {
     var svc = serviceFor(q);
     var fn = queryFunction(q);
-    if (fn.isDefined() and not svc.ownsFunctions.includes(fn)) {
-      svc.ownsFunctions.add(fn);
-    }
+    addOwnedOnce(svc, "ownsFunctions", fn);
   }
   for (ag in CIMDOMAIN!AggregateCandidate.all) {
     var svc = serviceFor(ag);
     var store = storeForAggregate(ag);
-    if (store.isDefined() and not svc.ownsStores.includes(store)) {
-      svc.ownsStores.add(store);
-    }
+    addOwnedOnce(svc, "ownsStores", store);
   }
   for (bp in CIMPROCESS!BusinessProcess.all) {
     var svc = serviceFor(bp);
     var workflow = workflowFor(bp);
-    if (workflow.isDefined() and not svc.ownsWorkflows.includes(workflow)) {
-      svc.ownsWorkflows.add(workflow);
-    }
+    addOwnedOnce(svc, "ownsWorkflows", workflow);
   }
   for (es in CIMORG!ExternalSystem.all) {
     var svc = pimRoot().services.first();
     var adapter = adapterFor(es);
-    if (adapter.isDefined() and not svc.ownsAdapters.includes(adapter)) {
-      svc.ownsAdapters.add(adapter);
-    }
+    addOwnedOnce(svc, "ownsAdapters", adapter);
   }
   for (api in API!Api.all) {
-    var owner = pimRoot().services.selectOne(s | s.ownsApis.includes(api));
-    if (owner.isUndefined()) {
-      pimRoot().services.first().ownsApis.add(api);
+    if (not cachedPimServiceOwnedKeys.includes("ownsApis::" + cacheKeyFor(api))) {
+      addOwnedOnce(pimRoot().services.first(), "ownsApis", api);
     }
   }
+}
+
+operation addOwnedOnce(service, featureName : String, element) {
+  if (service.isUndefined() or element.isUndefined()) {
+    return;
+  }
+  var key = cacheKeyFor(service) + "::" + featureName + "::" + cacheKeyFor(element);
+  if (cachedPimServiceOwnedKeys.includes(key)) {
+    return;
+  }
+  cacheOwnedKey(service, featureName, element);
+  service.eGet(service.eClass().getEStructuralFeature(featureName)).add(element);
+}
+
+operation cacheOwnedKey(service, featureName : String, element) {
+  cachedPimServiceOwnedKeys.add(cacheKeyFor(service) + "::" + featureName + "::" + cacheKeyFor(element));
+  cachedPimServiceOwnedKeys.add(featureName + "::" + cacheKeyFor(element));
 }
 
 operation createRequestResponseFlows() {
@@ -349,7 +362,7 @@ operation createExternalIntegrationFlows() {
 
 operation createDefaultRetentionPolicy(store : DATA!StorageElement) {
   var id = newId("retention", store.id);
-  var existing = POLICY!RetentionPolicy.all.selectOne(p | p.id = id);
+  var existing = cachedPimRetentionPolicyById.get(id);
   if (existing.isDefined()) {
     return existing;
   }
@@ -363,13 +376,14 @@ operation createDefaultRetentionPolicy(store : DATA!StorageElement) {
   policy.legalHoldPossible = store.containsPersonalData;
   policy.attachedTo.add(store);
   pimRoot().policies.add(policy);
+  cachedPimRetentionPolicyById.put(id, policy);
   traceGenerated(store, policy, "TR-150", "LOW");
   return policy;
 }
 
 operation createDefaultBackupPolicy(store : DATA!StorageElement) {
   var id = newId("backup", store.id);
-  var existing = POLICY!BackupPolicy.all.selectOne(p | p.id = id);
+  var existing = cachedPimBackupPolicyById.get(id);
   if (existing.isDefined()) {
     return existing;
   }
@@ -384,11 +398,18 @@ operation createDefaultBackupPolicy(store : DATA!StorageElement) {
   policy.recoveryTimeObjective = "24 hours";
   policy.attachedTo.add(store);
   pimRoot().policies.add(policy);
+  cachedPimBackupPolicyById.put(id, policy);
   traceGenerated(store, policy, "TR-150", "LOW");
   return policy;
 }
 
 operation ensureStoreOperationalPolicies() {
+  for (policy in POLICY!RetentionPolicy.all.select(p | hasText(p.id))) {
+    cachedPimRetentionPolicyById.put(policy.id, policy);
+  }
+  for (policy in POLICY!BackupPolicy.all.select(p | hasText(p.id))) {
+    cachedPimBackupPolicyById.put(policy.id, policy);
+  }
   for (store in DATA!StorageElement.all.select(s | s.persistent)) {
     if (store.retentionPolicy.isUndefined()) {
       store.retentionPolicy = createDefaultRetentionPolicy(store);
@@ -798,10 +819,10 @@ operation attachDataProtectionPolicies() {
     addIndexed(policiesByClassificationId, policy.generatedFrom, policy);
   }
 
-  var schemasByItemId = new Map;
+  cachedPimSchemasByItemId = new Map;
   for (schema in CONTRACTS!Schema.all) {
     for (field in schema.fields.select(f | hasText(f.generatedFrom))) {
-      addIndexed(schemasByItemId, field.generatedFrom, schema);
+      addIndexed(cachedPimSchemasByItemId, field.generatedFrom, schema);
     }
   }
 
@@ -832,26 +853,33 @@ operation attachDataProtectionPolicies() {
   for (item in CIMDOMAIN!InformationItem.all.select(i | i.classification.isDefined())) {
     var policies = indexedValues(policiesByClassificationId, item.classification.id);
     for (policy in policies) {
-      var schemas = indexedValues(schemasByItemId, item.id);
-      policy.attachedTo.addAll(schemas);
-
-      for (store in indexedValues(storesByItemId, item.id)) {
-        if (not policy.attachedTo.includes(store)) policy.attachedTo.add(store);
-        if (not store.dataProtectionPolicies.includes(policy)) store.dataProtectionPolicies.add(policy);
-      }
-
-      for (route in indexedValues(routesByItemId, item.id)) {
-        if (not policy.attachedTo.includes(route)) policy.attachedTo.add(route);
-        if (route.functionIntegration.isDefined() and not policy.attachedTo.includes(route.functionIntegration)) {
-          policy.attachedTo.add(route.functionIntegration);
-        }
-      }
-
-      for (flow in personalFlows) {
-        if (not policy.attachedTo.includes(flow)) policy.attachedTo.add(flow);
-        if (not flow.policies.includes(policy)) flow.policies.add(policy);
+      attachDataProtectionPolicyToItem(policy, item, storesByItemId, routesByItemId, personalFlows);
+    }
+  }
+  for (privacy in CIMGOV!PrivacyConstraint.all) {
+    for (policy in indexedValues(policiesByClassificationId, privacy.id)) {
+      for (item in privacy.dataItems) {
+        attachDataProtectionPolicyToItem(policy, item, storesByItemId, routesByItemId, personalFlows);
       }
     }
+  }
+}
+
+operation attachDataProtectionPolicyToItem(policy, item, storesByItemId, routesByItemId, personalFlows) {
+  policy.attachedTo.addAll(indexedValues(cachedPimSchemasByItemId, item.id));
+  for (store in indexedValues(storesByItemId, item.id)) {
+    if (not policy.attachedTo.includes(store)) policy.attachedTo.add(store);
+    if (not store.dataProtectionPolicies.includes(policy)) store.dataProtectionPolicies.add(policy);
+  }
+  for (route in indexedValues(routesByItemId, item.id)) {
+    if (not policy.attachedTo.includes(route)) policy.attachedTo.add(route);
+    if (route.functionIntegration.isDefined() and not policy.attachedTo.includes(route.functionIntegration)) {
+      policy.attachedTo.add(route.functionIntegration);
+    }
+  }
+  for (flow in personalFlows) {
+    if (not policy.attachedTo.includes(flow)) policy.attachedTo.add(flow);
+    if (not flow.policies.includes(policy)) flow.policies.add(policy);
   }
 }
 
@@ -1127,9 +1155,11 @@ operation addServiceMembership(service, element) {
   if (service.isUndefined() or element.isUndefined()) {
     return;
   }
-  if (pimRoot().serviceMemberships.exists(m | m.service = service and m.element = element)) {
+  var key = cacheKeyFor(service) + "::" + cacheKeyFor(element);
+  if (cachedPimServiceMembershipKeys.includes(key)) {
     return;
   }
+  cachedPimServiceMembershipKeys.add(key);
   var membership = new DEPLOY!ServiceElementMembership;
   membership.id = newId("svc_membership", service.id + "_" + element.id);
   membership.name = service.name + " owns " + firstText(element.name, element.id);

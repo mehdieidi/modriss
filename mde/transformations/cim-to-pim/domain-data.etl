@@ -284,12 +284,6 @@ rule PrivacyConstraint2Policies
   rp.legalHoldPossible = true;
   rp.productionRequired = true;
 
-  for (item in pc.dataItems) {
-    var schemas = CONTRACTS!Schema.all.select(s | s.fields.exists(f | f.generatedFrom = item.id));
-    dp.attachedTo.addAll(schemas);
-    rp.attachedTo.addAll(schemas);
-  }
-
   pimRoot().policies.add(dp);
   pimRoot().policies.add(rp);
   traceGenerated(pc, dp, "TR-060", "HIGH");
