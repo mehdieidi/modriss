@@ -85,9 +85,6 @@ const connectionsById = new Map();
 let hoveredEdgeId = null;
 let inlineLabelEditStartLabel = "";
 let inlineLabelEditUndoSnapshot = null;
-let layoutAutosaveTimer = 0;
-let layoutAutosaveInFlight = false;
-let layoutAutosaveQueued = false;
 
 function workbenchSurfaces() {
   renderCimWorkbenchSurface();
@@ -2194,42 +2191,6 @@ function setHoveredNode(nodeId) {
   }
 }
 
-function scheduleLayoutAutosave() {
-  if (!["cim", "pim", "psm"].includes(state.activeType)
-      || typeof window === "undefined") {
-    return;
-  }
-  syncActiveViewFromVisibleGraph();
-  saveCurrentTabGraphState(state.activeType);
-  if (layoutAutosaveTimer) {
-    window.clearTimeout(layoutAutosaveTimer);
-  }
-  layoutAutosaveTimer = window.setTimeout(() => {
-    layoutAutosaveTimer = 0;
-    void flushLayoutAutosave();
-  }, 120);
-}
-
-async function flushLayoutAutosave() {
-  if (layoutAutosaveInFlight) {
-    layoutAutosaveQueued = true;
-    return;
-  }
-  layoutAutosaveInFlight = true;
-  try {
-    const {saveCurrentModel} = await import('./model-ops.js');
-    await saveCurrentModel({quiet: true, rethrow: true});
-  } catch (error) {
-    console.warn("Layout autosave failed", error);
-  } finally {
-    layoutAutosaveInFlight = false;
-    if (layoutAutosaveQueued) {
-      layoutAutosaveQueued = false;
-      scheduleLayoutAutosave();
-    }
-  }
-}
-
 function toggleNodeInSelection(nodeId) {
   const nextSelection = new Set(state.selectedNodeIds);
   if (nextSelection.has(nodeId)) {
@@ -4230,8 +4191,9 @@ function endG6NodeDrag(nodeId, position, {moved = false} = {}) {
   syncNodeMetaToGraph(node);
   if (moved || state.dragNode?.moved) {
     commitUndoSnapshot(state.dragNode?.undoSnapshot);
+    syncActiveViewFromVisibleGraph();
+    saveCurrentTabGraphState(state.activeType);
     markModelDirty();
-    scheduleLayoutAutosave();
   }
   refreshG6Edges([...(edgeIdsByNodeId.get(node.id) || [])]);
   updateG6ContextBoxes();

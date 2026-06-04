@@ -595,16 +595,13 @@ function countRowsMatchingTypes(types) {
 function renderDashboard() {
   const stacks = countRowsMatchingTypes(["SamStack"]);
   const stages = countRowsMatchingTypes(["AwsStage"]);
-  const lensCards = psmLensEntries().filter((lens) => lens.key !== "all").map(
-      (lens) => [lens.label, countRowsMatchingTypes(lens.types)]);
   const cards = [
     ["Elements", elements().length],
     ["Connectors", relationships().length],
     ["Stacks", stacks],
     ["Stages", stages],
     ["Missing", elements().filter((item) =>
-        missingRequiredFields(item).length).length],
-    ...lensCards
+        missingRequiredFields(item).length).length]
   ];
   return `<div class="cim-dashboard-grid">
     ${cards.map(([label, value]) => `<div class="cim-metric">
@@ -640,16 +637,6 @@ function renderControls(profile, representation) {
       `<button class="${representation === mode ? "is-active" : ""}"
           data-psm-mode="${mode}" type="button">${escapeHtml(label)}</button>`)
   .join("")}
-    </div>
-    <div class="pim-lens-toolbar" aria-label="PSM lens">
-      <span>Lens</span>
-      <div class="pim-lens-buttons">
-        ${psmLensEntries().map((lens) =>
-      `<button class="${(state.psmWorkbench.activeLens || "all") === lens.key
-          ? "is-active" : ""}"
-              data-psm-lens="${lens.key}" type="button">${escapeHtml(
-          lens.label)}</button>`).join("")}
-      </div>
     </div>
     <div class="pim-edge-toolbar" aria-label="PSM edge visibility">
       <span>Edges</span>
@@ -828,11 +815,6 @@ function bindSurfaceEvents() {
     const mode = target?.closest("[data-psm-mode]")?.dataset?.psmMode;
     if (mode) {
       setActiveRepresentation(mode);
-      return;
-    }
-    const lens = target?.closest("[data-psm-lens]")?.dataset?.psmLens;
-    if (lens) {
-      applyPsmLens(lens);
       return;
     }
     const edgeMode = target?.closest("[data-psm-edge-mode]")?.dataset

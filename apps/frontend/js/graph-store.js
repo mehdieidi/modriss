@@ -824,6 +824,12 @@ function layoutNodesForElements(
       height: existing?.height
     };
   });
+  const allNodesAlreadyPositioned = nodes.length > 0 && nodes.every((node) =>
+    Number.isFinite(Number(node.x)) && Number.isFinite(Number(node.y))
+    && existingByElement.has(node.elementId));
+  if (allNodesAlreadyPositioned) {
+    return nodes;
+  }
   const fakeNodes = nodes.map((node) => ({
     id: node.elementId,
     x: node.x,

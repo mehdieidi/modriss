@@ -611,7 +611,7 @@ async function openWorkbenchView(viewId) {
         const {autoLayoutCurrentDiagram} = await import('./model-ops.js');
         await autoLayoutCurrentDiagram({
           progress: true,
-          save: true,
+          save: false,
           status: false
         });
         setStatus("View selected and arranged.");

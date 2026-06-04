@@ -1728,6 +1728,7 @@ export async function importActiveModel(file, format = "json",
   }
 
   const normalizedFormat = String(format || "json").toLowerCase();
+  const shouldAutoLayoutImportedModel = normalizedFormat === "xmi";
   const formData = new FormData();
   formData.append("file", file);
   try {
@@ -1787,9 +1788,31 @@ export async function importActiveModel(file, format = "json",
     setActiveModelName(body.name || defaultModelName());
 
     setGenerationProgressPhase("Preparing imported model…", 68);
-    renderDiagram();
-    renderViewWorkbench();
-    centerCurrentDiagram();
+    let importLayoutWarning = "";
+    if (shouldAutoLayoutImportedModel && state.diagram.nodes.length) {
+      try {
+        setGenerationProgressPhase("Auto-layouting imported model…", 76);
+        await autoLayoutCurrentDiagram({
+          progress: false,
+          save: false,
+          publish: false,
+          status: false,
+          busy: false,
+          rethrow: true,
+          preserveExistingPositions: false
+        });
+      } catch (layoutError) {
+        importLayoutWarning = layoutError.message
+            || "Auto layout failed for the imported model.";
+        renderDiagram();
+        renderViewWorkbench();
+        centerCurrentDiagram();
+      }
+    } else {
+      renderDiagram();
+      renderViewWorkbench();
+      centerCurrentDiagram();
+    }
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].diagram = structuredClone(state.diagram);
       state.tabs[state.activeType].dirty = true;
@@ -1810,13 +1833,19 @@ export async function importActiveModel(file, format = "json",
       const mergedIssues = mergeIssuesWithManualGuidance(backendIssues);
       applyValidationIssues(mergedIssues, {openOnFirst: true});
       toggleValidationDrawer(true);
-      setStatus(
-          `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()} with ${backendIssues.length} issue(s).`);
+      const issueStatus =
+          `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()} with ${backendIssues.length} issue(s).`;
+      setStatus(importLayoutWarning
+          ? `${issueStatus} Auto layout failed: ${importLayoutWarning}`
+          : issueStatus);
       return;
     }
     clearValidationIssues({keepPanelState: false});
-    setStatus(
-        `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}`);
+    const successStatus =
+        `Imported ${state.activeType.toUpperCase()} model ${normalizedFormat.toUpperCase()}`;
+    setStatus(importLayoutWarning
+        ? `${successStatus}. Auto layout failed: ${importLayoutWarning}`
+        : successStatus);
   } finally {
     hideGenerationProgress();
   }

@@ -884,16 +884,6 @@ function renderControls(profile, representation) {
           data-pim-mode="${mode}" type="button">${escapeHtml(
           label)}</button>`).join("")}
     </div>
-    <div class="pim-lens-toolbar" aria-label="PIM lens">
-      <span>Lens</span>
-      <div class="pim-lens-buttons">
-        ${pimLensEntries().map((lens) =>
-      `<button class="${(state.pimWorkbench.activeLens || "all") === lens.key
-          ? "is-active" : ""}"
-              data-pim-lens="${lens.key}" type="button">${escapeHtml(
-          lens.label)}</button>`).join("")}
-      </div>
-    </div>
     <div class="pim-edge-toolbar" aria-label="PIM edge visibility">
       <span>Edges</span>
       <div class="pim-edge-buttons">
@@ -1254,11 +1244,6 @@ function bindSurfaceEvents() {
     const mode = target?.closest("[data-pim-mode]")?.dataset?.pimMode;
     if (mode) {
       setActiveRepresentation(mode);
-      return;
-    }
-    const lens = target?.closest("[data-pim-lens]")?.dataset?.pimLens;
-    if (lens) {
-      applyPimLens(lens);
       return;
     }
     const edgeMode = target?.closest("[data-pim-edge-mode]")?.dataset
