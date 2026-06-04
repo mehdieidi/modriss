@@ -155,6 +155,12 @@ public final class ModelService {
         return clientRecord(model);
     }
 
+    ModelRecord getForTransformation(UserRecord user, ModelLevel level, String id) {
+        ModelRecord model = find(level, id);
+        projectService.get(user, model.projectId());
+        return repairMetadataIfNeeded(model);
+    }
+
     public ModelRecord get(UserRecord user, ModelLevel level, String projectId, String id) {
         projectService.get(user, projectId);
         ModelRecord model = store.require(modelPath(projectId, level, id), ModelRecord.class,
@@ -184,6 +190,32 @@ public final class ModelService {
                 metamodel.sha256(), 1, sourceXmi.hash(), "CURRENT", now, now);
         persistModelAndSourceXmi(null, model, sourceXmi);
         return clientRecord(model);
+    }
+
+    ModelRecord createGenerated(UserRecord user, ModelLevel level, String projectId, String name,
+            ObjectNode modelJson, byte[] sourceXmiBytes) {
+        ProjectRecord project = projectService.get(user, projectId);
+        projectService.requireEditor(project, user.id());
+        Instant now = Instant.now();
+        ObjectNode normalizedModel = modelJson == null
+                ? store.objectMapper().createObjectNode()
+                : modelJson;
+        if (!normalizedModel.hasNonNull("name")) {
+            normalizedModel.put("name", requireName(name, level));
+        }
+        if (!normalizedModel.hasNonNull("modelLevel")) {
+            normalizedModel.put("modelLevel", level.name());
+        }
+        SourceXmiUpdate sourceXmi = sourceXmiBytes == null || sourceXmiBytes.length == 0
+                ? resolveSourceXmiUpdate(user, projectId, level, normalizedModel, false)
+                : new SourceXmiUpdate(sourceXmiBytes, hashBytes(sourceXmiBytes), null);
+        sourceXmi = canonicalSourceXmi(level, normalizedModel, sourceXmi);
+        MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
+        ModelRecord model = new ModelRecord(UUID.randomUUID().toString(), projectId, level,
+                requireName(name, level), normalizedModel, metamodel.version(),
+                metamodel.sha256(), 1, sourceXmi.hash(), "CURRENT", now, now);
+        persistModelAndSourceXmi(null, model, sourceXmi);
+        return generatedClientRecord(model);
     }
 
     public ModelRecord update(UserRecord user, ModelLevel level, String id, String name,
@@ -949,6 +981,16 @@ public final class ModelService {
         }
         return new ModelRecord(model.id(), model.projectId(), model.level(), model.name(),
                 modelJson, textOrDefault(model.metamodelVersion(), currentVersion(model.level())),
+                textOrDefault(model.metamodelHash(), currentHash(model.level())),
+                Math.max(1, model.revision()), model.sourceXmiHash(),
+                textOrDefault(model.migrationState(), migrationState(model)),
+                model.createdAt(), model.updatedAt());
+    }
+
+    private ModelRecord generatedClientRecord(ModelRecord model) {
+        return new ModelRecord(model.id(), model.projectId(), model.level(), model.name(),
+                model.modelJson(),
+                textOrDefault(model.metamodelVersion(), currentVersion(model.level())),
                 textOrDefault(model.metamodelHash(), currentHash(model.level())),
                 Math.max(1, model.revision()), model.sourceXmiHash(),
                 textOrDefault(model.migrationState(), migrationState(model)),

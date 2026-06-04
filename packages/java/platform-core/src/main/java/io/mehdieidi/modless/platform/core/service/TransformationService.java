@@ -27,7 +27,6 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -86,16 +85,18 @@ public final class TransformationService {
 
     public ModelRecord cimToPim(UserRecord user, String sourceModelId, Long expectedRevision) {
         return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
-            ModelRecord source = modelService.get(user, ModelLevel.CIM, sourceModelId);
+            ModelRecord source = modelService.getForTransformation(user, ModelLevel.CIM,
+                    sourceModelId);
             requireSourceRevision(source, expectedRevision);
             GeneratedModel generated = formalCimToPimModel(source);
             generated.model().put("sourceModelId", source.id());
             generated.model().put("sourceModelRevision", source.revision());
-            generated.model().put("sourceModelHash", hash(source.modelJson()));
+            generated.model().put("sourceModelHash", sourceModelHash(source));
             mirrorReadinessToManualBacklog(generated.model());
-            ModelRecord target = modelService.create(user, ModelLevel.PIM, source.projectId(),
+            ModelRecord target = modelService.createGenerated(user, ModelLevel.PIM,
+                    source.projectId(),
                     source.name() + "-pim", generated.model(), generated.sourceXmi());
-            return modelService.get(user, ModelLevel.PIM, target.id());
+            return target;
         });
     }
 
@@ -105,15 +106,17 @@ public final class TransformationService {
 
     public ModelRecord pimToPsm(UserRecord user, String sourceModelId, Long expectedRevision) {
         return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
-            ModelRecord source = modelService.get(user, ModelLevel.PIM, sourceModelId);
+            ModelRecord source = modelService.getForTransformation(user, ModelLevel.PIM,
+                    sourceModelId);
             requireSourceRevision(source, expectedRevision);
             GeneratedModel generated = formalPimToPsmModel(source);
             generated.model().put("sourceModelId", source.id());
             generated.model().put("sourceModelRevision", source.revision());
-            generated.model().put("sourceModelHash", hash(source.modelJson()));
-            ModelRecord target = modelService.create(user, ModelLevel.PSM, source.projectId(),
+            generated.model().put("sourceModelHash", sourceModelHash(source));
+            ModelRecord target = modelService.createGenerated(user, ModelLevel.PSM,
+                    source.projectId(),
                     source.name() + "-psm", generated.model(), generated.sourceXmi());
-            return modelService.get(user, ModelLevel.PSM, target.id());
+            return target;
         });
     }
 
@@ -150,14 +153,14 @@ public final class TransformationService {
                         + summarizeDiagnostics(report));
             }
             byte[] targetBytes = Files.readAllBytes(pimXmi);
-            JsonNode imported = xmiModelIo.importModel(ModelLevel.PIM, targetBytes);
+            JsonNode imported = xmiModelIo.importGeneratedModel(ModelLevel.PIM, targetBytes);
             if (!imported.isObject()) {
                 throw new PlatformException(500, "CIM-to-PIM ETL did not produce a PIM model.");
             }
             ObjectNode target = (ObjectNode) imported;
             target.put("transformedFrom", ModelLevel.CIM.name());
             target.put("transformedFromModelId", source.id());
-            applyGeneratedTargetValidation(ModelLevel.PIM, target, targetBytes, "CIM-to-PIM");
+            markGeneratedTarget(target);
             return new GeneratedModel(target, targetBytes);
         } catch (PlatformException ex) {
             throw ex;
@@ -192,14 +195,14 @@ public final class TransformationService {
                         + summarizeDiagnostics(report));
             }
             byte[] targetBytes = Files.readAllBytes(psmXmi);
-            JsonNode imported = xmiModelIo.importModel(ModelLevel.PSM, targetBytes);
+            JsonNode imported = xmiModelIo.importGeneratedModel(ModelLevel.PSM, targetBytes);
             if (!imported.isObject()) {
                 throw new PlatformException(500, "PIM-to-PSM ETL did not produce a PSM model.");
             }
             ObjectNode target = (ObjectNode) imported;
             target.put("transformedFrom", ModelLevel.PIM.name());
             target.put("transformedFromModelId", source.id());
-            applyGeneratedTargetValidation(ModelLevel.PSM, target, targetBytes, "PIM-to-PSM");
+            markGeneratedTarget(target);
             mirrorReadinessToManualBacklog(target);
             return new GeneratedModel(target, targetBytes);
         } catch (PlatformException ex) {
@@ -264,9 +267,10 @@ public final class TransformationService {
     }
 
     private byte[] sourcePimXmi(ModelRecord model) {
-        return modelService.sourceXmi(model)
+        byte[] sourceBytes = modelService.sourceXmi(model)
                 .orElseGet(() -> xmiModelIo.exportModel(ModelLevel.PIM,
                         hydrateSemanticReferences(model.modelJson())));
+        return xmiModelIo.pruneTransformationInput(ModelLevel.PIM, sourceBytes);
     }
 
     private byte[] sourcePsmXmi(ModelRecord model) {
@@ -299,47 +303,9 @@ public final class TransformationService {
                 .collect(java.util.stream.Collectors.joining("; "));
     }
 
-    private void applyGeneratedTargetValidation(
-            ModelLevel targetLevel, ObjectNode target, byte[] xmiBytes, String operation) {
-        ModelService.ValidationResult validation = modelService.validateGeneratedXmi(targetLevel,
-                xmiBytes);
-        if (validation.issues().isEmpty()) {
-            target.put("transformationStatus", "GENERATED_BY_ETL");
-            return;
-        }
-        target.set("validationIssues", store.objectMapper().valueToTree(validation.issues()));
-        if (hasInfrastructureValidationError(validation)) {
-            throw new PlatformException(500, operation
-                    + " generated a target model that could not be validated: "
-                    + summarizeValidationIssues(validation.issues()));
-        }
-        if (hasError(validation)) {
-            target.put("transformationStatus", "GENERATED_BLOCKED_BY_VALIDATION");
-            return;
-        }
-        target.put("transformationStatus", "GENERATED_REVIEW_REQUIRED");
-    }
-
-    private boolean hasInfrastructureValidationError(ModelService.ValidationResult validation) {
-        return validation.issues().stream()
-                .anyMatch(issue -> "ERROR".equals(issue.severity())
-                        && issue.constraint().startsWith("EVL_"));
-    }
-
-    private boolean hasError(ModelService.ValidationResult validation) {
-        return validation.issues().stream()
-                .anyMatch(issue -> "ERROR".equals(issue.severity()));
-    }
-
-    private String summarizeValidationIssues(List<ModelService.ValidationIssue> issues) {
-        if (issues == null || issues.isEmpty()) {
-            return "no validation issues were reported";
-        }
-        return issues.stream()
-                .limit(3)
-                .map(issue -> issue.constraint() + " " + issue.issueClass() + ": "
-                        + issue.message())
-                .collect(java.util.stream.Collectors.joining("; "));
+    private void markGeneratedTarget(ObjectNode target) {
+        target.put("transformationStatus", "GENERATED_BY_ETL");
+        target.remove("validationIssues");
     }
 
     private Map<String, String> generatedFiles(Path outputDirectory) throws Exception {
@@ -425,6 +391,13 @@ public final class TransformationService {
         } catch (Exception ex) {
             throw new PlatformException(500, "Could not hash source model.");
         }
+    }
+
+    private String sourceModelHash(ModelRecord source) {
+        if (source.sourceXmiHash() != null && !source.sourceXmiHash().isBlank()) {
+            return source.sourceXmiHash();
+        }
+        return hash(source.modelJson());
     }
 
     private void requireExecutionInputBudget(byte[] bytes, String label) {

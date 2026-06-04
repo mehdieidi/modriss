@@ -665,14 +665,11 @@ operation createCapabilityDependencyArtifacts() {
 }
 
 operation containsProviderSpecificTerm(text) {
-  if (not hasText(text)) {
-    return false;
-  }
-  var value = text.toLowerCase();
-  return value.contains("lambda") or value.contains("dynamodb") or value.contains("sqs") or value.contains("sns") or
-    value.contains("eventbridge") or value.contains("api gateway") or value.contains("step functions") or
-    value.contains("cloudwatch") or value.contains("iam") or value.contains("cloudformation") or
-    value.contains("azure functions") or value.contains("google cloud functions");
+  return etlTextChecks.containsProviderSpecificTerm(text);
+}
+
+operation containsProviderSpecificTermIn(element) {
+  return etlTextChecks.containsProviderSpecificTermIn(element);
 }
 
 operation createDataAccesses() {
@@ -1135,20 +1132,32 @@ operation createHotspotManualDecision(h) {
 }
 
 post LinkAndDerive {
+  etlProfiler.mark("cim.link.start");
   for (hotspot in CIMTRANSFORM!Hotspot.all) {
     createHotspotManualDecision(hotspot);
   }
   attachOwnedElements();
+  etlProfiler.mark("cim.link.attachOwnedElements");
   createRequestResponseFlows();
+  etlProfiler.mark("cim.link.requestResponseFlows");
   createEventChannelsAndFlows();
+  etlProfiler.mark("cim.link.eventChannelsAndFlows");
   createTopicSubscriptions();
+  etlProfiler.mark("cim.link.topicSubscriptions");
   createPolicyRoutingRules();
+  etlProfiler.mark("cim.link.policyRoutingRules");
   createExternalIntegrationFlows();
+  etlProfiler.mark("cim.link.externalIntegrationFlows");
   createCapabilityDependencyArtifacts();
+  etlProfiler.mark("cim.link.capabilityDependencyArtifacts");
   createDataAccesses();
+  etlProfiler.mark("cim.link.dataAccesses");
   attachDataProtectionPolicies();
+  etlProfiler.mark("cim.link.dataProtectionPolicies");
   ensureGeneratedOperationalPolicies();
+  etlProfiler.mark("cim.link.operationalPolicies");
   generateServiceMemberships();
+  etlProfiler.mark("cim.link.serviceMemberships");
 }
 
 operation addServiceMembership(service, element) {
@@ -1182,6 +1191,7 @@ operation generateServiceMemberships() {
 }
 
 post DeploymentAndConfiguration {
+  etlProfiler.mark("cim.deploy.start");
   for (s in pimRoot().services) {
     var du = new DEPLOY!DeploymentUnit;
     du.id = idFor("du", s);
@@ -1257,9 +1267,11 @@ post DeploymentAndConfiguration {
       traceGenerated(adapter, sec, "TR-150", "MEDIUM");
     }
   }
+  etlProfiler.mark("cim.deploy.end");
 }
 
 post ValidationAndReadinessClosure {
+  etlProfiler.mark("cim.validation.start");
   if (pimRoot().functions.isEmpty()) {
     var fn = new COMPUTE!Function;
     fn.id = "fn_tbd_manual_completion";
@@ -1287,45 +1299,63 @@ post ValidationAndReadinessClosure {
   for (fn in COMPUTE!Function.all.select(f | f.contract.isUndefined())) {
     readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Function '" + fn.name + "' has no function contract.", "Create input/output/error contract for the function.", true, Sequence{fn});
   }
+  etlProfiler.mark("cim.validation.functions");
   for (api in API!Api.all.select(a | a.routes.isEmpty())) {
     readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "API '" + api.name + "' has no routes.", "Add routes or remove the API.", true, Sequence{api});
   }
+  etlProfiler.mark("cim.validation.apis");
   for (route in API!ApiRoute.all.select(r | (r.functionIntegration.isDefined() and r.workflowIntegration.isDefined()) or (r.functionIntegration.isUndefined() and r.workflowIntegration.isUndefined()))) {
     readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Route '" + route.name + "' must integrate exactly one function or workflow.", "Connect the route to exactly one invocation target.", true, Sequence{route});
   }
+  etlProfiler.mark("cim.validation.routes");
   for (et in CONTRACTS!EventType.all.select(e | e.schema.isUndefined() or e.envelope.isUndefined())) {
     readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Event type '" + et.name + "' lacks schema or envelope.", "Attach a schema and envelope.", true, Sequence{et});
   }
+  etlProfiler.mark("cim.validation.eventTypes");
   for (store in DATA!DataStore.all.select(s | s.ownedDataModels.isEmpty() or s.accessPatterns.isEmpty())) {
     readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Data store '" + store.name + "' lacks data model or access pattern.", "Add data model and at least one access pattern.", true, Sequence{store});
   }
+  etlProfiler.mark("cim.validation.storesShape");
   for (store in DATA!DataStore.all.select(s | s.containsPersonalData and not s.encrypted)) {
     readinessFinding("TR-170", KERNEL!FindingType#SECURITY_RISK, KERNEL!Severity#ERROR, "Sensitive store '" + store.name + "' is not encrypted.", "Enable provider-independent encryption requirement.", true, Sequence{store});
   }
+  etlProfiler.mark("cim.validation.storesEncryption");
   for (storeDp in DATA!DataStore.all.select(s | s.containsPersonalData and s.dataProtectionPolicies.isEmpty())) {
     readinessFinding("TR-170", KERNEL!FindingType#POLICY_VIOLATION, KERNEL!Severity#ERROR, "Personal data store '" + storeDp.name + "' has no data protection policy.", "Attach a DataProtectionPolicy generated from classification or privacy constraints.", true, Sequence{storeDp});
   }
+  etlProfiler.mark("cim.validation.storesDataProtection");
   for (du in DEPLOY!DeploymentUnit.all.select(d | d.contains.isEmpty())) {
     readinessFinding("TR-170", KERNEL!FindingType#DEPLOYMENT_RISK, KERNEL!Severity#WARNING, "Deployment unit '" + du.name + "' has no deployable contents.", "Review service ownership and generated behavior.", false, Sequence{du});
   }
+  etlProfiler.mark("cim.validation.deploymentUnits");
   for (route in API!ApiRoute.all.select(r | isTrue(r.authRequired) and r.authorization.isUndefined())) {
     readinessFinding("TR-170", KERNEL!FindingType#SECURITY_RISK, KERNEL!Severity#ERROR, "Protected route '" + route.name + "' has no authorization policy.", "Attach an AuthorizationPolicy or mark the route unprotected.", true, Sequence{route});
   }
+  etlProfiler.mark("cim.validation.routeSecurity");
   for (fnSec in COMPUTE!Function.all.select(f | isTrue(f.publicEntryPoint) and f.securityPolicies.isEmpty())) {
     readinessFinding("TR-170", KERNEL!FindingType#SECURITY_RISK, KERNEL!Severity#WARNING, "Public function '" + fnSec.name + "' has no security policy.", "Attach authentication/authorization policy coverage.", false, Sequence{fnSec});
   }
+  etlProfiler.mark("cim.validation.functionSecurity");
   for (adapter in EXTERNAL!ExternalAdapter.all.select(a | a.observability.isUndefined() or a.resilience.isUndefined() or a.endpoint.isUndefined() or (a.endpoint.isDefined() and isTrue(a.endpoint.credentialsRequired) and a.credentials.isEmpty()))) {
     readinessFinding("TR-170", KERNEL!FindingType#DEPLOYMENT_RISK, KERNEL!Severity#ERROR, "External adapter '" + adapter.name + "' lacks endpoint, credential, resilience, or observability review.", "Confirm ExternalAdapter.endpoint protocol, endpoint credentials, resilience, and observability.", true, Sequence{adapter});
   }
+  etlProfiler.mark("cim.validation.adapters");
   for (ch in INTEGRATION!EventChannel.all.select(c | c.deliverySemantics.isUndefined() or c.orderingRequirement.isUndefined())) {
     readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Event channel '" + ch.name + "' lacks delivery or ordering semantics.", "Set provider-independent delivery and ordering semantics.", true, Sequence{ch});
   }
-  for (el in KERNEL!TraceableElement.all.select(e | isTrue(e.generatedByTransformation) and not e.isKindOf(KERNEL!TraceLink) and e.generatedFrom.isUndefined() and e.rationale.isUndefined())) {
-    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_WARNING, KERNEL!Severity#WARNING, "Generated element '" + el.name + "' has no source trace or documented assumption.", "Add trace link or transformation assumption.", false, Sequence{el});
+  etlProfiler.mark("cim.validation.channels");
+  for (el in cachedPimValidationTargets) {
+    if (isTrue(el.generatedByTransformation) and el.generatedFrom.isUndefined() and el.rationale.isUndefined()) {
+      readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_WARNING, KERNEL!Severity#WARNING, "Generated element '" + el.name + "' has no source trace or documented assumption.", "Add trace link or transformation assumption.", false, Sequence{el});
+    }
   }
-  for (el2 in KERNEL!ModelElement.all.select(e | containsProviderSpecificTerm(e.name) or containsProviderSpecificTerm(e.description) or containsProviderSpecificTerm(e.summary))) {
-    readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Generated element '" + el2.name + "' contains provider-specific terminology.", "Replace cloud-provider-specific naming with provider-independent terms.", true, Sequence{el2});
+  etlProfiler.mark("cim.validation.traceableElements");
+  for (el2 in cachedPimValidationTargets) {
+    if (containsProviderSpecificTermIn(el2)) {
+      readinessFinding("TR-170", KERNEL!FindingType#VALIDATION_ERROR, KERNEL!Severity#ERROR, "Generated element '" + el2.name + "' contains provider-specific terminology.", "Replace cloud-provider-specific naming with provider-independent terms.", true, Sequence{el2});
+    }
   }
+  etlProfiler.mark("cim.validation.providerTerms");
 
   var readiness = pimRoot().readiness;
   readiness.transformationReady =
@@ -1349,8 +1379,10 @@ post ValidationAndReadinessClosure {
         readiness.readinessStatus = KERNEL!LifecycleStatus#TRANSFORMATION_READY;
       }
       else {
-        readiness.readinessStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
-      }
+      readiness.readinessStatus = KERNEL!LifecycleStatus#REVIEW_REQUIRED;
     }
   }
+  etlProfiler.mark("cim.validation.readinessStatus");
+  etlProfiler.mark("cim.validation.end");
+}
 }

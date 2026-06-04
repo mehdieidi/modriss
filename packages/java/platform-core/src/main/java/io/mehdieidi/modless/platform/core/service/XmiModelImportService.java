@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.emf.common.util.Enumerator;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
@@ -54,7 +55,16 @@ final class XmiModelImportService {
     }
 
     JsonNode importModel(ModelLevel level, byte[] bytes) {
-        Resource resource = loadResource(level, bytes, "import");
+        return importModel(level, bytes, "import", true);
+    }
+
+    JsonNode importGeneratedModel(ModelLevel level, byte[] bytes) {
+        return importModel(level, bytes, "generated-import", true);
+    }
+
+    private JsonNode importModel(ModelLevel level, byte[] bytes, String purpose,
+            boolean resolveAllReferences) {
+        Resource resource = loadResource(level, bytes, purpose, resolveAllReferences);
         try {
             List<EObject> roots = resource.getContents().stream()
                     .filter(EObject.class::isInstance)
@@ -87,6 +97,11 @@ final class XmiModelImportService {
     }
 
     Resource loadResource(ModelLevel level, byte[] bytes, String purpose) {
+        return loadResource(level, bytes, purpose, true);
+    }
+
+    Resource loadResource(ModelLevel level, byte[] bytes, String purpose,
+            boolean resolveAllReferences) {
         try {
             ResourceSet resourceSet = newResourceSet();
             registerMetamodel(resourceSet, level);
@@ -96,8 +111,10 @@ final class XmiModelImportService {
                 resource.load(input, Map.of());
             }
             assertNoLoadErrors(resource);
-            EcoreUtil.resolveAll(resourceSet);
-            assertNoLoadErrors(resource);
+            if (resolveAllReferences) {
+                EcoreUtil.resolveAll(resourceSet);
+                assertNoLoadErrors(resource);
+            }
             validateResourceRoot(level, resource);
             return resource;
         } catch (PlatformException ex) {
@@ -144,6 +161,54 @@ final class XmiModelImportService {
         } catch (Exception ex) {
             throw new PlatformException(400, "Model JSON cannot be exported as XMI: "
                     + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()));
+        }
+    }
+
+    byte[] pruneTransformationInput(ModelLevel level, byte[] bytes) {
+        if (level != ModelLevel.PIM || bytes == null || bytes.length == 0) {
+            return bytes;
+        }
+        try {
+            Resource resource = loadResource(level, bytes, "transform-source", false);
+            EObject root = singleRoot(resource);
+            unsetFeature(root, "traceModel");
+            unsetFeature(root, "readiness");
+            stripInverseTraceReferences(root);
+            ByteArrayOutputStream output = new ByteArrayOutputStream(bytes.length);
+            resource.save(output, Map.of());
+            return output.toByteArray();
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new PlatformException(500,
+                    "Could not prepare PIM source XMI for transformation.");
+        }
+    }
+
+    private EObject singleRoot(Resource resource) {
+        return resource.getContents().stream()
+                .filter(EObject.class::isInstance)
+                .map(EObject.class::cast)
+                .findFirst()
+                .orElseThrow(() -> new PlatformException(400,
+                        "Uploaded XMI does not contain a model root."));
+    }
+
+    private void stripInverseTraceReferences(EObject root) {
+        unsetFeature(root, "incomingTraces");
+        unsetFeature(root, "outgoingTraces");
+        TreeIterator<EObject> contents = root.eAllContents();
+        while (contents.hasNext()) {
+            EObject object = contents.next();
+            unsetFeature(object, "incomingTraces");
+            unsetFeature(object, "outgoingTraces");
+        }
+    }
+
+    private void unsetFeature(EObject object, String featureName) {
+        EStructuralFeature feature = object.eClass().getEStructuralFeature(featureName);
+        if (feature != null && feature.isChangeable() && object.eIsSet(feature)) {
+            object.eUnset(feature);
         }
     }
 
@@ -357,8 +422,8 @@ final class XmiModelImportService {
                 }
             }
 
-            context.captureGraphObject(object, node);
             ensureTraceEndpointIds(object, node, context);
+            context.captureGraphObject(object, node);
             return node;
         } finally {
             context.endSerialization(object);
@@ -817,6 +882,7 @@ final class XmiModelImportService {
         private final Set<String> usedIds = new LinkedHashSet<>();
         private final List<ObjectNode> graphElements = new ArrayList<>();
         private final List<ObjectNode> graphRelationships = new ArrayList<>();
+        private final List<ObjectNode> graphTraceLinks = new ArrayList<>();
         private final Set<String> graphRelationshipKeys = new LinkedHashSet<>();
         private final AtomicInteger syntheticIds = new AtomicInteger(1);
 
@@ -869,6 +935,13 @@ final class XmiModelImportService {
         }
 
         void captureGraphObject(EObject object, ObjectNode semanticNode) {
+            if ("TraceLink".equals(object.eClass().getName())) {
+                graphTraceLinks.add(shallowGraphElement(semanticNode));
+                return;
+            }
+            if (isGraphSupportObject(object)) {
+                return;
+            }
             if (isRelationshipObject(object)) {
                 captureGraphRelationship(object, semanticNode);
                 return;
@@ -945,6 +1018,9 @@ final class XmiModelImportService {
                 if (isRelationshipEndpointFeature(reference, object)) {
                     continue;
                 }
+                if (isGraphSupportReference(reference)) {
+                    continue;
+                }
                 if (reference.isMany()) {
                     Object raw = object.eGet(reference);
                     List<?> values = raw instanceof List<?> list ? list : List.of();
@@ -989,6 +1065,9 @@ final class XmiModelImportService {
         }
 
         private void addContainmentEdge(EObject owner, EReference reference, EObject child) {
+            if (isGraphSupportObject(child)) {
+                return;
+            }
             String sourceId = ensureId(owner);
             String targetId = ensureId(child);
             String kind = containmentRelationshipKind(reference.getName());
@@ -1026,6 +1105,20 @@ final class XmiModelImportService {
             return isRelationshipObject(owner)
                     && ("source".equals(reference.getName()) || "target".equals(
                     reference.getName()));
+        }
+
+        private boolean isGraphSupportObject(EObject object) {
+            return switch (object.eClass().getName()) {
+                case "Annotation", "AwsTag", "ReadinessFinding", "TraceLink" -> true;
+                default -> false;
+            };
+        }
+
+        private boolean isGraphSupportReference(EReference reference) {
+            return switch (reference.getName()) {
+                case "incomingTraces", "outgoingTraces", "affectedElements" -> true;
+                default -> "TraceLink".equals(reference.getEReferenceType().getName());
+            };
         }
 
         private void copyScalarIfPresent(ObjectNode from, ObjectNode to, String key) {
@@ -1111,7 +1204,8 @@ final class XmiModelImportService {
             graphElements.forEach(element -> elements.add(element.deepCopy()));
             ArrayNode relationships = graph.putArray("relationships");
             graphRelationships.forEach(relationship -> relationships.add(relationship.deepCopy()));
-            graph.putArray("traceLinks");
+            ArrayNode traceLinks = graph.putArray("traceLinks");
+            graphTraceLinks.forEach(traceLink -> traceLinks.add(traceLink.deepCopy()));
             graph.putArray("assumptions");
             graph.putArray("validationIssues");
             graph.putArray("manualBacklog");

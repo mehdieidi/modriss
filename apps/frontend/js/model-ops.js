@@ -5,7 +5,7 @@ import {api, apiAuthHeaders} from './api.js';
 import {flushCurrentModelPatch} from './model-patch.js';
 import {setBusy, setError, setStatus} from './status.js';
 import {emptyDiagram} from './utils.js';
-import {saveStoredEdgeLayout, serializeModel, toDiagram} from './diagram.js';
+import {saveStoredEdgeLayout, serializeModel} from './diagram.js';
 import {
   activeView,
   installGraphAndViews,
@@ -622,10 +622,9 @@ export async function loadModelById(typeKey, id,
   state.modelId = record.id;
   state.modelRevision = Number(record.revision) || 1;
   state.baseModel = structuredClone(record.modelJson);
-  state.diagram = toDiagram(typeKey, record.modelJson, record.name);
   installGraphAndViews(typeKey, record.modelJson, record.name
       || defaultModelName(typeKey));
-  materializeActiveView();
+  state.diagram = materializeActiveView();
   if (typeKey === "cim") {
     state.boundedContextCreateMode = false;
     state.boundedContextDraftNodeIds = new Set();
@@ -636,7 +635,7 @@ export async function loadModelById(typeKey, id,
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
     state.tabs[typeKey].modelRevision = state.modelRevision;
-    state.tabs[typeKey].baseModel = structuredClone(record.modelJson);
+    state.tabs[typeKey].baseModel = state.baseModel;
     state.tabs[typeKey].diagram = state.diagram;
     state.tabs[typeKey].modelName = record.name || defaultModelName(typeKey);
     state.tabs[typeKey].dirty = false;
@@ -667,10 +666,9 @@ async function loadModelRecord(typeKey, record,
   state.modelId = record.id;
   state.modelRevision = Number(record.revision) || 1;
   state.baseModel = structuredClone(record.modelJson);
-  state.diagram = toDiagram(typeKey, record.modelJson, record.name);
   installGraphAndViews(typeKey, record.modelJson, record.name
       || defaultModelName(typeKey));
-  materializeActiveView();
+  state.diagram = materializeActiveView();
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
     state.tabs[typeKey].modelRevision = state.modelRevision;
@@ -1147,26 +1145,6 @@ export function updateGenerateButtonState() {
   el.generateContextBtn.title = buttonConfig.title;
 }
 
-async function autoLayoutGeneratedModel(label) {
-  try {
-    await autoLayoutCurrentDiagram({
-      progress: false,
-      save: true,
-      publish: false,
-      status: false,
-      busy: false,
-      rethrow: true,
-      preserveExistingPositions: false
-    });
-    renderDiagram();
-    await waitForCanvasPaint();
-    centerViewportOnDiagram({fit: true});
-    return "";
-  } catch (error) {
-    return error.message || `${label} auto layout failed.`;
-  }
-}
-
 export async function generateCimToPim() {
   if (state.activeType !== "cim" || !state.modelId) {
     if (state.activeType !== "cim") {
@@ -1193,14 +1171,9 @@ export async function generateCimToPim() {
       await loadModelById("pim", result.resultModelId,
           {showManualGuidance: true});
     }
-    setGenerationProgressPhase("Arranging and fitting the generated PIM…", 84);
-    const layoutWarning = await autoLayoutGeneratedModel("PIM");
     setGenerationProgressPhase("Opening the generated PIM model…", 94);
     await completeGenerationProgress("PIM ready.");
-    if (layoutWarning) {
-      setStatus(
-          `PIM generated and loaded, but auto layout failed: ${layoutWarning}`);
-    } else if (!state.validation.issues.length) {
+    if (!state.validation.issues.length) {
       setStatus("PIM generated and loaded");
     }
   } catch (error) {
@@ -1253,14 +1226,9 @@ export async function generatePimToPsm() {
       await loadModelById("psm", result.resultModelId,
           {showManualGuidance: true});
     }
-    setGenerationProgressPhase("Arranging and fitting the generated PSM…", 84);
-    const layoutWarning = await autoLayoutGeneratedModel("PSM");
     setGenerationProgressPhase("Opening the generated PSM model…", 94);
     await completeGenerationProgress("PSM ready.");
-    if (layoutWarning) {
-      setStatus(
-          `PSM generated and loaded, but auto layout failed: ${layoutWarning}`);
-    } else if (!state.validation.issues.length) {
+    if (!state.validation.issues.length) {
       setStatus("PSM generated and loaded");
     }
   } catch (error) {

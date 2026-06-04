@@ -56,6 +56,7 @@ public final class EpsilonEtlExecutor {
         BoundedByteArrayOutputStream stderr = new BoundedByteArrayOutputStream(
                 maxCapturedOutputBytes);
         EtlModule module = new EtlModule();
+        EtlRuleExecutionProfiler ruleProfiler = EtlRuleExecutionProfiler.createIfEnabled();
         List<LoadedEtlModel> loadedModels = new ArrayList<>();
 
         try {
@@ -89,6 +90,9 @@ public final class EpsilonEtlExecutor {
             }
 
             configureTransformationState(module);
+            if (ruleProfiler != null) {
+                module.getContext().getExecutorFactory().addExecutionListener(ruleProfiler);
+            }
             phaseStarted = System.nanoTime();
             executeModule(module);
             phaseTiming.addExecute(System.nanoTime() - phaseStarted);
@@ -160,6 +164,9 @@ public final class EpsilonEtlExecutor {
                 }
             }
             module.getContext().dispose();
+            if (ruleProfiler != null) {
+                ruleProfiler.printReport();
+            }
             phaseTiming.addDispose(System.nanoTime() - disposeStarted);
             phaseTiming.setTotal(System.nanoTime() - startedNanos);
         }
@@ -303,6 +310,10 @@ public final class EpsilonEtlExecutor {
 
     private void configureTransformationState(EtlModule module) {
         module.getContext().getFrameStack().putGlobal(
+                new Variable("etlProfiler", new EtlProfiler(),
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("etlTextChecks", new EtlTextChecks(),
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("usedModelElementIds", new java.util.LinkedHashSet<>(),
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("usedAwsLogicalIds", new java.util.LinkedHashSet<>(),
@@ -340,6 +351,10 @@ public final class EpsilonEtlExecutor {
                 new Variable("cachedPimIdempotencyById", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedPimSchemaById", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimElementById", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimValidationTargets", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedPimDataAccessIds", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
@@ -415,17 +430,17 @@ public final class EpsilonEtlExecutor {
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedQueuesByEventTypeId", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedJsonSchemaById", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedOpenApiSchemaById", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+                new Variable("cachedPimRootName", null,
+                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedAwsReadinessDecisionIds", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedAwsReadinessFindingIds", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
                 new Variable("cachedAwsReadinessCheckIds", null,
-                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
-                new Variable("cachedSlugByText", null,
-                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
-                new Variable("cachedCamelByText", null,
-                        org.eclipse.epsilon.eol.types.EolAnyType.Instance),
-                new Variable("cachedPascalByText", null,
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance));
     }
 

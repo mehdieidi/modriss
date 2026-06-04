@@ -470,6 +470,7 @@ rule ProcessTransition2WorkflowTransition
 }
 
 post AttachWorkflowDetails {
+  etlProfiler.mark("cim.workflowDetails.start");
   for (bp in CIMPROCESS!BusinessProcess.all) {
     var wf = workflowFor(bp);
     if (wf.isUndefined()) {
@@ -551,6 +552,7 @@ post AttachWorkflowDetails {
       }
     }
   }
+  etlProfiler.mark("cim.workflowDetails.end");
 }
 
 rule ExceptionScenario2ErrorHandler

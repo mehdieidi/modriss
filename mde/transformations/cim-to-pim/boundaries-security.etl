@@ -200,6 +200,7 @@ rule ExternalSystem2Adapter
 }
 
 post EnsureServiceExists {
+  etlProfiler.mark("cim.ensureService.start");
   if (pimRoot().services.isEmpty()) {
     var c = cimRoot();
     var s = new DEPLOY!ServerlessService;
@@ -214,4 +215,5 @@ post EnsureServiceExists {
     addTrace(c, s, "TR-010", KERNEL!TraceLinkType#DERIVES_FROM, "LOW");
     manualDecision("TR-010", "Define service boundaries using bounded contexts or business capabilities.", KERNEL!Severity#BLOCKER, true, Sequence{c, s});
   }
+  etlProfiler.mark("cim.ensureService.end");
 }

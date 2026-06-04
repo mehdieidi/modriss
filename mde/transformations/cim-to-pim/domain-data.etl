@@ -123,6 +123,7 @@ rule DomainRelationship2SchemaReference
 }
 
 post AttachRelationshipDataFields {
+  etlProfiler.mark("cim.relationshipFields.start");
   for (rel in CIMDOMAIN!DomainRelationship.all.select(r | r.source.isKindOf(CIMDOMAIN!DomainEntity))) {
     var sourceStore = storeForEntity(rel.source);
     if (sourceStore.isDefined() and sourceStore.ownedDataModels.notEmpty()) {
@@ -142,6 +143,7 @@ post AttachRelationshipDataFields {
       traceGenerated(rel, dataField, "TR-050", "MEDIUM");
     }
   }
+  etlProfiler.mark("cim.relationshipFields.end");
 }
 
 rule Aggregate2DataStore

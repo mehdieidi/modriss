@@ -14,8 +14,7 @@ operation fieldFor(ownerSeed : String, name : String, fieldType, required : Bool
   f.required = required;
   f.nullable = not required;
   f.array = fieldType = PIMTYPES!FieldType#ARRAY;
-  f.generatedByTransformation = true;
-  f.manuallyMaintained = false;
+  markGeneratedHelperWithSourceId(f, "PIM_HELPER", ownerSeed);
   return f;
 }
 
@@ -114,8 +113,7 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
       literal.name = rawValue.trim();
       literal.literal = rawValue.trim();
       literal.displayName = rawValue.trim();
-      literal.generatedByTransformation = true;
-      literal.manuallyMaintained = false;
+      markGeneratedHelper(literal, "TR-040", item);
       f.enumValues.add(literal);
     }
     if (f.enumValues.isEmpty()) {
@@ -247,8 +245,7 @@ operation defaultEventEnvelope(seed : String) {
   env.causationIdField = "causationId";
   env.subjectField = "subject";
   env.metadataRequired = true;
-  env.generatedByTransformation = true;
-  env.manuallyMaintained = false;
+  markGeneratedHelperWithSourceId(env, "PIM_HELPER", seed);
   return env;
 }
 
@@ -359,8 +356,7 @@ operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, a
   o.dashboardRequired = alarms;
   o.correlationIdRequired = true;
   o.correlationIdField = "correlationId";
-  o.generatedByTransformation = true;
-  o.manuallyMaintained = false;
+  markGeneratedHelper(o, ruleId, seed);
   o.attachedTo.add(seed);
   pimRoot().policies.add(o);
   cachedPimObservabilityById.put(id, o);
@@ -403,8 +399,7 @@ operation createDefaultResilience(seed, ruleId : String, deadLetter : Boolean) {
     dl.alarmRequired = true;
     r.deadLetter = dl;
   }
-  r.generatedByTransformation = true;
-  r.manuallyMaintained = false;
+  markGeneratedHelper(r, ruleId, seed);
   r.attachedTo.add(seed);
   pimRoot().policies.add(r);
   cachedPimResilienceById.put(id, r);

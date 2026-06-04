@@ -10,15 +10,24 @@ pre ValidatePimInput {
     throw "PIM to AWS PSM requires exactly one PIMModel root; found " + PIM!PIMModel.all.size().asString() + ".";
   }
   initialisePimToAwsPsmCaches();
+  etlProfiler.mark("psm.pre.initialise");
 }
 
 post ResolveAndValidate {
   cachedAwsResolvingRelationships = false;
+  etlProfiler.mark("psm.resolve.start");
   resolveAwsRelationships();
+  etlProfiler.mark("psm.resolve.relationships");
   resolveSqsRedrivePolicies();
+  etlProfiler.mark("psm.resolve.redrive");
   generateIamStatements();
+  etlProfiler.mark("psm.resolve.iam");
   placeUncontainedAwsResources();
+  etlProfiler.mark("psm.resolve.placeResources");
   generateRelationshipViews();
+  etlProfiler.mark("psm.resolve.relationshipViews");
   generateReadinessChecks();
+  etlProfiler.mark("psm.resolve.readiness");
   validatePsmConstraints();
+  etlProfiler.mark("psm.resolve.constraints");
 }

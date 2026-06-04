@@ -23,9 +23,6 @@ operation initialisePimToAwsPsmCaches() {
   cachedSqsLambdaMappings = Sequence{};
   cachedSnsLambdaSubscriptions = Sequence{};
   cachedEventBridgeRules = Sequence{};
-  cachedSlugByText = new Map;
-  cachedCamelByText = new Map;
-  cachedPascalByText = new Map;
   cachedAwsResolvingRelationships = true;
   cachedAwsAuthorizerByApiId = new Map;
   cachedLambdaPermissionByKey = new Map;
@@ -34,6 +31,9 @@ operation initialisePimToAwsPsmCaches() {
   cachedTopicsByEventTypeId = new Map;
   cachedEventBusesByEventTypeId = new Map;
   cachedQueuesByEventTypeId = new Map;
+  cachedJsonSchemaById = new Map;
+  cachedOpenApiSchemaById = new Map;
+  cachedPimRootName = firstText(firstText(cachedPimRoot.domainName, cachedPimRoot.name), "Application");
   cachedAwsReadinessDecisionIds = Set{};
   cachedAwsReadinessFindingIds = Set{};
   cachedAwsReadinessCheckIds = Set{};
@@ -221,74 +221,31 @@ operation awsEquivalent(source) {
 }
 
 operation asText(value) {
-  if (value.isUndefined()) {
-    return "";
-  }
-  return value.asString();
+  return etlTextChecks.asText(value);
 }
 
 operation hasText(value) {
-  return value.isDefined() and not value.asString().trim().isEmpty();
+  return etlTextChecks.hasText(value);
 }
 
 operation firstText(primary, fallback) {
-  if (hasText(primary)) {
-    return primary.asString();
-  }
-  if (hasText(fallback)) {
-    return fallback.asString();
-  }
-  return "";
+  return etlTextChecks.firstText(primary, fallback);
 }
 
 operation slug(value) {
-  var text = asText(value);
-  if (cachedSlugByText.containsKey(text)) {
-    return cachedSlugByText.get(text);
-  }
-  var s = text.toLowerCase().trim().replaceAll("[^a-z0-9]+", "_").replaceAll("^_+|_+$", "");
-  if (s.isEmpty()) {
-    s = "unnamed";
-  }
-  cachedSlugByText.put(text, s);
-  return s;
+  return etlTextChecks.slug(value);
 }
 
 operation kebab(value) {
-  return slug(value).replace("_", "-");
+  return etlTextChecks.kebab(value);
 }
 
 operation camelCase(value) {
-  var text = asText(value);
-  if (cachedCamelByText.containsKey(text)) {
-    return cachedCamelByText.get(text);
-  }
-  var parts = slug(text).split("_");
-  if (parts.isEmpty()) {
-    return "unnamed";
-  }
-  var out = parts.first();
-  for (part in parts.excluding(parts.first())) {
-    if (part.length() > 0) {
-      out = out + part.substring(0, 1).toUpperCase() + part.substring(1);
-    }
-  }
-  cachedCamelByText.put(text, out);
-  return out;
+  return etlTextChecks.camelCase(value);
 }
 
 operation pascalCase(value) {
-  var text = asText(value);
-  if (cachedPascalByText.containsKey(text)) {
-    return cachedPascalByText.get(text);
-  }
-  var cc = camelCase(text);
-  if (cc.isEmpty()) {
-    return "Unnamed";
-  }
-  var result = cc.substring(0, 1).toUpperCase() + cc.substring(1);
-  cachedPascalByText.put(text, result);
-  return result;
+  return etlTextChecks.pascalCase(value);
 }
 
 operation idFor(prefix : String, source) {
@@ -366,7 +323,7 @@ operation qualifiedName(element) {
 }
 
 operation escapeJson(value) {
-  return asText(value).replace("\"", "\\\"");
+  return etlTextChecks.escapeJson(value);
 }
 
 operation safeJsonText(value) {
@@ -374,7 +331,7 @@ operation safeJsonText(value) {
 }
 
 operation rootName() {
-  return firstText(firstText(pimRoot().domainName, pimRoot().name), "Application");
+  return cachedPimRootName;
 }
 
 operation pimRoot() {
@@ -646,11 +603,27 @@ operation jsonStringArray(items) {
 }
 
 operation schemaToJsonSchema(schema) {
-  return schemaToObjectSchemaVisited(schema, true, Set{});
+  var key = cacheKeyFor(schema);
+  if (hasText(key) and cachedJsonSchemaById.containsKey(key)) {
+    return cachedJsonSchemaById.get(key);
+  }
+  var json = schemaToObjectSchemaVisited(schema, true, Set{});
+  if (hasText(key)) {
+    cachedJsonSchemaById.put(key, json);
+  }
+  return json;
 }
 
 operation schemaToOpenApiSchema(schema) {
-  return schemaToObjectSchemaVisited(schema, false, Set{});
+  var key = cacheKeyFor(schema);
+  if (hasText(key) and cachedOpenApiSchemaById.containsKey(key)) {
+    return cachedOpenApiSchemaById.get(key);
+  }
+  var json = schemaToObjectSchemaVisited(schema, false, Set{});
+  if (hasText(key)) {
+    cachedOpenApiSchemaById.put(key, json);
+  }
+  return json;
 }
 
 operation schemaToObjectSchema(schema, includeDialect : Boolean) {

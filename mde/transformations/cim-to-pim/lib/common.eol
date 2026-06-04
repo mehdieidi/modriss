@@ -12,6 +12,8 @@ operation initialiseCimToPimCaches() {
   cachedPimResilienceById = new Map;
   cachedPimIdempotencyById = new Map;
   cachedPimSchemaById = new Map;
+  cachedPimElementById = new Map;
+  cachedPimValidationTargets = Sequence{};
   cachedPimDataAccessIds = Set{};
   cachedPimExternalFlowIds = Set{};
   cachedPimQueueById = new Map;
@@ -20,9 +22,6 @@ operation initialiseCimToPimCaches() {
   cachedPimRetentionPolicyById = new Map;
   cachedPimBackupPolicyById = new Map;
   cachedPimSchemasByItemId = new Map;
-  cachedSlugByText = new Map;
-  cachedCamelByText = new Map;
-  cachedPascalByText = new Map;
   cachedReadinessManualDecisionsById = new Map;
   cachedReadinessFindingsById = new Map;
   cachedReadinessChecksById = new Map;
@@ -104,6 +103,11 @@ operation cachedEquivalent(source, ruleName : String) {
     if (cached = "__NONE__") return null;
     return cached;
   }
+  var deterministicTarget = cachedDeterministicEquivalent(source, ruleName, "");
+  if (deterministicTarget.isDefined()) {
+    cachedCimEquivalentByRule.put(key, deterministicTarget);
+    return deterministicTarget;
+  }
   var target = source.equivalents(ruleName).first();
   if (target.isDefined()) {
     cachedCimEquivalentByRule.put(key, target);
@@ -121,6 +125,11 @@ operation cachedEquivalentOfClass(source, ruleName : String, className : String)
     if (cached = "__NONE__") return null;
     return cached;
   }
+  var deterministicTarget = cachedDeterministicEquivalent(source, ruleName, className);
+  if (deterministicTarget.isDefined()) {
+    cachedCimEquivalentByRule.put(key, deterministicTarget);
+    return deterministicTarget;
+  }
   var target = source.equivalents(ruleName).selectOne(x | x.eClass().getName() = className);
   if (target.isDefined()) {
     cachedCimEquivalentByRule.put(key, target);
@@ -131,11 +140,58 @@ operation cachedEquivalentOfClass(source, ruleName : String, className : String)
   return target;
 }
 
-operation asText(value) {
-  if (value.isUndefined()) {
+operation cachePimTarget(target) {
+  if (target.isDefined() and hasText(target.id)) {
+    if (not cachedPimElementById.containsKey(target.id)) {
+      cachedPimValidationTargets.add(target);
+    }
+    cachedPimElementById.put(target.id, target);
+  }
+}
+
+operation cachedPimTargetById(id : String) {
+  if (hasText(id) and cachedPimElementById.containsKey(id)) {
+    return cachedPimElementById.get(id);
+  }
+  return null;
+}
+
+operation cachedDeterministicEquivalent(source, ruleName : String, className : String) {
+  var id = deterministicEquivalentId(source, ruleName, className);
+  if (not hasText(id)) {
+    return null;
+  }
+  return cachedPimTargetById(id);
+}
+
+operation deterministicEquivalentId(source, ruleName : String, className : String) {
+  if (source.isUndefined()) {
     return "";
   }
-  return value.asString();
+  if (ruleName = "BoundedContext2Service") return idFor("svc_ctx", source);
+  if (ruleName = "Capability2Service") return idFor("svc_cap", source);
+  if (ruleName = "Actor2Principal") return idFor("principal", source);
+  if (ruleName = "ExternalSystem2Adapter") return idFor("adapter", source);
+  if (ruleName = "Entity2Schema") return idFor("schema_entity", source);
+  if (ruleName = "ValueObject2Schema") return idFor("schema_value", source);
+  if (ruleName = "Aggregate2DataStore" and className = "DataStore") return idFor("store", source);
+  if (ruleName = "BusinessError2ErrorSchema") return idFor("schema_error", source);
+  if (ruleName = "BusinessEvent2EventType" and className = "EventType") return idFor("eventtype", source);
+  if (ruleName = "Command2Function") return idFor("fn_cmd", source);
+  if (ruleName = "UserInitiatedCommand2ApiRoute") return idFor("route_cmd", source);
+  if (ruleName = "Query2Function") return idFor("fn_query", source);
+  if (ruleName = "Query2ApiRoute") return idFor("route_query", source);
+  if (ruleName = "Policy2PolicyHandlerFunction") return idFor("fn_policy", source);
+  if (ruleName = "DecisionTable2ChoiceLogic") return idFor("fn_decision", source);
+  if (ruleName = "BusinessProcess2Workflow") return idFor("workflow", source);
+  if (ruleName = "ProcessStep2WorkflowState") return idFor("state", source);
+  if (ruleName = "ProcessTransition2WorkflowTransition") return idFor("wf_transition", source);
+  if (ruleName = "ExceptionScenario2ErrorHandler") return idFor("errorhandler", source);
+  return "";
+}
+
+operation asText(value) {
+  return etlTextChecks.asText(value);
 }
 
 operation Any orDefault(defaultValue : String) {
@@ -146,64 +202,27 @@ operation Any orDefault(defaultValue : String) {
 }
 
 operation hasText(value) {
-  return value.isDefined() and not value.asString().trim().isEmpty();
+  return etlTextChecks.hasText(value);
 }
 
 operation firstText(primary, fallback) {
-  if (hasText(primary)) {
-    return primary.asString();
-  }
-  if (hasText(fallback)) {
-    return fallback.asString();
-  }
-  return "";
+  return etlTextChecks.firstText(primary, fallback);
 }
 
 operation slug(value) {
-  var text = asText(value);
-  if (cachedSlugByText.containsKey(text)) {
-    return cachedSlugByText.get(text);
-  }
-  var s = text.toLowerCase().trim().replaceAll("[^a-z0-9]+", "_").replaceAll("^_+|_+$", "");
-  if (s.isEmpty()) {
-    s = "unnamed";
-  }
-  cachedSlugByText.put(text, s);
-  return s;
+  return etlTextChecks.slug(value);
 }
 
 operation kebab(value) {
-  return slug(value).replace("_", "-");
+  return etlTextChecks.kebab(value);
 }
 
 operation camelCase(value) {
-  var text = asText(value);
-  if (cachedCamelByText.containsKey(text)) {
-    return cachedCamelByText.get(text);
-  }
-  var parts = slug(text).split("_");
-  if (parts.isEmpty()) {
-    return "unnamed";
-  }
-  var result = parts.first();
-  for (part in parts.excluding(parts.first())) {
-    if (part.length() > 0) {
-      result = result + part.substring(0, 1).toUpperCase() + part.substring(1);
-    }
-  }
-  cachedCamelByText.put(text, result);
-  return result;
+  return etlTextChecks.camelCase(value);
 }
 
 operation pascalCase(value) {
-  var text = asText(value);
-  if (cachedPascalByText.containsKey(text)) {
-    return cachedPascalByText.get(text);
-  }
-  var cc = camelCase(text);
-  var result = cc.substring(0, 1).toUpperCase() + cc.substring(1);
-  cachedPascalByText.put(text, result);
-  return result;
+  return etlTextChecks.pascalCase(value);
 }
 
 operation removeSuffix(value : String, suffix : String) {

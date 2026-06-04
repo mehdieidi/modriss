@@ -10,4 +10,5 @@ pre ValidateInput {
     throw "CIM to PIM requires exactly one CIMModel root; found " + CIM!CIMModel.all.size().asString() + ".";
   }
   initialiseCimToPimCaches();
+  etlProfiler.mark("cim.pre.initialise");
 }

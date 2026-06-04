@@ -31,8 +31,7 @@ public final class JsonFileStore {
                 .build();
         this.objectMapper = new ObjectMapper(jsonFactory)
                 .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .enable(SerializationFeature.INDENT_OUTPUT);
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     public ObjectMapper objectMapper() {
