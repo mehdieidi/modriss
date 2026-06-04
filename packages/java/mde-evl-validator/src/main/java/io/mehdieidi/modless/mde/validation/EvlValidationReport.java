@@ -12,6 +12,7 @@ public record EvlValidationReport(
         Instant startedAt,
         Instant finishedAt,
         Duration duration,
+        Duration moduleDiscoveryDuration,
         List<EvlModuleReport> moduleReports,
         List<EvlConstraintViolation> violations,
         List<EvlDiagnostic> diagnostics,
@@ -25,6 +26,8 @@ public record EvlValidationReport(
         Objects.requireNonNull(startedAt, "startedAt");
         Objects.requireNonNull(finishedAt, "finishedAt");
         Objects.requireNonNull(duration, "duration");
+        moduleDiscoveryDuration = moduleDiscoveryDuration == null
+                ? Duration.ZERO : moduleDiscoveryDuration;
         moduleReports = moduleReports == null ? List.of() : List.copyOf(moduleReports);
         violations = violations == null ? List.of() : List.copyOf(violations);
         diagnostics = diagnostics == null ? List.of() : List.copyOf(diagnostics);
@@ -35,5 +38,9 @@ public record EvlValidationReport(
 
     public boolean hasMandatoryViolations() {
         return violations.stream().anyMatch(v -> v.kind() == EvlConstraintKind.MANDATORY);
+    }
+
+    public Duration totalDuration() {
+        return duration;
     }
 }

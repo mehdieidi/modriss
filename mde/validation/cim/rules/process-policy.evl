@@ -170,8 +170,7 @@ context CIM!DecisionStep {
   }
 
   constraint DecisionHasBranches {
-    check :
-      CIM!ProcessTransition.all.atLeastNMatch(transitionItem | transitionItem.source = self, 2)
+    check : self.outgoingTransitionCount() >= 2
     message :
       "Error [CIM-STEP-012] DecisionStep '" + self.labelText() + "' has fewer than two outgoing branches. " +
       "Suggestion: add at least two ProcessTransition elements representing alternative outcomes."

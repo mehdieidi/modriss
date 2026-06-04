@@ -67,6 +67,7 @@ public final class EpsilonEvlValidator {
         List<EvlDiagnostic> diagnostics = new ArrayList<>();
         List<EvlModuleReport> moduleReports = new ArrayList<>();
         List<EvlConstraintViolation> violations = new ArrayList<>();
+        Duration moduleDiscoveryDuration = Duration.ZERO;
         BoundedByteArrayOutputStream stdout = new BoundedByteArrayOutputStream(
                 maxCapturedOutputBytes);
         BoundedByteArrayOutputStream warnings = new BoundedByteArrayOutputStream(
@@ -76,12 +77,14 @@ public final class EpsilonEvlValidator {
 
         try {
             validateRequest(request, diagnostics);
-            failIfDiagnostics(request, startedAt, moduleReports, violations, diagnostics,
-                    stdout, warnings, stderr, null);
+            failIfDiagnostics(request, startedAt, moduleDiscoveryDuration, moduleReports,
+                    violations, diagnostics, stdout, warnings, stderr, null);
 
+            Instant moduleDiscoveryStartedAt = Instant.now();
             List<Path> modules = discoverModules(request, diagnostics);
-            failIfDiagnostics(request, startedAt, moduleReports, violations, diagnostics,
-                    stdout, warnings, stderr, null);
+            moduleDiscoveryDuration = Duration.between(moduleDiscoveryStartedAt, Instant.now());
+            failIfDiagnostics(request, startedAt, moduleDiscoveryDuration, moduleReports,
+                    violations, diagnostics, stdout, warnings, stderr, null);
 
             for (Path moduleFile : modules) {
                 EvlModuleReport moduleReport = validateModule(
@@ -93,11 +96,12 @@ public final class EpsilonEvlValidator {
 
             if (diagnostics.stream().anyMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
                 throw failure("EVL validation failed.", request, startedAt, moduleReports,
-                        violations, diagnostics, stdout, warnings, stderr, null);
+                        moduleDiscoveryDuration, violations, diagnostics, stdout, warnings,
+                        stderr, null);
             }
 
             return report(EvlValidationStatus.SUCCEEDED, request, startedAt, moduleReports,
-                    violations, diagnostics, stdout, warnings, stderr);
+                    moduleDiscoveryDuration, violations, diagnostics, stdout, warnings, stderr);
         } catch (EvlValidationException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -111,7 +115,8 @@ public final class EpsilonEvlValidator {
                     "Inspect the exception type and stack trace, then verify EVL/model/metamodel compatibility.",
                     ex));
             throw failure("EVL validation failed unexpectedly.", request, startedAt, moduleReports,
-                    violations, diagnostics, stdout, warnings, stderr, ex);
+                    moduleDiscoveryDuration, violations, diagnostics, stdout, warnings, stderr,
+                    ex);
         }
     }
 
@@ -126,30 +131,46 @@ public final class EpsilonEvlValidator {
         List<EvlConstraintViolation> violations = new ArrayList<>();
         List<IModel> loadedModels = new ArrayList<>();
         EvlModule module = new EvlModule();
+        Duration parseDuration = Duration.ZERO;
+        Duration modelLoadDuration = Duration.ZERO;
+        Duration structuralValidationDuration = Duration.ZERO;
+        Duration evlExecuteDuration = Duration.ZERO;
+        Duration violationMappingDuration = Duration.ZERO;
+        Duration disposeDuration = Duration.ZERO;
 
         try {
+            Instant phaseStartedAt = Instant.now();
             boolean parsed = parseModule(moduleFile, module, diagnostics);
-            if (!parsed || diagnostics.stream()
-                    .anyMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
-                return moduleReport(moduleFile, startedAt, violations, diagnostics);
-            }
+            parseDuration = Duration.between(phaseStartedAt, Instant.now());
+            if (parsed && diagnostics.stream()
+                    .noneMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
+                configureStreams(module, request.captureOutput(), stdout, warnings, stderr);
+                for (EvlModelConfiguration modelConfiguration : request.models()) {
+                    phaseStartedAt = Instant.now();
+                    IModel model = modelConfiguration.load();
+                    modelLoadDuration = modelLoadDuration.plus(
+                            Duration.between(phaseStartedAt, Instant.now()));
+                    loadedModels.add(model);
 
-            configureStreams(module, request.captureOutput(), stdout, warnings, stderr);
-            for (EvlModelConfiguration modelConfiguration : request.models()) {
-                IModel model = modelConfiguration.load();
-                loadedModels.add(model);
-                diagnostics.addAll(modelConfiguration.validateLoadedModel(model));
-                module.getContext().getModelRepository().addModel(model);
-            }
-            if (diagnostics.stream().anyMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
-                return moduleReport(moduleFile, startedAt, violations, diagnostics);
-            }
+                    phaseStartedAt = Instant.now();
+                    diagnostics.addAll(modelConfiguration.validateLoadedModel(model));
+                    structuralValidationDuration = structuralValidationDuration.plus(
+                            Duration.between(phaseStartedAt, Instant.now()));
+                    module.getContext().getModelRepository().addModel(model);
+                }
+                if (diagnostics.stream().noneMatch(
+                        d -> d.severity() == ValidationSeverity.ERROR)) {
+                    phaseStartedAt = Instant.now();
+                    Set<UnsatisfiedConstraint> unsatisfiedConstraints = executeModule(module);
+                    evlExecuteDuration = Duration.between(phaseStartedAt, Instant.now());
 
-            Set<UnsatisfiedConstraint> unsatisfiedConstraints = executeModule(module);
-            for (UnsatisfiedConstraint unsatisfiedConstraint : unsatisfiedConstraints) {
-                violations.add(toViolation(unsatisfiedConstraint));
+                    phaseStartedAt = Instant.now();
+                    for (UnsatisfiedConstraint unsatisfiedConstraint : unsatisfiedConstraints) {
+                        violations.add(toViolation(unsatisfiedConstraint));
+                    }
+                    violationMappingDuration = Duration.between(phaseStartedAt, Instant.now());
+                }
             }
-            return moduleReport(moduleFile, startedAt, violations, diagnostics);
         } catch (EolModelLoadingException ex) {
             diagnostics.add(EvlDiagnostic.error(
                     ValidationPhase.MODEL_LOADING,
@@ -160,10 +181,8 @@ public final class EpsilonEvlValidator {
                     "An EMF model or metamodel could not be loaded.",
                     "Check model paths, metamodel paths, aliases, namespace URIs, and Ecore availability.",
                     ex));
-            return moduleReport(moduleFile, startedAt, violations, diagnostics);
         } catch (EolRuntimeException ex) {
             diagnostics.add(runtimeDiagnostic(ex, moduleFile));
-            return moduleReport(moduleFile, startedAt, violations, diagnostics);
         } catch (EpsilonExecutionTimeoutException ex) {
             diagnostics.add(EvlDiagnostic.error(
                     ValidationPhase.EXECUTION,
@@ -174,7 +193,6 @@ public final class EpsilonEvlValidator {
                     "The EVL module exceeded the configured execution timeout.",
                     "Reduce model size, inspect EVL rules for non-terminating logic, or increase the timeout deliberately.",
                     ex));
-            return moduleReport(moduleFile, startedAt, violations, diagnostics);
         } catch (Exception ex) {
             diagnostics.add(EvlDiagnostic.error(
                     ValidationPhase.UNEXPECTED,
@@ -185,8 +203,8 @@ public final class EpsilonEvlValidator {
                     "An unexpected exception interrupted this EVL module.",
                     "Inspect the exception type and stack trace, then verify the EVL module and model aliases.",
                     ex));
-            return moduleReport(moduleFile, startedAt, violations, diagnostics);
         } finally {
+            Instant disposeStartedAt = Instant.now();
             for (IModel model : loadedModels) {
                 try {
                     model.dispose();
@@ -195,7 +213,11 @@ public final class EpsilonEvlValidator {
                 }
             }
             module.getContext().dispose();
+            disposeDuration = Duration.between(disposeStartedAt, Instant.now());
         }
+        return moduleReport(moduleFile, startedAt, parseDuration, modelLoadDuration,
+                structuralValidationDuration, evlExecuteDuration, violationMappingDuration,
+                disposeDuration, violations, diagnostics);
     }
 
     private void validateRequest(EvlValidationRequest request, List<EvlDiagnostic> diagnostics) {
@@ -288,6 +310,19 @@ public final class EpsilonEvlValidator {
                         "The directory root does not contain any direct .evl files.",
                         "Point evlRoot at an .evl file or place/import an entry .evl module directly under the root directory.",
                         null));
+            }
+            if (modules.size() > 1) {
+                diagnostics.add(new EvlDiagnostic(
+                        ValidationSeverity.WARNING,
+                        ValidationPhase.MODULE_DISCOVERY,
+                        request.evlRoot(),
+                        -1,
+                        -1,
+                        "Directory-mode EVL validation discovered " + modules.size()
+                                + " entry modules.",
+                        "Each direct .evl file will be parsed and executed as a separate module, which reloads the configured models for every module.",
+                        "For normal CIM/PIM/PSM profile validation, point evlRoot at the semantic entry module or pass exactly one entry module file.",
+                        ""));
             }
             return modules;
         } catch (IOException ex) {
@@ -535,12 +570,24 @@ public final class EpsilonEvlValidator {
     private EvlModuleReport moduleReport(
             Path moduleFile,
             Instant startedAt,
+            Duration parseDuration,
+            Duration modelLoadDuration,
+            Duration structuralValidationDuration,
+            Duration evlExecuteDuration,
+            Duration violationMappingDuration,
+            Duration disposeDuration,
             List<EvlConstraintViolation> violations,
             List<EvlDiagnostic> diagnostics) {
         Instant finishedAt = Instant.now();
         return new EvlModuleReport(
                 moduleFile,
                 Duration.between(startedAt, finishedAt),
+                parseDuration,
+                modelLoadDuration,
+                structuralValidationDuration,
+                evlExecuteDuration,
+                violationMappingDuration,
+                disposeDuration,
                 violations,
                 diagnostics);
     }
@@ -548,6 +595,7 @@ public final class EpsilonEvlValidator {
     private void failIfDiagnostics(
             EvlValidationRequest request,
             Instant startedAt,
+            Duration moduleDiscoveryDuration,
             List<EvlModuleReport> moduleReports,
             List<EvlConstraintViolation> violations,
             List<EvlDiagnostic> diagnostics,
@@ -557,7 +605,8 @@ public final class EpsilonEvlValidator {
             Throwable cause) throws EvlValidationException {
         if (diagnostics.stream().anyMatch(d -> d.severity() == ValidationSeverity.ERROR)) {
             throw failure("EVL validation request is invalid.", request, startedAt, moduleReports,
-                    violations, diagnostics, stdout, warnings, stderr, cause);
+                    moduleDiscoveryDuration, violations, diagnostics, stdout, warnings, stderr,
+                    cause);
         }
     }
 
@@ -566,6 +615,7 @@ public final class EpsilonEvlValidator {
             EvlValidationRequest request,
             Instant startedAt,
             List<EvlModuleReport> moduleReports,
+            Duration moduleDiscoveryDuration,
             List<EvlConstraintViolation> violations,
             List<EvlDiagnostic> diagnostics,
             BoundedByteArrayOutputStream stdout,
@@ -575,7 +625,8 @@ public final class EpsilonEvlValidator {
         return new EvlValidationException(
                 message,
                 report(EvlValidationStatus.FAILED, request, startedAt, moduleReports,
-                        violations, diagnostics, stdout, warnings, stderr),
+                        moduleDiscoveryDuration, violations, diagnostics, stdout, warnings,
+                        stderr),
                 cause);
     }
 
@@ -584,6 +635,7 @@ public final class EpsilonEvlValidator {
             EvlValidationRequest request,
             Instant startedAt,
             List<EvlModuleReport> moduleReports,
+            Duration moduleDiscoveryDuration,
             List<EvlConstraintViolation> violations,
             List<EvlDiagnostic> diagnostics,
             BoundedByteArrayOutputStream stdout,
@@ -596,6 +648,7 @@ public final class EpsilonEvlValidator {
                 startedAt,
                 finishedAt,
                 Duration.between(startedAt, finishedAt),
+                moduleDiscoveryDuration,
                 moduleReports,
                 violations,
                 diagnostics,

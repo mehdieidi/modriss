@@ -54,17 +54,8 @@ final class XmiModelImportService {
     }
 
     JsonNode importModel(ModelLevel level, byte[] bytes) {
+        Resource resource = loadResource(level, bytes, "import");
         try {
-            ResourceSet resourceSet = newResourceSet();
-            registerMetamodel(resourceSet, level);
-            Resource resource = resourceSet.createResource(URI.createURI(
-                    "memory:/import-" + level.apiName() + ".xmi"));
-            try (ByteArrayInputStream input = new ByteArrayInputStream(bytes)) {
-                resource.load(input, Map.of());
-            }
-            assertNoLoadErrors(resource);
-            EcoreUtil.resolveAll(resourceSet);
-            assertNoLoadErrors(resource);
             List<EObject> roots = resource.getContents().stream()
                     .filter(EObject.class::isInstance)
                     .map(EObject.class::cast)
@@ -93,6 +84,53 @@ final class XmiModelImportService {
                     : ex.getMessage();
             throw new PlatformException(400, "Uploaded model is not valid XMI: " + detail);
         }
+    }
+
+    Resource loadResource(ModelLevel level, byte[] bytes, String purpose) {
+        try {
+            ResourceSet resourceSet = newResourceSet();
+            registerMetamodel(resourceSet, level);
+            Resource resource = resourceSet.createResource(URI.createURI(
+                    "memory:/" + sanitizePurpose(purpose) + "-" + level.apiName() + ".xmi"));
+            try (ByteArrayInputStream input = new ByteArrayInputStream(bytes)) {
+                resource.load(input, Map.of());
+            }
+            assertNoLoadErrors(resource);
+            EcoreUtil.resolveAll(resourceSet);
+            assertNoLoadErrors(resource);
+            validateResourceRoot(level, resource);
+            return resource;
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            String detail = ex.getMessage() == null || ex.getMessage().isBlank()
+                    ? ex.getClass().getSimpleName()
+                    : ex.getMessage();
+            throw new PlatformException(400, "Uploaded model is not valid XMI: " + detail);
+        }
+    }
+
+    private void validateResourceRoot(ModelLevel level, Resource resource) {
+        List<EObject> roots = resource.getContents().stream()
+                .filter(EObject.class::isInstance)
+                .map(EObject.class::cast)
+                .toList();
+        if (roots.isEmpty()) {
+            throw new PlatformException(400,
+                    "Uploaded XMI does not contain a model root.");
+        }
+        if (roots.size() > 1) {
+            throw new PlatformException(400,
+                    "Uploaded XMI must contain exactly one model root.");
+        }
+        validateRoot(level, roots.get(0));
+    }
+
+    private String sanitizePurpose(String purpose) {
+        String value = String.valueOf(purpose == null ? "xmi" : purpose)
+                .replaceAll("[^A-Za-z0-9_.-]+", "-")
+                .replaceAll("^-+|-+$", "");
+        return value.isBlank() ? "xmi" : value;
     }
 
     byte[] exportModel(ModelLevel level, JsonNode modelJson) {
@@ -223,9 +261,12 @@ final class XmiModelImportService {
             ObjectNode object = (ObjectNode) node;
             JsonNode relationship = relationshipsById.get(scalarText(object.get("id")));
             if (relationship != null) {
-                copyTextIfMissing(object, relationship, "source");
-                copyTextIfMissing(object, relationship, "target");
+                copyTextIfMissing(object, relationship, "source", "sourceElementId");
+                copyTextIfMissing(object, relationship, "target", "targetElementId");
+                copyTextIfMissing(object, relationship, "sourceElementId", "source");
+                copyTextIfMissing(object, relationship, "targetElementId", "target");
             }
+            restoreTraceEndpointIds(object);
             object.fields().forEachRemaining(entry -> restoreRelationshipEndpoints(
                     entry.getValue(), relationshipsById));
             return;
@@ -235,11 +276,23 @@ final class XmiModelImportService {
         }
     }
 
-    private void copyTextIfMissing(ObjectNode target, JsonNode source, String fieldName) {
+    private void restoreTraceEndpointIds(ObjectNode object) {
+        if (!"TraceLink".equals(scalarText(object.get("eClass")))) {
+            return;
+        }
+        copyTextIfMissing(object, object, "sourceElementId", "source");
+        copyTextIfMissing(object, object, "targetElementId", "target");
+    }
+
+    private void copyTextIfMissing(ObjectNode target, JsonNode source, String fieldName,
+            String fallbackFieldName) {
         if (target.hasNonNull(fieldName) && !target.path(fieldName).asText("").isBlank()) {
             return;
         }
         String value = scalarText(source.get(fieldName));
+        if (value.isBlank()) {
+            value = scalarText(source.get(fallbackFieldName));
+        }
         if (!value.isBlank()) {
             target.put(fieldName, value);
         }
@@ -305,9 +358,31 @@ final class XmiModelImportService {
             }
 
             context.captureGraphObject(object, node);
+            ensureTraceEndpointIds(object, node, context);
             return node;
         } finally {
             context.endSerialization(object);
+        }
+    }
+
+    private void ensureTraceEndpointIds(EObject object, ObjectNode node,
+            SerializationContext context) {
+        if (!"TraceLink".equals(object.eClass().getName())) {
+            return;
+        }
+        copyReferenceIdAttributeIfMissing(object, node, context, "source", "sourceElementId");
+        copyReferenceIdAttributeIfMissing(object, node, context, "target", "targetElementId");
+    }
+
+    private void copyReferenceIdAttributeIfMissing(EObject object, ObjectNode node,
+            SerializationContext context, String referenceName, String attributeName) {
+        if (node.hasNonNull(attributeName) && !node.path(attributeName).asText("").isBlank()) {
+            return;
+        }
+        EStructuralFeature reference = object.eClass().getEStructuralFeature(referenceName);
+        Object value = reference == null ? null : object.eGet(reference);
+        if (value instanceof EObject target) {
+            node.put(attributeName, context.ensureId(target));
         }
     }
 
@@ -480,13 +555,21 @@ final class XmiModelImportService {
             }
             EClass eClass = eClassFor(node.path("eClass").asText(node.path("type").asText("")),
                     expectedType);
-            EObject object = eClass.getEPackage().getEFactoryInstance().create(eClass);
             String objectId = scalarText(node.get("id"));
             if (!objectId.isBlank()) {
-                if (objectsById.containsKey(objectId)) {
-                    diagnostics.error(object, "id",
+                EObject existing = objectsById.get(objectId);
+                if (existing != null) {
+                    if (existing.eClass() == eClass) {
+                        return existing;
+                    }
+                    EObject duplicate = eClass.getEPackage().getEFactoryInstance().create(eClass);
+                    diagnostics.error(duplicate, "id",
                             "Duplicate model element id '" + objectId + "'.");
+                    return duplicate;
                 }
+            }
+            EObject object = eClass.getEPackage().getEFactoryInstance().create(eClass);
+            if (!objectId.isBlank()) {
                 objectsById.put(objectId, object);
             }
             for (EStructuralFeature feature : eClass.getEAllStructuralFeatures()) {
@@ -729,6 +812,8 @@ final class XmiModelImportService {
         private final Map<EObject, String> ids = new IdentityHashMap<>();
         private final Set<EObject> serializing = java.util.Collections.newSetFromMap(
                 new IdentityHashMap<>());
+        private final Set<EObject> serialized = java.util.Collections.newSetFromMap(
+                new IdentityHashMap<>());
         private final Set<String> usedIds = new LinkedHashSet<>();
         private final List<ObjectNode> graphElements = new ArrayList<>();
         private final List<ObjectNode> graphRelationships = new ArrayList<>();
@@ -744,11 +829,15 @@ final class XmiModelImportService {
         }
 
         boolean beginSerialization(EObject object) {
+            if (serialized.contains(object)) {
+                return false;
+            }
             return serializing.add(object);
         }
 
         void endSerialization(EObject object) {
             serializing.remove(object);
+            serialized.add(object);
         }
 
         private String createId(EObject object) {

@@ -463,9 +463,12 @@ public final class TransformationService {
             ObjectNode object = (ObjectNode) node;
             JsonNode graphRelationship = graphRelationships.get(text(object, "id", ""));
             if (graphRelationship != null) {
-                copyReferenceIfMissing(object, graphRelationship, "source");
-                copyReferenceIfMissing(object, graphRelationship, "target");
+                copyReferenceIfMissing(object, graphRelationship, "source", "sourceElementId");
+                copyReferenceIfMissing(object, graphRelationship, "target", "targetElementId");
+                copyReferenceIfMissing(object, graphRelationship, "sourceElementId", "source");
+                copyReferenceIfMissing(object, graphRelationship, "targetElementId", "target");
             }
+            hydrateTraceEndpointIds(object);
             object.fields().forEachRemaining(entry -> hydrateSemanticReferences(entry.getValue(),
                     graphRelationships));
             return;
@@ -475,14 +478,26 @@ public final class TransformationService {
         }
     }
 
-    private void copyReferenceIfMissing(ObjectNode target, JsonNode source, String fieldName) {
+    private void copyReferenceIfMissing(ObjectNode target, JsonNode source, String fieldName,
+            String fallbackFieldName) {
         if (target.hasNonNull(fieldName) && !target.path(fieldName).asText("").isBlank()) {
             return;
         }
         String value = text(source, fieldName, "");
+        if (value.isBlank()) {
+            value = text(source, fallbackFieldName, "");
+        }
         if (!value.isBlank()) {
             target.put(fieldName, value);
         }
+    }
+
+    private void hydrateTraceEndpointIds(ObjectNode object) {
+        if (!"TraceLink".equals(text(object, "eClass", ""))) {
+            return;
+        }
+        copyReferenceIfMissing(object, object, "sourceElementId", "source");
+        copyReferenceIfMissing(object, object, "targetElementId", "target");
     }
 
     private void deleteQuietly(Path path) {

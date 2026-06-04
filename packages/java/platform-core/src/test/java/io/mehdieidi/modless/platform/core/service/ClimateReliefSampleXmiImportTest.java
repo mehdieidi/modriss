@@ -4,8 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
+import io.mehdieidi.modless.platform.core.model.ModelRecord;
+import io.mehdieidi.modless.platform.core.model.ProjectRecord;
+import io.mehdieidi.modless.platform.core.model.UserRecord;
 import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,6 +68,105 @@ class ClimateReliefSampleXmiImportTest {
         assertTrue(result.issues().isEmpty(),
                 () -> "Expected no validation issues, found: " + result.issues());
         assertEquals("cim-root", result.modelJson().path("id").asText());
+    }
+
+    @Test
+    void importedClimateReliefSampleExportsWithoutDuplicateInformationItemIds()
+            throws Exception {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+
+        byte[] bytes = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
+                "cim.xmi").normalize());
+
+        ModelService.ImportResult result = service.importModel(ModelLevel.CIM,
+                "cim.xmi", bytes, "xmi");
+
+        byte[] exported = service.exportModel(ModelLevel.CIM, result.modelJson(), "xmi");
+
+        assertTrue(exported.length > 0);
+    }
+
+    @Test
+    void validateButtonPathToleratesPreviouslyDuplicatedInformationItemJson()
+            throws Exception {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        UserRecord user = authService.register("cim-validator@example.com", "password123",
+                "Owner").user();
+        ProjectRecord project = projectService.create(user, "Climate", "");
+
+        byte[] bytes = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
+                "cim.xmi").normalize());
+        ObjectNode model = (ObjectNode) service.importModel(ModelLevel.CIM,
+                "cim.xmi", bytes, "xmi").modelJson();
+        duplicateInformationItemsUnderAddress(model);
+        ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "cim", model);
+
+        ModelService.ValidationResult validation = service.validate(user, ModelLevel.CIM,
+                created.id());
+
+        assertFalse(validation.issues().stream().anyMatch(issue ->
+                "XmiExport".equals(issue.constraint())
+                        && issue.message().contains("Duplicate model element id")));
+    }
+
+    @Test
+    void validateButtonPathPreservesTraceLinkEndpoints() throws Exception {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        UserRecord user = authService.register("trace-validator@example.com", "password123",
+                "Owner").user();
+        ProjectRecord project = projectService.create(user, "Climate Trace", "");
+
+        byte[] bytes = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
+                "cim.xmi").normalize());
+        ObjectNode model = (ObjectNode) service.importModel(ModelLevel.CIM,
+                "cim.xmi", bytes, "xmi").modelJson();
+        ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "cim", model);
+
+        ModelService.ValidationResult validation = service.validate(user, ModelLevel.CIM,
+                created.id());
+
+        assertNoTraceLinkEndpointErrors(validation);
+    }
+
+    @Test
+    void validateButtonPathRepairsStaleTraceLinkSourceXmi() throws Exception {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        UserRecord user = authService.register("stale-trace-validator@example.com",
+                "password123", "Owner").user();
+        ProjectRecord project = projectService.create(user, "Climate Stale Trace", "");
+
+        byte[] bytes = Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples",
+                "cim.xmi").normalize());
+        ObjectNode model = (ObjectNode) service.importModel(ModelLevel.CIM,
+                "cim.xmi", bytes, "xmi").modelJson();
+        ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "cim", model);
+        service.attachSourceXmi(created, removeTraceLinkEndpoints(new String(bytes))
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        ModelService.ValidationResult validation = service.validate(user, ModelLevel.CIM,
+                created.id());
+
+        assertNoTraceLinkEndpointErrors(validation);
+        ModelService.ValidationResult repairedSourceValidation = service.validateGeneratedXmi(
+                ModelLevel.CIM, service.sourceXmi(service.get(user, ModelLevel.CIM,
+                        created.id())).orElseThrow());
+        assertNoTraceLinkEndpointErrors(repairedSourceValidation);
     }
 
     @Test
@@ -157,6 +261,37 @@ class ClimateReliefSampleXmiImportTest {
         Resource resource = resourceSet.getResource(URI.createFileURI(sample.toString()), true);
         resource.load(Map.of());
         assertFalse(resource.getContents().isEmpty());
+    }
+
+    private void duplicateInformationItemsUnderAddress(ObjectNode model) {
+        ObjectNode address = informationItem(model, "info-address");
+        ArrayNode topLevelItems = (ArrayNode) model.path("informationItems");
+        topLevelItems.add(informationItem(address, "info-postcode").deepCopy());
+        topLevelItems.add(informationItem(address, "info-location-reference").deepCopy());
+    }
+
+    private void assertNoTraceLinkEndpointErrors(ModelService.ValidationResult validation) {
+        assertFalse(validation.issues().stream().anyMatch(issue ->
+                "TraceLinkHasReferenceOrExternalId".equals(issue.constraint())));
+    }
+
+    private String removeTraceLinkEndpoints(String xmi) {
+        return xmi.replaceAll("(<links[^>]*?)\\s+source=\"[^\"]*\"", "$1")
+                .replaceAll("(<links[^>]*?)\\s+target=\"[^\"]*\"", "$1");
+    }
+
+    private ObjectNode informationItem(JsonNode owner, String id) {
+        for (JsonNode item : owner.path("informationItems")) {
+            if (id.equals(item.path("id").asText())) {
+                return (ObjectNode) item;
+            }
+        }
+        for (JsonNode item : owner.path("subItems")) {
+            if (id.equals(item.path("id").asText())) {
+                return (ObjectNode) item;
+            }
+        }
+        throw new AssertionError("Missing information item: " + id);
     }
 
     private void registerPackage(ResourceSet resourceSet, EPackage ePackage) {

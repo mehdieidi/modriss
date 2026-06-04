@@ -35,9 +35,7 @@ context PIM!ApiRoute {
   }
 
   constraint UniqueMethodPathWithinApi {
-    check : PIM!ApiRoute.all.one(routeItem |
-      routeItem.api = self.api and routeItem.method = self.method and routeItem.pathTemplate = self.pathTemplate
-    )
+    check : not duplicatePimApiRouteKeys().includes(self.routeUniquenessKey())
     message : "[PIM-ROUTE-001] API route '" + self.method.asString() + " " + self.pathTemplate + "' is duplicated within API '" + self.api.displayName() + "'. Fix: change the method or pathTemplate so each route is unique inside the API."
   }
 

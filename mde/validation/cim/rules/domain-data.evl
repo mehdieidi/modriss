@@ -164,7 +164,7 @@ context CIM!BusinessInvariant {
 context CIM!InformationItem {
 
   constraint AcyclicSubItems {
-    check : not self.subItems.exists(child | child = self or child.transitiveSubItems().includes(self))
+    check : not self.hasSubItemCycle()
     message :
       "Error [CIM-INFO-000A] InformationItem '" + self.labelText() + "' has cyclic subItems. " +
       "Suggestion: remove the recursive containment/reference cycle."
@@ -179,7 +179,7 @@ context CIM!InformationItem {
   }
 
   constraint UniqueChildNames {
-    check : self.subItems.forAll(child | self.subItems.one(other | firstText(other.businessName, other.name) = firstText(child.businessName, child.name)))
+    check : collectionHasUniqueNames(self.subItems)
     message :
       "Error [CIM-INFO-000C] InformationItem '" + self.labelText() + "' has duplicate child names. " +
       "Suggestion: make nested InformationItem businessName/name values unique."

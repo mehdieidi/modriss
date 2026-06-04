@@ -12,7 +12,6 @@ import io.mehdieidi.modless.mde.validation.EvlDiagnostic;
 import io.mehdieidi.modless.mde.validation.EvlValidationException;
 import io.mehdieidi.modless.mde.validation.EvlValidationReport;
 import io.mehdieidi.modless.mde.validation.EvlValidationRequest;
-import io.mehdieidi.modless.mde.validation.FileEvlModelConfiguration;
 import io.mehdieidi.modless.mde.validation.ResourceEvlModelConfiguration;
 import io.mehdieidi.modless.mde.validation.ValidationSeverity;
 import io.mehdieidi.modless.platform.core.PlatformException;
@@ -32,6 +31,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -52,6 +52,13 @@ public final class ModelService {
     private final ModelLockService modelLocks;
     private final XmiModelImportService xmiImportService;
     private final EpsilonEvlValidator evlValidator;
+    private final Map<String, ValidationResult> validationCache = Collections.synchronizedMap(
+            new LinkedHashMap<>(128, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, ValidationResult> eldest) {
+                    return size() > 128;
+                }
+            });
 
     public ModelService(JsonFileStore store, ProjectService projectService) {
         this(store, projectService, new ModelingConfigService());
@@ -276,12 +283,59 @@ public final class ModelService {
 
     public ValidationResult validate(UserRecord user, ModelLevel level, String id) {
         ModelRecord model = get(user, level, id);
-        Optional<byte[]> xmiBytes = sourceXmi(model);
-        if (xmiBytes.isPresent()) {
-            return validateGeneratedXmi(level, xmiBytes.get());
+        String cacheKey = validationCacheKey(model);
+        ValidationResult cached = validationCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
         }
-        // Legacy JSON-only records are converted in memory so existing projects remain usable.
-        return validate(level, model.modelJson());
+        Optional<byte[]> xmiBytes = sourceXmi(model);
+        ValidationResult result;
+        if (xmiBytes.isPresent()) {
+            result = validateGeneratedXmi(level, xmiBytes.get());
+            if (hasRecoverableStaleSourceError(result)) {
+                ValidationResult repairedResult = validateRegeneratedSourceXmi(model);
+                if (!hasRecoverableStaleSourceError(repairedResult)) {
+                    result = repairedResult;
+                }
+            }
+        } else {
+            // Legacy JSON-only records are converted in memory so existing projects remain usable.
+            result = validate(level, model.modelJson());
+        }
+        validationCache.put(cacheKey, result);
+        return result;
+    }
+
+    private ValidationResult validateRegeneratedSourceXmi(ModelRecord model) {
+        try {
+            SourceXmiUpdate sourceXmi = canonicalSourceXmi(model.level(), model.modelJson(),
+                    null);
+            ValidationResult result = validateGeneratedXmi(model.level(), sourceXmi.bytes());
+            if (!hasRecoverableStaleSourceError(result)) {
+                attachSourceXmi(model, sourceXmi.bytes());
+            }
+            return result;
+        } catch (RuntimeException ex) {
+            return validate(model.level(), model.modelJson());
+        }
+    }
+
+    private boolean hasRecoverableStaleSourceError(ValidationResult result) {
+        return hasRelationshipEndpointLoadingError(result) || hasTraceEndpointError(result);
+    }
+
+    private boolean hasRelationshipEndpointLoadingError(ValidationResult result) {
+        return result != null && result.issues().stream().anyMatch(issue ->
+                "ERROR".equals(issue.severity())
+                        && "EVL_MODEL_LOADING".equals(issue.constraint())
+                        && (issue.message().contains("required feature 'source'")
+                        || issue.message().contains("required feature 'target'")));
+    }
+
+    private boolean hasTraceEndpointError(ValidationResult result) {
+        return result != null && result.issues().stream().anyMatch(issue ->
+                "ERROR".equals(issue.severity())
+                        && "TraceLinkHasReferenceOrExternalId".equals(issue.constraint()));
     }
 
     public ValidationResult validateGeneratedXmi(ModelLevel level, byte[] xmiBytes) {
@@ -316,21 +370,20 @@ public final class ModelService {
     }
 
     private List<ValidationIssue> validateWithEvl(ModelLevel level, byte[] xmiBytes) {
-        Path workDir = null;
         try {
-            workDir = Files.createTempDirectory("modless-" + level.apiName() + "-validation-");
-            Path modelFile = workDir.resolve("model-" + level.apiName() + ".xmi");
-            Files.write(modelFile, xmiBytes);
+            MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
             EvlValidationReport report = evlValidator.validate(new EvlValidationRequest(
                     mdePaths.validationRoot(level),
                     List.of(mdePaths.validationEntryFile(level)),
-                    List.of(FileEvlModelConfiguration.readOnly(
+                    List.of(ResourceEvlModelConfiguration.readOnly(
                             validationModelName(level),
                             validationModelAliases(level),
-                            modelFile,
-                            List.of(metamodelResolver.resolve(level).file()))),
+                            xmiImportService.loadResource(level, xmiBytes, "validation"),
+                            metamodel.packages())),
                     true));
             return validationIssues(report);
+        } catch (PlatformException ex) {
+            return List.of(issue("ERROR", "XmiLoad", ex.getMessage()));
         } catch (EvlValidationException ex) {
             return validationIssues(ex.getReport());
         } catch (Exception ex) {
@@ -338,10 +391,6 @@ public final class ModelService {
                     "EVL validation could not run: "
                             + (ex.getMessage() == null ? ex.getClass().getSimpleName()
                             : ex.getMessage())));
-        } finally {
-            if (workDir != null) {
-                deleteQuietly(workDir);
-            }
         }
     }
 
@@ -582,9 +631,12 @@ public final class ModelService {
             ObjectNode object = (ObjectNode) node;
             JsonNode graphRelationship = graphRelationships.get(text(object, "id", ""));
             if (graphRelationship != null) {
-                copyReferenceIfMissing(object, graphRelationship, "source");
-                copyReferenceIfMissing(object, graphRelationship, "target");
+                copyReferenceIfMissing(object, graphRelationship, "source", "sourceElementId");
+                copyReferenceIfMissing(object, graphRelationship, "target", "targetElementId");
+                copyReferenceIfMissing(object, graphRelationship, "sourceElementId", "source");
+                copyReferenceIfMissing(object, graphRelationship, "targetElementId", "target");
             }
+            hydrateTraceEndpointIds(object);
             object.fields().forEachRemaining(entry -> hydrateSemanticReferences(entry.getValue(),
                     graphRelationships));
             return;
@@ -594,14 +646,26 @@ public final class ModelService {
         }
     }
 
-    private void copyReferenceIfMissing(ObjectNode target, JsonNode source, String fieldName) {
+    private void copyReferenceIfMissing(ObjectNode target, JsonNode source, String fieldName,
+            String fallbackFieldName) {
         if (target.hasNonNull(fieldName) && !target.path(fieldName).asText("").isBlank()) {
             return;
         }
         String value = text(source, fieldName, "");
+        if (value.isBlank()) {
+            value = text(source, fallbackFieldName, "");
+        }
         if (!value.isBlank()) {
             target.put(fieldName, value);
         }
+    }
+
+    private void hydrateTraceEndpointIds(ObjectNode object) {
+        if (!"TraceLink".equals(text(object, "eClass", ""))) {
+            return;
+        }
+        copyReferenceIfMissing(object, object, "sourceElementId", "source");
+        copyReferenceIfMissing(object, object, "targetElementId", "target");
     }
 
     private String text(JsonNode node, String field, String fallback) {
@@ -1185,6 +1249,11 @@ public final class ModelService {
         } catch (Exception ex) {
             throw new PlatformException(500, "Could not hash source XMI.");
         }
+    }
+
+    private String validationCacheKey(ModelRecord model) {
+        return model.level().name() + ":" + model.id() + ":" + model.revision() + ":"
+                + String.valueOf(model.sourceXmiHash());
     }
 
     private Path modelDir(String projectId, ModelLevel level) {

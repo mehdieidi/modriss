@@ -88,7 +88,7 @@ context AWSPSM!SamStack {
 
   constraint StackLogicalIdsAreUnique {
     check : self.resources.forAll(resourceItem |
-      self.resources.one(otherResource | otherResource.logicalId = resourceItem.logicalId))
+      not duplicateResourceLogicalIdKeys().includes(resourceItem.stackLogicalIdKey()))
     message : 'SAM stack ' + self.stackName + ' contains duplicate resource logical IDs. Fix: rename the duplicate logicalId values; logical IDs must be unique per CloudFormation stack.'
   }
 
@@ -111,8 +111,7 @@ context AWSPSM!AwsResource {
   }
 
   constraint LogicalIdUniqueInStack {
-    check : AWSPSM!AwsResource.all.one(resourceItem |
-      (resourceItem.stack = self.stack) and (resourceItem.logicalId = self.logicalId))
+    check : not duplicateResourceLogicalIdKeys().includes(self.stackLogicalIdKey())
     message : 'Logical ID ' + self.logicalId + ' is duplicated in stack ' + self.stack.stackName + '. Fix: give each resource in a stack a unique logicalId.'
   }
 
@@ -122,7 +121,7 @@ context AWSPSM!AwsResource {
   }
 
   constraint NoDependencyCycles {
-    check : not self.dependsOn.exists(dependencyItem | dependencyItem.transitivelyDependsOn(self, Set{}))
+    check : not resourcesWithDependencyCycles().includes(self.`id`)
     message : 'Resource ' + self.resourceLabel() + ' is part of a circular dependency chain. Fix: remove or refactor dependsOn links so the stack dependency graph is acyclic.'
   }
 
@@ -266,4 +265,3 @@ context AWSPSM!NamedValueExpression {
     message : 'A map entry has no key. Fix: provide a stable non-empty key for the NamedValueExpression.'
   }
 }
-

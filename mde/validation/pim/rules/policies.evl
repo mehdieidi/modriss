@@ -27,7 +27,7 @@ context PIM!DeadLetterPolicy {
 context PIM!TimeoutPolicy {
 
   constraint TimeoutPolicyIsRootOwned {
-    check : PIM!PIMModel.all.exists(root | root.policies.includes(self))
+    check : rootPolicyIds().includes(self.`id`)
     message : "[PIM-POL-003A] TimeoutPolicy '" + self.displayName() + "' must be owned by PIMModel.policies and referenced from functions/routes/resilience policies."
   }
 

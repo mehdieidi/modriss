@@ -23,13 +23,60 @@ operation Any hasExpressionBody() : Boolean {
   return self.language.isDefined() and self.body.hasText();
 }
 
-operation CIM!InformationItem transitiveSubItems() : Set {
-  var result : Set = Set{};
-  for (child in self.subItems) {
-    result.add(child);
-    result.addAll(child.transitiveSubItems());
+operation collectionHasUniqueNames(items) : Boolean {
+  var seen : Set = Set{};
+  for (item in items) {
+    var key = firstText(item.businessName, item.name);
+    if (seen.includes(key)) {
+      return false;
+    }
+    seen.add(key);
   }
-  return result;
+  return true;
+}
+
+operation CIM!InformationItem hasSubItemCycle() : Boolean {
+  return self.hasSubItemCycle(Set{}, Set{});
+}
+
+operation CIM!InformationItem hasSubItemCycle(visited : Set, active : Set) : Boolean {
+  if (active.includes(self)) {
+    return true;
+  }
+  if (visited.includes(self)) {
+    return false;
+  }
+  visited.add(self);
+  active.add(self);
+  for (child in self.subItems) {
+    if (child.hasSubItemCycle(visited, active)) {
+      return true;
+    }
+  }
+  active.remove(self);
+  return false;
+}
+
+@cached
+operation cimOutgoingTransitionCountBySourceId() : Map {
+  var index = new Map;
+  for (transitionItem in CIM!ProcessTransition.all.select(t | t.source.isDefined())) {
+    var key = transitionItem.source.`id`;
+    var count = index.get(key);
+    if (count.isUndefined()) {
+      count = 0;
+    }
+    index.put(key, count + 1);
+  }
+  return index;
+}
+
+operation CIM!DecisionStep outgoingTransitionCount() : Integer {
+  var count = cimOutgoingTransitionCountBySourceId().get(self.`id`);
+  if (count.isUndefined()) {
+    return 0;
+  }
+  return count;
 }
 
 @cached

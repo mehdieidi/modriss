@@ -25,8 +25,8 @@ context PIM!EventType {
   }
 
   critique EventTypeProducerConsumerLinksConsistent {
-    check : self.producedBy.forAll(fn | PIM!EventChannel.all.exists(ch | ch.eventTypes.includes(self) and (ch.producers.includes(fn) or ch.externalProducers.includes(fn))))
-      and self.consumedBy.forAll(fn | PIM!EventChannel.all.exists(ch | ch.eventTypes.includes(self) and (ch.consumers.includes(fn) or ch.externalConsumers.includes(fn) or ch.workflowConsumers.includes(fn))))
+    check : self.producedBy.forAll(fn | eventChannelProducerKeys().includes(self.participantKey(fn)))
+      and self.consumedBy.forAll(fn | eventChannelConsumerKeys().includes(self.participantKey(fn)))
     message : "[PIM-EVENT-006] EventType '" + self.displayName() + "' has producedBy/consumedBy links that are not reflected by event-channel producer/consumer links. Suggested fix: synchronize EventType and EventChannel relationship references."
   }
 }
@@ -77,7 +77,7 @@ context PIM!EventChannel {
       and self.consumers.forAll(fn | self.eventTypes.exists(eventItem | eventItem.consumedBy.includes(fn) or fn.subscribesTo.includes(eventItem)))
       and self.externalProducers.forAll(adapter | self.eventTypes.exists(eventItem | eventItem.producedBy.includes(adapter)))
       and self.externalConsumers.forAll(adapter | self.eventTypes.exists(eventItem | eventItem.consumedBy.includes(adapter)))
-      and self.workflowConsumers.forAll(workflowItem | PIM!EventFlow.all.exists(flowItem | flowItem.channel = self and flowItem.target = workflowItem and self.eventTypes.includes(flowItem.eventType)))
+      and self.workflowConsumers.forAll(workflowItem | eventFlowWorkflowConsumerKeys().includes(self.workflowConsumerKey(workflowItem)))
     message : "[PIM-CHAN-006] Channel '" + self.displayName() + "' has producer/consumer links that are not reflected by event types, functions, external adapters, workflows, or event flows. Suggested fix: keep EventChannel, EventType, Function and EventFlow references synchronized."
   }
 }

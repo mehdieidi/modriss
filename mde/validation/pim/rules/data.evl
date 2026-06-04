@@ -109,9 +109,7 @@ context PIM!AccessPattern {
 
   critique HighFrequencyAccessPatternShouldHaveIndex {
     guard : self.highFrequency.isTrue() or self.highCardinality.isTrue()
-    check : PIM!IndexCandidate.all.exists(indexItem |
-      indexItem.dataStore = self.dataStore and indexItem.supportsAccessPatterns.includes(self)
-    )
+    check : indexedAccessPatternKeys().includes(self.indexSupportKey())
     message : "[PIM-DATA-014] High-frequency/high-cardinality AccessPattern '" + self.displayName() + "' has no supporting IndexCandidate. Suggested fix: add an index candidate and link it to this access pattern."
   }
 }

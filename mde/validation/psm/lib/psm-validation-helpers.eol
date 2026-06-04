@@ -49,12 +49,19 @@ operation AWSPSM!AwsResource resourceLabel() : String {
 
 @cached
 operation AWSPSM!AwsResource deployedToProductionStage() : Boolean {
-  if (self.stack.isUndefined()) {
-    return false;
+  return self.stack.isDefined() and productionStackIds().includes(self.stack.`id`);
+}
+
+@cached
+operation productionStackIds() : Set {
+  var ids : Set = Set{};
+  for (stageItem in AWSPSM!AwsStage.all.select(s |
+      s.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD)) {
+    for (stackItem in stageItem.deploysStacks) {
+      ids.add(stackItem.`id`);
+    }
   }
-  return AWSPSM!AwsStage.all.exists(stageItem |
-    (stageItem.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD) and
-    stageItem.deploysStacks.includes(self.stack));
+  return ids;
 }
 
 @cached
@@ -68,10 +75,14 @@ operation AWSPSM!AwsResource hasTagKey(keyText : String) : Boolean {
 
 @cached
 operation AWSPSM!AwsResource duplicateTagKeys() : Set {
+  var seen : Set = Set{};
   var duplicates : Set = Set{};
-  for (tagItem in self.tags) {
-    if (self.tags.atLeastNMatch(otherTag | otherTag.key = tagItem.key, 2)) {
+  for (tagItem in self.tags.select(t | t.key.hasText())) {
+    if (seen.includes(tagItem.key)) {
       duplicates.add(tagItem.key);
+    }
+    else {
+      seen.add(tagItem.key);
     }
   }
   return duplicates;
@@ -126,16 +137,57 @@ operation AWSPSM!AwsResource missingRequiredTagKeys() : Sequence {
   return missingKeys;
 }
 
-operation AWSPSM!AwsResource transitivelyDependsOn(candidateResource : AWSPSM!AwsResource, visitedResources : Set) : Boolean {
-  if (self.dependsOn.includes(candidateResource)) {
-    return true;
+operation AWSPSM!AwsResource stackLogicalIdKey() : String {
+  if (self.stack.isUndefined()) {
+    return "<no-stack>::" + self.logicalId;
   }
-  if (visitedResources.includes(self)) {
-    return false;
+  return self.stack.`id` + "::" + self.logicalId;
+}
+
+@cached
+operation duplicateResourceLogicalIdKeys() : Set {
+  var seen : Set = Set{};
+  var duplicates : Set = Set{};
+  for (resourceItem in AWSPSM!AwsResource.all.select(r | r.logicalId.hasText())) {
+    var key = resourceItem.stackLogicalIdKey();
+    if (seen.includes(key)) {
+      duplicates.add(key);
+    }
+    else {
+      seen.add(key);
+    }
   }
-  visitedResources.add(self);
-  return self.dependsOn.exists(dependencyItem |
-    dependencyItem.transitivelyDependsOn(candidateResource, visitedResources));
+  return duplicates;
+}
+
+@cached
+operation AWSPSM!AwsResource transitiveDependencyIds() : Set {
+  return self.transitiveDependencyIds(Set{});
+}
+
+operation AWSPSM!AwsResource transitiveDependencyIds(visitedResourceIds : Set) : Set {
+  var ids : Set = Set{};
+  if (visitedResourceIds.includes(self.`id`)) {
+    ids.add(self.`id`);
+    return ids;
+  }
+  visitedResourceIds.add(self.`id`);
+  for (dependencyItem in self.dependsOn) {
+    ids.add(dependencyItem.`id`);
+    ids.addAll(dependencyItem.transitiveDependencyIds(visitedResourceIds));
+  }
+  return ids;
+}
+
+@cached
+operation resourcesWithDependencyCycles() : Set {
+  var ids : Set = Set{};
+  for (resourceItem in AWSPSM!AwsResource.all) {
+    if (resourceItem.transitiveDependencyIds().includes(resourceItem.`id`)) {
+      ids.add(resourceItem.`id`);
+    }
+  }
+  return ids;
 }
 
 operation AWSPSM!ValueExpression usesSecureSource() : Boolean {
@@ -203,6 +255,73 @@ operation AWSPSM!ApiGatewayIntegration targetCount() : Integer {
     count = count + 1;
   }
   return count;
+}
+
+operation AWSPSM!ApiGatewayRoute apiRouteKeyPrefix() : String {
+  if (self.api.isUndefined()) {
+    return "<no-api>";
+  }
+  return self.api.`id`;
+}
+
+operation AWSPSM!HttpApiRoute httpApiRouteKey() : String {
+  return self.apiRouteKeyPrefix() + "::" + self.method.asString() + "::" + self.path;
+}
+
+operation AWSPSM!RestApiRoute restApiRouteKey() : String {
+  return self.apiRouteKeyPrefix() + "::" + self.method.asString() + "::" + self.path;
+}
+
+operation AWSPSM!WebSocketRoute webSocketRouteKey() : String {
+  return self.apiRouteKeyPrefix() + "::" + self.routeKey;
+}
+
+@cached
+operation duplicateHttpApiRouteKeys() : Set {
+  var seen : Set = Set{};
+  var duplicates : Set = Set{};
+  for (routeItem in AWSPSM!HttpApiRoute.all) {
+    var key = routeItem.httpApiRouteKey();
+    if (seen.includes(key)) {
+      duplicates.add(key);
+    }
+    else {
+      seen.add(key);
+    }
+  }
+  return duplicates;
+}
+
+@cached
+operation duplicateRestApiRouteKeys() : Set {
+  var seen : Set = Set{};
+  var duplicates : Set = Set{};
+  for (routeItem in AWSPSM!RestApiRoute.all) {
+    var key = routeItem.restApiRouteKey();
+    if (seen.includes(key)) {
+      duplicates.add(key);
+    }
+    else {
+      seen.add(key);
+    }
+  }
+  return duplicates;
+}
+
+@cached
+operation duplicateWebSocketRouteKeys() : Set {
+  var seen : Set = Set{};
+  var duplicates : Set = Set{};
+  for (routeItem in AWSPSM!WebSocketRoute.all) {
+    var key = routeItem.webSocketRouteKey();
+    if (seen.includes(key)) {
+      duplicates.add(key);
+    }
+    else {
+      seen.add(key);
+    }
+  }
+  return duplicates;
 }
 
 @cached

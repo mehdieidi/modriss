@@ -49,12 +49,30 @@ context CIM!Command {
 
   critique CommandOutcomeLinksMatchDirectCollections {
     guard : self.outcomes.notEmpty()
-    check : self.outcomes.forAll(outcome |
-      outcome.emittedEvents.forAll(eventItem | self.expectedEvents.includes(eventItem) or self.rejectionEvents.includes(eventItem)) and
-      outcome.errors.forAll(errorItem | self.possibleErrors.includes(errorItem))) and
-      self.expectedEvents.forAll(eventItem | self.outcomes.exists(outcome | outcome.success = true and outcome.emittedEvents.includes(eventItem))) and
-      self.rejectionEvents.forAll(eventItem | self.outcomes.exists(outcome | outcome.success <> true and outcome.emittedEvents.includes(eventItem))) and
-      self.possibleErrors.forAll(errorItem | self.outcomes.exists(outcome | outcome.errors.includes(errorItem)))
+    check {
+      var successEvents : Set = Set{};
+      var rejectionEvents : Set = Set{};
+      var outcomeErrors : Set = Set{};
+
+      for (outcome in self.outcomes) {
+        for (eventItem in outcome.emittedEvents) {
+          if (outcome.success = true) {
+            successEvents.add(eventItem);
+          }
+          else {
+            rejectionEvents.add(eventItem);
+          }
+        }
+        outcomeErrors.addAll(outcome.errors);
+      }
+
+      return self.expectedEvents.forAll(eventItem | successEvents.includes(eventItem)) and
+        self.rejectionEvents.forAll(eventItem | rejectionEvents.includes(eventItem)) and
+        self.possibleErrors.forAll(errorItem | outcomeErrors.includes(errorItem)) and
+        successEvents.forAll(eventItem | self.expectedEvents.includes(eventItem)) and
+        rejectionEvents.forAll(eventItem | self.rejectionEvents.includes(eventItem)) and
+        outcomeErrors.forAll(errorItem | self.possibleErrors.includes(errorItem));
+    }
     message :
       "Warning [CIM-CMD-007] Command '" + self.labelText() + "' has CommandOutcome event/error links that are not reflected in expectedEvents, rejectionEvents, or possibleErrors. " +
       "Suggestion: keep direct command collections and detailed outcomes consistent until outcome-derived helpers fully replace direct links."

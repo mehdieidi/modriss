@@ -27,6 +27,10 @@ public final class EvlValidationReportWriter {
         appendProperty(json, "startedAt", report.startedAt().toString(), true);
         appendProperty(json, "finishedAt", report.finishedAt().toString(), true);
         appendProperty(json, "durationMillis", Long.toString(report.duration().toMillis()), false);
+        appendProperty(json, "totalMillis", Long.toString(report.totalDuration().toMillis()),
+                false);
+        appendProperty(json, "moduleDiscoveryMillis",
+                Long.toString(report.moduleDiscoveryDuration().toMillis()), false);
         appendProperty(json, "mandatoryViolationCount",
                 Long.toString(report.violations().stream()
                         .filter(v -> v.kind() == EvlConstraintKind.MANDATORY).count()),
@@ -35,6 +39,7 @@ public final class EvlValidationReportWriter {
                 Long.toString(report.violations().stream()
                         .filter(v -> v.kind() == EvlConstraintKind.OPTIONAL).count()),
                 false);
+        appendModules(json, report);
         appendViolations(json, report);
         appendDiagnostics(json, report);
         appendProperty(json, "standardOutput", report.stdout(), true);
@@ -42,6 +47,39 @@ public final class EvlValidationReportWriter {
         appendProperty(json, "errorOutput", report.stderr(), true, 2, false);
         json.append("}\n");
         return json.toString();
+    }
+
+    private void appendModules(StringBuilder json, EvlValidationReport report) {
+        json.append("  \"modules\": [\n");
+        for (int i = 0; i < report.moduleReports().size(); i++) {
+            EvlModuleReport module = report.moduleReports().get(i);
+            json.append("    {\n");
+            appendProperty(json, "moduleFile", module.moduleFile().toString(), true, 6);
+            appendProperty(json, "totalMillis", Long.toString(module.duration().toMillis()),
+                    false, 6);
+            appendProperty(json, "parseMillis",
+                    Long.toString(module.parseDuration().toMillis()), false, 6);
+            appendProperty(json, "modelLoadMillis",
+                    Long.toString(module.modelLoadDuration().toMillis()), false, 6);
+            appendProperty(json, "structuralValidationMillis",
+                    Long.toString(module.structuralValidationDuration().toMillis()), false, 6);
+            appendProperty(json, "evlExecuteMillis",
+                    Long.toString(module.evlExecuteDuration().toMillis()), false, 6);
+            appendProperty(json, "violationMappingMillis",
+                    Long.toString(module.violationMappingDuration().toMillis()), false, 6);
+            appendProperty(json, "disposeMillis",
+                    Long.toString(module.disposeDuration().toMillis()), false, 6);
+            appendProperty(json, "violationCount",
+                    Integer.toString(module.violations().size()), false, 6);
+            appendProperty(json, "diagnosticCount",
+                    Integer.toString(module.diagnostics().size()), false, 6, false);
+            json.append("    }");
+            if (i + 1 < report.moduleReports().size()) {
+                json.append(',');
+            }
+            json.append('\n');
+        }
+        json.append("  ],\n");
     }
 
     private void appendViolations(StringBuilder json, EvlValidationReport report) {

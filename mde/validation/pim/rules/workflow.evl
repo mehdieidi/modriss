@@ -114,7 +114,7 @@ context PIM!ErrorHandler {
 context PIM!CompensationPolicy {
 
   constraint CompensationPolicyIsRootOwned {
-    check : PIM!PIMModel.all.exists(root | root.policies.includes(self))
+    check : rootPolicyIds().includes(self.`id`)
     message : "[PIM-WF-013A] CompensationPolicy '" + self.displayName() + "' must be owned by PIMModel.policies and referenced from WorkflowState.compensation."
   }
 

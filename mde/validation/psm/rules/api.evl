@@ -28,24 +28,21 @@ context AWSPSM!ApiGatewayApi {
 
 context AWSPSM!HttpApiRoute {
   constraint UniqueHttpRouteWithinApi {
-    check : AWSPSM!HttpApiRoute.all.one(routeItem |
-      (routeItem.api = self.api) and (routeItem.method = self.method) and (routeItem.path = self.path))
+    check : not duplicateHttpApiRouteKeys().includes(self.httpApiRouteKey())
     message : 'HTTP API route ' + self.method.asString() + ' ' + self.path + ' is duplicated in API ' + self.api.resourceLabel() + '. Fix: make method+path unique within the API.'
   }
 }
 
 context AWSPSM!RestApiRoute {
   constraint UniqueRestRouteWithinApi {
-    check : AWSPSM!RestApiRoute.all.one(routeItem |
-      (routeItem.api = self.api) and (routeItem.method = self.method) and (routeItem.path = self.path))
+    check : not duplicateRestApiRouteKeys().includes(self.restApiRouteKey())
     message : 'REST API route ' + self.method.asString() + ' ' + self.path + ' is duplicated in API ' + self.api.resourceLabel() + '. Fix: make method+path unique within the API.'
   }
 }
 
 context AWSPSM!WebSocketRoute {
   constraint UniqueWebSocketRouteKeyWithinApi {
-    check : AWSPSM!WebSocketRoute.all.one(routeItem |
-      (routeItem.api = self.api) and (routeItem.routeKey = self.routeKey))
+    check : not duplicateWebSocketRouteKeys().includes(self.webSocketRouteKey())
     message : 'WebSocket routeKey ' + self.routeKey + ' is duplicated in API ' + self.api.resourceLabel() + '. Fix: give each WebSocket route a unique routeKey.'
   }
 }

@@ -60,16 +60,44 @@ operation Any containsProviderToken() : Boolean {
 }
 
 @cached
+operation reachableFunctionIds() : Set {
+  var ids : Set = Set{};
+
+  for (functionItem in PIM!Function.all.select(f | f.triggers.notEmpty())) {
+    ids.add(functionItem.`id`);
+  }
+  for (triggerItem in PIM!Trigger.all.select(t | t.invokesFunction.isDefined())) {
+    ids.add(triggerItem.invokesFunction.`id`);
+  }
+  for (routeItem in PIM!ApiRoute.all.select(r | r.functionIntegration.isDefined())) {
+    ids.add(routeItem.functionIntegration.`id`);
+  }
+  for (stateItem in PIM!WorkflowState.all.select(s | s.invokesFunction.isDefined())) {
+    ids.add(stateItem.invokesFunction.`id`);
+  }
+  for (channelItem in PIM!EventChannel.all) {
+    for (functionItem in channelItem.producers) {
+      ids.add(functionItem.`id`);
+    }
+    for (functionItem in channelItem.consumers) {
+      ids.add(functionItem.`id`);
+    }
+  }
+  for (eventItem in PIM!EventType.all) {
+    for (functionItem in eventItem.producedBy) {
+      ids.add(functionItem.`id`);
+    }
+    for (functionItem in eventItem.consumedBy) {
+      ids.add(functionItem.`id`);
+    }
+  }
+
+  return ids;
+}
+
+@cached
 operation PIM!Function hasAnyIncomingBinding() : Boolean {
-  return self.triggers.notEmpty()
-    or PIM!ApiRoute.all.exists(routeItem |
-      routeItem.functionIntegration.isDefined() and routeItem.functionIntegration = self)
-    or PIM!WorkflowState.all.exists(stateItem |
-      stateItem.invokesFunction.isDefined() and stateItem.invokesFunction = self)
-    or PIM!EventChannel.all.exists(channelItem |
-      channelItem.producers.includes(self) or channelItem.consumers.includes(self))
-    or PIM!EventType.all.exists(eventItem |
-      eventItem.producedBy.includes(self) or eventItem.consumedBy.includes(self));
+  return reachableFunctionIds().includes(self.`id`);
 }
 
 @cached
@@ -86,7 +114,26 @@ operation PIM!ServerlessService ownedElements() : Sequence {
 
 @cached
 operation PIM!ServerlessService serviceMemberships() : Sequence {
-  return PIM!ServiceElementMembership.all.select(membershipItem | membershipItem.service = self).asSequence();
+  var memberships = serviceMembershipsByServiceId().get(self.`id`);
+  if (memberships.isUndefined()) {
+    return Sequence{};
+  }
+  return memberships;
+}
+
+@cached
+operation serviceMembershipsByServiceId() : Map {
+  var index = new Map;
+  for (membershipItem in PIM!ServiceElementMembership.all.select(m | m.service.isDefined())) {
+    var key = membershipItem.service.`id`;
+    var memberships = index.get(key);
+    if (memberships.isUndefined()) {
+      memberships = Sequence{};
+      index.put(key, memberships);
+    }
+    memberships.add(membershipItem);
+  }
+  return index;
 }
 
 @cached
@@ -111,9 +158,19 @@ operation PIM!Function needsIdempotencyPolicy() : Boolean {
       triggerItem.resilience.retry.isDefined() and
       triggerItem.resilience.retry.maxAttempts.isDefined() and
       triggerItem.resilience.retry.maxAttempts > 1)
-    or PIM!EventChannel.all.exists(channelItem |
-      channelItem.consumers.includes(self) and
-      channelItem.deliverySemantics.enumIn(Sequence{"EFFECTIVELY_ONCE_WITH_IDEMPOTENCY", "EXACTLY_ONCE_REQUIRED"}));
+    or idempotentConsumerFunctionIds().includes(self.`id`);
+}
+
+@cached
+operation idempotentConsumerFunctionIds() : Set {
+  var ids : Set = Set{};
+  for (channelItem in PIM!EventChannel.all.select(channelItem |
+      channelItem.deliverySemantics.enumIn(Sequence{"EFFECTIVELY_ONCE_WITH_IDEMPOTENCY", "EXACTLY_ONCE_REQUIRED"}))) {
+    for (functionItem in channelItem.consumers) {
+      ids.add(functionItem.`id`);
+    }
+  }
+  return ids;
 }
 
 operation PIM!Schema hasFieldNamed(fieldName : String) : Boolean {
@@ -140,18 +197,47 @@ operation PIM!EventChannel carriesPersonalData() : Boolean {
 
 @cached
 operation PIM!WorkflowState outgoingTransitions() : Collection {
-  if (self.workflow.isDefined()) {
-    return self.workflow.transitions.select(transitionItem | transitionItem.source = self);
+  var transitions = workflowTransitionsBySourceId().get(self.`id`);
+  if (transitions.isUndefined()) {
+    return Sequence{};
   }
-  return PIM!WorkflowTransition.all.select(transitionItem | transitionItem.source = self);
+  return transitions;
 }
 
 @cached
 operation PIM!WorkflowState incomingTransitions() : Collection {
-  if (self.workflow.isDefined()) {
-    return self.workflow.transitions.select(transitionItem | transitionItem.target = self);
+  var transitions = workflowTransitionsByTargetId().get(self.`id`);
+  if (transitions.isUndefined()) {
+    return Sequence{};
   }
-  return PIM!WorkflowTransition.all.select(transitionItem | transitionItem.target = self);
+  return transitions;
+}
+
+@cached
+operation workflowTransitionsBySourceId() : Map {
+  var index = new Map;
+  for (transitionItem in PIM!WorkflowTransition.all.select(t | t.source.isDefined())) {
+    addWorkflowTransition(index, transitionItem.source.`id`, transitionItem);
+  }
+  return index;
+}
+
+@cached
+operation workflowTransitionsByTargetId() : Map {
+  var index = new Map;
+  for (transitionItem in PIM!WorkflowTransition.all.select(t | t.target.isDefined())) {
+    addWorkflowTransition(index, transitionItem.target.`id`, transitionItem);
+  }
+  return index;
+}
+
+operation addWorkflowTransition(index : Map, key : String, transitionItem) {
+  var transitions = index.get(key);
+  if (transitions.isUndefined()) {
+    transitions = Sequence{};
+    index.put(key, transitions);
+  }
+  transitions.add(transitionItem);
 }
 
 @cached
@@ -193,6 +279,115 @@ operation PIM!AccessPattern hasQueryShape() : Boolean {
     or self.queryBy.hasText()
     or self.sortBy.hasText()
     or self.filterBy.hasText();
+}
+
+operation PIM!ApiRoute routeUniquenessKey() : String {
+  var apiId = "<no-api>";
+  if (self.api.isDefined()) {
+    apiId = self.api.`id`;
+  }
+  return apiId + "::" + self.method.asString() + "::" + self.pathTemplate;
+}
+
+@cached
+operation duplicatePimApiRouteKeys() : Set {
+  var seen : Set = Set{};
+  var duplicates : Set = Set{};
+  for (routeItem in PIM!ApiRoute.all) {
+    var key = routeItem.routeUniquenessKey();
+    if (seen.includes(key)) {
+      duplicates.add(key);
+    }
+    else {
+      seen.add(key);
+    }
+  }
+  return duplicates;
+}
+
+operation PIM!AccessPattern indexSupportKey() : String {
+  var storeId = "<no-store>";
+  if (self.dataStore.isDefined()) {
+    storeId = self.dataStore.`id`;
+  }
+  return storeId + "::" + self.`id`;
+}
+
+@cached
+operation indexedAccessPatternKeys() : Set {
+  var keys : Set = Set{};
+  for (indexItem in PIM!IndexCandidate.all.select(i | i.dataStore.isDefined())) {
+    for (pattern in indexItem.supportsAccessPatterns) {
+      keys.add(indexItem.dataStore.`id` + "::" + pattern.`id`);
+    }
+  }
+  return keys;
+}
+
+@cached
+operation eventChannelProducerKeys() : Set {
+  var keys : Set = Set{};
+  for (channelItem in PIM!EventChannel.all) {
+    for (eventItem in channelItem.eventTypes) {
+      for (producerItem in channelItem.producers) {
+        keys.add(eventItem.`id` + "::" + producerItem.`id`);
+      }
+      for (producerItem in channelItem.externalProducers) {
+        keys.add(eventItem.`id` + "::" + producerItem.`id`);
+      }
+    }
+  }
+  return keys;
+}
+
+@cached
+operation eventChannelConsumerKeys() : Set {
+  var keys : Set = Set{};
+  for (channelItem in PIM!EventChannel.all) {
+    for (eventItem in channelItem.eventTypes) {
+      for (consumerItem in channelItem.consumers) {
+        keys.add(eventItem.`id` + "::" + consumerItem.`id`);
+      }
+      for (consumerItem in channelItem.externalConsumers) {
+        keys.add(eventItem.`id` + "::" + consumerItem.`id`);
+      }
+      for (consumerItem in channelItem.workflowConsumers) {
+        keys.add(eventItem.`id` + "::" + consumerItem.`id`);
+      }
+    }
+  }
+  return keys;
+}
+
+operation PIM!EventType participantKey(participant : Any) : String {
+  return self.`id` + "::" + participant.`id`;
+}
+
+@cached
+operation eventFlowWorkflowConsumerKeys() : Set {
+  var keys : Set = Set{};
+  for (flowItem in PIM!EventFlow.all.select(f |
+      f.channel.isDefined() and f.target.isDefined() and f.eventType.isDefined())) {
+    if (flowItem.channel.eventTypes.includes(flowItem.eventType)) {
+      keys.add(flowItem.channel.`id` + "::" + flowItem.target.`id`);
+    }
+  }
+  return keys;
+}
+
+operation PIM!EventChannel workflowConsumerKey(workflowItem : Any) : String {
+  return self.`id` + "::" + workflowItem.`id`;
+}
+
+@cached
+operation rootPolicyIds() : Set {
+  var ids : Set = Set{};
+  for (root in PIM!PIMModel.all) {
+    for (policyItem in root.policies) {
+      ids.add(policyItem.`id`);
+    }
+  }
+  return ids;
 }
 
 @cached

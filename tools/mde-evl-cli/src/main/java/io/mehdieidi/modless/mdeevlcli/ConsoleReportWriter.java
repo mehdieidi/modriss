@@ -16,6 +16,7 @@ final class ConsoleReportWriter {
         out.printf("Violations: %d mandatory, %d optional.%n", mandatory, optional);
         writeViolations(out, report, verbose);
         if (verbose) {
+            writeTimings(out, report);
             writeCaptured(out, report);
         }
     }
@@ -48,6 +49,7 @@ final class ConsoleReportWriter {
         }
         writeViolations(err, report, verbose);
         if (verbose) {
+            writeTimings(err, report);
             writeCaptured(err, report);
         }
     }
@@ -93,6 +95,23 @@ final class ConsoleReportWriter {
         if (!report.stderr().isBlank()) {
             writer.println("---- EVL stderr ----");
             writer.println(report.stderr());
+        }
+    }
+
+    private void writeTimings(PrintWriter writer, EvlValidationReport report) {
+        writer.printf("Module discovery: %d ms.%n",
+                report.moduleDiscoveryDuration().toMillis());
+        for (var module : report.moduleReports()) {
+            writer.printf(
+                    "Module %s: total=%d ms, parse=%d ms, load=%d ms, structural=%d ms, evl=%d ms, map=%d ms, dispose=%d ms.%n",
+                    module.moduleFile(),
+                    module.duration().toMillis(),
+                    module.parseDuration().toMillis(),
+                    module.modelLoadDuration().toMillis(),
+                    module.structuralValidationDuration().toMillis(),
+                    module.evlExecuteDuration().toMillis(),
+                    module.violationMappingDuration().toMillis(),
+                    module.disposeDuration().toMillis());
         }
     }
 }

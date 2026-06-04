@@ -88,6 +88,65 @@ class ModelServiceXmiImportTest {
     }
 
     @Test
+    void validatesRelationshipsPersistedWithFrontendEndpointIds() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+
+        ObjectNode model = (ObjectNode) service.importModel(ModelLevel.CIM,
+                "relationships.xmi",
+                sampleCimRelationshipXmi().getBytes(StandardCharsets.UTF_8), "xmi").modelJson();
+        ObjectNode semanticRelationship = (ObjectNode) model.path("relationships").path(0);
+        semanticRelationship.remove("source");
+        semanticRelationship.remove("target");
+        ObjectNode graphRelationship = ((ObjectNode) model.path("graph"))
+                .withArray("relationships").addObject();
+        graphRelationship.put("id", "rel-source-target");
+        graphRelationship.put("kind", "DOMAIN_RELATIONSHIP");
+        graphRelationship.put("sourceElementId", "vo-source");
+        graphRelationship.put("targetElementId", "vo-target");
+
+        assertEquals("vo-source", graphRelationship.path("sourceElementId").asText());
+        assertEquals("vo-target", graphRelationship.path("targetElementId").asText());
+
+        ModelService.ValidationResult validation = service.validate(ModelLevel.CIM, model);
+
+        assertTrue(validation.issues().stream().noneMatch(issue ->
+                "EVL_MODEL_LOADING".equals(issue.constraint())
+                        && (issue.message().contains("required feature 'source'")
+                        || issue.message().contains("required feature 'target'"))));
+    }
+
+    @Test
+    void validateByIdRepairsStaleSourceXmiFromFrontendEndpointIds() {
+        JsonFileStore store = new JsonFileStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        UserRecord user = authService.register("stale-xmi-owner@example.com", "password123",
+                "Owner").user();
+        ProjectRecord project = projectService.create(user, "Stale XMI Project", "");
+
+        ObjectNode model = frontendEndpointOnlyRelationshipModel(service);
+        ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "relationships",
+                model);
+        service.attachSourceXmi(created, sampleCimRelationshipXmiWithoutEndpoints()
+                .getBytes(StandardCharsets.UTF_8));
+
+        ModelService.ValidationResult validation = service.validate(user, ModelLevel.CIM,
+                created.id());
+
+        assertNoRelationshipEndpointLoadingError(validation);
+        ModelService.ValidationResult repairedSourceValidation = service.validateGeneratedXmi(
+                ModelLevel.CIM, service.sourceXmi(service.get(user, ModelLevel.CIM,
+                        created.id())).orElseThrow());
+        assertNoRelationshipEndpointLoadingError(repairedSourceValidation);
+    }
+
+    @Test
     void rejectsInvalidEnumValuesDuringXmiExport() {
         JsonFileStore store = new JsonFileStore(tempDir);
         store.initialize();
@@ -450,6 +509,30 @@ class ModelServiceXmiImportTest {
         return null;
     }
 
+    private ObjectNode frontendEndpointOnlyRelationshipModel(ModelService service) {
+        ObjectNode model = (ObjectNode) service.importModel(ModelLevel.CIM,
+                "relationships.xmi",
+                sampleCimRelationshipXmi().getBytes(StandardCharsets.UTF_8), "xmi").modelJson();
+        ObjectNode semanticRelationship = (ObjectNode) model.path("relationships").path(0);
+        semanticRelationship.remove("source");
+        semanticRelationship.remove("target");
+        ObjectNode graphRelationship = ((ObjectNode) model.path("graph"))
+                .withArray("relationships").addObject();
+        graphRelationship.put("id", "rel-source-target");
+        graphRelationship.put("kind", "DOMAIN_RELATIONSHIP");
+        graphRelationship.put("sourceElementId", "vo-source");
+        graphRelationship.put("targetElementId", "vo-target");
+        return model;
+    }
+
+    private void assertNoRelationshipEndpointLoadingError(
+            ModelService.ValidationResult validation) {
+        assertTrue(validation.issues().stream().noneMatch(issue ->
+                "EVL_MODEL_LOADING".equals(issue.constraint())
+                        && (issue.message().contains("required feature 'source'")
+                        || issue.message().contains("required feature 'target'"))));
+    }
+
     private String missingFeature(ModelService.ValidationIssue issue) {
         String prefix = "Required CIM feature is missing: ";
         return issue.message().startsWith(prefix) ? issue.message().substring(prefix.length()) : "";
@@ -479,6 +562,58 @@ class ModelServiceXmiImportTest {
                   <goals xmi:id="goal-1" id="goal-1" name="Protect residents"/>
                   <actors xmi:id="actor-1" id="actor-1" name="Resident"/>
                   <capabilities xmi:id="cap-1" id="cap-1" name="Review applications" supports="goal-1"/>
+                </cim:CIMModel>
+                """;
+    }
+
+    private String sampleCimRelationshipXmi() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <cim:CIMModel xmi:version="2.0"
+                    xmlns:xmi="http://www.omg.org/XMI"
+                    xmlns:cim="https://modless.org/cim/1.0"
+                    xmi:id="cim-root"
+                    id="cim-root"
+                    name="Relationship Model"
+                    domainName="Relationship Test">
+                  <valueObjects xmi:id="vo-source" id="vo-source" name="Source"/>
+                  <valueObjects xmi:id="vo-target" id="vo-target" name="Target"/>
+                  <relationships xmi:id="rel-source-target" id="rel-source-target"
+                      name="Source to target"
+                      source="vo-source"
+                      target="vo-target">
+                    <sourceMultiplicity xmi:id="source-multiplicity" id="source-multiplicity"
+                        name="Source multiplicity"
+                        lowerBound="1" upperBound="1"/>
+                    <targetMultiplicity xmi:id="target-multiplicity" id="target-multiplicity"
+                        name="Target multiplicity"
+                        lowerBound="0" upperBound="1"/>
+                  </relationships>
+                </cim:CIMModel>
+                """;
+    }
+
+    private String sampleCimRelationshipXmiWithoutEndpoints() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <cim:CIMModel xmi:version="2.0"
+                    xmlns:xmi="http://www.omg.org/XMI"
+                    xmlns:cim="https://modless.org/cim/1.0"
+                    xmi:id="cim-root"
+                    id="cim-root"
+                    name="Relationship Model"
+                    domainName="Relationship Test">
+                  <valueObjects xmi:id="vo-source" id="vo-source" name="Source"/>
+                  <valueObjects xmi:id="vo-target" id="vo-target" name="Target"/>
+                  <relationships xmi:id="rel-source-target" id="rel-source-target"
+                      name="Source to target">
+                    <sourceMultiplicity xmi:id="source-multiplicity" id="source-multiplicity"
+                        name="Source multiplicity"
+                        lowerBound="1" upperBound="1"/>
+                    <targetMultiplicity xmi:id="target-multiplicity" id="target-multiplicity"
+                        name="Target multiplicity"
+                        lowerBound="0" upperBound="1"/>
+                  </relationships>
                 </cim:CIMModel>
                 """;
     }
