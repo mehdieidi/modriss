@@ -9,6 +9,11 @@ const ELK_ALGORITHM_LAYERED = "layered";
 const DEFAULT_NODE_SPACING = 112;
 const DEFAULT_LAYER_SPACING = 188;
 const ELK_PORT_SIZE = 10;
+const ELK_SMALL_GRAPH_NODE_LIMIT = 120;
+const ELK_SMALL_GRAPH_EDGE_LIMIT = 260;
+const ELK_PORT_NODE_LIMIT = 300;
+const ELK_PORT_EDGE_LIMIT = 1200;
+const ELK_ROUTE_EDGE_LIMIT = 1400;
 
 let elkInstance = null;
 
@@ -87,6 +92,9 @@ function browserElk() {
   if (elkInstance) {
     return elkInstance;
   }
+  if (typeof window === "undefined") {
+    return null;
+  }
   const ElkConstructor = window.ELK || window.Elk;
   if (!ElkConstructor) {
     return null;
@@ -108,11 +116,6 @@ function portId(nodeId, localPortId) {
   return `${nodeId}:${localPortId}`;
 }
 
-function layoutPortId(edgeId, endpoint) {
-  return `${endpoint}-${String(edgeId || "").replaceAll(/[^a-zA-Z0-9_-]+/g,
-      "_")}`;
-}
-
 function elkDirection(profile = "") {
   const normalized = String(profile || "").toUpperCase();
   if (normalized.includes("DOWN")) {
@@ -130,27 +133,40 @@ function elkDirection(profile = "") {
 function elkLayoutOptions({
   profile = "",
   nodeSpacing = DEFAULT_NODE_SPACING,
-  layerSpacing = DEFAULT_LAYER_SPACING
+  layerSpacing = DEFAULT_LAYER_SPACING,
+  nodeCount = 0,
+  edgeCount = 0
 } = {}) {
+  const smallGraph = nodeCount <= ELK_SMALL_GRAPH_NODE_LIMIT
+      && edgeCount <= ELK_SMALL_GRAPH_EDGE_LIMIT;
+  const largeGraph = nodeCount > 450 || edgeCount > 1200;
+  const veryLargeGraph = nodeCount > 1500 || edgeCount > 2400;
+  const resolvedNodeSpacing = Math.max(largeGraph ? 132 : 96,
+      numeric(nodeSpacing, 112));
+  const resolvedLayerSpacing = Math.max(largeGraph ? 228 : 172,
+      numeric(layerSpacing, 188));
   return {
     "elk.algorithm": ELK_ALGORITHM_LAYERED,
     "elk.direction": elkDirection(profile),
-    "elk.edgeRouting": "ORTHOGONAL",
+    "elk.edgeRouting": veryLargeGraph ? "POLYLINE" : "ORTHOGONAL",
     "elk.padding": `[top=${LAYOUT_MARGIN},left=${LAYOUT_MARGIN},bottom=${LAYOUT_MARGIN},right=${LAYOUT_MARGIN}]`,
-    "elk.spacing.nodeNode": String(Math.max(96, numeric(nodeSpacing, 112))),
-    "elk.spacing.edgeEdge": "28",
-    "elk.spacing.edgeNode": "36",
+    "elk.spacing.nodeNode": String(resolvedNodeSpacing),
+    "elk.spacing.edgeEdge": largeGraph ? "38" : "28",
+    "elk.spacing.edgeNode": largeGraph ? "48" : "36",
     "elk.spacing.portPort": "22",
-    "elk.layered.spacing.nodeNodeBetweenLayers": String(
-        Math.max(172, numeric(layerSpacing, 188))),
-    "elk.layered.spacing.edgeNodeBetweenLayers": "52",
-    "elk.layered.spacing.edgeEdgeBetweenLayers": "42",
+    "elk.layered.spacing.nodeNodeBetweenLayers": String(resolvedLayerSpacing),
+    "elk.layered.spacing.edgeNodeBetweenLayers": largeGraph ? "68" : "52",
+    "elk.layered.spacing.edgeEdgeBetweenLayers": largeGraph ? "52" : "42",
     "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
-    "elk.layered.crossingMinimization.greedySwitch.type": "TWO_SIDED",
-    "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+    "elk.layered.crossingMinimization.greedySwitch.type": smallGraph
+        ? "TWO_SIDED" : "ONE_SIDED",
+    "elk.layered.nodePlacement.strategy": smallGraph
+        ? "NETWORK_SIMPLEX" : "BRANDES_KOEPF",
     "elk.layered.nodePlacement.favorStraightEdges": "true",
-    "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",
-    "elk.layered.thoroughness": "24",
+    "elk.layered.considerModelOrder.strategy": largeGraph
+        ? "NONE" : "NODES_AND_EDGES",
+    "elk.layered.cycleBreaking.strategy": largeGraph ? "GREEDY" : "MODEL_ORDER",
+    "elk.layered.thoroughness": smallGraph ? "18" : largeGraph ? "4" : "8",
     "elk.layered.mergeEdges": "false",
     "elk.layered.unnecessaryBendpoints": "true",
     "elk.separateConnectedComponents": "true",
@@ -171,34 +187,35 @@ function semanticPortSide(port) {
 }
 
 function collectLayoutPorts(nodes, edges, nodeIds) {
-  const portsByNodeId = new Map(nodes.map((node) => [node.id, []]));
+  const portsByNodeId = new Map(nodes.map((node) => [
+    node.id,
+    (Array.isArray(node.ports) ? node.ports : []).map((port, index) => ({
+      id: port.id,
+      side: semanticPortSide(port),
+      index
+    })).filter((port) => port.id)
+  ]));
+  const ensurePort = (nodeId, localPortId, fallbackId) => {
+    const ports = portsByNodeId.get(nodeId);
+    if (!ports) {
+      return;
+    }
+    const id = localPortId || fallbackId;
+    if (ports.some((port) => port.id === id)) {
+      return;
+    }
+    ports.push({
+      id,
+      side: semanticPortSide({id}),
+      index: ports.length
+    });
+  };
   const validEdges = edges.filter((edge) => nodeIds.has(edge.sourceNodeId)
       && nodeIds.has(edge.targetNodeId)
       && edge.sourceNodeId !== edge.targetNodeId);
-  const sortedEdges = [...validEdges].sort((left, right) => {
-    const sourceDiff = String(left.sourceNodeId || "").localeCompare(
-        String(right.sourceNodeId || ""));
-    if (sourceDiff) {
-      return sourceDiff;
-    }
-    const targetDiff = String(left.targetNodeId || "").localeCompare(
-        String(right.targetNodeId || ""));
-    if (targetDiff) {
-      return targetDiff;
-    }
-    return String(left.id || "").localeCompare(String(right.id || ""));
-  });
-  sortedEdges.forEach((edge) => {
-    portsByNodeId.get(edge.sourceNodeId)?.push({
-      id: layoutPortId(edge.id, "source"),
-      side: semanticPortSide({id: edge.sourcePortId || "flow-out"}),
-      edgeId: edge.id
-    });
-    portsByNodeId.get(edge.targetNodeId)?.push({
-      id: layoutPortId(edge.id, "target"),
-      side: semanticPortSide({id: edge.targetPortId || "flow-in"}),
-      edgeId: edge.id
-    });
+  validEdges.forEach((edge) => {
+    ensurePort(edge.sourceNodeId, edge.sourcePortId, "flow-out");
+    ensurePort(edge.targetNodeId, edge.targetPortId, "flow-in");
   });
   portsByNodeId.forEach((ports) => {
     ports.sort((left, right) => {
@@ -206,14 +223,52 @@ function collectLayoutPorts(nodes, edges, nodeIds) {
       if (sideDiff) {
         return sideDiff;
       }
-      return String(left.edgeId || "").localeCompare(
-          String(right.edgeId || ""));
+      return String(left.id || "").localeCompare(String(right.id || ""));
     });
     ports.forEach((port, index) => {
       port.index = index;
     });
   });
   return portsByNodeId;
+}
+
+function selectElkEdges(validEdges, nodeIds) {
+  if (validEdges.length <= ELK_ROUTE_EDGE_LIMIT) {
+    return validEdges;
+  }
+  const selected = [];
+  const selectedIds = new Set();
+  const touchedSources = new Set();
+  const touchedTargets = new Set();
+  const add = (edge) => {
+    if (!edge?.id || selectedIds.has(edge.id)
+        || selected.length >= ELK_ROUTE_EDGE_LIMIT) {
+      return false;
+    }
+    selectedIds.add(edge.id);
+    selected.push(edge);
+    touchedSources.add(edge.sourceNodeId);
+    touchedTargets.add(edge.targetNodeId);
+    return true;
+  };
+
+  for (const edge of validEdges) {
+    if (!touchedSources.has(edge.sourceNodeId)
+        || !touchedTargets.has(edge.targetNodeId)) {
+      add(edge);
+    }
+    if (touchedSources.size >= nodeIds.size
+        && touchedTargets.size >= nodeIds.size) {
+      break;
+    }
+  }
+  for (const edge of validEdges) {
+    if (selected.length >= ELK_ROUTE_EDGE_LIMIT) {
+      break;
+    }
+    add(edge);
+  }
+  return selected;
 }
 
 function toElkGraph({
@@ -224,19 +279,27 @@ function toElkGraph({
   edges = []
 } = {}) {
   const nodeIds = new Set(nodes.map((node) => String(node.id || "")));
-  const layoutPortsByNodeId = collectLayoutPorts(nodes, edges, nodeIds);
+  const validEdges = edges.filter((edge) => nodeIds.has(edge.sourceNodeId)
+      && nodeIds.has(edge.targetNodeId)
+      && edge.sourceNodeId !== edge.targetNodeId);
+  const elkEdges = selectElkEdges(validEdges, nodeIds);
+  const usePorts = nodes.length <= ELK_PORT_NODE_LIMIT
+      && elkEdges.length <= ELK_PORT_EDGE_LIMIT;
+  const layoutPortsByNodeId = usePorts
+      ? collectLayoutPorts(nodes, elkEdges, nodeIds) : new Map();
   return {
     id: viewId || "modless-view",
     layoutOptions: elkLayoutOptions({
       profile,
       nodeSpacing: options.nodeSpacing,
-      layerSpacing: options.layerSpacing
+      layerSpacing: options.layerSpacing,
+      nodeCount: nodes.length,
+      edgeCount: elkEdges.length
     }),
     children: nodes.map((node) => ({
       id: node.id,
       width: Math.max(1, numeric(node.width, DEFAULT_NODE_W)),
       height: Math.max(1, numeric(node.height, DEFAULT_NODE_H)),
-      labels: node.label ? [{text: String(node.label)}] : [],
       ports: (layoutPortsByNodeId.get(node.id) || []).map((port) => ({
         id: portId(node.id, port.id),
         width: ELK_PORT_SIZE,
@@ -247,13 +310,14 @@ function toElkGraph({
         }
       }))
     })),
-    edges: edges.filter((edge) => nodeIds.has(edge.sourceNodeId)
-        && nodeIds.has(edge.targetNodeId)
-        && edge.sourceNodeId !== edge.targetNodeId).map((edge) => ({
+    edges: elkEdges.map((edge) => ({
       id: edge.id,
-      sources: [portId(edge.sourceNodeId, layoutPortId(edge.id, "source"))],
-      targets: [portId(edge.targetNodeId, layoutPortId(edge.id, "target"))],
-      labels: edge.label ? [{text: String(edge.label)}] : []
+      sources: [usePorts
+          ? portId(edge.sourceNodeId, edge.sourcePortId || "flow-out")
+          : edge.sourceNodeId],
+      targets: [usePorts
+          ? portId(edge.targetNodeId, edge.targetPortId || "flow-in")
+          : edge.targetNodeId]
     }))
   };
 }
@@ -306,6 +370,10 @@ export function isBrowserElkAvailable() {
   return Boolean(browserElk()?.layout);
 }
 
+export function shouldUseBrowserElk() {
+  return isBrowserElkAvailable();
+}
+
 function candidateScore(dx, dy, preferDx, preferDy) {
   const distance = Math.abs(dx) + Math.abs(dy);
   const biasPenalty = (preferDx && Math.sign(dx) !== Math.sign(preferDx)
@@ -317,6 +385,9 @@ function candidateScore(dx, dy, preferDx, preferDy) {
 
 function findFreePosition(origin, occupiedRects, nodeSize, options = {}) {
   const spacing = spacingFor(nodeSize, options);
+  const overlaps = options.overlaps
+      || ((rect) => occupiedRects.some((occupied) =>
+          rectsOverlap(rect, occupied)));
   const start = clampPosition(origin, options);
   const originRect = {
     minX: start.x - spacing.marginX,
@@ -324,13 +395,13 @@ function findFreePosition(origin, occupiedRects, nodeSize, options = {}) {
     maxX: start.x + spacing.width + spacing.marginX,
     maxY: start.y + spacing.height + spacing.marginY
   };
-  if (!occupiedRects.some((rect) => rectsOverlap(originRect, rect))) {
+  if (!overlaps(originRect)) {
     return start;
   }
 
   const preferDx = numeric(options.preferDx, 0);
   const preferDy = numeric(options.preferDy, 0);
-  const maxRadius = Math.max(8, occupiedRects.length + 3);
+  const maxRadius = Math.max(1, numeric(options.maxSearchRadius, 6));
   for (let radius = 1; radius <= maxRadius; radius += 1) {
     const candidates = [];
     for (let dx = -radius; dx <= radius; dx += 1) {
@@ -357,18 +428,25 @@ function findFreePosition(origin, occupiedRects, nodeSize, options = {}) {
         maxX: position.x + spacing.width + spacing.marginX,
         maxY: position.y + spacing.height + spacing.marginY
       };
-      if (!occupiedRects.some((occupied) => rectsOverlap(rect, occupied))) {
+      if (!overlaps(rect)) {
         return position;
       }
     }
   }
 
-  const maxBottom = occupiedRects.reduce((maxValue, rect) =>
-      Math.max(maxValue, rect.maxY), start.y);
-  return clampPosition({
+  const fallback = clampPosition({
     x: start.x,
-    y: maxBottom + spacing.marginY * 2
+    y: numeric(options.fallbackY, start.y + spacing.stepY)
   }, options);
+  while (overlaps({
+    minX: fallback.x - spacing.marginX,
+    minY: fallback.y - spacing.marginY,
+    maxX: fallback.x + spacing.width + spacing.marginX,
+    maxY: fallback.y + spacing.height + spacing.marginY
+  })) {
+    fallback.y += spacing.stepY;
+  }
+  return fallback;
 }
 
 function componentOrderKey(component) {
@@ -394,8 +472,10 @@ function connectedComponents(nodes, edges) {
     const queue = [node.id];
     const component = [];
     visited.add(node.id);
-    while (queue.length) {
-      const currentId = queue.shift();
+    let queueIndex = 0;
+    while (queueIndex < queue.length) {
+      const currentId = queue[queueIndex];
+      queueIndex += 1;
       const current = nodesById.get(currentId);
       if (!current) {
         continue;
@@ -418,6 +498,110 @@ function connectedComponents(nodes, edges) {
     }
     return componentOrderKey(left).localeCompare(componentOrderKey(right));
   });
+}
+
+function stronglyConnectedComponents(component, edgesBySource) {
+  const componentIds = new Set(component.map((node) => node.id));
+  const reverseEdges = new Map(component.map((node) => [node.id, []]));
+  component.forEach((node) => {
+    (edgesBySource.get(node.id) || []).forEach((targetId) => {
+      if (componentIds.has(targetId)) {
+        reverseEdges.get(targetId).push(node.id);
+      }
+    });
+  });
+
+  const visited = new Set();
+  const finishOrder = [];
+  component.forEach((node) => {
+    if (visited.has(node.id)) {
+      return;
+    }
+    const stack = [[node.id, false]];
+    while (stack.length) {
+      const [nodeId, expanded] = stack.pop();
+      if (expanded) {
+        finishOrder.push(nodeId);
+        continue;
+      }
+      if (visited.has(nodeId)) {
+        continue;
+      }
+      visited.add(nodeId);
+      stack.push([nodeId, true]);
+      (edgesBySource.get(nodeId) || []).forEach((targetId) => {
+        if (componentIds.has(targetId) && !visited.has(targetId)) {
+          stack.push([targetId, false]);
+        }
+      });
+    }
+  });
+
+  const result = [];
+  const assigned = new Set();
+  for (let index = finishOrder.length - 1; index >= 0; index -= 1) {
+    const rootId = finishOrder[index];
+    if (assigned.has(rootId)) {
+      continue;
+    }
+    const scc = [];
+    const stack = [rootId];
+    assigned.add(rootId);
+    while (stack.length) {
+      const nodeId = stack.pop();
+      scc.push(nodeId);
+      (reverseEdges.get(nodeId) || []).forEach((sourceId) => {
+        if (!assigned.has(sourceId)) {
+          assigned.add(sourceId);
+          stack.push(sourceId);
+        }
+      });
+    }
+    result.push(scc);
+  }
+  return result;
+}
+
+function layerComponent(component, edgesBySource) {
+  const sccs = stronglyConnectedComponents(component, edgesBySource);
+  const sccByNodeId = new Map();
+  sccs.forEach((scc, index) => scc.forEach((nodeId) =>
+      sccByNodeId.set(nodeId, index)));
+  const outgoing = sccs.map(() => new Set());
+  const indegree = sccs.map(() => 0);
+  component.forEach((node) => {
+    (edgesBySource.get(node.id) || []).forEach((targetId) => {
+      const sourceScc = sccByNodeId.get(node.id);
+      const targetScc = sccByNodeId.get(targetId);
+      if (targetScc === undefined || sourceScc === targetScc
+          || outgoing[sourceScc].has(targetScc)) {
+        return;
+      }
+      outgoing[sourceScc].add(targetScc);
+      indegree[targetScc] += 1;
+    });
+  });
+
+  const depth = sccs.map(() => 0);
+  const queue = [];
+  indegree.forEach((value, index) => {
+    if (value === 0) {
+      queue.push(index);
+    }
+  });
+  for (let queueIndex = 0; queueIndex < queue.length; queueIndex += 1) {
+    const sourceScc = queue[queueIndex];
+    outgoing[sourceScc].forEach((targetScc) => {
+      depth[targetScc] = Math.max(depth[targetScc], depth[sourceScc] + 1);
+      indegree[targetScc] -= 1;
+      if (indegree[targetScc] === 0) {
+        queue.push(targetScc);
+      }
+    });
+  }
+  return new Map(component.map((node) => [
+    node.id, depth[sccByNodeId.get(node.id)] || 0
+  ]));
 }
 
 function sortLayerNodes(nodes, edgesBySource, edgesByTarget) {
@@ -452,19 +636,57 @@ export function layoutLooksStacked(nodes, nodeSize, options = {}) {
     const y = Math.round(numeric(node.y) / Math.max(spacing.stepY, 1));
     return `${x},${y}`;
   }));
-  let overlapCount = 0;
-  for (let i = 0; i < nodes.length; i += 1) {
-    const leftRect = rectFor(nodes[i], nodeSize, options);
-    for (let j = i + 1; j < nodes.length; j += 1) {
-      if (rectsOverlap(leftRect, rectFor(nodes[j], nodeSize, options))) {
-        overlapCount += 1;
-        if (overlapCount > 0) {
-          return true;
-        }
-      }
+  const rectIndex = createRectIndex(spacing.stepX, spacing.stepY);
+  for (const node of nodes) {
+    const rect = rectFor(node, nodeSize, options);
+    if (rectIndex.overlaps(rect)) {
+      return true;
     }
+    rectIndex.add(rect);
   }
   return allZero || coarsePositions.size <= Math.ceil(nodes.length * 0.6);
+}
+
+function createRectIndex(cellWidth, cellHeight) {
+  const cells = new Map();
+  const keysFor = (rect) => {
+    const keys = [];
+    const minX = Math.floor(rect.minX / cellWidth);
+    const maxX = Math.floor((rect.maxX - 1) / cellWidth);
+    const minY = Math.floor(rect.minY / cellHeight);
+    const maxY = Math.floor((rect.maxY - 1) / cellHeight);
+    for (let x = minX; x <= maxX; x += 1) {
+      for (let y = minY; y <= maxY; y += 1) {
+        keys.push(`${x}:${y}`);
+      }
+    }
+    return keys;
+  };
+  return {
+    add(rect) {
+      keysFor(rect).forEach((key) => {
+        if (!cells.has(key)) {
+          cells.set(key, []);
+        }
+        cells.get(key).push(rect);
+      });
+    },
+    overlaps(rect) {
+      const checked = new Set();
+      for (const key of keysFor(rect)) {
+        for (const occupied of cells.get(key) || []) {
+          if (checked.has(occupied)) {
+            continue;
+          }
+          checked.add(occupied);
+          if (rectsOverlap(rect, occupied)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  };
 }
 
 export function resolveNodeOverlaps(nodes, nodeSize, options = {}) {
@@ -477,8 +699,13 @@ export function resolveNodeOverlaps(nodes, nodeSize, options = {}) {
       node.id)));
   const movableNodes = sortNodes(nodes.filter((node) => movableNodeIds.has(
       node.id)));
+  const spacing = spacingFor(nodeSize, options);
   const occupiedRects = fixedNodes.map((node) => rectFor(node, nodeSize,
       options));
+  const rectIndex = createRectIndex(spacing.stepX, spacing.stepY);
+  occupiedRects.forEach((rect) => rectIndex.add(rect));
+  let fallbackY = occupiedRects.reduce((maxValue, rect) =>
+      Math.max(maxValue, rect.maxY + spacing.marginY), LAYOUT_MARGIN);
   const movedNodeIds = new Set();
   for (const node of movableNodes) {
     const preferred = {
@@ -487,6 +714,8 @@ export function resolveNodeOverlaps(nodes, nodeSize, options = {}) {
     };
     const resolved = findFreePosition(preferred, occupiedRects, nodeSize, {
       ...options,
+      overlaps: (rect) => rectIndex.overlaps(rect),
+      fallbackY,
       preferDx: options.preferDxByNodeId?.get(node.id) ?? options.preferDx,
       preferDy: options.preferDyByNodeId?.get(node.id) ?? options.preferDy
     });
@@ -497,7 +726,10 @@ export function resolveNodeOverlaps(nodes, nodeSize, options = {}) {
     node.x = resolved.x;
     node.y = resolved.y;
     syncNodeMeta(node);
-    occupiedRects.push(rectFor(node, nodeSize, options));
+    const rect = rectFor(node, nodeSize, options);
+    occupiedRects.push(rect);
+    rectIndex.add(rect);
+    fallbackY = Math.max(fallbackY, rect.maxY + spacing.marginY);
   }
   return movedNodeIds;
 }
@@ -523,23 +755,7 @@ export function applyDeterministicLayout(nodes, edges = [], nodeSize,
   const movedNodeIds = new Set();
 
   components.forEach((component) => {
-    const depth = new Map(component.map((node) => [node.id, 0]));
-    for (let pass = 0; pass < component.length; pass += 1) {
-      let changed = false;
-      validEdges.forEach((edge) => {
-        if (!depth.has(edge.sourceId) || !depth.has(edge.targetId)) {
-          return;
-        }
-        const nextDepth = depth.get(edge.sourceId) + 1;
-        if (nextDepth > depth.get(edge.targetId)) {
-          depth.set(edge.targetId, nextDepth);
-          changed = true;
-        }
-      });
-      if (!changed) {
-        break;
-      }
-    }
+    const depth = layerComponent(component, edgesBySource);
 
     const layers = new Map();
     component.forEach((node) => {
@@ -583,7 +799,9 @@ export async function layoutWithBrowserElk(request = {}) {
   return normalizeElkResponse(layout);
 }
 
-export function deterministicLayoutResponse(request = {}, nodeSize) {
+export function deterministicLayoutResponse(request = {}, nodeSize, {
+  warnings = []
+} = {}) {
   const nodes = (Array.isArray(request.nodes) ? request.nodes : []).map(
       (node) => ({
         id: node.id,
@@ -636,7 +854,7 @@ export function deterministicLayoutResponse(request = {}, nodeSize) {
         bendPoints
       };
     }),
-    warnings: ["Browser elkjs was unavailable; used deterministic fallback layout."]
+    warnings
   };
 }
 

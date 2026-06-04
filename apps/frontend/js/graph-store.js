@@ -194,7 +194,7 @@ function relationshipRecords(modelJson, typeKey = state.activeType) {
       String(relationship?.id || "").trim(),
       relationship
     ]).filter(([id]) => id));
-    return semanticRelationships.map((relationship) => {
+    const mergedSemantic = semanticRelationships.map((relationship) => {
       const graphRelationship = graphById.get(
           String(relationship?.id || "").trim());
       return graphRelationship ? {
@@ -208,6 +208,13 @@ function relationshipRecords(modelJson, typeKey = state.activeType) {
             || graphRelationship.targetElementId || graphRelationship.target
       } : relationship;
     });
+    const semanticIds = new Set(semanticRelationships.map((relationship) =>
+        String(relationship?.id || "").trim()).filter(Boolean));
+    return [
+      ...mergedSemantic,
+      ...graphRelationships.filter((relationship) =>
+          !semanticIds.has(String(relationship?.id || "").trim()))
+    ];
   }
   if (Array.isArray(modelJson?.graph?.relationships)) {
     return modelJson.graph.relationships;
@@ -427,6 +434,18 @@ function matchesSemanticType(element, expectedType,
   return modelingTypeMatches(typeKey, expectedType, semanticType(element));
 }
 
+function relationshipKindMatches(kind, allowedKinds) {
+  if (!allowedKinds?.size) {
+    return true;
+  }
+  const normalized = String(kind || "").trim().toUpperCase();
+  if (allowedKinds.has(normalized)) {
+    return true;
+  }
+  const family = normalized.split("_")[0];
+  return Boolean(family && allowedKinds.has(family));
+}
+
 function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
   const additions = [];
   const edgeKeys = new Set();
@@ -535,19 +554,24 @@ function rebuildGraphIndexes(graph) {
     }
   });
 
+  const boundedContextsByName = new Map();
+  graph.elementsById.forEach((element) => {
+    if (semanticType(element) !== "BoundedContextCandidate") {
+      return;
+    }
+    const name = semanticLabel(element).trim().toLowerCase();
+    if (name && element.id) {
+      boundedContextsByName.set(name, element);
+    }
+  });
+
   graph.elementsById.forEach((element, elementId) => {
     const contextName = String(element?.contextName || element?.context || "")
     .trim();
     if (!contextName) {
       return;
     }
-    const parent = [...graph.elementsById.values()].find((candidate) => {
-      if (semanticType(candidate) !== "BoundedContextCandidate") {
-        return false;
-      }
-      return semanticLabel(candidate).trim().toLowerCase()
-          === contextName.toLowerCase();
-    });
+    const parent = boundedContextsByName.get(contextName.toLowerCase());
     if (!parent?.id || parent.id === elementId) {
       return;
     }
@@ -636,14 +660,15 @@ function configuredElementTypes(typeKey) {
 
 function edgeIdsForElementIds(graph, elementIds, relationshipKinds = []) {
   const ids = new Set(elementIds);
-  const allowedKinds = new Set(relationshipKinds || []);
+  const allowedKinds = new Set(safeArray(relationshipKinds).map((kind) =>
+      String(kind || "").trim().toUpperCase()).filter(Boolean));
   const result = [];
   graph.relationshipsById.forEach((relationship) => {
     if (!ids.has(relationship.sourceElementId) || !ids.has(
         relationship.targetElementId)) {
       return;
     }
-    if (allowedKinds.size && !allowedKinds.has(relationship.kind)) {
+    if (!relationshipKindMatches(relationship.kind, allowedKinds)) {
       return;
     }
     result.push(relationship.id);
@@ -671,10 +696,11 @@ function withRelationshipEndpoints(graph, elementIds, relationshipIds = []) {
 function relationshipIdsTouchingElements(graph, elementIds,
     relationshipKinds = []) {
   const ids = new Set(elementIds);
-  const allowedKinds = new Set(relationshipKinds || []);
+  const allowedKinds = new Set(safeArray(relationshipKinds).map((kind) =>
+      String(kind || "").trim().toUpperCase()).filter(Boolean));
   const result = [];
   graph.relationshipsById.forEach((relationship) => {
-    if (allowedKinds.size && !allowedKinds.has(relationship.kind)
+    if (!relationshipKindMatches(relationship.kind, allowedKinds)
         && relationship.containment !== true) {
       return;
     }
@@ -725,7 +751,7 @@ function neighborhoodElementIds(graph, rootElementId, depth) {
   return result;
 }
 
-function selectElementIdsForView(graph, view, typeKey) {
+export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
   const filterTypes = new Set(safeArray(view?.filters?.elementTypes));
   let candidates;
@@ -742,6 +768,10 @@ function selectElementIdsForView(graph, view, typeKey) {
   candidates.forEach((elementId) => {
     const element = graph.elementsById.get(elementId);
     if (!element || hidden.has(elementId)) {
+      return;
+    }
+    if (hasExplicitNodes) {
+      selected.push(elementId);
       return;
     }
     const includeByType = !filterTypes.size || filterTypes.has(
@@ -777,9 +807,10 @@ function selectElementIdsForView(graph, view, typeKey) {
   return selected;
 }
 
-function selectRelationshipIdsForView(graph, view, elementIds) {
+export function selectRelationshipIdsForView(graph, view, elementIds) {
   const hidden = new Set(safeArray(view?.hidden?.relationshipIds));
-  const filterKinds = new Set(safeArray(view?.filters?.relationshipKinds));
+  const filterKinds = new Set(safeArray(view?.filters?.relationshipKinds).map(
+      (kind) => String(kind || "").trim().toUpperCase()).filter(Boolean));
   const elementSet = new Set(elementIds);
   const explicitEdgeVisibility = new Map(
       safeArray(view?.edges).map((edge) => [edge.relationshipId, edge]));
@@ -796,7 +827,7 @@ function selectRelationshipIdsForView(graph, view, elementIds) {
         relationship.targetElementId)) {
       return;
     }
-    if (filterKinds.size && !filterKinds.has(relationship.kind)
+    if (!relationshipKindMatches(relationship.kind, filterKinds)
         && relationship.containment !== true) {
       return;
     }
@@ -825,8 +856,8 @@ function layoutNodesForElements(
     };
   });
   const allNodesAlreadyPositioned = nodes.length > 0 && nodes.every((node) =>
-    Number.isFinite(Number(node.x)) && Number.isFinite(Number(node.y))
-    && existingByElement.has(node.elementId));
+      Number.isFinite(Number(node.x)) && Number.isFinite(Number(node.y))
+      && existingByElement.has(node.elementId));
   if (allNodesAlreadyPositioned) {
     return nodes;
   }
@@ -1390,7 +1421,7 @@ export function serializeRuntimeFragments() {
   return [...state.fragments.byId.values()].map(clone);
 }
 
-export function syncActiveViewFromVisibleGraph() {
+export function syncActiveViewFromVisibleGraph({rebuildIndexes = true} = {}) {
   const view = activeView();
   if (!view || !state.diagram) {
     return;
@@ -1466,7 +1497,9 @@ export function syncActiveViewFromVisibleGraph() {
   });
   view.edges = [...viewEdgesById.values()].filter(
       (edge) => state.graph.relationshipsById.has(edge.relationshipId));
-  rebuildGraphIndexes(state.graph);
+  if (rebuildIndexes) {
+    rebuildGraphIndexes(state.graph);
+  }
 }
 
 export function serializeGraphAndViewsInto(root) {
@@ -2050,6 +2083,33 @@ export function persistEdgeLayoutInActiveView(edgeId, layout) {
   if (Array.isArray(layout?.sections)) {
     viewEdge.sections = clone(layout.sections);
   }
+  return true;
+}
+
+export function persistEdgeLayoutsInActiveView(layoutsByEdgeId) {
+  const view = activeView();
+  if (!view || !layoutsByEdgeId?.size) {
+    return false;
+  }
+  const viewEdgesById = new Map(safeArray(view.edges).map((edge) => [
+    edge.relationshipId, edge
+  ]));
+  layoutsByEdgeId.forEach((layout, edgeId) => {
+    let viewEdge = viewEdgesById.get(edgeId);
+    if (!viewEdge) {
+      viewEdge = {relationshipId: edgeId, visible: true};
+      viewEdgesById.set(edgeId, viewEdge);
+    }
+    viewEdge.pinPoints = safeArray(layout?.pinPoints).map(clone);
+    viewEdge.sourceAnchor = layout?.sourceAnchor ? clone(layout.sourceAnchor)
+        : undefined;
+    viewEdge.targetAnchor = layout?.targetAnchor ? clone(layout.targetAnchor)
+        : undefined;
+    if (Array.isArray(layout?.sections)) {
+      viewEdge.sections = clone(layout.sections);
+    }
+  });
+  view.edges = [...viewEdgesById.values()];
   return true;
 }
 

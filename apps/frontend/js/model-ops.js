@@ -9,6 +9,7 @@ import {saveStoredEdgeLayout, serializeModel, toDiagram} from './diagram.js';
 import {
   activeView,
   installGraphAndViews,
+  persistEdgeLayoutsInActiveView,
   restoreTabGraphState,
   saveCurrentTabGraphState,
   setActiveViewId,
@@ -28,9 +29,9 @@ import {
 } from './canvas.js';
 import {
   deterministicLayoutResponse,
-  isBrowserElkAvailable,
   layoutWithBrowserElk,
-  resolveNodeOverlaps
+  resolveNodeOverlaps,
+  shouldUseBrowserElk
 } from './layout-engine.js';
 import {closeAttributePanel} from './attr-panel.js';
 import {closeImpactPanel} from './impact.js';
@@ -45,8 +46,7 @@ import {
   completeGenerationProgress,
   hideGenerationProgress,
   setGenerationProgressPhase,
-  showGenerationProgress,
-  waitForGenerationProgress
+  showGenerationProgress
 } from './generation-progress.js';
 import {
   applyValidationIssues,
@@ -979,8 +979,15 @@ function spreadEdgeAnchorsForNode(node, edges, nodeSize) {
 
 function spreadEdgeAnchors(nodes, edges, nodeSize) {
   const visibleEdges = edges.filter((edge) => !edge.bundle);
-  nodes.forEach((node) => spreadEdgeAnchorsForNode(node, visibleEdges,
-      nodeSize));
+  const edgesByNodeId = new Map(nodes.map((node) => [node.id, []]));
+  visibleEdges.forEach((edge) => {
+    edgesByNodeId.get(edge.sourceId)?.push(edge);
+    if (edge.targetId !== edge.sourceId) {
+      edgesByNodeId.get(edge.targetId)?.push(edge);
+    }
+  });
+  nodes.forEach((node) => spreadEdgeAnchorsForNode(node,
+      edgesByNodeId.get(node.id) || [], nodeSize));
 }
 
 function routePointForAnchor(node, anchor, nodeSize) {
@@ -1058,6 +1065,47 @@ function orthogonalizeEdgeRoutes(nodes, edges, nodeSize) {
   edges.filter((edge) => !edge.bundle).forEach((edge) =>
       orthogonalizeEdgePinPoints(edge, nodesById.get(edge.sourceId),
           nodesById.get(edge.targetId), nodeSize));
+}
+
+function fallbackEdgePresentation(sourceNode, targetNode, nodeSize,
+    laneOffset = 0) {
+  if (!sourceNode || !targetNode) {
+    return {pinPoints: [], sourceAnchor: null, targetAnchor: null};
+  }
+  const sourceCenterX = sourceNode.x + nodeSize.width / 2;
+  const targetCenterX = targetNode.x + nodeSize.width / 2;
+  const sourceSide = targetCenterX >= sourceCenterX ? "right" : "left";
+  const targetSide = sourceSide === "right" ? "left" : "right";
+  const sourcePoint = {
+    x: Math.round(sourceNode.x + (sourceSide === "right" ? nodeSize.width : 0)),
+    y: Math.round(sourceNode.y + nodeSize.height / 2)
+  };
+  const targetPoint = {
+    x: Math.round(targetNode.x + (targetSide === "right" ? nodeSize.width : 0)),
+    y: Math.round(targetNode.y + nodeSize.height / 2)
+  };
+  const midX = Math.round((sourcePoint.x + targetPoint.x) / 2 + laneOffset);
+  return {
+    pinPoints: [
+      {x: midX, y: sourcePoint.y},
+      {x: midX, y: targetPoint.y}
+    ],
+    sourceAnchor: {side: sourceSide, offsetY: Math.round(nodeSize.height / 2)},
+    targetAnchor: {side: targetSide, offsetY: Math.round(nodeSize.height / 2)}
+  };
+}
+
+function fallbackLaneOffset(edge, laneIndex = 0) {
+  if (laneIndex <= 0) {
+    return 0;
+  }
+  const direction = laneIndex % 2 === 0 ? -1 : 1;
+  const distance = Math.ceil(laneIndex / 2);
+  let hash = 0;
+  String(edge?.id || "").split("").forEach((char) => {
+    hash = (hash * 31 + char.charCodeAt(0)) % 997;
+  });
+  return direction * (distance * 18 + hash % 7);
 }
 
 export function updateGenerateButtonState() {
@@ -1508,6 +1556,9 @@ export async function autoLayoutCurrentDiagram({
       targetPortId: semanticPortForEdge(edge, "target")
     })).filter((edge) => !String(edge.id || "").startsWith("bundle-"))
   };
+  const expectedLayoutNodeIds = new Set(payload.nodes.map((node) => node.id));
+  const expectedLayoutEdgeIds = new Set(payload.edges.filter((edge) =>
+      edge.sourceNodeId !== edge.targetNodeId).map((edge) => edge.id));
 
   try {
     if (progress) {
@@ -1523,14 +1574,12 @@ export async function autoLayoutCurrentDiagram({
     }
     if (progress) {
       setGenerationProgressPhase("Analyzing diagram topology…", 32);
-      await waitForGenerationProgress(24, {timeoutMs: 360});
-      setGenerationProgressPhase(isBrowserElkAvailable()
-          ? "Computing browser layout…" : "Preparing fallback layout…", 78);
-      await waitForGenerationProgress(58, {timeoutMs: 760});
+      setGenerationProgressPhase(shouldUseBrowserElk(payload)
+          ? "Computing ELK layout…" : "Preparing fallback layout…", 78);
     }
     let response;
     try {
-      response = isBrowserElkAvailable()
+      response = shouldUseBrowserElk(payload)
           ? await layoutWithBrowserElk(payload)
           : deterministicLayoutResponse(payload, nodeSize);
     } catch (layoutError) {
@@ -1540,6 +1589,27 @@ export async function autoLayoutCurrentDiagram({
         `Browser elkjs layout failed: ${layoutError.message}`
       ];
     }
+    const responseNodeIds = new Set((response.nodes || []).map(
+        (node) => node.id));
+    const responseEdgeIds = new Set((response.edges || []).map(
+        (edge) => edge.id));
+    const missingNodeIds = [...expectedLayoutNodeIds].filter(
+        (id) => !responseNodeIds.has(id));
+    const missingEdgeIds = [...expectedLayoutEdgeIds].filter(
+        (id) => !responseEdgeIds.has(id));
+    if (missingNodeIds.length) {
+      throw new Error(
+          `Layout response omitted ${missingNodeIds.length} visible node(s).`);
+    }
+    window.modlessLayoutAudit = {
+      expectedNodes: expectedLayoutNodeIds.size,
+      positionedNodes: responseNodeIds.size,
+      expectedEdges: expectedLayoutEdgeIds.size,
+      routedEdges: responseEdgeIds.size,
+      fallbackRoutedEdges: missingEdgeIds.length,
+      missingNodeIds,
+      missingEdgeIds
+    };
     const nodesById = new Map(
         (response.nodes || []).map((node) => [node.id, node]));
     const edgesById = new Map(
@@ -1563,34 +1633,32 @@ export async function autoLayoutCurrentDiagram({
         nodeSize));
     const movedByContext = separateBoundedContextOverlaps(nodeSize);
     movedByContext.forEach((nodeId) => movedNodeIds.add(nodeId));
-    resolveNodeOverlaps(state.diagram.nodes, nodeSize).forEach((nodeId) =>
-        movedNodeIds.add(nodeId));
+    if (movedByContext.size) {
+      resolveNodeOverlaps(state.diagram.nodes, nodeSize).forEach((nodeId) =>
+          movedNodeIds.add(nodeId));
+    }
     const layoutNodesById = new Map(
         state.diagram.nodes.map((node) => [node.id, node]));
+    const fallbackLaneCounts = new Map();
     state.diagram.connections.filter((edge) => !edge.bundle).forEach((edge) => {
-      if (movedNodeIds.has(edge.sourceId) || movedNodeIds.has(
-          edge.targetId)) {
-        edge.pinPoints = [];
-        delete edge.sourceAnchor;
-        delete edge.targetAnchor;
-        delete edge.layout;
-        saveStoredEdgeLayout(state.activeType, edge.id, {pinPoints: []});
-        return;
-      }
       const layoutData = edgesById.get(edge.id);
       const sourceNode = layoutNodesById.get(edge.sourceId);
       const targetNode = layoutNodesById.get(edge.targetId);
-      const presentation = edgePresentationFromLayout(layoutData, sourceNode,
-          targetNode);
+      const needsFallback = !layoutData || movedNodeIds.has(edge.sourceId)
+          || movedNodeIds.has(edge.targetId);
+      const laneKey = `${edge.sourceId || ""}->${edge.targetId || ""}`;
+      const laneIndex = fallbackLaneCounts.get(laneKey) || 0;
+      if (needsFallback) {
+        fallbackLaneCounts.set(laneKey, laneIndex + 1);
+      }
+      const presentation = needsFallback
+          ? fallbackEdgePresentation(sourceNode, targetNode, nodeSize,
+              fallbackLaneOffset(edge, laneIndex))
+          : edgePresentationFromLayout(layoutData, sourceNode, targetNode);
       edge.pinPoints = presentation.pinPoints;
       edge.sourceAnchor = presentation.sourceAnchor;
       edge.targetAnchor = presentation.targetAnchor;
       delete edge.layout;
-      saveStoredEdgeLayout(state.activeType, edge.id, {
-        pinPoints: presentation.pinPoints,
-        sourceAnchor: presentation.sourceAnchor,
-        targetAnchor: presentation.targetAnchor
-      });
     });
     spreadEdgeAnchors(state.diagram.nodes, state.diagram.connections, nodeSize);
     orthogonalizeEdgeRoutes(state.diagram.nodes, state.diagram.connections,
@@ -1599,20 +1667,28 @@ export async function autoLayoutCurrentDiagram({
     if (activeLayoutView) {
       activeLayoutView.autoLayoutApplied = true;
     }
-    state.diagram.connections.filter((edge) => !edge.bundle).forEach((edge) =>
-        saveStoredEdgeLayout(state.activeType, edge.id, {
-          pinPoints: edge.pinPoints,
-          sourceAnchor: edge.sourceAnchor,
-          targetAnchor: edge.targetAnchor
-        }));
-    if (progress) {
-      setGenerationProgressPhase("Refreshing the canvas…", 76);
+    const edgeLayoutsById = new Map();
+    state.diagram.connections.forEach((edge) => {
+      if (edge.bundle) {
+        return;
+      }
+      edgeLayoutsById.set(edge.id, {
+        pinPoints: edge.pinPoints,
+        sourceAnchor: edge.sourceAnchor,
+        targetAnchor: edge.targetAnchor
+      });
+    });
+    if (!persistEdgeLayoutsInActiveView(edgeLayoutsById)) {
+      edgeLayoutsById.forEach((layout, edgeId) =>
+          saveStoredEdgeLayout(state.activeType, edgeId, layout));
     }
-    syncActiveViewFromVisibleGraph();
+    if (progress) {
+      setGenerationProgressPhase("Rendering layout…", 88);
+    }
+    syncActiveViewFromVisibleGraph({rebuildIndexes: false});
 
     renderDiagram();
-    renderViewWorkbench();
-    await waitForCanvasPaint();
+    await waitForCanvasPaint(1);
     centerViewportOnDiagram({fit: true});
     if (save) {
       if (progress) {
@@ -1623,7 +1699,7 @@ export async function autoLayoutCurrentDiagram({
     if (publish) {
     }
     if (progress) {
-      await completeGenerationProgress("Layout applied.");
+      setGenerationProgressPhase("Layout applied.", 100);
     }
     const warnings = Array.isArray(response.warnings) ? response.warnings : [];
     if (warnings.length) {

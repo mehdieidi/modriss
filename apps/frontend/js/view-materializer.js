@@ -1,10 +1,11 @@
 import {state} from './state.js';
 import {emptyDiagram} from './utils.js';
-import {activeView} from './graph-store.js';
 import {
-  modelingElementDefinition,
-  modelingTypeMatches
-} from './modeling-config-data.js';
+  activeView,
+  selectElementIdsForView,
+  selectRelationshipIdsForView
+} from './graph-store.js';
+import {modelingElementDefinition} from './modeling-config-data.js';
 
 const CONTAINER_TYPES = {
   cim: new Set([
@@ -57,56 +58,29 @@ function viewEdgeByRelationship(view) {
   ]));
 }
 
-function selectedElementIds(view) {
-  const hidden = new Set(safeArray(view?.hidden?.elementIds));
-  const filterTypes = new Set(safeArray(view?.filters?.elementTypes));
-  const candidates = safeArray(view?.nodes).length
-      ? safeArray(view.nodes).map((node) => node.elementId)
-      : [...state.graph.elementsById.keys()];
-  return candidates.filter((elementId) => {
-    if (hidden.has(elementId)) {
-      return false;
-    }
-    const element = state.graph.elementsById.get(elementId);
-    if (!element) {
-      return false;
-    }
-    return !filterTypes.size || filterTypes.has(elementType(element))
-        || [...filterTypes].some((expected) => {
-          try {
-            return modelingTypeMatches(state.activeType, expected,
-                elementType(element));
-          } catch {
-            return false;
-          }
-        }) || elementId === view?.scope?.rootElementId;
-  });
+function shouldPruneIsolatedGeneratedNodes(view) {
+  const kind = String(view?.kind || "").trim().toUpperCase();
+  if (kind === "MAIN" || kind === "FOCUS" || view?.scope?.rootElementId
+      || view?.savedAt || view?.sourceViewId) {
+    return false;
+  }
+  return Boolean(view?.definitionId || view?.viewpoint);
 }
 
-function selectedRelationshipIds(view, elementIds) {
-  const hidden = new Set(safeArray(view?.hidden?.relationshipIds));
-  const allowedKinds = new Set(safeArray(view?.filters?.relationshipKinds));
-  const elementSet = new Set(elementIds);
-  const edgeById = viewEdgeByRelationship(view);
-  const result = [];
-  state.graph.relationshipsById.forEach((relationship, relationshipId) => {
-    if (hidden.has(relationshipId)) {
+function pruneIsolatedGeneratedNodes(graph, view, elementIds, relationshipIds) {
+  if (!shouldPruneIsolatedGeneratedNodes(view) || !relationshipIds.length) {
+    return elementIds;
+  }
+  const connected = new Set();
+  relationshipIds.forEach((relationshipId) => {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (!relationship) {
       return;
     }
-    const viewEdge = edgeById.get(relationshipId);
-    if (viewEdge?.visible === false) {
-      return;
-    }
-    if (!elementSet.has(relationship.sourceElementId) || !elementSet.has(
-        relationship.targetElementId)) {
-      return;
-    }
-    if (allowedKinds.size && !allowedKinds.has(relationship.kind)) {
-      return;
-    }
-    result.push(relationshipId);
+    connected.add(relationship.sourceElementId);
+    connected.add(relationship.targetElementId);
   });
-  return result;
+  return elementIds.filter((elementId) => connected.has(elementId));
 }
 
 export function isContainerElement(elementOrType, typeKey = state.activeType) {
@@ -183,16 +157,44 @@ export function materializeActiveView() {
     state.diagram = state.visibleGraph;
     return state.visibleGraph;
   }
-  const elementIds = selectedElementIds(view);
-  const relationshipIds = selectedRelationshipIds(view, elementIds);
-  const visible = materializeViewGraph(view, elementIds, relationshipIds);
-  state.views.visibleNodeIds = new Set(visible.nodes.map((node) => node.id));
-  state.views.visibleRelationshipIds = new Set(
-      visible.connections.map((edge) => edge.id));
-  state.views.expandedContainers = new Set(elementIds.filter((elementId) => {
-    const element = state.graph.elementsById.get(elementId);
-    return isContainerElement(element);
-  }));
+  const elementIds = selectElementIdsForView(state.graph, view,
+      state.activeType);
+  let relationshipIds = selectRelationshipIdsForView(state.graph, view,
+      elementIds);
+  const visibleElementIds = pruneIsolatedGeneratedNodes(state.graph, view,
+      elementIds, relationshipIds);
+  if (visibleElementIds.length !== elementIds.length) {
+    relationshipIds = selectRelationshipIdsForView(state.graph, view,
+        visibleElementIds);
+  }
+  const visibleElementIdSet = new Set(visibleElementIds);
+  const visible = materializeViewGraph(view, visibleElementIds,
+      relationshipIds);
+  const materializedNodeIds = new Set(visible.nodes.map((node) => node.id));
+  const materializedEdgeIds = new Set(visible.connections.map(
+      (edge) => edge.id));
+  window.modlessViewAudit = {
+    viewId: view.id,
+    graphNodes: state.graph.elementsById.size,
+    graphEdges: state.graph.relationshipsById.size,
+    selectedNodes: elementIds.length,
+    visibleNodesAfterPrune: visibleElementIds.length,
+    materializedNodes: visible.nodes.length,
+    selectedEdges: relationshipIds.length,
+    materializedEdges: visible.connections.length,
+    prunedIsolatedNodeIds: elementIds.filter((id) =>
+        !visibleElementIdSet.has(id)),
+    missingNodeIds: visibleElementIds.filter((id) =>
+        !materializedNodeIds.has(id)),
+    missingEdgeIds: relationshipIds.filter((id) => !materializedEdgeIds.has(id))
+  };
+  state.views.visibleNodeIds = materializedNodeIds;
+  state.views.visibleRelationshipIds = materializedEdgeIds;
+  state.views.expandedContainers = new Set(
+      visibleElementIds.filter((elementId) => {
+        const element = state.graph.elementsById.get(elementId);
+        return isContainerElement(element);
+      }));
   state.visibleGraph = {
     type: state.activeType,
     name: view.name || `${state.activeType}-view`,
