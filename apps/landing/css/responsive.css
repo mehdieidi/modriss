@@ -1,0 +1,314 @@
+@media (max-width: 1180px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 4rem;
+  }
+
+  .hero-visual {
+    width: min(42rem, 76vw);
+  }
+
+  .workbench-body {
+    grid-template-columns: 10.5rem minmax(0, 1fr);
+  }
+
+  .story-copy {
+    right: 0.85rem;
+    left: 11.75rem;
+    width: auto;
+  }
+
+  .model-node {
+    width: clamp(7.3rem, 12vw, 9rem);
+  }
+}
+
+@media (max-width: 900px) {
+  .site-nav {
+    grid-template-columns: 1fr auto;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .hero {
+    padding-top: 8rem;
+  }
+
+  .hero-line {
+    white-space: normal;
+  }
+
+  .hero-line:nth-child(2) {
+    margin-left: 0;
+  }
+
+  .method-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .method-strip article {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .method-strip article:last-of-type {
+    border-bottom: 0;
+  }
+
+  .workbench-header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .level-tabs {
+    display: none;
+  }
+
+  .validation-state {
+    display: none;
+  }
+
+  .workbench-body {
+    grid-template-columns: 1fr;
+  }
+
+  .palette {
+    display: none;
+  }
+
+  .story-copy {
+    top: auto;
+    right: 0.75rem;
+    bottom: 3.6rem;
+    left: 0.75rem;
+    height: 8rem;
+    width: auto;
+  }
+
+  .story-copy-card {
+    display: block;
+    padding: 0.9rem;
+  }
+
+  .story-copy h2 {
+    margin: 0.5rem 0 0.4rem;
+    font-size: 1.25rem;
+  }
+
+  .story-copy p {
+    display: none;
+  }
+
+  .phase-rule {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.55rem;
+    padding-top: 0.5rem;
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .phase-rule strong {
+    text-align: right;
+  }
+
+  .model-canvas {
+    bottom: 7.5rem;
+  }
+
+  .model-node {
+    width: clamp(6.8rem, 19vw, 8rem);
+  }
+
+  .model-node-body {
+    display: none;
+  }
+
+  .transformation-engine {
+    width: min(18rem, 42vw);
+    height: min(18rem, 42vw);
+  }
+
+  .mapping-rules {
+    width: 42vw;
+  }
+
+  .mapping-token {
+    font-size: 0.38rem;
+  }
+
+  .assistant-demo {
+    right: 1rem;
+    bottom: 0.75rem;
+    transform: scale(0.85);
+    transform-origin: 100% 100%;
+  }
+
+  .refinement-inspector {
+    width: 12rem;
+  }
+
+  .artifact-tree-panel {
+    width: 38%;
+  }
+
+  .code-panel {
+    width: 64%;
+  }
+
+  .story-progress-label,
+  .story-progress-phase {
+    display: none;
+  }
+
+  .story-progress {
+    grid-template-columns: minmax(4rem, 1fr) auto;
+  }
+
+  .finale-stats {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 620px) {
+  .site-nav {
+    right: 0.75rem;
+    left: 0.75rem;
+    min-height: 3.5rem;
+  }
+
+  .site-nav > .button {
+    min-height: 2.35rem;
+    padding-inline: 0.75rem;
+  }
+
+  .site-nav > .button span {
+    display: none;
+  }
+
+  .hero {
+    min-height: 130vh;
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .hero-title {
+    font-size: clamp(3.2rem, 17vw, 5.3rem);
+  }
+
+  .hero-visual {
+    width: 92vw;
+  }
+
+  .hero-orbit-node {
+    width: 3.7rem;
+    border-radius: 0.9rem;
+    font-size: 0.58rem;
+  }
+
+  .hero-core {
+    inset: 32%;
+  }
+
+  .method-strip article {
+    padding: 1.5rem;
+  }
+
+  .workbench-header {
+    padding: 0 0.65rem;
+  }
+
+  .workbench-actions {
+    display: none;
+  }
+
+  .canvas-tools span:last-child {
+    display: none;
+  }
+
+  .model-node {
+    width: clamp(5.8rem, 23vw, 7rem);
+  }
+
+  .model-node-head {
+    gap: 0.3rem;
+    padding: 0.35rem;
+  }
+
+  .model-node-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .model-node-title strong {
+    font-size: 0.5rem;
+  }
+
+  .model-node-menu,
+  .edge-label {
+    display: none;
+  }
+
+  .transformation-engine {
+    width: min(15rem, 48vw);
+    height: min(15rem, 48vw);
+  }
+
+  .mapping-rules {
+    display: none;
+  }
+
+  .assistant-demo {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    transform: scale(0.72);
+  }
+
+  .refinement-inspector {
+    top: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: 10rem;
+  }
+
+  .artifact-tree-panel,
+  .code-panel {
+    top: 2%;
+    bottom: 2%;
+  }
+
+  .artifact-tree-panel {
+    width: 46%;
+  }
+
+  .code-panel {
+    right: 1.5%;
+    width: 78%;
+  }
+
+  .tree-row {
+    font-size: 0.4rem;
+  }
+
+  .code-editor {
+    font-size: 0.38rem;
+  }
+
+  .deploy-ready {
+    width: 86%;
+  }
+
+  .finale {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .finale h2 {
+    font-size: clamp(2.7rem, 14vw, 4.5rem);
+  }
+}
