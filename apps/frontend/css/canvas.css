@@ -905,10 +905,9 @@
   height: 100%;
   overflow: hidden;
   background-color: var(--canvas-custom-bg, var(--canvas-bg));
-  background-image:
-      linear-gradient(color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px, transparent 1px),
-      radial-gradient(circle at 1px 1px, var(--canvas-dot) 1px, transparent 1px);
+  background-image: linear-gradient(color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px, transparent 1px),
+  linear-gradient(90deg, color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px, transparent 1px),
+  radial-gradient(circle at 1px 1px, var(--canvas-dot) 1px, transparent 1px);
   background-size: 88px 88px, 88px 88px, 22px 22px;
 }
 
