@@ -1,12 +1,6 @@
 import {el} from './dom.js';
 import {state} from './state.js';
-import {
-  applyThemeColors,
-  getThemeColorDefaults,
-  initTheme,
-  resetThemeColors,
-  toggleTheme
-} from './theme.js';
+import {initTheme, toggleTheme} from './theme.js';
 import {
   applyViewport,
   centerViewportOnDiagram,
@@ -84,6 +78,25 @@ window.modlessG6Debug = window.modlessG6Debug || (() => ({
   bootstrap: window.modlessFrontendBoot || null,
   ...getModelingRendererDebug()
 }));
+
+function shouldShowNotFoundPage() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  return path !== "/" && path !== "/index.html";
+}
+
+function showNotFoundPage() {
+  if (!el.notFoundOverlay) {
+    return false;
+  }
+  document.title = "Not Found - Modless";
+  el.notFoundOverlay.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  el.notFoundGoHomeBtn?.addEventListener("click", () => {
+    window.history.replaceState({}, "", "/");
+    window.location.reload();
+  }, {once: true});
+  return true;
+}
 
 function refreshCurrentUserLabel() {
   if (!el.currentUserLabel) {
@@ -382,75 +395,6 @@ function toggleTopbarMenu() {
   }
 }
 
-function showThemeColorDialog() {
-  if (
-      !el.themeColorOverlay ||
-      !el.themeTopbarColorInput ||
-      !el.themeCanvasColorInput ||
-      !el.themeChatColorInput ||
-      !el.themeColorCancelBtn ||
-      !el.themeColorResetBtn ||
-      !el.themeColorSaveBtn
-  ) {
-    setError("Theme color editor is unavailable");
-    return;
-  }
-
-  const defaults = getThemeColorDefaults();
-  el.themeTopbarColorInput.value = defaults.topbar;
-  el.themeCanvasColorInput.value = defaults.canvas;
-  el.themeChatColorInput.value = defaults.chat;
-  el.themeColorOverlay.classList.remove("hidden");
-  document.body.classList.add("modal-open");
-
-  const close = () => {
-    el.themeColorOverlay.classList.add("hidden");
-    document.body.classList.remove("modal-open");
-    el.themeColorSaveBtn.removeEventListener("click", onSave);
-    el.themeColorCancelBtn.removeEventListener("click", onCancel);
-    el.themeColorResetBtn.removeEventListener("click", onReset);
-    el.themeColorOverlay.removeEventListener("click", onOverlayClick);
-    document.removeEventListener("keydown", onKeyDown);
-  };
-
-  const onSave = () => {
-    applyThemeColors({
-      topbar: el.themeTopbarColorInput.value,
-      canvas: el.themeCanvasColorInput.value,
-      chat: el.themeChatColorInput.value
-    });
-    close();
-    setStatus("Theme colors updated");
-  };
-
-  const onReset = () => {
-    resetThemeColors();
-    const resetDefaults = getThemeColorDefaults();
-    el.themeTopbarColorInput.value = resetDefaults.topbar;
-    el.themeCanvasColorInput.value = resetDefaults.canvas;
-    el.themeChatColorInput.value = resetDefaults.chat;
-    setStatus("Theme colors reset");
-  };
-
-  const onCancel = () => close();
-  const onOverlayClick = (event) => {
-    if (event.target === el.themeColorOverlay) {
-      onCancel();
-    }
-  };
-  const onKeyDown = (event) => {
-    if (event.key === "Escape") {
-      onCancel();
-    }
-  };
-
-  el.themeColorSaveBtn.addEventListener("click", onSave);
-  el.themeColorCancelBtn.addEventListener("click", onCancel);
-  el.themeColorResetBtn.addEventListener("click", onReset);
-  el.themeColorOverlay.addEventListener("click", onOverlayClick);
-  document.addEventListener("keydown", onKeyDown);
-}
-
 function setMobileBackdropVisible(visible) {
   if (!el.mobileBackdrop) {
     return;
@@ -511,12 +455,14 @@ function syncPaletteRailToggleState() {
 function closeRailMenus() {
   el.fileRailMenu?.classList.add("hidden");
   el.projectRailMenu?.classList.add("hidden");
+  el.helpRailPanel?.classList.add("hidden");
   el.exportModelSubmenu?.classList.add("hidden");
   el.importModelSubmenu?.classList.add("hidden");
   el.exportModelBtn?.setAttribute("aria-expanded", "false");
   el.importModelBtn?.setAttribute("aria-expanded", "false");
   el.fileBtn?.classList.remove("active");
   el.settingsRailBtn?.classList.remove("active");
+  el.helpRailBtn?.classList.remove("active");
 }
 
 function toggleFileSubmenu(kind) {
@@ -540,16 +486,23 @@ function toggleRailMenu(kind) {
   if (isMobileViewport()) {
     return;
   }
-  const targetMenu = kind === "file" ? el.fileRailMenu : el.projectRailMenu;
-  const targetBtn = kind === "file" ? el.fileBtn : el.settingsRailBtn;
-  const otherMenu = kind === "file" ? el.projectRailMenu : el.fileRailMenu;
-  const otherBtn = kind === "file" ? el.settingsRailBtn : el.fileBtn;
+  const menus = {
+    file: {menu: el.fileRailMenu, button: el.fileBtn},
+    project: {menu: el.projectRailMenu, button: el.settingsRailBtn},
+    help: {menu: el.helpRailPanel, button: el.helpRailBtn}
+  };
+  const targetMenu = menus[kind]?.menu;
+  const targetBtn = menus[kind]?.button;
   if (!targetMenu || !targetBtn) {
     return;
   }
   const willOpen = targetMenu.classList.contains("hidden");
-  otherMenu?.classList.add("hidden");
-  otherBtn?.classList.remove("active");
+  Object.values(menus).forEach(({menu, button}) => {
+    if (menu !== targetMenu) {
+      menu?.classList.add("hidden");
+      button?.classList.remove("active");
+    }
+  });
   if (!willOpen) {
     targetMenu.classList.add("hidden");
     targetBtn.classList.remove("active");
@@ -620,6 +573,12 @@ function bindEvents() {
       toggleRailMenu("project");
     });
   }
+  if (el.helpRailBtn) {
+    el.helpRailBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleRailMenu("help");
+    });
+  }
   if (el.fileRailMenu) {
     el.fileRailMenu.addEventListener("click", (event) => {
       if (getElementTarget(event)?.closest(".rail-submenu-trigger")) {
@@ -639,9 +598,6 @@ function bindEvents() {
   }
   if (el.themeRailToggleBtn) {
     el.themeRailToggleBtn.addEventListener("click", toggleTheme);
-  }
-  if (el.openThemeColorsBtn) {
-    el.openThemeColorsBtn.addEventListener("click", showThemeColorDialog);
   }
   if (el.undoModelReplaceBtn) {
     el.undoModelReplaceBtn.addEventListener("click", async () => {
@@ -960,9 +916,13 @@ function bindEvents() {
 // ── Application init ──────────────────────────────────────────────────────────
 
 async function init() {
+  initTheme();
+  initSvgIconMasks();
+  if (shouldShowNotFoundPage() && showNotFoundPage()) {
+    return;
+  }
   const authState = await ensureAuthenticated();
   await loadModelingConfig();
-  initSvgIconMasks();
   refreshCurrentUserLabel();
   bindProjectDialogActions();
   setupIdeMenus();
@@ -990,7 +950,6 @@ async function init() {
     openConnectionPanel
   });
   syncPaletteRailToggleState();
-  initTheme();
   syncResponsiveUi();
   initializeModelingRenderer();
   setupDnD();

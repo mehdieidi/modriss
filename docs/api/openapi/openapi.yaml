@@ -10,7 +10,7 @@ servers:
   - url: http://127.0.0.1:8080
     description: Local development
 security:
-  - AuthToken: []
+  - AuthToken: [ ]
 tags:
   - name: Health
     description: Backend status checks.
@@ -31,9 +31,9 @@ tags:
 paths:
   /api/health:
     get:
-      tags: [Health]
+      tags: [ Health ]
       summary: Get backend health
-      security: []
+      security: [ ]
       responses:
         '200':
           description: Backend health status
@@ -43,9 +43,9 @@ paths:
                 $ref: '#/components/schemas/HealthResponse'
   /api/auth/register:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Register a user
-      security: []
+      security: [ ]
       requestBody:
         required: true
         content:
@@ -65,9 +65,9 @@ paths:
           $ref: '#/components/responses/Conflict'
   /api/auth/login:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Create an auth session
-      security: []
+      security: [ ]
       requestBody:
         required: true
         content:
@@ -87,7 +87,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
   /api/auth/me:
     get:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Get current user
       responses:
         '200':
@@ -99,7 +99,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
     put:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Update current user profile
       requestBody:
         required: true
@@ -120,7 +120,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
   /api/auth/logout:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: End the current auth session
       responses:
         '200':
@@ -129,7 +129,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
   /api/projects:
     get:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: List projects visible to the current user
       responses:
         '200':
@@ -143,7 +143,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Create a project
       requestBody:
         required: true
@@ -166,7 +166,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Get a project
       responses:
         '200':
@@ -182,7 +182,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     put:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Update a project
       requestBody:
         required: true
@@ -204,7 +204,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
     delete:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Delete a project
       responses:
         '200':
@@ -217,7 +217,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     get:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: List project members
       responses:
         '200':
@@ -236,7 +236,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
     post:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Invite an existing user to a project
       requestBody:
         required: true
@@ -268,7 +268,7 @@ paths:
         schema:
           type: string
     delete:
-      tags: [Projects]
+      tags: [ Projects ]
       summary: Revoke project access
       responses:
         '200':
@@ -283,7 +283,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ModelLevelPath'
     get:
-      tags: [Models]
+      tags: [ Models ]
       summary: List CIM, PIM, or PSM model summaries
       parameters:
         - name: projectId
@@ -303,7 +303,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
     post:
-      tags: [Models]
+      tags: [ Models ]
       summary: Create a CIM, PIM, or PSM model
       requestBody:
         required: true
@@ -329,7 +329,7 @@ paths:
       - $ref: '#/components/parameters/ModelLevelPath'
       - $ref: '#/components/parameters/ModelId'
     get:
-      tags: [Models]
+      tags: [ Models ]
       summary: Get a stored model
       responses:
         '200':
@@ -345,7 +345,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     put:
-      tags: [Models]
+      tags: [ Models ]
       summary: Replace a stored model
       description: Requires `expectedRevision`; returns 409 if the model has changed.
       requestBody:
@@ -370,7 +370,7 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
     patch:
-      tags: [Models]
+      tags: [ Models ]
       summary: Patch a stored model
       description: Supports JSON Pointer `add`, `replace`, and `remove` operations. Root replacement is not supported.
       requestBody:
@@ -395,7 +395,7 @@ paths:
         '409':
           $ref: '#/components/responses/Conflict'
     delete:
-      tags: [Models]
+      tags: [ Models ]
       summary: Delete a stored model
       responses:
         '200':
@@ -410,7 +410,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ModelLevelPath'
     post:
-      tags: [Models]
+      tags: [ Models ]
       summary: Validate unsaved model JSON
       requestBody:
         required: true
@@ -434,7 +434,7 @@ paths:
       - $ref: '#/components/parameters/ModelLevelPath'
       - $ref: '#/components/parameters/ModelId'
     post:
-      tags: [Models]
+      tags: [ Models ]
       summary: Validate a stored model
       responses:
         '200':
@@ -453,7 +453,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ModelLevelPath'
     post:
-      tags: [Models]
+      tags: [ Models ]
       summary: Export unsaved model JSON
       requestBody:
         required: false
@@ -484,7 +484,7 @@ paths:
       - $ref: '#/components/parameters/ModelLevelPath'
       - $ref: '#/components/parameters/ModelId'
     post:
-      tags: [Models]
+      tags: [ Models ]
       summary: Export a stored model
       requestBody:
         required: false
@@ -518,7 +518,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ModelLevelPath'
     post:
-      tags: [Models]
+      tags: [ Models ]
       summary: Import model JSON or XMI
       requestBody:
         required: true
@@ -526,13 +526,13 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [projectId, file]
+              required: [ projectId, file ]
               properties:
                 projectId:
                   type: string
                 format:
                   type: string
-                  enum: [json, xmi]
+                  enum: [ json, xmi ]
                   default: json
                 file:
                   type: string
@@ -554,7 +554,7 @@ paths:
           $ref: '#/components/responses/PayloadTooLarge'
   /api/transformations/cim-to-pim:
     post:
-      tags: [Transformations]
+      tags: [ Transformations ]
       summary: Generate a PIM model from a CIM model
       requestBody:
         $ref: '#/components/requestBodies/TransformRequest'
@@ -571,7 +571,7 @@ paths:
           $ref: '#/components/responses/Conflict'
   /api/transformations/pim-to-psm:
     post:
-      tags: [Transformations]
+      tags: [ Transformations ]
       summary: Generate a PSM model from a PIM model
       requestBody:
         $ref: '#/components/requestBodies/TransformRequest'
@@ -588,7 +588,7 @@ paths:
           $ref: '#/components/responses/Conflict'
   /api/transformations/psm-to-artifact:
     post:
-      tags: [Transformations]
+      tags: [ Transformations ]
       summary: Generate deployable artifacts from a PSM model
       requestBody:
         $ref: '#/components/requestBodies/TransformRequest'
@@ -613,7 +613,7 @@ paths:
         schema:
           type: string
     get:
-      tags: [Transformations]
+      tags: [ Transformations ]
       summary: Get a transformation job
       responses:
         '200':
@@ -636,7 +636,7 @@ paths:
         schema:
           type: string
     post:
-      tags: [Transformations]
+      tags: [ Transformations ]
       summary: Cancel a transformation job
       responses:
         '200':
@@ -653,7 +653,7 @@ paths:
           $ref: '#/components/responses/NotFound'
   /api/artifact:
     get:
-      tags: [Artifacts]
+      tags: [ Artifacts ]
       summary: List artifacts for a project
       parameters:
         - name: projectId
@@ -678,7 +678,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ArtifactId'
     get:
-      tags: [Artifacts]
+      tags: [ Artifacts ]
       summary: Get an artifact
       responses:
         '200':
@@ -702,7 +702,7 @@ paths:
         schema:
           type: string
     get:
-      tags: [Artifacts]
+      tags: [ Artifacts ]
       summary: Read an artifact file
       responses:
         '200':
@@ -723,7 +723,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ArtifactId'
     put:
-      tags: [Artifacts]
+      tags: [ Artifacts ]
       summary: Save or replace an artifact file
       requestBody:
         required: true
@@ -750,7 +750,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ArtifactId'
     get:
-      tags: [Artifacts]
+      tags: [ Artifacts ]
       summary: Download an artifact as a ZIP archive
       responses:
         '200':
@@ -772,9 +772,9 @@ paths:
           $ref: '#/components/responses/NotFound'
   /api/modeling/config:
     get:
-      tags: [Modeling]
+      tags: [ Modeling ]
       summary: Get modeling palette and UI metadata
-      security: []
+      security: [ ]
       responses:
         '200':
           description: Modeling configuration
@@ -785,9 +785,9 @@ paths:
                 additionalProperties: true
   /api/layout:
     post:
-      tags: [Modeling]
+      tags: [ Modeling ]
       summary: Auto-layout diagram nodes and edges
-      security: []
+      security: [ ]
       requestBody:
         required: true
         content:
@@ -807,14 +807,14 @@ paths:
     parameters:
       - $ref: '#/components/parameters/WildcardPath'
     get:
-      tags: [Future]
+      tags: [ Future ]
       summary: Planned GitHub integration endpoint
       description: Represents the Spring `/api/github/**` placeholder. Other HTTP methods return the same 501 response.
       responses:
         '501':
           $ref: '#/components/responses/NotImplemented'
     post:
-      tags: [Future]
+      tags: [ Future ]
       summary: Planned GitHub integration endpoint
       responses:
         '501':
@@ -823,14 +823,14 @@ paths:
     parameters:
       - $ref: '#/components/parameters/WildcardPath'
     get:
-      tags: [Future]
+      tags: [ Future ]
       summary: Planned impact analysis endpoint
       description: Represents the Spring `/api/impact/**` placeholder. Other HTTP methods return the same 501 response.
       responses:
         '501':
           $ref: '#/components/responses/NotImplemented'
     post:
-      tags: [Future]
+      tags: [ Future ]
       summary: Planned impact analysis endpoint
       responses:
         '501':
@@ -839,14 +839,14 @@ paths:
     parameters:
       - $ref: '#/components/parameters/WildcardPath'
     get:
-      tags: [Future]
+      tags: [ Future ]
       summary: Planned admin endpoint
       description: Represents the Spring `/api/admin/**` placeholder. Other HTTP methods return the same 501 response.
       responses:
         '501':
           $ref: '#/components/responses/NotImplemented'
     post:
-      tags: [Future]
+      tags: [ Future ]
       summary: Planned admin endpoint
       responses:
         '501':
@@ -882,7 +882,7 @@ components:
       required: true
       schema:
         type: string
-        enum: [cim, pim, psm]
+        enum: [ cim, pim, psm ]
     WildcardPath:
       name: path
       in: path
@@ -949,7 +949,7 @@ components:
   schemas:
     ApiErrorResponse:
       type: object
-      required: [message, status, timestamp, issues]
+      required: [ message, status, timestamp, issues ]
       properties:
         message:
           type: string
@@ -960,10 +960,10 @@ components:
           format: date-time
         issues:
           type: array
-          items: {}
+          items: { }
     HealthResponse:
       type: object
-      required: [status, service, timestamp]
+      required: [ status, service, timestamp ]
       properties:
         status:
           type: string
@@ -976,7 +976,7 @@ components:
           format: date-time
     RegisterRequest:
       type: object
-      required: [email, password, displayName]
+      required: [ email, password, displayName ]
       properties:
         email:
           type: string
@@ -989,7 +989,7 @@ components:
           maxLength: 80
     LoginRequest:
       type: object
-      required: [email, password]
+      required: [ email, password ]
       properties:
         email:
           type: string
@@ -999,14 +999,14 @@ components:
           minLength: 8
     UpdateMeRequest:
       type: object
-      required: [displayName]
+      required: [ displayName ]
       properties:
         displayName:
           type: string
           maxLength: 80
     AuthResponse:
       type: object
-      required: [token, user]
+      required: [ token, user ]
       properties:
         token:
           type: string
@@ -1014,7 +1014,7 @@ components:
           $ref: '#/components/schemas/UserDto'
     UserDto:
       type: object
-      required: [id, email, displayName]
+      required: [ id, email, displayName ]
       properties:
         id:
           type: string
@@ -1025,7 +1025,7 @@ components:
           type: string
     SaveProjectRequest:
       type: object
-      required: [name]
+      required: [ name ]
       properties:
         name:
           type: string
@@ -1038,7 +1038,7 @@ components:
           description: Map of active model level or view keys to model ids.
     InviteRequest:
       type: object
-      required: [email]
+      required: [ email ]
       properties:
         email:
           type: string
@@ -1046,7 +1046,7 @@ components:
           $ref: '#/components/schemas/MemberRole'
     ProjectRecord:
       type: object
-      required: [id, name, ownerUserId, activeModelIds, members, createdAt, updatedAt]
+      required: [ id, name, ownerUserId, activeModelIds, members, createdAt, updatedAt ]
       properties:
         id:
           type: string
@@ -1072,7 +1072,7 @@ components:
           format: date-time
     ProjectMember:
       type: object
-      required: [userId, email, displayName, role, addedAt]
+      required: [ userId, email, displayName, role, addedAt ]
       properties:
         userId:
           type: string
@@ -1088,13 +1088,13 @@ components:
           format: date-time
     MemberRole:
       type: string
-      enum: [OWNER, EDITOR, VIEWER]
+      enum: [ OWNER, EDITOR, VIEWER ]
     ModelLevel:
       type: string
-      enum: [CIM, PIM, PSM]
+      enum: [ CIM, PIM, PSM ]
     SaveModelRequest:
       type: object
-      required: [name]
+      required: [ name ]
       properties:
         name:
           type: string
@@ -1108,7 +1108,7 @@ components:
           description: Required for PUT updates.
     PatchModelRequest:
       type: object
-      required: [expectedRevision]
+      required: [ expectedRevision ]
       properties:
         name:
           type: string
@@ -1121,11 +1121,11 @@ components:
           format: int64
     ModelPatchOperation:
       type: object
-      required: [op, path]
+      required: [ op, path ]
       properties:
         op:
           type: string
-          enum: [add, replace, remove]
+          enum: [ add, replace, remove ]
         path:
           type: string
           description: JSON Pointer path.
@@ -1140,11 +1140,11 @@ components:
           description: Model JSON used by unsaved export.
         format:
           type: string
-          enum: [json, xmi]
+          enum: [ json, xmi ]
           default: json
     ModelSummary:
       type: object
-      required: [id, projectId, level, name, revision, createdAt, updatedAt]
+      required: [ id, projectId, level, name, revision, createdAt, updatedAt ]
       properties:
         id:
           type: string
@@ -1180,7 +1180,7 @@ components:
               type: string
     ValidationResult:
       type: object
-      required: [valid, issues]
+      required: [ valid, issues ]
       properties:
         valid:
           type: boolean
@@ -1207,7 +1207,7 @@ components:
           type: string
     ImportResult:
       type: object
-      required: [name, modelJson, issues]
+      required: [ name, modelJson, issues ]
       properties:
         name:
           type: string
@@ -1219,7 +1219,7 @@ components:
             $ref: '#/components/schemas/ValidationIssue'
     TransformRequest:
       type: object
-      required: [sourceModelId]
+      required: [ sourceModelId ]
       properties:
         sourceModelId:
           type: string
@@ -1228,7 +1228,7 @@ components:
           format: int64
     TransformationResponse:
       type: object
-      required: [success, status, diagnostics]
+      required: [ success, status, diagnostics ]
       properties:
         success:
           type: boolean
@@ -1251,7 +1251,7 @@ components:
             type: string
     ArtifactRecord:
       type: object
-      required: [id, projectId, name, modelJson, files, createdAt, updatedAt]
+      required: [ id, projectId, name, modelJson, files, createdAt, updatedAt ]
       properties:
         id:
           type: string
@@ -1273,7 +1273,7 @@ components:
           format: date-time
     SaveFileRequest:
       type: object
-      required: [path]
+      required: [ path ]
       properties:
         path:
           type: string
@@ -1281,7 +1281,7 @@ components:
           type: string
     MdeJobRecord:
       type: object
-      required: [id, projectId, userId, sourceModelId, sourceLevel, sourceRevision, operation, status, progressPercent, diagnostics, createdAt]
+      required: [ id, projectId, userId, sourceModelId, sourceLevel, sourceRevision, operation, status, progressPercent, diagnostics, createdAt ]
       properties:
         id:
           type: string
@@ -1300,10 +1300,10 @@ components:
           type: string
         operation:
           type: string
-          enum: [CIM_TO_PIM, PIM_TO_PSM, PSM_TO_ARTIFACT, VALIDATE]
+          enum: [ CIM_TO_PIM, PIM_TO_PSM, PSM_TO_ARTIFACT, VALIDATE ]
         status:
           type: string
-          enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED]
+          enum: [ QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED ]
         progressPercent:
           type: integer
           minimum: 0
@@ -1351,7 +1351,7 @@ components:
             $ref: '#/components/schemas/LayoutEdge'
     LayoutNode:
       type: object
-      required: [id, width, height]
+      required: [ id, width, height ]
       properties:
         id:
           type: string
@@ -1375,7 +1375,7 @@ components:
             $ref: '#/components/schemas/LayoutPort'
     LayoutPort:
       type: object
-      required: [id, width, height]
+      required: [ id, width, height ]
       properties:
         id:
           type: string
@@ -1395,7 +1395,7 @@ components:
           format: double
     LayoutEdge:
       type: object
-      required: [id, sourceNodeId, targetNodeId]
+      required: [ id, sourceNodeId, targetNodeId ]
       properties:
         id:
           type: string
@@ -1411,7 +1411,7 @@ components:
           type: string
     LayoutResponse:
       type: object
-      required: [nodes, edges, warnings]
+      required: [ nodes, edges, warnings ]
       properties:
         nodes:
           type: array
@@ -1427,7 +1427,7 @@ components:
             type: string
     LaidOutNode:
       type: object
-      required: [id, x, y, width, height]
+      required: [ id, x, y, width, height ]
       properties:
         id:
           type: string
@@ -1445,7 +1445,7 @@ components:
           format: double
     RoutedEdge:
       type: object
-      required: [id, sections, bendPoints]
+      required: [ id, sections, bendPoints ]
       properties:
         id:
           type: string
@@ -1459,7 +1459,7 @@ components:
             $ref: '#/components/schemas/LayoutPoint'
     EdgeSection:
       type: object
-      required: [startPoint, endPoint, bendPoints]
+      required: [ startPoint, endPoint, bendPoints ]
       properties:
         startPoint:
           $ref: '#/components/schemas/LayoutPoint'
@@ -1471,7 +1471,7 @@ components:
             $ref: '#/components/schemas/LayoutPoint'
     LayoutPoint:
       type: object
-      required: [x, y]
+      required: [ x, y ]
       properties:
         x:
           type: number

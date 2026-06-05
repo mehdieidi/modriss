@@ -114,12 +114,9 @@
   flex: 0 0 auto;
   gap: 4px;
   padding: 3px;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border) 80%);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 8px;
-  background: linear-gradient(180deg,
-  color-mix(in srgb, #b85f64 9%, transparent),
-  color-mix(in srgb, var(--surface-3) 48%, transparent)),
-  color-mix(in srgb, var(--surface-3) 42%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 66%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
   0 1px 0 color-mix(in srgb, #000 18%, transparent);
 }
@@ -385,21 +382,21 @@
   gap: 2px;
   min-width: 64px;
   padding-bottom: 5px;
-  border-color: color-mix(in srgb, #c86b70 50%, var(--border) 50%);
-  background: color-mix(in srgb, #b85f64 18%, var(--surface-3) 82%);
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--border) 56%);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-3) 84%);
   color: var(--text-strong);
 }
 
 .model-workbench-strip .model-save-btn:hover,
 .model-workbench-strip .model-save-btn:focus-visible {
-  border-color: color-mix(in srgb, #d8878b 72%, transparent);
-  background: color-mix(in srgb, #b85f64 26%, var(--surface-high) 74%);
+  border-color: color-mix(in srgb, var(--accent-light) 64%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-high) 78%);
   color: var(--text-strong);
 }
 
 .model-save-btn.is-dirty {
-  border-color: color-mix(in srgb, #de8a89 82%, transparent);
-  background: color-mix(in srgb, #b85f64 30%, var(--surface-high) 70%);
+  border-color: color-mix(in srgb, var(--warning) 72%, transparent);
+  background: color-mix(in srgb, var(--warning) 18%, var(--surface-high) 82%);
   color: var(--text-strong);
 }
 
@@ -436,7 +433,7 @@
   left: 0;
   width: 45%;
   border-radius: inherit;
-  background: color-mix(in srgb, #ffd4d6 72%, #b85f64 28%);
+  background: color-mix(in srgb, var(--accent-light) 72%, var(--accent) 28%);
   transform: translateX(-120%);
 }
 
@@ -908,8 +905,11 @@
   height: 100%;
   overflow: hidden;
   background-color: var(--canvas-custom-bg, var(--canvas-bg));
-  background-image: radial-gradient(circle at 1px 1px, var(--canvas-dot) 1px, transparent 1px);
-  background-size: 22px 22px;
+  background-image:
+      linear-gradient(color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px, transparent 1px),
+      radial-gradient(circle at 1px 1px, var(--canvas-dot) 1px, transparent 1px);
+  background-size: 88px 88px, 88px 88px, 22px 22px;
 }
 
 .cim-workbench-surface {
@@ -1078,7 +1078,6 @@
   padding: 7px;
 }
 
-.pim-lens-toolbar,
 .pim-edge-toolbar {
   grid-column: 1 / -1;
   display: grid;
@@ -1088,7 +1087,6 @@
   min-width: 0;
 }
 
-.pim-lens-toolbar > span,
 .pim-edge-toolbar > span {
   color: var(--muted);
   font: 800 9px/1 var(--font-display);
@@ -1096,7 +1094,6 @@
   text-transform: uppercase;
 }
 
-.pim-lens-buttons,
 .pim-edge-buttons {
   display: flex;
   gap: 5px;
@@ -1105,7 +1102,6 @@
   scrollbar-width: thin;
 }
 
-.pim-lens-buttons button,
 .pim-edge-buttons button {
   flex: 0 0 auto;
   min-height: 24px;
@@ -1120,8 +1116,6 @@
   cursor: pointer;
 }
 
-.pim-lens-buttons button:hover,
-.pim-lens-buttons button.is-active,
 .pim-edge-buttons button:hover,
 .pim-edge-buttons button.is-active {
   border-color: color-mix(in srgb, var(--accent) 55%, transparent);

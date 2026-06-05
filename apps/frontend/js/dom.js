@@ -15,6 +15,8 @@ export const el = {
   importModelXmiBtn: document.getElementById("importModelXmiBtn"),
   importModelFileInput: document.getElementById("importModelFileInput"),
   settingsRailBtn: document.getElementById("settingsRailBtn"),
+  helpRailBtn: document.getElementById("helpRailBtn"),
+  helpRailPanel: document.getElementById("helpRailPanel"),
   projectRailMenu: document.getElementById("projectRailMenu"),
   themeRailToggleBtn: document.getElementById("themeRailToggleBtn"),
   themeRailToggleIcon: document.getElementById("themeRailToggleIcon"),
@@ -56,14 +58,6 @@ export const el = {
   chatTypingIndicator: document.getElementById("chatTypingIndicator"),
   chatHeaderSubtitle: document.getElementById("chatHeaderSubtitle"),
   chatInputRow: document.getElementById("chatInputRow"),
-  openThemeColorsBtn: document.getElementById("openThemeColorsBtn"),
-  themeColorOverlay: document.getElementById("themeColorOverlay"),
-  themeTopbarColorInput: document.getElementById("themeTopbarColorInput"),
-  themeCanvasColorInput: document.getElementById("themeCanvasColorInput"),
-  themeChatColorInput: document.getElementById("themeChatColorInput"),
-  themeColorCancelBtn: document.getElementById("themeColorCancelBtn"),
-  themeColorResetBtn: document.getElementById("themeColorResetBtn"),
-  themeColorSaveBtn: document.getElementById("themeColorSaveBtn"),
   mobileSidebarToggleBtn: document.getElementById("mobileSidebarToggleBtn"),
   mobileInspectorToggleBtn: document.getElementById("mobileInspectorToggleBtn"),
   mobileBackdrop: document.getElementById("mobileBackdrop"),
@@ -181,20 +175,13 @@ export const el = {
   validationSubtitle: document.getElementById("validationSubtitle"),
   validationIssues: document.getElementById("validationIssues"),
   validationCloseBtn: document.getElementById("validationCloseBtn"),
-  generationProgressOverlay: document.getElementById(
-      "generationProgressOverlay"),
-  generationProgressKicker: document.getElementById("generationProgressKicker"),
-  generationProgressTitle: document.getElementById("generationProgressTitle"),
-  generationProgressSubtitle: document.getElementById(
-      "generationProgressSubtitle"),
-  generationProgressBarFill: document.getElementById(
-      "generationProgressBarFill"),
-  generationProgressLabel: document.getElementById("generationProgressLabel"),
   boundedContextNameOverlay: document.getElementById(
       "boundedContextNameOverlay"),
   boundedContextNameInput: document.getElementById("boundedContextNameInput"),
   boundedContextNameSaveBtn: document.getElementById(
       "boundedContextNameSaveBtn"),
   boundedContextNameCancelBtn: document.getElementById(
-      "boundedContextNameCancelBtn")
+      "boundedContextNameCancelBtn"),
+  notFoundOverlay: document.getElementById("notFoundOverlay"),
+  notFoundGoHomeBtn: document.getElementById("notFoundGoHomeBtn")
 };

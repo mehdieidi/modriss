@@ -576,16 +576,16 @@ function registerModlessG6Extensions() {
           pointerEvents: "none"
         }, container);
         this.upsert("notation", "text", low ? false : {
-              x: left + 11,
-              y: idY,
-              text: truncate(attributes.elementId || attributes.id || "", 36),
-              fontFamily: cssVar("--font-ui", "sans-serif"),
-              fontSize: 7.5,
-              fontWeight: 700,
-              fill: "rgba(152, 168, 192, 0.72)",
-              textBaseline: "middle",
-              pointerEvents: "none"
-            }, container);
+          x: left + 11,
+          y: idY,
+          text: truncate(attributes.elementId || attributes.id || "", 36),
+          fontFamily: cssVar("--font-ui", "sans-serif"),
+          fontSize: 7.5,
+          fontWeight: 700,
+          fill: "rgba(152, 168, 192, 0.72)",
+          textBaseline: "middle",
+          pointerEvents: "none"
+        }, container);
         renderNodeTags(this, container, {
           badges,
           diagramType,

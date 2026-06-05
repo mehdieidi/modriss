@@ -1,4 +1,8 @@
-import {el} from './dom.js';
+import {
+  hideProgressNotification,
+  showProgressNotification,
+  updateProgressNotification
+} from './status.js';
 
 const STATE = {
   active: false,
@@ -16,10 +20,7 @@ function clampProgress(value) {
 }
 
 function renderProgress() {
-  if (el.generationProgressBarFill) {
-    el.generationProgressBarFill.style.transform =
-        `scaleX(${(STATE.progress / 100).toFixed(4)})`;
-  }
+  updateProgressNotification({progress: STATE.progress});
 }
 
 function stopAnimation() {
@@ -90,33 +91,21 @@ export function showGenerationProgress({
   kicker = "Generation in Progress",
   title = "Generating model",
   subtitle = "Preparing the next step in your modeling flow.",
-  label = "Starting generation…"
+  label = "Starting generation..."
 } = {}) {
-  if (!el.generationProgressOverlay) {
-    return;
-  }
   STATE.active = true;
   STATE.progress = 6;
   STATE.target = 18;
   STATE.velocity = 0;
   STATE.startedAt = performance.now();
   STATE.trickleLimit = 88;
-  renderProgress();
-  if (el.generationProgressTitle) {
-    el.generationProgressTitle.textContent = title;
-  }
-  if (el.generationProgressKicker) {
-    el.generationProgressKicker.textContent = kicker;
-  }
-  if (el.generationProgressSubtitle) {
-    el.generationProgressSubtitle.textContent = subtitle;
-  }
-  if (el.generationProgressLabel) {
-    el.generationProgressLabel.textContent = label;
-  }
-  el.generationProgressOverlay.classList.remove("hidden");
-  el.generationProgressOverlay.setAttribute("aria-hidden", "false");
-  document.body.classList.add("modal-open");
+  showProgressNotification({
+    kicker,
+    title,
+    subtitle,
+    label,
+    progress: STATE.progress
+  });
   animateTo(18);
 }
 
@@ -124,9 +113,7 @@ export function setGenerationProgressPhase(label, targetProgress) {
   if (!STATE.active) {
     return;
   }
-  if (el.generationProgressLabel) {
-    el.generationProgressLabel.textContent = label;
-  }
+  updateProgressNotification({label});
   animateTo(targetProgress);
 }
 
@@ -147,9 +134,7 @@ export async function completeGenerationProgress(label = "Generation complete.")
   if (!STATE.active) {
     return;
   }
-  if (el.generationProgressLabel) {
-    el.generationProgressLabel.textContent = label;
-  }
+  updateProgressNotification({label});
   animateTo(100);
   const started = performance.now();
   while (STATE.progress < 99.4 && performance.now() - started < 850) {
@@ -158,17 +143,11 @@ export async function completeGenerationProgress(label = "Generation complete.")
 }
 
 export function hideGenerationProgress() {
-  if (!el.generationProgressOverlay) {
-    return;
-  }
   stopAnimation();
   STATE.active = false;
   STATE.progress = 0;
   STATE.target = 0;
   STATE.velocity = 0;
   STATE.trickleLimit = 0;
-  renderProgress();
-  el.generationProgressOverlay.classList.add("hidden");
-  el.generationProgressOverlay.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("modal-open");
+  hideProgressNotification();
 }

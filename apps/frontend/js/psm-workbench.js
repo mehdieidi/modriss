@@ -8,7 +8,6 @@ import {
   saveCurrentTabGraphState,
   syncActiveViewFromVisibleGraph
 } from './graph-store.js';
-import {materializeActiveView} from './view-materializer.js';
 import {
   modelingElementDefinition,
   modelingLevelConfig,
@@ -19,13 +18,25 @@ import {markModelDirty} from './model-save-ui.js';
 import {setStatus} from './status.js';
 import {
   activeWorkbenchRepresentation,
+  applyWorkbenchEdgeMode,
   bindWorkbenchInteractionShield,
   commitWorkbenchModelChange,
   downloadWorkbenchCsv,
   ensureWorkbenchSurface,
   renderLevelGuidePanel,
+  renderWorkbenchBoard,
+  renderWorkbenchBoardCard,
+  renderWorkbenchControls,
+  renderWorkbenchDashboard,
+  renderWorkbenchDetail,
+  renderWorkbenchMatrixSection,
+  renderWorkbenchRegister,
+  renderWorkbenchSliceOption,
+  renderWorkbenchSliceSelect,
   renderWorkbenchSurfaceLayout,
-  setWorkbenchRepresentation
+  renderWorkbenchToolbar,
+  setWorkbenchRepresentation,
+  STANDARD_EDGE_MODES
 } from './workbench-common.js';
 
 let surface = null;
@@ -67,12 +78,6 @@ const DEFAULT_REPRESENTATION_BY_PROFILE = {
   observability: "register",
   configuration: "register",
   readiness: "board"
-};
-
-const PSM_EDGE_MODES = {
-  both: {label: "Both"},
-  flows: {label: "Flows"},
-  references: {label: "Refs"}
 };
 
 const DEFAULT_REGISTER_BY_PROFILE = {
@@ -159,129 +164,16 @@ function setActiveRepresentation(mode) {
       renderPsmWorkbenchSurface, renderDiagramCallback, renderPaletteCallback);
 }
 
-function titleCase(value) {
-  return String(value || "").replaceAll(/[-_]+/g, " ").replace(
-      /\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function lensKeyFor(definition, index) {
-  return String(definition?.viewpoint || definition?.id || `view-${index}`)
-  .trim().toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replaceAll(
-      /^-|-$/g, "") || `view-${index}`;
-}
-
-function psmLensEntries() {
-  let definitions = [];
-  try {
-    definitions = safeArray(modelingLevelConfig("psm").viewDefinitions);
-  } catch {
-    definitions = [];
-  }
-  const byKey = new Map([["all", {key: "all", label: "All", types: []}]]);
-  definitions.forEach((definition, index) => {
-    const types = safeArray(definition?.elementTypes).map(String).filter(
-        Boolean);
-    if (!types.length) {
-      return;
-    }
-    const key = lensKeyFor(definition, index);
-    const existing = byKey.get(key);
-    const label = titleCase(definition?.viewpoint || definition?.displayName
-        || definition?.name || key);
-    byKey.set(key, {
-      key,
-      label: existing?.label || label,
-      types: [...new Set([...(existing?.types || []), ...types])]
-    });
-  });
-  return [...byKey.values()];
-}
-
-function psmLens(lensKey) {
-  return psmLensEntries().find((entry) => entry.key === lensKey) || null;
-}
-
-function psmFlowRelationshipKinds(allKinds) {
-  let labels = {};
-  try {
-    labels = modelingLevelConfig("psm").relationshipKindLabels || {};
-  } catch {
-    labels = {};
-  }
-  return safeArray(allKinds).filter((kind) => {
-    const text = `${kind} ${labels[kind] || ""}`.toLowerCase();
-    return /flow|invoke|route|target|transition|subscription|event|message/.test(
-        text);
-  });
-}
-
-function applyPsmLens(lensKey) {
-  const lens = psmLens(lensKey);
-  if (!lens) {
-    return;
-  }
-  state.psmWorkbench.activeLens = lensKey;
-  const view = activeView();
-  if (!view) {
-    return;
-  }
-  syncActiveViewFromVisibleGraph();
-  view.filters ??= {};
-  if (!Array.isArray(view.__psmBaseElementTypes)) {
-    view.__psmBaseElementTypes = safeArray(view.filters.elementTypes).map(
-        String);
-  }
-  const baseTypes = safeArray(view.__psmBaseElementTypes);
-  const lensTypes = safeArray(lens.types);
-  view.filters.elementTypes = lensTypes.length
-      ? (baseTypes.length
-          ? lensTypes.filter((type) => baseTypes.some((baseType) =>
-              modelingTypeMatches("psm", baseType, type)
-              || modelingTypeMatches("psm", type, baseType)))
-          : lensTypes)
-      : baseTypes;
-  if (lensTypes.length && !view.filters.elementTypes.length) {
-    view.filters.elementTypes = lensTypes;
-  }
-  materializeActiveView();
-  saveCurrentTabGraphState("psm");
-  renderPsmWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
-  setStatus(`${lens.label} lens applied`);
-}
-
 function applyPsmEdgeMode(mode) {
-  if (!PSM_EDGE_MODES[mode]) {
-    return;
-  }
-  state.psmWorkbench.edgeMode = mode;
-  const view = activeView();
-  if (!view) {
-    return;
-  }
-  syncActiveViewFromVisibleGraph();
-  const allKinds = [...state.graph.relationshipsByKind.keys()].sort();
-  const flowKinds = psmFlowRelationshipKinds(allKinds);
-  view.filters ??= {};
-  if (mode === "both") {
-    view.filters.relationshipKinds = [];
-  } else if (mode === "flows") {
-    view.filters.relationshipKinds = flowKinds.length ? flowKinds
-        : ["__PSM_NO_FLOW_EDGES__"];
-  } else {
-    const flowKindSet = new Set(flowKinds);
-    const referenceKinds = allKinds.filter((kind) =>
-        !flowKindSet.has(kind));
-    view.filters.relationshipKinds = referenceKinds.length ? referenceKinds
-        : ["__PSM_NO_REFERENCE_EDGES__"];
-  }
-  materializeActiveView();
-  saveCurrentTabGraphState("psm");
-  renderPsmWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
-  setStatus(`${PSM_EDGE_MODES[mode].label} edge mode applied`);
+  applyWorkbenchEdgeMode({
+    typeKey: "psm",
+    workbenchState: state.psmWorkbench,
+    mode,
+    graph: state.graph,
+    renderWorkbench: renderPsmWorkbenchSurface,
+    renderDiagram: renderDiagramCallback,
+    renderPalette: renderPaletteCallback
+  });
 }
 
 function elements() {
@@ -373,21 +265,6 @@ function rowInSlice(row) {
   return true;
 }
 
-function rowInActiveLens(row) {
-  const lensKey = state.psmWorkbench.activeLens || "all";
-  const lens = psmLens(lensKey);
-  if (!lens || !lens.types.length) {
-    return true;
-  }
-  if (typeMatchesAny(row?.eClass || row?.type, lens.types)) {
-    return true;
-  }
-  return Object.values(row || {}).some((value) => refIds(value).some((id) => {
-    const target = state.graph?.elementsById?.get(id);
-    return typeMatchesAny(target?.eClass, lens.types);
-  }));
-}
-
 function rowsForActiveView() {
   const allowed = new Set(viewTypes());
   const rows = elements().filter((row) => {
@@ -398,8 +275,7 @@ function rowsForActiveView() {
     return [...allowed].some((expected) =>
         modelingTypeMatches("psm", expected, type));
   });
-  const filtered = rows.filter(matchesSearch).filter(rowInSlice)
-  .filter(rowInActiveLens);
+  const filtered = rows.filter(matchesSearch).filter(rowInSlice);
   const missingFiltered = state.psmWorkbench.missingOnly
       ? filtered.filter((row) => missingRequiredFields(row).length) : filtered;
   const sortKey = state.psmWorkbench.sortKey || "name";
@@ -510,90 +386,129 @@ function exportCsv(profile = activeProfile()) {
       rows, columns, valueText);
 }
 
+function activeAddType(profile = activeProfile()) {
+  const register = resolveActiveRegister(profile);
+  if (register !== "all") {
+    return register;
+  }
+  return viewTypes()[0] || rowsForActiveView()[0]?.eClass || "SamStack";
+}
+
 function renderRegister(profile) {
   const rows = registerRows(profile);
   const columns = columnsForRows(rows);
-  return `<div class="cim-toolbar">
-    <select class="cim-select" data-psm-register>${registerTypeOptions(
-      profile)}</select>
-    <button class="cim-action cim-action-primary" data-psm-open-create type="button">Add From Palette</button>
-    <button class="cim-action" data-psm-export type="button">Export CSV</button>
-  </div>
-  <div class="cim-table-wrap"><table class="cim-table">
-    <thead><tr><th>Type</th>${columns.map((column) =>
-      `<th><button data-psm-sort="${escapeHtml(column)}">${escapeHtml(
-          column)}</button></th>`).join("")}<th></th></tr></thead>
-    <tbody>${rows.map((row) => `<tr>
-      <td>${rowBadge(row)}</td>
-      ${columns.map(
-      (column) => `<td>${controlForField(row, column)}</td>`).join("")}
-      <td><button class="cim-icon-action" data-psm-open="${escapeHtml(row.id)}"
-          type="button">Open</button></td>
-    </tr>`).join("") || `<tr><td colspan="${columns.length
-  + 2}">No PSM elements in this view.</td></tr>`}
-    </tbody>
-  </table></div>`;
+  const addType = activeAddType(profile);
+  const toolbarHtml = renderWorkbenchToolbar([
+    `<select class="cim-select" data-psm-register>${registerTypeOptions(
+        profile)}</select>`,
+    `<button class="cim-action cim-action-primary" data-psm-add-type="${escapeHtml(
+        addType)}" type="button">Add ${escapeHtml(addType)}</button>`,
+    `<button class="cim-action" data-psm-export type="button">Export CSV</button>`,
+    `<label class="cim-action cim-file-action">Import CSV
+      <input class="hidden" data-psm-import type="file" accept=".csv,text/csv">
+    </label>`
+  ]);
+  return renderWorkbenchRegister({
+    typeKey: "psm",
+    toolbarHtml,
+    rows,
+    columns,
+    getLabel: elementLabel,
+    getBadgeHtml: rowBadge,
+    renderCell: controlForField,
+    emptyText: "No PSM elements in this view."
+  });
 }
 
 function renderMatrix() {
   const rows = rowsForActiveView();
   const rels = relationships();
   const visibleIds = new Set(rows.map((row) => row.id));
-  return `<div class="cim-matrix-wrap"><table class="cim-matrix">
-    <thead><tr><th>Source</th><th>Kind</th><th>Target</th><th>Feature</th><th></th></tr></thead>
-    <tbody>${rels.filter((rel) => visibleIds.has(rel.sourceElementId)
-      || visibleIds.has(rel.targetElementId)).map((rel) => {
-    const source = state.graph.elementsById.get(rel.sourceElementId);
-    const target = state.graph.elementsById.get(rel.targetElementId);
-    return `<tr><td>${escapeHtml(elementLabel(source) || rel.sourceElementId)}</td>
-      <td>${escapeHtml(rel.kind || "")}</td>
-      <td>${escapeHtml(elementLabel(target) || rel.targetElementId)}</td>
-      <td>${escapeHtml(rel.semanticFeature || rel.feature || "")}</td>
-      <td><button class="cim-icon-action" data-psm-open-relationship="${escapeHtml(
-        rel.id)}" type="button">Open</button></td></tr>`;
-  }).join("") || `<tr><td colspan="5">No connectors in this view.</td></tr>`}</tbody>
-  </table></div>`;
+  const scopedRels = rels.filter((rel) => visibleIds.has(rel.sourceElementId)
+      || visibleIds.has(rel.targetElementId));
+  const sources = rows.filter((row) => scopedRels.some((rel) =>
+      rel.sourceElementId === row.id));
+  const targets = rows.filter((row) => scopedRels.some((rel) =>
+      rel.targetElementId === row.id));
+  return renderWorkbenchMatrixSection({
+    title: "Resource Connectors",
+    rows: sources,
+    columns: targets,
+    typeKey: "psm",
+    getRowLabel: elementLabel,
+    getColumnLabel: elementLabel,
+    getColumnMeta: (column) => column.eClass || "",
+    getCellHtml: (row, column) => {
+      const rel = scopedRels.find((candidate) =>
+          candidate.sourceElementId === row.id
+          && candidate.targetElementId === column.id);
+      if (!rel) {
+        return `<td></td>`;
+      }
+      const label = rel.kind || rel.semanticFeature || rel.feature || "x";
+      return `<td class="is-linked"><button class="cim-icon-action"
+          data-psm-open-relationship="${escapeHtml(rel.id)}"
+          type="button">${escapeHtml(label)}</button></td>`;
+    },
+    emptyText: "No connectors in this view."
+  });
 }
 
 function renderBoard() {
   const rows = rowsForActiveView();
-  const groups = ["BLOCKER", "ERROR", "WARNING", "INFO", "DRAFT", "READY"];
-  return `<div class="cim-board">${groups.map((group) => {
-    const items = rows.filter(
-        (row) => String(row.severity || row.readinessStatus
-                || row.lifecycleStatus || "DRAFT").toUpperCase().includes(group)
-            || (group === "READY" && /ready|complete/i.test(String(
-                row.lifecycleStatus || row.readinessStatus || ""))));
-    return `<section class="cim-board-column"><div class="cim-section-title">${escapeHtml(
-        group)}</div>${items.map((row) => `<button class="cim-board-card"
-          data-psm-open="${escapeHtml(
-        row.id)}" type="button"><strong>${escapeHtml(
-        elementLabel(row))}</strong><span>${escapeHtml(
-        row.eClass || "")}</span></button>`)
-    .join("") || `<div class="cim-empty-card">No items</div>`}</section>`;
-  }).join("")}</div>`;
+  const groups = [
+    ["Blocking", (row) => Boolean(row.productionBlocking || row.blocking
+        || String(row.severity || "").toUpperCase() === "BLOCKER")],
+    ["Open", (row) => !/ready|complete|accepted|passed/i.test(String(
+        row.lifecycleStatus || row.readinessStatus || row.status || ""))],
+    ["Accepted / Passed", (row) => /ready|complete|accepted|passed/i.test(
+        String(row.lifecycleStatus || row.readinessStatus || row.status || ""))]
+  ];
+  return renderWorkbenchBoard({
+    lanes: groups.map(([group, predicate]) => {
+      const items = rows.filter(predicate);
+      return {
+        title: group,
+        count: items.length,
+        cards: items.map((row) => renderWorkbenchBoardCard({
+          typeKey: "psm",
+          id: row.id,
+          title: elementLabel(row),
+          meta: row.eClass || "",
+          body: row.severity || row.readinessStatus || row.lifecycleStatus || ""
+        })),
+        emptyText: "No items"
+      };
+    })
+  });
 }
 
 function renderDetail() {
-  const rows = rowsForActiveView().slice(0, 24);
-  return rows.map((row) => {
-        const fields = columnsForRows([row]);
-        return `<section class="cim-detail-projection">
-      <div class="cim-detail-title"><strong>${escapeHtml(elementLabel(row))}</strong>
-        <span>${escapeHtml(row.eClass || "PSM")}</span></div>
-      <div class="cim-detail-grid">${fields.map((field) =>
-            `<div><span>${escapeHtml(field)}</span><strong>${escapeHtml(
-                valueText(row[field]))}</strong></div>`).join("")}
-        <div><span>missing required</span><strong>${escapeHtml(
-            missingRequiredFields(row).join(", ") || "none")}</strong></div>
-        <div><span>references</span><strong>${Object.values(row).flatMap(
-            refIds).length}</strong></div>
-      </div>
-      <div class="cim-dashboard-actions"><button class="cim-action"
-        data-psm-open="${escapeHtml(row.id)}" type="button">Open Full Inspector</button></div>
-    </section>`;
-      }).join("")
-      || `<div class="cim-empty-card">No PSM elements in this view.</div>`;
+  const selected = state.selectedNodeId
+      ? state.graph?.elementsById?.get(state.selectedNodeId) : null;
+  const row = selected || registerRows(activeProfile())[0]
+      || rowsForActiveView()[0];
+  if (!row) {
+    return renderWorkbenchDetail({
+      typeKey: "psm",
+      row: null,
+      valueText,
+      emptyText: "No PSM elements in this view."
+    });
+  }
+  return renderWorkbenchDetail({
+    typeKey: "psm",
+    row,
+    fields: columnsForRows([row]),
+    title: elementLabel(row),
+    typeLabel: row.eClass || "PSM",
+    valueText,
+    stats: [
+      ["missing required", missingRequiredFields(row).join(", ") || "none"],
+      ["references", Object.values(row).flatMap(refIds).length]
+    ],
+    emptyText: "No PSM elements in this view."
+  });
 }
 
 function countRowsMatchingTypes(types) {
@@ -611,60 +526,58 @@ function renderDashboard() {
     ["Missing", elements().filter((item) =>
         missingRequiredFields(item).length).length]
   ];
-  return `<div class="cim-dashboard-grid">
-    ${cards.map(([label, value]) => `<div class="cim-metric">
-      <strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span>
-    </div>`).join("")}
-  </div>
-  <div class="cim-dashboard-actions">
-    <button class="cim-action" data-psm-create-root type="button">${
-      stacks && stages ? "Refresh PSM Foundation" : "Create PSM Foundation"}</button>
-    <button class="cim-action" data-psm-mode="diagram" type="button">Open Diagram</button>
-  </div>`;
+  const missing = [
+    stacks ? "" : "stack",
+    stages ? "" : "stage"
+  ].filter(Boolean);
+  const foundationHtml = `<section class="cim-root-form">
+    <div class="cim-section-title">Model Foundation</div>
+    ${missing.length ? `<div class="cim-alert">Missing required foundation:
+      ${escapeHtml(missing.join(", "))}</div>` : `<div class="cim-ok">
+      Foundation requirements are satisfied.</div>`}
+    <label class="cim-form-field">
+      <span>stack</span>
+      <input readonly type="text" value="${escapeHtml(
+      stacks ? "Configured" : "")}">
+    </label>
+    <label class="cim-form-field">
+      <span>stage</span>
+      <input readonly type="text" value="${escapeHtml(
+      stages ? "Configured" : "")}">
+    </label>
+  </section>`;
+  const actionsHtml = `<section class="cim-view-entry-list">
+    <div class="cim-section-title">Actions</div>
+    <button class="cim-view-entry" data-psm-create-root type="button">
+      <span>${stacks && stages ? "Refresh PSM Foundation"
+      : "Create PSM Foundation"}</span>
+      <strong>foundation</strong>
+    </button>
+    <button class="cim-view-entry" data-psm-mode="diagram" type="button">
+      <span>Open Diagram</span>
+      <strong>diagram</strong>
+    </button>
+  </section>`;
+  return renderWorkbenchDashboard({
+    metrics: cards,
+    primaryHtml: foundationHtml,
+    secondaryHtml: actionsHtml
+  });
 }
 
 function renderControls(profile, representation) {
-  const modes = [
-    ["diagram", "Diagram"],
-    ["dashboard", "Dashboard"],
-    ["register", "Register"],
-    ["matrix", "Matrix"],
-    ["board", "Board"],
-    ["detail", "Detail"],
-    ["guide", "Guide"]
-  ];
   const definition = activeDefinition();
-  return `<div class="cim-surface-header">
-    <div class="cim-surface-title">
-      <strong>${escapeHtml(activeView()?.name || definition?.displayName
-      || "PSM View")}</strong>
-      <span>${escapeHtml(profile)}</span>
-    </div>
-    <div class="cim-mode-tabs">
-      ${modes.map(([mode, label]) =>
-      `<button class="${representation === mode ? "is-active" : ""}"
-          data-psm-mode="${mode}" type="button">${escapeHtml(label)}</button>`)
-  .join("")}
-    </div>
-    <div class="pim-edge-toolbar" aria-label="PSM edge visibility">
-      <span>Edges</span>
-      <div class="pim-edge-buttons">
-        ${Object.entries(PSM_EDGE_MODES).map(([key, mode]) =>
-      `<button class="${(state.psmWorkbench.edgeMode || "both") === key
-          ? "is-active" : ""}"
-              data-psm-edge-mode="${key}" type="button">${escapeHtml(
-          mode.label)}</button>`).join("")}
-      </div>
-    </div>
-    <div class="cim-filter-row">
-      <input data-psm-search placeholder="Search PSM" value="${escapeHtml(
-      state.psmWorkbench.search || "")}">
-      ${psmSliceSelectMarkup("kind")}
-      ${psmSliceSelectMarkup("value")}
-      <label class="cim-check-label"><input data-psm-missing-only type="checkbox" ${
-      state.psmWorkbench.missingOnly ? "checked" : ""}> Missing required</label>
-    </div>
-  </div>`;
+  return renderWorkbenchControls({
+    typeKey: "psm",
+    title: activeView()?.name || definition?.displayName || "PSM View",
+    profile,
+    representation,
+    workbenchState: state.psmWorkbench,
+    sliceControlsHtml: `${psmSliceSelectMarkup("kind")}${psmSliceSelectMarkup(
+        "value")}`,
+    edgeModes: STANDARD_EDGE_MODES,
+    searchPlaceholder: "Search PSM"
+  });
 }
 
 function sliceItems() {
@@ -690,14 +603,13 @@ function psmSliceValueLabel() {
 }
 
 function sliceOptionButton({value, label, selected, optionKind}) {
-  return `<button class="workbench-view-option${selected ? " is-active" : ""}"
-            type="button"
-            data-psm-slice-option="${escapeHtml(optionKind)}"
-            data-psm-slice-option-value="${escapeHtml(value)}"
-            role="option"
-            aria-selected="${selected ? "true" : "false"}">
-      <span class="workbench-view-option-label">${escapeHtml(label)}</span>
-    </button>`;
+  return renderWorkbenchSliceOption({
+    typeKey: "psm",
+    optionKind,
+    value,
+    label,
+    selected
+  });
 }
 
 function psmSliceMenuMarkup(optionKind) {
@@ -722,23 +634,13 @@ function psmSliceSelectMarkup(optionKind) {
   const isKind = optionKind === "kind";
   const open = psmSliceMenuOpen === optionKind;
   const label = isKind ? psmSliceKindLabel() : psmSliceValueLabel();
-  const dataAttr = isKind ? "data-psm-slice-kind" : "data-psm-slice-value";
-  return `<div class="workbench-view-select-wrap workbench-slice-select-wrap${open
-      ? " is-open" : ""}">
-      <button class="sidebar-select workbench-view-select workbench-slice-select"
-              type="button"
-              ${dataAttr}
-              data-psm-slice-toggle="${optionKind}"
-              aria-haspopup="listbox"
-              aria-expanded="${open ? "true" : "false"}">
-        <span class="workbench-view-select-label">${escapeHtml(label)}</span>
-      </button>
-      <span class="workbench-view-select-caret" aria-hidden="true"></span>
-      <div class="workbench-view-menu workbench-slice-menu${open ? "" : " hidden"}"
-           role="listbox">
-        ${psmSliceMenuMarkup(optionKind)}
-      </div>
-    </div>`;
+  return renderWorkbenchSliceSelect({
+    typeKey: "psm",
+    optionKind,
+    open,
+    label,
+    menuHtml: psmSliceMenuMarkup(optionKind)
+  });
 }
 
 function renderBody(representation) {
@@ -851,6 +753,49 @@ function addNode(type, x, y, name = "") {
   return node;
 }
 
+function createPsmElement(type) {
+  syncActiveViewFromVisibleGraph();
+  const center = currentCenter();
+  const node = addNode(type, center.x, center.y, type);
+  switch (type) {
+    case "SamStack":
+      node.meta.stackName ||= "main-stack";
+      break;
+    case "AwsStage":
+      node.meta.stageName ||= "dev";
+      break;
+    case "AwsLambdaFunction":
+      node.meta.runtime ||= "provided.al2";
+      node.meta.memorySizeMb ||= 256;
+      node.meta.timeoutSeconds ||= 30;
+      break;
+    case "ApiGatewayApi":
+      node.meta.endpointType ||= "REGIONAL";
+      break;
+    case "DynamoDbTable":
+      node.meta.billingMode ||= "PAY_PER_REQUEST";
+      node.meta.pointInTimeRecoveryEnabled ??= true;
+      break;
+    case "S3Bucket":
+      node.meta.publicAccessMode ||= "BLOCK";
+      node.meta.versioningEnabled ??= true;
+      break;
+    case "IamRole":
+      node.meta.roleName ||= node.label;
+      break;
+    case "CloudWatchLogGroup":
+      node.meta.retentionInDays ||= 30;
+      break;
+    case "EnvironmentConfig":
+      node.meta.environmentName ||= "dev";
+      break;
+    default:
+      break;
+  }
+  commitModelChange(`Added ${type}`);
+  openAttributePanelCallback?.(node.id);
+}
+
 function createRequiredRoot() {
   const center = currentCenter();
   const stack = elements().find((row) => row.eClass === "SamStack")
@@ -866,6 +811,31 @@ function createRequiredRoot() {
   }
   commitModelChange("Completed PSM root model");
   openAttributePanelCallback?.(stack.id);
+}
+
+async function importCsv(file, profile = activeProfile()) {
+  const type = activeAddType(profile);
+  if (!type || !file) {
+    return;
+  }
+  const text = await file.text();
+  const [headerLine, ...lines] = text.split(/\r?\n/).filter(Boolean);
+  const headers = headerLine.split(",").map((item) => item.trim());
+  lines.forEach((line, index) => {
+    const values = line.split(",");
+    const center = currentCenter();
+    const node = addNode(type, center.x + index * 34, center.y + index * 34,
+        `${type} ${index + 1}`);
+    headers.forEach((header, columnIndex) => {
+      if (header && values[columnIndex] !== undefined) {
+        node.meta[header] = values[columnIndex];
+      }
+    });
+    node.label = node.meta.name || node.meta.logicalId || node.label;
+    node.meta.name = node.label;
+    node.meta.label = node.label;
+  });
+  commitModelChange(`Imported ${lines.length} ${type} row(s)`);
 }
 
 function bindSurfaceEvents() {
@@ -888,6 +858,11 @@ function bindSurfaceEvents() {
       applyPsmEdgeMode(edgeMode);
       return;
     }
+    const addType = target?.closest("[data-psm-add-type]")?.dataset?.psmAddType;
+    if (addType) {
+      createPsmElement(addType);
+      return;
+    }
     const openId = target?.closest("[data-psm-open]")?.dataset?.psmOpen;
     if (openId) {
       openAttributePanelCallback?.(openId);
@@ -901,10 +876,6 @@ function bindSurfaceEvents() {
     }
     if (target?.closest("[data-psm-create-root]")) {
       createRequiredRoot();
-      return;
-    }
-    if (target?.closest("[data-psm-open-create]")) {
-      setStatus("Use the PSM palette to add a concrete resource or stack.");
       return;
     }
     if (target?.closest("[data-psm-export]")) {
@@ -973,6 +944,10 @@ function bindSurfaceEvents() {
       updateField(target.dataset.psmRow, target.dataset.psmField,
           target.type === "checkbox" ? target.checked : target.value,
           target.type);
+      return;
+    }
+    if (target.dataset.psmImport !== undefined && target.files?.[0]) {
+      void importCsv(target.files[0], activeProfile());
     }
   });
   host.addEventListener("input", (event) => {

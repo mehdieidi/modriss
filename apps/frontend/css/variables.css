@@ -13,59 +13,61 @@
 }
 
 :root {
+  color-scheme: dark;
+
   --font-ui: "Space Grotesk", "Segoe UI", sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "Space Grotesk", "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
 
-  --bg: #171b23;
-  --surface: #1d2430;
-  --surface-2: #242c3a;
-  --surface-3: #2d3849;
-  --surface-high: #3a465a;
-  --surface-contrast: #202838;
+  --bg: #101416;
+  --surface: #161b1e;
+  --surface-2: #1b2125;
+  --surface-3: #222a2f;
+  --surface-high: #2b343a;
+  --surface-contrast: #13181b;
 
   --panel: var(--surface-2);
   --panel-2: var(--surface-3);
-  --panel-3: #3f4d64;
-  --input-bg: #222b3a;
-  --canvas-bg: #1a202b;
-  --node-bg: #273142;
-  --node-border: #53657d;
+  --panel-3: #303a40;
+  --input-bg: #151b1e;
+  --canvas-bg: #111719;
+  --node-bg: #1d2629;
+  --node-border: #435057;
 
-  --border: #516177;
-  --border-subtle: #3a4658;
-  --outline: #8294b0;
-  --outline-soft: rgba(176, 190, 214, 0.28);
+  --border: #3b484f;
+  --border-subtle: #283238;
+  --outline: #7f929b;
+  --outline-soft: rgba(141, 160, 168, 0.2);
 
-  --text: #eef3fb;
-  --text-strong: #ffffff;
-  --muted: #c2ccdc;
-  --muted-2: #a3b1c7;
+  --text: #e4ecec;
+  --text-strong: #f8fbfa;
+  --muted: #aebdc0;
+  --muted-2: #83949a;
   --text-muted: var(--muted);
-  --text-soft: #d7deeb;
-  --node-title: #d3dceb;
+  --text-soft: #cad5d6;
+  --node-title: #d5dfdf;
 
   --accent: #00a6e0;
   --accent-dark: #0078ac;
   --accent-light: #7bd0ff;
   --accent-glow: rgba(0, 166, 224, 0.28);
   --accent-select: #5ecbff;
-  --accent-2: #dec29a;
+  --accent-2: #d6b36f;
 
-  --danger: #ff7a7a;
-  --danger-dark: #dd5656;
-  --success: #2ed0a0;
-  --warning: #f1b84f;
+  --danger: #f27878;
+  --danger-dark: #c95151;
+  --success: #53c993;
+  --warning: #d7a64e;
 
   --chat-user-bg: #008bc4;
   --chat-user-text: #f2fbff;
-  --chat-assistant-bg: #2a3446;
-  --chat-assistant-border: #5b6b83;
+  --chat-assistant-bg: #1f282c;
+  --chat-assistant-border: #39484e;
 
-  --grid-line-major: rgba(178, 195, 224, 0.2);
-  --grid-line-minor: rgba(178, 195, 224, 0.09);
+  --grid-line-major: rgba(149, 168, 170, 0.16);
+  --grid-line-minor: rgba(149, 168, 170, 0.07);
   --grid-size: 28px;
-  --canvas-dot: rgb(103 115 136 / 0.56);
+  --canvas-dot: rgb(105 125 127 / 0.36);
 
   --radius-sm: 6px;
   --radius: 10px;
@@ -73,17 +75,17 @@
   --radius-lg: 14px;
   --radius-xl: 18px;
 
-  --shadow-sm: 0 2px 8px rgba(9, 14, 24, 0.28);
-  --shadow: 0 10px 28px rgba(9, 14, 24, 0.36);
-  --shadow-lg: 0 18px 42px rgba(7, 12, 22, 0.42);
-  --overlay-bg: rgba(14, 20, 32, 0.66);
-  --modal-overlay-bg: rgba(14, 20, 32, 0.58);
-  --mobile-backdrop-bg: rgba(14, 20, 32, 0.54);
+  --shadow-sm: 0 2px 8px rgba(2, 6, 8, 0.24);
+  --shadow: 0 10px 28px rgba(2, 6, 8, 0.32);
+  --shadow-lg: 0 18px 42px rgba(2, 6, 8, 0.4);
+  --overlay-bg: rgba(9, 13, 15, 0.66);
+  --modal-overlay-bg: rgba(9, 13, 15, 0.58);
+  --mobile-backdrop-bg: rgba(9, 13, 15, 0.54);
 
-  --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--canvas-bg)) 72%, transparent);
-  --glass-pane-border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  --glass-pane-highlight: inset 0 0 0 1px color-mix(in srgb, var(--outline-soft) 42%, transparent);
-  --glass-pane-blur: blur(12px) saturate(118%);
+  --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--surface)) 88%, transparent);
+  --glass-pane-border: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
+  --glass-pane-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 5%, transparent);
+  --glass-pane-blur: blur(10px) saturate(108%);
 
   --transition: 0.18s ease;
   --topbar-h: 56px;
@@ -91,6 +93,8 @@
 }
 
 html.light {
+  color-scheme: light;
+
   --bg: #edf3fa;
   --surface: #ffffff;
   --surface-2: #f7f9fc;

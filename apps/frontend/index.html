@@ -37,14 +37,14 @@
   <header class="topbar">
     <div class="topbar-menu-strip">
       <div class="topbar-left">
-        <div class="app-brand">
+        <a aria-label="Open Modless landing page" class="app-brand" href="/landing/">
           <img alt="ServerlessFlow logo" class="app-logo-img"
                src="/assets/icons/hexagon_white.svg"/>
           <span class="app-brand-text">
             <span class="app-brand-name">MODELESS</span>
             <!--            <span class="app-brand-subtitle">Model Engineering Studio</span>-->
           </span>
-        </div>
+        </a>
         <button class="btn btn-secondary btn-sm mobile-only" id="mobileSidebarToggleBtn"
                 title="Toggle model palette" type="button">
           Palette
@@ -153,7 +153,7 @@
         <span aria-hidden="true" class="workspace-rail-icon icon-svg icon-mask"
               style="--icon-src: url('/assets/icons/settings.svg');"></span>
       </button>
-      <button class="workspace-rail-item" title="Help" type="button">
+      <button class="workspace-rail-item" id="helpRailBtn" title="Help" type="button">
         <span aria-hidden="true" class="workspace-rail-icon icon-svg icon-mask"
               style="--icon-src: url('/assets/icons/help.svg');"></span>
       </button>
@@ -199,10 +199,6 @@
         </div>
         <input accept=".json,.xmi,application/json,application/xml,text/xml" hidden
                id="importModelFileInput" type="file"/>
-        <button class="ide-menu-item" id="openThemeColorsBtn"
-                title="Customize topbar, canvas, and chat colors" type="button">
-          Customize Theme Colors
-        </button>
       </div>
 
       <div class="rail-menu-panel hidden" id="projectRailMenu" role="menu">
@@ -215,6 +211,43 @@
         <button class="ide-menu-item" id="deleteProjectBtn"
                 title="Delete current project" type="button">Delete Project
         </button>
+      </div>
+
+      <div aria-label="Modless help" class="rail-menu-panel help-rail-panel hidden"
+           id="helpRailPanel"
+           role="region">
+        <div class="help-panel-kicker">Modeling Flow</div>
+        <div class="help-panel-title">From intent to deployable shape</div>
+        <p class="help-panel-copy">
+          Work left to right: capture the business model in CIM, generate PIM, refine PSM, then
+          inspect artifacts. Save before each jump so traceability stays intact.
+        </p>
+        <div class="help-panel-steps">
+          <div class="help-panel-step">
+            <span>1</span>
+            <strong>CIM</strong>
+            <em>Describe capabilities, processes, actors, goals, and policies.</em>
+          </div>
+          <div class="help-panel-step">
+            <span>2</span>
+            <strong>PIM</strong>
+            <em>Shape platform-neutral services, contracts, data, and workflows.</em>
+          </div>
+          <div class="help-panel-step">
+            <span>3</span>
+            <strong>PSM</strong>
+            <em>Map the design to AWS serverless resources and security boundaries.</em>
+          </div>
+          <div class="help-panel-step">
+            <span>4</span>
+            <strong>Artifacts</strong>
+            <em>Review generated code, infrastructure, docs, tests, and deployment output.</em>
+          </div>
+        </div>
+        <div class="help-panel-note">
+          Tip: use validation before generation, Impact Analysis before changing shared elements,
+          and the assistant when you want model edits explained or drafted.
+        </div>
       </div>
     </nav>
 
@@ -608,27 +641,6 @@
     </div>
   </div>
 
-  <div aria-hidden="true" aria-labelledby="generationProgressTitle"
-       aria-modal="true" class="modal-overlay hidden" id="generationProgressOverlay"
-       role="dialog">
-    <div class="modal-dialog generation-progress-dialog">
-      <div class="generation-progress-kicker" id="generationProgressKicker">Generation in Progress
-      </div>
-      <h3 class="modal-title" id="generationProgressTitle">Generating model</h3>
-      <p class="modal-subtitle" id="generationProgressSubtitle">
-        Preparing the next step in your modeling flow.
-      </p>
-      <div aria-hidden="true" class="generation-progress-track">
-        <div class="generation-progress-fill" id="generationProgressBarFill"></div>
-        <div class="generation-progress-sheen"></div>
-      </div>
-      <div aria-live="polite" class="generation-progress-caption"
-           id="generationProgressLabel">
-        Starting generation…
-      </div>
-    </div>
-  </div>
-
   <div aria-labelledby="profileTitle" aria-modal="true" class="modal-overlay hidden"
        id="profileOverlay" role="dialog">
     <div class="modal-dialog auth-dialog">
@@ -642,33 +654,6 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" id="profileCancelBtn" type="button">Cancel</button>
         <button class="btn btn-primary" id="profileSaveBtn" type="button">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div aria-labelledby="themeColorsTitle" aria-modal="true" class="modal-overlay hidden"
-       id="themeColorOverlay" role="dialog">
-    <div class="modal-dialog">
-      <h3 class="modal-title" id="themeColorsTitle">Customize Theme Colors</h3>
-      <p class="modal-subtitle">Set custom colors for topbar, canvas, and chatbot.</p>
-      <div class="theme-color-grid">
-        <label class="theme-color-row" for="themeTopbarColorInput">
-          <span>Topbar</span>
-          <input id="themeTopbarColorInput" type="color"/>
-        </label>
-        <label class="theme-color-row" for="themeCanvasColorInput">
-          <span>Canvas</span>
-          <input id="themeCanvasColorInput" type="color"/>
-        </label>
-        <label class="theme-color-row" for="themeChatColorInput">
-          <span>Chatbot</span>
-          <input id="themeChatColorInput" type="color"/>
-        </label>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="themeColorCancelBtn" type="button">Cancel</button>
-        <button class="btn btn-secondary" id="themeColorResetBtn" type="button">Reset</button>
-        <button class="btn btn-primary" id="themeColorSaveBtn" type="button">Apply</button>
       </div>
     </div>
   </div>
@@ -742,6 +727,21 @@
       </div>
     </div>
   </div>
+
+  <div class="not-found-overlay hidden" id="notFoundOverlay">
+    <div class="not-found-panel">
+      <div class="not-found-code">404</div>
+      <h1 class="not-found-title">This model wandered off the map.</h1>
+      <p class="not-found-copy">
+        The route you opened does not match a Modless workspace. The canvas is still here; the
+        address just needs a clean starting point.
+      </p>
+      <button class="btn btn-primary" id="notFoundGoHomeBtn" type="button">Return to Workspace
+      </button>
+    </div>
+  </div>
+
+  <div aria-atomic="false" aria-live="polite" class="toast-host" id="toastHost"></div>
 
 </div>
 

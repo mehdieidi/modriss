@@ -198,8 +198,7 @@
 }
 
 .project-create-form,
-.auth-form,
-.theme-color-grid {
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -266,97 +265,6 @@
   border-color: rgba(22, 180, 133, 0.45);
   background: rgba(22, 180, 133, 0.14);
   color: color-mix(in srgb, var(--success) 86%, #fff 14%);
-}
-
-.theme-color-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--text);
-  font-size: 13px;
-}
-
-.theme-color-row input[type="color"] {
-  width: 56px;
-  height: 34px;
-  border-radius: 7px;
-  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-}
-
-body.modal-open {
-  overflow: hidden;
-}
-
-.generation-progress-dialog {
-  width: min(500px, 92vw);
-  padding: 24px 22px 20px;
-  gap: 14px;
-  border-color: color-mix(in srgb, var(--accent) 36%, var(--border) 64%);
-  background: radial-gradient(circle at top left,
-  color-mix(in srgb, var(--accent-glow) 36%, transparent), transparent 42%),
-  linear-gradient(180deg,
-      color-mix(in srgb, var(--surface-high) 80%, #000 20%),
-      color-mix(in srgb, var(--surface-2) 94%, #000 6%));
-}
-
-.generation-progress-kicker {
-  color: var(--accent-light);
-  font: 700 10px/1.2 var(--font-display);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.generation-progress-track {
-  position: relative;
-  height: 14px;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border) 80%);
-  background: color-mix(in srgb, var(--surface-3) 82%, #000 18%);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.04);
-}
-
-.generation-progress-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg,
-  color-mix(in srgb, var(--accent) 84%, #fff 16%),
-  color-mix(in srgb, var(--accent-light) 70%, #fff 30%));
-  box-shadow: 0 0 18px color-mix(in srgb, var(--accent-glow) 70%, transparent);
-  transform: scaleX(0);
-  transform-origin: left center;
-  will-change: transform;
-}
-
-.generation-progress-sheen {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(115deg, transparent 22%, rgba(255, 255, 255, 0.18) 50%, transparent 78%);
-  transform: translateX(-120%);
-  animation: generation-progress-sheen 1.6s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.generation-progress-caption {
-  min-height: 20px;
-  color: var(--text);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-@keyframes generation-progress-sheen {
-  from {
-    transform: translateX(-120%);
-  }
-  to {
-    transform: translateX(120%);
-  }
 }
 
 .validation-issues {

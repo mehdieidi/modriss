@@ -18,12 +18,24 @@ import {markModelDirty} from './model-save-ui.js';
 import {setStatus} from './status.js';
 import {
   activeWorkbenchRepresentation,
+  applyWorkbenchEdgeMode,
   bindWorkbenchInteractionShield,
   commitWorkbenchModelChange,
   downloadWorkbenchCsv,
   ensureWorkbenchSurface,
   renderLevelGuidePanel,
+  renderWorkbenchBoard,
+  renderWorkbenchBoardCard,
+  renderWorkbenchControls,
+  renderWorkbenchDashboard,
+  renderWorkbenchDataTable,
+  renderWorkbenchDetail,
+  renderWorkbenchMatrixSection,
+  renderWorkbenchRegister,
+  renderWorkbenchSliceOption,
+  renderWorkbenchSliceSelect,
   renderWorkbenchSurfaceLayout,
+  renderWorkbenchToolbar,
   setWorkbenchRepresentation
 } from './workbench-common.js';
 import {
@@ -81,7 +93,7 @@ const DEFAULT_REPRESENTATION_BY_PROFILE = {
   data: "register",
   eventstorming: "diagram",
   process: "diagram",
-  decision: "decision",
+  decision: "matrix",
   governance: "matrix",
   readiness: "board",
   traceability: "matrix"
@@ -273,6 +285,18 @@ function setActiveRepresentation(mode) {
   const viewId = activeView()?.id || "cim";
   setWorkbenchRepresentation(state.cimWorkbench, viewId, mode,
       renderCimWorkbenchSurface, renderDiagramCallback, renderPaletteCallback);
+}
+
+function applyCimEdgeMode(mode) {
+  applyWorkbenchEdgeMode({
+    typeKey: "cim",
+    workbenchState: state.cimWorkbench,
+    mode,
+    graph: state.graph,
+    renderWorkbench: renderCimWorkbenchSurface,
+    renderDiagram: renderDiagramCallback,
+    renderPalette: renderPaletteCallback
+  });
 }
 
 function activeRegister(profile) {
@@ -545,42 +569,27 @@ function renderRegister(profile) {
       return false;
     }
   });
-  return `
-    <div class="cim-toolbar">
-      <select class="cim-select" data-cim-register>${registerOptionsMarkup(
-      feature)}</select>
-      ${addType ? `<button class="cim-action" data-cim-add-type="${escapeHtml(
-      addType)}" type="button">Add ${escapeHtml(addType)}</button>` : ""}
-      <button class="cim-action" data-cim-export="${escapeHtml(
-      feature)}" type="button">Export CSV</button>
-      <label class="cim-action cim-file-action">Import CSV
+  const toolbarHtml = renderWorkbenchToolbar([
+    `<select class="cim-select" data-cim-register>${registerOptionsMarkup(
+        feature)}</select>`,
+    addType ? `<button class="cim-action" data-cim-add-type="${escapeHtml(
+        addType)}" type="button">Add ${escapeHtml(addType)}</button>` : "",
+    `<button class="cim-action" data-cim-export="${escapeHtml(
+        feature)}" type="button">Export CSV</button>`,
+    `<label class="cim-action cim-file-action">Import CSV
         <input class="hidden" data-cim-import="${escapeHtml(feature)}" type="file" accept=".csv,text/csv">
-      </label>
-    </div>
-    <div class="cim-table-wrap">
-      <table class="cim-table">
-        <thead><tr>
-          <th>Element</th>
-          ${uniqueColumns.map((column) => `<th data-cim-sort="${escapeHtml(
-      column)}">${escapeHtml(column)}</th>`).join("")}
-          <th></th>
-        </tr></thead>
-        <tbody>
-          ${rows.length ? rows.map((row) => `<tr>
-            <td>
-              <button class="cim-link" data-cim-open="${escapeHtml(row.id)}"
-                      type="button">${escapeHtml(elementLabel(row))}</button>
-              <div class="cim-row-meta">${rowTypeBadge(row)}</div>
-            </td>
-            ${uniqueColumns.map((column) => `<td>${controlForField(row,
-      column)}</td>`).join("")}
-            <td><button class="cim-icon-action" data-cim-open="${escapeHtml(
-      row.id)}" title="Open detail" type="button">Open</button></td>
-          </tr>`).join("") : `<tr><td colspan="${uniqueColumns.length + 2}"
-              class="cim-empty">No rows in this slice.</td></tr>`}
-        </tbody>
-      </table>
-    </div>`;
+      </label>`
+  ]);
+  return renderWorkbenchRegister({
+    typeKey: "cim",
+    toolbarHtml,
+    rows,
+    columns: uniqueColumns,
+    getLabel: elementLabel,
+    getBadgeHtml: rowTypeBadge,
+    renderCell: controlForField,
+    emptyText: "No rows in this slice."
+  });
 }
 
 function count(type) {
@@ -617,9 +626,7 @@ function renderDashboard() {
   ];
   const views = [...state.views.byId.values()].filter((view) => !view.scope
       ?.rootElementId);
-  return `
-    <div class="cim-dashboard-grid">
-      <section class="cim-root-form">
+  const rootHtml = `<section class="cim-root-form">
         <div class="cim-section-title">Model Root</div>
         ${["domainName", "businessScope", "organizationName", "modelingDate",
     "language"].map((field) => `
@@ -634,14 +641,8 @@ function renderDashboard() {
           <button class="cim-action cim-action-primary" data-cim-create-root
                   type="button">Create Required Root Elements</button>` : `
           <div class="cim-ok">Root requirements are satisfied.</div>`}
-      </section>
-      <section class="cim-health">
-        <div class="cim-section-title">Health Summary</div>
-        <div class="cim-metric-grid">${metrics.map(([label, value]) => `
-          <div class="cim-metric"><strong>${escapeHtml(value)}</strong><span>${
-      escapeHtml(label)}</span></div>`).join("")}</div>
-      </section>
-      <section class="cim-view-entry-list">
+      </section>`;
+  const viewsHtml = `<section class="cim-view-entry-list">
         <div class="cim-section-title">Views</div>
         ${views.map((view) => `<button class="cim-view-entry"
             data-cim-view="${escapeHtml(view.id)}" type="button">
@@ -649,8 +650,12 @@ function renderDashboard() {
           <strong>${escapeHtml(String(view.layoutProfile || view.kind
       || "view").toLowerCase())}</strong>
         </button>`).join("")}
-      </section>
-    </div>`;
+      </section>`;
+  return renderWorkbenchDashboard({
+    metrics,
+    primaryHtml: rootHtml,
+    secondaryHtml: viewsHtml
+  });
 }
 
 function matrixCell(row, feature, column) {
@@ -667,22 +672,18 @@ function matrixTable(title, rows, columns, featureForColumn, empty = "") {
         escapeHtml(title)}</div><div class="cim-empty">${escapeHtml(empty
         || "No rows or columns available.")}</div></section>`;
   }
-  return `<section class="cim-matrix-section">
-    <div class="cim-section-title">${escapeHtml(title)}</div>
-    <div class="cim-matrix-wrap">
-      <table class="cim-matrix">
-        <thead><tr><th></th>${columns.map((column) => `<th>${escapeHtml(
-      elementLabel(column))}<span>${escapeHtml(column.eClass)}</span></th>`)
-  .join("")}</tr></thead>
-        <tbody>${rows.map((row) => `<tr><th>
-          <button class="cim-link" data-cim-open="${escapeHtml(row.id)}"
-                  type="button">${escapeHtml(elementLabel(row))}</button>
-          <span>${escapeHtml(row.eClass)}</span>
-        </th>${columns.map((column) => matrixCell(row, featureForColumn(
-      column, row), column)).join("")}</tr>`).join("")}</tbody>
-      </table>
-    </div>
-  </section>`;
+  return renderWorkbenchMatrixSection({
+    title,
+    rows,
+    columns,
+    typeKey: "cim",
+    getRowLabel: elementLabel,
+    getColumnLabel: elementLabel,
+    getColumnMeta: (column) => column.eClass,
+    getCellHtml: (row, column) => matrixCell(row, featureForColumn(column,
+        row), column),
+    emptyText: empty || "No rows or columns available."
+  });
 }
 
 function renderMatrix(profile) {
@@ -832,12 +833,7 @@ function renderProcessStepTable() {
   }
   return processes.map((process) => {
     const steps = childElements(process, "steps", "ProcessStep");
-    return `<section class="cim-matrix-section">
-      <div class="cim-section-title">${escapeHtml(elementLabel(
-        process))} Steps</div>
-      <div class="cim-table-wrap"><table class="cim-table">
-        <thead><tr><th>Step</th><th>Type</th><th>Order</th><th>Responsibility</th><th>Required ref</th><th></th></tr></thead>
-        <tbody>${steps.map((step) => {
+    const rows = steps.map((step) => {
       const requiredRef = ({
         CommandStep: "command",
         QueryStep: "query",
@@ -855,9 +851,13 @@ function renderProcessStepTable() {
             <td><button class="cim-icon-action" data-cim-open="${escapeHtml(
           step.id)}" type="button">Open</button></td>
           </tr>`;
-    }).join("") || `<tr><td colspan="6" class="cim-empty">No steps.</td></tr>`}</tbody>
-      </table></div>
-    </section>`;
+    });
+    return renderWorkbenchDataTable({
+      title: `${elementLabel(process)} Steps`,
+      columns: ["Step", "Type", "Order", "Responsibility", "Required ref", ""],
+      rows,
+      emptyText: "No steps."
+    });
   }).join("");
 }
 
@@ -865,24 +865,20 @@ function renderTraceMatrix() {
   const links = registerRows("traceLinks").filter(matchesSearch);
   const modelElements = elements().filter((element) => element.eClass
       !== "TraceLink");
-  return `<section class="cim-matrix-section">
-    <div class="cim-section-title">Trace Links</div>
-    <div class="cim-table-wrap">
-      <table class="cim-table">
-        <thead><tr><th>Link</th><th>Type</th><th>Source</th><th>Target</th><th>Confidence</th><th></th></tr></thead>
-        <tbody>${links.map((link) => `<tr>
+  return renderWorkbenchDataTable({
+    title: "Trace Links",
+    columns: ["Link", "Type", "Source", "Target", "Confidence", ""],
+    rows: links.map((link) => `<tr>
           <td>${escapeHtml(elementLabel(link))}</td>
           <td>${controlForField(link, "linkType")}</td>
           <td>${traceEndpointSelect(link, "source", modelElements)}</td>
           <td>${traceEndpointSelect(link, "target", modelElements)}</td>
           <td>${controlForField(link, "confidence")}</td>
           <td><button class="cim-icon-action" data-cim-open="${escapeHtml(
-      link.id)}" type="button">Open</button></td>
-        </tr>`).join("")
-  || `<tr><td colspan="6" class="cim-empty">No trace links.</td></tr>`}</tbody>
-      </table>
-    </div>
-  </section>`;
+        link.id)}" type="button">Open</button></td>
+        </tr>`),
+    emptyText: "No trace links."
+  });
 }
 
 function traceEndpointSelect(link, field, options) {
@@ -894,48 +890,6 @@ function traceEndpointSelect(link, field, options) {
       current === option.id ? "selected" : ""}>${escapeHtml(elementLabel(
       option))} (${escapeHtml(option.eClass)})</option>`).join("")}
     </select>`;
-}
-
-function renderDecisionGrid() {
-  const tables = elementsMatchingTypes(["DecisionTable"]);
-  const activeTable = tables[0];
-  if (!activeTable) {
-    return `<div class="cim-empty-block">
-      <button class="cim-action cim-action-primary" data-cim-add-type="DecisionTable" type="button">Add Decision Table</button>
-    </div>`;
-  }
-  const rules = childElements(activeTable, "rules", "DecisionRule");
-  return `<section class="cim-decision-grid">
-    <div class="cim-toolbar">
-      <strong>${escapeHtml(elementLabel(activeTable))}</strong>
-      <button class="cim-action" data-cim-add-child="${escapeHtml(
-      activeTable.id)}" data-cim-feature="rules" data-cim-child-type="DecisionRule"
-              type="button">Add Rule</button>
-      <button class="cim-action" data-cim-open="${escapeHtml(
-      activeTable.id)}" type="button">Open Table</button>
-    </div>
-    <div class="cim-table-wrap"><table class="cim-table">
-      <thead><tr><th>Priority</th><th>If</th><th>Then</th><th>Commands</th><th>Events</th><th></th></tr></thead>
-      <tbody>${rules.map((rule, index) => `<tr>
-        <td><input class="cim-table-input" data-cim-row="${escapeHtml(
-      rule.id)}" data-cim-field="priorityOrder" type="number" value="${
-      escapeHtml(rule.priorityOrder ?? index + 1)}"></td>
-        <td><input class="cim-table-input" data-cim-row="${escapeHtml(
-      rule.id)}" data-cim-field="condition" type="text" value="${escapeHtml(
-      rule.condition || rule.conditionExpression || "")}"></td>
-        <td><input class="cim-table-input" data-cim-row="${escapeHtml(
-      rule.id)}" data-cim-field="outcome" type="text" value="${escapeHtml(
-      rule.outcome || "")}"></td>
-        <td>${escapeHtml(compactRefLabels(rule.resultingCommands,
-      state.graph.elementsById, 3))}</td>
-        <td>${escapeHtml(compactRefLabels(rule.resultingEvents,
-      state.graph.elementsById, 3))}</td>
-        <td><button class="cim-icon-action" data-cim-open="${escapeHtml(
-      rule.id)}" type="button">Open</button></td>
-      </tr>`).join("")
-  || `<tr><td colspan="6" class="cim-empty">No rules.</td></tr>`}</tbody>
-    </table></div>
-  </section>`;
 }
 
 function childElements(parent, feature, fallbackType) {
@@ -964,41 +918,58 @@ function renderReadinessBoard() {
   ];
   const cards = elementsMatchingTypes(["Risk", "Assumption", "Hotspot",
     "ManualDecision", "ReadinessFinding", "ReadinessCheck"]);
-  return `<div class="cim-board">${lanes.map(([title, predicate]) => `
-    <section class="cim-board-lane">
-      <div class="cim-section-title">${escapeHtml(title)}</div>
-      ${cards.filter(predicate).map((item) => `<button class="cim-board-card"
-          data-cim-open="${escapeHtml(item.id)}" type="button">
-        <strong>${escapeHtml(elementLabel(item))}</strong>
-        <span>${escapeHtml(item.eClass)}</span>
-        <em>${escapeHtml(item.riskStatement || item.question || item.message
-      || item.assumptionStatement || item.recommendation || "")}</em>
-      </button>`).join("") || `<div class="cim-empty">No items</div>`}
-    </section>`).join("")}</div>`;
+  return renderWorkbenchBoard({
+    lanes: lanes.map(([title, predicate]) => {
+      const laneCards = cards.filter(predicate);
+      return {
+        title,
+        count: laneCards.length,
+        cards: laneCards.map((item) => renderWorkbenchBoardCard({
+          typeKey: "cim",
+          id: item.id,
+          title: elementLabel(item),
+          meta: item.eClass,
+          body: item.riskStatement || item.question || item.message
+              || item.assumptionStatement || item.recommendation || ""
+        })),
+        emptyText: "No items"
+      };
+    })
+  });
 }
 
-function renderDetailProjection() {
+function renderDetailProjection(profile) {
   const selected = state.selectedNodeId
       ? state.graph.elementsById.get(state.selectedNodeId) : null;
-  if (!selected) {
-    return `<div class="cim-empty-block">Select an element on the diagram or open one from a register.</div>`;
+  const row = selected || filteredRows(activeRegister(profile))[0]
+      || elements()[0];
+  if (!row) {
+    return renderWorkbenchDetail({
+      typeKey: "cim",
+      row: null,
+      valueText,
+      emptyText: "Select an element on the diagram or open one from a register."
+    });
   }
-  const definition = modelingElementDefinition("cim", selected.eClass);
+  const definition = modelingElementDefinition("cim", row.eClass);
   const fields = [...safeArray(definition?.attributes),
-    ...safeArray(definition?.references)];
-  return `<section class="cim-detail-projection">
-    <div class="cim-detail-title">
-      <strong>${escapeHtml(elementLabel(selected))}</strong>
-      <span>${escapeHtml(selected.eClass)}</span>
-      <button class="cim-action" data-cim-open="${escapeHtml(selected.id)}"
-              type="button">Drawer</button>
-    </div>
-    <div class="cim-detail-grid">${fields.map((field) => `
-      <label class="cim-form-field">
-        <span>${escapeHtml(field.name)}${field.required ? " *" : ""}</span>
-        ${controlForField(selected, field.name)}
-      </label>`).join("")}</div>
-  </section>`;
+    ...safeArray(definition?.references)].map((field) => field.name);
+  const missing = missingRequiredFeatures(row);
+  const traces = relationships().filter((relationship) =>
+      relationship.sourceElementId === row.id
+      || relationship.targetElementId === row.id);
+  return renderWorkbenchDetail({
+    typeKey: "cim",
+    row,
+    fields,
+    title: elementLabel(row),
+    typeLabel: row.eClass,
+    valueText,
+    stats: [
+      ["missing required", missing.join(", ") || "none"],
+      ["trace links", traces.length]
+    ]
+  });
 }
 
 function sliceItems() {
@@ -1036,14 +1007,13 @@ function cimSliceValueLabel() {
 }
 
 function sliceOptionButton({value, label, selected, optionKind}) {
-  return `<button class="workbench-view-option${selected ? " is-active" : ""}"
-            type="button"
-            data-cim-slice-option="${escapeHtml(optionKind)}"
-            data-cim-slice-option-value="${escapeHtml(value)}"
-            role="option"
-            aria-selected="${selected ? "true" : "false"}">
-      <span class="workbench-view-option-label">${escapeHtml(label)}</span>
-    </button>`;
+  return renderWorkbenchSliceOption({
+    typeKey: "cim",
+    optionKind,
+    value,
+    label,
+    selected
+  });
 }
 
 function cimSliceMenuMarkup(optionKind) {
@@ -1068,56 +1038,35 @@ function cimSliceSelectMarkup(optionKind) {
   const isKind = optionKind === "kind";
   const open = cimSliceMenuOpen === optionKind;
   const label = isKind ? cimSliceKindLabel() : cimSliceValueLabel();
-  const dataAttr = isKind ? "data-cim-slice-kind" : "data-cim-slice-value";
-  return `<div class="workbench-view-select-wrap cim-slice-select-wrap${open
-      ? " is-open" : ""}">
-      <button class="sidebar-select workbench-view-select cim-slice-select"
-              type="button"
-              ${dataAttr}
-              data-cim-slice-toggle="${optionKind}"
-              aria-haspopup="listbox"
-              aria-expanded="${open ? "true" : "false"}">
-        <span class="workbench-view-select-label">${escapeHtml(label)}</span>
-      </button>
-      <span class="workbench-view-select-caret" aria-hidden="true"></span>
-      <div class="workbench-view-menu cim-slice-menu${open ? "" : " hidden"}"
-           role="listbox">
-        ${cimSliceMenuMarkup(optionKind)}
-      </div>
-    </div>`;
+  return renderWorkbenchSliceSelect({
+    typeKey: "cim",
+    optionKind,
+    open,
+    label,
+    menuHtml: cimSliceMenuMarkup(optionKind)
+  });
 }
 
 function renderControls(profile, representation) {
-  const modes = [
-    ["diagram", "Diagram"],
-    ["dashboard", "Dashboard"],
-    ["register", "Register"],
-    ["matrix", "Matrix"],
-    ["decision", "Decision"],
-    ["board", "Board"],
-    ["detail", "Detail"],
-    ["guide", "Guide"]
-  ];
-  return `<div class="cim-surface-header">
-    <div class="cim-surface-title">
-      <strong>${escapeHtml(activeView()?.name || "CIM View")}</strong>
-      <span>${escapeHtml(profile)}</span>
-    </div>
-    <div class="cim-mode-tabs">${modes.map(([mode, label]) => `
-      <button class="${representation === mode ? "is-active" : ""}"
-              data-cim-mode="${escapeHtml(mode)}" type="button">${escapeHtml(
-      label)}</button>`).join("")}</div>
-    <div class="cim-filter-row">
-      <input data-cim-search placeholder="Search model..." type="search"
-             value="${escapeHtml(state.cimWorkbench.search || "")}">
-      ${cimSliceSelectMarkup("kind")}
-      ${cimSliceSelectMarkup("value")}
-      <label class="cim-check-label">
-        <input data-cim-missing-only type="checkbox" ${
-      state.cimWorkbench.missingOnly ? "checked" : ""}> Missing required
-      </label>
-    </div>
-  </div>`;
+  return renderWorkbenchControls({
+    typeKey: "cim",
+    title: activeView()?.name || "CIM View",
+    profile,
+    representation,
+    workbenchState: state.cimWorkbench,
+    sliceControlsHtml: `${cimSliceSelectMarkup("kind")}${cimSliceSelectMarkup(
+        "value")}`,
+    modes: [
+      ["diagram", "Diagram"],
+      ["dashboard", "Dashboard"],
+      ["register", "Register"],
+      ["matrix", "Matrix"],
+      ["board", "Board"],
+      ["detail", "Detail"],
+      ["guide", "Guide"]
+    ],
+    searchPlaceholder: "Search CIM"
+  });
 }
 
 function renderBody(profile, representation) {
@@ -1130,14 +1079,11 @@ function renderBody(profile, representation) {
   if (representation === "matrix") {
     return renderMatrix(profile);
   }
-  if (representation === "decision") {
-    return renderDecisionGrid();
-  }
   if (representation === "board") {
     return renderReadinessBoard();
   }
   if (representation === "detail") {
-    return renderDetailProjection();
+    return renderDetailProjection(profile);
   }
   if (representation === "guide") {
     return renderLevelGuidePanel("cim");
@@ -1544,6 +1490,12 @@ function bindSurfaceEvents() {
     const mode = target?.closest("[data-cim-mode]")?.dataset?.cimMode;
     if (mode) {
       setActiveRepresentation(mode);
+      return;
+    }
+    const edgeMode = target?.closest("[data-cim-edge-mode]")?.dataset
+        ?.cimEdgeMode;
+    if (edgeMode) {
+      applyCimEdgeMode(edgeMode);
       return;
     }
     const addType = target?.closest("[data-cim-add-type]")?.dataset

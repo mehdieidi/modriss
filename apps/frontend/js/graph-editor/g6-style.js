@@ -173,5 +173,5 @@ export function isLightTheme() {
 }
 
 export function canvasBackgroundColor() {
-  return cssVar("--canvas-custom-bg", cssVar("--canvas-bg", "#0e1117"));
+  return cssVar("--canvas-bg", "#0e1117");
 }

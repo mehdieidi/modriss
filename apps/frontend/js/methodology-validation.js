@@ -81,26 +81,45 @@ function statusFromIssues(issues) {
       meta: "No issues found."
     };
   }
-  const hasError = issues.some((issue) => severityOf(issue) === "ERROR");
-  const hasWarning = issues.some((issue) => severityOf(issue) === "WARNING");
-  if (hasError) {
+  const manualIssues = issues.filter(isManualIssue);
+  const openManual = manualIssues.filter((issue) => !issue?.resolved);
+  const nonManual = issues.filter((issue) => !isManualIssue(issue));
+  const errorCount = nonManual.filter((issue) => severityOf(issue)
+      === "ERROR").length;
+  const warningCount = nonManual.filter((issue) => severityOf(issue)
+      === "WARNING").length;
+  if (errorCount) {
     return {
       stateClass: "validation-state-error",
-      label: `Errors (${issues.length})`,
-      meta: `${issues.length} issue(s): fix required before generation.`
+      label: `Errors (${errorCount})`,
+      meta: `${errorCount} error issue(s): fix required before generation.`
     };
   }
-  if (hasWarning) {
+  if (warningCount) {
     return {
       stateClass: "validation-state-warning",
-      label: `Warnings (${issues.length})`,
-      meta: `${issues.length} warning(s): review recommended.`
+      label: `Warnings (${warningCount})`,
+      meta: `${warningCount} warning(s): review recommended.`
+    };
+  }
+  if (openManual.length) {
+    return {
+      stateClass: "validation-state-warning",
+      label: `Manual Tasks (${openManual.length})`,
+      meta: `${openManual.length} manual task(s): review before promotion.`
+    };
+  }
+  if (manualIssues.length) {
+    return {
+      stateClass: "validation-state-ok",
+      label: `Manual Tasks (${manualIssues.length})`,
+      meta: `${manualIssues.length} manual task(s) resolved.`
     };
   }
   return {
     stateClass: "validation-state-ok",
-    label: `Issues (${issues.length})`,
-    meta: `${issues.length} informational issue(s).`
+    label: `Issues (${nonManual.length})`,
+    meta: `${nonManual.length} informational issue(s).`
   };
 }
 

@@ -7,7 +7,7 @@
   padding: 6px 12px;
   border-radius: 5px;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
+  background: color-mix(in srgb, var(--surface-3) 90%, var(--surface) 10%);
   color: color-mix(in srgb, var(--text) 88%, var(--muted) 12%);
   font: 700 10px/1.15 var(--font-display);
   letter-spacing: 0.09em;
@@ -21,8 +21,8 @@
 
 .btn:hover:not(:disabled) {
   color: var(--text-strong);
-  background: color-mix(in srgb, var(--surface-high) 92%, var(--surface-3) 8%);
-  box-shadow: 0 8px 16px rgba(8, 14, 24, 0.2);
+  background: color-mix(in srgb, var(--surface-high) 86%, var(--surface-3) 14%);
+  box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
@@ -53,7 +53,7 @@
 }
 
 .btn-secondary {
-  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
+  background: color-mix(in srgb, var(--surface-3) 90%, var(--surface) 10%);
   color: var(--text);
 }
 
@@ -104,7 +104,7 @@
   padding: 4px 8px;
   border-radius: 5px;
   border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
+  background: color-mix(in srgb, var(--surface-3) 90%, var(--surface) 10%);
   color: var(--muted);
   font: 700 9px/1 var(--font-display);
   letter-spacing: 0.07em;
@@ -116,7 +116,7 @@
 .btn-icon-xs:hover {
   color: var(--text);
   border-color: color-mix(in srgb, var(--outline) 55%, transparent);
-  background: color-mix(in srgb, var(--surface-high) 92%, var(--surface-3) 8%);
+  background: color-mix(in srgb, var(--surface-high) 86%, var(--surface-3) 14%);
 }
 
 .btn.active {

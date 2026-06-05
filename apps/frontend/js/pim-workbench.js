@@ -13,9 +13,7 @@ import {materializeActiveView} from './view-materializer.js';
 import {
   modelingElementDefinition,
   modelingLevelConfig,
-  modelingTypeMatches,
-  modelingViewDefinition,
-  modelingViewLenses
+  modelingViewDefinition
 } from './modeling-config-data.js';
 import {markModelDirty} from './model-save-ui.js';
 import {setStatus} from './status.js';
@@ -26,7 +24,17 @@ import {
   downloadWorkbenchCsv,
   ensureWorkbenchSurface,
   renderLevelGuidePanel,
+  renderWorkbenchBoard,
+  renderWorkbenchBoardCard,
+  renderWorkbenchControls,
+  renderWorkbenchDashboard,
+  renderWorkbenchDetail,
+  renderWorkbenchMatrixSection,
+  renderWorkbenchRegister,
+  renderWorkbenchSliceOption,
+  renderWorkbenchSliceSelect,
   renderWorkbenchSurfaceLayout,
+  renderWorkbenchToolbar,
   setWorkbenchRepresentation
 } from './workbench-common.js';
 import {
@@ -280,28 +288,6 @@ function elementsMatchingTypes(types) {
   return elements().filter((element) => allowed.has(element.eClass));
 }
 
-function pimLensEntries() {
-  try {
-    return modelingViewLenses("pim");
-  } catch {
-    return [{key: "all", label: "All", types: []}];
-  }
-}
-
-function pimLens(lensKey) {
-  return pimLensEntries().find((entry) => entry.key === lensKey) || null;
-}
-
-function typeInPimLens(type, lens) {
-  return safeArray(lens?.types).some((expected) => {
-    try {
-      return modelingTypeMatches("pim", expected, type);
-    } catch {
-      return expected === type;
-    }
-  });
-}
-
 function rootContainment(feature) {
   return PIM_ROOT_CONTAINMENTS.find((entry) => entry.feature === feature)
       || null;
@@ -407,66 +393,6 @@ function rowInSlice(row) {
   return true;
 }
 
-function rowInActiveLens(row) {
-  const lensKey = state.pimWorkbench.activeLens || "all";
-  const lens = pimLens(lensKey);
-  if (!lens || !lens.types.length) {
-    return true;
-  }
-  const type = row?.eClass || row?.type;
-  if (typeInPimLens(type, lens)) {
-    return true;
-  }
-  return Object.values(row || {}).some((value) => {
-    const ids = refIds(value);
-    return ids.some((id) => {
-      const target = state.graph?.elementsById?.get(id);
-      return typeInPimLens(target?.eClass, lens);
-    });
-  });
-}
-
-function applyPimLens(lensKey) {
-  const lens = pimLens(lensKey);
-  if (!lens) {
-    return;
-  }
-  state.pimWorkbench.activeLens = lensKey;
-  const view = activeView();
-  if (!view) {
-    return;
-  }
-  syncActiveViewFromVisibleGraph();
-  view.filters ??= {};
-  if (!Array.isArray(view.__pimBaseElementTypes)) {
-    view.__pimBaseElementTypes = safeArray(view.filters.elementTypes).map(
-        String);
-  }
-  const baseTypes = safeArray(view.__pimBaseElementTypes);
-  const lensTypes = safeArray(lens.types);
-  view.filters.elementTypes = lensTypes.length
-      ? (baseTypes.length
-          ? lensTypes.filter((type) => baseTypes.some((baseType) => {
-            try {
-              return modelingTypeMatches("pim", baseType, type)
-                  || modelingTypeMatches("pim", type, baseType);
-            } catch {
-              return baseType === type;
-            }
-          }))
-          : lensTypes)
-      : baseTypes;
-  if (lensTypes.length && !view.filters.elementTypes.length) {
-    view.filters.elementTypes = lensTypes;
-  }
-  materializeActiveView();
-  saveCurrentTabGraphState("pim");
-  renderPimWorkbenchSurface();
-  renderDiagramCallback?.();
-  renderPaletteCallback?.();
-  setStatus(`${lens.label} lens applied`);
-}
-
 function pimFlowRelationshipKinds(allKinds) {
   let labels = {};
   try {
@@ -514,8 +440,7 @@ function applyPimEdgeMode(mode) {
 }
 
 function filteredRows(feature) {
-  const rows = registerRows(feature).filter(matchesSearch).filter(rowInSlice)
-  .filter(rowInActiveLens);
+  const rows = registerRows(feature).filter(matchesSearch).filter(rowInSlice);
   const filtered = state.pimWorkbench.missingOnly ? rows.filter((row) =>
       missingRequiredFeatures(row).length) : rows;
   const sortKey = state.pimWorkbench.sortKey || "name";
@@ -604,41 +529,27 @@ function renderRegister(profile) {
       return false;
     }
   });
-  return `
-    <div class="cim-toolbar">
-      <select class="cim-select" data-pim-register>${registerOptionsMarkup(
-      feature)}</select>
-      ${addType ? `<button class="cim-action" data-pim-add-type="${escapeHtml(
-      addType)}"
-          type="button">Add ${escapeHtml(addType)}</button>` : ""}
-      <button class="cim-action" data-pim-export="${escapeHtml(feature)}" type="button">Export CSV</button>
-    </div>
-    <div class="cim-table-wrap">
-      <table class="cim-table">
-        <thead><tr>
-          <th>Element</th>
-          ${uniqueColumns.map(
-      (column) => `<th data-pim-sort="${escapeHtml(column)}">${
-          escapeHtml(column)}</th>`).join("")}
-          <th></th>
-        </tr></thead>
-        <tbody>
-          ${rows.length ? rows.map((row) => `<tr>
-            <td>
-              <button class="cim-link" data-pim-open="${escapeHtml(row.id)}"
-                  type="button">${escapeHtml(elementLabel(row))}</button>
-              <div class="cim-row-meta">${rowTypeBadge(row)}</div>
-            </td>
-            ${uniqueColumns.map(
-      (column) => `<td>${controlForField(row, column)}</td>`).join("")}
-            <td><button class="cim-icon-action" data-pim-open="${escapeHtml(
-      row.id)}"
-                type="button">Open</button></td>
-          </tr>`).join("") : `<tr><td colspan="${uniqueColumns.length + 2}"
-              class="cim-empty">No rows in this slice.</td></tr>`}
-        </tbody>
-      </table>
-    </div>`;
+  const toolbarHtml = renderWorkbenchToolbar([
+    `<select class="cim-select" data-pim-register>${registerOptionsMarkup(
+        feature)}</select>`,
+    addType ? `<button class="cim-action" data-pim-add-type="${escapeHtml(
+        addType)}" type="button">Add ${escapeHtml(addType)}</button>` : "",
+    `<button class="cim-action" data-pim-export="${escapeHtml(
+        feature)}" type="button">Export CSV</button>`,
+    `<label class="cim-action cim-file-action">Import CSV
+        <input class="hidden" data-pim-import="${escapeHtml(feature)}" type="file" accept=".csv,text/csv">
+      </label>`
+  ]);
+  return renderWorkbenchRegister({
+    typeKey: "pim",
+    toolbarHtml,
+    rows,
+    columns: uniqueColumns,
+    getLabel: elementLabel,
+    getBadgeHtml: rowTypeBadge,
+    renderCell: controlForField,
+    emptyText: "No rows in this slice."
+  });
 }
 
 function count(type) {
@@ -673,17 +584,35 @@ function renderDashboard() {
     ["Missing",
       elements().filter((item) => missingRequiredFeatures(item).length).length]
   ];
-  return `
-    <div class="cim-dashboard-grid">
-      ${cards.map(([label, value]) => `<div class="cim-metric">
-        <strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span>
-      </div>`).join("")}
-    </div>
-    <div class="cim-dashboard-actions">
-      <button class="cim-action" data-pim-create-root type="button">
-        ${rootMissing.length ? "Complete PIM Root" : "Refresh Root Links"}
-      </button>
-    </div>`;
+  const foundationHtml = `<section class="cim-root-form">
+    <div class="cim-section-title">Model Foundation</div>
+    ${rootMissing.length ? `<div class="cim-alert">Missing required foundation:
+      ${escapeHtml(rootMissing.join(", "))}</div>` : `<div class="cim-ok">
+      Foundation requirements are satisfied.</div>`}
+    <label class="cim-form-field">
+      <span>architectureStyle</span>
+      <input data-pim-root-field="architectureStyle" type="text"
+          value="${escapeHtml(state.baseModel?.architectureStyle || "")}">
+    </label>
+    <label class="cim-form-field">
+      <span>providerIndependent</span>
+      <input data-pim-root-field="providerIndependent" type="text"
+          value="${escapeHtml(
+      String(state.baseModel?.providerIndependent ?? ""))}">
+    </label>
+  </section>`;
+  const actionsHtml = `<section class="cim-view-entry-list">
+    <div class="cim-section-title">Actions</div>
+    <button class="cim-view-entry" data-pim-create-root type="button">
+      <span>${rootMissing.length ? "Complete PIM Root" : "Refresh Root Links"}</span>
+      <strong>foundation</strong>
+    </button>
+  </section>`;
+  return renderWorkbenchDashboard({
+    metrics: cards,
+    primaryHtml: foundationHtml,
+    secondaryHtml: actionsHtml
+  });
 }
 
 function renderMatrix(profile) {
@@ -744,22 +673,22 @@ function renderMatrix(profile) {
             "DataStore", "ObjectStore", "Workflow", "Queue", "Topic",
             "EventBus"])
           : elements().slice(0, 16);
-  return `<div class="cim-matrix-wrap">
-    <table class="cim-matrix">
-      <thead><tr><th>${escapeHtml(register)}</th>${columns.map((column) =>
-      `<th>${escapeHtml(elementLabel(column))}</th>`).join("")}</tr></thead>
-      <tbody>${rows.map((row) => `<tr>
-        <th><button class="cim-link" data-pim-open="${escapeHtml(row.id)}"
-            type="button">${escapeHtml(elementLabel(row))}</button></th>
-        ${columns.map((column) => {
-    const linked = rowReferences(row).has(column.id)
-        || relationshipExists(row.id, column.id)
-        || relationshipExists(column.id, row.id);
-    return `<td class="${linked ? "is-linked" : ""}">${linked ? "x" : ""}</td>`;
-  }).join("")}
-      </tr>`).join("")}</tbody>
-    </table>
-  </div>`;
+  return renderWorkbenchMatrixSection({
+    title: register,
+    rows,
+    columns,
+    typeKey: "pim",
+    getRowLabel: elementLabel,
+    getColumnLabel: elementLabel,
+    getCellHtml: (row, column) => {
+      const linked = rowReferences(row).has(column.id)
+          || relationshipExists(row.id, column.id)
+          || relationshipExists(column.id, row.id);
+      return `<td class="${linked ? "is-linked" : ""}">${linked ? "x"
+          : ""}</td>`;
+    },
+    emptyText: "No matrix rows."
+  });
 }
 
 function rowReferences(row) {
@@ -775,52 +704,50 @@ function relationshipExists(sourceId, targetId) {
 }
 
 function matrixTable(title, rows, columns, linked, empty = "No matrix rows.") {
-  if (!rows.length || !columns.length) {
-    return `<section class="cim-matrix-section">
-      <div class="cim-section-title">${escapeHtml(title)}</div>
-      <div class="cim-empty">${escapeHtml(empty)}</div>
-    </section>`;
-  }
-  return `<section class="cim-matrix-section">
-    <div class="cim-section-title">${escapeHtml(title)}</div>
-    <div class="cim-matrix-wrap">
-      <table class="cim-matrix">
-        <thead><tr><th></th>${columns.map((column) =>
-      `<th><span>${escapeHtml(elementLabel(column))}</span></th>`).join("")}</tr></thead>
-        <tbody>${rows.map((row) => `<tr>
-          <th><button class="cim-link" data-pim-open="${escapeHtml(row.id)}"
-              type="button">${escapeHtml(elementLabel(row))}</button></th>
-          ${columns.map((column) => {
-    const value = linked(row, column);
-    return `<td class="${value ? "is-linked" : ""}">${
-        value ? escapeHtml(value === true ? "x" : value) : ""}</td>`;
-  }).join("")}
-        </tr>`).join("")}</tbody>
-      </table>
-    </div>
-  </section>`;
+  return renderWorkbenchMatrixSection({
+    title,
+    rows,
+    columns,
+    typeKey: "pim",
+    getRowLabel: elementLabel,
+    getColumnLabel: elementLabel,
+    getCellHtml: (row, column) => {
+      const value = linked(row, column);
+      return `<td class="${value ? "is-linked" : ""}">${
+          value ? escapeHtml(value === true ? "x" : value) : ""}</td>`;
+    },
+    emptyText: empty
+  });
 }
 
 function renderReadinessBoard() {
-  const findings = elementsMatchingTypes(["ReadinessFinding"]);
-  const checks = elementsMatchingTypes(["ReadinessCheck"]);
-  const decisions = elementsMatchingTypes(["ManualDecision"]);
+  const rows = elementsMatchingTypes(["ReadinessFinding", "ReadinessCheck",
+    "ManualDecision"]);
   const groups = [
-    ["Findings", findings],
-    ["Checks", checks],
-    ["Decisions", decisions]
+    ["Blocking", (row) => Boolean(row.productionBlocking || row.blocking
+        || String(row.severity || "").toUpperCase() === "BLOCKER")],
+    ["Open", (row) => !/ready|complete|accepted|passed/i.test(String(
+        row.lifecycleStatus || row.readinessStatus || row.status || ""))],
+    ["Accepted / Passed", (row) => /ready|complete|accepted|passed/i.test(
+        String(row.lifecycleStatus || row.readinessStatus || row.status || ""))]
   ];
-  return `<div class="cim-board">
-    ${groups.map(([title, rows]) => `<section class="cim-board-lane">
-      <div class="cim-section-title">${escapeHtml(title)} ${rows.length}</div>
-      ${rows.length ? rows.map((row) => `<button class="cim-board-card"
-          data-pim-open="${escapeHtml(row.id)}" type="button">
-        <strong>${escapeHtml(elementLabel(row))}</strong>
-        <span>${escapeHtml(
-      row.message || row.question || row.checkId || row.severity || "")}</span>
-      </button>`).join("") : `<div class="cim-empty">No items.</div>`}
-    </section>`).join("")}
-  </div>`;
+  return renderWorkbenchBoard({
+    lanes: groups.map(([title, predicate]) => {
+      const laneRows = rows.filter(predicate);
+      return {
+        title,
+        count: laneRows.length,
+        cards: laneRows.map((row) => renderWorkbenchBoardCard({
+          typeKey: "pim",
+          id: row.id,
+          title: elementLabel(row),
+          meta: row.eClass,
+          body: row.message || row.question || row.checkId || row.severity || ""
+        })),
+        emptyText: "No items."
+      };
+    })
+  });
 }
 
 function detailRowsFor(row) {
@@ -843,9 +770,12 @@ function renderDetailProjection(profile) {
   const register = activeRegister(profile);
   const row = selected || filteredRows(register)[0] || elements()[0];
   if (!row) {
-    return `<section class="cim-detail-projection">
-      <div class="cim-empty">No PIM element selected.</div>
-    </section>`;
+    return renderWorkbenchDetail({
+      typeKey: "pim",
+      row: null,
+      valueText,
+      emptyText: "No PIM element selected."
+    });
   }
   const missing = missingRequiredFeatures(row);
   const traces = relationships().filter((relationship) =>
@@ -857,68 +787,33 @@ function renderDetailProjection(profile) {
     "ManualDecision"]).filter((item) => refIds(item.affectedElements).includes(
       row.id));
   const fields = detailRowsFor(row);
-  return `<section class="cim-detail-projection">
-    <div class="cim-detail-title">
-      <strong>${escapeHtml(elementLabel(row))}</strong>
-      <span>${escapeHtml(row.eClass || "PIM element")}</span>
-    </div>
-    <div class="cim-detail-grid">
-      ${fields.map((field) => `<div>
-        <span>${escapeHtml(field)}</span>
-        <strong>${escapeHtml(valueText(row[field]))}</strong>
-      </div>`).join("")}
-      <div><span>missing required</span><strong>${escapeHtml(
-      missing.join(", ") || "none")}</strong></div>
-      <div><span>trace links</span><strong>${traces.length}</strong></div>
-      <div><span>readiness items</span><strong>${readiness.length}</strong></div>
-    </div>
-    <div class="cim-dashboard-actions">
-      <button class="cim-action" data-pim-open="${escapeHtml(row.id)}"
-          type="button">Open Full Inspector</button>
-    </div>
-  </section>`;
+  return renderWorkbenchDetail({
+    typeKey: "pim",
+    row,
+    fields,
+    title: elementLabel(row),
+    typeLabel: row.eClass || "PIM element",
+    valueText,
+    stats: [
+      ["missing required", missing.join(", ") || "none"],
+      ["trace links", traces.length],
+      ["readiness items", readiness.length]
+    ]
+  });
 }
 
 function renderControls(profile, representation) {
-  const modes = [
-    ["diagram", "Diagram"],
-    ["dashboard", "Dashboard"],
-    ["register", "Register"],
-    ["matrix", "Matrix"],
-    ["board", "Board"],
-    ["detail", "Detail"],
-    ["guide", "Guide"]
-  ];
-  return `<div class="cim-surface-header">
-    <div class="cim-surface-title">
-      <strong>${escapeHtml(activeView()?.name || "PIM View")}</strong>
-      <span>${escapeHtml(profile)}</span>
-    </div>
-    <div class="cim-mode-tabs">
-      ${modes.map(([mode, label]) =>
-      `<button class="${representation === mode ? "is-active" : ""}"
-          data-pim-mode="${mode}" type="button">${escapeHtml(
-          label)}</button>`).join("")}
-    </div>
-    <div class="pim-edge-toolbar" aria-label="PIM edge visibility">
-      <span>Edges</span>
-      <div class="pim-edge-buttons">
-        ${Object.entries(PIM_EDGE_MODES).map(([key, mode]) =>
-      `<button class="${(state.pimWorkbench.edgeMode || "both") === key
-          ? "is-active" : ""}"
-              data-pim-edge-mode="${key}" type="button">${escapeHtml(
-          mode.label)}</button>`).join("")}
-      </div>
-    </div>
-    <div class="cim-filter-row">
-      <input data-pim-search placeholder="Search PIM" value="${escapeHtml(
-      state.pimWorkbench.search || "")}">
-      ${pimSliceSelectMarkup("kind")}
-      ${pimSliceSelectMarkup("value")}
-      <label class="cim-check-label"><input data-pim-missing-only type="checkbox" ${
-      state.pimWorkbench.missingOnly ? "checked" : ""}> Missing required</label>
-    </div>
-  </div>`;
+  return renderWorkbenchControls({
+    typeKey: "pim",
+    title: activeView()?.name || "PIM View",
+    profile,
+    representation,
+    workbenchState: state.pimWorkbench,
+    sliceControlsHtml: `${pimSliceSelectMarkup("kind")}${pimSliceSelectMarkup(
+        "value")}`,
+    edgeModes: PIM_EDGE_MODES,
+    searchPlaceholder: "Search PIM"
+  });
 }
 
 function sliceItems() {
@@ -957,14 +852,13 @@ function pimSliceValueLabel() {
 }
 
 function sliceOptionButton({value, label, selected, optionKind}) {
-  return `<button class="workbench-view-option${selected ? " is-active" : ""}"
-            type="button"
-            data-pim-slice-option="${escapeHtml(optionKind)}"
-            data-pim-slice-option-value="${escapeHtml(value)}"
-            role="option"
-            aria-selected="${selected ? "true" : "false"}">
-      <span class="workbench-view-option-label">${escapeHtml(label)}</span>
-    </button>`;
+  return renderWorkbenchSliceOption({
+    typeKey: "pim",
+    optionKind,
+    value,
+    label,
+    selected
+  });
 }
 
 function pimSliceMenuMarkup(optionKind) {
@@ -989,23 +883,13 @@ function pimSliceSelectMarkup(optionKind) {
   const isKind = optionKind === "kind";
   const open = pimSliceMenuOpen === optionKind;
   const label = isKind ? pimSliceKindLabel() : pimSliceValueLabel();
-  const dataAttr = isKind ? "data-pim-slice-kind" : "data-pim-slice-value";
-  return `<div class="workbench-view-select-wrap workbench-slice-select-wrap${open
-      ? " is-open" : ""}">
-      <button class="sidebar-select workbench-view-select workbench-slice-select"
-              type="button"
-              ${dataAttr}
-              data-pim-slice-toggle="${optionKind}"
-              aria-haspopup="listbox"
-              aria-expanded="${open ? "true" : "false"}">
-        <span class="workbench-view-select-label">${escapeHtml(label)}</span>
-      </button>
-      <span class="workbench-view-select-caret" aria-hidden="true"></span>
-      <div class="workbench-view-menu workbench-slice-menu${open ? "" : " hidden"}"
-           role="listbox">
-        ${pimSliceMenuMarkup(optionKind)}
-      </div>
-    </div>`;
+  return renderWorkbenchSliceSelect({
+    typeKey: "pim",
+    optionKind,
+    open,
+    label,
+    menuHtml: pimSliceMenuMarkup(optionKind)
+  });
 }
 
 function renderBody(profile, representation) {
@@ -1294,7 +1178,8 @@ function updateField(rowId, field, rawValue, inputType = "text") {
 
 function updateRootField(field, value) {
   state.baseModel ??= {};
-  state.baseModel[field] = value;
+  state.baseModel[field] = field === "providerIndependent"
+      ? value !== "false" : value;
   commitModelChange(`Updated ${field}`);
 }
 
@@ -1303,6 +1188,32 @@ function exportCsv(feature) {
   const columns = ["id", "eClass", "name",
     ...(REGISTER_COLUMNS[feature] || [])];
   downloadWorkbenchCsv(`pim-${feature}.csv`, rows, columns, valueText);
+}
+
+async function importCsv(feature, file) {
+  const containment = rootContainment(feature);
+  const type = containment?.types?.[0];
+  if (!type || !file) {
+    return;
+  }
+  const text = await file.text();
+  const [headerLine, ...lines] = text.split(/\r?\n/).filter(Boolean);
+  const headers = headerLine.split(",").map((item) => item.trim());
+  const center = currentCenter();
+  lines.forEach((line, index) => {
+    const values = line.split(",");
+    const node = addNode(type, center.x + index * 34, center.y + index * 34,
+        `${type} ${index + 1}`);
+    headers.forEach((header, columnIndex) => {
+      if (header && values[columnIndex] !== undefined) {
+        node.meta[header] = values[columnIndex];
+      }
+    });
+    node.label = node.meta.name || node.label;
+    node.meta.name = node.label;
+    node.meta.label = node.label;
+  });
+  commitModelChange(`Imported ${lines.length} ${feature} row(s)`);
 }
 
 function bindSurfaceEvents() {
@@ -1412,6 +1323,10 @@ function bindSurfaceEvents() {
       updateField(target.dataset.pimRow, target.dataset.pimField,
           target.type === "checkbox" ? target.checked : target.value,
           target.type);
+      return;
+    }
+    if (target.dataset.pimImport && target.files?.[0]) {
+      void importCsv(target.dataset.pimImport, target.files[0]);
     }
   });
   host.addEventListener("input", (event) => {

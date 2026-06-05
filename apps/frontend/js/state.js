@@ -158,7 +158,6 @@ export const state = {
     missingOnly: false,
     sliceKind: "",
     sliceValue: "",
-    activeLens: "all",
     edgeMode: "both",
     sortKey: "name",
     hidPalette: false
@@ -170,7 +169,6 @@ export const state = {
     missingOnly: false,
     sliceKind: "",
     sliceValue: "",
-    activeLens: "all",
     edgeMode: "both",
     sortKey: "name",
     hidPalette: false
@@ -182,7 +180,6 @@ export const state = {
     missingOnly: false,
     sliceKind: "",
     sliceValue: "",
-    activeLens: "all",
     edgeMode: "both",
     sortKey: "name",
     hidPalette: false

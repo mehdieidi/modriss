@@ -40,29 +40,29 @@ project permission failures, `404` for missing records, `409` for conflicts such
 
 ## Auth
 
-| Method | Path | Body | Response |
-| --- | --- | --- | --- |
+| Method | Path                 | Body                               | Response       |
+|--------|----------------------|------------------------------------|----------------|
 | `POST` | `/api/auth/register` | `email`, `password`, `displayName` | `AuthResponse` |
-| `POST` | `/api/auth/login` | `email`, `password` | `AuthResponse` |
-| `GET` | `/api/auth/me` | none | `UserDto` |
-| `PUT` | `/api/auth/me` | `displayName` | `UserDto` |
-| `POST` | `/api/auth/logout` | none | empty response |
+| `POST` | `/api/auth/login`    | `email`, `password`                | `AuthResponse` |
+| `GET`  | `/api/auth/me`       | none                               | `UserDto`      |
+| `PUT`  | `/api/auth/me`       | `displayName`                      | `UserDto`      |
+| `POST` | `/api/auth/logout`   | none                               | empty response |
 
 Passwords must be at least 8 characters. `displayName` is required and has a maximum length of 80
 characters.
 
 ## Projects
 
-| Method | Path | Query/Body | Response |
-| --- | --- | --- | --- |
-| `GET` | `/api/projects` | none | `ProjectRecord[]` |
-| `POST` | `/api/projects` | `name`, `description` | `ProjectRecord` |
-| `GET` | `/api/projects/{id}` | none | `ProjectRecord` |
-| `PUT` | `/api/projects/{id}` | `name`, `description`, `activeModelIds` | `ProjectRecord` |
-| `DELETE` | `/api/projects/{id}` | none | empty response |
-| `GET` | `/api/projects/{id}/members` | none | `ProjectMember[]` |
-| `POST` | `/api/projects/{id}/invite` | `email`, `role` | `ProjectMember` |
-| `DELETE` | `/api/projects/{id}/members/{userId}` | none | empty response |
+| Method   | Path                                  | Query/Body                              | Response          |
+|----------|---------------------------------------|-----------------------------------------|-------------------|
+| `GET`    | `/api/projects`                       | none                                    | `ProjectRecord[]` |
+| `POST`   | `/api/projects`                       | `name`, `description`                   | `ProjectRecord`   |
+| `GET`    | `/api/projects/{id}`                  | none                                    | `ProjectRecord`   |
+| `PUT`    | `/api/projects/{id}`                  | `name`, `description`, `activeModelIds` | `ProjectRecord`   |
+| `DELETE` | `/api/projects/{id}`                  | none                                    | empty response    |
+| `GET`    | `/api/projects/{id}/members`          | none                                    | `ProjectMember[]` |
+| `POST`   | `/api/projects/{id}/invite`           | `email`, `role`                         | `ProjectMember`   |
+| `DELETE` | `/api/projects/{id}/members/{userId}` | none                                    | empty response    |
 
 `role` is one of `OWNER`, `EDITOR`, or `VIEWER`. Only project owners can delete projects or revoke
 members. Editors can update project-owned models and artifacts.
@@ -71,19 +71,19 @@ members. Editors can update project-owned models and artifacts.
 
 Model-level routes use `{level}` with one of `cim`, `pim`, or `psm`.
 
-| Method | Path | Query/Body | Response |
-| --- | --- | --- | --- |
-| `GET` | `/api/{level}` | optional `projectId` query | `ModelSummary[]` |
-| `POST` | `/api/{level}` | `name`, `projectId`, `model` | `ModelSummary` |
-| `GET` | `/api/{level}/{id}` | none | `ModelRecord` |
-| `PUT` | `/api/{level}/{id}` | `name`, `model`, `expectedRevision` | `ModelSummary` |
-| `PATCH` | `/api/{level}/{id}` | `name`, `operations`, `expectedRevision` | `ModelSummary` |
-| `DELETE` | `/api/{level}/{id}` | none | empty response |
-| `POST` | `/api/{level}/validate` | `model` | `ValidationResult` |
-| `POST` | `/api/{level}/{id}/validate` | none | `ValidationResult` |
-| `POST` | `/api/{level}/export` | `name`, `model`, `format` | file download |
-| `POST` | `/api/{level}/{id}/export` | `name`, `format` | file download |
-| `POST` | `/api/{level}/import` | multipart `projectId`, `format`, `file` | `ImportResult` |
+| Method   | Path                         | Query/Body                               | Response           |
+|----------|------------------------------|------------------------------------------|--------------------|
+| `GET`    | `/api/{level}`               | optional `projectId` query               | `ModelSummary[]`   |
+| `POST`   | `/api/{level}`               | `name`, `projectId`, `model`             | `ModelSummary`     |
+| `GET`    | `/api/{level}/{id}`          | none                                     | `ModelRecord`      |
+| `PUT`    | `/api/{level}/{id}`          | `name`, `model`, `expectedRevision`      | `ModelSummary`     |
+| `PATCH`  | `/api/{level}/{id}`          | `name`, `operations`, `expectedRevision` | `ModelSummary`     |
+| `DELETE` | `/api/{level}/{id}`          | none                                     | empty response     |
+| `POST`   | `/api/{level}/validate`      | `model`                                  | `ValidationResult` |
+| `POST`   | `/api/{level}/{id}/validate` | none                                     | `ValidationResult` |
+| `POST`   | `/api/{level}/export`        | `name`, `model`, `format`                | file download      |
+| `POST`   | `/api/{level}/{id}/export`   | `name`, `format`                         | file download      |
+| `POST`   | `/api/{level}/import`        | multipart `projectId`, `format`, `file`  | `ImportResult`     |
 
 Updates and patches require `expectedRevision`; the server returns `409` if the stored revision has
 changed. Patch operations support JSON Pointer paths and the `add`, `replace`, and `remove` ops.
@@ -92,37 +92,37 @@ default is `json`. The default upload limit is 20 MiB unless configured otherwis
 
 ## Transformations
 
-| Method | Path | Body | Response |
-| --- | --- | --- | --- |
-| `POST` | `/api/transformations/cim-to-pim` | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model` |
-| `POST` | `/api/transformations/pim-to-psm` | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model` |
-| `POST` | `/api/transformations/psm-to-artifact` | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `artifact` |
-| `GET` | `/api/transformations/jobs/{id}` | none | `MdeJobRecord` |
-| `POST` | `/api/transformations/jobs/{id}/cancel` | none | `MdeJobRecord` |
+| Method | Path                                    | Body                                | Response                                 |
+|--------|-----------------------------------------|-------------------------------------|------------------------------------------|
+| `POST` | `/api/transformations/cim-to-pim`       | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model`    |
+| `POST` | `/api/transformations/pim-to-psm`       | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model`    |
+| `POST` | `/api/transformations/psm-to-artifact`  | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `artifact` |
+| `GET`  | `/api/transformations/jobs/{id}`        | none                                | `MdeJobRecord`                           |
+| `POST` | `/api/transformations/jobs/{id}/cancel` | none                                | `MdeJobRecord`                           |
 
 Transformation responses currently return synchronously with `success: true` and `status:
 "SUCCEEDED"` when generation completes. Job records are used for tracking and cancellation support.
 
 ## Artifacts
 
-| Method | Path | Query/Body | Response |
-| --- | --- | --- | --- |
-| `GET` | `/api/artifact` | required `projectId` query | `ArtifactRecord[]` |
-| `GET` | `/api/artifact/{id}` | none | `ArtifactRecord` |
-| `GET` | `/api/artifact/{id}/file` | required `path` query | `text/plain` file content |
-| `PUT` | `/api/artifact/{id}/files` | `path`, `content` | `ArtifactRecord` |
-| `GET` | `/api/artifact/{id}/download` | none | ZIP download |
+| Method | Path                          | Query/Body                 | Response                  |
+|--------|-------------------------------|----------------------------|---------------------------|
+| `GET`  | `/api/artifact`               | required `projectId` query | `ArtifactRecord[]`        |
+| `GET`  | `/api/artifact/{id}`          | none                       | `ArtifactRecord`          |
+| `GET`  | `/api/artifact/{id}/file`     | required `path` query      | `text/plain` file content |
+| `PUT`  | `/api/artifact/{id}/files`    | `path`, `content`          | `ArtifactRecord`          |
+| `GET`  | `/api/artifact/{id}/download` | none                       | ZIP download              |
 
 Artifact file paths must stay inside the artifact and cannot be absolute or directory traversal
 paths.
 
 ## Modeling And Layout
 
-| Method | Path | Body | Response |
-| --- | --- | --- | --- |
-| `GET` | `/api/modeling/config` | none | modeling palette and UI metadata |
-| `POST` | `/api/layout` | `LayoutRequest` | `LayoutResponse` |
-| `GET` | `/api/health` | none | health object |
+| Method | Path                   | Body            | Response                         |
+|--------|------------------------|-----------------|----------------------------------|
+| `GET`  | `/api/modeling/config` | none            | modeling palette and UI metadata |
+| `POST` | `/api/layout`          | `LayoutRequest` | `LayoutResponse`                 |
+| `GET`  | `/api/health`          | none            | health object                    |
 
 `LayoutRequest` contains `nodes`, `edges`, optional `fixedNodeIds`, optional profile/options, and
 returns node positions, routed edge sections, bend points, and warnings.

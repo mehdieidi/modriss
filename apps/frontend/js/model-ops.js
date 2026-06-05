@@ -385,6 +385,10 @@ function mergeIssuesWithManualGuidance(issues) {
   return merged;
 }
 
+function isManualGuidanceIssue(issue) {
+  return String(issue?.issueClass || "").startsWith("MANUAL_");
+}
+
 async function setManualTaskResolved(manualTaskId, resolved) {
   const model = state.baseModel;
   if (!model || !Array.isArray(model.manualBacklog)) {
@@ -429,13 +433,24 @@ function applyManualGuidanceFromLoadedModel() {
   applyValidationIssues(mergedIssues, {openOnFirst: true});
   toggleValidationDrawer(true);
   const warningCount = mergedIssues.filter(
-      (item) => String(item?.severity || "").toUpperCase()
+      (item) => !isManualGuidanceIssue(item)
+          && String(item?.severity || "").toUpperCase()
           === "WARNING").length;
   const requiredCount = openGuidanceIssues.filter(
       (item) => item.severity === "ERROR").length;
   const optionalCount = openGuidanceIssues.length - requiredCount;
-  setStatus(
-      `Generated model includes ${warningCount} warning(s), ${requiredCount} required and ${optionalCount} optional manual task(s).`);
+  const parts = [];
+  if (warningCount) {
+    parts.push(`${warningCount} warning(s)`);
+  }
+  if (requiredCount || optionalCount) {
+    parts.push(
+        `${requiredCount} required and ${optionalCount} optional manual task(s)`);
+  }
+  if (!parts.length) {
+    parts.push(`${mergedIssues.length} informational issue(s)`);
+  }
+  setStatus(`Generated model includes ${parts.join(", ")}.`);
 }
 
 export function getActiveModelName() {

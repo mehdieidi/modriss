@@ -50,9 +50,9 @@
   max-height: calc(100vh - var(--topbar-h) - 32px);
   border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-  background: color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 58%, transparent);
-  backdrop-filter: blur(16px) saturate(130%);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  background: color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 88%, transparent);
+  backdrop-filter: var(--glass-pane-blur);
+  -webkit-backdrop-filter: var(--glass-pane-blur);
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
@@ -72,8 +72,8 @@
   border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 48%, transparent),
-      color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 42%, transparent)
+      color-mix(in srgb, var(--chat-custom-bg, var(--surface-3)) 36%, transparent),
+      color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 64%, transparent)
   );
   display: flex;
   align-items: center;
@@ -126,7 +126,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  background: color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 34%, transparent);
+  background: color-mix(in srgb, var(--chat-custom-bg, var(--surface-contrast)) 32%, transparent);
   scroll-behavior: smooth;
 }
 
@@ -246,7 +246,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 12px 10px;
-  background: color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 30%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 30%, transparent);
 }
 
 .chat-typing span {
@@ -282,7 +282,7 @@
   gap: 8px;
   padding: 8px 11px;
   border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 38%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 38%, transparent);
 }
 
 .chat-attach-btn {
@@ -293,7 +293,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-3) 86%, var(--surface) 14%);
   color: var(--muted);
   font: 600 11px/1.2 var(--font-ui);
   cursor: pointer;
@@ -309,7 +309,7 @@
 .chat-attach-btn:hover {
   color: var(--text);
   border-color: color-mix(in srgb, var(--outline) 56%, transparent);
-  background: color-mix(in srgb, var(--surface-high) 78%, #000 22%);
+  background: color-mix(in srgb, var(--surface-high) 82%, var(--surface-3) 18%);
 }
 
 .chat-attach-btn input {
@@ -365,7 +365,7 @@
   gap: 8px;
   padding: 10px 11px;
   border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 38%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 38%, transparent);
   transition: padding var(--transition), box-shadow var(--transition);
 }
 

@@ -384,32 +384,6 @@ export function modelingRootContainments(typeKey = state.activeType) {
   return modelingContainmentsForType(typeKey, modelingRootType(typeKey));
 }
 
-export function modelingViewLenses(typeKey = state.activeType) {
-  const byKey = new Map([["all", {key: "all", label: "All", types: []}]]);
-  (modelingLevelConfig(typeKey).viewDefinitions || []).forEach(
-      (definition, index) => {
-        const types = Array.isArray(definition?.elementTypes)
-            ? definition.elementTypes.map(String).filter(Boolean) : [];
-        if (!types.length) {
-          return;
-        }
-        const rawKey = String(definition.viewpoint || definition.id
-            || `view-${index}`);
-        const key = rawKey.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")
-        .replaceAll(/^-|-$/g, "") || `view-${index}`;
-        const label = String(definition.displayName || definition.name
-            || definition.viewpoint || key).replaceAll(/[-_]+/g, " ")
-        .replace(/\b\w/g, (letter) => letter.toUpperCase());
-        const existing = byKey.get(key);
-        byKey.set(key, {
-          key,
-          label: existing?.label || label,
-          types: [...new Set([...(existing?.types || []), ...types])]
-        });
-      });
-  return [...byKey.values()];
-}
-
 export function modelingTypeMatches(typeKey, expected, actual) {
   if (!expected || expected === "*") {
     return true;
