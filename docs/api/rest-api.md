@@ -1,20 +1,156 @@
 # REST API
 
-The Spring Boot backend exposes the frontend API under `/api`.
+The Spring Boot backend exposes the frontend API under `/api`. The generated OpenAPI JSON is
+served at `/v3/api-docs`, the browser UI is available at `/swagger-ui.html`, and the fuller
+checked-in contract lives at `docs/api/openapi/openapi.yaml`.
 
-Interactive docs:
+## Base URL
 
-- OpenAPI JSON: `http://127.0.0.1:8080/v3/api-docs`
-- Swagger-style UI: `http://127.0.0.1:8080/swagger-ui.html`
+Local development defaults to:
 
-Implemented areas:
+```text
+http://127.0.0.1:8080
+```
 
-- Auth: register, login, logout, current user, display-name update
-- Projects: create, list, update, delete, members, invites, revoke access
-- Models: CIM/PIM/PSM CRUD, JSON import/export, validation response shape
-- Transformations: CIM to PIM, PIM to PSM, PSM to artifact
-- Artifacts: list, load, read file, save file, ZIP download
-- Modeling: palette/config metadata, layout, health
+All protected endpoints require the session token returned by login or registration:
 
-Future areas currently return `501`: chatbot, GitHub, impact analysis, admin workspace editing, and
-collaboration.
+```http
+X-Auth-Token: <token>
+```
+
+`/api/health`, `/api/auth/register`, `/api/auth/login`, `/api/modeling/config`, and `/api/layout`
+do not require this header.
+
+## Errors
+
+Errors are returned as JSON:
+
+```json
+{
+  "message": "Request validation failed.",
+  "status": 400,
+  "timestamp": "2026-06-05T12:00:00Z",
+  "issues": ["field: detail"]
+}
+```
+
+Common status codes are `400` for invalid input, `401` for missing or expired auth, `403` for
+project permission failures, `404` for missing records, `409` for conflicts such as stale revisions,
+`413` for model/artifact size limits, `501` for planned endpoints, and `500` for unexpected errors.
+
+## Auth
+
+| Method | Path | Body | Response |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/register` | `email`, `password`, `displayName` | `AuthResponse` |
+| `POST` | `/api/auth/login` | `email`, `password` | `AuthResponse` |
+| `GET` | `/api/auth/me` | none | `UserDto` |
+| `PUT` | `/api/auth/me` | `displayName` | `UserDto` |
+| `POST` | `/api/auth/logout` | none | empty response |
+
+Passwords must be at least 8 characters. `displayName` is required and has a maximum length of 80
+characters.
+
+## Projects
+
+| Method | Path | Query/Body | Response |
+| --- | --- | --- | --- |
+| `GET` | `/api/projects` | none | `ProjectRecord[]` |
+| `POST` | `/api/projects` | `name`, `description` | `ProjectRecord` |
+| `GET` | `/api/projects/{id}` | none | `ProjectRecord` |
+| `PUT` | `/api/projects/{id}` | `name`, `description`, `activeModelIds` | `ProjectRecord` |
+| `DELETE` | `/api/projects/{id}` | none | empty response |
+| `GET` | `/api/projects/{id}/members` | none | `ProjectMember[]` |
+| `POST` | `/api/projects/{id}/invite` | `email`, `role` | `ProjectMember` |
+| `DELETE` | `/api/projects/{id}/members/{userId}` | none | empty response |
+
+`role` is one of `OWNER`, `EDITOR`, or `VIEWER`. Only project owners can delete projects or revoke
+members. Editors can update project-owned models and artifacts.
+
+## Models
+
+Model-level routes use `{level}` with one of `cim`, `pim`, or `psm`.
+
+| Method | Path | Query/Body | Response |
+| --- | --- | --- | --- |
+| `GET` | `/api/{level}` | optional `projectId` query | `ModelSummary[]` |
+| `POST` | `/api/{level}` | `name`, `projectId`, `model` | `ModelSummary` |
+| `GET` | `/api/{level}/{id}` | none | `ModelRecord` |
+| `PUT` | `/api/{level}/{id}` | `name`, `model`, `expectedRevision` | `ModelSummary` |
+| `PATCH` | `/api/{level}/{id}` | `name`, `operations`, `expectedRevision` | `ModelSummary` |
+| `DELETE` | `/api/{level}/{id}` | none | empty response |
+| `POST` | `/api/{level}/validate` | `model` | `ValidationResult` |
+| `POST` | `/api/{level}/{id}/validate` | none | `ValidationResult` |
+| `POST` | `/api/{level}/export` | `name`, `model`, `format` | file download |
+| `POST` | `/api/{level}/{id}/export` | `name`, `format` | file download |
+| `POST` | `/api/{level}/import` | multipart `projectId`, `format`, `file` | `ImportResult` |
+
+Updates and patches require `expectedRevision`; the server returns `409` if the stored revision has
+changed. Patch operations support JSON Pointer paths and the `add`, `replace`, and `remove` ops.
+Root model replacement is not supported by patch. Import/export formats are `json` and `xmi`; the
+default is `json`. The default upload limit is 20 MiB unless configured otherwise.
+
+## Transformations
+
+| Method | Path | Body | Response |
+| --- | --- | --- | --- |
+| `POST` | `/api/transformations/cim-to-pim` | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model` |
+| `POST` | `/api/transformations/pim-to-psm` | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model` |
+| `POST` | `/api/transformations/psm-to-artifact` | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `artifact` |
+| `GET` | `/api/transformations/jobs/{id}` | none | `MdeJobRecord` |
+| `POST` | `/api/transformations/jobs/{id}/cancel` | none | `MdeJobRecord` |
+
+Transformation responses currently return synchronously with `success: true` and `status:
+"SUCCEEDED"` when generation completes. Job records are used for tracking and cancellation support.
+
+## Artifacts
+
+| Method | Path | Query/Body | Response |
+| --- | --- | --- | --- |
+| `GET` | `/api/artifact` | required `projectId` query | `ArtifactRecord[]` |
+| `GET` | `/api/artifact/{id}` | none | `ArtifactRecord` |
+| `GET` | `/api/artifact/{id}/file` | required `path` query | `text/plain` file content |
+| `PUT` | `/api/artifact/{id}/files` | `path`, `content` | `ArtifactRecord` |
+| `GET` | `/api/artifact/{id}/download` | none | ZIP download |
+
+Artifact file paths must stay inside the artifact and cannot be absolute or directory traversal
+paths.
+
+## Modeling And Layout
+
+| Method | Path | Body | Response |
+| --- | --- | --- | --- |
+| `GET` | `/api/modeling/config` | none | modeling palette and UI metadata |
+| `POST` | `/api/layout` | `LayoutRequest` | `LayoutResponse` |
+| `GET` | `/api/health` | none | health object |
+
+`LayoutRequest` contains `nodes`, `edges`, optional `fixedNodeIds`, optional profile/options, and
+returns node positions, routed edge sections, bend points, and warnings.
+
+## Planned Endpoints
+
+Requests under `/api/github/**`, `/api/impact/**`, and `/api/admin/**` currently return `501` with
+the message `This feature is planned for a future backend iteration.` There is no implemented
+WebSocket endpoint in this backend at the moment.
+
+## Shared Shapes
+
+Core response records:
+
+- `UserDto`: `id`, `email`, `displayName`
+- `AuthResponse`: `token`, `user`
+- `ProjectRecord`: `id`, `name`, `description`, `ownerUserId`, `activeModelIds`, `members`,
+  `createdAt`, `updatedAt`
+- `ProjectMember`: `userId`, `email`, `displayName`, `role`, `addedAt`
+- `ModelSummary`: `id`, `projectId`, `level`, `name`, `revision`, `metamodelVersion`,
+  `migrationState`, `createdAt`, `updatedAt`
+- `ModelRecord`: `id`, `projectId`, `level`, `name`, `modelJson`, `metamodelVersion`,
+  `metamodelHash`, `revision`, `sourceXmiHash`, `migrationState`, `createdAt`, `updatedAt`
+- `ValidationResult`: `valid`, `issues`
+- `ValidationIssue`: `severity`, `constraint`, `issueClass`, `message`, `guidance`, `elementId`,
+  `elementName`
+- `ImportResult`: `name`, `modelJson`, `issues`
+- `ArtifactRecord`: `id`, `projectId`, `name`, `modelJson`, `files`, `createdAt`, `updatedAt`
+- `MdeJobRecord`: `id`, `projectId`, `userId`, `sourceModelId`, `sourceLevel`, `sourceRevision`,
+  `sourceModelHash`, `operation`, `status`, `progressPercent`, `resultModelId`,
+  `resultArtifactId`, `diagnostics`, `createdAt`, `startedAt`, `finishedAt`

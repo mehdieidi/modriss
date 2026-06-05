@@ -17,31 +17,33 @@
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "Space Grotesk", "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
 
-  --bg: #101217;
-  --surface: #151820;
-  --surface-2: #1a1f29;
-  --surface-3: #232a37;
-  --surface-high: #2a3343;
-  --surface-contrast: #0f1219;
+  --bg: #171b23;
+  --surface: #1d2430;
+  --surface-2: #242c3a;
+  --surface-3: #2d3849;
+  --surface-high: #3a465a;
+  --surface-contrast: #202838;
 
   --panel: var(--surface-2);
   --panel-2: var(--surface-3);
-  --panel-3: #313d52;
-  --input-bg: #0f141d;
-  --canvas-bg: #0e1117;
-  --node-bg: #131923;
-  --node-border: #3d495f;
+  --panel-3: #3f4d64;
+  --input-bg: #222b3a;
+  --canvas-bg: #1a202b;
+  --node-bg: #273142;
+  --node-border: #53657d;
 
-  --border: #394558;
-  --border-subtle: #2a3343;
-  --outline: #5f708d;
-  --outline-soft: rgba(154, 170, 196, 0.22);
+  --border: #516177;
+  --border-subtle: #3a4658;
+  --outline: #8294b0;
+  --outline-soft: rgba(176, 190, 214, 0.28);
 
-  --text: #e3e8f2;
-  --text-strong: #f3f7ff;
-  --muted: #98a8c0;
-  --muted-2: #6f809c;
-  --node-title: #b8c5da;
+  --text: #eef3fb;
+  --text-strong: #ffffff;
+  --muted: #c2ccdc;
+  --muted-2: #a3b1c7;
+  --text-muted: var(--muted);
+  --text-soft: #d7deeb;
+  --node-title: #d3dceb;
 
   --accent: #00a6e0;
   --accent-dark: #0078ac;
@@ -50,18 +52,18 @@
   --accent-select: #5ecbff;
   --accent-2: #dec29a;
 
-  --danger: #ef6060;
-  --danger-dark: #cf4848;
-  --success: #16b485;
-  --warning: #d89b2f;
+  --danger: #ff7a7a;
+  --danger-dark: #dd5656;
+  --success: #2ed0a0;
+  --warning: #f1b84f;
 
-  --chat-user-bg: #0078ac;
+  --chat-user-bg: #008bc4;
   --chat-user-text: #f2fbff;
-  --chat-assistant-bg: #1b2230;
-  --chat-assistant-border: #3c475d;
+  --chat-assistant-bg: #2a3446;
+  --chat-assistant-border: #5b6b83;
 
-  --grid-line-major: rgba(153, 173, 206, 0.15);
-  --grid-line-minor: rgba(153, 173, 206, 0.06);
+  --grid-line-major: rgba(178, 195, 224, 0.2);
+  --grid-line-minor: rgba(178, 195, 224, 0.09);
   --grid-size: 28px;
   --canvas-dot: rgb(103 115 136 / 0.56);
 
@@ -71,17 +73,17 @@
   --radius-lg: 14px;
   --radius-xl: 18px;
 
-  --shadow-sm: 0 2px 8px rgba(6, 11, 20, 0.36);
-  --shadow: 0 10px 28px rgba(6, 11, 20, 0.45);
-  --shadow-lg: 0 18px 42px rgba(4, 8, 16, 0.52);
-  --overlay-bg: rgba(5, 10, 18, 0.74);
-  --modal-overlay-bg: rgba(5, 10, 18, 0.66);
-  --mobile-backdrop-bg: rgba(6, 10, 18, 0.62);
+  --shadow-sm: 0 2px 8px rgba(9, 14, 24, 0.28);
+  --shadow: 0 10px 28px rgba(9, 14, 24, 0.36);
+  --shadow-lg: 0 18px 42px rgba(7, 12, 22, 0.42);
+  --overlay-bg: rgba(14, 20, 32, 0.66);
+  --modal-overlay-bg: rgba(14, 20, 32, 0.58);
+  --mobile-backdrop-bg: rgba(14, 20, 32, 0.54);
 
-  --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--canvas-bg)) 40%, transparent);
-  --glass-pane-border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-  --glass-pane-highlight: inset 0 0 0 1px color-mix(in srgb, var(--outline-soft) 28%, transparent);
-  --glass-pane-blur: blur(14px) saturate(130%);
+  --glass-pane-bg: color-mix(in srgb, var(--canvas-custom-bg, var(--canvas-bg)) 72%, transparent);
+  --glass-pane-border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  --glass-pane-highlight: inset 0 0 0 1px color-mix(in srgb, var(--outline-soft) 42%, transparent);
+  --glass-pane-blur: blur(12px) saturate(118%);
 
   --transition: 0.18s ease;
   --topbar-h: 56px;
@@ -113,6 +115,8 @@ html.light {
   --text-strong: #111926;
   --muted: #5f6f84;
   --muted-2: #7a8aa0;
+  --text-muted: var(--muted);
+  --text-soft: #3b4656;
   --node-title: #44546d;
 
   --accent: #0077a8;

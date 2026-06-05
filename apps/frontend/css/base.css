@@ -130,7 +130,7 @@ body {
   color: var(--accent-light);
   border-left-width: 4px;
   border-left-color: color-mix(in srgb, var(--accent) 100%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 84%, #000 16%);
+  background: color-mix(in srgb, var(--accent-glow) 34%, var(--surface-3) 66%);
 }
 
 .workspace-rail-item-bottom {
@@ -146,7 +146,7 @@ body {
   overflow-y: auto;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
-  background: color-mix(in srgb, var(--surface) 94%, #000 6%);
+  background: color-mix(in srgb, var(--surface) 96%, var(--surface-high) 4%);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
   padding: 8px;
   display: flex;
@@ -160,7 +160,7 @@ body {
 }
 
 .rail-menu-panel .ide-menu-select {
-  background: color-mix(in srgb, var(--surface-3) 88%, #000 12%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
 }
 
 .rail-submenu-group {
@@ -191,7 +191,7 @@ body {
   padding: 8px;
   border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 94%, #000 6%);
+  background: color-mix(in srgb, var(--surface) 96%, var(--surface-high) 4%);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
   display: flex;
   flex-direction: column;

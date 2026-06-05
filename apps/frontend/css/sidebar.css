@@ -275,7 +275,7 @@
   padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
   color: var(--muted);
   font: 600 10px/1 var(--font-ui);
   cursor: pointer;
@@ -394,7 +394,7 @@
   min-height: 30px;
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 78%, #000 22%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
   color: var(--text);
   cursor: pointer;
   text-align: left;
@@ -403,7 +403,7 @@
 
 .model-tree-item:hover {
   border-color: color-mix(in srgb, var(--accent) 42%, transparent);
-  background: color-mix(in srgb, var(--surface-high) 78%, #000 22%);
+  background: color-mix(in srgb, var(--surface-high) 92%, var(--surface-3) 8%);
 }
 
 .model-tree-kind,
@@ -464,7 +464,7 @@
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
   border-left: 3px solid var(--node-accent, var(--border));
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
   color: var(--text);
   font: 600 10px/1.2 var(--font-ui);
   cursor: pointer;
@@ -474,19 +474,19 @@
 
 .palette-quick-action:hover {
   border-color: var(--node-accent, color-mix(in srgb, var(--outline) 58%, transparent));
-  background: color-mix(in srgb, var(--surface-high) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-high) 92%, var(--surface-3) 8%);
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
 .palette-quick-action.active {
   border-color: var(--node-accent, color-mix(in srgb, var(--outline) 58%, transparent));
-  background: color-mix(in srgb, var(--surface-high) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-high) 92%, var(--surface-3) 8%);
 }
 
 .palette-quick-action-done {
   border-color: var(--node-accent, color-mix(in srgb, var(--outline) 58%, transparent));
-  background: color-mix(in srgb, var(--surface-high) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-high) 92%, var(--surface-3) 8%);
 }
 
 .palette-quick-action-compact {
@@ -539,7 +539,7 @@
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
   border-left: 3px solid var(--node-accent, var(--border));
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
   color: var(--text);
   font: 600 10px/1.2 var(--font-ui);
   cursor: grab;
@@ -550,7 +550,7 @@
 
 .palette-item:hover {
   border-color: var(--node-accent, color-mix(in srgb, var(--outline) 58%, transparent));
-  background: color-mix(in srgb, var(--surface-high) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-high) 92%, var(--surface-3) 8%);
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }

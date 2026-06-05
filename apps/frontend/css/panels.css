@@ -132,7 +132,7 @@
   padding: 5px 7px;
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 74%, #000 26%);
+  background: color-mix(in srgb, var(--surface-3) 90%, var(--surface-high) 10%);
   color: var(--text);
 }
 
@@ -170,7 +170,7 @@
   padding: 7px 8px;
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 74%, #000 26%);
+  background: color-mix(in srgb, var(--surface-3) 90%, var(--surface-high) 10%);
   color: var(--text);
 }
 
@@ -250,7 +250,7 @@
   padding: 5px 8px;
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
   color: var(--muted);
   font: 600 10px/1 var(--font-display);
   letter-spacing: 0.07em;
@@ -262,7 +262,7 @@
 .attr-panel-close:hover {
   color: var(--text);
   border-color: color-mix(in srgb, var(--outline) 55%, transparent);
-  background: color-mix(in srgb, var(--surface-high) 78%, #000 22%);
+  background: color-mix(in srgb, var(--surface-high) 92%, var(--surface-3) 8%);
 }
 
 .attr-panel-body {
@@ -525,7 +525,7 @@
   padding: 7px 9px;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
   color: var(--muted);
   font: 500 11px/1.45 var(--font-mono);
   word-break: break-all;
@@ -779,7 +779,7 @@
 .impact-focal-card {
   border-radius: var(--radius);
   border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 82%, #000 18%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
   padding: 10px 12px;
 }
 
@@ -889,7 +889,7 @@
   padding: 7px 8px;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
 }
 
 .impact-tree-node-main {
@@ -981,7 +981,7 @@
   text-align: left;
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 80%, #000 20%);
+  background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
   color: var(--text);
   padding: 4px 7px;
   font: 500 11px/1.35 var(--font-mono);

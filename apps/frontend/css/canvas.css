@@ -387,20 +387,20 @@
   padding-bottom: 5px;
   border-color: color-mix(in srgb, #c86b70 50%, var(--border) 50%);
   background: color-mix(in srgb, #b85f64 18%, var(--surface-3) 82%);
-  color: color-mix(in srgb, #08090c 82%, var(--text) 18%);
+  color: var(--text-strong);
 }
 
 .model-workbench-strip .model-save-btn:hover,
 .model-workbench-strip .model-save-btn:focus-visible {
   border-color: color-mix(in srgb, #d8878b 72%, transparent);
   background: color-mix(in srgb, #b85f64 26%, var(--surface-high) 74%);
-  color: color-mix(in srgb, #050607 88%, var(--text-strong) 12%);
+  color: var(--text-strong);
 }
 
 .model-save-btn.is-dirty {
   border-color: color-mix(in srgb, #de8a89 82%, transparent);
   background: color-mix(in srgb, #b85f64 30%, var(--surface-high) 70%);
-  color: color-mix(in srgb, #050607 88%, var(--text-strong) 12%);
+  color: var(--text-strong);
 }
 
 .model-save-btn.is-saving {
@@ -410,7 +410,7 @@
 
 .model-save-btn.is-error {
   border-color: color-mix(in srgb, var(--danger, #ef4444) 84%, transparent);
-  color: color-mix(in srgb, #050607 88%, var(--text-strong) 12%);
+  color: var(--text-strong);
 }
 
 .model-save-btn-label {
@@ -443,14 +443,14 @@
 .model-workbench-strip .model-layout-btn {
   border-color: color-mix(in srgb, #4f9ca3 42%, var(--border) 58%);
   background: color-mix(in srgb, #4f9ca3 16%, var(--surface-3) 84%);
-  color: color-mix(in srgb, #08090c 82%, var(--text) 18%);
+  color: var(--text-strong);
 }
 
 .model-workbench-strip .model-layout-btn:hover,
 .model-workbench-strip .model-layout-btn:focus-visible {
   border-color: color-mix(in srgb, #74c3c9 68%, transparent);
   background: color-mix(in srgb, #4f9ca3 24%, var(--surface-high) 76%);
-  color: color-mix(in srgb, #050607 88%, var(--text-strong) 12%);
+  color: var(--text-strong);
 }
 
 .model-save-btn.is-saving .model-save-btn-progress {
