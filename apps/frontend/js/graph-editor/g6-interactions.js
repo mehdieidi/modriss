@@ -159,7 +159,7 @@ function openControlBounds(graph, nodeId) {
   const controlHeight = low ? 14 : 16;
   return {
     x: topLeft.x + topLeft.width - controlWidth - 9,
-    y: topLeft.y + (low ? 8 : 12),
+    y: topLeft.y + (low ? 8 : 7),
     width: controlWidth,
     height: controlHeight
   };
@@ -814,10 +814,15 @@ export function bindG6Interactions(editor, callbacks = {}) {
   window.addEventListener("pointerup", finishLinkDragWindow);
 
   escapeKeyDown = (event) => {
-    if (event.key === "Escape" && linkDrag) {
+    if (event.key !== "Escape") {
+      return;
+    }
+    if (linkDrag) {
       event.preventDefault();
       clearLinkDrag();
+      return;
     }
+    callbacks.onEscape?.(event);
   };
   window.addEventListener("keydown", escapeKeyDown);
 }

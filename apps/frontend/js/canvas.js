@@ -1851,6 +1851,7 @@ function ensureG6Canvas() {
         onEdgeClick: (edgeId) => selectConnection(edgeId, {openPicker: true}),
         onEdgeHover: setHoveredEdge,
         onCanvasClick: handleG6CanvasClick,
+        onEscape: handleG6CanvasClick,
         onCanvasPointerDown: closeEdgeKindPicker,
         onCanvasPointerMove: () => {
         },

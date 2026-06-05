@@ -133,6 +133,10 @@ function lineCount(text) {
   return value ? value.split("\n").length : 0;
 }
 
+function boundedText(text, maxLine, maxLines) {
+  return lineBreak(text, maxLine, maxLines).toUpperCase();
+}
+
 function pathMidpoint(points) {
   const segments = [];
   let total = 0;
@@ -193,10 +197,10 @@ function renderPlaceholderIcon(shape, container, {
   top,
   low = false
 } = {}) {
-  const size = low ? 18 : 22;
+  const size = low ? 18 : 20;
   shape.upsert("placeholderIcon", "image", {
     x: left + 10,
-    y: top + 9,
+    y: top + (low ? 9 : 6),
     width: size,
     height: size,
     src: "/assets/icons/placeholder.svg",
@@ -221,7 +225,7 @@ function renderOpenControl(shape, container, {
   const controlWidth = low ? 30 : 38;
   const controlHeight = low ? 14 : 16;
   const x = left + width - controlWidth - 9;
-  const y = top + (low ? 8 : 12);
+  const y = top + (low ? 8 : 7);
   const isCim = diagramType === "cim";
   const fill = openControlHover
       ? (isCim ? "rgba(24, 20, 14, 0.92)"
@@ -258,6 +262,60 @@ function renderOpenControl(shape, container, {
     textBaseline: "middle",
     cursor: "pointer"
   }, container);
+}
+
+function renderNodeTags(shape, container, {
+  badges = [],
+  diagramType,
+  left,
+  top,
+  width,
+  height,
+  low = false
+}) {
+  const tags = Array.isArray(badges) ? badges.slice(0, 4) : [];
+  let x = left + 10;
+  let y = top + height - 21;
+  const maxX = left + width - 10;
+  const rowHeight = 13;
+  tags.forEach((text, index) => {
+    const value = String(text || "").trim();
+    const label = truncate(value, 12).toUpperCase();
+    const tagWidth = Math.min(72, Math.max(28, 15 + label.length * 4.7));
+    if (x + tagWidth > maxX && x > left + 10) {
+      x = left + 10;
+      y += rowHeight + 2;
+    }
+    const visible = !low && value && y + rowHeight <= top + height - 5;
+    shape.upsert(`badge${index}`, "rect", visible ? {
+      x,
+      y,
+      width: tagWidth,
+      height: rowHeight,
+      radius: 3,
+      fill: badgeFill(value, diagramType),
+      stroke: diagramType === "cim" ? "rgba(15, 23, 42, 0.1)"
+          : "rgba(148, 163, 184, 0.14)",
+      pointerEvents: "none"
+    } : false, container);
+    shape.upsert(`badgeText${index}`, "text", visible ? {
+      x: x + tagWidth / 2,
+      y: y + rowHeight / 2 + 0.5,
+      text: label,
+      fontFamily: cssVar("--font-ui", "sans-serif"),
+      fontSize: 6.8,
+      fontWeight: 800,
+      fill: badgeTextFill(diagramType),
+      textAlign: "center",
+      textBaseline: "middle",
+      pointerEvents: "none"
+    } : false, container);
+    x += tagWidth + 4;
+  });
+  for (let index = tags.length; index < 4; index += 1) {
+    shape.upsert(`badge${index}`, "rect", false, container);
+    shape.upsert(`badgeText${index}`, "text", false, container);
+  }
 }
 
 function states(attributes) {
@@ -308,11 +366,12 @@ function registerModlessG6Extensions() {
       const openControlHover = attributes.openControlHover
           || stateSet.has("open-control-hover");
       const low = attributes.detailLevel === "low";
-      const high = attributes.detailLevel === "high";
       const containerNode = Boolean(attributes.isContainer);
       const handleVisible = Boolean(attributes.showHandles) || connectSource;
       const badges = Array.isArray(attributes.badges) ? attributes.badges
-      .slice(0, 3) : [];
+      .slice(0, 4) : [];
+      const headerHeight = low ? 0 : 32;
+      const tagStripHeight = low ? 0 : 24;
 
       if (diagramType === "cim") {
         const fill = attributes.sticky || "#fde68a";
@@ -351,7 +410,7 @@ function registerModlessG6Extensions() {
           x: left,
           y: top,
           width,
-          height: 40,
+          height: headerHeight,
           radius: [2, 2, 0, 0],
           fill: "rgba(255,255,255,0.34)",
           stroke: "transparent",
@@ -369,26 +428,27 @@ function registerModlessG6Extensions() {
           low
         });
         this.upsert("type", "text", low ? false : {
-          x: left + 40,
-          y: top + 21,
-          text: truncate(attributes.kindText || attributes.typeText
-              || "Element", containerNode ? 14 : 21).toUpperCase(),
+          x: left + 38,
+          y: top + 7,
+          text: boundedText(attributes.kindText || attributes.typeText
+              || "Element", containerNode ? 13 : 18, 2),
           fontFamily: cssVar("--font-display", "sans-serif"),
-          fontSize: 9,
+          fontSize: 8,
+          lineHeight: 8.5,
           fontWeight: 800,
           fill: "rgba(35, 28, 18, 0.86)",
-          textBaseline: "middle",
+          textBaseline: "top",
           pointerEvents: "none"
         }, container);
         const labelText = lineBreak(attributes.labelText || "", low ? 20 : 24,
             low ? 1 : 2);
         const labelLineHeight = low ? 12 : 14;
-        const notationY = low ? height - 14
-            : Math.min(height - 15,
-                48 + lineCount(labelText) * labelLineHeight + 12);
+        const labelY = top + (low ? 24 : 39);
+        const idY = Math.min(top + height - tagStripHeight - 10,
+            labelY + lineCount(labelText) * labelLineHeight + 8);
         this.upsert("label", "text", {
           x: left + 10,
-          y: top + (low ? 24 : 48),
+          y: labelY,
           text: labelText,
           fontFamily: cssVar("--font-ui", "sans-serif"),
           fontSize: low ? 10 : 12,
@@ -398,44 +458,26 @@ function registerModlessG6Extensions() {
           textBaseline: "top",
           pointerEvents: "none"
         }, container);
-        for (let index = 0; index < 4; index++) {
-          const text = badges[index];
-          const badgeWidth = Math.min(68, 18 + String(text || "").length * 5);
-          this.upsert(`badge${index}`, "rect", low || !text ? false : {
-            x: left + width - 10 - badgeWidth,
-            y: top + height - 17 - index * 16,
-            width: badgeWidth,
-            height: 13,
-            radius: 4,
-            fill: badgeFill(text, diagramType),
-            stroke: "rgba(15, 23, 42, 0.08)",
-            pointerEvents: "none"
-          }, container);
-          this.upsert(`badgeText${index}`, "text", low || !text ? false : {
-            x: left + width - 10 - badgeWidth / 2,
-            y: top + height - 10.5 - index * 16,
-            text: truncate(text, 11).toUpperCase(),
-            fontFamily: cssVar("--font-ui", "sans-serif"),
-            fontSize: 7,
-            fontWeight: 800,
-            fill: badgeTextFill(diagramType),
-            textAlign: "center",
-            textBaseline: "middle",
-            pointerEvents: "none"
-          }, container);
-        }
         this.upsert("notation", "text", low ? false : {
           x: left + 10,
-          y: top + notationY,
-          text: truncate(attributes.notationText || "",
-              containerNode ? 21 : 29),
+          y: idY,
+          text: truncate(attributes.elementId || attributes.id || "", 30),
           fontFamily: cssVar("--font-ui", "sans-serif"),
-          fontSize: 9.5,
-          fontWeight: 600,
-          fill: "rgba(45, 38, 26, 0.72)",
+          fontSize: 7.4,
+          fontWeight: 700,
+          fill: "rgba(45, 38, 26, 0.58)",
           textBaseline: "middle",
           pointerEvents: "none"
         }, container);
+        renderNodeTags(this, container, {
+          badges,
+          diagramType,
+          left,
+          top,
+          width,
+          height,
+          low
+        });
         if (containerNode) {
           renderOpenControl(this, container, {
             left,
@@ -486,7 +528,7 @@ function registerModlessG6Extensions() {
           x: left,
           y: top,
           width,
-          height: 40,
+          height: headerHeight,
           radius: [2, 2, 0, 0],
           fill: "rgba(35,42,55,0.58)",
           stroke: "transparent",
@@ -501,15 +543,16 @@ function registerModlessG6Extensions() {
           low
         });
         this.upsert("type", "text", low ? false : {
-          x: left + 42,
-          y: top + 21,
-          text: truncate(attributes.kindText || attributes.typeText
-              || "Element", containerNode ? 22 : 27).toUpperCase(),
+          x: left + 40,
+          y: top + 7,
+          text: boundedText(attributes.kindText || attributes.typeText
+              || "Element", containerNode ? 18 : 24, 2),
           fontFamily: cssVar("--font-display", "sans-serif"),
-          fontSize: 10,
+          fontSize: 8.2,
+          lineHeight: 8.8,
           fontWeight: 800,
           fill: accent,
-          textBaseline: "middle",
+          textBaseline: "top",
           pointerEvents: "none"
         }, container);
         this.upsert("dot", "circle", false, container);
@@ -517,11 +560,12 @@ function registerModlessG6Extensions() {
         const labelText = lineBreak(attributes.labelText || "", low ? 28 : 30,
             low ? 1 : 2);
         const labelLineHeight = low ? 12.5 : 14;
-        const notationY = top + Math.min(height - 20,
-            (low ? 18 : 53) + lineCount(labelText) * labelLineHeight + 13);
+        const labelY = top + (low ? 18 : 42);
+        const idY = Math.min(top + height - tagStripHeight - 10,
+            labelY + lineCount(labelText) * labelLineHeight + 8);
         this.upsert("label", "text", {
           x: left + 11,
-          y: top + (low ? 18 : 53),
+          y: labelY,
           text: labelText,
           fontFamily: cssVar("--font-ui", "sans-serif"),
           fontSize: low ? 10.5 : 12,
@@ -531,45 +575,26 @@ function registerModlessG6Extensions() {
           textBaseline: "top",
           pointerEvents: "none"
         }, container);
-        for (let index = 0; index < 4; index++) {
-          const text = badges[index];
-          const badgeWidth = Math.min(78, 18 + String(text || "").length * 5);
-          this.upsert(`badge${index}`, "rect", low || !text ? false : {
-            x: left + width - 11 - badgeWidth,
-            y: top + height - 16 - index * 16,
-            width: badgeWidth,
-            height: 13,
-            radius: 4,
-            fill: badgeFill(text, diagramType),
-            stroke: "rgba(148, 163, 184, 0.12)",
-            pointerEvents: "none"
-          }, container);
-          this.upsert(`badgeText${index}`, "text", low || !text ? false : {
-            x: left + width - 11 - badgeWidth / 2,
-            y: top + height - 9.5 - index * 16,
-            text: truncate(text, 11).toUpperCase(),
-            fontFamily: cssVar("--font-ui", "sans-serif"),
-            fontSize: 7,
-            fontWeight: 800,
-            fill: badgeTextFill(diagramType),
-            textAlign: "center",
-            textBaseline: "middle",
-            pointerEvents: "none"
-          }, container);
-        }
-        this.upsert("notation", "text", !high || !attributes.notationText
-            ? false : {
+        this.upsert("notation", "text", low ? false : {
               x: left + 11,
-              y: notationY,
-              text: truncate(attributes.notationText || "",
-                  containerNode ? 24 : 34),
+              y: idY,
+              text: truncate(attributes.elementId || attributes.id || "", 36),
               fontFamily: cssVar("--font-ui", "sans-serif"),
-              fontSize: 10,
-              fontWeight: 600,
-              fill: cssVar("--muted", "#98a8c0"),
+              fontSize: 7.5,
+              fontWeight: 700,
+              fill: "rgba(152, 168, 192, 0.72)",
               textBaseline: "middle",
               pointerEvents: "none"
             }, container);
+        renderNodeTags(this, container, {
+          badges,
+          diagramType,
+          left,
+          top,
+          width,
+          height,
+          low
+        });
         if (containerNode) {
           renderOpenControl(this, container, {
             left,
@@ -1308,6 +1333,7 @@ export function mountG6Editor(container, {
       type: G6_BASE_NODE_TYPE,
       state: {
         normal: {
+          selected: false,
           hover: false,
           focused: false,
           dimmed: false,
@@ -1331,7 +1357,12 @@ export function mountG6Editor(container, {
     edge: {
       type: G6_BASE_EDGE_TYPE,
       state: {
-        normal: {hovered: false, focused: false, dimmed: false},
+        normal: {
+          selected: false,
+          hovered: false,
+          focused: false,
+          dimmed: false
+        },
         selected: {selected: true},
         hover: {hovered: true},
         focus: {focused: true},
@@ -1640,6 +1671,9 @@ export function updateG6Selection() {
   flushElementStates(changedEdges, editor.edgeStateFlags);
   if (changedEdges.size) {
     refreshG6Edges([...changedEdges]);
+  }
+  if (changedNodes.size) {
+    scheduleGraphDraw(editor.graph);
   }
 }
 

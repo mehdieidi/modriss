@@ -257,6 +257,7 @@ export function mapNodeToG6(node, {
       width: size.width,
       height: size.height,
       diagramType: typeKey,
+      elementId: node.id,
       nodeType: node.type,
       labelText: node.label || node.id,
       labelFill: typeKey === "cim" ? "rgba(24, 20, 14, 0.92)"
