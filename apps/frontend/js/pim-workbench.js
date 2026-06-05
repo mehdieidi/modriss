@@ -45,6 +45,16 @@ let renderPaletteCallback = null;
 let openAttributePanelCallback = null;
 let openConnectionPanelCallback = null;
 let searchRenderTimer = 0;
+let pimSliceMenuOpen = "";
+
+const PIM_SLICE_KINDS = [
+  ["", "All slices"],
+  ["service", "Service"],
+  ["environment", "Environment"],
+  ["security", "Security"],
+  ["production", "Production"],
+  ["lifecycle", "Lifecycle"]
+];
 
 function scheduleSearchRender() {
   if (searchRenderTimer) {
@@ -365,17 +375,23 @@ function matchesSearch(row) {
 function rowInSlice(row) {
   const kind = String(state.pimWorkbench.sliceKind || "");
   const value = String(state.pimWorkbench.sliceValue || "");
-  if (!kind || !value) {
+  if (!kind) {
     return true;
   }
   if (kind === "lifecycle") {
-    return String(row.lifecycleStatus || "") === value;
+    return !value || String(row.lifecycleStatus || "") === value;
   }
   if (kind === "environment") {
+    if (!value) {
+      return true;
+    }
     return refIds(row.targetEnvironments).includes(value)
         || refIds(row.environments).includes(value);
   }
   if (kind === "service") {
+    if (!value) {
+      return true;
+    }
     return ["ownsFunctions", "ownsApis", "ownsChannels", "ownsStores",
       "ownsWorkflows", "ownsAdapters", "services"].some((feature) =>
         refIds(row[feature]).includes(value));
@@ -897,42 +913,99 @@ function renderControls(profile, representation) {
     <div class="cim-filter-row">
       <input data-pim-search placeholder="Search PIM" value="${escapeHtml(
       state.pimWorkbench.search || "")}">
-      <select data-pim-slice-kind>
-        <option value="">All slices</option>
-        ${["service", "environment", "security", "production", "lifecycle"].map(
-      (item) => `<option value="${item}" ${
-          state.pimWorkbench.sliceKind === item ? "selected" : ""}>${
-          escapeHtml(item)}</option>`).join("")}
-      </select>
-      <select data-pim-slice-value><option value="">Any</option>${sliceOptions()}</select>
+      ${pimSliceSelectMarkup("kind")}
+      ${pimSliceSelectMarkup("value")}
       <label class="cim-check-label"><input data-pim-missing-only type="checkbox" ${
       state.pimWorkbench.missingOnly ? "checked" : ""}> Missing required</label>
     </div>
   </div>`;
 }
 
-function sliceOptions() {
+function sliceItems() {
   const kind = state.pimWorkbench.sliceKind;
   if (kind === "service") {
-    return elementsMatchingTypes(["ServerlessService"]).map((item) =>
-        `<option value="${escapeHtml(item.id)}" ${
-            state.pimWorkbench.sliceValue === item.id ? "selected" : ""}>${
-            escapeHtml(elementLabel(item))}</option>`).join("");
+    return elementsMatchingTypes(["ServerlessService"]);
   }
   if (kind === "environment") {
-    return elementsMatchingTypes(["Environment"]).map((item) =>
-        `<option value="${escapeHtml(item.id)}" ${
-            state.pimWorkbench.sliceValue === item.id ? "selected" : ""}>${
-            escapeHtml(elementLabel(item))}</option>`).join("");
+    return elementsMatchingTypes(["Environment"]);
   }
   if (kind === "lifecycle") {
-    const statuses = [...new Set(elements().map((item) =>
-        String(item.lifecycleStatus || "")).filter(Boolean))];
-    return statuses.map((status) => `<option value="${escapeHtml(status)}" ${
-        state.pimWorkbench.sliceValue === status ? "selected" : ""}>${
-        escapeHtml(status)}</option>`).join("");
+    return [...new Set(elements().map((item) =>
+        String(item.lifecycleStatus || "")).filter(Boolean))]
+    .map((status) => ({id: status, name: status}));
   }
-  return "";
+  if (kind === "security") {
+    return [{id: "true", name: "Security-sensitive items"}];
+  }
+  if (kind === "production") {
+    return [{id: "true", name: "Production items"}];
+  }
+  return [];
+}
+
+function pimSliceKindLabel(value = state.pimWorkbench.sliceKind) {
+  return PIM_SLICE_KINDS.find(([key]) => key === value)?.[1] || "All slices";
+}
+
+function pimSliceValueLabel() {
+  const value = state.pimWorkbench.sliceValue || "";
+  if (!value) {
+    return "Any";
+  }
+  const item = sliceItems().find((candidate) => candidate.id === value);
+  return item ? elementLabel(item) : value;
+}
+
+function sliceOptionButton({value, label, selected, optionKind}) {
+  return `<button class="workbench-view-option${selected ? " is-active" : ""}"
+            type="button"
+            data-pim-slice-option="${escapeHtml(optionKind)}"
+            data-pim-slice-option-value="${escapeHtml(value)}"
+            role="option"
+            aria-selected="${selected ? "true" : "false"}">
+      <span class="workbench-view-option-label">${escapeHtml(label)}</span>
+    </button>`;
+}
+
+function pimSliceMenuMarkup(optionKind) {
+  if (optionKind === "kind") {
+    return PIM_SLICE_KINDS.map(([value, label]) => sliceOptionButton({
+      value,
+      label,
+      selected: state.pimWorkbench.sliceKind === value,
+      optionKind
+    })).join("");
+  }
+  const options = [{id: "", name: "Any"}, ...sliceItems()];
+  return options.map((item) => sliceOptionButton({
+    value: item.id,
+    label: item.id ? elementLabel(item) : item.name,
+    selected: (state.pimWorkbench.sliceValue || "") === item.id,
+    optionKind
+  })).join("");
+}
+
+function pimSliceSelectMarkup(optionKind) {
+  const isKind = optionKind === "kind";
+  const open = pimSliceMenuOpen === optionKind;
+  const label = isKind ? pimSliceKindLabel() : pimSliceValueLabel();
+  const dataAttr = isKind ? "data-pim-slice-kind" : "data-pim-slice-value";
+  return `<div class="workbench-view-select-wrap workbench-slice-select-wrap${open
+      ? " is-open" : ""}">
+      <button class="sidebar-select workbench-view-select workbench-slice-select"
+              type="button"
+              ${dataAttr}
+              data-pim-slice-toggle="${optionKind}"
+              aria-haspopup="listbox"
+              aria-expanded="${open ? "true" : "false"}">
+        <span class="workbench-view-select-label">${escapeHtml(label)}</span>
+      </button>
+      <span class="workbench-view-select-caret" aria-hidden="true"></span>
+      <div class="workbench-view-menu workbench-slice-menu${open ? "" : " hidden"}"
+           role="listbox">
+        ${pimSliceMenuMarkup(optionKind)}
+      </div>
+    </div>`;
 }
 
 function renderBody(profile, representation) {
@@ -1276,6 +1349,27 @@ function bindSurfaceEvents() {
     if (sortKey) {
       state.pimWorkbench.sortKey = sortKey;
       renderPimWorkbenchSurface();
+      return;
+    }
+    const sliceToggle = target?.closest("[data-pim-slice-toggle]")?.dataset
+        ?.pimSliceToggle;
+    if (sliceToggle) {
+      pimSliceMenuOpen = pimSliceMenuOpen === sliceToggle ? "" : sliceToggle;
+      renderPimWorkbenchSurface();
+      return;
+    }
+    const sliceOption = target?.closest("[data-pim-slice-option]");
+    if (sliceOption) {
+      const optionKind = sliceOption.dataset.pimSliceOption;
+      const value = sliceOption.dataset.pimSliceOptionValue || "";
+      if (optionKind === "kind") {
+        state.pimWorkbench.sliceKind = value;
+        state.pimWorkbench.sliceValue = "";
+      } else {
+        state.pimWorkbench.sliceValue = value;
+      }
+      pimSliceMenuOpen = "";
+      renderPimWorkbenchSurface();
     }
   });
   host.addEventListener("change", (event) => {
@@ -1326,6 +1420,13 @@ function bindSurfaceEvents() {
     if (target?.dataset?.pimSearch !== undefined) {
       state.pimWorkbench.search = target.value;
       scheduleSearchRender();
+    }
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (pimSliceMenuOpen && !target?.closest(".workbench-slice-select-wrap")) {
+      pimSliceMenuOpen = "";
+      renderPimWorkbenchSurface();
     }
   });
 }

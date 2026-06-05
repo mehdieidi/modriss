@@ -45,6 +45,20 @@ let renderPaletteCallback = null;
 let openAttributePanelCallback = null;
 let openConnectionPanelCallback = null;
 let searchRenderTimer = 0;
+let cimSliceMenuOpen = "";
+
+const CIM_SLICE_KINDS = [
+  ["", "All slices"],
+  ["context", "Context"],
+  ["capability", "Capability"],
+  ["actor", "Actor"],
+  ["aggregate", "Aggregate"],
+  ["process", "Process"],
+  ["classification", "Classification"],
+  ["lifecycle", "Lifecycle"],
+  ["blocking", "Blocking"],
+  ["traceType", "Trace type"]
+];
 
 function scheduleSearchRender() {
   if (searchRenderTimer) {
@@ -987,7 +1001,7 @@ function renderDetailProjection() {
   </section>`;
 }
 
-function sliceOptions() {
+function sliceItems() {
   const kind = state.cimWorkbench.sliceKind || "";
   const collections = {
     context: elementsMatchingTypes(["BoundedContextCandidate"]),
@@ -1005,10 +1019,72 @@ function sliceOptions() {
     })),
     blocking: [{id: "true", name: "Blocking items"}]
   };
-  const options = collections[kind] || [];
-  return options.map((item) => `<option value="${escapeHtml(item.id)}" ${
-      state.cimWorkbench.sliceValue === item.id ? "selected" : ""}>${
-      escapeHtml(elementLabel(item))}</option>`).join("");
+  return collections[kind] || [];
+}
+
+function cimSliceKindLabel(value = state.cimWorkbench.sliceKind) {
+  return CIM_SLICE_KINDS.find(([key]) => key === value)?.[1] || "All slices";
+}
+
+function cimSliceValueLabel() {
+  const value = state.cimWorkbench.sliceValue || "";
+  if (!value) {
+    return "Any";
+  }
+  const item = sliceItems().find((candidate) => candidate.id === value);
+  return item ? elementLabel(item) : value;
+}
+
+function sliceOptionButton({value, label, selected, optionKind}) {
+  return `<button class="workbench-view-option${selected ? " is-active" : ""}"
+            type="button"
+            data-cim-slice-option="${escapeHtml(optionKind)}"
+            data-cim-slice-option-value="${escapeHtml(value)}"
+            role="option"
+            aria-selected="${selected ? "true" : "false"}">
+      <span class="workbench-view-option-label">${escapeHtml(label)}</span>
+    </button>`;
+}
+
+function cimSliceMenuMarkup(optionKind) {
+  if (optionKind === "kind") {
+    return CIM_SLICE_KINDS.map(([value, label]) => sliceOptionButton({
+      value,
+      label,
+      selected: state.cimWorkbench.sliceKind === value,
+      optionKind
+    })).join("");
+  }
+  const options = [{id: "", name: "Any"}, ...sliceItems()];
+  return options.map((item) => sliceOptionButton({
+    value: item.id,
+    label: item.id ? elementLabel(item) : item.name,
+    selected: (state.cimWorkbench.sliceValue || "") === item.id,
+    optionKind
+  })).join("");
+}
+
+function cimSliceSelectMarkup(optionKind) {
+  const isKind = optionKind === "kind";
+  const open = cimSliceMenuOpen === optionKind;
+  const label = isKind ? cimSliceKindLabel() : cimSliceValueLabel();
+  const dataAttr = isKind ? "data-cim-slice-kind" : "data-cim-slice-value";
+  return `<div class="workbench-view-select-wrap cim-slice-select-wrap${open
+      ? " is-open" : ""}">
+      <button class="sidebar-select workbench-view-select cim-slice-select"
+              type="button"
+              ${dataAttr}
+              data-cim-slice-toggle="${optionKind}"
+              aria-haspopup="listbox"
+              aria-expanded="${open ? "true" : "false"}">
+        <span class="workbench-view-select-label">${escapeHtml(label)}</span>
+      </button>
+      <span class="workbench-view-select-caret" aria-hidden="true"></span>
+      <div class="workbench-view-menu cim-slice-menu${open ? "" : " hidden"}"
+           role="listbox">
+        ${cimSliceMenuMarkup(optionKind)}
+      </div>
+    </div>`;
 }
 
 function renderControls(profile, representation) {
@@ -1034,17 +1110,8 @@ function renderControls(profile, representation) {
     <div class="cim-filter-row">
       <input data-cim-search placeholder="Search model..." type="search"
              value="${escapeHtml(state.cimWorkbench.search || "")}">
-      <select data-cim-slice-kind>
-        <option value="">All slices</option>
-        ${["context", "capability", "actor", "aggregate", "process",
-    "classification", "lifecycle", "blocking", "traceType"].map(
-      (item) => `<option value="${item}" ${
-          state.cimWorkbench.sliceKind === item ? "selected" : ""}>${
-          escapeHtml(item)}</option>`).join("")}
-      </select>
-      <select data-cim-slice-value>
-        <option value="">Any</option>${sliceOptions()}
-      </select>
+      ${cimSliceSelectMarkup("kind")}
+      ${cimSliceSelectMarkup("value")}
       <label class="cim-check-label">
         <input data-cim-missing-only type="checkbox" ${
       state.cimWorkbench.missingOnly ? "checked" : ""}> Missing required
@@ -1513,6 +1580,27 @@ function bindSurfaceEvents() {
       renderCimWorkbenchSurface();
       return;
     }
+    const sliceToggle = target?.closest("[data-cim-slice-toggle]")?.dataset
+        ?.cimSliceToggle;
+    if (sliceToggle) {
+      cimSliceMenuOpen = cimSliceMenuOpen === sliceToggle ? "" : sliceToggle;
+      renderCimWorkbenchSurface();
+      return;
+    }
+    const sliceOption = target?.closest("[data-cim-slice-option]");
+    if (sliceOption) {
+      const optionKind = sliceOption.dataset.cimSliceOption;
+      const value = sliceOption.dataset.cimSliceOptionValue || "";
+      if (optionKind === "kind") {
+        state.cimWorkbench.sliceKind = value;
+        state.cimWorkbench.sliceValue = "";
+      } else {
+        state.cimWorkbench.sliceValue = value;
+      }
+      cimSliceMenuOpen = "";
+      renderCimWorkbenchSurface();
+      return;
+    }
     const childButton = target?.closest("[data-cim-add-child]");
     if (childButton) {
       addContainedChild(childButton.dataset.cimAddChild,
@@ -1577,6 +1665,13 @@ function bindSurfaceEvents() {
     if (target?.dataset?.cimSearch !== undefined) {
       state.cimWorkbench.search = target.value;
       scheduleSearchRender();
+    }
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (cimSliceMenuOpen && !target?.closest(".cim-slice-select-wrap")) {
+      cimSliceMenuOpen = "";
+      renderCimWorkbenchSurface();
     }
   });
 }

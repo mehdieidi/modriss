@@ -220,8 +220,6 @@ function viewMenuMarkup() {
       : "false"}">
       <span class="workbench-view-option-label">${escapeHtml(
       view.name || view.id)}</span>
-      <span class="workbench-view-option-kind">${escapeHtml(
-      String(view.kind || "view").toLowerCase())}</span>
     </button>`).join("");
 }
 

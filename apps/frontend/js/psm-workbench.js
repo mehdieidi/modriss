@@ -35,6 +35,14 @@ let renderPaletteCallback = null;
 let openAttributePanelCallback = null;
 let openConnectionPanelCallback = null;
 let searchRenderTimer = 0;
+let psmSliceMenuOpen = "";
+
+const PSM_SLICE_KINDS = [
+  ["", "All slices"],
+  ["security", "Security"],
+  ["production", "Production"],
+  ["lifecycle", "Lifecycle"]
+];
 
 function scheduleSearchRender() {
   if (searchRenderTimer) {
@@ -651,29 +659,86 @@ function renderControls(profile, representation) {
     <div class="cim-filter-row">
       <input data-psm-search placeholder="Search PSM" value="${escapeHtml(
       state.psmWorkbench.search || "")}">
-      <select data-psm-slice-kind>
-        <option value="">All slices</option>
-        ${["security", "production", "lifecycle"].map((item) =>
-      `<option value="${item}" ${
-          state.psmWorkbench.sliceKind === item ? "selected" : ""}>${
-          escapeHtml(item)}</option>`).join("")}
-      </select>
-      <select data-psm-slice-value><option value="">Any</option>${sliceOptions()}</select>
+      ${psmSliceSelectMarkup("kind")}
+      ${psmSliceSelectMarkup("value")}
       <label class="cim-check-label"><input data-psm-missing-only type="checkbox" ${
       state.psmWorkbench.missingOnly ? "checked" : ""}> Missing required</label>
     </div>
   </div>`;
 }
 
-function sliceOptions() {
+function sliceItems() {
   if (state.psmWorkbench.sliceKind === "lifecycle") {
-    const statuses = [...new Set(elements().map((item) =>
-        String(item.lifecycleStatus || "")).filter(Boolean))];
-    return statuses.map((status) => `<option value="${escapeHtml(status)}" ${
-        state.psmWorkbench.sliceValue === status ? "selected" : ""}>${
-        escapeHtml(status)}</option>`).join("");
+    return [...new Set(elements().map((item) =>
+        String(item.lifecycleStatus || "")).filter(Boolean))]
+    .map((status) => ({id: status, name: status}));
   }
-  return "";
+  return [];
+}
+
+function psmSliceKindLabel(value = state.psmWorkbench.sliceKind) {
+  return PSM_SLICE_KINDS.find(([key]) => key === value)?.[1] || "All slices";
+}
+
+function psmSliceValueLabel() {
+  const value = state.psmWorkbench.sliceValue || "";
+  if (!value) {
+    return "Any";
+  }
+  const item = sliceItems().find((candidate) => candidate.id === value);
+  return item ? elementLabel(item) : value;
+}
+
+function sliceOptionButton({value, label, selected, optionKind}) {
+  return `<button class="workbench-view-option${selected ? " is-active" : ""}"
+            type="button"
+            data-psm-slice-option="${escapeHtml(optionKind)}"
+            data-psm-slice-option-value="${escapeHtml(value)}"
+            role="option"
+            aria-selected="${selected ? "true" : "false"}">
+      <span class="workbench-view-option-label">${escapeHtml(label)}</span>
+    </button>`;
+}
+
+function psmSliceMenuMarkup(optionKind) {
+  if (optionKind === "kind") {
+    return PSM_SLICE_KINDS.map(([value, label]) => sliceOptionButton({
+      value,
+      label,
+      selected: state.psmWorkbench.sliceKind === value,
+      optionKind
+    })).join("");
+  }
+  const options = [{id: "", name: "Any"}, ...sliceItems()];
+  return options.map((item) => sliceOptionButton({
+    value: item.id,
+    label: item.id ? elementLabel(item) : item.name,
+    selected: (state.psmWorkbench.sliceValue || "") === item.id,
+    optionKind
+  })).join("");
+}
+
+function psmSliceSelectMarkup(optionKind) {
+  const isKind = optionKind === "kind";
+  const open = psmSliceMenuOpen === optionKind;
+  const label = isKind ? psmSliceKindLabel() : psmSliceValueLabel();
+  const dataAttr = isKind ? "data-psm-slice-kind" : "data-psm-slice-value";
+  return `<div class="workbench-view-select-wrap workbench-slice-select-wrap${open
+      ? " is-open" : ""}">
+      <button class="sidebar-select workbench-view-select workbench-slice-select"
+              type="button"
+              ${dataAttr}
+              data-psm-slice-toggle="${optionKind}"
+              aria-haspopup="listbox"
+              aria-expanded="${open ? "true" : "false"}">
+        <span class="workbench-view-select-label">${escapeHtml(label)}</span>
+      </button>
+      <span class="workbench-view-select-caret" aria-hidden="true"></span>
+      <div class="workbench-view-menu workbench-slice-menu${open ? "" : " hidden"}"
+           role="listbox">
+        ${psmSliceMenuMarkup(optionKind)}
+      </div>
+    </div>`;
 }
 
 function renderBody(representation) {
@@ -850,6 +915,27 @@ function bindSurfaceEvents() {
     if (sortKey) {
       state.psmWorkbench.sortKey = sortKey;
       renderPsmWorkbenchSurface();
+      return;
+    }
+    const sliceToggle = target?.closest("[data-psm-slice-toggle]")?.dataset
+        ?.psmSliceToggle;
+    if (sliceToggle) {
+      psmSliceMenuOpen = psmSliceMenuOpen === sliceToggle ? "" : sliceToggle;
+      renderPsmWorkbenchSurface();
+      return;
+    }
+    const sliceOption = target?.closest("[data-psm-slice-option]");
+    if (sliceOption) {
+      const optionKind = sliceOption.dataset.psmSliceOption;
+      const value = sliceOption.dataset.psmSliceOptionValue || "";
+      if (optionKind === "kind") {
+        state.psmWorkbench.sliceKind = value;
+        state.psmWorkbench.sliceValue = "";
+      } else {
+        state.psmWorkbench.sliceValue = value;
+      }
+      psmSliceMenuOpen = "";
+      renderPsmWorkbenchSurface();
     }
   });
   host.addEventListener("change", (event) => {
@@ -895,6 +981,13 @@ function bindSurfaceEvents() {
     if (target?.dataset?.psmSearch !== undefined) {
       state.psmWorkbench.search = target.value;
       scheduleSearchRender();
+    }
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (psmSliceMenuOpen && !target?.closest(".workbench-slice-select-wrap")) {
+      psmSliceMenuOpen = "";
+      renderPsmWorkbenchSurface();
     }
   });
 }
