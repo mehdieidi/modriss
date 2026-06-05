@@ -11,6 +11,7 @@ import {
   syncActiveViewFromVisibleGraph
 } from './graph-store.js';
 import {materializeActiveView} from './view-materializer.js';
+import {modelingLevelConfig} from './modeling-config-data.js';
 import {
   activeCanvasFocus,
   canvasFocusLabel,
@@ -32,56 +33,6 @@ let viewMenuOpen = false;
 let treeBodyScrollTop = 0;
 let modelTreeMode = "elements";
 let modelTreeFilter = "";
-
-const SPEC_VIEW_NAMES = {
-  cim: [
-    "CIM Overview",
-    "Goals and Requirements",
-    "Capability Map",
-    "Stakeholder and Actor Map",
-    "Bounded Context and Ubiquitous Language",
-    "Domain Model",
-    "Aggregate and Lifecycle",
-    "Domain Data and Classification",
-    "Behavior/Event Storming",
-    "Business Process",
-    "Policy and Decision",
-    "Governance and Risk",
-    "Transformation Readiness",
-    "Trace Overlay"
-  ],
-  pim: [
-    "PIM Overview",
-    "Service Landscape",
-    "API and Contract View",
-    "Function and Trigger View",
-    "Event and Flow View",
-    "Data and Storage View",
-    "Workflow View",
-    "Security View",
-    "Configuration and Secrets",
-    "Policy and Observability View",
-    "Deployment and Environment View",
-    "Schema and Event Contract View",
-    "Trace and Readiness Overlay"
-  ],
-  psm: [
-    "AWS PSM Overview",
-    "Stage and Stack View",
-    "Lambda Detail View",
-    "API Gateway View",
-    "EventBridge and Messaging View",
-    "Storage View",
-    "Security, IAM, and Secrets View",
-    "Cognito Identity View",
-    "Step Functions / ASL View",
-    "Observability and Networking View",
-    "Networking Detail View",
-    "SAM and CloudFormation View",
-    "Trace and Readiness Overlay",
-    "Integration Shortcut View"
-  ]
-};
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -115,10 +66,36 @@ function viewMatchesLevel(view) {
   return !level || level === state.activeType;
 }
 
+function metadataViewKeys() {
+  try {
+    return safeArray(modelingLevelConfig(state.activeType).viewDefinitions).map(
+        (definition) => normalizeLabel([
+          definition?.displayName,
+          definition?.name,
+          definition?.id
+        ].filter(Boolean).join(" ")));
+  } catch {
+    return [];
+  }
+}
+
+function viewMetadataKey(view) {
+  return normalizeLabel([
+    view?.name,
+    view?.displayName,
+    view?.definitionId,
+    view?.sourceDefinitionId
+  ].filter(Boolean).join(" "));
+}
+
+function metadataKeyMatches(viewKey, metadataKey) {
+  return Boolean(viewKey && metadataKey)
+      && (viewKey.includes(metadataKey) || metadataKey.includes(viewKey));
+}
+
 function levelViews() {
   const all = [...state.views.byId.values()].filter(viewMatchesLevel);
-  const wanted = safeArray(SPEC_VIEW_NAMES[state.activeType]).map(
-      normalizeLabel);
+  const wanted = metadataViewKeys();
   const wantedSet = new Set(wanted);
   const rank = (view) => {
     const kind = String(view?.kind || "").toUpperCase();
@@ -128,7 +105,8 @@ function levelViews() {
     if (kind === "SAVED_VIEWPOINT") {
       return 350;
     }
-    const specIndex = wanted.indexOf(normalizeLabel(view.name));
+    const specIndex = wanted.findIndex((key) =>
+        metadataKeyMatches(viewMetadataKey(view), key));
     if (specIndex >= 0) {
       return specIndex;
     }
@@ -138,7 +116,8 @@ function levelViews() {
     const kind = String(view?.kind || "").toUpperCase();
     return kind === "MAIN"
         || kind === "SAVED_VIEWPOINT"
-        || wantedSet.has(normalizeLabel(view.name))
+        || [...wantedSet].some((key) =>
+            metadataKeyMatches(viewMetadataKey(view), key))
         || !view.scope?.rootElementId;
   });
   return filtered.sort((a, b) => rank(a) - rank(b)

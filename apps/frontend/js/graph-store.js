@@ -446,6 +446,23 @@ function relationshipKindMatches(kind, allowedKinds) {
   return Boolean(family && allowedKinds.has(family));
 }
 
+function elementMatchesFilterTypes(element, filterTypes, typeKey) {
+  if (!filterTypes?.size) {
+    return true;
+  }
+  if (!element) {
+    return false;
+  }
+  const type = semanticType(element);
+  return filterTypes.has(type) || [...filterTypes].some((expected) => {
+    try {
+      return matchesSemanticType(element, expected, typeKey);
+    } catch {
+      return false;
+    }
+  });
+}
+
 function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
   const additions = [];
   const edgeKeys = new Set();
@@ -714,6 +731,25 @@ function withRelationshipEndpoints(graph, elementIds, relationshipIds = []) {
   return [...expanded];
 }
 
+function withFilteredRelationshipEndpoints(graph, elementIds,
+    relationshipIds = [], filterTypes = new Set(), typeKey = state.activeType) {
+  const expanded = new Set(elementIds);
+  safeArray(relationshipIds).forEach((relationshipId) => {
+    const relationship = graph.relationshipsById.get(relationshipId);
+    if (!relationship) {
+      return;
+    }
+    [relationship.sourceElementId, relationship.targetElementId].forEach(
+        (elementId) => {
+          const element = graph.elementsById.get(elementId);
+          if (elementMatchesFilterTypes(element, filterTypes, typeKey)) {
+            expanded.add(elementId);
+          }
+        });
+  });
+  return [...expanded];
+}
+
 function relationshipIdsTouchingElements(graph, elementIds,
     relationshipKinds = []) {
   const ids = new Set(elementIds);
@@ -775,6 +811,7 @@ function neighborhoodElementIds(graph, rootElementId, depth) {
 export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
   const filterTypes = new Set(safeArray(view?.filters?.elementTypes));
+  const metadataBacked = Boolean(matchingViewDefinition(typeKey, view));
   let candidates;
   const explicitNodeIds = safeArray(view?.nodes).map((node) =>
       String(node?.elementId || node?.id || "")).filter(Boolean);
@@ -785,7 +822,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
   const hasSemanticFilters = Boolean(filterTypes.size || safeArray(
       view?.filters?.relationshipKinds).length);
   const hasExplicitNodes = explicitNodeIds.length > 0
-      && !(hasOnlyRootExplicitNodes && hasSemanticFilters);
+      && !metadataBacked && !(hasOnlyRootExplicitNodes && hasSemanticFilters);
   if (hasExplicitNodes) {
     candidates = new Set(explicitNodeIds);
   } else if (view?.scope?.rootElementId) {
@@ -804,14 +841,8 @@ export function selectElementIdsForView(graph, view, typeKey) {
       selected.push(elementId);
       return;
     }
-    const includeByType = !filterTypes.size || filterTypes.has(
-        semanticType(element)) || [...filterTypes].some((expected) => {
-      try {
-        return matchesSemanticType(element, expected, typeKey);
-      } catch {
-        return false;
-      }
-    }) || elementId === view?.scope?.rootElementId;
+    const includeByType = elementMatchesFilterTypes(element, filterTypes,
+        typeKey) || elementId === view?.scope?.rootElementId;
     if (includeByType) {
       selected.push(elementId);
     }
@@ -828,6 +859,10 @@ export function selectElementIdsForView(graph, view, typeKey) {
       const parent = graph.elementsById.get(parentId);
       if (!parent || semanticType(parent) === ROOT_SCOPE_TYPE[typeKey]) {
         break;
+      }
+      if (!elementMatchesFilterTypes(parent, filterTypes, typeKey)) {
+        parentId = graph.parentByChild.get(parentId);
+        continue;
       }
       selected.push(parentId);
       selectedSet.add(parentId);
@@ -979,8 +1014,9 @@ function buildViewFromDefinition(typeKey, graph, definition,
   let elementIds = selectElementIdsForView(graph, view, typeKey);
   const relationshipKinds = safeArray(definition.relationshipKinds);
   if (relationshipKinds.length) {
-    elementIds = withRelationshipEndpoints(graph, elementIds,
-        relationshipIdsTouchingElements(graph, elementIds, relationshipKinds));
+    elementIds = withFilteredRelationshipEndpoints(graph, elementIds,
+        relationshipIdsTouchingElements(graph, elementIds, relationshipKinds),
+        new Set(safeArray(definition.elementTypes).map(String)), typeKey);
   }
   const relationshipIds = selectRelationshipIdsForView(graph, view, elementIds);
   view.nodes = layoutNodesForElements(graph, elementIds, [], typeKey);
@@ -1125,16 +1161,18 @@ function normalizeView(view, graph, typeKey, modelName) {
     }
   }
   if (graph.elementsById.size) {
-    let elementIds = normalized.nodes.length
-        ? normalized.nodes.map((node) => node.elementId)
-        : selectElementIdsForView(graph, normalized, typeKey);
+    let elementIds = definition || !normalized.nodes.length
+        ? selectElementIdsForView(graph, normalized, typeKey)
+        : normalized.nodes.map((node) => node.elementId);
     const explicitRelationshipIds = normalized.edges.map(
         (edge) => edge.relationshipId);
-    elementIds = withRelationshipEndpoints(graph, elementIds, [
-      ...explicitRelationshipIds,
-      ...relationshipIdsTouchingElements(graph, elementIds,
-          normalized.filters.relationshipKinds)
-    ]);
+    elementIds = withFilteredRelationshipEndpoints(graph, elementIds, [
+          ...explicitRelationshipIds,
+          ...relationshipIdsTouchingElements(graph, elementIds,
+              normalized.filters.relationshipKinds)
+        ],
+        new Set(safeArray(normalized.filters.elementTypes).map(String)),
+        typeKey);
     normalized.nodes = layoutNodesForElements(graph, elementIds,
         normalized.nodes, typeKey);
   }
