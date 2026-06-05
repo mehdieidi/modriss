@@ -30,7 +30,9 @@ Errors are returned as JSON:
   "message": "Request validation failed.",
   "status": 400,
   "timestamp": "2026-06-05T12:00:00Z",
-  "issues": ["field: detail"]
+  "issues": [
+    "field: detail"
+  ]
 }
 ```
 
