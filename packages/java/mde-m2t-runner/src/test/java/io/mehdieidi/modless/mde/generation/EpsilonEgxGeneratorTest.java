@@ -31,13 +31,28 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * Regression tests for EGX-driven artifact generation from AWS PSM models.
+ */
 final class EpsilonEgxGeneratorTest {
 
+    /**
+     * Repository root discovered from the current test working directory.
+     */
     private static final Path REPOSITORY_ROOT = findRepositoryRoot();
 
+    /**
+     * Temporary directory for generated source models and artifact projects.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Locates the repository root by walking upward to the MDE metamodel and generation
+     * directories.
+     *
+     * @return normalized repository root path
+     */
     private static Path findRepositoryRoot() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {
@@ -50,6 +65,9 @@ final class EpsilonEgxGeneratorTest {
         throw new IllegalStateException("Could not locate repository root from user.dir.");
     }
 
+    /**
+     * Ensures a missing EGX module is reported as a validation diagnostic.
+     */
     @Test
     void reportsMissingEgxModuleAsValidationDiagnostic() {
         EpsilonEgxGenerator generator = new EpsilonEgxGenerator();
@@ -70,6 +88,12 @@ final class EpsilonEgxGeneratorTest {
                         && d.reason().contains("EGX module does not exist")));
     }
 
+    /**
+     * Generates a project from a synthetic AWS PSM fixture and verifies the generated tree,
+     * reports, traces, scripts, and CI configuration.
+     *
+     * @throws Exception when fixture creation or generation fails
+     */
     @Test
     void generatesArtifactsForRepresentativeAwsPsmModel() throws Exception {
         Path sourceModel = tempDir.resolve("representative-aws-psm.xmi");
@@ -107,6 +131,12 @@ final class EpsilonEgxGeneratorTest {
         assertGeneratedScriptsAndCiImplementProductionGates(outputDirectory);
     }
 
+    /**
+     * Generates artifacts from the repository PSM sample and verifies trace coverage plus
+     * duplicate-free SAM parameters.
+     *
+     * @throws Exception when generation or generated-file inspection fails
+     */
     @Test
     void generatesCompleteUniqueTraceForRepositoryPsmSample() throws Exception {
         Path sourceModel = REPOSITORY_ROOT.resolve("mde/samples/psm.xmi");
@@ -127,6 +157,13 @@ final class EpsilonEgxGeneratorTest {
         assertGeneratedSamTemplatesDoNotRepeatParameterKeys(outputDirectory);
     }
 
+    /**
+     * Asserts that the generator emitted the production project skeleton expected by downstream
+     * users.
+     *
+     * @param outputDirectory generated project root
+     * @throws IOException when generated files cannot be inspected
+     */
     private void assertRequiredProjectTreeWasGenerated(Path outputDirectory) throws IOException {
         List<String> requiredFiles = List.of(
                 "template.yaml",
@@ -197,6 +234,13 @@ final class EpsilonEgxGeneratorTest {
         }
     }
 
+    /**
+     * Ensures the generated project is Go-only and references the generated Go module from its
+     * Lambda handler.
+     *
+     * @param outputDirectory generated project root
+     * @throws IOException when generated files cannot be inspected
+     */
     private void assertGoOnlyArtifactsWereGenerated(Path outputDirectory) throws IOException {
         assertFalse(Files.exists(outputDirectory.resolve("package.json")));
         assertFalse(Files.exists(outputDirectory.resolve("pyproject.toml")));
@@ -228,6 +272,12 @@ final class EpsilonEgxGeneratorTest {
         assertTrue(handler.contains("\"example.com/representative-aws-psm/src/shared\""));
     }
 
+    /**
+     * Verifies executor-finalized trace files no longer contain placeholder hashes or checksums.
+     *
+     * @param outputDirectory generated project root
+     * @throws IOException when trace files cannot be read
+     */
     private void assertTraceFilesAreFinalized(Path outputDirectory) throws IOException {
         String artifactTrace = Files.readString(
                 outputDirectory.resolve("generated/trace/artifact-trace.json"));
@@ -242,6 +292,14 @@ final class EpsilonEgxGeneratorTest {
         assertTrue(artifactTrace.contains("\"artifactKind\": \"SAM_TEMPLATE\""));
     }
 
+    /**
+     * Asserts artifact trace paths are unique and cover every file reported by the generation
+     * runner.
+     *
+     * @param outputDirectory generated project root
+     * @param report          successful generation report
+     * @throws IOException when trace files cannot be read
+     */
     private void assertTraceCoversEveryGeneratedFile(Path outputDirectory,
             EgxGenerationReport report)
             throws IOException {
@@ -262,6 +320,12 @@ final class EpsilonEgxGeneratorTest {
         }
     }
 
+    /**
+     * Extracts path entries from the generated artifact trace JSON.
+     *
+     * @param artifactTrace artifact trace JSON text
+     * @return ordered list of traced artifact paths
+     */
     private List<String> tracePaths(String artifactTrace) {
         Matcher matcher = Pattern.compile("\"path\"\\s*:\\s*\"([^\"]+)\"")
                 .matcher(artifactTrace);
@@ -272,6 +336,12 @@ final class EpsilonEgxGeneratorTest {
         return paths;
     }
 
+    /**
+     * Checks every generated SAM template for duplicate parameter keys.
+     *
+     * @param outputDirectory generated project root
+     * @throws IOException when generated templates cannot be inspected
+     */
     private void assertGeneratedSamTemplatesDoNotRepeatParameterKeys(Path outputDirectory)
             throws IOException {
         try (var files = Files.walk(outputDirectory)) {
@@ -285,6 +355,12 @@ final class EpsilonEgxGeneratorTest {
         }
     }
 
+    /**
+     * Scans a SAM template's top-level {@code Parameters} section for duplicate keys.
+     *
+     * @param templateFile generated template file
+     * @throws IOException when the template cannot be read
+     */
     private void assertNoDuplicateParameterKeys(Path templateFile) throws IOException {
         Set<String> parameterNames = new LinkedHashSet<>();
         boolean inParameters = false;
@@ -306,6 +382,12 @@ final class EpsilonEgxGeneratorTest {
         }
     }
 
+    /**
+     * Verifies the generated Markdown report summarizes manual actions and export gates.
+     *
+     * @param outputDirectory generated project root
+     * @throws IOException when the report cannot be read
+     */
     private void assertGenerationReportContainsExportGateSummary(Path outputDirectory)
             throws IOException {
         String generationReport = Files.readString(
@@ -316,6 +398,13 @@ final class EpsilonEgxGeneratorTest {
         assertTrue(generationReport.contains("Blocking production issues"));
     }
 
+    /**
+     * Ensures generated scripts and validation workflow enforce the expected production gates with
+     * Go-only tooling.
+     *
+     * @param outputDirectory generated project root
+     * @throws IOException when generated scripts or workflow files cannot be read
+     */
     private void assertGeneratedScriptsAndCiImplementProductionGates(Path outputDirectory)
             throws IOException {
         for (String scriptName : List.of(
@@ -365,6 +454,13 @@ final class EpsilonEgxGeneratorTest {
         assertTrue(validateWorkflow.contains("bash scripts/validate-models.sh --security"));
     }
 
+    /**
+     * Runs the EGX generator and fails the test with diagnostics and captured output on generation
+     * failure.
+     *
+     * @param request generation request to execute
+     * @return successful generation report
+     */
     private EgxGenerationReport generateOrFail(EgxGenerationRequest request) {
         try {
             return new EpsilonEgxGenerator().generate(request);
@@ -376,6 +472,13 @@ final class EpsilonEgxGeneratorTest {
         }
     }
 
+    /**
+     * Creates a representative AWS PSM model that drives Lambda, IAM, CloudWatch, S3, SAM stack,
+     * and stage artifact generation.
+     *
+     * @param modelFile output XMI file path
+     * @throws IOException when the generated fixture cannot be saved
+     */
     private void createRepresentativeAwsPsmModel(Path modelFile) throws IOException {
         Path metamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
         ResourceSet resourceSet = new ResourceSetImpl();
@@ -523,6 +626,11 @@ final class EpsilonEgxGeneratorTest {
         modelResource.save(null);
     }
 
+    /**
+     * Registers all root packages contained in a metamodel resource.
+     *
+     * @param metamodelResource loaded Ecore metamodel
+     */
     private void registerPackages(Resource metamodelResource) {
         for (EObject content : metamodelResource.getContents()) {
             if (content instanceof EPackage ePackage) {
@@ -531,6 +639,11 @@ final class EpsilonEgxGeneratorTest {
         }
     }
 
+    /**
+     * Registers a package and all nested subpackages in the global EMF registry.
+     *
+     * @param ePackage package to register recursively
+     */
     private void registerPackage(EPackage ePackage) {
         EPackage.Registry.INSTANCE.put(ePackage.getNsURI(), ePackage);
         for (EPackage child : ePackage.getESubpackages()) {
@@ -538,17 +651,39 @@ final class EpsilonEgxGeneratorTest {
         }
     }
 
+    /**
+     * Creates an EMF object by classifier name from the loaded AWS PSM metamodel.
+     *
+     * @param metamodelResource loaded metamodel resource
+     * @param classifierName    EClass name to instantiate
+     * @return new EObject instance
+     */
     private EObject create(Resource metamodelResource, String classifierName) {
         EClass eClass = (EClass) classifier(metamodelResource, classifierName);
         EFactory factory = eClass.getEPackage().getEFactoryInstance();
         return factory.create(eClass);
     }
 
+    /**
+     * Resolves an enum literal instance by enum and literal name.
+     *
+     * @param metamodelResource loaded metamodel resource
+     * @param enumName          EEnum name
+     * @param literalName       literal name
+     * @return EMF enum literal instance
+     */
     private Object enumValue(Resource metamodelResource, String enumName, String literalName) {
         EEnum eEnum = (EEnum) classifier(metamodelResource, enumName);
         return eEnum.getEEnumLiteral(literalName).getInstance();
     }
 
+    /**
+     * Finds a classifier anywhere in a metamodel resource's package tree.
+     *
+     * @param metamodelResource loaded metamodel resource
+     * @param name              classifier name
+     * @return matching classifier
+     */
     private EClassifier classifier(Resource metamodelResource, String name) {
         for (EObject content : metamodelResource.getContents()) {
             EClassifier classifier = classifier((EPackage) content, name);
@@ -559,6 +694,13 @@ final class EpsilonEgxGeneratorTest {
         throw new IllegalArgumentException("Classifier not found: " + name);
     }
 
+    /**
+     * Finds a classifier in a package or any nested subpackage.
+     *
+     * @param ePackage package to search
+     * @param name     classifier name
+     * @return matching classifier, or {@code null}
+     */
     private EClassifier classifier(EPackage ePackage, String name) {
         EClassifier classifier = ePackage.getEClassifier(name);
         if (classifier != null) {
@@ -573,15 +715,37 @@ final class EpsilonEgxGeneratorTest {
         return null;
     }
 
+    /**
+     * Sets a named EMF feature on an object.
+     *
+     * @param object      owner object
+     * @param featureName feature to set
+     * @param value       value to assign
+     */
     private void set(EObject object, String featureName, Object value) {
         object.eSet(feature(object, featureName), value);
     }
 
+    /**
+     * Adds a value to a many-valued EMF feature.
+     *
+     * @param object      owner object
+     * @param featureName many-valued feature name
+     * @param value       value to add
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void add(EObject object, String featureName, Object value) {
         ((List) object.eGet(feature(object, featureName))).add(value);
     }
 
+    /**
+     * Resolves a structural feature and fails fast when fixture code no longer matches the
+     * metamodel.
+     *
+     * @param object      owner object
+     * @param featureName expected feature name
+     * @return resolved structural feature
+     */
     private EStructuralFeature feature(EObject object, String featureName) {
         EStructuralFeature feature = object.eClass().getEStructuralFeature(featureName);
         if (feature == null) {

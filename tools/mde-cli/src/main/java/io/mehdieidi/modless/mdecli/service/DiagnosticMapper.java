@@ -6,8 +6,17 @@ import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.emf.ecore.resource.Resource;
 
+/**
+ * Converts EMF resource diagnostics and exceptions into CLI diagnostics.
+ */
 public final class DiagnosticMapper {
 
+    /**
+     * Maps all errors and warnings currently attached to a resource.
+     *
+     * @param resource EMF resource
+     * @return mapped diagnostics
+     */
     public List<DiagnosticEntry> map(Resource resource) {
         List<DiagnosticEntry> diagnostics = new ArrayList<>();
         resource.getErrors()
@@ -17,6 +26,13 @@ public final class DiagnosticMapper {
         return diagnostics;
     }
 
+    /**
+     * Maps an exception without source coordinates.
+     *
+     * @param location related source location
+     * @param ex       exception to map
+     * @return error diagnostic
+     */
     public DiagnosticEntry fromException(String location, Exception ex) {
         return new DiagnosticEntry(
                 Severity.ERROR,
@@ -28,6 +44,13 @@ public final class DiagnosticMapper {
                 "");
     }
 
+    /**
+     * Maps an EMF resource diagnostic.
+     *
+     * @param diagnostic resource diagnostic
+     * @param severity   desired CLI severity
+     * @return mapped diagnostic
+     */
     private DiagnosticEntry fromResourceDiagnostic(Resource.Diagnostic diagnostic,
             Severity severity) {
         return new DiagnosticEntry(
@@ -40,6 +63,12 @@ public final class DiagnosticMapper {
                 "");
     }
 
+    /**
+     * Derives actionable guidance from common compiler and resource messages.
+     *
+     * @param message diagnostic message
+     * @return resolution hint, or an empty string
+     */
     private String hintForMessage(String message) {
         if (message == null || message.isBlank()) {
             return "";

@@ -17,12 +17,23 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Integration tests for standalone and modular Emfatic conversion.
+ */
 class EmfConversionServiceIntegrationTest {
 
+    /**
+     * Detects unstable positional references in serialized modular Ecore output.
+     */
     private static final Pattern POSITIONAL_FRAGMENT_PATTERN =
             Pattern.compile("(eType|eSuperTypes|eOpposite)=\"#/\\d");
     private final EmfConversionService conversionService = new EmfConversionService();
 
+    /**
+     * Verifies standalone Emfatic conversion.
+     *
+     * @throws Exception if fixture creation or conversion fails
+     */
     @Test
     void convertsSingleEmfaticFileIntoEcore() throws Exception {
         Path tempDirectory = Files.createTempDirectory("mde-cli-test-");
@@ -44,6 +55,11 @@ class EmfConversionServiceIntegrationTest {
         assertTrue(Files.exists(output));
     }
 
+    /**
+     * Verifies repository CIM modules combine into a normalized Ecore resource.
+     *
+     * @throws Exception if conversion or output inspection fails
+     */
     @Test
     void convertsSampleCimDirectoryIntoCombinedEcore() throws Exception {
         Path projectRoot = findProjectRoot();
@@ -70,6 +86,11 @@ class EmfConversionServiceIntegrationTest {
                 "Combined output should keep modular packages as top-level packages.");
     }
 
+    /**
+     * Verifies modular single-file output uses final resource URIs and stable fragments.
+     *
+     * @throws Exception if conversion or output inspection fails
+     */
     @Test
     void convertsModularSingleFileWithoutLeakingTempUris() throws Exception {
         Path projectRoot = findProjectRoot();
@@ -91,6 +112,11 @@ class EmfConversionServiceIntegrationTest {
                 "Single-file modular output should not use positional local XMI fragments.");
     }
 
+    /**
+     * Locates the repository root from the active test working directory.
+     *
+     * @return repository root
+     */
     private Path findProjectRoot() {
         try (Stream<Path> parents = Stream.iterate(
                 Path.of("").toAbsolutePath().normalize(),

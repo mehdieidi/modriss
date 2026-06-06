@@ -6,8 +6,18 @@ import io.mehdieidi.modless.mde.validation.EvlDiagnostic;
 import io.mehdieidi.modless.mde.validation.EvlValidationReport;
 import java.io.PrintWriter;
 
+/**
+ * Renders EVL validation reports for interactive console use.
+ */
 final class ConsoleReportWriter {
 
+    /**
+     * Writes a completed validation summary and any constraint violations.
+     *
+     * @param out     destination writer
+     * @param report  completed validation report
+     * @param verbose whether to include timing, captured output, and detailed references
+     */
     void writeSuccess(PrintWriter out, EvlValidationReport report, boolean verbose) {
         long mandatory = count(report, EvlConstraintKind.MANDATORY);
         long optional = count(report, EvlConstraintKind.OPTIONAL);
@@ -21,6 +31,13 @@ final class ConsoleReportWriter {
         }
     }
 
+    /**
+     * Writes a failed validation summary, diagnostics, and collected violations.
+     *
+     * @param err     destination writer
+     * @param report  failed validation report
+     * @param verbose whether to include timing, captured output, and detailed references
+     */
     void writeFailure(PrintWriter err, EvlValidationReport report, boolean verbose) {
         err.printf("EVL validation failed in %d ms.%n", report.duration().toMillis());
         err.printf("EVL root: %s%n", report.evlRoot());
@@ -54,10 +71,24 @@ final class ConsoleReportWriter {
         }
     }
 
+    /**
+     * Counts violations of a given constraint kind.
+     *
+     * @param report validation report
+     * @param kind   constraint kind
+     * @return matching violation count
+     */
     private long count(EvlValidationReport report, EvlConstraintKind kind) {
         return report.violations().stream().filter(v -> v.kind() == kind).count();
     }
 
+    /**
+     * Writes constraint violations in a human-readable format.
+     *
+     * @param writer  destination writer
+     * @param report  validation report
+     * @param verbose whether to include element URI fragments
+     */
     private void writeViolations(
             PrintWriter writer, EvlValidationReport report, boolean verbose) {
         for (EvlConstraintViolation violation : report.violations()) {
@@ -83,6 +114,12 @@ final class ConsoleReportWriter {
         }
     }
 
+    /**
+     * Writes non-empty captured EVL output streams.
+     *
+     * @param writer destination writer
+     * @param report validation report
+     */
     private void writeCaptured(PrintWriter writer, EvlValidationReport report) {
         if (!report.stdout().isBlank()) {
             writer.println("---- EVL stdout ----");
@@ -98,6 +135,12 @@ final class ConsoleReportWriter {
         }
     }
 
+    /**
+     * Writes module discovery and per-module validation timings.
+     *
+     * @param writer destination writer
+     * @param report validation report
+     */
     private void writeTimings(PrintWriter writer, EvlValidationReport report) {
         writer.printf("Module discovery: %d ms.%n",
                 report.moduleDiscoveryDuration().toMillis());

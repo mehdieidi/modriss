@@ -23,13 +23,28 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * Regression tests for the default PIM-to-AWS-PSM ETL profile and its emitted EMF model shape.
+ */
 final class PimToAwsPsmEtlRegressionTest {
 
+    /**
+     * Repository root discovered from the current test working directory.
+     */
     private static final Path REPOSITORY_ROOT = findRepositoryRoot();
 
+    /**
+     * Temporary output directory for generated AWS PSM models.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Locates the repository root by walking upward to the MDE directories used by the regression
+     * fixtures.
+     *
+     * @return normalized repository root path
+     */
     private static Path findRepositoryRoot() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {
@@ -42,6 +57,12 @@ final class PimToAwsPsmEtlRegressionTest {
         throw new IllegalStateException("Could not locate repository root from user.dir.");
     }
 
+    /**
+     * Transforms the repository PIM sample and verifies the AWS PSM model contains the expected
+     * production resources, stages, trace links, and readiness backlog.
+     *
+     * @throws Exception when ETL execution or model loading fails
+     */
     @Test
     void transformsSamplePimToAwsPsmWithSpecCompletenessShape() throws Exception {
         Path psmMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/psm/psm-combined.ecore");
@@ -99,6 +120,12 @@ final class PimToAwsPsmEtlRegressionTest {
                 "Expected generated readiness checks.");
     }
 
+    /**
+     * Executes an ETL request and fails the test with collected diagnostics on runner failure.
+     *
+     * @param request ETL execution request
+     * @return successful ETL report
+     */
     private EtlExecutionReport executeOrFail(EtlExecutionRequest request) {
         try {
             return new EpsilonEtlExecutor().execute(request);
@@ -108,6 +135,13 @@ final class PimToAwsPsmEtlRegressionTest {
         }
     }
 
+    /**
+     * Loads an XMI model after registering the supplied combined metamodel.
+     *
+     * @param metamodel combined Ecore metamodel path
+     * @param modelFile XMI model path
+     * @return loaded model resource
+     */
     private Resource loadModel(Path metamodel, Path modelFile) {
         ResourceSet resourceSet = new ResourceSetImpl();
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
@@ -123,6 +157,11 @@ final class PimToAwsPsmEtlRegressionTest {
         return modelResource;
     }
 
+    /**
+     * Registers all root packages contained in a metamodel resource.
+     *
+     * @param metamodelResource loaded Ecore resource
+     */
     private void registerPackages(Resource metamodelResource) {
         for (EObject content : metamodelResource.getContents()) {
             if (content instanceof EPackage ePackage) {
@@ -131,6 +170,11 @@ final class PimToAwsPsmEtlRegressionTest {
         }
     }
 
+    /**
+     * Registers a package and all nested subpackages in the global EMF registry.
+     *
+     * @param ePackage package to register recursively
+     */
     private void registerPackage(EPackage ePackage) {
         EPackage.Registry.INSTANCE.put(ePackage.getNsURI(), ePackage);
         for (EPackage child : ePackage.getESubpackages()) {
@@ -138,19 +182,48 @@ final class PimToAwsPsmEtlRegressionTest {
         }
     }
 
+    /**
+     * Reads a many-valued EMF feature as a list of model objects.
+     *
+     * @param object      owner object
+     * @param featureName structural feature name
+     * @return feature value cast to a list of {@link EObject}s
+     */
     @SuppressWarnings("unchecked")
     private List<EObject> values(EObject object, String featureName) {
         return (List<EObject>) object.eGet(feature(object, featureName));
     }
 
+    /**
+     * Reads a single-valued EMF reference.
+     *
+     * @param object      owner object
+     * @param featureName reference feature name
+     * @return referenced object, or {@code null}
+     */
     private EObject reference(EObject object, String featureName) {
         return (EObject) object.eGet(feature(object, featureName));
     }
 
+    /**
+     * Reads an arbitrary EMF feature value.
+     *
+     * @param object      owner object
+     * @param featureName structural feature name
+     * @return current feature value
+     */
     private Object get(EObject object, String featureName) {
         return object.eGet(feature(object, featureName));
     }
 
+    /**
+     * Resolves a structural feature and fails fast when the fixture no longer matches the
+     * metamodel.
+     *
+     * @param object      owner object
+     * @param featureName expected feature name
+     * @return resolved structural feature
+     */
     private EStructuralFeature feature(EObject object, String featureName) {
         EStructuralFeature feature = object.eClass().getEStructuralFeature(featureName);
         if (feature == null) {
@@ -160,22 +233,43 @@ final class PimToAwsPsmEtlRegressionTest {
         return feature;
     }
 
+    /**
+     * Asserts that at least one object has the requested EClass name.
+     *
+     * @param objects   objects to inspect
+     * @param className expected EClass name
+     * @param message   assertion failure message
+     */
     private void assertAny(List<EObject> objects, String className, String message) {
         assertTrue(objects.stream().anyMatch(object -> className.equals(object.eClass().getName())),
                 message);
     }
 
+    /**
+     * Asserts that at least one object belongs to any of the requested EClass names.
+     *
+     * @param objects    objects to inspect
+     * @param classNames accepted EClass names
+     * @param message    assertion failure message
+     */
     private void assertAnyOf(List<EObject> objects, List<String> classNames, String message) {
         assertTrue(
                 objects.stream().anyMatch(object -> classNames.contains(object.eClass().getName())),
                 message);
     }
 
+    /**
+     * Collects all contained objects that inherit from {@code AwsResource}.
+     *
+     * @param root AWS PSM root object
+     * @return contained AWS resources
+     */
     private List<EObject> containedAwsResources(EObject root) {
         List<EObject> resources = new java.util.ArrayList<>();
         TreeIterator<EObject> contents = root.eAllContents();
         while (contents.hasNext()) {
             EObject object = contents.next();
+            // Resource subclasses are spread across nested PSM packages, so use the metamodel type graph.
             if (object.eClass().getEAllSuperTypes().stream()
                     .anyMatch(type -> "AwsResource".equals(type.getName()))) {
                 resources.add(object);
@@ -184,6 +278,11 @@ final class PimToAwsPsmEtlRegressionTest {
         return resources;
     }
 
+    /**
+     * Verifies every generated EMF object ID is unique across the PSM containment tree.
+     *
+     * @param root AWS PSM root object
+     */
     private void assertGeneratedIdsAreUnique(EObject root) {
         List<String> ids = new java.util.ArrayList<>();
         if (feature(root, "id") != null && get(root, "id") != null) {

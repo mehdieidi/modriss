@@ -1,14 +1,13 @@
 .model-group {
   position: absolute;
   z-index: 5;
-  inset: 0;
+  inset: 4.5rem 0.8rem 0.8rem;
   transform-origin: 50% 50%;
 }
 
 .model-group[data-model="pim"],
 .model-group[data-model="psm"] {
   opacity: 0;
-  transform: translateX(24vw) scale(0.58);
 }
 
 .model-edges,
@@ -27,6 +26,7 @@
   fill: none;
   stroke: var(--edge-color, rgba(246, 244, 242, 0.42));
   stroke-linecap: round;
+  stroke-linejoin: round;
   stroke-width: 1.6;
   vector-effect: non-scaling-stroke;
   opacity: 0;
@@ -265,8 +265,7 @@
 
 .flow-token {
   position: absolute;
-  top: var(--token-y);
-  left: 50%;
+  top: 50%;
   display: grid;
   place-items: center;
   min-width: 2.3rem;
@@ -281,6 +280,120 @@
   font-size: 0.42rem;
   font-weight: 750;
   letter-spacing: 0.06em;
+  translate: -50% -50%;
+}
+
+.flow-token-input {
+  left: 12%;
+}
+
+.flow-token-output {
+  left: 53%;
+}
+
+.pipeline-rails {
+  position: absolute;
+  z-index: 11;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+}
+
+.pipeline-rail {
+  position: absolute;
+  top: 50%;
+  width: clamp(5.5rem, 25%, 21rem);
+  transform: translateY(-50%);
+}
+
+.rail-input {
+  right: calc(50% + clamp(4.8rem, 8vw, 7rem));
+}
+
+.rail-output {
+  left: calc(50% + clamp(4.8rem, 8vw, 7rem));
+}
+
+.rail-caption {
+  position: absolute;
+  bottom: calc(100% + 0.55rem);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--paper-dim);
+  font-size: 0.42rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rail-input .rail-caption {
+  right: 0;
+}
+
+.rail-output .rail-caption {
+  left: 0;
+}
+
+.rail-caption strong {
+  color: var(--lime);
+  font-size: 0.38rem;
+}
+
+.rail-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 1.1rem;
+  border: 1px solid rgba(246, 244, 242, 0.16);
+  border-radius: 0.3rem;
+  background: linear-gradient(180deg, rgba(246, 244, 242, 0.055), transparent),
+  rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+  0 0.8rem 1.8rem rgba(0, 0, 0, 0.2);
+}
+
+.rail-track::before {
+  position: absolute;
+  right: 0.35rem;
+  left: 0.35rem;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, var(--lime), transparent);
+  opacity: 0.55;
+}
+
+.rail-track i {
+  position: relative;
+  width: 0.24rem;
+  height: 0.24rem;
+  border: 1px solid rgba(246, 244, 242, 0.35);
+  border-radius: 50%;
+  background: #252423;
+}
+
+.rail-input .rail-track::after,
+.rail-output .rail-track::after {
+  position: absolute;
+  top: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-top: 1px solid var(--lime);
+  border-right: 1px solid var(--lime);
+  content: "";
+}
+
+.rail-input .rail-track::after {
+  right: 0.28rem;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.rail-output .rail-track::after {
+  right: 0.28rem;
+  transform: translateY(-50%) rotate(45deg);
 }
 
 .transformation-engine {
@@ -288,12 +401,12 @@
   z-index: 12;
   top: 50%;
   left: 50%;
-  width: min(23rem, 28vw);
-  height: min(23rem, 28vw);
+  width: min(16rem, 21vw);
+  height: min(16rem, 21vw);
   opacity: 0;
   pointer-events: none;
   perspective: 55rem;
-  transform: translate(-50%, -50%) scale(0.68);
+  transform: translate(-50%, -50%) scale(0.72);
   transform-origin: 50% 50%;
 }
 
@@ -581,19 +694,24 @@
 .assistant-demo {
   position: absolute;
   z-index: 25;
-  right: 2rem;
-  bottom: 2rem;
-  width: 20rem;
-  height: 25rem;
+  top: 0.8rem;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  width: calc(var(--assistant-reserve, min(21rem, 31vw)) - 1.6rem);
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
   opacity: 0;
+  background: linear-gradient(90deg, rgba(44, 42, 40, 0.88), rgba(37, 36, 35, 0.97));
+  box-shadow: -1.5rem 0 4rem rgba(0, 0, 0, 0.18);
   pointer-events: none;
   transform: translateY(2rem);
 }
 
 .chatbot {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: 1rem;
+  bottom: 1rem;
   width: 4.5rem;
   height: 4.5rem;
   border: 1px solid rgba(183, 255, 84, 0.55);
@@ -666,9 +784,10 @@
 
 .chat-window {
   position: absolute;
-  right: 1.3rem;
-  bottom: 5.6rem;
-  width: 18.5rem;
+  right: 1rem;
+  bottom: 6.6rem;
+  left: 1rem;
+  width: auto;
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 1rem;

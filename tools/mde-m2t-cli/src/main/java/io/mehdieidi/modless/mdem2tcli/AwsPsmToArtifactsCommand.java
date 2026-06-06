@@ -15,6 +15,9 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
+/**
+ * Generates deployable artifacts from an AWS PSM through the repository EGX/EGL profile.
+ */
 @Command(
         name = "aws-psm-to-artifacts",
         mixinStandardHelpOptions = true,
@@ -45,6 +48,12 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
     @Option(names = "--log-file", description = "Write a JSON generation report to this file.")
     private Path logFile;
 
+    /**
+     * Executes artifact generation and writes console and optional JSON reports.
+     *
+     * @return zero on success or two on generation failure
+     * @throws Exception if report output cannot be written
+     */
     @Override
     public Integer call() throws Exception {
         PrintWriter out = commandSpec.commandLine().getOut();
@@ -67,6 +76,12 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
         }
     }
 
+    /**
+     * Writes a successful generation summary.
+     *
+     * @param out    destination writer
+     * @param report successful generation report
+     */
     private void writeSuccess(PrintWriter out, EgxGenerationReport report) {
         out.printf("AWS PSM artifact generation succeeded in %d ms.%n",
                 report.duration().toMillis());
@@ -78,6 +93,12 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
         }
     }
 
+    /**
+     * Writes a failed generation summary and its diagnostics.
+     *
+     * @param err    destination writer
+     * @param report failed generation report
+     */
     private void writeFailure(PrintWriter err, EgxGenerationReport report) {
         err.printf("AWS PSM artifact generation failed in %d ms.%n",
                 report.duration().toMillis());
@@ -111,6 +132,12 @@ public final class AwsPsmToArtifactsCommand implements Callable<Integer> {
         }
     }
 
+    /**
+     * Writes non-empty captured EGX and EGL output streams.
+     *
+     * @param writer destination writer
+     * @param report generation report
+     */
     private void writeCaptured(PrintWriter writer, EgxGenerationReport report) {
         if (!report.standardOutput().isBlank()) {
             writer.println("---- EGX stdout ----");

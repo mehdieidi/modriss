@@ -11,13 +11,27 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 
+/**
+ * Integration tests for the repository-backed model-to-text CLI profile.
+ */
 final class MdeM2tCliApplicationTest {
 
+    /**
+     * Repository root containing the generation profile and sample models.
+     */
     private static final Path REPOSITORY_ROOT = findRepositoryRoot();
 
+    /**
+     * Per-test output directory.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Locates the repository root from the active test working directory.
+     *
+     * @return repository root
+     */
     private static Path findRepositoryRoot() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {
@@ -30,6 +44,11 @@ final class MdeM2tCliApplicationTest {
         throw new IllegalStateException("Could not locate repository root from user.dir.");
     }
 
+    /**
+     * Verifies that the AWS PSM profile generates expected files and a JSON report.
+     *
+     * @throws Exception if the command or file assertions cannot be completed
+     */
     @Test
     void awsPsmToArtifactsCommandGeneratesRepositorySampleAndWritesReport() throws Exception {
         Path outputDirectory = tempDir.resolve("generated-artifacts");

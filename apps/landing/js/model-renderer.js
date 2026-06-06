@@ -24,14 +24,24 @@ function createSvgElement(tagName, attributes = {}) {
 }
 
 function edgePath(source, target) {
-  const direction = target.x >= source.x ? 1 : -1;
-  const bend = Math.max(55, Math.abs(target.x - source.x) * 0.42);
-  const controlOneX = source.x + bend * direction;
-  const controlTwoX = target.x - bend * direction;
-  return `M ${source.x} ${source.y} C ${controlOneX} ${source.y}, ${controlTwoX} ${target.y}, ${target.x} ${target.y}`;
+  const horizontalDistance = Math.abs(target.x - source.x);
+  if (horizontalDistance < 70) {
+    const middleY = (source.y + target.y) / 2;
+    return `M ${source.x} ${source.y} V ${middleY} H ${target.x} V ${target.y}`;
+  }
+
+  const middleX = (source.x + target.x) / 2;
+  return `M ${source.x} ${source.y} H ${middleX} V ${target.y} H ${target.x}`;
 }
 
 function edgeLabelPosition(source, target) {
+  if (Math.abs(target.x - source.x) < 70) {
+    return {
+      x: source.x + 12,
+      y: (source.y + target.y) / 2 - 8,
+    };
+  }
+
   return {
     x: (source.x + target.x) / 2,
     y: (source.y + target.y) / 2 - 8,
@@ -130,6 +140,8 @@ function renderModel(mount, model, modelId) {
       .filter(Boolean)
       .join(" "),
       "data-edge-id": edge.id,
+      "data-source": edge.source,
+      "data-target": edge.target,
       "marker-end": `url(#arrow-${modelId})`,
     });
     edges.append(path);
@@ -144,6 +156,9 @@ function renderModel(mount, model, modelId) {
       ]
       .filter(Boolean)
       .join(" "),
+      "data-edge-id": edge.id,
+      "data-source": edge.source,
+      "data-target": edge.target,
       "text-anchor": "middle",
     });
     label.textContent = edge.label;
@@ -181,9 +196,7 @@ function renderFlowTokens() {
       token.dataset.batch = batch.id;
       token.dataset.index = String(index);
       token.textContent = label;
-      token.style.setProperty("--token-y", `${27 + index * 9}%`);
       token.style.setProperty("--token-color", color);
-      token.style.transform = "translateX(-42vw)";
       mount.append(token);
     });
     batch.outputs.forEach(([label, color], index) => {
@@ -191,7 +204,6 @@ function renderFlowTokens() {
       token.dataset.batch = batch.id;
       token.dataset.index = String(index);
       token.textContent = label;
-      token.style.setProperty("--token-y", `${27 + index * 9}%`);
       token.style.setProperty("--token-color", color);
       mount.append(token);
     });

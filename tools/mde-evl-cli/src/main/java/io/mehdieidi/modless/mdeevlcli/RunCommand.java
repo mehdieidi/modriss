@@ -10,6 +10,9 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
+/**
+ * Runs arbitrary EVL modules against one file-backed EMF model.
+ */
 @Command(
         name = "run",
         mixinStandardHelpOptions = true,
@@ -54,6 +57,12 @@ public final class RunCommand implements Callable<Integer> {
     @Option(names = "--log-file", description = "Write a JSON validation report to this file.")
     private Path logFile;
 
+    /**
+     * Builds and executes a validation request from command-line options.
+     *
+     * @return CLI validation exit code
+     * @throws Exception if validation or report output fails
+     */
     @Override
     public Integer call() throws Exception {
         EvlValidationRequest request = new EvlValidationRequest(

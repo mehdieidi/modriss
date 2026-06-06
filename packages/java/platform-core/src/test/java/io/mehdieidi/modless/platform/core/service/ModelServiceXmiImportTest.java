@@ -21,11 +21,21 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * Regression tests for model import, export, validation, patching, and source-XMI preservation
+ * across CIM, PIM, and PSM levels.
+ */
 class ModelServiceXmiImportTest {
 
+    /**
+     * Isolated JSON-file store directory for each test case.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Verifies CIM XMI import into semantic JSON plus graph relationships.
+     */
     @Test
     void importsCimXmiIntoSemanticAndGraphJson() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -64,6 +74,9 @@ class ModelServiceXmiImportTest {
         assertNotNull(result.issues());
     }
 
+    /**
+     * Ensures required enum values equal to metamodel defaults survive import.
+     */
     @Test
     void importsRequiredCimEnumValuesThatMatchMetamodelDefaults() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -87,6 +100,10 @@ class ModelServiceXmiImportTest {
                         || "kind".equals(missingFeature(issue)))));
     }
 
+    /**
+     * Confirms validation can reconstruct semantic relationship endpoints from frontend graph
+     * endpoint IDs.
+     */
     @Test
     void validatesRelationshipsPersistedWithFrontendEndpointIds() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -119,6 +136,10 @@ class ModelServiceXmiImportTest {
                         || issue.message().contains("required feature 'target'"))));
     }
 
+    /**
+     * Ensures validate-by-id repairs stale source XMI when the stored JSON has only frontend
+     * relationship endpoint IDs.
+     */
     @Test
     void validateByIdRepairsStaleSourceXmiFromFrontendEndpointIds() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -146,6 +167,9 @@ class ModelServiceXmiImportTest {
         assertNoRelationshipEndpointLoadingError(repairedSourceValidation);
     }
 
+    /**
+     * Verifies strict export diagnostics for enum literals outside the metamodel.
+     */
     @Test
     void rejectsInvalidEnumValuesDuringXmiExport() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -167,6 +191,9 @@ class ModelServiceXmiImportTest {
         assertTrue(exception.getMessage().contains("Unknown enum literal"));
     }
 
+    /**
+     * Verifies strict export diagnostics for unresolved model references.
+     */
     @Test
     void rejectsUnresolvedReferencesDuringXmiExport() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -187,6 +214,9 @@ class ModelServiceXmiImportTest {
         assertTrue(exception.getMessage().contains("Unresolved reference id 'missing-goal'"));
     }
 
+    /**
+     * Verifies strict export diagnostics for containment type mismatches.
+     */
     @Test
     void rejectsWrongContainedChildTypeDuringXmiExport() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -206,6 +236,9 @@ class ModelServiceXmiImportTest {
         assertTrue(exception.getMessage().contains("is not valid for containment BusinessGoal"));
     }
 
+    /**
+     * Ensures XMI documents with multiple model roots are rejected.
+     */
     @Test
     void rejectsMultiRootXmiImports() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -221,6 +254,9 @@ class ModelServiceXmiImportTest {
         assertTrue(exception.getMessage().contains("exactly one model root"));
     }
 
+    /**
+     * Confirms transport-only source-XMI fields are never persisted in model JSON.
+     */
     @Test
     void stripsTransportOnlyFieldsWhenSavingModel() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -253,6 +289,12 @@ class ModelServiceXmiImportTest {
         assertEquals("climate-edited", summaries.get(0).name());
     }
 
+    /**
+     * Ensures JSON Patch updates the stored model incrementally while preserving platform-added
+     * model metadata.
+     *
+     * @throws Exception when patch payload parsing fails
+     */
     @Test
     void patchesStoredModelWithoutReplacingWholeJson() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -298,6 +340,9 @@ class ModelServiceXmiImportTest {
         assertEquals("CIM", updated.modelJson().path("modelLevel").asText());
     }
 
+    /**
+     * Verifies PSM relationship views are projected as canonical graph edges.
+     */
     @Test
     void importsPsmRelationshipViewsAsFilterableEdges() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -331,6 +376,9 @@ class ModelServiceXmiImportTest {
         assertTrue(stackContainsRoute.path("containment").asBoolean());
     }
 
+    /**
+     * Verifies PIM reference relationships are projected with PIM-specific edge kinds.
+     */
     @Test
     void importsPimReferenceEdgesWithPimSpecificKinds() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -366,6 +414,9 @@ class ModelServiceXmiImportTest {
         assertTrue(rootContainsApi.path("containment").asBoolean());
     }
 
+    /**
+     * Confirms imported PIM and PSM JSON can be exported and validated by EVL.
+     */
     @Test
     void validatesPimAndPsmModelsWithEvl() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -395,6 +446,10 @@ class ModelServiceXmiImportTest {
                         || issue.constraint().startsWith("PSM-")));
     }
 
+    /**
+     * Ensures inverse-only trace references do not prevent PIM JSON from being exported back to
+     * XMI.
+     */
     @Test
     void exportsPimWhenOnlyInverseTraceReferencesRemain() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -414,6 +469,9 @@ class ModelServiceXmiImportTest {
         assertTrue(exported.length > 0);
     }
 
+    /**
+     * Verifies validate-by-id prefers stored source XMI when editable JSON has stale references.
+     */
     @Test
     void validatesStoredXmiByIdWhenJsonHasStaleReferences() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -443,6 +501,9 @@ class ModelServiceXmiImportTest {
                 .anyMatch(issue -> "XmiExport".equals(issue.constraint())));
     }
 
+    /**
+     * Ensures patching a PIM model does not discard the stored source XMI fallback.
+     */
     @Test
     void patchPreservesStoredXmiWhenJsonHasStaleReferences() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -470,6 +531,9 @@ class ModelServiceXmiImportTest {
                 .anyMatch(issue -> "XmiExport".equals(issue.constraint())));
     }
 
+    /**
+     * Ensures patching a PSM model does not discard the stored source XMI fallback.
+     */
     @Test
     void patchPreservesStoredPsmXmiWhenJsonHasStaleReferences() {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -497,6 +561,15 @@ class ModelServiceXmiImportTest {
                 .anyMatch(issue -> "XmiExport".equals(issue.constraint())));
     }
 
+    /**
+     * Finds a graph relationship by endpoint IDs and edge kind.
+     *
+     * @param relationships graph relationship array
+     * @param source        expected source element ID
+     * @param target        expected target element ID
+     * @param kind          expected relationship kind
+     * @return matching relationship node, or {@code null} when absent
+     */
     private JsonNode relationship(JsonNode relationships, String source, String target,
             String kind) {
         for (JsonNode relationship : relationships) {
@@ -509,6 +582,13 @@ class ModelServiceXmiImportTest {
         return null;
     }
 
+    /**
+     * Builds a CIM JSON model whose semantic relationship endpoints are missing but whose frontend
+     * graph edge still exposes endpoint IDs.
+     *
+     * @param service model service used to import the base relationship fixture
+     * @return mutable CIM JSON model with graph-only relationship endpoints
+     */
     private ObjectNode frontendEndpointOnlyRelationshipModel(ModelService service) {
         ObjectNode model = (ObjectNode) service.importModel(ModelLevel.CIM,
                 "relationships.xmi",
@@ -525,6 +605,12 @@ class ModelServiceXmiImportTest {
         return model;
     }
 
+    /**
+     * Asserts validation did not fail because relationship source or target features were missing
+     * during EVL model loading.
+     *
+     * @param validation validation result to inspect
+     */
     private void assertNoRelationshipEndpointLoadingError(
             ModelService.ValidationResult validation) {
         assertTrue(validation.issues().stream().noneMatch(issue ->
@@ -533,11 +619,23 @@ class ModelServiceXmiImportTest {
                         || issue.message().contains("required feature 'target'"))));
     }
 
+    /**
+     * Extracts the feature name from the platform's required-feature validation issue message.
+     *
+     * @param issue validation issue to parse
+     * @return missing feature name, or an empty string for unrelated messages
+     */
     private String missingFeature(ModelService.ValidationIssue issue) {
         String prefix = "Required CIM feature is missing: ";
         return issue.message().startsWith(prefix) ? issue.message().substring(prefix.length()) : "";
     }
 
+    /**
+     * Creates the minimal valid CIM root used by strict-export negative tests.
+     *
+     * @param store file store that supplies the configured object mapper
+     * @return mutable CIM model JSON object
+     */
     private ObjectNode minimalCimModel(JsonFileStore store) {
         ObjectNode model = store.objectMapper().createObjectNode();
         model.put("eClass", "CIMModel");
@@ -547,6 +645,11 @@ class ModelServiceXmiImportTest {
         return model;
     }
 
+    /**
+     * Returns a small CIM XMI document with a goal, actor, and supporting capability.
+     *
+     * @return sample CIM XMI text
+     */
     private String sampleCimXmi() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -566,6 +669,11 @@ class ModelServiceXmiImportTest {
                 """;
     }
 
+    /**
+     * Returns a CIM XMI document with a relationship that has explicit semantic endpoints.
+     *
+     * @return relationship-focused CIM XMI text
+     */
     private String sampleCimRelationshipXmi() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -593,6 +701,11 @@ class ModelServiceXmiImportTest {
                 """;
     }
 
+    /**
+     * Returns a stale CIM relationship XMI fixture that omits required endpoint references.
+     *
+     * @return CIM XMI text without relationship {@code source} and {@code target}
+     */
     private String sampleCimRelationshipXmiWithoutEndpoints() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -618,6 +731,11 @@ class ModelServiceXmiImportTest {
                 """;
     }
 
+    /**
+     * Returns CIM XMI with required enum values set to their metamodel default literals.
+     *
+     * @return CIM XMI text for required enum import checks
+     */
     private String sampleCimRequiredEnumXmi() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -642,6 +760,11 @@ class ModelServiceXmiImportTest {
                 """;
     }
 
+    /**
+     * Returns XMI with two CIM roots to exercise importer root validation.
+     *
+     * @return invalid multi-root CIM XMI text
+     */
     private String multiRootCimXmi() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -654,6 +777,12 @@ class ModelServiceXmiImportTest {
                 """;
     }
 
+    /**
+     * Returns a compact PIM XMI fixture covering function, API, datastore, workflow, and principal
+     * reference edges.
+     *
+     * @return sample PIM XMI text
+     */
     private String samplePimXmi() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -717,6 +846,11 @@ class ModelServiceXmiImportTest {
                 """;
     }
 
+    /**
+     * Returns a compact AWS PSM XMI fixture with stack containments and a relationship view.
+     *
+     * @return sample AWS PSM XMI text
+     */
     private String samplePsmXmi() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>

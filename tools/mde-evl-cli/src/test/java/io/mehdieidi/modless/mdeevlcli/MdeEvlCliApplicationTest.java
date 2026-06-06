@@ -21,13 +21,27 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import picocli.CommandLine;
 
+/**
+ * Integration tests for repository-backed EVL CLI profiles.
+ */
 final class MdeEvlCliApplicationTest {
 
+    /**
+     * Repository root containing validation profiles and sample models.
+     */
     private static final Path REPOSITORY_ROOT = findRepositoryRoot();
 
+    /**
+     * Per-test output directory.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Locates the repository root from the active test working directory.
+     *
+     * @return repository root
+     */
     private static Path findRepositoryRoot() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {
@@ -40,6 +54,11 @@ final class MdeEvlCliApplicationTest {
         throw new IllegalStateException("Could not locate repository root from user.dir.");
     }
 
+    /**
+     * Verifies mandatory-violation exit behavior and JSON report generation.
+     *
+     * @throws Exception if the command or file assertions cannot be completed
+     */
     @Test
     void psmCommandReturnsViolationExitCodeAndWritesReport() throws Exception {
         Path reportFile = tempDir.resolve("psm-validation-report.json");
@@ -68,9 +87,16 @@ final class MdeEvlCliApplicationTest {
         assertTrue(reportJson.contains("\"constraintName\": \"ProdRequiresApproval\""));
     }
 
+    /**
+     * Creates a secure, temporary PSM fixture that violates production approval rules.
+     *
+     * @return path to the modified PSM fixture
+     * @throws Exception if the fixture cannot be parsed or written
+     */
     private Path psmWithProdApprovalDisabled() throws Exception {
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         documentBuilderFactory.setNamespaceAware(true);
+        // The fixture is local, but keep parser settings hardened against external XML entities.
         documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl",
                 true);
         documentBuilderFactory.setFeature(

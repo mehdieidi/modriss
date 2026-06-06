@@ -16,6 +16,9 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
+/**
+ * Runs an arbitrary ETL module against one source and one target EMF model.
+ */
 @Command(
         name = "run",
         mixinStandardHelpOptions = true,
@@ -68,6 +71,12 @@ public final class RunCommand implements Callable<Integer> {
     @Option(names = "--log-file", description = "Write a JSON execution report to this file.")
     private Path logFile;
 
+    /**
+     * Builds and executes the ETL request from command-line options.
+     *
+     * @return zero on success or two on execution failure
+     * @throws Exception if report output cannot be written
+     */
     @Override
     public Integer call() throws Exception {
         EtlExecutionRequest request = new EtlExecutionRequest(
@@ -83,6 +92,13 @@ public final class RunCommand implements Callable<Integer> {
         return execute(request);
     }
 
+    /**
+     * Executes an ETL request and writes both console and optional JSON reports.
+     *
+     * @param request normalized ETL execution request
+     * @return zero on success or two on execution failure
+     * @throws Exception if report output cannot be written
+     */
     private Integer execute(EtlExecutionRequest request) throws Exception {
         PrintWriter out = commandSpec.commandLine().getOut();
         PrintWriter err = commandSpec.commandLine().getErr();

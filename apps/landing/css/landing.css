@@ -541,6 +541,7 @@
 }
 
 .workbench-body {
+  --assistant-reserve: min(21rem, 31vw);
   position: absolute;
   inset: 4.35rem 0 2.7rem;
   display: grid;
@@ -700,6 +701,15 @@
   background: #201f1e;
 }
 
+.model-canvas.assistant-active #model-pim {
+  right: calc(var(--assistant-reserve) + clamp(3.5rem, 6vw, 5.5rem));
+}
+
+.model-canvas.assistant-active #transform-engine,
+.model-canvas.assistant-active #pipeline-rails {
+  opacity: 0 !important;
+}
+
 .canvas-grid {
   position: absolute;
   inset: 0;
@@ -728,6 +738,10 @@
   left: 13.75rem;
   width: auto;
   pointer-events: none;
+}
+
+.workbench-body.assistant-active .story-copy {
+  right: calc(var(--assistant-reserve) + 1.4rem);
 }
 
 .story-copy-card {

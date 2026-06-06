@@ -6,9 +6,17 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Serves a lightweight OpenAPI description and a browser-based Swagger UI.
+ */
 @RestController
 public class OpenApiController {
 
+    /**
+     * Builds the OpenAPI path summary exposed by this backend.
+     *
+     * @return OpenAPI document
+     */
     @GetMapping("/v3/api-docs")
     Map<String, Object> docs() {
         Map<String, Object> paths = new LinkedHashMap<>();
@@ -47,6 +55,11 @@ public class OpenApiController {
                 "paths", paths);
     }
 
+    /**
+     * Serves a Swagger UI configured to load the generated OpenAPI document.
+     *
+     * @return Swagger UI HTML page
+     */
     @GetMapping(value = "/swagger-ui.html", produces = MediaType.TEXT_HTML_VALUE)
     String swaggerUi() {
         return """
@@ -67,6 +80,14 @@ public class OpenApiController {
                 """;
     }
 
+    /**
+     * Adds one operation summary and its standard success response to the path map.
+     *
+     * @param paths   mutable OpenAPI path map
+     * @param path    endpoint path
+     * @param method  lower-case HTTP method
+     * @param summary operation summary
+     */
     @SuppressWarnings("unchecked")
     private void add(Map<String, Object> paths, String path, String method, String summary) {
         Map<String, Object> operations = (Map<String, Object>) paths.computeIfAbsent(path,

@@ -8,6 +8,9 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
+/**
+ * Runs the repository-standard CIM semantic validation profile.
+ */
 @Command(name = "cim", mixinStandardHelpOptions = true,
         description = "Runs the repository CIM semantic validation profile.")
 public final class CimCommand implements Callable<Integer> {
@@ -38,6 +41,12 @@ public final class CimCommand implements Callable<Integer> {
     @Option(names = "--log-file", description = "Write a JSON validation report to this file.")
     private Path logFile;
 
+    /**
+     * Executes CIM validation using repository-standard modules and metamodels.
+     *
+     * @return CLI validation exit code
+     * @throws Exception if validation or report output fails
+     */
     @Override
     public Integer call() throws Exception {
         return runner.execute(

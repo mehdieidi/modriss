@@ -33,15 +33,52 @@ import org.eclipse.elk.graph.ElkNode;
 import org.eclipse.elk.graph.ElkPort;
 import org.eclipse.elk.graph.util.ElkGraphUtil;
 
+/**
+ * Adapts platform graph layout requests to Eclipse Layout Kernel graphs and maps the computed
+ * coordinates back to API records.
+ */
 public final class LayoutService {
 
+    /**
+     * Default size used when a port omits dimensions.
+     */
     private static final double DEFAULT_PORT_SIZE = 10.0d;
-    private static final double DEFAULT_NODE_SPACING = 88.0d;
-    private static final double DEFAULT_LAYER_SPACING = 156.0d;
+    /**
+     * Default spacing between nodes for balanced layouts.
+     */
+    private static final double DEFAULT_NODE_SPACING = 156.0d;
+    /**
+     * Default spacing between layers for balanced layouts.
+     */
+    private static final double DEFAULT_LAYER_SPACING = 260.0d;
+    /**
+     * ELK id for the layered algorithm.
+     */
     private static final String LAYERED_ALGORITHM = "org.eclipse.elk.layered";
+    /**
+     * ELK id for the tree algorithm.
+     */
+    private static final String TREE_ALGORITHM = "org.eclipse.elk.mrtree";
+    /**
+     * ELK id for the radial algorithm.
+     */
+    private static final String RADIAL_ALGORITHM = "org.eclipse.elk.radial";
+    /**
+     * ELK id for the force-directed algorithm.
+     */
+    private static final String FORCE_ALGORITHM = "org.eclipse.elk.force";
+    /**
+     * Shared ELK layout engine; access is synchronized during layout execution.
+     */
     private static final RecursiveGraphLayoutEngine LAYOUT_ENGINE =
             new RecursiveGraphLayoutEngine();
 
+    /**
+     * Computes node positions and edge routes for a layout request.
+     *
+     * @param request layout request
+     * @return computed layout response
+     */
     public LayoutResponse layout(LayoutRequest request) {
         LayoutRequest normalizedRequest = validate(request);
         List<String> warnings = new ArrayList<>();
@@ -109,6 +146,12 @@ public final class LayoutService {
                 List.copyOf(warnings));
     }
 
+    /**
+     * Validates required ids, dimensions, and edge endpoints.
+     *
+     * @param request layout request
+     * @return original request when valid
+     */
     private LayoutRequest validate(LayoutRequest request) {
         if (request == null) {
             throw new PlatformException(400, "Layout request is required.");
@@ -168,14 +211,23 @@ public final class LayoutService {
         return request;
     }
 
+    /**
+     * Applies ELK graph-level options derived from the request profile and options.
+     *
+     * @param graph   ELK graph
+     * @param request layout request
+     */
     private void configureGraph(ElkNode graph, LayoutRequest request) {
-        graph.setProperty(CoreOptions.ALGORITHM, LAYERED_ALGORITHM);
+        LayoutStyle style = LayoutStyle.from(request);
+        graph.setProperty(CoreOptions.ALGORITHM, algorithm(style));
         graph.setProperty(CoreOptions.DIRECTION, direction(request));
         graph.setProperty(CoreOptions.EDGE_ROUTING, edgeRouting(request));
         graph.setProperty(CoreOptions.SPACING_NODE_NODE, nodeSpacing(request));
         graph.setProperty(LayeredOptions.SPACING_NODE_NODE_BETWEEN_LAYERS,
                 layerSpacing(request));
-        graph.setProperty(CoreOptions.PADDING, new ElkPadding(48));
+        graph.setProperty(CoreOptions.SPACING_EDGE_EDGE, style.edgeSpacing());
+        graph.setProperty(CoreOptions.SPACING_EDGE_NODE, style.edgeNodeSpacing());
+        graph.setProperty(CoreOptions.PADDING, new ElkPadding(style.padding()));
         graph.setProperty(CoreOptions.HIERARCHY_HANDLING,
                 HierarchyHandling.INCLUDE_CHILDREN);
         graph.setProperty(CoreOptions.ALIGNMENT, Alignment.CENTER);
@@ -196,12 +248,37 @@ public final class LayoutService {
                 GreedySwitchType.TWO_SIDED);
         graph.setProperty(LayeredOptions.NODE_PLACEMENT_FAVOR_STRAIGHT_EDGES, true);
         graph.setProperty(LayeredOptions.CONSIDER_MODEL_ORDER_NO_MODEL_ORDER, true);
-        graph.setProperty(LayeredOptions.UNNECESSARY_BENDPOINTS, false);
+        graph.setProperty(LayeredOptions.UNNECESSARY_BENDPOINTS, true);
     }
 
+    /**
+     * Maps a layout style to an ELK algorithm id.
+     *
+     * @param style normalized layout style
+     * @return ELK algorithm id
+     */
+    private String algorithm(LayoutStyle style) {
+        return switch (style) {
+            case TREE -> TREE_ALGORITHM;
+            case RADIAL -> RADIAL_ALGORITHM;
+            case FORCE -> FORCE_ALGORITHM;
+            default -> LAYERED_ALGORITHM;
+        };
+    }
+
+    /**
+     * Selects the primary layout direction.
+     *
+     * @param request layout request
+     * @return ELK direction option
+     */
     private Direction direction(LayoutRequest request) {
         String normalized = configuredValue(request, "direction", request.profile())
                 .toUpperCase(Locale.ROOT);
+        LayoutStyle style = LayoutStyle.from(request);
+        if (style == LayoutStyle.VERTICAL || style == LayoutStyle.TREE) {
+            return Direction.DOWN;
+        }
         if (normalized.contains("DOWN")) {
             return Direction.DOWN;
         }
@@ -214,8 +291,20 @@ public final class LayoutService {
         return Direction.RIGHT;
     }
 
+    /**
+     * Selects the edge routing strategy for the requested style.
+     *
+     * @param request layout request
+     * @return ELK edge routing option
+     */
     private EdgeRouting edgeRouting(LayoutRequest request) {
-        String normalized = configuredValue(request, "edgeRouting", "ORTHOGONAL")
+        LayoutStyle style = LayoutStyle.from(request);
+        String defaultRouting = switch (style) {
+            case RELAXED, FORCE, RADIAL -> "SPLINES";
+            case TREE -> "POLYLINE";
+            default -> "ORTHOGONAL";
+        };
+        String normalized = configuredValue(request, "edgeRouting", defaultRouting)
                 .toUpperCase(Locale.ROOT);
         if ("SPLINE".equals(normalized) || "SPLINES".equals(normalized)) {
             return EdgeRouting.SPLINES;
@@ -226,6 +315,12 @@ public final class LayoutService {
         return EdgeRouting.ORTHOGONAL;
     }
 
+    /**
+     * Computes node spacing from explicit options, style defaults, or legacy profile hints.
+     *
+     * @param request layout request
+     * @return node spacing in ELK units
+     */
     private double nodeSpacing(LayoutRequest request) {
         Object configured = request.options().get("nodeSpacing");
         if (configured instanceof Number number && number.doubleValue() > 0) {
@@ -241,6 +336,17 @@ public final class LayoutService {
             }
         }
         String profile = normalize(request.profile()).toUpperCase(Locale.ROOT);
+        LayoutStyle style = LayoutStyle.from(request);
+        if (style == LayoutStyle.SPACIOUS) {
+            return 220.0d;
+        }
+        if (style == LayoutStyle.RELAXED || style == LayoutStyle.RADIAL
+                || style == LayoutStyle.FORCE) {
+            return 190.0d;
+        }
+        if (style == LayoutStyle.TREE || style == LayoutStyle.VERTICAL) {
+            return 170.0d;
+        }
         if (profile.contains("SECURITY") || profile.contains("IAM")) {
             return 96.0d;
         }
@@ -250,6 +356,12 @@ public final class LayoutService {
         return DEFAULT_NODE_SPACING;
     }
 
+    /**
+     * Computes layer spacing from explicit options, style defaults, or legacy profile hints.
+     *
+     * @param request layout request
+     * @return layer spacing in ELK units
+     */
     private double layerSpacing(LayoutRequest request) {
         Object configured = request.options().get("layerSpacing");
         if (configured instanceof Number number && number.doubleValue() > 0) {
@@ -265,6 +377,16 @@ public final class LayoutService {
             }
         }
         String profile = normalize(request.profile()).toUpperCase(Locale.ROOT);
+        LayoutStyle style = LayoutStyle.from(request);
+        if (style == LayoutStyle.SPACIOUS) {
+            return 340.0d;
+        }
+        if (style == LayoutStyle.RELAXED) {
+            return 300.0d;
+        }
+        if (style == LayoutStyle.TREE || style == LayoutStyle.VERTICAL) {
+            return 260.0d;
+        }
         if (profile.contains("CONTAINER") || profile.contains("FOCUS")) {
             return 196.0d;
         }
@@ -274,9 +396,18 @@ public final class LayoutService {
         return DEFAULT_LAYER_SPACING;
     }
 
+    /**
+     * Selects ELK's layered node placement strategy.
+     *
+     * @param request layout request
+     * @return node placement strategy
+     */
     private NodePlacementStrategy nodePlacementStrategy(LayoutRequest request) {
+        LayoutStyle style = LayoutStyle.from(request);
+        String defaultStrategy = style == LayoutStyle.SPACIOUS
+                ? "BRANDES_KOEPF" : "NETWORK_SIMPLEX";
         String normalized = configuredValue(request, "nodePlacementStrategy",
-                "NETWORK_SIMPLEX").toUpperCase(Locale.ROOT);
+                defaultStrategy).toUpperCase(Locale.ROOT);
         if (normalized.contains("BRANDES")) {
             return NodePlacementStrategy.BRANDES_KOEPF;
         }
@@ -289,6 +420,13 @@ public final class LayoutService {
         return NodePlacementStrategy.NETWORK_SIMPLEX;
     }
 
+    /**
+     * Creates ELK ports for a node and indexes them by request id.
+     *
+     * @param node        ELK node
+     * @param nodeRequest request node
+     * @return ports keyed by id
+     */
     private Map<String, ElkPort> createPorts(ElkNode node, LayoutNode nodeRequest) {
         Map<String, ElkPort> portsById = new LinkedHashMap<>();
         if (!nodeRequest.ports().isEmpty()) {
@@ -310,6 +448,17 @@ public final class LayoutService {
         return portsById;
     }
 
+    /**
+     * Resolves an edge endpoint to a port when available, otherwise to the node boundary.
+     *
+     * @param nodeId        endpoint node id
+     * @param portId        endpoint port id
+     * @param nodesById     nodes keyed by id
+     * @param portsByNodeId ports keyed by node id and port id
+     * @param endpointName  human-readable endpoint name
+     * @param warnings      mutable warning sink
+     * @return resolved ELK connectable shape
+     */
     private ElkConnectableShape resolveEndpoint(
             String nodeId,
             String portId,
@@ -329,6 +478,13 @@ public final class LayoutService {
         return nodesById.get(nodeId);
     }
 
+    /**
+     * Builds platform node layout records from ELK nodes.
+     *
+     * @param request   original layout request
+     * @param nodesById ELK nodes keyed by id
+     * @return immutable laid-out node list
+     */
     private List<LaidOutNode> buildNodeLayouts(
             LayoutRequest request,
             Map<String, ElkNode> nodesById) {
@@ -345,6 +501,15 @@ public final class LayoutService {
         return List.copyOf(result);
     }
 
+    /**
+     * Builds platform edge route records from ELK edge sections.
+     *
+     * @param request   original layout request
+     * @param nodesById ELK nodes keyed by id
+     * @param edgesById ELK edges keyed by id
+     * @param warnings  mutable warning sink
+     * @return immutable routed edge list
+     */
     private List<RoutedEdge> buildEdgeLayouts(
             LayoutRequest request,
             Map<String, ElkNode> nodesById,
@@ -380,6 +545,14 @@ public final class LayoutService {
         return List.copyOf(result);
     }
 
+    /**
+     * Creates a simple source-to-target route when ELK omits explicit sections.
+     *
+     * @param edge      edge request
+     * @param nodesById ELK nodes keyed by id
+     * @param warnings  mutable warning sink
+     * @return fallback edge section
+     */
     private EdgeSection fallbackSection(LayoutEdge edge, Map<String, ElkNode> nodesById,
             List<String> warnings) {
         ElkNode source = nodesById.get(edge.sourceNodeId());
@@ -398,6 +571,12 @@ public final class LayoutService {
         return new EdgeSection(start, end, List.of());
     }
 
+    /**
+     * Adds a text label to an ELK node when present.
+     *
+     * @param node      ELK node
+     * @param labelText label text
+     */
     private void addLabel(ElkNode node, String labelText) {
         if (labelText == null || labelText.isBlank()) {
             return;
@@ -406,6 +585,12 @@ public final class LayoutService {
         label.setText(labelText.trim());
     }
 
+    /**
+     * Adds a text label to an ELK port when present.
+     *
+     * @param port      ELK port
+     * @param labelText label text
+     */
     private void addLabel(ElkPort port, String labelText) {
         if (labelText == null || labelText.isBlank()) {
             return;
@@ -414,6 +599,12 @@ public final class LayoutService {
         label.setText(labelText.trim());
     }
 
+    /**
+     * Adds a text label to an ELK edge when present.
+     *
+     * @param edge      ELK edge
+     * @param labelText label text
+     */
     private void addLabel(ElkEdge edge, String labelText) {
         if (labelText == null || labelText.isBlank()) {
             return;
@@ -422,11 +613,25 @@ public final class LayoutService {
         label.setText(labelText.trim());
     }
 
+    /**
+     * Reads a layout option as text with a normalized fallback.
+     *
+     * @param request    layout request
+     * @param optionName option name
+     * @param fallback   fallback value
+     * @return configured or fallback text
+     */
     private String configuredValue(LayoutRequest request, String optionName, String fallback) {
         Object value = request.options().get(optionName);
         return value == null ? normalize(fallback) : value.toString().trim();
     }
 
+    /**
+     * Infers a port side from common input/output naming conventions.
+     *
+     * @param portId port identifier
+     * @return inferred port side
+     */
     private PortSide inferPortSide(String portId) {
         String normalized = normalize(portId).toLowerCase(Locale.ROOT);
         if (normalized.endsWith("-in") || normalized.startsWith("in-")
@@ -443,28 +648,190 @@ public final class LayoutService {
         return PortSide.EAST;
     }
 
+    /**
+     * Checks whether a coordinate pair is present and finite.
+     *
+     * @param x x coordinate
+     * @param y y coordinate
+     * @return {@code true} when both coordinates are finite
+     */
     private boolean hasCoordinates(Double x, Double y) {
         return x != null && y != null && Double.isFinite(x) && Double.isFinite(y);
     }
 
+    /**
+     * Returns a positive value or a fallback.
+     *
+     * @param value    candidate value
+     * @param fallback fallback value
+     * @return positive value
+     */
     private double positiveOrDefault(double value, double fallback) {
         return value > 0 ? value : fallback;
     }
 
+    /**
+     * Returns a finite value or a fallback.
+     *
+     * @param value    candidate value
+     * @param fallback fallback value
+     * @return finite value
+     */
     private double finiteOrDefault(double value, double fallback) {
         return Double.isFinite(value) ? value : fallback;
     }
 
+    /**
+     * Trims nullable text.
+     *
+     * @param value raw value
+     * @return trimmed value or empty string
+     */
     private String normalize(String value) {
         return value == null ? "" : value.trim();
     }
 
+    /**
+     * Extracts a safe error message from an ELK runtime exception.
+     *
+     * @param exception runtime exception
+     * @return non-blank message
+     */
     private String safeMessage(RuntimeException exception) {
         String message = exception.getMessage();
         return message == null || message.isBlank() ? exception.getClass().getSimpleName()
                 : message;
     }
 
+    /**
+     * Normalized layout style used to derive ELK algorithm and spacing options.
+     */
+    private enum LayoutStyle {
+        /**
+         * Default layered layout with balanced spacing.
+         */
+        BALANCED(72.0d, 42.0d, 66.0d),
+        /**
+         * Layered layout with larger padding and spacing.
+         */
+        SPACIOUS(96.0d, 72.0d, 96.0d),
+        /**
+         * Layered layout tuned for relaxed routed edges.
+         */
+        RELAXED(84.0d, 64.0d, 86.0d),
+        /**
+         * Downward layered flow.
+         */
+        VERTICAL(80.0d, 56.0d, 80.0d),
+        /**
+         * Tree layout style.
+         */
+        TREE(84.0d, 56.0d, 82.0d),
+        /**
+         * Radial layout style.
+         */
+        RADIAL(96.0d, 64.0d, 90.0d),
+        /**
+         * Force-directed layout style.
+         */
+        FORCE(96.0d, 60.0d, 84.0d);
+
+        /**
+         * Graph padding for this style.
+         */
+        private final double padding;
+        /**
+         * Edge-to-edge spacing for this style.
+         */
+        private final double edgeSpacing;
+        /**
+         * Edge-to-node spacing for this style.
+         */
+        private final double edgeNodeSpacing;
+
+        /**
+         * Creates a layout style.
+         *
+         * @param padding         graph padding
+         * @param edgeSpacing     edge-to-edge spacing
+         * @param edgeNodeSpacing edge-to-node spacing
+         */
+        LayoutStyle(double padding, double edgeSpacing, double edgeNodeSpacing) {
+            this.padding = padding;
+            this.edgeSpacing = edgeSpacing;
+            this.edgeNodeSpacing = edgeNodeSpacing;
+        }
+
+        /**
+         * Derives a layout style from request options and profile text.
+         *
+         * @param request layout request
+         * @return normalized layout style
+         */
+        static LayoutStyle from(LayoutRequest request) {
+            String value = String.valueOf(request.options().getOrDefault("layoutStrategy",
+                            request.options().getOrDefault("algorithm", request.profile())))
+                    .toUpperCase(Locale.ROOT);
+            if (value.contains("SPACIOUS")) {
+                return SPACIOUS;
+            }
+            if (value.contains("RELAXED") || value.contains("SPLINE")) {
+                return RELAXED;
+            }
+            if (value.contains("VERTICAL")) {
+                return VERTICAL;
+            }
+            if (value.contains("TREE")) {
+                return TREE;
+            }
+            if (value.contains("RADIAL")) {
+                return RADIAL;
+            }
+            if (value.contains("FORCE")) {
+                return FORCE;
+            }
+            return BALANCED;
+        }
+
+        /**
+         * Returns graph padding for this style.
+         *
+         * @return padding
+         */
+        double padding() {
+            return padding;
+        }
+
+        /**
+         * Returns edge-to-edge spacing for this style.
+         *
+         * @return edge spacing
+         */
+        double edgeSpacing() {
+            return edgeSpacing;
+        }
+
+        /**
+         * Returns edge-to-node spacing for this style.
+         *
+         * @return edge-to-node spacing
+         */
+        double edgeNodeSpacing() {
+            return edgeNodeSpacing;
+        }
+    }
+
+    /**
+     * Request passed from the platform graph view into the backend layout engine.
+     *
+     * @param viewId                    view identifier
+     * @param profile                   layout profile name
+     * @param preserveExistingPositions whether existing positions should be preserved
+     * @param fixedNodeIds              node ids requested as fixed-position hints
+     * @param options                   layout algorithm options
+     * @param nodes                     nodes to lay out
+     * @param edges                     edges to route
+     */
     public record LayoutRequest(
             String viewId,
             String profile,
@@ -474,6 +841,9 @@ public final class LayoutService {
             List<LayoutNode> nodes,
             List<LayoutEdge> edges) {
 
+        /**
+         * Normalizes nullable collection fields to immutable empty collections.
+         */
         public LayoutRequest {
             fixedNodeIds = fixedNodeIds == null ? List.of() : List.copyOf(fixedNodeIds);
             options = options == null ? Map.of() : Map.copyOf(options);
@@ -482,6 +852,17 @@ public final class LayoutService {
         }
     }
 
+    /**
+     * Node included in a layout request.
+     *
+     * @param id     node identifier
+     * @param label  optional node label
+     * @param width  node width
+     * @param height node height
+     * @param x      existing x coordinate, when available
+     * @param y      existing y coordinate, when available
+     * @param ports  node ports
+     */
     public record LayoutNode(
             String id,
             String label,
@@ -491,11 +872,24 @@ public final class LayoutService {
             Double y,
             List<LayoutPort> ports) {
 
+        /**
+         * Normalizes nullable ports to an immutable empty list.
+         */
         public LayoutNode {
             ports = ports == null ? List.of() : List.copyOf(ports);
         }
     }
 
+    /**
+     * Port included in a layout node.
+     *
+     * @param id     port identifier
+     * @param label  optional port label
+     * @param width  port width
+     * @param height port height
+     * @param x      existing x coordinate, when available
+     * @param y      existing y coordinate, when available
+     */
     public record LayoutPort(
             String id,
             String label,
@@ -506,6 +900,16 @@ public final class LayoutService {
 
     }
 
+    /**
+     * Edge included in a layout request.
+     *
+     * @param id           edge identifier
+     * @param label        optional edge label
+     * @param sourceNodeId source node identifier
+     * @param targetNodeId target node identifier
+     * @param sourcePortId optional source port identifier
+     * @param targetPortId optional target port identifier
+     */
     public record LayoutEdge(
             String id,
             String label,
@@ -516,11 +920,21 @@ public final class LayoutService {
 
     }
 
+    /**
+     * Backend layout response.
+     *
+     * @param nodes    laid-out nodes
+     * @param edges    routed edges
+     * @param warnings non-fatal layout warnings
+     */
     public record LayoutResponse(
             List<LaidOutNode> nodes,
             List<RoutedEdge> edges,
             List<String> warnings) {
 
+        /**
+         * Normalizes nullable collection fields to immutable empty collections.
+         */
         public LayoutResponse {
             nodes = nodes == null ? List.of() : List.copyOf(nodes);
             edges = edges == null ? List.of() : List.copyOf(edges);
@@ -528,6 +942,15 @@ public final class LayoutService {
         }
     }
 
+    /**
+     * Computed node geometry.
+     *
+     * @param id     node identifier
+     * @param x      x coordinate
+     * @param y      y coordinate
+     * @param width  computed width
+     * @param height computed height
+     */
     public record LaidOutNode(
             String id,
             double x,
@@ -537,27 +960,53 @@ public final class LayoutService {
 
     }
 
+    /**
+     * Computed route for an edge.
+     *
+     * @param id         edge identifier
+     * @param sections   ordered edge sections
+     * @param bendPoints flattened bend points across all sections
+     */
     public record RoutedEdge(
             String id,
             List<EdgeSection> sections,
             List<LayoutPoint> bendPoints) {
 
+        /**
+         * Normalizes nullable collection fields to immutable empty collections.
+         */
         public RoutedEdge {
             sections = sections == null ? List.of() : List.copyOf(sections);
             bendPoints = bendPoints == null ? List.of() : List.copyOf(bendPoints);
         }
     }
 
+    /**
+     * One routed edge section.
+     *
+     * @param startPoint section start point
+     * @param endPoint   section end point
+     * @param bendPoints section bend points
+     */
     public record EdgeSection(
             LayoutPoint startPoint,
             LayoutPoint endPoint,
             List<LayoutPoint> bendPoints) {
 
+        /**
+         * Normalizes nullable bend points to an immutable empty list.
+         */
         public EdgeSection {
             bendPoints = bendPoints == null ? List.of() : List.copyOf(bendPoints);
         }
     }
 
+    /**
+     * Two-dimensional layout point.
+     *
+     * @param x x coordinate
+     * @param y y coordinate
+     */
     public record LayoutPoint(double x, double y) {
 
     }

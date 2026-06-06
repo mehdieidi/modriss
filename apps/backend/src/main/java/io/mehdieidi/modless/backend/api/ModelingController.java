@@ -1,33 +1,88 @@
 package io.mehdieidi.modless.backend.api;
 
+import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.service.LayoutService;
 import io.mehdieidi.modless.platform.core.service.ModelingConfigService;
+import io.mehdieidi.modless.platform.core.service.StoredViewLayoutService;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Exposes modeling configuration and diagram layout operations.
+ */
 @RestController
 @RequestMapping("/api")
 public class ModelingController {
 
     private final ModelingConfigService modelingConfig;
     private final LayoutService layoutService;
+    private final StoredViewLayoutService storedViewLayouts;
+    private final AuthSupport auth;
 
-    public ModelingController(ModelingConfigService modelingConfig, LayoutService layoutService) {
+    /**
+     * Creates the modeling controller.
+     *
+     * @param modelingConfig    modeling palette and configuration service
+     * @param layoutService     stateless diagram layout service
+     * @param storedViewLayouts stored-view layout service
+     * @param auth              controller authentication support
+     */
+    public ModelingController(ModelingConfigService modelingConfig, LayoutService layoutService,
+            StoredViewLayoutService storedViewLayouts, AuthSupport auth) {
         this.modelingConfig = modelingConfig;
         this.layoutService = layoutService;
+        this.storedViewLayouts = storedViewLayouts;
+        this.auth = auth;
     }
 
+    /**
+     * Returns the frontend modeling palette and related configuration.
+     *
+     * @return modeling configuration
+     */
     @GetMapping("/modeling/config")
     Map<String, Object> config() {
         return modelingConfig.config();
     }
 
+    /**
+     * Computes positions for an ad hoc diagram.
+     *
+     * @param request diagram layout request
+     * @return computed node positions
+     */
     @PostMapping("/layout")
     LayoutService.LayoutResponse layout(@RequestBody LayoutService.LayoutRequest request) {
         return layoutService.layout(request);
+    }
+
+    /**
+     * Computes and persists layout positions for a stored model view.
+     *
+     * @param token    session token
+     * @param level    model level API name
+     * @param modelId  model identifier
+     * @param viewId   view identifier
+     * @param force    whether to replace existing positions
+     * @param strategy optional layout strategy
+     * @return updated stored-view layout
+     */
+    @PostMapping("/{level:cim|pim|psm}/{modelId}/views/{viewId}/layout")
+    StoredViewLayoutService.StoredViewLayoutResponse layoutStoredView(
+            @RequestHeader("X-Auth-Token") String token,
+            @PathVariable String level,
+            @PathVariable String modelId,
+            @PathVariable String viewId,
+            @RequestParam(defaultValue = "false") boolean force,
+            @RequestParam(required = false) String strategy) {
+        return storedViewLayouts.layout(auth.user(token), ModelLevel.fromApiName(level), modelId,
+                viewId, force, strategy);
     }
 }

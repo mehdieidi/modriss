@@ -39,10 +39,10 @@ function addEngineRun(timeline, start, end) {
   const duration = end - start;
   timeline
   .add(
-      "#transform-engine",
+      "#transform-engine, #pipeline-rails",
       {
         opacity: 1,
-        scale: 1,
+        scale: 0.88,
         duration: 420,
         ease: "out(4)",
       },
@@ -144,55 +144,67 @@ function addRuleTokens(timeline, batch, start, hideAt) {
   );
 }
 
-function addFlowTokens(timeline, batch, start) {
-  const inputs = `.flow-token-input[data-batch="${batch}"]`;
-  const outputs = `.flow-token-output[data-batch="${batch}"]`;
-  timeline
-  .add(
-      inputs,
-      {
-        opacity: 1,
-        x: 0,
-        duration: 650,
-        delay: stagger(120),
-        ease: "inOut(3)",
-      },
-      start,
-  )
-  .add(
-      inputs,
-      {
-        opacity: 0,
-        x: "3vw",
-        scale: 0.35,
-        duration: 260,
-        delay: stagger(90),
-        ease: "in(4)",
-      },
-      start + 650,
-  )
-  .add(
-      outputs,
-      {
-        opacity: 1,
-        x: "32vw",
-        duration: 760,
-        delay: stagger(120),
-        ease: "out(3)",
-      },
-      start + 620,
-  )
-  .add(
-      outputs,
-      {
-        opacity: 0,
-        x: "37vw",
-        duration: 240,
-        delay: stagger(60),
-        ease: "in(3)",
-      },
-      start + 1500,
-  );
+function addFlowTokens(timeline, batch, start, stepGap = 250) {
+  const inputs = selector(`.flow-token-input[data-batch="${batch}"]`);
+  const outputs = selector(`.flow-token-output[data-batch="${batch}"]`);
+  const stepCount = Math.max(inputs.length, outputs.length);
+
+  for (let index = 0; index < stepCount; index += 1) {
+    const stepStart = start + index * stepGap;
+    const input = inputs[index];
+    const output = outputs[index];
+
+    if (input) {
+      timeline
+      .add(
+          input,
+          {
+            opacity: 1,
+            left: "42%",
+            scale: 1,
+            duration: 300,
+            ease: "inOut(3)",
+          },
+          stepStart,
+      )
+      .add(
+          input,
+          {
+            opacity: 0,
+            left: "47%",
+            scale: 0.38,
+            duration: 150,
+            ease: "in(4)",
+          },
+          stepStart + 300,
+      );
+    }
+
+    if (output) {
+      timeline
+      .add(
+          output,
+          {
+            opacity: 1,
+            left: "66%",
+            scale: 1,
+            duration: 280,
+            ease: "out(4)",
+          },
+          stepStart + 340,
+      )
+      .add(
+          output,
+          {
+            opacity: 0,
+            left: "88%",
+            duration: 310,
+            ease: "inOut(3)",
+          },
+          stepStart + 620,
+      );
+    }
+  }
 }
 
 function addModelTransformation({
@@ -205,74 +217,29 @@ function addModelTransformation({
   targetNodeSelector,
   targetEdgeSelector,
 }) {
-  const sourceNodes = `#model-${source} .model-node`;
-  const sourceEdges = `#model-${source} .model-edge, #model-${source} .edge-label`;
-  const targetNodes = targetNodeSelector || `#model-${target} .model-node`;
-  const targetEdges = targetEdgeSelector
-      || `#model-${target} .model-edge, #model-${target} .edge-label`;
+  const sourceNodes = selector(`#model-${source} .model-node`);
+  const sourceEdges = selector(
+      `#model-${source} .model-edge, #model-${source} .edge-label`,
+  );
+  const targetNodes = selector(
+      targetNodeSelector || `#model-${target} .model-node`,
+  );
+  const targetEdges = selector(
+      targetEdgeSelector
+      || `#model-${target} .model-edge, #model-${target} .edge-label`,
+  );
+  const stepCount = Math.max(sourceNodes.length, targetNodes.length);
+  const stepGap = Math.max(150, (finish - start - 930) / stepCount);
 
   timeline
-  .add(
-      `#model-${source}`,
-      {
-        x: "-24vw",
-        scale: 0.58,
-        duration: 640,
-        ease: "inOut(3)",
-      },
-      start,
-  )
   .add(
       `#model-${target}`,
       {
         opacity: 1,
-        duration: 280,
+        duration: 1,
         ease: "out(2)",
       },
-      start + 140,
-  )
-  .add(
-      sourceEdges,
-      {
-        opacity: 0,
-        duration: 320,
-        delay: stagger(35),
-        ease: "in(2)",
-      },
-      start + 360,
-  )
-  .add(
-      sourceNodes,
-      {
-        opacity: 0,
-        x: "25vw",
-        scale: 0.35,
-        duration: 650,
-        delay: stagger(90),
-        ease: "in(4)",
-      },
-      start + 670,
-  )
-  .add(
-      targetNodes,
-      {
-        opacity: 1,
-        x: 0,
-        duration: 560,
-        delay: stagger(95),
-        ease: "out(4)",
-      },
-      start + 850,
-  )
-  .add(
-      targetEdges,
-      {
-        opacity: 0.8,
-        duration: 340,
-        delay: stagger(45),
-        ease: "out(2)",
-      },
-      start + 1410,
+      start,
   )
   .add(
       `#model-${source}`,
@@ -284,7 +251,7 @@ function addModelTransformation({
       finish - 470,
   )
   .add(
-      "#transform-engine",
+      "#transform-engine, #pipeline-rails",
       {
         opacity: 0,
         scale: 0.72,
@@ -292,21 +259,69 @@ function addModelTransformation({
         ease: "in(3)",
       },
       finish - 470,
-  )
-  .add(
-      `#model-${target}`,
-      {
-        x: 0,
-        scale: 1,
-        duration: 620,
-        ease: "out(4)",
-      },
-      finish - 400,
   );
+
+  sourceEdges.forEach((edge, index) => {
+    timeline.add(
+        edge,
+        {
+          opacity: 0,
+          duration: 220,
+          ease: "in(2)",
+        },
+        start + 220 + index * Math.max(38, stepGap * 0.34),
+    );
+  });
+
+  for (let index = 0; index < stepCount; index += 1) {
+    const stepStart = start + 330 + index * stepGap;
+    const sourceNode = sourceNodes[index];
+    const targetNode = targetNodes[index];
+
+    if (sourceNode) {
+      timeline.add(
+          sourceNode,
+          {
+            opacity: 0,
+            x: "9vw",
+            scale: 0.42,
+            duration: 360,
+            ease: "in(4)",
+          },
+          stepStart,
+      );
+    }
+
+    if (targetNode) {
+      timeline.add(
+          targetNode,
+          {
+            opacity: 1,
+            x: 0,
+            scale: 1,
+            duration: 430,
+            ease: "out(4)",
+          },
+          stepStart + 350,
+      );
+    }
+  }
+
+  targetEdges.forEach((edge, index) => {
+    timeline.add(
+        edge,
+        {
+          opacity: 0.82,
+          duration: 260,
+          ease: "out(2)",
+        },
+        start + 760 + index * Math.max(42, stepGap * 0.38),
+    );
+  });
 
   addEngineRun(timeline, start + 80, finish - 420);
   addRuleTokens(timeline, batch, start + 260, finish - 520);
-  addFlowTokens(timeline, batch, start + 580);
+  addFlowTokens(timeline, batch, start + 350, stepGap);
 }
 
 export function createStoryTimeline() {
@@ -465,7 +480,7 @@ export function createStoryTimeline() {
 
   timeline
   .add(
-      "#transform-engine",
+      "#transform-engine, #pipeline-rails",
       {
         opacity: 0,
         scale: 0.72,
@@ -477,8 +492,6 @@ export function createStoryTimeline() {
       "#model-psm",
       {
         opacity: 1,
-        x: 0,
-        scale: 1,
         duration: 520,
         ease: "out(4)",
       },
@@ -582,16 +595,6 @@ export function createStoryTimeline() {
 
   timeline
   .add(
-      "#model-psm",
-      {
-        x: "-24vw",
-        scale: 0.58,
-        duration: 650,
-        ease: "inOut(3)",
-      },
-      11200,
-  )
-  .add(
       "#model-psm .model-edge, #model-psm .edge-label",
       {
         opacity: 0,
@@ -605,13 +608,13 @@ export function createStoryTimeline() {
       "#model-psm .model-node",
       {
         opacity: 0,
-        x: "25vw",
-        scale: 0.35,
-        duration: 680,
-        delay: stagger(95),
+        x: "9vw",
+        scale: 0.42,
+        duration: 520,
+        delay: stagger(150),
         ease: "in(4)",
       },
-      11720,
+      11480,
   )
   .add(
       ".artifact-tree-panel",
@@ -644,7 +647,7 @@ export function createStoryTimeline() {
       12700,
   )
   .add(
-      "#model-psm, #transform-engine",
+      "#model-psm, #transform-engine, #pipeline-rails",
       {
         opacity: 0,
         duration: 360,
@@ -746,9 +749,9 @@ export function createStoryTimeline() {
 
   addEngineRun(timeline, 11280, 12940);
   addRuleTokens(timeline, "psm-artifacts", 11420, 12820);
-  addFlowTokens(timeline, "psm-artifacts", 11620);
+  addFlowTokens(timeline, "psm-artifacts", 11520, 260);
   timeline.add(
-      "#transform-engine",
+      "#transform-engine, #pipeline-rails",
       {
         opacity: 0,
         scale: 0.72,

@@ -1608,8 +1608,8 @@ function scheduleInitialFocusAutoLayout(focusView) {
     void import('./model-ops.js').then(({autoLayoutCurrentDiagram}) =>
         autoLayoutCurrentDiagram({
           progress: true,
-          save: false,
-          status: false
+          status: false,
+          force: false
         }).then(() => {
           setStatus(`Opened ${focusView.name || "view"} and arranged it.`);
         })).catch((error) => {

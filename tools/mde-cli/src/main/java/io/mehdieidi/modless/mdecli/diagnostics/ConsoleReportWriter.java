@@ -3,8 +3,18 @@ package io.mehdieidi.modless.mdecli.diagnostics;
 import java.io.PrintWriter;
 import java.util.List;
 
+/**
+ * Renders conversion reports for interactive console use.
+ */
 public final class ConsoleReportWriter {
 
+    /**
+     * Writes a successful conversion summary.
+     *
+     * @param out     destination writer
+     * @param report  successful conversion report
+     * @param verbose whether to include execution events
+     */
     public void writeSuccess(PrintWriter out, ConversionReport report, boolean verbose) {
         out.println(report.getSummary());
         if (report.getOutputPath() != null) {
@@ -15,6 +25,13 @@ public final class ConsoleReportWriter {
         out.flush();
     }
 
+    /**
+     * Writes a failed conversion summary and resolution guidance.
+     *
+     * @param err     destination writer
+     * @param report  failed conversion report
+     * @param verbose whether to include execution events
+     */
     public void writeFailure(PrintWriter err, ConversionReport report, boolean verbose) {
         err.println(report.getSummary());
         if (!report.getResolutionHint().isBlank()) {
@@ -29,6 +46,12 @@ public final class ConsoleReportWriter {
         err.flush();
     }
 
+    /**
+     * Writes structured diagnostics in a compact human-readable format.
+     *
+     * @param out         destination writer
+     * @param diagnostics diagnostics to render
+     */
     private void writeDiagnostics(PrintWriter out, List<DiagnosticEntry> diagnostics) {
         for (DiagnosticEntry diagnostic : diagnostics) {
             StringBuilder line = new StringBuilder();
@@ -53,6 +76,13 @@ public final class ConsoleReportWriter {
         }
     }
 
+    /**
+     * Writes recorded execution events when verbose output is enabled.
+     *
+     * @param out     destination writer
+     * @param events  execution events
+     * @param verbose whether verbose output is enabled
+     */
     private void writeVerboseEvents(PrintWriter out, List<String> events, boolean verbose) {
         if (!verbose || events.isEmpty()) {
             return;

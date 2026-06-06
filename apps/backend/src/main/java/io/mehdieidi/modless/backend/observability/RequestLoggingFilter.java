@@ -10,11 +10,25 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+/**
+ * Logs the method, URI, status, and elapsed time of every backend request.
+ *
+ * <p>Log severity follows the response status so failed requests remain easy to identify.</p>
+ */
 @Component
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
 
+    /**
+     * Executes the request and records its final response status and duration.
+     *
+     * @param request     current HTTP request
+     * @param response    current HTTP response
+     * @param filterChain remaining servlet filter chain
+     * @throws ServletException if request processing fails in the servlet layer
+     * @throws IOException      if request processing fails during I/O
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain)

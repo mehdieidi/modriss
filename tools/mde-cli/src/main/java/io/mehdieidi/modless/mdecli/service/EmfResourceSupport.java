@@ -8,8 +8,16 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.emfatic.core.EmfaticResourceFactory;
 
+/**
+ * Creates EMF resource sets configured for Emfatic and Ecore resources.
+ */
 public final class EmfResourceSupport {
 
+    /**
+     * Creates a resource set with local and global Emfatic/Ecore factories registered.
+     *
+     * @return configured resource set
+     */
     public ResourceSet newResourceSet() {
         Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap()
                 .put("ecore", new EcoreResourceFactoryImpl());
@@ -29,6 +37,13 @@ public final class EmfResourceSupport {
         return resourceSet;
     }
 
+    /**
+     * Creates an Ecore resource in a configured resource set.
+     *
+     * @param resourceSet owning resource set
+     * @param uri         resource URI
+     * @return created resource
+     */
     public Resource newEcoreResource(ResourceSet resourceSet, URI uri) {
         return resourceSet.createResource(uri);
     }

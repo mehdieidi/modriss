@@ -22,20 +22,55 @@ import javax.crypto.spec.PBEKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Manages local user registration, password verification, and file-backed bearer sessions.
+ */
 public final class AuthService {
 
+    /**
+     * Logger for account and session events.
+     */
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    /**
+     * PBKDF2 iteration count used for password hashes.
+     */
     private static final int ITERATIONS = 120_000;
+    /**
+     * PBKDF2 output key length in bits.
+     */
     private static final int KEY_BITS = 256;
+    /**
+     * File repository used for users and sessions.
+     */
     private final JsonFileStore store;
+    /**
+     * Secure random source for salts and tokens.
+     */
     private final SecureRandom random = new SecureRandom();
+    /**
+     * Lifetime assigned to newly issued sessions.
+     */
     private final Duration sessionTtl;
 
+    /**
+     * Creates an authentication service.
+     *
+     * @param store      backing JSON repository
+     * @param sessionTtl lifetime assigned to new sessions
+     */
     public AuthService(JsonFileStore store, Duration sessionTtl) {
         this.store = store;
         this.sessionTtl = sessionTtl;
     }
 
+    /**
+     * Registers a new user and immediately issues a session.
+     *
+     * @param email       user email address
+     * @param password    plain-text password to hash
+     * @param displayName display name
+     * @return issued authentication result
+     */
     public AuthResult register(String email, String password, String displayName) {
         String normalizedEmail = normalizeEmail(email);
         validatePassword(password);
@@ -57,6 +92,13 @@ public final class AuthService {
         return issueSession(user);
     }
 
+    /**
+     * Verifies credentials and issues a fresh session.
+     *
+     * @param email    user email address
+     * @param password plain-text password to verify
+     * @return issued authentication result
+     */
     public AuthResult login(String email, String password) {
         UserRecord user = findByEmail(normalizeEmail(email));
         if (user == null || !constantTimeEquals(user.passwordHash(),
@@ -66,6 +108,12 @@ public final class AuthService {
         return issueSession(user);
     }
 
+    /**
+     * Resolves a bearer token to an active user.
+     *
+     * @param token bearer token
+     * @return authenticated user
+     */
     public UserRecord requireUser(String token) {
         if (token == null || token.isBlank()) {
             throw new PlatformException(401, "Authentication token is required.");
@@ -80,6 +128,13 @@ public final class AuthService {
                 "User not found.");
     }
 
+    /**
+     * Updates the authenticated user's display name.
+     *
+     * @param token       bearer token
+     * @param displayName replacement display name
+     * @return updated user record
+     */
     public UserRecord updateDisplayName(String token, String displayName) {
         UserRecord user = requireUser(token);
         UserRecord updated = new UserRecord(user.id(), user.email(), requireText(displayName,
@@ -89,6 +144,11 @@ public final class AuthService {
         return updated;
     }
 
+    /**
+     * Removes a session token if it exists.
+     *
+     * @param token bearer token
+     */
     public void logout(String token) {
         try {
             Files.deleteIfExists(store.resolve(Path.of("sessions", token + ".json")));
@@ -97,6 +157,12 @@ public final class AuthService {
         }
     }
 
+    /**
+     * Finds a user by normalized email address.
+     *
+     * @param email email address to search
+     * @return matching user, or {@code null} when absent
+     */
     public UserRecord findByEmail(String email) {
         String normalized = normalizeEmail(email);
         Path users = store.resolve(Path.of("users"));
@@ -112,6 +178,11 @@ public final class AuthService {
         }
     }
 
+    /**
+     * Lists all registered users.
+     *
+     * @return user records
+     */
     public List<UserRecord> users() {
         try (Stream<Path> files = Files.list(store.resolve(Path.of("users")))) {
             return files.filter(path -> path.getFileName().toString().endsWith(".json"))
@@ -124,6 +195,12 @@ public final class AuthService {
         }
     }
 
+    /**
+     * Creates and persists a new session for a user.
+     *
+     * @param user authenticated user
+     * @return issued authentication result
+     */
     private AuthResult issueSession(UserRecord user) {
         Instant now = Instant.now();
         String token = randomToken(32);
@@ -132,6 +209,13 @@ public final class AuthService {
         return new AuthResult(token, user);
     }
 
+    /**
+     * Hashes a password with PBKDF2 and the stored salt.
+     *
+     * @param password plain-text password
+     * @param salt     URL-safe Base64 salt
+     * @return hexadecimal password hash
+     */
     private String hashPassword(String password, String salt) {
         try {
             PBEKeySpec spec = new PBEKeySpec(password.toCharArray(),
@@ -144,17 +228,36 @@ public final class AuthService {
         }
     }
 
+    /**
+     * Generates a URL-safe random token.
+     *
+     * @param bytes number of random bytes before encoding
+     * @return URL-safe token without padding
+     */
     private String randomToken(int bytes) {
         byte[] data = new byte[bytes];
         random.nextBytes(data);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(data);
     }
 
+    /**
+     * Compares two UTF-8 strings using {@link MessageDigest#isEqual(byte[], byte[])}.
+     *
+     * @param left  first value
+     * @param right second value
+     * @return {@code true} when values match
+     */
     private boolean constantTimeEquals(String left, String right) {
         return MessageDigest.isEqual(left.getBytes(StandardCharsets.UTF_8),
                 right.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Validates and lowercases an email address.
+     *
+     * @param email email address
+     * @return normalized email
+     */
     private String normalizeEmail(String email) {
         String value = requireText(email, "Email is required.").toLowerCase(Locale.ROOT);
         if (!value.contains("@")) {
@@ -163,12 +266,24 @@ public final class AuthService {
         return value;
     }
 
+    /**
+     * Enforces minimum password requirements.
+     *
+     * @param password password to validate
+     */
     private void validatePassword(String password) {
         if (password == null || password.length() < 8) {
             throw new PlatformException(400, "Password must be at least 8 characters.");
         }
     }
 
+    /**
+     * Returns trimmed text or raises a platform validation error.
+     *
+     * @param value   raw text value
+     * @param message validation error message
+     * @return trimmed text
+     */
     private String requireText(String value, String message) {
         if (value == null || value.trim().isEmpty()) {
             throw new PlatformException(400, message);
@@ -176,10 +291,22 @@ public final class AuthService {
         return value.trim();
     }
 
+    /**
+     * Returns a short token prefix for logs.
+     *
+     * @param token full token
+     * @return short token representation
+     */
     private String shortToken(String token) {
         return token == null || token.length() < 8 ? "<empty>" : token.substring(0, 8);
     }
 
+    /**
+     * Authentication response containing a bearer token and user record.
+     *
+     * @param token issued bearer token
+     * @param user  authenticated user
+     */
     public record AuthResult(String token, UserRecord user) {
 
     }

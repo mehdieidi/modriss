@@ -27,19 +27,41 @@ import org.eclipse.gymnast.runtime.core.parser.ParseContext;
 import org.eclipse.gymnast.runtime.core.parser.ParseError;
 import org.eclipse.gymnast.runtime.core.parser.ParseMessage;
 
+/**
+ * Compiles Emfatic source into an in-memory Ecore resource with actionable diagnostics.
+ *
+ * <p>The compiler preserves the repository's {@code id attr} extension by normalizing it for
+ * the upstream parser and restoring Ecore ID flags after model construction.</p>
+ */
 public final class EmfaticCompiler {
 
+    /**
+     * Matches class-like declarations that can contain ID attributes.
+     */
     private static final Pattern CLASSIFIER_PATTERN =
             Pattern.compile(
                     "(?m)^\\s*(abstract\\s+class|class|interface)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b");
+    /**
+     * Matches repository-specific {@code id attr} declarations.
+     */
     private static final Pattern ID_ATTRIBUTE_PATTERN =
             Pattern.compile("(?m)^\\s*id\\s+attr\\s+[^;]*?\\s+([~]?[A-Za-z_][A-Za-z0-9_]*)\\s*;");
+    /**
+     * Rewrites {@code id attr} declarations into syntax accepted by the upstream parser.
+     */
     private static final Pattern ID_ATTRIBUTE_NORMALIZATION_PATTERN =
             Pattern.compile(
                     "(?m)^(\\s*)id\\s+(attr\\s+[^;]*?\\s+)([~]?[A-Za-z_][A-Za-z0-9_]*)(\\s*;)");
 
     private final EmfResourceSupport resourceSupport = new EmfResourceSupport();
 
+    /**
+     * Compiles one Emfatic source file.
+     *
+     * @param emfaticFile source file
+     * @return compiled resource, original source, and mapped diagnostics
+     * @throws IOException if the source cannot be read
+     */
     public CompilationResult compile(Path emfaticFile) throws IOException {
         String source = Files.readString(emfaticFile);
         NormalizedSource normalizedSource = normalizeSource(source);
@@ -69,6 +91,12 @@ public final class EmfaticCompiler {
         return new CompilationResult(source, resource, diagnostics, parseContext.hasErrors());
     }
 
+    /**
+     * Normalizes repository extensions while retaining markers needed after compilation.
+     *
+     * @param source original Emfatic source
+     * @return parser-compatible source and extracted ID markers
+     */
     private NormalizedSource normalizeSource(String source) {
         List<IdAttributeMarker> markers = extractIdMarkers(source);
         Matcher matcher = ID_ATTRIBUTE_NORMALIZATION_PATTERN.matcher(source);
@@ -88,6 +116,12 @@ public final class EmfaticCompiler {
         return new NormalizedSource(normalized.toString(), markers);
     }
 
+    /**
+     * Extracts class and attribute pairs declared with {@code id attr}.
+     *
+     * @param source original Emfatic source
+     * @return ID attribute markers
+     */
     private List<IdAttributeMarker> extractIdMarkers(String source) {
         List<IdAttributeMarker> markers = new ArrayList<>();
         Matcher classifierMatcher = CLASSIFIER_PATTERN.matcher(source);
@@ -111,6 +145,12 @@ public final class EmfaticCompiler {
         return markers;
     }
 
+    /**
+     * Restores Ecore ID flags removed by source normalization.
+     *
+     * @param resource compiled Ecore resource
+     * @param markers  extracted ID attribute markers
+     */
     private void applyIdMarkers(Resource resource, List<IdAttributeMarker> markers) {
         if (markers.isEmpty()) {
             return;
@@ -127,6 +167,13 @@ public final class EmfaticCompiler {
         }
     }
 
+    /**
+     * Finds a class recursively among Ecore resource roots.
+     *
+     * @param contents  Ecore roots
+     * @param className class name
+     * @return matching class, or {@code null}
+     */
     private EClass findClass(List<EObject> contents, String className) {
         for (EObject root : contents) {
             if (root instanceof EPackage ePackage) {
@@ -139,6 +186,13 @@ public final class EmfaticCompiler {
         return null;
     }
 
+    /**
+     * Finds a class recursively within a package.
+     *
+     * @param ePackage  package to search
+     * @param className class name
+     * @return matching class, or {@code null}
+     */
     private EClass findClass(EPackage ePackage, String className) {
         for (EClassifier classifier : ePackage.getEClassifiers()) {
             if (classifier instanceof EClass eClass && className.equals(eClass.getName())) {
@@ -154,6 +208,13 @@ public final class EmfaticCompiler {
         return null;
     }
 
+    /**
+     * Finds an inherited or declared attribute by name.
+     *
+     * @param eClass        class to search
+     * @param attributeName attribute name
+     * @return matching attribute, or {@code null}
+     */
     private EAttribute findAttribute(EClass eClass, String attributeName) {
         return eClass.getEAllAttributes().stream()
                 .filter(attribute -> attributeName.equals(attribute.getName()))
@@ -161,6 +222,13 @@ public final class EmfaticCompiler {
                 .orElse(null);
     }
 
+    /**
+     * Finds the closing brace paired with an opening classifier brace.
+     *
+     * @param source    Emfatic source
+     * @param bodyStart opening-brace offset
+     * @return closing-brace offset, or {@code -1}
+     */
     private int findMatchingBrace(String source, int bodyStart) {
         int depth = 0;
         for (int index = bodyStart; index < source.length(); index++) {
@@ -177,10 +245,22 @@ public final class EmfaticCompiler {
         return -1;
     }
 
+    /**
+     * Removes Emfatic's leading keyword-escape marker.
+     *
+     * @param identifier identifier to unescape
+     * @return bare identifier
+     */
     private String unescapeIdentifier(String identifier) {
         return identifier.startsWith("~") ? identifier.substring(1) : identifier;
     }
 
+    /**
+     * Escapes a keyword identifier when required by the upstream parser.
+     *
+     * @param identifier source identifier
+     * @return parser-safe identifier
+     */
     private String escapeIdentifierIfNeeded(String identifier) {
         String bareIdentifier = unescapeIdentifier(identifier);
         if (identifier.startsWith("~")) {
@@ -193,6 +273,15 @@ public final class EmfaticCompiler {
         return bareIdentifier;
     }
 
+    /**
+     * Returns parser messages added after a previous build or connect phase.
+     *
+     * @param parseContext     parser context
+     * @param emfaticFile      source file
+     * @param source           normalized source
+     * @param alreadyCollected previously mapped diagnostics
+     * @return newly added diagnostics
+     */
     private List<DiagnosticEntry> appendNewMessages(
             ParseContext parseContext,
             Path emfaticFile,
@@ -205,6 +294,14 @@ public final class EmfaticCompiler {
         return all.subList(alreadyCollected.size(), all.size());
     }
 
+    /**
+     * Maps parser messages to source-aware CLI diagnostics.
+     *
+     * @param parseContext parser context
+     * @param emfaticFile  source file
+     * @param source       normalized source
+     * @return mapped diagnostics
+     */
     private List<DiagnosticEntry> mapMessages(ParseContext parseContext, Path emfaticFile,
             String source) {
         SourceDocument document = new SourceDocument(source);
@@ -226,6 +323,14 @@ public final class EmfaticCompiler {
         return diagnostics;
     }
 
+    /**
+     * Derives actionable guidance from a parser message and nearby source lines.
+     *
+     * @param message      parser message
+     * @param lineText     reported source line
+     * @param nextLineText following source line
+     * @return resolution hint, or an empty string
+     */
     private String hintForMessage(String message, String lineText, String nextLineText) {
         if (lineText != null) {
             String reservedIdentifierHint = reservedKeywordIdentifierHint(lineText);
@@ -255,6 +360,12 @@ public final class EmfaticCompiler {
         return "";
     }
 
+    /**
+     * Detects unescaped Emfatic keywords used as feature identifiers.
+     *
+     * @param lineText source line
+     * @return keyword escape hint, or an empty string
+     */
     private String reservedKeywordIdentifierHint(String lineText) {
         String trimmed = lineText.strip();
         String[] prefixes = {"attr ", "id attr ", "ref ", "val ", "readonly ", "volatile ",
@@ -287,12 +398,25 @@ public final class EmfaticCompiler {
         return "";
     }
 
+    /**
+     * Result of compiling one Emfatic source file.
+     *
+     * @param source      original source text
+     * @param resource    compiled Ecore resource
+     * @param diagnostics mapped parser diagnostics
+     * @param hasErrors   whether parser errors remain
+     */
     public record CompilationResult(
             String source,
             Resource resource,
             List<DiagnosticEntry> diagnostics,
             boolean hasErrors) {
 
+        /**
+         * Returns the first compiled root as an Ecore package.
+         *
+         * @return root package, or {@code null} when no roots were produced
+         */
         public EPackage rootPackage() {
             if (resource.getContents().isEmpty()) {
                 return null;
@@ -301,8 +425,21 @@ public final class EmfaticCompiler {
         }
     }
 
+    /**
+     * Source coordinates and excerpt information for one parser message.
+     *
+     * @param line        one-based line
+     * @param column      one-based column
+     * @param lineText    source line text
+     * @param caretColumn one-based caret position within the source line
+     */
     private record SourceLocation(int line, int column, String lineText, int caretColumn) {
 
+        /**
+         * Renders the source line and a caret pointing at the diagnostic location.
+         *
+         * @return rendered excerpt, or an empty string
+         */
         String rendered() {
             if (lineText == null || lineText.isBlank()) {
                 return "";
@@ -312,11 +449,19 @@ public final class EmfaticCompiler {
         }
     }
 
+    /**
+     * Indexed source document used to map parser offsets to line and column coordinates.
+     */
     private static final class SourceDocument {
 
         private final List<String> lines;
         private final int[] offsets;
 
+        /**
+         * Indexes source lines and their absolute starting offsets.
+         *
+         * @param source normalized source text
+         */
         private SourceDocument(String source) {
             List<String> resolvedLines = new ArrayList<>();
             List<Integer> resolvedOffsets = new ArrayList<>();
@@ -343,6 +488,13 @@ public final class EmfaticCompiler {
             this.offsets = resolvedOffsets.stream().mapToInt(Integer::intValue).toArray();
         }
 
+        /**
+         * Maps an absolute parser offset to a source location.
+         *
+         * @param offset absolute source offset
+         * @param length parser message span length
+         * @return mapped source location
+         */
         private SourceLocation locate(int offset, int length) {
             if (lines.isEmpty()) {
                 return new SourceLocation(-1, -1, "", -1);
@@ -362,6 +514,12 @@ public final class EmfaticCompiler {
             return new SourceLocation(lineIndex + 1, column, lineText, caretColumn);
         }
 
+        /**
+         * Returns a source line by one-based line number.
+         *
+         * @param oneBasedLineNumber one-based line number
+         * @return source line, or {@code null} when out of range
+         */
         private String line(int oneBasedLineNumber) {
             if (oneBasedLineNumber < 1 || oneBasedLineNumber > lines.size()) {
                 return null;
@@ -370,10 +528,22 @@ public final class EmfaticCompiler {
         }
     }
 
+    /**
+     * Parser-compatible source and metadata needed to restore repository extensions.
+     *
+     * @param source    normalized source
+     * @param idMarkers extracted ID attribute markers
+     */
     private record NormalizedSource(String source, List<IdAttributeMarker> idMarkers) {
 
     }
 
+    /**
+     * Identifies an attribute that must be marked as an Ecore ID after compilation.
+     *
+     * @param className     declaring class name
+     * @param attributeName attribute name
+     */
     private record IdAttributeMarker(String className, String attributeName) {
 
     }

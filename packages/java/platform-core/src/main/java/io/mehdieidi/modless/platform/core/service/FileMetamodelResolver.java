@@ -21,20 +21,47 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 
+/**
+ * Loads Ecore metamodel descriptors from repository filesystem paths and caches them by model
+ * level.
+ */
 public final class FileMetamodelResolver implements MetamodelResolver {
 
+    /**
+     * Runtime paths used to locate metamodel files.
+     */
     private final MdeRuntimePaths paths;
+    /**
+     * Thread-safe descriptor cache by model level.
+     */
     private final ConcurrentMap<ModelLevel, MetamodelDescriptor> cache = new ConcurrentHashMap<>();
 
+    /**
+     * Creates a file-backed metamodel resolver.
+     *
+     * @param paths runtime path resolver
+     */
     public FileMetamodelResolver(MdeRuntimePaths paths) {
         this.paths = paths;
     }
 
+    /**
+     * Resolves and caches the descriptor for the requested level.
+     *
+     * @param level model level
+     * @return loaded metamodel descriptor
+     */
     @Override
     public MetamodelDescriptor resolve(ModelLevel level) {
         return cache.computeIfAbsent(level, this::loadDescriptor);
     }
 
+    /**
+     * Loads and hashes the metamodel descriptor for a model level.
+     *
+     * @param level model level
+     * @return loaded descriptor
+     */
     private MetamodelDescriptor loadDescriptor(ModelLevel level) {
         Path file = paths.metamodelFile(level).toAbsolutePath().normalize();
         if (!Files.isRegularFile(file)) {
@@ -69,11 +96,23 @@ public final class FileMetamodelResolver implements MetamodelResolver {
         }
     }
 
+    /**
+     * Recursively appends an EPackage and its subpackages.
+     *
+     * @param ePackage package to collect
+     * @param packages mutable package sink
+     */
     private void collectPackages(EPackage ePackage, List<EPackage> packages) {
         packages.add(ePackage);
         ePackage.getESubpackages().forEach(child -> collectPackages(child, packages));
     }
 
+    /**
+     * Selects a version string from the first non-blank namespace URI.
+     *
+     * @param packages loaded packages
+     * @return namespace/version string or {@code unknown}
+     */
     private String version(List<EPackage> packages) {
         return packages.stream()
                 .map(EPackage::getNsURI)
@@ -82,6 +121,13 @@ public final class FileMetamodelResolver implements MetamodelResolver {
                 .orElse("unknown");
     }
 
+    /**
+     * Computes a SHA-256 hash for a file.
+     *
+     * @param path file to hash
+     * @return lowercase hexadecimal digest
+     * @throws Exception when hashing or reading fails
+     */
     private String sha256(Path path) throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         return HexFormat.of().formatHex(digest.digest(Files.readAllBytes(path)));

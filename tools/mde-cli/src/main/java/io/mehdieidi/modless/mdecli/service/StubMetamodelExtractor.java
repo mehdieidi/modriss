@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Extracts enough Emfatic declarations to create bootstrap Ecore resources.
+ */
 public final class StubMetamodelExtractor {
 
     private static final Pattern NAMESPACE_PATTERN =
@@ -23,6 +26,12 @@ public final class StubMetamodelExtractor {
             Pattern.compile(
                     "(?m)^\\s*(?:readonly\\s+volatile\\s+transient\\s+derived\\s+)?(attr|ref|val)\\s+[^;]*?\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*;");
 
+    /**
+     * Extracts a minimal metamodel definition from an Emfatic file.
+     *
+     * @param emfaticFile source Emfatic file
+     * @return bootstrap metamodel definition
+     */
     public StubMetamodelDefinition extract(Path emfaticFile) {
         try {
             String content = Files.readString(emfaticFile);
@@ -47,6 +56,12 @@ public final class StubMetamodelExtractor {
         }
     }
 
+    /**
+     * Extracts classifier declarations and their feature placeholders.
+     *
+     * @param content Emfatic source
+     * @return classifier definitions
+     */
     private List<StubClassifierDefinition> extractClassifiers(String content) {
         List<StubClassifierDefinition> classifiers = new ArrayList<>();
         Matcher classifierMatcher = CLASSIFIER_PATTERN.matcher(content);
@@ -67,6 +82,12 @@ public final class StubMetamodelExtractor {
         return classifiers;
     }
 
+    /**
+     * Extracts minimal feature declarations from a classifier body.
+     *
+     * @param body classifier body
+     * @return feature definitions
+     */
     private List<StubFeatureDefinition> extractFeatures(String body) {
         List<StubFeatureDefinition> features = new ArrayList<>();
         Matcher featureMatcher = FEATURE_PATTERN.matcher(body);
@@ -77,6 +98,13 @@ public final class StubMetamodelExtractor {
         return features;
     }
 
+    /**
+     * Finds the closing brace paired with an opening classifier brace.
+     *
+     * @param content   Emfatic source
+     * @param bodyStart opening-brace offset
+     * @return closing-brace offset, or {@code -1}
+     */
     private int findMatchingBrace(String content, int bodyStart) {
         int depth = 0;
         for (int index = bodyStart; index < content.length(); index++) {

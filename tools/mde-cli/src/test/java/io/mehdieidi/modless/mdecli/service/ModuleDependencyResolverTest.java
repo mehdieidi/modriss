@@ -6,10 +6,16 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests dependency-first ordering of modular Emfatic sources.
+ */
 class ModuleDependencyResolverTest {
 
     private final ModuleDependencyResolver resolver = new ModuleDependencyResolver();
 
+    /**
+     * Verifies that imported modules appear before their dependents.
+     */
     @Test
     void sortsModulesSoImportedPackagesComeFirst() {
         ModuleDescriptor root = new ModuleDescriptor(Path.of("cim-root.emf"),

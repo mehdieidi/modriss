@@ -5,11 +5,10 @@ import {api, apiAuthHeaders} from './api.js';
 import {flushCurrentModelPatch} from './model-patch.js';
 import {setBusy, setError, setStatus} from './status.js';
 import {emptyDiagram} from './utils.js';
-import {saveStoredEdgeLayout, serializeModel} from './diagram.js';
+import {serializeModel} from './diagram.js';
 import {
   activeView,
   installGraphAndViews,
-  persistEdgeLayoutsInActiveView,
   restoreTabGraphState,
   saveCurrentTabGraphState,
   setActiveViewId,
@@ -19,20 +18,12 @@ import {materializeActiveView} from './view-materializer.js';
 import {
   centerViewportOnDiagram,
   contextNameFromNode,
-  edgePresentationFromLayout,
-  getCurrentDiagramNodeSize,
   renderDiagram,
   renderPalette,
   resetCanvasView,
   scrollToConnectionAndHighlight,
   scrollToNodeAndHighlight
 } from './canvas.js';
-import {
-  deterministicLayoutResponse,
-  layoutWithBrowserElk,
-  resolveNodeOverlaps,
-  shouldUseBrowserElk
-} from './layout-engine.js';
 import {closeAttributePanel} from './attr-panel.js';
 import {closeImpactPanel} from './impact.js';
 import {refreshGithubConnection} from './github.js';
@@ -340,6 +331,20 @@ function stripServerTransportFields(model) {
   delete model._sourceXmiBase64;
   delete model._sourceXmiToken;
   return model;
+}
+
+function mergePersistedViewIntoBaseModel(view) {
+  const base = state.baseModel && typeof state.baseModel === "object"
+      ? structuredClone(state.baseModel) : {};
+  const views = Array.isArray(base.views) ? base.views : [];
+  const index = views.findIndex((candidate) => candidate?.id === view?.id);
+  if (index >= 0) {
+    views[index] = structuredClone(view);
+  } else {
+    views.push(structuredClone(view));
+  }
+  base.views = views;
+  return base;
 }
 
 function manualGuidanceIssuesFromCurrentModel() {
@@ -666,6 +671,13 @@ export async function loadModelById(typeKey, id,
   renderViewWorkbench();
   centerCurrentDiagram();
   resetModelSaveState();
+  if (!activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
+    await autoLayoutCurrentDiagram({
+      progress: true,
+      status: false,
+      force: false
+    });
+  }
   if (showManualGuidance) {
     applyManualGuidanceFromLoadedModel();
   }
@@ -704,6 +716,13 @@ async function loadModelRecord(typeKey, record,
   renderViewWorkbench();
   centerCurrentDiagram();
   resetModelSaveState();
+  if (!activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
+    await autoLayoutCurrentDiagram({
+      progress: true,
+      status: false,
+      force: false
+    });
+  }
   if (showManualGuidance) {
     applyManualGuidanceFromLoadedModel();
   }
@@ -792,49 +811,6 @@ function rememberModelSummary(typeKey, record) {
     summary,
     ...state.modelsCache[typeKey].filter((item) => item.id !== record.id)
   ];
-}
-
-function semanticPortsForNode(node) {
-  const type = String(node?.type || "");
-  const commonPorts = [
-    {id: "flow-in", label: "in", width: 10, height: 10},
-    {id: "flow-out", label: "out", width: 10, height: 10}
-  ];
-  if (["Function", "AwsLambdaFunction", "Command", "BusinessEvent"].includes(
-      type)) {
-    return [
-      ...commonPorts,
-      {id: "data", label: "data", width: 10, height: 10},
-      {id: "security", label: "sec", width: 10, height: 10}
-    ];
-  }
-  if (["DataStore", "ObjectStore", "DynamoDbTable", "S3Bucket",
-    "SecretsManagerSecret", "SsmParameter", "KmsKey", "IamRole",
-    "IamPolicy"].includes(type)) {
-    return [
-      {id: "resource-in", label: "in", width: 10, height: 10},
-      {id: "resource-out", label: "out", width: 10, height: 10}
-    ];
-  }
-  return commonPorts;
-}
-
-function semanticPortForEdge(edge, endpoint) {
-  const kind = String(edge?.kind || "").toUpperCase();
-  if (["READS", "WRITES", "READS_FROM", "WRITES_TO", "HAS_ENV"].includes(
-      kind)) {
-    return endpoint === "source" ? "data" : "resource-in";
-  }
-  if (["USES_SECRET", "GRANTS", "USES_ROLE", "AUTHORIZED_BY",
-    "ENCRYPTED_BY"].includes(kind)) {
-    return endpoint === "source" ? "security" : "resource-in";
-  }
-  if (["CAUSES", "EMITS", "PUBLISHES", "TRIGGERS", "INVOKES", "TARGETS",
-    "ROUTES_TO", "INTEGRATES_WITH", "PRECEDES", "ORCHESTRATES"].includes(
-      kind)) {
-    return endpoint === "source" ? "flow-out" : "flow-in";
-  }
-  return endpoint === "source" ? "flow-out" : "flow-in";
 }
 
 function nodeRect(node, nodeSize) {
@@ -1510,12 +1486,11 @@ export async function autoLayoutCurrentDiagram(options = {}) {
 
 async function runAutoLayoutCurrentDiagram({
   progress = true,
-  save = true,
-  publish = true,
   status = true,
   busy = true,
   rethrow = false,
-  preserveExistingPositions = true
+  force = true,
+  strategy = ""
 } = {}) {
   if (!isModelingType()) {
     if (status) {
@@ -1530,46 +1505,24 @@ async function runAutoLayoutCurrentDiagram({
     return;
   }
 
-  const nodeSize = getCurrentDiagramNodeSize();
   const view = activeView();
-  const payload = {
-    viewId: state.views.activeViewId,
-    profile: view?.layoutProfile || "DEFAULT_LAYERED",
-    preserveExistingPositions,
-    options: {
-      nodeSpacing: state.activeType === "cim" ? 96 : 112,
-      layerSpacing: state.activeType === "cim" ? 164 : 188,
-      nodePlacementStrategy: "NETWORK_SIMPLEX"
-    },
-    nodes: state.diagram.nodes.map((node) => ({
-      id: node.id,
-      label: node.label,
-      width: nodeSize.width,
-      height: nodeSize.height,
-      x: node.x,
-      y: node.y,
-      ports: semanticPortsForNode(node)
-    })),
-    edges: state.diagram.connections.map((edge) => ({
-      id: edge.id,
-      label: edge.bundle ? (edge.label || "bundle") : edge.kind,
-      sourceNodeId: edge.sourceId,
-      targetNodeId: edge.targetId,
-      sourcePortId: semanticPortForEdge(edge, "source"),
-      targetPortId: semanticPortForEdge(edge, "target")
-    })).filter((edge) => !String(edge.id || "").startsWith("bundle-"))
-  };
-  const expectedLayoutNodeIds = new Set(payload.nodes.map((node) => node.id));
-  const expectedLayoutEdgeIds = new Set(payload.edges.filter((edge) =>
-      edge.sourceNodeId !== edge.targetNodeId).map((edge) => edge.id));
+  if (!view?.id) {
+    if (status) {
+      setStatus("No active view to arrange.");
+    }
+    return;
+  }
 
   try {
+    if (!await ensureStoredModelForBackendOperation("Auto Layout")) {
+      return;
+    }
     if (progress) {
       showGenerationProgress({
         kicker: "Auto Layout in Progress",
         title: "Arranging current view",
-        subtitle: "Computing positions for the elements visible in this view.",
-        label: "Preparing diagram elements…"
+        subtitle: "The backend is arranging the persisted view.",
+        label: "Loading persisted view…"
       });
     }
     if (busy) {
@@ -1578,134 +1531,49 @@ async function runAutoLayoutCurrentDiagram({
     if (progress || busy) {
       await waitForCanvasPaint(1);
     }
-    const useBrowserElk = shouldUseBrowserElk(payload);
     if (progress) {
       setGenerationProgressPhase("Analyzing diagram topology…", 32);
-      setGenerationProgressPhase(useBrowserElk
-          ? "Computing ELK layout…" : "Preparing fallback layout…", 78);
+      setGenerationProgressPhase("Computing backend ELK layout…", 72);
       await waitForCanvasPaint(1);
     }
-    let response;
-    try {
-      response = useBrowserElk
-          ? await layoutWithBrowserElk(payload)
-          : deterministicLayoutResponse(payload, nodeSize);
-    } catch (layoutError) {
-      response = deterministicLayoutResponse(payload, nodeSize);
-      response.warnings = [
-        ...(Array.isArray(response.warnings) ? response.warnings : []),
-        `Browser elkjs layout failed: ${layoutError.message}`
-      ];
+    const level = MODEL_TYPES[state.activeType].apiType;
+    const selectedStrategy = String(strategy || view.layoutStrategy
+        || "SPACIOUS_LAYERED");
+    const response = await api(
+        `/${level}/${state.modelId}/views/${encodeURIComponent(
+            view.id)}/layout?force=${force}&strategy=${encodeURIComponent(
+            selectedStrategy)}`,
+        {method: "POST"});
+    if (!response?.view) {
+      throw new Error("Backend layout did not return the persisted view.");
     }
-    const responseNodeIds = new Set((response.nodes || []).map(
-        (node) => node.id));
-    const responseEdgeIds = new Set((response.edges || []).map(
-        (edge) => edge.id));
-    const missingNodeIds = [...expectedLayoutNodeIds].filter(
-        (id) => !responseNodeIds.has(id));
-    const missingEdgeIds = [...expectedLayoutEdgeIds].filter(
-        (id) => !responseEdgeIds.has(id));
-    if (missingNodeIds.length) {
-      throw new Error(
-          `Layout response omitted ${missingNodeIds.length} visible node(s).`);
+    state.modelRevision = Number(response.revision) || state.modelRevision;
+    state.views.byId.set(view.id, structuredClone(response.view));
+    materializeActiveView();
+    state.baseModel = mergePersistedViewIntoBaseModel(response.view);
+    if (state.tabs[state.activeType]) {
+      state.tabs[state.activeType].modelRevision = state.modelRevision;
+      state.tabs[state.activeType].baseModel = state.baseModel;
+      state.tabs[state.activeType].diagram = state.diagram;
+      saveCurrentTabGraphState(state.activeType);
     }
     window.modlessLayoutAudit = {
-      expectedNodes: expectedLayoutNodeIds.size,
-      positionedNodes: responseNodeIds.size,
-      expectedEdges: expectedLayoutEdgeIds.size,
-      routedEdges: responseEdgeIds.size,
-      fallbackRoutedEdges: missingEdgeIds.length,
-      missingNodeIds,
-      missingEdgeIds
+      modelId: state.modelId,
+      viewId: view.id,
+      expectedNodes: response.nodeCount,
+      positionedNodes: response.nodeCount,
+      expectedEdges: response.edgeCount,
+      routedEdges: response.edgeCount,
+      backend: true,
+      layoutApplied: response.layoutApplied
     };
-    const nodesById = new Map(
-        (response.nodes || []).map((node) => [node.id, node]));
-    const edgesById = new Map(
-        (response.edges || []).map((edge) => [edge.id, edge]));
-    if (progress) {
-      setGenerationProgressPhase("Routing and spacing edges…", 84);
-    }
-
-    state.diagram.nodes.forEach((node) => {
-      const positioned = nodesById.get(node.id);
-      if (!positioned) {
-        return;
-      }
-      node.x = Math.round(Number(positioned.x) || 0);
-      node.y = Math.round(Number(positioned.y) || 0);
-      node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
-      node.meta.x = node.x;
-      node.meta.y = node.y;
-    });
-    const movedNodeIds = new Set(resolveNodeOverlaps(state.diagram.nodes,
-        nodeSize));
-    const movedByContext = separateBoundedContextOverlaps(nodeSize);
-    movedByContext.forEach((nodeId) => movedNodeIds.add(nodeId));
-    if (movedByContext.size) {
-      resolveNodeOverlaps(state.diagram.nodes, nodeSize).forEach((nodeId) =>
-          movedNodeIds.add(nodeId));
-    }
-    const layoutNodesById = new Map(
-        state.diagram.nodes.map((node) => [node.id, node]));
-    const fallbackLaneCounts = new Map();
-    state.diagram.connections.filter((edge) => !edge.bundle).forEach((edge) => {
-      const layoutData = edgesById.get(edge.id);
-      const sourceNode = layoutNodesById.get(edge.sourceId);
-      const targetNode = layoutNodesById.get(edge.targetId);
-      const needsFallback = !layoutData || movedNodeIds.has(edge.sourceId)
-          || movedNodeIds.has(edge.targetId);
-      const laneKey = `${edge.sourceId || ""}->${edge.targetId || ""}`;
-      const laneIndex = fallbackLaneCounts.get(laneKey) || 0;
-      if (needsFallback) {
-        fallbackLaneCounts.set(laneKey, laneIndex + 1);
-      }
-      const presentation = needsFallback
-          ? fallbackEdgePresentation(sourceNode, targetNode, nodeSize,
-              fallbackLaneOffset(edge, laneIndex))
-          : edgePresentationFromLayout(layoutData, sourceNode, targetNode);
-      edge.pinPoints = presentation.pinPoints;
-      edge.sourceAnchor = presentation.sourceAnchor;
-      edge.targetAnchor = presentation.targetAnchor;
-      delete edge.layout;
-    });
-    spreadEdgeAnchors(state.diagram.nodes, state.diagram.connections, nodeSize);
-    orthogonalizeEdgeRoutes(state.diagram.nodes, state.diagram.connections,
-        nodeSize);
-    const activeLayoutView = activeView();
-    if (activeLayoutView) {
-      activeLayoutView.autoLayoutApplied = true;
-    }
-    const edgeLayoutsById = new Map();
-    state.diagram.connections.forEach((edge) => {
-      if (edge.bundle) {
-        return;
-      }
-      edgeLayoutsById.set(edge.id, {
-        pinPoints: edge.pinPoints,
-        sourceAnchor: edge.sourceAnchor,
-        targetAnchor: edge.targetAnchor
-      });
-    });
-    if (!persistEdgeLayoutsInActiveView(edgeLayoutsById)) {
-      edgeLayoutsById.forEach((layout, edgeId) =>
-          saveStoredEdgeLayout(state.activeType, edgeId, layout));
-    }
     if (progress) {
       setGenerationProgressPhase("Rendering layout…", 88);
     }
-    syncActiveViewFromVisibleGraph({rebuildIndexes: false});
-
     renderDiagram();
     await waitForCanvasPaint(1);
     centerViewportOnDiagram({fit: true});
-    if (save) {
-      if (progress) {
-        setGenerationProgressPhase("Saving layout…", 92);
-      }
-      await saveCurrentModel({quiet: true, rethrow: true});
-    }
-    if (publish) {
-    }
+    resetModelSaveState();
     if (progress) {
       setGenerationProgressPhase("Layout applied.", 100);
     }
@@ -1717,7 +1585,9 @@ async function runAutoLayoutCurrentDiagram({
       return;
     }
     if (status) {
-      setStatus("Auto layout applied.");
+      setStatus(response.layoutApplied
+          ? "Auto layout applied and persisted."
+          : "Persisted layout restored.");
     }
   } catch (error) {
     if (rethrow) {

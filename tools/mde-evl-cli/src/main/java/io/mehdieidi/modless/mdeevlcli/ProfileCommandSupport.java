@@ -5,11 +5,29 @@ import io.mehdieidi.modless.mde.validation.FileEvlModelConfiguration;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Builds validation requests for repository-standard model-level profiles.
+ */
 final class ProfileCommandSupport {
 
+    /**
+     * Prevents construction of this utility class.
+     */
     private ProfileCommandSupport() {
     }
 
+    /**
+     * Creates a validation request using the conventional repository profile layout.
+     *
+     * @param repositoryRoot       repository root
+     * @param profile              model profile directory name
+     * @param entryModule          profile entry EVL module
+     * @param model                input XMI model
+     * @param modelName            Epsilon model name
+     * @param aliases              additional Epsilon aliases
+     * @param structuralValidation whether to perform EMF structural validation
+     * @return normalized validation request
+     */
     static EvlValidationRequest request(
             Path repositoryRoot,
             String profile,

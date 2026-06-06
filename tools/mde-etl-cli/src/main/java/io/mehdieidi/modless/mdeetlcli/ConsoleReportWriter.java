@@ -4,8 +4,18 @@ import io.mehdieidi.modless.mde.etl.EtlDiagnostic;
 import io.mehdieidi.modless.mde.etl.EtlExecutionReport;
 import java.io.PrintWriter;
 
+/**
+ * Renders ETL execution reports for interactive console use.
+ */
 final class ConsoleReportWriter {
 
+    /**
+     * Writes a successful execution summary.
+     *
+     * @param out     destination writer
+     * @param report  successful execution report
+     * @param verbose whether to include timing and captured output
+     */
     void writeSuccess(PrintWriter out, EtlExecutionReport report, boolean verbose) {
         out.printf("ETL execution succeeded in %d ms.%n", report.duration().toMillis());
         out.printf("Module: %s%n", report.moduleFile());
@@ -15,6 +25,13 @@ final class ConsoleReportWriter {
         }
     }
 
+    /**
+     * Writes a failed execution summary and its diagnostics.
+     *
+     * @param err     destination writer
+     * @param report  failed execution report
+     * @param verbose whether to include exception types, timing, and captured output
+     */
     void writeFailure(PrintWriter err, EtlExecutionReport report, boolean verbose) {
         err.printf("ETL execution failed in %d ms.%n", report.duration().toMillis());
         err.printf("Module: %s%n", report.moduleFile());
@@ -50,6 +67,12 @@ final class ConsoleReportWriter {
         }
     }
 
+    /**
+     * Writes per-phase ETL timing.
+     *
+     * @param writer destination writer
+     * @param report execution report
+     */
     private void writeTiming(PrintWriter writer, EtlExecutionReport report) {
         var timing = report.phaseTiming();
         writer.printf(
@@ -59,6 +82,12 @@ final class ConsoleReportWriter {
                 timing.modelStoreMs(), timing.disposeMs(), timing.totalMs());
     }
 
+    /**
+     * Writes non-empty captured ETL output streams.
+     *
+     * @param writer destination writer
+     * @param report execution report
+     */
     private void writeCaptured(PrintWriter writer, EtlExecutionReport report) {
         if (!report.standardOutput().isBlank()) {
             writer.println("---- ETL stdout ----");

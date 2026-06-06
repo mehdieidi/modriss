@@ -120,11 +120,12 @@ paths.
 
 ## Modeling And Layout
 
-| Method | Path                   | Body            | Response                         |
-|--------|------------------------|-----------------|----------------------------------|
-| `GET`  | `/api/modeling/config` | none            | modeling palette and UI metadata |
-| `POST` | `/api/layout`          | `LayoutRequest` | `LayoutResponse`                 |
-| `GET`  | `/api/health`          | none            | health object                    |
+| Method | Path                                                                                 | Body            | Response                         |
+|--------|--------------------------------------------------------------------------------------|-----------------|----------------------------------|
+| `GET`  | `/api/modeling/config`                                                               | none            | modeling palette and UI metadata |
+| `POST` | `/api/layout`                                                                        | `LayoutRequest` | `LayoutResponse`                 |
+| `POST` | `/api/{level}/{modelId}/views/{viewId}/layout?force=false&strategy=SPACIOUS_LAYERED` | none            | Persisted lazy view layout       |
+| `GET`  | `/api/health`                                                                        | none            | health object                    |
 
 `LayoutRequest` contains `nodes`, `edges`, optional `fixedNodeIds`, optional profile/options, and
 returns node positions, routed edge sections, bend points, and warnings.

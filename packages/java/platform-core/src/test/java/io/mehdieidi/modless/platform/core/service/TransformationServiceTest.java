@@ -20,11 +20,23 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * End-to-end regression tests for platform transformations backed by the MDE runners.
+ */
 class TransformationServiceTest {
 
+    /**
+     * Isolated repository root used by the JSON store for each test.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Verifies that CIM-to-PIM invokes the formal ETL pipeline and returns PIM semantics rather
+     * than relabeled CIM JSON.
+     *
+     * @throws Exception when fixture import, persistence, or transformation fails
+     */
     @Test
     void cimToPimCreatesPimSemanticModelInsteadOfRelabelingCimJson() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -68,6 +80,12 @@ class TransformationServiceTest {
                 .contains("Function"));
     }
 
+    /**
+     * Ensures validation of a generated PIM model does not duplicate manual decisions already
+     * produced by the ETL readiness assessment.
+     *
+     * @throws Exception when fixture import, persistence, transformation, or validation fails
+     */
     @Test
     void generatedPimValidationDoesNotCreateAdditionalManualTasks() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -118,6 +136,12 @@ class TransformationServiceTest {
                         + "like extra manual tasks: " + readinessIssues);
     }
 
+    /**
+     * Verifies that PIM-to-PSM invokes the formal ETL pipeline and preserves stack, stage,
+     * resource, and relationship information needed by the frontend.
+     *
+     * @throws Exception when fixture import, persistence, transformation, or validation fails
+     */
     @Test
     void pimToPsmRunsFormalEtlAndPreservesGeneratedRelationships() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -192,6 +216,12 @@ class TransformationServiceTest {
                         + validation.issues());
     }
 
+    /**
+     * Ensures artifact generation uses the formal EGX generator and stores artifact metadata
+     * without embedding full file contents in model JSON.
+     *
+     * @throws Exception when fixture import, persistence, transformation, or generation fails
+     */
     @Test
     void psmToArtifactRunsFormalEgxGeneratorInsteadOfScaffold() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);

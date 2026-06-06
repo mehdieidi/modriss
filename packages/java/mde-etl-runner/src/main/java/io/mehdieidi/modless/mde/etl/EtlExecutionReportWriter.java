@@ -5,8 +5,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Serializes ETL execution reports to a stable JSON representation.
+ */
 public final class EtlExecutionReportWriter {
 
+    /**
+     * Writes a report to disk, creating parent directories when necessary.
+     *
+     * @param file   destination JSON file; {@code null} is ignored
+     * @param report report to serialize
+     * @throws IOException when the report cannot be written
+     */
     public void write(Path file, EtlExecutionReport report) throws IOException {
         if (file == null) {
             return;
@@ -18,6 +28,12 @@ public final class EtlExecutionReportWriter {
         Files.writeString(file, toJson(report), StandardCharsets.UTF_8);
     }
 
+    /**
+     * Converts a report to JSON without requiring a JSON dependency at runtime.
+     *
+     * @param report report to serialize
+     * @return JSON document ending with a newline
+     */
     public String toJson(EtlExecutionReport report) {
         StringBuilder json = new StringBuilder();
         json.append("{\n");
@@ -61,15 +77,42 @@ public final class EtlExecutionReportWriter {
         return json.toString();
     }
 
+    /**
+     * Appends a top-level property followed by a comma.
+     *
+     * @param json       target JSON buffer
+     * @param name       property name
+     * @param value      property value
+     * @param quoteValue whether the value should be JSON-quoted
+     */
     private void appendProperty(StringBuilder json, String name, String value, boolean quoteValue) {
         appendProperty(json, name, value, quoteValue, 2, true);
     }
 
+    /**
+     * Appends an indented property followed by a comma.
+     *
+     * @param json       target JSON buffer
+     * @param name       property name
+     * @param value      property value
+     * @param quoteValue whether the value should be JSON-quoted
+     * @param indent     indentation width in spaces
+     */
     private void appendProperty(StringBuilder json, String name, String value, boolean quoteValue,
             int indent) {
         appendProperty(json, name, value, quoteValue, indent, true);
     }
 
+    /**
+     * Appends an indented property with explicit comma control.
+     *
+     * @param json       target JSON buffer
+     * @param name       property name
+     * @param value      property value
+     * @param quoteValue whether the value should be JSON-quoted
+     * @param indent     indentation width in spaces
+     * @param comma      whether to append a trailing comma
+     */
     private void appendProperty(
             StringBuilder json, String name, String value, boolean quoteValue, int indent,
             boolean comma) {
@@ -86,6 +129,12 @@ public final class EtlExecutionReportWriter {
         json.append('\n');
     }
 
+    /**
+     * Escapes a value for inclusion in a JSON string.
+     *
+     * @param value raw value
+     * @return escaped JSON string content
+     */
     private String escape(String value) {
         return value == null
                 ? ""

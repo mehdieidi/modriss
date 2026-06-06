@@ -32,25 +32,74 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+/**
+ * Coordinates formal MDE transformations and artifact generation between stored platform models.
+ */
 public final class TransformationService {
 
+    /**
+     * File repository used for hashing and serialization helpers.
+     */
     private final JsonFileStore store;
+    /**
+     * Model service used to load and persist generated models.
+     */
     private final ModelService modelService;
+    /**
+     * Artifact service used to persist generated artifact bundles.
+     */
     private final ArtifactService artifactService;
+    /**
+     * Runtime limits used during ETL and EGX execution.
+     */
     private final MdeRuntimeOptions runtimeOptions;
+    /**
+     * Runtime asset path resolver.
+     */
     private final MdeRuntimePaths mdePaths;
+    /**
+     * Metamodel resolver shared with XMI import/export.
+     */
     private final MetamodelResolver metamodelResolver;
+    /**
+     * Per-model lock service for source model operations.
+     */
     private final ModelLockService modelLocks;
+    /**
+     * XMI import/export bridge for model JSON and EMF resources.
+     */
     private final XmiModelImportService xmiModelIo;
+    /**
+     * ETL executor used for model-to-model transformations.
+     */
     private final EpsilonEtlExecutor etlExecutor;
+    /**
+     * EGX generator used for PSM-to-artifact generation.
+     */
     private final EpsilonEgxGenerator artifactGenerator;
 
+    /**
+     * Creates a transformation service using default runtime options.
+     *
+     * @param store           backing JSON repository
+     * @param modelService    model service
+     * @param artifactService artifact service
+     */
     public TransformationService(JsonFileStore store, ModelService modelService,
             ArtifactService artifactService) {
         this(store, modelService, artifactService, MdeRuntimeOptions.defaults(),
                 modelService.modelLocks());
     }
 
+    /**
+     * Creates a transformation service with explicit runtime options and locks.
+     *
+     * @param store           backing JSON repository
+     * @param modelService    model service
+     * @param artifactService artifact service
+     * @param runtimeOptions  runtime limits and asset roots
+     * @param modelLocks      per-model lock service
+     */
     public TransformationService(JsonFileStore store, ModelService modelService,
             ArtifactService artifactService, MdeRuntimeOptions runtimeOptions,
             ModelLockService modelLocks) {
@@ -58,6 +107,18 @@ public final class TransformationService {
                 new MdeRuntimePaths(runtimeOptions), null, modelLocks);
     }
 
+    /**
+     * Creates a transformation service with injectable path and metamodel resolvers for tests or
+     * embedded runtimes.
+     *
+     * @param store             backing JSON repository
+     * @param modelService      model service
+     * @param artifactService   artifact service
+     * @param runtimeOptions    runtime limits and asset roots
+     * @param mdePaths          runtime asset path resolver
+     * @param metamodelResolver metamodel resolver
+     * @param modelLocks        per-model lock service
+     */
     public TransformationService(JsonFileStore store, ModelService modelService,
             ArtifactService artifactService, MdeRuntimeOptions runtimeOptions,
             MdeRuntimePaths mdePaths, MetamodelResolver metamodelResolver,
@@ -79,10 +140,25 @@ public final class TransformationService {
                 this.runtimeOptions.maxCapturedOutputBytes());
     }
 
+    /**
+     * Generates a PIM model from a CIM source without a revision precondition.
+     *
+     * @param user          requesting user
+     * @param sourceModelId source CIM model id
+     * @return generated PIM model
+     */
     public ModelRecord cimToPim(UserRecord user, String sourceModelId) {
         return cimToPim(user, sourceModelId, null);
     }
 
+    /**
+     * Generates a PIM model from a CIM source.
+     *
+     * @param user             requesting user
+     * @param sourceModelId    source CIM model id
+     * @param expectedRevision expected source revision, or {@code null}
+     * @return generated PIM model
+     */
     public ModelRecord cimToPim(UserRecord user, String sourceModelId, Long expectedRevision) {
         return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
             ModelRecord source = modelService.getForTransformation(user, ModelLevel.CIM,
@@ -100,10 +176,25 @@ public final class TransformationService {
         });
     }
 
+    /**
+     * Generates an AWS PSM model from a PIM source without a revision precondition.
+     *
+     * @param user          requesting user
+     * @param sourceModelId source PIM model id
+     * @return generated PSM model
+     */
     public ModelRecord pimToPsm(UserRecord user, String sourceModelId) {
         return pimToPsm(user, sourceModelId, null);
     }
 
+    /**
+     * Generates an AWS PSM model from a PIM source.
+     *
+     * @param user             requesting user
+     * @param sourceModelId    source PIM model id
+     * @param expectedRevision expected source revision, or {@code null}
+     * @return generated PSM model
+     */
     public ModelRecord pimToPsm(UserRecord user, String sourceModelId, Long expectedRevision) {
         return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
             ModelRecord source = modelService.getForTransformation(user, ModelLevel.PIM,
@@ -120,10 +211,25 @@ public final class TransformationService {
         });
     }
 
+    /**
+     * Generates an artifact bundle from an AWS PSM source without a revision precondition.
+     *
+     * @param user          requesting user
+     * @param sourceModelId source PSM model id
+     * @return generated artifact bundle
+     */
     public ArtifactRecord psmToArtifact(UserRecord user, String sourceModelId) {
         return psmToArtifact(user, sourceModelId, null);
     }
 
+    /**
+     * Generates an artifact bundle from an AWS PSM source.
+     *
+     * @param user             requesting user
+     * @param sourceModelId    source PSM model id
+     * @param expectedRevision expected source revision, or {@code null}
+     * @return generated artifact bundle
+     */
     public ArtifactRecord psmToArtifact(UserRecord user, String sourceModelId,
             Long expectedRevision) {
         return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
@@ -135,6 +241,12 @@ public final class TransformationService {
         });
     }
 
+    /**
+     * Runs the formal CIM-to-PIM ETL module and imports the produced PIM XMI.
+     *
+     * @param source source CIM model
+     * @return generated model JSON and source XMI bytes
+     */
     private GeneratedModel formalCimToPimModel(ModelRecord source) {
         Path repositoryRoot = mdePaths.repositoryRoot();
         Path workDir = null;
@@ -177,6 +289,12 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Runs the formal PIM-to-AWS-PSM ETL module and imports the produced PSM XMI.
+     *
+     * @param source source PIM model
+     * @return generated model JSON and source XMI bytes
+     */
     private GeneratedModel formalPimToPsmModel(ModelRecord source) {
         Path repositoryRoot = mdePaths.repositoryRoot();
         Path workDir = null;
@@ -220,6 +338,12 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Runs the formal AWS PSM artifact generator and reads the generated files.
+     *
+     * @param source source PSM model
+     * @return generated files keyed by artifact-relative path
+     */
     private Map<String, String> formalPsmToArtifactFiles(ModelRecord source) {
         Path repositoryRoot = mdePaths.repositoryRoot();
         Path workDir = null;
@@ -260,12 +384,24 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Returns the best available CIM XMI source for transformation.
+     *
+     * @param model source model
+     * @return source XMI bytes
+     */
     private byte[] sourceCimXmi(ModelRecord model) {
         return modelService.sourceXmi(model)
                 .orElseGet(() -> xmiModelIo.exportModel(ModelLevel.CIM,
                         hydrateSemanticReferences(model.modelJson())));
     }
 
+    /**
+     * Returns a PIM source XMI pruned for transformation input.
+     *
+     * @param model source model
+     * @return source XMI bytes
+     */
     private byte[] sourcePimXmi(ModelRecord model) {
         byte[] sourceBytes = modelService.sourceXmi(model)
                 .orElseGet(() -> xmiModelIo.exportModel(ModelLevel.PIM,
@@ -273,12 +409,24 @@ public final class TransformationService {
         return xmiModelIo.pruneTransformationInput(ModelLevel.PIM, sourceBytes);
     }
 
+    /**
+     * Returns the best available PSM XMI source for artifact generation.
+     *
+     * @param model source model
+     * @return source XMI bytes
+     */
     private byte[] sourcePsmXmi(ModelRecord model) {
         return modelService.sourceXmi(model)
                 .orElseGet(() -> xmiModelIo.exportModel(ModelLevel.PSM,
                         hydrateSemanticReferences(model.modelJson())));
     }
 
+    /**
+     * Summarizes the first ETL diagnostics for an exception message.
+     *
+     * @param report ETL report
+     * @return compact diagnostic summary
+     */
     private String summarizeDiagnostics(EtlExecutionReport report) {
         if (report == null || report.diagnostics().isEmpty()) {
             return "no diagnostics were reported";
@@ -291,6 +439,12 @@ public final class TransformationService {
                 .collect(java.util.stream.Collectors.joining("; "));
     }
 
+    /**
+     * Summarizes the first EGX diagnostics for an exception message.
+     *
+     * @param report EGX report
+     * @return compact diagnostic summary
+     */
     private String summarizeDiagnostics(EgxGenerationReport report) {
         if (report == null || report.diagnostics().isEmpty()) {
             return "no diagnostics were reported";
@@ -303,11 +457,23 @@ public final class TransformationService {
                 .collect(java.util.stream.Collectors.joining("; "));
     }
 
+    /**
+     * Marks imported transformation output as generated and clears stale validation state.
+     *
+     * @param target target model JSON
+     */
     private void markGeneratedTarget(ObjectNode target) {
         target.put("transformationStatus", "GENERATED_BY_ETL");
         target.remove("validationIssues");
     }
 
+    /**
+     * Reads generated artifact files while enforcing configured count and size budgets.
+     *
+     * @param outputDirectory generator output directory
+     * @return generated files keyed by artifact-relative path
+     * @throws Exception when files cannot be read
+     */
     private Map<String, String> generatedFiles(Path outputDirectory) throws Exception {
         Map<String, String> files = new LinkedHashMap<>();
         long totalBytes = 0;
@@ -334,6 +500,12 @@ public final class TransformationService {
         return files;
     }
 
+    /**
+     * Verifies that generated files contain the artifact families implied by the source PSM.
+     *
+     * @param source source PSM model
+     * @param files  generated file map
+     */
     private void validateGeneratedArtifactCompleteness(ModelRecord source,
             Map<String, String> files) {
         JsonNode elements = source.modelJson().path("graph").path("elements");
@@ -360,6 +532,13 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Counts graph elements by EMF class name.
+     *
+     * @param elements graph element array
+     * @param eClass   EMF class name
+     * @return matching element count
+     */
     private long countElementsByClass(JsonNode elements, String eClass) {
         if (!elements.isArray()) {
             return 0;
@@ -373,6 +552,12 @@ public final class TransformationService {
         return count;
     }
 
+    /**
+     * Enforces an optional optimistic source revision precondition.
+     *
+     * @param source           source model
+     * @param expectedRevision expected revision, or {@code null}
+     */
     private void requireSourceRevision(ModelRecord source, Long expectedRevision) {
         if (expectedRevision == null) {
             return;
@@ -383,6 +568,12 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Hashes a model JSON payload.
+     *
+     * @param modelJson model JSON
+     * @return lowercase hexadecimal SHA-256 digest
+     */
     private String hash(JsonNode modelJson) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -393,6 +584,12 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Chooses the source XMI hash when present, otherwise hashes JSON.
+     *
+     * @param source source model
+     * @return source model hash
+     */
     private String sourceModelHash(ModelRecord source) {
         if (source.sourceXmiHash() != null && !source.sourceXmiHash().isBlank()) {
             return source.sourceXmiHash();
@@ -400,12 +597,25 @@ public final class TransformationService {
         return hash(source.modelJson());
     }
 
+    /**
+     * Enforces the configured maximum model input size before invoking Epsilon.
+     *
+     * @param bytes source bytes
+     * @param label user-facing source label
+     */
     private void requireExecutionInputBudget(byte[] bytes, String label) {
         if (bytes != null && bytes.length > runtimeOptions.maxModelUploadBytes()) {
             throw new PlatformException(413, label + " exceeds the configured size limit.");
         }
     }
 
+    /**
+     * Copies graph endpoint fields back into semantic relationship objects before exporting JSON to
+     * XMI.
+     *
+     * @param modelJson model JSON
+     * @return hydrated model JSON copy
+     */
     private JsonNode hydrateSemanticReferences(JsonNode modelJson) {
         if (modelJson == null || !modelJson.isObject()) {
             return modelJson;
@@ -427,6 +637,12 @@ public final class TransformationService {
         return copy;
     }
 
+    /**
+     * Recursively hydrates semantic relationship endpoint fields from graph relationship records.
+     *
+     * @param node               current JSON node
+     * @param graphRelationships graph relationships keyed by id
+     */
     private void hydrateSemanticReferences(JsonNode node,
             Map<String, JsonNode> graphRelationships) {
         if (node == null || node.isNull()) {
@@ -451,6 +667,14 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Copies a text reference from a source node when the target field is blank.
+     *
+     * @param target            target object to update
+     * @param source            source object to read
+     * @param fieldName         preferred field name
+     * @param fallbackFieldName fallback field name
+     */
     private void copyReferenceIfMissing(ObjectNode target, JsonNode source, String fieldName,
             String fallbackFieldName) {
         if (target.hasNonNull(fieldName) && !target.path(fieldName).asText("").isBlank()) {
@@ -465,6 +689,11 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Ensures TraceLink endpoint id fields are present for export.
+     *
+     * @param object semantic JSON object
+     */
     private void hydrateTraceEndpointIds(ObjectNode object) {
         if (!"TraceLink".equals(text(object, "eClass", ""))) {
             return;
@@ -473,6 +702,11 @@ public final class TransformationService {
         copyReferenceIfMissing(object, object, "targetElementId", "target");
     }
 
+    /**
+     * Best-effort recursive deletion for temporary transformation directories.
+     *
+     * @param path directory to delete
+     */
     private void deleteQuietly(Path path) {
         try (var paths = Files.walk(path)) {
             paths.sorted(java.util.Comparator.reverseOrder()).forEach(item -> {
@@ -487,6 +721,14 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Reads a non-blank text field from a JSON object.
+     *
+     * @param node     JSON object
+     * @param field    field name
+     * @param fallback fallback text
+     * @return field text or fallback
+     */
     private String text(JsonNode node, String field, String fallback) {
         JsonNode value = node == null ? null : node.get(field);
         if (value == null || value.isNull()) {
@@ -496,6 +738,12 @@ public final class TransformationService {
         return text.isBlank() ? fallback : text;
     }
 
+    /**
+     * Returns the first non-blank string from a set of candidates.
+     *
+     * @param values candidate values
+     * @return first non-blank value or an empty string
+     */
     private String firstNonBlank(String... values) {
         for (String value : values) {
             if (value != null && !value.isBlank()) {
@@ -505,12 +753,24 @@ public final class TransformationService {
         return "";
     }
 
+    /**
+     * Converts text to a stable kebab-case slug.
+     *
+     * @param value raw value
+     * @return slug value
+     */
     private String slug(String value) {
         String normalized = String.valueOf(value == null ? "" : value).trim().toLowerCase(
                 Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
         return normalized.isBlank() ? "generated" : normalized;
     }
 
+    /**
+     * Converts text to lower camel case.
+     *
+     * @param value raw value
+     * @return camel-case value
+     */
     private String camel(String value) {
         String[] parts = slug(value).split("-");
         if (parts.length == 0) {
@@ -526,6 +786,11 @@ public final class TransformationService {
         return result.toString();
     }
 
+    /**
+     * Mirrors generated readiness decisions into the manual backlog expected by the platform UI.
+     *
+     * @param model generated model JSON
+     */
     private void mirrorReadinessToManualBacklog(ObjectNode model) {
         ArrayNode backlog = store.objectMapper().createArrayNode();
         JsonNode readiness = model.path("readiness");
@@ -541,6 +806,12 @@ public final class TransformationService {
         graph.set("manualBacklog", backlog.deepCopy());
     }
 
+    /**
+     * Appends manual decision tasks from generated readiness decisions.
+     *
+     * @param backlog   backlog array to append to
+     * @param decisions readiness decision array
+     */
     private void appendManualDecisionTasks(ArrayNode backlog, JsonNode decisions) {
         if (!decisions.isArray()) {
             return;
@@ -555,6 +826,17 @@ public final class TransformationService {
                 "OPEN")));
     }
 
+    /**
+     * Builds a manual backlog task object.
+     *
+     * @param id        task identifier seed
+     * @param title     task title
+     * @param rationale task rationale
+     * @param required  whether completion is required
+     * @param category  task category
+     * @param status    task status
+     * @return task JSON object
+     */
     private ObjectNode manualTask(String id, String title, String rationale, boolean required,
             String category, String status) {
         ObjectNode task = store.objectMapper().createObjectNode();
@@ -568,6 +850,12 @@ public final class TransformationService {
         return task;
     }
 
+    /**
+     * Appends a generic manual review task to a model.
+     *
+     * @param model generated model JSON
+     * @param title task title
+     */
     private void addManualBacklog(ObjectNode model, String title) {
         model.withArray("manualBacklog").addObject()
                 .put("id", "review-" + System.currentTimeMillis())
@@ -579,6 +867,12 @@ public final class TransformationService {
                         "Semi-automated transformations require human review before promotion.");
     }
 
+    /**
+     * Serializes a JSON node with pretty printing.
+     *
+     * @param node JSON node to serialize
+     * @return pretty-printed JSON
+     */
     private String pretty(JsonNode node) {
         try {
             return store.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(node);
@@ -587,11 +881,23 @@ public final class TransformationService {
         }
     }
 
+    /**
+     * Sanitizes text for artifact path fragments.
+     *
+     * @param value raw value
+     * @return sanitized value
+     */
     private String sanitize(String value) {
         return String.valueOf(value == null ? "artifact" : value)
                 .replaceAll("[^A-Za-z0-9_.-]+", "-");
     }
 
+    /**
+     * Generated model JSON plus the canonical XMI sidecar bytes used to persist it.
+     *
+     * @param model     generated model JSON
+     * @param sourceXmi canonical source XMI bytes
+     */
     private record GeneratedModel(ObjectNode model, byte[] sourceXmi) {
 
     }

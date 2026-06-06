@@ -8,6 +8,9 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
+/**
+ * Runs the repository-standard AWS PSM semantic validation profile.
+ */
 @Command(name = "psm", mixinStandardHelpOptions = true,
         description = "Runs the repository AWS PSM semantic validation profile.")
 public final class PsmCommand implements Callable<Integer> {
@@ -38,6 +41,12 @@ public final class PsmCommand implements Callable<Integer> {
     @Option(names = "--log-file", description = "Write a JSON validation report to this file.")
     private Path logFile;
 
+    /**
+     * Executes PSM validation using repository-standard modules and metamodels.
+     *
+     * @return CLI validation exit code
+     * @throws Exception if validation or report output fails
+     */
     @Override
     public Integer call() throws Exception {
         return runner.execute(

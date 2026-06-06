@@ -32,13 +32,29 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * Regression tests for the CIM-to-PIM ETL profile using both repository samples and synthetic EMF
+ * fixtures.
+ */
 final class CimToPimEtlRegressionTest {
 
+    /**
+     * Repository root discovered from the current test working directory.
+     */
     private static final Path REPOSITORY_ROOT = findRepositoryRoot();
 
+    /**
+     * Temporary directory for generated CIM and PIM XMI fixtures.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Locates the repository root by walking upward to the MDE directories used by ETL regression
+     * fixtures.
+     *
+     * @return normalized repository root path
+     */
     private static Path findRepositoryRoot() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {
@@ -51,6 +67,12 @@ final class CimToPimEtlRegressionTest {
         throw new IllegalStateException("Could not locate repository root from user.dir.");
     }
 
+    /**
+     * Runs CIM-to-PIM against a representative order-management CIM fixture and verifies the
+     * generated PIM contains the main semantic projections.
+     *
+     * @throws Exception when fixture creation, ETL execution, or model loading fails
+     */
     @Test
     void executesCimToPimTransformationForRepresentativeBusinessModel() throws Exception {
         Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
@@ -93,6 +115,12 @@ final class CimToPimEtlRegressionTest {
                 "Runtime/language review decision should be generated.");
     }
 
+    /**
+     * Runs the default profile against the canonical climate-relief sample and verifies
+     * spec-complete PIM shape plus EVL semantic validity.
+     *
+     * @throws Exception when ETL execution, validation, or model loading fails
+     */
     @Test
     void transformsClimateReliefSampleThroughDefaultProfileWithSpecCompletenessShape()
             throws Exception {
@@ -178,6 +206,12 @@ final class CimToPimEtlRegressionTest {
                         + validation.violations());
     }
 
+    /**
+     * Exercises cross-boundary dependencies, protected queries, enum schema fields, external
+     * interactions, policy derivation, and manual review backlog rules.
+     *
+     * @throws Exception when fixture creation, ETL execution, or model loading fails
+     */
     @Test
     void coversCrossBoundaryRelationshipAndReviewBacklogRules() throws Exception {
         Path cimMetamodel = REPOSITORY_ROOT.resolve("mde/metamodels/cim/cim-combined.ecore");
@@ -251,6 +285,12 @@ final class CimToPimEtlRegressionTest {
                 "Missing query authorization rule should remain an explicit manual decision.");
     }
 
+    /**
+     * Verifies malformed ETL input yields structured validation or parse diagnostics instead of an
+     * unreported runner failure.
+     *
+     * @throws IOException when the broken ETL fixture cannot be written
+     */
     @Test
     void reportsParseDiagnosticsForBrokenEtl() throws IOException {
         Path broken = tempDir.resolve("broken.etl");
@@ -281,6 +321,12 @@ final class CimToPimEtlRegressionTest {
                         || d.phase() == ExecutionPhase.PARSE));
     }
 
+    /**
+     * Executes an ETL request and fails the test with diagnostics on failure.
+     *
+     * @param request ETL execution request
+     * @return successful execution report
+     */
     private EtlExecutionReport executeOrFail(EtlExecutionRequest request) {
         try {
             return new EpsilonEtlExecutor().execute(request);
@@ -290,6 +336,14 @@ final class CimToPimEtlRegressionTest {
         }
     }
 
+    /**
+     * Creates a compact order-management CIM model that covers goals, capabilities, actors,
+     * aggregate data, commands, queries, and events.
+     *
+     * @param metamodel combined CIM metamodel path
+     * @param modelFile output XMI path
+     * @throws IOException when the model cannot be saved
+     */
     private void createRepresentativeCimModel(Path metamodel, Path modelFile) throws IOException {
         ResourceSet resourceSet = new ResourceSetImpl();
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
@@ -433,6 +487,15 @@ final class CimToPimEtlRegressionTest {
         modelResource.save(null);
     }
 
+    /**
+     * Creates a broad CIM fixture for transformation branches not covered by the repository sample,
+     * including cross-capability messaging, policy derivation, classifications, domain
+     * relationships, and external process steps.
+     *
+     * @param metamodel combined CIM metamodel path
+     * @param modelFile output XMI path
+     * @throws IOException when the model cannot be saved
+     */
     private void createCoverageCimModel(Path metamodel, Path modelFile) throws IOException {
         ResourceSet resourceSet = new ResourceSetImpl();
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
@@ -728,6 +791,17 @@ final class CimToPimEtlRegressionTest {
         modelResource.save(null);
     }
 
+    /**
+     * Creates an information item with the common required attributes used by the synthetic CIM
+     * fixtures.
+     *
+     * @param metamodelResource loaded CIM metamodel
+     * @param id                element ID
+     * @param name              business and display name
+     * @param type              primitive business type literal
+     * @param required          whether the item is required
+     * @return configured information item
+     */
     private EObject informationItem(Resource metamodelResource, String id, String name, String type,
             boolean required) {
         EObject item = create(metamodelResource, "InformationItem");
@@ -740,6 +814,16 @@ final class CimToPimEtlRegressionTest {
         return item;
     }
 
+    /**
+     * Creates a CIM multiplicity value object for domain relationship endpoints.
+     *
+     * @param metamodelResource loaded CIM metamodel
+     * @param id                element ID
+     * @param lowerBound        lower multiplicity bound
+     * @param upperBound        optional upper multiplicity bound
+     * @param unbounded         whether the multiplicity has no upper bound
+     * @return configured multiplicity object
+     */
     private EObject multiplicity(Resource metamodelResource, String id, int lowerBound,
             Integer upperBound, boolean unbounded) {
         EObject multiplicity = create(metamodelResource, "Multiplicity");
@@ -755,6 +839,13 @@ final class CimToPimEtlRegressionTest {
         return multiplicity;
     }
 
+    /**
+     * Loads an XMI model after registering all packages from the supplied metamodel.
+     *
+     * @param metamodel combined Ecore metamodel path
+     * @param modelFile XMI model path
+     * @return loaded model resource
+     */
     private Resource loadModel(Path metamodel, Path modelFile) {
         ResourceSet resourceSet = new ResourceSetImpl();
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
@@ -770,6 +861,11 @@ final class CimToPimEtlRegressionTest {
         return modelResource;
     }
 
+    /**
+     * Registers all root packages contained in a loaded metamodel resource.
+     *
+     * @param metamodelResource loaded Ecore resource
+     */
     private void registerPackages(Resource metamodelResource) {
         for (EObject content : metamodelResource.getContents()) {
             if (content instanceof EPackage ePackage) {
@@ -778,6 +874,11 @@ final class CimToPimEtlRegressionTest {
         }
     }
 
+    /**
+     * Registers an EPackage tree in the global EMF registry.
+     *
+     * @param ePackage package to register recursively
+     */
     private void registerPackage(EPackage ePackage) {
         EPackage.Registry.INSTANCE.put(ePackage.getNsURI(), ePackage);
         for (EPackage child : ePackage.getESubpackages()) {
@@ -785,17 +886,39 @@ final class CimToPimEtlRegressionTest {
         }
     }
 
+    /**
+     * Creates an EMF object by classifier name from the loaded metamodel.
+     *
+     * @param metamodelResource loaded metamodel resource
+     * @param classifierName    EClass name to instantiate
+     * @return new EObject instance
+     */
     private EObject create(Resource metamodelResource, String classifierName) {
         EClass eClass = (EClass) classifier(metamodelResource, classifierName);
         EFactory factory = eClass.getEPackage().getEFactoryInstance();
         return factory.create(eClass);
     }
 
+    /**
+     * Resolves an enum literal instance by enum and literal name.
+     *
+     * @param metamodelResource loaded metamodel resource
+     * @param enumName          EEnum name
+     * @param literalName       literal name
+     * @return EMF enum literal instance
+     */
     private Object enumValue(Resource metamodelResource, String enumName, String literalName) {
         EEnum eEnum = (EEnum) classifier(metamodelResource, enumName);
         return eEnum.getEEnumLiteral(literalName).getInstance();
     }
 
+    /**
+     * Finds a classifier anywhere in a metamodel resource's package tree.
+     *
+     * @param metamodelResource loaded metamodel resource
+     * @param name              classifier name
+     * @return matching classifier
+     */
     private EClassifier classifier(Resource metamodelResource, String name) {
         for (EObject content : metamodelResource.getContents()) {
             EClassifier classifier = classifier((EPackage) content, name);
@@ -806,6 +929,13 @@ final class CimToPimEtlRegressionTest {
         throw new IllegalArgumentException("Classifier not found: " + name);
     }
 
+    /**
+     * Finds a classifier in a package or any nested subpackage.
+     *
+     * @param ePackage package to search
+     * @param name     classifier name
+     * @return matching classifier, or {@code null}
+     */
     private EClassifier classifier(EPackage ePackage, String name) {
         EClassifier classifier = ePackage.getEClassifier(name);
         if (classifier != null) {
@@ -820,33 +950,83 @@ final class CimToPimEtlRegressionTest {
         return null;
     }
 
+    /**
+     * Sets a named EMF feature on an object.
+     *
+     * @param object      owner object
+     * @param featureName feature to set
+     * @param value       value to assign
+     */
     private void set(EObject object, String featureName, Object value) {
         object.eSet(feature(object, featureName), value);
     }
 
+    /**
+     * Adds an EMF object to a many-valued containment or reference feature.
+     *
+     * @param object      owner object
+     * @param featureName many-valued feature name
+     * @param value       value to add
+     */
     @SuppressWarnings("unchecked")
     private void add(EObject object, String featureName, EObject value) {
         ((List<EObject>) object.eGet(feature(object, featureName))).add(value);
     }
 
+    /**
+     * Adds a scalar value to a many-valued EMF attribute feature.
+     *
+     * @param object      owner object
+     * @param featureName many-valued attribute feature name
+     * @param value       value to add
+     */
     @SuppressWarnings("unchecked")
     private void addValue(EObject object, String featureName, Object value) {
         ((List<Object>) object.eGet(feature(object, featureName))).add(value);
     }
 
+    /**
+     * Reads a many-valued EMF feature as a list of model objects.
+     *
+     * @param object      owner object
+     * @param featureName structural feature name
+     * @return feature value cast to a list of {@link EObject}s
+     */
     @SuppressWarnings("unchecked")
     private List<EObject> values(EObject object, String featureName) {
         return (List<EObject>) object.eGet(feature(object, featureName));
     }
 
+    /**
+     * Reads a single-valued EMF reference.
+     *
+     * @param object      owner object
+     * @param featureName reference feature name
+     * @return referenced object, or {@code null}
+     */
     private EObject reference(EObject object, String featureName) {
         return (EObject) object.eGet(feature(object, featureName));
     }
 
+    /**
+     * Reads an arbitrary EMF feature value.
+     *
+     * @param object      owner object
+     * @param featureName structural feature name
+     * @return current feature value
+     */
     private Object get(EObject object, String featureName) {
         return object.eGet(feature(object, featureName));
     }
 
+    /**
+     * Resolves a structural feature and fails fast when fixture code no longer matches the
+     * metamodel.
+     *
+     * @param object      owner object
+     * @param featureName expected feature name
+     * @return resolved structural feature
+     */
     private EStructuralFeature feature(EObject object, String featureName) {
         EStructuralFeature feature = object.eClass().getEStructuralFeature(featureName);
         if (feature == null) {

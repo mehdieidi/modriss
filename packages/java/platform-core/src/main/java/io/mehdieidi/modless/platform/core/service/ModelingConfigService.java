@@ -20,10 +20,22 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * Builds the modeling UI configuration by merging JSON-owned visual metadata with structure derived
+ * from Ecore metamodels.
+ */
 public final class ModelingConfigService {
 
+    /**
+     * Mapper used to read modeling metadata resources.
+     */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Returns the complete modeling configuration for all supported levels.
+     *
+     * @return configuration map consumed by the platform UI
+     */
     public Map<String, Object> config() {
         return Map.of(
                 "version", 2,
@@ -43,6 +55,12 @@ public final class ModelingConfigService {
                                         "passthroughUnmatched", true, "emitGitkeep", true))));
     }
 
+    /**
+     * Builds one level configuration from UI metadata and Ecore-derived structure.
+     *
+     * @param key lowercase level key
+     * @return level configuration map
+     */
     private Map<String, Object> level(String key) {
         Map<String, Object> metadata = readMetadata(key);
         metadata = mergeEcoreStructure(key, metadata);
@@ -76,6 +94,13 @@ public final class ModelingConfigService {
                 Map.entry("rootTemplate", requireMap(metadata, "rootTemplate", key)));
     }
 
+    /**
+     * Merges structural Ecore data into JSON-owned UI metadata.
+     *
+     * @param key      lowercase level key
+     * @param metadata metadata loaded from resources
+     * @return merged metadata
+     */
     private Map<String, Object> mergeEcoreStructure(String key, Map<String, Object> metadata) {
         Map<String, Object> merged = new LinkedHashMap<>(metadata);
         CimMetamodel metamodel = readEcoreMetamodel(key);
@@ -96,6 +121,15 @@ public final class ModelingConfigService {
         return merged;
     }
 
+    /**
+     * Combines Ecore element structure with UI visual metadata for each type.
+     *
+     * @param key                lowercase level key
+     * @param structuralElements Ecore-derived element descriptions
+     * @param uiElements         JSON-owned UI element metadata
+     * @param metadata           full metadata map containing defaults and rules
+     * @return merged element metadata
+     */
     private List<Map<String, Object>> mergeElements(String key,
             List<Map<String, Object>> structuralElements, List<?> uiElements,
             Map<String, Object> metadata) {
@@ -145,6 +179,12 @@ public final class ModelingConfigService {
         return elements;
     }
 
+    /**
+     * Deep-merges one metadata map into another for nested object values.
+     *
+     * @param target target map to mutate
+     * @param source source values to merge
+     */
     @SuppressWarnings("unchecked")
     private void mergeInto(Map<String, Object> target, Map<String, Object> source) {
         for (Map.Entry<String, Object> entry : source.entrySet()) {
@@ -163,6 +203,13 @@ public final class ModelingConfigService {
         }
     }
 
+    /**
+     * Checks whether an element visual rule applies to an Ecore-derived element.
+     *
+     * @param rule    visual rule metadata
+     * @param element structural element metadata
+     * @return {@code true} when the rule matches
+     */
     private boolean visualRuleMatches(Map<String, Object> rule, Map<String, Object> element) {
         Map<String, Object> match = optionalMap(rule, "match");
         if (match.isEmpty()) {
@@ -188,16 +235,37 @@ public final class ModelingConfigService {
                 || expected.equals(element.get("abstract"));
     }
 
+    /**
+     * Matches a scalar actual value against an optional list of expected values.
+     *
+     * @param expected configured expected values
+     * @param actual   actual value
+     * @return {@code true} when no expectation is configured or the value matches
+     */
     private boolean matchesAny(Object expected, String actual) {
         List<String> values = objectStringList(expected);
         return values.isEmpty() || values.contains(actual);
     }
 
+    /**
+     * Matches any actual value against an optional list of expected values.
+     *
+     * @param expected configured expected values
+     * @param actual   actual values
+     * @return {@code true} when no expectation is configured or any value matches
+     */
     private boolean matchesAny(Object expected, List<String> actual) {
         List<String> values = objectStringList(expected);
         return values.isEmpty() || actual.stream().anyMatch(values::contains);
     }
 
+    /**
+     * Matches type prefix, suffix, and substring selectors.
+     *
+     * @param match rule match object
+     * @param type  Ecore type name
+     * @return {@code true} when all configured affix checks match
+     */
     private boolean matchesTypeAffixes(Map<String, Object> match, String type) {
         List<String> prefixes = objectStringList(match.get("typePrefixes"));
         if (!prefixes.isEmpty() && prefixes.stream().noneMatch(type::startsWith)) {
@@ -211,6 +279,12 @@ public final class ModelingConfigService {
         return contains.isEmpty() || contains.stream().anyMatch(type::contains);
     }
 
+    /**
+     * Fills missing visual metadata with safe defaults.
+     *
+     * @param type    element type name
+     * @param element element metadata to mutate
+     */
     private void completeElementVisualMetadata(String type, Map<String, Object> element) {
         element.putIfAbsent("label", humanize(type));
         element.putIfAbsent("displayName", element.get("label"));
@@ -230,6 +304,12 @@ public final class ModelingConfigService {
         element.putIfAbsent("supportOnly", Boolean.FALSE);
     }
 
+    /**
+     * Derives a short stereotype-like token from a CamelCase type name.
+     *
+     * @param type element type name
+     * @return uppercase stereotype token
+     */
     private String stereotypeToken(String type) {
         StringBuilder token = new StringBuilder();
         for (String word : type.split("(?=[A-Z])")) {
@@ -243,6 +323,13 @@ public final class ModelingConfigService {
         return token.isEmpty() ? type.toUpperCase() : token.toString();
     }
 
+    /**
+     * Ensures required visual fields exist for a UI element.
+     *
+     * @param key  lowercase level key
+     * @param type element type name
+     * @param item merged element metadata
+     */
     private void requireElementVisualMetadata(String key, String type, Map<String, Object> item) {
         for (String field : List.of("label", "icon", "color", "category")) {
             Object value = item.get(field);
@@ -253,12 +340,25 @@ public final class ModelingConfigService {
         }
     }
 
+    /**
+     * Copies a raw map into a map with string keys.
+     *
+     * @param raw raw metadata map
+     * @return map with string keys
+     */
     private Map<String, Object> stringKeyMap(Map<?, ?> raw) {
         Map<String, Object> result = new LinkedHashMap<>();
         raw.forEach((key, value) -> result.put(String.valueOf(key), value));
         return result;
     }
 
+    /**
+     * Reads an optional list metadata field.
+     *
+     * @param metadata metadata map
+     * @param field    field name
+     * @return list value or an empty list
+     */
     private List<?> optionalList(Map<String, Object> metadata, String field) {
         Object value = metadata.get(field);
         if (value == null) {
@@ -271,6 +371,13 @@ public final class ModelingConfigService {
                 "Modeling UI metadata field '" + field + "' must be a list.");
     }
 
+    /**
+     * Reads an optional object metadata field.
+     *
+     * @param metadata metadata map
+     * @param field    field name
+     * @return object value or an empty map
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> optionalMap(Map<String, Object> metadata, String field) {
         Object value = metadata.get(field);
@@ -284,6 +391,12 @@ public final class ModelingConfigService {
                 "Modeling UI metadata field '" + field + "' must be an object.");
     }
 
+    /**
+     * Converts a scalar or list value to a list of non-blank strings.
+     *
+     * @param value raw value
+     * @return string list
+     */
     private List<String> objectStringList(Object value) {
         if (value == null) {
             return List.of();
@@ -296,6 +409,13 @@ public final class ModelingConfigService {
         return text.isBlank() ? List.of() : List.of(text);
     }
 
+    /**
+     * Merges configured and Ecore-derived relationship rules by stable key.
+     *
+     * @param configuredRules JSON-owned rules
+     * @param ecoreRules      Ecore-derived rules
+     * @return merged rules
+     */
     private List<Map<String, Object>> mergeRelationshipRules(List<?> configuredRules,
             List<Map<String, Object>> ecoreRules) {
         Map<String, Map<String, Object>> byKey = new LinkedHashMap<>();
@@ -313,6 +433,12 @@ public final class ModelingConfigService {
         return new ArrayList<>(byKey.values());
     }
 
+    /**
+     * Creates a stable de-duplication key for a relationship rule.
+     *
+     * @param rule relationship rule
+     * @return rule key
+     */
     private String relationshipRuleKey(Map<String, Object> rule) {
         return String.join("|",
                 String.valueOf(rule.getOrDefault("sourceType", "")),
@@ -321,6 +447,13 @@ public final class ModelingConfigService {
                 String.join(",", objectStringList(rule.get("allowedKinds"))));
     }
 
+    /**
+     * Merges configured and Ecore-derived semantic reference rules by stable key.
+     *
+     * @param configuredRules JSON-owned rules
+     * @param ecoreRules      Ecore-derived rules
+     * @return merged rules
+     */
     private List<Map<String, Object>> mergeSemanticReferenceRules(List<?> configuredRules,
             List<Map<String, Object>> ecoreRules) {
         Map<String, Map<String, Object>> byKey = new LinkedHashMap<>();
@@ -338,6 +471,12 @@ public final class ModelingConfigService {
         return new ArrayList<>(byKey.values());
     }
 
+    /**
+     * Creates a stable de-duplication key for a semantic reference rule.
+     *
+     * @param rule semantic reference rule
+     * @return rule key
+     */
     private String semanticReferenceRuleKey(Map<String, Object> rule) {
         return String.join("|",
                 String.valueOf(rule.getOrDefault("sourceType", "")),
@@ -346,6 +485,13 @@ public final class ModelingConfigService {
                 String.valueOf(rule.getOrDefault("kind", "")));
     }
 
+    /**
+     * Combines configured relationship kinds with kinds implied by rules.
+     *
+     * @param metadata          metadata map
+     * @param relationshipRules merged relationship rules
+     * @return ordered relationship kinds
+     */
     private List<String> mergeRelationshipKinds(Map<String, Object> metadata,
             List<?> relationshipRules) {
         LinkedHashSet<String> result = new LinkedHashSet<>(
@@ -362,6 +508,13 @@ public final class ModelingConfigService {
         return new ArrayList<>(result);
     }
 
+    /**
+     * Ensures every relationship kind has a display label.
+     *
+     * @param configured        configured label map
+     * @param relationshipKinds relationship kind values
+     * @return completed label map
+     */
     private Map<String, Object> relationshipKindLabels(Map<String, Object> configured,
             List<?> relationshipKinds) {
         Map<String, Object> labels = new LinkedHashMap<>(configured);
@@ -372,6 +525,14 @@ public final class ModelingConfigService {
         return labels;
     }
 
+    /**
+     * Reads a required list metadata field.
+     *
+     * @param metadata metadata map
+     * @param field    field name
+     * @param key      lowercase level key
+     * @return list value
+     */
     private List<?> requireList(Map<String, Object> metadata, String field, String key) {
         Object value = metadata.get(field);
         if (value instanceof List<?> list) {
@@ -381,6 +542,14 @@ public final class ModelingConfigService {
                 + key.toUpperCase() + " must define list field '" + field + "'.");
     }
 
+    /**
+     * Reads a required object metadata field.
+     *
+     * @param metadata metadata map
+     * @param field    field name
+     * @param key      lowercase level key
+     * @return object value
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> requireMap(Map<String, Object> metadata, String field,
             String key) {
@@ -392,6 +561,12 @@ public final class ModelingConfigService {
                 + key.toUpperCase() + " must define object field '" + field + "'.");
     }
 
+    /**
+     * Reads relationship kinds from merged metadata.
+     *
+     * @param metadata merged metadata map
+     * @return distinct relationship kind values
+     */
     private List<String> relationshipKinds(Map<String, Object> metadata) {
         Object configured = metadata.get("relationshipKinds");
         if (configured instanceof List<?> list && !list.isEmpty()) {
@@ -400,11 +575,22 @@ public final class ModelingConfigService {
         throw new PlatformException(500, "Modeling UI metadata must define relationshipKinds.");
     }
 
+    /**
+     * Returns the placeholder transformation configuration used by the UI.
+     *
+     * @return transformation configuration map
+     */
     private Map<String, Object> transformation() {
         return Map.of("enabled", true, "elementMappings", List.of(), "relationshipMappings",
                 List.of());
     }
 
+    /**
+     * Reads level-specific UI metadata from the classpath.
+     *
+     * @param key lowercase level key
+     * @return metadata map
+     */
     private Map<String, Object> readMetadata(String key) {
         String resource = "modeling/" + key + "-ui-metadata.json";
         try (InputStream input = Thread.currentThread().getContextClassLoader()
@@ -428,6 +614,12 @@ public final class ModelingConfigService {
         }
     }
 
+    /**
+     * Reads an Ecore metamodel and derives UI structural metadata from it.
+     *
+     * @param key lowercase level key
+     * @return derived metamodel metadata
+     */
     private CimMetamodel readEcoreMetamodel(String key) {
         Path ecoreFile = ecoreFile(key);
         try (InputStream input = Files.newInputStream(ecoreFile)) {
@@ -460,6 +652,12 @@ public final class ModelingConfigService {
         }
     }
 
+    /**
+     * Resolves the combined Ecore file for a level key.
+     *
+     * @param key lowercase level key
+     * @return Ecore file path
+     */
     private Path ecoreFile(String key) {
         ModelLevel level = switch (key) {
             case "cim" -> ModelLevel.CIM;
@@ -470,6 +668,12 @@ public final class ModelingConfigService {
         return new MdeRuntimePaths(MdeRuntimeOptions.defaults()).metamodelFile(level);
     }
 
+    /**
+     * Builds lookup entries for local Ecore path references.
+     *
+     * @param packages EPackage DOM nodes
+     * @return type names keyed by path fragment
+     */
     private Map<String, String> typeByPath(NodeList packages) {
         Map<String, String> result = new HashMap<>();
         for (int packageIndex = 0; packageIndex < packages.getLength(); packageIndex++) {
@@ -489,6 +693,13 @@ public final class ModelingConfigService {
         return result;
     }
 
+    /**
+     * Extracts all EClass definitions from Ecore DOM packages.
+     *
+     * @param packages   EPackage DOM nodes
+     * @param typeByPath type lookup for Ecore references
+     * @return classes keyed by type name
+     */
     private Map<String, EcoreClass> ecoreClasses(NodeList packages,
             Map<String, String> typeByPath) {
         Map<String, EcoreClass> result = new LinkedHashMap<>();
@@ -536,6 +747,14 @@ public final class ModelingConfigService {
         return result;
     }
 
+    /**
+     * Converts an Ecore structural feature DOM element to the internal feature representation.
+     *
+     * @param feature    Ecore feature element
+     * @param typeByPath type lookup for Ecore references
+     * @param kind       feature kind
+     * @return normalized feature
+     */
     private EmfaticFeature ecoreFeature(Element feature, Map<String, String> typeByPath,
             String kind) {
         int lower = lowerBound(feature);
@@ -549,6 +768,13 @@ public final class ModelingConfigService {
                 feature.getAttribute("eOpposite"), readonly);
     }
 
+    /**
+     * Converts lower and upper bounds to compact multiplicity notation.
+     *
+     * @param lower lower bound
+     * @param upper upper bound, with {@code -1} for unbounded
+     * @return multiplicity token
+     */
     private String multiplicity(int lower, int upper) {
         if (upper == -1 || upper > 1) {
             return lower > 0 ? "+" : "*";
@@ -556,6 +782,14 @@ public final class ModelingConfigService {
         return lower > 0 ? "1" : "";
     }
 
+    /**
+     * Builds a UI element description from an Ecore class.
+     *
+     * @param modelClass         Ecore class metadata
+     * @param classByType        class lookup by type
+     * @param enumLiteralsByType enum literals by enum type
+     * @return UI element metadata
+     */
     private Map<String, Object> metamodelElement(EcoreClass modelClass,
             Map<String, EcoreClass> classByType,
             Map<String, List<String>> enumLiteralsByType) {
@@ -583,6 +817,14 @@ public final class ModelingConfigService {
         return element;
     }
 
+    /**
+     * Chooses a small set of default fields to show for a type.
+     *
+     * @param type       element type name
+     * @param attributes attribute metadata
+     * @param references reference metadata
+     * @return ordered visible field names
+     */
     private List<String> defaultVisibleFields(String type, List<Map<String, Object>> attributes,
             List<Map<String, Object>> references) {
         LinkedHashSet<String> fields = new LinkedHashSet<>();
@@ -615,6 +857,14 @@ public final class ModelingConfigService {
         return new ArrayList<>(fields);
     }
 
+    /**
+     * Returns inherited and local Ecore features in override order.
+     *
+     * @param modelClass  model class metadata
+     * @param classByType class lookup by type
+     * @param attributes  whether to return attributes instead of references
+     * @return inherited feature list
+     */
     private List<EmfaticFeature> inheritedEcoreFeatures(EcoreClass modelClass,
             Map<String, EcoreClass> classByType, boolean attributes) {
         LinkedHashMap<String, EmfaticFeature> result = new LinkedHashMap<>();
@@ -636,6 +886,13 @@ public final class ModelingConfigService {
         return new ArrayList<>(result.values());
     }
 
+    /**
+     * Returns all transitive Ecore supertypes for a class.
+     *
+     * @param modelClass  model class metadata
+     * @param classByType class lookup by type
+     * @return ordered supertype names
+     */
     private List<String> allEcoreSuperTypes(EcoreClass modelClass,
             Map<String, EcoreClass> classByType) {
         LinkedHashSet<String> result = new LinkedHashSet<>();
@@ -643,6 +900,13 @@ public final class ModelingConfigService {
         return new ArrayList<>(result);
     }
 
+    /**
+     * Recursively collects transitive Ecore supertypes.
+     *
+     * @param modelClass  current class
+     * @param classByType class lookup by type
+     * @param result      mutable ordered supertype sink
+     */
     private void collectEcoreSuperTypes(EcoreClass modelClass, Map<String, EcoreClass> classByType,
             LinkedHashSet<String> result) {
         for (String superType : modelClass.superTypes()) {
@@ -656,6 +920,12 @@ public final class ModelingConfigService {
         }
     }
 
+    /**
+     * Extracts EEnum literal names from Ecore DOM packages.
+     *
+     * @param packages EPackage DOM nodes
+     * @return enum literal names keyed by enum type
+     */
     private Map<String, List<String>> enumLiteralsByType(NodeList packages) {
         Map<String, List<String>> result = new HashMap<>();
         for (int packageIndex = 0; packageIndex < packages.getLength(); packageIndex++) {
@@ -684,6 +954,13 @@ public final class ModelingConfigService {
         return result;
     }
 
+    /**
+     * Converts an internal feature to UI attribute metadata.
+     *
+     * @param feature            normalized feature
+     * @param enumLiteralsByType enum literals keyed by enum type
+     * @return attribute metadata
+     */
     private Map<String, Object> cimAttribute(EmfaticFeature feature,
             Map<String, List<String>> enumLiteralsByType) {
         Map<String, Object> attribute = new LinkedHashMap<>();
@@ -700,6 +977,12 @@ public final class ModelingConfigService {
         return attribute;
     }
 
+    /**
+     * Converts an internal feature to UI reference metadata.
+     *
+     * @param feature normalized feature
+     * @return reference metadata
+     */
     private Map<String, Object> cimReference(EmfaticFeature feature) {
         Map<String, Object> reference = new LinkedHashMap<>();
         reference.put("name", feature.name());
@@ -714,6 +997,14 @@ public final class ModelingConfigService {
         return reference;
     }
 
+    /**
+     * Converts an Ecore attribute DOM element to UI attribute metadata.
+     *
+     * @param feature            Ecore attribute element
+     * @param typeByPath         type lookup for Ecore references
+     * @param enumLiteralsByType enum literals keyed by enum type
+     * @return attribute metadata
+     */
     private Map<String, Object> cimAttribute(Element feature, Map<String, String> typeByPath,
             Map<String, List<String>> enumLiteralsByType) {
         String type = typeName(feature.getAttribute("eType"), typeByPath);
@@ -731,6 +1022,13 @@ public final class ModelingConfigService {
         return attribute;
     }
 
+    /**
+     * Converts an Ecore reference DOM element to UI reference metadata.
+     *
+     * @param feature    Ecore reference element
+     * @param typeByPath type lookup for Ecore references
+     * @return reference metadata
+     */
     private Map<String, Object> cimReference(Element feature, Map<String, String> typeByPath) {
         Map<String, Object> reference = new LinkedHashMap<>();
         reference.put("name", feature.getAttribute("name"));
@@ -747,6 +1045,14 @@ public final class ModelingConfigService {
         return reference;
     }
 
+    /**
+     * Derives relationship and semantic reference rules from Ecore references on a DOM classifier.
+     *
+     * @param classifier             Ecore classifier element
+     * @param typeByPath             type lookup for Ecore references
+     * @param relationshipRules      mutable relationship rule sink
+     * @param semanticReferenceRules mutable semantic reference rule sink
+     */
     private void collectReferenceRules(Element classifier, Map<String, String> typeByPath,
             List<Map<String, Object>> relationshipRules,
             List<Map<String, Object>> semanticReferenceRules) {
@@ -778,6 +1084,13 @@ public final class ModelingConfigService {
         }
     }
 
+    /**
+     * Derives relationship and semantic reference rules from an Emfatic class.
+     *
+     * @param modelClass             Emfatic class metadata
+     * @param relationshipRules      mutable relationship rule sink
+     * @param semanticReferenceRules mutable semantic reference rule sink
+     */
     private void collectReferenceRules(EmfaticClass modelClass,
             List<Map<String, Object>> relationshipRules,
             List<Map<String, Object>> semanticReferenceRules) {
@@ -798,6 +1111,14 @@ public final class ModelingConfigService {
         }
     }
 
+    /**
+     * Derives relationship and semantic reference rules from an Ecore class.
+     *
+     * @param levelKey               lowercase level key
+     * @param modelClass             Ecore class metadata
+     * @param relationshipRules      mutable relationship rule sink
+     * @param semanticReferenceRules mutable semantic reference rule sink
+     */
     private void collectReferenceRules(String levelKey, EcoreClass modelClass,
             List<Map<String, Object>> relationshipRules,
             List<Map<String, Object>> semanticReferenceRules) {
@@ -818,6 +1139,13 @@ public final class ModelingConfigService {
         }
     }
 
+    /**
+     * Resolves an Ecore type reference to a classifier name.
+     *
+     * @param eType      raw Ecore type reference
+     * @param typeByPath type lookup for path fragments
+     * @return classifier name or raw value
+     */
     private String typeName(String eType, Map<String, String> typeByPath) {
         if (eType == null || eType.isBlank()) {
             return "";
@@ -832,6 +1160,13 @@ public final class ModelingConfigService {
         return eType;
     }
 
+    /**
+     * Extracts direct Ecore supertypes from a DOM classifier.
+     *
+     * @param classifier Ecore classifier element
+     * @param typeByPath type lookup for Ecore references
+     * @return direct supertype names
+     */
     private List<String> directSuperTypes(Element classifier, Map<String, String> typeByPath) {
         List<String> result = new ArrayList<>();
         for (String rawSuperType : classifier.getAttribute("eSuperTypes").split("\\s+")) {
@@ -843,6 +1178,12 @@ public final class ModelingConfigService {
         return result;
     }
 
+    /**
+     * Generalizes broad target types to a wildcard UI rule target.
+     *
+     * @param targetType target type name
+     * @return specific target type or wildcard
+     */
     private String genericTarget(String targetType) {
         return switch (targetType) {
             case "ModelElement", "TraceableElement", "SemanticRelationship" -> "*";
@@ -850,6 +1191,13 @@ public final class ModelingConfigService {
         };
     }
 
+    /**
+     * Converts an Ecore reference name and containment flag to a relationship kind.
+     *
+     * @param featureName reference feature name
+     * @param containment whether the reference is containment
+     * @return relationship kind
+     */
     private String relationshipKind(String featureName, boolean containment) {
         if (containment) {
             return "CONTAINS";
@@ -857,24 +1205,55 @@ public final class ModelingConfigService {
         return featureNameToKind(featureName);
     }
 
+    /**
+     * Reads an Ecore lower bound with the Ecore default of zero.
+     *
+     * @param feature Ecore feature element
+     * @return lower bound
+     */
     private int lowerBound(Element feature) {
         String value = feature.getAttribute("lowerBound");
         return value == null || value.isBlank() ? 0 : Integer.parseInt(value);
     }
 
+    /**
+     * Reads an Ecore upper bound with the Ecore default of one.
+     *
+     * @param feature Ecore feature element
+     * @return upper bound
+     */
     private int upperBound(Element feature) {
         String value = feature.getAttribute("upperBound");
         return value == null || value.isBlank() ? 1 : Integer.parseInt(value);
     }
 
+    /**
+     * Checks whether multiplicity requires at least one value.
+     *
+     * @param multiplicity multiplicity token
+     * @return {@code true} when required
+     */
     private boolean required(String multiplicity) {
         return "1".equals(multiplicity) || "+".equals(multiplicity);
     }
 
+    /**
+     * Checks whether multiplicity allows multiple values.
+     *
+     * @param multiplicity multiplicity token
+     * @return {@code true} when many-valued
+     */
     private boolean many(String multiplicity) {
         return "*".equals(multiplicity) || "+".equals(multiplicity);
     }
 
+    /**
+     * Maps an Ecore data type to a UI field type.
+     *
+     * @param type               Ecore type name
+     * @param enumLiteralsByType enum literal lookup
+     * @return UI field type
+     */
     private String fieldType(String type, Map<String, List<String>> enumLiteralsByType) {
         if (type.contains("Boolean")) {
             return "boolean";
@@ -892,6 +1271,13 @@ public final class ModelingConfigService {
         return "text";
     }
 
+    /**
+     * Supplies a default UI value from type and upper bound.
+     *
+     * @param type       Ecore type name
+     * @param upperBound Ecore upper bound
+     * @return default value
+     */
     private Object defaultValue(String type, int upperBound) {
         if (upperBound == -1 || upperBound > 1) {
             return List.of();
@@ -906,6 +1292,13 @@ public final class ModelingConfigService {
         return "";
     }
 
+    /**
+     * Supplies a default UI value from type and multiplicity token.
+     *
+     * @param type         Ecore type name
+     * @param multiplicity multiplicity token
+     * @return default value
+     */
     private Object defaultValue(String type, String multiplicity) {
         if (many(multiplicity)) {
             return List.of();
@@ -920,32 +1313,83 @@ public final class ModelingConfigService {
         return "";
     }
 
+    /**
+     * Converts a feature name to an uppercase relationship kind.
+     *
+     * @param featureName feature name
+     * @return relationship kind
+     */
     private String featureNameToKind(String featureName) {
         return featureName.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
     }
 
+    /**
+     * Converts an identifier-like type name to display text.
+     *
+     * @param type type name
+     * @return display text
+     */
     private String humanize(String type) {
         return type.replace('_', ' ').replaceAll("([a-z])([A-Z])", "$1 $2");
     }
 
+    /**
+     * Ecore-derived structural metadata for a modeling level.
+     *
+     * @param elements               element metadata
+     * @param relationshipRules      relationship rules
+     * @param semanticReferenceRules semantic reference rules
+     */
     private record CimMetamodel(List<Map<String, Object>> elements,
                                 List<Map<String, Object>> relationshipRules,
                                 List<Map<String, Object>> semanticReferenceRules) {
 
     }
 
+    /**
+     * Internal Ecore class description.
+     *
+     * @param packageName  Ecore package name
+     * @param name         class name
+     * @param superTypes   direct supertype names
+     * @param abstractType whether the class is abstract
+     * @param attributes   attribute features
+     * @param references   reference features
+     */
     private record EcoreClass(String packageName, String name, List<String> superTypes,
                               boolean abstractType, List<EmfaticFeature> attributes,
                               List<EmfaticFeature> references) {
 
     }
 
+    /**
+     * Internal Emfatic class description retained for compatibility with Emfatic-derived metadata
+     * helpers.
+     *
+     * @param packageName  package name
+     * @param name         class name
+     * @param superType    direct supertype
+     * @param abstractType whether the class is abstract
+     * @param attributes   attribute features
+     * @param references   reference features
+     */
     private record EmfaticClass(String packageName, String name, String superType,
                                 boolean abstractType, List<EmfaticFeature> attributes,
                                 List<EmfaticFeature> references) {
 
     }
 
+    /**
+     * Internal structural feature description used by both DOM and Emfatic helpers.
+     *
+     * @param name         feature name
+     * @param kind         attribute or reference
+     * @param type         target or data type
+     * @param containment  whether the reference is containment
+     * @param multiplicity compact multiplicity token
+     * @param opposite     Ecore opposite reference
+     * @param readonly     whether the feature should be treated as read-only
+     */
     private record EmfaticFeature(String name, String kind, String type, boolean containment,
                                   String multiplicity, String opposite, boolean readonly) {
 

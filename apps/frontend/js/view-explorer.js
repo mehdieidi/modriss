@@ -30,9 +30,47 @@ let host = null;
 let bound = false;
 let treeBound = false;
 let viewMenuOpen = false;
+let layoutMenuOpen = false;
 let treeBodyScrollTop = 0;
 let modelTreeMode = "elements";
 let modelTreeFilter = "";
+const LAYOUT_STRATEGIES = [
+  {
+    id: "SPACIOUS_LAYERED",
+    label: "Spacious",
+    title: "Wide layered layout with stronger node and edge separation"
+  },
+  {
+    id: "RELAXED_SPLINES",
+    label: "Relaxed",
+    title: "Curved routes with extra spacing for dense relationship maps"
+  },
+  {
+    id: "VERTICAL_FLOW",
+    label: "Vertical",
+    title: "Top-down flow for process-like views"
+  },
+  {
+    id: "BALANCED_LAYERED",
+    label: "Balanced",
+    title: "Moderate layered layout for smaller views"
+  },
+  {
+    id: "TREE",
+    label: "Tree",
+    title: "Tree layout for hierarchy-heavy views"
+  },
+  {
+    id: "RADIAL",
+    label: "Radial",
+    title: "Radial layout for hub-and-spoke views"
+  },
+  {
+    id: "FORCE",
+    label: "Force",
+    title: "Force-directed layout for exploratory relationship maps"
+  }
+];
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -52,10 +90,62 @@ function ensureHost() {
 async function runManualAutoLayout() {
   try {
     const {autoLayoutCurrentDiagram} = await import('./model-ops.js');
-    await autoLayoutCurrentDiagram();
+    await autoLayoutCurrentDiagram({
+      strategy: selectedLayoutStrategy(),
+      force: true
+    });
   } catch (error) {
     console.warn("Auto layout failed", error);
   }
+}
+
+function selectedLayoutStrategy() {
+  const view = activeView();
+  const stored = window.localStorage.getItem(
+      `modless.layoutStrategy.${state.activeType}`);
+  const value = String(view?.layoutStrategy || stored || "SPACIOUS_LAYERED")
+  .toUpperCase();
+  return LAYOUT_STRATEGIES.some((strategy) => strategy.id === value)
+      ? value : "SPACIOUS_LAYERED";
+}
+
+function selectedLayoutStrategyConfig() {
+  const selected = selectedLayoutStrategy();
+  return LAYOUT_STRATEGIES.find((strategy) => strategy.id === selected)
+      || LAYOUT_STRATEGIES[0];
+}
+
+function layoutStrategyMenuMarkup() {
+  const selected = selectedLayoutStrategy();
+  return LAYOUT_STRATEGIES.map((strategy) =>
+      `<button class="workbench-view-option workbench-layout-option${strategy.id
+      === selected
+          ? " is-active" : ""}"
+               type="button"
+               role="option"
+               aria-selected="${strategy.id === selected ? "true" : "false"}"
+               data-layout-strategy="${escapeHtml(strategy.id)}"
+               title="${escapeHtml(strategy.title)}">
+         <span class="workbench-view-option-label">${escapeHtml(
+          strategy.label)}</span>
+         <span class="workbench-view-option-kind">${escapeHtml(
+          strategy.title)}</span>
+       </button>`).join("");
+}
+
+function setLayoutStrategy(strategyId) {
+  const strategy = String(strategyId || "SPACIOUS_LAYERED").toUpperCase();
+  const selected = LAYOUT_STRATEGIES.some((item) => item.id === strategy)
+      ? strategy : "SPACIOUS_LAYERED";
+  const view = activeView();
+  if (view) {
+    view.layoutStrategy = selected;
+  }
+  window.localStorage.setItem(`modless.layoutStrategy.${state.activeType}`,
+      selected);
+  layoutMenuOpen = false;
+  renderViewWorkbench();
+  setStatus("Layout strategy selected. Run Auto Layout to apply it.");
 }
 
 function viewMatchesLevel(view) {
@@ -509,6 +599,28 @@ export function renderViewWorkbench() {
             <span class="model-save-btn-progress-bar"></span>
           </span>
         </button>
+        <div class="workbench-layout-select-wrap${layoutMenuOpen ? " is-open"
+      : ""}">
+          <span class="workbench-layout-select-label">Layout</span>
+          <button class="sidebar-select workbench-view-select workbench-layout-select"
+                  id="layoutStrategySelect"
+                  type="button"
+                  title="${escapeHtml(selectedLayoutStrategyConfig().title)}"
+                  aria-haspopup="listbox"
+                  aria-expanded="${layoutMenuOpen ? "true" : "false"}">
+            <span class="workbench-view-select-label">${escapeHtml(
+      selectedLayoutStrategyConfig().label)}</span>
+          </button>
+          <span class="workbench-view-select-caret workbench-layout-select-caret"
+                aria-hidden="true"></span>
+          <div class="workbench-view-menu workbench-layout-menu${layoutMenuOpen
+      ? "" : " hidden"}"
+               id="layoutStrategyMenu"
+               role="listbox"
+               aria-label="Auto layout strategies">
+            ${layoutStrategyMenuMarkup()}
+          </div>
+        </div>
         <button class="sidebar-inline-action model-layout-btn"
                 id="workbenchAutoLayoutBtn"
                 type="button"
@@ -588,8 +700,8 @@ async function openWorkbenchView(viewId) {
         const {autoLayoutCurrentDiagram} = await import('./model-ops.js');
         await autoLayoutCurrentDiagram({
           progress: true,
-          save: false,
-          status: false
+          status: false,
+          force: false
         });
         setStatus("View selected and arranged.");
       } catch (error) {
@@ -681,6 +793,13 @@ function bindWorkbenchEvents() {
     }
     if (target?.closest("#activeViewSelect")) {
       viewMenuOpen = !viewMenuOpen;
+      layoutMenuOpen = false;
+      renderViewWorkbench();
+      return;
+    }
+    if (target?.closest("#layoutStrategySelect")) {
+      layoutMenuOpen = !layoutMenuOpen;
+      viewMenuOpen = false;
       renderViewWorkbench();
       return;
     }
@@ -732,6 +851,12 @@ function bindWorkbenchEvents() {
       void openWorkbenchView(selectedView);
       return;
     }
+    const selectedLayout = target?.closest(
+        "[data-layout-strategy]")?.dataset?.layoutStrategy;
+    if (selectedLayout) {
+      setLayoutStrategy(selectedLayout);
+      return;
+    }
     if (target?.closest("#workbenchAutoLayoutBtn")) {
       runManualAutoLayout();
       return;
@@ -756,10 +881,15 @@ function bindWorkbenchEvents() {
       viewMenuOpen = false;
       renderViewWorkbench();
     }
+    if (!target?.closest(".workbench-layout-select-wrap") && layoutMenuOpen) {
+      layoutMenuOpen = false;
+      renderViewWorkbench();
+    }
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && viewMenuOpen) {
+    if (event.key === "Escape" && (viewMenuOpen || layoutMenuOpen)) {
       viewMenuOpen = false;
+      layoutMenuOpen = false;
       renderViewWorkbench();
     }
   });

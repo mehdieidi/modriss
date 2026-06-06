@@ -16,12 +16,30 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Small JSON-backed repository abstraction that constrains all paths to a configured root and
+ * writes data atomically where possible.
+ */
 public final class JsonFileStore {
 
+    /**
+     * Logger for repository read/write failures.
+     */
     private static final Logger log = LoggerFactory.getLogger(JsonFileStore.class);
+    /**
+     * Mapper configured for Java time values and large model payloads.
+     */
     private final ObjectMapper objectMapper;
+    /**
+     * Normalized repository root directory.
+     */
     private final Path root;
 
+    /**
+     * Creates a JSON file store rooted at the supplied directory.
+     *
+     * @param root repository root directory
+     */
     public JsonFileStore(Path root) {
         this.root = root.toAbsolutePath().normalize();
         JsonFactory jsonFactory = JsonFactory.builder()
@@ -34,14 +52,27 @@ public final class JsonFileStore {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
+    /**
+     * Returns the shared object mapper used by repository services.
+     *
+     * @return configured object mapper
+     */
     public ObjectMapper objectMapper() {
         return objectMapper;
     }
 
+    /**
+     * Returns the normalized repository root.
+     *
+     * @return repository root
+     */
     public Path root() {
         return root;
     }
 
+    /**
+     * Creates the directory structure expected by platform services.
+     */
     public void initialize() {
         try {
             Files.createDirectories(root);
@@ -56,6 +87,14 @@ public final class JsonFileStore {
         }
     }
 
+    /**
+     * Reads a JSON file when it exists.
+     *
+     * @param path repository-relative path
+     * @param type target value type
+     * @param <T>  target value type
+     * @return optional decoded value
+     */
     public <T> Optional<T> read(Path path, Class<T> type) {
         Path resolved = resolve(path);
         if (!Files.isRegularFile(resolved)) {
@@ -69,20 +108,47 @@ public final class JsonFileStore {
         }
     }
 
+    /**
+     * Reads a JSON file or throws a 404 platform exception.
+     *
+     * @param path    repository-relative path
+     * @param type    target value type
+     * @param message message used when the file is absent
+     * @param <T>     target value type
+     * @return decoded value
+     */
     public <T> T require(Path path, Class<T> type, String message) {
         return read(path, type).orElseThrow(() -> new PlatformException(404, message));
     }
 
+    /**
+     * Writes a value as JSON using an atomic replacement when supported.
+     *
+     * @param path  repository-relative path
+     * @param value value to serialize
+     */
     public void write(Path path, Object value) {
         Path resolved = resolve(path);
         writeJsonResolved(resolved, value);
     }
 
+    /**
+     * Writes raw bytes using an atomic replacement when supported.
+     *
+     * @param path  repository-relative path
+     * @param bytes bytes to write; {@code null} writes an empty file
+     */
     public void writeBytesAtomically(Path path, byte[] bytes) {
         Path resolved = resolve(path);
         writeBytesResolved(resolved, bytes == null ? new byte[0] : bytes);
     }
 
+    /**
+     * Moves a repository file to another repository path.
+     *
+     * @param source repository-relative source path
+     * @param target repository-relative target path
+     */
     public void moveAtomically(Path source, Path target) {
         Path resolvedSource = resolve(source);
         Path resolvedTarget = resolve(target);
@@ -96,6 +162,11 @@ public final class JsonFileStore {
         }
     }
 
+    /**
+     * Deletes a repository file when present.
+     *
+     * @param path repository-relative path
+     */
     public void deleteIfExists(Path path) {
         try {
             Files.deleteIfExists(resolve(path));
@@ -104,6 +175,12 @@ public final class JsonFileStore {
         }
     }
 
+    /**
+     * Writes JSON to an already-resolved path.
+     *
+     * @param resolved absolute path under the repository root
+     * @param value    value to serialize
+     */
     private void writeJsonResolved(Path resolved, Object value) {
         try {
             Files.createDirectories(resolved.getParent());
@@ -118,6 +195,12 @@ public final class JsonFileStore {
         }
     }
 
+    /**
+     * Writes raw bytes to an already-resolved path.
+     *
+     * @param resolved absolute path under the repository root
+     * @param bytes    bytes to write
+     */
     private void writeBytesResolved(Path resolved, byte[] bytes) {
         try {
             Files.createDirectories(resolved.getParent());
@@ -131,6 +214,13 @@ public final class JsonFileStore {
         }
     }
 
+    /**
+     * Moves a file with atomic replacement when the filesystem supports it.
+     *
+     * @param source resolved source path
+     * @param target resolved target path
+     * @throws IOException when the move fails
+     */
     private void moveReplacing(Path source, Path target) throws IOException {
         try {
             Files.move(source, target, StandardCopyOption.REPLACE_EXISTING,
@@ -140,6 +230,12 @@ public final class JsonFileStore {
         }
     }
 
+    /**
+     * Resolves a repository-relative path and rejects traversal outside the repository root.
+     *
+     * @param path repository-relative path
+     * @return normalized absolute path under the repository root
+     */
     public Path resolve(Path path) {
         Path resolved = root.resolve(path).normalize();
         if (!resolved.startsWith(root)) {

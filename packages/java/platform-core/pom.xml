@@ -86,6 +86,21 @@
       <version>${elk.version}</version>
     </dependency>
     <dependency>
+      <artifactId>org.eclipse.elk.alg.mrtree</artifactId>
+      <groupId>org.eclipse.elk</groupId>
+      <version>${elk.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.elk.alg.radial</artifactId>
+      <groupId>org.eclipse.elk</groupId>
+      <version>${elk.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>org.eclipse.elk.alg.force</artifactId>
+      <groupId>org.eclipse.elk</groupId>
+      <version>${elk.version}</version>
+    </dependency>
+    <dependency>
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
       <groupId>org.eclipse.xtext</groupId>
       <version>${xtext.version}</version>

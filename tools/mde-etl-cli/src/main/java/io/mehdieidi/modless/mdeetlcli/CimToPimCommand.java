@@ -14,6 +14,9 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
+/**
+ * Runs the repository's standard CIM-to-PIM transformation profile.
+ */
 @Command(
         name = "cim-to-pim",
         mixinStandardHelpOptions = true,
@@ -45,6 +48,12 @@ public final class CimToPimCommand implements Callable<Integer> {
     @Option(names = "--log-file", description = "Write a JSON execution report to this file.")
     private Path logFile;
 
+    /**
+     * Executes the configured CIM-to-PIM transformation and writes its reports.
+     *
+     * @return zero on success or two on execution failure
+     * @throws Exception if report output cannot be written
+     */
     @Override
     public Integer call() throws Exception {
         PrintWriter out = commandSpec.commandLine().getOut();

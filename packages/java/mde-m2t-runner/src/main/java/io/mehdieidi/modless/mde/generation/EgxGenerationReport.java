@@ -6,6 +6,21 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Immutable summary of an EGX generation run.
+ *
+ * @param status          final generation status
+ * @param moduleFile      EGX entry module
+ * @param outputDirectory generation output directory
+ * @param startedAt       wall-clock start time
+ * @param finishedAt      wall-clock finish time
+ * @param duration        total wall-clock duration
+ * @param diagnostics     diagnostics emitted during generation
+ * @param generatedFiles  generated files relative to the output directory
+ * @param standardOutput  captured standard output
+ * @param warningOutput   captured warning output
+ * @param errorOutput     captured error output
+ */
 public record EgxGenerationReport(
         GenerationStatus status,
         Path moduleFile,
@@ -19,6 +34,9 @@ public record EgxGenerationReport(
         String warningOutput,
         String errorOutput) {
 
+    /**
+     * Normalizes nullable optional fields and defensively copies collections.
+     */
     public EgxGenerationReport {
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(moduleFile, "moduleFile");
@@ -33,6 +51,11 @@ public record EgxGenerationReport(
         errorOutput = errorOutput == null ? "" : errorOutput;
     }
 
+    /**
+     * Indicates whether generation completed successfully.
+     *
+     * @return {@code true} when the status is {@link GenerationStatus#SUCCEEDED}
+     */
     public boolean succeeded() {
         return status == GenerationStatus.SUCCEEDED;
     }

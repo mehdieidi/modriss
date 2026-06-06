@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.platform.core.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,10 +11,19 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests backend ELK layout request validation, routing, and strategy selection.
+ */
 class LayoutServiceTest {
 
+    /**
+     * Service under test.
+     */
     private final LayoutService service = new LayoutService();
 
+    /**
+     * Verifies that a basic layered layout returns positioned nodes and routed edge sections.
+     */
     @Test
     void computesLayeredLayoutWithEdgeRouting() {
         LayoutService.LayoutResponse response = service.layout(new LayoutService.LayoutRequest(
@@ -46,6 +56,9 @@ class LayoutServiceTest {
         assertNotNull(edge.sections().get(edge.sections().size() - 1).endPoint());
     }
 
+    /**
+     * Verifies that an edge targeting a missing node is rejected before ELK runs.
+     */
     @Test
     void rejectsEdgesThatReferenceMissingNodes() {
         PlatformException exception = assertThrows(PlatformException.class,
@@ -61,5 +74,39 @@ class LayoutServiceTest {
                                 "edge-1", "broken", "only-node", "missing", null, null)))));
 
         assertTrue(exception.getMessage().contains("missing target node"));
+    }
+
+    /**
+     * Verifies that every supported layout strategy can be selected without dropping nodes or
+     * edges.
+     */
+    @Test
+    void supportsSelectableLayoutStrategies() {
+        List<String> strategies = List.of("SPACIOUS_LAYERED", "BALANCED_LAYERED",
+                "RELAXED_SPLINES", "VERTICAL_FLOW", "TREE", "RADIAL", "FORCE");
+
+        for (String strategy : strategies) {
+            LayoutService.LayoutResponse response = service.layout(new LayoutService.LayoutRequest(
+                    "view-" + strategy.toLowerCase(),
+                    "DEFAULT_LAYERED",
+                    false,
+                    List.of(),
+                    Map.of("layoutStrategy", strategy),
+                    List.of(
+                            new LayoutService.LayoutNode(
+                                    "a", "A", 180, 90, 0.0, 0.0, List.of()),
+                            new LayoutService.LayoutNode(
+                                    "b", "B", 180, 90, 0.0, 0.0, List.of()),
+                            new LayoutService.LayoutNode(
+                                    "c", "C", 180, 90, 0.0, 0.0, List.of())),
+                    List.of(
+                            new LayoutService.LayoutEdge(
+                                    "edge-ab", "ab", "a", "b", null, null),
+                            new LayoutService.LayoutEdge(
+                                    "edge-ac", "ac", "a", "c", null, null))));
+
+            assertEquals(3, response.nodes().size(), strategy);
+            assertEquals(2, response.edges().size(), strategy);
+        }
     }
 }

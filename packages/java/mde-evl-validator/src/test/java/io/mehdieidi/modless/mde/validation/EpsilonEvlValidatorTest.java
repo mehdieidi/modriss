@@ -26,19 +26,41 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * Regression tests for EVL validation, diagnostics, and model-loading behavior.
+ */
 class EpsilonEvlValidatorTest {
 
+    /**
+     * Repository root discovered from the current test working directory.
+     */
     private static final Path REPOSITORY_ROOT = findRepositoryRoot();
 
+    /**
+     * Temporary directory for generated EVL, Ecore, and XMI fixtures.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Counts violations for a named EVL constraint.
+     *
+     * @param report         validation report to inspect
+     * @param constraintName EVL constraint name
+     * @return number of matching violations
+     */
     private static long countViolations(EvlValidationReport report, String constraintName) {
         return report.violations().stream()
                 .filter(v -> v.constraintName().equals(constraintName))
                 .count();
     }
 
+    /**
+     * Locates the repository root by walking upward to the MDE metamodel and validation
+     * directories.
+     *
+     * @return normalized repository root path
+     */
     private static Path findRepositoryRoot() {
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         while (current != null) {
@@ -51,6 +73,12 @@ class EpsilonEvlValidatorTest {
         throw new IllegalStateException("Could not locate repository root from user.dir.");
     }
 
+    /**
+     * Verifies imported EVL modules report both mandatory constraints and optional critiques while
+     * exposing only safe element attributes.
+     *
+     * @throws Exception when fixture writing or validation fails
+     */
     @Test
     void reportsMandatoryAndOptionalViolationsFromImportedEvl() throws Exception {
         Path evlRoot = tempDir.resolve("evl");
@@ -102,6 +130,11 @@ class EpsilonEvlValidatorTest {
                         && v.constraintName().equals("PersonShouldHaveName")));
     }
 
+    /**
+     * Ensures a valid in-memory model succeeds with no violations.
+     *
+     * @throws Exception when fixture writing or validation fails
+     */
     @Test
     void succeedsWithNoViolationsForValidModel() throws Exception {
         Path evlFile = tempDir.resolve("person.evl");
@@ -132,6 +165,12 @@ class EpsilonEvlValidatorTest {
         assertFalse(report.hasMandatoryViolations());
     }
 
+    /**
+     * Validates the repository AWS PSM sample and verifies readiness manual decisions remain
+     * explicit without triggering mandatory violations.
+     *
+     * @throws Exception when sample loading or validation fails
+     */
     @Test
     void validatesRepositoryPsmSampleWithReadinessBacklog() throws Exception {
         Path psmSample = REPOSITORY_ROOT.resolve("mde/samples/psm.xmi");
@@ -165,6 +204,11 @@ class EpsilonEvlValidatorTest {
         assertEquals(0, countViolations(report, "CriticalEventTargetsHaveRetryOrDlq"));
     }
 
+    /**
+     * Ensures EVL parse errors are reported as structured diagnostics.
+     *
+     * @throws Exception when fixture writing fails
+     */
     @Test
     void parseFailuresCarryStructuredDiagnostics() throws Exception {
         Path evlFile = tempDir.resolve("broken.evl");
@@ -186,6 +230,12 @@ class EpsilonEvlValidatorTest {
                         && d.severity() == ValidationSeverity.ERROR));
     }
 
+    /**
+     * Confirms that one module's parse diagnostics do not prevent independent modules from
+     * producing their own validation results.
+     *
+     * @throws Exception when fixture writing or validation fails
+     */
     @Test
     void continuesIndependentModulesAfterModuleDiagnostics() throws Exception {
         Path evlRoot = tempDir.resolve("evl-continue");
@@ -224,6 +274,12 @@ class EpsilonEvlValidatorTest {
                 .anyMatch(v -> "PersonMustBeAdult".equals(v.constraintName())));
     }
 
+    /**
+     * Ensures runtime failures include the EVL execution phase, source location, and failure
+     * reason.
+     *
+     * @throws Exception when fixture writing or validation fails
+     */
     @Test
     void runtimeFailuresCarryLocationAndReason() throws Exception {
         Path evlFile = tempDir.resolve("runtime.evl");
@@ -256,6 +312,12 @@ class EpsilonEvlValidatorTest {
         assertTrue(diagnostic.reason().contains("MissingType"));
     }
 
+    /**
+     * Verifies file-backed EMF validation reports all structural model-loading errors for missing
+     * required attributes.
+     *
+     * @throws Exception when metamodel/model fixtures cannot be written
+     */
     @Test
     void fileModelValidationReportsAllStructuralDiagnostics() throws Exception {
         Path evlFile = tempDir.resolve("structural.evl");
@@ -317,6 +379,12 @@ class EpsilonEvlValidatorTest {
         assertTrue(structuralErrors >= 2, exception.getReport().diagnostics().toString());
     }
 
+    /**
+     * Builds a minimal in-memory Ecore model with public and sensitive Person attributes for
+     * validation tests.
+     *
+     * @return configured in-memory test model
+     */
     private TestModel testModel() {
         EcoreFactory factory = EcoreFactory.eINSTANCE;
         EPackage ePackage = factory.createEPackage();
@@ -347,6 +415,16 @@ class EpsilonEvlValidatorTest {
         return new TestModel(ePackage, resource, person, name, age, secretToken);
     }
 
+    /**
+     * In-memory Ecore fixture used by EVL validator tests.
+     *
+     * @param ePackage    package containing the test classifier
+     * @param resource    resource receiving test instances
+     * @param person      Person EClass
+     * @param name        public name attribute
+     * @param age         non-exposed age attribute
+     * @param secretToken sensitive attribute used to verify diagnostic filtering
+     */
     private record TestModel(
             EPackage ePackage,
             Resource resource,
@@ -355,6 +433,11 @@ class EpsilonEvlValidatorTest {
             EAttribute age,
             EAttribute secretToken) {
 
+        /**
+         * Creates a new Person instance from the fixture metamodel.
+         *
+         * @return new Person EObject
+         */
         EObject newPerson() {
             return EcoreUtil.create(person);
         }

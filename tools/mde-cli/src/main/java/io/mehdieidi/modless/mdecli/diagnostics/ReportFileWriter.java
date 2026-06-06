@@ -5,8 +5,17 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Writes detailed plain-text conversion reports for later inspection.
+ */
 public final class ReportFileWriter {
 
+    /**
+     * Writes a report when a target path is configured.
+     *
+     * @param target optional report file path
+     * @param report conversion report
+     */
     public void write(Path target, ConversionReport report) {
         if (target == null) {
             return;
@@ -22,6 +31,12 @@ public final class ReportFileWriter {
         }
     }
 
+    /**
+     * Renders a conversion report, diagnostics, events, and optional cause.
+     *
+     * @param report conversion report
+     * @return plain-text report content
+     */
     private String render(ConversionReport report) {
         StringBuilder content = new StringBuilder();
         content.append("status=").append(report.getStatus()).append(System.lineSeparator());

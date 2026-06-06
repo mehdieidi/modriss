@@ -9,8 +9,14 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for ETL executor validation, target configuration, and reporting.
+ */
 final class EpsilonEtlExecutorTest {
 
+    /**
+     * Ensures a missing ETL module is reported as a validation diagnostic.
+     */
     @Test
     void reportsMissingModuleAsValidationDiagnostic() {
         EpsilonEtlExecutor executor = new EpsilonEtlExecutor();
@@ -31,6 +37,9 @@ final class EpsilonEtlExecutorTest {
         assertTrue(exception.getReport().phaseTiming().totalMs() >= 0);
     }
 
+    /**
+     * Verifies target models are persisted only through executor-controlled storage.
+     */
     @Test
     void targetModelsUseExecutorControlledStorageOnly() {
         EtlModelConfiguration target = EtlModelConfiguration.target(
@@ -40,6 +49,9 @@ final class EpsilonEtlExecutorTest {
         assertFalse(target.storeOnDisposal());
     }
 
+    /**
+     * Confirms phase timing data is included in serialized execution reports.
+     */
     @Test
     void serializesPhaseTimingsInReports() {
         EtlPhaseTiming timing = new EtlPhaseTiming();

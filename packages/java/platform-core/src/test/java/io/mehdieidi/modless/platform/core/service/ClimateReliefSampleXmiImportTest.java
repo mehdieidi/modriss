@@ -27,11 +27,24 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+/**
+ * Regression coverage for importing, validating, and re-exporting the repository climate-relief
+ * sample models.
+ */
 class ClimateReliefSampleXmiImportTest {
 
+    /**
+     * Isolated store directory for persisted platform records created by tests.
+     */
     @TempDir
     Path tempDir;
 
+    /**
+     * Verifies that the canonical CIM sample imports into semantic JSON and a populated graph
+     * projection.
+     *
+     * @throws Exception when sample loading or import fails
+     */
     @Test
     void importsClimateReliefSample() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -51,6 +64,11 @@ class ClimateReliefSampleXmiImportTest {
         assertTrue(result.modelJson().path("graph").path("elements").size() > 10);
     }
 
+    /**
+     * Confirms that the canonical CIM sample is semantically valid immediately after import.
+     *
+     * @throws Exception when sample loading or import fails
+     */
     @Test
     void importedClimateReliefSampleHasNoValidationErrors() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -70,6 +88,12 @@ class ClimateReliefSampleXmiImportTest {
         assertEquals("cim-root", result.modelJson().path("id").asText());
     }
 
+    /**
+     * Guards the exporter against reintroducing duplicate nested information item IDs from the
+     * climate-relief sample.
+     *
+     * @throws Exception when sample import or export fails
+     */
     @Test
     void importedClimateReliefSampleExportsWithoutDuplicateInformationItemIds()
             throws Exception {
@@ -90,6 +114,12 @@ class ClimateReliefSampleXmiImportTest {
         assertTrue(exported.length > 0);
     }
 
+    /**
+     * Ensures the validate-by-id path tolerates older JSON payloads that exposed nested information
+     * items both at the owning element and top level.
+     *
+     * @throws Exception when setup, persistence, or validation fails
+     */
     @Test
     void validateButtonPathToleratesPreviouslyDuplicatedInformationItemJson()
             throws Exception {
@@ -117,6 +147,12 @@ class ClimateReliefSampleXmiImportTest {
                         && issue.message().contains("Duplicate model element id")));
     }
 
+    /**
+     * Verifies that validating a stored CIM model preserves trace link endpoint references through
+     * the source-XMI round trip.
+     *
+     * @throws Exception when sample import, persistence, or validation fails
+     */
     @Test
     void validateButtonPathPreservesTraceLinkEndpoints() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -140,6 +176,12 @@ class ClimateReliefSampleXmiImportTest {
         assertNoTraceLinkEndpointErrors(validation);
     }
 
+    /**
+     * Confirms that stale source XMI without trace endpoints is repaired during validation so later
+     * source-XMI validation sees the restored endpoints.
+     *
+     * @throws Exception when sample import, persistence, or validation fails
+     */
     @Test
     void validateButtonPathRepairsStaleTraceLinkSourceXmi() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -169,6 +211,12 @@ class ClimateReliefSampleXmiImportTest {
         assertNoTraceLinkEndpointErrors(repairedSourceValidation);
     }
 
+    /**
+     * Verifies that CIM assumptions referenced by readiness findings export to XMI without
+     * requiring a full sample model.
+     *
+     * @throws Exception when export fails
+     */
     @Test
     void validationExportPreservesCimAssumptions() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -217,6 +265,12 @@ class ClimateReliefSampleXmiImportTest {
         service.exportModel(ModelLevel.CIM, model, "xmi");
     }
 
+    /**
+     * Ensures AWS PSM samples with nested PSM package namespaces import through the platform
+     * metamodel resolver.
+     *
+     * @throws Exception when sample loading or import fails
+     */
     @Test
     void importsAwsPsmSampleWithNestedPsmPackages() throws Exception {
         JsonFileStore store = new JsonFileStore(tempDir);
@@ -235,6 +289,12 @@ class ClimateReliefSampleXmiImportTest {
         assertFalse(result.modelJson().path("allResources").isEmpty());
     }
 
+    /**
+     * Sanity-checks direct EMF loading of the climate sample with the same metamodel registration
+     * shape used by the platform importer.
+     *
+     * @throws Exception when EMF registration, loading, or resource parsing fails
+     */
     @Test
     void rawEmfLoadOfClimateReliefSample() throws Exception {
         Path sample = Path.of("..", "..", "..", "mde", "samples",
@@ -263,23 +323,48 @@ class ClimateReliefSampleXmiImportTest {
         assertFalse(resource.getContents().isEmpty());
     }
 
+    /**
+     * Adds stale duplicate information items to the top-level CIM array to emulate legacy JSON
+     * persisted before import de-duplication.
+     *
+     * @param model mutable imported CIM JSON model
+     */
     private void duplicateInformationItemsUnderAddress(ObjectNode model) {
         ObjectNode address = informationItem(model, "info-address");
         ArrayNode topLevelItems = (ArrayNode) model.path("informationItems");
+        // These duplicates intentionally mirror nested children that already exist under Address.
         topLevelItems.add(informationItem(address, "info-postcode").deepCopy());
         topLevelItems.add(informationItem(address, "info-location-reference").deepCopy());
     }
 
+    /**
+     * Asserts that validation did not report missing trace link endpoints.
+     *
+     * @param validation validation result to inspect
+     */
     private void assertNoTraceLinkEndpointErrors(ModelService.ValidationResult validation) {
         assertFalse(validation.issues().stream().anyMatch(issue ->
                 "TraceLinkHasReferenceOrExternalId".equals(issue.constraint())));
     }
 
+    /**
+     * Removes trace link endpoint attributes from XMI while leaving the links themselves intact.
+     *
+     * @param xmi source XMI text
+     * @return XMI text with {@code source} and {@code target} attributes removed from links
+     */
     private String removeTraceLinkEndpoints(String xmi) {
         return xmi.replaceAll("(<links[^>]*?)\\s+source=\"[^\"]*\"", "$1")
                 .replaceAll("(<links[^>]*?)\\s+target=\"[^\"]*\"", "$1");
     }
 
+    /**
+     * Finds an information item by ID under either top-level or nested item containments.
+     *
+     * @param owner JSON object that may contain {@code informationItems} or {@code subItems}
+     * @param id    expected information item ID
+     * @return matching information item object
+     */
     private ObjectNode informationItem(JsonNode owner, String id) {
         for (JsonNode item : owner.path("informationItems")) {
             if (id.equals(item.path("id").asText())) {
@@ -294,6 +379,12 @@ class ClimateReliefSampleXmiImportTest {
         throw new AssertionError("Missing information item: " + id);
     }
 
+    /**
+     * Registers an EPackage tree by namespace URI for XMI loading.
+     *
+     * @param resourceSet EMF resource set receiving registrations
+     * @param ePackage    root package to register recursively
+     */
     private void registerPackage(ResourceSet resourceSet, EPackage ePackage) {
         if (ePackage.getNsURI() != null && !ePackage.getNsURI().isBlank()) {
             resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);

@@ -71,6 +71,7 @@
   }
 
   .workbench-body {
+    --assistant-reserve: 17rem;
     grid-template-columns: 1fr;
   }
 
@@ -85,6 +86,10 @@
     left: 0.75rem;
     height: 8rem;
     width: auto;
+  }
+
+  .workbench-body.assistant-active .story-copy {
+    right: calc(var(--assistant-reserve) + 1rem);
   }
 
   .story-copy-card {
@@ -129,8 +134,8 @@
   }
 
   .transformation-engine {
-    width: min(18rem, 42vw);
-    height: min(18rem, 42vw);
+    width: min(13.5rem, 31vw);
+    height: min(13.5rem, 31vw);
   }
 
   .mapping-rules {
@@ -142,10 +147,10 @@
   }
 
   .assistant-demo {
-    right: 1rem;
-    bottom: 0.75rem;
-    transform: scale(0.85);
-    transform-origin: 100% 100%;
+    top: 0.6rem;
+    right: 0.6rem;
+    bottom: 0.6rem;
+    width: calc(var(--assistant-reserve) - 1.2rem);
   }
 
   .refinement-inspector {
@@ -255,8 +260,24 @@
   }
 
   .transformation-engine {
-    width: min(15rem, 48vw);
-    height: min(15rem, 48vw);
+    width: min(9rem, 36vw);
+    height: min(9rem, 36vw);
+  }
+
+  .pipeline-rail {
+    width: 4.2rem;
+  }
+
+  .rail-input {
+    right: calc(50% + 3.6rem);
+  }
+
+  .rail-output {
+    left: calc(50% + 3.6rem);
+  }
+
+  .rail-caption {
+    font-size: 0.34rem;
   }
 
   .mapping-rules {
@@ -264,9 +285,36 @@
   }
 
   .assistant-demo {
+    top: auto;
     right: 0.5rem;
     bottom: 0.5rem;
-    transform: scale(0.72);
+    left: 0.5rem;
+    width: auto;
+    height: 12rem;
+  }
+
+  .model-canvas.assistant-active #model-pim {
+    right: 0.5rem;
+    bottom: 13rem;
+  }
+
+  .workbench-body.assistant-active .story-copy {
+    right: 0.75rem;
+    bottom: 15.5rem;
+  }
+
+  .assistant-demo .chat-window {
+    top: 0.5rem;
+    right: 5.5rem;
+    bottom: 0.5rem;
+    left: 0.5rem;
+  }
+
+  .assistant-demo .chatbot {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    transform: scale(0.82);
+    transform-origin: 100% 100%;
   }
 
   .refinement-inspector {

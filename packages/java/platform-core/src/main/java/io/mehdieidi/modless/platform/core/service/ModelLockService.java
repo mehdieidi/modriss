@@ -8,11 +8,29 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Provides per-model locks for operations that mutate model JSON or XMI sidecars.
+ */
 public final class ModelLockService {
 
+    /**
+     * Default wait time for acquiring a model lock.
+     */
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
+    /**
+     * Locks keyed by model id.
+     */
     private final ConcurrentMap<String, ReentrantLock> locks = new ConcurrentHashMap<>();
 
+    /**
+     * Executes an operation while holding the lock for the requested model id.
+     *
+     * @param modelId   model identifier used as the lock key
+     * @param timeout   maximum time to wait for the lock; {@code null} uses the default
+     * @param operation operation to execute while locked
+     * @param <T>       operation result type
+     * @return operation result
+     */
     public <T> T withModelLock(String modelId, Duration timeout, Callable<T> operation) {
         String key = modelId == null || modelId.isBlank() ? "__unknown__" : modelId;
         ReentrantLock lock = locks.computeIfAbsent(key, ignored -> new ReentrantLock());

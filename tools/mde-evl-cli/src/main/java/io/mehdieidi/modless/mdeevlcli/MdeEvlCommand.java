@@ -2,6 +2,9 @@ package io.mehdieidi.modless.mdeevlcli;
 
 import picocli.CommandLine.Command;
 
+/**
+ * Root Picocli command for EVL validation.
+ */
 @Command(
         name = "mde-evl-cli",
         mixinStandardHelpOptions = true,
@@ -15,6 +18,9 @@ import picocli.CommandLine.Command;
         })
 public final class MdeEvlCommand implements Runnable {
 
+    /**
+     * Rejects invocation without a validation subcommand.
+     */
     @Override
     public void run() {
         throw new picocli.CommandLine.ParameterException(

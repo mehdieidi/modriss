@@ -15,6 +15,9 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
+/**
+ * Converts standalone or modular Emfatic metamodels into Ecore resources.
+ */
 @Command(
         name = "mde-cli",
         mixinStandardHelpOptions = true,
@@ -48,6 +51,11 @@ public final class MetamodelCommand implements Callable<Integer> {
     @Option(names = "--log-file", paramLabel = "FILE", description = "Write a detailed execution report to this file.")
     private Path logFile;
 
+    /**
+     * Executes conversion and maps user-fixable and unexpected failures to CLI exit codes.
+     *
+     * @return zero on success, two for user-fixable failures, or one for unexpected failures
+     */
     @Override
     public Integer call() {
         PrintWriter out = commandSpec.commandLine().getOut();

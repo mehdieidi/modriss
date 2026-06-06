@@ -41,35 +41,98 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+/**
+ * Manages stored platform models, validation, import/export, XMI sidecars, and
+ * optimistic-concurrency updates.
+ */
 public final class ModelService {
 
+    /**
+     * File repository used for model JSON, indexes, and XMI sidecars.
+     */
     private final JsonFileStore store;
+    /**
+     * Project service used for access and editor checks.
+     */
     private final ProjectService projectService;
+    /**
+     * Modeling configuration service used for JSON-level validation.
+     */
     private final ModelingConfigService modelingConfig;
+    /**
+     * Runtime limits and asset roots.
+     */
     private final MdeRuntimeOptions runtimeOptions;
+    /**
+     * Runtime path resolver for validation assets.
+     */
     private final MdeRuntimePaths mdePaths;
+    /**
+     * Metamodel resolver used for import/export and metadata repair.
+     */
     private final MetamodelResolver metamodelResolver;
+    /**
+     * Per-model lock service for mutations.
+     */
     private final ModelLockService modelLocks;
+    /**
+     * XMI bridge between JSON and EMF resources.
+     */
     private final XmiModelImportService xmiImportService;
+    /**
+     * EVL validator used for semantic validation.
+     */
     private final EpsilonEvlValidator evlValidator;
+    /**
+     * Small LRU validation cache keyed by model revision and XMI hash.
+     */
     private final Map<String, ValidationResult> validationCache = Collections.synchronizedMap(
             new LinkedHashMap<>(128, 0.75f, true) {
+                /**
+                 * Evicts the least-recently used validation result once the cache reaches its
+                 * fixed service-local capacity.
+                 *
+                 * @param eldest least-recently accessed cache entry
+                 * @return {@code true} when the eldest entry should be removed
+                 */
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, ValidationResult> eldest) {
                     return size() > 128;
                 }
             });
 
+    /**
+     * Creates a model service using a default modeling configuration service.
+     *
+     * @param store          backing JSON repository
+     * @param projectService project access service
+     */
     public ModelService(JsonFileStore store, ProjectService projectService) {
         this(store, projectService, new ModelingConfigService());
     }
 
+    /**
+     * Creates a model service with default runtime options.
+     *
+     * @param store          backing JSON repository
+     * @param projectService project access service
+     * @param modelingConfig modeling configuration service
+     */
     public ModelService(JsonFileStore store, ProjectService projectService,
             ModelingConfigService modelingConfig) {
         this(store, projectService, modelingConfig, MdeRuntimeOptions.defaults(),
                 new ModelLockService());
     }
 
+    /**
+     * Creates a model service with explicit runtime options and lock service.
+     *
+     * @param store          backing JSON repository
+     * @param projectService project access service
+     * @param modelingConfig modeling configuration service
+     * @param runtimeOptions runtime limits and asset roots
+     * @param modelLocks     per-model lock service
+     */
     public ModelService(JsonFileStore store, ProjectService projectService,
             ModelingConfigService modelingConfig, MdeRuntimeOptions runtimeOptions,
             ModelLockService modelLocks) {
@@ -77,6 +140,17 @@ public final class ModelService {
                 new MdeRuntimePaths(runtimeOptions), null, modelLocks);
     }
 
+    /**
+     * Creates a fully configurable model service.
+     *
+     * @param store             backing JSON repository
+     * @param projectService    project access service
+     * @param modelingConfig    modeling configuration service
+     * @param runtimeOptions    runtime limits and asset roots
+     * @param mdePaths          runtime path resolver
+     * @param metamodelResolver metamodel resolver
+     * @param modelLocks        per-model lock service
+     */
     public ModelService(JsonFileStore store, ProjectService projectService,
             ModelingConfigService modelingConfig, MdeRuntimeOptions runtimeOptions,
             MdeRuntimePaths mdePaths, MetamodelResolver metamodelResolver,
@@ -96,18 +170,44 @@ public final class ModelService {
                 this.runtimeOptions.maxCapturedOutputBytes());
     }
 
+    /**
+     * Creates a compact validation issue.
+     *
+     * @param severity   issue severity
+     * @param constraint issue constraint identifier
+     * @param message    issue message
+     * @return validation issue
+     */
     private static ValidationIssue issue(String severity, String constraint, String message) {
         return new ValidationIssue(severity, constraint, "MODEL", message, null, null, null);
     }
 
+    /**
+     * Returns the lock service shared with transformation operations.
+     *
+     * @return model lock service
+     */
     ModelLockService modelLocks() {
         return modelLocks;
     }
 
+    /**
+     * Returns the maximum model upload size.
+     *
+     * @return maximum bytes accepted for uploaded models
+     */
     public long maxModelUploadBytes() {
         return runtimeOptions.maxModelUploadBytes();
     }
 
+    /**
+     * Lists models for a project and level after verifying project access.
+     *
+     * @param user      requesting user
+     * @param level     model level
+     * @param projectId project identifier
+     * @return full model records ordered by last update
+     */
     public List<ModelRecord> list(UserRecord user, ModelLevel level, String projectId) {
         if (projectId == null || projectId.isBlank()) {
             return List.of();
@@ -129,6 +229,14 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Lists lightweight model summaries for a project and level.
+     *
+     * @param user      requesting user
+     * @param level     model level
+     * @param projectId project identifier
+     * @return summaries ordered by last update
+     */
     public List<ModelSummary> listSummaries(UserRecord user, ModelLevel level, String projectId) {
         if (projectId == null || projectId.isBlank()) {
             return List.of();
@@ -149,18 +257,43 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Loads a model by id and returns a client-safe record.
+     *
+     * @param user  requesting user
+     * @param level model level
+     * @param id    model identifier
+     * @return model record
+     */
     public ModelRecord get(UserRecord user, ModelLevel level, String id) {
         ModelRecord model = find(level, id);
         projectService.get(user, model.projectId());
         return clientRecord(model);
     }
 
+    /**
+     * Loads a model for transformation, preserving server-only metadata needed by MDE flows.
+     *
+     * @param user  requesting user
+     * @param level model level
+     * @param id    model identifier
+     * @return model record repaired for internal use
+     */
     ModelRecord getForTransformation(UserRecord user, ModelLevel level, String id) {
         ModelRecord model = find(level, id);
         projectService.get(user, model.projectId());
         return repairMetadataIfNeeded(model);
     }
 
+    /**
+     * Loads a model by project id and model id.
+     *
+     * @param user      requesting user
+     * @param level     model level
+     * @param projectId project identifier
+     * @param id        model identifier
+     * @return client-safe model record
+     */
     public ModelRecord get(UserRecord user, ModelLevel level, String projectId, String id) {
         projectService.get(user, projectId);
         ModelRecord model = store.require(modelPath(projectId, level, id), ModelRecord.class,
@@ -169,11 +302,32 @@ public final class ModelService {
         return clientRecord(repairMetadataIfNeeded(model));
     }
 
+    /**
+     * Creates a model without an explicit source XMI payload.
+     *
+     * @param user      requesting user
+     * @param level     model level
+     * @param projectId project identifier
+     * @param name      model name
+     * @param modelJson model JSON
+     * @return created model
+     */
     public ModelRecord create(UserRecord user, ModelLevel level, String projectId, String name,
             JsonNode modelJson) {
         return create(user, level, projectId, name, modelJson, null);
     }
 
+    /**
+     * Creates a model with optional source XMI bytes.
+     *
+     * @param user           requesting user
+     * @param level          model level
+     * @param projectId      project identifier
+     * @param name           model name
+     * @param modelJson      model JSON
+     * @param sourceXmiBytes optional source XMI sidecar bytes
+     * @return created model
+     */
     public ModelRecord create(UserRecord user, ModelLevel level, String projectId, String name,
             JsonNode modelJson, byte[] sourceXmiBytes) {
         ProjectRecord project = projectService.get(user, projectId);
@@ -192,6 +346,17 @@ public final class ModelService {
         return clientRecord(model);
     }
 
+    /**
+     * Creates a generated model while preserving generated JSON fields for the caller.
+     *
+     * @param user           requesting user
+     * @param level          generated model level
+     * @param projectId      project identifier
+     * @param name           model name
+     * @param modelJson      generated model JSON
+     * @param sourceXmiBytes canonical source XMI sidecar bytes
+     * @return generated model record
+     */
     ModelRecord createGenerated(UserRecord user, ModelLevel level, String projectId, String name,
             ObjectNode modelJson, byte[] sourceXmiBytes) {
         ProjectRecord project = projectService.get(user, projectId);
@@ -218,11 +383,32 @@ public final class ModelService {
         return generatedClientRecord(model);
     }
 
+    /**
+     * Updates a model without a revision precondition.
+     *
+     * @param user      requesting user
+     * @param level     model level
+     * @param id        model identifier
+     * @param name      replacement model name
+     * @param modelJson replacement model JSON
+     * @return updated model
+     */
     public ModelRecord update(UserRecord user, ModelLevel level, String id, String name,
             JsonNode modelJson) {
         return update(user, level, id, name, modelJson, null);
     }
 
+    /**
+     * Updates a model and its XMI sidecar under a model lock.
+     *
+     * @param user             requesting user
+     * @param level            model level
+     * @param id               model identifier
+     * @param name             replacement model name
+     * @param modelJson        replacement model JSON
+     * @param expectedRevision expected revision, or {@code null}
+     * @return updated model
+     */
     public ModelRecord update(UserRecord user, ModelLevel level, String id, String name,
             JsonNode modelJson, Long expectedRevision) {
         return modelLocks.withModelLock(id, Duration.ofSeconds(30), () -> {
@@ -248,11 +434,32 @@ public final class ModelService {
         });
     }
 
+    /**
+     * Applies JSON Patch-like operations without a revision precondition.
+     *
+     * @param user       requesting user
+     * @param level      model level
+     * @param id         model identifier
+     * @param name       replacement model name, or {@code null} to keep existing
+     * @param operations patch operations
+     * @return updated model
+     */
     public ModelRecord patch(UserRecord user, ModelLevel level, String id, String name,
             List<ModelPatchOperation> operations) {
         return patch(user, level, id, name, operations, null);
     }
 
+    /**
+     * Applies JSON Patch-like operations and persists the resulting model under a model lock.
+     *
+     * @param user             requesting user
+     * @param level            model level
+     * @param id               model identifier
+     * @param name             replacement model name, or {@code null} to keep existing
+     * @param operations       patch operations
+     * @param expectedRevision expected revision, or {@code null}
+     * @return updated model
+     */
     public ModelRecord patch(UserRecord user, ModelLevel level, String id, String name,
             List<ModelPatchOperation> operations, Long expectedRevision) {
         return modelLocks.withModelLock(id, Duration.ofSeconds(30), () -> {
@@ -288,6 +495,13 @@ public final class ModelService {
         });
     }
 
+    /**
+     * Deletes a model, its XMI sidecar, and global index entry.
+     *
+     * @param user  requesting user
+     * @param level model level
+     * @param id    model identifier
+     */
     public void delete(UserRecord user, ModelLevel level, String id) {
         modelLocks.withModelLock(id, Duration.ofSeconds(30), () -> {
             ModelRecord model = get(user, level, id);
@@ -300,6 +514,13 @@ public final class ModelService {
         });
     }
 
+    /**
+     * Validates model JSON using EVL and level-specific JSON checks.
+     *
+     * @param level     model level
+     * @param modelJson model JSON
+     * @return validation result
+     */
     public ValidationResult validate(ModelLevel level, JsonNode modelJson) {
         if (modelJson == null || modelJson.isNull()) {
             return new ValidationResult(false,
@@ -313,6 +534,14 @@ public final class ModelService {
         return new ValidationResult(valid, issues);
     }
 
+    /**
+     * Validates a stored model using its source XMI sidecar when available.
+     *
+     * @param user  requesting user
+     * @param level model level
+     * @param id    model identifier
+     * @return validation result
+     */
     public ValidationResult validate(UserRecord user, ModelLevel level, String id) {
         ModelRecord model = get(user, level, id);
         String cacheKey = validationCacheKey(model);
@@ -338,6 +567,13 @@ public final class ModelService {
         return result;
     }
 
+    /**
+     * Regenerates a source XMI sidecar for validation when stored XMI appears stale but
+     * recoverable.
+     *
+     * @param model stored model
+     * @return validation result from regenerated XMI or JSON fallback
+     */
     private ValidationResult validateRegeneratedSourceXmi(ModelRecord model) {
         try {
             SourceXmiUpdate sourceXmi = canonicalSourceXmi(model.level(), model.modelJson(),
@@ -352,10 +588,22 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Detects validation failures that can be repaired by regenerating source XMI from JSON.
+     *
+     * @param result validation result
+     * @return {@code true} when stale source XMI is likely
+     */
     private boolean hasRecoverableStaleSourceError(ValidationResult result) {
         return hasRelationshipEndpointLoadingError(result) || hasTraceEndpointError(result);
     }
 
+    /**
+     * Detects missing relationship endpoint errors from EMF model loading.
+     *
+     * @param result validation result
+     * @return {@code true} when endpoint loading failed
+     */
     private boolean hasRelationshipEndpointLoadingError(ValidationResult result) {
         return result != null && result.issues().stream().anyMatch(issue ->
                 "ERROR".equals(issue.severity())
@@ -364,18 +612,38 @@ public final class ModelService {
                         || issue.message().contains("required feature 'target'")));
     }
 
+    /**
+     * Detects TraceLink endpoint validation errors that can be repaired from graph endpoint ids.
+     *
+     * @param result validation result
+     * @return {@code true} when TraceLink endpoints are stale
+     */
     private boolean hasTraceEndpointError(ValidationResult result) {
         return result != null && result.issues().stream().anyMatch(issue ->
                 "ERROR".equals(issue.severity())
                         && "TraceLinkHasReferenceOrExternalId".equals(issue.constraint()));
     }
 
+    /**
+     * Validates generated or uploaded XMI bytes with EVL.
+     *
+     * @param level    model level
+     * @param xmiBytes XMI payload
+     * @return validation result
+     */
     public ValidationResult validateGeneratedXmi(ModelLevel level, byte[] xmiBytes) {
         List<ValidationIssue> issues = validateWithEvl(level, xmiBytes);
         boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
         return new ValidationResult(valid, issues);
     }
 
+    /**
+     * Exports model JSON to an in-memory EMF resource and validates it with EVL.
+     *
+     * @param level     model level
+     * @param modelJson model JSON
+     * @return validation issues
+     */
     private List<ValidationIssue> validateWithEvl(ModelLevel level, JsonNode modelJson) {
         try {
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
@@ -401,6 +669,13 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Loads XMI bytes into an EMF resource and validates it with EVL.
+     *
+     * @param level    model level
+     * @param xmiBytes source XMI bytes
+     * @return validation issues
+     */
     private List<ValidationIssue> validateWithEvl(ModelLevel level, byte[] xmiBytes) {
         try {
             MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
@@ -426,6 +701,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Converts an EVL report to platform validation issues.
+     *
+     * @param report EVL validation report
+     * @return validation issues
+     */
     private List<ValidationIssue> validationIssues(EvlValidationReport report) {
         if (report == null) {
             return List.of(issue("ERROR", "EvlValidationExecution",
@@ -437,6 +718,12 @@ public final class ModelService {
         return issues;
     }
 
+    /**
+     * Converts an EVL constraint violation to a platform validation issue.
+     *
+     * @param violation EVL violation
+     * @return validation issue
+     */
     private ValidationIssue validationIssue(EvlConstraintViolation violation) {
         String severity = violation.kind() == EvlConstraintKind.MANDATORY ? "ERROR" : "WARNING";
         String elementId = violation.element().attributes().getOrDefault("id", null);
@@ -449,6 +736,12 @@ public final class ModelService {
                 elementId, elementName);
     }
 
+    /**
+     * Converts an EVL diagnostic to a platform validation issue.
+     *
+     * @param diagnostic EVL diagnostic
+     * @return validation issue
+     */
     private ValidationIssue validationIssue(EvlDiagnostic diagnostic) {
         String severity = diagnostic.severity() == ValidationSeverity.ERROR ? "ERROR" : "WARNING";
         String constraint = "EVL_" + diagnostic.phase().name();
@@ -459,6 +752,12 @@ public final class ModelService {
                 null, diagnostic.file() == null ? null : diagnostic.file().toString());
     }
 
+    /**
+     * Performs additional CIM JSON checks using merged modeling metadata.
+     *
+     * @param modelJson CIM model JSON
+     * @return validation issues
+     */
     private List<ValidationIssue> validateCimModel(JsonNode modelJson) {
         List<ValidationIssue> issues = new java.util.ArrayList<>();
         Map<String, Object> config = modelingConfig.config();
@@ -504,6 +803,12 @@ public final class ModelService {
         return issues;
     }
 
+    /**
+     * Indexes graph objects by id.
+     *
+     * @param nodes graph object array
+     * @param index mutable index
+     */
     private void indexGraphObjects(JsonNode nodes, Map<String, JsonNode> index) {
         if (!nodes.isArray()) {
             return;
@@ -516,6 +821,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Appends graph relationships to a mutable list.
+     *
+     * @param nodes         graph relationship array
+     * @param relationships mutable relationship sink
+     */
     private void collectGraphRelationships(JsonNode nodes, List<JsonNode> relationships) {
         if (!nodes.isArray()) {
             return;
@@ -523,6 +834,14 @@ public final class ModelService {
         nodes.forEach(relationships::add);
     }
 
+    /**
+     * Resolves a graph object that can supply missing semantic fields.
+     *
+     * @param element            semantic element
+     * @param graphObjectsById   graph objects keyed by id
+     * @param graphRelationships graph relationship list
+     * @return fallback graph object, or {@code null}
+     */
     private JsonNode resolveGraphFallback(JsonNode element, Map<String, JsonNode> graphObjectsById,
             List<JsonNode> graphRelationships) {
         String id = element.path("id").asText("");
@@ -545,6 +864,12 @@ public final class ModelService {
         return null;
     }
 
+    /**
+     * Recursively collects semantic objects while skipping transport graph data.
+     *
+     * @param node     current JSON node
+     * @param elements mutable semantic element sink
+     */
     private void collectSemanticElements(JsonNode node, List<JsonNode> elements) {
         if (node == null || node.isNull()) {
             return;
@@ -566,6 +891,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Returns the primary Epsilon model name used for validation.
+     *
+     * @param level model level
+     * @return validation model name
+     */
     private String validationModelName(ModelLevel level) {
         return switch (level) {
             case CIM -> "CIM";
@@ -574,6 +905,12 @@ public final class ModelService {
         };
     }
 
+    /**
+     * Returns additional model aliases used by EVL validation.
+     *
+     * @param level model level
+     * @return validation model aliases
+     */
     private List<String> validationModelAliases(ModelLevel level) {
         return switch (level) {
             case CIM, PIM -> List.of("KERNEL");
@@ -581,6 +918,16 @@ public final class ModelService {
         };
     }
 
+    /**
+     * Validates required attributes and references for one semantic element.
+     *
+     * @param element         semantic element
+     * @param fallbackElement graph fallback object
+     * @param definition      metadata definition
+     * @param issues          mutable issue sink
+     * @param elementId       element identifier
+     * @param elementName     element display name
+     */
     private void validateRequiredFeatures(JsonNode element, JsonNode fallbackElement,
             Map<?, ?> definition,
             List<ValidationIssue> issues, String elementId, String elementName) {
@@ -592,6 +939,18 @@ public final class ModelService {
                 "RequiredReference", issues, elementId, elementName);
     }
 
+    /**
+     * Validates one configured required feature list.
+     *
+     * @param element         semantic element
+     * @param fallbackElement graph fallback object
+     * @param definition      metadata definition
+     * @param fieldsObject    configured field list
+     * @param constraint      validation constraint name
+     * @param issues          mutable issue sink
+     * @param elementId       element identifier
+     * @param elementName     element display name
+     */
     private void validateRequiredFeatureList(JsonNode element, JsonNode fallbackElement,
             Map<?, ?> definition, Object fieldsObject, String constraint,
             List<ValidationIssue> issues, String elementId, String elementName) {
@@ -627,6 +986,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Copies graph endpoint fields back into semantic relationships before XMI validation/export.
+     *
+     * @param modelJson model JSON
+     * @return hydrated model JSON copy
+     */
     private JsonNode hydrateSemanticReferences(JsonNode modelJson) {
         if (modelJson == null || !modelJson.isObject()) {
             return modelJson;
@@ -649,11 +1014,22 @@ public final class ModelService {
         return copy;
     }
 
+    /**
+     * Removes transport-only fields that should not be exported for validation.
+     *
+     * @param model model JSON copy to mutate
+     */
     private void stripValidationExportOnlyFields(ObjectNode model) {
         model.remove(List.of("graph", "diagram", "views", "manualBacklog",
                 "validationIssues"));
     }
 
+    /**
+     * Recursively hydrates semantic relationship endpoint fields from graph relationship records.
+     *
+     * @param node               current JSON node
+     * @param graphRelationships graph relationships keyed by id
+     */
     private void hydrateSemanticReferences(JsonNode node,
             Map<String, JsonNode> graphRelationships) {
         if (node == null || node.isNull()) {
@@ -678,6 +1054,14 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Copies a reference value from a source object when the target field is blank.
+     *
+     * @param target            target object to update
+     * @param source            source object to read
+     * @param fieldName         preferred field name
+     * @param fallbackFieldName fallback field name
+     */
     private void copyReferenceIfMissing(ObjectNode target, JsonNode source, String fieldName,
             String fallbackFieldName) {
         if (target.hasNonNull(fieldName) && !target.path(fieldName).asText("").isBlank()) {
@@ -692,6 +1076,11 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Ensures TraceLink endpoint id fields are present for export/validation.
+     *
+     * @param object semantic JSON object
+     */
     private void hydrateTraceEndpointIds(ObjectNode object) {
         if (!"TraceLink".equals(text(object, "eClass", ""))) {
             return;
@@ -700,14 +1089,34 @@ public final class ModelService {
         copyReferenceIfMissing(object, object, "targetElementId", "target");
     }
 
+    /**
+     * Reads a text field from a JSON object.
+     *
+     * @param node     JSON object
+     * @param field    field name
+     * @param fallback fallback text
+     * @return field text or fallback
+     */
     private String text(JsonNode node, String field, String fallback) {
         return node == null ? fallback : node.path(field).asText(fallback);
     }
 
+    /**
+     * Returns a fallback when a string is blank.
+     *
+     * @param value    candidate value
+     * @param fallback fallback value
+     * @return non-blank value
+     */
     private String textOrDefault(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
     }
 
+    /**
+     * Best-effort recursive deletion for temporary validation directories.
+     *
+     * @param path directory to delete
+     */
     private void deleteQuietly(Path path) {
         try (var paths = Files.walk(path)) {
             paths.sorted(java.util.Comparator.reverseOrder()).forEach(item -> {
@@ -722,11 +1131,32 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Imports a model payload without project-specific staged side effects.
+     *
+     * @param level    model level
+     * @param fileName uploaded file name
+     * @param bytes    uploaded bytes
+     * @param format   import format, {@code json} or {@code xmi}
+     * @return import result
+     */
     public ImportResult importModel(ModelLevel level, String fileName, byte[] bytes,
             String format) {
         return importModel(null, null, level, fileName, bytes, format);
     }
 
+    /**
+     * Imports a model payload and, for XMI, attaches source bytes to the resulting JSON payload for
+     * later persistence.
+     *
+     * @param user      requesting user
+     * @param projectId project identifier
+     * @param level     model level
+     * @param fileName  uploaded file name
+     * @param bytes     uploaded bytes
+     * @param format    import format, {@code json} or {@code xmi}
+     * @return import result
+     */
     public ImportResult importModel(UserRecord user, String projectId, ModelLevel level,
             String fileName, byte[] bytes, String format) {
         if (bytes != null && bytes.length > runtimeOptions.maxModelUploadBytes()) {
@@ -761,6 +1191,18 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Imports a bounded model stream.
+     *
+     * @param user      requesting user
+     * @param projectId project identifier
+     * @param level     model level
+     * @param fileName  uploaded file name
+     * @param input     uploaded stream
+     * @param sizeBytes reported upload size
+     * @param format    import format, {@code json} or {@code xmi}
+     * @return import result
+     */
     public ImportResult importModelFromStream(UserRecord user, String projectId, ModelLevel level,
             String fileName, InputStream input, long sizeBytes, String format) {
         if (sizeBytes > runtimeOptions.maxModelUploadBytes()) {
@@ -782,6 +1224,14 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Exports model JSON to JSON or XMI bytes.
+     *
+     * @param level     model level
+     * @param modelJson model JSON
+     * @param format    export format, {@code json} or {@code xmi}
+     * @return exported bytes
+     */
     public byte[] exportModel(ModelLevel level, JsonNode modelJson, String format) {
         try {
             return switch (String.valueOf(format == null ? "json" : format).toLowerCase()) {
@@ -799,10 +1249,26 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Exports model JSON using CIM as the default level.
+     *
+     * @param modelJson model JSON
+     * @param format    export format
+     * @return exported bytes
+     */
     public byte[] exportModel(JsonNode modelJson, String format) {
         return exportModel(ModelLevel.CIM, modelJson, format);
     }
 
+    /**
+     * Exports a stored model, preferring the source XMI sidecar for XMI exports.
+     *
+     * @param user   requesting user
+     * @param level  model level
+     * @param id     model identifier
+     * @param format export format
+     * @return exported bytes
+     */
     public byte[] exportModel(UserRecord user, ModelLevel level, String id, String format) {
         ModelRecord model = get(user, level, id);
         if ("xmi".equalsIgnoreCase(String.valueOf(format))) {
@@ -814,6 +1280,13 @@ public final class ModelService {
         return exportModel(level, model.modelJson(), format);
     }
 
+    /**
+     * Finds a model by id using the global index with legacy fallback.
+     *
+     * @param level model level
+     * @param id    model identifier
+     * @return repaired model record
+     */
     public ModelRecord find(ModelLevel level, String id) {
         Optional<ModelIndexRecord> index = store.read(modelIndexPath(id), ModelIndexRecord.class);
         if (index.isPresent()) {
@@ -828,6 +1301,14 @@ public final class ModelService {
         return findLegacyAndIndex(level, id);
     }
 
+    /**
+     * Ensures required model-level fields exist in model JSON.
+     *
+     * @param name      fallback model name
+     * @param level     model level
+     * @param modelJson raw model JSON
+     * @return normalized model JSON
+     */
     private JsonNode normalizeModel(String name, ModelLevel level, JsonNode modelJson) {
         ObjectNode copy = modelJson == null || !modelJson.isObject()
                 ? store.objectMapper().createObjectNode()
@@ -841,12 +1322,24 @@ public final class ModelService {
         return copy;
     }
 
+    /**
+     * Creates a lightweight model summary.
+     *
+     * @param model model record
+     * @return model summary
+     */
     public ModelSummary summary(ModelRecord model) {
         return new ModelSummary(model.id(), model.projectId(), model.level(), model.name(),
                 Math.max(1, model.revision()), model.metamodelVersion(), model.migrationState(),
                 model.createdAt(), model.updatedAt());
     }
 
+    /**
+     * Reads the stored source XMI sidecar for a model.
+     *
+     * @param model model record
+     * @return optional source XMI bytes
+     */
     public Optional<byte[]> sourceXmi(ModelRecord model) {
         Path path = sourceXmiPath(model.projectId(), model.level(), model.id());
         try {
@@ -859,6 +1352,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Attaches source XMI bytes to an existing model and updates its sidecar hash.
+     *
+     * @param model model record
+     * @param bytes source XMI bytes
+     */
     public void attachSourceXmi(ModelRecord model, byte[] bytes) {
         if (bytes == null || bytes.length == 0) {
             return;
@@ -878,6 +1377,14 @@ public final class ModelService {
         writeModelIndex(updated);
     }
 
+    /**
+     * Produces canonical source XMI unless an existing requested source should be preserved.
+     *
+     * @param level              model level
+     * @param modelJson          model JSON
+     * @param requestedSourceXmi requested source XMI update
+     * @return canonical source XMI update
+     */
     private SourceXmiUpdate canonicalSourceXmi(ModelLevel level, JsonNode modelJson,
             SourceXmiUpdate requestedSourceXmi) {
         if (requestedSourceXmi != null && requestedSourceXmi.bytes() != null
@@ -889,6 +1396,13 @@ public final class ModelService {
         return new SourceXmiUpdate(bytes, hashBytes(bytes), null);
     }
 
+    /**
+     * Checks whether diagram coordinates are present and should be preserved in source XMI
+     * annotations.
+     *
+     * @param modelJson model JSON
+     * @return {@code true} when diagram layout exists
+     */
     private boolean hasDiagramLayout(JsonNode modelJson) {
         JsonNode elements = modelJson == null ? null : modelJson.path("diagram").path("elements");
         if (elements == null || !elements.isArray()) {
@@ -903,6 +1417,12 @@ public final class ModelService {
         return false;
     }
 
+    /**
+     * Adds layout annotations to semantic elements from diagram positions.
+     *
+     * @param modelJson model JSON
+     * @return model JSON with layout annotations
+     */
     private JsonNode withLayoutAnnotations(JsonNode modelJson) {
         if (!(modelJson instanceof ObjectNode)) {
             return modelJson;
@@ -925,6 +1445,12 @@ public final class ModelService {
         return copy;
     }
 
+    /**
+     * Recursively applies layout annotations to matching semantic elements.
+     *
+     * @param node       current JSON node
+     * @param layoutById diagram layout nodes keyed by id
+     */
     private void applyLayoutAnnotations(JsonNode node, Map<String, JsonNode> layoutById) {
         if (node == null || node.isNull()) {
             return;
@@ -944,6 +1470,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Replaces layout annotations on one semantic element.
+     *
+     * @param element semantic element JSON
+     * @param layout  diagram layout JSON
+     */
     private void mergeLayoutAnnotations(ObjectNode element, JsonNode layout) {
         ArrayNode annotations = element.withArray("annotations");
         ArrayNode retained = store.objectMapper().createArrayNode();
@@ -962,6 +1494,13 @@ public final class ModelService {
         element.set("annotations", retained);
     }
 
+    /**
+     * Creates a layout annotation object for XMI round-tripping.
+     *
+     * @param key   annotation key
+     * @param value annotation value
+     * @return annotation JSON
+     */
     private ObjectNode layoutAnnotation(String key, String value) {
         ObjectNode annotation = store.objectMapper().createObjectNode();
         annotation.put("eClass", "Annotation");
@@ -971,6 +1510,12 @@ public final class ModelService {
         return annotation;
     }
 
+    /**
+     * Removes transport-only fields before returning a model to clients.
+     *
+     * @param model stored model record
+     * @return client-safe model record
+     */
     private ModelRecord clientRecord(ModelRecord model) {
         JsonNode modelJson = model.modelJson();
         if (modelJson instanceof ObjectNode objectNode) {
@@ -987,6 +1532,12 @@ public final class ModelService {
                 model.createdAt(), model.updatedAt());
     }
 
+    /**
+     * Returns a generated model record without stripping generated model fields.
+     *
+     * @param model stored generated model
+     * @return client record for generated model response
+     */
     private ModelRecord generatedClientRecord(ModelRecord model) {
         return new ModelRecord(model.id(), model.projectId(), model.level(), model.name(),
                 model.modelJson(),
@@ -997,6 +1548,11 @@ public final class ModelService {
                 model.createdAt(), model.updatedAt());
     }
 
+    /**
+     * Removes fields used only during transport/import.
+     *
+     * @param model model JSON to mutate
+     */
     private void stripTransportOnlyFields(ObjectNode model) {
         model.remove("_sourceXmiBase64");
         JsonNode diagram = model.get("diagram");
@@ -1005,6 +1561,13 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Detects duplicated generated diagram data that can be omitted from client responses.
+     *
+     * @param graph   graph JSON
+     * @param diagram diagram JSON
+     * @return {@code true} when diagram duplicates graph content
+     */
     private boolean isGeneratedDiagramDuplicate(JsonNode graph, JsonNode diagram) {
         if (graph == null || diagram == null || !graph.isObject() || !diagram.isObject()) {
             return false;
@@ -1021,6 +1584,13 @@ public final class ModelService {
                 && sameRelationshipEndpoints(graphRelationships, diagramRelationships);
     }
 
+    /**
+     * Compares relationship endpoint fields between graph and diagram arrays.
+     *
+     * @param graphRelationships   graph relationship array
+     * @param diagramRelationships diagram relationship array
+     * @return {@code true} when ids, kinds, and endpoints match
+     */
     private boolean sameRelationshipEndpoints(JsonNode graphRelationships,
             JsonNode diagramRelationships) {
         if (graphRelationships.size() != diagramRelationships.size()) {
@@ -1042,6 +1612,15 @@ public final class ModelService {
         return true;
     }
 
+    /**
+     * Stages source XMI bytes for later model creation or update.
+     *
+     * @param user      requesting user
+     * @param projectId project identifier
+     * @param level     model level
+     * @param bytes     source XMI bytes
+     * @return staging token
+     */
     private String stageSourceXmi(UserRecord user, String projectId, ModelLevel level,
             byte[] bytes) {
         String token = UUID.randomUUID().toString();
@@ -1060,6 +1639,12 @@ public final class ModelService {
         return token;
     }
 
+    /**
+     * Removes and returns a staged source XMI token from model JSON.
+     *
+     * @param modelJson model JSON
+     * @return token or empty string
+     */
     private String removeSourceXmiToken(JsonNode modelJson) {
         if (modelJson instanceof ObjectNode objectNode) {
             String token = text(objectNode, "_sourceXmiToken", "");
@@ -1069,6 +1654,17 @@ public final class ModelService {
         return "";
     }
 
+    /**
+     * Resolves source XMI bytes from inline Base64, a staged token, preservation, or deletion
+     * semantics.
+     *
+     * @param user                        requesting user
+     * @param projectId                   project identifier
+     * @param level                       model level
+     * @param modelJson                   model JSON to consume transport fields from
+     * @param preserveExistingWhenMissing whether a missing source should preserve current sidecar
+     * @return source XMI update instruction
+     */
     private SourceXmiUpdate resolveSourceXmiUpdate(UserRecord user, String projectId,
             ModelLevel level, JsonNode modelJson, boolean preserveExistingWhenMissing) {
         byte[] inlineBytes = removeSourceXmiBase64(modelJson);
@@ -1111,6 +1707,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Removes and decodes inline Base64 source XMI from model JSON.
+     *
+     * @param modelJson model JSON
+     * @return decoded bytes, or {@code null}
+     */
     private byte[] removeSourceXmiBase64(JsonNode modelJson) {
         if (!(modelJson instanceof ObjectNode objectNode)) {
             return null;
@@ -1127,6 +1729,13 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Persists model JSON and source XMI as a best-effort transaction with rollback snapshots.
+     *
+     * @param previous  previous model record, or {@code null} for create
+     * @param model     model record to persist
+     * @param sourceXmi source XMI update instruction
+     */
     private void persistModelAndSourceXmi(ModelRecord previous, ModelRecord model,
             SourceXmiUpdate sourceXmi) {
         Path modelPath = modelPath(model.projectId(), model.level(), model.id());
@@ -1154,6 +1763,17 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Restores model and source sidecar bytes after a failed persistence step.
+     *
+     * @param modelPath           model JSON path
+     * @param sourcePath          source XMI path
+     * @param previousModelBytes  previous model bytes
+     * @param previousSourceBytes previous source bytes
+     * @param hadPreviousModel    whether a previous model existed
+     * @param hadPreviousSource   whether a previous source sidecar existed
+     * @param newModelId          new model id whose index should be deleted on rollback
+     */
     private void rollback(Path modelPath, Path sourcePath, byte[] previousModelBytes,
             byte[] previousSourceBytes, boolean hadPreviousModel, boolean hadPreviousSource,
             String newModelId) {
@@ -1176,6 +1796,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Reads raw repository bytes when a file exists.
+     *
+     * @param path repository-relative path
+     * @return file bytes or {@code null}
+     */
     private byte[] readBytesIfPresent(Path path) {
         try {
             Path resolved = store.resolve(path);
@@ -1185,11 +1811,24 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Writes the global model index entry.
+     *
+     * @param model model to index
+     */
     private void writeModelIndex(ModelRecord model) {
         store.write(modelIndexPath(model.id()),
                 new ModelIndexRecord(model.id(), model.projectId(), model.level()));
     }
 
+    /**
+     * Searches legacy per-project model locations and writes an index entry after a match is
+     * found.
+     *
+     * @param level model level
+     * @param id    model identifier
+     * @return model record
+     */
     private ModelRecord findLegacyAndIndex(ModelLevel level, String id) {
         Path projects = store.resolve(Path.of("projects"));
         try (Stream<Path> projectDirs = Files.list(projects)) {
@@ -1208,6 +1847,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Backfills metamodel metadata and migration state on older model records.
+     *
+     * @param model model record
+     * @return original or repaired model
+     */
     private ModelRecord repairMetadataIfNeeded(ModelRecord model) {
         if (model == null) {
             return null;
@@ -1232,6 +1877,12 @@ public final class ModelService {
         return repaired;
     }
 
+    /**
+     * Enforces an optional optimistic revision precondition.
+     *
+     * @param existing         existing model
+     * @param expectedRevision expected revision, or {@code null}
+     */
     private void requireExpectedRevision(ModelRecord existing, Long expectedRevision) {
         if (expectedRevision == null) {
             return;
@@ -1241,24 +1892,53 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Computes the next persisted revision.
+     *
+     * @param existing existing model
+     * @return next revision number
+     */
     private long nextRevision(ModelRecord existing) {
         return Math.max(1, existing.revision()) + 1;
     }
 
+    /**
+     * Returns the current metamodel version for a level.
+     *
+     * @param level model level
+     * @return current metamodel version
+     */
     private String currentVersion(ModelLevel level) {
         return metamodelResolver.resolve(level).version();
     }
 
+    /**
+     * Returns the current metamodel hash for a level.
+     *
+     * @param level model level
+     * @return current metamodel hash
+     */
     private String currentHash(ModelLevel level) {
         return metamodelResolver.resolve(level).sha256();
     }
 
+    /**
+     * Computes migration state for a model relative to the current metamodel.
+     *
+     * @param model model record
+     * @return migration state
+     */
     private String migrationState(ModelRecord model) {
         String hash = model.metamodelHash();
         return hash == null || hash.isBlank() || hash.equals(currentHash(model.level()))
                 ? "CURRENT" : "NEEDS_MIGRATION";
     }
 
+    /**
+     * Deletes a staged import record and its source XMI file.
+     *
+     * @param record staged import record
+     */
     private void cleanupStagedImport(StagedImportRecord record) {
         if (record == null) {
             return;
@@ -1267,6 +1947,9 @@ public final class ModelService {
         store.deleteIfExists(stagedSourceXmiRecordPath(record.token()));
     }
 
+    /**
+     * Removes expired staged XMI imports.
+     */
     public void cleanupExpiredImports() {
         Path imports = store.resolve(Path.of("model-imports"));
         if (!Files.isDirectory(imports)) {
@@ -1284,6 +1967,12 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Hashes raw bytes with SHA-256.
+     *
+     * @param bytes bytes to hash
+     * @return lowercase hexadecimal digest
+     */
     private String hashBytes(byte[] bytes) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -1293,15 +1982,35 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Builds a validation cache key from model identity and content metadata.
+     *
+     * @param model model record
+     * @return cache key
+     */
     private String validationCacheKey(ModelRecord model) {
         return model.level().name() + ":" + model.id() + ":" + model.revision() + ":"
                 + String.valueOf(model.sourceXmiHash());
     }
 
+    /**
+     * Returns the repository directory for models at a level within a project.
+     *
+     * @param projectId project identifier
+     * @param level     model level
+     * @return repository-relative directory
+     */
     private Path modelDir(String projectId, ModelLevel level) {
         return Path.of("projects", projectId, "models", level.apiName());
     }
 
+    /**
+     * Reads only summary fields from a model JSON file.
+     *
+     * @param path          resolved model JSON path
+     * @param fallbackLevel level used when the record omits level
+     * @return model summary, or {@code null} when the file cannot be summarized
+     */
     private ModelSummary readSummary(Path path, ModelLevel fallbackLevel) {
         try (JsonParser parser = store.objectMapper().getFactory().createParser(path.toFile())) {
             String id = null;
@@ -1353,6 +2062,13 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Parses an instant with a fallback for absent or legacy values.
+     *
+     * @param value    raw instant text
+     * @param fallback fallback timestamp
+     * @return parsed or fallback timestamp
+     */
     private Instant parseInstant(String value, Instant fallback) {
         try {
             return value == null || value.isBlank() ? fallback : Instant.parse(value);
@@ -1361,30 +2077,77 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Returns the repository path for a model JSON record.
+     *
+     * @param projectId project identifier
+     * @param level     model level
+     * @param id        model identifier
+     * @return repository-relative path
+     */
     private Path modelPath(String projectId, ModelLevel level, String id) {
         return modelDir(projectId, level).resolve(id + ".json");
     }
 
+    /**
+     * Returns the repository path for a source XMI sidecar.
+     *
+     * @param projectId project identifier
+     * @param level     model level
+     * @param id        model identifier
+     * @return repository-relative path
+     */
     private Path sourceXmiPath(String projectId, ModelLevel level, String id) {
         return modelDir(projectId, level).resolve(id + ".xmi");
     }
 
+    /**
+     * Returns the repository path for staged source XMI bytes.
+     *
+     * @param token staging token
+     * @return repository-relative path
+     */
     private Path stagedSourceXmiPath(String token) {
         return Path.of("model-imports", token + ".xmi");
     }
 
+    /**
+     * Returns the repository path for a staged source XMI metadata record.
+     *
+     * @param token staging token
+     * @return repository-relative path
+     */
     private Path stagedSourceXmiRecordPath(String token) {
         return Path.of("model-imports", token + ".json");
     }
 
+    /**
+     * Returns the repository path for a model index record.
+     *
+     * @param id model identifier
+     * @return repository-relative path
+     */
     private Path modelIndexPath(String id) {
         return Path.of("indexes", "models", id + ".json");
     }
 
+    /**
+     * Validates and defaults a model name.
+     *
+     * @param name  candidate name
+     * @param level model level
+     * @return trimmed or default model name
+     */
     private String requireName(String name, ModelLevel level) {
         return name == null || name.trim().isEmpty() ? level.apiName() + "-model" : name.trim();
     }
 
+    /**
+     * Applies a single supported JSON patch operation to a model object.
+     *
+     * @param root      model root object
+     * @param operation patch operation
+     */
     private void applyPatchOperation(ObjectNode root, ModelPatchOperation operation) {
         if (operation == null || operation.op() == null || operation.path() == null) {
             throw new PlatformException(400, "Patch operations require op and path.");
@@ -1403,6 +2166,13 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Adds a value to an object field or array position.
+     *
+     * @param root  model root object
+     * @param path  JSON Pointer path
+     * @param value value to add
+     */
     private void addPatchValue(ObjectNode root, String path, JsonNode value) {
         JsonNode parent = patchParent(root, path);
         String key = lastPointerSegment(path);
@@ -1423,6 +2193,13 @@ public final class ModelService {
         throw new PlatformException(400, "Patch parent is not writable.");
     }
 
+    /**
+     * Replaces an existing object field or array item.
+     *
+     * @param root  model root object
+     * @param path  JSON Pointer path
+     * @param value replacement value
+     */
     private void replacePatchValue(ObjectNode root, String path, JsonNode value) {
         JsonNode parent = patchParent(root, path);
         String key = lastPointerSegment(path);
@@ -1442,6 +2219,12 @@ public final class ModelService {
         throw new PlatformException(400, "Patch parent is not writable.");
     }
 
+    /**
+     * Removes an object field or array item.
+     *
+     * @param root model root object
+     * @param path JSON Pointer path
+     */
     private void removePatchValue(ObjectNode root, String path) {
         JsonNode parent = patchParent(root, path);
         String key = lastPointerSegment(path);
@@ -1456,6 +2239,13 @@ public final class ModelService {
         throw new PlatformException(400, "Patch parent is not writable.");
     }
 
+    /**
+     * Resolves the parent node for a JSON Pointer patch path.
+     *
+     * @param root model root object
+     * @param path JSON Pointer path
+     * @return parent node
+     */
     private JsonNode patchParent(ObjectNode root, String path) {
         String[] segments = pointerSegments(path);
         if (segments.length == 0) {
@@ -1477,6 +2267,12 @@ public final class ModelService {
         return current;
     }
 
+    /**
+     * Splits and unescapes a JSON Pointer path.
+     *
+     * @param path JSON Pointer path
+     * @return unescaped path segments
+     */
     private String[] pointerSegments(String path) {
         if ("/".equals(path)) {
             return new String[]{""};
@@ -1488,11 +2284,24 @@ public final class ModelService {
         return raw;
     }
 
+    /**
+     * Returns the final segment of a JSON Pointer path.
+     *
+     * @param path JSON Pointer path
+     * @return final segment
+     */
     private String lastPointerSegment(String path) {
         String[] segments = pointerSegments(path);
         return segments[segments.length - 1];
     }
 
+    /**
+     * Parses and bounds-checks an array index.
+     *
+     * @param value        raw index value
+     * @param maxInclusive maximum allowed index
+     * @return parsed index
+     */
     private int arrayIndex(String value, int maxInclusive) {
         try {
             int index = Integer.parseInt(value);
@@ -1505,10 +2314,27 @@ public final class ModelService {
         }
     }
 
+    /**
+     * Validation result returned by model validation calls.
+     *
+     * @param valid  whether no error issues were reported
+     * @param issues validation issues
+     */
     public record ValidationResult(boolean valid, List<ValidationIssue> issues) {
 
     }
 
+    /**
+     * Platform validation issue suitable for API responses.
+     *
+     * @param severity    issue severity
+     * @param constraint  constraint or diagnostic identifier
+     * @param issueClass  issue class or model context
+     * @param message     user-facing message
+     * @param guidance    optional remediation guidance
+     * @param elementId   related element id
+     * @param elementName related element name or file
+     */
     public record ValidationIssue(
             String severity,
             String constraint,
@@ -1520,14 +2346,41 @@ public final class ModelService {
 
     }
 
+    /**
+     * Result produced after importing a model payload.
+     *
+     * @param name      derived model name
+     * @param modelJson imported model JSON
+     * @param issues    validation issues
+     */
     public record ImportResult(String name, JsonNode modelJson, List<ValidationIssue> issues) {
 
     }
 
+    /**
+     * Supported JSON patch operation.
+     *
+     * @param op    operation name, {@code add}, {@code replace}, or {@code remove}
+     * @param path  JSON Pointer path
+     * @param value value used by add and replace operations
+     */
     public record ModelPatchOperation(String op, String path, JsonNode value) {
 
     }
 
+    /**
+     * Lightweight model summary used for list responses.
+     *
+     * @param id               model identifier
+     * @param projectId        owning project identifier
+     * @param level            model level
+     * @param name             display name
+     * @param revision         optimistic concurrency revision
+     * @param metamodelVersion metamodel version at persistence time
+     * @param migrationState   migration state relative to current metamodel
+     * @param createdAt        creation timestamp
+     * @param updatedAt        last update timestamp
+     */
     public record ModelSummary(
             String id,
             String projectId,
@@ -1541,24 +2394,57 @@ public final class ModelService {
 
     }
 
+    /**
+     * Source XMI persistence instruction used while writing model records.
+     *
+     * @param bytes  source XMI bytes, or {@code null} for preserve/delete operations
+     * @param hash   source XMI hash, {@code null} to preserve, empty to delete
+     * @param record staged import record to clean up after commit
+     */
     private record SourceXmiUpdate(byte[] bytes, String hash, StagedImportRecord record) {
 
+        /**
+         * Creates an instruction to preserve the existing sidecar.
+         *
+         * @return preserve instruction
+         */
         static SourceXmiUpdate preserveUpdate() {
             return new SourceXmiUpdate(null, null, null);
         }
 
+        /**
+         * Creates an instruction to delete the existing sidecar.
+         *
+         * @return delete instruction
+         */
         static SourceXmiUpdate deleteUpdate() {
             return new SourceXmiUpdate(null, "", null);
         }
 
+        /**
+         * Indicates whether the current sidecar should be preserved.
+         *
+         * @return {@code true} for preserve instruction
+         */
         boolean shouldPreserve() {
             return bytes == null && hash == null;
         }
 
+        /**
+         * Indicates whether the current sidecar should be deleted.
+         *
+         * @return {@code true} for delete instruction
+         */
         boolean shouldDelete() {
             return bytes == null && hash != null;
         }
 
+        /**
+         * Returns the hash that should be stored on the model record.
+         *
+         * @param previousHash previous sidecar hash
+         * @return effective hash
+         */
         String effectiveHash(String previousHash) {
             return shouldPreserve() ? previousHash : hash;
         }

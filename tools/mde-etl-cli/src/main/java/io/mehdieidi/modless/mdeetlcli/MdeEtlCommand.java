@@ -2,6 +2,9 @@ package io.mehdieidi.modless.mdeetlcli;
 
 import picocli.CommandLine.Command;
 
+/**
+ * Root Picocli command for ETL transformations.
+ */
 @Command(
         name = "mde-etl-cli",
         mixinStandardHelpOptions = true,
@@ -14,6 +17,9 @@ import picocli.CommandLine.Command;
         })
 public final class MdeEtlCommand implements Runnable {
 
+    /**
+     * Rejects invocation without a transformation subcommand.
+     */
     @Override
     public void run() {
         throw new picocli.CommandLine.ParameterException(

@@ -25,18 +25,44 @@ import org.eclipse.epsilon.eol.models.IModel;
 import org.eclipse.epsilon.eol.models.Model;
 import org.eclipse.epsilon.etl.EtlModule;
 
+/**
+ * Executes Epsilon ETL modules against file-backed EMF models and returns a structured report for
+ * both successes and failures.
+ */
 public final class EpsilonEtlExecutor {
 
+    /**
+     * Default watchdog limit for ETL execution when no timeout is supplied.
+     */
     private static final Duration DEFAULT_EXECUTION_TIMEOUT = Duration.ofMinutes(5);
+    /**
+     * Default maximum captured bytes per Epsilon output stream.
+     */
     private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
 
+    /**
+     * Optional execution timeout; {@code null} disables the watchdog.
+     */
     private final Duration executionTimeout;
+    /**
+     * Maximum number of bytes captured from each output stream.
+     */
     private final int maxCapturedOutputBytes;
 
+    /**
+     * Creates an executor with default output capture limits and no timeout.
+     */
     public EpsilonEtlExecutor() {
         this(null, DEFAULT_MAX_CAPTURED_OUTPUT_BYTES);
     }
 
+    /**
+     * Creates an executor with explicit runtime limits.
+     *
+     * @param executionTimeout       timeout for ETL execution; {@code null} or non-positive values
+     *                               disable the watchdog
+     * @param maxCapturedOutputBytes byte limit for each captured output stream
+     */
     public EpsilonEtlExecutor(Duration executionTimeout, int maxCapturedOutputBytes) {
         this.executionTimeout = executionTimeout == null || executionTimeout.isZero()
                 || executionTimeout.isNegative() ? null : executionTimeout;
@@ -44,6 +70,13 @@ public final class EpsilonEtlExecutor {
                 ? DEFAULT_MAX_CAPTURED_OUTPUT_BYTES : maxCapturedOutputBytes;
     }
 
+    /**
+     * Executes the requested ETL module and returns a completed report.
+     *
+     * @param request ETL execution request
+     * @return successful execution report
+     * @throws EtlExecutionException when validation, parsing, loading, execution, or storage fails
+     */
     public EtlExecutionReport execute(EtlExecutionRequest request) throws EtlExecutionException {
         Instant startedAt = Instant.now();
         long startedNanos = System.nanoTime();
@@ -172,6 +205,15 @@ public final class EpsilonEtlExecutor {
         }
     }
 
+    /**
+     * Parses an ETL module and translates parser diagnostics into report diagnostics.
+     *
+     * @param request     execution request containing the module file
+     * @param module      Epsilon ETL module to parse
+     * @param diagnostics mutable diagnostic sink
+     * @return {@code true} when Epsilon reports a parsed module
+     * @throws Exception when Epsilon internals fail outside normal parse errors
+     */
     private boolean parseModule(
             EtlExecutionRequest request, EtlModule module, List<EtlDiagnostic> diagnostics)
             throws Exception {
@@ -206,6 +248,12 @@ public final class EpsilonEtlExecutor {
         return parsed;
     }
 
+    /**
+     * Performs preflight validation before files are created or models are loaded.
+     *
+     * @param request     execution request to validate
+     * @param diagnostics mutable diagnostic sink
+     */
     private void validateRequest(EtlExecutionRequest request, List<EtlDiagnostic> diagnostics) {
         if (!Files.isRegularFile(request.moduleFile())) {
             diagnostics.add(EtlDiagnostic.error(
@@ -269,6 +317,13 @@ public final class EpsilonEtlExecutor {
         }
     }
 
+    /**
+     * Ensures writable target directories exist and removes stale targets when overwrite mode
+     * allows it.
+     *
+     * @param request execution request
+     * @throws Exception when filesystem preparation fails
+     */
     private void prepareOutputs(EtlExecutionRequest request) throws Exception {
         for (EtlModelConfiguration model : request.models()) {
             if (model.readOnly()) {
@@ -285,6 +340,13 @@ public final class EpsilonEtlExecutor {
         }
     }
 
+    /**
+     * Creates and loads an Epsilon EMF model from a model configuration.
+     *
+     * @param modelConfiguration model configuration to load
+     * @return loaded Epsilon model
+     * @throws EolModelLoadingException when Epsilon cannot load the model
+     */
     private IModel loadModel(EtlModelConfiguration modelConfiguration)
             throws EolModelLoadingException {
         EmfModel model = new EmfModel();
@@ -308,7 +370,14 @@ public final class EpsilonEtlExecutor {
         return model;
     }
 
+    /**
+     * Adds helper objects and cache variables expected by the bundled ETL modules.
+     *
+     * @param module module whose context should be initialized
+     */
     private void configureTransformationState(EtlModule module) {
+        // The ETL library treats these globals as shared per-run caches; initializing
+        // them here keeps script imports deterministic and avoids stale JVM state.
         module.getContext().getFrameStack().putGlobal(
                 new Variable("etlProfiler", new EtlProfiler(),
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance),
@@ -444,6 +513,12 @@ public final class EpsilonEtlExecutor {
                         org.eclipse.epsilon.eol.types.EolAnyType.Instance));
     }
 
+    /**
+     * Executes the parsed module, optionally protected by the watchdog timeout.
+     *
+     * @param module parsed ETL module
+     * @throws Exception when the module or watchdog reports failure
+     */
     private void executeModule(EtlModule module) throws Exception {
         if (executionTimeout == null) {
             module.execute();
@@ -458,6 +533,7 @@ public final class EpsilonEtlExecutor {
         });
         ScheduledFuture<?> timeout = watchdog.schedule(() -> {
             timedOut.set(true);
+            // Epsilon execution is synchronous, so the watchdog interrupts the caller thread.
             executingThread.interrupt();
         }, executionTimeout.toMillis(), TimeUnit.MILLISECONDS);
         try {
@@ -479,11 +555,21 @@ public final class EpsilonEtlExecutor {
         }
     }
 
+    /**
+     * Builds the timeout exception used after watchdog interruption.
+     *
+     * @return timeout exception with a user-facing duration
+     */
     private EpsilonExecutionTimeoutException timeoutException() {
         return new EpsilonExecutionTimeoutException(
                 "ETL execution timed out after " + executionTimeout + ".", null);
     }
 
+    /**
+     * Raises a timeout exception when the watchdog fired after module execution returned normally.
+     *
+     * @param timedOut watchdog state
+     */
     private void throwIfTimedOut(AtomicBoolean timedOut) {
         if (timedOut.get()) {
             throw new EpsilonExecutionTimeoutException(
@@ -491,6 +577,19 @@ public final class EpsilonEtlExecutor {
         }
     }
 
+    /**
+     * Persists writable models and fails the run when persistence diagnostics are recorded.
+     *
+     * @param request      original execution request
+     * @param startedAt    run start time
+     * @param phaseTiming  mutable phase timing accumulator
+     * @param loadedModels loaded model/configuration pairs
+     * @param diagnostics  mutable diagnostic sink
+     * @param stdout       captured standard output
+     * @param warnings     captured warning output
+     * @param stderr       captured error output
+     * @throws EtlExecutionException when any target model cannot be stored
+     */
     private void storeModels(
             EtlExecutionRequest request,
             Instant startedAt,
@@ -547,6 +646,12 @@ public final class EpsilonEtlExecutor {
         }
     }
 
+    /**
+     * Joins metamodel paths as comma-separated file URIs for Epsilon.
+     *
+     * @param paths metamodel paths
+     * @return comma-separated file URI list
+     */
     private String joinFileUris(List<Path> paths) {
         return paths.stream()
                 .map(this::fileUri)
@@ -554,10 +659,25 @@ public final class EpsilonEtlExecutor {
                 .orElse("");
     }
 
+    /**
+     * Converts a filesystem path to an EMF file URI.
+     *
+     * @param path filesystem path
+     * @return normalized file URI string
+     */
     private String fileUri(Path path) {
         return URI.createFileURI(path.toAbsolutePath().normalize().toString()).toString();
     }
 
+    /**
+     * Redirects Epsilon output streams to bounded capture buffers when requested.
+     *
+     * @param module        module whose streams should be configured
+     * @param captureOutput whether capture is enabled
+     * @param stdout        standard output buffer
+     * @param warnings      warning output buffer
+     * @param stderr        error output buffer
+     */
     private void configureStreams(
             EtlModule module,
             boolean captureOutput,
@@ -573,6 +693,14 @@ public final class EpsilonEtlExecutor {
         module.getContext().setErrorStream(new PrintStream(stderr, true, StandardCharsets.UTF_8));
     }
 
+    /**
+     * Converts an Epsilon runtime exception into an execution diagnostic with source location when
+     * available.
+     *
+     * @param ex           runtime exception from Epsilon
+     * @param fallbackFile file used when the AST does not expose a source file
+     * @return structured runtime diagnostic
+     */
     private EtlDiagnostic runtimeDiagnostic(EolRuntimeException ex, Path fallbackFile) {
         ModuleElement ast = ex.getAst();
         Path file = fallbackFile;
@@ -590,6 +718,13 @@ public final class EpsilonEtlExecutor {
                 ex);
     }
 
+    /**
+     * Returns the first non-blank string, or an empty string when neither value is useful.
+     *
+     * @param first  preferred value
+     * @param second fallback value
+     * @return first non-blank value
+     */
     private String firstNonBlank(String first, String second) {
         if (first != null && !first.isBlank()) {
             return first;
@@ -597,6 +732,19 @@ public final class EpsilonEtlExecutor {
         return second == null ? "" : second;
     }
 
+    /**
+     * Fails fast when request validation collected any error diagnostics.
+     *
+     * @param request     original execution request
+     * @param startedAt   run start time
+     * @param phaseTiming phase timing accumulator
+     * @param diagnostics collected diagnostics
+     * @param stdout      captured standard output
+     * @param warnings    captured warning output
+     * @param stderr      captured error output
+     * @param cause       optional root cause
+     * @throws EtlExecutionException when diagnostics contain an error
+     */
     private void failIfDiagnostics(
             EtlExecutionRequest request,
             Instant startedAt,
@@ -612,6 +760,20 @@ public final class EpsilonEtlExecutor {
         }
     }
 
+    /**
+     * Builds an ETL exception carrying a failed execution report.
+     *
+     * @param message     exception message
+     * @param request     original execution request
+     * @param startedAt   run start time
+     * @param phaseTiming phase timing accumulator
+     * @param diagnostics collected diagnostics
+     * @param stdout      captured standard output
+     * @param warnings    captured warning output
+     * @param stderr      captured error output
+     * @param cause       optional root cause
+     * @return exception with a failure report
+     */
     private EtlExecutionException failure(
             String message,
             EtlExecutionRequest request,
@@ -629,6 +791,19 @@ public final class EpsilonEtlExecutor {
                 cause);
     }
 
+    /**
+     * Creates an immutable execution report from the current run state.
+     *
+     * @param status      terminal status
+     * @param request     original execution request
+     * @param startedAt   run start time
+     * @param phaseTiming phase timing accumulator
+     * @param diagnostics collected diagnostics
+     * @param stdout      captured standard output
+     * @param warnings    captured warning output
+     * @param stderr      captured error output
+     * @return execution report
+     */
     private EtlExecutionReport report(
             EtlExecutionStatus status,
             EtlExecutionRequest request,
@@ -652,12 +827,28 @@ public final class EpsilonEtlExecutor {
                 stderr.asUtf8String());
     }
 
+    /**
+     * Couples a loaded model with the configuration that controls storage and timing buckets.
+     *
+     * @param configuration original model configuration
+     * @param model         loaded Epsilon model
+     */
     private record LoadedEtlModel(EtlModelConfiguration configuration, IModel model) {
 
     }
 
+    /**
+     * Runtime exception used internally to distinguish watchdog timeouts from Epsilon runtime
+     * failures.
+     */
     private static final class EpsilonExecutionTimeoutException extends RuntimeException {
 
+        /**
+         * Creates a timeout exception.
+         *
+         * @param message exception message
+         * @param cause   optional root cause
+         */
         private EpsilonExecutionTimeoutException(String message, Throwable cause) {
             super(message, cause);
         }

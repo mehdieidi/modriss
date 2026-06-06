@@ -13,10 +13,20 @@ import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 
+/**
+ * Generates minimal Ecore resources that bootstrap compilation of mutually dependent modules.
+ */
 public final class StubEcoreGenerator {
 
     private final EmfResourceSupport resourceSupport = new EmfResourceSupport();
 
+    /**
+     * Generates and saves a bootstrap Ecore resource.
+     *
+     * @param definition minimal metamodel definition
+     * @param outputFile output Ecore path
+     * @throws IOException if the resource cannot be saved
+     */
     public void generate(StubMetamodelDefinition definition, Path outputFile) throws IOException {
         ResourceSet resourceSet = resourceSupport.newResourceSet();
         Resource resource = resourceSupport.newEcoreResource(resourceSet,
@@ -25,6 +35,12 @@ public final class StubEcoreGenerator {
         resource.save(null);
     }
 
+    /**
+     * Creates the bootstrap package and its classifier declarations.
+     *
+     * @param definition minimal metamodel definition
+     * @return generated Ecore package
+     */
     private EPackage createPackage(StubMetamodelDefinition definition) {
         EPackage ePackage = EcoreFactory.eINSTANCE.createEPackage();
         ePackage.setName(definition.packageName());
@@ -37,6 +53,12 @@ public final class StubEcoreGenerator {
         return ePackage;
     }
 
+    /**
+     * Creates a bootstrap classifier matching an Emfatic classifier kind.
+     *
+     * @param classifier classifier definition
+     * @return generated Ecore classifier
+     */
     private org.eclipse.emf.ecore.EClassifier createClassifier(
             StubClassifierDefinition classifier) {
         return switch (classifier.kind()) {
@@ -50,6 +72,14 @@ public final class StubEcoreGenerator {
         };
     }
 
+    /**
+     * Creates a bootstrap class or interface and placeholder features.
+     *
+     * @param classifier  classifier definition
+     * @param isAbstract  whether the class is abstract
+     * @param isInterface whether the class is an interface
+     * @return generated Ecore class
+     */
     private EClass newClass(StubClassifierDefinition classifier, boolean isAbstract,
             boolean isInterface) {
         EClass eClass = EcoreFactory.eINSTANCE.createEClass();
@@ -72,12 +102,24 @@ public final class StubEcoreGenerator {
         return eClass;
     }
 
+    /**
+     * Creates an empty bootstrap enumeration.
+     *
+     * @param name enumeration name
+     * @return generated Ecore enumeration
+     */
     private EEnum newEnum(String name) {
         EEnum eEnum = EcoreFactory.eINSTANCE.createEEnum();
         eEnum.setName(name);
         return eEnum;
     }
 
+    /**
+     * Creates a bootstrap data type backed by {@link Object}.
+     *
+     * @param name data type name
+     * @return generated Ecore data type
+     */
     private EDataType newDataType(String name) {
         EDataType eDataType = EcoreFactory.eINSTANCE.createEDataType();
         eDataType.setName(name);

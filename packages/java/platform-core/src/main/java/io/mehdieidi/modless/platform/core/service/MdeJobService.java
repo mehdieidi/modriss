@@ -25,15 +25,45 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Submits and tracks asynchronous MDE transformation and generation jobs.
+ */
 public final class MdeJobService implements AutoCloseable {
 
+    /**
+     * File repository used for job records and indexes.
+     */
     private final JsonFileStore store;
+    /**
+     * Project service used for access and editor checks.
+     */
     private final ProjectService projectService;
+    /**
+     * Model service used to resolve source models.
+     */
     private final ModelService modelService;
+    /**
+     * Transformation service that performs the actual MDE work.
+     */
     private final TransformationService transformationService;
+    /**
+     * Bounded worker pool used for asynchronous jobs.
+     */
     private final ThreadPoolExecutor executor;
+    /**
+     * Futures keyed by job id for cancellation and cleanup.
+     */
     private final Map<String, Future<?>> runningJobs = new ConcurrentHashMap<>();
 
+    /**
+     * Creates an MDE job service with a bounded worker pool.
+     *
+     * @param store                 backing JSON repository
+     * @param projectService        project access service
+     * @param modelService          model service
+     * @param transformationService transformation service
+     * @param options               runtime options controlling pool and queue sizes
+     */
     public MdeJobService(JsonFileStore store, ProjectService projectService,
             ModelService modelService, TransformationService transformationService,
             MdeRuntimeOptions options) {
@@ -56,42 +86,101 @@ public final class MdeJobService implements AutoCloseable {
                 new ThreadPoolExecutor.AbortPolicy());
     }
 
+    /**
+     * Submits a CIM-to-PIM job without revision precondition.
+     *
+     * @param user          requesting user
+     * @param sourceModelId source CIM model id
+     * @return queued job record
+     */
     public MdeJobRecord submitCimToPim(UserRecord user, String sourceModelId) {
         return submitCimToPim(user, sourceModelId, null);
     }
 
+    /**
+     * Submits a CIM-to-PIM job with an optional source revision precondition.
+     *
+     * @param user             requesting user
+     * @param sourceModelId    source CIM model id
+     * @param expectedRevision expected source revision, or {@code null}
+     * @return queued job record
+     */
     public MdeJobRecord submitCimToPim(UserRecord user, String sourceModelId,
             Long expectedRevision) {
         return submit(user, ModelLevel.CIM, sourceModelId, MdeJobOperation.CIM_TO_PIM,
                 expectedRevision);
     }
 
+    /**
+     * Submits a PIM-to-PSM job without revision precondition.
+     *
+     * @param user          requesting user
+     * @param sourceModelId source PIM model id
+     * @return queued job record
+     */
     public MdeJobRecord submitPimToPsm(UserRecord user, String sourceModelId) {
         return submitPimToPsm(user, sourceModelId, null);
     }
 
+    /**
+     * Submits a PIM-to-PSM job with an optional source revision precondition.
+     *
+     * @param user             requesting user
+     * @param sourceModelId    source PIM model id
+     * @param expectedRevision expected source revision, or {@code null}
+     * @return queued job record
+     */
     public MdeJobRecord submitPimToPsm(UserRecord user, String sourceModelId,
             Long expectedRevision) {
         return submit(user, ModelLevel.PIM, sourceModelId, MdeJobOperation.PIM_TO_PSM,
                 expectedRevision);
     }
 
+    /**
+     * Submits a PSM-to-artifact job without revision precondition.
+     *
+     * @param user          requesting user
+     * @param sourceModelId source PSM model id
+     * @return queued job record
+     */
     public MdeJobRecord submitPsmToArtifact(UserRecord user, String sourceModelId) {
         return submitPsmToArtifact(user, sourceModelId, null);
     }
 
+    /**
+     * Submits a PSM-to-artifact job with an optional source revision precondition.
+     *
+     * @param user             requesting user
+     * @param sourceModelId    source PSM model id
+     * @param expectedRevision expected source revision, or {@code null}
+     * @return queued job record
+     */
     public MdeJobRecord submitPsmToArtifact(UserRecord user, String sourceModelId,
             Long expectedRevision) {
         return submit(user, ModelLevel.PSM, sourceModelId, MdeJobOperation.PSM_TO_ARTIFACT,
                 expectedRevision);
     }
 
+    /**
+     * Loads a job after verifying project access.
+     *
+     * @param user requesting user
+     * @param id   job identifier
+     * @return job record
+     */
     public MdeJobRecord get(UserRecord user, String id) {
         MdeJobRecord job = find(id);
         projectService.get(user, job.projectId());
         return job;
     }
 
+    /**
+     * Cancels a queued or running job when possible.
+     *
+     * @param user requesting user
+     * @param id   job identifier
+     * @return terminal or unchanged job record
+     */
     public MdeJobRecord cancel(UserRecord user, String id) {
         MdeJobRecord job = get(user, id);
         ProjectRecord project = projectService.get(user, job.projectId());
@@ -109,6 +198,16 @@ public final class MdeJobService implements AutoCloseable {
                 Instant.now()));
     }
 
+    /**
+     * Creates and enqueues a job for an operation.
+     *
+     * @param user             requesting user
+     * @param sourceLevel      source model level
+     * @param sourceModelId    source model id
+     * @param operation        job operation
+     * @param expectedRevision expected source revision, or {@code null}
+     * @return queued job record
+     */
     private MdeJobRecord submit(UserRecord user, ModelLevel sourceLevel, String sourceModelId,
             MdeJobOperation operation, Long expectedRevision) {
         ModelRecord source = modelService.get(user, sourceLevel, sourceModelId);
@@ -133,6 +232,12 @@ public final class MdeJobService implements AutoCloseable {
         return job;
     }
 
+    /**
+     * Executes a persisted job and updates terminal status.
+     *
+     * @param jobId job identifier
+     * @param user  submitting user
+     */
     private void run(String jobId, UserRecord user) {
         MdeJobRecord job = find(jobId);
         if (job.status() == MdeJobStatus.CANCELLED) {
@@ -176,6 +281,12 @@ public final class MdeJobService implements AutoCloseable {
         }
     }
 
+    /**
+     * Finds a job by id through the global index.
+     *
+     * @param id job identifier
+     * @return job record
+     */
     private MdeJobRecord find(String id) {
         MdeJobIndexRecord index = store.require(jobIndexPath(id), MdeJobIndexRecord.class,
                 "MDE job not found.");
@@ -183,12 +294,31 @@ public final class MdeJobService implements AutoCloseable {
                 "MDE job not found.");
     }
 
+    /**
+     * Persists a job and its global index entry.
+     *
+     * @param job job record
+     * @return persisted job record
+     */
     private MdeJobRecord write(MdeJobRecord job) {
         store.write(jobPath(job.projectId(), job.id()), job);
         store.write(jobIndexPath(job.id()), new MdeJobIndexRecord(job.id(), job.projectId()));
         return job;
     }
 
+    /**
+     * Creates a copy of a job with updated status fields.
+     *
+     * @param job              existing job
+     * @param status           new status
+     * @param progress         new progress percentage
+     * @param resultModelId    generated model id
+     * @param resultArtifactId generated artifact id
+     * @param diagnostics      job diagnostics
+     * @param startedAt        start timestamp override
+     * @param finishedAt       finish timestamp
+     * @return updated job record
+     */
     private MdeJobRecord status(MdeJobRecord job, MdeJobStatus status, int progress,
             String resultModelId, String resultArtifactId, List<String> diagnostics,
             Instant startedAt, Instant finishedAt) {
@@ -198,6 +328,12 @@ public final class MdeJobService implements AutoCloseable {
                 startedAt == null ? job.startedAt() : startedAt, finishedAt);
     }
 
+    /**
+     * Hashes a model JSON payload for source snapshot tracking.
+     *
+     * @param modelJson model JSON
+     * @return lowercase hexadecimal SHA-256 digest
+     */
     private String hash(JsonNode modelJson) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -208,6 +344,12 @@ public final class MdeJobService implements AutoCloseable {
         }
     }
 
+    /**
+     * Extracts a user-facing message from a job exception.
+     *
+     * @param ex job exception
+     * @return diagnostic message
+     */
     private String message(Exception ex) {
         if (ex instanceof PlatformException platformException) {
             return platformException.getMessage();
@@ -215,14 +357,30 @@ public final class MdeJobService implements AutoCloseable {
         return ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
     }
 
+    /**
+     * Returns the repository path for a job record.
+     *
+     * @param projectId project identifier
+     * @param id        job identifier
+     * @return repository-relative path
+     */
     private Path jobPath(String projectId, String id) {
         return Path.of("projects", projectId, "mde-jobs", id + ".json");
     }
 
+    /**
+     * Returns the repository path for a job index record.
+     *
+     * @param id job identifier
+     * @return repository-relative path
+     */
     private Path jobIndexPath(String id) {
         return Path.of("indexes", "mde-jobs", id + ".json");
     }
 
+    /**
+     * Stops worker threads when the service is closed.
+     */
     @Override
     public void close() {
         executor.shutdownNow();

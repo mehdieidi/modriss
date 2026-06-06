@@ -95,6 +95,8 @@ function updateStoryMetadata(progress) {
   const label = document.querySelector(".story-progress-phase");
   const count = document.querySelector(".story-progress-count");
   const canvasTitle = document.querySelector("[data-canvas-title]");
+  const modelCanvas = document.querySelector(".model-canvas");
+  const workbenchBody = document.querySelector(".workbench-body");
 
   fill.style.transform = `translateX(${progress * 100 - 100}%)`;
   label.textContent = activePhase.label;
@@ -104,6 +106,9 @@ function updateStoryMetadata(progress) {
   document.querySelectorAll(".level-tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.level === activePhase.level);
   });
+  const assistantActive = progress >= 0.26 && progress < 0.39;
+  modelCanvas.classList.toggle("assistant-active", assistantActive);
+  workbenchBody.classList.toggle("assistant-active", assistantActive);
 
   const refinedNode = document.querySelector(".manual-target");
   if (refinedNode) {

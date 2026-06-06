@@ -25,6 +25,12 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
+/**
+ * Converts standalone and modular Emfatic inputs into normalized Ecore resources.
+ *
+ * <p>Modular conversion stages the transitive source graph, bootstraps imports with minimal
+ * Ecore stubs, and recompiles modules until all cross-module references resolve.</p>
+ */
 public final class EmfConversionService {
 
     private final PathDecider pathDecider = new PathDecider();
@@ -37,6 +43,13 @@ public final class EmfConversionService {
     private final StubMetamodelExtractor stubMetamodelExtractor = new StubMetamodelExtractor();
     private final StubEcoreGenerator stubEcoreGenerator = new StubEcoreGenerator();
 
+    /**
+     * Converts a requested Emfatic file or module directory.
+     *
+     * @param request conversion options
+     * @return successful conversion report
+     * @throws ConversionException when validation or conversion fails
+     */
     public ConversionReport convert(ConversionRequest request) {
         Path input = request.input().toAbsolutePath().normalize();
         Path output = pathDecider.resolveOutput(request);
@@ -66,6 +79,14 @@ public final class EmfConversionService {
         }
     }
 
+    /**
+     * Converts a standalone file directly or delegates imported files to modular conversion.
+     *
+     * @param input  input Emfatic file
+     * @param output output Ecore path
+     * @param report execution report
+     * @throws IOException if source loading or output writing fails
+     */
     private void convertSingleFile(Path input, Path output, ConversionReport report)
             throws IOException {
         ModuleDescriptor descriptor = importScanner.scan(input);
@@ -81,6 +102,15 @@ public final class EmfConversionService {
         saveAsEcore(output, inputResource.getContents(), report);
     }
 
+    /**
+     * Converts a module directory and combines compiled packages into one Ecore resource.
+     *
+     * @param directory module directory
+     * @param output    combined Ecore path
+     * @param request   conversion options
+     * @param report    execution report
+     * @throws IOException if workspace preparation, compilation, or output writing fails
+     */
     private void convertDirectory(Path directory, Path output, ConversionRequest request,
             ConversionReport report) throws IOException {
         report.recordEvent("Running modular directory conversion.");
@@ -112,6 +142,14 @@ public final class EmfConversionService {
         saveAsEcore(output, combinedContents, report);
     }
 
+    /**
+     * Converts one modular source and materializes its compiled sibling dependencies.
+     *
+     * @param input  requested modular source
+     * @param output requested source's output path
+     * @param report execution report
+     * @throws IOException if workspace preparation, compilation, or output writing fails
+     */
     private void convertModularSingleFile(Path input, Path output, ConversionReport report)
             throws IOException {
         Path absoluteInput = input.toAbsolutePath().normalize();
@@ -140,6 +178,15 @@ public final class EmfConversionService {
         materializeModularSingleFileOutputs(tempDirectory, modules, absoluteInput, output, report);
     }
 
+    /**
+     * Stages the transitive module graph and external Ecore dependencies in a temporary workspace.
+     *
+     * @param seedFiles  initial Emfatic modules
+     * @param tempPrefix temporary-directory prefix
+     * @param report     execution report
+     * @return prepared workspace
+     * @throws IOException if the module graph cannot be planned or staged
+     */
     private PreparedWorkspace prepareWorkspace(
             Collection<Path> seedFiles,
             String tempPrefix,
@@ -164,6 +211,15 @@ public final class EmfConversionService {
         return new PreparedWorkspace(tempDirectory, stagedPaths, stagedModules);
     }
 
+    /**
+     * Compiles an Emfatic source into a resource set and records parser diagnostics.
+     *
+     * @param resourceSet target resource set
+     * @param path        Emfatic source path
+     * @param report      execution report
+     * @return loaded Ecore resource
+     * @throws IOException if compilation reports errors
+     */
     private Resource loadEmfaticResource(ResourceSet resourceSet, Path path,
             ConversionReport report) throws IOException {
         EmfaticCompiler.CompilationResult result = emfaticCompiler.compile(path);
@@ -176,8 +232,17 @@ public final class EmfConversionService {
         return resource;
     }
 
+    /**
+     * Recompiles modules in passes so progressively resolved imports replace bootstrap stubs.
+     *
+     * @param modules staged modules
+     * @param report  execution report
+     * @throws IOException if any module remains uncompilable after all passes
+     */
     private void compileModulesIteratively(List<ModuleDescriptor> modules, ConversionReport report)
             throws IOException {
+        // Modules may depend cyclically at the type level; each successful pass improves the
+        // bootstrap Ecores available to the next pass.
         int maxPasses = Math.max(2, modules.size());
         List<String> failedInLastPass = new ArrayList<>();
 
@@ -210,6 +275,14 @@ public final class EmfConversionService {
                 "Some modules could not be compiled after repeated passes: " + failedInLastPass);
     }
 
+    /**
+     * Compiles one Emfatic module to an Ecore file.
+     *
+     * @param input  Emfatic source
+     * @param output generated Ecore path
+     * @param report execution report
+     * @throws IOException if compilation or saving fails
+     */
     private void compileModule(Path input, Path output, ConversionReport report)
             throws IOException {
         try {
@@ -228,6 +301,14 @@ public final class EmfConversionService {
         }
     }
 
+    /**
+     * Deep-copies, normalizes, and saves Ecore roots.
+     *
+     * @param output   output Ecore path
+     * @param contents source Ecore roots
+     * @param report   execution report
+     * @throws IOException if the resource cannot be saved
+     */
     private void saveAsEcore(Path output, List<EObject> contents, ConversionReport report)
             throws IOException {
         Path absoluteOutput = output.toAbsolutePath();
@@ -244,6 +325,16 @@ public final class EmfConversionService {
         diagnosticMapper.map(outputResource).forEach(report::addDiagnostic);
     }
 
+    /**
+     * Reassigns staged resource URIs and saves a modular output set beside the requested output.
+     *
+     * @param tempDirectory   staged workspace
+     * @param modules         staged modules
+     * @param requestedInput  originally requested source
+     * @param requestedOutput requested output path
+     * @param report          execution report
+     * @throws IOException if resources cannot be loaded or saved
+     */
     private void materializeModularSingleFileOutputs(
             Path tempDirectory,
             List<ModuleDescriptor> modules,
@@ -284,6 +375,8 @@ public final class EmfConversionService {
             uriRemapping.put(originalUri, finalUri);
         }
 
+        // Remap before resolution so serialized cross-resource references point at final outputs,
+        // never at the temporary workspace.
         resourceSet.getURIConverter().getURIMap().putAll(uriRemapping);
         EcoreUtil.resolveAll(resourceSet);
 
@@ -295,6 +388,13 @@ public final class EmfConversionService {
         }
     }
 
+    /**
+     * Discovers the transitive local module graph and external Ecore dependencies.
+     *
+     * @param seedFiles initial Emfatic modules
+     * @return workspace plan preserving discovery order
+     * @throws IOException if workspace planning fails
+     */
     private WorkspacePlan planWorkspace(Collection<Path> seedFiles) throws IOException {
         Set<Path> modules = new LinkedHashSet<>();
         Set<Path> externalEcores = new LinkedHashSet<>();
@@ -329,6 +429,12 @@ public final class EmfConversionService {
         return new WorkspacePlan(workspaceRoot, List.copyOf(modules), List.copyOf(externalEcores));
     }
 
+    /**
+     * Resolves an imported Ecore path to an existing sibling Emfatic source.
+     *
+     * @param importedEcorePath imported Ecore path
+     * @return sibling source when one exists
+     */
     private Optional<Path> resolveImportedModule(Path importedEcorePath) {
         String fileName = importedEcorePath.getFileName().toString();
         if (!fileName.toLowerCase(Locale.ROOT).endsWith(".ecore")) {
@@ -350,6 +456,15 @@ public final class EmfConversionService {
         return Optional.empty();
     }
 
+    /**
+     * Mirrors a dependency into the staged workspace while retaining its relative path.
+     *
+     * @param source        dependency source
+     * @param workspaceRoot common source root
+     * @param tempDirectory staged workspace
+     * @param report        execution report
+     * @return staged dependency path
+     */
     private Path copyIntoWorkspace(Path source, Path workspaceRoot, Path tempDirectory,
             ConversionReport report) {
         Path relativePath = workspaceRoot.relativize(source.toAbsolutePath().normalize());
@@ -366,6 +481,12 @@ public final class EmfConversionService {
         }
     }
 
+    /**
+     * Finds the nearest common parent directory of all paths.
+     *
+     * @param paths input paths
+     * @return common parent directory
+     */
     private Path commonAncestor(Collection<Path> paths) {
         if (paths.isEmpty()) {
             throw new IllegalStateException("No workspace paths were provided.");
@@ -381,6 +502,13 @@ public final class EmfConversionService {
         return ancestor;
     }
 
+    /**
+     * Narrows an existing ancestor until it also contains the right-hand path.
+     *
+     * @param leftAncestor current common ancestor
+     * @param rightPath    path to include
+     * @return nearest common ancestor
+     */
     private Path commonAncestor(Path leftAncestor, Path rightPath) {
         Path candidate = leftAncestor;
         Path normalizedRight = rightPath.toAbsolutePath().normalize();
@@ -393,6 +521,15 @@ public final class EmfConversionService {
         return candidate;
     }
 
+    /**
+     * Loads all staged Ecore resources, placing the requested root first.
+     *
+     * @param resourceSet        target resource set
+     * @param tempDirectory      staged workspace
+     * @param generatedRootEcore requested root Ecore
+     * @return loaded resources
+     * @throws IOException if the workspace cannot be traversed
+     */
     private List<Resource> loadCompiledResources(ResourceSet resourceSet, Path tempDirectory,
             Path generatedRootEcore) throws IOException {
         List<Path> ecoreFiles;
@@ -413,6 +550,13 @@ public final class EmfConversionService {
         return resources;
     }
 
+    /**
+     * Condenses compiler errors into a message suitable for CLI output.
+     *
+     * @param input       failing input
+     * @param diagnostics compiler diagnostics
+     * @return human-readable failure message
+     */
     private String buildHumanReadableFailure(Path input, List<DiagnosticEntry> diagnostics) {
         String details = diagnostics.stream()
                 .filter(diagnostic -> diagnostic.severity() == DiagnosticEntry.Severity.ERROR)
@@ -437,6 +581,13 @@ public final class EmfConversionService {
         return "Failed to compile " + input.getFileName() + ": " + details;
     }
 
+    /**
+     * Generates bootstrap Ecore resources for all staged modules.
+     *
+     * @param modules staged modules
+     * @param report  execution report
+     * @throws IOException if a stub cannot be generated
+     */
     private void generateStubEcores(List<ModuleDescriptor> modules, ConversionReport report)
             throws IOException {
         for (ModuleDescriptor module : modules) {
@@ -449,6 +600,15 @@ public final class EmfConversionService {
         }
     }
 
+    /**
+     * Validates input type, existence, and overwrite policy before conversion.
+     *
+     * @param input     normalized input path
+     * @param output    normalized output path
+     * @param overwrite whether an existing output may be replaced
+     * @param report    execution report
+     * @throws ConversionException when request validation fails
+     */
     private void validateRequest(Path input, Path output, boolean overwrite,
             ConversionReport report) {
         if (Files.notExists(input)) {
@@ -474,27 +634,60 @@ public final class EmfConversionService {
         }
     }
 
+    /**
+     * Tests whether a path has a supported Emfatic source extension.
+     *
+     * @param path path to inspect
+     * @return {@code true} for {@code .emf} or {@code .emfatic}
+     */
     private boolean isEmfaticFile(Path path) {
         String fileName = path.getFileName().toString().toLowerCase(Locale.ROOT);
         return fileName.endsWith(".emf") || fileName.endsWith(".emfatic");
     }
 
+    /**
+     * Replaces the final file-name extension.
+     *
+     * @param fileName     source file name
+     * @param newExtension replacement extension including its leading period
+     * @return file name with the replacement extension
+     */
     private String replaceExtension(String fileName, String newExtension) {
         int extensionStart = fileName.lastIndexOf('.');
         String baseName = extensionStart < 0 ? fileName : fileName.substring(0, extensionStart);
         return baseName + newExtension;
     }
 
+    /**
+     * Planned source graph and its common workspace root.
+     *
+     * @param workspaceRoot      common source root
+     * @param moduleFiles        transitive Emfatic modules
+     * @param externalEcoreFiles imported Ecore files without sibling Emfatic sources
+     */
     private record WorkspacePlan(Path workspaceRoot, List<Path> moduleFiles,
                                  List<Path> externalEcoreFiles) {
 
     }
 
+    /**
+     * Staged modular-conversion workspace.
+     *
+     * @param tempDirectory temporary workspace root
+     * @param stagedPaths   original-to-staged module path mapping
+     * @param modules       descriptors scanned from staged sources
+     */
     private record PreparedWorkspace(
             Path tempDirectory,
             Map<Path, Path> stagedPaths,
             List<ModuleDescriptor> modules) {
 
+        /**
+         * Returns the staged path corresponding to an original source path.
+         *
+         * @param originalPath original source path
+         * @return staged path
+         */
         private Path requireStagedPath(Path originalPath) {
             Path normalizedOriginal = originalPath.toAbsolutePath().normalize();
             Path stagedPath = stagedPaths.get(normalizedOriginal);

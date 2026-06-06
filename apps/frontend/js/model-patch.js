@@ -149,6 +149,12 @@ export async function flushCurrentModelPatch({name, rethrow = false} = {}) {
     }
     return updated || true;
   } catch (error) {
+    const stalePatchPath = error?.status === 400
+        && /Patch (replace|remove) path does not exist:/i.test(
+            String(error?.message || ""));
+    if (stalePatchPath) {
+      return false;
+    }
     if (rethrow) {
       throw error;
     }

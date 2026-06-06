@@ -12,16 +12,32 @@ import org.eclipse.epsilon.common.parse.problem.ParseProblem;
 import org.eclipse.epsilon.egl.EglModule;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Syntax-level regression tests for the AWS PSM artifact generation templates.
+ */
 final class AwsPsmArtifactGenerationSyntaxTest {
 
+    /**
+     * Repository root derived from the Maven module working directory.
+     */
     private static final Path REPOSITORY_ROOT = Path.of("").toAbsolutePath()
             .getParent()
             .getParent()
             .getParent();
 
+    /**
+     * Root directory containing the EGX coordinator and EGL templates.
+     */
     private static final Path GENERATOR_ROOT = REPOSITORY_ROOT.resolve(
             "mde/generation/awspsm-to-artifacts");
 
+    /**
+     * Formats EGL parse problems into an assertion message tied to the template file being parsed.
+     *
+     * @param file     template file with parse problems
+     * @param problems parse problems returned by Epsilon
+     * @return multi-line assertion message
+     */
     private static String describeProblems(Path file, Iterable<ParseProblem> problems) {
         StringBuilder builder = new StringBuilder("Parse problems in ")
                 .append(file)
@@ -39,6 +55,11 @@ final class AwsPsmArtifactGenerationSyntaxTest {
         return builder.toString();
     }
 
+    /**
+     * Ensures the EGX coordinator only imports existing modules and references existing templates.
+     *
+     * @throws Exception when the EGX coordinator cannot be read
+     */
     @Test
     void egxCoordinatorReferencesExistingImportsAndTemplates() throws Exception {
         Path egxFile = GENERATOR_ROOT.resolve("awspsm2artifacts.egx");
@@ -58,6 +79,11 @@ final class AwsPsmArtifactGenerationSyntaxTest {
         }
     }
 
+    /**
+     * Parses every EGL template to catch syntax errors before generation tests execute them.
+     *
+     * @throws Exception when template discovery fails
+     */
     @Test
     void everyEglTemplateParsesWithoutErrors() throws Exception {
         try (Stream<Path> templateFiles = Files.walk(GENERATOR_ROOT.resolve("templates"))) {

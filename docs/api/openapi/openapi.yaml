@@ -801,6 +801,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LayoutResponse'
+  /api/{level}/{modelId}/views/{viewId}/layout:
+    post:
+      tags: [ Modeling ]
+      summary: Lazily auto-layout and persist one stored model view
+      parameters:
+        - name: level
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [ cim, pim, psm ]
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: viewId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: force
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: strategy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ SPACIOUS_LAYERED, BALANCED_LAYERED, RELAXED_SPLINES, VERTICAL_FLOW, TREE, RADIAL, FORCE ]
+            default: SPACIOUS_LAYERED
+      responses:
+        '200':
+          description: Persisted view layout result
         '400':
           $ref: '#/components/responses/BadRequest'
   /api/github/{path}:

@@ -2,6 +2,9 @@ package io.mehdieidi.modless.mdem2tcli;
 
 import picocli.CommandLine.Command;
 
+/**
+ * Root Picocli command for model-to-text generation.
+ */
 @Command(
         name = "mde-m2t-cli",
         mixinStandardHelpOptions = true,
@@ -12,6 +15,9 @@ import picocli.CommandLine.Command;
         })
 public final class MdeM2tCommand implements Runnable {
 
+    /**
+     * Rejects invocation without a generation subcommand.
+     */
     @Override
     public void run() {
         throw new picocli.CommandLine.ParameterException(

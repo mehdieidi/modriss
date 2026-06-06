@@ -8,11 +8,24 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.Diagnostician;
 
+/**
+ * Converts EMF resource load and structural validation diagnostics into EVL diagnostics.
+ */
 final class EvlModelResourceDiagnostics {
 
+    /**
+     * Prevents construction of this helper class.
+     */
     private EvlModelResourceDiagnostics() {
     }
 
+    /**
+     * Validates a loaded EMF resource and returns structural diagnostics.
+     *
+     * @param resource  resource to inspect
+     * @param modelFile file associated with the resource, when available
+     * @return structural diagnostics for errors and warnings
+     */
     static List<EvlDiagnostic> validate(Resource resource, Path modelFile) {
         if (resource == null) {
             return List.of();
@@ -28,6 +41,14 @@ final class EvlModelResourceDiagnostics {
         return diagnostics;
     }
 
+    /**
+     * Converts a resource-level load diagnostic to the validator diagnostic shape.
+     *
+     * @param severity   mapped diagnostic severity
+     * @param diagnostic EMF resource diagnostic
+     * @param modelFile  file associated with the resource
+     * @return EVL diagnostic
+     */
     private static EvlDiagnostic resourceDiagnostic(
             ValidationSeverity severity, Resource.Diagnostic diagnostic, Path modelFile) {
         return new EvlDiagnostic(
@@ -42,6 +63,13 @@ final class EvlModelResourceDiagnostics {
                 diagnostic.getClass().getName());
     }
 
+    /**
+     * Recursively flattens EMF validation diagnostics, preferring leaf messages.
+     *
+     * @param diagnostic EMF diagnostic tree
+     * @param modelFile  file associated with the resource
+     * @param out        mutable diagnostic sink
+     */
     private static void collectDiagnostics(
             Diagnostic diagnostic, Path modelFile, List<EvlDiagnostic> out) {
         if (diagnostic == null || diagnostic.getSeverity() == Diagnostic.OK
@@ -64,6 +92,12 @@ final class EvlModelResourceDiagnostics {
         }
     }
 
+    /**
+     * Maps EMF diagnostic severity to EVL diagnostic severity.
+     *
+     * @param diagnostic EMF diagnostic
+     * @return validation severity
+     */
     private static ValidationSeverity severity(Diagnostic diagnostic) {
         return diagnostic.getSeverity() == Diagnostic.WARNING
                 ? ValidationSeverity.WARNING

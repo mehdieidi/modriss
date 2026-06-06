@@ -26,18 +26,44 @@ import org.eclipse.epsilon.eol.exceptions.models.EolModelLoadingException;
 import org.eclipse.epsilon.eol.models.IModel;
 import org.eclipse.epsilon.eol.models.Model;
 
+/**
+ * Executes Epsilon EGX modules against file-backed EMF models and returns a structured generation
+ * report.
+ */
 public final class EpsilonEgxGenerator {
 
+    /**
+     * Default watchdog limit for EGX execution when no timeout is supplied.
+     */
     private static final Duration DEFAULT_EXECUTION_TIMEOUT = Duration.ofMinutes(5);
+    /**
+     * Default maximum captured bytes per Epsilon output stream.
+     */
     private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
 
+    /**
+     * Optional execution timeout; {@code null} disables the watchdog.
+     */
     private final Duration executionTimeout;
+    /**
+     * Maximum number of bytes captured from each output stream.
+     */
     private final int maxCapturedOutputBytes;
 
+    /**
+     * Creates a generator with default output capture limits and no timeout.
+     */
     public EpsilonEgxGenerator() {
         this(null, DEFAULT_MAX_CAPTURED_OUTPUT_BYTES);
     }
 
+    /**
+     * Creates a generator with explicit runtime limits.
+     *
+     * @param executionTimeout       timeout for EGX execution; {@code null} or non-positive values
+     *                               disable the watchdog
+     * @param maxCapturedOutputBytes byte limit for each captured output stream
+     */
     public EpsilonEgxGenerator(Duration executionTimeout, int maxCapturedOutputBytes) {
         this.executionTimeout = executionTimeout == null || executionTimeout.isZero()
                 || executionTimeout.isNegative() ? null : executionTimeout;
@@ -45,6 +71,14 @@ public final class EpsilonEgxGenerator {
                 ? DEFAULT_MAX_CAPTURED_OUTPUT_BYTES : maxCapturedOutputBytes;
     }
 
+    /**
+     * Executes the requested EGX module and returns a completed report.
+     *
+     * @param request generation request
+     * @return successful generation report
+     * @throws EgxGenerationException when validation, parsing, loading, execution, or trace
+     *                                finalization fails
+     */
     public EgxGenerationReport generate(EgxGenerationRequest request)
             throws EgxGenerationException {
         Instant startedAt = Instant.now();
@@ -144,6 +178,13 @@ public final class EpsilonEgxGenerator {
         }
     }
 
+    /**
+     * Performs request preflight validation before output directories are created.
+     *
+     * @param request     generation request to validate
+     * @param diagnostics mutable diagnostic sink
+     * @throws Exception when directory inspection fails
+     */
     private void validateRequest(EgxGenerationRequest request,
             List<GenerationDiagnostic> diagnostics)
             throws Exception {
@@ -221,12 +262,28 @@ public final class EpsilonEgxGenerator {
         }
     }
 
+    /**
+     * Checks whether a directory contains at least one child entry.
+     *
+     * @param directory directory to inspect
+     * @return {@code true} when the directory is non-empty
+     * @throws Exception when children cannot be listed
+     */
     private boolean isNotEmpty(Path directory) throws Exception {
         try (Stream<Path> children = Files.list(directory)) {
             return children.findAny().isPresent();
         }
     }
 
+    /**
+     * Parses an EGX module and maps parser diagnostics into report diagnostics.
+     *
+     * @param request     generation request containing the module file
+     * @param module      Epsilon EGX module to parse
+     * @param diagnostics mutable diagnostic sink
+     * @return {@code true} when Epsilon reports a parsed module
+     * @throws Exception when Epsilon internals fail outside normal parse errors
+     */
     private boolean parseModule(
             EgxGenerationRequest request, EgxModule module, List<GenerationDiagnostic> diagnostics)
             throws Exception {
@@ -261,6 +318,13 @@ public final class EpsilonEgxGenerator {
         return parsed;
     }
 
+    /**
+     * Creates and loads an Epsilon EMF model from a model configuration.
+     *
+     * @param modelConfiguration model configuration to load
+     * @return loaded Epsilon model
+     * @throws EolModelLoadingException when Epsilon cannot load the model
+     */
     private IModel loadModel(GenerationModelConfiguration modelConfiguration)
             throws EolModelLoadingException {
         EmfModel model = new EmfModel();
@@ -282,6 +346,12 @@ public final class EpsilonEgxGenerator {
         return model;
     }
 
+    /**
+     * Joins metamodel paths for Epsilon's file-based model configuration.
+     *
+     * @param paths metamodel paths
+     * @return comma-separated absolute path list
+     */
     private String joinPaths(List<Path> paths) {
         return paths.stream()
                 .map(path -> path.toAbsolutePath().toString())
@@ -289,6 +359,12 @@ public final class EpsilonEgxGenerator {
                 .orElse("");
     }
 
+    /**
+     * Executes the parsed module, optionally protected by the watchdog timeout.
+     *
+     * @param module parsed EGX module
+     * @throws Exception when the module or watchdog reports failure
+     */
     private void executeModule(EgxModule module) throws Exception {
         if (executionTimeout == null) {
             module.execute();
@@ -303,6 +379,7 @@ public final class EpsilonEgxGenerator {
         });
         ScheduledFuture<?> timeout = watchdog.schedule(() -> {
             timedOut.set(true);
+            // EGX execution is synchronous, so the watchdog interrupts the caller thread.
             executingThread.interrupt();
         }, executionTimeout.toMillis(), TimeUnit.MILLISECONDS);
         try {
@@ -326,11 +403,25 @@ public final class EpsilonEgxGenerator {
         }
     }
 
+    /**
+     * Builds the timeout exception used after watchdog interruption.
+     *
+     * @return timeout exception with a user-facing duration
+     */
     private EpsilonExecutionTimeoutException timeoutException() {
         return new EpsilonExecutionTimeoutException(
                 "EGX execution timed out after " + executionTimeout + ".", null);
     }
 
+    /**
+     * Redirects Epsilon output streams to bounded capture buffers when requested.
+     *
+     * @param module        module whose streams should be configured
+     * @param captureOutput whether capture is enabled
+     * @param stdout        standard output buffer
+     * @param warnings      warning output buffer
+     * @param stderr        error output buffer
+     */
     private void configureStreams(
             EgxModule module,
             boolean captureOutput,
@@ -346,6 +437,14 @@ public final class EpsilonEgxGenerator {
         module.getContext().setErrorStream(new PrintStream(stderr, true, StandardCharsets.UTF_8));
     }
 
+    /**
+     * Converts an Epsilon runtime exception into an execution diagnostic with source location when
+     * available.
+     *
+     * @param ex           runtime exception from Epsilon
+     * @param fallbackFile file used when the AST does not expose a source file
+     * @return structured runtime diagnostic
+     */
     private GenerationDiagnostic runtimeDiagnostic(EolRuntimeException ex, Path fallbackFile) {
         ModuleElement ast = ex.getAst();
         Path file = fallbackFile;
@@ -363,6 +462,12 @@ public final class EpsilonEgxGenerator {
                 ex);
     }
 
+    /**
+     * Replaces trace placeholders that can only be computed after files are written.
+     *
+     * @param request original generation request
+     * @throws Exception when trace files or generated artifacts cannot be read
+     */
     private void finalizeGeneratedTraceFiles(EgxGenerationRequest request) throws Exception {
         Path artifactTrace = request.outputDirectory()
                 .resolve("generated/trace/artifact-trace.json");
@@ -385,6 +490,7 @@ public final class EpsilonEgxGenerator {
                 continue;
             }
             if (line.contains("COMPUTED_AFTER_WRITE") && currentPath != null) {
+                // Template code cannot know final file hashes until all artifacts are written.
                 Path artifact = request.outputDirectory().resolve(currentPath).normalize();
                 String checksum = Files.isRegularFile(artifact) ? sha256(artifact) : "MISSING";
                 updatedLines.add(line.replace("COMPUTED_AFTER_WRITE", checksum));
@@ -395,6 +501,12 @@ public final class EpsilonEgxGenerator {
         Files.write(artifactTrace, updatedLines, StandardCharsets.UTF_8);
     }
 
+    /**
+     * Extracts a JSON string value from a simple property line.
+     *
+     * @param line JSON line containing a string property
+     * @return unescaped string value, or an empty string when parsing fails
+     */
     private String jsonStringValue(String line) {
         int colon = line.indexOf(':');
         int start = line.indexOf('"', colon + 1);
@@ -408,11 +520,25 @@ public final class EpsilonEgxGenerator {
                 .replace("\\\\", "\\");
     }
 
+    /**
+     * Computes a SHA-256 hash for a file.
+     *
+     * @param path file to hash
+     * @return lowercase hexadecimal digest
+     * @throws Exception when hashing or reading fails
+     */
     private String sha256(Path path) throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         return HexFormat.of().formatHex(digest.digest(Files.readAllBytes(path)));
     }
 
+    /**
+     * Returns the first non-blank string, or an empty string when neither value is useful.
+     *
+     * @param first  preferred value
+     * @param second fallback value
+     * @return first non-blank value
+     */
     private String firstNonBlank(String first, String second) {
         if (first != null && !first.isBlank()) {
             return first;
@@ -420,6 +546,18 @@ public final class EpsilonEgxGenerator {
         return second == null ? "" : second;
     }
 
+    /**
+     * Fails fast when request validation collected error diagnostics.
+     *
+     * @param request     original generation request
+     * @param startedAt   run start time
+     * @param diagnostics collected diagnostics
+     * @param stdout      captured standard output
+     * @param warnings    captured warning output
+     * @param stderr      captured error output
+     * @param cause       optional root cause
+     * @throws EgxGenerationException when diagnostics contain an error
+     */
     private void failIfDiagnostics(
             EgxGenerationRequest request,
             Instant startedAt,
@@ -434,6 +572,19 @@ public final class EpsilonEgxGenerator {
         }
     }
 
+    /**
+     * Builds a generation exception carrying a failed report.
+     *
+     * @param message     exception message
+     * @param request     original generation request
+     * @param startedAt   run start time
+     * @param diagnostics collected diagnostics
+     * @param stdout      captured standard output
+     * @param warnings    captured warning output
+     * @param stderr      captured error output
+     * @param cause       optional root cause
+     * @return exception with a failed generation report
+     */
     private EgxGenerationException failure(
             String message,
             EgxGenerationRequest request,
@@ -450,6 +601,18 @@ public final class EpsilonEgxGenerator {
                 cause);
     }
 
+    /**
+     * Creates an immutable generation report from the current run state.
+     *
+     * @param status      terminal status
+     * @param request     original generation request
+     * @param startedAt   run start time
+     * @param diagnostics collected diagnostics
+     * @param stdout      captured standard output
+     * @param warnings    captured warning output
+     * @param stderr      captured error output
+     * @return generation report
+     */
     private EgxGenerationReport report(
             GenerationStatus status,
             EgxGenerationRequest request,
@@ -473,6 +636,12 @@ public final class EpsilonEgxGenerator {
                 stderr.asUtf8String());
     }
 
+    /**
+     * Lists generated files relative to the output directory.
+     *
+     * @param outputDirectory generation output directory
+     * @return sorted relative file paths, or an empty list when listing fails
+     */
     private List<Path> listGeneratedFiles(Path outputDirectory) {
         if (!Files.isDirectory(outputDirectory)) {
             return List.of();
@@ -487,8 +656,18 @@ public final class EpsilonEgxGenerator {
         }
     }
 
+    /**
+     * Runtime exception used internally to distinguish watchdog timeouts from normal Epsilon
+     * runtime failures.
+     */
     private static final class EpsilonExecutionTimeoutException extends RuntimeException {
 
+        /**
+         * Creates a timeout exception.
+         *
+         * @param message exception message
+         * @param cause   optional root cause
+         */
         private EpsilonExecutionTimeoutException(String message, Throwable cause) {
             super(message, cause);
         }

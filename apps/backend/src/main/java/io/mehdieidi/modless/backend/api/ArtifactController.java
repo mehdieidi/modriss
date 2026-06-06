@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Provides authenticated access to generated artifacts and their files.
+ */
 @RestController
 @RequestMapping("/api/artifact")
 public class ArtifactController {
@@ -26,28 +29,64 @@ public class ArtifactController {
     private final ArtifactService artifacts;
     private final AuthSupport auth;
 
+    /**
+     * Creates the artifact controller.
+     *
+     * @param artifacts artifact service
+     * @param auth      controller authentication support
+     */
     public ArtifactController(ArtifactService artifacts, AuthSupport auth) {
         this.artifacts = artifacts;
         this.auth = auth;
     }
 
+    /**
+     * Lists artifacts belonging to a project.
+     *
+     * @param token     session token
+     * @param projectId project identifier
+     * @return accessible project artifacts
+     */
     @GetMapping
     List<ArtifactRecord> list(@RequestHeader("X-Auth-Token") String token,
             @RequestParam("projectId") String projectId) {
         return artifacts.list(auth.user(token), projectId);
     }
 
+    /**
+     * Returns an artifact by identifier.
+     *
+     * @param token session token
+     * @param id    artifact identifier
+     * @return requested artifact
+     */
     @GetMapping("/{id}")
     ArtifactRecord get(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
         return artifacts.get(auth.user(token), id);
     }
 
+    /**
+     * Reads a text file from an artifact.
+     *
+     * @param token session token
+     * @param id    artifact identifier
+     * @param path  artifact-relative file path
+     * @return file content
+     */
     @GetMapping(value = "/{id}/file", produces = MediaType.TEXT_PLAIN_VALUE)
     String file(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id,
             @RequestParam("path") String path) {
         return artifacts.readFile(auth.user(token), id, path);
     }
 
+    /**
+     * Replaces or creates one text file in an artifact.
+     *
+     * @param token   session token
+     * @param id      artifact identifier
+     * @param request file path and content
+     * @return updated artifact
+     */
     @PutMapping("/{id}/files")
     ArtifactRecord saveFile(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("id") String id,
@@ -55,6 +94,13 @@ public class ArtifactController {
         return artifacts.updateFile(auth.user(token), id, request.path(), request.content());
     }
 
+    /**
+     * Downloads an artifact and all of its files as a ZIP archive.
+     *
+     * @param token session token
+     * @param id    artifact identifier
+     * @return ZIP download response
+     */
     @GetMapping("/{id}/download")
     ResponseEntity<byte[]> download(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("id") String id) {
@@ -68,6 +114,12 @@ public class ArtifactController {
                 .body(bytes);
     }
 
+    /**
+     * Artifact file update payload.
+     *
+     * @param path    artifact-relative file path
+     * @param content replacement file content
+     */
     public record SaveFileRequest(@NotBlank String path, String content) {
 
     }

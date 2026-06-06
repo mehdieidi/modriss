@@ -9,12 +9,28 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import picocli.CommandLine.Model.CommandSpec;
 
+/**
+ * Executes EVL requests and maps validation outcomes to CLI exit codes.
+ */
 final class ValidationRunner {
 
     private final EpsilonEvlValidator validator = new EpsilonEvlValidator();
     private final ConsoleReportWriter consoleReportWriter = new ConsoleReportWriter();
     private final EvlValidationReportWriter reportWriter = new EvlValidationReportWriter();
 
+    /**
+     * Runs validation, writes reports, and applies configured violation exit policies.
+     *
+     * @param commandSpec               active Picocli command
+     * @param request                   validation request
+     * @param failOnMandatoryViolations whether mandatory violations return exit code three
+     * @param failOnOptionalViolations  whether any violation returns exit code three
+     * @param verbose                   whether to print detailed console output
+     * @param logFile                   optional JSON report path
+     * @return zero for accepted validation, two for execution failure, or three for rejected
+     * violations
+     * @throws Exception if report output cannot be written
+     */
     int execute(
             CommandSpec commandSpec,
             EvlValidationRequest request,

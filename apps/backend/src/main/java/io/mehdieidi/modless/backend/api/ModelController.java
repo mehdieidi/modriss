@@ -24,17 +24,34 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Provides authenticated model CRUD, validation, import, export, and patch endpoints.
+ */
 @RestController
 public class ModelController {
 
     private final ModelService models;
     private final AuthSupport auth;
 
+    /**
+     * Creates the model controller.
+     *
+     * @param models model service
+     * @param auth   controller authentication support
+     */
     public ModelController(ModelService models, AuthSupport auth) {
         this.models = models;
         this.auth = auth;
     }
 
+    /**
+     * Lists model summaries for a level and optional project.
+     *
+     * @param token     session token
+     * @param level     model level API name
+     * @param projectId optional project identifier
+     * @return matching model summaries
+     */
     @GetMapping("/api/{level:cim|pim|psm}")
     List<ModelService.ModelSummary> list(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -42,6 +59,14 @@ public class ModelController {
         return models.listSummaries(auth.user(token), ModelLevel.fromApiName(level), projectId);
     }
 
+    /**
+     * Creates a model at the requested level.
+     *
+     * @param token   session token
+     * @param level   model level API name
+     * @param request model details
+     * @return created model summary
+     */
     @PostMapping("/api/{level:cim|pim|psm}")
     ModelService.ModelSummary create(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -51,6 +76,14 @@ public class ModelController {
         return models.summary(created);
     }
 
+    /**
+     * Returns a model by level and identifier.
+     *
+     * @param token session token
+     * @param level model level API name
+     * @param id    model identifier
+     * @return requested model
+     */
     @GetMapping("/api/{level:cim|pim|psm}/{id}")
     ModelRecord get(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -58,6 +91,15 @@ public class ModelController {
         return models.get(auth.user(token), ModelLevel.fromApiName(level), id);
     }
 
+    /**
+     * Replaces a model when its revision matches the request.
+     *
+     * @param token   session token
+     * @param level   model level API name
+     * @param id      model identifier
+     * @param request replacement model and expected revision
+     * @return updated model summary
+     */
     @PutMapping("/api/{level:cim|pim|psm}/{id}")
     ModelService.ModelSummary update(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -69,6 +111,15 @@ public class ModelController {
         return models.summary(updated);
     }
 
+    /**
+     * Applies small change operations when the model revision matches the request.
+     *
+     * @param token   session token
+     * @param level   model level API name
+     * @param id      model identifier
+     * @param request optional name, operations, and expected revision
+     * @return updated model summary
+     */
     @PatchMapping("/api/{level:cim|pim|psm}/{id}")
     ModelService.ModelSummary patch(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -82,12 +133,27 @@ public class ModelController {
         return models.summary(updated);
     }
 
+    /**
+     * Deletes a model.
+     *
+     * @param token session token
+     * @param level model level API name
+     * @param id    model identifier
+     */
     @DeleteMapping("/api/{level:cim|pim|psm}/{id}")
     void delete(@RequestHeader("X-Auth-Token") String token, @PathVariable("level") String level,
             @PathVariable("id") String id) {
         models.delete(auth.user(token), ModelLevel.fromApiName(level), id);
     }
 
+    /**
+     * Validates an ad hoc model payload.
+     *
+     * @param token   session token
+     * @param level   model level API name
+     * @param request model payload
+     * @return validation result
+     */
     @PostMapping("/api/{level:cim|pim|psm}/validate")
     ModelService.ValidationResult validate(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -96,6 +162,14 @@ public class ModelController {
         return models.validate(ModelLevel.fromApiName(level), request.model());
     }
 
+    /**
+     * Validates a stored model.
+     *
+     * @param token session token
+     * @param level model level API name
+     * @param id    model identifier
+     * @return validation result
+     */
     @PostMapping("/api/{level:cim|pim|psm}/{id}/validate")
     ModelService.ValidationResult validateStored(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -103,6 +177,14 @@ public class ModelController {
         return models.validate(auth.user(token), ModelLevel.fromApiName(level), id);
     }
 
+    /**
+     * Exports an ad hoc model as JSON or XMI.
+     *
+     * @param token   session token
+     * @param level   model level API name
+     * @param request export name, model, and format
+     * @return downloadable model response
+     */
     @PostMapping("/api/{level:cim|pim|psm}/export")
     ResponseEntity<byte[]> export(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -123,6 +205,15 @@ public class ModelController {
                 .body(bytes);
     }
 
+    /**
+     * Exports a stored model as JSON or XMI.
+     *
+     * @param token   session token
+     * @param level   model level API name
+     * @param id      model identifier
+     * @param request export name and format
+     * @return downloadable model response
+     */
     @PostMapping("/api/{level:cim|pim|psm}/{id}/export")
     ResponseEntity<byte[]> exportStored(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -141,6 +232,17 @@ public class ModelController {
                 .body(bytes);
     }
 
+    /**
+     * Stages an uploaded JSON or XMI model for import.
+     *
+     * @param token     session token
+     * @param level     model level API name
+     * @param projectId destination project identifier
+     * @param format    uploaded model format
+     * @param file      uploaded model file
+     * @return staged import result
+     * @throws Exception if the upload stream cannot be read
+     */
     @PostMapping(value = "/api/{level:cim|pim|psm}/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ModelService.ImportResult importModel(@RequestHeader("X-Auth-Token") String token,
             @PathVariable("level") String level,
@@ -158,6 +260,11 @@ public class ModelController {
         }
     }
 
+    /**
+     * Enforces optimistic-concurrency input for model mutations.
+     *
+     * @param expectedRevision requested model revision
+     */
     private void requireExpectedRevision(Long expectedRevision) {
         if (expectedRevision == null) {
             throw new io.mehdieidi.modless.platform.core.PlatformException(400,
@@ -165,27 +272,61 @@ public class ModelController {
         }
     }
 
+    /**
+     * Resolves the download media type for an export format.
+     *
+     * @param format requested export format
+     * @return XML for XMI, otherwise JSON
+     */
     private MediaType mediaType(String format) {
         return "xmi".equalsIgnoreCase(format)
                 ? MediaType.APPLICATION_XML
                 : MediaType.APPLICATION_JSON;
     }
 
+    /**
+     * Resolves the file extension for an export format.
+     *
+     * @param format requested export format
+     * @return file extension including its leading period
+     */
     private String extension(String format) {
         return "xmi".equalsIgnoreCase(format) ? ".xmi" : ".json";
     }
 
+    /**
+     * Model create, update, or ad hoc validation payload.
+     *
+     * @param name             model name
+     * @param model            model JSON tree
+     * @param projectId        owning project identifier
+     * @param expectedRevision expected revision for updates
+     */
     public record SaveModelRequest(@NotBlank String name, JsonNode model, String projectId,
                                    Long expectedRevision) {
 
     }
 
+    /**
+     * Incremental model update payload.
+     *
+     * @param name             optional replacement model name
+     * @param operations       patch operations
+     * @param expectedRevision expected current revision
+     */
     public record PatchModelRequest(String name,
                                     List<ModelService.ModelPatchOperation> operations,
                                     Long expectedRevision) {
 
     }
 
+    /**
+     * Ad hoc or stored model export options.
+     *
+     * @param name   optional download base name
+     * @param model  ad hoc model JSON tree
+     * @param format requested export format
+     */
     public record ExportRequest(String name, JsonNode model, String format) {
 
     }

@@ -8,11 +8,23 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Extracts declared Ecore imports from Emfatic source files.
+ */
 public final class EmfaticImportScanner {
 
+    /**
+     * Matches quoted Ecore imports in Emfatic syntax.
+     */
     private static final Pattern IMPORT_PATTERN = Pattern.compile(
             "import\\s+\"([^\"]+\\.ecore)\"\\s*;");
 
+    /**
+     * Scans one Emfatic file for imported Ecore paths.
+     *
+     * @param emfaticFile source Emfatic file
+     * @return module descriptor
+     */
     public ModuleDescriptor scan(Path emfaticFile) {
         try {
             String content = Files.readString(emfaticFile);

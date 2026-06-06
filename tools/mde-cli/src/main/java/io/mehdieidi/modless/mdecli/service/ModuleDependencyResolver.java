@@ -9,8 +9,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Orders Emfatic modules so imported sibling modules precede their dependents.
+ */
 public final class ModuleDependencyResolver {
 
+    /**
+     * Topologically sorts modules by their local Ecore import dependencies.
+     *
+     * @param modules modules to order
+     * @return immutable dependency-first module order
+     * @throws IllegalStateException when local imports form a cycle
+     */
     public List<ModuleDescriptor> sort(Collection<ModuleDescriptor> modules) {
         Map<Path, ModuleDescriptor> byPath = new HashMap<>();
         Map<Path, Integer> indegrees = new HashMap<>();
@@ -59,6 +69,13 @@ public final class ModuleDependencyResolver {
         return List.copyOf(sorted);
     }
 
+    /**
+     * Resolves an imported Ecore name to a sibling {@code .emf} or {@code .emfatic} source.
+     *
+     * @param sourceFile    importing module source
+     * @param importedEcore imported Ecore path
+     * @return normalized sibling source path
+     */
     private Path replaceWithSiblingEmf(Path sourceFile, String importedEcore) {
         String fileName = Path.of(importedEcore).getFileName().toString();
         String sourceName = fileName.substring(0, fileName.length() - ".ecore".length()) + ".emf";

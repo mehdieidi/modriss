@@ -9,10 +9,19 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests the merged modeling configuration exposed to the UI.
+ */
 class ModelingConfigServiceTest {
 
+    /**
+     * Service under test.
+     */
     private final ModelingConfigService service = new ModelingConfigService();
 
+    /**
+     * Verifies that Ecore-derived structural fields coexist with JSON-owned UI metadata.
+     */
     @Test
     void exposesEcoreDerivedStructureAndJsonOwnedUiMetadata() {
         Map<String, Object> pim = level("pim");
@@ -29,6 +38,9 @@ class ModelingConfigServiceTest {
         assertEquals("Compute", function.get("category"));
     }
 
+    /**
+     * Verifies that each level exposes the JSON-owned editor sections required by the frontend.
+     */
     @Test
     void requiresJsonOwnedEditorSectionsForEveryLevel() {
         for (String key : List.of("cim", "pim", "psm")) {
@@ -42,6 +54,9 @@ class ModelingConfigServiceTest {
         }
     }
 
+    /**
+     * Verifies that every Ecore type receives complete visual metadata.
+     */
     @Test
     void appliesJsonOwnedVisualRulesToEveryEcoreType() {
         for (String key : List.of("cim", "pim", "psm")) {
@@ -62,6 +77,9 @@ class ModelingConfigServiceTest {
         assertEquals(Boolean.FALSE, modelElement.get("creatable"));
     }
 
+    /**
+     * Verifies that root templates are sourced from JSON metadata.
+     */
     @Test
     void rootTemplatesComeFromJsonMetadata() {
         assertEquals("CIMModel", map(level("cim").get("rootTemplate")).get("eClass"));
@@ -69,27 +87,58 @@ class ModelingConfigServiceTest {
         assertEquals("AwsPsmModel", map(level("psm").get("rootTemplate")).get("eClass"));
     }
 
+    /**
+     * Returns one level configuration from the service output.
+     *
+     * @param key level key
+     * @return level configuration
+     */
     private Map<String, Object> level(String key) {
         return map(map(service.config().get("levels")).get(key));
     }
 
+    /**
+     * Finds an element metadata entry by type.
+     *
+     * @param elements element metadata list
+     * @param type     element type
+     * @return matching element metadata
+     */
     private Map<String, Object> element(List<Map<String, Object>> elements, String type) {
         return elements.stream().filter(item -> type.equals(item.get("type"))).findFirst()
                 .orElseThrow();
     }
 
+    /**
+     * Casts a value to a map after asserting it is present.
+     *
+     * @param value value to cast
+     * @return cast map
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> map(Object value) {
         assertNotNull(value);
         return (Map<String, Object>) value;
     }
 
+    /**
+     * Casts a value to a list of maps after asserting it is present.
+     *
+     * @param value value to cast
+     * @return cast list
+     */
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> listOfMaps(Object value) {
         assertNotNull(value);
         return (List<Map<String, Object>>) value;
     }
 
+    /**
+     * Casts a value to a string list after asserting it is present.
+     *
+     * @param value value to cast
+     * @return cast list
+     */
     @SuppressWarnings("unchecked")
     private List<String> stringList(Object value) {
         assertNotNull(value);

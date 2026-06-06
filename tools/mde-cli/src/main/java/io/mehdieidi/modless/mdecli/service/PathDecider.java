@@ -7,8 +7,17 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Applies CLI conventions for output paths and modular root-file selection.
+ */
 public final class PathDecider {
 
+    /**
+     * Resolves the output path from an explicit option or the input naming convention.
+     *
+     * @param request conversion request
+     * @return normalized output path
+     */
     public Path resolveOutput(ConversionRequest request) {
         if (request.output() != null) {
             return request.output().toAbsolutePath().normalize();
@@ -25,6 +34,14 @@ public final class PathDecider {
         return input.resolveSibling(baseName + ".ecore");
     }
 
+    /**
+     * Resolves a directory conversion's root module.
+     *
+     * @param directory    module directory
+     * @param rootOverride optional explicit root module
+     * @return normalized root module path
+     * @throws IllegalStateException when no unambiguous root can be selected
+     */
     public Path resolveRootFile(Path directory, Path rootOverride) {
         if (rootOverride != null) {
             return rootOverride.toAbsolutePath().normalize();

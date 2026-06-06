@@ -6,6 +6,20 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Immutable summary of an ETL run, including timing, diagnostics, and captured output streams.
+ *
+ * @param status         final execution status
+ * @param moduleFile     ETL entry module
+ * @param startedAt      wall-clock start time
+ * @param finishedAt     wall-clock finish time
+ * @param duration       total wall-clock duration
+ * @param phaseTiming    phase-level timing values
+ * @param diagnostics    diagnostics emitted during the run
+ * @param standardOutput captured standard output
+ * @param warningOutput  captured warning output
+ * @param errorOutput    captured error output
+ */
 public record EtlExecutionReport(
         EtlExecutionStatus status,
         Path moduleFile,
@@ -18,6 +32,9 @@ public record EtlExecutionReport(
         String warningOutput,
         String errorOutput) {
 
+    /**
+     * Normalizes nullable optional fields and defensively copies collections.
+     */
     public EtlExecutionReport {
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(moduleFile, "moduleFile");
@@ -31,6 +48,11 @@ public record EtlExecutionReport(
         errorOutput = errorOutput == null ? "" : errorOutput;
     }
 
+    /**
+     * Indicates whether the ETL run completed successfully.
+     *
+     * @return {@code true} when the status is {@link EtlExecutionStatus#SUCCEEDED}
+     */
     public boolean succeeded() {
         return status == EtlExecutionStatus.SUCCEEDED;
     }

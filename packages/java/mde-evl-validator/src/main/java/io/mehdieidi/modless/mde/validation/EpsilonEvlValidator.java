@@ -33,10 +33,23 @@ import org.eclipse.epsilon.evl.dom.Constraint;
 import org.eclipse.epsilon.evl.execute.FixInstance;
 import org.eclipse.epsilon.evl.execute.UnsatisfiedConstraint;
 
+/**
+ * Executes Epsilon EVL modules against configured EMF models and returns structured validation
+ * reports.
+ */
 public final class EpsilonEvlValidator {
 
+    /**
+     * Default watchdog limit for EVL execution when no timeout is supplied.
+     */
     private static final Duration DEFAULT_EXECUTION_TIMEOUT = Duration.ofMinutes(5);
+    /**
+     * Default maximum captured bytes per Epsilon output stream.
+     */
     private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
+    /**
+     * Attribute names that can be copied into diagnostics without exposing secrets.
+     */
     private static final Set<String> SAFE_DIAGNOSTIC_ATTRIBUTES = Set.of(
             "id",
             "name",
@@ -47,13 +60,29 @@ public final class EpsilonEvlValidator {
             "pathtemplate",
             "method");
 
+    /**
+     * Optional execution timeout; {@code null} disables the watchdog.
+     */
     private final Duration executionTimeout;
+    /**
+     * Maximum number of bytes captured from each output stream.
+     */
     private final int maxCapturedOutputBytes;
 
+    /**
+     * Creates a validator with default output capture limits and no timeout.
+     */
     public EpsilonEvlValidator() {
         this(null, DEFAULT_MAX_CAPTURED_OUTPUT_BYTES);
     }
 
+    /**
+     * Creates a validator with explicit runtime limits.
+     *
+     * @param executionTimeout       timeout for EVL execution; {@code null} or non-positive values
+     *                               disable the watchdog
+     * @param maxCapturedOutputBytes byte limit for each captured output stream
+     */
     public EpsilonEvlValidator(Duration executionTimeout, int maxCapturedOutputBytes) {
         this.executionTimeout = executionTimeout == null || executionTimeout.isZero()
                 || executionTimeout.isNegative() ? null : executionTimeout;
@@ -61,6 +90,14 @@ public final class EpsilonEvlValidator {
                 ? DEFAULT_MAX_CAPTURED_OUTPUT_BYTES : maxCapturedOutputBytes;
     }
 
+    /**
+     * Validates the requested EVL root/modules against the configured models.
+     *
+     * @param request validation request
+     * @return successful validation report
+     * @throws EvlValidationException when request validation, module discovery, module execution,
+     *                                or structural validation fails
+     */
     public EvlValidationReport validate(EvlValidationRequest request)
             throws EvlValidationException {
         Instant startedAt = Instant.now();
@@ -120,6 +157,17 @@ public final class EpsilonEvlValidator {
         }
     }
 
+    /**
+     * Parses, loads models for, and executes one EVL module.
+     *
+     * @param moduleFile module file to execute
+     * @param request    original validation request
+     * @param stdout     captured standard output
+     * @param warnings   captured warning output
+     * @param stderr     captured error output
+     * @return per-module validation report
+     * @throws EvlValidationException reserved for report-level failures
+     */
     private EvlModuleReport validateModule(
             Path moduleFile,
             EvlValidationRequest request,
@@ -220,6 +268,12 @@ public final class EpsilonEvlValidator {
                 disposeDuration, violations, diagnostics);
     }
 
+    /**
+     * Performs request preflight validation before module discovery.
+     *
+     * @param request     validation request to check
+     * @param diagnostics mutable diagnostic sink
+     */
     private void validateRequest(EvlValidationRequest request, List<EvlDiagnostic> diagnostics) {
         if (!Files.exists(request.evlRoot())) {
             diagnostics.add(EvlDiagnostic.error(
@@ -250,6 +304,12 @@ public final class EpsilonEvlValidator {
         }
     }
 
+    /**
+     * Validates paths used by a file-backed EVL model configuration.
+     *
+     * @param model       model configuration to check
+     * @param diagnostics mutable diagnostic sink
+     */
     private void validateFileModel(
             FileEvlModelConfiguration model, List<EvlDiagnostic> diagnostics) {
         if (!Files.isRegularFile(model.modelFile())) {
@@ -278,6 +338,13 @@ public final class EpsilonEvlValidator {
         }
     }
 
+    /**
+     * Resolves the EVL modules that should be parsed and executed.
+     *
+     * @param request     validation request
+     * @param diagnostics mutable diagnostic sink
+     * @return discovered module files in execution order
+     */
     private List<Path> discoverModules(
             EvlValidationRequest request, List<EvlDiagnostic> diagnostics) {
         if (!request.moduleFiles().isEmpty()) {
@@ -312,6 +379,7 @@ public final class EpsilonEvlValidator {
                         null));
             }
             if (modules.size() > 1) {
+                // Directory mode is supported, but each entry module reloads models independently.
                 diagnostics.add(new EvlDiagnostic(
                         ValidationSeverity.WARNING,
                         ValidationPhase.MODULE_DISCOVERY,
@@ -339,6 +407,12 @@ public final class EpsilonEvlValidator {
         }
     }
 
+    /**
+     * Creates a diagnostic for an explicitly requested missing module.
+     *
+     * @param module missing module path
+     * @return module discovery diagnostic
+     */
     private EvlDiagnostic missingModuleDiagnostic(Path module) {
         return EvlDiagnostic.error(
                 ValidationPhase.MODULE_DISCOVERY,
@@ -351,6 +425,14 @@ public final class EpsilonEvlValidator {
                 null);
     }
 
+    /**
+     * Parses an EVL module and maps parser diagnostics into report diagnostics.
+     *
+     * @param moduleFile  module file to parse
+     * @param module      Epsilon EVL module
+     * @param diagnostics mutable diagnostic sink
+     * @return {@code true} when Epsilon reports a parsed module
+     */
     private boolean parseModule(
             Path moduleFile, EvlModule module, List<EvlDiagnostic> diagnostics) {
         boolean parsed;
@@ -385,6 +467,12 @@ public final class EpsilonEvlValidator {
         return parsed;
     }
 
+    /**
+     * Converts an unsatisfied EVL constraint into the public violation shape.
+     *
+     * @param unsatisfiedConstraint unsatisfied EVL constraint
+     * @return mapped constraint violation
+     */
     private EvlConstraintViolation toViolation(UnsatisfiedConstraint unsatisfiedConstraint) {
         Constraint constraint = unsatisfiedConstraint.getConstraint();
         ModuleElement ast = constraint;
@@ -403,6 +491,12 @@ public final class EpsilonEvlValidator {
                 extras(unsatisfiedConstraint.getExtras()));
     }
 
+    /**
+     * Builds a safe reference for the element associated with a violation.
+     *
+     * @param instance violating model element or scalar value
+     * @return safe element reference
+     */
     private EvlElementReference elementReference(Object instance) {
         if (instance instanceof EObject eObject) {
             Resource resource = eObject.eResource();
@@ -433,6 +527,12 @@ public final class EpsilonEvlValidator {
                 instance == null ? "" : instance.toString());
     }
 
+    /**
+     * Determines whether an EMF attribute can be exposed in diagnostics.
+     *
+     * @param attribute attribute to inspect
+     * @return {@code true} when the attribute is identifying and non-sensitive
+     */
     private boolean isSafeDiagnosticAttribute(EAttribute attribute) {
         String name = attribute.getName() == null ? ""
                 : attribute.getName().toLowerCase(Locale.ROOT);
@@ -442,6 +542,12 @@ public final class EpsilonEvlValidator {
         return attribute.isID() || SAFE_DIAGNOSTIC_ATTRIBUTES.contains(name);
     }
 
+    /**
+     * Identifies attribute names that should never be copied into diagnostics.
+     *
+     * @param name lowercase attribute name
+     * @return {@code true} when the name appears sensitive
+     */
     private boolean isSensitiveAttributeName(String name) {
         return name.contains("secret")
                 || name.contains("password")
@@ -451,6 +557,12 @@ public final class EpsilonEvlValidator {
                 || name.contains("email");
     }
 
+    /**
+     * Converts an attribute value to bounded diagnostic text.
+     *
+     * @param value attribute value
+     * @return safe string representation
+     */
     private String safeDiagnosticValue(Object value) {
         if (value == null) {
             return "";
@@ -459,6 +571,12 @@ public final class EpsilonEvlValidator {
         return text.length() <= 256 ? text : text.substring(0, 256) + "...";
     }
 
+    /**
+     * Evaluates available EVL fix titles into serializable suggestions.
+     *
+     * @param fixes EVL fix instances
+     * @return evaluated fix suggestions
+     */
     private List<EvlFixSuggestion> fixSuggestions(List<FixInstance> fixes) {
         if (fixes == null || fixes.isEmpty()) {
             return List.of();
@@ -475,6 +593,12 @@ public final class EpsilonEvlValidator {
         return suggestions;
     }
 
+    /**
+     * Converts EVL extras to a string map for JSON-safe reporting.
+     *
+     * @param extras extras reported by Epsilon
+     * @return string-valued extras map
+     */
     private Map<String, String> extras(Map<String, Object> extras) {
         if (extras == null || extras.isEmpty()) {
             return Map.of();
@@ -486,6 +610,13 @@ public final class EpsilonEvlValidator {
         return values;
     }
 
+    /**
+     * Executes a parsed EVL module, optionally protected by the watchdog timeout.
+     *
+     * @param module parsed EVL module
+     * @return unsatisfied constraints reported by Epsilon
+     * @throws Exception when EVL execution or the watchdog fails
+     */
     private Set<UnsatisfiedConstraint> executeModule(EvlModule module) throws Exception {
         if (executionTimeout == null) {
             return module.execute();
@@ -499,6 +630,7 @@ public final class EpsilonEvlValidator {
         });
         ScheduledFuture<?> timeout = watchdog.schedule(() -> {
             timedOut.set(true);
+            // EVL execution is synchronous, so the watchdog interrupts the caller thread.
             executingThread.interrupt();
         }, executionTimeout.toMillis(), TimeUnit.MILLISECONDS);
         try {
@@ -523,11 +655,25 @@ public final class EpsilonEvlValidator {
         }
     }
 
+    /**
+     * Builds the timeout exception used after watchdog interruption.
+     *
+     * @return timeout exception with a user-facing duration
+     */
     private EpsilonExecutionTimeoutException timeoutException() {
         return new EpsilonExecutionTimeoutException(
                 "EVL execution timed out after " + executionTimeout + ".", null);
     }
 
+    /**
+     * Redirects Epsilon output streams to bounded capture buffers when requested.
+     *
+     * @param module        module whose streams should be configured
+     * @param captureOutput whether capture is enabled
+     * @param stdout        standard output buffer
+     * @param warnings      warning output buffer
+     * @param stderr        error output buffer
+     */
     private void configureStreams(
             EvlModule module,
             boolean captureOutput,
@@ -543,6 +689,14 @@ public final class EpsilonEvlValidator {
         module.getContext().setErrorStream(new PrintStream(stderr, true, StandardCharsets.UTF_8));
     }
 
+    /**
+     * Converts an Epsilon runtime exception into an execution diagnostic with source location when
+     * available.
+     *
+     * @param ex           runtime exception from Epsilon
+     * @param fallbackFile file used when the AST does not expose a source file
+     * @return structured runtime diagnostic
+     */
     private EvlDiagnostic runtimeDiagnostic(EolRuntimeException ex, Path fallbackFile) {
         ModuleElement ast = ex.getAst();
         Path file = fallbackFile;
@@ -560,6 +714,13 @@ public final class EpsilonEvlValidator {
                 ex);
     }
 
+    /**
+     * Returns the first non-blank string, or an empty string when neither value is useful.
+     *
+     * @param first  preferred value
+     * @param second fallback value
+     * @return first non-blank value
+     */
     private String firstNonBlank(String first, String second) {
         if (first != null && !first.isBlank()) {
             return first;
@@ -567,6 +728,21 @@ public final class EpsilonEvlValidator {
         return second == null ? "" : second;
     }
 
+    /**
+     * Creates a module report from phase timing and collected results.
+     *
+     * @param moduleFile                   module that was executed
+     * @param startedAt                    module start time
+     * @param parseDuration                parse duration
+     * @param modelLoadDuration            model load duration
+     * @param structuralValidationDuration structural validation duration
+     * @param evlExecuteDuration           EVL execution duration
+     * @param violationMappingDuration     violation mapping duration
+     * @param disposeDuration              disposal duration
+     * @param violations                   mapped violations
+     * @param diagnostics                  module diagnostics
+     * @return per-module report
+     */
     private EvlModuleReport moduleReport(
             Path moduleFile,
             Instant startedAt,
@@ -592,6 +768,21 @@ public final class EpsilonEvlValidator {
                 diagnostics);
     }
 
+    /**
+     * Fails fast when request validation or module discovery collected errors.
+     *
+     * @param request                 original validation request
+     * @param startedAt               run start time
+     * @param moduleDiscoveryDuration module discovery duration
+     * @param moduleReports           collected module reports
+     * @param violations              collected violations
+     * @param diagnostics             collected diagnostics
+     * @param stdout                  captured standard output
+     * @param warnings                captured warning output
+     * @param stderr                  captured error output
+     * @param cause                   optional root cause
+     * @throws EvlValidationException when diagnostics contain an error
+     */
     private void failIfDiagnostics(
             EvlValidationRequest request,
             Instant startedAt,
@@ -610,6 +801,22 @@ public final class EpsilonEvlValidator {
         }
     }
 
+    /**
+     * Builds a validation exception carrying a failed report.
+     *
+     * @param message                 exception message
+     * @param request                 original validation request
+     * @param startedAt               run start time
+     * @param moduleReports           collected module reports
+     * @param moduleDiscoveryDuration module discovery duration
+     * @param violations              collected violations
+     * @param diagnostics             collected diagnostics
+     * @param stdout                  captured standard output
+     * @param warnings                captured warning output
+     * @param stderr                  captured error output
+     * @param cause                   optional root cause
+     * @return exception with a failed validation report
+     */
     private EvlValidationException failure(
             String message,
             EvlValidationRequest request,
@@ -630,6 +837,21 @@ public final class EpsilonEvlValidator {
                 cause);
     }
 
+    /**
+     * Creates an immutable validation report from the current run state.
+     *
+     * @param status                  terminal status
+     * @param request                 original validation request
+     * @param startedAt               run start time
+     * @param moduleReports           collected module reports
+     * @param moduleDiscoveryDuration module discovery duration
+     * @param violations              collected violations
+     * @param diagnostics             collected diagnostics
+     * @param stdout                  captured standard output
+     * @param warnings                captured warning output
+     * @param stderr                  captured error output
+     * @return validation report
+     */
     private EvlValidationReport report(
             EvlValidationStatus status,
             EvlValidationRequest request,
@@ -657,8 +879,18 @@ public final class EpsilonEvlValidator {
                 stderr.asUtf8String());
     }
 
+    /**
+     * Runtime exception used internally to distinguish watchdog timeouts from normal Epsilon
+     * runtime failures.
+     */
     private static final class EpsilonExecutionTimeoutException extends RuntimeException {
 
+        /**
+         * Creates a timeout exception.
+         *
+         * @param message exception message
+         * @param cause   optional root cause
+         */
         private EpsilonExecutionTimeoutException(String message, Throwable cause) {
             super(message, cause);
         }
