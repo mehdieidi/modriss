@@ -13,8 +13,8 @@
   }
 
   .story-copy {
-    right: 0.85rem;
-    left: 11.75rem;
+    right: 0;
+    left: 0;
     width: auto;
   }
 
@@ -80,41 +80,38 @@
   }
 
   .story-copy {
-    top: auto;
-    right: 0.75rem;
-    bottom: 3.6rem;
-    left: 0.75rem;
-    height: 8rem;
+    top: 4.35rem;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    height: 4.75rem;
     width: auto;
   }
 
-  .workbench-body.assistant-active .story-copy {
-    right: calc(var(--assistant-reserve) + 1rem);
-  }
-
   .story-copy-card {
-    display: block;
-    padding: 0.9rem;
+    top: 0.5rem;
+    display: grid;
+    grid-template-columns: minmax(7rem, 0.55fr) minmax(12rem, 1fr) minmax(7rem, 0.55fr);
+    padding: 0.7rem;
   }
 
   .story-copy h2 {
-    margin: 0.5rem 0 0.4rem;
-    font-size: 1.25rem;
+    margin: 0;
+    font-size: 1rem;
   }
 
   .story-copy p {
-    display: none;
+    display: block;
+    font-size: 0.52rem;
   }
 
   .phase-rule {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 0.55rem;
-    padding-top: 0.5rem;
-    padding-left: 0;
-    border-top: 1px solid var(--line);
-    border-left: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
   }
 
   .phase-rule strong {
@@ -261,23 +258,7 @@
 
   .transformation-engine {
     width: min(9rem, 36vw);
-    height: min(9rem, 36vw);
-  }
-
-  .pipeline-rail {
-    width: 4.2rem;
-  }
-
-  .rail-input {
-    right: calc(50% + 3.6rem);
-  }
-
-  .rail-output {
-    left: calc(50% + 3.6rem);
-  }
-
-  .rail-caption {
-    font-size: 0.34rem;
+    height: min(7.5rem, 30vw);
   }
 
   .mapping-rules {
@@ -296,11 +277,6 @@
   .model-canvas.assistant-active #model-pim {
     right: 0.5rem;
     bottom: 13rem;
-  }
-
-  .workbench-body.assistant-active .story-copy {
-    right: 0.75rem;
-    bottom: 15.5rem;
   }
 
   .assistant-demo .chat-window {

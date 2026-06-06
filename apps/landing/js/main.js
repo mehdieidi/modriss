@@ -4,7 +4,7 @@ import {
   stagger,
 } from "https://cdn.jsdelivr.net/npm/animejs@4.4.1/+esm";
 import {phases} from "./case-study.js";
-import {renderCaseStudy} from "./model-renderer.js";
+import {renderCaseStudy, updateRenderedModelEdges} from "./model-renderer.js";
 import {createStoryTimeline, STORY_DURATION} from "./story-timeline.js";
 
 const clamp = (value, minimum = 0, maximum = 1) =>
@@ -97,11 +97,15 @@ function updateStoryMetadata(progress) {
   const canvasTitle = document.querySelector("[data-canvas-title]");
   const modelCanvas = document.querySelector(".model-canvas");
   const workbenchBody = document.querySelector(".workbench-body");
+  const engineLabel = document.querySelector(".engine-window strong");
 
   fill.style.transform = `translateX(${progress * 100 - 100}%)`;
   label.textContent = activePhase.label;
   count.textContent = activePhase.count;
   canvasTitle.textContent = activePhase.label;
+  if (engineLabel) {
+    engineLabel.textContent = activePhase.id === "generate" ? "EGX" : "ETL";
+  }
 
   document.querySelectorAll(".level-tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.level === activePhase.level);
@@ -135,6 +139,7 @@ function setupScrollScrubbing(storyTimeline, heroTimeline) {
     const storyProgress = clamp((scrollTop - storyStart) / storyDistance);
     storyTimeline.seek(storyProgress * STORY_DURATION, true);
     updateStoryMetadata(storyProgress);
+    updateRenderedModelEdges();
     ticking = false;
   };
 

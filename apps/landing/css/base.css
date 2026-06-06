@@ -1,12 +1,14 @@
 @font-face {
   font-family: "Space Grotesk";
-  src: url("../../frontend/assets/fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.ttf") format("truetype");
+  src: url("../assets/fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.ttf") format("truetype");
   font-style: normal;
-  font-weight: 300 700;
-  font-display: swap;
+  font-weight: 400;
 }
 
 :root {
+  --font-ui: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-mono: "Space Grotesk", "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
   --ink: #252423;
   --ink-raised: #2c2a28;
   --ink-soft: #34312f;
@@ -15,10 +17,15 @@
   --paper-dim: #85837e;
   --line: rgba(246, 244, 242, 0.13);
   --line-strong: rgba(246, 244, 242, 0.24);
-  --lime: #b7ff54;
-  --green: #8dff55;
-  --cyan: #4ce6e0;
-  --blue: #71a7ff;
+  --accent: #0077a8;
+  --accent-dark: #005f89;
+  --accent-light: #008dc8;
+  --accent-glow: rgba(0, 119, 168, 0.2);
+  --accent-select: #0c9bd6;
+  --lime: var(--accent);
+  --green: var(--accent-select);
+  --cyan: #14b8c7;
+  --blue: var(--accent-light);
   --violet: #b497ff;
   --pink: #ff79b0;
   --orange: #ffa828;
@@ -34,6 +41,7 @@
 
 * {
   box-sizing: border-box;
+  font-family: var(--font-ui);
 }
 
 html {
@@ -47,7 +55,7 @@ body {
   overflow-x: hidden;
   color: var(--paper);
   background: var(--ink);
-  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 16px;
   line-height: 1.5;
 }
@@ -69,7 +77,7 @@ a {
 }
 
 ::selection {
-  color: var(--ink);
+  color: var(--paper);
   background: var(--lime);
 }
 
@@ -100,7 +108,7 @@ a {
   height: 0.5rem;
   border-radius: 50%;
   background: var(--lime);
-  box-shadow: 0 0 1.25rem rgba(183, 255, 84, 0.75);
+  box-shadow: 0 0 1.25rem color-mix(in srgb, var(--accent) 72%, transparent);
 }
 
 .button {
@@ -125,9 +133,9 @@ a {
 }
 
 .button-primary {
-  color: var(--ink);
+  color: var(--paper);
   background: var(--lime);
-  box-shadow: 0 0 2.5rem rgba(183, 255, 84, 0.18);
+  box-shadow: 0 0 2.5rem var(--accent-glow);
 }
 
 .button-primary:hover {

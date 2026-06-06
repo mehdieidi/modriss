@@ -7,6 +7,8 @@ import {
 } from "./case-study.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+const PORT_STUB = 38;
+const renderedModels = [];
 
 function createElement(tagName, className) {
   const element = document.createElement(tagName);
@@ -24,32 +26,81 @@ function createSvgElement(tagName, attributes = {}) {
 }
 
 function edgePath(source, target) {
-  const horizontalDistance = Math.abs(target.x - source.x);
-  if (horizontalDistance < 70) {
-    const middleY = (source.y + target.y) / 2;
-    return `M ${source.x} ${source.y} V ${middleY} H ${target.x} V ${target.y}`;
-  }
-
-  const middleX = (source.x + target.x) / 2;
-  return `M ${source.x} ${source.y} H ${middleX} V ${target.y} H ${target.x}`;
+  const sourceExit = source.x + source.direction * PORT_STUB;
+  const targetEntry = target.x + target.direction * PORT_STUB;
+  const middleX = (sourceExit + targetEntry) / 2;
+  return [
+    `M ${source.x} ${source.y}`,
+    `H ${sourceExit}`,
+    `H ${middleX}`,
+    `V ${target.y}`,
+    `H ${targetEntry}`,
+    `H ${target.x}`,
+  ].join(" ");
 }
 
 function edgeLabelPosition(source, target) {
-  if (Math.abs(target.x - source.x) < 70) {
-    return {
-      x: source.x + 12,
-      y: (source.y + target.y) / 2 - 8,
-    };
-  }
-
   return {
-    x: (source.x + target.x) / 2,
+    x: ((source.x + source.direction * PORT_STUB)
+        + (target.x + target.direction * PORT_STUB)) / 2,
     y: (source.y + target.y) / 2 - 8,
   };
 }
 
+function canvasPointFromPort(port, mount, side) {
+  const portRect = port.getBoundingClientRect();
+  const mountRect = mount.getBoundingClientRect();
+  const x = portRect.left - mountRect.left + portRect.width / 2;
+  const y = portRect.top - mountRect.top + portRect.height / 2;
+
+  return {
+    direction: side === "right" ? 1 : -1,
+    x: (x / mountRect.width) * CANVAS_SIZE.width,
+    y: (y / mountRect.height) * CANVAS_SIZE.height,
+  };
+}
+
+function nodePort(mount, node, side) {
+  const anchor = mount.querySelector(
+      `.model-node-anchor[data-node-id="${node.id}"]`,
+  );
+  const port = anchor.querySelector(`.node-port-${side}`);
+  return canvasPointFromPort(port, mount, side);
+}
+
+function updateModelEdges(renderedModel) {
+  const {
+    edges,
+    model,
+    mount,
+    nodesById,
+  } = renderedModel;
+
+  model.edges.forEach((edge) => {
+    const sourceNode = nodesById.get(edge.source);
+    const targetNode = nodesById.get(edge.target);
+    const sourceSide = targetNode.x >= sourceNode.x ? "right" : "left";
+    const targetSide = targetNode.x >= sourceNode.x ? "left" : "right";
+    const source = nodePort(mount, sourceNode, sourceSide);
+    const target = nodePort(mount, targetNode, targetSide);
+
+    const path = edges.querySelector(`path[data-edge-id="${edge.id}"]`);
+    path.setAttribute("d", edgePath(source, target));
+
+    const labelPosition = edgeLabelPosition(source, target);
+    const label = edges.querySelector(`text[data-edge-id="${edge.id}"]`);
+    label.setAttribute("x", labelPosition.x);
+    label.setAttribute("y", labelPosition.y);
+  });
+}
+
+export function updateRenderedModelEdges() {
+  renderedModels.forEach(updateModelEdges);
+}
+
 function renderNode(node) {
   const anchor = createElement("div", "model-node-anchor");
+  anchor.dataset.nodeId = node.id;
   anchor.style.left = `${(node.x / CANVAS_SIZE.width) * 100}%`;
   anchor.style.top = `${(node.y / CANVAS_SIZE.height) * 100}%`;
 
@@ -64,6 +115,9 @@ function renderNode(node) {
   if (node.manualTarget) {
     card.classList.add("manual-target");
   }
+
+  const leftPort = createElement("span", "node-port node-port-left");
+  const rightPort = createElement("span", "node-port node-port-right");
 
   const head = createElement("div", "model-node-head");
   const icon = createElement("span", "model-node-icon");
@@ -93,7 +147,7 @@ function renderNode(node) {
 
   const badge = createElement("span", "node-badge");
   badge.textContent = "refined";
-  card.append(head, body, badge);
+  card.append(leftPort, rightPort, head, body, badge);
   anchor.append(card);
   return anchor;
 }
@@ -127,10 +181,7 @@ function renderModel(mount, model, modelId) {
   edges.append(definitions);
 
   model.edges.forEach((edge) => {
-    const source = nodesById.get(edge.source);
-    const target = nodesById.get(edge.target);
     const path = createSvgElement("path", {
-      d: edgePath(source, target),
       class: [
         "model-edge",
         edge.dashed ? "edge-dashed" : "",
@@ -146,10 +197,7 @@ function renderModel(mount, model, modelId) {
     });
     edges.append(path);
 
-    const labelPosition = edgeLabelPosition(source, target);
     const label = createSvgElement("text", {
-      x: labelPosition.x,
-      y: labelPosition.y,
       class: [
         "edge-label",
         edge.aiAddition ? "ai-addition-edge" : "",
@@ -168,6 +216,15 @@ function renderModel(mount, model, modelId) {
   const nodes = createElement("div", "model-nodes");
   model.nodes.forEach((node) => nodes.append(renderNode(node)));
   mount.append(edges, nodes);
+
+  const renderedModel = {
+    edges,
+    model,
+    mount,
+    nodesById,
+  };
+  renderedModels.push(renderedModel);
+  updateModelEdges(renderedModel);
 }
 
 function renderMappingRules() {
@@ -240,6 +297,7 @@ function renderCode() {
 }
 
 export function renderCaseStudy() {
+  renderedModels.length = 0;
   Object.entries(models).forEach(([modelId, model]) => {
     const mount = document.querySelector(`#model-${modelId}`);
     renderModel(mount, model, modelId);
@@ -248,4 +306,8 @@ export function renderCaseStudy() {
   renderFlowTokens();
   renderArtifacts();
   renderCode();
+
+  window.addEventListener("resize", () => {
+    window.requestAnimationFrame(updateRenderedModelEdges);
+  }, {passive: true});
 }

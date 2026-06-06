@@ -4,9 +4,124 @@ import {
 } from "https://cdn.jsdelivr.net/npm/animejs@4.4.1/+esm";
 
 export const STORY_DURATION = 16500;
+const TRANSFORM_ENGINE_SELECTOR = "#transform-engine";
 
 function selector(value) {
   return document.querySelectorAll(value);
+}
+
+function setEngineLabel(label) {
+  const engineLabel = document.querySelector(".engine-window strong");
+  if (engineLabel) {
+    engineLabel.textContent = label;
+  }
+}
+
+function centerInCanvas(element) {
+  const canvasRect = document.querySelector(".model-canvas")
+  .getBoundingClientRect();
+  const rect = element.getBoundingClientRect();
+  return {
+    x: rect.left - canvasRect.left + rect.width / 2,
+    y: rect.top - canvasRect.top + rect.height / 2,
+  };
+}
+
+function engineCenter() {
+  return centerInCanvas(document.querySelector(TRANSFORM_ENGINE_SELECTOR));
+}
+
+function nodeLabel(node) {
+  return node.querySelector(".model-node-title strong")?.textContent
+      || node.dataset.nodeType
+      || "model";
+}
+
+function nodeColor(node) {
+  return node.style.getPropertyValue("--node-color") || "var(--accent)";
+}
+
+function clearTravelers() {
+  document.querySelector("#transformation-travelers")?.replaceChildren();
+}
+
+function createTraveler(label, color, className) {
+  const traveler = document.createElement("span");
+  traveler.className = `traveler-node ${className}`;
+  traveler.textContent = label;
+  traveler.style.setProperty("--traveler-color", color);
+  document.querySelector("#transformation-travelers").append(traveler);
+  return traveler;
+}
+
+function createModelTravelers(sourceNodes, targetNodes) {
+  clearTravelers();
+  sourceNodes.forEach((node, index) => {
+    const traveler = createTraveler(
+        nodeLabel(node),
+        nodeColor(node),
+        "traveler-source",
+    );
+    traveler.dataset.index = String(index);
+  });
+  targetNodes.forEach((node, index) => {
+    const traveler = createTraveler(
+        nodeLabel(node),
+        nodeColor(node),
+        "traveler-target",
+    );
+    traveler.dataset.index = String(index);
+  });
+}
+
+function placeModelTravelers(sourceNodes, targetNodes) {
+  const engine = engineCenter();
+  selector(".traveler-source").forEach((traveler, index) => {
+    const source = sourceNodes[index];
+    const point = source ? centerInCanvas(source) : engine;
+    traveler.style.left = `${point.x}px`;
+    traveler.style.top = `${point.y}px`;
+  });
+  selector(".traveler-target").forEach((traveler) => {
+    traveler.style.left = `${engine.x}px`;
+    traveler.style.top = `${engine.y}px`;
+  });
+}
+
+function createArtifactTravelers(sourceNodes, targets) {
+  clearTravelers();
+  sourceNodes.forEach((node, index) => {
+    const traveler = createTraveler(
+        nodeLabel(node),
+        nodeColor(node),
+        "traveler-source",
+    );
+    traveler.dataset.index = String(index);
+  });
+  targets.forEach(([label, color], index) => {
+    const traveler = createTraveler(label, color, "traveler-target");
+    traveler.dataset.index = String(index);
+  });
+}
+
+function artifactTargetPoint(index) {
+  const rows = selector(".tree-row");
+  const fallback = document.querySelector(".artifact-tree-panel");
+  return centerInCanvas(rows[index] || fallback);
+}
+
+function placeArtifactTravelers(sourceNodes) {
+  const engine = engineCenter();
+  selector(".traveler-source").forEach((traveler, index) => {
+    const source = sourceNodes[index];
+    const point = source ? centerInCanvas(source) : engine;
+    traveler.style.left = `${point.x}px`;
+    traveler.style.top = `${point.y}px`;
+  });
+  selector(".traveler-target").forEach((traveler) => {
+    traveler.style.left = `${engine.x}px`;
+    traveler.style.top = `${engine.y}px`;
+  });
 }
 
 function addCopyTransition(timeline, phase, showAt, hideAt) {
@@ -39,10 +154,10 @@ function addEngineRun(timeline, start, end) {
   const duration = end - start;
   timeline
   .add(
-      "#transform-engine, #pipeline-rails",
+      TRANSFORM_ENGINE_SELECTOR,
       {
         opacity: 1,
-        scale: 0.88,
+        scale: 1,
         duration: 420,
         ease: "out(4)",
       },
@@ -153,6 +268,8 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
     const stepStart = start + index * stepGap;
     const input = inputs[index];
     const output = outputs[index];
+    const laneOffset = (index % 3 - 1) * 7;
+    const tokenTop = `${50 + laneOffset}%`;
 
     if (input) {
       timeline
@@ -160,8 +277,9 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
           input,
           {
             opacity: 1,
-            left: "42%",
-            scale: 1,
+            left: "32%",
+            top: tokenTop,
+            scale: 0.72,
             duration: 300,
             ease: "inOut(3)",
           },
@@ -171,9 +289,9 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
           input,
           {
             opacity: 0,
-            left: "47%",
-            scale: 0.38,
-            duration: 150,
+            left: "50%",
+            scale: 0.24,
+            duration: 230,
             ease: "in(4)",
           },
           stepStart + 300,
@@ -186,8 +304,9 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
           output,
           {
             opacity: 1,
-            left: "66%",
-            scale: 1,
+            left: "60%",
+            top: tokenTop,
+            scale: 0.72,
             duration: 280,
             ease: "out(4)",
           },
@@ -197,7 +316,7 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
           output,
           {
             opacity: 0,
-            left: "88%",
+            left: "74%",
             duration: 310,
             ease: "inOut(3)",
           },
@@ -214,6 +333,7 @@ function addModelTransformation({
   batch,
   start,
   finish,
+  engineLabel = "ETL",
   targetNodeSelector,
   targetEdgeSelector,
 }) {
@@ -229,36 +349,117 @@ function addModelTransformation({
       || `#model-${target} .model-edge, #model-${target} .edge-label`,
   );
   const stepCount = Math.max(sourceNodes.length, targetNodes.length);
-  const stepGap = Math.max(150, (finish - start - 930) / stepCount);
+  const stepGap = Math.max(105, (finish - start - 1400) / stepCount);
+  const feedStart = start + 620;
 
   timeline
   .add(
-      `#model-${target}`,
+      {},
       {
-        opacity: 1,
         duration: 1,
-        ease: "out(2)",
+        onBegin: () => {
+          setEngineLabel(engineLabel);
+          createModelTravelers(sourceNodes, targetNodes);
+        },
       },
       start,
   )
   .add(
       `#model-${source}`,
       {
-        opacity: 0,
-        duration: 260,
-        ease: "in(2)",
+        opacity: 0.84,
+        x: "-34%",
+        y: 0,
+        scale: 0.38,
+        duration: 460,
+        ease: "out(4)",
       },
-      finish - 470,
+      start,
   )
   .add(
-      "#transform-engine, #pipeline-rails",
+      `#model-${target}`,
+      {
+        opacity: 1,
+        x: "34%",
+        y: 0,
+        scale: 0.38,
+        duration: 1,
+        ease: "out(2)",
+      },
+      start,
+  )
+  .add(
+      targetNodes,
+      {
+        opacity: 0,
+        x: 0,
+        y: 0,
+        scale: 0.18,
+        duration: 1,
+      },
+      start,
+  )
+  .add(
+      {},
+      {
+        duration: 1,
+        onBegin: () => placeModelTravelers(sourceNodes, targetNodes),
+      },
+      start + 470,
+  )
+  .add(
+      `#model-${source}`,
+      {
+        opacity: 0,
+        x: "-39%",
+        scale: 0.32,
+        duration: 320,
+        ease: "in(2)",
+      },
+      finish - 700,
+  )
+  .add(
+      TRANSFORM_ENGINE_SELECTOR,
       {
         opacity: 0,
         scale: 0.72,
         duration: 350,
         ease: "in(3)",
       },
-      finish - 470,
+      finish - 450,
+  )
+  .add(
+      targetEdges,
+      {
+        opacity: 0,
+        duration: 1,
+      },
+      start,
+  )
+  .add(
+      `#model-${target}`,
+      {
+        x: 0,
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        duration: 520,
+        ease: "out(4)",
+      },
+      finish - 360,
+  )
+  .add(
+      targetNodes,
+      {
+        x: 0,
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        duration: 500,
+        delay: stagger(32),
+        ease: "out(4)",
+      },
+      finish - 350,
   );
 
   sourceEdges.forEach((edge, index) => {
@@ -274,35 +475,67 @@ function addModelTransformation({
   });
 
   for (let index = 0; index < stepCount; index += 1) {
-    const stepStart = start + 330 + index * stepGap;
+    const stepStart = feedStart + index * stepGap;
     const sourceNode = sourceNodes[index];
     const targetNode = targetNodes[index];
+    const sourceTraveler = `.traveler-source[data-index="${index}"]`;
+    const targetTraveler = `.traveler-target[data-index="${index}"]`;
 
     if (sourceNode) {
+      const engine = engineCenter;
       timeline.add(
-          sourceNode,
+          sourceTraveler,
           {
-            opacity: 0,
-            x: "9vw",
-            scale: 0.42,
-            duration: 360,
+            opacity: [
+              {to: 1, duration: 60},
+              {to: 1, duration: 180},
+              {to: 0, duration: 80},
+            ],
+            left: () => `${engine().x}px`,
+            top: () => `${engine().y}px`,
+            scale: 0.38,
+            duration: 320,
             ease: "in(4)",
           },
           stepStart,
       );
+      timeline.add(
+          sourceNode,
+          {
+            opacity: 0.16,
+            duration: 220,
+            ease: "in(2)",
+          },
+          stepStart + 120,
+      );
     }
 
     if (targetNode) {
+      const targetPoint = () => centerInCanvas(targetNode);
+      timeline.add(
+          targetTraveler,
+          {
+            opacity: 1,
+            left: () => `${targetPoint().x}px`,
+            top: () => `${targetPoint().y}px`,
+            scale: 1,
+            duration: 380,
+            ease: "out(4)",
+          },
+          stepStart + 260,
+      );
       timeline.add(
           targetNode,
           {
             opacity: 1,
-            x: 0,
-            scale: 1,
-            duration: 430,
+            scale: [
+              {to: 1.08, duration: 120},
+              {to: 1, duration: 180},
+            ],
+            duration: 300,
             ease: "out(4)",
           },
-          stepStart + 350,
+          stepStart + 520,
       );
     }
   }
@@ -311,17 +544,24 @@ function addModelTransformation({
     timeline.add(
         edge,
         {
-          opacity: 0.82,
+          opacity: 0.72,
           duration: 260,
           ease: "out(2)",
         },
-        start + 760 + index * Math.max(42, stepGap * 0.38),
+        finish - 840 + index * Math.max(24, stepGap * 0.16),
     );
   });
 
-  addEngineRun(timeline, start + 80, finish - 420);
-  addRuleTokens(timeline, batch, start + 260, finish - 520);
-  addFlowTokens(timeline, batch, start + 350, stepGap);
+  addEngineRun(timeline, start + 80, finish - 360);
+  timeline.add(
+      ".traveler-source, .traveler-target",
+      {
+        opacity: 0,
+        duration: 220,
+        ease: "in(2)",
+      },
+      finish - 430,
+  );
 }
 
 export function createStoryTimeline() {
@@ -438,6 +678,7 @@ export function createStoryTimeline() {
       {
         opacity: 1,
         x: 0,
+        y: 0,
         scale: [
           {to: 1.08, duration: 300},
           {to: 1, duration: 280},
@@ -480,7 +721,7 @@ export function createStoryTimeline() {
 
   timeline
   .add(
-      "#transform-engine, #pipeline-rails",
+      TRANSFORM_ENGINE_SELECTOR,
       {
         opacity: 0,
         scale: 0.72,
@@ -492,6 +733,9 @@ export function createStoryTimeline() {
       "#model-psm",
       {
         opacity: 1,
+        x: 0,
+        y: 0,
+        scale: 1,
         duration: 520,
         ease: "out(4)",
       },
@@ -532,7 +776,7 @@ export function createStoryTimeline() {
           {to: 1.08, duration: 240},
           {to: 1, duration: 320},
         ],
-        borderColor: "#b7ff54",
+        borderColor: "var(--accent)",
         duration: 560,
         ease: "out(4)",
       },
@@ -568,7 +812,7 @@ export function createStoryTimeline() {
       ".toggle i",
       {
         x: 13,
-        backgroundColor: "#b7ff54",
+        backgroundColor: "var(--accent)",
         duration: 300,
         ease: "out(4)",
       },
@@ -595,6 +839,47 @@ export function createStoryTimeline() {
 
   timeline
   .add(
+      {},
+      {
+        duration: 1,
+        onBegin: () => {
+          setEngineLabel("EGX");
+          createArtifactTravelers(
+              selector("#model-psm .model-node"),
+              [
+                ["handler.go", "#71a7ff"],
+                ["template.yaml", "#ffa828"],
+                ["openapi.yaml", "#b497ff"],
+                ["tests", "#8dff55"],
+                ["trace.json", "var(--accent)"],
+              ],
+          );
+        },
+      },
+      11280,
+  )
+  .add(
+      "#model-psm",
+      {
+        opacity: 0.84,
+        x: "-34%",
+        y: 0,
+        scale: 0.38,
+        duration: 460,
+        ease: "out(4)",
+      },
+      11280,
+  )
+  .add(
+      {},
+      {
+        duration: 1,
+        onBegin: () => placeArtifactTravelers(
+            selector("#model-psm .model-node")),
+      },
+      11740,
+  )
+  .add(
       "#model-psm .model-edge, #model-psm .edge-label",
       {
         opacity: 0,
@@ -607,14 +892,12 @@ export function createStoryTimeline() {
   .add(
       "#model-psm .model-node",
       {
-        opacity: 0,
-        x: "9vw",
-        scale: 0.42,
-        duration: 520,
-        delay: stagger(150),
+        opacity: 0.16,
+        duration: 220,
+        delay: stagger(120),
         ease: "in(4)",
       },
-      11480,
+      11900,
   )
   .add(
       ".artifact-tree-panel",
@@ -647,7 +930,7 @@ export function createStoryTimeline() {
       12700,
   )
   .add(
-      "#model-psm, #transform-engine, #pipeline-rails",
+      `#model-psm, ${TRANSFORM_ENGINE_SELECTOR}`,
       {
         opacity: 0,
         duration: 360,
@@ -711,8 +994,14 @@ export function createStoryTimeline() {
       ".code-line.protected",
       {
         backgroundColor: [
-          {to: "rgba(183,255,84,.12)", duration: 320},
-          {to: "rgba(183,255,84,.04)", duration: 420},
+          {
+            to: "color-mix(in srgb, var(--accent) 12%, transparent)",
+            duration: 320
+          },
+          {
+            to: "color-mix(in srgb, var(--accent) 4%, transparent)",
+            duration: 420
+          },
         ],
         duration: 740,
         ease: "inOut(2)",
@@ -748,10 +1037,51 @@ export function createStoryTimeline() {
   );
 
   addEngineRun(timeline, 11280, 12940);
-  addRuleTokens(timeline, "psm-artifacts", 11420, 12820);
-  addFlowTokens(timeline, "psm-artifacts", 11520, 260);
+  for (let index = 0; index < 6; index += 1) {
+    const stepStart = 11820 + index * 210;
+    const sourceTraveler = `.traveler-source[data-index="${index}"]`;
+    const targetTraveler = `.traveler-target[data-index="${index}"]`;
+    timeline
+    .add(
+        sourceTraveler,
+        {
+          opacity: [
+            {to: 1, duration: 50},
+            {to: 1, duration: 130},
+            {to: 0, duration: 70},
+          ],
+          left: () => `${engineCenter().x}px`,
+          top: () => `${engineCenter().y}px`,
+          scale: 0.38,
+          duration: 250,
+          ease: "in(4)",
+        },
+        stepStart,
+    )
+    .add(
+        targetTraveler,
+        {
+          opacity: 1,
+          left: () => `${artifactTargetPoint(index).x}px`,
+          top: () => `${artifactTargetPoint(index).y}px`,
+          scale: 1,
+          duration: 310,
+          ease: "out(4)",
+        },
+        stepStart + 190,
+    );
+  }
   timeline.add(
-      "#transform-engine, #pipeline-rails",
+      ".traveler-source, .traveler-target",
+      {
+        opacity: 0,
+        duration: 220,
+        ease: "in(2)",
+      },
+      12860,
+  );
+  timeline.add(
+      TRANSFORM_ENGINE_SELECTOR,
       {
         opacity: 0,
         scale: 0.72,

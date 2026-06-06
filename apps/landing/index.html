@@ -9,6 +9,20 @@
   >
   <title>Modless | Model intent. Ship serverless.</title>
   <link href="../frontend/assets/icons/favicon.svg" rel="icon" type="image/svg+xml">
+  <link
+      as="font"
+      crossorigin
+      href="./assets/fonts/Space_Grotesk/static/SpaceGrotesk-Regular.ttf"
+      rel="preload"
+      type="font/ttf"
+  >
+  <link
+      as="font"
+      crossorigin
+      href="./assets/fonts/Flamenco/Flamenco-Regular.ttf"
+      rel="preload"
+      type="font/ttf"
+  >
   <link href="./css/base.css" rel="stylesheet">
   <link href="./css/landing.css" rel="stylesheet">
   <link href="./css/modeler.css" rel="stylesheet">
@@ -134,6 +148,112 @@
           </div>
         </header>
 
+        <aside aria-live="polite" class="story-copy">
+          <article class="story-copy-card" data-phase="cim">
+            <span class="phase-kicker">01 / Computation-independent</span>
+            <h2>Capture business meaning first.</h2>
+            <p>
+              Signal Desk begins with a customer, a support capability, a ticket aggregate,
+              and the commands, queries, and events the business actually understands.
+            </p>
+            <div class="phase-rule">
+              <span>CIM</span>
+              <strong>No cloud vocabulary</strong>
+            </div>
+          </article>
+
+          <article class="story-copy-card" data-phase="cim-pim">
+            <span class="phase-kicker">02 / ETL transformation</span>
+            <h2>Turn intent into a serverless architecture.</h2>
+            <p>
+              Formal mappings generate functions, routes, schemas, event contracts, and a
+              persistent store while preserving trace links back to business intent.
+            </p>
+            <div class="phase-rule">
+              <span>TR-070</span>
+              <strong>Command to Function + Route</strong>
+            </div>
+          </article>
+
+          <article class="story-copy-card" data-phase="assistant">
+            <span class="phase-kicker">03 / AI modeling assistant</span>
+            <h2>Ask for the change in plain language.</h2>
+            <p>
+              The assistant sees the active PIM, understands its metamodel and validation
+              rules, then applies a valid notification flow directly on the canvas.
+            </p>
+            <div class="phase-rule">
+              <span>AI</span>
+              <strong>Model-aware, constraint-aware</strong>
+            </div>
+          </article>
+
+          <article class="story-copy-card" data-phase="pim-psm">
+            <span class="phase-kicker">04 / Platform-specific</span>
+            <h2>Realize the design on AWS.</h2>
+            <p>
+              Provider-independent elements become Lambda, HTTP API, DynamoDB, SNS, IAM,
+              logging, and traceable integration resources.
+            </p>
+            <div class="phase-rule">
+              <span>AWS PSM</span>
+              <strong>Reviewable infrastructure model</strong>
+            </div>
+          </article>
+
+          <article class="story-copy-card" data-phase="refine">
+            <span class="phase-kicker">05 / Developer refinement</span>
+            <h2>Automation proposes. You decide.</h2>
+            <p>
+              Refine provider-specific settings manually. Here the submit function receives
+              more memory and active tracing before generation.
+            </p>
+            <div class="phase-rule">
+              <span>Manual</span>
+              <strong>512 MB + tracing enabled</strong>
+            </div>
+          </article>
+
+          <article class="story-copy-card" data-phase="generate">
+            <span class="phase-kicker">06 / EGL generation</span>
+            <h2>Generate the whole deployable project.</h2>
+            <p>
+              The AWS PSM becomes SAM infrastructure, Go handlers, shared runtime code,
+              contracts, tests, scripts, documentation, and trace reports.
+            </p>
+            <div class="phase-rule">
+              <span>PSM to text</span>
+              <strong>Repeatable artifact generation</strong>
+            </div>
+          </article>
+
+          <article class="story-copy-card" data-phase="protected">
+            <span class="phase-kicker">07 / Protected regions</span>
+            <h2>Keep generated structure. Own business logic.</h2>
+            <p>
+              Generated handlers reserve explicit developer-owned regions, so regeneration
+              can update infrastructure and contracts without overwriting hand-written logic.
+            </p>
+            <div class="phase-rule">
+              <span>Merge-safe</span>
+              <strong>Business logic preserved</strong>
+            </div>
+          </article>
+
+          <article class="story-copy-card" data-phase="ready">
+            <span class="phase-kicker">08 / Deployment-ready</span>
+            <h2>One traceable path from intent to deployment.</h2>
+            <p>
+              Every generated artifact remains connected to the models and decisions that
+              produced it, ready for review, export, and deployment.
+            </p>
+            <div class="phase-rule">
+              <span>Ready</span>
+              <strong>sam build &amp;&amp; sam deploy</strong>
+            </div>
+          </article>
+        </aside>
+
         <div class="workbench-body">
           <aside aria-label="Model palette" class="palette">
             <div class="palette-title">
@@ -176,26 +296,11 @@
 
               <div aria-hidden="true" class="mapping-rules" id="mapping-rules"></div>
               <div aria-hidden="true" class="flow-tokens" id="flow-tokens"></div>
-
-              <div aria-hidden="true" class="pipeline-rails" id="pipeline-rails">
-                <div class="pipeline-rail rail-input">
-                  <span class="rail-caption"><strong>IN</strong> input rail</span>
-                  <span class="rail-track"><i></i><i></i><i></i><i></i><i></i></span>
-                </div>
-                <div class="pipeline-rail rail-output">
-                  <span class="rail-caption"><strong>OUT</strong> output rail</span>
-                  <span class="rail-track"><i></i><i></i><i></i><i></i><i></i></span>
-                </div>
-              </div>
+              <div aria-hidden="true" class="transformation-travelers"
+                   id="transformation-travelers"></div>
 
               <div aria-hidden="true" class="transformation-engine" id="transform-engine">
                 <div class="engine-shadow"></div>
-                <div class="engine-conveyor conveyor-left">
-                  <span></span><span></span><span></span><span></span>
-                </div>
-                <div class="engine-conveyor conveyor-right">
-                  <span></span><span></span><span></span><span></span>
-                </div>
                 <div class="engine-machine">
                   <div class="engine-pipe pipe-left"></div>
                   <div class="engine-pipe pipe-right"></div>
@@ -207,7 +312,7 @@
                     <span class="engine-bolt bolt-four"></span>
                     <div class="engine-window">
                       <span class="engine-pulse"></span>
-                      <strong>ETL</strong>
+                      <strong>EGX</strong>
                     </div>
                     <div class="engine-meter">
                       <span></span><span></span><span></span><span></span><span></span>
@@ -324,111 +429,6 @@
             </div>
           </div>
 
-          <aside aria-live="polite" class="story-copy">
-            <article class="story-copy-card" data-phase="cim">
-              <span class="phase-kicker">01 / Computation-independent</span>
-              <h2>Capture business meaning first.</h2>
-              <p>
-                Signal Desk begins with a customer, a support capability, a ticket aggregate,
-                and the commands, queries, and events the business actually understands.
-              </p>
-              <div class="phase-rule">
-                <span>CIM</span>
-                <strong>No cloud vocabulary</strong>
-              </div>
-            </article>
-
-            <article class="story-copy-card" data-phase="cim-pim">
-              <span class="phase-kicker">02 / ETL transformation</span>
-              <h2>Turn intent into a serverless architecture.</h2>
-              <p>
-                Formal mappings generate functions, routes, schemas, event contracts, and a
-                persistent store while preserving trace links back to business intent.
-              </p>
-              <div class="phase-rule">
-                <span>TR-070</span>
-                <strong>Command to Function + Route</strong>
-              </div>
-            </article>
-
-            <article class="story-copy-card" data-phase="assistant">
-              <span class="phase-kicker">03 / AI modeling assistant</span>
-              <h2>Ask for the change in plain language.</h2>
-              <p>
-                The assistant sees the active PIM, understands its metamodel and validation
-                rules, then applies a valid notification flow directly on the canvas.
-              </p>
-              <div class="phase-rule">
-                <span>AI</span>
-                <strong>Model-aware, constraint-aware</strong>
-              </div>
-            </article>
-
-            <article class="story-copy-card" data-phase="pim-psm">
-              <span class="phase-kicker">04 / Platform-specific</span>
-              <h2>Realize the design on AWS.</h2>
-              <p>
-                Provider-independent elements become Lambda, HTTP API, DynamoDB, SNS, IAM,
-                logging, and traceable integration resources.
-              </p>
-              <div class="phase-rule">
-                <span>AWS PSM</span>
-                <strong>Reviewable infrastructure model</strong>
-              </div>
-            </article>
-
-            <article class="story-copy-card" data-phase="refine">
-              <span class="phase-kicker">05 / Developer refinement</span>
-              <h2>Automation proposes. You decide.</h2>
-              <p>
-                Refine provider-specific settings manually. Here the submit function receives
-                more memory and active tracing before generation.
-              </p>
-              <div class="phase-rule">
-                <span>Manual</span>
-                <strong>512 MB + tracing enabled</strong>
-              </div>
-            </article>
-
-            <article class="story-copy-card" data-phase="generate">
-              <span class="phase-kicker">06 / EGL generation</span>
-              <h2>Generate the whole deployable project.</h2>
-              <p>
-                The AWS PSM becomes SAM infrastructure, Go handlers, shared runtime code,
-                contracts, tests, scripts, documentation, and trace reports.
-              </p>
-              <div class="phase-rule">
-                <span>PSM to text</span>
-                <strong>Repeatable artifact generation</strong>
-              </div>
-            </article>
-
-            <article class="story-copy-card" data-phase="protected">
-              <span class="phase-kicker">07 / Protected regions</span>
-              <h2>Keep generated structure. Own business logic.</h2>
-              <p>
-                Generated handlers reserve explicit developer-owned regions, so regeneration
-                can update infrastructure and contracts without overwriting hand-written logic.
-              </p>
-              <div class="phase-rule">
-                <span>Merge-safe</span>
-                <strong>Business logic preserved</strong>
-              </div>
-            </article>
-
-            <article class="story-copy-card" data-phase="ready">
-              <span class="phase-kicker">08 / Deployment-ready</span>
-              <h2>One traceable path from intent to deployment.</h2>
-              <p>
-                Every generated artifact remains connected to the models and decisions that
-                produced it, ready for review, export, and deployment.
-              </p>
-              <div class="phase-rule">
-                <span>Ready</span>
-                <strong>sam build &amp;&amp; sam deploy</strong>
-              </div>
-            </article>
-          </aside>
         </div>
 
         <footer class="story-progress">
