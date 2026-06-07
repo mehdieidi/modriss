@@ -25,7 +25,19 @@
 
   <dependencies>
     <dependency>
-      <artifactId>platform-core</artifactId>
+      <artifactId>platform-domain</artifactId>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>platform-application</artifactId>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>platform-storage-json</artifactId>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>platform-modeling</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>

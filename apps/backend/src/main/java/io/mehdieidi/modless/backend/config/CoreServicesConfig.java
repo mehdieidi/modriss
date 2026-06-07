@@ -2,6 +2,7 @@ package io.mehdieidi.modless.backend.config;
 
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
+import io.mehdieidi.modless.platform.core.repository.PlatformStore;
 import io.mehdieidi.modless.platform.core.service.ArtifactService;
 import io.mehdieidi.modless.platform.core.service.AuthService;
 import io.mehdieidi.modless.platform.core.service.FileMetamodelResolver;
@@ -48,7 +49,7 @@ public class CoreServicesConfig {
      * @return authentication service
      */
     @Bean
-    AuthService authService(JsonFileStore store, BackendProperties properties) {
+    AuthService authService(PlatformStore store, BackendProperties properties) {
         return new AuthService(store, properties.sessionTtl());
     }
 
@@ -107,7 +108,7 @@ public class CoreServicesConfig {
      * @return project service
      */
     @Bean
-    ProjectService projectService(JsonFileStore store, AuthService authService) {
+    ProjectService projectService(PlatformStore store, AuthService authService) {
         return new ProjectService(store, authService);
     }
 
@@ -124,7 +125,7 @@ public class CoreServicesConfig {
      * @return model service
      */
     @Bean
-    ModelService modelService(JsonFileStore store, ProjectService projectService,
+    ModelService modelService(PlatformStore store, ProjectService projectService,
             ModelingConfigService modelingConfigService, MdeRuntimeOptions mdeRuntimeOptions,
             MdeRuntimePaths mdeRuntimePaths, MetamodelResolver metamodelResolver,
             ModelLockService modelLockService) {
@@ -140,7 +141,7 @@ public class CoreServicesConfig {
      * @return artifact service
      */
     @Bean
-    ArtifactService artifactService(JsonFileStore store, ProjectService projectService) {
+    ArtifactService artifactService(PlatformStore store, ProjectService projectService) {
         return new ArtifactService(store, projectService);
     }
 
@@ -157,7 +158,7 @@ public class CoreServicesConfig {
      * @return transformation service
      */
     @Bean
-    TransformationService transformationService(JsonFileStore store, ModelService models,
+    TransformationService transformationService(PlatformStore store, ModelService models,
             ArtifactService artifacts, MdeRuntimeOptions mdeRuntimeOptions,
             MdeRuntimePaths mdeRuntimePaths, MetamodelResolver metamodelResolver,
             ModelLockService modelLockService) {
@@ -176,7 +177,7 @@ public class CoreServicesConfig {
      * @return MDE job service
      */
     @Bean
-    MdeJobService mdeJobService(JsonFileStore store, ProjectService projects, ModelService models,
+    MdeJobService mdeJobService(PlatformStore store, ProjectService projects, ModelService models,
             TransformationService transformations, MdeRuntimeOptions mdeRuntimeOptions) {
         return new MdeJobService(store, projects, models, transformations, mdeRuntimeOptions);
     }
