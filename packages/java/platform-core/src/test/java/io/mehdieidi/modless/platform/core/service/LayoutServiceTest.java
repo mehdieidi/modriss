@@ -2,6 +2,7 @@ package io.mehdieidi.modless.platform.core.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -86,27 +87,63 @@ class LayoutServiceTest {
                 "RELAXED_SPLINES", "VERTICAL_FLOW", "TREE", "RADIAL", "FORCE");
 
         for (String strategy : strategies) {
-            LayoutService.LayoutResponse response = service.layout(new LayoutService.LayoutRequest(
-                    "view-" + strategy.toLowerCase(),
-                    "DEFAULT_LAYERED",
-                    false,
-                    List.of(),
-                    Map.of("layoutStrategy", strategy),
-                    List.of(
-                            new LayoutService.LayoutNode(
-                                    "a", "A", 180, 90, 0.0, 0.0, List.of()),
-                            new LayoutService.LayoutNode(
-                                    "b", "B", 180, 90, 0.0, 0.0, List.of()),
-                            new LayoutService.LayoutNode(
-                                    "c", "C", 180, 90, 0.0, 0.0, List.of())),
-                    List.of(
-                            new LayoutService.LayoutEdge(
-                                    "edge-ab", "ab", "a", "b", null, null),
-                            new LayoutService.LayoutEdge(
-                                    "edge-ac", "ac", "a", "c", null, null))));
+            LayoutService.LayoutResponse response = layoutForStrategy(strategy);
 
             assertEquals(3, response.nodes().size(), strategy);
             assertEquals(2, response.edges().size(), strategy);
         }
+    }
+
+    /**
+     * Verifies that non-layered strategies invoke distinct ELK algorithms instead of falling back
+     * to the same layered coordinates.
+     */
+    @Test
+    void selectableAlgorithmsProduceDistinctGeometry() {
+        String balanced = geometrySignature(layoutForStrategy("BALANCED_LAYERED"));
+
+        assertNotEquals(balanced, geometrySignature(layoutForStrategy("TREE")));
+        assertNotEquals(balanced, geometrySignature(layoutForStrategy("RADIAL")));
+        assertNotEquals(balanced, geometrySignature(layoutForStrategy("FORCE")));
+    }
+
+    /**
+     * Computes a small layout for a strategy.
+     *
+     * @param strategy layout strategy
+     * @return layout response
+     */
+    private LayoutService.LayoutResponse layoutForStrategy(String strategy) {
+        return service.layout(new LayoutService.LayoutRequest(
+                "view-" + strategy.toLowerCase(),
+                "DEFAULT_LAYERED",
+                false,
+                List.of(),
+                Map.of("layoutStrategy", strategy),
+                List.of(
+                        new LayoutService.LayoutNode(
+                                "a", "A", 180, 90, 0.0, 0.0, List.of()),
+                        new LayoutService.LayoutNode(
+                                "b", "B", 180, 90, 0.0, 0.0, List.of()),
+                        new LayoutService.LayoutNode(
+                                "c", "C", 180, 90, 0.0, 0.0, List.of())),
+                List.of(
+                        new LayoutService.LayoutEdge(
+                                "edge-ab", "ab", "a", "b", null, null),
+                        new LayoutService.LayoutEdge(
+                                "edge-ac", "ac", "a", "c", null, null))));
+    }
+
+    /**
+     * Builds a deterministic signature from node coordinates.
+     *
+     * @param response layout response
+     * @return compact coordinate signature
+     */
+    private String geometrySignature(LayoutService.LayoutResponse response) {
+        return response.nodes().stream()
+                .map(node -> node.id() + "=" + Math.round(node.x()) + "," + Math.round(node.y()))
+                .sorted()
+                .reduce("", (left, right) -> left + "|" + right);
     }
 }

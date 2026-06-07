@@ -95,6 +95,10 @@ public final class LayoutService {
         Map<String, ElkNode> nodesById = new LinkedHashMap<>();
         Map<String, Map<String, ElkPort>> portsByNodeId = new LinkedHashMap<>();
         Map<String, ElkEdge> edgesById = new LinkedHashMap<>();
+        LayoutStyle style = LayoutStyle.from(normalizedRequest);
+        Set<String> layoutEdgeIds = style == LayoutStyle.RADIAL
+                ? radialSpanningForestEdgeIds(normalizedRequest, warnings)
+                : null;
 
         for (LayoutNode nodeRequest : normalizedRequest.nodes()) {
             ElkNode node = ElkGraphUtil.createNode(graph);
@@ -109,6 +113,9 @@ public final class LayoutService {
         }
 
         for (LayoutEdge edgeRequest : normalizedRequest.edges()) {
+            if (layoutEdgeIds != null && !layoutEdgeIds.contains(edgeRequest.id())) {
+                continue;
+            }
             ElkConnectableShape source = resolveEndpoint(
                     edgeRequest.sourceNodeId(),
                     edgeRequest.sourcePortId(),
@@ -136,6 +143,9 @@ public final class LayoutService {
         } catch (NoClassDefFoundError | ExceptionInInitializerError exception) {
             throw new PlatformException(500,
                     "ELK layout runtime is not available on the backend classpath.");
+        } catch (StackOverflowError error) {
+            throw new PlatformException(400,
+                    "ELK layout failed: radial layout could not process this graph topology.");
         } catch (RuntimeException exception) {
             throw new PlatformException(400, "ELK layout failed: " + safeMessage(exception));
         }
@@ -237,6 +247,9 @@ public final class LayoutService {
                         SizeOptions.MINIMUM_SIZE_ACCOUNTS_FOR_PADDING,
                         SizeOptions.PORTS_OVERHANG));
         graph.setProperty(CoreOptions.SEPARATE_CONNECTED_COMPONENTS, true);
+        if (!style.usesLayeredOptions()) {
+            return;
+        }
         graph.setProperty(LayeredOptions.NODE_PLACEMENT_STRATEGY,
                 nodePlacementStrategy(request));
         graph.setProperty(LayeredOptions.CROSSING_MINIMIZATION_STRATEGY,
@@ -264,6 +277,57 @@ public final class LayoutService {
             case FORCE -> FORCE_ALGORITHM;
             default -> LAYERED_ALGORITHM;
         };
+    }
+
+    /**
+     * Selects an undirected spanning forest for ELK radial placement.
+     *
+     * <p>ELK radial recursively traverses successors and can overflow on cyclic graphs. A spanning
+     * forest preserves the graph's connected structure for node placement while allowing the stored
+     * view service to route every original edge after positions are computed.</p>
+     *
+     * @param request  layout request
+     * @param warnings mutable warning sink
+     * @return edge ids included in the radial placement graph
+     */
+    private Set<String> radialSpanningForestEdgeIds(LayoutRequest request, List<String> warnings) {
+        Map<String, String> parents = new LinkedHashMap<>();
+        request.nodes().forEach(node -> parents.put(node.id(), node.id()));
+        Set<String> selected = new LinkedHashSet<>();
+        int omitted = 0;
+        for (LayoutEdge edge : request.edges()) {
+            String sourceRoot = findRoot(parents, edge.sourceNodeId());
+            String targetRoot = findRoot(parents, edge.targetNodeId());
+            if (sourceRoot.equals(targetRoot)) {
+                omitted += 1;
+                continue;
+            }
+            parents.put(targetRoot, sourceRoot);
+            selected.add(edge.id());
+        }
+        if (omitted > 0) {
+            warnings.add("Radial layout used a spanning forest for placement and routed "
+                    + omitted + " non-tree edge(s) after layout.");
+        }
+        return selected;
+    }
+
+    /**
+     * Finds the root of a union-find set.
+     *
+     * @param parents parent map
+     * @param nodeId  node id
+     * @return root id
+     */
+    private String findRoot(Map<String, String> parents, String nodeId) {
+        String parent = parents.getOrDefault(nodeId, nodeId);
+        if (parent.equals(nodeId)) {
+            parents.putIfAbsent(nodeId, nodeId);
+            return nodeId;
+        }
+        String root = findRoot(parents, parent);
+        parents.put(nodeId, root);
+        return root;
     }
 
     /**
@@ -520,7 +584,8 @@ public final class LayoutService {
             ElkEdge edge = edgesById.get(edgeRequest.id());
             List<EdgeSection> sections = new ArrayList<>();
             List<LayoutPoint> bendPoints = new ArrayList<>();
-            for (ElkEdgeSection section : edge.getSections()) {
+            for (ElkEdgeSection section : edge == null ? List.<ElkEdgeSection>of()
+                    : edge.getSections()) {
                 List<LayoutPoint> sectionBendPoints = new ArrayList<>();
                 section.getBendPoints().forEach(point -> {
                     LayoutPoint bendPoint = new LayoutPoint(point.getX(), point.getY());
@@ -791,6 +856,18 @@ public final class LayoutService {
                 return FORCE;
             }
             return BALANCED;
+        }
+
+        /**
+         * Whether this style uses ELK layered algorithm specific options.
+         *
+         * @return {@code true} for layered styles
+         */
+        boolean usesLayeredOptions() {
+            return switch (this) {
+                case TREE, RADIAL, FORCE -> false;
+                default -> true;
+            };
         }
 
         /**

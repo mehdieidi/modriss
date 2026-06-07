@@ -299,6 +299,9 @@ public final class StoredViewLayoutService {
      */
     private boolean shouldUseDenseDashboardGrid(ObjectNode view,
             LayoutService.LayoutRequest request) {
+        if (!Boolean.TRUE.equals(request.options().get("semanticDashboardGrid"))) {
+            return false;
+        }
         String profile = text(view, "layoutProfile", request.profile()).toUpperCase();
         String kind = text(view, "kind", "").toUpperCase();
         return request.nodes().size() >= 36
@@ -524,26 +527,27 @@ public final class StoredViewLayoutService {
                     "nodePlacementStrategy", "BRANDES_KOEPF");
             case "RELAXED_SPLINES" -> Map.of(
                     "layoutStrategy", strategy,
-                    "edgeRouting", "ORTHOGONAL",
+                    "edgeRouting", "SPLINES",
                     "nodeSpacing", 260,
                     "layerSpacing", 400,
                     "nodePlacementStrategy", "BRANDES_KOEPF");
             case "TREE" -> Map.of(
                     "layoutStrategy", strategy,
                     "direction", "DOWN",
-                    "edgeRouting", "ORTHOGONAL",
+                    "edgeRouting", "POLYLINE",
                     "nodeSpacing", 250,
                     "layerSpacing", 380);
             case "RADIAL" -> Map.of(
                     "layoutStrategy", strategy,
-                    "edgeRouting", "ORTHOGONAL",
+                    "edgeRouting", "SPLINES",
                     "nodeSpacing", 260);
             case "FORCE" -> Map.of(
                     "layoutStrategy", strategy,
-                    "edgeRouting", "ORTHOGONAL",
+                    "edgeRouting", "SPLINES",
                     "nodeSpacing", 280);
             default -> Map.of(
                     "layoutStrategy", "SPACIOUS_LAYERED",
+                    "semanticDashboardGrid", true,
                     "nodeSpacing", 300,
                     "layerSpacing", 460,
                     "nodePlacementStrategy", "BRANDES_KOEPF");
