@@ -11,10 +11,10 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -309,5 +309,6 @@ public final class JsonFileStore implements PlatformStore {
     }
 
     private record StorageSchema(int version, String adapter) {
+
     }
 }

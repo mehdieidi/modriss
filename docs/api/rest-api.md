@@ -62,6 +62,7 @@ characters.
 | `GET`    | `/api/projects/{id}`                  | none                                    | `ProjectRecord`   |
 | `PUT`    | `/api/projects/{id}`                  | `name`, `description`, `activeModelIds` | `ProjectRecord`   |
 | `DELETE` | `/api/projects/{id}`                  | none                                    | empty response    |
+| `GET`    | `/api/projects/{id}/download`         | none                                    | ZIP download      |
 | `GET`    | `/api/projects/{id}/members`          | none                                    | `ProjectMember[]` |
 | `POST`   | `/api/projects/{id}/invite`           | `email`, `role`                         | `ProjectMember`   |
 | `DELETE` | `/api/projects/{id}/members/{userId}` | none                                    | empty response    |

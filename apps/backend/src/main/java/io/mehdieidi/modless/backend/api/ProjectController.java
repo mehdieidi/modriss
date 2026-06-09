@@ -7,8 +7,13 @@ import io.mehdieidi.modless.platform.core.model.UserRecord;
 import io.mehdieidi.modless.platform.core.service.ProjectService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,6 +82,27 @@ public class ProjectController {
     }
 
     /**
+     * Downloads the complete project repository and generated artifact files as a ZIP archive.
+     *
+     * @param token session token
+     * @param id    project identifier
+     * @return ZIP download response
+     */
+    @GetMapping("/{id}/download")
+    ResponseEntity<byte[]> download(@RequestHeader("X-Auth-Token") String token,
+            @PathVariable("id") String id) {
+        UserRecord user = auth.user(token);
+        ProjectRecord project = projects.get(user, id);
+        byte[] bytes = projects.zip(user, id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(downloadFileName(project), StandardCharsets.UTF_8).build()
+                        .toString())
+                .body(bytes);
+    }
+
+    /**
      * Updates an existing project.
      *
      * @param token   session token
@@ -141,6 +167,19 @@ public class ProjectController {
     void revoke(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id,
             @PathVariable("userId") String userId) {
         projects.revoke(auth.user(token), id, userId);
+    }
+
+    /**
+     * Creates a safe project archive filename.
+     *
+     * @param project project metadata
+     * @return ZIP filename
+     */
+    private String downloadFileName(ProjectRecord project) {
+        String name = project.name() == null || project.name().isBlank() ? project.id()
+                : project.name();
+        String safe = name.replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("^-+|-+$", "");
+        return (safe.isBlank() ? "project" : safe) + ".zip";
     }
 
     /**

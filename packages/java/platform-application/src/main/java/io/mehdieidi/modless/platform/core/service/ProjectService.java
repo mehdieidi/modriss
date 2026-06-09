@@ -1,11 +1,16 @@
 package io.mehdieidi.modless.platform.core.service;
 
 import io.mehdieidi.modless.platform.core.PlatformException;
+import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.MemberRole;
 import io.mehdieidi.modless.platform.core.model.ProjectMember;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
 import io.mehdieidi.modless.platform.core.repository.PlatformStore;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,6 +19,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Manages project metadata, membership, and access checks.
@@ -47,10 +55,17 @@ public final class ProjectService {
      * @return visible projects ordered by last update
      */
     public List<ProjectRecord> list(UserRecord user) {
-        return store.list(Path.of("projects"), ProjectRecord.class).stream()
-                .filter(project -> canRead(project, user.id()))
-                .sorted(Comparator.comparing(ProjectRecord::updatedAt).reversed())
-                .toList();
+        try {
+            return store.list(Path.of("projects"), ProjectRecord.class).stream()
+                    .filter(project -> project != null && canRead(project, user.id()))
+                    .sorted(Comparator.comparing(ProjectRecord::updatedAt,
+                            Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                    .toList();
+        } catch (PlatformException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new PlatformException(500, "Could not list stored data.");
+        }
     }
 
     /**
@@ -120,6 +135,30 @@ public final class ProjectService {
             throw new PlatformException(403, "Only the project owner can delete a project.");
         }
         store.deleteTree(Path.of("projects", projectId));
+    }
+
+    /**
+     * Packages the complete project repository and expanded generated artifact files as ZIP.
+     *
+     * @param user      requesting user
+     * @param projectId project identifier
+     * @return ZIP archive bytes
+     */
+    public byte[] zip(UserRecord user, String projectId) {
+        ProjectRecord project = get(user, projectId);
+        Path projectDir = store.resolve(Path.of("projects", project.id()));
+        if (!Files.isDirectory(projectDir)) {
+            throw new PlatformException(404, "Project not found.");
+        }
+        try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                ZipOutputStream zip = new ZipOutputStream(bytes)) {
+            addStoredProjectFiles(zip, projectDir);
+            addExpandedArtifactFiles(zip, projectDir);
+            zip.finish();
+            return bytes.toByteArray();
+        } catch (IOException ex) {
+            throw new PlatformException(500, "Could not package project.");
+        }
     }
 
     /**
@@ -212,6 +251,9 @@ public final class ProjectService {
      * @return {@code true} when the user is a member
      */
     private boolean canRead(ProjectRecord project, String userId) {
+        if (project.members() == null) {
+            return false;
+        }
         return project.members().stream().anyMatch(member -> member.userId().equals(userId));
     }
 
@@ -235,6 +277,111 @@ public final class ProjectService {
      */
     private Path projectPath(String projectId) {
         return Path.of("projects", projectId, "project.json");
+    }
+
+    /**
+     * Adds stored project metadata, model records, and artifact records to the ZIP.
+     *
+     * @param zip        target archive
+     * @param projectDir resolved project repository directory
+     * @throws IOException when a file cannot be read or written to the archive
+     */
+    private void addStoredProjectFiles(ZipOutputStream zip, Path projectDir) throws IOException {
+        try (Stream<Path> paths = Files.walk(projectDir)) {
+            for (Path path : paths.filter(Files::isRegularFile).toList()) {
+                Path relative = projectDir.relativize(path);
+                addFileEntry(zip, Path.of("modless-project", relative.toString()).toString(),
+                        Files.readAllBytes(path));
+            }
+        }
+    }
+
+    /**
+     * Adds generated artifact file trees from each artifact record to the ZIP.
+     *
+     * @param zip        target archive
+     * @param projectDir resolved project repository directory
+     * @throws IOException when an artifact file cannot be read or written to the archive
+     */
+    private void addExpandedArtifactFiles(ZipOutputStream zip, Path projectDir) throws IOException {
+        Path artifactsDir = projectDir.resolve("artifacts");
+        if (!Files.isDirectory(artifactsDir)) {
+            return;
+        }
+        try (Stream<Path> paths = Files.list(artifactsDir)) {
+            for (Path path : paths.filter(candidate -> candidate.getFileName().toString()
+                    .endsWith(".json")).toList()) {
+                ArtifactRecord artifact = store.objectMapper().readValue(path.toFile(),
+                        ArtifactRecord.class);
+                String artifactRoot = "artifacts/" + archiveSegment(artifact.name(),
+                        artifact.id()) + "-" + archiveSegment(shortId(artifact.id()),
+                        artifact.id());
+                Map<String, String> artifactFiles = artifact.files() == null ? Map.of()
+                        : artifact.files();
+                for (Map.Entry<String, String> file : artifactFiles.entrySet()) {
+                    String normalizedPath = normalizeArtifactPath(file.getKey());
+                    addFileEntry(zip, artifactRoot + "/" + normalizedPath,
+                            String.valueOf(file.getValue() == null ? "" : file.getValue())
+                                    .getBytes(StandardCharsets.UTF_8));
+                }
+            }
+        }
+    }
+
+    /**
+     * Writes one normalized file entry into the ZIP archive.
+     *
+     * @param zip   target archive
+     * @param name  archive entry name
+     * @param bytes file bytes
+     * @throws IOException when the entry cannot be written
+     */
+    private void addFileEntry(ZipOutputStream zip, String name, byte[] bytes) throws IOException {
+        String normalized = name.replace('\\', '/').replaceAll("/+", "/");
+        zip.putNextEntry(new ZipEntry(normalized));
+        zip.write(bytes == null ? new byte[0] : bytes);
+        zip.closeEntry();
+    }
+
+    /**
+     * Converts an arbitrary label into a safe archive path segment.
+     *
+     * @param label    preferred label
+     * @param fallback fallback value
+     * @return path-safe archive segment
+     */
+    private String archiveSegment(String label, String fallback) {
+        String value = label == null || label.isBlank() ? fallback : label;
+        String sanitized = value.replaceAll("[^A-Za-z0-9._-]+", "-")
+                .replaceAll("^-+|-+$", "");
+        return sanitized.isBlank() ? "artifact" : sanitized;
+    }
+
+    /**
+     * Returns a compact identifier suffix for disambiguating archive paths.
+     *
+     * @param id full identifier
+     * @return first eight identifier characters, or the full nonblank identifier if shorter
+     */
+    private String shortId(String id) {
+        String value = String.valueOf(id == null ? "" : id).trim();
+        return value.length() <= 8 ? value : value.substring(0, 8);
+    }
+
+    /**
+     * Normalizes and validates generated artifact paths before adding them to a ZIP.
+     *
+     * @param path artifact-relative path
+     * @return normalized relative path
+     */
+    private String normalizeArtifactPath(String path) {
+        String normalized = String.valueOf(path == null ? "" : path).replace('\\', '/')
+                .replaceAll("/+", "/");
+        if (normalized.startsWith("/") || normalized.contains("../")
+                || normalized.equals("..") || normalized.isBlank()) {
+            throw new PlatformException(400, "Invalid artifact file path.");
+        }
+        return normalized;
     }
 
     /**

@@ -96,7 +96,8 @@
       <version>${junit.version}</version>
     </dependency>
   </dependencies>
-  <description>Platform modeling, metamodel resolution, XMI import/export, and layout services.</description>
+  <description>Platform modeling, metamodel resolution, XMI import/export, and layout services.
+  </description>
   <modelVersion>4.0.0</modelVersion>
   <name>platform-modeling</name>
   <packaging>jar</packaging>

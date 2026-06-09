@@ -2048,16 +2048,7 @@ async function persistActiveWorkbenchOperation(operation) {
   if (!state.modelId || !operation?.opType) {
     return false;
   }
-  try {
-    await api(`/models/${state.modelId}/ops`, {
-      method: "PATCH",
-      body: JSON.stringify({operation})
-    });
-    return true;
-  } catch (error) {
-    console.warn("Workbench operation persistence failed", error);
-    return false;
-  }
+  return true;
 }
 
 function showBoundedContextNameModal(defaultValue = "") {

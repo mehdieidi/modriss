@@ -22,7 +22,6 @@ import {
   validateCurrentModel
 } from './model-ops.js';
 import {
-  downloadCurrentArtifact,
   initArtifactEditor,
   saveCurrentFile,
   toggleArtifactTreeCollapsed
@@ -44,6 +43,7 @@ import {
 import {
   bindProjectDialogActions,
   deleteCurrentProject,
+  downloadCurrentProject,
   restoreLastProjectIfPossible,
   showProjectDialog
 } from './project.js';
@@ -233,7 +233,6 @@ function showProfileDialog() {
 
 function bindUserMenuActions() {
   el.userMenuEditProfileBtn?.addEventListener("click", showProfileDialog);
-  el.userMenuProjectsBtn?.addEventListener("click", showProjectDialog);
   el.userMenuLogoutBtn?.addEventListener("click", async () => {
     try {
       await logout();
@@ -248,7 +247,7 @@ function bindCriticalActions() {
   // Generation
   el.generateContextBtn?.addEventListener("click", async () => {
     if (state.activeType === "artifact") {
-      downloadCurrentArtifact();
+      downloadCurrentProject();
       return;
     }
     await generateForCurrentContext();

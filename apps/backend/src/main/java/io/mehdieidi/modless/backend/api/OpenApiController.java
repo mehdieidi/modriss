@@ -28,6 +28,7 @@ public class OpenApiController {
         add(paths, "/api/projects/{id}", "get", "Get project");
         add(paths, "/api/projects/{id}", "put", "Update project");
         add(paths, "/api/projects/{id}", "delete", "Delete project");
+        add(paths, "/api/projects/{id}/download", "get", "Download project ZIP");
         add(paths, "/api/{level}", "get", "List CIM/PIM/PSM models");
         add(paths, "/api/{level}", "post", "Create CIM/PIM/PSM model");
         add(paths, "/api/{level}/{id}", "get", "Get model");

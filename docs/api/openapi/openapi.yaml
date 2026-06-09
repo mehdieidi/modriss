@@ -213,6 +213,30 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /api/projects/{id}/download:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [ Projects ]
+      summary: Download project ZIP
+      responses:
+        '200':
+          description: Project ZIP archive
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/projects/{id}/members:
     parameters:
       - $ref: '#/components/parameters/ProjectId'

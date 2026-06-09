@@ -2408,7 +2408,7 @@ public final class ModelService {
          *
          * @return preserve instruction
          */
-        static SourceXmiUpdate preserveUpdate() {
+        static SourceXmiUpdate preserveUpdate () {
             return new SourceXmiUpdate(null, null, null);
         }
 
@@ -2417,7 +2417,7 @@ public final class ModelService {
          *
          * @return delete instruction
          */
-        static SourceXmiUpdate deleteUpdate() {
+        static SourceXmiUpdate deleteUpdate () {
             return new SourceXmiUpdate(null, "", null);
         }
 
@@ -2426,7 +2426,7 @@ public final class ModelService {
          *
          * @return {@code true} for preserve instruction
          */
-        boolean shouldPreserve() {
+        boolean shouldPreserve () {
             return bytes == null && hash == null;
         }
 
@@ -2435,7 +2435,7 @@ public final class ModelService {
          *
          * @return {@code true} for delete instruction
          */
-        boolean shouldDelete() {
+        boolean shouldDelete () {
             return bytes == null && hash != null;
         }
 
@@ -2445,7 +2445,7 @@ public final class ModelService {
          * @param previousHash previous sidecar hash
          * @return effective hash
          */
-        String effectiveHash(String previousHash) {
+        String effectiveHash (String previousHash){
             return shouldPreserve() ? previousHash : hash;
         }
     }

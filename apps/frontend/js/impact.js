@@ -1,6 +1,6 @@
 import {state} from './state.js';
 import {el} from './dom.js';
-import {api} from './api.js';
+import {api, isPlannedFeatureError} from './api.js';
 import {setStatus} from './status.js';
 import {escapeHtml} from './utils.js';
 import {MODEL_TYPES} from './config.js';
@@ -92,6 +92,11 @@ export async function fetchImpact(elementId) {
     setStatus(`Impact analysis complete for ${enriched.focalElement?.elementName
     || elementId}`);
   } catch (error) {
+    if (isPlannedFeatureError(error)) {
+      setStatus("Impact analysis is not available in this backend build.");
+      renderImpactPanel(null);
+      return;
+    }
     setStatus(`Impact analysis failed: ${error.message}`);
     renderImpactPanel(null);
   }
@@ -489,6 +494,10 @@ async function buildArtifactImpact(artifactId, filePath = null) {
   try {
     chain = await api(`/impact/artifact/${artifactId}`);
   } catch (error) {
+    if (isPlannedFeatureError(error)) {
+      throw new Error(
+          "Impact analysis is not available in this backend build.");
+    }
     throw new Error(`Failed to load artifact impact data: ${error.message}`);
   }
 
@@ -570,6 +579,10 @@ async function resolveArtifactFileLineage(artifactId, filePath, psmId) {
     exactImpact = await api(`/impact/psm/${psmId}/element/${encodeURIComponent(
         impactingElementId)}`);
   } catch (error) {
+    if (isPlannedFeatureError(error)) {
+      throw new Error(
+          "Impact analysis is not available in this backend build.");
+    }
     throw new Error(
         `Failed to resolve element ${impactingElementId} lineage for file ${normalizedPath}: ${error.message}`);
   }

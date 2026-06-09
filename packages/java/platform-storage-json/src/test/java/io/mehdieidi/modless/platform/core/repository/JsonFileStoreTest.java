@@ -72,7 +72,7 @@ class JsonFileStoreTest {
         store.write(Path.of("projects", "project-1", "records", "b.json"),
                 new StoredValue("b", 2));
         store.writeBytesAtomically(Path.of("projects", "project-1", "records", "note.txt"),
-                new byte[] {9});
+                new byte[]{9});
 
         List<StoredValue> values = store.list(Path.of("projects", "project-1", "records"),
                 StoredValue.class);
@@ -90,12 +90,13 @@ class JsonFileStoreTest {
         store.initialize();
 
         store.writeBytesAtomically(Path.of("projects", "project-1", "blob.bin"),
-                new byte[] {1, 2, 3});
+                new byte[]{1, 2, 3});
 
-        assertArrayEquals(new byte[] {1, 2, 3},
+        assertArrayEquals(new byte[]{1, 2, 3},
                 Files.readAllBytes(store.resolve(Path.of("projects", "project-1", "blob.bin"))));
     }
 
     private record StoredValue(String id, int revision) {
+
     }
 }

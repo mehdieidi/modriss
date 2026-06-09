@@ -1,6 +1,6 @@
 import {state} from './state.js';
 import {el} from './dom.js';
-import {apiUrl} from './config.js';
+import {api} from './api.js';
 
 const AUTH_TOKEN_KEY = "modless.authToken";
 
@@ -20,24 +20,6 @@ export function clearAuthSession() {
   setAuthToken("");
   state.auth.token = null;
   state.auth.user = null;
-}
-
-async function authApi(path, options = {}) {
-  const response = await fetch(apiUrl(path), {
-    headers: {"Content-Type": "application/json", ...(options.headers || {})},
-    ...options
-  });
-  if (!response.ok) {
-    let message = `HTTP ${response.status}`;
-    try {
-      const body = await response.json();
-      message = body.message || message;
-    } catch {
-      // ignore
-    }
-    throw new Error(message);
-  }
-  return response.json();
 }
 
 function setAuthMode(mode) {
@@ -223,7 +205,7 @@ async function showAuthDialog() {
       try {
         setBusy(true);
         if (mode === "register") {
-          const result = await authApi("/auth/register", {
+          const result = await api("/auth/register", {
             method: "POST",
             body: JSON.stringify({
               email: payload.email,
@@ -235,7 +217,7 @@ async function showAuthDialog() {
           resolveSession(result);
           return;
         }
-        const result = await authApi("/auth/login", {
+        const result = await api("/auth/login", {
           method: "POST",
           body: JSON.stringify({
             email: payload.email,
@@ -272,7 +254,7 @@ export async function ensureAuthenticated() {
   const existingToken = getAuthToken();
   if (existingToken) {
     try {
-      const me = await authApi("/auth/me", {
+      const me = await api("/auth/me", {
         headers: {"X-Auth-Token": existingToken}
       });
       state.auth.token = existingToken;
@@ -293,7 +275,7 @@ export async function logout() {
   const token = getAuthToken();
   if (token) {
     try {
-      await authApi("/auth/logout", {
+      await api("/auth/logout", {
         method: "POST",
         headers: {"X-Auth-Token": token}
       });
@@ -314,7 +296,7 @@ export async function updateDisplayName(displayName) {
   if (!normalized) {
     throw new Error("Display name is required");
   }
-  const updated = await authApi("/auth/me", {
+  const updated = await api("/auth/me", {
     method: "PUT",
     headers: {"X-Auth-Token": token},
     body: JSON.stringify({displayName: normalized})

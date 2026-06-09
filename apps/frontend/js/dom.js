@@ -128,7 +128,6 @@ export const el = {
   currentUserLabel: document.getElementById("currentUserLabel"),
   userMenuTrigger: document.getElementById("userMenuTrigger"),
   userMenuEditProfileBtn: document.getElementById("userMenuEditProfileBtn"),
-  userMenuProjectsBtn: document.getElementById("userMenuProjectsBtn"),
   userMenuLogoutBtn: document.getElementById("userMenuLogoutBtn"),
   projectOverlay: document.getElementById("projectOverlay"),
   projectList: document.getElementById("projectList"),

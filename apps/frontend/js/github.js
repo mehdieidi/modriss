@@ -1,6 +1,6 @@
 import {state} from './state.js';
 import {el} from './dom.js';
-import {api} from './api.js';
+import {api, isPlannedFeatureError} from './api.js';
 import {backendOrigin} from './config.js';
 import {setError, setStatus} from './status.js';
 
@@ -27,7 +27,9 @@ function renderGithubPanel() {
   }
 
   const g = state.github;
-  if (g.connected) {
+  if (g.lastDeploymentStatus === "UNAVAILABLE") {
+    el.githubDeployStatus.textContent = "GitHub integration is unavailable in this backend build";
+  } else if (g.connected) {
     el.githubDeployStatus.textContent = g.selectedRepository
         ? `Connected as ${g.githubLogin
         || "GitHub user"} - ${g.selectedRepository}`
@@ -69,6 +71,7 @@ function renderGithubPanel() {
 }
 
 function applyConnectionState(payload) {
+  state.github.available = true;
   state.github.connected = !!payload.connected;
   state.github.githubLogin = payload.githubLogin || "";
   state.github.selectedRepository = payload.selectedRepository || "";
@@ -81,11 +84,35 @@ function applyConnectionState(payload) {
   renderGithubPanel();
 }
 
+function setGithubUnavailable(message) {
+  state.github.available = false;
+  state.github.connected = false;
+  state.github.githubLogin = "";
+  state.github.selectedRepository = "";
+  state.github.selectedBranch = "";
+  state.github.lastDeploymentStatus = "UNAVAILABLE";
+  state.github.lastDeploymentMessage = message;
+  state.github.lastDeploymentAt = "";
+  state.github.repositoryUrl = "";
+  state.github.commitUrl = "";
+  renderGithubPanel();
+}
+
 export async function refreshGithubConnection() {
+  if (state.github.available === false) {
+    renderGithubPanel();
+    return false;
+  }
   try {
     const connection = await api("/github/connection");
     applyConnectionState(connection || {});
+    return true;
   } catch (error) {
+    if (isPlannedFeatureError(error)) {
+      setGithubUnavailable(
+          "GitHub integration is not available in this backend build.");
+      return false;
+    }
     state.github.connected = false;
     state.github.githubLogin = "";
     state.github.selectedRepository = "";
@@ -93,6 +120,7 @@ export async function refreshGithubConnection() {
     state.github.lastDeploymentStatus = "ERROR";
     state.github.lastDeploymentMessage = error.message;
     renderGithubPanel();
+    return false;
   }
 }
 
@@ -185,6 +213,10 @@ export async function deployToGithubFromArtifacts() {
     setError("Load the current artifact before deploying");
     return;
   }
+  if (state.github.available === false) {
+    setStatus("GitHub integration is not available in this backend build.");
+    return;
+  }
 
   setDeployButtonBusy(true,
       state.github.connected ? "Deploying..." : "Connecting...");
@@ -224,6 +256,12 @@ export async function deployToGithubFromArtifacts() {
     renderGithubPanel();
     setStatus(deployResult.message || "Deployment completed");
   } catch (error) {
+    if (isPlannedFeatureError(error)) {
+      setGithubUnavailable(
+          "GitHub integration is not available in this backend build.");
+      setStatus("GitHub integration is not available in this backend build.");
+      return;
+    }
     state.github.lastDeploymentStatus = "ERROR";
     state.github.lastDeploymentMessage = error.message
         || "GitHub deployment failed";

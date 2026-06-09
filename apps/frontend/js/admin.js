@@ -1,4 +1,4 @@
-import {api} from './api.js';
+import {api, isPlannedFeatureError} from './api.js';
 import {el} from './dom.js';
 import {state} from './state.js';
 import {escapeHtml} from './utils.js';
@@ -87,6 +87,9 @@ function renderAdminTree(entries) {
 }
 
 async function loadEntries() {
+  if (state.admin.unavailable) {
+    return;
+  }
   const scope = adminScope();
   if (!scope) {
     return;
@@ -118,6 +121,10 @@ async function openAdminEntry(entry) {
 }
 
 export async function openAdminFile(path) {
+  if (state.admin.unavailable) {
+    setStatus("Admin workspace is not available in this backend build.");
+    return;
+  }
   try {
     const scope = adminScope();
     if (!scope) {
@@ -140,6 +147,10 @@ export async function openAdminFile(path) {
 }
 
 export async function saveAdminFile() {
+  if (state.admin.unavailable) {
+    setStatus("Admin workspace is not available in this backend build.");
+    return;
+  }
   if (!state.admin.activeFile || !adminScope()) {
     setStatus("No file selected");
     return;
@@ -162,6 +173,9 @@ export async function saveAdminFile() {
 }
 
 export async function reloadAdminEntries() {
+  if (state.admin.unavailable) {
+    return;
+  }
   try {
     await loadEntries();
     setStatus("Admin workspace refreshed");
@@ -171,6 +185,7 @@ export async function reloadAdminEntries() {
 }
 
 export async function initAdminWorkspace() {
+  state.admin.unavailable = false;
   try {
     if (!state.admin.scopes.length) {
       state.admin.scopes = await api("/admin/workspace/scopes");
@@ -187,11 +202,25 @@ export async function initAdminWorkspace() {
     state.admin.currentPath = "";
     await loadEntries();
   } catch (error) {
+    if (isPlannedFeatureError(error)) {
+      state.admin.unavailable = true;
+      state.admin.scopes = [];
+      state.admin.scope = null;
+      resetAdminEditor();
+      el.adminScopeSelect.innerHTML = "";
+      el.adminTree.innerHTML = `<div class="project-list-empty">Admin workspace is not available in this backend build.</div>`;
+      setStatus("Admin workspace is not available in this backend build.");
+      return;
+    }
     setError(`Admin init failed: ${error.message}`);
   }
 }
 
 export async function changeAdminScope() {
+  if (state.admin.unavailable) {
+    setStatus("Admin workspace is not available in this backend build.");
+    return;
+  }
   state.admin.scope = el.adminScopeSelect.value || null;
   state.admin.currentPath = "";
   resetAdminEditor();
@@ -199,12 +228,19 @@ export async function changeAdminScope() {
 }
 
 export async function navigateAdminUp() {
+  if (state.admin.unavailable) {
+    return;
+  }
   state.admin.currentPath = parentPath(state.admin.currentPath);
   resetAdminEditor();
   await reloadAdminEntries();
 }
 
 export async function createAdminFile() {
+  if (state.admin.unavailable) {
+    setStatus("Admin workspace is not available in this backend build.");
+    return;
+  }
   const fileName = window.prompt("New file name (relative to current folder):",
       "new-file");
   if (!fileName) {
@@ -227,6 +263,10 @@ export async function createAdminFile() {
 }
 
 export async function createAdminDirectory() {
+  if (state.admin.unavailable) {
+    setStatus("Admin workspace is not available in this backend build.");
+    return;
+  }
   const folderName = window.prompt(
       "New folder name (relative to current folder):", "new-folder");
   if (!folderName) {
@@ -248,6 +288,10 @@ export async function createAdminDirectory() {
 }
 
 export async function renameAdminEntry() {
+  if (state.admin.unavailable) {
+    setStatus("Admin workspace is not available in this backend build.");
+    return;
+  }
   if (!state.admin.selectedEntry) {
     setStatus("Select a file or folder first");
     return;
@@ -279,6 +323,10 @@ export async function renameAdminEntry() {
 }
 
 export async function deleteAdminEntry() {
+  if (state.admin.unavailable) {
+    setStatus("Admin workspace is not available in this backend build.");
+    return;
+  }
   if (!state.admin.selectedEntry) {
     setStatus("Select a file or folder first");
     return;

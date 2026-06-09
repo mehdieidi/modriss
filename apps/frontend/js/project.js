@@ -1,6 +1,6 @@
 import {state} from './state.js';
 import {el} from './dom.js';
-import {api} from './api.js';
+import {api, apiAuthHeaders} from './api.js';
 import {setBusy, setError, setStatus} from './status.js';
 import {emptyDiagram, escapeHtml} from './utils.js';
 import {toDiagram} from './diagram.js';
@@ -10,7 +10,7 @@ import {renderViewWorkbench} from './view-explorer.js';
 import {restoreTabGraphState} from './graph-store.js';
 import {materializeActiveView} from './view-materializer.js';
 import {clearArtifactState} from './artifact.js';
-import {MODEL_TYPES} from './config.js';
+import {apiUrl, MODEL_TYPES} from './config.js';
 import {confirmAction} from './confirm-action.js';
 import {resetModelSaveState, updateModelSaveUi} from './model-save-ui.js';
 
@@ -493,6 +493,58 @@ export async function deleteCurrentProject() {
     setStatus(`Deleted project "${projectName}"`);
   } catch (error) {
     setError(`Failed to delete project: ${error.message}`);
+  }
+}
+
+function filenameFromContentDisposition(contentDisposition, fallbackFilename) {
+  const utf8Filename = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Filename) {
+    return decodeURIComponent(utf8Filename[1]);
+  }
+  const basicFilename = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+  return basicFilename?.[1] || fallbackFilename;
+}
+
+export async function downloadCurrentProject() {
+  if (!state.project?.id) {
+    setStatus("Load a project first.");
+    return;
+  }
+  const projectName = state.project.name || "project";
+  const fallbackFilename = `${projectName.replaceAll(/[^A-Za-z0-9._-]+/g,
+      "-").replaceAll(/^-+|-+$/g, "") || "project"}.zip`;
+  try {
+    const response = await fetch(
+        apiUrl(`/projects/${state.project.id}/download`), {
+          headers: apiAuthHeaders()
+        });
+    if (!response.ok) {
+      let message = `Download failed (${response.status})`;
+      try {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const body = await response.json();
+          message = body.message || message;
+        } else {
+          message = (await response.text()).trim() || message;
+        }
+      } catch {
+        // keep fallback message
+      }
+      throw new Error(message);
+    }
+    const blob = await response.blob();
+    const filename = filenameFromContentDisposition(
+        response.headers.get("content-disposition") || "", fallbackFilename);
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(objectUrl);
+    setStatus(`Downloaded project: ${filename}`);
+  } catch (error) {
+    setError(`Project download failed: ${error.message}`);
   }
 }
 

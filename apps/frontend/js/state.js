@@ -97,6 +97,7 @@ export const state = {
   panDrag: null,
   touchTap: null,
   chat: {
+    available: true,
     sessions: new Map(),
     channels: new Map(),
     attachment: null
@@ -110,6 +111,7 @@ export const state = {
     treeCollapsed: false
   },
   github: {
+    available: true,
     connected: false,
     githubLogin: "",
     selectedRepository: "",
@@ -122,6 +124,7 @@ export const state = {
     loading: false
   },
   admin: {
+    unavailable: false,
     scopes: [],
     scope: null,
     currentPath: "",

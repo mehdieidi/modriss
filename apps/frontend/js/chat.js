@@ -1,6 +1,6 @@
 import {state} from './state.js';
 import {el} from './dom.js';
-import {api} from './api.js';
+import {api, isPlannedFeatureError} from './api.js';
 import {setError, setStatus} from './status.js';
 import {apiUrl, MODEL_TYPES, websocketUrl} from './config.js';
 import {serializeModel, toDiagram} from './diagram.js';
@@ -9,21 +9,35 @@ import {renderDiagram} from './canvas.js';
 // ── Chat session / realtime ───────────────────────────────────────────────────
 
 export async function ensureChatSession() {
+  if (state.chat.available === false) {
+    setStatus("Chat is not available in this backend build.");
+    return null;
+  }
   const typeKey = state.activeType;
   if (state.chat.sessions.has(typeKey)) {
     return state.chat.sessions.get(typeKey);
   }
 
-  const response = await api("/chatbot/sessions", {
-    method: "POST",
-    body: JSON.stringify({
-      modelType: MODEL_TYPES[typeKey].chatType,
-      modelName: (state.tabs[typeKey]?.modelName
-          || `${typeKey}-assistant`).trim(),
-      initialDocument: "Initialized from web modeling editor",
-      projectId: state.project?.id || null
-    })
-  });
+  let response;
+  try {
+    response = await api("/chatbot/sessions", {
+      method: "POST",
+      body: JSON.stringify({
+        modelType: MODEL_TYPES[typeKey].chatType,
+        modelName: (state.tabs[typeKey]?.modelName
+            || `${typeKey}-assistant`).trim(),
+        initialDocument: "Initialized from web modeling editor",
+        projectId: state.project?.id || null
+      })
+    });
+  } catch (error) {
+    if (isPlannedFeatureError(error)) {
+      state.chat.available = false;
+      setStatus("Chat is not available in this backend build.");
+      return null;
+    }
+    throw error;
+  }
 
   const session = {
     sessionId: response.sessionId,
@@ -165,6 +179,9 @@ export async function sendChatMessage() {
 
   try {
     const session = await ensureChatSession();
+    if (!session) {
+      return;
+    }
     const requestedModelId = state.modelId;
     const requestDiagramFingerprint = JSON.stringify(state.diagram || {});
     appendChat("user", text);

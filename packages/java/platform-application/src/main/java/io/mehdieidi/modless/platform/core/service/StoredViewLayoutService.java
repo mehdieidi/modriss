@@ -791,7 +791,7 @@ public final class StoredViewLayoutService {
          *
          * @return center x coordinate
          */
-        double centerX() {
+        double centerX () {
             return x + width / 2.0d;
         }
     }
