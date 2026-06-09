@@ -351,6 +351,9 @@ function addModelTransformation({
   const stepCount = Math.max(sourceNodes.length, targetNodes.length);
   const stepGap = Math.max(105, (finish - start - 1400) / stepCount);
   const feedStart = start + 620;
+  const targetNodeIndexes = new Map(
+      [...targetNodes].map((node, index) => [node.dataset.nodeId, index]),
+  );
 
   timeline
   .add(
@@ -494,7 +497,7 @@ function addModelTransformation({
             left: () => `${engine().x}px`,
             top: () => `${engine().y}px`,
             scale: 0.38,
-            duration: 320,
+            duration: 380,
             ease: "in(4)",
           },
           stepStart,
@@ -502,11 +505,12 @@ function addModelTransformation({
       timeline.add(
           sourceNode,
           {
-            opacity: 0.16,
-            duration: 220,
-            ease: "in(2)",
+            opacity: 0.12,
+            scale: 0.76,
+            duration: 260,
+            ease: "in(3)",
           },
-          stepStart + 120,
+          stepStart + 110,
       );
     }
 
@@ -519,7 +523,7 @@ function addModelTransformation({
             left: () => `${targetPoint().x}px`,
             top: () => `${targetPoint().y}px`,
             scale: 1,
-            duration: 380,
+            duration: 420,
             ease: "out(4)",
           },
           stepStart + 260,
@@ -537,18 +541,34 @@ function addModelTransformation({
           },
           stepStart + 520,
       );
+      timeline.add(
+          targetTraveler,
+          {
+            opacity: 0,
+            scale: 0.74,
+            duration: 180,
+            ease: "in(2)",
+          },
+          stepStart + 760,
+      );
     }
   }
 
   targetEdges.forEach((edge, index) => {
+    const sourceIndex = targetNodeIndexes.get(edge.dataset.source);
+    const targetIndex = targetNodeIndexes.get(edge.dataset.target);
+    const nodeRevealIndex = Math.max(sourceIndex ?? 0, targetIndex ?? 0);
+    const revealAt = sourceIndex == null && targetIndex == null
+        ? finish - 840 + index * Math.max(24, stepGap * 0.16)
+        : feedStart + nodeRevealIndex * stepGap + 780;
     timeline.add(
         edge,
         {
-          opacity: 0.72,
+          opacity: edge.classList.contains("edge-label") ? 0.84 : 0.72,
           duration: 260,
           ease: "out(2)",
         },
-        finish - 840 + index * Math.max(24, stepGap * 0.16),
+        Math.min(revealAt, finish - 430),
     );
   });
 
@@ -837,6 +857,15 @@ export function createStoryTimeline() {
       10950,
   );
 
+  const artifactSourceNodes = selector("#model-psm .model-node");
+  const artifactTargets = [
+    ["handler.go", "#71a7ff"],
+    ["template.yaml", "#ffa828"],
+    ["openapi.yaml", "#b497ff"],
+    ["tests", "#8dff55"],
+    ["trace.json", "var(--accent)"],
+  ];
+
   timeline
   .add(
       {},
@@ -844,16 +873,7 @@ export function createStoryTimeline() {
         duration: 1,
         onBegin: () => {
           setEngineLabel("EGX");
-          createArtifactTravelers(
-              selector("#model-psm .model-node"),
-              [
-                ["handler.go", "#71a7ff"],
-                ["template.yaml", "#ffa828"],
-                ["openapi.yaml", "#b497ff"],
-                ["tests", "#8dff55"],
-                ["trace.json", "var(--accent)"],
-              ],
-          );
+          createArtifactTravelers(artifactSourceNodes, artifactTargets);
         },
       },
       11280,
@@ -874,8 +894,7 @@ export function createStoryTimeline() {
       {},
       {
         duration: 1,
-        onBegin: () => placeArtifactTravelers(
-            selector("#model-psm .model-node")),
+        onBegin: () => placeArtifactTravelers(artifactSourceNodes),
       },
       11740,
   )
@@ -888,16 +907,6 @@ export function createStoryTimeline() {
         ease: "in(2)",
       },
       11520,
-  )
-  .add(
-      "#model-psm .model-node",
-      {
-        opacity: 0.16,
-        duration: 220,
-        delay: stagger(120),
-        ease: "in(4)",
-      },
-      11900,
   )
   .add(
       ".artifact-tree-panel",
@@ -1037,39 +1046,73 @@ export function createStoryTimeline() {
   );
 
   addEngineRun(timeline, 11280, 12940);
-  for (let index = 0; index < 6; index += 1) {
-    const stepStart = 11820 + index * 210;
+  const artifactRows = selector(".tree-row");
+  const artifactStepCount = Math.max(
+      artifactSourceNodes.length,
+      artifactTargets.length,
+  );
+  for (let index = 0; index < artifactStepCount; index += 1) {
+    const stepStart = 11820 + index * 160;
     const sourceTraveler = `.traveler-source[data-index="${index}"]`;
     const targetTraveler = `.traveler-target[data-index="${index}"]`;
-    timeline
-    .add(
-        sourceTraveler,
-        {
-          opacity: [
-            {to: 1, duration: 50},
-            {to: 1, duration: 130},
-            {to: 0, duration: 70},
-          ],
-          left: () => `${engineCenter().x}px`,
-          top: () => `${engineCenter().y}px`,
-          scale: 0.38,
-          duration: 250,
-          ease: "in(4)",
-        },
-        stepStart,
-    )
-    .add(
-        targetTraveler,
-        {
-          opacity: 1,
-          left: () => `${artifactTargetPoint(index).x}px`,
-          top: () => `${artifactTargetPoint(index).y}px`,
-          scale: 1,
-          duration: 310,
-          ease: "out(4)",
-        },
-        stepStart + 190,
-    );
+    const sourceNode = artifactSourceNodes[index];
+    const targetRow = artifactRows[index];
+
+    if (sourceNode) {
+      timeline
+      .add(
+          sourceTraveler,
+          {
+            opacity: [
+              {to: 1, duration: 50},
+              {to: 1, duration: 120},
+              {to: 0, duration: 50},
+            ],
+            left: () => `${engineCenter().x}px`,
+            top: () => `${engineCenter().y}px`,
+            scale: 0.38,
+            duration: 220,
+            ease: "in(4)",
+          },
+          stepStart,
+      )
+      .add(
+          sourceNode,
+          {
+            opacity: 0.12,
+            scale: 0.76,
+            duration: 180,
+            ease: "in(3)",
+          },
+          stepStart + 70,
+      );
+    }
+
+    if (targetRow && index < artifactTargets.length) {
+      timeline
+      .add(
+          targetTraveler,
+          {
+            opacity: 1,
+            left: () => `${artifactTargetPoint(index).x}px`,
+            top: () => `${artifactTargetPoint(index).y}px`,
+            scale: 1,
+            duration: 180,
+            ease: "out(4)",
+          },
+          stepStart + 120,
+      )
+      .add(
+          targetTraveler,
+          {
+            opacity: 0,
+            scale: 0.74,
+            duration: 140,
+            ease: "in(2)",
+          },
+          stepStart + 330,
+      );
+    }
   }
   timeline.add(
       ".traveler-source, .traveler-target",
@@ -1078,7 +1121,7 @@ export function createStoryTimeline() {
         duration: 220,
         ease: "in(2)",
       },
-      12860,
+      13080,
   );
   timeline.add(
       TRANSFORM_ENGINE_SELECTOR,

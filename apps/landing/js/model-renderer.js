@@ -7,8 +7,15 @@ import {
 } from "./case-study.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const PORT_STUB = 38;
+const EDGE_CONTROL_MIN = 42;
+const EDGE_CONTROL_MAX = 132;
 const renderedModels = [];
+const PORT_VECTORS = {
+  bottom: {x: 0, y: 1},
+  left: {x: -1, y: 0},
+  right: {x: 1, y: 0},
+  top: {x: 0, y: -1},
+};
 
 function createElement(tagName, className) {
   const element = document.createElement(tagName);
@@ -26,23 +33,31 @@ function createSvgElement(tagName, attributes = {}) {
 }
 
 function edgePath(source, target) {
-  const sourceExit = source.x + source.direction * PORT_STUB;
-  const targetEntry = target.x + target.direction * PORT_STUB;
-  const middleX = (sourceExit + targetEntry) / 2;
+  const distance = Math.hypot(target.x - source.x, target.y - source.y);
+  const controlDistance = Math.min(
+      EDGE_CONTROL_MAX,
+      Math.max(EDGE_CONTROL_MIN, distance * 0.34),
+  );
+  const sourceControl = {
+    x: source.x + source.vector.x * controlDistance,
+    y: source.y + source.vector.y * controlDistance,
+  };
+  const targetControl = {
+    x: target.x + target.vector.x * controlDistance,
+    y: target.y + target.vector.y * controlDistance,
+  };
+
   return [
-    `M ${source.x} ${source.y}`,
-    `H ${sourceExit}`,
-    `H ${middleX}`,
-    `V ${target.y}`,
-    `H ${targetEntry}`,
-    `H ${target.x}`,
+    `M ${source.x.toFixed(2)} ${source.y.toFixed(2)}`,
+    `C ${sourceControl.x.toFixed(2)} ${sourceControl.y.toFixed(2)}`,
+    `${targetControl.x.toFixed(2)} ${targetControl.y.toFixed(2)}`,
+    `${target.x.toFixed(2)} ${target.y.toFixed(2)}`,
   ].join(" ");
 }
 
 function edgeLabelPosition(source, target) {
   return {
-    x: ((source.x + source.direction * PORT_STUB)
-        + (target.x + target.direction * PORT_STUB)) / 2,
+    x: (source.x + target.x) / 2,
     y: (source.y + target.y) / 2 - 8,
   };
 }
@@ -54,7 +69,7 @@ function canvasPointFromPort(port, mount, side) {
   const y = portRect.top - mountRect.top + portRect.height / 2;
 
   return {
-    direction: side === "right" ? 1 : -1,
+    vector: PORT_VECTORS[side],
     x: (x / mountRect.width) * CANVAS_SIZE.width,
     y: (y / mountRect.height) * CANVAS_SIZE.height,
   };
@@ -79,8 +94,15 @@ function updateModelEdges(renderedModel) {
   model.edges.forEach((edge) => {
     const sourceNode = nodesById.get(edge.source);
     const targetNode = nodesById.get(edge.target);
-    const sourceSide = targetNode.x >= sourceNode.x ? "right" : "left";
-    const targetSide = targetNode.x >= sourceNode.x ? "left" : "right";
+    const deltaX = targetNode.x - sourceNode.x;
+    const deltaY = targetNode.y - sourceNode.y;
+    const usesHorizontalPorts = Math.abs(deltaX) >= Math.abs(deltaY) * 0.72;
+    const sourceSide = usesHorizontalPorts
+        ? (deltaX >= 0 ? "right" : "left")
+        : (deltaY >= 0 ? "bottom" : "top");
+    const targetSide = usesHorizontalPorts
+        ? (deltaX >= 0 ? "left" : "right")
+        : (deltaY >= 0 ? "top" : "bottom");
     const source = nodePort(mount, sourceNode, sourceSide);
     const target = nodePort(mount, targetNode, targetSide);
 
@@ -118,6 +140,8 @@ function renderNode(node) {
 
   const leftPort = createElement("span", "node-port node-port-left");
   const rightPort = createElement("span", "node-port node-port-right");
+  const topPort = createElement("span", "node-port node-port-top");
+  const bottomPort = createElement("span", "node-port node-port-bottom");
 
   const head = createElement("div", "model-node-head");
   const icon = createElement("span", "model-node-icon");
@@ -147,7 +171,7 @@ function renderNode(node) {
 
   const badge = createElement("span", "node-badge");
   badge.textContent = "refined";
-  card.append(leftPort, rightPort, head, body, badge);
+  card.append(leftPort, rightPort, topPort, bottomPort, head, body, badge);
   anchor.append(card);
   return anchor;
 }

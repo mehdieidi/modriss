@@ -79,19 +79,23 @@
     display: none;
   }
 
+  .story-shell {
+    --story-copy-height: 5.35rem;
+  }
+
   .story-copy {
     top: 4.35rem;
     right: 0;
     bottom: auto;
     left: 0;
-    height: 4.75rem;
+    height: 5.35rem;
     width: auto;
   }
 
   .story-copy-card {
     top: 0.5rem;
     display: grid;
-    grid-template-columns: minmax(7rem, 0.55fr) minmax(12rem, 1fr) minmax(7rem, 0.55fr);
+    grid-template-columns: minmax(6.5rem, 0.48fr) minmax(11rem, 1fr) minmax(6.5rem, 0.48fr);
     padding: 0.7rem;
   }
 
@@ -191,6 +195,10 @@
 
   .site-nav > .button span {
     display: none;
+  }
+
+  .story-shell {
+    --story-copy-height: 6.9rem;
   }
 
   .hero {
@@ -298,6 +306,30 @@
     right: 0.5rem;
     bottom: 0.5rem;
     width: 10rem;
+  }
+
+  .story-copy {
+    height: 6.9rem;
+  }
+
+  .story-copy-card {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .story-copy h2 {
+    font-size: 0.92rem;
+  }
+
+  .story-copy p {
+    display: block;
+    font-size: 0.48rem;
+  }
+
+  .phase-rule {
+    display: none;
   }
 
   .artifact-tree-panel,
