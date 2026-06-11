@@ -37,6 +37,11 @@
       <scope>test</scope>
       <version>${junit.version}</version>
     </dependency>
+    <dependency>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <description>Platform application use cases and workflow orchestration.</description>
   <modelVersion>4.0.0</modelVersion>

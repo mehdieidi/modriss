@@ -24,6 +24,7 @@ The backend now persists application state in PostgreSQL through Spring JDBC and
 The schema is versioned in:
 
 -
+
 `packages/java/platform-storage-postgres/src/main/resources/db/migration/V1__create_platform_schema.sql`
 
 Detailed operations and migration guidance lives in:

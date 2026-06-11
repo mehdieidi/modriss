@@ -13,7 +13,7 @@ import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
+import io.mehdieidi.modless.platform.core.repository.TestPlatformStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -41,7 +41,7 @@ class StoredViewLayoutServiceTest {
      */
     @Test
     void lazilyLayoutsAndPersistsAStoredViewOnlyOnce() throws Exception {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService auth = new AuthService(store, Duration.ofHours(1));
         ProjectService projects = new ProjectService(store, auth);
@@ -89,7 +89,7 @@ class StoredViewLayoutServiceTest {
      */
     @Test
     void dashboardViewKeepsSelectedAlgorithmGeometry() throws Exception {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService auth = new AuthService(store, Duration.ofHours(1));
         ProjectService projects = new ProjectService(store, auth);

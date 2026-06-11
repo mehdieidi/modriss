@@ -1,0 +1,15 @@
+.git
+.agents
+.codex
+.idea
+.vscode
+
+**/target
+logs
+storage
+
+apps/frontend
+apps/landing
+
+README.md
+docs

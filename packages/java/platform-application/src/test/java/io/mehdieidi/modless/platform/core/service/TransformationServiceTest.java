@@ -9,7 +9,7 @@ import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
+import io.mehdieidi.modless.platform.core.repository.TestPlatformStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -39,7 +39,7 @@ class TransformationServiceTest {
      */
     @Test
     void cimToPimCreatesPimSemanticModelInsteadOfRelabelingCimJson() throws Exception {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -88,7 +88,7 @@ class TransformationServiceTest {
      */
     @Test
     void generatedPimValidationDoesNotCreateAdditionalManualTasks() throws Exception {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -144,7 +144,7 @@ class TransformationServiceTest {
      */
     @Test
     void pimToPsmRunsFormalEtlAndPreservesGeneratedRelationships() throws Exception {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -224,7 +224,7 @@ class TransformationServiceTest {
      */
     @Test
     void psmToArtifactRunsFormalEgxGeneratorInsteadOfScaffold() throws Exception {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);

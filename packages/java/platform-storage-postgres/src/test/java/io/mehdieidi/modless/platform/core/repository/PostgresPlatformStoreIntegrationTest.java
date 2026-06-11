@@ -9,7 +9,12 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.AuthSession;
+import io.mehdieidi.modless.platform.core.model.MdeJobIndexRecord;
+import io.mehdieidi.modless.platform.core.model.MdeJobOperation;
+import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
+import io.mehdieidi.modless.platform.core.model.MdeJobStatus;
 import io.mehdieidi.modless.platform.core.model.MemberRole;
+import io.mehdieidi.modless.platform.core.model.ModelIndexRecord;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectMember;
@@ -107,6 +112,10 @@ class PostgresPlatformStoreIntegrationTest {
         ArtifactRecord artifact = new ArtifactRecord("artifact-1", "project-1", "Artifact",
                 store.objectMapper().createObjectNode(), Map.of("README.md", "hello"), now, now);
         store.write(Path.of("projects", "project-1", "artifacts", "artifact-1.json"), artifact);
+        MdeJobRecord job = new MdeJobRecord("job-1", "project-1", "user-1", "model-1",
+                ModelLevel.CIM, 1, "model-hash", MdeJobOperation.CIM_TO_PIM,
+                MdeJobStatus.FAILED, 100, null, null, List.of("diagnostic"), now, now, now);
+        store.write(Path.of("projects", "project-1", "mde-jobs", "job-1.json"), job);
 
         UserRecord storedUser = store.require(Path.of("users", "user-1.json"),
                 UserRecord.class, "missing");
@@ -121,6 +130,19 @@ class PostgresPlatformStoreIntegrationTest {
                 "stage-1.xmi")).orElseThrow());
         assertEquals("hello", store.require(Path.of("projects", "project-1", "artifacts",
                 "artifact-1.json"), ArtifactRecord.class, "missing").files().get("README.md"));
+        assertEquals("project-1", store.require(Path.of("indexes", "models", "model-1.json"),
+                ModelIndexRecord.class, "missing").projectId());
+        assertEquals("project-1", store.require(Path.of("indexes", "mde-jobs", "job-1.json"),
+                MdeJobIndexRecord.class, "missing").projectId());
+        assertEquals(List.of("diagnostic"), store.require(Path.of("projects", "project-1",
+                "mde-jobs", "job-1.json"), MdeJobRecord.class, "missing").diagnostics());
+
+        byte[] serializedModel = store.readBytes(Path.of("projects", "project-1", "models",
+                "cim", "model-1.json")).orElseThrow();
+        store.writeBytesAtomically(Path.of("projects", "project-1", "models", "cim",
+                "model-1.json"), serializedModel);
+        store.deleteIfExists(Path.of("sessions", "token-1.json"));
+        store.deleteIfExists(Path.of("model-imports", "stage-1.json"));
 
         store.deleteTree(Path.of("projects", "project-1"));
 
@@ -128,8 +150,10 @@ class PostgresPlatformStoreIntegrationTest {
                 ProjectRecord.class).isPresent());
         assertEquals(0, count("models"));
         assertEquals(0, count("artifact_files"));
+        assertEquals(0, count("mde_jobs"));
         assertEquals(0, count("staged_imports"));
         assertEquals(0, count("staged_import_payloads"));
+        assertEquals(0, count("auth_sessions"));
     }
 
     @Test

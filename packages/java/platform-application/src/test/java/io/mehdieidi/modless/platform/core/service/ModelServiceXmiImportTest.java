@@ -14,7 +14,7 @@ import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
+import io.mehdieidi.modless.platform.core.repository.TestPlatformStore;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -38,7 +38,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void importsCimXmiIntoSemanticAndGraphJson() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -79,7 +79,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void importsRequiredCimEnumValuesThatMatchMetamodelDefaults() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -106,7 +106,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void validatesRelationshipsPersistedWithFrontendEndpointIds() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -142,7 +142,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void validateByIdRepairsStaleSourceXmiFromFrontendEndpointIds() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -172,7 +172,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void rejectsInvalidEnumValuesDuringXmiExport() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -196,7 +196,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void rejectsUnresolvedReferencesDuringXmiExport() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -219,7 +219,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void rejectsWrongContainedChildTypeDuringXmiExport() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -241,7 +241,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void rejectsMultiRootXmiImports() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -259,7 +259,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void stripsTransportOnlyFieldsWhenSavingModel() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -297,7 +297,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void patchesStoredModelWithoutReplacingWholeJson() throws Exception {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -345,7 +345,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void importsPsmRelationshipViewsAsFilterableEdges() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -381,7 +381,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void importsPimReferenceEdgesWithPimSpecificKinds() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -419,7 +419,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void validatesPimAndPsmModelsWithEvl() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -452,7 +452,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void exportsPimWhenOnlyInverseTraceReferencesRemain() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -474,7 +474,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void validatesStoredXmiByIdWhenJsonHasStaleReferences() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -506,7 +506,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void patchPreservesStoredXmiWhenJsonHasStaleReferences() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -536,7 +536,7 @@ class ModelServiceXmiImportTest {
      */
     @Test
     void patchPreservesStoredPsmXmiWhenJsonHasStaleReferences() {
-        JsonFileStore store = new JsonFileStore(tempDir);
+        TestPlatformStore store = new TestPlatformStore(tempDir);
         store.initialize();
         AuthService authService = new AuthService(store, Duration.ofHours(1));
         ProjectService projectService = new ProjectService(store, authService);
@@ -636,7 +636,7 @@ class ModelServiceXmiImportTest {
      * @param store file store that supplies the configured object mapper
      * @return mutable CIM model JSON object
      */
-    private ObjectNode minimalCimModel(JsonFileStore store) {
+    private ObjectNode minimalCimModel(TestPlatformStore store) {
         ObjectNode model = store.objectMapper().createObjectNode();
         model.put("eClass", "CIMModel");
         model.put("id", "cim-root");

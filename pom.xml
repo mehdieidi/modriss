@@ -56,11 +56,6 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-storage-json</artifactId>
-        <groupId>${project.groupId}</groupId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
         <artifactId>platform-storage-postgres</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
@@ -95,7 +90,6 @@
     <module>apps/backend</module>
     <module>packages/java/platform-domain</module>
     <module>packages/java/platform-application</module>
-    <module>packages/java/platform-storage-json</module>
     <module>packages/java/platform-storage-postgres</module>
     <module>packages/java/platform-modeling</module>
     <module>packages/java/mde-etl-runner</module>

@@ -41,5 +41,23 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  frontend:
+    image: python:3.13-alpine
+    command: [ "python3", "-m", "http.server", "--bind", "0.0.0.0", "8082", "--directory", "/app" ]
+    ports:
+      - "${FRONTEND_PORT:-8082}:8082"
+    volumes:
+      - ./apps/frontend:/app:ro
+    restart: unless-stopped
+
+  landing:
+    image: python:3.13-alpine
+    command: [ "python3", "-m", "http.server", "--bind", "0.0.0.0", "8083", "--directory", "/app" ]
+    ports:
+      - "${LANDING_PORT:-8083}:8083"
+    volumes:
+      - ./apps/landing:/app:ro
+    restart: unless-stopped
+
 volumes:
   modless-postgres-data:
