@@ -33,12 +33,20 @@
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
-      <artifactId>platform-storage-json</artifactId>
+      <artifactId>platform-storage-postgres</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>
     <dependency>
       <artifactId>platform-modeling</artifactId>
       <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+      <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+      <groupId>org.springframework.boot</groupId>
     </dependency>
     <dependency>
       <artifactId>spring-boot-starter-validation</artifactId>
@@ -47,6 +55,19 @@
     <dependency>
       <artifactId>spring-boot-starter-web</artifactId>
       <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>flyway-core</artifactId>
+      <groupId>org.flywaydb</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>flyway-database-postgresql</artifactId>
+      <groupId>org.flywaydb</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>postgresql</artifactId>
+      <groupId>org.postgresql</groupId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <artifactId>spring-boot-starter-test</artifactId>

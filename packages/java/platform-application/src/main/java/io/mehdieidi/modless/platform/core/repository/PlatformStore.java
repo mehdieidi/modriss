@@ -62,6 +62,14 @@ public interface PlatformStore {
     void writeBytesAtomically(Path path, byte[] bytes);
 
     /**
+     * Reads stored bytes when they exist.
+     *
+     * @param path logical storage key
+     * @return optional byte payload
+     */
+    Optional<byte[]> readBytes(Path path);
+
+    /**
      * Deletes one stored value when it exists.
      *
      * @param path logical storage key
@@ -85,21 +93,4 @@ public interface PlatformStore {
      */
     void deleteTree(Path directory);
 
-    /**
-     * Resolves a logical key for adapter-specific streaming operations.
-     *
-     * <p>This is a temporary bridge for large-file parsing code that has not yet been extracted
-     * into finer repository ports. Storage adapters remain responsible for path safety.
-     *
-     * @param path logical storage key
-     * @return adapter-resolved path
-     */
-    Path resolve(Path path);
-
-    /**
-     * Returns the adapter root for legacy relative-key calculations.
-     *
-     * @return adapter root
-     */
-    Path root();
 }

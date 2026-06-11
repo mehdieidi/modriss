@@ -87,6 +87,12 @@ for model validation, model transformation, and code generation.
 The backend follows a monolithic but modular architecture. It is designed to remain maintainable,
 extensible, and modifiable.
 
+## Runtime
+
+The backend now uses PostgreSQL for persisted application state, with schema migrations managed by
+Flyway and container orchestration documented in `compose.yaml`. Storage operations and migration
+workflow are documented in `docs/postgres-storage.md`.
+
 ## AI-Assisted Modeling
 
 The platform includes an AI modeling assistant integrated into the frontend editor and implemented

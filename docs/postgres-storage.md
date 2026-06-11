@@ -1,0 +1,150 @@
+# PostgreSQL Storage
+
+Modless persists application-owned runtime data in PostgreSQL. The backend uses Spring JDBC for
+data access and Flyway for schema migration.
+
+## What Is Stored
+
+- Users and sessions: `users`, `auth_sessions`
+- Projects and access control: `projects`, `project_members`, `project_active_models`
+- CIM/PIM/PSM model instances: `models.model_json` as `jsonb`
+- CIM/PIM/PSM source XMI sidecars: `models.source_xmi` as `bytea`
+- Temporary imported XMI: `staged_imports`, `staged_import_payloads`
+- Generated artifact bundles: `artifacts`, `artifact_files`
+- MDE job state and diagnostics: `mde_jobs`, `mde_job_diagnostics`
+
+Static product/configuration assets, such as metamodels, EVL/ETL/EGX scripts, and UI metadata JSON
+resources, are still versioned with the application source code.
+
+## Local Database
+
+Start PostgreSQL:
+
+```powershell
+docker compose up -d postgres
+```
+
+Run the backend against that database:
+
+```powershell
+mvn -pl apps/backend -am spring-boot:run
+```
+
+Default connection settings:
+
+```text
+MODLESS_DB_URL=jdbc:postgresql://localhost:5432/modless
+MODLESS_DB_USER=modless
+MODLESS_DB_PASSWORD=modless
+```
+
+Override them in the shell when needed:
+
+```powershell
+$env:MODLESS_DB_URL = "jdbc:postgresql://localhost:5432/modless"
+$env:MODLESS_DB_USER = "modless"
+$env:MODLESS_DB_PASSWORD = "modless"
+mvn -pl apps/backend -am spring-boot:run
+```
+
+## Full Stack
+
+Build and run PostgreSQL plus the backend container:
+
+```powershell
+docker compose up --build
+```
+
+Health endpoints:
+
+```text
+http://127.0.0.1:8080/api/health
+http://127.0.0.1:8080/actuator/health
+```
+
+If Windows proxy settings route `localhost` through a local proxy, use `127.0.0.1` or bypass the
+proxy in your HTTP client.
+
+## Migrations
+
+Migration files live in:
+
+```text
+packages/java/platform-storage-postgres/src/main/resources/db/migration
+```
+
+Flyway runs automatically during Spring Boot startup. The first schema is:
+
+```text
+V1__create_platform_schema.sql
+```
+
+For future schema edits, do not modify an already-applied migration in a shared or production
+database. Add a new migration instead:
+
+```text
+V2__add_example_column.sql
+V3__create_example_table.sql
+```
+
+Good migration rules:
+
+- Use forward-only migrations.
+- Make constraints explicit with `NOT NULL`, `CHECK`, primary keys, foreign keys, and indexes.
+- Add backfill steps before adding new `NOT NULL` constraints to existing populated tables.
+- Keep application code compatible with the migration order.
+- Test migrations against an empty database and an existing database.
+
+During early local development, if you intentionally change `V1` before it is shared, reset the
+local database volume:
+
+```powershell
+docker compose down -v
+docker compose up -d postgres
+```
+
+## Inspecting The Database
+
+Open `psql` in the running container:
+
+```powershell
+docker exec -it modless-postgres-1 psql -U modless -d modless
+```
+
+Useful checks:
+
+```sql
+select version, description, success from flyway_schema_history order by installed_rank;
+select count(*) from users;
+select count(*) from projects;
+select id, project_id, level, revision from models order by updated_at desc;
+```
+
+## Tests And Verification
+
+Compile and run the full Maven test suite:
+
+```powershell
+mvn test
+```
+
+Build the backend:
+
+```powershell
+mvn -pl apps/backend -am package -DskipTests
+```
+
+Basic live smoke test:
+
+```powershell
+curl.exe --noproxy "*" http://127.0.0.1:8080/api/health
+```
+
+For storage changes, verify at least:
+
+- user registration and login
+- project create, list, get, update, delete
+- model create/update/export for JSON and XMI
+- staged import cleanup
+- artifact create/update/download through transformation or service-level tests
+- project deletion cascades models, artifacts, jobs, members, and staged imports

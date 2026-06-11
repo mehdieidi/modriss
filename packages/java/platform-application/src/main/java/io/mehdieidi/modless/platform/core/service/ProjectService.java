@@ -2,7 +2,10 @@ package io.mehdieidi.modless.platform.core.service;
 
 import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
+import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
 import io.mehdieidi.modless.platform.core.model.MemberRole;
+import io.mehdieidi.modless.platform.core.model.ModelLevel;
+import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectMember;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
@@ -146,14 +149,10 @@ public final class ProjectService {
      */
     public byte[] zip(UserRecord user, String projectId) {
         ProjectRecord project = get(user, projectId);
-        Path projectDir = store.resolve(Path.of("projects", project.id()));
-        if (!Files.isDirectory(projectDir)) {
-            throw new PlatformException(404, "Project not found.");
-        }
         try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 ZipOutputStream zip = new ZipOutputStream(bytes)) {
-            addStoredProjectFiles(zip, projectDir);
-            addExpandedArtifactFiles(zip, projectDir);
+            addStoredProjectRecords(zip, project);
+            addExpandedArtifactFiles(zip, project.id());
             zip.finish();
             return bytes.toByteArray();
         } catch (IOException ex) {
@@ -286,13 +285,26 @@ public final class ProjectService {
      * @param projectDir resolved project repository directory
      * @throws IOException when a file cannot be read or written to the archive
      */
-    private void addStoredProjectFiles(ZipOutputStream zip, Path projectDir) throws IOException {
-        try (Stream<Path> paths = Files.walk(projectDir)) {
-            for (Path path : paths.filter(Files::isRegularFile).toList()) {
-                Path relative = projectDir.relativize(path);
-                addFileEntry(zip, Path.of("modless-project", relative.toString()).toString(),
-                        Files.readAllBytes(path));
+    private void addStoredProjectRecords(ZipOutputStream zip, ProjectRecord project)
+            throws IOException {
+        addJsonEntry(zip, "modless-project/project.json", project);
+        for (ModelLevel level : ModelLevel.values()) {
+            for (ModelRecord model : store.list(Path.of("projects", project.id(), "models",
+                    level.apiName()), ModelRecord.class)) {
+                String root = "modless-project/models/" + level.apiName() + "/" + model.id();
+                addJsonEntry(zip, root + ".json", model);
+                store.readBytes(Path.of("projects", project.id(), "models", level.apiName(),
+                                model.id() + ".xmi"))
+                        .ifPresent(bytes -> addFileEntryUnchecked(zip, root + ".xmi", bytes));
             }
+        }
+        for (ArtifactRecord artifact : store.list(Path.of("projects", project.id(), "artifacts"),
+                ArtifactRecord.class)) {
+            addJsonEntry(zip, "modless-project/artifacts/" + artifact.id() + ".json", artifact);
+        }
+        for (MdeJobRecord job : store.list(Path.of("projects", project.id(), "mde-jobs"),
+                MdeJobRecord.class)) {
+            addJsonEntry(zip, "modless-project/mde-jobs/" + job.id() + ".json", job);
         }
     }
 
@@ -303,28 +315,33 @@ public final class ProjectService {
      * @param projectDir resolved project repository directory
      * @throws IOException when an artifact file cannot be read or written to the archive
      */
-    private void addExpandedArtifactFiles(ZipOutputStream zip, Path projectDir) throws IOException {
-        Path artifactsDir = projectDir.resolve("artifacts");
-        if (!Files.isDirectory(artifactsDir)) {
-            return;
-        }
-        try (Stream<Path> paths = Files.list(artifactsDir)) {
-            for (Path path : paths.filter(candidate -> candidate.getFileName().toString()
-                    .endsWith(".json")).toList()) {
-                ArtifactRecord artifact = store.objectMapper().readValue(path.toFile(),
-                        ArtifactRecord.class);
-                String artifactRoot = "artifacts/" + archiveSegment(artifact.name(),
-                        artifact.id()) + "-" + archiveSegment(shortId(artifact.id()),
-                        artifact.id());
-                Map<String, String> artifactFiles = artifact.files() == null ? Map.of()
-                        : artifact.files();
-                for (Map.Entry<String, String> file : artifactFiles.entrySet()) {
-                    String normalizedPath = normalizeArtifactPath(file.getKey());
-                    addFileEntry(zip, artifactRoot + "/" + normalizedPath,
-                            String.valueOf(file.getValue() == null ? "" : file.getValue())
-                                    .getBytes(StandardCharsets.UTF_8));
-                }
+    private void addExpandedArtifactFiles(ZipOutputStream zip, String projectId)
+            throws IOException {
+        for (ArtifactRecord artifact : store.list(Path.of("projects", projectId, "artifacts"),
+                ArtifactRecord.class)) {
+            String artifactRoot = "artifacts/" + archiveSegment(artifact.name(),
+                    artifact.id()) + "-" + archiveSegment(shortId(artifact.id()),
+                    artifact.id());
+            Map<String, String> artifactFiles = artifact.files() == null ? Map.of()
+                    : artifact.files();
+            for (Map.Entry<String, String> file : artifactFiles.entrySet()) {
+                String normalizedPath = normalizeArtifactPath(file.getKey());
+                addFileEntry(zip, artifactRoot + "/" + normalizedPath,
+                        String.valueOf(file.getValue() == null ? "" : file.getValue())
+                                .getBytes(StandardCharsets.UTF_8));
             }
+        }
+    }
+
+    private void addJsonEntry(ZipOutputStream zip, String name, Object value) throws IOException {
+        addFileEntry(zip, name, store.objectMapper().writeValueAsBytes(value));
+    }
+
+    private void addFileEntryUnchecked(ZipOutputStream zip, String name, byte[] bytes) {
+        try {
+            addFileEntry(zip, name, bytes);
+        } catch (IOException ex) {
+            throw new PlatformException(500, "Could not package project.");
         }
     }
 

@@ -92,8 +92,8 @@ class JsonFileStoreTest {
         store.writeBytesAtomically(Path.of("projects", "project-1", "blob.bin"),
                 new byte[]{1, 2, 3});
 
-        assertArrayEquals(new byte[]{1, 2, 3},
-                Files.readAllBytes(store.resolve(Path.of("projects", "project-1", "blob.bin"))));
+        assertArrayEquals(new byte[]{1, 2, 3}, store.readBytes(
+                Path.of("projects", "project-1", "blob.bin")).orElseThrow());
     }
 
     private record StoredValue(String id, int revision) {

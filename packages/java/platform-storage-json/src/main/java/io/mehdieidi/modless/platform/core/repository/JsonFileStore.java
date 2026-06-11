@@ -168,6 +168,20 @@ public final class JsonFileStore implements PlatformStore {
         writeBytesResolved(resolved, bytes == null ? new byte[0] : bytes);
     }
 
+    @Override
+    public Optional<byte[]> readBytes(Path path) {
+        Path resolved = resolve(path);
+        if (!Files.isRegularFile(resolved)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Files.readAllBytes(resolved));
+        } catch (IOException ex) {
+            log.error("Failed to read repository file {}", resolved, ex);
+            throw new PlatformException(500, "Could not read stored data.");
+        }
+    }
+
     /**
      * Moves a repository file to another repository path.
      *

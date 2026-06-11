@@ -92,6 +92,12 @@ class ApplicationServicesPortTest {
         }
 
         @Override
+        public Optional<byte[]> readBytes(Path path) {
+            Object value = values.get(key(path));
+            return value instanceof byte[] bytes ? Optional.of(bytes.clone()) : Optional.empty();
+        }
+
+        @Override
         public void deleteIfExists(Path path) {
             values.remove(key(path));
         }
@@ -112,16 +118,6 @@ class ApplicationServicesPortTest {
             new LinkedHashMap<>(values).keySet().stream()
                     .filter(key -> key.startsWith(prefix))
                     .forEach(values::remove);
-        }
-
-        @Override
-        public Path resolve(Path path) {
-            throw new UnsupportedOperationException("In-memory store has no filesystem path.");
-        }
-
-        @Override
-        public Path root() {
-            throw new UnsupportedOperationException("In-memory store has no filesystem root.");
         }
 
         boolean containsPrefix(Path directory) {

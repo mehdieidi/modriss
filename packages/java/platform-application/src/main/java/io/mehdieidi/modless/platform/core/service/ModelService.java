@@ -213,20 +213,9 @@ public final class ModelService {
             return List.of();
         }
         projectService.get(user, projectId);
-        Path dir = store.resolve(modelDir(projectId, level));
-        if (!Files.isDirectory(dir)) {
-            return List.of();
-        }
-        try (Stream<Path> files = Files.list(dir)) {
-            return files.filter(path -> path.getFileName().toString().endsWith(".json"))
-                    .map(path -> store.read(store.root().relativize(path), ModelRecord.class)
-                            .orElse(null))
-                    .filter(model -> model != null)
-                    .sorted(Comparator.comparing(ModelRecord::updatedAt).reversed())
-                    .toList();
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not list models.");
-        }
+        return store.list(modelDir(projectId, level), ModelRecord.class).stream()
+                .sorted(Comparator.comparing(ModelRecord::updatedAt).reversed())
+                .toList();
     }
 
     /**
@@ -242,19 +231,10 @@ public final class ModelService {
             return List.of();
         }
         projectService.get(user, projectId);
-        Path dir = store.resolve(modelDir(projectId, level));
-        if (!Files.isDirectory(dir)) {
-            return List.of();
-        }
-        try (Stream<Path> files = Files.list(dir)) {
-            return files.filter(path -> path.getFileName().toString().endsWith(".json"))
-                    .map(path -> readSummary(path, level))
-                    .filter(model -> model != null)
-                    .sorted(Comparator.comparing(ModelSummary::updatedAt).reversed())
-                    .toList();
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not list model summaries.");
-        }
+        return store.list(modelDir(projectId, level), ModelRecord.class).stream()
+                .map(this::summary)
+                .sorted(Comparator.comparing(ModelSummary::updatedAt).reversed())
+                .toList();
     }
 
     /**
@@ -1341,15 +1321,7 @@ public final class ModelService {
      * @return optional source XMI bytes
      */
     public Optional<byte[]> sourceXmi(ModelRecord model) {
-        Path path = sourceXmiPath(model.projectId(), model.level(), model.id());
-        try {
-            Path resolved = store.resolve(path);
-            return Files.isRegularFile(resolved)
-                    ? Optional.of(Files.readAllBytes(resolved))
-                    : Optional.empty();
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not read stored source XMI.");
-        }
+        return store.readBytes(sourceXmiPath(model.projectId(), model.level(), model.id()));
     }
 
     /**
@@ -1626,7 +1598,6 @@ public final class ModelService {
         String token = UUID.randomUUID().toString();
         Instant now = Instant.now();
         Path xmiPath = stagedSourceXmiPath(token);
-        store.writeBytesAtomically(xmiPath, bytes);
         store.write(stagedSourceXmiRecordPath(token), new StagedImportRecord(
                 token,
                 user == null ? "" : user.id(),
@@ -1636,6 +1607,7 @@ public final class ModelService {
                 bytes == null ? 0 : bytes.length,
                 now,
                 now.plus(runtimeOptions.stagedImportTtl())));
+        store.writeBytesAtomically(xmiPath, bytes);
         return token;
     }
 
@@ -1694,17 +1666,10 @@ public final class ModelService {
             throw new PlatformException(403,
                     "Staged XMI import token belongs to another project.");
         }
-        Path xmiPath = Path.of(record.xmiPath());
-        Path resolved = store.resolve(xmiPath);
-        if (!Files.isRegularFile(resolved)) {
-            throw new PlatformException(410, "Staged XMI import file is no longer available.");
-        }
-        try {
-            byte[] bytes = Files.readAllBytes(resolved);
-            return new SourceXmiUpdate(bytes, hashBytes(bytes), record);
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not read staged source XMI.");
-        }
+        byte[] bytes = store.readBytes(Path.of(record.xmiPath()))
+                .orElseThrow(() -> new PlatformException(410,
+                        "Staged XMI import file is no longer available."));
+        return new SourceXmiUpdate(bytes, hashBytes(bytes), record);
     }
 
     /**
@@ -1803,12 +1768,7 @@ public final class ModelService {
      * @return file bytes or {@code null}
      */
     private byte[] readBytesIfPresent(Path path) {
-        try {
-            Path resolved = store.resolve(path);
-            return Files.isRegularFile(resolved) ? Files.readAllBytes(resolved) : null;
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not snapshot stored model state.");
-        }
+        return store.readBytes(path).orElse(null);
     }
 
     /**
@@ -1830,11 +1790,10 @@ public final class ModelService {
      * @return model record
      */
     private ModelRecord findLegacyAndIndex(ModelLevel level, String id) {
-        Path projects = store.resolve(Path.of("projects"));
-        try (Stream<Path> projectDirs = Files.list(projects)) {
-            ModelRecord model = projectDirs.map(project -> store.read(Path.of("projects",
-                            project.getFileName().toString(), "models", level.apiName(),
-                            id + ".json"), ModelRecord.class).orElse(null))
+        try {
+            ModelRecord model = store.list(Path.of("projects"), ProjectRecord.class).stream()
+                    .map(project -> store.read(Path.of("projects", project.id(), "models",
+                            level.apiName(), id + ".json"), ModelRecord.class).orElse(null))
                     .filter(candidate -> candidate != null)
                     .findFirst()
                     .orElseThrow(() -> new PlatformException(404, "Model not found."));
@@ -1951,15 +1910,9 @@ public final class ModelService {
      * Removes expired staged XMI imports.
      */
     public void cleanupExpiredImports() {
-        Path imports = store.resolve(Path.of("model-imports"));
-        if (!Files.isDirectory(imports)) {
-            return;
-        }
-        try (Stream<Path> files = Files.list(imports)) {
-            files.filter(path -> path.getFileName().toString().endsWith(".json"))
-                    .map(path -> store.read(store.root().relativize(path),
-                            StagedImportRecord.class).orElse(null))
-                    .filter(record -> record != null && record.expiresAt() != null
+        try {
+            store.list(Path.of("model-imports"), StagedImportRecord.class).stream()
+                    .filter(record -> record.expiresAt() != null
                             && record.expiresAt().isBefore(Instant.now()))
                     .forEach(this::cleanupStagedImport);
         } catch (Exception ex) {

@@ -1,7 +1,6 @@
 package io.mehdieidi.modless.backend.config;
 
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.repository.JsonFileStore;
 import io.mehdieidi.modless.platform.core.repository.PlatformStore;
 import io.mehdieidi.modless.platform.core.service.ArtifactService;
 import io.mehdieidi.modless.platform.core.service.AuthService;
@@ -27,19 +26,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(BackendProperties.class)
 public class CoreServicesConfig {
-
-    /**
-     * Creates and initializes the JSON file store.
-     *
-     * @param properties backend storage settings
-     * @return initialized JSON file store
-     */
-    @Bean
-    JsonFileStore jsonFileStore(BackendProperties properties) {
-        JsonFileStore store = new JsonFileStore(properties.storageRoot());
-        store.initialize();
-        return store;
-    }
 
     /**
      * Creates the authentication service.

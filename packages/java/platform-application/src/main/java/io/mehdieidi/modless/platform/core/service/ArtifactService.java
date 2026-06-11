@@ -61,19 +61,10 @@ public final class ArtifactService {
             return List.of();
         }
         projectService.get(user, projectId);
-        Path dir = store.resolve(Path.of("projects", projectId, "artifacts"));
-        if (!Files.isDirectory(dir)) {
-            return List.of();
-        }
-        try (Stream<Path> files = Files.list(dir)) {
-            return files.filter(path -> path.getFileName().toString().endsWith(".json"))
-                    .map(this::readSummary)
-                    .filter(artifact -> artifact != null)
-                    .sorted(Comparator.comparing(ArtifactRecord::updatedAt).reversed())
-                    .toList();
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not list artifacts.");
-        }
+        return store.list(Path.of("projects", projectId, "artifacts"),
+                        ArtifactRecord.class).stream()
+                .sorted(Comparator.comparing(ArtifactRecord::updatedAt).reversed())
+                .toList();
     }
 
     /**
@@ -246,9 +237,10 @@ public final class ArtifactService {
      * @return artifact record
      */
     private ArtifactRecord findLegacyAndIndex(String id) {
-        try (Stream<Path> projectDirs = Files.list(store.resolve(Path.of("projects")))) {
-            ArtifactRecord artifact = projectDirs.map(project -> store.read(Path.of("projects",
-                                    project.getFileName().toString(), "artifacts", id + ".json"),
+        try {
+            ArtifactRecord artifact = store.list(Path.of("projects"), ProjectRecord.class).stream()
+                    .map(project -> store.read(Path.of("projects", project.id(), "artifacts",
+                                    id + ".json"),
                             ArtifactRecord.class).orElse(null))
                     .filter(candidate -> candidate != null)
                     .findFirst()
