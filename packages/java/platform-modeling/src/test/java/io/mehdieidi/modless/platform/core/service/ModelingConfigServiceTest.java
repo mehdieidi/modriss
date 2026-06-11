@@ -3,6 +3,7 @@ package io.mehdieidi.modless.platform.core.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -88,6 +89,20 @@ class ModelingConfigServiceTest {
     }
 
     /**
+     * Verifies that new elements do not receive an invalid empty enum literal.
+     */
+    @Test
+    void leavesEnumAttributesUnsetByDefault() {
+        Map<String, Object> goal = element(listOfMaps(level("cim").get("elements")),
+                "BusinessGoal");
+        Map<String, Object> priority = attribute(goal, "priority");
+
+        assertEquals("select", priority.get("fieldType"));
+        assertNull(priority.get("defaultValue"));
+        assertTrue(stringList(priority.get("options")).contains("MEDIUM"));
+    }
+
+    /**
      * Returns one level configuration from the service output.
      *
      * @param key level key
@@ -107,6 +122,18 @@ class ModelingConfigServiceTest {
     private Map<String, Object> element(List<Map<String, Object>> elements, String type) {
         return elements.stream().filter(item -> type.equals(item.get("type"))).findFirst()
                 .orElseThrow();
+    }
+
+    /**
+     * Finds an attribute metadata entry by name.
+     *
+     * @param element element metadata
+     * @param name    attribute name
+     * @return matching attribute metadata
+     */
+    private Map<String, Object> attribute(Map<String, Object> element, String name) {
+        return listOfMaps(element.get("attributes")).stream()
+                .filter(item -> name.equals(item.get("name"))).findFirst().orElseThrow();
     }
 
     /**

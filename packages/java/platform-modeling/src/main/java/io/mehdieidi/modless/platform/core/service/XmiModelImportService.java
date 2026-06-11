@@ -1109,6 +1109,9 @@ final class XmiModelImportService {
             EDataType type = attribute.getEAttributeType();
             if (type instanceof EEnum eEnum) {
                 String literal = scalarText(value);
+                if (literal.isBlank()) {
+                    return null;
+                }
                 EEnumLiteral enumLiteral = eEnum.getEEnumLiteral(literal);
                 if (enumLiteral == null) {
                     enumLiteral = eEnum.getEEnumLiteralByLiteral(literal);

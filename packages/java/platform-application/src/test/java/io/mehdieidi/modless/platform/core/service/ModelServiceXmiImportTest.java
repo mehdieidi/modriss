@@ -192,6 +192,29 @@ class ModelServiceXmiImportTest {
     }
 
     /**
+     * Verifies that blank enum values from older frontend defaults are treated as unset.
+     */
+    @Test
+    void ignoresBlankEnumValuesDuringXmiExport() {
+        TestPlatformStore store = new TestPlatformStore(tempDir);
+        store.initialize();
+        AuthService authService = new AuthService(store, Duration.ofHours(1));
+        ProjectService projectService = new ProjectService(store, authService);
+        ModelService service = new ModelService(store, projectService);
+        ObjectNode model = minimalCimModel(store);
+        ObjectNode goal = model.putArray("goals").addObject();
+        goal.put("eClass", "BusinessGoal");
+        goal.put("id", "goal-1");
+        goal.put("name", "Improve customer retention");
+        goal.put("priority", "");
+
+        byte[] exported = assertDoesNotThrow(
+                () -> service.exportModel(ModelLevel.CIM, model, "xmi"));
+
+        assertTrue(exported.length > 0);
+    }
+
+    /**
      * Verifies strict export diagnostics for unresolved model references.
      */
     @Test

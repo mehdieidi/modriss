@@ -970,7 +970,8 @@ public final class ModelingConfigService {
         attribute.put("required", required(feature.multiplicity()));
         attribute.put("many", many(feature.multiplicity()));
         attribute.put("fieldType", fieldType(feature.type(), enumLiteralsByType));
-        attribute.put("defaultValue", defaultValue(feature.type(), feature.multiplicity()));
+        attribute.put("defaultValue",
+                defaultValue(feature.type(), feature.multiplicity(), enumLiteralsByType));
         if (enumLiteralsByType.containsKey(feature.type())) {
             attribute.put("options", enumLiteralsByType.get(feature.type()));
         }
@@ -1015,7 +1016,7 @@ public final class ModelingConfigService {
         attribute.put("required", lowerBound(feature) > 0);
         attribute.put("many", upperBound(feature) == -1 || upperBound(feature) > 1);
         attribute.put("fieldType", fieldType(type, enumLiteralsByType));
-        attribute.put("defaultValue", defaultValue(type, upperBound(feature)));
+        attribute.put("defaultValue", defaultValue(type, upperBound(feature), enumLiteralsByType));
         if (enumLiteralsByType.containsKey(type)) {
             attribute.put("options", enumLiteralsByType.get(type));
         }
@@ -1274,13 +1275,18 @@ public final class ModelingConfigService {
     /**
      * Supplies a default UI value from type and upper bound.
      *
-     * @param type       Ecore type name
-     * @param upperBound Ecore upper bound
+     * @param type               Ecore type name
+     * @param upperBound         Ecore upper bound
+     * @param enumLiteralsByType enum literals keyed by enum type
      * @return default value
      */
-    private Object defaultValue(String type, int upperBound) {
+    private Object defaultValue(String type, int upperBound,
+            Map<String, List<String>> enumLiteralsByType) {
         if (upperBound == -1 || upperBound > 1) {
             return List.of();
+        }
+        if (enumLiteralsByType.containsKey(type)) {
+            return null;
         }
         if (type.contains("Boolean")) {
             return false;
@@ -1295,13 +1301,18 @@ public final class ModelingConfigService {
     /**
      * Supplies a default UI value from type and multiplicity token.
      *
-     * @param type         Ecore type name
-     * @param multiplicity multiplicity token
+     * @param type               Ecore type name
+     * @param multiplicity       multiplicity token
+     * @param enumLiteralsByType enum literals keyed by enum type
      * @return default value
      */
-    private Object defaultValue(String type, String multiplicity) {
+    private Object defaultValue(String type, String multiplicity,
+            Map<String, List<String>> enumLiteralsByType) {
         if (many(multiplicity)) {
             return List.of();
+        }
+        if (enumLiteralsByType.containsKey(type)) {
+            return null;
         }
         if (type.contains("Boolean")) {
             return false;
