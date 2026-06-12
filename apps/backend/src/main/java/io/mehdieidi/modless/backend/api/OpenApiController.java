@@ -49,6 +49,25 @@ public class OpenApiController {
         add(paths, "/api/artifact/{id}/download", "get", "Download artifact ZIP");
         add(paths, "/api/modeling/config", "get", "Get modeling palette/configuration");
         add(paths, "/api/layout", "post", "Auto-layout diagram nodes");
+        add(paths, "/api/chatbot/sessions", "post", "Create assistant session");
+        add(paths, "/api/chatbot/sessions/{sessionId}", "delete",
+                "Clear assistant session memory");
+        add(paths, "/api/chatbot/sessions/{sessionId}/messages", "post",
+                "Send assistant message");
+        add(paths, "/api/chatbot/sessions/{sessionId}/events", "get",
+                "Open assistant SSE event stream");
+        add(paths, "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}", "get",
+                "Get assistant proposal");
+        add(paths, "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve", "post",
+                "Approve assistant proposal");
+        add(paths, "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject", "post",
+                "Reject assistant proposal");
+        add(paths, "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo", "post",
+                "Undo applied assistant proposal");
+        add(paths, "/api/chatbot/sessions/{sessionId}/choices", "post",
+                "Submit assistant choice");
+        add(paths, "/ws/chatbot/sessions/{sessionId}", "get",
+                "Open assistant WebSocket stream");
         add(paths, "/api/health", "get", "Get backend health");
         return Map.of(
                 "openapi", "3.1.0",

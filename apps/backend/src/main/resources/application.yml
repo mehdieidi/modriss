@@ -46,6 +46,43 @@ modless:
     max-generated-artifact-bytes: ${MODLESS_MDE_MAX_GENERATED_ARTIFACT_BYTES:52428800}
     staged-import-ttl: ${MODLESS_MDE_STAGED_IMPORT_TTL:2h}
     import-cleanup-interval: ${MODLESS_MDE_IMPORT_CLEANUP_INTERVAL:PT15M}
+  ai:
+    enabled: ${MODLESS_AI_ENABLED:false}
+    mode: ${MODLESS_AI_MODE:EXPLAIN_ONLY}
+    provider: ${MODLESS_AI_PROVIDER:groq}
+    request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:30s}
+    max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:6}
+    token-budget: ${MODLESS_AI_TOKEN_BUDGET:6000}
+    hardening:
+      per-user-requests-per-window: ${MODLESS_AI_RATE_LIMIT_REQUESTS:30}
+      rate-limit-window: ${MODLESS_AI_RATE_LIMIT_WINDOW:1m}
+      circuit-failure-threshold: ${MODLESS_AI_CIRCUIT_FAILURE_THRESHOLD:3}
+      circuit-open-duration: ${MODLESS_AI_CIRCUIT_OPEN_DURATION:1m}
+      provider-retry-attempts: ${MODLESS_AI_PROVIDER_RETRY_ATTEMPTS:2}
+      retry-backoff: ${MODLESS_AI_RETRY_BACKOFF:250ms}
+      recent-message-window: ${MODLESS_AI_RECENT_MESSAGE_WINDOW:12}
+    embeddings:
+      provider: ${MODLESS_AI_EMBEDDINGS_PROVIDER:ONNX}
+      model-resource: ${MODLESS_AI_EMBEDDINGS_MODEL_RESOURCE:}
+      tokenizer-resource: ${MODLESS_AI_EMBEDDINGS_TOKENIZER_RESOURCE:}
+      model-output-name: ${MODLESS_AI_EMBEDDINGS_MODEL_OUTPUT_NAME:}
+      cache-directory: ${MODLESS_AI_EMBEDDINGS_CACHE_DIRECTORY:}
+      disable-caching: ${MODLESS_AI_EMBEDDINGS_DISABLE_CACHING:false}
+      gpu-device-id: ${MODLESS_AI_EMBEDDINGS_GPU_DEVICE_ID:-1}
+      fallback-to-hash: ${MODLESS_AI_EMBEDDINGS_FALLBACK_TO_HASH:true}
+    proxy:
+      enabled: ${MODLESS_AI_PROXY_ENABLED:true}
+      type: ${MODLESS_AI_PROXY_TYPE:HTTP}
+      host: ${MODLESS_AI_PROXY_HOST:127.0.0.1}
+      port: ${MODLESS_AI_PROXY_PORT:2081}
+      connect-timeout: ${MODLESS_AI_PROXY_CONNECT_TIMEOUT:2s}
+    groq:
+      base-url: ${GROQ_BASE_URL:https://api.groq.com/openai}
+      api-key: ${GROQ_API_KEY:}
+    models:
+      planner: ${MODLESS_AI_PLANNER_MODEL:llama-3.3-70b-versatile}
+      responder: ${MODLESS_AI_RESPONDER_MODEL:llama-3.3-70b-versatile}
+      summarizer: ${MODLESS_AI_SUMMARIZER_MODEL:llama-3.1-8b-instant}
   allowed-origins:
     - http://127.0.0.1:5500
     - http://localhost:5500

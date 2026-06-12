@@ -35,7 +35,7 @@ import {
 } from './attr-panel.js';
 import {closeImpactPanel, toggleImpactMode} from './impact.js';
 import {
-  buildChatWelcomeCard,
+  clearChatConversation,
   ensureChatSession,
   sendChatMessage,
   updateChatAttachmentLabel
@@ -808,9 +808,9 @@ function bindEvents() {
 
   if (el.chatClearBtn) {
     el.chatClearBtn.addEventListener("click", () => {
-      el.chatMessages.innerHTML = "";
-      el.chatMessages.appendChild(buildChatWelcomeCard());
-      setStatus("Chat cleared");
+      clearChatConversation().catch((error) => {
+        setError(`Chat clear failed: ${error.message}`);
+      });
     });
   }
 

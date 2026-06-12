@@ -3,7 +3,7 @@ import {el} from './dom.js';
 import {api, isPlannedFeatureError} from './api.js';
 import {setError, setStatus} from './status.js';
 import {apiUrl, MODEL_TYPES, websocketUrl} from './config.js';
-import {serializeModel, toDiagram} from './diagram.js';
+import {toDiagram} from './diagram.js';
 import {renderDiagram} from './canvas.js';
 
 // ── Chat session / realtime ───────────────────────────────────────────────────
@@ -11,6 +11,10 @@ import {renderDiagram} from './canvas.js';
 export async function ensureChatSession() {
   if (state.chat.available === false) {
     setStatus("Chat is not available in this backend build.");
+    return null;
+  }
+  if (!state.project?.id) {
+    setStatus("Open a project before starting chat.");
     return null;
   }
   const typeKey = state.activeType;
@@ -27,7 +31,7 @@ export async function ensureChatSession() {
         modelName: (state.tabs[typeKey]?.modelName
             || `${typeKey}-assistant`).trim(),
         initialDocument: "Initialized from web modeling editor",
-        projectId: state.project?.id || null
+        projectId: state.project.id
       })
     });
   } catch (error) {
@@ -47,6 +51,41 @@ export async function ensureChatSession() {
   await connectChatRealtime(typeKey, session.sessionId);
 
   return session;
+}
+
+export async function clearChatConversation() {
+  const typeKey = state.activeType;
+  const session = state.chat.sessions.get(typeKey);
+  if (session?.sessionId) {
+    try {
+      await api(`/chatbot/sessions/${session.sessionId}`, {
+        method: "DELETE"
+      });
+    } catch (error) {
+      if (!error?.featureUnavailable) {
+        throw error;
+      }
+    }
+  }
+
+  const channel = state.chat.channels.get(typeKey);
+  if (channel?.handle) {
+    try {
+      channel.handle.close?.();
+    } catch {
+      // ignore cleanup errors
+    }
+  }
+  state.chat.channels.delete(typeKey);
+  state.chat.sessions.delete(typeKey);
+  state.chat.attachment = null;
+  if (el.chatFileInput) {
+    el.chatFileInput.value = "";
+  }
+  updateChatAttachmentLabel();
+  el.chatMessages.innerHTML = "";
+  el.chatMessages.appendChild(buildChatWelcomeCard());
+  setStatus("Chat cleared");
 }
 
 async function connectChatRealtime(typeKey, sessionId) {
@@ -90,6 +129,14 @@ async function connectChatRealtime(typeKey, sessionId) {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "model.updated", payload);
   });
+  stream.addEventListener("proposal.rejected", (event) => {
+    const payload = JSON.parse(event.data)?.payload;
+    handleChatRealtimeEvent(typeKey, "proposal.rejected", payload);
+  });
+  stream.addEventListener("assistant.choice", (event) => {
+    const payload = JSON.parse(event.data)?.payload;
+    handleChatRealtimeEvent(typeKey, "assistant.choice", payload);
+  });
   stream.onerror = () => {
     setStatus("Chat realtime stream disconnected");
   };
@@ -100,6 +147,16 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
   if (eventType === "chat.assistant") {
     const message = payload?.assistantMessage || payload?.message;
     appendAssistantDeduped(message);
+    return;
+  }
+
+  if (eventType === "proposal.rejected") {
+    appendAssistantDeduped("Proposal rejected.");
+    return;
+  }
+
+  if (eventType === "assistant.choice") {
+    appendAssistantDeduped("Choice recorded.");
     return;
   }
 
@@ -126,6 +183,7 @@ function appendChat(role, text) {
 
   const msg = document.createElement("div");
   msg.className = `chat-msg ${role}`;
+  msg.dataset.chatKind = "message";
 
   const avatar = document.createElement("div");
   avatar.className = "chat-msg-avatar";
@@ -147,14 +205,223 @@ function appendAssistantDeduped(text) {
   if (!text) {
     return;
   }
-  const last = el.chatMessages.lastElementChild;
-  if (last?.classList?.contains("assistant")) {
+  const messages = [...el.chatMessages.querySelectorAll(
+      '.chat-msg.assistant[data-chat-kind="message"]')];
+  const last = messages[messages.length - 1];
+  if (last) {
     const bubble = last.querySelector(".chat-msg-bubble");
     if (bubble && bubble.textContent === text) {
       return;
     }
   }
   appendChat("assistant", text);
+}
+
+function appendProposalCard(typeKey, sessionId, proposal) {
+  if (!proposal) {
+    return;
+  }
+  const card = document.createElement("div");
+  card.className = "chat-msg assistant";
+  card.dataset.chatKind = "proposal";
+  const bubble = document.createElement("div");
+  bubble.className = "chat-msg-bubble";
+
+  const title = document.createElement("div");
+  title.className = "chat-proposal-title";
+  title.textContent = `Proposal ${proposal.riskLevel
+  || "HIGH"}${proposal.approvalRequired ? " requires approval" : ""}`;
+  bubble.appendChild(title);
+
+  const summary = document.createElement("div");
+  summary.className = "chat-proposal-summary";
+  summary.textContent = `Affected: ${(proposal.affectedElements || []).join(
+      ", ") || "n/a"}`;
+  bubble.appendChild(summary);
+
+  const validation = document.createElement("div");
+  validation.className = "chat-proposal-validation";
+  const issues = Array.isArray(proposal.validation?.issues)
+      ? proposal.validation.issues : [];
+  validation.textContent = `Validation: ${proposal.validation?.mandatoryPassed
+      ? "mandatory constraints pass"
+      : "mandatory constraints fail"}; ${issues.length} issue(s)`;
+  bubble.appendChild(validation);
+
+  const operations = Array.isArray(proposal.patch?.operations)
+      ? proposal.patch.operations : [];
+  if (operations.length) {
+    const details = document.createElement("details");
+    details.className = "chat-proposal-preview";
+    const detailsTitle = document.createElement("summary");
+    detailsTitle.textContent = `${operations.length} semantic operation(s)`;
+    details.appendChild(detailsTitle);
+    const list = document.createElement("ul");
+    for (const operation of operations) {
+      const item = document.createElement("li");
+      item.textContent = [
+        operation.type,
+        operation.targetElementId,
+        operation.sourceElementId && `from ${operation.sourceElementId}`,
+        operation.referenceName && `via ${operation.referenceName}`
+      ].filter(Boolean).join(" ");
+      list.appendChild(item);
+    }
+    details.appendChild(list);
+    bubble.appendChild(details);
+  }
+
+  if (Array.isArray(proposal.citations) && proposal.citations.length) {
+    const citations = document.createElement("div");
+    citations.className = "chat-proposal-citations";
+    citations.textContent = `Citations: ${proposal.citations.join(", ")}`;
+    bubble.appendChild(citations);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "chat-proposal-actions";
+  if (proposal.approvalRequired) {
+    const approve = document.createElement("button");
+    approve.type = "button";
+    approve.textContent = "Approve";
+    approve.addEventListener("click", async () => {
+      try {
+        const response = await api(
+            `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`, {
+              method: "POST"
+            });
+        appendAssistantDeduped(
+            response.assistantMessage || "Proposal approved");
+        await applyAssistantModelResponse(typeKey, response);
+      } catch (error) {
+        appendChat("assistant", `Error: ${error.message}`);
+      }
+    });
+    actions.appendChild(approve);
+
+    const reject = document.createElement("button");
+    reject.type = "button";
+    reject.textContent = "Reject";
+    reject.addEventListener("click", async () => {
+      try {
+        await api(
+            `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/reject`, {
+              method: "POST"
+            });
+        appendChat("assistant", "Proposal rejected.");
+      } catch (error) {
+        appendChat("assistant", `Error: ${error.message}`);
+      }
+    });
+    actions.appendChild(reject);
+  } else if (proposal.id) {
+    const undo = document.createElement("button");
+    undo.type = "button";
+    undo.textContent = "Undo";
+    undo.addEventListener("click", async () => {
+      try {
+        const response = await api(
+            `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
+              method: "POST"
+            });
+        appendAssistantDeduped(response.assistantMessage || "Proposal undone");
+        await applyAssistantModelResponse(typeKey, response);
+      } catch (error) {
+        appendChat("assistant", `Error: ${error.message}`);
+      }
+    });
+    actions.appendChild(undo);
+  }
+  bubble.appendChild(actions);
+  card.appendChild(bubble);
+  el.chatMessages.appendChild(card);
+  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+}
+
+function appendChoiceButtons(typeKey, sessionId, choices) {
+  if (!Array.isArray(choices) || !choices.length) {
+    return;
+  }
+  const choice = choices[0];
+  const card = document.createElement("div");
+  card.className = "chat-msg assistant";
+  card.dataset.chatKind = "choice";
+  const bubble = document.createElement("div");
+  bubble.className = "chat-msg-bubble";
+  bubble.textContent = choice.prompt || "Choose an option.";
+  const actions = document.createElement("div");
+  actions.className = "chat-proposal-actions";
+  for (const option of choice.options || []) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = option.label || option.id;
+    button.addEventListener("click", async () => {
+      try {
+        await api(`/chatbot/sessions/${sessionId}/choices`, {
+          method: "POST",
+          body: JSON.stringify({
+            choiceId: choice.id,
+            optionId: option.id
+          })
+        });
+        appendChat("assistant", `Selected ${option.label || option.id}.`);
+      } catch (error) {
+        appendChat("assistant", `Error: ${error.message}`);
+      }
+    });
+    actions.appendChild(button);
+  }
+  bubble.appendChild(actions);
+  card.appendChild(bubble);
+  el.chatMessages.appendChild(card);
+  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+}
+
+async function applyAssistantModelResponse(typeKey, response,
+    requestedModelId = null,
+    requestDiagramFingerprint = null) {
+  if (!response) {
+    return;
+  }
+  const responseModelId = String(response.modelId || "").trim();
+  const liveModelId = String(state.modelId || "").trim();
+  const requestedModelIdValue = String(requestedModelId || "").trim();
+  const liveDiagramFingerprint = JSON.stringify(state.diagram || {});
+  const hasLocalEditsSinceRequest = requestDiagramFingerprint != null
+      && liveDiagramFingerprint !== requestDiagramFingerprint;
+  let model = response.model || null;
+  if (!model && responseModelId) {
+    try {
+      model = await api(`/${MODEL_TYPES[typeKey].apiType}/${responseModelId}`);
+    } catch {
+      model = null;
+    }
+  }
+  if (responseModelId && liveModelId && responseModelId !== liveModelId
+      && requestedModelIdValue && liveModelId !== requestedModelIdValue) {
+    setStatus(
+        "Assistant response received for another model; skipped auto-apply");
+    return;
+  }
+  if (hasLocalEditsSinceRequest) {
+    setStatus("Assistant response received; kept your newer canvas edits");
+    return;
+  }
+  if (!model) {
+    return;
+  }
+  state.modelId = responseModelId || state.modelId;
+  state.modelRevision = Number(response.revision) || state.modelRevision || 1;
+  state.baseModel = structuredClone(model);
+  state.diagram = toDiagram(typeKey, model, state.tabs[typeKey]?.modelName);
+  if (state.tabs[typeKey]) {
+    state.tabs[typeKey].modelId = state.modelId;
+    state.tabs[typeKey].modelRevision = state.modelRevision;
+    state.tabs[typeKey].baseModel = state.baseModel;
+    state.tabs[typeKey].diagram = state.diagram;
+    state.tabs[typeKey].modelName = model.name || state.tabs[typeKey].modelName;
+  }
+  renderDiagram();
 }
 
 export function updateChatAttachmentLabel() {
@@ -200,7 +467,15 @@ export async function sendChatMessage() {
           body: JSON.stringify({
             message: text,
             modelId: state.modelId,
-            currentModel: serializeModel(),
+            revision: state.modelRevision || null,
+            activeView: state.activeType,
+            selectedElementIds: [...new Set([
+              ...(state.selectedNodeIds instanceof Set
+                  ? [...state.selectedNodeIds]
+                  : []),
+              state.selectedNodeId,
+              state.selectedConnectionId
+            ].filter(Boolean))],
             attachmentName: state.chat.attachment?.name || null,
             attachmentContent: state.chat.attachment?.content || null
           })
@@ -211,37 +486,11 @@ export async function sendChatMessage() {
       el.chatHeaderSubtitle.textContent = "Ready to help";
     }
     appendAssistantDeduped(response.assistantMessage || "Done");
-    if (response.model) {
-      const responseModelId = String(response.modelId || "").trim();
-      const liveModelId = String(state.modelId || "").trim();
-      const requestedModelIdValue = String(requestedModelId || "").trim();
-      const liveDiagramFingerprint = JSON.stringify(state.diagram || {});
-      const hasLocalEditsSinceRequest = liveDiagramFingerprint
-          !== requestDiagramFingerprint;
-      if (responseModelId && liveModelId && responseModelId !== liveModelId
-          && requestedModelIdValue && liveModelId !== requestedModelIdValue) {
-        setStatus(
-            "Assistant response received for another model; skipped auto-apply");
-      } else if (hasLocalEditsSinceRequest) {
-        setStatus("Assistant response received; kept your newer canvas edits");
-      } else {
-        state.modelId = responseModelId || state.modelId;
-        state.modelRevision = Number(response.revision) || state.modelRevision
-            || 1;
-        state.baseModel = structuredClone(response.model);
-        state.diagram = toDiagram(state.activeType, response.model,
-            state.tabs[state.activeType]?.modelName);
-        if (state.tabs[state.activeType]) {
-          state.tabs[state.activeType].modelId = state.modelId;
-          state.tabs[state.activeType].modelRevision = state.modelRevision;
-          state.tabs[state.activeType].baseModel = state.baseModel;
-          state.tabs[state.activeType].diagram = state.diagram;
-          state.tabs[state.activeType].modelName = response.model.name
-              || state.tabs[state.activeType].modelName;
-        }
-        renderDiagram();
-      }
-    }
+    appendProposalCard(state.activeType, session.sessionId, response.proposal);
+    appendChoiceButtons(state.activeType, session.sessionId, response.choices);
+    await applyAssistantModelResponse(state.activeType, response,
+        requestedModelId,
+        requestDiagramFingerprint);
     state.chat.attachment = null;
     if (el.chatFileInput) {
       el.chatFileInput.value = "";

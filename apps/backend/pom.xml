@@ -57,6 +57,48 @@
       <groupId>org.springframework.boot</groupId>
     </dependency>
     <dependency>
+      <artifactId>spring-boot-starter-websocket</artifactId>
+      <groupId>org.springframework.boot</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-ai-client-chat</artifactId>
+      <groupId>org.springframework.ai</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-ai-openai</artifactId>
+      <groupId>org.springframework.ai</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-ai-model-chat-memory-repository-jdbc</artifactId>
+      <groupId>org.springframework.ai</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-ai-transformers</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>onnxruntime</artifactId>
+          <groupId>com.microsoft.onnxruntime</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>pytorch-engine</artifactId>
+          <groupId>ai.djl.pytorch</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>api</artifactId>
+          <groupId>ai.djl</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>model-zoo</artifactId>
+          <groupId>ai.djl</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>tokenizers</artifactId>
+          <groupId>ai.djl.huggingface</groupId>
+        </exclusion>
+      </exclusions>
+      <groupId>org.springframework.ai</groupId>
+    </dependency>
+    <dependency>
       <artifactId>flyway-core</artifactId>
       <groupId>org.flywaydb</groupId>
     </dependency>
@@ -86,4 +128,36 @@
     <relativePath>../../pom.xml</relativePath>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
+  <profiles>
+    <profile>
+      <id>onnx-embeddings</id>
+      <dependencies>
+        <dependency>
+          <artifactId>onnxruntime</artifactId>
+          <groupId>com.microsoft.onnxruntime</groupId>
+          <version>1.20.0</version>
+        </dependency>
+        <dependency>
+          <artifactId>pytorch-engine</artifactId>
+          <groupId>ai.djl.pytorch</groupId>
+          <version>0.32.0</version>
+        </dependency>
+        <dependency>
+          <artifactId>api</artifactId>
+          <groupId>ai.djl</groupId>
+          <version>0.32.0</version>
+        </dependency>
+        <dependency>
+          <artifactId>model-zoo</artifactId>
+          <groupId>ai.djl</groupId>
+          <version>0.32.0</version>
+        </dependency>
+        <dependency>
+          <artifactId>tokenizers</artifactId>
+          <groupId>ai.djl.huggingface</groupId>
+          <version>0.32.0</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

@@ -1,0 +1,60 @@
+package io.mehdieidi.modless.backend.assistant;
+
+import io.mehdieidi.modless.platform.core.service.ModelService;
+import java.time.Instant;
+import java.util.List;
+
+/**
+ * Assistant proposal that must pass backend validation before approval or apply.
+ *
+ * @param id               proposal ID
+ * @param affectedElements stable affected element IDs
+ * @param patch            semantic patch
+ * @param inversePatch     inverse executable patch
+ * @param validation       validation preview
+ * @param riskLevel        risk level
+ * @param approvalRequired whether user approval is required
+ * @param citations        supporting catalog or validation citations
+ * @param createdAt        creation time
+ */
+public record AssistantProposal(
+        String id,
+        List<String> affectedElements,
+        SemanticModelPatch patch,
+        List<ModelService.ModelPatchOperation> inversePatch,
+        AssistantValidationSummary validation,
+        RiskLevel riskLevel,
+        boolean approvalRequired,
+        List<String> citations,
+        Instant createdAt) {
+
+    /**
+     * Applies immutable collection semantics.
+     */
+    public AssistantProposal {
+        affectedElements = affectedElements == null ? List.of() : List.copyOf(affectedElements);
+        patch = patch == null ? new SemanticModelPatch(List.of()) : patch;
+        inversePatch = inversePatch == null ? List.of() : List.copyOf(inversePatch);
+        citations = citations == null ? List.of() : List.copyOf(citations);
+        riskLevel = riskLevel == null ? RiskLevel.HIGH : riskLevel;
+        createdAt = createdAt == null ? Instant.now() : createdAt;
+    }
+
+    /**
+     * Assistant proposal risk levels.
+     */
+    public enum RiskLevel {
+        /**
+         * Low-risk additive or explanatory change.
+         */
+        LOW,
+        /**
+         * Ambiguous or constraint-sensitive change.
+         */
+        MEDIUM,
+        /**
+         * Destructive, bulk, or high-impact change.
+         */
+        HIGH
+    }
+}
