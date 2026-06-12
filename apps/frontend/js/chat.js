@@ -220,6 +220,14 @@ function appendAssistantDeduped(text) {
   appendChat("assistant", text);
 }
 
+function unwrapAssistantModel(model) {
+  if (model && typeof model === "object" && model.modelJson
+      && typeof model.modelJson === "object") {
+    return model.modelJson;
+  }
+  return model;
+}
+
 function appendProposalCard(typeKey, sessionId, proposal) {
   if (!proposal) {
     return;
@@ -392,10 +400,11 @@ async function applyAssistantModelResponse(typeKey, response,
   const liveDiagramFingerprint = JSON.stringify(state.diagram || {});
   const hasLocalEditsSinceRequest = requestDiagramFingerprint != null
       && liveDiagramFingerprint !== requestDiagramFingerprint;
-  let model = response.model || null;
+  let model = unwrapAssistantModel(response.model || null);
   if (!model && responseModelId) {
     try {
-      model = await api(`/${MODEL_TYPES[typeKey].apiType}/${responseModelId}`);
+      model = unwrapAssistantModel(
+          await api(`/${MODEL_TYPES[typeKey].apiType}/${responseModelId}`));
     } catch {
       model = null;
     }

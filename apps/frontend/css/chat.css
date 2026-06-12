@@ -219,6 +219,10 @@
   padding-left: 32px;
 }
 
+.chat-msg.assistant[data-chat-kind="message"] {
+  display: block;
+}
+
 .chat-msg-avatar {
   width: 28px;
   height: 28px;
@@ -250,6 +254,11 @@
   background: color-mix(in srgb, var(--accent-glow) 66%, transparent);
 }
 
+.chat-msg.assistant[data-chat-kind="message"] .chat-msg-avatar {
+  float: left;
+  margin: 0 10px 4px 0;
+}
+
 .chat-msg-bubble {
   max-width: calc(100% - 44px);
   padding: 9px 12px;
@@ -272,12 +281,22 @@
 
 .chat-msg.assistant .chat-msg-bubble {
   flex: 1;
-  max-width: calc(100% - 36px);
+  max-width: 100%;
   padding: 2px 4px 12px;
   border-radius: 0;
   color: var(--text);
   background: transparent;
   border: none;
+}
+
+.chat-msg.assistant[data-chat-kind="message"] .chat-msg-bubble {
+  display: block;
+}
+
+.chat-msg.assistant[data-chat-kind="message"]::after {
+  content: "";
+  display: block;
+  clear: both;
 }
 
 .chat-msg.assistant[data-chat-kind="proposal"] .chat-msg-bubble,
