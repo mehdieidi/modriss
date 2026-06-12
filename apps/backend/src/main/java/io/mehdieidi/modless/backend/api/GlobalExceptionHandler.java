@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Maps backend exceptions to stable API error responses and appropriate logging.
@@ -49,6 +50,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest()
                 .body(new ApiErrorResponse("Request validation failed.", 400, Instant.now(),
                         issues));
+    }
+
+    /**
+     * Maps missing routes/static resources to not-found instead of an internal error.
+     *
+     * @param ex missing route/resource failure
+     * @return API error response
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<ApiErrorResponse> missingResource(NoResourceFoundException ex) {
+        log.warn("Route not found: {}", ex.getResourcePath());
+        return ResponseEntity.status(404)
+                .body(new ApiErrorResponse("Resource not found.", 404, Instant.now(), List.of()));
     }
 
     /**

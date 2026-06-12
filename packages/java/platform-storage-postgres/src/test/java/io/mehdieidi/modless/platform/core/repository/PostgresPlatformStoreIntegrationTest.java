@@ -54,7 +54,9 @@ class PostgresPlatformStoreIntegrationTest {
         assumeTrue(databaseAvailable(), "PostgreSQL test database is not available.");
         schema = "test_" + UUID.randomUUID().toString().replace("-", "");
         DriverManagerDataSource admin = dataSource(baseUrl);
-        new JdbcTemplate(admin).execute("CREATE SCHEMA " + schema);
+        JdbcTemplate adminJdbc = new JdbcTemplate(admin);
+        adminJdbc.execute("CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public");
+        adminJdbc.execute("CREATE SCHEMA " + schema);
 
         String schemaUrl = withCurrentSchema(baseUrl, schema);
         Flyway.configure()
@@ -181,6 +183,6 @@ class PostgresPlatformStoreIntegrationTest {
     }
 
     private String withCurrentSchema(String url, String schema) {
-        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
     }
 }

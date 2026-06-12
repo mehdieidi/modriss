@@ -92,7 +92,7 @@ public class AssistantCatalogService {
         List<AssistantModelProvider.ContextSnippet> exact = jdbc.query("""
                 SELECT source, title, content FROM assistant_retrieval_documents
                 WHERE (lower(title) = lower(?) OR lower(source) = lower(?))
-                  AND (? = '' OR metadata->>'level' = ?)
+                  AND (? = '' OR metadata->>'level' = ? OR metadata->>'level' = 'SHARED')
                 ORDER BY updated_at DESC
                 LIMIT ?
                 """, (rs, row) -> snippet(rs.getString("source"), rs.getString("title"),
@@ -113,7 +113,7 @@ public class AssistantCatalogService {
         String queryVector = embeddings.vectorLiteral(normalized);
         return jdbc.query("""
                 SELECT source, title, content FROM assistant_retrieval_documents
-                WHERE (? = '' OR metadata->>'level' = ?)
+                WHERE (? = '' OR metadata->>'level' = ? OR metadata->>'level' = 'SHARED')
                 ORDER BY
                   CASE
                     WHEN to_tsvector('simple', title || ' ' || content)
@@ -173,14 +173,22 @@ public class AssistantCatalogService {
     private List<Document> parseEmfatic(Path path, String source, String hash) throws Exception {
         List<Document> documents = new ArrayList<>();
         List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+        String currentPackage = "";
         String currentClass = null;
         for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
             String line = lines.get(lineNumber);
             String trimmed = line.trim();
+            if (trimmed.startsWith("package ")) {
+                currentPackage = trimmed.substring(8).split("[;\\s]", 2)[0].trim();
+                documents.add(document(source, hash, "package", currentPackage, trimmed,
+                        Map.of("kind", "package", "line", lineNumber + 1)));
+            }
             if (trimmed.startsWith("class ")) {
                 currentClass = trimmed.substring(6).split("[\\s\\{]", 2)[0].trim();
-                documents.add(document(source, hash, "classifier", currentClass, trimmed,
-                        Map.of("kind", "class", "line", lineNumber + 1)));
+                documents.add(document(source, hash, "classifier",
+                        currentPackage.isBlank() ? currentClass : currentPackage + "." + currentClass,
+                        trimmed, Map.of("kind", "class", "package", currentPackage,
+                                "line", lineNumber + 1)));
             } else if (currentClass != null && trimmed.startsWith("val ")
                     || currentClass != null && trimmed.startsWith("attr ")
                     || currentClass != null && trimmed.startsWith("ref ")) {
@@ -200,6 +208,15 @@ public class AssistantCatalogService {
         var builder = factory.newDocumentBuilder();
         try (InputStream input = Files.newInputStream(path)) {
             org.w3c.dom.Document document = builder.parse(input);
+            var root = document.getDocumentElement();
+            if (root != null) {
+                String packageName = blankToDefault(root.getAttribute("name"),
+                        path.getFileName().toString());
+                documents.add(document(source, hash, "package", packageName,
+                        root.getTagName() + " " + packageName,
+                        Map.of("kind", "package", "nsURI", root.getAttribute("nsURI"),
+                                "nsPrefix", root.getAttribute("nsPrefix"))));
+            }
             var classifiers = document.getElementsByTagName("eClassifiers");
             for (int index = 0; index < classifiers.getLength(); index++) {
                 var node = classifiers.item(index);
@@ -211,8 +228,16 @@ public class AssistantCatalogService {
                 if (name == null || name.isBlank()) {
                     continue;
                 }
+                String superTypes = element.getAttribute("eSuperTypes");
+                StringBuilder classifierContent = new StringBuilder(kind + " " + name);
+                if (superTypes != null && !superTypes.isBlank()) {
+                    classifierContent.append(" supers ").append(superTypes);
+                }
                 documents.add(document(source, hash, "classifier", name,
-                        kind + " " + name, Map.of("kind", kind)));
+                        classifierContent.toString(), Map.of("kind", kind,
+                                "abstract", element.getAttribute("abstract"),
+                                "interface", element.getAttribute("interface"),
+                                "eSuperTypes", superTypes)));
                 var features = element.getElementsByTagName("eStructuralFeatures");
                 for (int featureIndex = 0; featureIndex < features.getLength(); featureIndex++) {
                     var featureNode = features.item(featureIndex);
@@ -227,9 +252,15 @@ public class AssistantCatalogService {
                     String lower = blankToDefault(feature.getAttribute("lowerBound"), "0");
                     String upper = blankToDefault(feature.getAttribute("upperBound"), "1");
                     String type = feature.getAttribute("eType");
+                    String containment = feature.getAttribute("containment");
+                    String derived = feature.getAttribute("derived");
+                    String ordered = feature.getAttribute("ordered");
+                    String unique = feature.getAttribute("unique");
                     String content = "owner " + name + " feature " + featureName
                             + " kind " + featureKind + " type " + type
-                            + " multiplicity " + lower + ".." + upper;
+                            + " multiplicity " + lower + ".." + upper
+                            + " containment " + containment + " derived " + derived
+                            + " ordered " + ordered + " unique " + unique;
                     documents.add(document(source, hash, "feature", name + "." + featureName,
                             content, Map.of("owner", name, "kind", featureKind,
                                     "lowerBound", lower, "upperBound", upper, "type", type)));
@@ -243,20 +274,36 @@ public class AssistantCatalogService {
         List<Document> documents = new ArrayList<>();
         List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
         String context = "";
-        String constraintKind = "constraint";
+        String currentRuleName = null;
+        String currentRuleKind = null;
+        StringBuilder currentRuleBody = null;
+        int braceDepth = 0;
         for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
             String line = lines.get(lineNumber);
             String trimmed = line.trim();
-            if (trimmed.startsWith("context ")) {
+            if (currentRuleName == null && trimmed.startsWith("context ")) {
                 context = trimmed.substring(8).trim();
-            } else if (trimmed.startsWith("constraint ") || trimmed.startsWith("critique ")) {
-                constraintKind = trimmed.startsWith("critique ") ? "optional" : "mandatory";
+            } else if (currentRuleName == null
+                    && (trimmed.startsWith("constraint ") || trimmed.startsWith("critique "))) {
+                currentRuleKind = trimmed.startsWith("critique ") ? "optional" : "mandatory";
                 String keyword = trimmed.startsWith("critique ") ? "critique " : "constraint ";
-                String name = trimmed.substring(keyword.length()).split("[\\s\\{]", 2)[0].trim();
-                documents.add(document(source, hash, "constraint", name,
-                        "context " + context + " " + constraintKind + " constraint " + name,
-                        Map.of("context", context, "constraintKind", constraintKind,
-                                "line", lineNumber + 1)));
+                currentRuleName = trimmed.substring(keyword.length()).split("[\\s\\{]", 2)[0].trim();
+                currentRuleBody = new StringBuilder();
+                braceDepth = 0;
+            }
+            if (currentRuleName != null) {
+                currentRuleBody.append(line).append('\n');
+                braceDepth += count(line, '{') - count(line, '}');
+                if (braceDepth <= 0 && trimmed.endsWith("}")) {
+                    documents.add(document(source, hash, "constraint", currentRuleName,
+                            "context " + context + "\nkind " + currentRuleKind + "\n"
+                                    + currentRuleBody,
+                            Map.of("context", context, "constraintKind", currentRuleKind,
+                                    "line", lineNumber + 1)));
+                    currentRuleName = null;
+                    currentRuleKind = null;
+                    currentRuleBody = null;
+                }
             }
         }
         return documents;
@@ -279,6 +326,16 @@ public class AssistantCatalogService {
 
     private String blankToDefault(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private int count(String value, char needle) {
+        int matches = 0;
+        for (int index = 0; index < value.length(); index++) {
+            if (value.charAt(index) == needle) {
+                matches++;
+            }
+        }
+        return matches;
     }
 
     private void upsert(Document document) {
@@ -307,6 +364,9 @@ public class AssistantCatalogService {
 
     private String level(String source) {
         String normalized = source.toLowerCase(Locale.ROOT).replace('\\', '/');
+        if (normalized.contains("/shared/")) {
+            return "SHARED";
+        }
         if (normalized.contains("/cim/")) {
             return "CIM";
         }

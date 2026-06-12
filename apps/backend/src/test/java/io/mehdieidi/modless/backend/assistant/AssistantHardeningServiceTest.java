@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.mehdieidi.modless.platform.core.PlatformException;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -85,6 +86,29 @@ class AssistantHardeningServiceTest {
 
         assertEquals(429, ex.status());
         assertEquals("AI provider rate limit reached. Try again shortly.", ex.getMessage());
+        assertEquals(1, attempts.get());
+    }
+
+    @Test
+    void returnsProviderTimeoutWithoutRetrying() {
+        AiProperties properties = new AiProperties(true, null, null, null, 0, 0,
+                new AiProperties.Hardening(30, Duration.ofMinutes(1), 3,
+                        Duration.ofMinutes(1), 2, Duration.ZERO, 12),
+                null, null, null, null, null);
+        AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
+        AtomicInteger attempts = new AtomicInteger();
+
+        PlatformException ex = assertThrows(PlatformException.class,
+                () -> hardening.providerCall(AssistantModelRole.PLANNER, "openai", "model",
+                        () -> {
+                            attempts.incrementAndGet();
+                            throw new IllegalStateException(new SocketTimeoutException(
+                                    "Read timed out"));
+                        }));
+
+        assertEquals(504, ex.status());
+        assertEquals("AI provider timed out before returning a response. Try again shortly.",
+                ex.getMessage());
         assertEquals(1, attempts.get());
     }
 }

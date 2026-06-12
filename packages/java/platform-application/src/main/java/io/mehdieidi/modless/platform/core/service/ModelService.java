@@ -632,6 +632,7 @@ public final class ModelService {
                     List.of(mdePaths.validationEntryFile(level)),
                     List.of(ResourceEvlModelConfiguration.readOnly(
                             validationModelName(level),
+                            validationModelAliases(level),
                             xmiImportService.exportResource(level,
                                     hydrateSemanticReferences(modelJson)),
                             metamodel.packages())),

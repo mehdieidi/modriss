@@ -42,4 +42,22 @@ class AssistantPatchCompilerTest {
         assertThrows(io.mehdieidi.modless.platform.core.PlatformException.class,
                 () -> compiler.compile(model, patch));
     }
+
+    @Test
+    void appendsVisualElementsToGraphWhenSavedModelHasNoDiagram() throws Exception {
+        var model = mapper.readTree("""
+                {"services":[],"graph":{"elements":[],"relationships":[]}}
+                """);
+        SemanticModelPatch patch = new SemanticModelPatch(List.of(
+                new SemanticModelPatch.Operation(SemanticModelPatch.OperationType.ADD_ELEMENT,
+                        "service-1", "ServerlessService",
+                        mapper.readTree("{\"name\":\"Orders\"}"), null, null)));
+
+        AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
+        var preview = compiler.apply(model, compiled);
+
+        assertEquals("/services/-", compiled.patch().get(0).path());
+        assertEquals("/graph/elements/-", compiled.patch().get(1).path());
+        assertEquals("Orders", preview.at("/graph/elements/0/name").asText());
+    }
 }

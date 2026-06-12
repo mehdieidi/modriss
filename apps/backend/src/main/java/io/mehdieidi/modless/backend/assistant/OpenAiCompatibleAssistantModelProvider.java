@@ -6,6 +6,7 @@ import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -42,6 +43,8 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
                                 AssistantModelRole.RESPONDER))
                         .temperature(0.2)
                         .build())
+                // The assistant hardening layer owns retries and circuit breaking.
+                .retryTemplate(RetryTemplate.builder().maxAttempts(1).noBackoff().build())
                 .build();
         return model;
     }

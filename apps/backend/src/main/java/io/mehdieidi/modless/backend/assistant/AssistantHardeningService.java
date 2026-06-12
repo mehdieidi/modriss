@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.time.Clock;
 import java.time.Instant;
+import java.net.SocketTimeoutException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -147,6 +148,10 @@ public class AssistantHardeningService {
                     || message.contains("\"code\":\"rate_limit_exceeded\""))) {
                 return new PlatformException(429,
                         "AI provider rate limit reached. Try again shortly.");
+            }
+            if (current instanceof SocketTimeoutException) {
+                return new PlatformException(504,
+                        "AI provider timed out before returning a response. Try again shortly.");
             }
             current = current.getCause();
         }

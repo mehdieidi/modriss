@@ -42,7 +42,7 @@ public record AiProperties(
         mode = mode == null ? RolloutMode.EXPLAIN_ONLY : mode;
         provider = Provider.from(provider).key();
         requestTimeout = requestTimeout == null ? Duration.ofSeconds(30) : requestTimeout;
-        maxToolCalls = maxToolCalls <= 0 ? 6 : maxToolCalls;
+        maxToolCalls = maxToolCalls <= 0 ? 24 : maxToolCalls;
         tokenBudget = tokenBudget <= 0 ? 6000 : tokenBudget;
         hardening = hardening == null ? new Hardening(30, Duration.ofMinutes(1), 3,
                 Duration.ofMinutes(1), 2, Duration.ofMillis(250), 12) : hardening;

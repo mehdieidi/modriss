@@ -308,6 +308,54 @@
   border: 1px solid var(--chat-assistant-border);
 }
 
+.chat-proposal-title {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.chat-proposal-summary,
+.chat-proposal-validation,
+.chat-proposal-citations {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.chat-proposal-preview {
+  margin-top: 8px;
+}
+
+.chat-proposal-preview ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.chat-proposal-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.chat-proposal-actions button {
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--accent-glow) 72%, var(--surface-3));
+  color: var(--text-strong);
+  padding: 5px 9px;
+  font: 600 11px/1.2 var(--font-ui);
+  cursor: pointer;
+}
+
+.chat-proposal-actions button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.chat-proposal-decision {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .chat-markdown {
   min-width: 0;
   font-size: 12px;

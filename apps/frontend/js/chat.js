@@ -148,6 +148,13 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
   if (eventType === "chat.assistant") {
     const message = payload?.assistantMessage || payload?.message;
     appendAssistantDeduped(message);
+    const sessionId = state.chat.sessions.get(typeKey)?.sessionId;
+    if (sessionId) {
+      appendProposalCard(typeKey, sessionId, payload?.proposal);
+      if (!payload?.proposal) {
+        appendChoiceButtons(typeKey, sessionId, payload?.choices);
+      }
+    }
     return;
   }
 
@@ -232,9 +239,16 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   if (!proposal) {
     return;
   }
+  if (proposal.id && el.chatMessages.querySelector(
+      `[data-chat-proposal-id="${CSS.escape(proposal.id)}"]`)) {
+    return;
+  }
   const card = document.createElement("div");
   card.className = "chat-msg assistant";
   card.dataset.chatKind = "proposal";
+  if (proposal.id) {
+    card.dataset.chatProposalId = proposal.id;
+  }
   const bubble = document.createElement("div");
   bubble.className = "chat-msg-bubble";
 
@@ -292,35 +306,48 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   const actions = document.createElement("div");
   actions.className = "chat-proposal-actions";
   if (proposal.approvalRequired) {
-    const approve = document.createElement("button");
-    approve.type = "button";
-    approve.textContent = "Approve";
-    approve.addEventListener("click", async () => {
-      try {
-        const response = await api(
-            `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`, {
-              method: "POST"
-            });
-        appendAssistantDeduped(
-            response.assistantMessage || "Proposal approved");
-        await applyAssistantModelResponse(typeKey, response);
-      } catch (error) {
-        appendChat("assistant", `Error: ${error.message}`);
-      }
-    });
-    actions.appendChild(approve);
+    if (proposal.validation?.mandatoryPassed !== false) {
+      const approve = document.createElement("button");
+      approve.type = "button";
+      approve.textContent = "Approve";
+      approve.addEventListener("click", async () => {
+        try {
+          setProposalActionsDisabled(actions, true);
+          const response = await api(
+              `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`, {
+                method: "POST"
+              });
+          setProposalDecision(card, "Applied");
+          appendAssistantDeduped(
+              response.assistantMessage || "Proposal approved");
+          await applyAssistantModelResponse(typeKey, response);
+        } catch (error) {
+          setProposalActionsDisabled(actions, false);
+          appendChat("assistant", `Error: ${error.message}`);
+        }
+      });
+      actions.appendChild(approve);
+    } else {
+      const blocked = document.createElement("span");
+      blocked.className = "chat-proposal-decision";
+      blocked.textContent = "Apply blocked by mandatory validation";
+      actions.appendChild(blocked);
+    }
 
     const reject = document.createElement("button");
     reject.type = "button";
     reject.textContent = "Reject";
     reject.addEventListener("click", async () => {
       try {
+        setProposalActionsDisabled(actions, true);
         await api(
             `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/reject`, {
               method: "POST"
             });
+        setProposalDecision(card, "Rejected");
         appendChat("assistant", "Proposal rejected.");
       } catch (error) {
+        setProposalActionsDisabled(actions, false);
         appendChat("assistant", `Error: ${error.message}`);
       }
     });
@@ -331,13 +358,16 @@ function appendProposalCard(typeKey, sessionId, proposal) {
     undo.textContent = "Undo";
     undo.addEventListener("click", async () => {
       try {
+        setProposalActionsDisabled(actions, true);
         const response = await api(
             `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
               method: "POST"
             });
+        setProposalDecision(card, "Undone");
         appendAssistantDeduped(response.assistantMessage || "Proposal undone");
         await applyAssistantModelResponse(typeKey, response);
       } catch (error) {
+        setProposalActionsDisabled(actions, false);
         appendChat("assistant", `Error: ${error.message}`);
       }
     });
@@ -349,14 +379,39 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
 }
 
+function setProposalActionsDisabled(actions, disabled) {
+  for (const button of actions.querySelectorAll("button")) {
+    button.disabled = disabled;
+  }
+}
+
+function setProposalDecision(card, label) {
+  const actions = card.querySelector(".chat-proposal-actions");
+  if (!actions) {
+    return;
+  }
+  actions.replaceChildren();
+  const status = document.createElement("span");
+  status.className = "chat-proposal-decision";
+  status.textContent = label;
+  actions.appendChild(status);
+}
+
 function appendChoiceButtons(typeKey, sessionId, choices) {
   if (!Array.isArray(choices) || !choices.length) {
     return;
   }
   const choice = choices[0];
+  if (choice.id && el.chatMessages.querySelector(
+      `[data-chat-choice-id="${CSS.escape(choice.id)}"]`)) {
+    return;
+  }
   const card = document.createElement("div");
   card.className = "chat-msg assistant";
   card.dataset.chatKind = "choice";
+  if (choice.id) {
+    card.dataset.chatChoiceId = choice.id;
+  }
   const bubble = document.createElement("div");
   bubble.className = "chat-msg-bubble";
   bubble.textContent = choice.prompt || "Choose an option.";
@@ -375,6 +430,7 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
             optionId: option.id
           })
         });
+        setProposalActionsDisabled(actions, true);
         appendChat("assistant", `Selected ${option.label || option.id}.`);
       } catch (error) {
         appendChat("assistant", `Error: ${error.message}`);
@@ -499,7 +555,9 @@ export async function sendChatMessage() {
     }
     appendAssistantDeduped(response.assistantMessage || "Done");
     appendProposalCard(state.activeType, session.sessionId, response.proposal);
-    appendChoiceButtons(state.activeType, session.sessionId, response.choices);
+    if (!response.proposal) {
+      appendChoiceButtons(state.activeType, session.sessionId, response.choices);
+    }
     await applyAssistantModelResponse(state.activeType, response,
         requestedModelId,
         requestDiagramFingerprint);
