@@ -57,6 +57,21 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: width var(--transition), height var(--transition),
+    left var(--transition), right var(--transition), top var(--transition),
+    bottom var(--transition), border-radius var(--transition);
+}
+
+.chat-window.chat-window-expanded {
+  left: var(--chat-expanded-left, calc(var(--rail-w) + var(--workbench-gap)));
+  top: var(--chat-expanded-top, calc(var(--topbar-h) + var(--workbench-gap)));
+  right: auto;
+  bottom: auto;
+  width: var(--chat-expanded-width, auto);
+  max-width: none;
+  height: var(--chat-expanded-height, auto);
+  max-height: none;
+  border-radius: 14px;
 }
 
 .workspace.artifact-mode .chat-toggle {
@@ -65,6 +80,13 @@
 
 .workspace.artifact-mode .chat-window {
   bottom: 86px;
+}
+
+.workspace.artifact-mode .chat-window.chat-window-expanded {
+  left: var(--chat-expanded-left, var(--workbench-gap));
+  top: var(--chat-expanded-top, var(--workbench-gap));
+  width: var(--chat-expanded-width, auto);
+  height: var(--chat-expanded-height, auto);
 }
 
 .chat-header {
@@ -116,6 +138,19 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+}
+
+.chat-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.chat-expand-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .chat-messages {
@@ -181,6 +216,7 @@
 
 .chat-msg.user {
   flex-direction: row-reverse;
+  padding-left: 32px;
 }
 
 .chat-msg-avatar {
@@ -235,10 +271,144 @@
 }
 
 .chat-msg.assistant .chat-msg-bubble {
-  border-radius: 6px 11px 11px 11px;
+  flex: 1;
+  max-width: calc(100% - 36px);
+  padding: 2px 4px 12px;
+  border-radius: 0;
   color: var(--text);
+  background: transparent;
+  border: none;
+}
+
+.chat-msg.assistant[data-chat-kind="proposal"] .chat-msg-bubble,
+.chat-msg.assistant[data-chat-kind="choice"] .chat-msg-bubble {
+  max-width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
   background: var(--chat-assistant-bg);
   border: 1px solid var(--chat-assistant-border);
+}
+
+.chat-markdown {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.chat-markdown > :first-child {
+  margin-top: 0;
+}
+
+.chat-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.chat-markdown p,
+.chat-markdown ul,
+.chat-markdown ol,
+.chat-markdown blockquote,
+.chat-markdown pre,
+.chat-markdown table {
+  margin: 0 0 10px;
+}
+
+.chat-markdown h1,
+.chat-markdown h2,
+.chat-markdown h3,
+.chat-markdown h4,
+.chat-markdown h5,
+.chat-markdown h6 {
+  margin: 16px 0 7px;
+  color: var(--text-strong);
+  line-height: 1.3;
+}
+
+.chat-markdown h1 {
+  font-size: 18px;
+}
+
+.chat-markdown h2 {
+  font-size: 16px;
+}
+
+.chat-markdown h3,
+.chat-markdown h4,
+.chat-markdown h5,
+.chat-markdown h6 {
+  font-size: 13px;
+}
+
+.chat-markdown ul,
+.chat-markdown ol {
+  padding-left: 22px;
+}
+
+.chat-markdown li + li {
+  margin-top: 4px;
+}
+
+.chat-markdown code {
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface-high) 76%, transparent);
+  color: var(--accent-light);
+  padding: 1px 4px;
+  font: 500 0.92em/1.5 monospace;
+}
+
+.chat-markdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-contrast) 78%, transparent);
+  padding: 10px 12px;
+}
+
+.chat-markdown pre code {
+  background: transparent;
+  color: var(--text);
+  padding: 0;
+  white-space: pre;
+}
+
+.chat-markdown blockquote {
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  padding-left: 10px;
+}
+
+.chat-markdown a {
+  color: var(--accent-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-markdown hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.chat-markdown table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.chat-markdown th,
+.chat-markdown td {
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  padding: 6px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.chat-markdown th {
+  background: color-mix(in srgb, var(--surface-high) 70%, transparent);
+  color: var(--text-strong);
 }
 
 .chat-typing {
@@ -467,6 +637,20 @@
     border-right: none;
     border-bottom: none;
     border-left: none;
+  }
+
+  .chat-window.chat-window-expanded {
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .workspace.artifact-mode .chat-window.chat-window-expanded {
+    bottom: 0;
   }
 }
 

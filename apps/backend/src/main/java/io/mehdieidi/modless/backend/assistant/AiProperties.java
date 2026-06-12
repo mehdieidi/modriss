@@ -245,9 +245,9 @@ public record AiProperties(
          * Applies default Groq model names.
          */
         public Models {
-            planner = blankToDefault(planner, "llama-3.3-70b-versatile");
-            responder = blankToDefault(responder, "llama-3.3-70b-versatile");
-            summarizer = blankToDefault(summarizer, "llama-3.1-8b-instant");
+            planner = blankToDefault(planner, "openai/gpt-oss-120b");
+            responder = blankToDefault(responder, "openai/gpt-oss-120b");
+            summarizer = blankToDefault(summarizer, "openai/gpt-oss-120b");
         }
 
         /**

@@ -542,6 +542,10 @@ body.modal-open {
   height: calc(100% + var(--topbar-h));
 }
 
+.workspace.chat-expanded .workspace-main > .canvas-pane {
+  z-index: 4;
+}
+
 .workspace-main > .left-pane,
 .workspace-main > .right-pane,
 .workspace-main > .impact-panel {

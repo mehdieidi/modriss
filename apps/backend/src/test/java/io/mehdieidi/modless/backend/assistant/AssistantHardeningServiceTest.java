@@ -65,4 +65,26 @@ class AssistantHardeningServiceTest {
                         () -> "never"));
         assertEquals(503, ex.status());
     }
+
+    @Test
+    void returnsProviderRateLimitWithoutRetrying() {
+        AiProperties properties = new AiProperties(true, null, null, null, 0, 0,
+                new AiProperties.Hardening(30, Duration.ofMinutes(1), 3,
+                        Duration.ofMinutes(1), 2, Duration.ZERO, 12),
+                null, null, null, null);
+        AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
+        AtomicInteger attempts = new AtomicInteger();
+
+        PlatformException ex = assertThrows(PlatformException.class,
+                () -> hardening.providerCall(AssistantModelRole.RESPONDER, "groq", "model",
+                        () -> {
+                            attempts.incrementAndGet();
+                            throw new IllegalStateException(
+                                    "429 - {\"error\":{\"code\":\"rate_limit_exceeded\"}}");
+                        }));
+
+        assertEquals(429, ex.status());
+        assertEquals("AI provider rate limit reached. Try again shortly.", ex.getMessage());
+        assertEquals(1, attempts.get());
+    }
 }

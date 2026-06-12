@@ -22,7 +22,7 @@ class AiPropertiesTest {
         assertEquals(30, properties.hardening().perUserRequestsPerWindow());
         assertEquals(AiProperties.EmbeddingProvider.ONNX, properties.embeddings().provider());
         assertTrue(properties.embeddings().fallbackToHash());
-        assertEquals("llama-3.3-70b-versatile",
+        assertEquals("openai/gpt-oss-120b",
                 properties.models().forRole(AssistantModelRole.RESPONDER));
     }
 

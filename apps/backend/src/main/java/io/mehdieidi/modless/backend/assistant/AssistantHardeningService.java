@@ -95,6 +95,11 @@ public class AssistantHardeningService {
                             role.name(), "model", model);
                     return result;
                 } catch (RuntimeException ex) {
+                    PlatformException providerFailure = classifyProviderFailure(ex);
+                    if (providerFailure != null) {
+                        recordFailure(provider);
+                        throw providerFailure;
+                    }
                     last = ex;
                     counter("assistant.provider.retry", "provider", provider, "attempt",
                             String.valueOf(attempt));
@@ -131,6 +136,21 @@ public class AssistantHardeningService {
                 : Instant.EPOCH;
         circuit = new Circuit(failures, openUntil);
         counter("assistant.provider.failure", "provider", provider);
+    }
+
+    private PlatformException classifyProviderFailure(RuntimeException failure) {
+        Throwable current = failure;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null && (message.startsWith("429 ")
+                    || message.startsWith("429 -")
+                    || message.contains("\"code\":\"rate_limit_exceeded\""))) {
+                return new PlatformException(429,
+                        "AI provider rate limit reached. Try again shortly.");
+            }
+            current = current.getCause();
+        }
+        return null;
     }
 
     private void sleep() {

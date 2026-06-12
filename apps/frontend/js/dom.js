@@ -47,6 +47,8 @@ export const el = {
   chatToggle: document.getElementById("chatToggle"),
   chatWindow: document.getElementById("chatWindow"),
   chatCloseBtn: document.getElementById("chatCloseBtn"),
+  chatExpandBtn: document.getElementById("chatExpandBtn"),
+  chatExpandIcon: document.getElementById("chatExpandIcon"),
   chatClearBtn: document.getElementById("chatClearBtn"),
   chatMessages: document.getElementById("chatMessages"),
   chatInput: document.getElementById("chatInput"),

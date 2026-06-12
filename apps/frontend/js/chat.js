@@ -5,6 +5,7 @@ import {setError, setStatus} from './status.js';
 import {apiUrl, MODEL_TYPES, websocketUrl} from './config.js';
 import {toDiagram} from './diagram.js';
 import {renderDiagram} from './canvas.js';
+import {renderMarkdown} from './markdown.js';
 
 // ── Chat session / realtime ───────────────────────────────────────────────────
 
@@ -184,6 +185,7 @@ function appendChat(role, text) {
   const msg = document.createElement("div");
   msg.className = `chat-msg ${role}`;
   msg.dataset.chatKind = "message";
+  msg.dataset.chatText = text;
 
   const avatar = document.createElement("div");
   avatar.className = "chat-msg-avatar";
@@ -193,7 +195,11 @@ function appendChat(role, text) {
 
   const bubble = document.createElement("div");
   bubble.className = "chat-msg-bubble";
-  bubble.textContent = text;
+  if (role === "assistant") {
+    bubble.appendChild(renderMarkdown(text));
+  } else {
+    bubble.textContent = text;
+  }
 
   msg.appendChild(avatar);
   msg.appendChild(bubble);
@@ -208,11 +214,8 @@ function appendAssistantDeduped(text) {
   const messages = [...el.chatMessages.querySelectorAll(
       '.chat-msg.assistant[data-chat-kind="message"]')];
   const last = messages[messages.length - 1];
-  if (last) {
-    const bubble = last.querySelector(".chat-msg-bubble");
-    if (bubble && bubble.textContent === text) {
-      return;
-    }
+  if (last?.dataset.chatText === text) {
+    return;
   }
   appendChat("assistant", text);
 }
