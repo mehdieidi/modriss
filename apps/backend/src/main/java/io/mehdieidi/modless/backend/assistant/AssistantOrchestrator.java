@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
@@ -135,6 +137,10 @@ public class AssistantOrchestrator {
         ProjectRecord project = projects.get(user, session.projectId());
         String modelId = resolveModelId(request.modelId(), project, session.level());
         ModelRecord model = modelId == null ? null : models.get(user, session.level(), modelId);
+        if (model == null && shouldCreateModel(request)) {
+            model = createStarterModel(user, project, session);
+            modelId = model.id();
+        }
         if (model != null && request.revision() != null
                 && request.revision().longValue() != model.revision()) {
             throw new PlatformException(409,
@@ -170,9 +176,14 @@ public class AssistantOrchestrator {
                     Map.of("proposalId", proposal.id(), "modelId", modelId));
         }
 
-        Long nextRevision = proposal != null && !proposal.approvalRequired()
-                ? model.revision() + 1
-                : request.revision();
+        Long nextRevision;
+        if (proposal != null && !proposal.approvalRequired()) {
+            nextRevision = model.revision() + 1L;
+        } else if (model != null) {
+            nextRevision = model.revision();
+        } else {
+            nextRevision = request.revision();
+        }
         AssistantTurnResponse response = new AssistantTurnResponse(assistantMessage, modelId,
                 nextRevision, proposal,
                 proposal == null ? List.of() : proposalChoices(proposal), workflowState(proposal));
@@ -399,7 +410,73 @@ public class AssistantOrchestrator {
         if (requestedModelId != null && !requestedModelId.isBlank()) {
             return requestedModelId.trim();
         }
-        return project.activeModelIds().get(level.apiName());
+        Map<String, String> activeModelIds = project.activeModelIds();
+        if (activeModelIds == null) {
+            return null;
+        }
+        String modelId = activeModelIds.get(level.apiName());
+        return modelId == null ? activeModelIds.get(level.name()) : modelId;
+    }
+
+    private boolean shouldCreateModel(AssistantTurnRequest request) {
+        String message = request.message().toLowerCase(java.util.Locale.ROOT);
+        return message.contains("create") || message.contains("generate")
+                || message.contains("build") || message.contains("design")
+                || message.contains("scaffold") || message.contains("draft");
+    }
+
+    private ModelRecord createStarterModel(UserRecord user, ProjectRecord project,
+            AssistantSessionStore.AssistantSession session) {
+        String name = session.title() == null || session.title().isBlank()
+                ? session.level().apiName() + "-model"
+                : session.title();
+        ModelRecord created = models.create(user, session.level(), project.id(), name,
+                starterModel(session.level(), name));
+        Map<String, String> activeModelIds = new LinkedHashMap<>(
+                project.activeModelIds() == null ? Map.of() : project.activeModelIds());
+        activeModelIds.put(session.level().apiName(), created.id());
+        projects.update(user, project.id(), project.name(), project.description(),
+                activeModelIds);
+        memory.ensureThread(user, project.id(), session.level(), session.title(), created.id(),
+                created.revision());
+        realtime.publish(session.id(), "model.updated",
+                Map.of("modelId", created.id(), "revision", created.revision(),
+                        "created", true));
+        return created;
+    }
+
+    private ObjectNode starterModel(ModelLevel level, String name) {
+        ObjectNode root = JsonNodeFactory.instance.objectNode();
+        root.put("name", name);
+        root.put("eClass", switch (level) {
+            case CIM -> "CIMModel";
+            case PIM -> "PIMModel";
+            case PSM -> "AwsPsmModel";
+        });
+        root.put("modelLevel", level == ModelLevel.PSM ? "AWS_PSM" : level.name());
+        if (level == ModelLevel.PIM) {
+            root.put("architectureStyle", "EVENT_DRIVEN_SERVERLESS");
+            root.put("providerIndependent", true);
+        } else if (level == ModelLevel.PSM) {
+            root.put("platform", "AWS");
+            root.put("defaultRegion", "us-east-1");
+            root.putArray("stages");
+            root.putArray("stacks");
+            root.putArray("relationshipViews");
+        }
+        ObjectNode diagram = root.putObject("diagram");
+        diagram.putArray("elements");
+        diagram.putArray("relationships");
+        ObjectNode graph = root.putObject("graph");
+        graph.putArray("elements");
+        graph.putArray("relationships");
+        graph.putArray("traceLinks");
+        graph.putArray("assumptions");
+        graph.putArray("validationIssues");
+        graph.putArray("manualBacklog");
+        root.putArray("views");
+        root.putArray("fragments");
+        return root;
     }
 
     private List<AssistantModelProvider.ContextSnippet> retrievalSnippets(
@@ -556,6 +633,7 @@ public class AssistantOrchestrator {
                         throw new PlatformException(422,
                                 "Assistant proposed an invalid new element ID.");
                     }
+                    existingIds.add(operation.targetElementId());
                 }
                 case CONNECT_ELEMENTS -> {
                     if (!existingIds.contains(operation.sourceElementId())
