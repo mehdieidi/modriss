@@ -15,7 +15,7 @@ class AssistantHardeningServiceTest {
         AiProperties properties = new AiProperties(true, null, null, null, 0, 0,
                 new AiProperties.Hardening(1, Duration.ofMinutes(1), 3,
                         Duration.ofMinutes(1), 1, Duration.ZERO, 12),
-                null, null, null, null);
+                null, null, null, null, null);
         AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
 
         hardening.checkRateLimit("user-1");
@@ -28,7 +28,7 @@ class AssistantHardeningServiceTest {
         AiProperties properties = new AiProperties(true, null, null, null, 0, 0,
                 new AiProperties.Hardening(30, Duration.ofMinutes(1), 3,
                         Duration.ofMinutes(1), 2, Duration.ZERO, 12),
-                null, null, null, null);
+                null, null, null, null, null);
         AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
         AtomicInteger attempts = new AtomicInteger();
 
@@ -49,7 +49,7 @@ class AssistantHardeningServiceTest {
         AiProperties properties = new AiProperties(true, null, null, null, 0, 0,
                 new AiProperties.Hardening(30, Duration.ofMinutes(1), 1,
                         Duration.ofMinutes(1), 1, Duration.ZERO, 12),
-                null, null, null, null);
+                null, null, null, null, null);
         AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
 
         PlatformException providerFailure = assertThrows(PlatformException.class,
@@ -71,12 +71,12 @@ class AssistantHardeningServiceTest {
         AiProperties properties = new AiProperties(true, null, null, null, 0, 0,
                 new AiProperties.Hardening(30, Duration.ofMinutes(1), 3,
                         Duration.ofMinutes(1), 2, Duration.ZERO, 12),
-                null, null, null, null);
+                null, null, null, null, null);
         AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
         AtomicInteger attempts = new AtomicInteger();
 
         PlatformException ex = assertThrows(PlatformException.class,
-                () -> hardening.providerCall(AssistantModelRole.RESPONDER, "groq", "model",
+                () -> hardening.providerCall(AssistantModelRole.RESPONDER, "openai", "model",
                         () -> {
                             attempts.incrementAndGet();
                             throw new IllegalStateException(

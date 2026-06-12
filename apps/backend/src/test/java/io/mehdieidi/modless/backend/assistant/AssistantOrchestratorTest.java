@@ -98,7 +98,7 @@ class AssistantOrchestratorTest {
         AssistantRealtimeHub realtime = new AssistantRealtimeHub(mapper);
         ModelService models = null;
         AiProperties properties = new AiProperties(false, null, null, null, 0, 0, null, null,
-                null, null, null);
+                null, null, null, null);
         AssistantOrchestrator orchestrator = new AssistantOrchestrator(
                 properties,
                 new FailingProvider(), new AssistantSessionStore(), memory,
@@ -204,7 +204,7 @@ class AssistantOrchestratorTest {
         when(models.validate(eq(user), eq(ModelLevel.PIM), eq(created.id())))
                 .thenReturn(new ModelService.ValidationResult(true, List.of()));
         AiProperties properties = new AiProperties(true, null, null, null, 0, 0, null, null,
-                null, null, null);
+                null, null, null, null);
         AssistantOrchestrator orchestrator = new AssistantOrchestrator(
                 properties,
                 new EchoProvider(), new AssistantSessionStore(), memory,

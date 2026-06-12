@@ -11,19 +11,19 @@ class AiPropertiesTest {
     @Test
     void appliesConservativeDefaults() {
         AiProperties properties = new AiProperties(false, null, null, null, 0, 0, null, null,
-                null, null, null);
+                null, null, null, null);
 
         assertFalse(properties.enabled());
         assertEquals(AiProperties.RolloutMode.EXPLAIN_ONLY, properties.mode());
-        assertEquals("groq", properties.provider());
+        assertEquals("openai", properties.provider());
         assertEquals("127.0.0.1", properties.proxy().host());
         assertEquals(2081, properties.proxy().port());
-        assertEquals("https://api.groq.com/openai", properties.groq().baseUrl());
+        assertEquals("https://api.openai.com", properties.openaiCompatible().baseUrl());
+        assertEquals("", properties.gemini().apiKey());
         assertEquals(30, properties.hardening().perUserRequestsPerWindow());
         assertEquals(AiProperties.EmbeddingProvider.ONNX, properties.embeddings().provider());
         assertTrue(properties.embeddings().fallbackToHash());
-        assertEquals("openai/gpt-oss-120b",
-                properties.models().forRole(AssistantModelRole.RESPONDER));
+        assertEquals("gpt-4o-mini", properties.modelFor(AssistantModelRole.RESPONDER));
     }
 
     @Test
@@ -36,9 +36,19 @@ class AiPropertiesTest {
 
     @Test
     void stripsVersionSegmentFromOpenAiCompatibleBaseUrl() {
-        AiProperties.Groq groq = new AiProperties.Groq(
-                "https://api.groq.com/openai/v1/", "key");
+        AiProperties.OpenAiCompatible openai = new AiProperties.OpenAiCompatible(
+                "https://example.test/openai/v1/", "key");
 
-        assertEquals("https://api.groq.com/openai", groq.baseUrl());
+        assertEquals("https://example.test/openai", openai.baseUrl());
+    }
+
+    @Test
+    void appliesGeminiProviderDefaultModel() {
+        AiProperties properties = new AiProperties(false, null, "gemini", null, 0, 0, null,
+                null, null, null, new AiProperties.Gemini("key"), null);
+
+        assertEquals(AiProperties.Provider.GEMINI, properties.providerKind());
+        assertEquals("gemini-2.0-flash", properties.modelFor(AssistantModelRole.RESPONDER));
+        assertEquals("key", properties.gemini().apiKey());
     }
 }

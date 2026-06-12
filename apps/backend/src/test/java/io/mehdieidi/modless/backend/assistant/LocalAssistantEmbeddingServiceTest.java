@@ -26,7 +26,7 @@ class LocalAssistantEmbeddingServiceTest {
         AiProperties properties = new AiProperties(false, null, null, null, 0, 0, null,
                 new AiProperties.Embeddings(AiProperties.EmbeddingProvider.ONNX, null, null,
                         null, null, false, -1, true),
-                null, null, null);
+                null, null, null, null);
         LocalAssistantEmbeddingService embeddings = new LocalAssistantEmbeddingService(properties);
 
         assertEquals(LocalAssistantEmbeddingService.DIMENSIONS, embeddings.embed("fallback").length);

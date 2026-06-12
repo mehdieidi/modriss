@@ -9,14 +9,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @param enabled        whether outbound AI calls are allowed
  * @param mode           assistant rollout mode
- * @param provider       configured provider key
+ * @param provider       configured provider key, currently {@code openai} or {@code gemini}
  * @param requestTimeout outbound AI request timeout
  * @param maxToolCalls   maximum tool calls per assistant turn
  * @param tokenBudget    approximate prompt budget per turn
  * @param hardening      rate-limit and circuit-breaker settings
  * @param embeddings     local embedding settings
  * @param proxy          AI-only outbound proxy settings
- * @param groq           Groq OpenAI-compatible settings
+ * @param openaiCompatible OpenAI-compatible endpoint settings
+ * @param gemini         Google Gemini Developer API settings
  * @param models         role-specific model names
  */
 @ConfigurationProperties(prefix = "modless.ai")
@@ -30,7 +31,8 @@ public record AiProperties(
         Hardening hardening,
         Embeddings embeddings,
         Proxy proxy,
-        Groq groq,
+        OpenAiCompatible openaiCompatible,
+        Gemini gemini,
         Models models) {
 
     /**
@@ -38,7 +40,7 @@ public record AiProperties(
      */
     public AiProperties {
         mode = mode == null ? RolloutMode.EXPLAIN_ONLY : mode;
-        provider = blankToDefault(provider, "groq");
+        provider = Provider.from(provider).key();
         requestTimeout = requestTimeout == null ? Duration.ofSeconds(30) : requestTimeout;
         maxToolCalls = maxToolCalls <= 0 ? 6 : maxToolCalls;
         tokenBudget = tokenBudget <= 0 ? 6000 : tokenBudget;
@@ -47,8 +49,29 @@ public record AiProperties(
         embeddings = embeddings == null ? new Embeddings(null, null, null, null, null, false,
                 -1, true) : embeddings;
         proxy = proxy == null ? new Proxy(true, ProxyType.HTTP, null, null, null) : proxy;
-        groq = groq == null ? new Groq(null, null) : groq;
+        openaiCompatible = openaiCompatible == null
+                ? new OpenAiCompatible(null, null) : openaiCompatible;
+        gemini = gemini == null ? new Gemini(null) : gemini;
         models = models == null ? new Models(null, null, null) : models;
+    }
+
+    /**
+     * Resolves the configured provider key.
+     *
+     * @return configured provider enum
+     */
+    public Provider providerKind() {
+        return Provider.from(provider);
+    }
+
+    /**
+     * Resolves the configured model for the currently selected provider.
+     *
+     * @param role assistant model role
+     * @return configured or provider-default model name
+     */
+    public String modelFor(AssistantModelRole role) {
+        return models.forRole(providerKind(), role);
     }
 
     private static String blankToDefault(String value, String defaultValue) {
@@ -56,7 +79,7 @@ public record AiProperties(
     }
 
     private static String normalizeOpenAiCompatibleBaseUrl(String value) {
-        String normalized = blankToDefault(value, "https://api.groq.com/openai");
+        String normalized = blankToDefault(value, "https://api.openai.com");
         while (normalized.endsWith("/")) {
             normalized = normalized.substring(0, normalized.length() - 1);
         }
@@ -64,6 +87,50 @@ public record AiProperties(
             return normalized.substring(0, normalized.length() - 3);
         }
         return normalized;
+    }
+
+    /**
+     * Supported assistant chat providers.
+     */
+    public enum Provider {
+        /**
+         * OpenAI or any provider exposing an OpenAI-compatible chat API.
+         */
+        OPENAI("openai"),
+        /**
+         * Google Gemini through the Gemini Developer API.
+         */
+        GEMINI("gemini");
+
+        private final String key;
+
+        Provider(String key) {
+            this.key = key;
+        }
+
+        /**
+         * Configuration key for this provider.
+         *
+         * @return provider key
+         */
+        public String key() {
+            return key;
+        }
+
+        private static Provider from(String value) {
+            String normalized = blankToDefault(value, "openai").toLowerCase(
+                    java.util.Locale.ROOT);
+            if ("openai-compatible".equals(normalized)
+                    || "openai_compatible".equals(normalized)) {
+                return OPENAI;
+            }
+            for (Provider provider : values()) {
+                if (provider.key.equals(normalized)) {
+                    return provider;
+                }
+            }
+            throw new IllegalArgumentException("Unsupported AI provider: " + value);
+        }
     }
 
     /**
@@ -216,18 +283,33 @@ public record AiProperties(
     }
 
     /**
-     * OpenAI-compatible Groq endpoint settings.
+     * OpenAI-compatible endpoint settings.
      *
      * @param baseUrl provider API base URL
      * @param apiKey  provider API key
      */
-    public record Groq(String baseUrl, String apiKey) {
+    public record OpenAiCompatible(String baseUrl, String apiKey) {
 
         /**
-         * Applies Groq's OpenAI-compatible API base URL.
+         * Applies OpenAI's API base URL when no compatible endpoint is configured.
          */
-        public Groq {
+        public OpenAiCompatible {
             baseUrl = normalizeOpenAiCompatibleBaseUrl(baseUrl);
+            apiKey = apiKey == null ? "" : apiKey.trim();
+        }
+    }
+
+    /**
+     * Google Gemini Developer API settings.
+     *
+     * @param apiKey provider API key
+     */
+    public record Gemini(String apiKey) {
+
+        /**
+         * Applies empty key default.
+         */
+        public Gemini {
             apiKey = apiKey == null ? "" : apiKey.trim();
         }
     }
@@ -242,12 +324,12 @@ public record AiProperties(
     public record Models(String planner, String responder, String summarizer) {
 
         /**
-         * Applies default Groq model names.
+         * Normalizes configured model names.
          */
         public Models {
-            planner = blankToDefault(planner, "openai/gpt-oss-120b");
-            responder = blankToDefault(responder, "openai/gpt-oss-120b");
-            summarizer = blankToDefault(summarizer, "openai/gpt-oss-120b");
+            planner = planner == null ? "" : planner.trim();
+            responder = responder == null ? "" : responder.trim();
+            summarizer = summarizer == null ? "" : summarizer.trim();
         }
 
         /**
@@ -257,11 +339,27 @@ public record AiProperties(
          * @return configured model name
          */
         public String forRole(AssistantModelRole role) {
+            return forRole(Provider.OPENAI, role);
+        }
+
+        /**
+         * Resolves a model by assistant role and provider.
+         *
+         * @param provider assistant provider
+         * @param role     assistant model role
+         * @return configured or provider-default model name
+         */
+        public String forRole(Provider provider, AssistantModelRole role) {
+            Provider resolvedProvider = provider == null ? Provider.OPENAI : provider;
             return switch (role == null ? AssistantModelRole.RESPONDER : role) {
-                case PLANNER -> planner;
-                case RESPONDER -> responder;
-                case SUMMARIZER -> summarizer;
+                case PLANNER -> blankToDefault(planner, defaultModel(resolvedProvider));
+                case RESPONDER -> blankToDefault(responder, defaultModel(resolvedProvider));
+                case SUMMARIZER -> blankToDefault(summarizer, defaultModel(resolvedProvider));
             };
+        }
+
+        private static String defaultModel(Provider provider) {
+            return provider == Provider.GEMINI ? "gemini-2.0-flash" : "gpt-4o-mini";
         }
     }
 }

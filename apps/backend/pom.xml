@@ -69,6 +69,10 @@
       <groupId>org.springframework.ai</groupId>
     </dependency>
     <dependency>
+      <artifactId>spring-ai-google-genai</artifactId>
+      <groupId>org.springframework.ai</groupId>
+    </dependency>
+    <dependency>
       <artifactId>spring-ai-model-chat-memory-repository-jdbc</artifactId>
       <groupId>org.springframework.ai</groupId>
     </dependency>

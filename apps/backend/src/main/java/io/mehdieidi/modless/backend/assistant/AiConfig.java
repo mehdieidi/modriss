@@ -4,6 +4,7 @@ import java.net.Proxy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
@@ -13,6 +14,22 @@ import org.springframework.web.client.RestClient;
 @Configuration
 @EnableConfigurationProperties(AiProperties.class)
 public class AiConfig {
+
+    /**
+     * Selects the configured provider while keeping orchestrator code provider-neutral.
+     *
+     * @param properties AI settings
+     * @param openai     OpenAI-compatible adapter
+     * @param gemini     Gemini adapter
+     * @return configured provider delegate
+     */
+    @Bean
+    @Primary
+    AssistantModelProvider assistantModelProvider(AiProperties properties,
+            OpenAiCompatibleAssistantModelProvider openai,
+            GeminiAssistantModelProvider gemini) {
+        return new ConfiguredAssistantModelProvider(properties, openai, gemini);
+    }
 
     /**
      * Creates a RestClient builder whose proxy applies only to AI provider calls.
