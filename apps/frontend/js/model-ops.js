@@ -748,9 +748,26 @@ async function runTransformation(path, sourceModelId) {
   return result;
 }
 
-async function ensureStoredModelForBackendOperation(operationLabel) {
-  if (state.modelId && !hasUnsavedModelChanges()) {
+function storedModelHasView(viewId) {
+  const normalizedId = String(viewId || "").trim();
+  return !normalizedId || Array.isArray(state.baseModel?.views)
+      && state.baseModel.views.some(
+          (view) => String(view?.id || "") === normalizedId);
+}
+
+async function ensureStoredModelForBackendOperation(operationLabel,
+    {requiredViewId = ""} = {}) {
+  const hasUnsavedChanges = hasUnsavedModelChanges();
+  if (state.modelId && !hasUnsavedChanges && storedModelHasView(
+      requiredViewId)) {
     return true;
+  }
+  if (state.modelId && !hasUnsavedChanges && requiredViewId) {
+    await saveCurrentModel({quiet: true, rethrow: true});
+    if (storedModelHasView(requiredViewId)) {
+      return true;
+    }
+    throw new Error(`Unable to persist active view: ${requiredViewId}`);
   }
   const level = String(state.activeType || "model").toUpperCase();
   const confirmed = await confirmAction({
@@ -1514,7 +1531,9 @@ async function runAutoLayoutCurrentDiagram({
   }
 
   try {
-    if (!await ensureStoredModelForBackendOperation("Auto Layout")) {
+    if (!await ensureStoredModelForBackendOperation("Auto Layout", {
+      requiredViewId: view.id
+    })) {
       return;
     }
     if (progress) {
