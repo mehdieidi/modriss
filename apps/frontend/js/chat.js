@@ -6,6 +6,7 @@ import { apiUrl, MODEL_TYPES, websocketUrl } from "./config.js";
 import { toDiagram } from "./diagram.js";
 import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
+import { loadModelById } from "./model-ops.js";
 
 // ── Chat session / realtime ───────────────────────────────────────────────────
 
@@ -326,9 +327,9 @@ function appendProposalCard(typeKey, sessionId, proposal) {
               method: "POST",
             },
           );
-          setProposalDecision(card, "Applied");
           appendAssistantDeduped(response.assistantMessage || "Proposal approved");
           await applyAssistantModelResponse(typeKey, response);
+          setProposalDecision(card, "Applied");
         } catch (error) {
           setProposalActionsDisabled(actions, false);
           appendChat("assistant", `Error: ${error.message}`);
@@ -369,9 +370,9 @@ function appendProposalCard(typeKey, sessionId, proposal) {
         const response = await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
           method: "POST",
         });
-        setProposalDecision(card, "Undone");
         appendAssistantDeduped(response.assistantMessage || "Proposal undone");
         await applyAssistantModelResponse(typeKey, response);
+        setProposalDecision(card, "Undone");
       } catch (error) {
         setProposalActionsDisabled(actions, false);
         appendChat("assistant", `Error: ${error.message}`);
@@ -467,16 +468,6 @@ async function applyAssistantModelResponse(
   const liveDiagramFingerprint = JSON.stringify(state.diagram || {});
   const hasLocalEditsSinceRequest =
     requestDiagramFingerprint != null && liveDiagramFingerprint !== requestDiagramFingerprint;
-  let model = unwrapAssistantModel(response.model || null);
-  if (!model && responseModelId) {
-    try {
-      model = unwrapAssistantModel(
-        await api(`/${MODEL_TYPES[typeKey].apiType}/${responseModelId}`),
-      );
-    } catch {
-      model = null;
-    }
-  }
   if (
     responseModelId &&
     liveModelId &&
@@ -491,15 +482,24 @@ async function applyAssistantModelResponse(
     setStatus("Assistant response received; kept your newer canvas edits");
     return;
   }
+  if (responseModelId) {
+    await loadModelById(typeKey, responseModelId);
+    if (state.project) {
+      state.project.activeModelIds = {
+        ...(state.project.activeModelIds || {}),
+        [typeKey]: responseModelId,
+      };
+    }
+    return;
+  }
+  const model = unwrapAssistantModel(response.model || null);
   if (!model) {
     return;
   }
-  state.modelId = responseModelId || state.modelId;
   state.modelRevision = Number(response.revision) || state.modelRevision || 1;
   state.baseModel = structuredClone(model);
   state.diagram = toDiagram(typeKey, model, state.tabs[typeKey]?.modelName);
   if (state.tabs[typeKey]) {
-    state.tabs[typeKey].modelId = state.modelId;
     state.tabs[typeKey].modelRevision = state.modelRevision;
     state.tabs[typeKey].baseModel = state.baseModel;
     state.tabs[typeKey].diagram = state.diagram;

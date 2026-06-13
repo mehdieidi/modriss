@@ -32,6 +32,64 @@ import org.junit.jupiter.api.Test;
 class AssistantOrchestratorTest {
 
   @Test
+  void recognizesMultiTurnMutationAndApprovalPhrases() {
+    AiProperties properties =
+        new AiProperties(
+            true,
+            AiProperties.RolloutMode.PROPOSAL_ONLY,
+            null,
+            null,
+            0,
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
+    SpringAiChatMemoryService chatMemory = mock(SpringAiChatMemoryService.class);
+    AssistantSessionStore.AssistantSession session =
+        new AssistantSessionStore.AssistantSession(
+            "session-1",
+            "user-1",
+            "project-1",
+            ModelLevel.PIM,
+            "PIM Assistant",
+            Instant.now(),
+            Instant.now());
+    when(chatMemory.recent(eq("user-1:project-1:PIM"), eq(12)))
+        .thenReturn(
+            List.of(
+                new SpringAiChatMemoryService.MemoryMessage(
+                    "USER", "do it and propose new model changes"),
+                new SpringAiChatMemoryService.MemoryMessage("USER", "yes")));
+    AssistantOrchestrator orchestrator =
+        new AssistantOrchestrator(
+            properties,
+            mock(AssistantModelProvider.class),
+            mock(AssistantSessionStore.class),
+            mock(AssistantMemoryRepository.class),
+            chatMemory,
+            mock(AssistantCatalogService.class),
+            mock(AssistantModelContextIndexService.class),
+            mock(AssistantPatchCompiler.class),
+            mock(AssistantRealtimeHub.class),
+            mock(AssistantHardeningService.class),
+            mock(ModelService.class),
+            mock(ProjectService.class));
+
+    assertTrue(orchestrator.shouldDraftProposal(session, request("apply them")));
+    assertTrue(
+        orchestrator.shouldDraftProposal(session, request("do it and propose new model changes")));
+    assertTrue(
+        orchestrator.shouldDraftProposal(session, request("this is too incomplete; complete it")));
+    assertTrue(orchestrator.shouldDraftProposal(session, request("yes")));
+    assertTrue(orchestrator.isTextualApproval("yes"));
+    assertTrue(orchestrator.isTextualApproval("Apply it."));
+    assertEquals(false, orchestrator.shouldDraftProposal(session, request("explain it")));
+  }
+
+  @Test
   void disabledAssistantReturnsCompatibilityResponseWithoutProviderCall() {
     ObjectMapper mapper = new ObjectMapper();
     InMemoryStore store = new InMemoryStore(mapper);
@@ -329,7 +387,7 @@ class AssistantOrchestratorTest {
                     user,
                     sessionId,
                     new AssistantOrchestrator.AssistantTurnRequest(
-                        "Create a serverless model", null, null, "canvas", null, null)));
+                        "Add an orders component", null, null, "canvas", null, null)));
 
     assertTrue(response.assistantMessage().contains("Review the preview below"));
     assertNotNull(response.proposal());
@@ -459,10 +517,11 @@ class AssistantOrchestratorTest {
             null,
             null,
             null);
+    BootstrapProvider provider = new BootstrapProvider();
     AssistantOrchestrator orchestrator =
         new AssistantOrchestrator(
             properties,
-            new BootstrapProvider(),
+            provider,
             new AssistantSessionStore(),
             memory,
             new SpringAiChatMemoryService(),
@@ -494,10 +553,11 @@ class AssistantOrchestratorTest {
     assertNotNull(response.proposal());
     assertTrue(response.proposal().approvalRequired());
     assertTrue(response.proposal().validation().mandatoryPassed());
-    assertEquals(1, response.proposal().patch().operations().size());
+    assertEquals(18, response.proposal().patch().operations().size());
     assertEquals(
         SemanticModelPatch.OperationType.ADD_ELEMENT,
         response.proposal().patch().operations().get(0).type());
+    assertEquals(2, provider.proposalCalls());
     assertNull(response.modelId());
     assertEquals(0L, response.revision());
     assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
@@ -519,6 +579,11 @@ class AssistantOrchestratorTest {
     public AssistantReply complete(AssistantPrompt prompt) {
       throw new AssertionError("Provider should not be called.");
     }
+  }
+
+  private static AssistantOrchestrator.AssistantTurnRequest request(String message) {
+    return new AssistantOrchestrator.AssistantTurnRequest(
+        message, "model-1", 1L, "canvas", List.of(), null);
   }
 
   private static final class ProposalProvider implements AssistantModelProvider {
@@ -556,6 +621,9 @@ class AssistantOrchestratorTest {
 
   private static final class BootstrapProvider implements AssistantModelProvider {
 
+    private final java.util.concurrent.atomic.AtomicInteger proposalCalls =
+        new java.util.concurrent.atomic.AtomicInteger();
+
     @Override
     public AssistantProviderMetadata metadata() {
       return new AssistantProviderMetadata("test", "test", "direct");
@@ -573,17 +641,35 @@ class AssistantOrchestratorTest {
 
     @Override
     public SemanticModelPatch proposePatch(AssistantPrompt prompt) {
-      ObjectNode attributes = JsonNodeFactory.instance.objectNode();
-      attributes.put("name", "Orders API");
-      return new SemanticModelPatch(
-          List.of(
-              new SemanticModelPatch.Operation(
-                  SemanticModelPatch.OperationType.ADD_ELEMENT,
-                  "api-orders",
-                  "Api",
-                  attributes,
-                  null,
-                  null)));
+      int call = proposalCalls.incrementAndGet();
+      java.util.ArrayList<SemanticModelPatch.Operation> operations = new java.util.ArrayList<>();
+      for (int index = 0; index < 12; index++) {
+        ObjectNode attributes = JsonNodeFactory.instance.objectNode();
+        attributes.put("name", "Architecture element " + index);
+        operations.add(
+            new SemanticModelPatch.Operation(
+                SemanticModelPatch.OperationType.ADD_ELEMENT,
+                "element-" + index,
+                "Api",
+                attributes,
+                null,
+                null));
+      }
+      for (int index = 1; index <= 6; index++) {
+        operations.add(
+            new SemanticModelPatch.Operation(
+                SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+                call == 1 && index == 1 ? "missing-element" : "element-" + index,
+                null,
+                null,
+                "element-0",
+                "relatedElements"));
+      }
+      return new SemanticModelPatch(operations);
+    }
+
+    private int proposalCalls() {
+      return proposalCalls.get();
     }
   }
 

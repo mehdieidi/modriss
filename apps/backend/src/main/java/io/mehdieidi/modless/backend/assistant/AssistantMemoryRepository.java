@@ -281,6 +281,42 @@ public class AssistantMemoryRepository {
   }
 
   /**
+   * Loads the most recent proposal in a workflow state for a thread.
+   *
+   * @param threadId thread ID
+   * @param status proposal workflow status
+   * @return latest matching proposal, if present
+   */
+  public Optional<ProposalRecord> findLatestProposal(String threadId, String status) {
+    return jdbc.query(
+        """
+        SELECT id, thread_id, project_id, model_id, model_revision, semantic_patch,
+          validation_summary, citations, status, decided_at, risk_level, approval_required,
+          inverse_patch, created_at
+        FROM assistant_proposals
+        WHERE thread_id = ? AND status = ?
+        ORDER BY created_at DESC LIMIT 1
+        """,
+        rs ->
+            rs.next()
+                ? Optional.of(
+                    new ProposalRecord(
+                        rs.getString("id"),
+                        rs.getString("thread_id"),
+                        rs.getString("project_id"),
+                        rs.getString("model_id"),
+                        rs.getLong("model_revision"),
+                        deserializeProposal(rs),
+                        rs.getString("status"),
+                        rs.getTimestamp("decided_at") == null
+                            ? null
+                            : rs.getTimestamp("decided_at").toInstant()))
+                : Optional.empty(),
+        threadId,
+        status);
+  }
+
+  /**
    * Updates proposal status.
    *
    * @param proposalId proposal ID

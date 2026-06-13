@@ -186,7 +186,7 @@ class AssistantHardeningServiceTest {
 
     assertEquals(504, ex.status());
     assertEquals(
-        "AI provider returned no response within 120 seconds. The provider or model is currently "
+        "AI provider returned no response within 300 seconds. The provider or model is currently "
             + "too slow; try again shortly.",
         ex.getMessage());
     assertEquals(1, attempts.get());

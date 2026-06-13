@@ -87,7 +87,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
 
   private int completionLimit(AssistantModelRole role) {
     return switch (role) {
-      case PLANNER -> 1600;
+      case PLANNER -> 6000;
       case SUMMARIZER -> 800;
       case RESPONDER -> 3000;
     };

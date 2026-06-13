@@ -39,7 +39,10 @@ public class AiConfig {
   @Bean("aiRestClientBuilder")
   RestClient.Builder aiRestClientBuilder(AiProperties properties) {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-    factory.setConnectTimeout(properties.requestTimeout());
+    factory.setConnectTimeout(
+        properties.requestTimeout().compareTo(java.time.Duration.ofSeconds(10)) < 0
+            ? properties.requestTimeout()
+            : java.time.Duration.ofSeconds(10));
     factory.setReadTimeout(properties.requestTimeout());
     AiProperties.Proxy proxy = properties.proxy();
     if (proxy.enabled() && proxy.type() != AiProperties.ProxyType.DIRECT) {

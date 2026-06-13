@@ -150,6 +150,33 @@ public class AssistantOrchestrator {
       return response;
     }
 
+    if (isTextualApproval(request.message())) {
+      java.util.Optional<AssistantMemoryRepository.ProposalRecord> pending =
+          memory.findLatestProposal(threadId, "PROPOSED");
+      if (pending.isPresent()) {
+        AssistantTurnResponse response = applyStoredProposal(user, session, pending.get());
+        memory.appendAudit(
+            pending.get().id(),
+            session.projectId(),
+            user.id(),
+            "APPROVED",
+            Map.of("proposalId", pending.get().id(), "source", "chat-message"));
+        memory.appendMessage(
+            threadId,
+            "ASSISTANT",
+            response.assistantMessage(),
+            Map.of(
+                "modelId",
+                response.modelId() == null ? "" : response.modelId(),
+                "workflowState",
+                response.workflowState().name()));
+        chatMemory.appendAssistant(threadId, response.assistantMessage());
+        updateRollingSummary(threadId);
+        realtime.publish(sessionId, "chat.assistant", response);
+        return response;
+      }
+    }
+
     ProjectRecord project = projects.get(user, session.projectId());
     String modelId = resolveModelId(request.modelId(), project, session.level());
     ModelRecord model = modelId == null ? null : models.get(user, session.level(), modelId);
@@ -165,7 +192,7 @@ public class AssistantOrchestrator {
               + ". Refresh before asking the assistant "
               + "to propose a change.");
     }
-    boolean proposalRequested = shouldDraftProposal(request);
+    boolean proposalRequested = shouldDraftProposal(session, request);
     ModelService.ValidationResult validation =
         model == null ? null : models.validate(user, session.level(), model.id());
     AssistantModelContextIndexService.AssistantModelContext context =
@@ -549,27 +576,67 @@ public class AssistantOrchestrator {
         || message.contains("draft");
   }
 
-  private boolean shouldDraftProposal(AssistantTurnRequest request) {
+  boolean shouldDraftProposal(
+      AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
     if (properties.mode() == AiProperties.RolloutMode.EXPLAIN_ONLY) {
       return false;
     }
     String message = request.message().toLowerCase(java.util.Locale.ROOT);
-    if (message.contains("explain")
-        || message.contains("describe")
-        || message.contains("what is")
-        || message.contains("how does")
-        || message.contains("why ")) {
+    boolean mutationIntent =
+        shouldCreateModel(request)
+            || message.contains("add ")
+            || message.contains("connect ")
+            || message.contains("change ")
+            || message.contains("update ")
+            || message.contains("set ")
+            || message.contains("delete ")
+            || message.contains("remove ")
+            || message.contains("modify ")
+            || message.contains("edit ")
+            || message.contains("expand ")
+            || message.contains("complete ")
+            || message.contains("finish ")
+            || message.contains("improve ")
+            || message.contains("fix ")
+            || message.contains("apply ")
+            || message.contains("propose ")
+            || message.matches(
+                "(?s).*\\b(do it|apply it|apply them|make it so|go ahead|proceed)\\b.*")
+            || (isTextualApproval(message) && hasRecentMutationContext(session));
+    if (!mutationIntent
+        && (message.contains("explain")
+            || message.contains("describe")
+            || message.contains("what is")
+            || message.contains("how does")
+            || message.contains("why "))) {
       return false;
     }
-    return shouldCreateModel(request)
-        || message.contains("add ")
-        || message.contains("connect ")
-        || message.contains("change ")
-        || message.contains("update ")
-        || message.contains("set ")
-        || message.contains("delete ")
-        || message.contains("remove ")
-        || message.contains("modify ");
+    return mutationIntent;
+  }
+
+  private boolean hasRecentMutationContext(AssistantSessionStore.AssistantSession session) {
+    String threadId = threadId(session.userId(), session.projectId(), session.level());
+    List<SpringAiChatMemoryService.MemoryMessage> recent =
+        chatMemory.recent(threadId, properties.hardening().recentMessageWindow());
+    int previousEnd = Math.max(0, recent.size() - 1);
+    return recent.subList(0, previousEnd).stream()
+        .map(SpringAiChatMemoryService.MemoryMessage::content)
+        .map(content -> content == null ? "" : content.toLowerCase(java.util.Locale.ROOT))
+        .anyMatch(
+            content ->
+                content.matches(
+                    "(?s).*\\b(create|generate|build|design|add|connect|change|update|set|delete|"
+                        + "remove|modify|edit|expand|complete|finish|improve|fix|apply|propose|"
+                        + "proposal|patch|model changes)\\b.*"));
+  }
+
+  boolean isTextualApproval(String message) {
+    String normalized =
+        message == null
+            ? ""
+            : message.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("[.!]+$", "").trim();
+    return normalized.matches(
+        "(yes|yes please|approve|approved|apply|apply it|apply them|do it|go ahead|proceed)");
   }
 
   private ModelRecord createStarterModel(
@@ -802,7 +869,7 @@ public class AssistantOrchestrator {
       AssistantModelContextIndexService.AssistantModelContext context,
       ModelLevel level) {
     Map<String, AssistantModelProvider.ContextSnippet> snippets = new LinkedHashMap<>();
-    metamodelTypes(request.message())
+    metamodelTypes(request.message(), level)
         .forEach(type -> addSnippet(snippets, typeDescription(type, level)));
     retrievalTerms(request.message()).stream()
         .limit(6)
@@ -820,7 +887,7 @@ public class AssistantOrchestrator {
     }
     return snippets.values().stream()
         .map(this::compactSnippet)
-        .limit(properties.tokenBudget() > 0 ? 8 : 4)
+        .limit(properties.tokenBudget() > 0 ? 14 : 8)
         .toList();
   }
 
@@ -909,7 +976,7 @@ public class AssistantOrchestrator {
             "using",
             "when",
             "with");
-    List<String> terms = new ArrayList<>(metamodelTypes(message));
+    List<String> terms = new ArrayList<>();
     java.util.Arrays.stream(normalized.split("[^a-z0-9_]+"))
         .filter(term -> term.length() >= 3)
         .filter(term -> !stopWords.contains(term))
@@ -918,9 +985,35 @@ public class AssistantOrchestrator {
     return terms.stream().distinct().toList();
   }
 
-  private List<String> metamodelTypes(String message) {
+  private List<String> metamodelTypes(String message, ModelLevel level) {
     String normalized = message == null ? "" : message.toLowerCase(java.util.Locale.ROOT);
     List<String> types = new ArrayList<>();
+    if (requiresConnectedArchitecture(message)) {
+      types.addAll(
+          switch (level) {
+            case CIM ->
+                List.of(
+                    "CIMModel", "BoundedContextCandidate", "BusinessCapability", "BusinessProcess");
+            case PIM ->
+                List.of(
+                    "ImplementationProfile",
+                    "Function",
+                    "EventType",
+                    "Schema",
+                    "SchemaField",
+                    "Api",
+                    "Workflow",
+                    "Queue");
+            case PSM ->
+                List.of(
+                    "AwsPsmModel",
+                    "LambdaFunction",
+                    "ApiGatewayApi",
+                    "DynamoDbTable",
+                    "EventBridgeBus",
+                    "SqsQueue");
+          });
+    }
     if (normalized.matches(".*\\bapi\\b.*")) {
       types.add("Api");
     }
@@ -950,7 +1043,6 @@ public class AssistantOrchestrator {
       return null;
     }
     JsonNode baseModel = model.modelJson();
-    long planningStarted = System.nanoTime();
     SemanticModelPatch patch =
         deterministicPatch(session, baseModel, request)
             .orElseGet(
@@ -961,21 +1053,24 @@ public class AssistantOrchestrator {
                             plannerPrompt(session, request, context),
                             request.message(),
                             snippets)));
-    patch = ensureCreationPatch(session, request, context, snippets, patch, planningStarted);
-    validateSemanticPatch(patch, context);
+    patch = ensureArchitecturePatch(session, request, context, snippets, patch);
+    PreparedSemanticPatch prepared =
+        prepareSemanticPatch(session, request, context, snippets, baseModel, patch);
+    patch = prepared.patch();
     if (patch.operations().isEmpty()) {
       return null;
     }
-    AssistantPatchCompiler.CompiledPatch compiled = patchCompiler.compile(baseModel, patch);
+    AssistantPatchCompiler.CompiledPatch compiled = prepared.compiled();
     if (compiled.patch().isEmpty()) {
       return null;
     }
     var preview = patchCompiler.apply(baseModel, compiled);
     ModelService.ValidationResult previewValidation = models.validate(session.level(), preview);
     AssistantValidationSummary summary = validationSummary(previewValidation);
-    if (!summary.mandatoryPassed() && mayAttemptRepair(planningStarted)) {
+    if (!summary.mandatoryPassed()) {
       SemanticModelPatch repaired =
           repairSemanticPatch(session, request, context, snippets, patch, summary);
+      repaired = canonicalizeEnumLiterals(repaired, context, session.level());
       validateSemanticPatch(repaired, context);
       if (!repaired.operations().isEmpty()) {
         patch = repaired;
@@ -1958,7 +2053,6 @@ public class AssistantOrchestrator {
     AssistantModelContextIndexService.AssistantModelContext bootstrapContext =
         modelContexts.transientSnapshot(
             session.projectId(), session.level(), session.title(), 0L, baseModel, baseValidation);
-    long planningStarted = System.nanoTime();
     SemanticModelPatch patch =
         deterministicPatch(session, baseModel, request)
             .orElseGet(
@@ -1969,22 +2063,24 @@ public class AssistantOrchestrator {
                             plannerPrompt(session, request, bootstrapContext),
                             request.message(),
                             snippets)));
-    patch =
-        ensureCreationPatch(session, request, bootstrapContext, snippets, patch, planningStarted);
-    validateSemanticPatch(patch, bootstrapContext);
+    patch = ensureArchitecturePatch(session, request, bootstrapContext, snippets, patch);
+    PreparedSemanticPatch prepared =
+        prepareSemanticPatch(session, request, bootstrapContext, snippets, baseModel, patch);
+    patch = prepared.patch();
     if (patch.operations().isEmpty()) {
       return null;
     }
-    AssistantPatchCompiler.CompiledPatch compiled = patchCompiler.compile(baseModel, patch);
+    AssistantPatchCompiler.CompiledPatch compiled = prepared.compiled();
     if (compiled.patch().isEmpty()) {
       return null;
     }
     var preview = patchCompiler.apply(baseModel, compiled);
     AssistantValidationSummary summary =
         validationSummary(models.validate(session.level(), preview));
-    if (!summary.mandatoryPassed() && mayAttemptRepair(planningStarted)) {
+    if (!summary.mandatoryPassed()) {
       SemanticModelPatch repaired =
           repairSemanticPatch(session, request, bootstrapContext, snippets, patch, summary);
+      repaired = canonicalizeEnumLiterals(repaired, bootstrapContext, session.level());
       validateSemanticPatch(repaired, bootstrapContext);
       if (!repaired.operations().isEmpty()) {
         patch = repaired;
@@ -2005,51 +2101,68 @@ public class AssistantOrchestrator {
         Instant.now());
   }
 
-  private SemanticModelPatch ensureCreationPatch(
+  private SemanticModelPatch ensureArchitecturePatch(
       AssistantSessionStore.AssistantSession session,
       AssistantTurnRequest request,
       AssistantModelContextIndexService.AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
-      SemanticModelPatch patch,
-      long planningStarted) {
-    if (!isArchitectureCreationRequest(request.message()) || containsElementAddition(patch)) {
+      SemanticModelPatch patch) {
+    if (!requiresConnectedArchitecture(request.message()) || isConnectedArchitecturePatch(patch)) {
       return patch;
-    }
-    if (!mayAttemptRepair(planningStarted)) {
-      throw new PlatformException(
-          502, "AI planner did not produce elements for the requested architecture.");
     }
     String correctionRequest =
         "Original request:\n"
             + request.message()
-            + "\n\nPrevious semantic patch that did not create an architecture:\n"
+            + "\n\nPrevious semantic patch that was too small or disconnected:\n"
             + patch
-            + "\n\nReturn a complete replacement semantic patch. It must contain ADD_ELEMENT "
-            + "operations that create the smallest useful architecture requested by the user. "
-            + "Do not return only root attributes or other no-op changes.";
+            + "\n\nReturn a complete replacement semantic patch for the user's domain. Create "
+            + "at least 12 meaningful model elements spanning the relevant concerns and at least "
+            + "6 CONNECT_ELEMENTS operations so the canvas is a connected architecture, not a "
+            + "collection of isolated nodes. Include semantic references in element attributes "
+            + "as required by the metamodel. Do not return only root attributes or no-op changes.";
     SemanticModelPatch corrected =
         provider.proposePatch(
             new AssistantModelProvider.AssistantPrompt(
                 AssistantModelRole.PLANNER,
                 plannerPrompt(session, request, context)
-                    + "\nThis is a bounded correction because the previous patch created no "
-                    + "elements.",
+                    + "\nThis is a bounded correction because the previous architecture was "
+                    + "too small or disconnected.",
                 correctionRequest,
                 snippets));
-    if (!containsElementAddition(corrected)) {
+    if (!isConnectedArchitecturePatch(corrected)) {
       throw new PlatformException(
-          502, "AI planner did not produce elements for the requested architecture.");
+          502, "AI planner did not produce a complete connected architecture.");
     }
     return corrected;
   }
 
-  private boolean containsElementAddition(SemanticModelPatch patch) {
-    return patch != null
-        && patch.operations().stream()
-            .anyMatch(
-                operation ->
-                    operation != null
-                        && operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT);
+  private boolean requiresConnectedArchitecture(String message) {
+    String normalized = message == null ? "" : message.toLowerCase(java.util.Locale.ROOT);
+    return isArchitectureCreationRequest(message)
+        || normalized.contains("complete model")
+        || normalized.contains("complete architecture")
+        || normalized.contains("expand the model")
+        || normalized.contains("expand this model")
+        || normalized.contains("more complete")
+        || normalized.contains("too incomplete");
+  }
+
+  private boolean isConnectedArchitecturePatch(SemanticModelPatch patch) {
+    if (patch == null) {
+      return false;
+    }
+    long additions =
+        patch.operations().stream()
+            .filter(operation -> operation != null)
+            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .count();
+    long connections =
+        patch.operations().stream()
+            .filter(operation -> operation != null)
+            .filter(
+                operation -> operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS)
+            .count();
+    return additions >= 12 && connections >= 6;
   }
 
   private SemanticModelPatch repairSemanticPatch(
@@ -2076,9 +2189,34 @@ public class AssistantOrchestrator {
             + "request and repairs these failures.";
     Map<String, AssistantModelProvider.ContextSnippet> repairSnippets = new LinkedHashMap<>();
     addSnippets(repairSnippets, snippets);
+    validation.issues().stream()
+        .filter(issue -> "ERROR".equalsIgnoreCase(issue.severity()))
+        .limit(10)
+        .forEach(
+            issue -> {
+              addSnippets(
+                  repairSnippets, catalogs.search(issue.constraint(), session.level().name(), 2));
+              addSnippets(
+                  repairSnippets, catalogs.search(issue.message(), session.level().name(), 2));
+            });
+    Map<String, String> elementTypes =
+        context.elements().stream()
+            .collect(
+                Collectors.toMap(
+                    AssistantModelContextIndexService.ContextElement::id,
+                    AssistantModelContextIndexService.ContextElement::type,
+                    (first, ignored) -> first,
+                    LinkedHashMap::new));
     failedPatch.operations().stream()
         .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
-        .map(SemanticModelPatch.Operation::elementType)
+        .forEach(
+            operation -> elementTypes.put(operation.targetElementId(), operation.elementType()));
+    failedPatch.operations().stream()
+        .map(
+            operation ->
+                operation.elementType() != null
+                    ? operation.elementType()
+                    : elementTypes.get(operation.targetElementId()))
         .filter(type -> type != null && !type.isBlank())
         .distinct()
         .forEach(type -> addSnippet(repairSnippets, typeDescription(type, session.level())));
@@ -2088,15 +2226,35 @@ public class AssistantOrchestrator {
             plannerPrompt(session, request, context)
                 + "\nThis is the single bounded validation-repair pass.",
             repairRequest,
-            repairSnippets.values().stream().map(this::compactSnippet).limit(12).toList()));
+            repairSnippets.values().stream().map(this::compactSnippet).limit(20).toList()));
   }
 
-  private boolean mayAttemptRepair(long planningStarted) {
-    long elapsedMillis =
-        java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - planningStarted);
-    long repairStartBudgetMillis =
-        Math.min(30_000L, Math.max(5_000L, properties.requestTimeout().toMillis() / 4));
-    return elapsedMillis <= repairStartBudgetMillis;
+  private PreparedSemanticPatch prepareSemanticPatch(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantModelContextIndexService.AssistantModelContext context,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      JsonNode baseModel,
+      SemanticModelPatch proposedPatch) {
+    SemanticModelPatch patch = canonicalizeEnumLiterals(proposedPatch, context, session.level());
+    try {
+      validateSemanticPatch(patch, context);
+      return new PreparedSemanticPatch(patch, patchCompiler.compile(baseModel, patch));
+    } catch (PlatformException failure) {
+      AssistantValidationSummary groundingFailure =
+          new AssistantValidationSummary(
+              false,
+              false,
+              0,
+              List.of(
+                  new AssistantValidationSummary.Issue(
+                      "ERROR", "SemanticPatchGrounding", null, failure.getMessage())));
+      SemanticModelPatch repaired =
+          repairSemanticPatch(session, request, context, snippets, patch, groundingFailure);
+      repaired = canonicalizeEnumLiterals(repaired, context, session.level());
+      validateSemanticPatch(repaired, context);
+      return new PreparedSemanticPatch(repaired, patchCompiler.compile(baseModel, repaired));
+    }
   }
 
   private void applyProposal(
@@ -2186,7 +2344,7 @@ public class AssistantOrchestrator {
         updated.id(),
         updated.revision(),
         record.proposal(),
-        proposalChoices(record.proposal()),
+        List.of(),
         AssistantWorkflowState.APPLIED);
   }
 
@@ -2246,8 +2404,16 @@ public class AssistantOrchestrator {
         + "an unambiguous creation request merely because selected IDs are empty."
         + "\nCONNECT_ELEMENTS may connect existing or newly-added IDs. Use the exact metamodel "
         + "reference name, not a generic visual label."
-        + "\nFor pattern requests, add the smallest complete set of elements and references "
-        + "needed to represent the requested pattern."
+        + "\nEnum attribute values must use the exact case-sensitive literal from the metamodel "
+        + "catalog, for example TYPESCRIPT rather than TypeScript."
+        + "\nFor architecture creation, completion, or expansion requests, produce a "
+        + "domain-complete model rather than a minimal scaffold. Cover the relevant APIs, "
+        + "functions, data, events/messaging, workflows, security, policies, and external "
+        + "integrations. Use at least 12 meaningful ADD_ELEMENT operations and at least 6 "
+        + "CONNECT_ELEMENTS operations. Every major element should participate in a semantic "
+        + "reference and a visible connection; avoid isolated canvas nodes."
+        + "\nFor narrowly scoped pattern requests, add the complete set of elements and "
+        + "references needed to represent the requested pattern."
         + "\nIf no saved model exists yet, draft a bootstrap proposal for the blank starter "
         + session.level().apiName()
         + " model rather than returning no operations."
@@ -2308,6 +2474,70 @@ public class AssistantOrchestrator {
                 502, "AI planner proposed an unsupported semantic operation.");
       }
     }
+  }
+
+  private SemanticModelPatch canonicalizeEnumLiterals(
+      SemanticModelPatch patch,
+      AssistantModelContextIndexService.AssistantModelContext context,
+      ModelLevel level) {
+    Map<String, String> elementTypes =
+        context.elements().stream()
+            .collect(
+                Collectors.toMap(
+                    AssistantModelContextIndexService.ContextElement::id,
+                    AssistantModelContextIndexService.ContextElement::type,
+                    (first, ignored) -> first,
+                    LinkedHashMap::new));
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>();
+    for (SemanticModelPatch.Operation operation : patch.operations()) {
+      String elementType =
+          operation.elementType() == null
+              ? elementTypes.get(operation.targetElementId())
+              : operation.elementType();
+      JsonNode attributes = operation.attributes();
+      if (operation.type() == SemanticModelPatch.OperationType.SET_ATTRIBUTE
+          && attributes != null
+          && attributes.isTextual()
+          && elementType != null) {
+        attributes =
+            catalogs
+                .canonicalEnumLiteral(
+                    elementType, operation.referenceName(), attributes.asText(), level.name())
+                .<JsonNode>map(JsonNodeFactory.instance::textNode)
+                .orElse(attributes);
+      } else if (operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
+          && attributes instanceof ObjectNode object
+          && elementType != null) {
+        ObjectNode canonical = object.deepCopy();
+        object
+            .fields()
+            .forEachRemaining(
+                entry -> {
+                  if (!entry.getValue().isTextual()) {
+                    return;
+                  }
+                  catalogs
+                      .canonicalEnumLiteral(
+                          elementType, entry.getKey(), entry.getValue().asText(), level.name())
+                      .ifPresent(value -> canonical.put(entry.getKey(), value));
+                });
+        attributes = canonical;
+      }
+      operations.add(
+          new SemanticModelPatch.Operation(
+              operation.type(),
+              operation.targetElementId(),
+              operation.elementType(),
+              attributes,
+              operation.sourceElementId(),
+              operation.referenceName()));
+      if (operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
+          && operation.targetElementId() != null
+          && elementType != null) {
+        elementTypes.put(operation.targetElementId(), elementType);
+      }
+    }
+    return new SemanticModelPatch(operations);
   }
 
   private List<AssistantChoice> proposalChoices(AssistantProposal proposal) {
@@ -2458,4 +2688,7 @@ public class AssistantOrchestrator {
       workflowState = workflowState == null ? AssistantWorkflowState.EXPLAINED : workflowState;
     }
   }
+
+  private record PreparedSemanticPatch(
+      SemanticModelPatch patch, AssistantPatchCompiler.CompiledPatch compiled) {}
 }

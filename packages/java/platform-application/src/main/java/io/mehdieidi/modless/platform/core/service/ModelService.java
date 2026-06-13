@@ -9,6 +9,7 @@ import io.mehdieidi.modless.mde.validation.EpsilonEvlValidator;
 import io.mehdieidi.modless.mde.validation.EvlConstraintKind;
 import io.mehdieidi.modless.mde.validation.EvlConstraintViolation;
 import io.mehdieidi.modless.mde.validation.EvlDiagnostic;
+import io.mehdieidi.modless.mde.validation.EvlModelConfiguration;
 import io.mehdieidi.modless.mde.validation.EvlValidationException;
 import io.mehdieidi.modless.mde.validation.EvlValidationReport;
 import io.mehdieidi.modless.mde.validation.EvlValidationRequest;
@@ -39,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.resource.Resource;
 
 /**
  * Manages stored platform models, validation, import/export, XMI sidecars, and
@@ -718,13 +721,10 @@ public final class ModelService {
               new EvlValidationRequest(
                   mdePaths.validationRoot(level),
                   List.of(mdePaths.validationEntryFile(level)),
-                  List.of(
-                      ResourceEvlModelConfiguration.readOnly(
-                          validationModelName(level),
-                          validationModelAliases(level),
-                          xmiImportService.exportResource(
-                              level, hydrateSemanticReferences(modelJson)),
-                          metamodel.packages())),
+                  validationModelConfigurations(
+                      level,
+                      xmiImportService.exportResource(level, hydrateSemanticReferences(modelJson)),
+                      metamodel.packages()),
                   true));
       return validationIssues(report);
     } catch (PlatformException ex) {
@@ -756,12 +756,10 @@ public final class ModelService {
               new EvlValidationRequest(
                   mdePaths.validationRoot(level),
                   List.of(mdePaths.validationEntryFile(level)),
-                  List.of(
-                      ResourceEvlModelConfiguration.readOnly(
-                          validationModelName(level),
-                          validationModelAliases(level),
-                          xmiImportService.loadResource(level, xmiBytes, "validation"),
-                          metamodel.packages())),
+                  validationModelConfigurations(
+                      level,
+                      xmiImportService.loadResource(level, xmiBytes, "validation"),
+                      metamodel.packages()),
                   true));
       return validationIssues(report);
     } catch (PlatformException ex) {
@@ -1013,6 +1011,21 @@ public final class ModelService {
       case CIM, PIM -> List.of("KERNEL");
       case PSM -> List.of("AWSPSMENUMS", "KERNEL");
     };
+  }
+
+  private List<EvlModelConfiguration> validationModelConfigurations(
+      ModelLevel level, Resource resource, List<EPackage> metamodelPackages) {
+    List<EvlModelConfiguration> configurations = new ArrayList<>();
+    configurations.add(
+        ResourceEvlModelConfiguration.readOnly(
+            validationModelName(level), resource, metamodelPackages));
+    validationModelAliases(level)
+        .forEach(
+            alias ->
+                configurations.add(
+                    new ResourceEvlModelConfiguration(
+                        alias, List.of(), resource, metamodelPackages, true, true, false)));
+    return List.copyOf(configurations);
   }
 
   /**

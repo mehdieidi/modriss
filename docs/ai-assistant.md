@@ -31,15 +31,16 @@ OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com
 MODLESS_AI_PLANNER_MODEL=gpt-4o-mini
 MODLESS_AI_RESPONDER_MODEL=gpt-4o-mini
 MODLESS_AI_SUMMARIZER_MODEL=gpt-4o-mini
-MODLESS_AI_MAX_TOOL_CALLS=24
+MODLESS_AI_MAX_TOOL_CALLS=96
 MODLESS_AI_TOKEN_BUDGET=6000
-MODLESS_AI_REQUEST_TIMEOUT=120s
+MODLESS_AI_REQUEST_TIMEOUT=5m
 ```
 
-`MODLESS_AI_REQUEST_TIMEOUT` defaults to 120 seconds. OpenAI-compatible gateways and reasoning
-models can have highly variable time-to-first-byte latency; lower values may reject otherwise
-successful requests. A timeout is not retried because the provider may still be processing the
-original request.
+`MODLESS_AI_REQUEST_TIMEOUT` defaults to 5 minutes. Complete architecture proposals can require
+large structured responses, and OpenAI-compatible gateways or reasoning models can have highly
+variable latency. Lower values may reject otherwise successful requests. Connection establishment
+still fails after at most 10 seconds. A response timeout is not retried because the provider may
+still be processing the original request.
 
 For another OpenAI-compatible provider, keep `MODLESS_AI_PROVIDER=openai` and set
 `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`, and the role-specific model names to the
@@ -111,8 +112,9 @@ docker compose up --build
 ```
 
 Compose passes the common AI settings into the backend container. The backend service defaults the
-AI proxy host to `host.docker.internal`, because `127.0.0.1` inside the container would mean the
-container itself, not your host machine.
+AI proxy to disabled because its default OpenAI-compatible endpoint is a local host gateway. When
+you explicitly enable the AI proxy, its host defaults to `host.docker.internal`, because
+`127.0.0.1` inside the container would mean the container itself, not your host machine.
 
 To turn AI off again:
 

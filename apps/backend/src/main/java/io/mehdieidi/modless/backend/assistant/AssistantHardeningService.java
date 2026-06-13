@@ -89,6 +89,13 @@ public class AssistantHardeningService {
         long attemptStarted = System.nanoTime();
         try {
           T result = call.get();
+          log.info(
+              "AI provider call succeeded provider={} role={} model={} attempt={} elapsedMs={}",
+              provider,
+              role,
+              model,
+              attempt,
+              elapsedMillis(attemptStarted));
           circuit = new Circuit(0, Instant.EPOCH);
           counter(
               "assistant.provider.success",

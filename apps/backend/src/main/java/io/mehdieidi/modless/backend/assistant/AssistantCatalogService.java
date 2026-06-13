@@ -13,6 +13,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -79,7 +80,7 @@ public class AssistantCatalogService {
    */
   public List<AssistantModelProvider.ContextSnippet> search(String query, String level, int limit) {
     String normalized = query == null ? "" : query.trim();
-    if (normalized.isBlank()) {
+    if (jdbc == null || normalized.isBlank()) {
       return List.of();
     }
     String normalizedLevel = level == null ? "" : level.toUpperCase(Locale.ROOT);
@@ -150,7 +151,7 @@ public class AssistantCatalogService {
   public List<AssistantModelProvider.ContextSnippet> describeType(
       String type, String level, int limit) {
     String normalizedType = type == null ? "" : type.trim();
-    if (normalizedType.isBlank()) {
+    if (jdbc == null || normalizedType.isBlank()) {
       return List.of();
     }
     String normalizedLevel = level == null ? "" : level.toUpperCase(Locale.ROOT);
@@ -176,6 +177,71 @@ public class AssistantCatalogService {
         normalizedLevel,
         normalizedType,
         Math.max(1, limit));
+  }
+
+  /**
+   * Canonicalizes a textual enum value using the indexed metamodel literals.
+   *
+   * @param ownerType classifier that owns the enum-typed feature
+   * @param featureName feature name
+   * @param value proposed textual value
+   * @param level modeling level
+   * @return canonical enum literal when the feature and value are known
+   */
+  public Optional<String> canonicalEnumLiteral(
+      String ownerType, String featureName, String value, String level) {
+    if (jdbc == null
+        || ownerType == null
+        || ownerType.isBlank()
+        || featureName == null
+        || featureName.isBlank()
+        || value == null
+        || value.isBlank()) {
+      return Optional.empty();
+    }
+    String normalizedLevel = level == null ? "" : level.toUpperCase(Locale.ROOT);
+    List<String> contents =
+        jdbc.query(
+            """
+            SELECT enum_doc.content
+            FROM assistant_retrieval_documents feature_doc
+            JOIN assistant_retrieval_documents enum_doc
+              ON lower(enum_doc.title) =
+                 lower(regexp_replace(feature_doc.metadata->>'type', '^.*/', '')
+                       || '.literals')
+            WHERE lower(feature_doc.title) = lower(?)
+              AND (? = '' OR feature_doc.metadata->>'level' = ?
+                   OR feature_doc.metadata->>'level' = 'SHARED')
+              AND (? = '' OR enum_doc.metadata->>'level' = ?
+                   OR enum_doc.metadata->>'level' = 'SHARED')
+            LIMIT 4
+            """,
+            (rs, row) -> rs.getString("content"),
+            ownerType + "." + featureName,
+            normalizedLevel,
+            normalizedLevel,
+            normalizedLevel,
+            normalizedLevel);
+    return contents.stream()
+        .map(content -> canonicalEnumLiteral(content, value))
+        .flatMap(Optional::stream)
+        .findFirst();
+  }
+
+  Optional<String> canonicalEnumLiteral(String enumDescription, String value) {
+    if (enumDescription == null || value == null) {
+      return Optional.empty();
+    }
+    int marker = enumDescription.indexOf("allowed literals ");
+    if (marker < 0) {
+      return Optional.empty();
+    }
+    String requested = value.trim();
+    return java.util.Arrays.stream(
+            enumDescription.substring(marker + "allowed literals ".length()).split(","))
+        .map(String::trim)
+        .filter(literal -> literal.equalsIgnoreCase(requested))
+        .findFirst();
   }
 
   private boolean matches(Path path, String... suffixes) {

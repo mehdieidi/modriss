@@ -64,4 +64,90 @@ class SemanticModelPatchParserTest {
     assertEquals("name", patch.operations().get(0).referenceName());
     assertEquals("Orders API", patch.operations().get(0).attributes().asText());
   }
+
+  @Test
+  void extractsAndNormalizesCommonProviderPatchAliases() {
+    SemanticModelPatch patch =
+        parser.parse(
+            """
+            Here is the patch:
+            [
+              {"operation":"create_element","body":{"id":"api-users","type":"Api",
+                "name":"Users API"}},
+              {"op":"updateAttribute","element":"api-users","attribute":"basePath",
+                "value":"/users"}
+            ]
+            Apply it after validation.
+            """);
+
+    assertEquals(2, patch.operations().size());
+    assertEquals(SemanticModelPatch.OperationType.ADD_ELEMENT, patch.operations().get(0).type());
+    assertEquals("api-users", patch.operations().get(0).targetElementId());
+    assertEquals("Users API", patch.operations().get(0).attributes().path("name").asText());
+    assertEquals(SemanticModelPatch.OperationType.SET_ATTRIBUTE, patch.operations().get(1).type());
+    assertEquals("basePath", patch.operations().get(1).referenceName());
+  }
+
+  @Test
+  void parsesJsonFollowedByProviderCommentary() {
+    SemanticModelPatch patch =
+        parser.parse(
+            """
+            {"operations":[{"type":"ADD_ELEMENT","targetElementId":"api-users",
+            "elementType":"Api","attributes":{"name":"Users API"}}]}
+            I created the requested model changes.
+            """);
+
+    assertEquals(1, patch.operations().size());
+    assertEquals("api-users", patch.operations().get(0).targetElementId());
+  }
+
+  @Test
+  void skipsNonPatchJsonAndParsesWrappedSemanticPatch() {
+    SemanticModelPatch patch =
+        parser.parse(
+            """
+            Planning metadata: {"status":"ready"}
+            {"semanticPatch":{"operations":[{"type":"ADD_ELEMENT",
+            "targetElementId":"api-users","elementType":"Api",
+            "attributes":{"name":"Users API"}}]}}
+            """);
+
+    assertEquals(1, patch.operations().size());
+    assertEquals("Users API", patch.operations().get(0).attributes().path("name").asText());
+  }
+
+  @Test
+  void toleratesCommonModelGeneratedJsonFormattingMistakes() {
+    SemanticModelPatch patch =
+        parser.parse(
+            """
+            {
+              'operations': [
+                // Add the requested API.
+                {'type':'ADD_ELEMENT','targetElementId':'api-users',
+                 'elementType':'Api','attributes':{'name':'Users API'},},
+              ],
+            }
+            """);
+
+    assertEquals(1, patch.operations().size());
+    assertEquals("api-users", patch.operations().get(0).targetElementId());
+  }
+
+  @Test
+  void collectsStandaloneJsonLineOperations() {
+    SemanticModelPatch patch =
+        parser.parse(
+            """
+            {"operation":"create_element","body":{"id":"api-users","type":"Api",
+              "name":"Users API"}}
+            {"operation":"create_element","body":{"id":"api-books","type":"Api",
+              "name":"Books API"}}
+            """);
+
+    assertEquals(2, patch.operations().size());
+    assertEquals("api-users", patch.operations().get(0).targetElementId());
+    assertEquals("api-books", patch.operations().get(1).targetElementId());
+  }
 }

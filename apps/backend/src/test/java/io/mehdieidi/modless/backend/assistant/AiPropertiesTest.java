@@ -20,7 +20,7 @@ class AiPropertiesTest {
     assertEquals("127.0.0.1", properties.proxy().host());
     assertEquals(2081, properties.proxy().port());
     assertEquals("https://api.openai.com", properties.openaiCompatible().baseUrl());
-    assertEquals(Duration.ofSeconds(120), properties.requestTimeout());
+    assertEquals(Duration.ofMinutes(5), properties.requestTimeout());
     assertEquals("", properties.gemini().apiKey());
     assertEquals(30, properties.hardening().perUserRequestsPerWindow());
     assertEquals(AiProperties.EmbeddingProvider.ONNX, properties.embeddings().provider());
