@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+[% /* Generates the local invoke artifact. */ %]#!/usr/bin/env bash
 set -euo pipefail
 
 function_logical_id="${1:?Usage: scripts/local-invoke.sh <FunctionLogicalId> <event-json>}"

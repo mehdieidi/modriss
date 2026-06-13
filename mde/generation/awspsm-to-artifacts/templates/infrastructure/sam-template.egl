@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+[% /* Generates the sam template artifact. */ %]AWSTemplateFormatVersion: '2010-09-09'
 [% if (stackObj.useSamTransform.isUndefined() or stackObj.useSamTransform = true) { %]
 Transform: AWS::Serverless-2016-10-31
 [% } %]
@@ -8,7 +8,7 @@ Description: [%= stackObj.templateDescription.orElseText(emitCtx.get("projectNam
 [%= stackObj.mappingsSection() %]
 [%= stackObj.conditionsSection() %]
 [%= stackObj.globalsSection(awsRoot) %]
-[%= stackObj.resourcesSection(emitCtx) %]
+[% /* Resources are emitted in dependency order so generated templates remain deterministic. */ %][%= stackObj.resourcesSection(emitCtx) %]
 [%= stackObj.outputsSection() %]
 [%= out.startPreserve("#", "", stackObj.manualRegionId("yaml-extension"), true) %]
 # Optional developer-owned CloudFormation/SAM additions that cannot yet be represented in the PSM.
@@ -16,6 +16,7 @@ Description: [%= stackObj.templateDescription.orElseText(emitCtx.get("projectNam
 
 [%
 @template
+/** Computes parameters section. */
 operation AWSPSMCORE!SamStack parametersSection() { %]
 [% if (self.uniqueParameters().notEmpty()) { %]
 Parameters:
@@ -33,6 +34,7 @@ Parameters:
 [% }
 
 @template
+/** Computes mappings section. */
 operation AWSPSMCORE!SamStack mappingsSection() { %]
 [% if (self.mappings.notEmpty()) { %]
 Mappings:
@@ -44,6 +46,7 @@ Mappings:
 [% }
 
 @template
+/** Computes conditions section. */
 operation AWSPSMCORE!SamStack conditionsSection() { %]
 [% if (self.conditions.notEmpty()) { %]
 Conditions:
@@ -56,6 +59,7 @@ Conditions:
 [% }
 
 @template
+/** Computes globals section. */
 operation AWSPSMCORE!SamStack globalsSection(awsRoot : AWSPSM!AwsPsmModel) { %]
 [% if (awsRoot.samGlobals.isDefined() or self.globals.notEmpty()) { %]
 Globals:
@@ -66,6 +70,7 @@ Globals:
 [% }
 
 @template
+/** Computes sam globals body. */
 operation AWSPSMCORE!SamGlobals samGlobalsBody() { %]
 [% if (self.functionGlobals.notEmpty()) { %]  Function:
 [%= self.functionGlobals.emitNativePropertiesYaml(4) %][% } %]
@@ -78,6 +83,7 @@ operation AWSPSMCORE!SamGlobals samGlobalsBody() { %]
 [% }
 
 @template
+/** Computes resources section. */
 operation AWSPSMCORE!SamStack resourcesSection(emitCtx : Map) { %]
 [% if (self.resources.notEmpty()) { %]
 Resources:
@@ -89,6 +95,7 @@ Resources:
 [% }
 
 @template
+/** Computes outputs section. */
 operation AWSPSMCORE!SamStack outputsSection() { %]
 [% if (self.outputs.notEmpty()) { %]
 Outputs:

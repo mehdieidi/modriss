@@ -1,4 +1,4 @@
-package unit
+[% /* Generates the unit test go artifact. */ %]package unit
 
 import (
 	"os"

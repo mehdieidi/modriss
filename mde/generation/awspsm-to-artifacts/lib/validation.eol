@@ -1,6 +1,8 @@
+/** Provides reusable validation operations. */
 import "naming.eol";
 import "trace.eol";
 
+/** Adds or records collect blocking issues. */
 operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence {
   var issueSeq = new Sequence;
 
@@ -106,6 +108,7 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
   return issueSeq;
 }
 
+/** Returns whether the receiver is sue tuple. */
 operation AWSPSM!AwsPsmModel issueTuple(codeText : String, severityText : String, messageText : String, sourceObj, blockingFlag : Boolean) : Map {
   var stableText = "";
   var sourceTypeText = "";

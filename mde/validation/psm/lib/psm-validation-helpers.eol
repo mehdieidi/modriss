@@ -1,3 +1,5 @@
+/** Provides reusable psm validation helpers operations. */
+/** Returns whether the receiver contains a non-empty textual value. */
 operation Any hasText() : Boolean {
   if (self.isUndefined()) {
     return false;
@@ -5,15 +7,18 @@ operation Any hasText() : Boolean {
   return self.asString().trim().size() > 0;
 }
 
+/** Returns whether the receiver is true value. */
 operation Any isTrueValue() : Boolean {
   return self.isDefined() and (self = true);
 }
 
+/** Returns whether the receiver is false value. */
 operation Any isFalseValue() : Boolean {
   return self.isDefined() and (self = false);
 }
 
 @cached
+/** Computes current psm model. */
 operation currentPsmModel() : Any {
   if (AWSPSM!AwsPsmModel.all.isEmpty()) {
     return null;
@@ -22,6 +27,7 @@ operation currentPsmModel() : Any {
 }
 
 @cached
+/** Computes production stage exists. */
 operation productionStageExists() : Boolean {
   return AWSPSM!AwsStage.all.exists(stageItem |
     stageItem.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD);
@@ -29,6 +35,7 @@ operation productionStageExists() : Boolean {
 
 
 @cached
+/** Computes stack resource set. */
 operation AWSPSM!AwsPsmModel stackResourceSet() : Set {
   var resourceSet : Set = Set{};
   for (stackItem in self.stacks) {
@@ -37,6 +44,7 @@ operation AWSPSM!AwsPsmModel stackResourceSet() : Set {
   return resourceSet;
 }
 
+/** Computes resource label. */
 operation AWSPSM!AwsResource resourceLabel() : String {
   if (self.logicalId.hasText()) {
     return self.logicalId;
@@ -48,11 +56,13 @@ operation AWSPSM!AwsResource resourceLabel() : String {
 }
 
 @cached
+/** Computes deployed to production stage. */
 operation AWSPSM!AwsResource deployedToProductionStage() : Boolean {
   return self.stack.isDefined() and productionStackIds().includes(self.stack.`id`);
 }
 
 @cached
+/** Computes production stack ids. */
 operation productionStackIds() : Set {
   var ids : Set = Set{};
   for (stageItem in AWSPSM!AwsStage.all.select(s |
@@ -65,15 +75,18 @@ operation productionStackIds() : Set {
 }
 
 @cached
+/** Returns whether the receiver is production scoped. */
 operation AWSPSM!AwsResource isProductionScoped() : Boolean {
   return (self.productionCritical = true) or self.deployedToProductionStage();
 }
 
+/** Returns whether the receiver has tag key. */
 operation AWSPSM!AwsResource hasTagKey(keyText : String) : Boolean {
   return self.tags.exists(tagItem | tagItem.key = keyText);
 }
 
 @cached
+/** Computes duplicate tag keys. */
 operation AWSPSM!AwsResource duplicateTagKeys() : Set {
   var seen : Set = Set{};
   var duplicates : Set = Set{};
@@ -89,6 +102,7 @@ operation AWSPSM!AwsResource duplicateTagKeys() : Set {
 }
 
 @cached
+/** Computes active tagging policy. */
 operation activeTaggingPolicy() : Any {
   var modelRoot = currentPsmModel();
   if (modelRoot.isUndefined()) {
@@ -98,6 +112,7 @@ operation activeTaggingPolicy() : Any {
 }
 
 @cached
+/** Computes required tag keys. */
 operation requiredTagKeys() : Sequence {
   var policyItem = activeTaggingPolicy();
   var keys : Sequence = Sequence{};
@@ -127,6 +142,7 @@ operation requiredTagKeys() : Sequence {
 }
 
 @cached
+/** Computes missing required tag keys. */
 operation AWSPSM!AwsResource missingRequiredTagKeys() : Sequence {
   var missingKeys : Sequence = Sequence{};
   for (requiredKey in requiredTagKeys()) {
@@ -137,6 +153,7 @@ operation AWSPSM!AwsResource missingRequiredTagKeys() : Sequence {
   return missingKeys;
 }
 
+/** Computes stack logical id key. */
 operation AWSPSM!AwsResource stackLogicalIdKey() : String {
   if (self.stack.isUndefined()) {
     return "<no-stack>::" + self.logicalId;
@@ -145,6 +162,7 @@ operation AWSPSM!AwsResource stackLogicalIdKey() : String {
 }
 
 @cached
+/** Computes duplicate resource logical id keys. */
 operation duplicateResourceLogicalIdKeys() : Set {
   var seen : Set = Set{};
   var duplicates : Set = Set{};
@@ -161,10 +179,12 @@ operation duplicateResourceLogicalIdKeys() : Set {
 }
 
 @cached
+/** Computes transitive dependency ids. */
 operation AWSPSM!AwsResource transitiveDependencyIds() : Set {
   return self.transitiveDependencyIds(Set{});
 }
 
+/** Computes transitive dependency ids. */
 operation AWSPSM!AwsResource transitiveDependencyIds(visitedResourceIds : Set) : Set {
   var ids : Set = Set{};
   if (visitedResourceIds.includes(self.`id`)) {
@@ -180,6 +200,7 @@ operation AWSPSM!AwsResource transitiveDependencyIds(visitedResourceIds : Set) :
 }
 
 @cached
+/** Computes resources with dependency cycles. */
 operation resourcesWithDependencyCycles() : Set {
   var ids : Set = Set{};
   for (resourceItem in AWSPSM!AwsResource.all) {
@@ -190,45 +211,54 @@ operation resourcesWithDependencyCycles() : Set {
   return ids;
 }
 
+/** Returns whether the receiver uses secure source. */
 operation AWSPSM!ValueExpression usesSecureSource() : Boolean {
   return (self.sourceKind = AWSPSMENUMS!ValueSourceKind#SECRETS_MANAGER_REFERENCE) or
     (self.sourceKind = AWSPSMENUMS!ValueSourceKind#SSM_SECURE_REFERENCE) or
     (self.sourceKind = AWSPSMENUMS!ValueSourceKind#DYNAMIC_REFERENCE);
 }
 
+/** Computes action is wildcard. */
 operation AWSPSM!IamStatement actionIsWildcard() : Boolean {
   return (self.wildcardAction = true) or
     self.actions.exists(actionText | (actionText = '*') or actionText.endsWith(':*'));
 }
 
+/** Computes resource is wildcard. */
 operation AWSPSM!IamStatement resourceIsWildcard() : Boolean {
   return (self.wildcardResource = true) or
     self.resources.exists(resourceText | resourceText = '*');
 }
 
+/** Returns whether the receiver has least privilege justification. */
 operation AWSPSM!IamStatement hasLeastPrivilegeJustification() : Boolean {
   return self.wildcardJustification.hasText() or self.conditions.notEmpty();
 }
 
+/** Returns whether the receiver has action side. */
 operation AWSPSM!IamStatement hasActionSide() : Boolean {
   return self.actions.notEmpty() or self.notActions.notEmpty();
 }
 
+/** Returns whether the receiver has resource side. */
 operation AWSPSM!IamStatement hasResourceSide() : Boolean {
   return self.resources.notEmpty() or self.notResources.notEmpty();
 }
 
 @cached
+/** Returns whether the receiver is trust policy statement. */
 operation AWSPSM!IamStatement isTrustPolicyStatement() : Boolean {
   return self.principals.notEmpty();
 }
 
 @cached
+/** Returns whether the receiver is generator managed code skeleton. */
 operation AWSPSM!LambdaZipCodeConfig isGeneratorManagedCodeSkeleton() : Boolean {
   return self.generatedByTransformation = true;
 }
 
 @cached
+/** Computes blocks all public access. */
 operation AWSPSM!S3Bucket blocksAllPublicAccess() : Boolean {
   if (self.publicAccessMode = AWSPSMENUMS!S3BlockPublicAccessMode#STRICT_BLOCK_ALL) {
     return true;
@@ -243,6 +273,7 @@ operation AWSPSM!S3Bucket blocksAllPublicAccess() : Boolean {
 }
 
 @cached
+/** Computes target count. */
 operation AWSPSM!ApiGatewayIntegration targetCount() : Integer {
   var count : Integer = 0;
   if (self.lambdaTarget.isDefined()) {
@@ -257,6 +288,7 @@ operation AWSPSM!ApiGatewayIntegration targetCount() : Integer {
   return count;
 }
 
+/** Computes api route key prefix. */
 operation AWSPSM!ApiGatewayRoute apiRouteKeyPrefix() : String {
   if (self.api.isUndefined()) {
     return "<no-api>";
@@ -264,19 +296,23 @@ operation AWSPSM!ApiGatewayRoute apiRouteKeyPrefix() : String {
   return self.api.`id`;
 }
 
+/** Computes http api route key. */
 operation AWSPSM!HttpApiRoute httpApiRouteKey() : String {
   return self.apiRouteKeyPrefix() + "::" + self.method.asString() + "::" + self.path;
 }
 
+/** Computes rest api route key. */
 operation AWSPSM!RestApiRoute restApiRouteKey() : String {
   return self.apiRouteKeyPrefix() + "::" + self.method.asString() + "::" + self.path;
 }
 
+/** Computes web socket route key. */
 operation AWSPSM!WebSocketRoute webSocketRouteKey() : String {
   return self.apiRouteKeyPrefix() + "::" + self.routeKey;
 }
 
 @cached
+/** Computes duplicate http api route keys. */
 operation duplicateHttpApiRouteKeys() : Set {
   var seen : Set = Set{};
   var duplicates : Set = Set{};
@@ -293,6 +329,7 @@ operation duplicateHttpApiRouteKeys() : Set {
 }
 
 @cached
+/** Computes duplicate rest api route keys. */
 operation duplicateRestApiRouteKeys() : Set {
   var seen : Set = Set{};
   var duplicates : Set = Set{};
@@ -309,6 +346,7 @@ operation duplicateRestApiRouteKeys() : Set {
 }
 
 @cached
+/** Computes duplicate web socket route keys. */
 operation duplicateWebSocketRouteKeys() : Set {
   var seen : Set = Set{};
   var duplicates : Set = Set{};
@@ -325,6 +363,7 @@ operation duplicateWebSocketRouteKeys() : Set {
 }
 
 @cached
+/** Resolves resolved access log group. */
 operation AWSPSM!ApiGatewayStage resolvedAccessLogGroup() : Any {
   if (self.accessLogGroup.isDefined()) {
     return self.accessLogGroup;
@@ -336,6 +375,7 @@ operation AWSPSM!ApiGatewayStage resolvedAccessLogGroup() : Any {
 }
 
 @cached
+/** Computes definition count. */
 operation AWSPSM!StepFunctionStateMachine definitionCount() : Integer {
   var count : Integer = 0;
   if (self.definitionUri.hasText()) {
@@ -350,11 +390,13 @@ operation AWSPSM!StepFunctionStateMachine definitionCount() : Integer {
   return count;
 }
 
+/** Returns whether the receiver has state named. */
 operation AWSPSM!AslDocument hasStateNamed(stateNameText : String) : Boolean {
   return self.states.exists(stateItem | stateItem.stateName = stateNameText);
 }
 
 @cached
+/** Computes duplicate state names. */
 operation AWSPSM!AslDocument duplicateStateNames() : Set {
   var duplicates : Set = Set{};
   for (stateItem in self.states) {

@@ -1,7 +1,10 @@
+/** Validates the semantic rules for readiness. */
 import "../lib/pim-validation-helpers.eol";
 
+/** Validates Trace Link elements. */
 context KERNEL!TraceLink {
 
+  /** Checks that trace link has reference or external id. */
   constraint TraceLinkHasReferenceOrExternalId {
     check : (self.source.isDefined() and self.target.isDefined())
       or (self.sourceElementId.hasText() and self.targetElementId.hasText())
@@ -9,8 +12,10 @@ context KERNEL!TraceLink {
   }
 }
 
+/** Validates Production Readiness Assessment elements. */
 context KERNEL!ProductionReadinessAssessment {
 
+  /** Checks that production ready requires passed checks and no blocking findings. */
   constraint ProductionReadyRequiresPassedChecksAndNoBlockingFindings {
     guard : self.productionReady.isTrue()
     check : self.transformationReady.isTrue() and self.deploymentReady.isTrue()
@@ -21,16 +26,20 @@ context KERNEL!ProductionReadinessAssessment {
   }
 }
 
+/** Validates Readiness Finding elements. */
 context KERNEL!ReadinessFinding {
 
+  /** Advises that finding should recommend remediation. */
   critique FindingShouldRecommendRemediation {
     check : self.`message`.hasText() and self.recommendation.hasText() and self.affectedElements.notEmpty()
     message : "[PIM-READY-003] ReadinessFinding '" + self.displayName() + "' lacks message, recommendation or affectedElements. Suggested fix: explain the issue, attach affected elements and provide remediation."
   }
 }
 
+/** Validates Readiness Check elements. */
 context KERNEL!ReadinessCheck {
 
+  /** Advises that failed check should have remediation. */
   critique FailedCheckShouldHaveRemediation {
     guard : self.passed.isDefined() and not self.passed
     check : self.`message`.hasText() and self.remediation.hasText()
@@ -38,14 +47,17 @@ context KERNEL!ReadinessCheck {
   }
 }
 
+/** Validates Manual Decision elements. */
 context KERNEL!ManualDecision {
 
+  /** Checks that blocking manual decision must be answered. */
   constraint BlockingManualDecisionMustBeAnswered {
     guard : self.blocking.isTrue() and not self.generatedByTransformation.isTrue()
     check : self.decision.hasText() and self.decisionOwner.hasText()
     message : "[PIM-READY-005] Blocking ManualDecision '" + self.displayName() + "' is unanswered or has no owner. Fix: record the decision and decisionOwner, or mark it non-blocking if it should not stop generation."
   }
 
+  /** Advises that generated blocking manual decision should have owner. */
   critique GeneratedBlockingManualDecisionShouldHaveOwner {
     guard : self.blocking.isTrue() and self.generatedByTransformation.isTrue()
     check : self.decisionOwner.hasText() or self.affectedElements.notEmpty()

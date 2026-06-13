@@ -1,4 +1,4 @@
-package integration
+[% /* Generates the integration test artifact. */ %]package integration
 
 import (
 	"os"

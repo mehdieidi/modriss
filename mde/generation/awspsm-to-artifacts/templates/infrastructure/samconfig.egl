@@ -1,4 +1,4 @@
-version = 0.1
+[% /* Generates the samconfig artifact. */ %]version = 0.1
 
 [default.global.parameters]
 stack_name = "[%= emitCtx.get("projectSlug") %]"
@@ -13,6 +13,7 @@ stack_name = "[%= emitCtx.get("projectSlug") %]"
 
 [%
 @template
+/** Computes sam config environment. */
 operation AWSPSMCORE!AwsStage samConfigEnvironment(stackObj : AWSPSMCORE!SamStack) { %]
 [[%= self.stageSlug() %].deploy.parameters]
 stack_name = [%= self.stackDeployName(stackObj).jsonString() %]

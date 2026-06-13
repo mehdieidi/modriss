@@ -1,58 +1,70 @@
+/** Validates the semantic rules for compute. */
 import "../lib/pim-validation-helpers.eol";
 
+/** Validates Function elements. */
 context PIM!Function {
 
+  /** Checks that function responsibility required. */
   constraint FunctionResponsibilityRequired {
     check : self.responsibility.hasText() or self.handlerResponsibility.hasText()
     message : "[PIM-FUNC-001] Function '" + self.displayName() + "' does not describe its responsibility. Fix: fill responsibility and/or handlerResponsibility with the business operation this function performs."
   }
 
+  /** Checks that function contract required. */
   constraint FunctionContractRequired {
     check : self.contract.isDefined()
     message : "[PIM-FUNC-002] Function '" + self.displayName() + "' has no FunctionContract. Fix: add a contract with input, output and error schemas as appropriate."
   }
 
+  /** Checks that function must be reachable. */
   constraint FunctionMustBeReachable {
     check : self.hasAnyIncomingBinding()
     message : "[PIM-FUNC-003] Function '" + self.displayName() + "' is not reachable from any trigger, API route, workflow state, event channel, or event type. Fix: connect it through a Trigger, ApiRoute.functionIntegration, WorkflowState.invokesFunction, EventChannel producer/consumer, or EventType producedBy/consumedBy reference."
   }
 
+  /** Checks that state changing function needs idempotency. */
   constraint StateChangingFunctionNeedsIdempotency {
     guard : self.needsIdempotencyPolicy()
     check : self.idempotency.isDefined() and self.idempotency.keySource.hasText()
     message : "[PIM-FUNC-004] Function '" + self.displayName() + "' changes state, publishes events, retries, or requires idempotency but lacks a usable IdempotencyPolicy. Fix: attach an IdempotencyPolicy with keySource, scope, expiration and storage decision."
   }
 
+  /** Checks that reads state must reference stores. */
   constraint ReadsStateMustReferenceStores {
     guard : self.readsState.isTrue()
     check : self.reads.notEmpty()
     message : "[PIM-FUNC-005] Function '" + self.displayName() + "' declares readsState but references no storage in reads. Fix: link the DataStore/ObjectStore it reads or set readsState to false."
   }
 
+  /** Checks that writes state must reference stores. */
   constraint WritesStateMustReferenceStores {
     guard : self.writesState.isTrue()
     check : self.writes.notEmpty()
     message : "[PIM-FUNC-006] Function '" + self.displayName() + "' declares writesState but references no storage in writes. Fix: link the DataStore/ObjectStore it writes or set writesState to false."
   }
 
+  /** Checks that publishes events must reference event types. */
   constraint PublishesEventsMustReferenceEventTypes {
     guard : self.publishesEvents.isTrue()
     check : self.publishes.notEmpty()
     message : "[PIM-FUNC-007] Function '" + self.displayName() + "' declares publishesEvents but has no published EventType. Fix: add entries to publishes or set publishesEvents to false."
   }
 
+  /** Advises that external calls need resilience and timeout. */
   critique ExternalCallsNeedResilienceAndTimeout {
     guard : self.callsAdapters.notEmpty() or self.requiresNetworkAccess.isTrue()
     check : self.resilience.isDefined() and self.timeout.isDefined()
     message : "[PIM-FUNC-008] Function '" + self.displayName() + "' calls external systems or needs network access but lacks resilience/timeout policy. Suggested fix: attach TimeoutPolicy and ResiliencePolicy with retry, timeout and fallback/dead-letter decisions."
   }
 
+  /** Advises that function duration estimates should be consistent. */
   critique FunctionDurationEstimatesShouldBeConsistent {
     guard : self.expectedAverageDurationMs.isDefined() and self.expectedP95DurationMs.isDefined()
     check : self.expectedAverageDurationMs > 0 and self.expectedP95DurationMs >= self.expectedAverageDurationMs
     message : "[PIM-FUNC-009] Function '" + self.displayName() + "' has inconsistent duration estimates. Suggested fix: make expectedAverageDurationMs positive and expectedP95DurationMs greater than or equal to the average."
   }
 
+  /** Advises that public function should have security policy. */
   critique PublicFunctionShouldHaveSecurityPolicy {
     guard : self.publicEntryPoint.isTrue()
     check : self.securityPolicies.exists(policyItem | policyItem.authenticationRequired.isTrue() or policyItem.authorizationRequired.isTrue())
@@ -60,19 +72,23 @@ context PIM!Function {
   }
 }
 
+/** Validates Trigger elements. */
 context PIM!Trigger {
 
+  /** Checks that exactly one invocation target. */
   constraint ExactlyOneInvocationTarget {
     check : (self.invokesFunction.isDefined() and self.startsWorkflow.isUndefined()) or
       (self.invokesFunction.isUndefined() and self.startsWorkflow.isDefined())
     message : "[PIM-TRIGGER-000] Trigger '" + self.displayName() + "' must target exactly one function or workflow."
   }
 
+  /** Checks that trigger targets function or workflow. */
   constraint TriggerTargetsFunctionOrWorkflow {
     check : self.invokesFunction.isDefined() or self.startsWorkflow.isDefined()
     message : "[PIM-TRIGGER-001] Trigger '" + self.displayName() + "' does not invoke a function or start a workflow. Fix: set invokesFunction or startsWorkflow."
   }
 
+  /** Advises that disabled trigger should explain why. */
   critique DisabledTriggerShouldExplainWhy {
     guard : self.enabled.isDefined() and not self.enabled
     check : self.rationale.hasText() or self.reviewNotes.hasText()

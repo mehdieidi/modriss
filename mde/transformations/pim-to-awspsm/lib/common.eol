@@ -1,3 +1,5 @@
+/** Provides reusable common operations. */
+/** Initializes shared roots, lookup maps, and deduplication sets for the PIM-to-AWS-PSM run. */
 operation initialisePimToAwsPsmCaches() {
   usedModelElementIds = Set{};
   usedAwsLogicalIds = Set{};
@@ -59,6 +61,7 @@ operation initialisePimToAwsPsmCaches() {
   cachePimDataAccesses();
 }
 
+/** Computes cache key for. */
 operation cacheKeyFor(element) {
   if (element.isUndefined()) {
     return "";
@@ -72,10 +75,12 @@ operation cacheKeyFor(element) {
   return element.eClass().getName() + "_" + slug(element.asString());
 }
 
+/** Computes cache existing target. */
 operation cacheExistingTarget(target) {
   cachedAwsExistingTargetByKey.put(target.generatedFrom + "::" + target.eClass().getName(), target);
 }
 
+/** Computes cache pim ownership. */
 operation cachePimOwnership() {
   for (service in cachedPimRoot.services) {
     cachePimServiceOwner(service, service);
@@ -132,6 +137,7 @@ operation cachePimOwnership() {
   }
 }
 
+/** Computes cache pim service owner. */
 operation cachePimServiceOwner(element, service) {
   var key = cacheKeyFor(element);
   if (hasText(key)) {
@@ -140,6 +146,7 @@ operation cachePimServiceOwner(element, service) {
   }
 }
 
+/** Computes cache deployment assignment. */
 operation cacheDeploymentAssignment(element, unit) {
   var key = cacheKeyFor(element);
   if (hasText(key)) {
@@ -148,6 +155,7 @@ operation cacheDeploymentAssignment(element, unit) {
   }
 }
 
+/** Adds or records add indexed. */
 operation addIndexed(index, key, value) {
   if (not hasText(key) or value.isUndefined()) {
     return;
@@ -162,6 +170,7 @@ operation addIndexed(index, key, value) {
   }
 }
 
+/** Computes indexed values. */
 operation indexedValues(index, key) {
   var values = index.get(key);
   if (values.isDefined()) {
@@ -170,6 +179,7 @@ operation indexedValues(index, key) {
   return Sequence{};
 }
 
+/** Computes cache pim event channels. */
 operation cachePimEventChannels() {
   for (topic in INTEGRATION!Topic.all) {
     for (eventType in topic.eventTypes) {
@@ -188,12 +198,14 @@ operation cachePimEventChannels() {
   }
 }
 
+/** Computes cache pim data accesses. */
 operation cachePimDataAccesses() {
   for (access in DATA!DataAccess.all.select(a | a.`function`.isDefined())) {
     addIndexed(cachedDataAccessesByFunctionId, cacheKeyFor(access.`function`), access);
   }
 }
 
+/** Computes aws equivalent. */
 operation awsEquivalent(source) {
   if (source.isUndefined()) {
     return null;
@@ -220,34 +232,42 @@ operation awsEquivalent(source) {
   return null;
 }
 
+/** Converts the receiver to text. */
 operation asText(value) {
   return etlTextChecks.asText(value);
 }
 
+/** Returns whether the receiver has text. */
 operation hasText(value) {
   return etlTextChecks.hasText(value);
 }
 
+/** Computes first text. */
 operation firstText(primary, fallback) {
   return etlTextChecks.firstText(primary, fallback);
 }
 
+/** Converts the receiver to slug. */
 operation slug(value) {
   return etlTextChecks.slug(value);
 }
 
+/** Converts the receiver to kebab. */
 operation kebab(value) {
   return etlTextChecks.kebab(value);
 }
 
+/** Converts the receiver to camel case. */
 operation camelCase(value) {
   return etlTextChecks.camelCase(value);
 }
 
+/** Converts the receiver to pascal case. */
 operation pascalCase(value) {
   return etlTextChecks.pascalCase(value);
 }
 
+/** Computes id for. */
 operation idFor(prefix : String, source) {
   var seed = source.id;
   if (not hasText(seed)) {
@@ -259,10 +279,12 @@ operation idFor(prefix : String, source) {
   return generatedStableId(prefix, source, "");
 }
 
+/** Computes generated id. */
 operation generatedId(prefix : String, source, suffix : String) {
   return generatedStableId(prefix, source, suffix);
 }
 
+/** Computes generated stable id. */
 operation generatedStableId(prefix : String, source, suffix : String) {
   var key = prefix + "::" + cacheKeyFor(source) + "::" + suffix;
   if (cachedGeneratedIdByKey.containsKey(key)) {
@@ -277,6 +299,7 @@ operation generatedStableId(prefix : String, source, suffix : String) {
   return id;
 }
 
+/** Computes unique id. */
 operation uniqueId(base : String) {
   var seed = slug(base);
   var candidate = seed;
@@ -291,10 +314,12 @@ operation uniqueId(base : String) {
   return candidate;
 }
 
+/** Returns whether the receiver is true. */
 operation isTrue(value) {
   return value.isDefined() and value;
 }
 
+/** Computes positive or. */
 operation positiveOr(value, fallback : Integer) {
   if (value.isDefined() and value > 0) {
     return value;
@@ -302,6 +327,7 @@ operation positiveOr(value, fallback : Integer) {
   return fallback;
 }
 
+/** Derives clamp. */
 operation clamp(value : Integer, minimum : Integer, maximum : Integer) {
   if (value < minimum) {
     return minimum;
@@ -312,6 +338,7 @@ operation clamp(value : Integer, minimum : Integer, maximum : Integer) {
   return value;
 }
 
+/** Computes qualified name. */
 operation qualifiedName(element) {
   if (element.isUndefined()) {
     return "";
@@ -322,22 +349,27 @@ operation qualifiedName(element) {
   return element.eClass().getName() + "/" + firstText(element.name, element.id);
 }
 
+/** Computes escape json. */
 operation escapeJson(value) {
   return etlTextChecks.escapeJson(value);
 }
 
+/** Converts the receiver to safe json text. */
 operation safeJsonText(value) {
   return escapeJson(firstText(value, ""));
 }
 
+/** Returns root name. */
 operation rootName() {
   return cachedPimRootName;
 }
 
+/** Returns pim root. */
 operation pimRoot() {
   return cachedPimRoot;
 }
 
+/** Returns aws root. */
 operation awsRoot() {
   if (cachedAwsRoot.isUndefined()) {
     cachedAwsRoot = AWSPSM!AwsPsmModel.all.first();
@@ -345,6 +377,7 @@ operation awsRoot() {
   return cachedAwsRoot;
 }
 
+/** Computes copy traceable. */
 operation copyTraceable(source, target) {
   var preserved = existingTargetFor(source, target.eClass().getName());
   if (preserved.isDefined() and isTrue(preserved.manuallyMaintained)) {
@@ -366,6 +399,7 @@ operation copyTraceable(source, target) {
   }
 }
 
+/** Computes existing target for. */
 operation existingTargetFor(source, className : String) {
   if (not cachedAwsTargetHadPreloadedContent or not hasText(source.id)) {
     return null;
@@ -373,6 +407,7 @@ operation existingTargetFor(source, className : String) {
   return cachedAwsExistingTargetByKey.get(source.id + "::" + className);
 }
 
+/** Computes copy aws resource. */
 operation copyAwsResource(source, target, kind : String, awsType : String) {
   copyTraceable(source, target);
   registerAwsGeneratedResource(target);
@@ -398,6 +433,7 @@ operation copyAwsResource(source, target, kind : String, awsType : String) {
   applyProductionDefaults(target);
 }
 
+/** Adds or records register aws generated resource. */
 operation registerAwsGeneratedResource(resource) {
   if (resource.isUndefined() or cachedAwsGeneratedResourceObjects.includes(resource)) {
     return;
@@ -411,6 +447,7 @@ operation registerAwsGeneratedResource(resource) {
   if (className = "EventBridgeRule") cachedEventBridgeRules.add(resource);
 }
 
+/** Computes apply production defaults. */
 operation applyProductionDefaults(resource) {
   if (not isProductionRoot()) {
     return;
@@ -424,6 +461,7 @@ operation applyProductionDefaults(resource) {
   }
 }
 
+/** Creates default kms key. */
 operation defaultKmsKey() {
   var cacheKey = "__platform_default_kms_key__";
   if (cachedAwsEquivalentBySourceId.containsKey(cacheKey)) {
@@ -460,6 +498,7 @@ operation defaultKmsKey() {
   return key;
 }
 
+/** Creates default alarm topic. */
 operation defaultAlarmTopic() {
   var cacheKey = "__platform_alarm_topic__";
   if (cachedAwsEquivalentBySourceId.containsKey(cacheKey)) {
@@ -494,10 +533,12 @@ operation defaultAlarmTopic() {
   return topic;
 }
 
+/** Computes logical id. */
 operation logicalId(source, awsKind : String) {
   return uniqueLogicalId(pascalCase(firstText(firstText(source.name, source.externalId), source.id)) + awsKind);
 }
 
+/** Computes unique logical id. */
 operation uniqueLogicalId(base : String) {
   var seed = pascalCase(base);
   var candidate = seed;
@@ -512,6 +553,7 @@ operation uniqueLogicalId(base : String) {
   return candidate;
 }
 
+/** Computes physical name. */
 operation physicalName(source, awsKind : String, stage) {
   var prefix = "default";
   if (stage.isDefined()) {
@@ -524,6 +566,7 @@ operation physicalName(source, awsKind : String, stage) {
   return name;
 }
 
+/** Computes owning service name. */
 operation owningServiceName(element) {
   var name = cachedPimServiceNameByElementId.get(cacheKeyFor(element));
   if (hasText(name)) {
@@ -532,6 +575,7 @@ operation owningServiceName(element) {
   return "Application";
 }
 
+/** Computes owning owner team. */
 operation owningOwnerTeam(element) {
   var owner = cachedPimOwnerTeamByElementId.get(cacheKeyFor(element));
   if (hasText(owner)) {
@@ -540,14 +584,17 @@ operation owningOwnerTeam(element) {
   return "REVIEW_REQUIRED_OWNER";
 }
 
+/** Returns whether the receiver is production root. */
 operation isProductionRoot() {
   return cachedIsProductionRoot;
 }
 
+/** Returns whether the receiver is production pim. */
 operation isProductionPim(p) {
   return p.environments.exists(e | e.environmentClass = PIMTYPES!EnvironmentClass#PROD or isTrue(e.productionLike));
 }
 
+/** Creates default stage. */
 operation defaultStage() {
   if (cachedDefaultStage.isUndefined() and AWSPSMCORE!AwsStage.all.notEmpty()) {
     cachedDefaultStage = AWSPSMCORE!AwsStage.all.first();
@@ -555,6 +602,7 @@ operation defaultStage() {
   return cachedDefaultStage;
 }
 
+/** Creates default stage name. */
 operation defaultStageName() {
   var stage = defaultStage();
   if (stage.isDefined() and hasText(stage.stageName)) {
@@ -563,6 +611,7 @@ operation defaultStageName() {
   return "dev";
 }
 
+/** Computes env boolean. */
 operation envBoolean(value) {
   if (value.isUndefined()) {
     return false;
@@ -570,6 +619,7 @@ operation envBoolean(value) {
   return value;
 }
 
+/** Computes set feature. */
 operation setFeature(element, featureName : String, value) {
   var feature = element.eClass().getEStructuralFeature(featureName);
   if (feature.isUndefined()) {
@@ -578,6 +628,7 @@ operation setFeature(element, featureName : String, value) {
   element.eSet(feature, value);
 }
 
+/** Computes feature value. */
 operation featureValue(element, featureName : String) {
   if (element.isUndefined()) {
     return null;
@@ -589,6 +640,7 @@ operation featureValue(element, featureName : String) {
   return element.eGet(feature);
 }
 
+/** Renders json string array. */
 operation jsonStringArray(items) {
   var out = "";
   for (item in items) {
@@ -602,6 +654,7 @@ operation jsonStringArray(items) {
   return "[ " + out + " ]";
 }
 
+/** Computes schema to json schema. */
 operation schemaToJsonSchema(schema) {
   var key = cacheKeyFor(schema);
   if (hasText(key) and cachedJsonSchemaById.containsKey(key)) {
@@ -614,6 +667,7 @@ operation schemaToJsonSchema(schema) {
   return json;
 }
 
+/** Computes schema to open api schema. */
 operation schemaToOpenApiSchema(schema) {
   var key = cacheKeyFor(schema);
   if (hasText(key) and cachedOpenApiSchemaById.containsKey(key)) {
@@ -626,10 +680,12 @@ operation schemaToOpenApiSchema(schema) {
   return json;
 }
 
+/** Computes schema to object schema. */
 operation schemaToObjectSchema(schema, includeDialect : Boolean) {
   return schemaToObjectSchemaVisited(schema, includeDialect, Set{});
 }
 
+/** Computes schema to object schema visited. */
 operation schemaToObjectSchemaVisited(schema, includeDialect : Boolean, visited) {
   var schemaKey = cacheKeyFor(schema);
   if (hasText(schemaKey) and visited.includes(schemaKey)) {
@@ -663,10 +719,12 @@ operation schemaToObjectSchemaVisited(schema, includeDialect : Boolean, visited)
     ", \"properties\": { " + properties + " }, \"required\": [ " + required + " ] }";
 }
 
+/** Computes schema field to json. */
 operation schemaFieldToJson(field) {
   return schemaFieldToJsonVisited(field, Set{});
 }
 
+/** Computes schema field to json visited. */
 operation schemaFieldToJsonVisited(field, visited) {
   if (isTrue(field.array) or field.fieldType = PIMTYPES!FieldType#ARRAY) {
     var itemJson = "{ \"type\": \"string\" }";
@@ -686,10 +744,12 @@ operation schemaFieldToJsonVisited(field, visited) {
   return "{ \"type\": \"" + jsonSchemaTypeForField(field) + "\"" + schemaFieldConstraintJson(field) + " }";
 }
 
+/** Computes schema reference for. */
 operation schemaReferenceFor(schema) {
   return "#/components/schemas/" + escapeJson(pascalCase(firstText(schema.name, schema.id)));
 }
 
+/** Computes schema field constraint json. */
 operation schemaFieldConstraintJson(field) {
   var out = "";
   if (field.enumValues.notEmpty()) {
@@ -735,6 +795,7 @@ operation schemaFieldConstraintJson(field) {
   return out;
 }
 
+/** Renders json schema type for field. */
 operation jsonSchemaTypeForField(field) {
   if (field.fieldType = PIMTYPES!FieldType#INTEGER) {
     return "integer";

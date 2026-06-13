@@ -1,4 +1,4 @@
-module [%= emitCtx.goModulePath() %]
+[% /* Generates the go mod artifact. */ %]module [%= emitCtx.goModulePath() %]
 
 go 1.22
 

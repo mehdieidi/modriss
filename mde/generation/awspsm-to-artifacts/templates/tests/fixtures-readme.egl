@@ -1,4 +1,4 @@
-# Test Fixtures
+[% /* Generates the fixtures readme artifact. */ %]# Test Fixtures
 
 This directory is generated so generated test suites have a stable location for project-owned fixtures.
 

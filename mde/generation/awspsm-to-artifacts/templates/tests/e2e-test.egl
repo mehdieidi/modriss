@@ -1,4 +1,4 @@
-package e2e
+[% /* Generates the e2e test artifact. */ %]package e2e
 
 import "testing"
 

@@ -1,35 +1,42 @@
+/** Validates the semantic rules for workflow. */
 import "../lib/psm-validation-helpers.eol";
 
 /* Workflow / Step Functions / ASL */
 
 context AWSPSM!StepFunctionStateMachine {
+  /** Checks that state machine has role. */
   constraint StateMachineHasRole {
     check : self.role.isDefined()
     message : 'Step Functions state machine ' + self.resourceLabel() + ' has no execution role. Fix: attach an IamRole trusted by states.amazonaws.com.'
   }
 
+  /** Checks that state machine has definition. */
   constraint StateMachineHasDefinition {
     check : self.definitionCount() >= 1
     message : 'Step Functions state machine ' + self.resourceLabel() + ' has no definition. Fix: provide definitionUri, definitionString, or aslDocument.'
   }
 
+  /** Advises that state machine should use single definition source. */
   critique StateMachineShouldUseSingleDefinitionSource {
     check : self.definitionCount() <= 1
     message : 'Step Functions state machine ' + self.resourceLabel() + ' defines more than one definition source. Fix: keep exactly one of definitionUri, definitionString, or aslDocument to avoid ambiguity.'
   }
 
+  /** Checks that state machine asl has states. */
   constraint StateMachineAslHasStates {
     guard : self.aslDocument.isDefined()
     check : self.aslDocument.states.notEmpty()
     message : 'Step Functions state machine ' + self.resourceLabel() + ' has an ASL document with no states. Fix: add AslState entries or remove the empty ASL document.'
   }
 
+  /** Checks that publish alias requires alias name. */
   constraint PublishAliasRequiresAliasName {
     guard : self.publishAlias = true
     check : self.aliasName.hasText()
     message : 'Step Functions state machine ' + self.resourceLabel() + ' publishes an alias but aliasName is empty. Fix: set aliasName.'
   }
 
+  /** Advises that production state machine should log and trace. */
   critique ProductionStateMachineShouldLogAndTrace {
     guard : self.isProductionScoped()
     check : self.logging.isDefined() and self.tracing.isDefined() and self.tracing.enabled = true
@@ -37,17 +44,21 @@ context AWSPSM!StepFunctionStateMachine {
   }
 }
 
+/** Validates Asl Document elements. */
 context AWSPSM!AslDocument {
+  /** Checks that start at references existing state. */
   constraint StartAtReferencesExistingState {
     check : self.startAt.hasText() and self.hasStateNamed(self.startAt)
     message : 'ASL document startAt value ' + self.startAt + ' does not match any stateName. Fix: set startAt to the name of an existing AslState.'
   }
 
+  /** Checks that state names unique. */
   constraint StateNamesUnique {
     check : self.duplicateStateNames().isEmpty()
     message : 'ASL document contains duplicate state names: ' + self.duplicateStateNames().concat(', ') + '. Fix: give every AslState a unique stateName.'
   }
 
+  /** Checks that asl has terminal state. */
   constraint AslHasTerminalState {
     check : self.states.exists(stateItem |
       (stateItem.end = true) or (stateItem.type = AWSPSMENUMS!AslStateType#SUCCEED) or (stateItem.type = AWSPSMENUMS!AslStateType#FAIL))
@@ -55,25 +66,30 @@ context AWSPSM!AslDocument {
   }
 }
 
+/** Validates Asl State elements. */
 context AWSPSM!AslState {
+  /** Checks that non terminal state has next or terminal type. */
   constraint NonTerminalStateHasNextOrTerminalType {
     check : (self.end = true) or self.nextState.isDefined() or self.nextStateName.hasText() or
       (self.type = AWSPSMENUMS!AslStateType#SUCCEED) or (self.type = AWSPSMENUMS!AslStateType#FAIL) or (self.type = AWSPSMENUMS!AslStateType#CHOICE)
     message : 'ASL state ' + self.stateName + ' is not terminal and has no next state. Fix: set nextState/nextStateName, mark end=true, or use a terminal/choice state type.'
   }
 
+  /** Checks that terminal state does not have next. */
   constraint TerminalStateDoesNotHaveNext {
     guard : (self.end = true) or (self.type = AWSPSMENUMS!AslStateType#SUCCEED) or (self.type = AWSPSMENUMS!AslStateType#FAIL)
     check : self.nextState.isUndefined() and (not self.nextStateName.hasText())
     message : 'Terminal ASL state ' + self.stateName + ' also defines a next state. Fix: remove nextState/nextStateName from terminal states.'
   }
 
+  /** Checks that task state has resource. */
   constraint TaskStateHasResource {
     guard : self.type = AWSPSMENUMS!AslStateType#TASK
     check : self.resource.hasText() or self.invokedResource.isDefined()
     message : 'TASK ASL state ' + self.stateName + ' has no resource or invokedResource. Fix: set the AWS service ARN/resource string or reference the invoked PSM resource.'
   }
 
+  /** Checks that choice state has choices. */
   constraint ChoiceStateHasChoices {
     guard : self.type = AWSPSMENUMS!AslStateType#CHOICE
     check : self.choices.notEmpty()
@@ -81,7 +97,9 @@ context AWSPSM!AslState {
   }
 }
 
+/** Validates Asl Retry Rule elements. */
 context AWSPSM!AslRetryRule {
+  /** Checks that retry rule ranges valid. */
   constraint RetryRuleRangesValid {
     check : ((self.intervalSeconds.isUndefined()) or (self.intervalSeconds >= 1)) and
       ((self.maxAttempts.isUndefined()) or (self.maxAttempts >= 0)) and
@@ -91,14 +109,18 @@ context AWSPSM!AslRetryRule {
   }
 }
 
+/** Validates Asl Catch Rule elements. */
 context AWSPSM!AslCatchRule {
+  /** Checks that catch rule has errors and next. */
   constraint CatchRuleHasErrorsAndNext {
     check : self.errorEquals.notEmpty() and self.nextState.isDefined()
     message : 'ASL catch rule lacks errorEquals or nextState. Fix: list errors to catch and reference the recovery state.'
   }
 }
 
+/** Validates Asl Choice Rule elements. */
 context AWSPSM!AslChoiceRule {
+  /** Checks that choice rule has condition and next. */
   constraint ChoiceRuleHasConditionAndNext {
     check : (self.conditionExpression.hasText() or self.variable.hasText()) and self.nextState.isDefined()
     message : 'ASL choice rule lacks condition/variable or nextState. Fix: define the condition and target state for the choice branch.'

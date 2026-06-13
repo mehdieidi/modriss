@@ -1,67 +1,84 @@
+/** Provides reusable paths operations. */
 import "naming.eol";
 
+/** Computes source extension. */
 operation Any sourceExtension() : String {
   return "go";
 }
 
+/** Computes test extension. */
 operation Any testExtension() : String {
   return self.sourceExtension();
 }
 
+/** Computes primary language. */
 operation Map primaryLanguage() : String {
   return "GO";
 }
 
+/** Computes source extension. */
 operation Map sourceExtension() : String {
   return self.primaryLanguage().sourceExtension();
 }
 
+/** Computes test extension. */
 operation Map testExtension() : String {
   return self.primaryLanguage().testExtension();
 }
 
+/** Computes function path segment. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction functionPathSegment(profileMap : Map) : String {
   return self.functionSlug();
 }
 
+/** Computes handler path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction handlerPath(profileMap : Map) : String {
   return "src/functions/" + self.functionPathSegment(profileMap) + "/handler." + profileMap.sourceExtension();
 }
 
+/** Computes local schema path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction localSchemaPath(profileMap : Map) : String {
   return "src/functions/" + self.functionPathSegment(profileMap) + "/schema.json";
 }
 
+/** Computes local schema path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction localSchemaPath() : String {
   return self.localSchemaPath(AWSPSM!AwsPsmModel.all.first().defaultEmitContext());
 }
 
+/** Computes generated handler name. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction generatedHandlerName(profileMap : Map) : String {
   return "bootstrap";
 }
 
+/** Computes generated code uri. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction generatedCodeUri(profileMap : Map) : String {
   return "bin/" + self.functionPathSegment(profileMap);
 }
 
+/** Computes unit test path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction unitTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
   return "tests/unit/" + self.functionSlug() + ".test." + extText;
 }
 
+/** Computes integration test path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction integrationTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
   return "tests/integration/" + self.functionSlug() + ".integration.test." + extText;
 }
 
+/** Computes open api path. */
 operation AWSPSMAPI!ApiGatewayApi openApiPath() : String {
   return "openapi/" + self.apiSlug() + ".openapi.yaml";
 }
 
+/** Renders asl path. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine aslPath() : String {
   return "asl/" + self.workflowSlug() + ".asl.json";
 }
 
+/** Computes document path. */
 operation KERNEL!StructuredDocument documentPath() : String {
   var baseName = firstText(self.name, self.id).toSlug();
   if (self.id.isPresent() and self.id.startsWith("schema_doc_")) {
@@ -85,11 +102,13 @@ operation KERNEL!StructuredDocument documentPath() : String {
   return "generated/documents/" + baseName + ".txt";
 }
 
+/** Computes workflow test path. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
   return "tests/workflows/" + self.workflowSlug() + ".workflow.test." + extText;
 }
 
+/** Computes fixture slug. */
 operation KERNEL!TraceableElement fixtureSlug(fallbackText : String) : String {
   if (self.id.isPresent()) {
     return self.id.toSlug();
@@ -97,18 +116,22 @@ operation KERNEL!TraceableElement fixtureSlug(fallbackText : String) : String {
   return fallbackText.toSlug();
 }
 
+/** Computes event fixture path. */
 operation AWSPSMEVENTS!EventBridgeRule eventFixturePath() : String {
   return "events/samples/" + self.fixtureSlug(self.eventRuleSlug()) + ".json";
 }
 
+/** Computes queue fixture path. */
 operation AWSPSMMESSAGING!SqsQueue queueFixturePath() : String {
   return "events/samples/" + self.fixtureSlug(self.queueSlug()) + "-sqs-message.json";
 }
 
+/** Converts the receiver to topic fixture path. */
 operation AWSPSMMESSAGING!SnsTopic topicFixturePath() : String {
   return "events/samples/" + self.fixtureSlug(self.topicSlug()) + "-sns-message.json";
 }
 
+/** Computes env path. */
 operation AWSPSMCORE!AwsStage envPath() : String {
   if (self.environmentClass.asString() = "PROD") {
     return "env/prod.example.json";
@@ -116,6 +139,7 @@ operation AWSPSMCORE!AwsStage envPath() : String {
   return "env/" + self.stageSlug() + ".json";
 }
 
+/** Computes path kind. */
 operation Any pathKind(pathText : String) : String {
   if (pathText.endsWith(".yaml") or pathText.endsWith(".yml")) {
     return "YAML";
@@ -135,6 +159,7 @@ operation Any pathKind(pathText : String) : String {
   return "TEXT";
 }
 
+/** Computes path kind. */
 operation String pathKind() : String {
   if (self.endsWith(".yaml") or self.endsWith(".yml")) {
     return "YAML";
@@ -154,6 +179,7 @@ operation String pathKind() : String {
   return "TEXT";
 }
 
+/** Computes go module path. */
 operation Map goModulePath() : String {
   return "example.com/" + self.get("projectSlug");
 }

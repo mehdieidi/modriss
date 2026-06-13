@@ -1,8 +1,10 @@
+/** Provides reusable cfn operations. */
 import "naming.eol";
 import "values.eol";
 import "iam.eol";
 import "paths.eol";
 
+/** Derives ordered resources. */
 operation AWSPSMCORE!SamStack orderedResources() : Sequence {
   var resSeq = new Sequence;
   var groupSeq = Sequence{
@@ -31,6 +33,7 @@ operation AWSPSMCORE!SamStack orderedResources() : Sequence {
   return resSeq;
 }
 
+/** Renders emit cfn resource yaml. */
 operation AWSPSMCORE!AwsResource emitCfnResourceYaml(emitCtx : Map) : String {
   var outText = "  " + self.cfnLogicalId() + ":\n";
   outText = outText + "    Type: " + self.cfnTypeText(emitCtx) + "\n";
@@ -42,6 +45,7 @@ operation AWSPSMCORE!AwsResource emitCfnResourceYaml(emitCtx : Map) : String {
   return outText;
 }
 
+/** Renders emit common cfn attributes yaml. */
 operation AWSPSMCORE!AwsResource emitCommonCfnAttributesYaml() : String {
   var outText = "";
   if (self.conditionName.isPresent()) {
@@ -70,6 +74,7 @@ operation AWSPSMCORE!AwsResource emitCommonCfnAttributesYaml() : String {
   return outText;
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCORE!AwsResource cfnTypeText(emitCtx : Map) : String {
   if (self.awsResourceType.isPresent()) {
     return self.awsResourceType;
@@ -77,6 +82,7 @@ operation AWSPSMCORE!AwsResource cfnTypeText(emitCtx : Map) : String {
   return "Custom::" + self.eClass().getName();
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCORE!AwsNativeResource cfnTypeText(emitCtx : Map) : String {
   if (self.cloudFormationType.isPresent()) {
     return self.cloudFormationType;
@@ -84,18 +90,22 @@ operation AWSPSMCORE!AwsNativeResource cfnTypeText(emitCtx : Map) : String {
   return "Custom::" + self.eClass().getName();
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCORE!AwsResource emitCfnPropertiesYaml(emitCtx : Map) : String {
   return self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCORE!AwsNativeResource emitCfnPropertiesYaml(emitCtx : Map) : String {
   return self.properties.emitNativePropertiesYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction cfnTypeText(emitCtx : Map) : String {
   return "AWS::Serverless::Function";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + emitYamlScalarProperty("FunctionName", firstText(self.functionName, self.physicalName), 6);
@@ -227,14 +237,17 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) :
   return outText;
 }
 
+/** Creates default runtime identifier. */
 operation Any defaultRuntimeIdentifier() : String {
   return "provided.al2023";
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!LambdaEventSourceMapping cfnTypeText(emitCtx : Map) : String {
   return "AWS::Lambda::EventSourceMapping";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
@@ -267,18 +280,22 @@ operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitCfnPropertiesYaml(emitCtx :
   return outText;
 }
 
+/** Renders emit event source arn yaml. */
 operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitEventSourceArnYaml() : String {
   return "";
 }
 
+/** Renders emit event source arn yaml. */
 operation AWSPSMCOMPUTE!SqsLambdaEventSourceMapping emitEventSourceArnYaml() : String {
   return spaces(6) + "EventSourceArn: " + arnForResource(self.queue) + "\n";
 }
 
+/** Renders emit event source arn yaml. */
 operation AWSPSMCOMPUTE!DynamoDbStreamLambdaEventSourceMapping emitEventSourceArnYaml() : String {
   return spaces(6) + "EventSourceArn: !GetAtt " + self.table.cfnLogicalId() + ".StreamArn\n";
 }
 
+/** Renders emit event source arn yaml. */
 operation AWSPSMCOMPUTE!GenericLambdaEventSourceMapping emitEventSourceArnYaml() : String {
   if (self.eventSourceResource.isDefined()) {
     return spaces(6) + "EventSourceArn: " + arnForResource(self.eventSourceResource) + "\n";
@@ -286,10 +303,12 @@ operation AWSPSMCOMPUTE!GenericLambdaEventSourceMapping emitEventSourceArnYaml()
   return emitYamlScalarProperty("EventSourceArn", self.sourceArnExpression, 6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!LambdaPermission cfnTypeText(emitCtx : Map) : String {
   return "AWS::Lambda::Permission";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaPermission emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
@@ -301,10 +320,12 @@ operation AWSPSMCOMPUTE!LambdaPermission emitCfnPropertiesYaml(emitCtx : Map) : 
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!LambdaLayerVersion cfnTypeText(emitCtx : Map) : String {
   return "AWS::Serverless::LayerVersion";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaLayerVersion emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + emitYamlScalarProperty("LayerName", firstText(self.layerName, self.physicalName), 6);
@@ -320,10 +341,12 @@ operation AWSPSMCOMPUTE!LambdaLayerVersion emitCfnPropertiesYaml(emitCtx : Map) 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!LambdaLayerPermission cfnTypeText(emitCtx : Map) : String {
   return "AWS::Lambda::LayerVersionPermission";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaLayerPermission emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "LayerVersionArn: !Ref " + self.layerVersion.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Action", self.action.orElseText("lambda:GetLayerVersion"), 6);
@@ -332,10 +355,12 @@ operation AWSPSMCOMPUTE!LambdaLayerPermission emitCfnPropertiesYaml(emitCtx : Ma
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!LambdaFunctionUrl cfnTypeText(emitCtx : Map) : String {
   return "AWS::Lambda::Url";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaFunctionUrl emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + spaces(6) + "TargetFunctionArn: " + arnForResource(self.modelFeatureValue("function")) + "\n";
@@ -349,10 +374,12 @@ operation AWSPSMCOMPUTE!LambdaFunctionUrl emitCfnPropertiesYaml(emitCtx : Map) :
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!LambdaVersion cfnTypeText(emitCtx : Map) : String {
   return "AWS::Lambda::Version";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaVersion emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Description", self.versionDescription, 6);
@@ -363,10 +390,12 @@ operation AWSPSMCOMPUTE!LambdaVersion emitCfnPropertiesYaml(emitCtx : Map) : Str
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!LambdaAlias cfnTypeText(emitCtx : Map) : String {
   return "AWS::Lambda::Alias";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaAlias emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Name", self.aliasName, 6);
@@ -382,10 +411,12 @@ operation AWSPSMCOMPUTE!LambdaAlias emitCfnPropertiesYaml(emitCtx : Map) : Strin
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!LambdaEventInvokeConfig cfnTypeText(emitCtx : Map) : String {
   return "AWS::Lambda::EventInvokeConfig";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!LambdaEventInvokeConfig emitCfnPropertiesYaml(emitCtx : Map) : String {
   var lambdaObj = self.modelFeatureValue("function");
   var outText = spaces(6) + "FunctionName: !Ref " + lambdaObj.cfnLogicalId() + "\n";
@@ -414,10 +445,12 @@ operation AWSPSMCOMPUTE!LambdaEventInvokeConfig emitCfnPropertiesYaml(emitCtx : 
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!IamRole cfnTypeText(emitCtx : Map) : String {
   return "AWS::IAM::Role";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!IamRole emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + emitYamlScalarProperty("RoleName", firstText(self.roleName, self.physicalName), 6);
@@ -443,10 +476,12 @@ operation AWSPSMSECURITY!IamRole emitCfnPropertiesYaml(emitCtx : Map) : String {
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!IamManagedPolicy cfnTypeText(emitCtx : Map) : String {
   return "AWS::IAM::ManagedPolicy";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!IamManagedPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("ManagedPolicyName", firstText(self.managedPolicyName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Path", self.path, 6);
@@ -459,10 +494,12 @@ operation AWSPSMSECURITY!IamManagedPolicy emitCfnPropertiesYaml(emitCtx : Map) :
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!IamPolicy cfnTypeText(emitCtx : Map) : String {
   return "AWS::IAM::Policy";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!IamPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("PolicyName", self.policyName, 6);
   if (self.rawPolicyJson.isPresent()) {
@@ -480,10 +517,12 @@ operation AWSPSMSECURITY!IamPolicy emitCfnPropertiesYaml(emitCtx : Map) : String
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!KmsKey cfnTypeText(emitCtx : Map) : String {
   return "AWS::KMS::Key";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!KmsKey emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
@@ -502,10 +541,12 @@ operation AWSPSMSECURITY!KmsKey emitCfnPropertiesYaml(emitCtx : Map) : String {
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!KmsAlias cfnTypeText(emitCtx : Map) : String {
   return "AWS::KMS::Alias";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!KmsAlias emitCfnPropertiesYaml(emitCtx : Map) : String {
   var aliasText = self.aliasName;
   if (aliasText.isPresent() and not aliasText.startsWith("alias/")) {
@@ -516,10 +557,12 @@ operation AWSPSMSECURITY!KmsAlias emitCfnPropertiesYaml(emitCtx : Map) : String 
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!SecretsManagerSecret cfnTypeText(emitCtx : Map) : String {
   return "AWS::SecretsManager::Secret";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!SecretsManagerSecret emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.secretName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
@@ -536,10 +579,12 @@ operation AWSPSMSECURITY!SecretsManagerSecret emitCfnPropertiesYaml(emitCtx : Ma
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!SecretRotationSchedule cfnTypeText(emitCtx : Map) : String {
   return "AWS::SecretsManager::RotationSchedule";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!SecretRotationSchedule emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "SecretId: !Ref " + self.secret.cfnLogicalId() + "\n";
   if (self.rotationLambda.isDefined()) {
@@ -551,10 +596,12 @@ operation AWSPSMSECURITY!SecretRotationSchedule emitCfnPropertiesYaml(emitCtx : 
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!SecretsManagerResourcePolicy cfnTypeText(emitCtx : Map) : String {
   return "AWS::SecretsManager::ResourcePolicy";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!SecretsManagerResourcePolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "SecretId: !Ref " + self.secret.cfnLogicalId() + "\n";
   if (self.resourcePolicyJson.isPresent()) {
@@ -566,10 +613,12 @@ operation AWSPSMSECURITY!SecretsManagerResourcePolicy emitCfnPropertiesYaml(emit
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSECURITY!SsmParameter cfnTypeText(emitCtx : Map) : String {
   return "AWS::SSM::Parameter";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSECURITY!SsmParameter emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", self.parameterName, 6);
   outText = outText + emitYamlScalarProperty("Type", self.parameterType.asString().replace("_", ""), 6);
@@ -585,10 +634,12 @@ operation AWSPSMSECURITY!SsmParameter emitCfnPropertiesYaml(emitCtx : Map) : Str
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMMESSAGING!SqsQueue cfnTypeText(emitCtx : Map) : String {
   return "AWS::SQS::Queue";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMMESSAGING!SqsQueue emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + emitYamlScalarProperty("QueueName", firstText(self.queueName, self.physicalName), 6);
@@ -626,10 +677,12 @@ operation AWSPSMMESSAGING!SqsQueue emitCfnPropertiesYaml(emitCtx : Map) : String
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMMESSAGING!SqsQueuePolicy cfnTypeText(emitCtx : Map) : String {
   return "AWS::SQS::QueuePolicy";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMMESSAGING!SqsQueuePolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "Queues:\n";
   for (queueObj in self.queues.sortBy(queueObj | queueObj.cfnLogicalId())) {
@@ -644,10 +697,12 @@ operation AWSPSMMESSAGING!SqsQueuePolicy emitCfnPropertiesYaml(emitCtx : Map) : 
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMMESSAGING!SnsTopic cfnTypeText(emitCtx : Map) : String {
   return "AWS::SNS::Topic";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMMESSAGING!SnsTopic emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("TopicName", firstText(self.topicName, self.physicalName), 6);
   outText = outText + emitYamlBooleanProperty("FifoTopic", self.fifoTopic, 6);
@@ -665,10 +720,12 @@ operation AWSPSMMESSAGING!SnsTopic emitCfnPropertiesYaml(emitCtx : Map) : String
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMMESSAGING!SnsSubscription cfnTypeText(emitCtx : Map) : String {
   return "AWS::SNS::Subscription";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMMESSAGING!SnsSubscription emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "TopicArn: !Ref " + self.topic.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Protocol", self.protocol.snsProtocolText(), 6);
@@ -704,10 +761,12 @@ operation AWSPSMMESSAGING!SnsSubscription emitCfnPropertiesYaml(emitCtx : Map) :
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMMESSAGING!SnsTopicPolicy cfnTypeText(emitCtx : Map) : String {
   return "AWS::SNS::TopicPolicy";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMMESSAGING!SnsTopicPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "Topics:\n";
   for (topicObj in self.topics.sortBy(topicObj | topicObj.cfnLogicalId())) {
@@ -722,20 +781,24 @@ operation AWSPSMMESSAGING!SnsTopicPolicy emitCfnPropertiesYaml(emitCtx : Map) : 
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMEVENTS!EventBridgeBus cfnTypeText(emitCtx : Map) : String {
   return "AWS::Events::EventBus";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeBus emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.busName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("EventSourceName", self.eventSourceName, 6);
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMEVENTS!EventBridgeBusPolicy cfnTypeText(emitCtx : Map) : String {
   return "AWS::Events::EventBusPolicy";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeBusPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("StatementId", self.statementId, 6);
   outText = outText + spaces(6) + "EventBusName: !Ref " + self.bus.cfnLogicalId() + "\n";
@@ -748,10 +811,12 @@ operation AWSPSMEVENTS!EventBridgeBusPolicy emitCfnPropertiesYaml(emitCtx : Map)
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMEVENTS!EventBridgeRule cfnTypeText(emitCtx : Map) : String {
   return "AWS::Events::Rule";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeRule emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.ruleName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
@@ -775,6 +840,7 @@ operation AWSPSMEVENTS!EventBridgeRule emitCfnPropertiesYaml(emitCtx : Map) : St
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Renders emit event pattern yaml. */
 operation AWSPSMEVENTS!EventPattern emitEventPatternYaml(indentCount : Integer) : String {
   var outText = "";
   outText = outText + emitYamlStringListProperty("source", self.sources, indentCount);
@@ -787,6 +853,7 @@ operation AWSPSMEVENTS!EventPattern emitEventPatternYaml(indentCount : Integer) 
   return outText;
 }
 
+/** Renders emit event bridge target yaml. */
 operation AWSPSMEVENTS!EventBridgeTarget emitEventBridgeTargetYaml(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "- Id: " + self.targetId.yamlScalar() + "\n";
   if (self.targetResource.isDefined()) {
@@ -828,10 +895,12 @@ operation AWSPSMEVENTS!EventBridgeTarget emitEventBridgeTargetYaml(indentCount :
   return outText;
 }
 
+/** Computes cfn type text. */
 operation AWSPSMEVENTS!EventBridgeArchive cfnTypeText(emitCtx : Map) : String {
   return "AWS::Events::Archive";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeArchive emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "SourceArn: " + arnForResource(self.eventSourceBus) + "\n";
   outText = outText + emitYamlScalarProperty("ArchiveName", firstText(self.archiveName, self.physicalName), 6);
@@ -842,10 +911,12 @@ operation AWSPSMEVENTS!EventBridgeArchive emitCfnPropertiesYaml(emitCtx : Map) :
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMEVENTS!EventBridgeSchedule cfnTypeText(emitCtx : Map) : String {
   return "AWS::Scheduler::Schedule";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeSchedule emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.scheduleName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
@@ -868,10 +939,12 @@ operation AWSPSMEVENTS!EventBridgeSchedule emitCfnPropertiesYaml(emitCtx : Map) 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMEVENTS!EventBridgePipe cfnTypeText(emitCtx : Map) : String {
   return "AWS::Pipes::Pipe";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgePipe emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.pipeName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("DesiredState", self.desiredState, 6);
@@ -908,10 +981,12 @@ operation AWSPSMEVENTS!EventBridgePipe emitCfnPropertiesYaml(emitCtx : Map) : St
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMEVENTS!EventBridgeConnection cfnTypeText(emitCtx : Map) : String {
   return "AWS::Events::Connection";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeConnection emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.connectionName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("AuthorizationType", self.authorizationType.asString(), 6);
@@ -922,10 +997,12 @@ operation AWSPSMEVENTS!EventBridgeConnection emitCfnPropertiesYaml(emitCtx : Map
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMEVENTS!EventBridgeApiDestination cfnTypeText(emitCtx : Map) : String {
   return "AWS::Events::ApiDestination";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeApiDestination emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.destinationName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("InvocationEndpoint", self.invocationEndpoint, 6);
@@ -935,10 +1012,12 @@ operation AWSPSMEVENTS!EventBridgeApiDestination emitCfnPropertiesYaml(emitCtx :
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSTORAGE!DynamoDbTable cfnTypeText(emitCtx : Map) : String {
   return "AWS::DynamoDB::Table";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSTORAGE!DynamoDbTable emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("TableName", firstText(self.tableName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("BillingMode", self.billingMode.asString(), 6);
@@ -1013,6 +1092,7 @@ operation AWSPSMSTORAGE!DynamoDbTable emitCfnPropertiesYaml(emitCtx : Map) : Str
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Renders emit ddb indexes yaml. */
 operation Collection emitDdbIndexesYaml(nameText : String, indentCount : Integer) : String {
   if (self.isEmpty()) {
     return "";
@@ -1039,10 +1119,12 @@ operation Collection emitDdbIndexesYaml(nameText : String, indentCount : Integer
   return outText;
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSTORAGE!S3Bucket cfnTypeText(emitCtx : Map) : String {
   return "AWS::S3::Bucket";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSTORAGE!S3Bucket emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("BucketName", firstText(self.bucketName, self.physicalName), 6);
   if (self.versioningStatus.isDefined()) {
@@ -1145,10 +1227,12 @@ operation AWSPSMSTORAGE!S3Bucket emitCfnPropertiesYaml(emitCtx : Map) : String {
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMSTORAGE!S3BucketPolicy cfnTypeText(emitCtx : Map) : String {
   return "AWS::S3::BucketPolicy";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMSTORAGE!S3BucketPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "Bucket: !Ref " + self.bucket.cfnLogicalId() + "\n";
   if (self.policyDocumentJson.isPresent()) {
@@ -1160,6 +1244,7 @@ operation AWSPSMSTORAGE!S3BucketPolicy emitCfnPropertiesYaml(emitCtx : Map) : St
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Renders emit s3 notification rules yaml. */
 operation Collection emitS3NotificationRulesYaml(indentCount : Integer) : String {
   var lambdaText = "";
   var queueText = "";
@@ -1191,6 +1276,7 @@ operation Collection emitS3NotificationRulesYaml(indentCount : Integer) : String
   return outText;
 }
 
+/** Renders emit single s3 notification yaml. */
 operation AWSPSMSTORAGE!S3NotificationRule emitSingleS3NotificationYaml(destinationNameText : String, indentCount : Integer) : String {
   var eventText = "s3:ObjectCreated:*";
   if (self.eventTypes.notEmpty()) {
@@ -1214,18 +1300,22 @@ operation AWSPSMSTORAGE!S3NotificationRule emitSingleS3NotificationYaml(destinat
   return outText;
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!HttpApi cfnTypeText(emitCtx : Map) : String {
   return "AWS::Serverless::HttpApi";
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!RestApi cfnTypeText(emitCtx : Map) : String {
   return "AWS::Serverless::Api";
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!WebSocketApi cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::Api";
 }
 
+/** Renders emit api common properties yaml. */
 operation AWSPSMAPI!ApiGatewayApi emitApiCommonPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.apiName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
@@ -1255,6 +1345,7 @@ operation AWSPSMAPI!ApiGatewayApi emitApiCommonPropertiesYaml(emitCtx : Map) : S
   return outText;
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!HttpApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = self.emitApiCommonPropertiesYaml(emitCtx);
   outText = outText + emitYamlBooleanProperty("DisableExecuteApiEndpoint", self.disableExecuteApiEndpoint, 6);
@@ -1263,6 +1354,7 @@ operation AWSPSMAPI!HttpApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!RestApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = self.emitApiCommonPropertiesYaml(emitCtx);
   if (self.endpointType.isDefined()) {
@@ -1276,6 +1368,7 @@ operation AWSPSMAPI!RestApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!WebSocketApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.apiName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
@@ -1284,10 +1377,12 @@ operation AWSPSMAPI!WebSocketApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayIntegration cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::Integration";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayIntegration emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   var routeObj = AWSPSMAPI!ApiGatewayRoute.all.selectOne(routeObj | routeObj.integration = self);
@@ -1323,18 +1418,22 @@ operation AWSPSMAPI!ApiGatewayIntegration emitCfnPropertiesYaml(emitCtx : Map) :
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!HttpApiRoute cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::Route";
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!WebSocketRoute cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::Route";
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!RestApiRoute cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGateway::Method";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayRoute emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + spaces(6) + "ApiId: !Ref " + self.api.cfnLogicalId() + "\n";
@@ -1358,6 +1457,7 @@ operation AWSPSMAPI!ApiGatewayRoute emitCfnPropertiesYaml(emitCtx : Map) : Strin
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!RestApiRoute emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "RestApiId: !Ref " + self.api.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("HttpMethod", self.method.asString(), 6);
@@ -1378,6 +1478,7 @@ operation AWSPSMAPI!RestApiRoute emitCfnPropertiesYaml(emitCtx : Map) : String {
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayStage cfnTypeText(emitCtx : Map) : String {
   if (self.eClass().getName() = "RestApiStage") {
     return "AWS::ApiGateway::Stage";
@@ -1385,6 +1486,7 @@ operation AWSPSMAPI!ApiGatewayStage cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::Stage";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayStage emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   if (self.eClass().getName() = "RestApiStage") {
@@ -1407,6 +1509,7 @@ operation AWSPSMAPI!ApiGatewayStage emitCfnPropertiesYaml(emitCtx : Map) : Strin
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayAuthorizer cfnTypeText(emitCtx : Map) : String {
   if (self.api.eClass().getName() = "RestApi") {
     return "AWS::ApiGateway::Authorizer";
@@ -1414,6 +1517,7 @@ operation AWSPSMAPI!ApiGatewayAuthorizer cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::Authorizer";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayAuthorizer emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   if (self.api.eClass().getName() = "RestApi") {
@@ -1443,6 +1547,7 @@ operation AWSPSMAPI!ApiGatewayAuthorizer emitCfnPropertiesYaml(emitCtx : Map) : 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayDomainName cfnTypeText(emitCtx : Map) : String {
   if (self.api.isDefined() and self.api.eClass().getName() = "RestApi") {
     return "AWS::ApiGateway::DomainName";
@@ -1450,6 +1555,7 @@ operation AWSPSMAPI!ApiGatewayDomainName cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGatewayV2::DomainName";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayDomainName emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("DomainName", self.domainName, 6);
   outText = outText + emitYamlScalarProperty("CertificateArn", self.certificateArn, 6);
@@ -1460,6 +1566,7 @@ operation AWSPSMAPI!ApiGatewayDomainName emitCfnPropertiesYaml(emitCtx : Map) : 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayBasePathMapping cfnTypeText(emitCtx : Map) : String {
   if (self.api.eClass().getName() = "RestApi") {
     return "AWS::ApiGateway::BasePathMapping";
@@ -1467,6 +1574,7 @@ operation AWSPSMAPI!ApiGatewayBasePathMapping cfnTypeText(emitCtx : Map) : Strin
   return "AWS::ApiGatewayV2::ApiMapping";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayBasePathMapping emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "DomainName: !Ref " + self.domainName.cfnLogicalId() + "\n";
   if (self.api.eClass().getName() = "RestApi") {
@@ -1482,10 +1590,12 @@ operation AWSPSMAPI!ApiGatewayBasePathMapping emitCfnPropertiesYaml(emitCtx : Ma
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayApiKey cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGateway::ApiKey";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayApiKey emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.apiKeyName, self.physicalName), 6);
   outText = outText + emitYamlBooleanProperty("Enabled", self.enabled, 6);
@@ -1496,10 +1606,12 @@ operation AWSPSMAPI!ApiGatewayApiKey emitCfnPropertiesYaml(emitCtx : Map) : Stri
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayUsagePlan cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGateway::UsagePlan";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayUsagePlan emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("UsagePlanName", firstText(self.usagePlanName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
@@ -1523,10 +1635,12 @@ operation AWSPSMAPI!ApiGatewayUsagePlan emitCfnPropertiesYaml(emitCtx : Map) : S
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayUsagePlanKey cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGateway::UsagePlanKey";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayUsagePlanKey emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "KeyId: !Ref " + self.apiKey.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("KeyType", self.keyType.orElseText("API_KEY"), 6);
@@ -1534,30 +1648,36 @@ operation AWSPSMAPI!ApiGatewayUsagePlanKey emitCfnPropertiesYaml(emitCtx : Map) 
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!ApiGatewayDeployment cfnTypeText(emitCtx : Map) : String {
   return "AWS::ApiGateway::Deployment";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!ApiGatewayDeployment emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "RestApiId: !Ref " + self.api.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMAPI!WafWebAclAssociation cfnTypeText(emitCtx : Map) : String {
   return "AWS::WAFv2::WebACLAssociation";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMAPI!WafWebAclAssociation emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("WebACLArn", self.webAclArn, 6);
   outText = outText + spaces(6) + "ResourceArn: " + arnForResource(self.protectedResource) + "\n";
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMIDENTITY!CognitoUserPool cfnTypeText(emitCtx : Map) : String {
   return "AWS::Cognito::UserPool";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMIDENTITY!CognitoUserPool emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("UserPoolName", firstText(self.userPoolName, self.physicalName), 6);
   if (self.mfaConfiguration.isDefined()) {
@@ -1591,10 +1711,12 @@ operation AWSPSMIDENTITY!CognitoUserPool emitCfnPropertiesYaml(emitCtx : Map) : 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMIDENTITY!CognitoUserPoolClient cfnTypeText(emitCtx : Map) : String {
   return "AWS::Cognito::UserPoolClient";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMIDENTITY!CognitoUserPoolClient emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "UserPoolId: !Ref " + self.userPool.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("ClientName", firstText(self.clientName, self.physicalName), 6);
@@ -1616,10 +1738,12 @@ operation AWSPSMIDENTITY!CognitoUserPoolClient emitCfnPropertiesYaml(emitCtx : M
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMIDENTITY!CognitoUserPoolGroup cfnTypeText(emitCtx : Map) : String {
   return "AWS::Cognito::UserPoolGroup";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMIDENTITY!CognitoUserPoolGroup emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "UserPoolId: !Ref " + self.userPool.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("GroupName", firstText(self.groupName, self.physicalName), 6);
@@ -1631,10 +1755,12 @@ operation AWSPSMIDENTITY!CognitoUserPoolGroup emitCfnPropertiesYaml(emitCtx : Ma
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMIDENTITY!CognitoUserPoolDomain cfnTypeText(emitCtx : Map) : String {
   return "AWS::Cognito::UserPoolDomain";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMIDENTITY!CognitoUserPoolDomain emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "UserPoolId: !Ref " + self.userPool.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Domain", self.domain, 6);
@@ -1645,10 +1771,12 @@ operation AWSPSMIDENTITY!CognitoUserPoolDomain emitCfnPropertiesYaml(emitCtx : M
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMIDENTITY!CognitoIdentityPool cfnTypeText(emitCtx : Map) : String {
   return "AWS::Cognito::IdentityPool";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMIDENTITY!CognitoIdentityPool emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("IdentityPoolName", firstText(self.identityPoolName, self.physicalName), 6);
   outText = outText + emitYamlBooleanProperty("AllowUnauthenticatedIdentities", self.allowUnauthenticatedIdentities, 6);
@@ -1658,10 +1786,12 @@ operation AWSPSMIDENTITY!CognitoIdentityPool emitCfnPropertiesYaml(emitCtx : Map
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMNETWORKING!Vpc cfnTypeText(emitCtx : Map) : String {
   return "AWS::EC2::VPC";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMNETWORKING!Vpc emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("CidrBlock", self.cidrBlock, 6);
   outText = outText + emitYamlBooleanProperty("EnableDnsHostnames", self.enableDnsHostnames, 6);
@@ -1669,10 +1799,12 @@ operation AWSPSMNETWORKING!Vpc emitCfnPropertiesYaml(emitCtx : Map) : String {
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMNETWORKING!Subnet cfnTypeText(emitCtx : Map) : String {
   return "AWS::EC2::Subnet";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMNETWORKING!Subnet emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("CidrBlock", self.cidrBlock, 6);
   outText = outText + emitYamlScalarProperty("AvailabilityZone", self.availabilityZone, 6);
@@ -1683,10 +1815,12 @@ operation AWSPSMNETWORKING!Subnet emitCfnPropertiesYaml(emitCtx : Map) : String 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMNETWORKING!VpcEndpoint cfnTypeText(emitCtx : Map) : String {
   return "AWS::EC2::VPCEndpoint";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMNETWORKING!VpcEndpoint emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("ServiceName", self.serviceName, 6);
   outText = outText + emitYamlScalarProperty("VpcEndpointType", self.endpointType, 6);
@@ -1711,10 +1845,12 @@ operation AWSPSMNETWORKING!VpcEndpoint emitCfnPropertiesYaml(emitCtx : Map) : St
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMNETWORKING!SecurityGroup cfnTypeText(emitCtx : Map) : String {
   return "AWS::EC2::SecurityGroup";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMNETWORKING!SecurityGroup emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("GroupDescription", self.groupDescription, 6);
   if (self.vpc.isDefined()) {
@@ -1728,6 +1864,7 @@ operation AWSPSMNETWORKING!SecurityGroup emitCfnPropertiesYaml(emitCtx : Map) : 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Renders emit security group rules yaml. */
 operation Collection emitSecurityGroupRulesYaml(nameText : String, indentCount : Integer) : String {
   if (self.isEmpty()) {
     return "";
@@ -1747,10 +1884,12 @@ operation Collection emitSecurityGroupRulesYaml(nameText : String, indentCount :
   return outText;
 }
 
+/** Computes cfn type text. */
 operation AWSPSMOBSERVABILITY!CloudWatchLogGroup cfnTypeText(emitCtx : Map) : String {
   return "AWS::Logs::LogGroup";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMOBSERVABILITY!CloudWatchLogGroup emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("LogGroupName", firstText(self.logGroupName, self.physicalName), 6);
   outText = outText + emitYamlIntegerProperty("RetentionInDays", self.retentionDays, 6);
@@ -1766,10 +1905,12 @@ operation AWSPSMOBSERVABILITY!CloudWatchLogGroup emitCfnPropertiesYaml(emitCtx :
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMOBSERVABILITY!CloudWatchMetricFilter cfnTypeText(emitCtx : Map) : String {
   return "AWS::Logs::MetricFilter";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMOBSERVABILITY!CloudWatchMetricFilter emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "LogGroupName: !Ref " + self.logGroup.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("FilterPattern", self.filterPattern, 6);
@@ -1779,10 +1920,12 @@ operation AWSPSMOBSERVABILITY!CloudWatchMetricFilter emitCfnPropertiesYaml(emitC
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMOBSERVABILITY!CloudWatchLogSubscriptionFilter cfnTypeText(emitCtx : Map) : String {
   return "AWS::Logs::SubscriptionFilter";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMOBSERVABILITY!CloudWatchLogSubscriptionFilter emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = spaces(6) + "LogGroupName: !Ref " + self.logGroup.cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("FilterPattern", self.filterPattern, 6);
@@ -1801,10 +1944,12 @@ operation AWSPSMOBSERVABILITY!CloudWatchLogSubscriptionFilter emitCfnPropertiesY
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMOBSERVABILITY!CloudWatchAlarm cfnTypeText(emitCtx : Map) : String {
   return "AWS::CloudWatch::Alarm";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMOBSERVABILITY!CloudWatchAlarm emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("AlarmName", firstText(self.alarmName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("AlarmDescription", self.alarmDescription, 6);
@@ -1833,10 +1978,12 @@ operation AWSPSMOBSERVABILITY!CloudWatchAlarm emitCfnPropertiesYaml(emitCtx : Ma
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMOBSERVABILITY!CloudWatchCompositeAlarm cfnTypeText(emitCtx : Map) : String {
   return "AWS::CloudWatch::CompositeAlarm";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMOBSERVABILITY!CloudWatchCompositeAlarm emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("AlarmRule", self.alarmRule, 6);
   outText = outText + emitYamlStringListProperty("AlarmActions", self.alarmActionArns, 6);
@@ -1844,20 +1991,24 @@ operation AWSPSMOBSERVABILITY!CloudWatchCompositeAlarm emitCfnPropertiesYaml(emi
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMOBSERVABILITY!CloudWatchDashboard cfnTypeText(emitCtx : Map) : String {
   return "AWS::CloudWatch::Dashboard";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMOBSERVABILITY!CloudWatchDashboard emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("DashboardName", firstText(self.dashboardName, self.physicalName), 6);
   outText = outText + yamlBlock("DashboardBody", self.dashboardBodyJson, 6);
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine cfnTypeText(emitCtx : Map) : String {
   return "AWS::Serverless::StateMachine";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.stateMachineName, self.physicalName), 6);
   outText = outText + spaces(6) + "Role: " + arnForResource(self.role) + "\n";
@@ -1904,10 +2055,12 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Computes cfn type text. */
 operation AWSPSMCOMPUTE!CodeSigningConfig cfnTypeText(emitCtx : Map) : String {
   return "AWS::Lambda::CodeSigningConfig";
 }
 
+/** Renders emit cfn properties yaml. */
 operation AWSPSMCOMPUTE!CodeSigningConfig emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Description", self.descriptionText, 6);
   if (self.allowedPublishers.isPresent()) {

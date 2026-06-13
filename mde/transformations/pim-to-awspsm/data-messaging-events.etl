@@ -1,3 +1,4 @@
+/** Maps data messaging events model elements and supporting relationships. */
 rule DataStore2DynamoDbTable
   transform ds : DATA!DataStore
   to t : AWSPSMSTORAGE!DynamoDbTable {
@@ -45,6 +46,7 @@ rule DataStore2DynamoDbTable
   createTrace(ds, t, "DataStore2DynamoDbTable", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Data S elements into re2 Native Unsupported Store elements. */
 rule DataStore2NativeUnsupportedStore
   transform ds : DATA!DataStore
   to n : AWSPSMCORE!AwsNativeResource {
@@ -63,6 +65,7 @@ rule DataStore2NativeUnsupportedStore
   createTrace(ds, n, "DataStore2NativeUnsupportedStore", "LOW", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms Object S elements into re2 S3 Bucket elements. */
 rule ObjectStore2S3Bucket
   transform os : DATA!ObjectStore
   to b : AWSPSMSTORAGE!S3Bucket {
@@ -103,6 +106,7 @@ rule ObjectStore2S3Bucket
   createTrace(os, b, "ObjectStore2S3Bucket", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Queue elements into Sqs Queue elements. */
 rule Queue2SqsQueue
   transform q : INTEGRATION!Queue
   to sqs : AWSPSMMESSAGING!SqsQueue {
@@ -156,6 +160,7 @@ rule Queue2SqsQueue
   createTrace(q, sqs, "Queue2SqsQueue", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Resolves resolve sqs redrive policies. */
 operation resolveSqsRedrivePolicies() {
   for (q in INTEGRATION!Queue.all.select(queue | queue.deadLetterChannel.isDefined())) {
     var sqs = awsEquivalent(q);
@@ -177,6 +182,7 @@ operation resolveSqsRedrivePolicies() {
   }
 }
 
+/** Transforms Topic elements into Sns Topic elements. */
 rule Topic2SnsTopic
   transform t : INTEGRATION!Topic
   to sns : AWSPSMMESSAGING!SnsTopic {
@@ -202,6 +208,7 @@ rule Topic2SnsTopic
   createTrace(t, sns, "Topic2SnsTopic", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Subscription elements into Sns Subscription elements. */
 rule Subscription2SnsSubscription
   transform s : INTEGRATION!Subscription
   to sub : AWSPSMMESSAGING!SnsSubscription {
@@ -242,6 +249,7 @@ rule Subscription2SnsSubscription
   createTrace(s, sub, "Subscription2SnsSubscription", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Creates create sns subscription dlq. */
 operation createSnsSubscriptionDlq(s) {
   var q = new AWSPSMMESSAGING!SqsQueue;
   copyAwsResource(s, q, "SubscriptionDlq", "AWS::SQS::Queue");
@@ -258,6 +266,7 @@ operation createSnsSubscriptionDlq(s) {
   return q;
 }
 
+/** Transforms Event Bus elements into Event Bridge Bus elements. */
 rule EventBus2EventBridgeBus
   transform b : INTEGRATION!EventBus
   to eb : AWSPSMEVENTS!EventBridgeBus {
@@ -269,6 +278,7 @@ rule EventBus2EventBridgeBus
   createTrace(b, eb, "EventBus2EventBridgeBus", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Event Routing Rule elements into Event Bridge Rule elements. */
 rule EventRoutingRule2EventBridgeRule
   transform rr : INTEGRATION!EventRoutingRule
   to er : AWSPSMEVENTS!EventBridgeRule {
@@ -298,6 +308,7 @@ rule EventRoutingRule2EventBridgeRule
   createTrace(rr, er, "EventRoutingRule2EventBridgeRule", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Schedule elements into Event Bridge Schedule elements. */
 rule Schedule2EventBridgeSchedule
   transform s : INTEGRATION!Schedule
   to es : AWSPSMEVENTS!EventBridgeSchedule {
@@ -329,6 +340,7 @@ rule Schedule2EventBridgeSchedule
   createTrace(s, es, "Schedule2EventBridgeSchedule", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Adds or records add dynamo keys. */
 operation addDynamoKeys(ds, t) {
   if (ds.ownedDataModels.isEmpty()) {
     manualDecision("DYNAMO_DATA_MODEL_REQUIRED",
@@ -366,6 +378,7 @@ operation addDynamoKeys(ds, t) {
   }
 }
 
+/** Adds or records add dynamo attribute. */
 operation addDynamoAttribute(t, field) {
   if (t.attributeDefinitions.exists(a | a.attributeName = firstText(field.storageName, field.name))) {
     return;
@@ -378,6 +391,7 @@ operation addDynamoAttribute(t, field) {
   t.attributeDefinitions.add(a);
 }
 
+/** Computes dynamo key. */
 operation dynamoKey(name : String, keyType) {
   var k = new AWSPSMSTORAGE!DynamoDbKeySchemaElement;
   k.id = uniqueId("dynamodb_key_" + slug(name + "_" + keyType.asString()));
@@ -387,6 +401,7 @@ operation dynamoKey(name : String, keyType) {
   return k;
 }
 
+/** Computes dynamo type. */
 operation dynamoType(ft) {
   if (ft = PIMTYPES!FieldType#INTEGER or ft = PIMTYPES!FieldType#NUMBER or ft = PIMTYPES!FieldType#MONEY) {
     return AWSPSMENUMS!DynamoDbAttributeType#N;
@@ -397,6 +412,7 @@ operation dynamoType(ft) {
   return AWSPSMENUMS!DynamoDbAttributeType#S;
 }
 
+/** Adds or records add dynamo indexes. */
 operation addDynamoIndexes(ds, t) {
   for (idx in ds.indexCandidates) {
     var keyFields = indexKeyFields(idx);
@@ -448,6 +464,7 @@ operation addDynamoIndexes(ds, t) {
   }
 }
 
+/** Computes field by storage or name. */
 operation fieldByStorageOrName(ds, fieldName : String) {
   if (not hasText(fieldName)) {
     return null;
@@ -466,6 +483,7 @@ operation fieldByStorageOrName(ds, fieldName : String) {
   return null;
 }
 
+/** Computes index key fields. */
 operation indexKeyFields(idx) {
   var fields = Sequence{};
   for (candidate in asText(idx.partitionKeyField).split(",")) {
@@ -480,10 +498,12 @@ operation indexKeyFields(idx) {
   return fields;
 }
 
+/** Converts the receiver to normalized lookup key. */
 operation normalizedLookupKey(value) {
   return asText(value).toLowerCase().replaceAll("[^a-z0-9]+", "");
 }
 
+/** Creates create s3 encryption. */
 operation createS3Encryption(os) {
   var e = new AWSPSMSTORAGE!S3BucketEncryption;
   e.id = generatedId("s3_encryption", os, "default");
@@ -493,6 +513,7 @@ operation createS3Encryption(os) {
   return e;
 }
 
+/** Creates create strict public access block. */
 operation createStrictPublicAccessBlock(os) {
   var p = new AWSPSMSTORAGE!S3PublicAccessBlockConfiguration;
   p.id = generatedId("s3_public_block", os, "strict");
@@ -504,6 +525,7 @@ operation createStrictPublicAccessBlock(os) {
   return p;
 }
 
+/** Creates create s3 ownership. */
 operation createS3Ownership(os) {
   var o = new AWSPSMSTORAGE!S3OwnershipControls;
   o.id = generatedId("s3_ownership", os, "controls");
@@ -516,6 +538,7 @@ operation createS3Ownership(os) {
   return o;
 }
 
+/** Creates create s3 lifecycle. */
 operation createS3Lifecycle(os) {
   var lc = new AWSPSMSTORAGE!S3LifecycleConfiguration;
   lc.id = generatedId("s3_lifecycle", os, "default");
@@ -536,6 +559,7 @@ operation createS3Lifecycle(os) {
   return lc;
 }
 
+/** Computes retention days. */
 operation retentionDays(policy) {
   if (policy.isUndefined() or not hasText(policy.retentionPeriod)) {
     return 0;
@@ -560,6 +584,7 @@ operation retentionDays(policy) {
   return 0;
 }
 
+/** Computes extract leading integer. */
 operation extractLeadingInteger(text : String) {
   var digits = "";
   for (i in Sequence{0..text.length() - 1}) {
@@ -579,6 +604,7 @@ operation extractLeadingInteger(text : String) {
   return 0;
 }
 
+/** Creates create s3 notification. */
 operation createS3Notification(os) {
   var n = new AWSPSMSTORAGE!S3NotificationConfiguration;
   n.id = generatedId("s3_notification", os, "events");
@@ -593,6 +619,7 @@ operation createS3Notification(os) {
   return n;
 }
 
+/** Computes event types pattern json. */
 operation eventTypesPatternJson(events) {
   var details = "";
   for (e in events) {
@@ -607,6 +634,7 @@ operation eventTypesPatternJson(events) {
   return "{ \"detail-type\": [ " + details + " ] }";
 }
 
+/** Creates create event bridge target. */
 operation createEventBridgeTarget(src, endpoint) {
   var t = new AWSPSMEVENTS!EventBridgeTarget;
   t.id = generatedId("eventbridge_target", src, firstText(endpoint.name, endpoint.id));
@@ -643,6 +671,7 @@ operation createEventBridgeTarget(src, endpoint) {
   return t;
 }
 
+/** Creates default event bridge retry policy. */
 operation defaultEventBridgeRetryPolicy(src, endpoint) {
   var p = new AWSPSMEVENTS!AwsRetryPolicy;
   p.id = generatedId("eventbridge_retry", src, firstText(endpoint.name, endpoint.id));
@@ -652,6 +681,7 @@ operation defaultEventBridgeRetryPolicy(src, endpoint) {
   return p;
 }
 
+/** Computes endpoint resource. */
 operation endpointResource(endpoint) {
   if (endpoint.isUndefined()) {
     return null;
@@ -663,6 +693,7 @@ operation endpointResource(endpoint) {
   return null;
 }
 
+/** Computes external endpoint for subscription. */
 operation externalEndpointForSubscription(endpoint) : String {
   if (endpoint.isDefined() and endpoint.eClass().getName() = "ExternalAdapter" and endpoint.endpoint.isDefined()) {
     return firstText(endpoint.endpoint.endpointUri, endpoint.endpoint.endpointDescription);
@@ -670,10 +701,12 @@ operation externalEndpointForSubscription(endpoint) : String {
   return "REVIEW_REQUIRED_SUBSCRIPTION_ENDPOINT";
 }
 
+/** Computes unresolved target arn. */
 operation unresolvedTargetArn(endpoint) : String {
   return "REVIEW_REQUIRED_TARGET_ARN_" + slug(firstText(endpoint.name, endpoint.id)).toUpperCase();
 }
 
+/** Computes subscription protocol. */
 operation subscriptionProtocol(endpoint) {
   var res = endpointResource(endpoint);
   if (res.isUndefined()) {
@@ -688,6 +721,7 @@ operation subscriptionProtocol(endpoint) {
   return AWSPSMENUMS!SnsProtocol#HTTP;
 }
 
+/** Computes event bridge target kind. */
 operation eventBridgeTargetKind(endpoint) {
   var res = endpointResource(endpoint);
   if (res.isUndefined()) {
@@ -717,6 +751,7 @@ operation eventBridgeTargetKind(endpoint) {
   return AWSPSMENUMS!EventBridgeTargetKind#OTHER_AWS_RESOURCE;
 }
 
+/** Creates create scheduler role. */
 operation createSchedulerRole(s) {
   var role = new AWSPSMSECURITY!IamRole;
   copyAwsResource(s, role, "SchedulerRole", "AWS::IAM::Role");
@@ -727,6 +762,7 @@ operation createSchedulerRole(s) {
   return role;
 }
 
+/** Creates create unresolved schedule target. */
 operation createUnresolvedScheduleTarget(s) {
   var t = new AWSPSMEVENTS!EventBridgeTarget;
   t.id = generatedId("eventbridge_target", s, "unresolved_schedule_target");
@@ -737,6 +773,7 @@ operation createUnresolvedScheduleTarget(s) {
   return t;
 }
 
+/** Creates create storage resource policy. */
 operation createStorageResourcePolicy(source, resource) {
   var doc = policyDocument();
   var st = allowStatement("DenyInsecureTransport");
@@ -756,6 +793,7 @@ operation createStorageResourcePolicy(source, resource) {
   return doc;
 }
 
+/** Creates create deny insecure transport policy. */
 operation createDenyInsecureTransportPolicy(resource) {
   var doc = policyDocument();
   var st = allowStatement("DenyInsecureTransport");

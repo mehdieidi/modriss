@@ -1,3 +1,5 @@
+/** Provides reusable common operations. */
+/** Initializes shared roots, lookup maps, and deduplication sets for the CIM-to-PIM run. */
 operation initialiseCimToPimCaches() {
   cachedCimRoot = CIM!CIMModel.all.first();
   cachedPimRoot = null;
@@ -44,10 +46,12 @@ operation initialiseCimToPimCaches() {
   }
 }
 
+/** Computes cim root. */
 operation cimRoot() {
   return cachedCimRoot;
 }
 
+/** Computes cache key for. */
 operation cacheKeyFor(element) {
   if (element.isUndefined()) {
     return "";
@@ -61,6 +65,7 @@ operation cacheKeyFor(element) {
   return element.eClass().getName() + "_" + slug(element.asString());
 }
 
+/** Computes cache aggregate entity. */
 operation cacheAggregateEntity(entity, aggregate) {
   var key = cacheKeyFor(entity);
   if (hasText(key)) {
@@ -68,6 +73,7 @@ operation cacheAggregateEntity(entity, aggregate) {
   }
 }
 
+/** Computes cache context by capability. */
 operation cacheContextByCapability(capability, context) {
   var key = cacheKeyFor(capability);
   if (hasText(key)) {
@@ -75,6 +81,7 @@ operation cacheContextByCapability(capability, context) {
   }
 }
 
+/** Computes cache context elements. */
 operation cacheContextElements(elements, context) {
   for (element in elements) {
     var key = cacheKeyFor(element);
@@ -84,18 +91,22 @@ operation cacheContextElements(elements, context) {
   }
 }
 
+/** Computes cached aggregate for entity. */
 operation cachedAggregateForEntity(entity) {
   return cachedCimAggregateByEntityId.get(cacheKeyFor(entity));
 }
 
+/** Computes cached context for capability. */
 operation cachedContextForCapability(capability) {
   return cachedCimContextByCapabilityId.get(cacheKeyFor(capability));
 }
 
+/** Computes cached owner context for. */
 operation cachedOwnerContextFor(element) {
   return cachedCimOwnerContextByElementId.get(cacheKeyFor(element));
 }
 
+/** Resolves cached equivalent. */
 operation cachedEquivalent(source, ruleName : String) {
   var key = ruleName + "::" + cacheKeyFor(source);
   if (cachedCimEquivalentByRule.containsKey(key)) {
@@ -118,6 +129,7 @@ operation cachedEquivalent(source, ruleName : String) {
   return target;
 }
 
+/** Resolves cached equivalent of class. */
 operation cachedEquivalentOfClass(source, ruleName : String, className : String) {
   var key = ruleName + "::" + cacheKeyFor(source) + "::" + className;
   if (cachedCimEquivalentByRule.containsKey(key)) {
@@ -140,6 +152,7 @@ operation cachedEquivalentOfClass(source, ruleName : String, className : String)
   return target;
 }
 
+/** Computes cache pim target. */
 operation cachePimTarget(target) {
   if (target.isDefined() and hasText(target.id)) {
     if (not cachedPimElementById.containsKey(target.id)) {
@@ -149,6 +162,7 @@ operation cachePimTarget(target) {
   }
 }
 
+/** Computes cached pim target by id. */
 operation cachedPimTargetById(id : String) {
   if (hasText(id) and cachedPimElementById.containsKey(id)) {
     return cachedPimElementById.get(id);
@@ -156,6 +170,7 @@ operation cachedPimTargetById(id : String) {
   return null;
 }
 
+/** Computes cached deterministic equivalent. */
 operation cachedDeterministicEquivalent(source, ruleName : String, className : String) {
   var id = deterministicEquivalentId(source, ruleName, className);
   if (not hasText(id)) {
@@ -164,6 +179,7 @@ operation cachedDeterministicEquivalent(source, ruleName : String, className : S
   return cachedPimTargetById(id);
 }
 
+/** Computes deterministic equivalent id. */
 operation deterministicEquivalentId(source, ruleName : String, className : String) {
   if (source.isUndefined()) {
     return "";
@@ -190,10 +206,12 @@ operation deterministicEquivalentId(source, ruleName : String, className : Strin
   return "";
 }
 
+/** Converts the receiver to text. */
 operation asText(value) {
   return etlTextChecks.asText(value);
 }
 
+/** Computes or default. */
 operation Any orDefault(defaultValue : String) {
   if (self.isUndefined() or self.trim().isEmpty()) {
     return defaultValue;
@@ -201,30 +219,37 @@ operation Any orDefault(defaultValue : String) {
   return self;
 }
 
+/** Returns whether the receiver has text. */
 operation hasText(value) {
   return etlTextChecks.hasText(value);
 }
 
+/** Computes first text. */
 operation firstText(primary, fallback) {
   return etlTextChecks.firstText(primary, fallback);
 }
 
+/** Converts the receiver to slug. */
 operation slug(value) {
   return etlTextChecks.slug(value);
 }
 
+/** Converts the receiver to kebab. */
 operation kebab(value) {
   return etlTextChecks.kebab(value);
 }
 
+/** Converts the receiver to camel case. */
 operation camelCase(value) {
   return etlTextChecks.camelCase(value);
 }
 
+/** Converts the receiver to pascal case. */
 operation pascalCase(value) {
   return etlTextChecks.pascalCase(value);
 }
 
+/** Computes remove suffix. */
 operation removeSuffix(value : String, suffix : String) {
   if (value.isDefined() and value.endsWith(suffix)) {
     return value.substring(0, value.length() - suffix.length());
@@ -232,6 +257,7 @@ operation removeSuffix(value : String, suffix : String) {
   return value;
 }
 
+/** Converts the receiver to pluralize. */
 operation pluralize(value) {
   var text = asText(value);
   if (text.isEmpty()) {
@@ -246,6 +272,7 @@ operation pluralize(value) {
   return text + "s";
 }
 
+/** Computes id for. */
 operation idFor(prefix : String, source) {
   var seed = source.id;
   if (not hasText(seed)) {
@@ -254,6 +281,7 @@ operation idFor(prefix : String, source) {
   return prefix + "_" + slug(seed);
 }
 
+/** Computes name for. */
 operation nameFor(source, suffix : String) {
   var baseName = source.name;
   if (not hasText(baseName)) {
@@ -262,14 +290,17 @@ operation nameFor(source, suffix : String) {
   return baseName.orDefault("Unnamed") + suffix;
 }
 
+/** Creates new id. */
 operation newId(prefix : String, seed) {
   return prefix + "_" + slug(seed);
 }
 
+/** Adds or records collection text. */
 operation collectionText(items) {
   return joinText(items.collect(i | i.name), ", ");
 }
 
+/** Computes join text. */
 operation joinText(items, separator : String) {
   var result = "";
   for (item in items) {
@@ -283,19 +314,23 @@ operation joinText(items, separator : String) {
   return result;
 }
 
+/** Returns whether the receiver has any. */
 operation hasAny(items) {
   return items.isDefined() and not items.isEmpty();
 }
 
+/** Returns whether the receiver is true. */
 operation isTrue(value) {
   return value.isDefined() and value;
 }
 
+/** Returns whether the receiver is public actor. */
 operation isPublicActor(actor) {
   return actor.isDefined() and actor.actorType.isDefined() and
     actor.actorType.asString() <> "TIME";
 }
 
+/** Computes set feature. */
 operation setFeature(element, featureName : String, value) {
   var feature = element.eClass().getEStructuralFeature(featureName);
   if (feature.isUndefined()) {
@@ -304,6 +339,7 @@ operation setFeature(element, featureName : String, value) {
   element.eSet(feature, value);
 }
 
+/** Computes feature value. */
 operation featureValue(element, featureName : String) {
   if (element.isUndefined()) {
     return null;
@@ -315,6 +351,7 @@ operation featureValue(element, featureName : String) {
   return element.eGet(feature);
 }
 
+/** Computes expression text. */
 operation expressionText(element) : String {
   if (element.isUndefined()) {
     return "";
@@ -341,6 +378,7 @@ operation expressionText(element) : String {
   return "";
 }
 
+/** Computes expression language text. */
 operation expressionLanguageText(element) : String {
   if (element.isUndefined()) {
     return "NATURAL_LANGUAGE";
@@ -359,12 +397,14 @@ operation expressionLanguageText(element) : String {
   return "NATURAL_LANGUAGE";
 }
 
+/** Returns whether the receiver has multiplicity bounds. */
 operation Any hasMultiplicityBounds() : Boolean {
   return self.isDefined() and self.eClass().getName() = "Multiplicity" and
     self.lowerBound.isDefined() and
     (self.upperBound.isDefined() or self.unbounded = true);
 }
 
+/** Returns whether the receiver is many. */
 operation Any isMany() : Boolean {
   return self.isDefined() and self.eClass().getName() = "Multiplicity" and
     (self.unbounded = true or (self.upperBound.isDefined() and self.upperBound > 1));

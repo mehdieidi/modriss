@@ -1,9 +1,11 @@
+/** Maps integration deployment model elements and supporting relationships. */
 import "lib/common.eol";
 import "lib/mapping.eol";
 import "lib/trace-readiness.eol";
 import "lib/pim-builders.eol";
 import "lib/resolution.eol";
 
+/** Adds or records attach owned elements. */
 operation attachOwnedElements() {
   for (service in pimRoot().services) {
     for (fn in service.ownsFunctions) { cacheOwnedKey(service, "ownsFunctions", fn); }
@@ -44,6 +46,7 @@ operation attachOwnedElements() {
   }
 }
 
+/** Adds or records add owned once. */
 operation addOwnedOnce(service, featureName : String, element) {
   if (service.isUndefined() or element.isUndefined()) {
     return;
@@ -56,11 +59,13 @@ operation addOwnedOnce(service, featureName : String, element) {
   service.eGet(service.eClass().getEStructuralFeature(featureName)).add(element);
 }
 
+/** Computes cache owned key. */
 operation cacheOwnedKey(service, featureName : String, element) {
   cachedPimServiceOwnedKeys.add(cacheKeyFor(service) + "::" + featureName + "::" + cacheKeyFor(element));
   cachedPimServiceOwnedKeys.add(featureName + "::" + cacheKeyFor(element));
 }
 
+/** Creates create request response flows. */
 operation createRequestResponseFlows() {
   for (route in API!ApiRoute.all) {
     var flow = new INTEGRATION!RequestResponseFlow;
@@ -83,6 +88,7 @@ operation createRequestResponseFlows() {
   }
 }
 
+/** Creates create event channels and flows. */
 operation createEventChannelsAndFlows() {
   for (e in CIMBEHAVIOR!BusinessEvent.all) {
     var service = serviceFor(e);
@@ -269,6 +275,7 @@ operation createEventChannelsAndFlows() {
   }
 }
 
+/** Creates create topic subscriptions. */
 operation createTopicSubscriptions() {
   for (topic in INTEGRATION!Topic.all) {
     for (fn in topic.consumers) {
@@ -307,6 +314,7 @@ operation createTopicSubscriptions() {
   }
 }
 
+/** Creates create policy routing rules. */
 operation createPolicyRoutingRules() {
   for (pol in CIMPROCESS!Policy.all.select(p | p.triggeredBy.notEmpty() and (p.emitsCommands.notEmpty() or p.emitsEvents.notEmpty()))) {
     var bus = ensureEventBusForService(serviceFor(pol));
@@ -332,6 +340,7 @@ operation createPolicyRoutingRules() {
   }
 }
 
+/** Creates create external integration flows. */
 operation createExternalIntegrationFlows() {
   for (state in WORKFLOW!WorkflowState.all.select(s | s.invokesAdapter.isDefined())) {
     var flowId = newId("flow_external", state.id + "_" + state.invokesAdapter.id);
@@ -360,6 +369,7 @@ operation createExternalIntegrationFlows() {
   }
 }
 
+/** Creates create default retention policy. */
 operation createDefaultRetentionPolicy(store : DATA!StorageElement) {
   var id = newId("retention", store.id);
   var existing = cachedPimRetentionPolicyById.get(id);
@@ -381,6 +391,7 @@ operation createDefaultRetentionPolicy(store : DATA!StorageElement) {
   return policy;
 }
 
+/** Creates create default backup policy. */
 operation createDefaultBackupPolicy(store : DATA!StorageElement) {
   var id = newId("backup", store.id);
   var existing = cachedPimBackupPolicyById.get(id);
@@ -403,6 +414,7 @@ operation createDefaultBackupPolicy(store : DATA!StorageElement) {
   return policy;
 }
 
+/** Creates ensure store operational policies. */
 operation ensureStoreOperationalPolicies() {
   for (policy in POLICY!RetentionPolicy.all.select(p | hasText(p.id))) {
     cachedPimRetentionPolicyById.put(policy.id, policy);
@@ -420,6 +432,7 @@ operation ensureStoreOperationalPolicies() {
   }
 }
 
+/** Creates ensure index candidates for access patterns. */
 operation ensureIndexCandidatesForAccessPatterns() {
   for (store in DATA!DataStore.all) {
     for (pattern in store.accessPatterns.select(p | p.highFrequency or p.highCardinality)) {
@@ -447,6 +460,7 @@ operation ensureIndexCandidatesForAccessPatterns() {
   }
 }
 
+/** Creates ensure function contract fields. */
 operation ensureFunctionContractFields() {
   for (contract in CONTRACTS!FunctionContract.all.select(c | c.inputSchema.isDefined())) {
     if (hasText(contract.correlationIdField)) {
@@ -461,6 +475,7 @@ operation ensureFunctionContractFields() {
   }
 }
 
+/** Creates ensure api contracts. */
 operation ensureApiContracts() {
   for (api in API!Api.all.select(a | a.generatedOpenApiRequired and a.contract.isUndefined())) {
     var contract = new CONTRACTS!ApiContract;
@@ -486,6 +501,7 @@ operation ensureApiContracts() {
   }
 }
 
+/** Creates ensure channel connectivity intent. */
 operation ensureChannelConnectivityIntent() {
   for (channel in INTEGRATION!EventChannel.all) {
     for (eventType in channel.eventTypes) {
@@ -511,6 +527,7 @@ operation ensureChannelConnectivityIntent() {
   }
 }
 
+/** Creates ensure flow operational policies. */
 operation ensureFlowOperationalPolicies() {
   var defaultDataProtection = POLICY!DataProtectionPolicy.all.selectOne(p | hasText(p.classification));
   for (flow in INTEGRATION!Flow.all) {
@@ -530,12 +547,14 @@ operation ensureFlowOperationalPolicies() {
   }
 }
 
+/** Creates ensure readiness finding affected elements. */
 operation ensureReadinessFindingAffectedElements() {
   for (finding in KERNEL!ReadinessFinding.all.select(f | f.affectedElements.isEmpty())) {
     finding.affectedElements.add(pimRoot());
   }
 }
 
+/** Computes first owned function. */
 operation firstOwnedFunction(service : DEPLOY!ServerlessService) {
   if (service.ownsFunctions.notEmpty()) {
     return service.ownsFunctions.first();
@@ -543,6 +562,7 @@ operation firstOwnedFunction(service : DEPLOY!ServerlessService) {
   return null;
 }
 
+/** Creates create capability dependency artifacts. */
 operation createCapabilityDependencyArtifacts() {
   for (dep in CIMORG!CapabilityDependency.all) {
     var sourceService = serviceFor(dep.source);
@@ -664,14 +684,17 @@ operation createCapabilityDependencyArtifacts() {
   }
 }
 
+/** Returns whether the receiver contains provider specific term. */
 operation containsProviderSpecificTerm(text) {
   return etlTextChecks.containsProviderSpecificTerm(text);
 }
 
+/** Returns whether the receiver contains provider specific term in. */
 operation containsProviderSpecificTermIn(element) {
   return etlTextChecks.containsProviderSpecificTermIn(element);
 }
 
+/** Creates create data accesses. */
 operation createDataAccesses() {
   for (cmd in CIMBEHAVIOR!Command.all) {
     var cmdFn = commandFunction(cmd);
@@ -784,10 +807,12 @@ operation createDataAccesses() {
   }
 }
 
+/** Computes schema contains item. */
 operation schemaContainsItem(schema : CONTRACTS!Schema, item : CIMDOMAIN!InformationItem) {
   return schema.fields.exists(f | f.generatedFrom = item.id);
 }
 
+/** Adds or records add indexed. */
 operation addIndexed(index, key, value) {
   if (not hasText(key) or value.isUndefined()) {
     return;
@@ -802,6 +827,7 @@ operation addIndexed(index, key, value) {
   }
 }
 
+/** Computes indexed values. */
 operation indexedValues(index, key) {
   var values = index.get(key);
   if (values.isDefined()) {
@@ -810,6 +836,7 @@ operation indexedValues(index, key) {
   return Sequence{};
 }
 
+/** Adds or records attach data protection policies. */
 operation attachDataProtectionPolicies() {
   var policiesByClassificationId = new Map;
   for (policy in POLICY!DataProtectionPolicy.all.select(p | hasText(p.generatedFrom))) {
@@ -862,6 +889,7 @@ operation attachDataProtectionPolicies() {
   }
 }
 
+/** Adds or records attach data protection policy to item. */
 operation attachDataProtectionPolicyToItem(policy, item, storesByItemId, routesByItemId, personalFlows) {
   policy.attachedTo.addAll(indexedValues(cachedPimSchemasByItemId, item.id));
   for (store in indexedValues(storesByItemId, item.id)) {
@@ -880,6 +908,7 @@ operation attachDataProtectionPolicyToItem(policy, item, storesByItemId, routesB
   }
 }
 
+/** Adds or records add event types to channel. */
 operation addEventTypesToChannel(channel : INTEGRATION!EventChannel, eventTypes) {
   for (eventType in eventTypes.select(e | e.isDefined())) {
     if (not channel.eventTypes.includes(eventType)) {
@@ -888,6 +917,7 @@ operation addEventTypesToChannel(channel : INTEGRATION!EventChannel, eventTypes)
   }
 }
 
+/** Computes copy seed event types to channel. */
 operation copySeedEventTypesToChannel(seed, channel : INTEGRATION!EventChannel) {
   if (seed.isKindOf(INTEGRATION!EventChannel)) {
     addEventTypesToChannel(channel, seed.eventTypes);
@@ -913,6 +943,7 @@ operation copySeedEventTypesToChannel(seed, channel : INTEGRATION!EventChannel) 
   }
 }
 
+/** Creates ensure dead letter queue. */
 operation ensureDeadLetterQueue(seed) {
   var queueId = newId("dlq", seed.id);
   var queue = cachedPimQueueById.get(queueId);
@@ -949,6 +980,7 @@ operation ensureDeadLetterQueue(seed) {
   return queue;
 }
 
+/** Creates ensure event type for channel. */
 operation ensureEventTypeForChannel(channel : INTEGRATION!EventChannel) {
   if (channel.eventTypes.notEmpty()) {
     return channel.eventTypes.first();
@@ -984,6 +1016,7 @@ operation ensureEventTypeForChannel(channel : INTEGRATION!EventChannel) {
   return eventType;
 }
 
+/** Creates ensure api authentication. */
 operation ensureApiAuthentication() {
   var identityProvider = SECURITY!IdentityProvider.all.first();
   for (api in API!Api.all.select(a | isTrue(a.authRequired) and a.auth.isUndefined())) {
@@ -1007,6 +1040,7 @@ operation ensureApiAuthentication() {
   }
 }
 
+/** Creates ensure generated operational policies. */
 operation ensureGeneratedOperationalPolicies() {
   for (fn in COMPUTE!Function.all.select(f | f.observability.isUndefined())) {
     fn.observability = createDefaultObservability(fn, "TR-150", false, false);
@@ -1063,6 +1097,7 @@ operation ensureGeneratedOperationalPolicies() {
   ensureApiAuthentication();
 }
 
+/** Transforms Risk elements into Readiness Finding elements. */
 rule Risk2ReadinessFinding
   transform r : CIMTRANSFORM!Risk
   to f : KERNEL!ReadinessFinding {
@@ -1087,6 +1122,7 @@ rule Risk2ReadinessFinding
   readinessRoot().findings.add(f);
 }
 
+/** Transforms Assumption elements into Readiness Finding elements. */
 rule Assumption2ReadinessFinding
   transform a : CIMTRANSFORM!Assumption
   to f : KERNEL!ReadinessFinding {
@@ -1111,6 +1147,7 @@ rule Assumption2ReadinessFinding
   readinessRoot().findings.add(f);
 }
 
+/** Creates create hotspot manual decision. */
 operation createHotspotManualDecision(h) {
   var severity = KERNEL!Severity#WARNING;
   if (h.blocksTransformation) {
@@ -1160,6 +1197,7 @@ post LinkAndDerive {
   etlProfiler.mark("cim.link.serviceMemberships");
 }
 
+/** Adds or records add service membership. */
 operation addServiceMembership(service, element) {
   if (service.isUndefined() or element.isUndefined()) {
     return;
@@ -1179,6 +1217,7 @@ operation addServiceMembership(service, element) {
   pimRoot().serviceMemberships.add(membership);
 }
 
+/** Computes generate service memberships. */
 operation generateServiceMemberships() {
   for (service in pimRoot().services) {
     for (fn in service.ownsFunctions) { addServiceMembership(service, fn); }

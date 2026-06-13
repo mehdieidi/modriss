@@ -1,5 +1,7 @@
+/** Provides reusable readiness trace operations. */
 import "common.eol";
 
+/** Creates create trace model. */
 operation createTraceModel(source) {
   var tm = new KERNEL!TraceModel;
   tm.id = generatedId("trace_model", source, "awspsm");
@@ -9,6 +11,7 @@ operation createTraceModel(source) {
   return tm;
 }
 
+/** Creates create readiness assessment. */
 operation createReadinessAssessment(source) {
   var r = new KERNEL!ProductionReadinessAssessment;
   r.id = generatedId("readiness", source, "awspsm");
@@ -23,6 +26,7 @@ operation createReadinessAssessment(source) {
   return r;
 }
 
+/** Adds or records trace container. */
 operation traceContainer() {
   if (awsRoot().traceModel.isDefined()) {
     return awsRoot().traceModel;
@@ -30,6 +34,7 @@ operation traceContainer() {
   return null;
 }
 
+/** Computes readiness container. */
 operation readinessContainer() {
   if (awsRoot().readiness.isDefined()) {
     return awsRoot().readiness;
@@ -37,6 +42,7 @@ operation readinessContainer() {
   return null;
 }
 
+/** Creates create trace. */
 operation createTrace(source, target, transformName : String, confidence : String, linkType) {
   var tm = traceContainer();
   if (tm.isUndefined()) {
@@ -56,6 +62,7 @@ operation createTrace(source, target, transformName : String, confidence : Strin
   tm.links.add(link);
 }
 
+/** Computes map trace confidence. */
 operation mapTraceConfidence(confidence : String) {
   if (confidence = "VERIFIED") return KERNEL!TraceConfidence#VERIFIED;
   if (confidence = "MANUAL") return KERNEL!TraceConfidence#MANUAL;
@@ -64,6 +71,7 @@ operation mapTraceConfidence(confidence : String) {
   return KERNEL!TraceConfidence#MEDIUM;
 }
 
+/** Computes manual decision. */
 operation manualDecision(decisionId : String, question : String, severity, blocking : Boolean, affected, recommendation : String) {
   var r = readinessContainer();
   if (r.isUndefined()) {
@@ -106,6 +114,7 @@ operation manualDecision(decisionId : String, question : String, severity, block
   r.findings.add(f);
 }
 
+/** Resolves finding. */
 operation finding(checkId : String, message : String, severity, blocking : Boolean, affected, recommendation : String) {
   var r = readinessContainer();
   if (r.isUndefined()) {
@@ -131,6 +140,7 @@ operation finding(checkId : String, message : String, severity, blocking : Boole
   r.findings.add(f);
 }
 
+/** Validates check. */
 operation check(checkId : String, passed : Boolean, message : String, severity, affected, remediation : String) {
   var r = readinessContainer();
   if (r.isUndefined()) {
@@ -155,6 +165,7 @@ operation check(checkId : String, passed : Boolean, message : String, severity, 
   r.checks.add(c);
 }
 
+/** Adds or records add target affected. */
 operation addTargetAffected(container, affected) {
   for (element in affected) {
     if (element.isDefined() and element.eClass().getEPackage().getNsURI().contains("awspsm")) {
@@ -163,6 +174,7 @@ operation addTargetAffected(container, affected) {
   }
 }
 
+/** Computes affected stable key. */
 operation affectedStableKey(affected) {
   if (affected.isUndefined()) {
     return "";

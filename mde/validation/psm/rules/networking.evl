@@ -1,19 +1,23 @@
+/** Validates the semantic rules for networking. */
 import "../lib/psm-validation-helpers.eol";
 
 /* Networking */
 
 context AWSPSM!VpcAttachmentConfig {
+  /** Checks that vpc attachment has subnets and security groups. */
   constraint VpcAttachmentHasSubnetsAndSecurityGroups {
     check : (self.subnetIds.notEmpty() or self.subnets.notEmpty()) and (self.securityGroupIds.notEmpty() or self.securityGroups.notEmpty())
     message : 'VPC attachment is missing subnet IDs/references or security groups. Fix: provide at least one subnet and one security group for the attached Lambda/function resource.'
   }
 
+  /** Advises that modeled vpc attachment should not contradict raw ids. */
   critique ModeledVpcAttachmentShouldNotContradictRawIds {
     guard : self.vpc.isDefined() or self.subnets.notEmpty() or self.securityGroups.notEmpty()
     check : (not self.vpcId.hasText()) and self.subnetIds.isEmpty() and self.securityGroupIds.isEmpty()
     message : 'VPC attachment mixes modeled VPC/subnet/security-group references with raw IDs. Fix: use modeled references for generated infrastructure, or raw IDs for imported infrastructure with rationale.'
   }
 
+  /** Advises that private subnets require endpoints when flagged. */
   critique PrivateSubnetsRequireEndpointsWhenFlagged {
     guard : self.privateSubnetsRequireNatOrEndpoints = true
     check : self.requiredEndpoints.forAll(endpointItem | endpointItem.requiredForPrivateAccess <> true or endpointItem.serviceName.hasText())
@@ -21,20 +25,25 @@ context AWSPSM!VpcAttachmentConfig {
   }
 }
 
+/** Validates Vpc elements. */
 context AWSPSM!Vpc {
+  /** Advises that vpc should enable dns. */
   critique VpcShouldEnableDns {
     check : (self.enableDnsHostnames = true) and (self.enableDnsSupport = true)
     message : 'VPC ' + self.resourceLabel() + ' does not enable both DNS hostnames and DNS support. Fix: set enableDnsHostnames and enableDnsSupport to true unless explicitly unsupported.'
   }
 }
 
+/** Validates Security Group Rule elements. */
 context AWSPSM!SecurityGroupRule {
+  /** Checks that port range valid. */
   constraint PortRangeValid {
     check : (self.fromPort.isUndefined() and self.toPort.isUndefined()) or
       (self.fromPort.isDefined() and self.toPort.isDefined() and self.fromPort >= 0 and self.toPort <= 65535 and self.fromPort <= self.toPort)
     message : 'Security group rule has invalid port range. Fix: set fromPort/toPort within 0..65535 and ensure fromPort <= toPort, or omit both for protocols that do not use ports.'
   }
 
+  /** Advises that public admin ingress requires review. */
   critique PublicAdminIngressRequiresReview {
     guard : (self.cidrIp = '0.0.0.0/0') and self.fromPort.isDefined() and ((self.fromPort <= 22 and self.toPort >= 22) or (self.fromPort <= 3389 and self.toPort >= 3389))
     check : self.ruleDescription.hasText() and self.ruleDescription.toLowerCase().matches('.*review.*|.*approved.*|.*exception.*')

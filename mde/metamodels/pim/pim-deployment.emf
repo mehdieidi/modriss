@@ -1,3 +1,4 @@
+/** Defines the pim deployment metamodel package. */
 @namespace(uri="https://modless.org/pim/deployment/1.0", prefix="deployment")
 package deployment;
 
@@ -12,6 +13,7 @@ import "pim-external.ecore";
 import "pim-policy.ecore";
 import "pim-config.ecore";
 
+/** Represents the Serverless Service concept in this model. */
 class ServerlessService extends kernel.TraceableElement, kernel.PolicyTarget, kernel.ConfigurableElement {
   attr pimtypes.BoundaryType[1] boundaryType;
   attr String responsibility;
@@ -28,12 +30,14 @@ class ServerlessService extends kernel.TraceableElement, kernel.PolicyTarget, ke
   ref policy.ArchitecturePolicy[*] constrainedBy;
 }
 
+/** Represents the Service Element Membership concept in this model. */
 class ServiceElementMembership extends kernel.TraceableElement {
   attr pimtypes.OwnershipKind[1] ownershipKind;
   ref ServerlessService[1] service;
   ref kernel.DeployableElement[1] element;
 }
 
+/** Represents the Deployment Unit concept in this model. */
 class DeploymentUnit extends kernel.TraceableElement, kernel.PolicyTarget, kernel.ConfigurableElement {
   attr pimtypes.DeploymentUnitType[1] unitType;
   attr String lifecycle;
@@ -45,6 +49,7 @@ class DeploymentUnit extends kernel.TraceableElement, kernel.PolicyTarget, kerne
   ref Environment[*] targetEnvironments;
 }
 
+/** Represents the Environment concept in this model. */
 class Environment extends kernel.TraceableElement, kernel.EnvironmentTarget, kernel.PolicyTarget {
   attr pimtypes.EnvironmentClass[1] environmentClass;
   attr String nameSuffix;
@@ -55,6 +60,7 @@ class Environment extends kernel.TraceableElement, kernel.EnvironmentTarget, ker
   ref config.EnvironmentVariable[*] variables;
 }
 
+/** Represents the Implementation Profile concept in this model. */
 class ImplementationProfile extends kernel.TraceableElement {
   attr pimtypes.RuntimeLanguage[1] primaryLanguage;
   attr String languageVersion;
@@ -69,6 +75,7 @@ class ImplementationProfile extends kernel.TraceableElement {
   attr Boolean generateRuntimeValidation;
 }
 
+/** Represents the Platform Capability concept in this model. */
 class PlatformCapability extends kernel.TraceableElement {
   attr String platform;
   attr String providerService;
@@ -77,6 +84,7 @@ class PlatformCapability extends kernel.TraceableElement {
   ref kernel.ModelElement[*] supportedPimConcepts;
 }
 
+/** Represents the Platform Mapping Assessment concept in this model. */
 class PlatformMappingAssessment extends kernel.TraceableElement {
   ref kernel.ModelElement[1] source;
   attr pimtypes.SupportLevel[1] supportLevel;

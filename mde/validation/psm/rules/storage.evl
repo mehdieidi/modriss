@@ -1,20 +1,24 @@
+/** Validates the semantic rules for storage. */
 import "../lib/psm-validation-helpers.eol";
 
 /* Storage / DynamoDB / S3 */
 
 context AWSPSM!DynamoDbTable {
+  /** Checks that dynamo table has valid primary key schema. */
   constraint DynamoTableHasValidPrimaryKeySchema {
     check : self.keySchema.one(keyItem | keyItem.keyType = AWSPSMENUMS!DynamoDbKeyType#HASH) and
       self.keySchema.atMostNMatch(keyItem | keyItem.keyType = AWSPSMENUMS!DynamoDbKeyType#RANGE, 1)
     message : 'DynamoDB table ' + self.resourceLabel() + ' must have exactly one HASH key and at most one RANGE key. Fix: adjust keySchema accordingly.'
   }
 
+  /** Checks that dynamo attributes cover table keys. */
   constraint DynamoAttributesCoverTableKeys {
     check : self.keySchema.forAll(keyItem |
       self.attributeDefinitions.exists(attributeItem | attributeItem.attributeName = keyItem.attributeName))
     message : 'DynamoDB table ' + self.resourceLabel() + ' has key schema attributes not declared in attributeDefinitions. Fix: add DynamoDbAttributeDefinition entries for every key attribute.'
   }
 
+  /** Checks that dynamo index keys are covered by attributes. */
   constraint DynamoIndexKeysAreCoveredByAttributes {
     check : self.localSecondaryIndexes.forAll(indexItem |
         indexItem.keySchema.forAll(keyItem | self.attributeDefinitions.exists(attributeItem | attributeItem.attributeName = keyItem.attributeName))) and
@@ -23,30 +27,35 @@ context AWSPSM!DynamoDbTable {
     message : 'DynamoDB table ' + self.resourceLabel() + ' has an index key not declared in attributeDefinitions. Fix: add matching attribute definitions for all LSI/GSI key attributes.'
   }
 
+  /** Checks that provisioned mode needs throughput. */
   constraint ProvisionedModeNeedsThroughput {
     guard : self.billingMode = AWSPSMENUMS!DynamoDbBillingMode#PROVISIONED
     check : self.provisionedThroughput.isDefined()
     message : 'DynamoDB table ' + self.resourceLabel() + ' uses PROVISIONED billing but has no provisionedThroughput. Fix: add readCapacityUnits/writeCapacityUnits or switch to PAY_PER_REQUEST.'
   }
 
+  /** Checks that pay per request does not use provisioned throughput. */
   constraint PayPerRequestDoesNotUseProvisionedThroughput {
     guard : self.billingMode = AWSPSMENUMS!DynamoDbBillingMode#PAY_PER_REQUEST
     check : self.provisionedThroughput.isUndefined()
     message : 'DynamoDB table ' + self.resourceLabel() + ' uses PAY_PER_REQUEST but also defines provisionedThroughput. Fix: remove provisionedThroughput or switch billingMode to PROVISIONED.'
   }
 
+  /** Checks that provisioned throughput positive. */
   constraint ProvisionedThroughputPositive {
     guard : self.provisionedThroughput.isDefined()
     check : self.provisionedThroughput.readCapacityUnits >= 1 and self.provisionedThroughput.writeCapacityUnits >= 1
     message : 'DynamoDB table ' + self.resourceLabel() + ' has invalid provisioned throughput. Fix: set both readCapacityUnits and writeCapacityUnits to at least 1.'
   }
 
+  /** Advises that production table should have pit recovery and deletion protection. */
   critique ProductionTableShouldHavePitRecoveryAndDeletionProtection {
     guard : self.isProductionScoped()
     check : (self.pointInTimeRecoveryEnabled = true) and (self.deletionProtectionEnabled = true)
     message : 'Production-scoped DynamoDB table ' + self.resourceLabel() + ' lacks PITR or deletion protection. Fix: enable pointInTimeRecoveryEnabled and deletionProtectionEnabled unless an exception is approved.'
   }
 
+  /** Advises that production table should be encrypted with kms. */
   critique ProductionTableShouldBeEncryptedWithKms {
     guard : self.isProductionScoped()
     check : self.kmsKey.isDefined() or (self.sseSpecification.isDefined() and self.sseSpecification.enabled = true)
@@ -54,13 +63,16 @@ context AWSPSM!DynamoDbTable {
   }
 }
 
+/** Validates Dynamo Db Global Secondary Index elements. */
 context AWSPSM!DynamoDbGlobalSecondaryIndex {
+  /** Checks that gsi projection include has attributes. */
   constraint GsiProjectionIncludeHasAttributes {
     guard : self.projection.isDefined() and self.projection.projectionType = AWSPSMENUMS!DynamoDbProjectionType#INCLUDE
     check : self.projection.nonKeyAttributes.notEmpty()
     message : 'DynamoDB GSI ' + self.indexName + ' uses INCLUDE projection but has no nonKeyAttributes. Fix: add projected attributes or change projectionType to ALL/KEYS_ONLY.'
   }
 
+  /** Checks that gsi provisioned throughput positive when present. */
   constraint GsiProvisionedThroughputPositiveWhenPresent {
     guard : self.provisionedThroughput.isDefined()
     check : self.provisionedThroughput.readCapacityUnits >= 1 and self.provisionedThroughput.writeCapacityUnits >= 1
@@ -68,7 +80,9 @@ context AWSPSM!DynamoDbGlobalSecondaryIndex {
   }
 }
 
+/** Validates Dynamo Db Time To Live Specification elements. */
 context AWSPSM!DynamoDbTimeToLiveSpecification {
+  /** Advises that enabled ttl has attribute name. */
   critique EnabledTtlHasAttributeName {
     guard : self.enabled = true
     check : self.attributeName.hasText()
@@ -76,25 +90,30 @@ context AWSPSM!DynamoDbTimeToLiveSpecification {
   }
 }
 
+/** Validates S3 Bucket elements. */
 context AWSPSM!S3Bucket {
+  /** Checks that production buckets block public access. */
   constraint ProductionBucketsBlockPublicAccess {
     guard : self.isProductionScoped()
     check : self.blocksAllPublicAccess()
     message : 'Production-scoped S3 bucket ' + self.resourceLabel() + ' does not block all public access. Fix: set publicAccessMode STRICT_BLOCK_ALL or configure all publicAccessBlock flags to true.'
   }
 
+  /** Checks that production buckets encrypted. */
   constraint ProductionBucketsEncrypted {
     guard : self.isProductionScoped()
     check : self.encryption.isDefined()
     message : 'Production-scoped S3 bucket ' + self.resourceLabel() + ' has no encryption configuration. Fix: add S3BucketEncryption with SSE-S3 or SSE-KMS settings.'
   }
 
+  /** Advises that production buckets should version. */
   critique ProductionBucketsShouldVersion {
     guard : self.isProductionScoped()
     check : self.versioningStatus = AWSPSMENUMS!S3VersioningStatus#ENABLED
     message : 'Production-scoped S3 bucket ' + self.resourceLabel() + ' does not enable versioning. Fix: set versioningStatus to ENABLED unless the bucket is intentionally ephemeral.'
   }
 
+  /** Advises that website bucket should not be production critical. */
   critique WebsiteBucketShouldNotBeProductionCritical {
     guard : self.websiteConfigurationJson.hasText()
     check : not self.isProductionScoped()
@@ -102,7 +121,9 @@ context AWSPSM!S3Bucket {
   }
 }
 
+/** Validates S3 Bucket Encryption elements. */
 context AWSPSM!S3BucketEncryption {
+  /** Checks that kms algorithm requires kms key. */
   constraint KmsAlgorithmRequiresKmsKey {
     guard : self.sseAlgorithm.hasText() and self.sseAlgorithm.toUpperCase().matches('.*KMS.*')
     check : self.kmsKey.isDefined()
@@ -110,14 +131,18 @@ context AWSPSM!S3BucketEncryption {
   }
 }
 
+/** Validates S3 Notification Rule elements. */
 context AWSPSM!S3NotificationRule {
+  /** Checks that notification rule has event and destination. */
   constraint NotificationRuleHasEventAndDestination {
     check : self.eventTypes.notEmpty() and self.destination.isDefined()
     message : 'S3 notification rule is missing eventTypes or destination. Fix: add one or more S3 event types and choose a valid notification destination.'
   }
 }
 
+/** Validates S3 Replication Configuration elements. */
 context AWSPSM!S3ReplicationConfiguration {
+  /** Checks that replication has role and rules. */
   constraint ReplicationHasRoleAndRules {
     check : self.role.isDefined() and (self.rules.notEmpty() or self.rulesJson.hasText())
     message : 'S3 replication configuration lacks role or rules. Fix: attach an IAM role and define replication rules or rulesJson.'

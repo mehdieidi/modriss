@@ -1,3 +1,4 @@
+/** Defines the awspsm identity metamodel package. */
 @namespace(uri="https://modless.org/awspsm/identity/1.0", prefix="awspsmidentity")
 package awspsmidentity;
 
@@ -6,6 +7,7 @@ import "awspsm-enums.ecore";
 import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 
+/** Represents the Cognito User Pool concept in this model. */
 class CognitoUserPool extends awspsmcore.AwsResource {
   attr String userPoolName;
   attr awspsmenums.CognitoMfaConfiguration mfaConfiguration;
@@ -32,6 +34,7 @@ class CognitoUserPool extends awspsmcore.AwsResource {
   ref CognitoUserPoolDomain[?]#userPool domain;
 }
 
+/** Represents the Cognito Password Policy concept in this model. */
 class CognitoPasswordPolicy extends kernel.TraceableElement {
   attr Integer minimumLength;
   attr Boolean requireUppercase;
@@ -41,6 +44,7 @@ class CognitoPasswordPolicy extends kernel.TraceableElement {
   attr Integer temporaryPasswordValidityDays;
 }
 
+/** Represents the Cognito Schema Attribute concept in this model. */
 class CognitoSchemaAttribute extends kernel.TraceableElement {
   attr String[1] attributeName;
   attr String[1] attributeDataType;
@@ -53,6 +57,7 @@ class CognitoSchemaAttribute extends kernel.TraceableElement {
   attr String maximum;
 }
 
+/** Represents the Cognito Email Configuration concept in this model. */
 class CognitoEmailConfiguration extends kernel.TraceableElement {
   attr String emailSendingAccount;
   attr String from;
@@ -61,15 +66,18 @@ class CognitoEmailConfiguration extends kernel.TraceableElement {
   attr String configurationSet;
 }
 
+/** Represents the Cognito Account Recovery Setting concept in this model. */
 class CognitoAccountRecoverySetting extends kernel.TraceableElement {
   val CognitoRecoveryMechanism[*] recoveryMechanisms;
 }
 
+/** Represents the Cognito Recovery Mechanism concept in this model. */
 class CognitoRecoveryMechanism extends kernel.TraceableElement {
   attr String[1] name;
   attr Integer[1] priority;
 }
 
+/** Represents the Cognito Lambda Config concept in this model. */
 class CognitoLambdaConfig extends kernel.TraceableElement {
   ref awspsmcore.AwsResource[?] preSignUp;
   ref awspsmcore.AwsResource[?] postConfirmation;
@@ -83,6 +91,7 @@ class CognitoLambdaConfig extends kernel.TraceableElement {
   ref awspsmcore.AwsResource[?] userMigration;
 }
 
+/** Represents the Cognito User Pool Client concept in this model. */
 class CognitoUserPoolClient extends awspsmcore.AwsResource {
   attr String clientName;
   attr Boolean generateSecret;
@@ -102,6 +111,7 @@ class CognitoUserPoolClient extends awspsmcore.AwsResource {
   ref CognitoUserPool[1]#clients userPool;
 }
 
+/** Represents the Cognito O Auth Configuration concept in this model. */
 class CognitoOAuthConfiguration extends kernel.TraceableElement {
   attr String[*] callbackUrls;
   attr String[*] logoutUrls;
@@ -111,6 +121,7 @@ class CognitoOAuthConfiguration extends kernel.TraceableElement {
   attr String[*] supportedIdentityProviders;
 }
 
+/** Represents the Cognito User Pool Group concept in this model. */
 class CognitoUserPoolGroup extends awspsmcore.AwsResource {
   attr String groupName;
   attr String descriptionText;
@@ -119,12 +130,14 @@ class CognitoUserPoolGroup extends awspsmcore.AwsResource {
   ref awspsmsecurity.IamRole[?] role;
 }
 
+/** Represents the Cognito User Pool Domain concept in this model. */
 class CognitoUserPoolDomain extends awspsmcore.AwsResource {
   attr String[1] domain;
   attr String certificateArn;
   ref CognitoUserPool[1]#domain userPool;
 }
 
+/** Represents the Cognito Identity Pool concept in this model. */
 class CognitoIdentityPool extends awspsmcore.AwsResource {
   attr String identityPoolName;
   attr Boolean allowUnauthenticatedIdentities;

@@ -1,4 +1,4 @@
-SHELL := /usr/bin/env bash
+[% /* Generates the makefile artifact. */ %]SHELL := /usr/bin/env bash
 STAGE ?= [%= emitCtx.get("defaultStageName") %]
 
 .PHONY: validate build test deploy package local-api local-invoke

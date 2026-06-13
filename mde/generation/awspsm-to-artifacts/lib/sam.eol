@@ -1,5 +1,7 @@
+/** Provides reusable sam operations. */
 import "naming.eol";
 
+/** Computes unique parameters. */
 operation AWSPSMCORE!SamStack uniqueParameters() : Sequence {
   var seenNames : Set = Set{};
   var uniqueSeq : Sequence = Sequence{};
@@ -13,6 +15,7 @@ operation AWSPSMCORE!SamStack uniqueParameters() : Sequence {
   return uniqueSeq;
 }
 
+/** Computes capabilities text. */
 operation AWSPSMCORE!SamStack capabilitiesText() : String {
   if (self.capabilities.isEmpty()) {
     return "CAPABILITY_IAM";
@@ -20,6 +23,7 @@ operation AWSPSMCORE!SamStack capabilitiesText() : String {
   return self.capabilities.collect(capObj | capObj.asString()).concat(" ");
 }
 
+/** Computes stack deploy name. */
 operation AWSPSMCORE!AwsStage stackDeployName(stackObj : AWSPSMCORE!SamStack) : String {
   var prefixText = self.stackNamePrefix.orElseText("");
   if (prefixText.isPresent()) {
@@ -28,6 +32,7 @@ operation AWSPSMCORE!AwsStage stackDeployName(stackObj : AWSPSMCORE!SamStack) : 
   return stackObj.stackName;
 }
 
+/** Computes parameter override text. */
 operation AWSPSMCORE!AwsStage parameterOverrideText() : String {
   return self.parameterOverrides
     .sortBy(kvObj | kvObj.key)

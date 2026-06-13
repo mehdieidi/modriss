@@ -1,3 +1,4 @@
+/** Maps workflow security config model elements and supporting relationships. */
 rule Workflow2StepFunctionStateMachine
   transform w : WORKFLOW!Workflow
   to sm : AWSPSMWORKFLOW!StepFunctionStateMachine {
@@ -34,6 +35,7 @@ rule Workflow2StepFunctionStateMachine
   createTrace(w, sm, "Workflow2StepFunctionStateMachine", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Identity Provider elements into Cognito User Pool elements. */
 rule IdentityProvider2CognitoUserPool
   transform idp : SECURITY!IdentityProvider
   to pool : AWSPSMIDENTITY!CognitoUserPool {
@@ -63,6 +65,7 @@ rule IdentityProvider2CognitoUserPool
   createTrace(idp, pool, "IdentityProvider2CognitoUserPool", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Principal elements into Iam Role elements. */
 rule Principal2IamRole
   transform p : SECURITY!Principal
   to role : AWSPSMSECURITY!IamRole {
@@ -90,6 +93,7 @@ rule Principal2IamRole
   createTrace(p, role, "Principal2IamRole", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Secret elements into Secrets Manager Secret elements. */
 rule Secret2SecretsManagerSecret
   transform s : CONFIG!Secret
   to sec : AWSPSMSECURITY!SecretsManagerSecret {
@@ -120,6 +124,7 @@ rule Secret2SecretsManagerSecret
   createTrace(s, sec, "Secret2SecretsManagerSecret", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Configuration Set elements into Cfn Parameter Carrier elements. */
 rule ConfigurationSet2CfnParameterCarrier
   transform c : CONFIG!ConfigurationSet
   to doc : KERNEL!StructuredDocument {
@@ -132,6 +137,7 @@ rule ConfigurationSet2CfnParameterCarrier
   createTrace(c, doc, "ConfigurationSet2CfnParameterCarrier", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms Config Parameter elements into Cfn Parameter elements. */
 rule ConfigParameter2CfnParameter
   transform p : CONFIG!ConfigParameter
   to c : AWSPSMCORE!CfnParameter {
@@ -152,6 +158,7 @@ rule ConfigParameter2CfnParameter
   createTrace(p, c, "ConfigParameter2CfnParameter", "HIGH", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms Secret Config Parameter elements into Ssm Parameter elements. */
 rule SecretConfigParameter2SsmParameter
   transform p : CONFIG!ConfigParameter
   to s : AWSPSMSECURITY!SsmParameter {
@@ -176,6 +183,7 @@ rule SecretConfigParameter2SsmParameter
   createTrace(p, s, "SecretConfigParameter2SsmParameter", "HIGH", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Creates create asl document. */
 operation createAslDocument(w) {
   var d = new AWSPSMWORKFLOW!AslDocument;
   d.id = generatedId("asl", w, "document");
@@ -209,6 +217,7 @@ operation createAslDocument(w) {
   return d;
 }
 
+/** Creates create asl state. */
 operation createAslState(w, ws) {
   var st = new AWSPSMWORKFLOW!AslState;
   st.id = generatedId("asl_state", ws, "state");
@@ -252,6 +261,7 @@ operation createAslState(w, ws) {
   return st;
 }
 
+/** Computes complete asl state transitions. */
 operation completeAslStateTransitions(w, stateByPimId) {
   for (ws in w.states) {
     var st = stateByPimId.get(cacheKeyFor(ws));
@@ -298,6 +308,7 @@ operation completeAslStateTransitions(w, stateByPimId) {
   }
 }
 
+/** Creates create asl choice. */
 operation createAslChoice(tr, stateByPimId) {
   var resolvedNextState = stateByPimId.get(cacheKeyFor(tr.target));
   if (resolvedNextState.isUndefined()) {
@@ -322,6 +333,7 @@ operation createAslChoice(tr, stateByPimId) {
   return c;
 }
 
+/** Computes map asl state type. */
 operation mapAslStateType(kind) {
   if (kind = PIMTYPES!WorkflowStateKind#TASK) {
     return AWSPSMENUMS!AslStateType#TASK;
@@ -347,6 +359,7 @@ operation mapAslStateType(kind) {
   return AWSPSMENUMS!AslStateType#PASS;
 }
 
+/** Creates create asl retry. */
 operation createAslRetry(p) {
   var r = new AWSPSMWORKFLOW!AslRetryRule;
   r.id = uniqueId("asl_retry_" + slug(p.name));
@@ -368,6 +381,7 @@ operation createAslRetry(p) {
   return r;
 }
 
+/** Creates create asl catch. */
 operation createAslCatch(h, stateByPimId) {
   var resolvedNextState = stateByPimId.get(cacheKeyFor(h.nextState));
   if (resolvedNextState.isUndefined()) {
@@ -386,6 +400,7 @@ operation createAslCatch(h, stateByPimId) {
   return c;
 }
 
+/** Creates create state machine role. */
 operation createStateMachineRole(w) {
   var role = new AWSPSMSECURITY!IamRole;
   copyAwsResource(w, role, "StateMachineRole", "AWS::IAM::Role");
@@ -396,6 +411,7 @@ operation createStateMachineRole(w) {
   return role;
 }
 
+/** Creates create step function logging. */
 operation createStepFunctionLogging(w, sm) {
   var cfg = new AWSPSMWORKFLOW!StepFunctionLoggingConfig;
   cfg.id = generatedId("sfn_logging", w, "logging");
@@ -406,6 +422,7 @@ operation createStepFunctionLogging(w, sm) {
   return cfg;
 }
 
+/** Creates create step function tracing. */
 operation createStepFunctionTracing(w) {
   var t = new AWSPSMWORKFLOW!StepFunctionTracingConfig;
   t.id = generatedId("sfn_tracing", w, "xray");
@@ -414,10 +431,12 @@ operation createStepFunctionTracing(w) {
   return t;
 }
 
+/** Renders asl summary json. */
 operation aslSummaryJson(w, doc) {
   return renderAsl(doc);
 }
 
+/** Renders render asl. */
 operation renderAsl(doc) {
   var states = "";
   for (s in doc.states) {
@@ -429,6 +448,7 @@ operation renderAsl(doc) {
   return "{ \"Comment\": \"" + escapeJson(doc.comment) + "\", \"StartAt\": \"" + escapeJson(doc.startAt) + "\", \"States\": { " + states + " } }";
 }
 
+/** Renders render asl state. */
 operation renderAslState(s) {
   var body = "{ \"Type\": \"" + aslTypeName(s.type) + "\"";
   if (hasText(s.resource)) {
@@ -463,6 +483,7 @@ operation renderAslState(s) {
   return body + " }";
 }
 
+/** Renders asl type name. */
 operation aslTypeName(t) {
   if (t = AWSPSMENUMS!AslStateType#SUCCEED) {
     return "Succeed";
@@ -473,6 +494,7 @@ operation aslTypeName(t) {
   return t.asString().substring(0, 1).toUpperCase() + t.asString().substring(1).toLowerCase();
 }
 
+/** Computes retry json. */
 operation retryJson(items) {
   var out = "";
   for (r in items) {
@@ -485,6 +507,7 @@ operation retryJson(items) {
   return "[ " + out + " ]";
 }
 
+/** Computes catch json. */
 operation catchJson(items) {
   var out = "";
   for (c in items) {
@@ -497,6 +520,7 @@ operation catchJson(items) {
   return "[ " + out + " ]";
 }
 
+/** Computes choice json. */
 operation choiceJson(items) {
   var out = "";
   for (c in items) {
@@ -508,6 +532,7 @@ operation choiceJson(items) {
   return "[ " + out + " ]";
 }
 
+/** Computes string array json. */
 operation stringArrayJson(items) {
   var out = "";
   for (item in items) {
@@ -519,6 +544,7 @@ operation stringArrayJson(items) {
   return "[ " + out + " ]";
 }
 
+/** Computes rotation days. */
 operation rotationDays(text) {
   if (not hasText(text)) {
     return 30;
@@ -532,6 +558,7 @@ operation rotationDays(text) {
   return 30;
 }
 
+/** Computes configuration json. */
 operation configurationJson(c) {
   var entries = "";
   for (p in c.parameters) {

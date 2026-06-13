@@ -1,4 +1,4 @@
-package shared
+[% /* Generates the shared metrics artifact. */ %]package shared
 
 type Metrics struct {
 	Namespace string

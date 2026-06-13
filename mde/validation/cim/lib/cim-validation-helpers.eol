@@ -1,21 +1,27 @@
+/** Provides reusable cim validation helpers operations. */
+/** Returns whether the receiver contains a non-empty textual value. */
 operation Any hasText() : Boolean {
   return self.isDefined() and self.asString().trim().size() > 0;
 }
 
+/** Returns whether the receiver has items. */
 operation Collection hasItems() : Boolean {
   return self.isDefined() and self.size() > 0;
 }
 
+/** Returns whether the receiver has multiplicity bounds. */
 operation KERNEL!Multiplicity hasMultiplicityBounds() : Boolean {
   return self.isDefined() and self.lowerBound.isDefined() and
     (self.upperBound.isDefined() or self.unbounded = true);
 }
 
+/** Returns whether the receiver is many. */
 operation KERNEL!Multiplicity isMany() : Boolean {
   return self.isDefined() and
     (self.unbounded = true or (self.upperBound.isDefined() and self.upperBound > 1));
 }
 
+/** Returns whether the receiver has expression body. */
 operation Any hasExpressionBody() : Boolean {
   if (self.isUndefined() or self.eClass().getName() <> "Expression") {
     return false;
@@ -23,6 +29,7 @@ operation Any hasExpressionBody() : Boolean {
   return self.language.isDefined() and self.body.hasText();
 }
 
+/** Adds or records collection has unique names. */
 operation collectionHasUniqueNames(items) : Boolean {
   var seen : Set = Set{};
   for (item in items) {
@@ -35,10 +42,12 @@ operation collectionHasUniqueNames(items) : Boolean {
   return true;
 }
 
+/** Returns whether the receiver has sub item cycle. */
 operation CIM!InformationItem hasSubItemCycle() : Boolean {
   return self.hasSubItemCycle(Set{}, Set{});
 }
 
+/** Returns whether the receiver has sub item cycle. */
 operation CIM!InformationItem hasSubItemCycle(visited : Set, active : Set) : Boolean {
   if (active.includes(self)) {
     return true;
@@ -58,6 +67,7 @@ operation CIM!InformationItem hasSubItemCycle(visited : Set, active : Set) : Boo
 }
 
 @cached
+/** Computes cim outgoing transition count by source id. */
 operation cimOutgoingTransitionCountBySourceId() : Map {
   var index = new Map;
   for (transitionItem in CIM!ProcessTransition.all.select(t | t.source.isDefined())) {
@@ -71,6 +81,7 @@ operation cimOutgoingTransitionCountBySourceId() : Map {
   return index;
 }
 
+/** Computes outgoing transition count. */
 operation CIM!DecisionStep outgoingTransitionCount() : Integer {
   var count = cimOutgoingTransitionCountBySourceId().get(self.`id`);
   if (count.isUndefined()) {
@@ -80,10 +91,12 @@ operation CIM!DecisionStep outgoingTransitionCount() : Integer {
 }
 
 @cached
+/** Computes provider technology pattern. */
 operation providerTechnologyPattern() : String {
   return "(?i).*(lambda|dynamodb|sqs|sns|eventbridge|cloudwatch|xray|iam|cognito|s3|aws|arn|sam|cloudformation|azure|gcp|pubsub|kafka|kubernetes|terraform).*";
 }
 
+/** Computes label text. */
 operation KERNEL!ModelElement labelText() : String {
   if (self.name.hasText()) {
     return self.name;
@@ -92,6 +105,7 @@ operation KERNEL!ModelElement labelText() : String {
 }
 
 @cached
+/** Returns whether the receiver contains provider technology term. */
 operation KERNEL!ModelElement containsProviderTechnologyTerm() : Boolean {
   return
     ((self.name.hasText()) and (self.name.matches(providerTechnologyPattern()))) or
@@ -101,6 +115,7 @@ operation KERNEL!ModelElement containsProviderTechnologyTerm() : Boolean {
 }
 
 @cached
+/** Returns whether the receiver is personal kind. */
 operation CIM!DataClassification isPersonalKind() : Boolean {
   return (self.kind = CIM!DataKind#PERSONAL) or (self.kind = CIM!DataKind#SENSITIVE_PERSONAL) or
     (self.kind = CIM!DataKind#FINANCIAL) or (self.kind = CIM!DataKind#HEALTH) or
@@ -108,6 +123,7 @@ operation CIM!DataClassification isPersonalKind() : Boolean {
 }
 
 @cached
+/** Returns whether the receiver requires strong protection. */
 operation CIM!DataClassification requiresStrongProtection() : Boolean {
   return
     (self.kind = CIM!DataKind#SENSITIVE_PERSONAL) or
@@ -118,11 +134,13 @@ operation CIM!DataClassification requiresStrongProtection() : Boolean {
 }
 
 @cached
+/** Returns whether the receiver has personal classification. */
 operation CIM!InformationItem hasPersonalClassification() : Boolean {
   return self.classification.isDefined() and self.classification.isPersonalKind();
 }
 
 @cached
+/** Returns whether the receiver requires privacy controls. */
 operation CIM!InformationItem requiresPrivacyControls() : Boolean {
   return
     self.hasPersonalClassification() or
@@ -133,11 +151,13 @@ operation CIM!InformationItem requiresPrivacyControls() : Boolean {
 }
 
 @cached
+/** Returns whether the receiver has human issuer. */
 operation CIM!Command hasHumanIssuer() : Boolean {
   return self.issuedBy.exists(actorItem | actorItem.actorType = CIM!ActorType#HUMAN);
 }
 
 @cached
+/** Returns whether the receiver has external or untrusted issuer. */
 operation CIM!Command hasExternalOrUntrustedIssuer() : Boolean {
   return self.issuedBy.exists(actorItem |
     (actorItem.actorType = CIM!ActorType#EXTERNAL_SYSTEM) or
@@ -148,16 +168,19 @@ operation CIM!Command hasExternalOrUntrustedIssuer() : Boolean {
 }
 
 @cached
+/** Returns whether the receiver has authorization decision. */
 operation CIM!Command hasAuthorizationDecision() : Boolean {
   return (self.authorizationRequired = true) and self.authorizationRule.hasText();
 }
 
 @cached
+/** Computes outputs personal data. */
 operation CIM!Query outputsPersonalData() : Boolean {
   return self.output.exists(item | item.hasPersonalClassification());
 }
 
 @cached
+/** Returns whether the receiver is production ready intent. */
 operation CIM!CIMModel isProductionReadyIntent() : Boolean {
   return
     (self.lifecycleStatus = KERNEL!LifecycleStatus#PRODUCTION_READY) or

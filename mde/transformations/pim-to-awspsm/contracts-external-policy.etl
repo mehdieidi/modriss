@@ -1,3 +1,4 @@
+/** Maps contracts external policy model elements and supporting relationships. */
 rule Schema2StructuredDocument
   transform s : CONTRACTS!Schema
   to d : KERNEL!StructuredDocument {
@@ -11,6 +12,7 @@ rule Schema2StructuredDocument
   createTrace(s, d, "Schema2StructuredDocument", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms Event Type elements into Structured Document elements. */
 rule EventType2StructuredDocument
   transform e : CONTRACTS!EventType
   to d : KERNEL!StructuredDocument {
@@ -23,6 +25,7 @@ rule EventType2StructuredDocument
   createTrace(e, d, "EventType2StructuredDocument", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms Business Rule elements into Structured Document elements. */
 rule BusinessRule2StructuredDocument
   transform b : POLICY!BusinessRule
   to d : KERNEL!StructuredDocument {
@@ -35,6 +38,7 @@ rule BusinessRule2StructuredDocument
   createTrace(b, d, "BusinessRule2StructuredDocument", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms Decision Model elements into Psm Metadata elements. */
 rule DecisionModel2PsmMetadata
   transform dm : POLICY!DecisionModel
   to n : AWSPSMCORE!AwsNativeResource {
@@ -52,6 +56,7 @@ rule DecisionModel2PsmMetadata
   createTrace(dm, n, "DecisionModel2PsmMetadata", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms External Adapter elements into Psm Metadata elements. */
 rule ExternalAdapter2PsmMetadata
   transform a : EXTERNAL!ExternalAdapter
   to n : AWSPSMCORE!AwsNativeResource {
@@ -90,6 +95,7 @@ rule ExternalAdapter2PsmMetadata
   createTrace(a, n, "ExternalAdapter2PsmMetadata", "MEDIUM", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms Alert Policy elements into Cloud Watch Alarm elements. */
 rule AlertPolicy2CloudWatchAlarm
   transform a : POLICY!AlertPolicy
   to alarm : AWSPSMOBSERVABILITY!CloudWatchAlarm {
@@ -119,10 +125,12 @@ rule AlertPolicy2CloudWatchAlarm
   createTrace(a, alarm, "AlertPolicy2CloudWatchAlarm", "MEDIUM", KERNEL!TraceLinkType#OBSERVES);
 }
 
+/** Renders render json schema. */
 operation renderJsonSchema(s) {
   return schemaToJsonSchema(s);
 }
 
+/** Computes event contract json. */
 operation eventContractJson(e) {
   return "{ \"semanticName\": \"" + escapeJson(e.semanticName) +
     "\", \"version\": \"" + escapeJson(e.version) +
@@ -132,6 +140,7 @@ operation eventContractJson(e) {
     "\", \"schema\": \"" + escapeJson(e.schema.name) + "\" }";
 }
 
+/** Computes business rule document json. */
 operation businessRuleDocumentJson(b) {
   return "{ \"name\": \"" + escapeJson(b.name) +
     "\", \"naturalLanguageRule\": \"" + escapeJson(b.naturalLanguageRule) +
@@ -140,6 +149,7 @@ operation businessRuleDocumentJson(b) {
     ", \"enforcedByCount\": " + b.enforcedBy.size().asString() + " }";
 }
 
+/** Computes apply function policies. */
 operation applyFunctionPolicies(f, l) {
   applyObservability(f, l);
   applySecurityPolicies(f, l);
@@ -154,6 +164,7 @@ operation applyFunctionPolicies(f, l) {
   }
 }
 
+/** Computes apply idempotency. */
 operation applyIdempotency(f, l) {
   if (isTrue(f.requiresIdempotency) or isTrue(f.writesState)) {
     if (f.idempotency.isUndefined() or not hasText(f.idempotency.keySource)) {
@@ -168,6 +179,7 @@ operation applyIdempotency(f, l) {
   }
 }
 
+/** Computes apply data protection policies. */
 operation applyDataProtectionPolicies(source, resource) {
   for (p in source.dataProtectionPolicies) {
     if (isTrue(p.maskingRequired) or isTrue(p.tokenizationRequired)) {
@@ -185,6 +197,7 @@ operation applyDataProtectionPolicies(source, resource) {
   }
 }
 
+/** Computes apply observability. */
 operation applyObservability(source, resource) {
   var obs = null;
   if (source.eClass().getEStructuralFeature("observability").isDefined()) {
@@ -221,6 +234,7 @@ operation applyObservability(source, resource) {
   }
 }
 
+/** Creates create policy alarm. */
 operation createPolicyAlarm(source, resource, alert) {
   var alarm = new AWSPSMOBSERVABILITY!CloudWatchAlarm;
   copyAwsResource(alert, alarm, "Alarm", "AWS::CloudWatch::Alarm");
@@ -242,6 +256,7 @@ operation createPolicyAlarm(source, resource, alert) {
   }
 }
 
+/** Computes apply security policies. */
 operation applySecurityPolicies(source, resource) {
   for (p in source.securityPolicies) {
     if (isTrue(p.encryptionAtRestRequired)) {
@@ -256,6 +271,7 @@ operation applySecurityPolicies(source, resource) {
   }
 }
 
+/** Creates create lambda alarm. */
 operation createLambdaAlarm(f, l, suffix : String, metric : String, threshold : Real) {
   var a = new AWSPSMOBSERVABILITY!CloudWatchAlarm;
   copyAwsResource(f, a, "Alarm" + suffix, "AWS::CloudWatch::Alarm");
@@ -278,6 +294,7 @@ operation createLambdaAlarm(f, l, suffix : String, metric : String, threshold : 
   return a;
 }
 
+/** Creates create lambda dead letter config. */
 operation createLambdaDeadLetterConfig(f) {
   var q = new AWSPSMMESSAGING!SqsQueue;
   copyAwsResource(f, q, "LambdaDlq", "AWS::SQS::Queue");
@@ -299,6 +316,7 @@ operation createLambdaDeadLetterConfig(f) {
   return cfg;
 }
 
+/** Returns whether the receiver is http adapter. */
 operation isHttpAdapter(a) {
   var ep = endpointOf(a);
   if (ep.isUndefined()) {
@@ -308,6 +326,7 @@ operation isHttpAdapter(a) {
     asText(ep.endpointUri).toLowerCase().startsWith("http") or asText(ep.endpointDescription).toLowerCase().startsWith("http");
 }
 
+/** Creates create event bridge connection and api destination. */
 operation createEventBridgeConnectionAndApiDestination(a) {
   var conn = new AWSPSMEVENTS!EventBridgeConnection;
   copyAwsResource(a, conn, "Connection", "AWS::Events::Connection");
@@ -338,6 +357,7 @@ operation createEventBridgeConnectionAndApiDestination(a) {
   }
 }
 
+/** Computes endpoint of. */
 operation endpointOf(a) {
   if (a.isUndefined() or a.endpoint.isUndefined()) {
     return null;
@@ -345,6 +365,7 @@ operation endpointOf(a) {
   return a.endpoint;
 }
 
+/** Creates create connection auth parameters. */
 operation createConnectionAuthParameters(a, authType) {
   if (authType = AWSPSMENUMS!EventBridgeConnectionAuthorizationType#BASIC) {
     var b = new AWSPSMEVENTS!EventBridgeBasicAuthParameters;
@@ -384,10 +405,12 @@ operation createConnectionAuthParameters(a, authType) {
   return k;
 }
 
+/** Computes credential secret value. */
 operation credentialSecretValue(a, purpose : String) {
   return secretReferenceValue(credentialReferenceName(a, purpose));
 }
 
+/** Computes credential reference name. */
 operation credentialReferenceName(a, purpose : String) {
   var credential = a.credentials.selectOne(c |
     asText(c.purpose).toLowerCase().contains(purpose.replace("_", " ")) or
@@ -406,6 +429,7 @@ operation credentialReferenceName(a, purpose : String) {
   return "REVIEW_REQUIRED_" + slug(firstText(a.name, a.id) + "_" + purpose).toUpperCase();
 }
 
+/** Computes first credential name. */
 operation firstCredentialName(a) {
   if (a.credentials.notEmpty()) {
     return firstText(a.credentials.first().name, a.credentials.first().purpose);
@@ -413,6 +437,7 @@ operation firstCredentialName(a) {
   return "REVIEW_REQUIRED_CREDENTIAL_NAME";
 }
 
+/** Computes first credential value. */
 operation firstCredentialValue(a) {
   if (a.credentials.notEmpty()) {
     return firstText(a.credentials.first().externalId, a.credentials.first().name);
@@ -424,6 +449,7 @@ operation firstCredentialValue(a) {
   return "REVIEW_REQUIRED_SECRET_VALUE";
 }
 
+/** Derives infer connection auth type. */
 operation inferConnectionAuthType(a) {
   if (a.credentials.exists(c | c.secretKind = PIMTYPES!SecretKind#PASSWORD)) {
     return AWSPSMENUMS!EventBridgeConnectionAuthorizationType#BASIC;
@@ -434,6 +460,7 @@ operation inferConnectionAuthType(a) {
   return AWSPSMENUMS!EventBridgeConnectionAuthorizationType#API_KEY;
 }
 
+/** Computes endpoint from description. */
 operation endpointFromDescription(text) {
   if (not hasText(text)) {
     return "";
@@ -445,6 +472,7 @@ operation endpointFromDescription(text) {
   return "";
 }
 
+/** Derives infer metric namespace. */
 operation inferMetricNamespace(a) {
   if (asText(a.metricName).toLowerCase().contains("latency") or asText(a.metricName).toLowerCase().contains("4xx") or asText(a.metricName).toLowerCase().contains("5xx")) {
     return "AWS/ApiGateway";
@@ -452,6 +480,7 @@ operation inferMetricNamespace(a) {
   return "AWS/Lambda";
 }
 
+/** Converts the receiver to parse comparison. */
 operation parseComparison(condition) {
   var c = asText(condition).toLowerCase();
   if (c.contains("<=")) {
@@ -466,6 +495,7 @@ operation parseComparison(condition) {
   return AWSPSMENUMS!CloudWatchComparisonOperator#GREATER_THAN_THRESHOLD;
 }
 
+/** Converts the receiver to parse threshold. */
 operation parseThreshold(text) {
   if (hasText(text) and text.matches("^-?[0-9]+(\\.[0-9]+)?$")) {
     return text.asDouble();

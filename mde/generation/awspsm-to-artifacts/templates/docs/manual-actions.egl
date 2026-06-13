@@ -1,4 +1,4 @@
-# Manual Actions
+[% /* Generates the manual actions artifact. */ %]# Manual Actions
 
 [% if (emitCtx.get("manualIssueList").isEmpty()) { %]
 No manual actions were recorded by the generator.

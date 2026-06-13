@@ -1,23 +1,30 @@
+/** Provides reusable pim validation helpers operations. */
+/** Returns whether the receiver contains a non-empty textual value. */
 operation Any hasText() : Boolean {
   return self.isDefined() and self.asString().trim().size() > 0;
 }
 
+/** Returns whether the receiver is true. */
 operation Any isTrue() : Boolean {
   return self.isDefined() and self = true;
 }
 
+/** Computes enum is. */
 operation Any enumIs(expectedLiteral : String) : Boolean {
   return self.isDefined() and self.asString() = expectedLiteral;
 }
 
+/** Computes enum in. */
 operation Any enumIn(expectedLiterals : Sequence) : Boolean {
   return self.isDefined() and expectedLiterals.includes(self.asString());
 }
 
+/** Computes not empty. */
 operation Collection notEmpty() : Boolean {
   return self.isDefined() and self.size() > 0;
 }
 
+/** Computes display name. */
 operation KERNEL!ModelElement displayName() : String {
   if (self.name.hasText()) {
     return self.name;
@@ -29,6 +36,7 @@ operation KERNEL!ModelElement displayName() : String {
 }
 
 @cached
+/** Returns whether the receiver contains provider token. */
 operation Any containsProviderToken() : Boolean {
   if (not self.hasText()) {
     return false;
@@ -60,6 +68,7 @@ operation Any containsProviderToken() : Boolean {
 }
 
 @cached
+/** Computes reachable function ids. */
 operation reachableFunctionIds() : Set {
   var ids : Set = Set{};
 
@@ -96,11 +105,13 @@ operation reachableFunctionIds() : Set {
 }
 
 @cached
+/** Returns whether the receiver has any incoming binding. */
 operation PIM!Function hasAnyIncomingBinding() : Boolean {
   return reachableFunctionIds().includes(self.`id`);
 }
 
 @cached
+/** Computes owned elements. */
 operation PIM!ServerlessService ownedElements() : Sequence {
   var elements = Sequence{};
   elements.addAll(self.ownsFunctions);
@@ -113,6 +124,7 @@ operation PIM!ServerlessService ownedElements() : Sequence {
 }
 
 @cached
+/** Computes service memberships. */
 operation PIM!ServerlessService serviceMemberships() : Sequence {
   var memberships = serviceMembershipsByServiceId().get(self.`id`);
   if (memberships.isUndefined()) {
@@ -122,6 +134,7 @@ operation PIM!ServerlessService serviceMemberships() : Sequence {
 }
 
 @cached
+/** Computes service memberships by service id. */
 operation serviceMembershipsByServiceId() : Map {
   var index = new Map;
   for (membershipItem in PIM!ServiceElementMembership.all.select(m | m.service.isDefined())) {
@@ -137,11 +150,13 @@ operation serviceMembershipsByServiceId() : Map {
 }
 
 @cached
+/** Returns whether the receiver has membership for. */
 operation PIM!ServerlessService hasMembershipFor(element) : Boolean {
   return self.serviceMemberships().exists(membershipItem | membershipItem.element = element);
 }
 
 @cached
+/** Computes changes state or emits events. */
 operation PIM!Function changesStateOrEmitsEvents() : Boolean {
   return self.writesState.isTrue()
     or self.publishesEvents.isTrue()
@@ -150,6 +165,7 @@ operation PIM!Function changesStateOrEmitsEvents() : Boolean {
 }
 
 @cached
+/** Returns whether the receiver needs idempotency policy. */
 operation PIM!Function needsIdempotencyPolicy() : Boolean {
   return self.requiresIdempotency.isTrue()
     or self.changesStateOrEmitsEvents()
@@ -162,6 +178,7 @@ operation PIM!Function needsIdempotencyPolicy() : Boolean {
 }
 
 @cached
+/** Computes idempotent consumer function ids. */
 operation idempotentConsumerFunctionIds() : Set {
   var ids : Set = Set{};
   for (channelItem in PIM!EventChannel.all.select(channelItem |
@@ -173,11 +190,13 @@ operation idempotentConsumerFunctionIds() : Set {
   return ids;
 }
 
+/** Returns whether the receiver has field named. */
 operation PIM!Schema hasFieldNamed(fieldName : String) : Boolean {
   return fieldName.hasText() and self.fields.exists(fieldItem | fieldItem.name = fieldName);
 }
 
 @cached
+/** Returns whether the receiver has classified sensitive fields. */
 operation PIM!Schema hasClassifiedSensitiveFields() : Boolean {
   return self.fields.forAll(fieldItem |
     not (fieldItem.personalData.isTrue() or fieldItem.sensitiveData.isTrue() or fieldItem.secretValue.isTrue())
@@ -185,17 +204,20 @@ operation PIM!Schema hasClassifiedSensitiveFields() : Boolean {
 }
 
 @cached
+/** Computes carries personal data. */
 operation PIM!EventType carriesPersonalData() : Boolean {
   return self.containsPersonalData.isTrue()
     or self.schema.fields.exists(fieldItem | fieldItem.personalData.isTrue());
 }
 
 @cached
+/** Computes carries personal data. */
 operation PIM!EventChannel carriesPersonalData() : Boolean {
   return self.eventTypes.exists(eventItem | eventItem.carriesPersonalData());
 }
 
 @cached
+/** Computes outgoing transitions. */
 operation PIM!WorkflowState outgoingTransitions() : Collection {
   var transitions = workflowTransitionsBySourceId().get(self.`id`);
   if (transitions.isUndefined()) {
@@ -205,6 +227,7 @@ operation PIM!WorkflowState outgoingTransitions() : Collection {
 }
 
 @cached
+/** Computes incoming transitions. */
 operation PIM!WorkflowState incomingTransitions() : Collection {
   var transitions = workflowTransitionsByTargetId().get(self.`id`);
   if (transitions.isUndefined()) {
@@ -214,6 +237,7 @@ operation PIM!WorkflowState incomingTransitions() : Collection {
 }
 
 @cached
+/** Computes workflow transitions by source id. */
 operation workflowTransitionsBySourceId() : Map {
   var index = new Map;
   for (transitionItem in PIM!WorkflowTransition.all.select(t | t.source.isDefined())) {
@@ -223,6 +247,7 @@ operation workflowTransitionsBySourceId() : Map {
 }
 
 @cached
+/** Computes workflow transitions by target id. */
 operation workflowTransitionsByTargetId() : Map {
   var index = new Map;
   for (transitionItem in PIM!WorkflowTransition.all.select(t | t.target.isDefined())) {
@@ -231,6 +256,7 @@ operation workflowTransitionsByTargetId() : Map {
   return index;
 }
 
+/** Adds or records add workflow transition. */
 operation addWorkflowTransition(index : Map, key : String, transitionItem) {
   var transitions = index.get(key);
   if (transitions.isUndefined()) {
@@ -241,6 +267,7 @@ operation addWorkflowTransition(index : Map, key : String, transitionItem) {
 }
 
 @cached
+/** Computes action count. */
 operation PIM!WorkflowState actionCount() : Integer {
   var total = 0;
   if (self.invokesFunction.isDefined()) { total = total + 1; }
@@ -250,6 +277,7 @@ operation PIM!WorkflowState actionCount() : Integer {
 }
 
 @cached
+/** Computes data store contains sensitive data. */
 operation PIM!DataStore dataStoreContainsSensitiveData() : Boolean {
   return self.containsPersonalData.isTrue()
     or self.ownedDataModels.exists(modelItem |
@@ -258,11 +286,13 @@ operation PIM!DataStore dataStoreContainsSensitiveData() : Boolean {
 }
 
 @cached
+/** Computes object store contains sensitive data. */
 operation PIM!ObjectStore objectStoreContainsSensitiveData() : Boolean {
   return self.containsPersonalData.isTrue();
 }
 
 @cached
+/** Computes storage contains sensitive data. */
 operation PIM!StorageElement storageContainsSensitiveData() : Boolean {
   if (self.isKindOf(PIM!DataStore)) {
     return self.dataStoreContainsSensitiveData();
@@ -274,6 +304,7 @@ operation PIM!StorageElement storageContainsSensitiveData() : Boolean {
 }
 
 @cached
+/** Returns whether the receiver has query shape. */
 operation PIM!AccessPattern hasQueryShape() : Boolean {
   return self.`operation`.hasText()
     or self.queryBy.hasText()
@@ -281,6 +312,7 @@ operation PIM!AccessPattern hasQueryShape() : Boolean {
     or self.filterBy.hasText();
 }
 
+/** Computes route uniqueness key. */
 operation PIM!ApiRoute routeUniquenessKey() : String {
   var apiId = "<no-api>";
   if (self.api.isDefined()) {
@@ -290,6 +322,7 @@ operation PIM!ApiRoute routeUniquenessKey() : String {
 }
 
 @cached
+/** Computes duplicate pim api route keys. */
 operation duplicatePimApiRouteKeys() : Set {
   var seen : Set = Set{};
   var duplicates : Set = Set{};
@@ -305,6 +338,7 @@ operation duplicatePimApiRouteKeys() : Set {
   return duplicates;
 }
 
+/** Computes index support key. */
 operation PIM!AccessPattern indexSupportKey() : String {
   var storeId = "<no-store>";
   if (self.dataStore.isDefined()) {
@@ -314,6 +348,7 @@ operation PIM!AccessPattern indexSupportKey() : String {
 }
 
 @cached
+/** Computes indexed access pattern keys. */
 operation indexedAccessPatternKeys() : Set {
   var keys : Set = Set{};
   for (indexItem in PIM!IndexCandidate.all.select(i | i.dataStore.isDefined())) {
@@ -325,6 +360,7 @@ operation indexedAccessPatternKeys() : Set {
 }
 
 @cached
+/** Computes event channel producer keys. */
 operation eventChannelProducerKeys() : Set {
   var keys : Set = Set{};
   for (channelItem in PIM!EventChannel.all) {
@@ -341,6 +377,7 @@ operation eventChannelProducerKeys() : Set {
 }
 
 @cached
+/** Computes event channel consumer keys. */
 operation eventChannelConsumerKeys() : Set {
   var keys : Set = Set{};
   for (channelItem in PIM!EventChannel.all) {
@@ -359,11 +396,13 @@ operation eventChannelConsumerKeys() : Set {
   return keys;
 }
 
+/** Computes participant key. */
 operation PIM!EventType participantKey(participant : Any) : String {
   return self.`id` + "::" + participant.`id`;
 }
 
 @cached
+/** Computes event flow workflow consumer keys. */
 operation eventFlowWorkflowConsumerKeys() : Set {
   var keys : Set = Set{};
   for (flowItem in PIM!EventFlow.all.select(f |
@@ -375,11 +414,13 @@ operation eventFlowWorkflowConsumerKeys() : Set {
   return keys;
 }
 
+/** Computes workflow consumer key. */
 operation PIM!EventChannel workflowConsumerKey(workflowItem : Any) : String {
   return self.`id` + "::" + workflowItem.`id`;
 }
 
 @cached
+/** Returns root policy ids. */
 operation rootPolicyIds() : Set {
   var ids : Set = Set{};
   for (root in PIM!PIMModel.all) {
@@ -391,6 +432,7 @@ operation rootPolicyIds() : Set {
 }
 
 @cached
+/** Computes package manager fits language. */
 operation PIM!ImplementationProfile packageManagerFitsLanguage() : Boolean {
   if (self.primaryLanguage.enumIn(Sequence{"TYPESCRIPT", "JAVASCRIPT"})) {
     return self.packageManager.enumIn(Sequence{"NPM", "PNPM", "YARN"});

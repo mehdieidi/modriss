@@ -1,4 +1,4 @@
-# Generation Report
+[% /* Generates the generation report artifact. */ %]# Generation Report
 
 - Project: `[%= emitCtx.get("projectName") %]`
 - Generator version: `[%= emitCtx.get("generatorVersion") %]`

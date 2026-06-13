@@ -1,4 +1,6 @@
+/** Validates the semantic rules for kernel constraints. */
 context KERNEL!TraceLink {
+  /** Checks that trace link has reference or external id. */
   constraint TraceLinkHasReferenceOrExternalId {
     check : self.source.isDefined() or self.target.isDefined() or
       self.sourceElementId.hasText() or self.targetElementId.hasText() or self.externalId.hasText()

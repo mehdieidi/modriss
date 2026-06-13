@@ -1,1 +1,1 @@
-[%= schemaOwnerObj.localInputSchemaJson(emitCtx) %]
+[% /* Generates the json schema artifact. */ %][%= schemaOwnerObj.localInputSchemaJson(emitCtx) %]

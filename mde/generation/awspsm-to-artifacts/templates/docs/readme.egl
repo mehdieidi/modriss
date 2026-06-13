@@ -1,4 +1,4 @@
-# [%= emitCtx.get("projectName") %]
+[% /* Generates the readme artifact. */ %]# [%= emitCtx.get("projectName") %]
 
 Generated AWS serverless project from the PSM model.
 

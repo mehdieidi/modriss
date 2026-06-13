@@ -1,8 +1,10 @@
+/** Maps boundaries security model elements and supporting relationships. */
 import "lib/common.eol";
 import "lib/mapping.eol";
 import "lib/trace-readiness.eol";
 import "lib/pim-builders.eol";
 
+/** Computes capability in bounded context. */
 operation capabilityInBoundedContext(cap : CIMORG!BusinessCapability) {
   if (cachedContextForCapability(cap).isDefined()) {
     return true;
@@ -10,6 +12,7 @@ operation capabilityInBoundedContext(cap : CIMORG!BusinessCapability) {
   return CIMORG!BoundedContextCandidate.all.exists(bc | bc.capabilities.includes(cap));
 }
 
+/** Derives infer external protocol family. */
 operation inferExternalProtocolFamily(es : CIMORG!ExternalSystem) : String {
   var evidence = firstText(es.businessPurpose, firstText(es.contractualSla, firstText(es.authenticationExpectation, es.summary))).toLowerCase();
   if (evidence.contains("http") or evidence.contains("https") or evidence.contains("rest") or evidence.contains("api") or evidence.contains("webhook")) {
@@ -24,6 +27,7 @@ operation inferExternalProtocolFamily(es : CIMORG!ExternalSystem) : String {
   return "REVIEW_REQUIRED_PROTOCOL";
 }
 
+/** Creates ensure privileged principal permission. */
 operation ensurePrivilegedPrincipalPermission(p : SECURITY!Principal, seed, permissionSummary : String) {
   if (not isTrue(p.privileged) or p.permissions.notEmpty()) {
     return;
@@ -45,6 +49,7 @@ operation ensurePrivilegedPrincipalPermission(p : SECURITY!Principal, seed, perm
   traceGenerated(seed, permission, "TR-020", "MEDIUM");
 }
 
+/** Transforms Bounded Context elements into Service elements. */
 rule BoundedContext2Service
   transform bc : CIMORG!BoundedContextCandidate
   to s : DEPLOY!ServerlessService {
@@ -62,6 +67,7 @@ rule BoundedContext2Service
   traceGenerated(bc, s, "TR-010", "HIGH");
 }
 
+/** Transforms Capability elements into Service elements. */
 rule Capability2Service
   transform cap : CIMORG!BusinessCapability
   to s : DEPLOY!ServerlessService {
@@ -81,6 +87,7 @@ rule Capability2Service
   traceGenerated(cap, s, "TR-010", "MEDIUM");
 }
 
+/** Transforms Ac elements into r2 Principal elements. */
 rule Actor2Principal
   transform a : CIMORG!Actor
   to p : SECURITY!Principal {
@@ -121,6 +128,7 @@ rule Actor2Principal
   }
 }
 
+/** Transforms Role elements into Principal elements. */
 rule Role2Principal
   transform r : CIMORG!Role
   to p : SECURITY!Principal {
@@ -152,6 +160,7 @@ rule Role2Principal
   }
 }
 
+/** Transforms External System elements into Adapter elements. */
 rule ExternalSystem2Adapter
   transform es : CIMORG!ExternalSystem
   to a : EXTERNAL!ExternalAdapter {

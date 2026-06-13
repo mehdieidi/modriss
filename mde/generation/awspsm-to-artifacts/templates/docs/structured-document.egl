@@ -1,1 +1,1 @@
-[%= documentObj.content %]
+[% /* Generates the structured document artifact. */ %][%= documentObj.content %]

@@ -1,3 +1,4 @@
+/** Defines the awspsm api metamodel package. */
 @namespace(uri="https://modless.org/awspsm/api/1.0", prefix="awspsmapi")
 package awspsmapi;
 
@@ -10,6 +11,7 @@ import "awspsm-compute.ecore";
 import "awspsm-workflow.ecore";
 import "awspsm-identity.ecore";
 
+/** Represents the Api Gateway Api concept in this model. */
 abstract class ApiGatewayApi extends awspsmcore.AwsResource {
   attr String apiName;
   attr String descriptionText;
@@ -33,6 +35,7 @@ abstract class ApiGatewayApi extends awspsmcore.AwsResource {
   ref WafWebAclAssociation[?] wafAssociation;
 }
 
+/** Represents the Http Api concept in this model. */
 class HttpApi extends ApiGatewayApi {
   attr String protocolType;
   attr Boolean disableExecuteApiEndpoint;
@@ -40,6 +43,7 @@ class HttpApi extends ApiGatewayApi {
   attr Boolean failOnWarnings;
 }
 
+/** Represents the Rest Api concept in this model. */
 class RestApi extends ApiGatewayApi {
   attr awspsmenums.ApiGatewayEndpointType endpointType;
   attr Integer minimumCompressionSize;
@@ -48,10 +52,12 @@ class RestApi extends ApiGatewayApi {
   ref RestApiResource[*]#api resources;
 }
 
+/** Represents the Web Socket Api concept in this model. */
 class WebSocketApi extends ApiGatewayApi {
   attr String[1] routeSelectionExpression;
 }
 
+/** Represents the Api Gateway Route concept in this model. */
 abstract class ApiGatewayRoute extends awspsmcore.AwsResource {
   attr String operationName;
   attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
@@ -70,18 +76,21 @@ abstract class ApiGatewayRoute extends awspsmcore.AwsResource {
   ref ApiGatewayAuthorizer[?] authorizer;
 }
 
+/** Represents the Http Api Route concept in this model. */
 class HttpApiRoute extends ApiGatewayRoute {
   attr awspsmenums.ApiGatewayHttpMethod[1] method;
   attr String[1] path;
   attr String routeKey;
 }
 
+/** Represents the Rest Api Route concept in this model. */
 class RestApiRoute extends ApiGatewayRoute {
   attr awspsmenums.ApiGatewayHttpMethod[1] method;
   attr String[1] path;
   attr String restApiResourcePath;
 }
 
+/** Represents the Rest Api Resource concept in this model. */
 class RestApiResource extends awspsmcore.AwsResource {
   attr String[1] pathPart;
   attr String fullPath;
@@ -89,16 +98,19 @@ class RestApiResource extends awspsmcore.AwsResource {
   ref RestApiResource[?] parentResource;
 }
 
+/** Represents the Rest Api Method concept in this model. */
 class RestApiMethod extends ApiGatewayRoute {
   attr awspsmenums.ApiGatewayHttpMethod[1] method;
   ref RestApiResource[1] resource;
   ref ApiGatewayRequestValidator[?] requestValidator;
 }
 
+/** Represents the Web Socket Route concept in this model. */
 class WebSocketRoute extends ApiGatewayRoute {
   attr String[1] routeKey;
 }
 
+/** Represents the Api Gateway Request Model concept in this model. */
 class ApiGatewayRequestModel extends kernel.TraceableElement {
   attr String[1] modelName;
   attr String contentType;
@@ -106,6 +118,7 @@ class ApiGatewayRequestModel extends kernel.TraceableElement {
   ref awspsmcore.AwsResource[?] schemaResource;
 }
 
+/** Represents the Api Gateway Response Model concept in this model. */
 class ApiGatewayResponseModel extends kernel.TraceableElement {
   attr String[1] statusCode;
   attr String contentType;
@@ -113,6 +126,7 @@ class ApiGatewayResponseModel extends kernel.TraceableElement {
   ref awspsmcore.AwsResource[?] schemaResource;
 }
 
+/** Represents the Api Gateway Request Validator concept in this model. */
 class ApiGatewayRequestValidator extends awspsmcore.AwsResource {
   attr String validatorName;
   attr Boolean validateRequestBody;
@@ -120,6 +134,7 @@ class ApiGatewayRequestValidator extends awspsmcore.AwsResource {
   ref RestApi[1] api;
 }
 
+/** Represents the Api Gateway Route Setting concept in this model. */
 class ApiGatewayRouteSetting extends kernel.TraceableElement {
   attr Boolean detailedMetricsEnabled;
   attr Boolean dataTraceEnabled;
@@ -128,12 +143,14 @@ class ApiGatewayRouteSetting extends kernel.TraceableElement {
   attr Double throttlingRateLimit;
 }
 
+/** Represents the Api Gateway Access Log Setting concept in this model. */
 class ApiGatewayAccessLogSetting extends kernel.TraceableElement {
   attr String format;
   attr String destinationArn;
   ref awspsmobservability.CloudWatchLogGroup[?] destinationLogGroup;
 }
 
+/** Represents the Api Gateway Integration concept in this model. */
 class ApiGatewayIntegration extends awspsmcore.AwsResource {
   attr awspsmenums.ApiGatewayIntegrationType[1] integrationType;
   attr String integrationUri;
@@ -151,16 +168,19 @@ class ApiGatewayIntegration extends awspsmcore.AwsResource {
   ref awspsmsecurity.IamRole[?] credentialsRole;
 }
 
+/** Represents the Api Gateway Integration Request Template concept in this model. */
 class ApiGatewayIntegrationRequestTemplate extends kernel.TraceableElement {
   attr String[1] contentType;
   attr String template;
 }
 
+/** Represents the Api Gateway Integration Response Parameter concept in this model. */
 class ApiGatewayIntegrationResponseParameter extends kernel.TraceableElement {
   attr String[1] parameterName;
   val awspsmcore.ValueExpression[1] value;
 }
 
+/** Represents the Api Gateway Stage concept in this model. */
 abstract class ApiGatewayStage extends awspsmcore.AwsResource, awspsmcore.WafAssociableResource {
   attr String[1] stageName;
   attr Boolean autoDeploy;
@@ -178,16 +198,20 @@ abstract class ApiGatewayStage extends awspsmcore.AwsResource, awspsmcore.WafAss
   ref awspsmobservability.CloudWatchLogGroup[?] accessLogGroup;
 }
 
+/** Represents the Http Api Stage concept in this model. */
 class HttpApiStage extends ApiGatewayStage {
 }
 
+/** Represents the Rest Api Stage concept in this model. */
 class RestApiStage extends ApiGatewayStage {
   ref ApiGatewayDeployment[?] deployment;
 }
 
+/** Represents the Web Socket Stage concept in this model. */
 class WebSocketStage extends ApiGatewayStage {
 }
 
+/** Represents the Api Gateway Authorizer concept in this model. */
 abstract class ApiGatewayAuthorizer extends awspsmcore.AwsResource {
   attr String authorizerName;
   attr awspsmenums.ApiGatewayAuthorizationType[1] authorizationType;
@@ -196,22 +220,26 @@ abstract class ApiGatewayAuthorizer extends awspsmcore.AwsResource {
   ref ApiGatewayApi[1]#authorizers api;
 }
 
+/** Represents the Jwt Authorizer concept in this model. */
 class JwtAuthorizer extends ApiGatewayAuthorizer {
   attr String issuer;
   attr String[*] audience;
 }
 
+/** Represents the Cognito Authorizer concept in this model. */
 class CognitoAuthorizer extends ApiGatewayAuthorizer {
   ref awspsmidentity.CognitoUserPool[1] userPool;
   ref awspsmidentity.CognitoUserPoolClient[*] clients;
 }
 
+/** Represents the Lambda Authorizer concept in this model. */
 class LambdaAuthorizer extends ApiGatewayAuthorizer {
   attr String authorizerPayloadFormatVersion;
   attr Boolean enableSimpleResponses;
   ref awspsmcompute.AwsLambdaFunction[1] function;
 }
 
+/** Represents the Api Gateway Domain Name concept in this model. */
 class ApiGatewayDomainName extends awspsmcore.AwsResource {
   attr String[1] domainName;
   attr String certificateArn;
@@ -221,6 +249,7 @@ class ApiGatewayDomainName extends awspsmcore.AwsResource {
   ref ApiGatewayBasePathMapping[*]#domainName mappings;
 }
 
+/** Represents the Api Gateway Base Path Mapping concept in this model. */
 class ApiGatewayBasePathMapping extends awspsmcore.AwsResource {
   attr String basePath;
   ref ApiGatewayDomainName[1]#mappings domainName;
@@ -228,6 +257,7 @@ class ApiGatewayBasePathMapping extends awspsmcore.AwsResource {
   ref ApiGatewayStage[?] stage;
 }
 
+/** Represents the Api Gateway Api Key concept in this model. */
 class ApiGatewayApiKey extends awspsmcore.AwsResource {
   attr String apiKeyName;
   attr Boolean enabled;
@@ -236,6 +266,7 @@ class ApiGatewayApiKey extends awspsmcore.AwsResource {
   ref RestApiStage[*] stages;
 }
 
+/** Represents the Api Gateway Usage Plan concept in this model. */
 class ApiGatewayUsagePlan extends awspsmcore.AwsResource {
   attr String usagePlanName;
   attr String descriptionText;
@@ -246,20 +277,24 @@ class ApiGatewayUsagePlan extends awspsmcore.AwsResource {
   ref RestApiStage[*] apiStages;
 }
 
+/** Represents the Api Gateway Usage Plan Key concept in this model. */
 class ApiGatewayUsagePlanKey extends awspsmcore.AwsResource {
   attr String keyType;
   ref ApiGatewayApiKey[1] apiKey;
   ref ApiGatewayUsagePlan[1] usagePlan;
 }
 
+/** Represents the Api Gateway Deployment concept in this model. */
 class ApiGatewayDeployment extends awspsmcore.AwsResource {
   attr String descriptionText;
   ref RestApi[1] api;
 }
 
+/** Represents the Api Gateway Tracing Config concept in this model. */
 class ApiGatewayTracingConfig extends awspsmcore.TracingConfig {
 }
 
+/** Represents the Waf Web Acl Association concept in this model. */
 class WafWebAclAssociation extends awspsmcore.AwsResource {
   attr String[1] webAclArn;
   ref awspsmcore.WafAssociableResource[1] protectedResource;

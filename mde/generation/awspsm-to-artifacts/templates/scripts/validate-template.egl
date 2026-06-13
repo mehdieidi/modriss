@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+[% /* Generates the validate template artifact. */ %]#!/usr/bin/env bash
 set -euo pipefail
 
 if [[ "$#" -gt 0 ]]; then

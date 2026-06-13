@@ -1,3 +1,4 @@
+/** Defines the cim root metamodel package. */
 @namespace(uri="https://modless.org/cim/1.0", prefix="cim")
 package cim;
 
@@ -10,6 +11,7 @@ import "cim-process-policy.ecore";
 import "cim-governance.ecore";
 import "cim-transformation.ecore";
 
+/** Represents the CIM Model concept in this model. */
 class CIMModel extends kernel.TraceableElement {
   attr String[1] domainName;
   attr String businessScope;

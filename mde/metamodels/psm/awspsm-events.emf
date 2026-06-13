@@ -1,3 +1,4 @@
+/** Defines the awspsm events metamodel package. */
 @namespace(uri="https://modless.org/awspsm/events/1.0", prefix="awspsmevents")
 package awspsmevents;
 
@@ -8,6 +9,7 @@ import "awspsm-security.ecore";
 import "awspsm-messaging.ecore";
 import "awspsm-compute.ecore";
 
+/** Represents the Event Bridge Bus concept in this model. */
 class EventBridgeBus extends awspsmcore.AwsResource {
   attr String busName;
   attr String eventSourceName;
@@ -16,6 +18,7 @@ class EventBridgeBus extends awspsmcore.AwsResource {
   ref EventBridgeBusPolicy[*]#bus policies;
 }
 
+/** Represents the Event Bridge Bus Policy concept in this model. */
 class EventBridgeBusPolicy extends awspsmcore.AwsResource {
   attr String statementId;
   val awspsmsecurity.IamPolicyDocument[?] policyDocument;
@@ -23,6 +26,7 @@ class EventBridgeBusPolicy extends awspsmcore.AwsResource {
   ref EventBridgeBus[1]#policies bus;
 }
 
+/** Represents the Event Bridge Rule concept in this model. */
 class EventBridgeRule extends awspsmcore.AwsResource {
   attr String ruleName;
   attr String descriptionText;
@@ -34,6 +38,7 @@ class EventBridgeRule extends awspsmcore.AwsResource {
   ref EventBridgeBus[?]#rules bus;
 }
 
+/** Represents the Event Pattern concept in this model. */
 class EventPattern extends kernel.TraceableElement {
   attr String[*] sources;
   attr String[*] detailTypes;
@@ -42,6 +47,7 @@ class EventPattern extends kernel.TraceableElement {
   attr String detailJson;
 }
 
+/** Represents the Event Bridge Target concept in this model. */
 class EventBridgeTarget extends kernel.TraceableElement {
   attr String[1] targetId;
   attr awspsmenums.EventBridgeTargetKind[1] targetKind;
@@ -57,24 +63,29 @@ class EventBridgeTarget extends kernel.TraceableElement {
   val EventBridgeInputTransformer[?] inputTransformer;
 }
 
+/** Represents the Event Bridge Target Parameters concept in this model. */
 abstract class EventBridgeTargetParameters extends kernel.TraceableElement {
 }
 
+/** Represents the Event Bridge Sqs Target Parameters concept in this model. */
 class EventBridgeSqsTargetParameters extends EventBridgeTargetParameters {
   attr String messageGroupId;
 }
 
+/** Represents the Event Bridge Http Target Parameters concept in this model. */
 class EventBridgeHttpTargetParameters extends EventBridgeTargetParameters {
   val HttpParameter[*] headerParameters;
   val HttpParameter[*] queryStringParameters;
   val HttpParameter[*] pathParameterValues;
 }
 
+/** Represents the Http Parameter concept in this model. */
 class HttpParameter extends kernel.TraceableElement {
   attr String key;
   attr String value;
 }
 
+/** Represents the Event Bridge Batch Target Parameters concept in this model. */
 class EventBridgeBatchTargetParameters extends EventBridgeTargetParameters {
   attr String jobDefinition;
   attr String jobName;
@@ -82,11 +93,13 @@ class EventBridgeBatchTargetParameters extends EventBridgeTargetParameters {
   attr Integer jobAttempts;
 }
 
+/** Represents the Event Bridge Input Transformer concept in this model. */
 class EventBridgeInputTransformer extends kernel.TraceableElement {
   attr String inputPathsMapJson;
   attr String inputTemplate;
 }
 
+/** Represents the Event Bridge Archive concept in this model. */
 class EventBridgeArchive extends awspsmcore.AwsResource {
   attr String archiveName;
   attr String eventPatternJson;
@@ -94,6 +107,7 @@ class EventBridgeArchive extends awspsmcore.AwsResource {
   ref EventBridgeBus[1]#archives eventSourceBus;
 }
 
+/** Represents the Event Bridge Schedule concept in this model. */
 class EventBridgeSchedule extends awspsmcore.AwsResource {
   attr String scheduleName;
   attr String[1] scheduleExpression;
@@ -106,11 +120,13 @@ class EventBridgeSchedule extends awspsmcore.AwsResource {
   ref awspsmsecurity.IamRole[1] role;
 }
 
+/** Represents the Event Bridge Flexible Time Window concept in this model. */
 class EventBridgeFlexibleTimeWindow extends kernel.TraceableElement {
   attr String mode;
   attr Integer maximumWindowInMinutes;
 }
 
+/** Represents the Event Bridge Pipe concept in this model. */
 class EventBridgePipe extends awspsmcore.AwsResource {
   attr String pipeName;
   attr String sourceArn;
@@ -126,19 +142,23 @@ class EventBridgePipe extends awspsmcore.AwsResource {
   ref awspsmsecurity.IamRole[1] role;
 }
 
+/** Represents the Event Bridge Auth Parameters concept in this model. */
 abstract class EventBridgeAuthParameters extends kernel.TraceableElement {
 }
 
+/** Represents the Event Bridge Api Key Auth Parameters concept in this model. */
 class EventBridgeApiKeyAuthParameters extends EventBridgeAuthParameters {
   attr String[1] apiKeyName;
   val awspsmcore.ValueExpression[1] apiKeyValue;
 }
 
+/** Represents the Event Bridge Basic Auth Parameters concept in this model. */
 class EventBridgeBasicAuthParameters extends EventBridgeAuthParameters {
   val awspsmcore.ValueExpression[1] username;
   val awspsmcore.ValueExpression[1] password;
 }
 
+/** Represents the Event Bridge O Auth Parameters concept in this model. */
 class EventBridgeOAuthParameters extends EventBridgeAuthParameters {
   attr String[1] authorizationEndpoint;
   attr awspsmenums.EventBridgeHttpMethod[1] httpMethod;
@@ -147,12 +167,14 @@ class EventBridgeOAuthParameters extends EventBridgeAuthParameters {
   val EventBridgeHttpParameters[?] oauthHttpParameters;
 }
 
+/** Represents the Event Bridge Http Parameters concept in this model. */
 class EventBridgeHttpParameters extends kernel.TraceableElement {
   val HttpParameter[*] headerParameters;
   val HttpParameter[*] queryStringParameters;
   val HttpParameter[*] bodyParameters;
 }
 
+/** Represents the Event Bridge Connection concept in this model. */
 class EventBridgeConnection extends awspsmcore.AwsResource {
   attr String connectionName;
   attr awspsmenums.EventBridgeConnectionAuthorizationType[1] authorizationType;
@@ -160,6 +182,7 @@ class EventBridgeConnection extends awspsmcore.AwsResource {
   val EventBridgeHttpParameters[?] invocationHttpParameters;
 }
 
+/** Represents the Event Bridge Api Destination concept in this model. */
 class EventBridgeApiDestination extends awspsmcore.AwsResource {
   attr String destinationName;
   attr String invocationEndpoint;
@@ -168,6 +191,7 @@ class EventBridgeApiDestination extends awspsmcore.AwsResource {
   ref EventBridgeConnection[1] connection;
 }
 
+/** Represents the Aws Retry Policy concept in this model. */
 class AwsRetryPolicy extends kernel.TraceableElement {
   attr Integer maximumRetryAttempts;
   attr Integer maximumEventAgeInSeconds;

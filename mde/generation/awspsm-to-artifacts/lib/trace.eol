@@ -1,6 +1,8 @@
+/** Provides reusable trace operations. */
 import "naming.eol";
 import "paths.eol";
 
+/** Creates default emit context. */
 operation AWSPSM!AwsPsmModel defaultEmitContext() : Map {
   var profileMap = new Map;
   var rootNameText = firstText(self.name, "Generated AWS Serverless Project");
@@ -28,6 +30,7 @@ operation AWSPSM!AwsPsmModel defaultEmitContext() : Map {
 }
 
 @cached
+/** Creates default stage name. */
 operation AWSPSM!AwsPsmModel defaultStageName() : String {
   if (self.stages.notEmpty()) {
     return self.stages.first().stageName;
@@ -36,6 +39,7 @@ operation AWSPSM!AwsPsmModel defaultStageName() : String {
 }
 
 @cached
+/** Returns all modeled resources. */
 operation AWSPSM!AwsPsmModel allModeledResources() : Sequence {
   var resSeq = OrderedSet{};
   for (stackObj in self.stacks) {
@@ -47,6 +51,7 @@ operation AWSPSM!AwsPsmModel allModeledResources() : Sequence {
   return resSeq.sortBy(resObj | resObj.cfnLogicalId());
 }
 
+/** Adds or records record artifact. */
 operation Map recordArtifact(pathText : String, kindText : String, ruleNameText : String, sourceSeq, mergeStrategyText : String, protectedSeq) {
   var rowMap = new Map;
   rowMap.put("path", pathText);
@@ -77,6 +82,7 @@ operation Map recordArtifact(pathText : String, kindText : String, ruleNameText 
   return rowMap;
 }
 
+/** Adds or records record protected region. */
 operation Map recordProtectedRegion(pathText : String, sourceIdText : String, kindText : String, regionIdText : String, requiredForProduction : Boolean) {
   var rowMap = new Map;
   rowMap.put("regionId", regionIdText);
@@ -90,6 +96,7 @@ operation Map recordProtectedRegion(pathText : String, sourceIdText : String, ki
   return rowMap;
 }
 
+/** Adds or records add manual issue. */
 operation Map addManualIssue(codeText : String, severityText : String, messageText : String, sourceObj, blockingFlag : Boolean) {
   var rowMap = new Map;
   rowMap.put("code", codeText);
@@ -108,6 +115,7 @@ operation Map addManualIssue(codeText : String, severityText : String, messageTe
   return rowMap;
 }
 
+/** Adds or records add artifact plan. */
 operation Map addArtifactPlan(pathText : String, kindText : String, ruleNameText : String) {
   var rowMap = new Map;
   rowMap.put("path", pathText);

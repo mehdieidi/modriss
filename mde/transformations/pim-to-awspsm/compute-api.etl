@@ -1,3 +1,4 @@
+/** Maps compute api model elements and supporting relationships. */
 rule Function2AwsLambdaFunction
   transform f : COMPUTE!Function
   to l : AWSPSMCOMPUTE!AwsLambdaFunction {
@@ -58,6 +59,7 @@ rule Function2AwsLambdaFunction
   createTrace(f, l, "Function2AwsLambdaFunction", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Api elements into Http Api elements. */
 rule Api2HttpApi
   transform api : API!Api
   to g : AWSPSMAPI!HttpApi {
@@ -89,6 +91,7 @@ rule Api2HttpApi
   createTrace(api, g, "Api2HttpApi", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Api elements into Rest Api elements. */
 rule Api2RestApi
   transform api : API!Api
   to g : AWSPSMAPI!RestApi {
@@ -119,6 +122,7 @@ rule Api2RestApi
   createTrace(api, g, "Api2RestApi", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Api elements into Native Unsupported Api elements. */
 rule Api2NativeUnsupportedApi
   transform api : API!Api
   to n : AWSPSMCORE!AwsNativeResource {
@@ -137,6 +141,7 @@ rule Api2NativeUnsupportedApi
   createTrace(api, n, "Api2NativeUnsupportedApi", "LOW", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Transforms Api Route elements into Http Api Route elements. */
 rule ApiRoute2HttpApiRoute
   transform r : API!ApiRoute
   to gr : AWSPSMAPI!HttpApiRoute {
@@ -172,6 +177,7 @@ rule ApiRoute2HttpApiRoute
   createTrace(r, gr, "ApiRoute2HttpApiRoute", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Transforms Api Route elements into Rest Api Route elements. */
 rule ApiRoute2RestApiRoute
   transform r : API!ApiRoute
   to gr : AWSPSMAPI!RestApiRoute {
@@ -204,6 +210,7 @@ rule ApiRoute2RestApiRoute
   createTrace(r, gr, "ApiRoute2RestApiRoute", "HIGH", KERNEL!TraceLinkType#REALIZES);
 }
 
+/** Derives infer memory mb. */
 operation inferMemoryMb(f) {
   if (f.computeProfile = PIMTYPES!ComputeProfile#MEMORY_INTENSIVE) {
     return 1024;
@@ -220,6 +227,7 @@ operation inferMemoryMb(f) {
   return 256;
 }
 
+/** Derives infer timeout seconds. */
 operation inferTimeoutSeconds(f) {
   var t = 29;
   if (f.timeout.isDefined() and f.timeout.timeoutSeconds.isDefined() and f.timeout.timeoutSeconds > 0) {
@@ -240,6 +248,7 @@ operation inferTimeoutSeconds(f) {
   return clamp(t, 1, 900);
 }
 
+/** Derives infer reserved concurrency. */
 operation inferReservedConcurrency(f) {
   if (f.concurrency.isDefined() and f.concurrency.reservedConcurrencyHint.isDefined()) {
     return f.concurrency.reservedConcurrencyHint;
@@ -247,6 +256,7 @@ operation inferReservedConcurrency(f) {
   return 0;
 }
 
+/** Creates create lambda tracing. */
 operation createLambdaTracing(f) {
   var t = new AWSPSMCOMPUTE!LambdaTracingConfig;
   t.id = generatedId("lambda_tracing", f, "xray");
@@ -256,6 +266,7 @@ operation createLambdaTracing(f) {
   return t;
 }
 
+/** Creates create lambda logging. */
 operation createLambdaLogging(l) {
   var cfg = new AWSPSMCOMPUTE!LambdaLoggingConfig;
   cfg.id = uniqueId("lambda_logging_" + slug(l.logicalId));
@@ -267,6 +278,7 @@ operation createLambdaLogging(l) {
   return cfg;
 }
 
+/** Creates create lambda environment. */
 operation createLambdaEnvironment(f) {
   var out = Sequence{};
   for (ev in f.environmentVariables) {
@@ -308,6 +320,7 @@ operation createLambdaEnvironment(f) {
   return out;
 }
 
+/** Computes resource name env. */
 operation resourceNameEnv(f, store) {
   var le = new AWSPSMCOMPUTE!LambdaEnvironmentVariable;
   le.id = generatedId("lambda_env_resource", f, store.name);
@@ -318,6 +331,7 @@ operation resourceNameEnv(f, store) {
   return le;
 }
 
+/** Creates create lambda role. */
 operation createLambdaRole(f) {
   var role = new AWSPSMSECURITY!IamRole;
   copyAwsResource(f, role, "LambdaRole", "AWS::IAM::Role");
@@ -330,6 +344,7 @@ operation createLambdaRole(f) {
   return role;
 }
 
+/** Creates create vpc attachment decision. */
 operation createVpcAttachmentDecision(f) {
   var v = new AWSPSMNETWORKING!VpcAttachmentConfig;
   v.id = generatedId("vpc_attachment", f, "lambda");
@@ -342,10 +357,12 @@ operation createVpcAttachmentDecision(f) {
   return v;
 }
 
+/** Computes route needs auth. */
 operation routeNeedsAuth(r) {
   return isTrue(r.authRequired) or (r.api.isDefined() and isTrue(r.api.authRequired)) or (not isTrue(r.publicRoute));
 }
 
+/** Derives infer authorization type. */
 operation inferAuthorizationType(r) {
   if (not routeNeedsAuth(r)) {
     return AWSPSMENUMS!ApiGatewayAuthorizationType#NONE;
@@ -388,6 +405,7 @@ operation inferAuthorizationType(r) {
   return AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM;
 }
 
+/** Computes apply authorizer fallback. */
 operation applyAuthorizerFallback(r, gr) {
   if (routeNeedsAuth(r)
       and gr.authorizationType <> AWSPSMENUMS!ApiGatewayAuthorizationType#AWS_IAM
@@ -401,6 +419,7 @@ operation applyAuthorizerFallback(r, gr) {
   }
 }
 
+/** Computes map http method. */
 operation mapHttpMethod(m) {
   if (m = PIMTYPES!HttpMethod#GET) {
     return AWSPSMENUMS!ApiGatewayHttpMethod#GET;
@@ -426,6 +445,7 @@ operation mapHttpMethod(m) {
   return AWSPSMENUMS!ApiGatewayHttpMethod#ANY;
 }
 
+/** Derives infer route timeout millis. */
 operation inferRouteTimeoutMillis(r) {
   if (r.timeout.isDefined() and r.timeout.clientTimeoutSeconds.isDefined() and r.timeout.clientTimeoutSeconds > 0) {
     return clamp(r.timeout.clientTimeoutSeconds * 1000, 50, 29000);
@@ -433,6 +453,7 @@ operation inferRouteTimeoutMillis(r) {
   return 29000;
 }
 
+/** Creates create api integration. */
 operation createApiIntegration(r, gr) {
   var i = new AWSPSMAPI!ApiGatewayIntegration;
   copyAwsResource(r, i, "Integration", "AWS::ApiGatewayV2::Integration");
@@ -461,10 +482,12 @@ operation createApiIntegration(r, gr) {
   return i;
 }
 
+/** Returns whether the receiver requires rest api. */
 operation requiresRestApi(api) {
   return api.routes.exists(r | isTrue(r.requestValidationRequired) or isTrue(r.responseValidationRequired) or inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY);
 }
 
+/** Creates create api stages. */
 operation createApiStages(api, g) {
   for (stage in AWSPSMCORE!AwsStage.all) {
     if (g.eClass().getName() = "RestApi") {
@@ -488,6 +511,7 @@ operation createApiStages(api, g) {
   }
 }
 
+/** Computes fill api stage. */
 operation fillApiStage(apiStage, stage, api, g) {
   apiStage.stageName = stage.stageName;
   apiStage.autoDeploy = not isProductionRoot();
@@ -515,6 +539,7 @@ operation fillApiStage(apiStage, stage, api, g) {
   apiStage.api = g;
 }
 
+/** Creates create api authorizer. */
 operation createApiAuthorizer(api, g) {
   if (api.auth.isUndefined() or not isTrue(api.authRequired)) {
     return null;
@@ -565,6 +590,7 @@ operation createApiAuthorizer(api, g) {
   return null;
 }
 
+/** Resolves find authorizer for. */
 operation findAuthorizerFor(r) {
   var apiTarget = awsEquivalent(r.api);
   if (apiTarget.isUndefined()) {
@@ -576,6 +602,7 @@ operation findAuthorizerFor(r) {
   return null;
 }
 
+/** Creates create cors. */
 operation createCors(policy) {
   var c = new AWSPSMCORE!CorsConfiguration;
   c.id = uniqueId("cors_" + slug(rootName()));
@@ -610,6 +637,7 @@ operation createCors(policy) {
   return c;
 }
 
+/** Computes schema ref json. */
 operation schemaRefJson(schema) {
   if (schema.isUndefined()) {
     return "";
@@ -617,6 +645,7 @@ operation schemaRefJson(schema) {
   return "{ \"" + schema.name + "\": \"" + firstText(schema.externalSchemaUri, schema.id) + "\" }";
 }
 
+/** Adds or records attach open api models. */
 operation attachOpenApiModels(route, awsRoute) {
   if (route.requestSchema.isDefined()) {
     awsRoute.requestModels.add(createRequestModel(route, route.requestSchema));
@@ -629,6 +658,7 @@ operation attachOpenApiModels(route, awsRoute) {
   }
 }
 
+/** Creates create request model. */
 operation createRequestModel(route, schema) {
   var apiModel = new AWSPSMAPI!ApiGatewayRequestModel;
   copyTraceable(schema, apiModel);
@@ -640,6 +670,7 @@ operation createRequestModel(route, schema) {
   return apiModel;
 }
 
+/** Creates create response model. */
 operation createResponseModel(route, schema, statusCode : String) {
   var apiModel = new AWSPSMAPI!ApiGatewayResponseModel;
   copyTraceable(schema, apiModel);
@@ -651,6 +682,7 @@ operation createResponseModel(route, schema, statusCode : String) {
   return apiModel;
 }
 
+/** Computes generate open api. */
 operation generateOpenApi(api) {
   var paths = "";
   for (r in api.routes) {
@@ -667,6 +699,7 @@ operation generateOpenApi(api) {
     " }, \"components\": { \"schemas\": " + openApiSchemas(api) + ", \"securitySchemes\": " + openApiSecuritySchemes(api) + " } }";
 }
 
+/** Computes open api schemas. */
 operation openApiSchemas(api) {
   var schemas = Sequence{};
   for (route in api.routes) {
@@ -686,12 +719,14 @@ operation openApiSchemas(api) {
   return "{ " + out + " }";
 }
 
+/** Adds or records add schema once. */
 operation addSchemaOnce(schemas, schema) {
   if (schema.isDefined() and not schemas.includes(schema)) {
     schemas.add(schema);
   }
 }
 
+/** Computes open api request body. */
 operation openApiRequestBody(r) {
   if (r.requestSchema.isUndefined()) {
     return "null";
@@ -701,6 +736,7 @@ operation openApiRequestBody(r) {
     escapeJson(pascalCase(r.requestSchema.name)) + "\" } } } }";
 }
 
+/** Computes open api responses. */
 operation openApiResponses(r) {
   var responses = "\"" + positiveOr(r.expectedSuccessStatus, 200).asString() + "\": { \"description\": \"Success\"";
   if (r.responseSchema.isDefined()) {
@@ -713,6 +749,7 @@ operation openApiResponses(r) {
   return "{ " + responses + " }";
 }
 
+/** Computes status for error. */
 operation statusForError(e) {
   if (e.abstractStatusClass.toLowerCase().contains("4")) {
     return "400";
@@ -723,6 +760,7 @@ operation statusForError(e) {
   return "default";
 }
 
+/** Computes open api security. */
 operation openApiSecurity(r) {
   if (not routeNeedsAuth(r)) {
     return "[]";
@@ -736,6 +774,7 @@ operation openApiSecurity(r) {
   return "[ { \"DefaultAuthorizer\": " + scopesJson(r) + " } ]";
 }
 
+/** Computes scopes json. */
 operation scopesJson(r) {
   if (r.authorization.isDefined() and hasText(r.authorization.roleOrScopeRequired)) {
     return "[ \"" + escapeJson(r.authorization.roleOrScopeRequired) + "\" ]";
@@ -746,6 +785,7 @@ operation scopesJson(r) {
   return "[]";
 }
 
+/** Computes open api security schemes. */
 operation openApiSecuritySchemes(api) {
   if (not isTrue(api.authRequired)) {
     return "{}";
@@ -753,6 +793,7 @@ operation openApiSecuritySchemes(api) {
   return "{ \"DefaultAuthorizer\": { \"type\": \"http\", \"scheme\": \"bearer\", \"bearerFormat\": \"JWT\" }, \"ApiKeyAuth\": { \"type\": \"apiKey\", \"in\": \"header\", \"name\": \"x-api-key\" }, \"AwsIamAuth\": { \"type\": \"apiKey\", \"in\": \"header\", \"name\": \"Authorization\" } }";
 }
 
+/** Creates create api key and usage plan. */
 operation createApiKeyAndUsagePlan(api, g) {
   if (not api.routes.exists(r | inferAuthorizationType(r) = AWSPSMENUMS!ApiGatewayAuthorizationType#API_KEY)) {
     return;
@@ -792,6 +833,7 @@ operation createApiKeyAndUsagePlan(api, g) {
   link.usagePlan = plan;
 }
 
+/** Computes secret value. */
 operation secretValue(secret) {
   var v = new AWSPSMSECURITY!SecretValueExpression;
   var reference = "REVIEW_REQUIRED_SECRET_REFERENCE";

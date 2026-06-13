@@ -1,3 +1,4 @@
+/** Defines the awspsm security metamodel package. */
 @namespace(uri="https://modless.org/awspsm/security/1.0", prefix="awspsmsecurity")
 package awspsmsecurity;
 
@@ -5,6 +6,7 @@ import "../shared/kernel.ecore";
 import "awspsm-enums.ecore";
 import "awspsm-core.ecore";
 
+/** Represents the Iam Role concept in this model. */
 class IamRole extends awspsmcore.AwsResource {
   attr String roleName;
   attr String path;
@@ -17,11 +19,13 @@ class IamRole extends awspsmcore.AwsResource {
   ref IamManagedPolicy[*] managedPolicies;
 }
 
+/** Represents the Iam Inline Policy concept in this model. */
 class IamInlinePolicy extends kernel.TraceableElement {
   attr String[1] policyName;
   val IamPolicyDocument[1] document;
 }
 
+/** Represents the Iam Policy concept in this model. */
 class IamPolicy extends awspsmcore.AwsResource {
   attr String[1] policyName;
   val IamPolicyDocument[1] document;
@@ -29,6 +33,7 @@ class IamPolicy extends awspsmcore.AwsResource {
   ref IamRole[*] roles;
 }
 
+/** Represents the Iam Managed Policy concept in this model. */
 class IamManagedPolicy extends awspsmcore.AwsResource {
   attr String[1] managedPolicyName;
   attr String path;
@@ -36,11 +41,13 @@ class IamManagedPolicy extends awspsmcore.AwsResource {
   attr String rawPolicyJson;
 }
 
+/** Represents the Iam Policy Document concept in this model. */
 class IamPolicyDocument extends kernel.TraceableElement {
   attr String version;
   val IamStatement[+] statements;
 }
 
+/** Represents the Iam Statement concept in this model. */
 class IamStatement extends kernel.TraceableElement {
   attr String sid;
   attr awspsmenums.IamEffect[1] effect;
@@ -55,17 +62,20 @@ class IamStatement extends kernel.TraceableElement {
   attr String wildcardJustification;
 }
 
+/** Represents the Iam Principal concept in this model. */
 class IamPrincipal extends kernel.TraceableElement {
   attr String principalType;
   attr String[*] identifiers;
 }
 
+/** Represents the Iam Condition concept in this model. */
 class IamCondition extends kernel.TraceableElement {
   attr String operator;
   attr String key;
   attr String[*] values;
 }
 
+/** Represents the Kms Key concept in this model. */
 class KmsKey extends awspsmcore.AwsResource {
   attr String descriptionText;
   attr String keyUsage;
@@ -79,11 +89,13 @@ class KmsKey extends awspsmcore.AwsResource {
   ref KmsAlias[*]#targetKey aliases;
 }
 
+/** Represents the Kms Alias concept in this model. */
 class KmsAlias extends awspsmcore.AwsResource {
   attr String[1] aliasName;
   ref KmsKey[1]#aliases targetKey;
 }
 
+/** Represents the Generate Secret String Config concept in this model. */
 class GenerateSecretStringConfig extends kernel.TraceableElement {
   attr String secretStringTemplate;
   attr String generateStringKey;
@@ -97,6 +109,7 @@ class GenerateSecretStringConfig extends kernel.TraceableElement {
   attr Boolean requireEachIncludedType;
 }
 
+/** Represents the Secrets Manager Secret concept in this model. */
 class SecretsManagerSecret extends awspsmcore.AwsResource {
   attr String secretName;
   attr String descriptionText;
@@ -110,12 +123,14 @@ class SecretsManagerSecret extends awspsmcore.AwsResource {
   ref SecretsManagerResourcePolicy[?]#secret resourcePolicy;
 }
 
+/** Represents the Secret Rotation Rules concept in this model. */
 class SecretRotationRules extends kernel.TraceableElement {
   attr Integer automaticallyAfterDays;
   attr String scheduleExpression;
   attr Integer durationHours;
 }
 
+/** Represents the Secret Rotation Schedule concept in this model. */
 class SecretRotationSchedule extends awspsmcore.AwsResource {
   val SecretRotationRules[?] rotationRules;
   attr String rotationRulesJson;
@@ -123,12 +138,14 @@ class SecretRotationSchedule extends awspsmcore.AwsResource {
   ref awspsmcore.AwsResource[?] rotationLambda;
 }
 
+/** Represents the Secrets Manager Resource Policy concept in this model. */
 class SecretsManagerResourcePolicy extends awspsmcore.AwsResource {
   val IamPolicyDocument[?] resourcePolicy;
   attr String resourcePolicyJson;
   ref SecretsManagerSecret[1]#resourcePolicy secret;
 }
 
+/** Represents the Ssm Parameter concept in this model. */
 class SsmParameter extends awspsmcore.AwsResource {
   attr String[1] parameterName;
   attr awspsmenums.ParameterType[1] parameterType;
@@ -140,10 +157,12 @@ class SsmParameter extends awspsmcore.AwsResource {
   ref KmsKey[?] kmsKey;
 }
 
+/** Represents the Ssm Parameter Value Expression concept in this model. */
 class SsmParameterValueExpression extends awspsmcore.ValueExpression {
   ref SsmParameter[?] ssmParameter;
 }
 
+/** Represents the Secret Value Expression concept in this model. */
 class SecretValueExpression extends awspsmcore.ValueExpression {
   ref SecretsManagerSecret[?] secretRef;
 }

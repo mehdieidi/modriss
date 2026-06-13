@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+[% /* Generates the build artifact. */ %]#!/usr/bin/env bash
 set -euo pipefail
 
 mode_text="${1:-}"

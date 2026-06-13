@@ -1,4 +1,4 @@
-package shared
+[% /* Generates the shared errors artifact. */ %]package shared
 
 type GeneratedHandlerError struct {
 	Code    string

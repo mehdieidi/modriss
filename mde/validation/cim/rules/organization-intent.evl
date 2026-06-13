@@ -1,7 +1,10 @@
+/** Validates the semantic rules for organization intent. */
 import "../lib/cim-validation-helpers.eol";
 
+/** Validates Requirement elements. */
 context CIM!Requirement {
 
+  /** Checks that requirement has fit criterion or acceptance criteria. */
   constraint RequirementHasFitCriterionOrAcceptanceCriteria {
     check : self.fitCriterion.hasText() or self.acceptanceCriteria.notEmpty()
     message :
@@ -9,6 +12,7 @@ context CIM!Requirement {
       "Suggestion: add a measurable fit criterion or at least one Given/When/Then-style acceptance criterion describing how satisfaction will be judged."
   }
 
+  /** Checks that production blocking requirement is mandatory. */
   constraint ProductionBlockingRequirementIsMandatory {
     guard : self.productionBlocking = true
     check : self.mandatory = true
@@ -17,6 +21,7 @@ context CIM!Requirement {
       "Suggestion: set mandatory=true or downgrade productionBlocking=false if the requirement is not a release gate."
   }
 
+  /** Checks that requirement does not depend on itself. */
   constraint RequirementDoesNotDependOnItself {
     check :
       (not self.dependsOn.includes(self)) and (not self.conflictsWith.includes(self))
@@ -25,6 +30,7 @@ context CIM!Requirement {
       "Suggestion: remove the self-reference and model the actual dependency/conflict with another requirement."
   }
 
+  /** Advises that requirement supports goal or constrains element. */
   critique RequirementSupportsGoalOrConstrainsElement {
     check : self.supportsGoals.notEmpty() or self.constrains.notEmpty()
     message :
@@ -33,8 +39,10 @@ context CIM!Requirement {
   }
 }
 
+/** Validates Acceptance Criterion elements. */
 context CIM!AcceptanceCriterion {
 
+  /** Checks that acceptance criterion uses given when then. */
   constraint AcceptanceCriterionUsesGivenWhenThen {
     check :
       self.givenContext.hasText() and self.whenAction.hasText() and self.thenOutcome.hasText()
@@ -43,6 +51,7 @@ context CIM!AcceptanceCriterion {
       "Suggestion: fill givenContext, whenAction, and thenOutcome so the condition, stimulus, and expected result are explicit."
   }
 
+  /** Advises that automatable acceptance criterion has target. */
   critique AutomatableAcceptanceCriterionHasTarget {
     guard : self.automatableTestCandidate = true
     check : self.measurableTarget.hasText()
@@ -52,8 +61,10 @@ context CIM!AcceptanceCriterion {
   }
 }
 
+/** Validates Business Goal elements. */
 context CIM!BusinessGoal {
 
+  /** Checks that business goal has success criterion. */
   constraint BusinessGoalHasSuccessCriterion {
     check : self.successCriterion.hasText()
     message :
@@ -61,6 +72,7 @@ context CIM!BusinessGoal {
       "Suggestion: state the business outcome that proves the goal has been achieved, preferably in measurable terms."
   }
 
+  /** Advises that critical goal has owner and kpi. */
   critique CriticalGoalHasOwnerAndKpi {
     guard : self.priority = KERNEL!Priority#CRITICAL
     check : self.owners.notEmpty() and self.measuredBy.notEmpty()
@@ -69,6 +81,7 @@ context CIM!BusinessGoal {
       "Suggestion: assign an accountable stakeholder and at least one KPI so the critical goal can be governed."
   }
 
+  /** Advises that business goal explains value and risk. */
   critique BusinessGoalExplainsValueAndRisk {
     check : self.businessValue.hasText() and self.failureConsequence.hasText()
     message :
@@ -77,8 +90,10 @@ context CIM!BusinessGoal {
   }
 }
 
+/** Validates KPI elements. */
 context CIM!KPI {
 
+  /** Checks that kpi is measurable. */
   constraint KPIIsMeasurable {
     check :
       self.metricName.hasText() and self.targetValue.hasText() and self.unit.hasText()
@@ -87,6 +102,7 @@ context CIM!KPI {
       "Suggestion: provide metricName, targetValue, and unit, for example 'approval latency', '<= 2', and 'business days'."
   }
 
+  /** Advises that kpi has measurement method. */
   critique KPIHasMeasurementMethod {
     check :
       self.metricDefinition.hasText() and self.measurementFrequency.hasText() and self.dataSource.hasText()
@@ -95,6 +111,7 @@ context CIM!KPI {
       "Suggestion: define how the metric is calculated, how often it is measured, and where the measurement comes from."
   }
 
+  /** Advises that kpi has recognisable operator. */
   critique KPIHasRecognisableOperator {
     guard : self.operator.hasText()
     check : Sequence{"<", "<=", ">", ">=", "=", "==", "between", "increases", "decreases"}.includes(self.operator)
@@ -104,8 +121,10 @@ context CIM!KPI {
   }
 }
 
+/** Validates Stakeholder elements. */
 context CIM!Stakeholder {
 
+  /** Advises that stakeholder concern is declared. */
   critique StakeholderConcernIsDeclared {
     check : self.stakeholderType.hasText() and self.concern.hasText()
     message :
@@ -114,8 +133,10 @@ context CIM!Stakeholder {
   }
 }
 
+/** Validates Actor elements. */
 context CIM!Actor {
 
+  /** Checks that actor has type and trust level. */
   constraint ActorHasTypeAndTrustLevel {
     check : self.actorType.isDefined() and self.trustLevel.isDefined()
     message :
@@ -123,6 +144,7 @@ context CIM!Actor {
       "Suggestion: classify who/what the actor is and how much the business trusts it; this drives authorization, privacy, and boundary validations."
   }
 
+  /** Advises that human actor has role. */
   critique HumanActorHasRole {
     guard : self.actorType = CIM!ActorType#HUMAN
     check : self.playsRoles.notEmpty()
@@ -131,6 +153,7 @@ context CIM!Actor {
       "Suggestion: add at least one role describing the responsibility and business permissions used when issuing commands or queries."
   }
 
+  /** Checks that external actor declares auth expectations. */
   constraint ExternalActorDeclaresAuthExpectations {
     guard :
       (self.actorType = CIM!ActorType#EXTERNAL_SYSTEM) or
@@ -144,8 +167,10 @@ context CIM!Actor {
   }
 }
 
+/** Validates Role elements. */
 context CIM!Role {
 
+  /** Checks that privileged role has permission summary. */
   constraint PrivilegedRoleHasPermissionSummary {
     guard : self.privileged = true
     check : self.responsibility.hasText() and self.businessPermissionSummary.hasText()
@@ -154,6 +179,7 @@ context CIM!Role {
       "Suggestion: document the privileged responsibility and the business permissions that justify elevated access."
   }
 
+  /** Advises that role assigned to actor. */
   critique RoleAssignedToActor {
     check : self.assignedTo.notEmpty()
     message :
@@ -162,8 +188,10 @@ context CIM!Role {
   }
 }
 
+/** Validates External System elements. */
 context CIM!ExternalSystem {
 
+  /** Checks that actor type matches subclass. */
   constraint ActorTypeMatchesSubclass {
     check : self.actorType = CIM!ActorType#EXTERNAL_SYSTEM
     message :
@@ -171,6 +199,7 @@ context CIM!ExternalSystem {
       "Suggestion: align the actorType enum with the concrete ExternalSystem class."
   }
 
+  /** Checks that external system declares purpose and trust. */
   constraint ExternalSystemDeclaresPurposeAndTrust {
     check :
       self.owningOrganization.hasText() and self.businessPurpose.hasText() and self.trustRationale.hasText()
@@ -179,6 +208,7 @@ context CIM!ExternalSystem {
       "Suggestion: identify who owns the system, why the business integrates with it, and why its trust level is acceptable."
   }
 
+  /** Checks that external system data exchange is explicit. */
   constraint ExternalSystemDataExchangeIsExplicit {
     guard :
       (self.storesBusinessData = true) or
@@ -194,8 +224,10 @@ context CIM!ExternalSystem {
   }
 }
 
+/** Validates Business Capability elements. */
 context CIM!BusinessCapability {
 
+  /** Checks that capability supports goal. */
   constraint CapabilitySupportsGoal {
     check : self.supports.notEmpty()
     message :
@@ -203,6 +235,7 @@ context CIM!BusinessCapability {
       "Suggestion: link the capability to at least one goal, or remove it if it is outside the CIM scope."
   }
 
+  /** Checks that capability has owner or responsibility. */
   constraint CapabilityHasOwnerOrResponsibility {
     check :
       self.owner.isDefined() or self.ownerName.hasText() or self.responsibility.hasText()
@@ -211,6 +244,7 @@ context CIM!BusinessCapability {
       "Suggestion: assign an Actor owner, provide ownerName, or describe the responsibility boundary."
   }
 
+  /** Advises that capability has behavior or managed data. */
   critique CapabilityHasBehaviorOrManagedData {
     check :
       self.containsCommands.notEmpty() or self.containsQueries.notEmpty() or
@@ -221,6 +255,7 @@ context CIM!BusinessCapability {
       "Suggestion: add the behavior/data it owns, or mark it as out of transformation scope using notes/rationale."
   }
 
+  /** Advises that critical capability has requirements and nfrs. */
   critique CriticalCapabilityHasRequirementsAndNfrs {
     guard :
       (self.criticality = CIM!CapabilityCriticality#CORE) or
@@ -232,8 +267,10 @@ context CIM!BusinessCapability {
   }
 }
 
+/** Validates Capability Dependency elements. */
 context CIM!CapabilityDependency {
 
+  /** Checks that capability dependency is meaningful. */
   constraint CapabilityDependencyIsMeaningful {
     check :
       (self.source <> self.target) and self.dependencyReason.hasText()
@@ -242,6 +279,7 @@ context CIM!CapabilityDependency {
       "Suggestion: connect two distinct capabilities and explain the business reason for the dependency."
   }
 
+  /** Advises that critical dependency has rationale. */
   critique CriticalDependencyHasRationale {
     guard : self.criticalPath = true
     check : self.rationale.hasText() or self.dependencyReason.hasText()
@@ -251,8 +289,10 @@ context CIM!CapabilityDependency {
   }
 }
 
+/** Validates Bounded Context Candidate elements. */
 context CIM!BoundedContextCandidate {
 
+  /** Checks that bounded context has boundary definition. */
   constraint BoundedContextHasBoundaryDefinition {
     check : self.languageBoundary.hasText() and self.ownershipBoundary.hasText()
     message :
@@ -260,6 +300,7 @@ context CIM!BoundedContextCandidate {
       "Suggestion: state the ubiquitous language boundary and the ownership/team/business boundary."
   }
 
+  /** Advises that bounded context has scoped content. */
   critique BoundedContextHasScopedContent {
     check :
       self.capabilities.notEmpty() or self.entities.notEmpty() or
@@ -270,6 +311,7 @@ context CIM!BoundedContextCandidate {
       "Suggestion: add capabilities, entities, commands, queries, events, or policies that belong to this boundary."
   }
 
+  /** Advises that commands target context owned aggregates. */
   critique CommandsTargetContextOwnedAggregates {
     check : self.commands.forAll(commandItem |
       commandItem.targetAggregate.isUndefined() or
@@ -282,8 +324,10 @@ context CIM!BoundedContextCandidate {
   }
 }
 
+/** Validates Ubiquitous Language Term elements. */
 context CIM!UbiquitousLanguageTerm {
 
+  /** Checks that ubiquitous language term has definition. */
   constraint UbiquitousLanguageTermHasDefinition {
     check : self.term.hasText() and self.definition.hasText()
     message :
@@ -291,6 +335,7 @@ context CIM!UbiquitousLanguageTerm {
       "Suggestion: define the term in business language and add synonyms/forbiddenSynonyms where ambiguity is likely."
   }
 
+  /** Advises that ubiquitous language term is unique in context. */
   critique UbiquitousLanguageTermIsUniqueInContext {
     guard : self.term.hasText()
     check :

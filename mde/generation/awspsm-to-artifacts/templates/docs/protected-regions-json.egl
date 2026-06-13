@@ -1,4 +1,4 @@
-{
+[% /* Generates the protected regions json artifact. */ %]{
   "regions": [
 [% var regionSeq = emitCtx.get("protectedRegionRows").sortBy(rowMap | rowMap.get("regionId")); %]
 [% for (rowMap in regionSeq) { %]

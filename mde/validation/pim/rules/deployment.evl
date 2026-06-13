@@ -1,52 +1,64 @@
+/** Validates the semantic rules for deployment. */
 import "../lib/pim-validation-helpers.eol";
 
+/** Validates Serverless Service elements. */
 context PIM!ServerlessService {
 
+  /** Checks that service responsibility required. */
   constraint ServiceResponsibilityRequired {
     check : self.responsibility.hasText()
     message : "[PIM-SVC-001] Service '" + self.displayName() + "' has no responsibility. Fix: describe the business capability, bounded context, process step or architectural role this service owns."
   }
 
+  /** Checks that service owns at least one element. */
   constraint ServiceOwnsAtLeastOneElement {
     check : self.ownedElements().notEmpty()
     message : "[PIM-SVC-002] Service '" + self.displayName() + "' does not own any PIM elements. Fix: attach owned functions, APIs, channels, stores, workflows or adapters, or remove the empty service."
   }
 
+  /** Checks that owned elements have membership records. */
   constraint OwnedElementsHaveMembershipRecords {
     check : self.ownedElements().forAll(elementItem | self.hasMembershipFor(elementItem))
     message : "[PIM-SVC-002A] Service '" + self.displayName() + "' has owned elements without ServiceElementMembership records. Fix: generate one membership for every owns* reference."
   }
 
+  /** Checks that externally exposed service needs api. */
   constraint ExternallyExposedServiceNeedsApi {
     guard : self.externallyExposed.isTrue()
     check : self.ownsApis.notEmpty()
     message : "[PIM-SVC-003] Externally exposed service '" + self.displayName() + "' owns no API. Fix: add an Api/ApiRoute model or mark externallyExposed as false if exposure is indirect."
   }
 
+  /** Checks that data owning service needs store. */
   constraint DataOwningServiceNeedsStore {
     guard : self.ownsData.isTrue()
     check : self.ownsStores.notEmpty()
     message : "[PIM-SVC-004] Data-owning service '" + self.displayName() + "' owns no storage element. Fix: attach a DataStore or ObjectStore that represents the owned data boundary."
   }
 
+  /** Advises that service owner team recommended. */
   critique ServiceOwnerTeamRecommended {
     check : self.ownerTeam.hasText()
     message : "[PIM-SVC-005] Service '" + self.displayName() + "' has no ownerTeam. Suggested fix: set the owning team so generated documentation and production readiness reports have an accountable owner."
   }
 }
 
+/** Validates Deployment Unit elements. */
 context PIM!DeploymentUnit {
 
+  /** Checks that deployment unit contains elements. */
   constraint DeploymentUnitContainsElements {
     check : self.contains.notEmpty()
     message : "[PIM-DU-001] Deployment unit '" + self.displayName() + "' contains no deployable elements. Fix: add the functions, APIs, channels, workflows, adapters, stores, schedules or configuration that should deploy together."
   }
 
+  /** Checks that deployment unit targets environment. */
   constraint DeploymentUnitTargetsEnvironment {
     check : self.targetEnvironments.notEmpty()
     message : "[PIM-DU-002] Deployment unit '" + self.displayName() + "' has no target environments. Fix: reference DEV/TEST/STAGING/PROD or another Environment where the unit can be generated/deployed."
   }
 
+  /** Advises that independently deployable unit needs release strategy. */
   critique IndependentlyDeployableUnitNeedsReleaseStrategy {
     guard : self.independentlyDeployable.isTrue()
     check : self.releaseStrategy.hasText() and self.versioningStrategy.hasText()
@@ -54,14 +66,17 @@ context PIM!DeploymentUnit {
   }
 }
 
+/** Validates Environment elements. */
 context PIM!Environment {
 
+  /** Checks that prod environment is production like. */
   constraint ProdEnvironmentIsProductionLike {
     guard : self.environmentClass.enumIs("PROD")
     check : self.productionLike.isTrue()
     message : "[PIM-ENV-001] PROD environment '" + self.displayName() + "' is not marked productionLike. Fix: set productionLike to true or choose a non-PROD environmentClass."
   }
 
+  /** Advises that prod environment should require approval. */
   critique ProdEnvironmentShouldRequireApproval {
     guard : self.environmentClass.enumIs("PROD")
     check : self.requiresApproval.isTrue()
@@ -69,18 +84,22 @@ context PIM!Environment {
   }
 }
 
+/** Validates Implementation Profile elements. */
 context PIM!ImplementationProfile {
 
+  /** Checks that profile has generation basics. */
   constraint ProfileHasGenerationBasics {
     check : self.sourceLayout.hasText() and self.buildCommand.hasText()
     message : "[PIM-PROFILE-001] Implementation profile '" + self.displayName() + "' lacks sourceLayout or buildCommand. Fix: specify where generated code should be placed and how it is built."
   }
 
+  /** Checks that package manager matches runtime language. */
   constraint PackageManagerMatchesRuntimeLanguage {
     check : self.packageManagerFitsLanguage()
     message : "[PIM-PROFILE-002] Implementation profile '" + self.displayName() + "' uses package manager '" + self.packageManager.asString() + "' with runtime language '" + self.primaryLanguage.asString() + "'. Fix: choose a compatible package manager, for example NPM/PNPM/YARN for TypeScript/JavaScript, PIP/POETRY for Python, MAVEN/GRADLE for Java, DOTNET for C#, GO_MOD for Go, or CARGO for Rust."
   }
 
+  /** Advises that runtime validation should generate typed contracts. */
   critique RuntimeValidationShouldGenerateTypedContracts {
     guard : self.generateRuntimeValidation.isTrue()
     check : self.generateTypedContracts.isTrue()
@@ -88,7 +107,9 @@ context PIM!ImplementationProfile {
   }
 }
 
+/** Validates Service Element Membership elements. */
 context PIM!ServiceElementMembership {
+  /** Checks that membership matches service ownership. */
   constraint MembershipMatchesServiceOwnership {
     check : self.service.isDefined() and self.element.isDefined() and
       (self.service.ownsFunctions.includes(self.element) or self.service.ownsApis.includes(self.element) or

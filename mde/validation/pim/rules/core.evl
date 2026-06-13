@@ -1,22 +1,28 @@
+/** Validates the semantic rules for core. */
 import "../lib/pim-validation-helpers.eol";
 
+/** Validates PIM Model elements. */
 context PIM!PIMModel {
 
+  /** Checks that provider independent flag must be true. */
   constraint ProviderIndependentFlagMustBeTrue {
     check : self.providerIndependent.isTrue()
     message : "[PIM-ROOT-001] The PIM model must remain provider-independent. Fix: set providerIndependent to true and move provider-specific implementation details to a PSM or implementation profile extension."
   }
 
+  /** Checks that domain name required. */
   constraint DomainNameRequired {
     check : self.domainName.hasText()
     message : "[PIM-ROOT-002] The PIM model is missing a domainName. Fix: provide a stable domain or bounded-context name so generated artifacts and reports can be named consistently."
   }
 
+  /** Checks that implementation profile required for generation. */
   constraint ImplementationProfileRequiredForGeneration {
     check : self.implementationProfile.isDefined()
     message : "[PIM-ROOT-003] Artifact generation requires an ImplementationProfile. Fix: add one with primaryLanguage, packageManager, sourceLayout, test/build commands and contract-generation choices."
   }
 
+  /** Checks that no provider specific names in model. */
   constraint NoProviderSpecificNamesInModel {
     check : KERNEL!ModelElement.all.forAll(elementItem |
       not elementItem.name.containsProviderToken()
@@ -27,16 +33,19 @@ context PIM!PIMModel {
     message : "[PIM-ROOT-004] The model contains provider-specific wording in a name or description. Fix: replace cloud/vendor service names with provider-independent domain terms such as function, queue, topic, object store, identity provider, event bus, trace, metric or deployment unit."
   }
 
+  /** Checks that model element ids must be unique. */
   constraint ModelElementIdsMustBeUnique {
     check : KERNEL!ModelElement.all.collect(elementItem | elementItem.`id`).asSet().size() = KERNEL!ModelElement.all.size()
     message : "[PIM-ROOT-005] ModelElement ids must be globally unique. Fix: assign a distinct stable id to each element in the PIM model."
   }
 
+  /** Advises that default correlation id should be named. */
   critique DefaultCorrelationIdShouldBeNamed {
     check : self.defaultCorrelationIdName.hasText()
     message : "[PIM-ROOT-006] No defaultCorrelationIdName is defined. Suggested fix: set a portable name such as correlationId so APIs, events, workflows and logs can share the same correlation convention."
   }
 
+  /** Advises that architecture style should match contents. */
   critique ArchitectureStyleShouldMatchContents {
     check :
       (not self.architectureStyle.enumIs("API_FIRST_SERVERLESS") or self.apis.notEmpty()) and
@@ -46,13 +55,16 @@ context PIM!PIMModel {
   }
 }
 
+/** Validates Model Element elements. */
 context KERNEL!ModelElement {
 
+  /** Checks that model element id required. */
   constraint ModelElementIdRequired {
     check : self.`id`.hasText()
     message : "[PIM-NAME-001] Element id is missing. Fix: assign a globally unique stable id to '" + self.displayName() + "'."
   }
 
+  /** Advises that portable name recommended. */
   critique PortableNameRecommended {
     guard : not self.isKindOf(KERNEL!TraceLink)
       and not self.isKindOf(KERNEL!ManualDecision)
@@ -63,8 +75,10 @@ context KERNEL!ModelElement {
   }
 }
 
+/** Validates Traceable Element elements. */
 context KERNEL!TraceableElement {
 
+  /** Advises that generated element should be traceable. */
   critique GeneratedElementShouldBeTraceable {
     guard : self.generatedByTransformation.isTrue()
       and not self.isKindOf(KERNEL!TraceLink)
@@ -78,6 +92,7 @@ context KERNEL!TraceableElement {
     message : "[PIM-TRACE-001] Generated element '" + self.displayName() + "' has no trace back to its source. Suggested fix: fill generatedFrom, sourceReference, sourceUri or traceId so users can understand where the element came from."
   }
 
+  /** Advises that rationale recommended for manually maintained elements. */
   critique RationaleRecommendedForManuallyMaintainedElements {
     guard : self.manuallyMaintained.isTrue()
     check : self.rationale.hasText() or self.reviewNotes.hasText()
@@ -85,6 +100,7 @@ context KERNEL!TraceableElement {
   }
 }
 
+/** Returns whether the receiver is generated trace support element. */
 operation KERNEL!TraceableElement isGeneratedTraceSupportElement() : Boolean {
   return Sequence{
     "SchemaField",

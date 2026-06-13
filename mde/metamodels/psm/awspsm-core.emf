@@ -1,3 +1,4 @@
+/** Defines the awspsm core metamodel package. */
 @namespace(uri="https://modless.org/awspsm/core/1.0", prefix="awspsmcore")
 package awspsmcore;
 
@@ -12,6 +13,7 @@ interface S3NotificationDestination {
 interface WafAssociableResource {
 }
 
+/** Represents the Aws Resource concept in this model. */
 abstract class AwsResource extends kernel.TraceableElement {
   attr String[1] logicalId;
   attr String physicalName;
@@ -33,12 +35,14 @@ abstract class AwsResource extends kernel.TraceableElement {
   ref AwsResource[*] dependsOn;
 }
 
+/** Represents the Aws Tag concept in this model. */
 class AwsTag extends kernel.TraceableElement {
   attr String[1] key;
   attr String value;
   attr Boolean propagated;
 }
 
+/** Represents the Resource Import concept in this model. */
 class ResourceImport extends kernel.TraceableElement {
   attr String importedArn;
   attr String importedName;
@@ -47,6 +51,7 @@ class ResourceImport extends kernel.TraceableElement {
   attr Boolean managedOutsideModel;
 }
 
+/** Represents the Native Property concept in this model. */
 class NativeProperty extends kernel.TraceableElement {
   attr String[1] propertyName;
   attr kernel.StructuredFormat[1] format;
@@ -56,6 +61,7 @@ class NativeProperty extends kernel.TraceableElement {
   attr awspsmenums.Decision validationState;
 }
 
+/** Represents the Value Expression concept in this model. */
 class ValueExpression extends kernel.TraceableElement {
   attr awspsmenums.ValueSourceKind[1] sourceKind;
   attr awspsmenums.ValueType expectedType;
@@ -69,11 +75,13 @@ class ValueExpression extends kernel.TraceableElement {
   ref CfnParameter[?] parameter;
 }
 
+/** Represents the Named Value Expression concept in this model. */
 class NamedValueExpression extends kernel.TraceableElement {
   attr String[1] key;
   val ValueExpression[1] value;
 }
 
+/** Represents the Cors Configuration concept in this model. */
 class CorsConfiguration extends kernel.TraceableElement {
   attr String[*] allowOrigins;
   attr String[*] allowMethods;
@@ -83,15 +91,18 @@ class CorsConfiguration extends kernel.TraceableElement {
   attr Boolean allowCredentials;
 }
 
+/** Represents the Tracing Config concept in this model. */
 abstract class TracingConfig extends kernel.TraceableElement {
   attr Boolean enabled;
 }
 
+/** Represents the Aws Native Resource concept in this model. */
 class AwsNativeResource extends AwsResource {
   attr String[1] cloudFormationType;
   val NativeProperty[+] properties;
 }
 
+/** Represents the Aws Stage concept in this model. */
 class AwsStage extends kernel.TraceableElement {
   attr String[1] stageName;
   attr awspsmenums.AwsEnvironmentClass[1] environmentClass;
@@ -108,6 +119,7 @@ class AwsStage extends kernel.TraceableElement {
   ref SamStack[*] deploysStacks;
 }
 
+/** Represents the Sam Stack concept in this model. */
 class SamStack extends kernel.TraceableElement {
   attr String[1] stackName;
   attr String templatePath;
@@ -126,6 +138,7 @@ class SamStack extends kernel.TraceableElement {
   val NativeProperty[*] metadata;
 }
 
+/** Represents the Cfn Parameter concept in this model. */
 class CfnParameter extends kernel.TraceableElement {
   attr String[1] parameterName;
   attr String[1] type;
@@ -136,18 +149,21 @@ class CfnParameter extends kernel.TraceableElement {
   attr Boolean noEcho;
 }
 
+/** Represents the Cfn Mapping concept in this model. */
 class CfnMapping extends kernel.TraceableElement {
   attr String[1] mappingName;
   attr kernel.StructuredFormat[1] format;
   attr String content;
 }
 
+/** Represents the Cfn Condition concept in this model. */
 class CfnCondition extends kernel.TraceableElement {
   attr String[1] conditionName;
   attr String expression;
   val ValueExpression[?] expressionValue;
 }
 
+/** Represents the Cfn Output concept in this model. */
 class CfnOutput extends kernel.TraceableElement {
   attr String[1] outputName;
   attr String outputDescription;
@@ -156,6 +172,7 @@ class CfnOutput extends kernel.TraceableElement {
   ref AwsResource[?] resource;
 }
 
+/** Represents the Sam Globals concept in this model. */
 class SamGlobals extends kernel.TraceableElement {
   val NativeProperty[*] functionGlobals;
   val NativeProperty[*] apiGlobals;
@@ -163,6 +180,7 @@ class SamGlobals extends kernel.TraceableElement {
   val NativeProperty[*] stateMachineGlobals;
 }
 
+/** Represents the Aws Naming Policy concept in this model. */
 class AwsNamingPolicy extends kernel.TraceableElement {
   attr String logicalIdPattern;
   attr String physicalNamePattern;
@@ -171,6 +189,7 @@ class AwsNamingPolicy extends kernel.TraceableElement {
   attr Boolean allowGeneratedPhysicalNames;
 }
 
+/** Represents the Aws Tagging Policy concept in this model. */
 class AwsTaggingPolicy extends kernel.TraceableElement {
   attr Boolean requireOwnerTag;
   attr Boolean requireEnvironmentTag;
@@ -179,6 +198,7 @@ class AwsTaggingPolicy extends kernel.TraceableElement {
   val AwsTag[*] requiredTags;
 }
 
+/** Represents the Aws Security Baseline concept in this model. */
 class AwsSecurityBaseline extends kernel.TraceableElement {
   attr Boolean encryptionAtRestDefault;
   attr Boolean publicAccessBlockedDefault;

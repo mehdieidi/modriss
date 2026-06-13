@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+[% /* Generates the validate contracts artifact. */ %]#!/usr/bin/env bash
 set -euo pipefail
 
 go test ./tests/contract

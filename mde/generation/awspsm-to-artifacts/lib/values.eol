@@ -1,5 +1,7 @@
+/** Provides reusable values operations. */
 import "naming.eol";
 
+/** Computes spaces. */
 operation spaces(indentCount : Integer) : String {
   if (indentCount <= 0) {
     return "";
@@ -7,6 +9,7 @@ operation spaces(indentCount : Integer) : String {
   return " ".repeat(indentCount);
 }
 
+/** Renders json escape. */
 operation Any jsonEscape() : String {
   if (self.isUndefined()) {
     return "";
@@ -18,10 +21,12 @@ operation Any jsonEscape() : String {
     .replaceAll("\n", "\\\\n");
 }
 
+/** Renders json string. */
 operation Any jsonString() : String {
   return "\"" + self.jsonEscape() + "\"";
 }
 
+/** Renders yaml scalar. */
 operation Any yamlScalar() : String {
   if (self.isUndefined()) {
     return "''";
@@ -42,6 +47,7 @@ operation Any yamlScalar() : String {
   return "'" + text.replace("'", "''") + "'";
 }
 
+/** Renders yaml plain scalar. */
 operation Any yamlPlainScalar() : String {
   if (self.isUndefined()) {
     return "''";
@@ -49,6 +55,7 @@ operation Any yamlPlainScalar() : String {
   return self.asString().yamlScalar();
 }
 
+/** Renders yaml block. */
 operation yamlBlock(nameText : String, contentText : String, indentCount : Integer) : String {
   var lineIndent = spaces(indentCount);
   var contentIndent = spaces(indentCount + 2);
@@ -59,6 +66,7 @@ operation yamlBlock(nameText : String, contentText : String, indentCount : Integ
   return outText;
 }
 
+/** Renders emit yaml scalar property. */
 operation emitYamlScalarProperty(nameText : String, valueObj, indentCount : Integer) : String {
   if (valueObj.isUndefined() or valueObj.asString().trim().isEmpty()) {
     return "";
@@ -66,6 +74,7 @@ operation emitYamlScalarProperty(nameText : String, valueObj, indentCount : Inte
   return spaces(indentCount) + nameText + ": " + valueObj.yamlScalar() + "\n";
 }
 
+/** Renders emit yaml boolean property. */
 operation emitYamlBooleanProperty(nameText : String, valueObj, indentCount : Integer) : String {
   if (valueObj.isUndefined()) {
     return "";
@@ -73,6 +82,7 @@ operation emitYamlBooleanProperty(nameText : String, valueObj, indentCount : Int
   return spaces(indentCount) + nameText + ": " + valueObj.asString().toLowerCase() + "\n";
 }
 
+/** Renders emit yaml integer property. */
 operation emitYamlIntegerProperty(nameText : String, valueObj, indentCount : Integer) : String {
   if (valueObj.isUndefined()) {
     return "";
@@ -80,6 +90,7 @@ operation emitYamlIntegerProperty(nameText : String, valueObj, indentCount : Int
   return spaces(indentCount) + nameText + ": " + valueObj.asString() + "\n";
 }
 
+/** Renders emit yaml string list property. */
 operation emitYamlStringListProperty(nameText : String, valueSeq, indentCount : Integer) : String {
   if (valueSeq.isUndefined() or valueSeq.isEmpty()) {
     return "";
@@ -91,6 +102,7 @@ operation emitYamlStringListProperty(nameText : String, valueSeq, indentCount : 
   return outText;
 }
 
+/** Computes cfn policy name. */
 operation Any cfnPolicyName() : String {
   var text = self.orElseText("").asString();
   if (text = "RETAIN") {
@@ -108,6 +120,7 @@ operation Any cfnPolicyName() : String {
   return text;
 }
 
+/** Computes lambda architecture text. */
 operation Any lambdaArchitectureText() : String {
   var text = self.orElseText("").asString();
   if (text = "X86_64") {
@@ -119,6 +132,7 @@ operation Any lambdaArchitectureText() : String {
   return text.toLowerCase();
 }
 
+/** Computes lambda tracing mode text. */
 operation Any lambdaTracingModeText() : String {
   var text = self.orElseText("").asString();
   if (text = "ACTIVE") {
@@ -130,6 +144,7 @@ operation Any lambdaTracingModeText() : String {
   return "";
 }
 
+/** Computes iam effect text. */
 operation Any iamEffectText() : String {
   var text = self.orElseText("ALLOW").asString();
   if (text = "ALLOW") {
@@ -141,14 +156,17 @@ operation Any iamEffectText() : String {
   return text;
 }
 
+/** Computes http method text. */
 operation Any httpMethodText() : String {
   return self.orElseText("GET").asString().toLowerCase();
 }
 
+/** Computes sns protocol text. */
 operation Any snsProtocolText() : String {
   return self.orElseText("").asString().toLowerCase();
 }
 
+/** Computes ref for resource. */
 operation refForResource(resObj) : String {
   if (resObj.isUndefined()) {
     return "";
@@ -156,6 +174,7 @@ operation refForResource(resObj) : String {
   return "!Ref " + resObj.cfnLogicalId();
 }
 
+/** Computes arn for resource. */
 operation arnForResource(resObj) : String {
   if (resObj.isUndefined()) {
     return "";
@@ -170,6 +189,7 @@ operation arnForResource(resObj) : String {
 }
 
 @cached
+/** Computes cfn inline yaml. */
 operation AWSPSMCORE!ValueExpression cfnInlineYaml() : String {
   var kindText = self.sourceKind.asString();
   if (kindText = "PLAINTEXT") {
@@ -211,6 +231,7 @@ operation AWSPSMCORE!ValueExpression cfnInlineYaml() : String {
   return firstText(self.expression, self.literal).yamlScalar();
 }
 
+/** Computes cfn value yaml. */
 operation AWSPSMCORE!ValueExpression cfnValueYaml(indentCount : Integer) : String {
   var kindText = self.sourceKind.asString();
   if (kindText = "LIST") {
@@ -241,6 +262,7 @@ operation AWSPSMCORE!ValueExpression cfnValueYaml(indentCount : Integer) : Strin
   return self.cfnInlineYaml();
 }
 
+/** Renders emit cfn value property. */
 operation AWSPSMCORE!ValueExpression emitCfnValueProperty(nameText : String, indentCount : Integer) : String {
   var kindText = self.sourceKind.asString();
   if (kindText = "LIST" or kindText = "MAP") {
@@ -249,6 +271,7 @@ operation AWSPSMCORE!ValueExpression emitCfnValueProperty(nameText : String, ind
   return spaces(indentCount) + nameText + ": " + self.cfnInlineYaml() + "\n";
 }
 
+/** Computes event bridge auth yaml. */
 operation AWSPSMEVENTS!EventBridgeApiKeyAuthParameters eventBridgeAuthYaml(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "ApiKeyAuthParameters:\n";
   outText = outText + emitYamlScalarProperty("ApiKeyName", self.apiKeyName, indentCount + 2);
@@ -256,6 +279,7 @@ operation AWSPSMEVENTS!EventBridgeApiKeyAuthParameters eventBridgeAuthYaml(inden
   return outText;
 }
 
+/** Computes event bridge auth yaml. */
 operation AWSPSMEVENTS!EventBridgeBasicAuthParameters eventBridgeAuthYaml(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "BasicAuthParameters:\n";
   outText = outText + spaces(indentCount + 2) + "Username: " + self.username.cfnInlineYaml() + "\n";
@@ -263,6 +287,7 @@ operation AWSPSMEVENTS!EventBridgeBasicAuthParameters eventBridgeAuthYaml(indent
   return outText;
 }
 
+/** Computes event bridge auth yaml. */
 operation AWSPSMEVENTS!EventBridgeOAuthParameters eventBridgeAuthYaml(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "OAuthParameters:\n";
   outText = outText + emitYamlScalarProperty("AuthorizationEndpoint", self.authorizationEndpoint, indentCount + 2);
@@ -273,6 +298,7 @@ operation AWSPSMEVENTS!EventBridgeOAuthParameters eventBridgeAuthYaml(indentCoun
   return outText;
 }
 
+/** Renders emit native property yaml. */
 operation AWSPSMCORE!NativeProperty emitNativePropertyYaml(indentCount : Integer) : String {
   if (self.value.isUndefined()) {
     return "";
@@ -286,6 +312,7 @@ operation AWSPSMCORE!NativeProperty emitNativePropertyYaml(indentCount : Integer
   return self.value.emitCfnValueProperty(self.propertyName, indentCount);
 }
 
+/** Renders emit native properties yaml. */
 operation Collection emitNativePropertiesYaml(indentCount : Integer) : String {
   var outText = "";
   for (propObj in self.sortBy(propObj | propObj.propertyName)) {
@@ -294,6 +321,7 @@ operation Collection emitNativePropertiesYaml(indentCount : Integer) : String {
   return outText;
 }
 
+/** Renders emit tags yaml. */
 operation Collection emitTagsYaml(indentCount : Integer) : String {
   if (self.isEmpty()) {
     return "";
@@ -306,6 +334,7 @@ operation Collection emitTagsYaml(indentCount : Integer) : String {
   return outText;
 }
 
+/** Renders emit cors yaml. */
 operation AWSPSMCORE!CorsConfiguration emitCorsYaml(indentCount : Integer) : String {
   var outText = "";
   outText = outText + emitYamlStringListProperty("AllowOrigins", self.allowOrigins, indentCount);

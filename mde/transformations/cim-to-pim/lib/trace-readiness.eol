@@ -1,5 +1,7 @@
+/** Provides reusable trace readiness operations. */
 import "common.eol";
 
+/** Returns pim root. */
 operation pimRoot() {
   if (cachedPimRoot.isUndefined()) {
     if (PIM!PIMModel.all.isEmpty()) {
@@ -10,6 +12,7 @@ operation pimRoot() {
   return cachedPimRoot;
 }
 
+/** Computes readiness root. */
 operation readinessRoot() {
   var root = pimRoot();
   if (root.isDefined() and root.readiness.isDefined()) {
@@ -18,6 +21,7 @@ operation readinessRoot() {
   return null;
 }
 
+/** Adds or records trace root. */
 operation traceRoot() {
   var root = pimRoot();
   if (root.isDefined() and root.traceModel.isDefined()) {
@@ -26,6 +30,7 @@ operation traceRoot() {
   return null;
 }
 
+/** Computes mark generated helper with source id. */
 operation markGeneratedHelperWithSourceId(target, ruleId : String, sourceId : String) {
   if (target.isUndefined()) {
     return target;
@@ -40,10 +45,12 @@ operation markGeneratedHelperWithSourceId(target, ruleId : String, sourceId : St
   return target;
 }
 
+/** Computes mark generated helper. */
 operation markGeneratedHelper(target, ruleId : String, seed) {
   return markGeneratedHelperWithSourceId(target, ruleId, cacheKeyFor(seed));
 }
 
+/** Computes copy common trace. */
 operation copyCommonTrace(source, target, ruleId : String, confidence : String) {
   target.sourceReference = source.sourceReference;
   target.sourceExcerpt = source.sourceExcerpt;
@@ -66,6 +73,7 @@ operation copyCommonTrace(source, target, ruleId : String, confidence : String) 
   }
 }
 
+/** Adds or records add trace. */
 operation addTrace(source, target, ruleId : String, linkType, confidence : String) {
   var trace = traceRoot();
   if (trace.isUndefined()) {
@@ -85,6 +93,7 @@ operation addTrace(source, target, ruleId : String, linkType, confidence : Strin
   trace.links.add(link);
 }
 
+/** Computes map trace confidence. */
 operation mapTraceConfidence(confidence : String) {
   if (confidence = "VERIFIED") {
     return KERNEL!TraceConfidence#VERIFIED;
@@ -101,11 +110,13 @@ operation mapTraceConfidence(confidence : String) {
   return KERNEL!TraceConfidence#MEDIUM;
 }
 
+/** Adds or records trace generated. */
 operation traceGenerated(source, target, ruleId : String, confidence : String) {
   copyCommonTrace(source, target, ruleId, confidence);
   addTrace(source, target, ruleId, KERNEL!TraceLinkType#TRANSFORMS_TO, confidence);
 }
 
+/** Returns whether the receiver is target model reference. */
 operation isTargetModelReference(element) {
   if (element.isUndefined()) {
     return false;
@@ -126,6 +137,7 @@ operation isTargetModelReference(element) {
   return nsUri.startsWith("https://modless.org/pim/");
 }
 
+/** Adds or records append target affected elements. */
 operation appendTargetAffectedElements(owner, affected) {
   if (owner.isUndefined() or affected.isUndefined()) {
     return;
@@ -137,6 +149,7 @@ operation appendTargetAffectedElements(owner, affected) {
   }
 }
 
+/** Computes affected stable key. */
 operation affectedStableKey(affected) {
   if (affected.isUndefined()) {
     return "";
@@ -157,6 +170,7 @@ operation affectedStableKey(affected) {
   return key;
 }
 
+/** Computes manual decision. */
 operation manualDecision(ruleId : String, question : String, severity, blocking : Boolean, affected) {
   var readiness = readinessRoot();
   if (readiness.isUndefined()) {
@@ -194,6 +208,7 @@ operation manualDecision(ruleId : String, question : String, severity, blocking 
   return d;
 }
 
+/** Computes readiness finding. */
 operation readinessFinding(ruleId : String, findingType, severity, message : String, recommendation : String, blocking : Boolean, affected) {
   var readiness = readinessRoot();
   if (readiness.isUndefined()) {
@@ -223,6 +238,7 @@ operation readinessFinding(ruleId : String, findingType, severity, message : Str
   return f;
 }
 
+/** Computes readiness check. */
 operation readinessCheck(checkId : String, severity, passed : Boolean, message : String, remediation : String, affected) {
   var readiness = readinessRoot();
   if (readiness.isUndefined()) {

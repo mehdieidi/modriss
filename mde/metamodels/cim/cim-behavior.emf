@@ -1,3 +1,4 @@
+/** Defines the cim behavior metamodel package. */
 @namespace(uri="https://modless.org/cim/behavior/1.0", prefix="cimbehavior")
 package cimbehavior;
 
@@ -7,6 +8,7 @@ import "cim-organization.ecore";
 import "cim-domain-data.ecore";
 import "cim-process-policy.ecore";
 
+/** Represents the Command concept in this model. */
 class Command extends kernel.TraceableElement {
   attr String intent;
   attr cimtypes.CommandType commandType;
@@ -30,6 +32,7 @@ class Command extends kernel.TraceableElement {
   val CommandOutcome[*]#command outcomes;
 }
 
+/** Represents the Command Outcome concept in this model. */
 class CommandOutcome extends kernel.TraceableElement {
   attr Boolean success;
   attr String resultDescription;
@@ -39,6 +42,7 @@ class CommandOutcome extends kernel.TraceableElement {
   ref cimdomain.InformationItem[*] output;
 }
 
+/** Represents the Query concept in this model. */
 class Query extends kernel.TraceableElement {
   attr String intent;
   attr cimtypes.QueryType queryType;
@@ -58,6 +62,7 @@ class Query extends kernel.TraceableElement {
   ref cimorg.BusinessCapability[?]#containsQueries targetCapability;
 }
 
+/** Represents the Business Event concept in this model. */
 class BusinessEvent extends kernel.TraceableElement {
   attr String semanticName;
   attr String occurredInPastTenseName;
@@ -83,6 +88,7 @@ class BusinessEvent extends kernel.TraceableElement {
   ref cimdomain.DomainEntity[*] affects;
 }
 
+/** Represents the Business Error concept in this model. */
 class BusinessError extends kernel.TraceableElement {
   attr String errorCode;
   attr String businessMeaning;
@@ -93,6 +99,7 @@ class BusinessError extends kernel.TraceableElement {
   ref BusinessEvent[*] emittedEvents;
 }
 
+/** Represents the Condition concept in this model. */
 class Condition extends kernel.TraceableElement {
   attr String naturalLanguage;
   attr kernel.ExpressionLanguage expressionLanguage;

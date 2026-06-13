@@ -1,7 +1,10 @@
+/** Provides reusable naming operations. */
+/** Returns whether the receiver contains a non-empty textual value. */
 operation Any isPresent() : Boolean {
   return self.isDefined() and not self.asString().trim().isEmpty();
 }
 
+/** Computes text or empty. */
 operation Any textOrEmpty() : String {
   if (self.isUndefined()) {
     return "";
@@ -9,6 +12,7 @@ operation Any textOrEmpty() : String {
   return self.asString();
 }
 
+/** Computes or else text. */
 operation Any orElseText(fallbackText : String) : String {
   if (self.isPresent()) {
     return self.asString();
@@ -16,10 +20,12 @@ operation Any orElseText(fallbackText : String) : String {
   return fallbackText;
 }
 
+/** Computes model feature value. */
 operation Any modelFeatureValue(featureNameText : String) : Any {
   return self.eGet(self.eClass().getEStructuralFeature(featureNameText));
 }
 
+/** Computes first text. */
 operation firstText(primaryValue, fallbackValue) : String {
   if (primaryValue.isPresent()) {
     return primaryValue.asString();
@@ -30,6 +36,7 @@ operation firstText(primaryValue, fallbackValue) : String {
   return "";
 }
 
+/** Converts the receiver to normalized token. */
 operation String normalizedToken() : String {
   var resultText = self.orElseText("unnamed").trim()
     .replaceAll("[^A-Za-z0-9]+", "-")
@@ -41,16 +48,19 @@ operation String normalizedToken() : String {
 }
 
 @cached
+/** Converts the receiver to slug. */
 operation Any toSlug() : String {
   return self.textOrEmpty().normalizedToken().toLowerCase();
 }
 
 @cached
+/** Converts the receiver to snake. */
 operation Any toSnake() : String {
   return self.toSlug().replace("-", "_");
 }
 
 @cached
+/** Converts the receiver to cfn logical id. */
 operation Any toCfnLogicalId() : String {
   var tokenSeq = self.textOrEmpty().normalizedToken().split("-");
   var resultText = "";
@@ -69,18 +79,22 @@ operation Any toCfnLogicalId() : String {
 }
 
 @cached
+/** Converts the receiver to camel. */
 operation Any toCamel() : String {
   var pascalText = self.toCfnLogicalId();
   return pascalText.substring(0, 1).toLowerCase() + pascalText.substring(1);
 }
 
 @cached
+/** Converts the receiver to safe file stem. */
 operation Any safeFileStem() : String {
   return self.toSlug();
 }
 
 @cached
+/** Computes stable key. */
 operation KERNEL!TraceableElement stableKey() : String {
+  // Prefer externally stable trace identities; mutable display names and hashes are last resorts.
   if (self.traceId.isPresent()) {
     return self.traceId;
   }
@@ -100,7 +114,9 @@ operation KERNEL!TraceableElement stableKey() : String {
 }
 
 @cached
+/** Computes stable key. */
 operation AWSPSMCORE!AwsResource stableKey() : String {
+  // Resource logical IDs are stable within a stack and therefore precede display names.
   if (self.traceId.isPresent()) {
     return self.traceId;
   }
@@ -120,6 +136,7 @@ operation AWSPSMCORE!AwsResource stableKey() : String {
 }
 
 @cached
+/** Computes cfn logical id. */
 operation AWSPSMCORE!AwsResource cfnLogicalId() : String {
   if (self.logicalId.isPresent()) {
     return self.logicalId.toCfnLogicalId();
@@ -131,56 +148,67 @@ operation AWSPSMCORE!AwsResource cfnLogicalId() : String {
 }
 
 @cached
+/** Computes function slug. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction functionSlug() : String {
   return firstText(self.functionName, firstText(self.logicalId, self.name)).toSlug();
 }
 
 @cached
+/** Computes api slug. */
 operation AWSPSMAPI!ApiGatewayApi apiSlug() : String {
   return firstText(self.apiName, firstText(self.logicalId, self.name)).toSlug();
 }
 
 @cached
+/** Computes workflow slug. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowSlug() : String {
   return firstText(self.stateMachineName, firstText(self.logicalId, self.name)).toSlug();
 }
 
 @cached
+/** Computes event rule slug. */
 operation AWSPSMEVENTS!EventBridgeRule eventRuleSlug() : String {
   return firstText(self.ruleName, firstText(self.logicalId, self.name)).toSlug();
 }
 
 @cached
+/** Computes queue slug. */
 operation AWSPSMMESSAGING!SqsQueue queueSlug() : String {
   return firstText(self.queueName, firstText(self.logicalId, self.name)).toSlug();
 }
 
 @cached
+/** Converts the receiver to topic slug. */
 operation AWSPSMMESSAGING!SnsTopic topicSlug() : String {
   return firstText(self.topicName, firstText(self.logicalId, self.name)).toSlug();
 }
 
 @cached
+/** Computes table slug. */
 operation AWSPSMSTORAGE!DynamoDbTable tableSlug() : String {
   return firstText(self.tableName, firstText(self.logicalId, self.name)).toSlug();
 }
 
 @cached
+/** Computes bucket slug. */
 operation AWSPSMSTORAGE!S3Bucket bucketSlug() : String {
   return firstText(self.bucketName, firstText(self.logicalId, self.name)).toSlug();
 }
 
 @cached
+/** Computes stack slug. */
 operation AWSPSMCORE!SamStack stackSlug() : String {
   return firstText(self.stackName, self.name).toSlug();
 }
 
 @cached
+/** Computes stage slug. */
 operation AWSPSMCORE!AwsStage stageSlug() : String {
   return firstText(self.stageName, self.name).toSlug();
 }
 
 @cached
+/** Computes stack template path. */
 operation AWSPSMCORE!SamStack stackTemplatePath() : String {
   if (self.templatePath.isPresent()) {
     return self.templatePath;
@@ -188,6 +216,7 @@ operation AWSPSMCORE!SamStack stackTemplatePath() : String {
   return "template.yaml";
 }
 
+/** Computes display name. */
 operation Any displayName() : String {
   if (self.isUndefined()) {
     return "Unnamed";

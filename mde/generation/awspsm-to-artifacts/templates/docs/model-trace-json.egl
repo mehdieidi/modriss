@@ -1,4 +1,4 @@
-{
+[% /* Generates the model trace json artifact. */ %]{
   "projectSlug": "[%= emitCtx.get("projectSlug").jsonEscape() %]",
   "resources": [
 [% var resSeq = awsRoot.allModeledResources(); %]

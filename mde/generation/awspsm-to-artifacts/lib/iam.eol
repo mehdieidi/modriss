@@ -1,6 +1,8 @@
+/** Provides reusable iam operations. */
 import "naming.eol";
 import "values.eol";
 
+/** Renders emit iam policy document yaml. */
 operation AWSPSMSECURITY!IamPolicyDocument emitIamPolicyDocumentYaml(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "Version: " + self.version.orElseText("2012-10-17").yamlScalar() + "\n";
   outText = outText + spaces(indentCount) + "Statement:\n";
@@ -10,6 +12,7 @@ operation AWSPSMSECURITY!IamPolicyDocument emitIamPolicyDocumentYaml(indentCount
   return outText;
 }
 
+/** Renders emit iam statement yaml. */
 operation AWSPSMSECURITY!IamStatement emitIamStatementYaml(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "- Effect: " + self.effect.iamEffectText() + "\n";
   if (self.sid.isPresent()) {
@@ -41,6 +44,7 @@ operation AWSPSMSECURITY!IamStatement emitIamStatementYaml(indentCount : Integer
   return outText;
 }
 
+/** Renders emit iam list yaml. */
 operation Collection emitIamListYaml(nameText : String, indentCount : Integer) : String {
   if (self.isEmpty()) {
     return "";
@@ -55,6 +59,7 @@ operation Collection emitIamListYaml(nameText : String, indentCount : Integer) :
   return outText;
 }
 
+/** Renders emit iam policy document json. */
 operation AWSPSMSECURITY!IamPolicyDocument emitIamPolicyDocumentJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
   outText = outText + spaces(indentCount + 2) + "\"Version\": " + self.version.orElseText("2012-10-17").jsonString() + ",\n";
@@ -71,6 +76,7 @@ operation AWSPSMSECURITY!IamPolicyDocument emitIamPolicyDocumentJson(indentCount
   return outText;
 }
 
+/** Renders emit iam statement json. */
 operation AWSPSMSECURITY!IamStatement emitIamStatementJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
   outText = outText + spaces(indentCount + 2) + "\"Effect\": " + self.effect.iamEffectText().jsonString();
@@ -87,6 +93,7 @@ operation AWSPSMSECURITY!IamStatement emitIamStatementJson(indentCount : Integer
   return outText;
 }
 
+/** Renders emit json string array. */
 operation Collection emitJsonStringArray(nameText : String, indentCount : Integer) : String {
   var outText = spaces(indentCount) + "\"" + nameText + "\": ";
   if (self.size() = 1) {

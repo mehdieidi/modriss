@@ -1,3 +1,4 @@
+/** Defines the pim integration metamodel package. */
 @namespace(uri="https://modless.org/pim/integration/1.0", prefix="integration")
 package integration;
 
@@ -10,10 +11,12 @@ import "pim-external.ecore";
 import "pim-policy.ecore";
 import "pim-api.ecore";
 
+/** Represents the Integration Element concept in this model. */
 abstract class IntegrationElement extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
   attr String integrationPurpose;
 }
 
+/** Represents the Event Channel concept in this model. */
 abstract class EventChannel extends IntegrationElement, kernel.DeployableElement, kernel.InvocationSource, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.EventCarrier {
   attr pimtypes.ChannelKind[1] channelKind;
   attr pimtypes.OrderingRequirement[1] orderingRequirement;
@@ -32,6 +35,7 @@ abstract class EventChannel extends IntegrationElement, kernel.DeployableElement
   ref policy.ObservabilityConfig[?] observability;
 }
 
+/** Represents the Queue concept in this model. */
 class Queue extends EventChannel {
   attr Boolean fifoRequired;
   attr Boolean deduplicationRequired;
@@ -43,17 +47,20 @@ class Queue extends EventChannel {
   ref policy.BatchPolicy[?] batchPolicy;
 }
 
+/** Represents the Topic concept in this model. */
 class Topic extends EventChannel {
   attr String subscriptionMode;
   attr Boolean filteringRequired;
   val Subscription[*]#ownerTopic subscriptions;
 }
 
+/** Represents the Event Bus concept in this model. */
 class EventBus extends EventChannel {
   attr String routingExpressionLanguage;
   val EventRoutingRule[*]#eventBus routingRules;
 }
 
+/** Represents the Schedule concept in this model. */
 class Schedule extends IntegrationElement, kernel.DeployableElement, kernel.InvocationSource {
   attr String[1] scheduleExpression;
   attr Boolean enabled;
@@ -61,6 +68,7 @@ class Schedule extends IntegrationElement, kernel.DeployableElement, kernel.Invo
   ref kernel.RoutingTarget[*] targets;
 }
 
+/** Represents the Subscription concept in this model. */
 class Subscription extends kernel.TraceableElement {
   attr String filterExpression;
   val kernel.Expression[?] filter;
@@ -71,6 +79,7 @@ class Subscription extends kernel.TraceableElement {
   ref kernel.SubscriptionTarget[1] target;
 }
 
+/** Represents the Event Routing Rule concept in this model. */
 class EventRoutingRule extends kernel.TraceableElement, kernel.InvocationSource {
   attr String eventPattern;
   attr String scheduleExpression;
@@ -82,6 +91,7 @@ class EventRoutingRule extends kernel.TraceableElement, kernel.InvocationSource 
   ref policy.ResiliencePolicy[?] resilience;
 }
 
+/** Represents the Flow concept in this model. */
 abstract class Flow extends kernel.TraceableElement, kernel.PolicyTarget {
   attr String flowPurpose;
   attr Boolean criticalPath;
@@ -93,30 +103,36 @@ abstract class Flow extends kernel.TraceableElement, kernel.PolicyTarget {
   ref policy.ArchitecturePolicy[*] policies;
 }
 
+/** Represents the Request Response Flow concept in this model. */
 class RequestResponseFlow extends Flow {
   attr Boolean synchronous;
   ref api.ApiRoute[1] apiRoute;
 }
 
+/** Represents the Event Flow concept in this model. */
 class EventFlow extends Flow {
   ref contracts.EventType[1] eventType;
   ref EventChannel[1] channel;
 }
 
+/** Represents the Message Flow concept in this model. */
 class MessageFlow extends Flow {
   ref contracts.Schema[1] messageSchema;
   ref Queue[1] queue;
 }
 
+/** Represents the Pub Sub Flow concept in this model. */
 class PubSubFlow extends Flow {
   ref Topic[1] topic;
   ref Subscription[*] subscriptions;
 }
 
+/** Represents the Orchestration Flow concept in this model. */
 class OrchestrationFlow extends Flow {
   ref workflow.Workflow[1] workflow;
 }
 
+/** Represents the External Integration Flow concept in this model. */
 class ExternalIntegrationFlow extends Flow {
   ref external.ExternalAdapter[1] adapter;
 }

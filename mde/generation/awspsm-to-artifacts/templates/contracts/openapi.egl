@@ -1,4 +1,4 @@
-[% if (apiObj.definitionBody.isPresent()) { %]
+[% /* Generates the openapi artifact. */ %][% if (apiObj.definitionBody.isPresent()) { %]
 [%= apiObj.definitionBody %]
 [% } else { %]
 [%= apiObj.emitOpenApiDocument(routeSeq) %]

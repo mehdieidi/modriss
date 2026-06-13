@@ -1,3 +1,4 @@
+/** Defines the pim compute metamodel package. */
 @namespace(uri="https://modless.org/pim/compute/1.0", prefix="compute")
 package compute;
 
@@ -10,6 +11,7 @@ import "pim-config.ecore";
 import "pim-policy.ecore";
 import "pim-security.ecore";
 
+/** Represents the Compute Element concept in this model. */
 abstract class ComputeElement extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
   attr String responsibility;
   attr pimtypes.ComputeProfile computeProfile;
@@ -21,6 +23,7 @@ abstract class ComputeElement extends kernel.TraceableElement, kernel.FlowEndpoi
   attr Integer expectedPeakConcurrency;
 }
 
+/** Represents the Function concept in this model. */
 class Function extends ComputeElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.FunctionTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.ConfigurableElement {
   attr pimtypes.FunctionKind[1] functionKind;
   attr String handlerResponsibility;
@@ -51,6 +54,7 @@ class Function extends ComputeElement, kernel.DeployableElement, kernel.Invocati
   ref security.SecurityPolicy[*] securityPolicies;
 }
 
+/** Represents the Trigger concept in this model. */
 class Trigger extends kernel.TraceableElement, kernel.PolicyTarget {
   attr String triggerKind;
   attr pimtypes.InvocationMode[1] invocationMode;

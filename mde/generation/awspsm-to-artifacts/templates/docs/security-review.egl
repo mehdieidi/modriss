@@ -1,4 +1,4 @@
-# Security Review
+[% /* Generates the security review artifact. */ %]# Security Review
 
 ## Generated Findings
 

@@ -1,7 +1,10 @@
+/** Validates the semantic rules for behavior. */
 import "../lib/cim-validation-helpers.eol";
 
+/** Validates Command elements. */
 context CIM!Command {
 
+  /** Checks that command must cause business outcome. */
   constraint CommandMustCauseBusinessOutcome {
     check : self.expectedEvents.notEmpty() or self.rejectionEvents.notEmpty()
     message :
@@ -9,6 +12,7 @@ context CIM!Command {
       "Suggestion: link the business facts that occur when the command succeeds or is rejected."
   }
 
+  /** Checks that command has behavioral owner. */
   constraint CommandHasBehavioralOwner {
     check : self.targetCapability.isDefined() or self.targetAggregate.isDefined()
     message :
@@ -16,6 +20,7 @@ context CIM!Command {
       "Suggestion: assign the capability or aggregate responsible for deciding and executing the command."
   }
 
+  /** Checks that actor facing command has authorization decision. */
   constraint ActorFacingCommandHasAuthorizationDecision {
     guard : self.hasHumanIssuer()
     check : self.hasAuthorizationDecision()
@@ -24,6 +29,7 @@ context CIM!Command {
       "Suggestion: set authorizationRequired=true and add an authorizationRule explaining who may issue it and under what business conditions."
   }
 
+  /** Checks that external or untrusted command requires audit and authorization. */
   constraint ExternalOrUntrustedCommandRequiresAuditAndAuthorization {
     guard : self.hasExternalOrUntrustedIssuer()
     check : (self.auditRequired = true) and self.hasAuthorizationDecision()
@@ -32,6 +38,7 @@ context CIM!Command {
       "Suggestion: require authorization and auditing for commands crossing trust boundaries."
   }
 
+  /** Advises that duplicate submission command has idempotency key. */
   critique DuplicateSubmissionCommandHasIdempotencyKey {
     guard : self.duplicateSubmissionPossible = true
     check : self.idempotencyBusinessKey.hasText()
@@ -40,6 +47,7 @@ context CIM!Command {
       "Suggestion: define the business key that lets the system recognize duplicate intent."
   }
 
+  /** Advises that command has preconditions or errors. */
   critique CommandHasPreconditionsOrErrors {
     check : self.preconditions.notEmpty() or self.possibleErrors.notEmpty()
     message :
@@ -47,6 +55,7 @@ context CIM!Command {
       "Suggestion: document business conditions and rejection/error cases so command semantics are complete."
   }
 
+  /** Advises that command outcome links match direct collections. */
   critique CommandOutcomeLinksMatchDirectCollections {
     guard : self.outcomes.notEmpty()
     check {
@@ -54,6 +63,7 @@ context CIM!Command {
       var rejectionEvents : Set = Set{};
       var outcomeErrors : Set = Set{};
 
+      // Flatten detailed outcomes before comparing both representations in both directions.
       for (outcome in self.outcomes) {
         for (eventItem in outcome.emittedEvents) {
           if (outcome.success = true) {
@@ -79,8 +89,10 @@ context CIM!Command {
   }
 }
 
+/** Validates Query elements. */
 context CIM!Query {
 
+  /** Checks that query must have output. */
   constraint QueryMustHaveOutput {
     check : self.output.notEmpty()
     message :
@@ -88,6 +100,7 @@ context CIM!Query {
       "Suggestion: link at least one InformationItem that the query returns."
   }
 
+  /** Checks that personal query must declare authorization. */
   constraint PersonalQueryMustDeclareAuthorization {
     guard : (self.containsPersonalData = true) or self.outputsPersonalData()
     check : (self.authorizationRequired = true) and self.authorizationRule.hasText()
@@ -96,6 +109,7 @@ context CIM!Query {
       "Suggestion: specify who may read this data and under which business/legal conditions."
   }
 
+  /** Advises that query personal flag matches output. */
   critique QueryPersonalFlagMatchesOutput {
     check :
       (self.containsPersonalData = self.outputsPersonalData()) or
@@ -105,6 +119,7 @@ context CIM!Query {
       "Suggestion: update containsPersonalData or classify the output InformationItems correctly."
   }
 
+  /** Advises that list search query declares result handling. */
   critique ListSearchQueryDeclaresResultHandling {
     guard : (self.queryType = CIM!QueryType#LIST) or (self.queryType = CIM!QueryType#SEARCH)
     check : self.paginationExpectation.hasText() and self.filteringExpectation.hasText()
@@ -113,6 +128,7 @@ context CIM!Query {
       "Suggestion: declare expected pagination and filtering behavior so frontends and read models can be generated safely."
   }
 
+  /** Advises that query declares freshness. */
   critique QueryDeclaresFreshness {
     check : self.freshnessNeed.isDefined()
     message :
@@ -121,8 +137,10 @@ context CIM!Query {
   }
 }
 
+/** Validates Business Event elements. */
 context CIM!BusinessEvent {
 
+  /** Checks that event name past tense. */
   constraint EventNamePastTense {
     check :
       (self.name.matches("(?i).*(ed|done|completed|created|updated|deleted|rejected|accepted|submitted|failed|cancelled)$")) or
@@ -132,6 +150,7 @@ context CIM!BusinessEvent {
       "Suggestion: rename it to a past-tense fact such as 'OrderSubmitted', 'PaymentRejected', or fill occurredInPastTenseName."
   }
 
+  /** Checks that event is business fact not command. */
   constraint EventIsBusinessFactNotCommand {
     check :
       (not self.name.startsWith("Create")) and
@@ -145,6 +164,7 @@ context CIM!BusinessEvent {
       "Suggestion: model commands as Command elements and events as facts that already happened, e.g. 'CustomerApproved' instead of 'ApproveCustomer'."
   }
 
+  /** Checks that event has business meaning. */
   constraint EventHasBusinessMeaning {
     check : self.businessMeaning.hasText() or self.semanticName.hasText()
     message :
@@ -152,6 +172,7 @@ context CIM!BusinessEvent {
       "Suggestion: explain the business fact and why it matters."
   }
 
+  /** Advises that event has producer or consumer. */
   critique EventHasProducerOrConsumer {
     check :
       self.expectedByCommands.notEmpty() or self.rejectedByCommands.notEmpty() or
@@ -163,6 +184,7 @@ context CIM!BusinessEvent {
       "Suggestion: connect it to a command, policy, process, or external system that produces or consumes it."
   }
 
+  /** Checks that production relevant event has versioning metadata. */
   constraint ProductionRelevantEventHasVersioningMetadata {
     guard : self.externallyVisible = true or self.auditRelevant = true or self.retentionRelevant = true
     check : self.semanticVersion.hasText() and self.versioningRationale.hasText()
@@ -171,6 +193,7 @@ context CIM!BusinessEvent {
       "Suggestion: set an explicit semantic version and describe how event meaning/payload changes will be managed."
   }
 
+  /** Checks that event semantic version looks like sem ver. */
   constraint EventSemanticVersionLooksLikeSemVer {
     guard : self.semanticVersion.hasText()
     check : self.semanticVersion.matches("^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$")
@@ -179,6 +202,7 @@ context CIM!BusinessEvent {
       "Suggestion: use MAJOR.MINOR.PATCH with optional prerelease/build metadata, for example 1.0.0."
   }
 
+  /** Checks that event payload information is typed. */
   constraint EventPayloadInformationIsTyped {
     check : self.payload.forAll(item | item.type.isDefined())
     message :
@@ -187,8 +211,10 @@ context CIM!BusinessEvent {
   }
 }
 
+/** Validates Business Error elements. */
 context CIM!BusinessError {
 
+  /** Checks that business error is user understandable. */
   constraint BusinessErrorIsUserUnderstandable {
     check :
       self.errorCode.hasText() and self.businessMeaning.hasText() and self.userVisibleMessage.hasText()
@@ -197,6 +223,7 @@ context CIM!BusinessError {
       "Suggestion: define a stable business error code and a user-facing explanation that does not expose implementation details."
   }
 
+  /** Advises that retry meaningful implies recoverable. */
   critique RetryMeaningfulImpliesRecoverable {
     guard : self.retryMeaningful = true
     check : self.recoverable = true
@@ -206,8 +233,10 @@ context CIM!BusinessError {
   }
 }
 
+/** Validates Condition elements. */
 context CIM!Condition {
 
+  /** Checks that condition is specified. */
   constraint ConditionIsSpecified {
     check : self.naturalLanguage.hasText() or self.expression.hasText() or self.expressionModel.hasExpressionBody()
     message :
@@ -215,6 +244,7 @@ context CIM!Condition {
       "Suggestion: write the condition in business language and optionally add expressionModel.body for automation."
   }
 
+  /** Checks that automatable condition has expression. */
   constraint AutomatableConditionHasExpression {
     guard : self.mustBeAutomatable = true
     check : self.expressionModel.hasExpressionBody() or (self.expressionLanguage.isDefined() and self.expression.hasText())
@@ -223,6 +253,7 @@ context CIM!Condition {
       "Suggestion: provide a machine-evaluable kernel.Expression with language and body."
   }
 
+  /** Advises that condition references information or concepts. */
   critique ConditionReferencesInformationOrConcepts {
     check : self.referencedInformation.notEmpty() or self.referencedConcepts.notEmpty()
     message :

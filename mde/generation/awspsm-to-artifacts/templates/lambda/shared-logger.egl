@@ -1,4 +1,4 @@
-package shared
+[% /* Generates the shared logger artifact. */ %]package shared
 
 import (
 	"encoding/json"

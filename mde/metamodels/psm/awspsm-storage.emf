@@ -1,3 +1,4 @@
+/** Defines the awspsm storage metamodel package. */
 @namespace(uri="https://modless.org/awspsm/storage/1.0", prefix="awspsmstorage")
 package awspsmstorage;
 
@@ -6,6 +7,7 @@ import "awspsm-enums.ecore";
 import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 
+/** Represents the Dynamo Db Table concept in this model. */
 class DynamoDbTable extends awspsmcore.AwsResource {
   attr String tableName;
   attr awspsmenums.DynamoDbBillingMode[1] billingMode;
@@ -30,37 +32,44 @@ class DynamoDbTable extends awspsmcore.AwsResource {
   attr String resourcePolicyJson;
 }
 
+/** Represents the Dynamo Db Attribute Definition concept in this model. */
 class DynamoDbAttributeDefinition extends kernel.TraceableElement {
   attr String[1] attributeName;
   attr awspsmenums.DynamoDbAttributeType[1] attributeType;
 }
 
+/** Represents the Dynamo Db Key Schema Element concept in this model. */
 class DynamoDbKeySchemaElement extends kernel.TraceableElement {
   attr String[1] attributeName;
   attr awspsmenums.DynamoDbKeyType[1] keyType;
 }
 
+/** Represents the Dynamo Db Projection concept in this model. */
 class DynamoDbProjection extends kernel.TraceableElement {
   attr awspsmenums.DynamoDbProjectionType[1] projectionType;
   attr String[*] nonKeyAttributes;
 }
 
+/** Represents the Dynamo Db Provisioned Throughput concept in this model. */
 class DynamoDbProvisionedThroughput extends kernel.TraceableElement {
   attr Integer[1] readCapacityUnits;
   attr Integer[1] writeCapacityUnits;
 }
 
+/** Represents the Dynamo Db On Demand Throughput concept in this model. */
 class DynamoDbOnDemandThroughput extends kernel.TraceableElement {
   attr Integer maxReadRequestUnits;
   attr Integer maxWriteRequestUnits;
 }
 
+/** Represents the Dynamo Db Local Secondary Index concept in this model. */
 class DynamoDbLocalSecondaryIndex extends kernel.TraceableElement {
   attr String[1] indexName;
   val DynamoDbKeySchemaElement[+] keySchema;
   val DynamoDbProjection[1] projection;
 }
 
+/** Represents the Dynamo Db Global Secondary Index concept in this model. */
 class DynamoDbGlobalSecondaryIndex extends kernel.TraceableElement {
   attr String[1] indexName;
   val DynamoDbKeySchemaElement[+] keySchema;
@@ -69,6 +78,7 @@ class DynamoDbGlobalSecondaryIndex extends kernel.TraceableElement {
   val DynamoDbOnDemandThroughput[?] onDemandThroughput;
 }
 
+/** Represents the Dynamo Db Replica Specification concept in this model. */
 class DynamoDbReplicaSpecification extends kernel.TraceableElement {
   attr String[1] region;
   attr Boolean pointInTimeRecoveryEnabled;
@@ -76,27 +86,32 @@ class DynamoDbReplicaSpecification extends kernel.TraceableElement {
   ref awspsmsecurity.KmsKey[?] kmsKey;
 }
 
+/** Represents the Dynamo Db Stream Specification concept in this model. */
 class DynamoDbStreamSpecification extends kernel.TraceableElement {
   attr awspsmenums.DynamoDbStreamViewType[1] streamViewType;
 }
 
+/** Represents the Dynamo Db Time To Live Specification concept in this model. */
 class DynamoDbTimeToLiveSpecification extends kernel.TraceableElement {
   attr String[1] attributeName;
   attr Boolean enabled;
 }
 
+/** Represents the Dynamo Db Sse Specification concept in this model. */
 class DynamoDbSseSpecification extends kernel.TraceableElement {
   attr Boolean enabled;
   attr String sseType;
   ref awspsmsecurity.KmsKey[?] kmsKey;
 }
 
+/** Represents the Dynamo Db Backup Policy concept in this model. */
 class DynamoDbBackupPolicy extends kernel.TraceableElement {
   attr awspsmenums.Decision pointInTimeRecoveryDecision;
   attr String backupRationale;
   attr Integer recoveryPointRetentionDays;
 }
 
+/** Represents the S3 Bucket concept in this model. */
 class S3Bucket extends awspsmcore.AwsResource {
   attr String bucketName;
   attr awspsmenums.S3VersioningStatus versioningStatus;
@@ -118,24 +133,29 @@ class S3Bucket extends awspsmcore.AwsResource {
   ref S3BucketPolicy[?]#bucket bucketPolicy;
 }
 
+/** Represents the S3 Bucket Encryption concept in this model. */
 class S3BucketEncryption extends kernel.TraceableElement {
   attr String sseAlgorithm;
   attr Boolean bucketKeyEnabled;
   ref awspsmsecurity.KmsKey[?] kmsKey;
 }
 
+/** Represents the S3 Ownership Controls concept in this model. */
 class S3OwnershipControls extends kernel.TraceableElement {
   val S3OwnershipRule[+] rules;
 }
 
+/** Represents the S3 Ownership Rule concept in this model. */
 class S3OwnershipRule extends kernel.TraceableElement {
   attr String objectOwnership;
 }
 
+/** Represents the S3 Lifecycle Configuration concept in this model. */
 class S3LifecycleConfiguration extends kernel.TraceableElement {
   val S3LifecycleRule[+] rules;
 }
 
+/** Represents the S3 Lifecycle Rule concept in this model. */
 class S3LifecycleRule extends kernel.TraceableElement {
   attr String[1] ruleId;
   attr String[1] status;
@@ -147,6 +167,7 @@ class S3LifecycleRule extends kernel.TraceableElement {
   val S3Transition[*] transitions;
 }
 
+/** Represents the S3 Lifecycle Filter concept in this model. */
 class S3LifecycleFilter extends kernel.TraceableElement {
   attr String prefix;
   val S3TagFilter[*] tags;
@@ -154,16 +175,19 @@ class S3LifecycleFilter extends kernel.TraceableElement {
   attr Integer objectSizeLessThan;
 }
 
+/** Represents the S3 Tag Filter concept in this model. */
 class S3TagFilter extends kernel.TraceableElement {
   attr String[1] key;
   attr String value;
 }
 
+/** Represents the S3 Transition concept in this model. */
 class S3Transition extends kernel.TraceableElement {
   attr String storageClass;
   attr Integer transitionInDays;
 }
 
+/** Represents the S3 Public Access Block Configuration concept in this model. */
 class S3PublicAccessBlockConfiguration extends kernel.TraceableElement {
   attr Boolean blockPublicAcls;
   attr Boolean blockPublicPolicy;
@@ -171,11 +195,13 @@ class S3PublicAccessBlockConfiguration extends kernel.TraceableElement {
   attr Boolean restrictPublicBuckets;
 }
 
+/** Represents the S3 Notification Configuration concept in this model. */
 class S3NotificationConfiguration extends kernel.TraceableElement {
   attr Boolean eventBridgeEnabled;
   val S3NotificationRule[*]#configuration rules;
 }
 
+/** Represents the S3 Notification Rule concept in this model. */
 class S3NotificationRule extends kernel.TraceableElement {
   attr String[*] eventTypes;
   attr String filterPrefix;
@@ -184,12 +210,14 @@ class S3NotificationRule extends kernel.TraceableElement {
   ref awspsmcore.S3NotificationDestination[?] destination;
 }
 
+/** Represents the S3 Replication Configuration concept in this model. */
 class S3ReplicationConfiguration extends kernel.TraceableElement {
   val S3ReplicationRule[*] rules;
   attr String rulesJson;
   ref awspsmsecurity.IamRole[1] role;
 }
 
+/** Represents the S3 Replication Rule concept in this model. */
 class S3ReplicationRule extends kernel.TraceableElement {
   attr String ruleId;
   attr String status;
@@ -200,6 +228,7 @@ class S3ReplicationRule extends kernel.TraceableElement {
   val S3ReplicationDestination[?] destination;
 }
 
+/** Represents the S3 Replication Destination concept in this model. */
 class S3ReplicationDestination extends kernel.TraceableElement {
   attr String[1] bucketArn;
   attr String accountId;
@@ -207,6 +236,7 @@ class S3ReplicationDestination extends kernel.TraceableElement {
   ref awspsmsecurity.KmsKey[?] replicaKmsKey;
 }
 
+/** Represents the S3 Bucket Policy concept in this model. */
 class S3BucketPolicy extends awspsmcore.AwsResource {
   val awspsmsecurity.IamPolicyDocument[?] policyDocument;
   attr String policyDocumentJson;

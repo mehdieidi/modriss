@@ -1,4 +1,4 @@
-package workflows
+[% /* Generates the workflow test artifact. */ %]package workflows
 
 import (
 	"encoding/json"

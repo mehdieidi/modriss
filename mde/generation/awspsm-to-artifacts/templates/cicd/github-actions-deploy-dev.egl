@@ -1,4 +1,4 @@
-name: Deploy Non-Prod
+[% /* Generates the github actions deploy dev artifact. */ %]name: Deploy Non-Prod
 
 on:
   workflow_dispatch:

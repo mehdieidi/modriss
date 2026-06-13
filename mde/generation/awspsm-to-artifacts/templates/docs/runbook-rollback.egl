@@ -1,4 +1,4 @@
-# Rollback Runbook
+[% /* Generates the runbook rollback artifact. */ %]# Rollback Runbook
 
 ## Generated Checklist
 

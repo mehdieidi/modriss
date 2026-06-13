@@ -1,54 +1,67 @@
+/** Validates the semantic rules for relationships. */
 import "../lib/psm-validation-helpers.eol";
 
 /* Relationship views */
 
 context AWSPSM!AwsRelationshipView {
+  /** Checks that relationship view has endpoints. */
   constraint RelationshipViewHasEndpoints {
     check : self.source.isDefined() and self.target.isDefined()
     message : 'Relationship view has missing source or target. Fix: attach both source and target AwsResource references or remove the incomplete view.'
   }
 }
 
+/** Validates Api Gateway Lambda Integration View elements. */
 context AWSPSM!ApiGatewayLambdaIntegrationView {
+  /** Checks that api lambda view matches deployable objects. */
   constraint ApiLambdaViewMatchesDeployableObjects {
     check : self.route.isDefined() and self.integration.isDefined() and self.`function`.isDefined()
       and self.route.integration = self.integration and self.integration.lambdaTarget = self.`function` and self.source = self.route and self.target = self.`function`
     message : 'API Gateway to Lambda relationship view is inconsistent with route/integration/function references. Fix: align source=route, target=function, route.integration=integration, and integration.lambdaTarget=function.'
   }
 
+  /** Advises that api lambda permission recommended. */
   critique ApiLambdaPermissionRecommended {
     check : self.permission.isDefined()
     message : 'API Gateway to Lambda relationship view has no LambdaPermission. Fix: add LambdaPermission allowing API Gateway to invoke the function, unless permission is generated elsewhere.'
   }
 }
 
+/** Validates Event Bridge Lambda Target View elements. */
 context AWSPSM!EventBridgeLambdaTargetView {
+  /** Checks that event bridge lambda view matches deployable objects. */
   constraint EventBridgeLambdaViewMatchesDeployableObjects {
     check : self.rule.isDefined() and self.targetRow.isDefined() and self.`function`.isDefined()
       and self.rule.targets.includes(self.targetRow) and self.targetRow.targetResource = self.`function` and self.source = self.rule and self.target = self.`function`
     message : 'EventBridge to Lambda relationship view is inconsistent. Fix: ensure targetRow belongs to rule, targetRow.targetResource references function, and view source/target match.'
   }
 
+  /** Advises that event bridge lambda permission recommended. */
   critique EventBridgeLambdaPermissionRecommended {
     check : self.permission.isDefined()
     message : 'EventBridge to Lambda relationship view has no LambdaPermission. Fix: add LambdaPermission allowing EventBridge to invoke the function, unless permission is generated elsewhere.'
   }
 }
 
+/** Validates Sns Lambda Subscription View elements. */
 context AWSPSM!SnsLambdaSubscriptionView {
+  /** Checks that sns lambda view matches deployable objects. */
   constraint SnsLambdaViewMatchesDeployableObjects {
     check : self.topic.isDefined() and self.subscription.isDefined() and self.`function`.isDefined()
       and self.topic.subscriptions.includes(self.subscription) and self.subscription.endpointResource = self.`function` and self.source = self.topic and self.target = self.`function`
     message : 'SNS to Lambda relationship view is inconsistent. Fix: ensure subscription belongs to topic, endpointResource references function, and view source/target match.'
   }
 
+  /** Advises that sns lambda permission recommended. */
   critique SnsLambdaPermissionRecommended {
     check : self.permission.isDefined()
     message : 'SNS to Lambda relationship view has no LambdaPermission. Fix: add LambdaPermission allowing SNS to invoke the function, unless permission is generated elsewhere.'
   }
 }
 
+/** Validates Sqs Lambda Event Source View elements. */
 context AWSPSM!SqsLambdaEventSourceView {
+  /** Checks that sqs lambda view matches mapping. */
   constraint SqsLambdaViewMatchesMapping {
     check : self.mapping.isDefined() and self.queue.isDefined() and self.`function`.isDefined()
       and self.mapping.queue = self.queue and self.mapping.`function` = self.`function` and self.source = self.queue and self.target = self.`function`
@@ -56,7 +69,9 @@ context AWSPSM!SqsLambdaEventSourceView {
   }
 }
 
+/** Validates Step Function Event Bridge Target View elements. */
 context AWSPSM!StepFunctionEventBridgeTargetView {
+  /** Checks that step function event bridge view matches target. */
   constraint StepFunctionEventBridgeViewMatchesTarget {
     check : self.rule.isDefined() and self.targetRow.isDefined() and self.stateMachine.isDefined()
       and self.rule.targets.includes(self.targetRow) and self.targetRow.targetResource = self.stateMachine and self.source = self.rule and self.target = self.stateMachine

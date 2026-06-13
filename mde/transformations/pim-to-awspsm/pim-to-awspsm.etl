@@ -1,3 +1,4 @@
+/** Maps pim to awspsm model elements and supporting relationships. */
 import "lib/aws-builders.eol";
 import "root-stage-stack.etl";
 import "compute-api.etl";

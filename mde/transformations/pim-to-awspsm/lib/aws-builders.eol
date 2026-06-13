@@ -1,6 +1,8 @@
+/** Provides reusable aws builders operations. */
 import "common.eol";
 import "readiness-trace.eol";
 
+/** Computes map environment class. */
 operation mapEnvironmentClass(c) {
   if (c = PIMTYPES!EnvironmentClass#PROD) {
     return AWSPSMENUMS!AwsEnvironmentClass#PROD;
@@ -17,6 +19,7 @@ operation mapEnvironmentClass(c) {
   return AWSPSMENUMS!AwsEnvironmentClass#DEV;
 }
 
+/** Derives infer region. */
 operation inferRegion(environment) {
   if (environment.isUndefined()) {
     return "";
@@ -28,6 +31,7 @@ operation inferRegion(environment) {
   return "";
 }
 
+/** Derives infer default region. */
 operation inferDefaultRegion(p) {
   var e = p.environments.selectOne(x | hasText(inferRegion(x)));
   if (e.isDefined()) {
@@ -36,6 +40,7 @@ operation inferDefaultRegion(p) {
   return "us-east-1";
 }
 
+/** Computes tag. */
 operation tag(key : String, value : String) {
   var t = new AWSPSMCORE!AwsTag;
   t.id = uniqueId("tag_" + slug(key + "_" + value));
@@ -48,6 +53,7 @@ operation tag(key : String, value : String) {
   return t;
 }
 
+/** Computes literal value. */
 operation literalValue(value : String, secret : Boolean) {
   var v = new AWSPSMCORE!ValueExpression;
   v.id = uniqueId("value_" + slug(value));
@@ -58,6 +64,7 @@ operation literalValue(value : String, secret : Boolean) {
   return v;
 }
 
+/** Computes secret reference value. */
 operation secretReferenceValue(referenceText : String) {
   var resolvedReference = firstText(referenceText, "REVIEW_REQUIRED_SECRET_REFERENCE");
   var v = new AWSPSMCORE!ValueExpression;
@@ -69,6 +76,7 @@ operation secretReferenceValue(referenceText : String) {
   return v;
 }
 
+/** Computes ssm secure reference value. */
 operation ssmSecureReferenceValue(referenceText : String) {
   var resolvedReference = firstText(referenceText, "REVIEW_REQUIRED_SSM_SECURE_REFERENCE");
   var v = new AWSPSMCORE!ValueExpression;
@@ -80,6 +88,7 @@ operation ssmSecureReferenceValue(referenceText : String) {
   return v;
 }
 
+/** Computes ref value. */
 operation refValue(resource) {
   if (resource.isUndefined()) {
     return literalValue("REVIEW_REQUIRED_RESOURCE_REF", false);
@@ -92,6 +101,7 @@ operation refValue(resource) {
   return v;
 }
 
+/** Returns get att. */
 operation getAtt(resource, attributeName : String) {
   if (resource.isUndefined()) {
     return literalValue("REVIEW_REQUIRED_RESOURCE_GETATT_" + attributeName, false);
@@ -105,6 +115,7 @@ operation getAtt(resource, attributeName : String) {
   return v;
 }
 
+/** Computes native text. */
 operation nativeText(name : String, value : String, fmt, required : Boolean, secret : Boolean) {
   var p = new AWSPSMCORE!NativeProperty;
   p.id = uniqueId("native_" + slug(name + "_" + value));
@@ -118,6 +129,7 @@ operation nativeText(name : String, value : String, fmt, required : Boolean, sec
   return p;
 }
 
+/** Creates create naming policy. */
 operation createNamingPolicy(source) {
   var p = new AWSPSMCORE!AwsNamingPolicy;
   p.id = generatedId("naming", source, "aws");
@@ -131,6 +143,7 @@ operation createNamingPolicy(source) {
   return p;
 }
 
+/** Creates create tagging policy. */
 operation createTaggingPolicy(source) {
   var p = new AWSPSMCORE!AwsTaggingPolicy;
   p.id = generatedId("tagging", source, "aws");
@@ -145,6 +158,7 @@ operation createTaggingPolicy(source) {
   return p;
 }
 
+/** Creates create security baseline. */
 operation createSecurityBaseline(source) {
   var b = new AWSPSMCORE!AwsSecurityBaseline;
   b.id = generatedId("security_baseline", source, "aws");
@@ -159,6 +173,7 @@ operation createSecurityBaseline(source) {
   return b;
 }
 
+/** Creates create sam globals. */
 operation createSamGlobals(source) {
   var g = new AWSPSMCORE!SamGlobals;
   g.id = generatedId("sam_globals", source, "aws");
@@ -170,6 +185,7 @@ operation createSamGlobals(source) {
   return g;
 }
 
+/** Creates create default stage. */
 operation createDefaultStage(source) {
   var s = new AWSPSMCORE!AwsStage;
   s.id = generatedId("stage", source, "default");
@@ -187,6 +203,7 @@ operation createDefaultStage(source) {
   return s;
 }
 
+/** Creates create default stack. */
 operation createDefaultStack(source) {
   var s = new AWSPSMCORE!SamStack;
   s.id = generatedId("stack", source, "default");
@@ -203,6 +220,7 @@ operation createDefaultStack(source) {
   return s;
 }
 
+/** Creates default runtime. */
 operation defaultRuntime(profile) {
   if (profile.isUndefined()) {
     return "";
@@ -231,6 +249,7 @@ operation defaultRuntime(profile) {
   return "nodejs22.x";
 }
 
+/** Derives infer handler. */
 operation inferHandler(f) {
   if (hasText(f.sourceNameSuggestion)) {
     return f.sourceNameSuggestion;
@@ -238,6 +257,7 @@ operation inferHandler(f) {
   return camelCase(firstText(f.name, f.id)) + ".handler";
 }
 
+/** Creates create lambda code config. */
 operation createLambdaCodeConfig(f, profile) {
   if (usesImagePackage(f)) {
     var img = new AWSPSMCOMPUTE!LambdaImageCodeConfig;
@@ -276,11 +296,13 @@ operation createLambdaCodeConfig(f, profile) {
   return zip;
 }
 
+/** Returns whether the receiver uses image package. */
 operation usesImagePackage(f) {
   var tags = asText(f.modelTags).toLowerCase();
   return tags.contains("lambda.packagetype=image") or tags.contains("package=image");
 }
 
+/** Computes annotation value. */
 operation annotationValue(text, key : String) {
   if (not hasText(text)) {
     return "";
@@ -295,6 +317,7 @@ operation annotationValue(text, key : String) {
   return "";
 }
 
+/** Creates create log group for. */
 operation createLogGroupFor(source, logicalSeed : String, logName : String) {
   var g = new AWSPSMOBSERVABILITY!CloudWatchLogGroup;
   registerAwsGeneratedResource(g);
@@ -328,6 +351,7 @@ operation createLogGroupFor(source, logicalSeed : String, logName : String) {
   return g;
 }
 
+/** Computes policy document. */
 operation policyDocument() {
   var doc = new AWSPSMSECURITY!IamPolicyDocument;
   doc.id = uniqueId("policy_doc_generated");
@@ -336,6 +360,7 @@ operation policyDocument() {
   return doc;
 }
 
+/** Computes service assume role policy. */
 operation serviceAssumeRolePolicy(service : String) {
   var doc = policyDocument();
   var st = allowStatement("AssumeRole");
@@ -350,6 +375,7 @@ operation serviceAssumeRolePolicy(service : String) {
   return doc;
 }
 
+/** Returns allow statement. */
 operation allowStatement(sid : String) {
   var st = new AWSPSMSECURITY!IamStatement;
   st.id = uniqueId("stmt_" + slug(sid));
@@ -361,6 +387,7 @@ operation allowStatement(sid : String) {
   return st;
 }
 
+/** Computes permission statement. */
 operation permissionStatement(perm) {
   var st = allowStatement(firstText(perm.name, "Permission"));
   if (perm.effect = PIMTYPES!PermissionEffect#DENY) {
@@ -379,10 +406,12 @@ operation permissionStatement(perm) {
   return st;
 }
 
+/** Creates create lambda permission for. */
 operation createLambdaPermissionFor(prefix : String, origin, fn, principal : String) {
   return createLambdaPermissionFor(prefix, origin, fn, principal, sourceArnFor(origin));
 }
 
+/** Creates create lambda permission for. */
 operation createLambdaPermissionFor(prefix : String, origin, fn, principal : String, sourceArnExpression : String) {
   if (fn.isUndefined()) {
     return null;
@@ -411,6 +440,7 @@ operation createLambdaPermissionFor(prefix : String, origin, fn, principal : Str
   return p;
 }
 
+/** Computes source arn for. */
 operation sourceArnFor(origin) {
   if (origin.isUndefined()) {
     return "";
@@ -440,6 +470,7 @@ operation sourceArnFor(origin) {
   return "";
 }
 
+/** Computes cfn arn expression. */
 operation cfnArnExpression(resource) : String {
   if (resource.isUndefined() or resource.eClass().getEStructuralFeature("logicalId").isUndefined() or not hasText(resource.logicalId)) {
     return "";
@@ -447,6 +478,7 @@ operation cfnArnExpression(resource) : String {
   return "!GetAtt " + resource.logicalId + ".Arn";
 }
 
+/** Computes cfn arn sub expression. */
 operation cfnArnSubExpression(resource, suffix : String) : String {
   if (resource.isUndefined() or resource.eClass().getEStructuralFeature("logicalId").isUndefined() or not hasText(resource.logicalId)) {
     return "";
@@ -454,6 +486,7 @@ operation cfnArnSubExpression(resource, suffix : String) : String {
   return "!Sub '${" + resource.logicalId + ".Arn}" + suffix + "'";
 }
 
+/** Returns whether the receiver is api gateway route. */
 operation isApiGatewayRoute(element) : Boolean {
   if (element.isUndefined()) {
     return false;
@@ -462,6 +495,7 @@ operation isApiGatewayRoute(element) : Boolean {
   return className = "ApiRoute" or className = "HttpApiRoute" or className = "RestApiRoute" or className = "RestApiMethod" or className = "WebSocketRoute";
 }
 
+/** Computes api gateway route source arn. */
 operation apiGatewayRouteSourceArn(route) : String {
   if (route.isUndefined()) {
     return "";
@@ -502,6 +536,7 @@ operation apiGatewayRouteSourceArn(route) : String {
   return "!Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${" + apiResource.logicalId + "}/*/" + methodText + "/" + pathText + "'";
 }
 
+/** Converts the receiver to normalize execute api path. */
 operation normalizeExecuteApiPath(pathValue) : String {
   var pathText = asText(pathValue).trim();
   if (pathText.isEmpty()) {
@@ -524,6 +559,7 @@ operation defaultStack() {
   return cachedDefaultStack;
 }
 
+/** Computes place uncontained aws resources. */
 operation placeUncontainedAwsResources() {
   flagUnassignedDeployables();
   var st = defaultStack();
@@ -557,6 +593,7 @@ operation placeUncontainedAwsResources() {
   }
 }
 
+/** Adds or records add stage stack once. */
 operation addStageStackOnce(stage, stack) {
   if (stage.isUndefined() or stack.isUndefined()) {
     return;
@@ -569,6 +606,7 @@ operation addStageStackOnce(stage, stack) {
   stage.deploysStacks.add(stack);
 }
 
+/** Returns stack for generated resource. */
 operation stackForGeneratedResource(resource) {
   if (not hasText(resource.generatedFrom)) {
     return null;
@@ -580,6 +618,7 @@ operation stackForGeneratedResource(resource) {
   return null;
 }
 
+/** Resolves resolve aws relationships. */
 operation resolveAwsRelationships() {
   resolveTriggers();
   resolveFlows();
@@ -588,6 +627,7 @@ operation resolveAwsRelationships() {
   applyCostPolicies();
 }
 
+/** Computes generate iam statements. */
 operation generateIamStatements() {
   for (f in COMPUTE!Function.all) {
     var l = awsEquivalent(f);
@@ -630,6 +670,7 @@ operation generateIamStatements() {
   }
 }
 
+/** Computes generate relationship views. */
 operation generateRelationshipViews() {
   for (route in cachedApiGatewayRoutesWithLambdaIntegration) {
     if (route.integration.isDefined() and route.integration.lambdaTarget.isDefined()) {
@@ -705,6 +746,7 @@ operation generateRelationshipViews() {
   }
 }
 
+/** Computes generate readiness checks. */
 operation generateReadinessChecks() {
   var r = readinessContainer();
   if (r.isUndefined()) {
@@ -734,12 +776,14 @@ operation generateReadinessChecks() {
   }
 }
 
+/** Validates validate psm constraints. */
 operation validatePsmConstraints() {
   // PSM EVL is the canonical source for structural and semantic PSM validation.
   // Transformation-time checks stay in mapping helpers only when a generation
   // decision is needed to continue producing a reviewable PSM model.
 }
 
+/** Computes flag unassigned deployables. */
 operation flagUnassignedDeployables() {
   var unassigned = Sequence{};
   for (f in COMPUTE!Function.all) {
@@ -777,12 +821,14 @@ operation flagUnassignedDeployables() {
   }
 }
 
+/** Adds or records collect if unassigned. */
 operation collectIfUnassigned(element, unassigned) {
   if (not cachedPimDeploymentAssignedIds.includes(cacheKeyFor(element))) {
     unassigned.add(element);
   }
 }
 
+/** Computes apply cost policies. */
 operation applyCostPolicies() {
   for (p in POLICY!CostPolicy.all) {
     for (target in p.attachedTo) {
@@ -803,6 +849,7 @@ operation applyCostPolicies() {
   }
 }
 
+/** Resolves resolve triggers. */
 operation resolveTriggers() {
   for (t in COMPUTE!Trigger.all) {
     if (t.invokesFunction.isDefined() and t.source.isDefined()) {
@@ -849,6 +896,7 @@ operation resolveTriggers() {
   }
 }
 
+/** Resolves resolve flows. */
 operation resolveFlows() {
   for (flow in INTEGRATION!RequestResponseFlow.all) {
     if (flow.apiRoute.isDefined() and flow.target.isDefined() and flow.target.eClass().getName() = "Function") {
@@ -880,6 +928,7 @@ operation resolveFlows() {
   }
 }
 
+/** Resolves resolve event targets. */
 operation resolveEventTargets() {
   for (er in AWSPSMEVENTS!EventBridgeRule.all) {
     for (targetRow in er.targets) {
@@ -891,6 +940,7 @@ operation resolveEventTargets() {
   }
 }
 
+/** Computes configure event bridge target invoke. */
 operation configureEventBridgeTargetInvoke(origin, targetRow) {
   if (targetRow.isUndefined()) {
     return;
@@ -929,6 +979,7 @@ operation configureEventBridgeTargetInvoke(origin, targetRow) {
   }
 }
 
+/** Resolves resolve topic subscriptions. */
 operation resolveTopicSubscriptions() {
   for (topic in INTEGRATION!Topic.all) {
     var sns = awsEquivalent(topic);
@@ -940,6 +991,7 @@ operation resolveTopicSubscriptions() {
   }
 }
 
+/** Creates create sqs lambda mapping. */
 operation createSqsLambdaMapping(origin, queue, fn, batchPolicy, resilience) {
   if (queue.isUndefined() or fn.isUndefined()) {
     return null;
@@ -969,6 +1021,7 @@ operation createSqsLambdaMapping(origin, queue, fn, batchPolicy, resilience) {
   return m;
 }
 
+/** Creates create dynamo lambda mapping. */
 operation createDynamoLambdaMapping(origin, table, fn, batchPolicy, resilience) {
   if (table.isUndefined() or fn.isUndefined()) {
     return null;
@@ -998,6 +1051,7 @@ operation createDynamoLambdaMapping(origin, table, fn, batchPolicy, resilience) 
   return m;
 }
 
+/** Creates create sns lambda subscription. */
 operation createSnsLambdaSubscription(origin, topic, fn) {
   if (topic.isUndefined() or fn.isUndefined()) {
     return null;
@@ -1020,6 +1074,7 @@ operation createSnsLambdaSubscription(origin, topic, fn) {
   return sub;
 }
 
+/** Creates create sns queue subscription. */
 operation createSnsQueueSubscription(origin, topic, queue) {
   if (topic.isUndefined() or queue.isUndefined()) {
     return null;
@@ -1041,6 +1096,7 @@ operation createSnsQueueSubscription(origin, topic, queue) {
   return sub;
 }
 
+/** Adds or records add s3 lambda notification. */
 operation addS3LambdaNotification(origin, bucket, fn) {
   if (bucket.isUndefined() or fn.isUndefined()) {
     return;
@@ -1061,6 +1117,7 @@ operation addS3LambdaNotification(origin, bucket, fn) {
   createLambdaPermissionFor("S3Invoke", origin, fn, "s3.amazonaws.com", cfnArnExpression(bucket));
 }
 
+/** Creates create event invoke role. */
 operation createEventInvokeRole(origin, targetResource, action : String) {
   var role = new AWSPSMSECURITY!IamRole;
   copyAwsResource(origin, role, "EventInvokeRole", "AWS::IAM::Role");
@@ -1097,6 +1154,7 @@ operation createEventInvokeRole(origin, targetResource, action : String) {
   return role;
 }
 
+/** Adds or records add resource statement. */
 operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
   var res = awsEquivalent(storage);
   if (res.isUndefined()) {
@@ -1133,6 +1191,7 @@ operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
   }
 }
 
+/** Computes unresolved access statement. */
 operation unresolvedAccessStatement(source) {
   var st = allowStatement("ReviewGeneratedAccess" + pascalCase(firstText(source.name, source.id)));
   st.effect = AWSPSMENUMS!IamEffect#DENY;
@@ -1148,6 +1207,7 @@ operation unresolvedAccessStatement(source) {
   return st;
 }
 
+/** Adds or records add publish statement. */
 operation addPublishStatement(doc, eventType) {
   for (topic in indexedValues(cachedTopicsByEventTypeId, cacheKeyFor(eventType))) {
     var sns = awsEquivalent(topic);
@@ -1169,6 +1229,7 @@ operation addPublishStatement(doc, eventType) {
   }
 }
 
+/** Adds or records add subscribe statement. */
 operation addSubscribeStatement(doc, eventType) {
   for (queue in indexedValues(cachedQueuesByEventTypeId, cacheKeyFor(eventType))) {
     var sqs = awsEquivalent(queue);
@@ -1181,6 +1242,7 @@ operation addSubscribeStatement(doc, eventType) {
   }
 }
 
+/** Adds or records add secret statement. */
 operation addSecretStatement(doc, secret) {
   var sec = awsEquivalent(secret);
   if (sec.isUndefined()) {
@@ -1192,6 +1254,7 @@ operation addSecretStatement(doc, secret) {
   doc.statements.add(st);
 }
 
+/** Computes if defined int. */
 operation ifDefinedInt(holder, feature : String, fallback : Integer) {
   if (holder.isDefined()) {
     var value = holder.eGet(holder.eClass().getEStructuralFeature(feature));
@@ -1202,6 +1265,7 @@ operation ifDefinedInt(holder, feature : String, fallback : Integer) {
   return fallback;
 }
 
+/** Computes retry attempts. */
 operation retryAttempts(resilience, fallback : Integer) {
   if (resilience.isDefined() and resilience.retry.isDefined() and resilience.retry.maxAttempts.isDefined() and resilience.retry.maxAttempts > 0) {
     return resilience.retry.maxAttempts;

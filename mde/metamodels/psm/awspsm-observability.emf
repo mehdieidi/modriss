@@ -1,3 +1,4 @@
+/** Defines the awspsm observability metamodel package. */
 @namespace(uri="https://modless.org/awspsm/observability/1.0", prefix="awspsmobservability")
 package awspsmobservability;
 
@@ -6,6 +7,7 @@ import "awspsm-enums.ecore";
 import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 
+/** Represents the Cloud Watch Log Group concept in this model. */
 class CloudWatchLogGroup extends awspsmcore.AwsResource {
   attr String logGroupName;
   attr Integer retentionDays;
@@ -16,6 +18,7 @@ class CloudWatchLogGroup extends awspsmcore.AwsResource {
   ref CloudWatchLogSubscriptionFilter[*]#logGroup subscriptionFilters;
 }
 
+/** Represents the Cloud Watch Metric Filter concept in this model. */
 class CloudWatchMetricFilter extends awspsmcore.AwsResource {
   attr String[1] filterPattern;
   val CloudWatchMetricTransformation[*] metricTransformations;
@@ -23,6 +26,7 @@ class CloudWatchMetricFilter extends awspsmcore.AwsResource {
   ref CloudWatchLogGroup[1]#metricFilters logGroup;
 }
 
+/** Represents the Cloud Watch Metric Transformation concept in this model. */
 class CloudWatchMetricTransformation extends kernel.TraceableElement {
   attr String[1] metricName;
   attr String[1] metricNamespace;
@@ -32,6 +36,7 @@ class CloudWatchMetricTransformation extends kernel.TraceableElement {
   val MetricDimension[*] dimensions;
 }
 
+/** Represents the Cloud Watch Log Subscription Filter concept in this model. */
 class CloudWatchLogSubscriptionFilter extends awspsmcore.AwsResource {
   attr String[1] filterPattern;
   attr String destinationArn;
@@ -41,6 +46,7 @@ class CloudWatchLogSubscriptionFilter extends awspsmcore.AwsResource {
   ref awspsmsecurity.IamRole[?] role;
 }
 
+/** Represents the Cloud Watch Alarm concept in this model. */
 class CloudWatchAlarm extends awspsmcore.AwsResource {
   attr String alarmName;
   attr String alarmDescription;
@@ -64,11 +70,13 @@ class CloudWatchAlarm extends awspsmcore.AwsResource {
   ref awspsmcore.AwsResource[?] monitoredResource;
 }
 
+/** Represents the Metric Dimension concept in this model. */
 class MetricDimension extends kernel.TraceableElement {
   attr String[1] dimensionName;
   val awspsmcore.ValueExpression[1] value;
 }
 
+/** Represents the Cloud Watch Composite Alarm concept in this model. */
 class CloudWatchCompositeAlarm extends awspsmcore.AwsResource {
   attr String[1] alarmRule;
   attr String[*] alarmActionArns;
@@ -77,6 +85,7 @@ class CloudWatchCompositeAlarm extends awspsmcore.AwsResource {
   ref awspsmcore.AwsResource[*] okActionResources;
 }
 
+/** Represents the Cloud Watch Dashboard concept in this model. */
 class CloudWatchDashboard extends awspsmcore.AwsResource {
   attr String[1] dashboardName;
   attr String[1] dashboardBodyJson;

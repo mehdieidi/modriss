@@ -1,3 +1,4 @@
+/** Defines the cim process policy metamodel package. */
 @namespace(uri="https://modless.org/cim/process-policy/1.0", prefix="cimprocess")
 package cimprocess;
 
@@ -7,6 +8,7 @@ import "cim-organization.ecore";
 import "cim-domain-data.ecore";
 import "cim-behavior.ecore";
 
+/** Represents the Business Process concept in this model. */
 class BusinessProcess extends kernel.TraceableElement {
   attr cimtypes.ProcessKind processKind;
   attr cimtypes.CapabilityCriticality criticality;
@@ -28,6 +30,7 @@ class BusinessProcess extends kernel.TraceableElement {
   val TemporalConstraint[*] temporalConstraints;
 }
 
+/** Represents the Process Step concept in this model. */
 abstract class ProcessStep extends kernel.TraceableElement {
   attr cimtypes.StepKind stepKind;
   attr Integer orderIndex;
@@ -37,50 +40,61 @@ abstract class ProcessStep extends kernel.TraceableElement {
   ref cimorg.Role[*] responsibleRoles;
 }
 
+/** Represents the Start Step concept in this model. */
 class StartStep extends ProcessStep {
 }
 
+/** Represents the End Step concept in this model. */
 class EndStep extends ProcessStep {
 }
 
+/** Represents the Command Step concept in this model. */
 class CommandStep extends ProcessStep {
   ref cimbehavior.Command[1] command;
 }
 
+/** Represents the Query Step concept in this model. */
 class QueryStep extends ProcessStep {
   ref cimbehavior.Query[1] query;
 }
 
+/** Represents the Event Step concept in this model. */
 class EventStep extends ProcessStep {
   ref cimbehavior.BusinessEvent[1] event;
 }
 
+/** Represents the Policy Step concept in this model. */
 class PolicyStep extends ProcessStep {
   ref Policy[1] policy;
 }
 
+/** Represents the Human Task Step concept in this model. */
 class HumanTaskStep extends ProcessStep {
   attr String taskDescription;
   attr String completionEvidence;
 }
 
+/** Represents the External Interaction Step concept in this model. */
 class ExternalInteractionStep extends ProcessStep {
   ref cimorg.ExternalSystem[1] externalSystem;
   attr String interactionPurpose;
   ref cimdomain.InformationItem[*] exchangedInformation;
 }
 
+/** Represents the Decision Step concept in this model. */
 class DecisionStep extends ProcessStep {
   ref cimbehavior.Condition[?] condition;
   ref DecisionTable[?] decisionTable;
 }
 
+/** Represents the Wait Step concept in this model. */
 class WaitStep extends ProcessStep {
   attr String waitReason;
   attr String durationExpression;
   val kernel.Expression[?] durationExpressionModel;
 }
 
+/** Represents the Process Transition concept in this model. */
 class ProcessTransition extends kernel.SemanticRelationship {
   attr String label;
   attr String conditionExpression;
@@ -92,6 +106,7 @@ class ProcessTransition extends kernel.SemanticRelationship {
   ref cimbehavior.Condition[?] conditionRef;
 }
 
+/** Represents the Policy concept in this model. */
 class Policy extends kernel.TraceableElement {
   attr cimtypes.PolicyType policyType;
   attr String naturalLanguageRule;
@@ -109,6 +124,7 @@ class Policy extends kernel.TraceableElement {
   ref DecisionTable[?] decisionTable;
 }
 
+/** Represents the Decision Table concept in this model. */
 class DecisionTable extends kernel.TraceableElement {
   attr String hitPolicy;
   attr String defaultOutcome;
@@ -118,6 +134,7 @@ class DecisionTable extends kernel.TraceableElement {
   ref cimdomain.InformationItem[*] outputs;
 }
 
+/** Represents the Decision Rule concept in this model. */
 class DecisionRule extends kernel.TraceableElement {
   attr Integer priorityOrder;
   attr String condition;
@@ -128,6 +145,7 @@ class DecisionRule extends kernel.TraceableElement {
   ref cimbehavior.BusinessEvent[*] resultingEvents;
 }
 
+/** Represents the Exception Scenario concept in this model. */
 class ExceptionScenario extends kernel.TraceableElement {
   attr String scenario;
   attr String businessImpact;
@@ -139,6 +157,7 @@ class ExceptionScenario extends kernel.TraceableElement {
   ref cimbehavior.BusinessEvent[*] resultingEvents;
 }
 
+/** Represents the Temporal Constraint concept in this model. */
 class TemporalConstraint extends kernel.TraceableElement {
   attr String deadlineExpression;
   attr String durationExpression;

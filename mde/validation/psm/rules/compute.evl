@@ -1,29 +1,35 @@
+/** Validates the semantic rules for compute. */
 import "../lib/psm-validation-helpers.eol";
 
 /* Compute / Lambda */
 
 context AWSPSM!AwsLambdaFunction {
 
+  /** Checks that lambda has execution role. */
   constraint LambdaHasExecutionRole {
     check : self.role.isDefined()
     message : 'Lambda ' + self.resourceLabel() + ' has no execution role. Fix: attach an IamRole that Lambda can assume.'
   }
 
+  /** Checks that lambda has log group. */
   constraint LambdaHasLogGroup {
     check : self.logGroup.isDefined()
     message : 'Lambda ' + self.resourceLabel() + ' has no logGroup. Fix: attach the CloudWatchLogGroup used for function logs.'
   }
 
+  /** Checks that lambda has code config. */
   constraint LambdaHasCodeConfig {
     check : self.code.isDefined()
     message : 'Lambda ' + self.resourceLabel() + ' has no code configuration. Fix: attach LambdaZipCodeConfig or LambdaImageCodeConfig.'
   }
 
+  /** Checks that lambda has supported code config. */
   constraint LambdaHasSupportedCodeConfig {
     check : self.code.isKindOf(AWSPSM!LambdaZipCodeConfig) or self.code.isKindOf(AWSPSM!LambdaImageCodeConfig)
     message : 'Lambda ' + self.resourceLabel() + ' uses an unsupported code configuration. Fix: use LambdaZipCodeConfig for ZIP functions or LambdaImageCodeConfig for container-image functions.'
   }
 
+  /** Checks that lambda package type matches code config. */
   constraint LambdaPackageTypeMatchesCodeConfig {
     check : self.packageType.isUndefined() or self.code.isUndefined() or
       (self.code.isKindOf(AWSPSM!LambdaZipCodeConfig) and self.packageType = AWSPSMENUMS!PackageType#ZIP) or
@@ -31,50 +37,59 @@ context AWSPSM!AwsLambdaFunction {
     message : 'Lambda ' + self.resourceLabel() + ' packageType does not match its code configuration. Fix: use ZIP for LambdaZipCodeConfig and IMAGE for LambdaImageCodeConfig, or omit packageType when it is derived by generators.'
   }
 
+  /** Checks that lambda memory range. */
   constraint LambdaMemoryRange {
     check : (self.memorySizeMb.isUndefined()) or ((self.memorySizeMb >= 128) and (self.memorySizeMb <= 10240))
     message : 'Lambda ' + self.resourceLabel() + ' memorySizeMb is outside the valid range 128..10240. Fix: set memorySizeMb to a valid Lambda memory value in MB.'
   }
 
+  /** Checks that lambda timeout range. */
   constraint LambdaTimeoutRange {
     check : (self.timeoutSeconds.isUndefined()) or ((self.timeoutSeconds >= 1) and (self.timeoutSeconds <= 900))
     message : 'Lambda ' + self.resourceLabel() + ' timeoutSeconds is outside the valid range 1..900. Fix: choose a timeout from 1 second to 15 minutes.'
   }
 
+  /** Checks that lambda ephemeral storage range. */
   constraint LambdaEphemeralStorageRange {
     check : (self.ephemeralStorageMb.isUndefined()) or ((self.ephemeralStorageMb >= 512) and (self.ephemeralStorageMb <= 10240))
     message : 'Lambda ' + self.resourceLabel() + ' ephemeralStorageMb is outside the valid range 512..10240. Fix: set /tmp storage to a valid MB value.'
   }
 
+  /** Checks that reserved concurrency non negative. */
   constraint ReservedConcurrencyNonNegative {
     check : (self.reservedConcurrentExecutions.isUndefined()) or (self.reservedConcurrentExecutions >= 0)
     message : 'Lambda ' + self.resourceLabel() + ' has a negative reservedConcurrentExecutions value. Fix: remove the value or set it to zero or greater.'
   }
 
+  /** Checks that auto publish alias requires version publishing. */
   constraint AutoPublishAliasRequiresVersionPublishing {
     guard : self.autoPublishAlias.hasText()
     check : self.publishVersion = true
     message : 'Lambda ' + self.resourceLabel() + ' has autoPublishAlias but publishVersion is not true. Fix: set publishVersion to true so aliases can point to immutable versions.'
   }
 
+  /** Checks that code signing decision honored. */
   constraint CodeSigningDecisionHonored {
     guard : self.codeSigningDecision = AWSPSMENUMS!Decision#REQUIRED
     check : self.codeSigningConfig.isDefined()
     message : 'Lambda ' + self.resourceLabel() + ' requires code signing but has no codeSigningConfig. Fix: attach a CodeSigningConfig or change codeSigningDecision if code signing is not required.'
   }
 
+  /** Advises that production lambda should use tracing. */
   critique ProductionLambdaShouldUseTracing {
     guard : self.isProductionScoped()
     check : self.tracing.isDefined() and self.tracing.mode = AWSPSMENUMS!LambdaTracingMode#ACTIVE
     message : 'Production-scoped Lambda ' + self.resourceLabel() + ' does not enable active tracing. Fix: add LambdaTracingConfig with mode ACTIVE unless tracing is intentionally disabled with a documented rationale.'
   }
 
+  /** Advises that production lambda should use structured logging. */
   critique ProductionLambdaShouldUseStructuredLogging {
     guard : self.isProductionScoped()
     check : self.logging.isDefined() and self.logging.logFormat.hasText()
     message : 'Production-scoped Lambda ' + self.resourceLabel() + ' has no explicit logging configuration. Fix: add LambdaLoggingConfig and set logFormat/applicationLogLevel/systemLogLevel to the platform standard.'
   }
 
+  /** Advises that production lambda should have failure destination or dlq. */
   critique ProductionLambdaShouldHaveFailureDestinationOrDlq {
     guard : self.isProductionScoped()
     check : self.deadLetterConfig.isDefined() or self.eventInvokeConfigs.exists(invokeItem |
@@ -83,12 +98,15 @@ context AWSPSM!AwsLambdaFunction {
   }
 }
 
+/** Validates Lambda Zip Code Config elements. */
 context AWSPSM!LambdaZipCodeConfig {
+  /** Checks that zip code has runtime and handler. */
   constraint ZipCodeHasRuntimeAndHandler {
     check : (self.runtimeIdentifier.hasText() and self.handler.hasText()) or self.isGeneratorManagedCodeSkeleton()
     message : 'ZIP Lambda code configuration is missing runtimeIdentifier or handler. Fix: set runtimeIdentifier and handler for externally supplied ZIP code; generator-managed skeletons may rely on the artifact generator runtime defaults.'
   }
 
+  /** Checks that zip code has exactly one location. */
   constraint ZipCodeHasExactlyOneLocation {
     check : ((self.codeUri.hasText() ? 1 else 0) +
              (((self.s3Bucket.hasText()) and (self.s3Key.hasText())) ? 1 else 0) +
@@ -97,25 +115,31 @@ context AWSPSM!LambdaZipCodeConfig {
   }
 }
 
+/** Validates Lambda Image Code Config elements. */
 context AWSPSM!LambdaImageCodeConfig {
+  /** Checks that image code has image uri. */
   constraint ImageCodeHasImageUri {
     check : self.imageUri.hasText()
     message : 'Image Lambda code configuration has no imageUri. Fix: provide the ECR image URI including repository and tag or digest.'
   }
 }
 
+/** Validates Lambda Environment Variable elements. */
 context AWSPSM!LambdaEnvironmentVariable {
+  /** Checks that environment variable name valid. */
   constraint EnvironmentVariableNameValid {
     check : self.variableName.matches('^[A-Za-z][A-Za-z0-9_]*$')
     message : 'Lambda environment variable name ' + self.variableName + ' is invalid. Fix: start with a letter and use only letters, digits, and underscores.'
   }
 
+  /** Checks that secret environment value uses secure reference. */
   constraint SecretEnvironmentValueUsesSecureReference {
     guard : self.value.isDefined() and self.value.secret = true
     check : self.value.usesSecureSource()
     message : 'Lambda environment variable ' + self.variableName + ' is marked secret but does not use a secure source. Fix: use SSM_SECURE_REFERENCE, SECRETS_MANAGER_REFERENCE, or DYNAMIC_REFERENCE.'
   }
 
+  /** Advises that stage specific variable should have rationale. */
   critique StageSpecificVariableShouldHaveRationale {
     guard : self.stageSpecific = true
     check : self.rationale.hasText()
@@ -123,29 +147,36 @@ context AWSPSM!LambdaEnvironmentVariable {
   }
 }
 
+/** Validates Lambda Dead Letter Config elements. */
 context AWSPSM!LambdaDeadLetterConfig {
+  /** Checks that dlq has exactly one target. */
   constraint DlqHasExactlyOneTarget {
     check : ((self.targetQueue.isDefined() ? 1 else 0) + (self.targetTopic.isDefined() ? 1 else 0)) = 1
     message : 'Lambda DLQ configuration must choose exactly one target. Fix: set either targetQueue or targetTopic, not both.'
   }
 }
 
+/** Validates Lambda Event Source Mapping elements. */
 context AWSPSM!LambdaEventSourceMapping {
+  /** Checks that batch size positive. */
   constraint BatchSizePositive {
     check : (self.batchSize.isUndefined()) or (self.batchSize > 0)
     message : 'Lambda event source mapping ' + self.resourceLabel() + ' has an invalid batchSize. Fix: remove batchSize to use the service default, or set it to a positive integer.'
   }
 
+  /** Checks that maximum batching window range. */
   constraint MaximumBatchingWindowRange {
     check : (self.maximumBatchingWindowSeconds.isUndefined()) or ((self.maximumBatchingWindowSeconds >= 0) and (self.maximumBatchingWindowSeconds <= 300))
     message : 'Lambda event source mapping ' + self.resourceLabel() + ' maximumBatchingWindowSeconds is outside 0..300. Fix: choose a batching window within five minutes.'
   }
 
+  /** Checks that parallelization factor range. */
   constraint ParallelizationFactorRange {
     check : (self.parallelizationFactor.isUndefined()) or ((self.parallelizationFactor >= 1) and (self.parallelizationFactor <= 10))
     message : 'Lambda event source mapping ' + self.resourceLabel() + ' parallelizationFactor is outside 1..10. Fix: set a value from 1 to 10 or remove it.'
   }
 
+  /** Checks that starting timestamp requires at timestamp. */
   constraint StartingTimestampRequiresAtTimestamp {
     guard : self.startingPositionTimestamp.hasText()
     check : self.startingPosition = AWSPSMENUMS!StartingPosition#AT_TIMESTAMP
@@ -153,7 +184,9 @@ context AWSPSM!LambdaEventSourceMapping {
   }
 }
 
+/** Validates Sqs Lambda Event Source Mapping elements. */
 context AWSPSM!SqsLambdaEventSourceMapping {
+  /** Checks that queue visibility greater than function timeout. */
   constraint QueueVisibilityGreaterThanFunctionTimeout {
     check : self.queue.isDefined() and self.`function`.isDefined() and
       ((self.queue.visibilityTimeoutSeconds.isUndefined()) or
@@ -162,11 +195,13 @@ context AWSPSM!SqsLambdaEventSourceMapping {
     message : 'SQS queue visibility timeout must be greater than Lambda timeout for mapping ' + self.resourceLabel() + '. Fix: increase queue.visibilityTimeoutSeconds or reduce function.timeoutSeconds to avoid duplicate processing.'
   }
 
+  /** Advises that partial batch failure recommended for sqs. */
   critique PartialBatchFailureRecommendedForSqs {
     check : self.reportBatchItemFailures = true
     message : 'SQS event source mapping ' + self.resourceLabel() + ' does not report partial batch item failures. Fix: set reportBatchItemFailures to true and include FunctionResponseTypes=ReportBatchItemFailures in the generated mapping.'
   }
 
+  /** Checks that required partial batch failure decision honored. */
   constraint RequiredPartialBatchFailureDecisionHonored {
     guard : self.partialBatchFailureHandlingDecision = AWSPSMENUMS!Decision#REQUIRED
     check : self.reportBatchItemFailures = true
@@ -174,26 +209,33 @@ context AWSPSM!SqsLambdaEventSourceMapping {
   }
 }
 
+/** Validates Dynamo Db Stream Lambda Event Source Mapping elements. */
 context AWSPSM!DynamoDbStreamLambdaEventSourceMapping {
+  /** Checks that dynamo stream mapping requires stream specification. */
   constraint DynamoStreamMappingRequiresStreamSpecification {
     check : self.table.isDefined() and self.table.streamSpecification.isDefined()
     message : 'DynamoDB stream event source mapping ' + self.resourceLabel() + ' points to a table without streamSpecification. Fix: enable DynamoDbStreamSpecification on the table or remove the mapping.'
   }
 
+  /** Checks that dynamo stream mapping has starting position. */
   constraint DynamoStreamMappingHasStartingPosition {
     check : self.startingPosition.isDefined()
     message : 'DynamoDB stream event source mapping ' + self.resourceLabel() + ' has no startingPosition. Fix: set startingPosition to LATEST, TRIM_HORIZON, or AT_TIMESTAMP.'
   }
 }
 
+/** Validates Lambda Provisioned Concurrency Config elements. */
 context AWSPSM!LambdaProvisionedConcurrencyConfig {
+  /** Checks that provisioned concurrency positive. */
   constraint ProvisionedConcurrencyPositive {
     check : self.provisionedConcurrentExecutions > 0
     message : 'Provisioned concurrency must be greater than zero. Fix: set provisionedConcurrentExecutions to a positive integer or remove the provisioned concurrency config.'
   }
 }
 
+/** Validates Lambda Function Url elements. */
 context AWSPSM!LambdaFunctionUrl {
+  /** Checks that production function url requires auth. */
   constraint ProductionFunctionUrlRequiresAuth {
     guard : self.`function`.isDefined() and self.`function`.isProductionScoped()
     check : self.authType <> AWSPSMENUMS!LambdaFunctionUrlAuthType#NONE

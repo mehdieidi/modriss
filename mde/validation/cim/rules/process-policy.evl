@@ -1,7 +1,10 @@
+/** Validates the semantic rules for process policy. */
 import "../lib/cim-validation-helpers.eol";
 
+/** Validates Business Process elements. */
 context CIM!BusinessProcess {
 
+  /** Checks that process has start and end. */
   constraint ProcessHasStartAndEnd {
     check :
       self.steps.one(stepItem | stepItem.stepKind = CIM!StepKind#START) and
@@ -11,6 +14,7 @@ context CIM!BusinessProcess {
       "Suggestion: add one StartStep and one or more EndSteps, and ensure their stepKind values match."
   }
 
+  /** Checks that process has trigger and completion criterion. */
   constraint ProcessHasTriggerAndCompletionCriterion {
     check :
       (self.trigger.isDefined() or self.triggeringEvent.isDefined() or self.triggeringCommand.isDefined() or self.triggeringActor.isDefined() or self.businessTriggerDescription.hasText()) and
@@ -20,6 +24,7 @@ context CIM!BusinessProcess {
       "Suggestion: specify what starts the process and the business condition that means the process is complete."
   }
 
+  /** Checks that process trigger is typed for production. */
   constraint ProcessTriggerIsTypedForProduction {
     guard : self.trigger.isDefined()
     check : self.trigger.isKindOf(CIM!BusinessEvent) or self.trigger.isKindOf(CIM!Command) or self.trigger.isKindOf(CIM!Actor)
@@ -28,6 +33,7 @@ context CIM!BusinessProcess {
       "Suggestion: use triggeringEvent, triggeringCommand, triggeringActor, or describe the business trigger explicitly."
   }
 
+  /** Checks that long running process has temporal constraint. */
   constraint LongRunningProcessHasTemporalConstraint {
     guard : (self.longRunning = true) or (self.processKind = CIM!ProcessKind#LONG_RUNNING) or (self.processKind = CIM!ProcessKind#SAGA_LIKE_BUSINESS_PROCESS)
     check : self.temporalConstraints.notEmpty()
@@ -36,6 +42,7 @@ context CIM!BusinessProcess {
       "Suggestion: add deadlines, durations, or ordering constraints that define acceptable process timing."
   }
 
+  /** Checks that process transitions stay inside process. */
   constraint ProcessTransitionsStayInsideProcess {
     check :
       self.transitions.forAll(transitionItem |
@@ -46,6 +53,7 @@ context CIM!BusinessProcess {
       "Suggestion: reconnect the transition to steps contained by the same process."
   }
 
+  /** Checks that process step order indexes are unique. */
   constraint ProcessStepOrderIndexesAreUnique {
     check {
       var indexedSteps = self.steps.select(stepItem | stepItem.orderIndex.isDefined());
@@ -56,6 +64,7 @@ context CIM!BusinessProcess {
       "Suggestion: assign unique orderIndex values to ordered steps, or leave orderIndex unset where ordering is fully represented by transitions."
   }
 
+  /** Advises that compensation process has exception scenarios. */
   critique CompensationProcessHasExceptionScenarios {
     guard : self.compensationExpected = true
     check : self.exceptions.notEmpty()
@@ -65,8 +74,10 @@ context CIM!BusinessProcess {
   }
 }
 
+/** Validates Process Step elements. */
 context CIM!ProcessStep {
 
+  /** Advises that process step has responsibility. */
   critique ProcessStepHasResponsibility {
     guard : (self.stepKind <> CIM!StepKind#START) and (self.stepKind <> CIM!StepKind#END)
     check : self.responsibility.hasText() or self.responsibleRoles.notEmpty()
@@ -76,7 +87,9 @@ context CIM!ProcessStep {
   }
 }
 
+/** Validates Start Step elements. */
 context CIM!StartStep {
+  /** Checks that start step kind matches class. */
   constraint StartStepKindMatchesClass {
     check : self.stepKind = CIM!StepKind#START
     message :
@@ -85,7 +98,9 @@ context CIM!StartStep {
   }
 }
 
+/** Validates End Step elements. */
 context CIM!EndStep {
+  /** Checks that end step kind matches class. */
   constraint EndStepKindMatchesClass {
     check : self.stepKind = CIM!StepKind#END
     message :
@@ -94,7 +109,9 @@ context CIM!EndStep {
   }
 }
 
+/** Validates Command Step elements. */
 context CIM!CommandStep {
+  /** Checks that command step kind matches class. */
   constraint CommandStepKindMatchesClass {
     check : self.stepKind = CIM!StepKind#COMMAND
     message :
@@ -103,7 +120,9 @@ context CIM!CommandStep {
   }
 }
 
+/** Validates Query Step elements. */
 context CIM!QueryStep {
+  /** Checks that query step kind matches class. */
   constraint QueryStepKindMatchesClass {
     check : self.stepKind = CIM!StepKind#QUERY
     message :
@@ -112,7 +131,9 @@ context CIM!QueryStep {
   }
 }
 
+/** Validates Event Step elements. */
 context CIM!EventStep {
+  /** Checks that event step kind matches class. */
   constraint EventStepKindMatchesClass {
     check : self.stepKind = CIM!StepKind#EVENT
     message :
@@ -121,7 +142,9 @@ context CIM!EventStep {
   }
 }
 
+/** Validates Policy Step elements. */
 context CIM!PolicyStep {
+  /** Checks that policy step kind matches class. */
   constraint PolicyStepKindMatchesClass {
     check : self.stepKind = CIM!StepKind#POLICY
     message :
@@ -130,7 +153,9 @@ context CIM!PolicyStep {
   }
 }
 
+/** Validates Human Task Step elements. */
 context CIM!HumanTaskStep {
+  /** Checks that human task step kind and description. */
   constraint HumanTaskStepKindAndDescription {
     check :
       (self.stepKind = CIM!StepKind#HUMAN_TASK) and
@@ -141,7 +166,9 @@ context CIM!HumanTaskStep {
   }
 }
 
+/** Validates External Interaction Step elements. */
 context CIM!ExternalInteractionStep {
+  /** Checks that external interaction step is explicit. */
   constraint ExternalInteractionStepIsExplicit {
     check :
       (self.stepKind = CIM!StepKind#EXTERNAL_INTERACTION) and
@@ -151,6 +178,7 @@ context CIM!ExternalInteractionStep {
       "Suggestion: set the correct stepKind, select the external system, and explain the business purpose of the interaction."
   }
 
+  /** Advises that external interaction declares information. */
   critique ExternalInteractionDeclaresInformation {
     check : self.exchangedInformation.notEmpty()
     message :
@@ -159,7 +187,9 @@ context CIM!ExternalInteractionStep {
   }
 }
 
+/** Validates Decision Step elements. */
 context CIM!DecisionStep {
+  /** Checks that decision step has decision logic. */
   constraint DecisionStepHasDecisionLogic {
     check :
       (self.stepKind = CIM!StepKind#DECISION) and
@@ -169,6 +199,7 @@ context CIM!DecisionStep {
       "Suggestion: set stepKind=DECISION and link either a Condition or a DecisionTable."
   }
 
+  /** Checks that decision has branches. */
   constraint DecisionHasBranches {
     check : self.outgoingTransitionCount() >= 2
     message :
@@ -177,7 +208,9 @@ context CIM!DecisionStep {
   }
 }
 
+/** Validates Wait Step elements. */
 context CIM!WaitStep {
+  /** Checks that wait step has duration or reason. */
   constraint WaitStepHasDurationOrReason {
     check :
       (self.stepKind = CIM!StepKind#WAIT) and
@@ -188,8 +221,10 @@ context CIM!WaitStep {
   }
 }
 
+/** Validates Process Transition elements. */
 context CIM!ProcessTransition {
 
+  /** Checks that transition connects different steps. */
   constraint TransitionConnectsDifferentSteps {
     check : self.source.isDefined() and self.target.isDefined() and self.source <> self.target
     message :
@@ -197,6 +232,7 @@ context CIM!ProcessTransition {
       "Suggestion: connect the transition to a distinct target step."
   }
 
+  /** Checks that transition does not leave end or enter start. */
   constraint TransitionDoesNotLeaveEndOrEnterStart {
     check :
       self.source.isDefined() and self.target.isDefined() and
@@ -206,6 +242,7 @@ context CIM!ProcessTransition {
       "Suggestion: remove the invalid transition or reconnect it so flow starts at START and terminates at END."
   }
 
+  /** Advises that conditional transition is labelled. */
   critique ConditionalTransitionIsLabelled {
     guard : self.source.isDefined() and self.source.stepKind = CIM!StepKind#DECISION
     check : self.label.hasText() or self.conditionExpression.hasText() or self.condition.isDefined()
@@ -215,8 +252,10 @@ context CIM!ProcessTransition {
   }
 }
 
+/** Validates Decision Table elements. */
 context CIM!DecisionTable {
 
+  /** Checks that decision table has rules. */
   constraint DecisionTableHasRules {
     check : self.rules.notEmpty()
     message :
@@ -224,6 +263,7 @@ context CIM!DecisionTable {
       "Suggestion: add at least one DecisionRule with a condition and outcome."
   }
 
+  /** Checks that decision table rules have unique priority. */
   constraint DecisionTableRulesHaveUniquePriority {
     check {
       var orderedRules = self.rules.select(ruleItem | ruleItem.priorityOrder.isDefined());
@@ -234,6 +274,7 @@ context CIM!DecisionTable {
       "Suggestion: assign unique priorityOrder values or remove priority ordering if hitPolicy does not need it."
   }
 
+  /** Advises that incomplete decision table has default. */
   critique IncompleteDecisionTableHasDefault {
     guard : not (self.complete = true)
     check : self.defaultOutcome.hasText()
@@ -243,8 +284,10 @@ context CIM!DecisionTable {
   }
 }
 
+/** Validates Decision Rule elements. */
 context CIM!DecisionRule {
 
+  /** Checks that decision rule has condition and outcome. */
   constraint DecisionRuleHasConditionAndOutcome {
     check :
       (self.condition.hasText() or self.conditionExpression.hasExpressionBody()) and
@@ -254,6 +297,7 @@ context CIM!DecisionRule {
       "Suggestion: specify when the rule applies and what business outcome it produces, using text fields or typed kernel.Expression objects."
   }
 
+  /** Advises that decision rule has executable effect. */
   critique DecisionRuleHasExecutableEffect {
     check : self.resultingCommands.notEmpty() or self.resultingEvents.notEmpty() or self.outcome.hasText()
     message :
@@ -262,8 +306,10 @@ context CIM!DecisionRule {
   }
 }
 
+/** Validates Policy elements. */
 context CIM!Policy {
 
+  /** Checks that policy either reacts or guards. */
   constraint PolicyEitherReactsOrGuards {
     check :
       self.triggeredBy.notEmpty() or
@@ -274,6 +320,7 @@ context CIM!Policy {
       "Suggestion: link triggeredBy events, guarded commands, constrained queries, or split this policy into a more specific policy."
   }
 
+  /** Checks that policy has rule definition. */
   constraint PolicyHasRuleDefinition {
     check :
       self.naturalLanguageRule.hasText() or
@@ -285,6 +332,7 @@ context CIM!Policy {
       "Suggestion: define the rule in natural language and optionally provide expressionModel.body or a DecisionTable."
   }
 
+  /** Checks that mandatory or blocking policy has severity. */
   constraint MandatoryOrBlockingPolicyHasSeverity {
     guard :
       (self.enforcementStrength = KERNEL!ConstraintStrength#MANDATORY) or
@@ -295,6 +343,7 @@ context CIM!Policy {
       "Suggestion: set violationSeverity to ERROR, CRITICAL, or BLOCKER according to business impact."
   }
 
+  /** Advises that reaction policy emits outcome. */
   critique ReactionPolicyEmitsOutcome {
     guard : self.policyType = CIM!PolicyType#REACTION
     check : self.emitsCommands.notEmpty() or self.emitsEvents.notEmpty()
@@ -304,8 +353,10 @@ context CIM!Policy {
   }
 }
 
+/** Validates Exception Scenario elements. */
 context CIM!ExceptionScenario {
 
+  /** Checks that exception scenario is actionable. */
   constraint ExceptionScenarioIsActionable {
     check :
       self.scenario.hasText() and self.businessImpact.hasText() and
@@ -315,6 +366,7 @@ context CIM!ExceptionScenario {
       "Suggestion: describe the exception, its business impact, and how recovery should happen."
   }
 
+  /** Advises that compensation scenario emits event. */
   critique CompensationScenarioEmitsEvent {
     guard : self.compensationRequired = true
     check : self.recoveryAction.hasText() and self.resultingEvents.notEmpty()
@@ -324,8 +376,10 @@ context CIM!ExceptionScenario {
   }
 }
 
+/** Validates Temporal Constraint elements. */
 context CIM!TemporalConstraint {
 
+  /** Checks that temporal constraint has expression. */
   constraint TemporalConstraintHasExpression {
     check :
       self.deadlineExpression.hasText() or self.durationExpression.hasText() or self.orderingExpression.hasText()
@@ -334,6 +388,7 @@ context CIM!TemporalConstraint {
       "Suggestion: provide at least one temporal expression and link constrainedElements."
   }
 
+  /** Advises that temporal constraint has scope. */
   critique TemporalConstraintHasScope {
     check : self.constrainedElements.notEmpty()
     message :

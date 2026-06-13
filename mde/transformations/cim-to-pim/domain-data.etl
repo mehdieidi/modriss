@@ -1,9 +1,11 @@
+/** Maps domain data model elements and supporting relationships. */
 import "lib/common.eol";
 import "lib/mapping.eol";
 import "lib/trace-readiness.eol";
 import "lib/pim-builders.eol";
 import "lib/resolution.eol";
 
+/** Computes aggregate items. */
 operation aggregateItems(ag : CIMDOMAIN!AggregateCandidate) {
   var items = Sequence{};
   for (entity in ag.members) {
@@ -19,18 +21,22 @@ operation aggregateItems(ag : CIMDOMAIN!AggregateCandidate) {
   return items;
 }
 
+/** Computes aggregate contains sensitive data. */
 operation aggregateContainsSensitiveData(ag : CIMDOMAIN!AggregateCandidate) {
   return aggregateItems(ag).exists(i | isSensitive(i) or isSecret(i));
 }
 
+/** Computes aggregate contains personal data. */
 operation aggregateContainsPersonalData(ag : CIMDOMAIN!AggregateCandidate) {
   return aggregateItems(ag).exists(i | isPersonal(i));
 }
 
+/** Computes storage field name for. */
 operation storageFieldNameFor(item) {
   return camelCase(firstText(item.businessName, item.name));
 }
 
+/** Transforms Entity elements into Schema elements. */
 rule Entity2Schema
   transform e : CIMDOMAIN!DomainEntity
   to s : CONTRACTS!Schema {
@@ -65,6 +71,7 @@ rule Entity2Schema
   traceGenerated(e, s, "TR-040", "HIGH");
 }
 
+/** Transforms Value Object elements into Schema elements. */
 rule ValueObject2Schema
   transform v : CIMDOMAIN!ValueObject
   to s : CONTRACTS!Schema {
@@ -84,6 +91,7 @@ rule ValueObject2Schema
   traceGenerated(v, s, "TR-040", "HIGH");
 }
 
+/** Transforms Domain Relationship elements into Schema Reference elements. */
 rule DomainRelationship2SchemaReference
   transform rel : CIMDOMAIN!DomainRelationship
   to field : CONTRACTS!SchemaField,
@@ -146,6 +154,7 @@ post AttachRelationshipDataFields {
   etlProfiler.mark("cim.relationshipFields.end");
 }
 
+/** Transforms Aggregate elements into Data Store elements. */
 rule Aggregate2DataStore
   transform ag : CIMDOMAIN!AggregateCandidate
   to store : DATA!DataStore,
@@ -232,6 +241,7 @@ rule Aggregate2DataStore
   }
 }
 
+/** Transforms Data Classification elements into Data Protection Policy elements. */
 rule DataClassification2DataProtectionPolicy
   transform dc : CIMDOMAIN!DataClassification
   to pol : POLICY!DataProtectionPolicy {
@@ -257,6 +267,7 @@ rule DataClassification2DataProtectionPolicy
   }
 }
 
+/** Transforms Privacy Constraint elements into Policies elements. */
 rule PrivacyConstraint2Policies
   transform pc : CIMGOV!PrivacyConstraint
   to dp : POLICY!DataProtectionPolicy,
@@ -296,6 +307,7 @@ rule PrivacyConstraint2Policies
   }
 }
 
+/** Transforms Compliance Constraint elements into Compliance Policy elements. */
 rule ComplianceConstraint2CompliancePolicy
   transform cc : CIMGOV!ComplianceConstraint
   to pol : POLICY!CompliancePolicy {

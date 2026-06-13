@@ -1,4 +1,4 @@
-package shared
+[% /* Generates the shared validation artifact. */ %]package shared
 
 import "encoding/json"
 

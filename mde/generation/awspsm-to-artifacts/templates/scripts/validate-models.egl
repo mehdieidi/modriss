@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+[% /* Generates the validate models artifact. */ %]#!/usr/bin/env bash
 set -euo pipefail
 
 echo "Generated PSM model validation gate"

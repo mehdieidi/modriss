@@ -1,4 +1,4 @@
-package shared
+[% /* Generates the shared config artifact. */ %]package shared
 
 import "os"
 

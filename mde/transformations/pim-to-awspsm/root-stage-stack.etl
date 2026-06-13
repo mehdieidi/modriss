@@ -1,3 +1,4 @@
+/** Maps root stage stack model elements and supporting relationships. */
 rule PIMModel2AwsPsmModel
   transform p : PIM!PIMModel
   to a : AWSPSM!AwsPsmModel {
@@ -45,6 +46,7 @@ rule PIMModel2AwsPsmModel
   }
 }
 
+/** Transforms Environment elements into Aws Stage elements. */
 rule Environment2AwsStage
   transform e : DEPLOYMENT!Environment
   to s : AWSPSMCORE!AwsStage {
@@ -71,6 +73,7 @@ rule Environment2AwsStage
   createTrace(e, s, "Environment2AwsStage", "HIGH", KERNEL!TraceLinkType#DEPLOYS_TO);
 }
 
+/** Transforms Deployment Unit elements into Sam Stack elements. */
 rule DeploymentUnit2SamStack
   transform d : DEPLOYMENT!DeploymentUnit
   to s : AWSPSMCORE!SamStack {
@@ -89,6 +92,7 @@ rule DeploymentUnit2SamStack
   createTrace(d, s, "DeploymentUnit2SamStack", "HIGH", KERNEL!TraceLinkType#DEPLOYS_TO);
 }
 
+/** Transforms Serverless Service elements into Structured Metadata elements. */
 rule ServerlessService2StructuredMetadata
   transform svc : DEPLOYMENT!ServerlessService
   to doc : KERNEL!StructuredDocument {

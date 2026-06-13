@@ -1,4 +1,4 @@
-.aws-sam/
+[% /* Generates the gitignore artifact. */ %].aws-sam/
 bin/
 coverage/
 build/

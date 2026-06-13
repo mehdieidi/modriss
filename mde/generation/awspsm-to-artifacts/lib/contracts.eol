@@ -1,7 +1,9 @@
+/** Provides reusable contracts operations. */
 import "naming.eol";
 import "values.eol";
 import "paths.eol";
 
+/** Computes route path. */
 operation AWSPSMAPI!ApiGatewayRoute routePath() : String {
   if (self.eClass().getName() = "HttpApiRoute" or self.eClass().getName() = "RestApiRoute") {
     return self.path.orElseText("/" + self.stableKey().toSlug());
@@ -9,6 +11,7 @@ operation AWSPSMAPI!ApiGatewayRoute routePath() : String {
   return "/" + self.stableKey().toSlug();
 }
 
+/** Computes route method. */
 operation AWSPSMAPI!ApiGatewayRoute routeMethod() : String {
   if (self.eClass().getName() = "HttpApiRoute" or self.eClass().getName() = "RestApiRoute") {
     return self.method.httpMethodText();
@@ -16,10 +19,12 @@ operation AWSPSMAPI!ApiGatewayRoute routeMethod() : String {
   return "get";
 }
 
+/** Computes operation id text. */
 operation AWSPSMAPI!ApiGatewayRoute operationIdText() : String {
   return self.operationName.orElseText(self.stableKey()).toCamel();
 }
 
+/** Renders emit open api document. */
 operation AWSPSMAPI!ApiGatewayApi emitOpenApiDocument(routeSeq : Collection) : String {
   var outText = "openapi: 3.0.3\n";
   outText = outText + "info:\n";
@@ -44,6 +49,7 @@ operation AWSPSMAPI!ApiGatewayApi emitOpenApiDocument(routeSeq : Collection) : S
   return outText;
 }
 
+/** Computes open api schemas yaml. */
 operation AWSPSMAPI!ApiGatewayApi openApiSchemasYaml(routeSeq : Collection, indentCount : Integer) : String {
   var schemaModels = self.collectOpenApiSchemaModels(routeSeq);
   var outText = spaces(indentCount) + "schemas:\n";
@@ -56,6 +62,7 @@ operation AWSPSMAPI!ApiGatewayApi openApiSchemasYaml(routeSeq : Collection, inde
   return outText;
 }
 
+/** Adds or records collect open api schema models. */
 operation AWSPSMAPI!ApiGatewayApi collectOpenApiSchemaModels(routeSeq : Collection) : Sequence {
   var schemaModels = Sequence{};
   var seenNames = Set{};
@@ -77,6 +84,7 @@ operation AWSPSMAPI!ApiGatewayApi collectOpenApiSchemaModels(routeSeq : Collecti
   return schemaModels;
 }
 
+/** Computes open api security schemes yaml. */
 operation AWSPSMAPI!ApiGatewayApi openApiSecuritySchemesYaml(routeSeq : Collection, indentCount : Integer) : String {
   var schemeNames = routeSeq.collect(routeObj | routeObj.openApiSecuritySchemeName())
     .select(schemeName | schemeName.isPresent()).asSet().asSequence().sortBy(schemeName | schemeName);
@@ -115,6 +123,7 @@ operation AWSPSMAPI!ApiGatewayApi openApiSecuritySchemesYaml(routeSeq : Collecti
   return outText;
 }
 
+/** Computes open api operation. */
 operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : String {
   var outText = spaces(indentCount) + self.routeMethod() + ":\n";
   outText = outText + spaces(indentCount + 2) + "operationId: " + self.operationIdText().yamlScalar() + "\n";
@@ -169,10 +178,12 @@ operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : St
   return outText;
 }
 
+/** Derives sorted open api response models. */
 operation AWSPSMAPI!ApiGatewayRoute sortedOpenApiResponseModels() : Sequence {
   return self.responseModels.asSequence().sortBy(responseModel | responseModel.statusCode);
 }
 
+/** Computes open api response description. */
 operation AWSPSMAPI!ApiGatewayRoute openApiResponseDescription(statusCode : String) : String {
   if (statusCode.startsWith("2")) {
     return "Successful response";
@@ -186,6 +197,7 @@ operation AWSPSMAPI!ApiGatewayRoute openApiResponseDescription(statusCode : Stri
   return "Response";
 }
 
+/** Computes open api security scheme name. */
 operation AWSPSMAPI!ApiGatewayRoute openApiSecuritySchemeName() : String {
   var raw = self.authorizationType.asString().toLowerCase().replace(" ", "_");
   if (raw = "none") {
@@ -194,18 +206,22 @@ operation AWSPSMAPI!ApiGatewayRoute openApiSecuritySchemeName() : String {
   return raw;
 }
 
+/** Computes openapi schema name. */
 operation AWSPSMAPI!ApiGatewayResponseModel openapiSchemaName() : String {
   return pascalCase(firstText(self.name, self.id));
 }
 
+/** Computes openapi model name. */
 operation AWSPSMAPI!ApiGatewayRequestModel openapiModelName() : String {
   return self.modelName;
 }
 
+/** Computes openapi model name. */
 operation AWSPSMAPI!ApiGatewayResponseModel openapiModelName() : String {
   return self.openapiSchemaName();
 }
 
+/** Renders emit asl state json. */
 operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
   outText = outText + spaces(indentCount + 2) + "\"Type\": " + self.modelFeatureValue("type").asString().firstToUpperCase().toLowerCase().firstToUpperCase().jsonString();
@@ -285,6 +301,7 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
   return outText;
 }
 
+/** Renders emit asl retry json. */
 operation AWSPSMWORKFLOW!AslRetryRule emitAslRetryJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
   outText = outText + self.errorEquals.emitJsonStringArray("ErrorEquals", indentCount + 2);
@@ -306,6 +323,7 @@ operation AWSPSMWORKFLOW!AslRetryRule emitAslRetryJson(indentCount : Integer) : 
   return outText + "\n" + spaces(indentCount) + "}";
 }
 
+/** Renders emit asl catch json. */
 operation AWSPSMWORKFLOW!AslCatchRule emitAslCatchJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
   outText = outText + self.errorEquals.emitJsonStringArray("ErrorEquals", indentCount + 2);
@@ -316,6 +334,7 @@ operation AWSPSMWORKFLOW!AslCatchRule emitAslCatchJson(indentCount : Integer) : 
   return outText + "\n" + spaces(indentCount) + "}";
 }
 
+/** Renders emit asl choice json. */
 operation AWSPSMWORKFLOW!AslChoiceRule emitAslChoiceJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
   if (self.conditionExpression.isPresent()) {
@@ -329,10 +348,12 @@ operation AWSPSMWORKFLOW!AslChoiceRule emitAslChoiceJson(indentCount : Integer) 
   return outText + spaces(indentCount) + "}";
 }
 
+/** Computes schema title. */
 operation KERNEL!TraceableElement schemaTitle(schemaKindText : String) : String {
   return self.name.orElseText(self.eClass().getName()) + " " + schemaKindText;
 }
 
+/** Computes indent json block. */
 operation indentJsonBlock(text : String, indentCount : Integer) : String {
   var outText = "";
   for (lineText in text.split("\n")) {
@@ -344,6 +365,7 @@ operation indentJsonBlock(text : String, indentCount : Integer) : String {
   return outText;
 }
 
+/** Computes local input schema json. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction localInputSchemaJson(profileMap : Map) : String {
   var variants = Sequence{};
   if (self.hasApiGatewayInvocation()) {
@@ -383,6 +405,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction localInputSchemaJson(profileMap : Map)
     "}\n";
 }
 
+/** Computes wrap local schema document. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction wrapLocalSchemaDocument(profileMap : Map, bodyText : String) : String {
   return "{\n" +
     "  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n" +
@@ -394,10 +417,12 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction wrapLocalSchemaDocument(profileMap : M
     "}\n";
 }
 
+/** Returns whether the receiver has api gateway invocation. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction hasApiGatewayInvocation() : Boolean {
   return AWSPSMAPI!ApiGatewayIntegration.all.exists(integrationObj | integrationObj.lambdaTarget = self);
 }
 
+/** Computes api gateway proxy event schema json. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction apiGatewayProxyEventSchemaJson() : String {
   return "{\n" +
     "  \"title\": \"API Gateway proxy event\",\n" +
@@ -418,6 +443,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction apiGatewayProxyEventSchemaJson() : Str
     "}";
 }
 
+/** Computes sqs event schema json. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction sqsEventSchemaJson() : String {
   return "{\n" +
     "  \"title\": \"SQS event\",\n" +
@@ -430,6 +456,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction sqsEventSchemaJson() : String {
     "}";
 }
 
+/** Computes dynamo stream event schema json. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction dynamoStreamEventSchemaJson() : String {
   return "{\n" +
     "  \"title\": \"DynamoDB stream event\",\n" +
@@ -442,6 +469,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction dynamoStreamEventSchemaJson() : String
     "}";
 }
 
+/** Computes event bridge event schema json. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction eventBridgeEventSchemaJson() : String {
   return "{\n" +
     "  \"title\": \"EventBridge event\",\n" +
@@ -459,6 +487,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction eventBridgeEventSchemaJson() : String 
     "}";
 }
 
+/** Computes generic json event schema json. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction genericJsonEventSchemaJson() : String {
   return "{\n" +
     "  \"title\": \"Generic JSON event\",\n" +
@@ -467,6 +496,7 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction genericJsonEventSchemaJson() : String 
     "}";
 }
 
+/** Returns whether the receiver requires idempotency. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction requiresIdempotency() : Boolean {
   if (self.eventSourceMappings.notEmpty()) {
     return true;

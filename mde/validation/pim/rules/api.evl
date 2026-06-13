@@ -1,24 +1,30 @@
+/** Validates the semantic rules for api. */
 import "../lib/pim-validation-helpers.eol";
 
+/** Validates Api elements. */
 context PIM!Api {
 
+  /** Checks that api has at least one route. */
   constraint ApiHasAtLeastOneRoute {
     check : self.routes.notEmpty()
     message : "[PIM-API-001] API '" + self.displayName() + "' has no routes. Fix: add ApiRoute elements for the operations exposed by this API."
   }
 
+  /** Checks that protected api has auth policy. */
   constraint ProtectedApiHasAuthPolicy {
     guard : self.authRequired.isTrue()
     check : self.auth.isDefined()
     message : "[PIM-API-002] API '" + self.displayName() + "' requires authentication but has no AuthPolicy. Fix: attach auth with scheme, identity provider and token/scopes validation rules."
   }
 
+  /** Advises that consumer facing api has public metadata. */
   critique ConsumerFacingApiHasPublicMetadata {
     guard : self.externalConsumerFacing.isTrue()
     check : self.publicName.hasText() and self.version.hasText() and self.basePath.hasText()
     message : "[PIM-API-003] Consumer-facing API '" + self.displayName() + "' lacks publicName, version or basePath. Suggested fix: fill these fields so OpenAPI/docs can be generated with stable public metadata."
   }
 
+  /** Advises that generated open api needs contract. */
   critique GeneratedOpenApiNeedsContract {
     guard : self.generatedOpenApiRequired.isTrue()
     check : self.contract.isDefined()
@@ -26,48 +32,57 @@ context PIM!Api {
   }
 }
 
+/** Validates Api Route elements. */
 context PIM!ApiRoute {
 
+  /** Checks that exactly one integration. */
   constraint ExactlyOneIntegration {
     check : (self.functionIntegration.isDefined() and self.workflowIntegration.isUndefined())
       or (self.functionIntegration.isUndefined() and self.workflowIntegration.isDefined())
     message : "[PIM-ROUTE-000] API route '" + self.displayName() + "' must integrate exactly one backend."
   }
 
+  /** Checks that unique method path within api. */
   constraint UniqueMethodPathWithinApi {
     check : not duplicatePimApiRouteKeys().includes(self.routeUniquenessKey())
     message : "[PIM-ROUTE-001] API route '" + self.method.asString() + " " + self.pathTemplate + "' is duplicated within API '" + self.api.displayName() + "'. Fix: change the method or pathTemplate so each route is unique inside the API."
   }
 
+  /** Checks that route path starts with slash. */
   constraint RoutePathStartsWithSlash {
     check : self.pathTemplate.hasText() and self.pathTemplate.startsWith("/")
     message : "[PIM-ROUTE-002] API route pathTemplate '" + self.pathTemplate.ifUndefined("<missing>") + "' must start with '/'. Fix: use a portable absolute path template such as /orders/{orderId}."
   }
 
+  /** Checks that route integration is exactly one backend. */
   constraint RouteIntegrationIsExactlyOneBackend {
     check : (self.functionIntegration.isDefined() and self.workflowIntegration.isUndefined())
       or (self.functionIntegration.isUndefined() and self.workflowIntegration.isDefined())
     message : "[PIM-ROUTE-003] API route '" + self.displayName() + "' must integrate with exactly one backend. Fix: set either functionIntegration or workflowIntegration, not both and not neither."
   }
 
+  /** Checks that protected route has authorization. */
   constraint ProtectedRouteHasAuthorization {
     guard : self.authRequired.isTrue() or self.api.authRequired.isTrue()
     check : self.authorization.isDefined()
     message : "[PIM-ROUTE-004] Protected route '" + self.method.asString() + " " + self.pathTemplate + "' has no AuthorizationPolicy. Fix: attach authorization with ruleExpression, role/scope, allowed principals or permissions."
   }
 
+  /** Checks that request validation needs request schema. */
   constraint RequestValidationNeedsRequestSchema {
     guard : self.requestValidationRequired.isTrue()
     check : self.requestSchema.isDefined()
     message : "[PIM-ROUTE-005] Route '" + self.displayName() + "' requires request validation but has no requestSchema. Fix: attach a request Schema or set requestValidationRequired to false."
   }
 
+  /** Checks that response validation needs response schema. */
   constraint ResponseValidationNeedsResponseSchema {
     guard : self.responseValidationRequired.isTrue()
     check : self.responseSchema.isDefined()
     message : "[PIM-ROUTE-006] Route '" + self.displayName() + "' requires response validation but has no responseSchema. Fix: attach a response Schema or set responseValidationRequired to false."
   }
 
+  /** Advises that public route should describe consumers. */
   critique PublicRouteShouldDescribeConsumers {
     guard : self.publicRoute.isTrue()
     check : self.descriptionForConsumers.hasText()
@@ -75,8 +90,10 @@ context PIM!ApiRoute {
   }
 }
 
+/** Validates Error Mapping elements. */
 context PIM!ErrorMapping {
 
+  /** Advises that error mapping should be actionable. */
   critique ErrorMappingShouldBeActionable {
     check : self.domainErrorCode.hasText() and self.abstractStatusClass.hasText() and self.responseMessage.hasText()
     message : "[PIM-ROUTE-008] ErrorMapping '" + self.displayName() + "' is missing domainErrorCode, abstractStatusClass or responseMessage. Suggested fix: define a stable domain error, map it to an abstract status class, and write a client-safe response message."

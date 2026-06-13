@@ -1,11 +1,14 @@
+/** Maps behavior contracts model elements and supporting relationships. */
 import "lib/common.eol";
 import "lib/mapping.eol";
 import "lib/trace-readiness.eol";
 import "lib/pim-builders.eol";
 import "lib/resolution.eol";
 
+/** Computes command path. */
 operation commandPath(cmd : CIMBEHAVIOR!Command) {
   var resource = cmd.name;
+  // Prefer the aggregate or capability boundary so related commands share a stable API resource.
   if (cmd.targetAggregate.isDefined()) {
     resource = pluralize(cmd.targetAggregate.root.name);
   }
@@ -15,6 +18,7 @@ operation commandPath(cmd : CIMBEHAVIOR!Command) {
     }
   }
   var method = inferHttpMethod(cmd);
+  // Resource-mutating methods address an existing instance through its business identity.
   if (method = PIMTYPES!HttpMethod#PATCH or method = PIMTYPES!HttpMethod#PUT or method = PIMTYPES!HttpMethod#DELETE) {
     var idName = "id";
     if (cmd.targetAggregate.isDefined() and cmd.targetAggregate.root.primaryIdentityAttribute.isDefined()) {
@@ -28,6 +32,7 @@ operation commandPath(cmd : CIMBEHAVIOR!Command) {
   return "/" + kebab(resource);
 }
 
+/** Computes query path. */
 operation queryPath(q : CIMBEHAVIOR!Query) {
   if (q.reads.notEmpty()) {
     var entity = q.reads.first();
@@ -39,13 +44,16 @@ operation queryPath(q : CIMBEHAVIOR!Query) {
   return "/" + kebab(pluralize(q.name));
 }
 
+/** Computes event subject. */
 operation eventSubject(e : CIMBEHAVIOR!BusinessEvent) {
+  // Choose the strongest available business partition key before falling back to the event name.
   if (hasText(e.correlationBusinessKey)) return e.correlationBusinessKey;
   if (hasText(e.orderingKeyCandidate)) return e.orderingKeyCandidate;
   if (e.affects.notEmpty()) return e.affects.first().name;
   return e.name;
 }
 
+/** Transforms Business Error elements into Error Schema elements. */
 rule BusinessError2ErrorSchema
   transform e : CIMBEHAVIOR!BusinessError
   to s : CONTRACTS!Schema {
@@ -64,6 +72,7 @@ rule BusinessError2ErrorSchema
   traceGenerated(e, s, "TR-130", "HIGH");
 }
 
+/** Transforms Business Event elements into Event Type elements. */
 rule BusinessEvent2EventType
   transform e : CIMBEHAVIOR!BusinessEvent
   to et : CONTRACTS!EventType,
@@ -101,6 +110,7 @@ rule BusinessEvent2EventType
   traceGenerated(e, et, "TR-090", "HIGH");
 }
 
+/** Transforms Command elements into Function elements. */
 rule Command2Function
   transform cmd : CIMBEHAVIOR!Command
   to fn : COMPUTE!Function {
@@ -164,6 +174,7 @@ rule Command2Function
   traceGenerated(cmd, fn, "TR-070", "HIGH");
 }
 
+/** Transforms User Initiated Command elements into Api Route elements. */
 rule UserInitiatedCommand2ApiRoute
   transform cmd : CIMBEHAVIOR!Command
   to route : API!ApiRoute {
@@ -247,6 +258,7 @@ rule UserInitiatedCommand2ApiRoute
   }
 }
 
+/** Transforms Query elements into Function elements. */
 rule Query2Function
   transform q : CIMBEHAVIOR!Query
   to fn : COMPUTE!Function {
@@ -288,6 +300,7 @@ rule Query2Function
   traceGenerated(q, fn, "TR-080", "HIGH");
 }
 
+/** Transforms Query elements into Api Route elements. */
 rule Query2ApiRoute
   transform q : CIMBEHAVIOR!Query
   to route : API!ApiRoute {
@@ -348,6 +361,7 @@ rule Query2ApiRoute
   }
 }
 
+/** Transforms Query elements into Access Pattern elements. */
 rule Query2AccessPattern
   transform q : CIMBEHAVIOR!Query
   to ap : DATA!AccessPattern {

@@ -1,4 +1,4 @@
-# Model Summary
+[% /* Generates the model summary artifact. */ %]# Model Summary
 
 - Project: `[%= emitCtx.get("projectName") %]`
 - Generator version: `[%= emitCtx.get("generatorVersion") %]`

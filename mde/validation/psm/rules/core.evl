@@ -1,55 +1,66 @@
+/** Validates the semantic rules for core. */
 import "../lib/psm-validation-helpers.eol";
 
 /* Root model and core AWS/SAM structure */
 
 context AWSPSM!AwsPsmModel {
 
+  /** Checks that model has stacks. */
   constraint ModelHasStacks {
     check : self.stacks.notEmpty()
     message : 'AWS PSM model has no SAM stacks. Fix: add at least one SamStack and place deployable AwsResource elements inside it.'
   }
 
+  /** Checks that model has stages. */
   constraint ModelHasStages {
     check : self.stages.notEmpty()
     message : 'AWS PSM model has no deployment stages. Fix: add at least one AwsStage with stageName, environmentClass, accountId, and region.'
   }
 
+  /** Checks that production mode has prod stage. */
   constraint ProductionModeHasProdStage {
     guard : self.productionMode = true
     check : self.stages.exists(stageItem | stageItem.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD)
     message : 'productionMode is true but no PROD stage exists. Fix: add an AwsStage with environmentClass PROD, or set productionMode to false for non-production models.'
   }
 
+  /** Checks that unique stack names. */
   constraint UniqueStackNames {
     check : self.stacks.forAll(stackItem |
       self.stacks.one(otherStack | otherStack.stackName = stackItem.stackName))
     message : 'Two or more SAM stacks have the same stackName. Fix: rename stacks so each stackName is unique within the PSM model.'
   }
 
+  /** Checks that unique stage names. */
   constraint UniqueStageNames {
     check : self.stages.forAll(stageItem |
       self.stages.one(otherStage | otherStage.stageName = stageItem.stageName))
     message : 'Two or more deployment stages have the same stageName. Fix: rename stages so each stageName is unique within the PSM model.'
   }
 
+  /** Advises that default region recommended. */
   critique DefaultRegionRecommended {
     check : self.defaultRegion.hasText()
     message : 'The model has no defaultRegion. Fix: set defaultRegion, for example eu-central-1, or ensure every AwsStage declares an explicit region.'
   }
 
+  /** Advises that stack resources exist. */
   critique StackResourcesExist {
     check : self.stackResourceSet().notEmpty() or self.stacks.isEmpty()
     message : 'AWS PSM model has stacks but no stack-contained resources. Fix: place generated resources under SamStack.resources.'
   }
 }
 
+/** Validates Aws Stage elements. */
 context AWSPSM!AwsStage {
 
+  /** Checks that stage has account and region. */
   constraint StageHasAccountAndRegion {
     check : self.accountId.hasText() and self.region.hasText()
     message : 'Stage ' + self.stageName + ' is missing accountId or region. Fix: provide the AWS account ID and region for this deployment stage.'
   }
 
+  /** Checks that prod requires approval. */
   constraint ProdRequiresApproval {
     guard : self.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD
     check : self.requiresManualApproval = true
@@ -62,69 +73,83 @@ context AWSPSM!AwsStage {
     }
   }
 
+  /** Advises that prod should confirm changeset. */
   critique ProdShouldConfirmChangeset {
     guard : self.environmentClass = AWSPSMENUMS!AwsEnvironmentClass#PROD
     check : self.confirmChangeset = true
     message : 'Production stage ' + self.stageName + ' does not confirm changesets. Fix: set confirmChangeset to true so operators review the CloudFormation changes before execution.'
   }
 
+  /** Advises that stage deploys at least one stack. */
   critique StageDeploysAtLeastOneStack {
     check : self.deploysStacks.notEmpty()
     message : 'Stage ' + self.stageName + ' does not deploy any stacks. Fix: attach one or more SamStack instances to deploysStacks, or remove the unused stage.'
   }
 }
 
+/** Validates Sam Stack elements. */
 context AWSPSM!SamStack {
 
+  /** Checks that deployable stack has resources. */
   constraint DeployableStackHasResources {
     check : self.resources.notEmpty()
     message : 'SAM stack ' + self.stackName + ' has no resources. Fix: add at least one AwsResource to the stack before transformation/deployment.'
   }
 
+  /** Checks that stack has resources. */
   constraint StackHasResources {
     check : self.resources.notEmpty()
     message : 'SAM stack ' + self.stackName + ' has no resources. Fix: add at least one AwsResource to the stack before transformation/deployment.'
   }
 
+  /** Checks that stack logical ids are unique. */
   constraint StackLogicalIdsAreUnique {
     check : self.resources.forAll(resourceItem |
       not duplicateResourceLogicalIdKeys().includes(resourceItem.stackLogicalIdKey()))
     message : 'SAM stack ' + self.stackName + ' contains duplicate resource logical IDs. Fix: rename the duplicate logicalId values; logical IDs must be unique per CloudFormation stack.'
   }
 
+  /** Advises that sam transform recommended. */
   critique SamTransformRecommended {
     check : self.useSamTransform = true
     message : 'SAM stack ' + self.stackName + ' does not enable the SAM transform. Fix: set useSamTransform to true unless this stack intentionally emits plain CloudFormation only.'
   }
 
+  /** Advises that validation tools recommended. */
   critique ValidationToolsRecommended {
     check : (self.validateWithSam = true) and (self.validateWithCfnLint = true)
     message : 'SAM stack ' + self.stackName + ' is not configured for both SAM and cfn-lint validation. Fix: set validateWithSam and validateWithCfnLint to true in production pipelines.'
   }
 }
 
+/** Validates Aws Resource elements. */
 context AWSPSM!AwsResource {
 
+  /** Checks that logical id valid. */
   constraint LogicalIdValid {
     check : self.logicalId.matches('^[A-Za-z][A-Za-z0-9]*$')
     message : 'Resource logicalId "' + self.logicalId + '" is invalid. Fix: use only letters and digits, start with a letter, and avoid spaces, dashes, underscores, or punctuation.'
   }
 
+  /** Checks that logical id unique in stack. */
   constraint LogicalIdUniqueInStack {
     check : not duplicateResourceLogicalIdKeys().includes(self.stackLogicalIdKey())
     message : 'Logical ID ' + self.logicalId + ' is duplicated in stack ' + self.stack.stackName + '. Fix: give each resource in a stack a unique logicalId.'
   }
 
+  /** Checks that no direct self dependency. */
   constraint NoDirectSelfDependency {
     check : not self.dependsOn.includes(self)
     message : 'Resource ' + self.resourceLabel() + ' depends on itself. Fix: remove the self-reference from dependsOn.'
   }
 
+  /** Checks that no dependency cycles. */
   constraint NoDependencyCycles {
     check : not resourcesWithDependencyCycles().includes(self.`id`)
     message : 'Resource ' + self.resourceLabel() + ' is part of a circular dependency chain. Fix: remove or refactor dependsOn links so the stack dependency graph is acyclic.'
   }
 
+  /** Checks that imported resource has import identity. */
   constraint ImportedResourceHasImportIdentity {
     guard : self.importedResource = true
     check : self.importedArn.hasText() or
@@ -133,29 +158,34 @@ context AWSPSM!AwsResource {
     message : 'Imported resource ' + self.resourceLabel() + ' has no import identity. Fix: set importedArn or importDetails.importedArn/importedName/importedLogicalId so generators can reference the external AWS resource safely.'
   }
 
+  /** Advises that non imported resource should not have import metadata. */
   critique NonImportedResourceShouldNotHaveImportMetadata {
     guard : self.importedResource <> true
     check : (not self.importedArn.hasText()) and self.importDetails.isUndefined()
     message : 'Resource ' + self.resourceLabel() + ' is not marked imported but contains import metadata. Fix: either set importedResource to true or remove importedArn/importDetails.'
   }
 
+  /** Checks that deployable resource has aws type. */
   constraint DeployableResourceHasAwsType {
     guard : self.importedResource <> true and self.stack.isDefined()
     check : self.awsResourceType.hasText()
     message : 'Deployable resource ' + self.resourceLabel() + ' has no awsResourceType. Fix: set a valid CloudFormation/SAM resource type.'
   }
 
+  /** Checks that production resources have required tags. */
   constraint ProductionResourcesHaveRequiredTags {
     guard : self.isProductionScoped()
     check : self.missingRequiredTagKeys().isEmpty()
     message : 'Production-scoped resource ' + self.resourceLabel() + ' is missing required tags: ' + self.missingRequiredTagKeys().concat(', ') + '. Fix: add these tags to the resource, or update AwsTaggingPolicy if the requirement is not applicable.'
   }
 
+  /** Checks that tag keys are unique per resource. */
   constraint TagKeysAreUniquePerResource {
     check : self.duplicateTagKeys().isEmpty()
     message : 'Resource ' + self.resourceLabel() + ' has duplicate tag keys: ' + self.duplicateTagKeys().concat(', ') + '. Fix: keep one tag per key and merge/remove duplicate values.'
   }
 
+  /** Advises that production resources should retain on delete. */
   critique ProductionResourcesShouldRetainOnDelete {
     guard : self.isProductionScoped()
     check : (self.retainInProduction = true) or (self.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#RETAIN) or (self.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#SNAPSHOT)
@@ -163,14 +193,18 @@ context AWSPSM!AwsResource {
   }
 }
 
+/** Validates Aws Native Resource elements. */
 context AWSPSM!AwsNativeResource {
+  /** Checks that native resource type name valid. */
   constraint NativeResourceTypeNameValid {
     check : self.cloudFormationType.matches('^(AWS::[A-Za-z0-9]+::[A-Za-z0-9]+|Custom::[A-Za-z0-9][A-Za-z0-9_-]*)$')
     message : 'Native resource ' + self.resourceLabel() + ' has invalid cloudFormationType. Fix: use AWS::Service::Resource or Custom::Name.'
   }
 }
 
+/** Validates Value Expression elements. */
 context AWSPSM!ValueExpression {
+  /** Checks that value expression source shape. */
   constraint ValueExpressionSourceShape {
     check :
       (self.sourceKind = AWSPSMENUMS!ValueSourceKind#PLAINTEXT and self.literal.hasText() and self.resource.isUndefined()) or
@@ -188,6 +222,7 @@ context AWSPSM!ValueExpression {
     message : 'ValueExpression ' + self.labelText() + ' has fields that do not match sourceKind. Fix the literal/resource/attribute/reference shape.'
   }
 
+  /** Advises that secret literal reviewed. */
   critique SecretLiteralReviewed {
     guard : self.secret = true
     check : self.sourceKind <> AWSPSMENUMS!ValueSourceKind#PLAINTEXT or self.reviewStatus.hasText()
@@ -195,25 +230,31 @@ context AWSPSM!ValueExpression {
   }
 }
 
+/** Validates Aws Tag elements. */
 context AWSPSM!AwsTag {
+  /** Checks that tag key has text. */
   constraint TagKeyHasText {
     check : self.key.hasText()
     message : 'A tag has an empty key. Fix: provide a non-empty tag key such as Owner, Environment, CostCenter, Service, or DataClassification.'
   }
 
+  /** Advises that avoid aws reserved tag prefix. */
   critique AvoidAwsReservedTagPrefix {
     check : not self.key.toLowerCase().startsWith('aws:')
     message : 'Tag key ' + self.key + ' uses the AWS-reserved aws: prefix. Fix: use an application-owned tag namespace instead, for example app:owner or Owner.'
   }
 }
 
+/** Validates Native Property elements. */
 context AWSPSM!NativeProperty {
+  /** Checks that required native property has value. */
   constraint RequiredNativePropertyHasValue {
     guard : self.required = true
     check : self.value.isDefined()
     message : 'Required native property ' + self.propertyName + ' has no value. Fix: provide a ValueExpression for this property or mark it as not required if it is intentionally omitted.'
   }
 
+  /** Checks that secret native property uses secure expression. */
   constraint SecretNativePropertyUsesSecureExpression {
     guard : self.secret = true
     check : self.value.isDefined() and self.value.secret = true and self.value.usesSecureSource()
@@ -221,37 +262,44 @@ context AWSPSM!NativeProperty {
   }
 }
 
+/** Validates Value Expression elements. */
 context AWSPSM!ValueExpression {
+  /** Checks that plain text has literal. */
   constraint PlainTextHasLiteral {
     guard : self.sourceKind = AWSPSMENUMS!ValueSourceKind#PLAINTEXT
     check : self.literal.hasText()
     message : 'PLAINTEXT value expression has no literal. Fix: set literal to the intended non-secret value, or use a reference sourceKind if the value is resolved elsewhere.'
   }
 
+  /** Checks that cloud formation ref has target. */
   constraint CloudFormationRefHasTarget {
     guard : self.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_REF
     check : self.resource.isDefined() or self.parameter.isDefined() or self.expression.hasText()
     message : 'CLOUDFORMATION_REF value expression has no target. Fix: set resource, parameter, or expression so the generator can emit a valid Ref.'
   }
 
+  /** Checks that get att has resource and attribute. */
   constraint GetAttHasResourceAndAttribute {
     guard : self.sourceKind = AWSPSMENUMS!ValueSourceKind#CLOUDFORMATION_GETATT
     check : self.resource.isDefined() and self.attributeName.hasText()
     message : 'CLOUDFORMATION_GETATT value expression requires both resource and attributeName. Fix: select the referenced AwsResource and set attributeName, such as Arn or Name.'
   }
 
+  /** Checks that list expression has items. */
   constraint ListExpressionHasItems {
     guard : self.sourceKind = AWSPSMENUMS!ValueSourceKind#LIST
     check : self.items.notEmpty()
     message : 'LIST value expression has no items. Fix: add one or more child ValueExpression items, or change sourceKind if a list is not intended.'
   }
 
+  /** Checks that map expression has entries. */
   constraint MapExpressionHasEntries {
     guard : self.sourceKind = AWSPSMENUMS!ValueSourceKind#MAP
     check : self.entries.notEmpty()
     message : 'MAP value expression has no entries. Fix: add NamedValueExpression entries with keys and values, or change sourceKind if a map is not intended.'
   }
 
+  /** Checks that secret value must use secure reference. */
   constraint SecretValueMustUseSecureReference {
     guard : self.secret = true
     check : self.usesSecureSource()
@@ -259,7 +307,9 @@ context AWSPSM!ValueExpression {
   }
 }
 
+/** Validates Named Value Expression elements. */
 context AWSPSM!NamedValueExpression {
+  /** Checks that map entry has key. */
   constraint MapEntryHasKey {
     check : self.key.hasText()
     message : 'A map entry has no key. Fix: provide a stable non-empty key for the NamedValueExpression.'

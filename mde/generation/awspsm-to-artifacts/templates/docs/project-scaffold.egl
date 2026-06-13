@@ -1,4 +1,4 @@
-Project: [%= emitCtx.get("projectName") %]
+[% /* Generates the project scaffold artifact. */ %]Project: [%= emitCtx.get("projectName") %]
 Slug: [%= emitCtx.get("projectSlug") %]
 Generator: [%= emitCtx.get("generatorVersion") %]
 Primary language: [%= emitCtx.primaryLanguage() %]

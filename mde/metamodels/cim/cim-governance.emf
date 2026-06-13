@@ -1,3 +1,4 @@
+/** Defines the cim governance metamodel package. */
 @namespace(uri="https://modless.org/cim/governance/1.0", prefix="cimgov")
 package cimgov;
 
@@ -21,6 +22,7 @@ class NonFunctionalRequirement extends cimorg.Requirement {
   val QualityScenario[*] scenarios;
 }
 
+/** Represents the Quality Scenario concept in this model. */
 class QualityScenario extends kernel.TraceableElement {
   attr cimtypes.QualityType qualityType;
   attr String source;
@@ -31,6 +33,7 @@ class QualityScenario extends kernel.TraceableElement {
   attr String responseMeasure;
 }
 
+/** Represents the Security Constraint concept in this model. */
 class SecurityConstraint extends NonFunctionalRequirement {
   attr String authenticationNeed;
   attr String authorizationRule;
@@ -44,6 +47,7 @@ class SecurityConstraint extends NonFunctionalRequirement {
   ref cimdomain.InformationItem[*] constrainedInformation;
 }
 
+/** Represents the Privacy Constraint concept in this model. */
 class PrivacyConstraint extends NonFunctionalRequirement {
   attr String law;
   attr String jurisdiction;
@@ -63,6 +67,7 @@ class PrivacyConstraint extends NonFunctionalRequirement {
   ref cimorg.Actor[*] dataSubjects;
 }
 
+/** Represents the Compliance Constraint concept in this model. */
 class ComplianceConstraint extends NonFunctionalRequirement {
   attr String regulation;
   attr String controlId;

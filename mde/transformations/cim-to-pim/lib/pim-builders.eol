@@ -1,11 +1,14 @@
+/** Provides reusable pim builders operations. */
 import "common.eol";
 import "mapping.eol";
 import "trace-readiness.eol";
 
+/** Computes field. */
 operation field(name : String, fieldType, required : Boolean) {
   return fieldFor("generic", name, fieldType, required);
 }
 
+/** Computes field for. */
 operation fieldFor(ownerSeed : String, name : String, fieldType, required : Boolean) {
   var f = new CONTRACTS!SchemaField;
   f.id = newId("field", ownerSeed + "_" + name + "_" + fieldType.asString());
@@ -18,22 +21,26 @@ operation fieldFor(ownerSeed : String, name : String, fieldType, required : Bool
   return f;
 }
 
+/** Computes field with default. */
 operation fieldWithDefault(name : String, fieldType, required : Boolean, defaultValue : String) {
   var f = fieldFor("generic", name, fieldType, required);
   f.defaultValue = defaultValue;
   return f;
 }
 
+/** Computes field for with default. */
 operation fieldForWithDefault(ownerSeed : String, name : String, fieldType, required : Boolean, defaultValue : String) {
   var f = fieldFor(ownerSeed, name, fieldType, required);
   f.defaultValue = defaultValue;
   return f;
 }
 
+/** Creates create schema field. */
 operation createSchemaField(item : CIMDOMAIN!InformationItem) {
   return createSchemaField(item, "shared");
 }
 
+/** Creates create schema field. */
 operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String) {
   var f = new CONTRACTS!SchemaField;
   f.id = newId("field", ownerSeed + "_" + item.id);
@@ -132,6 +139,7 @@ operation createSchemaField(item : CIMDOMAIN!InformationItem, ownerSeed : String
   return f;
 }
 
+/** Computes split allowed values. */
 operation splitAllowedValues(value) {
   var values = Sequence{};
   var current = "";
@@ -154,10 +162,12 @@ operation splitAllowedValues(value) {
   return values;
 }
 
+/** Creates create condition constraint. */
 operation createConditionConstraint(condition : CIMBEHAVIOR!Condition, ruleId : String) {
   return createConditionConstraint(condition, ruleId, "shared");
 }
 
+/** Creates create condition constraint. */
 operation createConditionConstraint(condition : CIMBEHAVIOR!Condition, ruleId : String, ownerSeed : String) {
   var c = new CONTRACTS!SchemaConstraint;
   c.id = newId("constraint", ownerSeed + "_" + condition.id);
@@ -173,10 +183,12 @@ operation createConditionConstraint(condition : CIMBEHAVIOR!Condition, ruleId : 
   return c;
 }
 
+/** Creates create data field. */
 operation createDataField(item : CIMDOMAIN!InformationItem, identityItem) {
   return createDataField(item, identityItem, "shared");
 }
 
+/** Creates create data field. */
 operation createDataField(item : CIMDOMAIN!InformationItem, identityItem, ownerSeed : String) {
   var f = new DATA!DataField;
   f.id = newId("datafield", ownerSeed + "_" + item.id);
@@ -197,11 +209,13 @@ operation createDataField(item : CIMDOMAIN!InformationItem, identityItem, ownerS
   return f;
 }
 
+/** Adds or records add correlation fields. */
 operation addCorrelationFields(schema : CONTRACTS!Schema) {
   ensureSchemaField(schema, "correlationId", PIMTYPES!FieldType#STRING, true);
   ensureSchemaField(schema, "causationId", PIMTYPES!FieldType#STRING, false);
 }
 
+/** Creates ensure schema field. */
 operation ensureSchemaField(schema : CONTRACTS!Schema, name : String, fieldType, required : Boolean) {
   var normalizedName = name;
   var generatedName = camelCase(name);
@@ -220,6 +234,7 @@ operation ensureSchemaField(schema : CONTRACTS!Schema, name : String, fieldType,
   return f;
 }
 
+/** Adds or records add event metadata fields. */
 operation addEventMetadataFields(schema : CONTRACTS!Schema, event : CIMBEHAVIOR!BusinessEvent) {
   schema.fields.add(fieldFor(schema.id, "eventId", PIMTYPES!FieldType#STRING, true));
   schema.fields.add(fieldFor(schema.id, "eventType", PIMTYPES!FieldType#STRING, true));
@@ -232,6 +247,7 @@ operation addEventMetadataFields(schema : CONTRACTS!Schema, event : CIMBEHAVIOR!
   }
 }
 
+/** Creates default event envelope. */
 operation defaultEventEnvelope(seed : String) {
   var env = new CONTRACTS!EventEnvelope;
   env.id = newId("event_envelope", seed);
@@ -249,6 +265,7 @@ operation defaultEventEnvelope(seed : String) {
   return env;
 }
 
+/** Creates create command request schema. */
 operation createCommandRequestSchema(cmd : CIMBEHAVIOR!Command) {
   var s = new CONTRACTS!Schema;
   s.id = idFor("schema_cmd_req", cmd);
@@ -273,6 +290,7 @@ operation createCommandRequestSchema(cmd : CIMBEHAVIOR!Command) {
   return s;
 }
 
+/** Creates create command response schema. */
 operation createCommandResponseSchema(cmd : CIMBEHAVIOR!Command) {
   var s = new CONTRACTS!Schema;
   s.id = idFor("schema_cmd_res", cmd);
@@ -292,6 +310,7 @@ operation createCommandResponseSchema(cmd : CIMBEHAVIOR!Command) {
   return s;
 }
 
+/** Creates create query request schema. */
 operation createQueryRequestSchema(q : CIMBEHAVIOR!Query) {
   var s = new CONTRACTS!Schema;
   s.id = idFor("schema_query_req", q);
@@ -314,6 +333,7 @@ operation createQueryRequestSchema(q : CIMBEHAVIOR!Query) {
   return s;
 }
 
+/** Creates create query response schema. */
 operation createQueryResponseSchema(q : CIMBEHAVIOR!Query) {
   var s = new CONTRACTS!Schema;
   s.id = idFor("schema_query_res", q);
@@ -335,6 +355,7 @@ operation createQueryResponseSchema(q : CIMBEHAVIOR!Query) {
   return s;
 }
 
+/** Creates create default observability. */
 operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, alarms : Boolean) {
   var id = newId("observability", seed.id + "_" + ruleId);
   if (cachedPimObservabilityById.containsKey(id)) {
@@ -363,6 +384,7 @@ operation createDefaultObservability(seed, ruleId : String, tracing : Boolean, a
   return o;
 }
 
+/** Creates create default resilience. */
 operation createDefaultResilience(seed, ruleId : String, deadLetter : Boolean) {
   var id = newId("resilience", seed.id + "_" + ruleId);
   if (cachedPimResilienceById.containsKey(id)) {
@@ -406,6 +428,7 @@ operation createDefaultResilience(seed, ruleId : String, deadLetter : Boolean) {
   return r;
 }
 
+/** Creates create idempotency policy. */
 operation createIdempotencyPolicy(cmd : CIMBEHAVIOR!Command) {
   var p = new POLICY!IdempotencyPolicy;
   p.id = idFor("idempotency", cmd);
@@ -424,6 +447,7 @@ operation createIdempotencyPolicy(cmd : CIMBEHAVIOR!Command) {
   return p;
 }
 
+/** Creates create idempotency policy for target. */
 operation createIdempotencyPolicyForTarget(target, seed, ruleId : String, keySource : String) {
   var id = newId("idempotency", target.id);
   if (cachedPimIdempotencyById.containsKey(id)) {

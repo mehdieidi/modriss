@@ -1,4 +1,4 @@
-{
+[% /* Generates the sample event artifact. */ %]{
   "id": "[%= eventOwnerObj.stableKey().toSlug() %]-sample",
   "source": "modless.[%= eventKindText %]",
   "detail-type": "[%= eventOwnerObj.eClass().getName() %]",

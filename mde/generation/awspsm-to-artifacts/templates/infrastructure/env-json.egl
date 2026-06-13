@@ -1,4 +1,4 @@
-{
+[% /* Generates the env json artifact. */ %]{
   "stage": "[%= stageObj.stageName %]",
   "environmentClass": "[%= stageObj.environmentClass.asString() %]",
   "accountId": "[%= stageObj.accountId.orElseText("") %]",

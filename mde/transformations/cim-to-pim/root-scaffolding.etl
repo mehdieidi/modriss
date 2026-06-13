@@ -1,7 +1,9 @@
+/** Maps root scaffolding model elements and supporting relationships. */
 import "lib/common.eol";
 import "lib/mapping.eol";
 import "lib/trace-readiness.eol";
 
+/** Derives infer architecture style. */
 operation inferArchitectureStyle(c : CIM!CIMModel) {
   if (c.processes.exists(p | p.longRunning or p.humanApprovalPossible or p.compensationExpected)) {
     return PIMTYPES!ArchitectureStyle#WORKFLOW_ORCHESTRATED_SERVERLESS;
@@ -15,6 +17,7 @@ operation inferArchitectureStyle(c : CIM!CIMModel) {
   return PIMTYPES!ArchitectureStyle#HYBRID_SERVERLESS;
 }
 
+/** Creates build architecture rationale. */
 operation buildArchitectureRationale(c : CIM!CIMModel) {
   return "Generated provider-independent serverless PIM from CIM intent: " +
     c.commands.size() + " commands, " +
@@ -23,6 +26,7 @@ operation buildArchitectureRationale(c : CIM!CIMModel) {
     c.processes.size() + " processes.";
 }
 
+/** Computes requirement rule text. */
 operation requirementRuleText(r : CIMORG!Requirement) {
   var text = firstText(r.fitCriterion, r.description);
   if (not hasText(text) and r.acceptanceCriteria.notEmpty()) {
@@ -37,11 +41,13 @@ operation requirementRuleText(r : CIMORG!Requirement) {
   return text;
 }
 
+/** Computes goal rule text. */
 operation goalRuleText(g : CIMORG!BusinessGoal) {
   return firstText(g.successCriterion,
     firstText(g.businessValue, "Preserve business goal '" + firstText(g.name, g.id) + "'."));
 }
 
+/** Computes glossary rule text. */
 operation glossaryRuleText(t : CIMORG!UbiquitousLanguageTerm) {
   var definition = firstText(t.definition, "definition requires review");
   var text = "Use business term '" + t.term + "' consistently: " + definition + ".";
@@ -51,6 +57,7 @@ operation glossaryRuleText(t : CIMORG!UbiquitousLanguageTerm) {
   return text;
 }
 
+/** Transforms CIM Model elements into PIM Model elements. */
 rule CIMModel2PIMModel
   transform c : CIM!CIMModel
   to p : PIM!PIMModel {
@@ -86,6 +93,7 @@ rule CIMModel2PIMModel
   addTrace(c, p, "TR-001", KERNEL!TraceLinkType#TRANSFORMS_TO, "HIGH");
 }
 
+/** Generates artifacts or model elements for Default Environments And Implementation Profile. */
 rule DefaultEnvironmentsAndImplementationProfile
   transform c : CIM!CIMModel
   to dev : DEPLOY!Environment,
@@ -140,6 +148,7 @@ rule DefaultEnvironmentsAndImplementationProfile
   manualDecision("TR-003", "Choose runtime language, package manager, test framework, source layout, lint, format, and build commands.", KERNEL!Severity#WARNING, false, Sequence{profile});
 }
 
+/** Transforms Requirement elements into Business Rule elements. */
 rule Requirement2BusinessRule
   transform r : CIMORG!Requirement
   to b : POLICY!BusinessRule {
@@ -158,6 +167,7 @@ rule Requirement2BusinessRule
   }
 }
 
+/** Transforms Business Goal elements into Business Rule elements. */
 rule BusinessGoal2BusinessRule
   transform g : CIMORG!BusinessGoal
   to b : POLICY!BusinessRule {
@@ -170,6 +180,7 @@ rule BusinessGoal2BusinessRule
   traceGenerated(g, b, "TR-004", "LOW");
 }
 
+/** Transforms Ubiqui elements into us Language Term2 Business Rule elements. */
 rule UbiquitousLanguageTerm2BusinessRule
   transform t : CIMORG!UbiquitousLanguageTerm
   to b : POLICY!BusinessRule {
@@ -182,6 +193,7 @@ rule UbiquitousLanguageTerm2BusinessRule
   traceGenerated(t, b, "TR-004", "LOW");
 }
 
+/** Transforms KPI elements into Readiness Check elements. */
 rule KPI2ReadinessCheck
   transform k : CIMORG!KPI
   to c : KERNEL!ReadinessCheck {
@@ -199,6 +211,7 @@ rule KPI2ReadinessCheck
   traceGenerated(k, c, "TR-004", "LOW");
 }
 
+/** Transforms Stakeholder elements into Manual Decision elements. */
 rule Stakeholder2ManualDecision
   transform s : CIMORG!Stakeholder
   to d : KERNEL!ManualDecision {

@@ -1,4 +1,4 @@
-{
+[% /* Generates the artifact trace json artifact. */ %]{
   "generatorVersion": "[%= emitCtx.get("generatorVersion").jsonEscape() %]",
   "sourceModelHash": "COMPUTED_BY_EXECUTOR",
   "artifacts": [

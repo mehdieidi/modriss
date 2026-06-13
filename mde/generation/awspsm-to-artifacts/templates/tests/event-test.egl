@@ -1,4 +1,4 @@
-package events
+[% /* Generates the event test artifact. */ %]package events
 
 import (
 	"encoding/json"

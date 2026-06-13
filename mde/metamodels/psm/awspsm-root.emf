@@ -1,3 +1,4 @@
+/** Defines the awspsm root metamodel package. */
 @namespace(uri="https://modless.org/awspsm/1.0", prefix="awspsm")
 package awspsm;
 
@@ -16,6 +17,7 @@ import "awspsm-api.ecore";
 import "awspsm-events.ecore";
 import "awspsm-integrations.ecore";
 
+/** Represents the Aws Psm Model concept in this model. */
 class AwsPsmModel extends kernel.TraceableElement {
   attr awspsmenums.AwsPartition[1] partition;
   attr String accountStrategy;

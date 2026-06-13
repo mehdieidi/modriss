@@ -1,4 +1,4 @@
-package main
+[% /* Generates the go handler artifact. */ %]package main
 
 import (
 	"context"

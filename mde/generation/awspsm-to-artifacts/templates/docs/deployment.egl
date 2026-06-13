@@ -1,4 +1,4 @@
-# Deployment
+[% /* Generates the deployment artifact. */ %]# Deployment
 
 ## Environments
 

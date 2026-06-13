@@ -1,7 +1,9 @@
+/** Provides reusable resolution operations. */
 import "common.eol";
 import "trace-readiness.eol";
 import "pim-builders.eol";
 
+/** Returns service for. */
 operation serviceFor(source) {
   if (source.isUndefined()) {
     return null;
@@ -22,6 +24,7 @@ operation serviceFor(source) {
   return service;
 }
 
+/** Resolves resolve service for. */
 operation resolveServiceFor(source) {
   if (pimRoot().services.isEmpty() and PIM!PIMModel.all.notEmpty()) {
     var c = cimRoot();
@@ -84,26 +87,32 @@ operation resolveServiceFor(source) {
   return null;
 }
 
+/** Computes command function. */
 operation commandFunction(cmd : CIMBEHAVIOR!Command) {
   return cachedEquivalent(cmd, "Command2Function");
 }
 
+/** Computes query function. */
 operation queryFunction(q : CIMBEHAVIOR!Query) {
   return cachedEquivalent(q, "Query2Function");
 }
 
+/** Computes policy function. */
 operation policyFunction(p : CIMPROCESS!Policy) {
   return cachedEquivalent(p, "Policy2PolicyHandlerFunction");
 }
 
+/** Computes event type for. */
 operation eventTypeFor(e : CIMBEHAVIOR!BusinessEvent) {
   return cachedEquivalentOfClass(e, "BusinessEvent2EventType", "EventType");
 }
 
+/** Computes schema for entity. */
 operation schemaForEntity(e : CIMDOMAIN!DomainEntity) {
   return cachedEquivalent(e, "Entity2Schema");
 }
 
+/** Computes schema for domain concept. */
 operation schemaForDomainConcept(concept : CIMDOMAIN!DomainConcept) {
   if (concept.isKindOf(CIMDOMAIN!DomainEntity)) {
     return cachedEquivalent(concept, "Entity2Schema");
@@ -114,10 +123,12 @@ operation schemaForDomainConcept(concept : CIMDOMAIN!DomainConcept) {
   return null;
 }
 
+/** Computes store for aggregate. */
 operation storeForAggregate(ag : CIMDOMAIN!AggregateCandidate) {
   return cachedEquivalentOfClass(ag, "Aggregate2DataStore", "DataStore");
 }
 
+/** Computes store for entity. */
 operation storeForEntity(entity : CIMDOMAIN!DomainEntity) {
   var ag = cachedAggregateForEntity(entity);
   if (ag.isDefined()) {
@@ -126,14 +137,17 @@ operation storeForEntity(entity : CIMDOMAIN!DomainEntity) {
   return null;
 }
 
+/** Computes adapter for. */
 operation adapterFor(es : CIMORG!ExternalSystem) {
   return cachedEquivalent(es, "ExternalSystem2Adapter");
 }
 
+/** Computes workflow for. */
 operation workflowFor(bp : CIMPROCESS!BusinessProcess) {
   return cachedEquivalent(bp, "BusinessProcess2Workflow");
 }
 
+/** Computes policy targets for. */
 operation policyTargetsFor(source) {
   var sourceKey = cacheKeyFor(source);
   if (hasText(sourceKey) and cachedCimPolicyTargetsBySourceId.containsKey(sourceKey)) {
@@ -185,6 +199,7 @@ operation policyTargetsFor(source) {
   return targets;
 }
 
+/** Computes policy targets for all. */
 operation policyTargetsForAll(sources) {
   var targets = Sequence{};
   for (source in sources) {
@@ -195,6 +210,7 @@ operation policyTargetsForAll(sources) {
   return targets;
 }
 
+/** Creates ensure api for service. */
 operation ensureApiForService(service : DEPLOY!ServerlessService) {
   if (service.ownsApis.notEmpty()) {
     return service.ownsApis.first();
@@ -219,6 +235,7 @@ operation ensureApiForService(service : DEPLOY!ServerlessService) {
   return api;
 }
 
+/** Creates ensure event bus for service. */
 operation ensureEventBusForService(service : DEPLOY!ServerlessService) {
   var existing = service.ownsChannels.selectOne(c | c.isKindOf(INTEGRATION!EventBus));
   if (existing.isDefined()) {

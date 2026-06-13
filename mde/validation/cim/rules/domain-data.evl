@@ -1,7 +1,10 @@
+/** Validates the semantic rules for domain data. */
 import "../lib/cim-validation-helpers.eol";
 
+/** Validates Domain Concept elements. */
 context CIM!DomainConcept {
 
+  /** Advises that domain concept has business definition. */
   critique DomainConceptHasBusinessDefinition {
     check : self.glossaryDefinition.hasText() or self.description.hasText()
     message :
@@ -10,8 +13,10 @@ context CIM!DomainConcept {
   }
 }
 
+/** Validates Domain Entity elements. */
 context CIM!DomainEntity {
 
+  /** Checks that entity has primary identity attribute. */
   constraint EntityHasPrimaryIdentityAttribute {
     check : self.primaryIdentityAttribute.isDefined()
     message :
@@ -19,6 +24,7 @@ context CIM!DomainEntity {
       "Suggestion: select or create the InformationItem that uniquely identifies the entity in business terms."
   }
 
+  /** Checks that identity attributes are owned attributes. */
   constraint IdentityAttributesAreOwnedAttributes {
     guard : self.primaryIdentityAttribute.isDefined()
     check : self.identityAttributes.notEmpty() and
@@ -30,6 +36,7 @@ context CIM!DomainEntity {
       "Suggestion: add all identity attributes to attributes and choose primaryIdentityAttribute from identityAttributes."
   }
 
+  /** Advises that entity has owning capability. */
   critique EntityHasOwningCapability {
     check : self.owningCapability.isDefined() or self.businessOwner.hasText()
     message :
@@ -37,6 +44,7 @@ context CIM!DomainEntity {
       "Suggestion: assign the business capability or owner responsible for the entity's lifecycle and invariants."
   }
 
+  /** Checks that lifecycle states have single initial state. */
   constraint LifecycleStatesHaveSingleInitialState {
     guard : self.lifecycleStates.notEmpty()
     check :
@@ -48,8 +56,10 @@ context CIM!DomainEntity {
   }
 }
 
+/** Validates Value Object elements. */
 context CIM!ValueObject {
 
+  /** Advises that value object should be immutable. */
   critique ValueObjectShouldBeImmutable {
     check : self.immutable = true
     message :
@@ -57,6 +67,7 @@ context CIM!ValueObject {
       "Suggestion: set immutable=true unless this concept is actually an entity with identity and lifecycle."
   }
 
+  /** Checks that value object defines equality. */
   constraint ValueObjectDefinesEquality {
     check : self.equalityAttributes.notEmpty()
     message :
@@ -65,8 +76,10 @@ context CIM!ValueObject {
   }
 }
 
+/** Validates Domain Relationship elements. */
 context CIM!DomainRelationship {
 
+  /** Checks that domain relationship has distinct ends. */
   constraint DomainRelationshipHasDistinctEnds {
     check : self.source <> self.target
     message :
@@ -74,6 +87,7 @@ context CIM!DomainRelationship {
       "Suggestion: connect distinct source and target concepts, or model the self-relation explicitly with named roles and rationale if it is truly intentional."
   }
 
+  /** Advises that domain relationship has roles and multiplicities. */
   critique DomainRelationshipHasRolesAndMultiplicities {
     check :
       self.sourceRole.hasText() and self.targetRole.hasText() and
@@ -83,6 +97,7 @@ context CIM!DomainRelationship {
       "Suggestion: provide sourceRole, targetRole, sourceMultiplicity, and targetMultiplicity to remove ambiguity."
   }
 
+  /** Checks that ownership relationship uses ownership type. */
   constraint OwnershipRelationshipUsesOwnershipType {
     guard : self.ownership = true
     check :
@@ -95,8 +110,10 @@ context CIM!DomainRelationship {
   }
 }
 
+/** Validates Aggregate Candidate elements. */
 context CIM!AggregateCandidate {
 
+  /** Checks that root is member. */
   constraint RootIsMember {
     check : self.members.includes(self.root)
     message :
@@ -104,6 +121,7 @@ context CIM!AggregateCandidate {
       "Suggestion: add the root entity to members or select a root from the existing member entities."
   }
 
+  /** Checks that strong consistency requires rationale. */
   constraint StrongConsistencyRequiresRationale {
     guard : self.strongConsistencyRequired = true
     check : self.consistencyBoundaryRationale.hasText()
@@ -112,6 +130,7 @@ context CIM!AggregateCandidate {
       "Suggestion: explain the invariant or business rule that makes the strong consistency boundary necessary."
   }
 
+  /** Checks that strong consistency expectation is consistent. */
   constraint StrongConsistencyExpectationIsConsistent {
     guard : self.strongConsistencyRequired = true
     check :
@@ -122,6 +141,7 @@ context CIM!AggregateCandidate {
       "Suggestion: set consistencyExpectation to SINGLE_ENTITY or MULTI_ENTITY_STRONG_CONSISTENCY, or set strongConsistencyRequired=false."
   }
 
+  /** Advises that eventual consistency has conflict policy. */
   critique EventualConsistencyHasConflictPolicy {
     guard :
       (self.consistencyExpectation = CIM!ConsistencyExpectation#EVENTUAL_CONSISTENCY_ACCEPTABLE) or
@@ -132,6 +152,7 @@ context CIM!AggregateCandidate {
       "Suggestion: describe how conflicting updates, reconciliation, or stale reads are handled."
   }
 
+  /** Advises that aggregate commands declare idempotency. */
   critique AggregateCommandsDeclareIdempotency {
     guard : self.handledCommands.exists(commandItem | commandItem.duplicateSubmissionPossible = true)
     check :
@@ -144,8 +165,10 @@ context CIM!AggregateCandidate {
   }
 }
 
+/** Validates Business Invariant elements. */
 context CIM!BusinessInvariant {
 
+  /** Checks that business invariant is expressed. */
   constraint BusinessInvariantIsExpressed {
     check : self.naturalLanguageStatement.hasText() or self.expression.hasText() or self.expressionModel.hasExpressionBody()
     message :
@@ -153,6 +176,7 @@ context CIM!BusinessInvariant {
       "Suggestion: write the invariant as a business rule, optionally adding expressionModel.body for automatable validation."
   }
 
+  /** Advises that business invariant constrains concepts. */
   critique BusinessInvariantConstrainsConcepts {
     check : self.constrainedConcepts.notEmpty()
     message :
@@ -161,8 +185,10 @@ context CIM!BusinessInvariant {
   }
 }
 
+/** Validates Information Item elements. */
 context CIM!InformationItem {
 
+  /** Checks that acyclic sub items. */
   constraint AcyclicSubItems {
     check : not self.hasSubItemCycle()
     message :
@@ -170,6 +196,7 @@ context CIM!InformationItem {
       "Suggestion: remove the recursive containment/reference cycle."
   }
 
+  /** Checks that structured items use object or list. */
   constraint StructuredItemsUseObjectOrList {
     guard : self.subItems.notEmpty()
     check : (self.type.asString() = "OBJECT") or (self.type.asString() = "LIST")
@@ -178,6 +205,7 @@ context CIM!InformationItem {
       "Suggestion: use a structured business type for nested information."
   }
 
+  /** Checks that unique child names. */
   constraint UniqueChildNames {
     check : collectionHasUniqueNames(self.subItems)
     message :
@@ -185,6 +213,7 @@ context CIM!InformationItem {
       "Suggestion: make nested InformationItem businessName/name values unique."
   }
 
+  /** Checks that information item has type. */
   constraint InformationItemHasType {
     check : self.type.isDefined()
     message :
@@ -192,6 +221,7 @@ context CIM!InformationItem {
       "Suggestion: choose the PrimitiveBusinessType that best represents the business value, such as TEXT, MONEY, DATE, EMAIL, IDENTIFIER, OBJECT, or LIST."
   }
 
+  /** Checks that information item has business name. */
   constraint InformationItemHasBusinessName {
     check : self.businessName.hasText() or self.name.hasText()
     message :
@@ -199,6 +229,7 @@ context CIM!InformationItem {
       "Suggestion: provide a business-facing name such as 'Customer email address' rather than a technical field name alone."
   }
 
+  /** Checks that personal or sensitive information has privacy constraint. */
   constraint PersonalOrSensitiveInformationHasPrivacyConstraint {
     guard : self.requiresPrivacyControls()
     check : self.privacyConstraints.notEmpty()
@@ -207,6 +238,7 @@ context CIM!InformationItem {
       "Suggestion: add a PrivacyConstraint covering purpose, legalBasis, retention, minimization, and data subject obligations."
   }
 
+  /** Checks that collection information has multiplicity. */
   constraint CollectionInformationHasMultiplicity {
     guard : self.collection = true
     check : self.cardinality.isDefined() and self.cardinality.lowerBound.isDefined() and
@@ -216,6 +248,7 @@ context CIM!InformationItem {
       "Suggestion: specify expected cardinality bounds such as 0..*, 1..*, 0..10, or business-specific limits."
   }
 
+  /** Checks that derived information has derivation rule. */
   constraint DerivedInformationHasDerivationRule {
     guard : self.derived = true
     check : self.derivationRule.hasText()
@@ -224,6 +257,7 @@ context CIM!InformationItem {
       "Suggestion: explain the business formula, source items, or policy used to derive the value."
   }
 
+  /** Advises that search or report item has source of truth. */
   critique SearchOrReportItemHasSourceOfTruth {
     guard : (self.searchRelevant = true) or (self.reportingRelevant = true)
     check : self.sourceOfTruth.hasText()
@@ -232,6 +266,7 @@ context CIM!InformationItem {
       "Suggestion: identify the authoritative business source to avoid inconsistent read models and reports."
   }
 
+  /** Checks that length bounds are consistent. */
   constraint LengthBoundsAreConsistent {
     guard : self.minLength.isDefined() and self.maxLength.isDefined()
     check : self.minLength <= self.maxLength
@@ -241,8 +276,10 @@ context CIM!InformationItem {
   }
 }
 
+/** Validates Data Classification elements. */
 context CIM!DataClassification {
 
+  /** Checks that data classification has kind. */
   constraint DataClassificationHasKind {
     check : self.kind.isDefined()
     message :
@@ -250,6 +287,7 @@ context CIM!DataClassification {
       "Suggestion: set kind to PUBLIC, INTERNAL, CONFIDENTIAL, PERSONAL, SENSITIVE_PERSONAL, FINANCIAL, HEALTH, AUTHENTICATION_SECRET, or REGULATED."
   }
 
+  /** Checks that sensitive data requires protection expectation. */
   constraint SensitiveDataRequiresProtectionExpectation {
     guard : self.requiresStrongProtection()
     check : (self.encryptionExpected = true) and (self.auditAccessRequired = true)
@@ -258,6 +296,7 @@ context CIM!DataClassification {
       "Suggestion: enable encryption and audit access, or downgrade kind only if the business classification was wrong."
   }
 
+  /** Checks that personal data has identifiability. */
   constraint PersonalDataHasIdentifiability {
     guard : self.isPersonalKind()
     check :
@@ -269,6 +308,7 @@ context CIM!DataClassification {
       "Suggestion: set identifiability to PSEUDONYMOUS, DIRECTLY_IDENTIFYING, or INDIRECTLY_IDENTIFYING."
   }
 
+  /** Advises that regulated data has regulatory category. */
   critique RegulatedDataHasRegulatoryCategory {
     guard :
       (self.kind = CIM!DataKind#REGULATED) or

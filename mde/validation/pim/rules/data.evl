@@ -1,19 +1,24 @@
+/** Validates the semantic rules for data. */
 import "../lib/pim-validation-helpers.eol";
 
+/** Validates Storage Element elements. */
 context PIM!StorageElement {
 
+  /** Checks that sensitive storage must be encrypted. */
   constraint SensitiveStorageMustBeEncrypted {
     guard : self.storageContainsSensitiveData()
     check : self.encrypted.isTrue()
     message : "[PIM-DATA-001] Storage element '" + self.displayName() + "' contains personal/sensitive data but is not encrypted. Fix: set encrypted to true and attach relevant data protection/security policies."
   }
 
+  /** Advises that persistent storage should have retention policy. */
   critique PersistentStorageShouldHaveRetentionPolicy {
     guard : self.persistent.isTrue()
     check : self.retentionPolicy.isDefined()
     message : "[PIM-DATA-002] Persistent storage '" + self.displayName() + "' has no retentionPolicy. Suggested fix: attach RetentionPolicy with retentionPeriod, deletion and legal-hold decisions."
   }
 
+  /** Advises that persistent storage should have backup decision. */
   critique PersistentStorageShouldHaveBackupDecision {
     guard : self.persistent.isTrue()
     check : self.backupPolicy.isDefined()
@@ -21,24 +26,29 @@ context PIM!StorageElement {
   }
 }
 
+/** Validates Data Store elements. */
 context PIM!DataStore {
 
+  /** Checks that data store has data model. */
   constraint DataStoreHasDataModel {
     check : self.ownedDataModels.notEmpty()
     message : "[PIM-DATA-004] DataStore '" + self.displayName() + "' has no ownedDataModels. Fix: add at least one DataModel describing the stored aggregate/entity/read model."
   }
 
+  /** Checks that data store has access pattern. */
   constraint DataStoreHasAccessPattern {
     check : self.accessPatterns.notEmpty()
     message : "[PIM-DATA-005] DataStore '" + self.displayName() + "' has no accessPatterns. Fix: add AccessPattern entries that describe query/write shapes used by functions or APIs."
   }
 
+  /** Checks that transactional store needs transactional consistency. */
   constraint TransactionalStoreNeedsTransactionalConsistency {
     guard : self.transactional.isTrue()
     check : self.consistencyNeed.enumIs("TRANSACTIONAL") or self.consistencyNeed.enumIs("STRONG")
     message : "[PIM-DATA-006] Transactional DataStore '" + self.displayName() + "' does not declare transactional/strong consistency. Fix: align consistencyNeed with transactional intent or set transactional to false."
   }
 
+  /** Advises that source of truth should have pitr or backup. */
   critique SourceOfTruthShouldHavePitrOrBackup {
     guard : self.ownedDataModels.exists(modelItem | modelItem.sourceOfTruth.isTrue())
     check : self.pointInTimeRecoveryRequired.isTrue() or self.backupPolicy.isDefined()
@@ -46,14 +56,17 @@ context PIM!DataStore {
   }
 }
 
+/** Validates Object Store elements. */
 context PIM!ObjectStore {
 
+  /** Advises that object store with events should declare event types. */
   critique ObjectStoreWithEventsShouldDeclareEventTypes {
     guard : self.eventNotificationRequired.isTrue()
     check : self.emittedEvents.notEmpty()
     message : "[PIM-OBJ-001] ObjectStore '" + self.displayName() + "' requires event notification but has no emittedEvents. Suggested fix: add EventType entries representing object-created/updated/deleted events."
   }
 
+  /** Advises that versioned object store should have lifecycle decision. */
   critique VersionedObjectStoreShouldHaveLifecycleDecision {
     guard : self.versioningRequired.isTrue()
     check : self.lifecyclePolicyRequired.isTrue() or self.rationale.hasText()
@@ -61,33 +74,40 @@ context PIM!ObjectStore {
   }
 }
 
+/** Validates Data Model elements. */
 context PIM!DataModel {
 
+  /** Checks that data model has schema. */
   constraint DataModelHasSchema {
     check : self.schema.isDefined()
     message : "[PIM-DATA-008] DataModel '" + self.displayName() + "' has no schema. Fix: link the Schema that describes the stored data shape."
   }
 
+  /** Checks that source of truth cannot be read model. */
   constraint SourceOfTruthCannotBeReadModel {
     guard : self.sourceOfTruth.isTrue()
     check : not self.readModel.isTrue()
     message : "[PIM-DATA-009] DataModel '" + self.displayName() + "' is both sourceOfTruth and readModel. Fix: split write/source model and read projection model or choose one role."
   }
 
+  /** Advises that data model should expose storage fields. */
   critique DataModelShouldExposeStorageFields {
     check : self.storageFields.notEmpty()
     message : "[PIM-DATA-010] DataModel '" + self.displayName() + "' has no storageFields. Suggested fix: add storage fields for keys, indexes, sensitive data and generated storage mapping."
   }
 }
 
+/** Validates Data Field elements. */
 context PIM!DataField {
 
+  /** Checks that sensitive data field is classified. */
   constraint SensitiveDataFieldIsClassified {
     guard : self.personalData.isTrue() or self.sensitiveData.isTrue()
     check : self.classification.hasText()
     message : "[PIM-DATA-011] DataField '" + self.displayName() + "' is personal/sensitive but has no classification. Fix: set a classification that can drive protection, retention and masking decisions."
   }
 
+  /** Advises that identifier field should be required. */
   critique IdentifierFieldShouldBeRequired {
     guard : self.identifier.isTrue()
     check : self.required.isTrue()
@@ -95,18 +115,22 @@ context PIM!DataField {
   }
 }
 
+/** Validates Access Pattern elements. */
 context PIM!AccessPattern {
 
+  /** Checks that access pattern operation defined. */
   constraint AccessPatternOperationDefined {
     check : self.`operation`.isDefined()
     message : "[PIM-DATA-012A] AccessPattern '" + self.displayName() + "' has no operation. Fix: choose a DataAccessMode literal such as READ, WRITE, READ_WRITE, APPEND or DELETE."
   }
 
+  /** Checks that access pattern names query shape. */
   constraint AccessPatternNamesQueryShape {
     check : self.hasQueryShape()
     message : "[PIM-DATA-013] AccessPattern '" + self.displayName() + "' does not describe operation/query shape. Fix: fill operation, queryBy, sortBy, filterBy or projection."
   }
 
+  /** Advises that high frequency access pattern should have index. */
   critique HighFrequencyAccessPatternShouldHaveIndex {
     guard : self.highFrequency.isTrue() or self.highCardinality.isTrue()
     check : indexedAccessPatternKeys().includes(self.indexSupportKey())
@@ -114,8 +138,10 @@ context PIM!AccessPattern {
   }
 }
 
+/** Validates Index Candidate elements. */
 context PIM!IndexCandidate {
 
+  /** Advises that production index supports access pattern. */
   critique ProductionIndexSupportsAccessPattern {
     guard : self.requiredForProduction.isTrue()
     check : self.supportsAccessPatterns.notEmpty() and self.partitionKeyField.hasText()
@@ -123,8 +149,10 @@ context PIM!IndexCandidate {
   }
 }
 
+/** Validates Data Access elements. */
 context PIM!DataAccess {
 
+  /** Checks that data access consistent with function refs. */
   constraint DataAccessConsistentWithFunctionRefs {
     check :
       (self.mode = PIM!DataAccessMode#READ and self.`function`.reads.includes(self.store)) or
@@ -133,11 +161,13 @@ context PIM!DataAccess {
     message : "[PIM-DATA-015A] DataAccess '" + self.displayName() + "' is not reflected in Function.reads/writes. Fix: synchronize DataAccess.mode with the function shortcut references."
   }
 
+  /** Advises that generates or references permission. */
   critique GeneratesOrReferencesPermission {
     check : self.purpose.hasText() and self.`function`.isDefined() and self.store.isDefined()
     message : "[PIM-DATA-015B] DataAccess '" + self.displayName() + "' lacks enough function/store/purpose information to generate or review permissions. Suggested fix: complete the access intent before PSM IAM generation."
   }
 
+  /** Checks that data access has purpose. */
   constraint DataAccessHasPurpose {
     check : self.purpose.hasText()
     message : "[PIM-DATA-016] DataAccess '" + self.displayName() + "' has no purpose. Fix: explain why the function accesses this store and what business operation it supports."

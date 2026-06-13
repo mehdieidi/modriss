@@ -1,9 +1,11 @@
+/** Defines the awspsm networking metamodel package. */
 @namespace(uri="https://modless.org/awspsm/networking/1.0", prefix="awspsmnetworking")
 package awspsmnetworking;
 
 import "../shared/kernel.ecore";
 import "awspsm-core.ecore";
 
+/** Represents the Vpc Attachment Config concept in this model. */
 class VpcAttachmentConfig extends kernel.TraceableElement {
   attr String vpcId;
   attr String[*] subnetIds;
@@ -16,18 +18,21 @@ class VpcAttachmentConfig extends kernel.TraceableElement {
   ref SecurityGroup[*] securityGroups;
 }
 
+/** Represents the Vpc Endpoint Reference concept in this model. */
 class VpcEndpointReference extends kernel.TraceableElement {
   attr String[1] serviceName;
   attr String endpointType;
   attr Boolean requiredForPrivateAccess;
 }
 
+/** Represents the Vpc concept in this model. */
 class Vpc extends awspsmcore.AwsResource {
   attr String cidrBlock;
   attr Boolean enableDnsHostnames;
   attr Boolean enableDnsSupport;
 }
 
+/** Represents the Subnet concept in this model. */
 class Subnet extends awspsmcore.AwsResource {
   attr String subnetName;
   attr String cidrBlock;
@@ -36,6 +41,7 @@ class Subnet extends awspsmcore.AwsResource {
   ref Vpc[?] vpc;
 }
 
+/** Represents the Vpc Endpoint concept in this model. */
 class VpcEndpoint extends awspsmcore.AwsResource {
   attr String serviceName;
   attr String endpointType;
@@ -45,6 +51,7 @@ class VpcEndpoint extends awspsmcore.AwsResource {
   ref SecurityGroup[*] securityGroups;
 }
 
+/** Represents the Security Group concept in this model. */
 class SecurityGroup extends awspsmcore.AwsResource {
   attr String[1] groupDescription;
   attr String vpcId;
@@ -53,6 +60,7 @@ class SecurityGroup extends awspsmcore.AwsResource {
   val SecurityGroupRule[*] egressRules;
 }
 
+/** Represents the Security Group Rule concept in this model. */
 class SecurityGroupRule extends kernel.TraceableElement {
   attr String ipProtocol;
   attr Integer fromPort;

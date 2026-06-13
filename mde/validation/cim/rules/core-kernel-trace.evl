@@ -1,7 +1,10 @@
+/** Validates the semantic rules for core kernel trace. */
 import "../lib/cim-validation-helpers.eol";
 
+/** Validates CIM Model elements. */
 context CIM!CIMModel {
 
+  /** Checks that cim model has semantic core. */
   constraint CIMModelHasSemanticCore {
     check :
       self.goals.notEmpty() and
@@ -12,6 +15,7 @@ context CIM!CIMModel {
       "Suggestion: add the minimal business core before semantic validation: a goal that explains value, an actor that initiates or observes work, and a capability that realizes the goal."
   }
 
+  /** Advises that cim model declares business scope. */
   critique CIMModelDeclaresBusinessScope {
     check :
       self.domainName.hasText() and self.businessScope.hasText() and self.organizationName.hasText()
@@ -20,6 +24,7 @@ context CIM!CIMModel {
       "Suggestion: describe the business domain, the boundary of what is included/excluded, and the organization or business unit that owns the model."
   }
 
+  /** Checks that production ready model has no blockers. */
   constraint ProductionReadyModelHasNoBlockers {
     guard : self.isProductionReadyIntent()
     check :
@@ -33,6 +38,7 @@ context CIM!CIMModel {
       "Suggestion: resolve or downgrade all blockers, record mitigations, and update readiness checks before setting lifecycleStatus/readiness to production-ready."
   }
 
+  /** Checks that transformation profile explicit auth is enforced. */
   constraint TransformationProfileExplicitAuthIsEnforced {
     guard :
       self.transformationProfile.isDefined() and
@@ -46,6 +52,7 @@ context CIM!CIMModel {
       "Suggestion: for each human-issued command, either define the authorization rule or remove the human actor as an issuer if the command is internal/system-triggered."
   }
 
+  /** Checks that transformation profile privacy classification is enforced. */
   constraint TransformationProfilePrivacyClassificationIsEnforced {
     guard :
       self.transformationProfile.isDefined() and
@@ -58,8 +65,10 @@ context CIM!CIMModel {
   }
 }
 
+/** Validates Model Element elements. */
 context KERNEL!ModelElement {
 
+  /** Checks that model element name is present. */
   constraint ModelElementNameIsPresent {
     check : self.name.hasText()
     message :
@@ -67,6 +76,7 @@ context KERNEL!ModelElement {
       "Suggestion: provide a concise business name for this element. Avoid implementation names, provider products, acronyms without definitions, or generated placeholders."
   }
 
+  /** Checks that model element avoids provider specific terms. */
   constraint ModelElementAvoidsProviderSpecificTerms {
     check : not self.containsProviderTechnologyTerm()
     message :
@@ -74,6 +84,7 @@ context KERNEL!ModelElement {
       "Suggestion: rename/reword it in CIM-level business language. For example, prefer 'Customer notification requested' over 'SNS message sent' and 'Document storage' over 'S3 bucket'."
   }
 
+  /** Advises that model element has explanation. */
   critique ModelElementHasExplanation {
     check :
       self.summary.hasText() or self.description.hasText() or self.documentation.hasText()
@@ -83,8 +94,10 @@ context KERNEL!ModelElement {
   }
 }
 
+/** Validates Traceable Element elements. */
 context KERNEL!TraceableElement {
 
+  /** Advises that traceable element has source or rationale. */
   critique TraceableElementHasSourceOrRationale {
     check :
       self.sourceReference.hasText() or self.sourceExcerpt.hasText() or
@@ -94,6 +107,7 @@ context KERNEL!TraceableElement {
       "Suggestion: link the element to the workshop note, requirement, policy, regulation, interview, or decision record that justifies it."
   }
 
+  /** Checks that generated element has origin. */
   constraint GeneratedElementHasOrigin {
     guard : self.generatedByTransformation = true
     check : self.generatedFrom.hasText() or self.traceId.hasText() or self.sourceReference.hasText()
@@ -103,8 +117,10 @@ context KERNEL!TraceableElement {
   }
 }
 
+/** Validates Trace Link elements. */
 context KERNEL!TraceLink {
 
+  /** Checks that trace link has reference or external id. */
   constraint TraceLinkHasReferenceOrExternalId {
     check :
       ((self.source.isDefined()) and (self.target.isDefined())) or
@@ -114,6 +130,7 @@ context KERNEL!TraceLink {
       "Suggestion: set source and target references when both elements are in the model; otherwise provide stable external IDs for both ends."
   }
 
+  /** Checks that trace link does not point to same element. */
   constraint TraceLinkDoesNotPointToSameElement {
     check :
       (self.source.isUndefined()) or (self.target.isUndefined()) or (self.source <> self.target)

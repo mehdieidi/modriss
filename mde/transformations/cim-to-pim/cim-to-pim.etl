@@ -1,3 +1,4 @@
+/** Maps cim to pim model elements and supporting relationships. */
 import "root-scaffolding.etl";
 import "boundaries-security.etl";
 import "domain-data.etl";

@@ -1,4 +1,4 @@
-# Security
+[% /* Generates the security artifact. */ %]# Security
 
 Generated security posture is model-owned and should be reviewed before production deployment.
 

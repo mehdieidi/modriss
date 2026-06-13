@@ -1,9 +1,11 @@
+/** Defines the pim contracts metamodel package. */
 @namespace(uri="https://modless.org/pim/contracts/1.0", prefix="contracts")
 package contracts;
 
 import "../shared/kernel.ecore";
 import "pim-types.ecore";
 
+/** Represents the Schema concept in this model. */
 class Schema extends kernel.TraceableElement, kernel.PolicyTarget {
   attr pimtypes.SchemaKind[1] schemaKind;
   attr String semanticVersion;
@@ -15,6 +17,7 @@ class Schema extends kernel.TraceableElement, kernel.PolicyTarget {
   val SchemaConstraint[*]#ownerSchema constraints;
 }
 
+/** Represents the Schema Field concept in this model. */
 class SchemaField extends kernel.TraceableElement {
   attr pimtypes.FieldType[1] fieldType;
   attr Boolean required;
@@ -42,6 +45,7 @@ class SchemaField extends kernel.TraceableElement {
   val SchemaField[?] mapValue;
 }
 
+/** Represents the Schema Enum Literal concept in this model. */
 class SchemaEnumLiteral extends kernel.TraceableElement {
   attr String[1] literal;
   attr String displayName;
@@ -49,6 +53,7 @@ class SchemaEnumLiteral extends kernel.TraceableElement {
   readonly transient ref SchemaField[1]#enumValues field;
 }
 
+/** Represents the Schema Validation Constraint concept in this model. */
 class SchemaValidationConstraint extends kernel.TraceableElement {
   attr String keyword;
   attr String value;
@@ -57,6 +62,7 @@ class SchemaValidationConstraint extends kernel.TraceableElement {
   val kernel.Expression[?] expression;
 }
 
+/** Represents the Schema Constraint concept in this model. */
 class SchemaConstraint extends kernel.TraceableElement {
   attr String expressionLanguage;
   attr String expression;
@@ -66,6 +72,7 @@ class SchemaConstraint extends kernel.TraceableElement {
   readonly transient ref Schema[1]#constraints ownerSchema;
 }
 
+/** Represents the Function Contract concept in this model. */
 class FunctionContract extends kernel.TraceableElement {
   attr String contractVersion;
   attr Boolean validatesInput;
@@ -80,6 +87,7 @@ class FunctionContract extends kernel.TraceableElement {
   ref EventType[*] emittedEvents;
 }
 
+/** Represents the Api Contract concept in this model. */
 class ApiContract extends kernel.TraceableElement {
   attr String publicVersion;
   attr Boolean backwardCompatible;
@@ -88,6 +96,7 @@ class ApiContract extends kernel.TraceableElement {
   ref Schema[*] errorSchemas;
 }
 
+/** Represents the Event Envelope concept in this model. */
 class EventEnvelope extends kernel.TraceableElement {
   attr String eventIdField;
   attr String eventTypeField;
@@ -100,6 +109,7 @@ class EventEnvelope extends kernel.TraceableElement {
   attr Boolean metadataRequired;
 }
 
+/** Represents the Event Type concept in this model. */
 class EventType extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget {
   attr String[1] semanticName;
   attr String version;

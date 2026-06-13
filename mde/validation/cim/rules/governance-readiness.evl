@@ -1,7 +1,10 @@
+/** Validates the semantic rules for governance readiness. */
 import "../lib/cim-validation-helpers.eol";
 
+/** Validates Non Functional Requirement elements. */
 context CIM!NonFunctionalRequirement {
 
+  /** Checks that nfr must be measurable. */
   constraint NFRMustBeMeasurable {
     check : self.metric.hasText() and self.target.hasText()
     message :
@@ -9,6 +12,7 @@ context CIM!NonFunctionalRequirement {
       "Suggestion: define the measurable quality metric and target threshold."
   }
 
+  /** Checks that nfr constrains elements. */
   constraint NFRConstrainsElements {
     check : self.constrainedElements.notEmpty()
     message :
@@ -16,6 +20,7 @@ context CIM!NonFunctionalRequirement {
       "Suggestion: link the commands, queries, capabilities, information items, processes, or other elements affected by this NFR."
   }
 
+  /** Advises that production blocking nfr has scenario. */
   critique ProductionBlockingNFRHasScenario {
     guard : self.productionBlocking = true
     check : self.scenarios.notEmpty()
@@ -25,8 +30,10 @@ context CIM!NonFunctionalRequirement {
   }
 }
 
+/** Validates Quality Scenario elements. */
 context CIM!QualityScenario {
 
+  /** Checks that quality scenario is complete. */
   constraint QualityScenarioIsComplete {
     check :
       self.source.hasText() and self.stimulus.hasText() and self.environment.hasText() and
@@ -37,8 +44,10 @@ context CIM!QualityScenario {
   }
 }
 
+/** Validates Security Constraint elements. */
 context CIM!SecurityConstraint {
 
+  /** Checks that security constraint must constrain behavior or information. */
   constraint SecurityConstraintMustConstrainBehaviorOrInformation {
     check :
       self.constrainedActors.notEmpty() or
@@ -50,6 +59,7 @@ context CIM!SecurityConstraint {
       "Suggestion: link the business elements affected by the security rule."
   }
 
+  /** Checks that security constraint has rule or threat rationale. */
   constraint SecurityConstraintHasRuleOrThreatRationale {
     check :
       self.authenticationNeed.hasText() or self.authorizationRule.hasText() or self.threatRationale.hasText()
@@ -58,6 +68,7 @@ context CIM!SecurityConstraint {
       "Suggestion: state the security need/rule and why it exists."
   }
 
+  /** Advises that security constraint aligns command authorization. */
   critique SecurityConstraintAlignsCommandAuthorization {
     guard : self.authorizationRule.hasText()
     check :
@@ -69,6 +80,7 @@ context CIM!SecurityConstraint {
       "Suggestion: copy or specialize the authorization rule on each constrained command so command-level validation is explicit."
   }
 
+  /** Advises that specialized scope included in generic scope. */
   critique SpecializedScopeIncludedInGenericScope {
     check : self.constrainedCommands.forAll(commandItem | self.constrainedElements.includes(commandItem))
       and self.constrainedQueries.forAll(queryItem | self.constrainedElements.includes(queryItem))
@@ -80,8 +92,10 @@ context CIM!SecurityConstraint {
   }
 }
 
+/** Validates Privacy Constraint elements. */
 context CIM!PrivacyConstraint {
 
+  /** Checks that privacy needs purpose and legal basis. */
   constraint PrivacyNeedsPurposeAndLegalBasis {
     check :
       self.dataItems.isEmpty() or
@@ -91,6 +105,7 @@ context CIM!PrivacyConstraint {
       "Suggestion: provide the processing purpose and set legalBasis to CONSENT, CONTRACT, LEGAL_OBLIGATION, VITAL_INTERESTS, PUBLIC_TASK, LEGITIMATE_INTEREST, or NOT_APPLICABLE."
   }
 
+  /** Checks that privacy constraint has retention or minimization. */
   constraint PrivacyConstraintHasRetentionOrMinimization {
     check : self.retentionPeriod.hasText() or self.minimizationRule.hasText()
     message :
@@ -98,6 +113,7 @@ context CIM!PrivacyConstraint {
       "Suggestion: document how long data is kept or how the collected data is minimized."
   }
 
+  /** Checks that consent basis requires consent. */
   constraint ConsentBasisRequiresConsent {
     guard : self.legalBasis = CIM!LegalBasis#CONSENT
     check : self.consentRequired = true
@@ -106,6 +122,7 @@ context CIM!PrivacyConstraint {
       "Suggestion: set consentRequired=true or choose the correct legalBasis."
   }
 
+  /** Advises that data residency has allowed area. */
   critique DataResidencyHasAllowedArea {
     guard : self.dataResidencyRequired = true
     check : self.allowedResidencyArea.hasText()
@@ -115,8 +132,10 @@ context CIM!PrivacyConstraint {
   }
 }
 
+/** Validates Compliance Constraint elements. */
 context CIM!ComplianceConstraint {
 
+  /** Checks that compliance constraint is auditable. */
   constraint ComplianceConstraintIsAuditable {
     check :
       self.regulation.hasText() and self.controlId.hasText() and
@@ -126,6 +145,7 @@ context CIM!ComplianceConstraint {
       "Suggestion: identify the regulation/control and the evidence needed for audit or review."
   }
 
+  /** Advises that compliance constraint has scope. */
   critique ComplianceConstraintHasScope {
     check : self.scopedElements.notEmpty()
     message :
@@ -134,8 +154,10 @@ context CIM!ComplianceConstraint {
   }
 }
 
+/** Validates Risk elements. */
 context CIM!Risk {
 
+  /** Checks that risk is actionable when blocking. */
   constraint RiskIsActionableWhenBlocking {
     guard : self.productionBlocking = true
     check :
@@ -147,6 +169,7 @@ context CIM!Risk {
       "Suggestion: provide riskStatement, probability, impact, mitigation, and affectedElements before it can be managed."
   }
 
+  /** Advises that risk has affected elements. */
   critique RiskHasAffectedElements {
     check : self.affectedElements.notEmpty()
     message :
@@ -155,8 +178,10 @@ context CIM!Risk {
   }
 }
 
+/** Validates Assumption elements. */
 context CIM!Assumption {
 
+  /** Checks that assumption has statement and validation. */
   constraint AssumptionHasStatementAndValidation {
     check : self.assumptionStatement.hasText() and self.validationApproach.hasText()
     message :
@@ -164,6 +189,7 @@ context CIM!Assumption {
       "Suggestion: state what is assumed and how it will be validated or retired."
   }
 
+  /** Checks that accepted assumption has decision details. */
   constraint AcceptedAssumptionHasDecisionDetails {
     guard : self.accepted = true
     check : self.acceptedBy.hasText() and self.acceptedOn.isDefined()
@@ -173,8 +199,10 @@ context CIM!Assumption {
   }
 }
 
+/** Validates Hotspot elements. */
 context CIM!Hotspot {
 
+  /** Checks that blocking hotspot requires owner. */
   constraint BlockingHotspotRequiresOwner {
     guard : (self.blocksTransformation = true) or (self.blocksProduction = true)
     check : self.owner.hasText()
@@ -183,6 +211,7 @@ context CIM!Hotspot {
       "Suggestion: assign the person/role responsible for resolving the open question."
   }
 
+  /** Advises that blocking hotspot has due date and impact. */
   critique BlockingHotspotHasDueDateAndImpact {
     guard : (self.blocksTransformation = true) or (self.blocksProduction = true)
     check : self.dueDate.isDefined() and self.impact.hasText() and self.attachedTo.notEmpty()
@@ -192,8 +221,10 @@ context CIM!Hotspot {
   }
 }
 
+/** Validates Transformation Profile elements. */
 context CIM!TransformationProfile {
 
+  /** Advises that service granularity preference has rationale. */
   critique ServiceGranularityPreferenceHasRationale {
     guard : self.preferCapabilityAsServiceBoundary = true
     check : self.defaultServiceGranularityRationale.hasText()
@@ -202,6 +233,7 @@ context CIM!TransformationProfile {
       "Suggestion: document why capability-based service boundaries are preferred and when exceptions are allowed."
   }
 
+  /** Advises that required manual decisions are owned. */
   critique RequiredManualDecisionsAreOwned {
     check :
       self.requiredDecisions.forAll(decisionItem |
@@ -212,6 +244,7 @@ context CIM!TransformationProfile {
       "Suggestion: make each manual decision explicit and assign an owner."
   }
 
+  /** Advises that required decisions are referenced not contained readiness decisions. */
   critique RequiredDecisionsAreReferencedNotContainedReadinessDecisions {
     check : self.requiredDecisions.forAll(decisionItem | decisionItem.eContainer().isUndefined() or decisionItem.eContainer().isKindOf(KERNEL!ProductionReadinessAssessment))
     message :
@@ -220,8 +253,10 @@ context CIM!TransformationProfile {
   }
 }
 
+/** Validates Production Readiness Assessment elements. */
 context KERNEL!ProductionReadinessAssessment {
 
+  /** Checks that production ready assessment is consistent. */
   constraint ProductionReadyAssessmentIsConsistent {
     guard : self.productionReady = true
     check :
@@ -233,6 +268,7 @@ context KERNEL!ProductionReadinessAssessment {
       "Suggestion: set readinessStatus=PRODUCTION_READY only when all checks pass and no blocking findings remain."
   }
 
+  /** Advises that readiness assessment has assessor. */
   critique ReadinessAssessmentHasAssessor {
     check : self.assessedAt.isDefined() and self.assessedBy.hasText()
     message :
@@ -241,8 +277,10 @@ context KERNEL!ProductionReadinessAssessment {
   }
 }
 
+/** Validates Readiness Finding elements. */
 context KERNEL!ReadinessFinding {
 
+  /** Checks that blocking finding has recommendation. */
   constraint BlockingFindingHasRecommendation {
     guard : self.blocking = true
     check :
@@ -253,8 +291,10 @@ context KERNEL!ReadinessFinding {
   }
 }
 
+/** Validates Readiness Check elements. */
 context KERNEL!ReadinessCheck {
 
+  /** Checks that failed readiness check has remediation. */
   constraint FailedReadinessCheckHasRemediation {
     guard : not (self.passed = true)
     check : self.`message`.hasText() and self.remediation.hasText()
@@ -264,8 +304,10 @@ context KERNEL!ReadinessCheck {
   }
 }
 
+/** Validates Manual Decision elements. */
 context KERNEL!ManualDecision {
 
+  /** Checks that blocking manual decision has owner. */
   constraint BlockingManualDecisionHasOwner {
     guard : self.blocking = true
     check : self.question.hasText() and self.decisionOwner.hasText()
@@ -274,6 +316,7 @@ context KERNEL!ManualDecision {
       "Suggestion: write the decision question and assign an accountable owner."
   }
 
+  /** Advises that manual decision has due date. */
   critique ManualDecisionHasDueDate {
     guard : self.blocking = true
     check : self.dueDate.isDefined()

@@ -1,5 +1,7 @@
+/** Provides reusable mapping operations. */
 import "common.eol";
 
+/** Computes map field type. */
 operation mapFieldType(item : CIMDOMAIN!InformationItem) {
   var t = item.type.asString();
   if (t = "TEXT") return PIMTYPES!FieldType#STRING;
@@ -31,6 +33,7 @@ operation mapFieldType(item : CIMDOMAIN!InformationItem) {
   return PIMTYPES!FieldType#STRING;
 }
 
+/** Derives derive format. */
 operation deriveFormat(item : CIMDOMAIN!InformationItem) {
   if (item.type.asString() = "EMAIL") return "email";
   if (item.type.asString() = "PHONE") return "phone";
@@ -38,6 +41,7 @@ operation deriveFormat(item : CIMDOMAIN!InformationItem) {
   return item.formatHint;
 }
 
+/** Returns whether the receiver is personal. */
 operation isPersonal(item : CIMDOMAIN!InformationItem) {
   if (item.classification.isUndefined()) {
     return false;
@@ -48,6 +52,7 @@ operation isPersonal(item : CIMDOMAIN!InformationItem) {
     item.classification.identifiability.asString() <> "NON_PERSONAL";
 }
 
+/** Returns whether the receiver is sensitive. */
 operation isSensitive(item : CIMDOMAIN!InformationItem) {
   if (item.classification.isUndefined()) {
     return false;
@@ -57,16 +62,19 @@ operation isSensitive(item : CIMDOMAIN!InformationItem) {
     k = "HEALTH" or k = "AUTHENTICATION_SECRET" or k = "REGULATED";
 }
 
+/** Returns whether the receiver is secret. */
 operation isSecret(item : CIMDOMAIN!InformationItem) {
   return item.classification.isDefined() and item.classification.kind.asString() = "AUTHENTICATION_SECRET";
 }
 
+/** Returns whether the receiver is sensitive classification. */
 operation isSensitiveClassification(dc : CIMDOMAIN!DataClassification) {
   var k = dc.kind.asString();
   return k = "CONFIDENTIAL" or k = "SENSITIVE_PERSONAL" or k = "FINANCIAL" or
     k = "HEALTH" or k = "AUTHENTICATION_SECRET" or k = "REGULATED";
 }
 
+/** Computes map principal kind. */
 operation mapPrincipalKind(actorType) {
   var t = actorType.asString();
   if (t = "HUMAN") return PIMTYPES!PrincipalKind#HUMAN_USER;
@@ -79,6 +87,7 @@ operation mapPrincipalKind(actorType) {
   return PIMTYPES!PrincipalKind#GROUP;
 }
 
+/** Derives infer store kind. */
 operation inferStoreKind(ag : CIMDOMAIN!AggregateCandidate) {
   if (ag.consistencyExpectation.asString() = "MULTI_ENTITY_STRONG_CONSISTENCY") return PIMTYPES!StoreKind#RELATIONAL;
   if (ag.members.size() > 1) return PIMTYPES!StoreKind#DOCUMENT;
@@ -86,12 +95,14 @@ operation inferStoreKind(ag : CIMDOMAIN!AggregateCandidate) {
   return PIMTYPES!StoreKind#DOCUMENT;
 }
 
+/** Derives infer consistency. */
 operation inferConsistency(ag : CIMDOMAIN!AggregateCandidate) {
   if (ag.consistencyExpectation.asString() = "MULTI_ENTITY_STRONG_CONSISTENCY") return PIMTYPES!ConsistencyNeed#TRANSACTIONAL;
   if (ag.consistencyExpectation.asString() = "SINGLE_ENTITY") return PIMTYPES!ConsistencyNeed#READ_YOUR_WRITES;
   return PIMTYPES!ConsistencyNeed#EVENTUAL;
 }
 
+/** Derives infer http method. */
 operation inferHttpMethod(cmd : CIMBEHAVIOR!Command) {
   var n = (cmd.name + " " + cmd.intent).toLowerCase();
   if (n.startsWith("create") or n.contains(" create")) return PIMTYPES!HttpMethod#POST;
@@ -101,6 +112,7 @@ operation inferHttpMethod(cmd : CIMBEHAVIOR!Command) {
   return PIMTYPES!HttpMethod#POST;
 }
 
+/** Derives infer command execution model. */
 operation inferCommandExecutionModel(cmd : CIMBEHAVIOR!Command) {
   if (cmd.interactionExpectation.asString() = "RESPONSE_CAN_BE_DELAYED" or cmd.commandType.asString() = "POLICY_TRIGGERED_INTENT") {
     return PIMTYPES!ExecutionModel#ASYNC_EVENT;
@@ -108,10 +120,12 @@ operation inferCommandExecutionModel(cmd : CIMBEHAVIOR!Command) {
   return PIMTYPES!ExecutionModel#REQUEST_RESPONSE;
 }
 
+/** Derives infer compute profile. */
 operation inferComputeProfile(source) {
   return PIMTYPES!ComputeProfile#LIGHTWEIGHT;
 }
 
+/** Computes map workflow kind. */
 operation mapWorkflowKind(bp : CIMPROCESS!BusinessProcess) {
   if (bp.processKind.asString() = "SAGA_LIKE_BUSINESS_PROCESS") return PIMTYPES!WorkflowKind#SAGA;
   if (bp.processKind.asString() = "HUMAN_INVOLVED" or bp.processKind.asString() = "CASE_MANAGEMENT" or bp.humanApprovalPossible) return PIMTYPES!WorkflowKind#HUMAN_APPROVAL;
@@ -120,6 +134,7 @@ operation mapWorkflowKind(bp : CIMPROCESS!BusinessProcess) {
   return PIMTYPES!WorkflowKind#ORCHESTRATION;
 }
 
+/** Computes map state kind. */
 operation mapStateKind(step : CIMPROCESS!ProcessStep) {
   if (step.isKindOf(CIMPROCESS!StartStep)) return PIMTYPES!WorkflowStateKind#PASS;
   if (step.isKindOf(CIMPROCESS!EndStep)) return PIMTYPES!WorkflowStateKind#SUCCESS;
@@ -129,6 +144,7 @@ operation mapStateKind(step : CIMPROCESS!ProcessStep) {
   return PIMTYPES!WorkflowStateKind#TASK;
 }
 
+/** Computes map risk severity. */
 operation mapRiskSeverity(impact, probability) {
   var i = asText(impact).toLowerCase();
   var p = asText(probability).toLowerCase();
@@ -138,6 +154,7 @@ operation mapRiskSeverity(impact, probability) {
   return KERNEL!Severity#INFO;
 }
 
+/** Computes map severity. */
 operation mapSeverity(severity) {
   var value = severity.asString();
   if (value = "BLOCKER") return KERNEL!Severity#BLOCKER;

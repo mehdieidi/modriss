@@ -1,4 +1,4 @@
-{
+[% /* Generates the default env json artifact. */ %]{
   "stage": "[%= stageNameText.jsonEscape() %]",
   "environmentClass": "[%= environmentClassText.jsonEscape() %]",
   "accountId": "",
