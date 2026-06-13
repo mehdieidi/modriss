@@ -2,11 +2,14 @@ package io.mehdieidi.modless.backend.observability;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -45,17 +48,74 @@ class RequestLoggingFilterTest {
   }
 
   @Test
-  void skipsHealthChecks() throws ServletException, IOException {
-    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/actuator/health");
-    MockHttpServletResponse response = new MockHttpServletResponse();
-    AtomicReference<Boolean> chainInvoked = new AtomicReference<>(false);
+  void requestSummaryKeepsRequestIdInMdc() throws ServletException, IOException {
+    var logger =
+        (ch.qos.logback.classic.Logger)
+            org.slf4j.LoggerFactory.getLogger(RequestLoggingFilter.class);
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    appender.start();
+    logger.addAppender(appender);
 
-    FilterChain chain = (req, res) -> chainInvoked.set(true);
+    try {
+      MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/projects");
+      request.addHeader("X-Request-Id", "req-summary");
+
+      filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> {});
+    } finally {
+      logger.detachAppender(appender);
+    }
+
+    assertEquals(1, appender.list.size());
+    assertEquals("req-summary", appender.list.get(0).getMDCPropertyMap().get("requestId"));
+    assertNull(MDC.get("requestId"));
+  }
+
+  @Test
+  void generatesRequestIdWhenHeaderIsMissing() throws ServletException, IOException {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/projects");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    AtomicReference<String> requestIdSeenInChain = new AtomicReference<>();
+
+    FilterChain chain = (req, res) -> requestIdSeenInChain.set(MDC.get("requestId"));
 
     filter.doFilter(request, response, chain);
 
-    assertTrue(chainInvoked.get());
-    assertNull(response.getHeader("X-Request-Id"));
+    String requestId = response.getHeader("X-Request-Id");
+    assertEquals(requestId, requestIdSeenInChain.get());
+    assertEquals(requestId, UUID.fromString(requestId).toString());
+    assertNull(MDC.get("requestId"));
+  }
+
+  @Test
+  void generatesRequestIdWhenHeaderIsBlank() throws ServletException, IOException {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/projects");
+    request.addHeader("X-Request-Id", "  ");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, (req, res) -> {});
+
+    String requestId = response.getHeader("X-Request-Id");
+    assertEquals(requestId, UUID.fromString(requestId).toString());
+    assertNull(MDC.get("requestId"));
+  }
+
+  @Test
+  void cleansUpMdcWhenRequestFails() {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/projects");
+    request.addHeader("X-Request-Id", "req-failure");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    assertThrows(
+        ServletException.class,
+        () ->
+            filter.doFilter(
+                request,
+                response,
+                (req, res) -> {
+                  throw new ServletException("failed");
+                }));
+
+    assertEquals("req-failure", response.getHeader("X-Request-Id"));
     assertNull(MDC.get("requestId"));
   }
 }

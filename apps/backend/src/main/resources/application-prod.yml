@@ -1,3 +1,9 @@
 logging:
+  structured:
+    format:
+      console: logstash
+    json:
+      add:
+        service: ${spring.application.name}
   level:
     io.mehdieidi.modless: INFO

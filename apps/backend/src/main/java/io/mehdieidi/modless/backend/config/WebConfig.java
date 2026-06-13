@@ -33,7 +33,7 @@ public class WebConfig implements WebMvcConfigurer {
         .allowedOrigins(origins.toArray(String[]::new))
         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         .allowedHeaders("*")
-        .exposedHeaders("Content-Disposition")
+        .exposedHeaders("Content-Disposition", "X-Request-Id")
         .allowCredentials(false);
   }
 }
