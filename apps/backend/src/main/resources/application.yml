@@ -50,7 +50,7 @@ modless:
     enabled: ${MODLESS_AI_ENABLED:false}
     mode: ${MODLESS_AI_MODE:EXPLAIN_ONLY}
     provider: ${MODLESS_AI_PROVIDER:openai}
-    request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:30s}
+    request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:120s}
     max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:24}
     token-budget: ${MODLESS_AI_TOKEN_BUDGET:6000}
     hardening:

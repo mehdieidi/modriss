@@ -20,6 +20,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       AssistantPromptGuard promptGuard,
       AssistantToolService tools,
       AssistantHardeningService hardening,
+      SemanticModelPatchParser patchParser,
       @Qualifier("aiRestClientBuilder") RestClient.Builder restClientBuilder) {
     super(
         AiProperties.Provider.OPENAI.key(),
@@ -28,6 +29,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
         promptGuard,
         tools,
         hardening,
+        patchParser,
         ChatClient.create(chatModel(properties, restClientBuilder)));
   }
 
@@ -75,11 +77,24 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   }
 
   @Override
-  protected OpenAiChatOptions options(String model) {
+  protected OpenAiChatOptions options(String model, AssistantModelRole role) {
     return OpenAiChatOptions.builder()
         .model(model)
         .temperature(0.2)
-        .maxCompletionTokens(Math.min(properties.tokenBudget(), 4000))
+        .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)))
         .build();
+  }
+
+  private int completionLimit(AssistantModelRole role) {
+    return switch (role) {
+      case PLANNER -> 1600;
+      case SUMMARIZER -> 800;
+      case RESPONDER -> 3000;
+    };
+  }
+
+  @Override
+  protected boolean registerTools(AssistantModelRole role) {
+    return role != AssistantModelRole.PLANNER;
   }
 }

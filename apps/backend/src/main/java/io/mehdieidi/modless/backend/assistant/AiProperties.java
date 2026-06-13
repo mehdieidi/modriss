@@ -39,7 +39,7 @@ public record AiProperties(
   public AiProperties {
     mode = mode == null ? RolloutMode.EXPLAIN_ONLY : mode;
     provider = Provider.from(provider).key();
-    requestTimeout = requestTimeout == null ? Duration.ofSeconds(30) : requestTimeout;
+    requestTimeout = requestTimeout == null ? Duration.ofSeconds(120) : requestTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 24 : maxToolCalls;
     tokenBudget = tokenBudget <= 0 ? 6000 : tokenBudget;
     hardening =

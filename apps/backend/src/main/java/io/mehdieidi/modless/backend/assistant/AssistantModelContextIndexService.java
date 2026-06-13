@@ -85,6 +85,27 @@ public class AssistantModelContextIndexService {
   }
 
   /**
+   * Builds a compact context for an in-memory model that has not been persisted yet.
+   *
+   * @param projectId project scope
+   * @param level modeling level
+   * @param modelName model display name
+   * @param revision transient revision
+   * @param modelJson in-memory model
+   * @param validationResult validation preview
+   * @return compact transient context
+   */
+  public AssistantModelContext transientSnapshot(
+      String projectId,
+      ModelLevel level,
+      String modelName,
+      long revision,
+      JsonNode modelJson,
+      ModelService.ValidationResult validationResult) {
+    return buildContext(null, projectId, level, modelName, revision, modelJson, validationResult);
+  }
+
+  /**
    * Creates a compact natural-language summary for the prompt.
    *
    * @param context compact model context
@@ -93,7 +114,7 @@ public class AssistantModelContextIndexService {
   public String summarize(AssistantModelContext context) {
     String elementSummary =
         context.elements().stream()
-            .limit(12)
+            .limit(60)
             .map(element -> element.id() + ":" + element.type() + ":" + element.name())
             .collect(Collectors.joining(", "));
     String issueSummary =
@@ -110,6 +131,42 @@ public class AssistantModelContextIndexService {
             .limit(8)
             .map(entry -> entry.getKey() + "->" + entry.getValue())
             .collect(Collectors.joining(" | "));
+  }
+
+  private AssistantModelContext buildContext(
+      String modelId,
+      String projectId,
+      ModelLevel level,
+      String modelName,
+      long revision,
+      JsonNode root,
+      ModelService.ValidationResult validationResult) {
+    Map<String, ContextElement> elements = new LinkedHashMap<>();
+    List<ContextRelationship> relationships = new ArrayList<>();
+    collect(root, "", elements, relationships);
+    Map<String, List<String>> neighborhoods = neighborhoods(elements, relationships);
+    List<AssistantValidationSummary.Issue> issues =
+        validationResult == null
+            ? List.of()
+            : validationResult.issues().stream()
+                .map(
+                    issue ->
+                        new AssistantValidationSummary.Issue(
+                            issue.severity(),
+                            issue.constraint(),
+                            issue.elementId(),
+                            issue.message()))
+                .toList();
+    return new AssistantModelContext(
+        modelId,
+        projectId,
+        level,
+        modelName,
+        revision,
+        new ArrayList<>(elements.values()),
+        relationships,
+        neighborhoods,
+        issues);
   }
 
   private void collect(

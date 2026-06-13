@@ -340,7 +340,7 @@ class AssistantOrchestratorTest {
   }
 
   @Test
-  void proposalOnlyBootstrapsBlankModelWhenNoActiveModelExists() {
+  void proposalOnlyBootstrapsRequestedChangeWhenNoActiveModelExists() {
     ObjectMapper mapper = new ObjectMapper();
     InMemoryStore store = new InMemoryStore(mapper);
     UserRecord user =
@@ -490,11 +490,14 @@ class AssistantOrchestratorTest {
                         null,
                         null)));
 
-    assertTrue(response.assistantMessage().contains("blank starter model proposal"));
+    assertTrue(response.assistantMessage().contains("first model and requested changes"));
     assertNotNull(response.proposal());
     assertTrue(response.proposal().approvalRequired());
     assertTrue(response.proposal().validation().mandatoryPassed());
-    assertTrue(response.proposal().patch().operations().isEmpty());
+    assertEquals(1, response.proposal().patch().operations().size());
+    assertEquals(
+        SemanticModelPatch.OperationType.ADD_ELEMENT,
+        response.proposal().patch().operations().get(0).type());
     assertNull(response.modelId());
     assertEquals(0L, response.revision());
     assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
@@ -570,7 +573,17 @@ class AssistantOrchestratorTest {
 
     @Override
     public SemanticModelPatch proposePatch(AssistantPrompt prompt) {
-      return new SemanticModelPatch(List.of());
+      ObjectNode attributes = JsonNodeFactory.instance.objectNode();
+      attributes.put("name", "Orders API");
+      return new SemanticModelPatch(
+          List.of(
+              new SemanticModelPatch.Operation(
+                  SemanticModelPatch.OperationType.ADD_ELEMENT,
+                  "api-orders",
+                  "Api",
+                  attributes,
+                  null,
+                  null)));
     }
   }
 

@@ -21,7 +21,8 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
       ProxyAvailability proxyAvailability,
       AssistantPromptGuard promptGuard,
       AssistantToolService tools,
-      AssistantHardeningService hardening) {
+      AssistantHardeningService hardening,
+      SemanticModelPatchParser patchParser) {
     super(
         AiProperties.Provider.GEMINI.key(),
         properties,
@@ -29,6 +30,7 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
         promptGuard,
         tools,
         hardening,
+        patchParser,
         ChatClient.create(chatModel(properties)));
   }
 
@@ -87,12 +89,20 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
   }
 
   @Override
-  protected GoogleGenAiChatOptions options(String model) {
+  protected GoogleGenAiChatOptions options(String model, AssistantModelRole role) {
     return GoogleGenAiChatOptions.builder()
         .model(model)
         .temperature(0.2)
-        .maxOutputTokens(Math.min(properties.tokenBudget(), 4000))
+        .maxOutputTokens(Math.min(properties.tokenBudget(), completionLimit(role)))
         .build();
+  }
+
+  private int completionLimit(AssistantModelRole role) {
+    return switch (role) {
+      case PLANNER -> 4000;
+      case SUMMARIZER -> 800;
+      case RESPONDER -> 3000;
+    };
   }
 
   @Override

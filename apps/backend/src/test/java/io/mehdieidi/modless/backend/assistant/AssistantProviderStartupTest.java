@@ -34,6 +34,7 @@ class AssistantProviderStartupTest {
         new AssistantToolService(
             mock(AssistantCatalogService.class), new AssistantPatchCompiler(), new ObjectMapper());
     AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
+    SemanticModelPatchParser patchParser = new SemanticModelPatchParser(new ObjectMapper());
 
     assertDoesNotThrow(
         () ->
@@ -43,11 +44,12 @@ class AssistantProviderStartupTest {
                 promptGuard,
                 tools,
                 hardening,
+                patchParser,
                 RestClient.builder()));
     assertDoesNotThrow(
         () ->
             new GeminiAssistantModelProvider(
-                properties, proxyAvailability, promptGuard, tools, hardening));
+                properties, proxyAvailability, promptGuard, tools, hardening, patchParser));
   }
 
   @Test
@@ -78,7 +80,8 @@ class AssistantProviderStartupTest {
                 proxyAvailability,
                 new AssistantPromptGuard(),
                 tools,
-                new AssistantHardeningService(properties, null)));
+                new AssistantHardeningService(properties, null),
+                new SemanticModelPatchParser(new ObjectMapper())));
   }
 
   @Test
@@ -106,14 +109,15 @@ class AssistantProviderStartupTest {
             new ProxyAvailability(properties),
             new AssistantPromptGuard(),
             tools,
-            new AssistantHardeningService(properties, null));
+            new AssistantHardeningService(properties, null),
+            new SemanticModelPatchParser(new ObjectMapper()));
 
     assertFalse(gemini.registerTools(AssistantModelRole.RESPONDER));
     assertFalse(gemini.registerTools(AssistantModelRole.PLANNER));
   }
 
   @Test
-  void openAiCompatibleProviderRegistersSpringAiTools() {
+  void openAiCompatibleProviderRegistersToolsForResponderButNotStructuredPlanner() {
     AiProperties properties =
         new AiProperties(
             false,
@@ -138,9 +142,10 @@ class AssistantProviderStartupTest {
             new AssistantPromptGuard(),
             tools,
             new AssistantHardeningService(properties, null),
+            new SemanticModelPatchParser(new ObjectMapper()),
             RestClient.builder());
 
     assertTrue(openai.registerTools(AssistantModelRole.RESPONDER));
-    assertTrue(openai.registerTools(AssistantModelRole.PLANNER));
+    assertFalse(openai.registerTools(AssistantModelRole.PLANNER));
   }
 }

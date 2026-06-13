@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class AssistantCatalogService {
 
+  private static final String INDEX_FORMAT_VERSION = "2";
+
   private final JdbcTemplate jdbc;
   private final LocalAssistantEmbeddingService embeddings;
 
@@ -135,6 +137,45 @@ public class AssistantCatalogService {
         fuzzyQuery,
         queryVector,
         limit);
+  }
+
+  /**
+   * Returns a compact classifier definition with mandatory features first.
+   *
+   * @param type metamodel classifier name
+   * @param level modeling level
+   * @param limit maximum classifier and feature snippets
+   * @return classifier and feature snippets
+   */
+  public List<AssistantModelProvider.ContextSnippet> describeType(
+      String type, String level, int limit) {
+    String normalizedType = type == null ? "" : type.trim();
+    if (normalizedType.isBlank()) {
+      return List.of();
+    }
+    String normalizedLevel = level == null ? "" : level.toUpperCase(Locale.ROOT);
+    return jdbc.query(
+        """
+        SELECT source, title, content FROM assistant_retrieval_documents
+        WHERE (lower(title) = lower(?) OR lower(metadata->>'owner') = lower(?))
+          AND (? = '' OR metadata->>'level' = ? OR metadata->>'level' = 'SHARED')
+        ORDER BY
+          CASE
+            WHEN lower(title) = lower(?) THEN 0
+            WHEN metadata->>'lowerBound' = '1' THEN 1
+            ELSE 2
+          END,
+          title
+        LIMIT ?
+        """,
+        (rs, row) ->
+            snippet(rs.getString("source"), rs.getString("title"), rs.getString("content")),
+        normalizedType,
+        normalizedType,
+        normalizedLevel,
+        normalizedLevel,
+        normalizedType,
+        Math.max(1, limit));
   }
 
   private boolean matches(Path path, String... suffixes) {
@@ -286,6 +327,26 @@ public class AssistantCatalogService {
                     element.getAttribute("interface"),
                     "eSuperTypes",
                     superTypes)));
+        if ("ecore:EEnum".equals(kind)) {
+          List<String> literals = new ArrayList<>();
+          var literalNodes = element.getElementsByTagName("eLiterals");
+          for (int literalIndex = 0; literalIndex < literalNodes.getLength(); literalIndex++) {
+            if (literalNodes.item(literalIndex) instanceof org.w3c.dom.Element literal) {
+              String literalName = literal.getAttribute("name");
+              if (literalName != null && !literalName.isBlank()) {
+                literals.add(literalName);
+              }
+            }
+          }
+          documents.add(
+              document(
+                  source,
+                  hash,
+                  "enum",
+                  name + ".literals",
+                  "enum " + name + " allowed literals " + String.join(", ", literals),
+                  Map.of("owner", name, "kind", "enum-literals")));
+        }
         var features = element.getElementsByTagName("eStructuralFeatures");
         for (int featureIndex = 0; featureIndex < features.getLength(); featureIndex++) {
           var featureNode = features.item(featureIndex);
@@ -486,6 +547,7 @@ public class AssistantCatalogService {
 
   private String hash(Path path) throws Exception {
     MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    digest.update(INDEX_FORMAT_VERSION.getBytes(StandardCharsets.UTF_8));
     byte[] bytes = Files.readAllBytes(path);
     return HexFormat.of().formatHex(digest.digest(bytes));
   }

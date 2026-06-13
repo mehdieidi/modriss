@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -71,5 +72,34 @@ class AssistantModelContextIndexServiceTest {
             anyString(),
             anyString(),
             org.mockito.ArgumentMatchers.<Timestamp>any());
+  }
+
+  @Test
+  void transientSnapshotIndexesUnpersistedStarterElements() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    AssistantModelContextIndexService service = new AssistantModelContextIndexService();
+
+    var context =
+        service.transientSnapshot(
+            "project-1",
+            ModelLevel.PIM,
+            "Orders",
+            0,
+            mapper.readTree(
+                """
+                {
+                  "id": "orders-root",
+                  "eClass": "PIMModel",
+                  "name": "Orders",
+                  "functions": [
+                    {"id": "function-orders", "eClass": "Function", "name": "Process Order"}
+                  ]
+                }
+                """),
+            new ModelService.ValidationResult(true, List.of()));
+
+    assertTrue(
+        context.elements().stream().anyMatch(element -> "function-orders".equals(element.id())));
+    assertTrue(service.summarize(context).contains("function-orders:Function:Process Order"));
   }
 }

@@ -41,17 +41,49 @@ public class AssistantPatchCompiler {
       switch (operation.type()) {
         case ADD_ELEMENT -> {
           JsonNode element = elementPayload(operation);
-          Optional<String> collection = semanticRootCollection(operation.elementType());
-          if (collection.isPresent()) {
-            ArrayNode semanticElements = root.withArray(collection.get());
-            patch.add(
-                new ModelService.ModelPatchOperation(
-                    "add", "/" + collection.get() + "/-", element));
-            inverse.add(
-                0,
-                new ModelService.ModelPatchOperation(
-                    "remove", "/" + collection.get() + "/" + semanticElements.size(), null));
-            semanticElements.add(element.deepCopy());
+          LocatedElement requestedOwner =
+              operation.sourceElementId() == null || operation.sourceElementId().isBlank()
+                  ? null
+                  : locateElement(root, operation.sourceElementId());
+          if (requestedOwner != null && !requestedOwner.path().isBlank()) {
+            if (operation.referenceName() == null
+                || !operation.referenceName().matches("[A-Za-z][A-Za-z0-9_-]*")) {
+              throw new PlatformException(400, "Assistant containment reference is not allowed.");
+            }
+            JsonNode owned = requestedOwner.node().get(operation.referenceName());
+            String collectionPath =
+                requestedOwner.path() + "/" + escapePointer(operation.referenceName());
+            if (owned == null || owned.isNull()) {
+              ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(element.deepCopy());
+              patch.add(new ModelService.ModelPatchOperation("add", collectionPath, initial));
+              inverse.add(0, new ModelService.ModelPatchOperation("remove", collectionPath, null));
+              requestedOwner.node().set(operation.referenceName(), initial.deepCopy());
+            } else if (owned.isArray()) {
+              int index = owned.size();
+              patch.add(
+                  new ModelService.ModelPatchOperation("add", collectionPath + "/-", element));
+              inverse.add(
+                  0,
+                  new ModelService.ModelPatchOperation(
+                      "remove", collectionPath + "/" + index, null));
+              ((ArrayNode) owned).add(element.deepCopy());
+            } else {
+              throw new PlatformException(
+                  400, "Assistant containment reference must target a collection.");
+            }
+          } else {
+            Optional<String> collection = semanticRootCollection(operation.elementType());
+            if (collection.isPresent()) {
+              ArrayNode semanticElements = root.withArray(collection.get());
+              patch.add(
+                  new ModelService.ModelPatchOperation(
+                      "add", "/" + collection.get() + "/-", element));
+              inverse.add(
+                  0,
+                  new ModelService.ModelPatchOperation(
+                      "remove", "/" + collection.get() + "/" + semanticElements.size(), null));
+              semanticElements.add(element.deepCopy());
+            }
           }
           patch.add(
               new ModelService.ModelPatchOperation(
@@ -84,6 +116,9 @@ public class AssistantPatchCompiler {
           }
           LocatedElement located = locateElement(root, operation.targetElementId());
           JsonNode previous = located.node().get(operation.referenceName());
+          if (java.util.Objects.equals(previous, operation.attributes())) {
+            continue;
+          }
           String path = located.path() + "/" + escapePointer(operation.referenceName());
           patch.add(
               new ModelService.ModelPatchOperation(
@@ -94,10 +129,24 @@ public class AssistantPatchCompiler {
           affected.add(operation.targetElementId());
         }
         case DELETE_ELEMENT -> {
-          LocatedElement located = locateElement(root, operation.targetElementId());
-          ObjectNode snapshot = located.node().deepCopy();
-          patch.add(new ModelService.ModelPatchOperation("remove", located.path(), null));
-          inverse.add(new ModelService.ModelPatchOperation("add", located.path(), snapshot));
+          List<LocatedElement> located =
+              locateDeletedElements(root, operation.targetElementId()).stream()
+                  .sorted(this::compareForRemoval)
+                  .toList();
+          if (located.isEmpty()) {
+            throw new PlatformException(
+                404, "Assistant could not locate element: " + operation.targetElementId());
+          }
+          located.forEach(
+              element ->
+                  patch.add(new ModelService.ModelPatchOperation("remove", element.path(), null)));
+          located.stream()
+              .sorted(this::compareForRestore)
+              .forEach(
+                  element ->
+                      inverse.add(
+                          new ModelService.ModelPatchOperation(
+                              "add", element.path(), element.node().deepCopy())));
           affected.add(operation.targetElementId());
         }
       }
@@ -218,9 +267,10 @@ public class AssistantPatchCompiler {
   private JsonNode elementPayload(SemanticModelPatch.Operation operation) {
     ObjectNode node = JsonNodeFactory.instance.objectNode();
     node.put("id", safe(operation.targetElementId()));
-    node.put("eClass", safe(operation.elementType()));
-    node.put("name", safe(operation.elementType()));
-    node.put("label", safe(operation.elementType()));
+    String elementType = canonicalElementType(operation.elementType());
+    node.put("eClass", elementType);
+    node.put("name", elementType);
+    node.put("label", elementType);
     if (operation.attributes() != null && operation.attributes().isObject()) {
       node.setAll((ObjectNode) operation.attributes());
     }
@@ -268,6 +318,84 @@ public class AssistantPatchCompiler {
     return found;
   }
 
+  private List<LocatedElement> locateDeletedElements(JsonNode node, String id) {
+    List<LocatedElement> found = new ArrayList<>();
+    locateDeletedElements(node, id, "", found);
+    return found.stream()
+        .collect(
+            java.util.stream.Collectors.toMap(
+                LocatedElement::path,
+                element -> element,
+                (first, ignored) -> first,
+                java.util.LinkedHashMap::new))
+        .values()
+        .stream()
+        .toList();
+  }
+
+  private void locateDeletedElements(
+      JsonNode node, String id, String path, List<LocatedElement> found) {
+    if (node == null || node.isNull()) {
+      return;
+    }
+    if (node.isObject()) {
+      ObjectNode object = (ObjectNode) node;
+      if (id.equals(text(object.get("id")))
+          || id.equals(text(object.get("source")))
+          || id.equals(text(object.get("target")))) {
+        found.add(new LocatedElement(path, object));
+        return;
+      }
+      var fields = object.fields();
+      while (fields.hasNext()) {
+        var entry = fields.next();
+        locateDeletedElements(
+            entry.getValue(), id, path + "/" + escapePointer(entry.getKey()), found);
+      }
+      return;
+    }
+    if (node.isArray()) {
+      for (int index = 0; index < node.size(); index++) {
+        locateDeletedElements(node.get(index), id, path + "/" + index, found);
+      }
+    }
+  }
+
+  private int compareForRemoval(LocatedElement left, LocatedElement right) {
+    String leftParent = parentPath(left.path());
+    String rightParent = parentPath(right.path());
+    if (leftParent.equals(rightParent)) {
+      return Integer.compare(lastIndex(right.path()), lastIndex(left.path()));
+    }
+    return Integer.compare(right.path().length(), left.path().length());
+  }
+
+  private int compareForRestore(LocatedElement left, LocatedElement right) {
+    String leftParent = parentPath(left.path());
+    String rightParent = parentPath(right.path());
+    if (leftParent.equals(rightParent)) {
+      return Integer.compare(lastIndex(left.path()), lastIndex(right.path()));
+    }
+    return Integer.compare(left.path().length(), right.path().length());
+  }
+
+  private String parentPath(String path) {
+    int separator = path.lastIndexOf('/');
+    return separator < 0 ? "" : path.substring(0, separator);
+  }
+
+  private int lastIndex(String path) {
+    int separator = path.lastIndexOf('/');
+    if (separator < 0) {
+      return -1;
+    }
+    try {
+      return Integer.parseInt(path.substring(separator + 1));
+    } catch (NumberFormatException ignored) {
+      return -1;
+    }
+  }
+
   private LocatedElement locateElement(JsonNode node, String id, String path) {
     if (node == null || node.isNull()) {
       return null;
@@ -300,7 +428,17 @@ public class AssistantPatchCompiler {
   }
 
   private Optional<String> semanticRootCollection(String elementType) {
-    return Optional.ofNullable(SEMANTIC_ROOT_COLLECTIONS.get(safe(elementType)));
+    return SEMANTIC_ROOT_COLLECTIONS.entrySet().stream()
+        .filter(entry -> entry.getKey().equalsIgnoreCase(safe(elementType)))
+        .map(Map.Entry::getValue)
+        .findFirst();
+  }
+
+  private String canonicalElementType(String elementType) {
+    return SEMANTIC_ROOT_COLLECTIONS.keySet().stream()
+        .filter(type -> type.equalsIgnoreCase(safe(elementType)))
+        .findFirst()
+        .orElse(safe(elementType));
   }
 
   private JsonNode copyValue(JsonNode value) {

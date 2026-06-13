@@ -33,7 +33,13 @@ MODLESS_AI_RESPONDER_MODEL=gpt-4o-mini
 MODLESS_AI_SUMMARIZER_MODEL=gpt-4o-mini
 MODLESS_AI_MAX_TOOL_CALLS=24
 MODLESS_AI_TOKEN_BUDGET=6000
+MODLESS_AI_REQUEST_TIMEOUT=120s
 ```
+
+`MODLESS_AI_REQUEST_TIMEOUT` defaults to 120 seconds. OpenAI-compatible gateways and reasoning
+models can have highly variable time-to-first-byte latency; lower values may reject otherwise
+successful requests. A timeout is not retried because the provider may still be processing the
+original request.
 
 For another OpenAI-compatible provider, keep `MODLESS_AI_PROVIDER=openai` and set
 `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`, and the role-specific model names to the

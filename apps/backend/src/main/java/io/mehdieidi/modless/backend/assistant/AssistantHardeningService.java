@@ -86,6 +86,7 @@ public class AssistantHardeningService {
     try {
       RuntimeException last = null;
       for (int attempt = 1; attempt <= properties.hardening().providerRetryAttempts(); attempt++) {
+        long attemptStarted = System.nanoTime();
         try {
           T result = call.get();
           circuit = new Circuit(0, Instant.EPOCH);
@@ -101,6 +102,18 @@ public class AssistantHardeningService {
         } catch (RuntimeException ex) {
           PlatformException providerFailure = classifyProviderFailure(ex);
           if (providerFailure != null) {
+            log.warn(
+                "AI provider call failed provider={} role={} model={} attempt={} elapsedMs={} "
+                    + "configuredTimeoutMs={} status={} rootCause={}: {}",
+                provider,
+                role,
+                model,
+                attempt,
+                elapsedMillis(attemptStarted),
+                properties.requestTimeout().toMillis(),
+                providerFailure.status(),
+                rootCause(ex).getClass().getSimpleName(),
+                rootCause(ex).getMessage());
             recordFailure(provider);
             throw providerFailure;
           }
@@ -162,7 +175,10 @@ public class AssistantHardeningService {
       }
       if (current instanceof SocketTimeoutException) {
         return new PlatformException(
-            504, "AI provider timed out before returning a response. Try again shortly.");
+            504,
+            "AI provider returned no response within "
+                + properties.requestTimeout().toSeconds()
+                + " seconds. The provider or model is currently too slow; try again shortly.");
       }
       current = current.getCause();
     }
@@ -176,6 +192,18 @@ public class AssistantHardeningService {
       Thread.currentThread().interrupt();
       throw new PlatformException(503, "AI provider retry was interrupted.");
     }
+  }
+
+  private long elapsedMillis(long started) {
+    return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+  }
+
+  private Throwable rootCause(Throwable failure) {
+    Throwable current = failure;
+    while (current.getCause() != null && current.getCause() != current) {
+      current = current.getCause();
+    }
+    return current;
   }
 
   private void counter(String name, String... tags) {

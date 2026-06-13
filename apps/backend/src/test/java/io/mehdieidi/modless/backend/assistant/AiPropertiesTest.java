@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 class AiPropertiesTest {
@@ -19,6 +20,7 @@ class AiPropertiesTest {
     assertEquals("127.0.0.1", properties.proxy().host());
     assertEquals(2081, properties.proxy().port());
     assertEquals("https://api.openai.com", properties.openaiCompatible().baseUrl());
+    assertEquals(Duration.ofSeconds(120), properties.requestTimeout());
     assertEquals("", properties.gemini().apiKey());
     assertEquals(30, properties.hardening().perUserRequestsPerWindow());
     assertEquals(AiProperties.EmbeddingProvider.ONNX, properties.embeddings().provider());
