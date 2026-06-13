@@ -274,5 +274,21 @@ class TransformationServiceTest {
                 "SAM template must not contain runaway EGL indentation.");
         assertFalse(samTemplate.contains("Resources: {}"),
                 "SAM template must be generated from AWS PSM resources.");
+
+        String handlerPath = artifact.files().keySet().stream()
+                .filter(path -> path.startsWith("src/functions/") && path.endsWith("/handler.go"))
+                .findFirst()
+                .orElseThrow();
+        String customLogic = "\treturn GeneratedResult{Status: \"developer-owned\"}, nil";
+        artifactService.updateFile(user, artifact.id(), handlerPath,
+                artifact.files().get(handlerPath).replace(
+                        "\treturn GeneratedResult{}, shared.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\", \"Business logic has not been implemented yet.\")",
+                        customLogic));
+
+        ArtifactRecord regenerated = transformations.psmToArtifact(user, psm.id());
+
+        assertEquals(psm.id(), regenerated.modelJson().path("sourceModelId").asText());
+        assertTrue(regenerated.files().get(handlerPath).contains(customLogic),
+                "Regeneration must preserve content edited inside protected regions.");
     }
 }

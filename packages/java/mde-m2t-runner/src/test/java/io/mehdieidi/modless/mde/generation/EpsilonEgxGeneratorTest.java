@@ -158,6 +158,29 @@ final class EpsilonEgxGeneratorTest {
     }
 
     /**
+     * Ensures merge-enabled EGL templates preserve developer-owned protected-region content.
+     */
+    @Test
+    void preservesProtectedRegionsWhenRegeneratingExistingArtifacts() throws Exception {
+        Path sourceModel = tempDir.resolve("representative-aws-psm.xmi");
+        Path outputDirectory = tempDir.resolve("regenerated-project");
+        createRepresentativeAwsPsmModel(sourceModel);
+
+        generateOrFail(AwsPsmToArtifactsDefaults.request(
+                REPOSITORY_ROOT, sourceModel, outputDirectory, true, true));
+        Path handler = outputDirectory.resolve("src/functions/order-handler/handler.go");
+        String customLogic = "\treturn GeneratedResult{Status: \"developer-owned\"}, nil";
+        Files.writeString(handler, Files.readString(handler).replace(
+                "\treturn GeneratedResult{}, shared.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\", \"Business logic has not been implemented yet.\")",
+                customLogic));
+
+        generateOrFail(AwsPsmToArtifactsDefaults.request(
+                REPOSITORY_ROOT, sourceModel, outputDirectory, false, true));
+
+        assertTrue(Files.readString(handler).contains(customLogic));
+    }
+
+    /**
      * Asserts that the generator emitted the production project skeleton expected by downstream
      * users.
      *

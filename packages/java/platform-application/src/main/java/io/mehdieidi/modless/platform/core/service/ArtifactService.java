@@ -91,12 +91,28 @@ public final class ArtifactService {
      */
     public ArtifactRecord create(UserRecord user, String projectId, String name,
             Map<String, String> files) {
+        return create(user, projectId, name, null, files);
+    }
+
+    /**
+     * Creates an artifact bundle under a project with caller-provided metadata.
+     *
+     * @param user      requesting user
+     * @param projectId project identifier
+     * @param name      artifact display name
+     * @param metadata  additional artifact metadata, or {@code null}
+     * @param files     artifact files keyed by path
+     * @return created artifact
+     */
+    public ArtifactRecord create(UserRecord user, String projectId, String name,
+            ObjectNode metadata, Map<String, String> files) {
         ProjectRecord project = projectService.get(user, projectId);
         projectService.requireEditor(project, user.id());
         Instant now = Instant.now();
         String id = UUID.randomUUID().toString();
         Map<String, String> normalizedFiles = new LinkedHashMap<>(files);
-        ObjectNode modelJson = store.objectMapper().createObjectNode();
+        ObjectNode modelJson = metadata == null ? store.objectMapper().createObjectNode()
+                : metadata.deepCopy();
         modelJson.put("name", name);
         modelJson.put("fileCount", normalizedFiles.size());
         ArtifactRecord artifact = new ArtifactRecord(id, projectId, name, modelJson,
@@ -139,7 +155,10 @@ public final class ArtifactService {
         projectService.requireEditor(project, user.id());
         Map<String, String> files = new LinkedHashMap<>(artifact.files());
         files.put(normalizePath(path), content == null ? "" : content);
-        ObjectNode modelJson = store.objectMapper().createObjectNode();
+        ObjectNode modelJson = artifact.modelJson() != null && artifact.modelJson().isObject()
+                ? ((ObjectNode) artifact.modelJson()).deepCopy()
+                : store.objectMapper().createObjectNode();
+        modelJson.remove("files");
         modelJson.put("name", artifact.name());
         modelJson.put("fileCount", files.size());
         ArtifactRecord updated = new ArtifactRecord(artifact.id(), artifact.projectId(),
@@ -327,7 +346,8 @@ public final class ArtifactService {
         if (!artifact.modelJson().path("files").isObject()) {
             return artifact;
         }
-        ObjectNode modelJson = store.objectMapper().createObjectNode();
+        ObjectNode modelJson = ((ObjectNode) artifact.modelJson()).deepCopy();
+        modelJson.remove("files");
         modelJson.put("name", artifact.name());
         modelJson.put("fileCount", artifact.files().size());
         ArtifactRecord repaired = new ArtifactRecord(artifact.id(), artifact.projectId(),

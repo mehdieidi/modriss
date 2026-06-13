@@ -27,8 +27,10 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -235,10 +237,32 @@ public final class TransformationService {
         return modelLocks.withModelLock(sourceModelId, Duration.ofSeconds(30), () -> {
             ModelRecord source = modelService.get(user, ModelLevel.PSM, sourceModelId);
             requireSourceRevision(source, expectedRevision);
-            Map<String, String> files = formalPsmToArtifactFiles(source);
-            return artifactService.create(user, source.projectId(), source.name() + "-artifact",
-                    files);
+            String artifactName = source.name() + "-artifact";
+            ArtifactRecord previousArtifact = latestArtifactForSource(user, source, artifactName);
+            Map<String, String> files = formalPsmToArtifactFiles(source,
+                    previousArtifact == null ? Map.of() : previousArtifact.files());
+            ObjectNode metadata = store.objectMapper().createObjectNode();
+            metadata.put("sourceModelId", source.id());
+            metadata.put("sourceModelRevision", source.revision());
+            metadata.put("sourceModelHash", sourceModelHash(source));
+            return artifactService.create(user, source.projectId(), artifactName,
+                    metadata, files);
         });
+    }
+
+    /**
+     * Finds the latest artifact generated from a source PSM. The name fallback supports artifacts
+     * created before source-model metadata was introduced.
+     */
+    private ArtifactRecord latestArtifactForSource(UserRecord user, ModelRecord source,
+            String artifactName) {
+        return artifactService.list(user, source.projectId()).stream()
+                .filter(artifact -> source.id().equals(
+                        artifact.modelJson().path("sourceModelId").asText(null))
+                        || (artifact.modelJson().path("sourceModelId").isMissingNode()
+                                && artifactName.equals(artifact.name())))
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -344,7 +368,8 @@ public final class TransformationService {
      * @param source source PSM model
      * @return generated files keyed by artifact-relative path
      */
-    private Map<String, String> formalPsmToArtifactFiles(ModelRecord source) {
+    private Map<String, String> formalPsmToArtifactFiles(ModelRecord source,
+            Map<String, String> previousFiles) {
         Path repositoryRoot = mdePaths.repositoryRoot();
         Path workDir = null;
         try {
@@ -354,15 +379,17 @@ public final class TransformationService {
             byte[] sourceBytes = sourcePsmXmi(source);
             requireExecutionInputBudget(sourceBytes, "PSM-to-artifact source model");
             Files.write(psmXmi, sourceBytes);
+            stageProtectedRegionFiles(outputDirectory, previousFiles);
 
             EgxGenerationReport report = artifactGenerator.generate(
                     AwsPsmToArtifactsDefaults.request(
-                            repositoryRoot, psmXmi, outputDirectory, true, true));
+                            repositoryRoot, psmXmi, outputDirectory, false, true));
             if (report.status() != GenerationStatus.SUCCEEDED) {
                 throw new PlatformException(500, "PSM-to-artifact generation failed: "
                         + summarizeDiagnostics(report));
             }
             Map<String, String> files = generatedFiles(outputDirectory);
+            files.keySet().retainAll(currentArtifactPaths(outputDirectory));
             if (files.isEmpty()) {
                 throw new PlatformException(500,
                         "PSM-to-artifact generation did not produce files.");
@@ -382,6 +409,44 @@ public final class TransformationService {
                 deleteQuietly(workDir);
             }
         }
+    }
+
+    /**
+     * Stages existing files that contain EGL protected regions so merge-enabled templates can
+     * recover developer-owned content.
+     */
+    private void stageProtectedRegionFiles(Path outputDirectory, Map<String, String> files)
+            throws Exception {
+        Path outputRoot = outputDirectory.toAbsolutePath().normalize();
+        for (Map.Entry<String, String> entry : files.entrySet()) {
+            String content = entry.getValue();
+            if (content == null || !content.contains("protected region ")) {
+                continue;
+            }
+            Path target = outputRoot.resolve(entry.getKey()).normalize();
+            if (!target.startsWith(outputRoot)) {
+                throw new PlatformException(400, "Invalid artifact file path.");
+            }
+            Files.createDirectories(target.getParent());
+            Files.writeString(target, content, StandardCharsets.UTF_8);
+        }
+    }
+
+    /**
+     * Reads the artifact trace to identify files emitted by the current generation run.
+     */
+    private Set<String> currentArtifactPaths(Path outputDirectory) throws Exception {
+        JsonNode artifacts = store.objectMapper().readTree(
+                outputDirectory.resolve("generated/trace/artifact-trace.json").toFile())
+                .path("artifacts");
+        Set<String> paths = new LinkedHashSet<>();
+        for (JsonNode artifact : artifacts) {
+            String path = artifact.path("path").asText();
+            if (!path.isBlank()) {
+                paths.add(path);
+            }
+        }
+        return paths;
     }
 
     /**
