@@ -557,45 +557,92 @@ export function renderViewWorkbench() {
     <div class="model-workbench-commandbar">
       <div class="workbench-primary-group">
         <div class="workbench-strip-title">
-          <strong>Modeling</strong>
-          <span>${escapeHtml(state.activeType.toUpperCase())}</span>
+          <span>${escapeHtml(state.activeType.toUpperCase())} workspace</span>
+          <strong>Modeling tools</strong>
         </div>
-        <div class="workbench-view-select-wrap${viewMenuOpen ? " is-open" : ""}">
-          <button class="sidebar-select workbench-view-select"
-                  id="activeViewSelect"
-                  type="button"
-                  title="${escapeHtml(state.activeType.toUpperCase())} view"
-                  aria-haspopup="listbox"
-                  aria-expanded="${viewMenuOpen ? "true" : "false"}">
-            <span class="workbench-view-select-label">${escapeHtml(activeViewLabel())}</span>
-          </button>
-          <span class="workbench-view-select-caret" aria-hidden="true"></span>
-          <div class="workbench-view-menu${viewMenuOpen ? "" : " hidden"}"
-               id="activeViewMenu"
-               role="listbox"
-               aria-label="${escapeHtml(state.activeType.toUpperCase())} views">
-            ${viewMenuMarkup()}
+        <div class="workbench-view-control">
+          <span class="workbench-control-label">Active view</span>
+          <div class="workbench-view-select-wrap${viewMenuOpen ? " is-open" : ""}">
+            <button class="sidebar-select workbench-view-select"
+                    id="activeViewSelect"
+                    type="button"
+                    title="${escapeHtml(state.activeType.toUpperCase())} view"
+                    aria-haspopup="listbox"
+                    aria-expanded="${viewMenuOpen ? "true" : "false"}">
+              <span class="workbench-view-select-label">${escapeHtml(activeViewLabel())}</span>
+            </button>
+            <span class="workbench-view-select-caret" aria-hidden="true"></span>
+            <div class="workbench-view-menu${viewMenuOpen ? "" : " hidden"}"
+                 id="activeViewMenu"
+                 role="listbox"
+                 aria-label="${escapeHtml(state.activeType.toUpperCase())} views">
+              ${viewMenuMarkup()}
+            </div>
           </div>
         </div>
       </div>
       ${contextTools ? `<div class="workbench-context-slot">${contextTools}</div>` : ""}
       <div class="workbench-action-group">
-        <button class="sidebar-inline-action" id="focusDepthOneBtn" type="button"
-                title="Open selected element neighborhood depth 1">Focus 1</button>
-        <button class="sidebar-inline-action" id="focusDepthTwoBtn" type="button"
-                title="Open selected element neighborhood depth 2">Focus 2</button>
-        <button class="sidebar-inline-action" id="saveViewpointBtn" type="button"
-                title="Save filters, layout, and camera as a viewpoint">Save View</button>
-        <button class="sidebar-inline-action${
-          modelTreeMode === "elements" && !el.modelTreePanel?.classList.contains("hidden")
-            ? " is-active"
-            : ""
-        }" id="modelTreeToggleBtn" type="button">Tree</button>
-        <button class="sidebar-inline-action${
-          modelTreeMode === "relationships" && !el.modelTreePanel?.classList.contains("hidden")
-            ? " is-active"
-            : ""
-        }" id="relationshipTreeToggleBtn" type="button">Relationships</button>
+        <div class="workbench-tool-cluster" aria-label="Explore selected element">
+          <span class="workbench-control-label">Explore</span>
+          <div class="workbench-tool-actions">
+            <button class="sidebar-inline-action" id="focusDepthOneBtn" type="button"
+                    title="Open selected element neighborhood depth 1">Nearby</button>
+            <button class="sidebar-inline-action" id="focusDepthTwoBtn" type="button"
+                    title="Open selected element neighborhood depth 2">Extended</button>
+          </div>
+        </div>
+        <div class="workbench-tool-cluster" aria-label="Inspect model structure">
+          <span class="workbench-control-label">Inspect</span>
+          <div class="workbench-tool-actions">
+            <button class="sidebar-inline-action${
+              modelTreeMode === "elements" && !el.modelTreePanel?.classList.contains("hidden")
+                ? " is-active"
+                : ""
+            }" id="modelTreeToggleBtn" type="button">Elements</button>
+            <button class="sidebar-inline-action${
+              modelTreeMode === "relationships" && !el.modelTreePanel?.classList.contains("hidden")
+                ? " is-active"
+                : ""
+            }" id="relationshipTreeToggleBtn" type="button">Relations</button>
+          </div>
+        </div>
+        <div class="workbench-tool-cluster workbench-viewpoint-cluster" aria-label="Viewpoint actions">
+          <span class="workbench-control-label">Viewpoint</span>
+          <div class="workbench-tool-actions">
+            <button class="sidebar-inline-action" id="saveViewpointBtn" type="button"
+                    title="Save filters, layout, and camera as a viewpoint">Save as new</button>
+          </div>
+        </div>
+        <div class="workbench-tool-cluster workbench-arrange-cluster" aria-label="Arrange active view">
+          <span class="workbench-control-label">Arrange</span>
+          <div class="workbench-tool-actions">
+            <div class="workbench-layout-select-wrap${layoutMenuOpen ? " is-open" : ""}">
+              <button class="sidebar-select workbench-view-select workbench-layout-select"
+                      id="layoutStrategySelect"
+                      type="button"
+                      title="${escapeHtml(selectedLayoutStrategyConfig().title)}"
+                      aria-haspopup="listbox"
+                      aria-expanded="${layoutMenuOpen ? "true" : "false"}">
+                <span class="workbench-view-select-label">${escapeHtml(
+                  selectedLayoutStrategyConfig().label,
+                )}</span>
+              </button>
+              <span class="workbench-view-select-caret workbench-layout-select-caret"
+                    aria-hidden="true"></span>
+              <div class="workbench-view-menu workbench-layout-menu${layoutMenuOpen ? "" : " hidden"}"
+                   id="layoutStrategyMenu"
+                   role="listbox"
+                   aria-label="Auto layout strategies">
+                ${layoutStrategyMenuMarkup()}
+              </div>
+            </div>
+            <button class="sidebar-inline-action model-layout-btn"
+                    id="workbenchAutoLayoutBtn"
+                    type="button"
+                    title="Arrange current view automatically">Apply</button>
+          </div>
+        </div>
       </div>
       <div class="workbench-persist-group">
         <button class="sidebar-inline-action model-save-btn"
@@ -607,31 +654,6 @@ export function renderViewWorkbench() {
             <span class="model-save-btn-progress-bar"></span>
           </span>
         </button>
-        <div class="workbench-layout-select-wrap${layoutMenuOpen ? " is-open" : ""}">
-          <span class="workbench-layout-select-label">Layout</span>
-          <button class="sidebar-select workbench-view-select workbench-layout-select"
-                  id="layoutStrategySelect"
-                  type="button"
-                  title="${escapeHtml(selectedLayoutStrategyConfig().title)}"
-                  aria-haspopup="listbox"
-                  aria-expanded="${layoutMenuOpen ? "true" : "false"}">
-            <span class="workbench-view-select-label">${escapeHtml(
-              selectedLayoutStrategyConfig().label,
-            )}</span>
-          </button>
-          <span class="workbench-view-select-caret workbench-layout-select-caret"
-                aria-hidden="true"></span>
-          <div class="workbench-view-menu workbench-layout-menu${layoutMenuOpen ? "" : " hidden"}"
-               id="layoutStrategyMenu"
-               role="listbox"
-               aria-label="Auto layout strategies">
-            ${layoutStrategyMenuMarkup()}
-          </div>
-        </div>
-        <button class="sidebar-inline-action model-layout-btn"
-                id="workbenchAutoLayoutBtn"
-                type="button"
-                title="Arrange current view automatically">Auto Layout</button>
         <button class="sidebar-inline-action model-tools-minimize"
                 id="modelToolsMinimizeBtn"
                 type="button"

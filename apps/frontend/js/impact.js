@@ -17,9 +17,9 @@ function setImpactButtonState(active) {
   el.impactToggleBtn.classList.toggle("active", !!active);
   const label = el.impactToggleBtn.querySelector(".topbar-btn-label");
   if (label) {
-    label.textContent = "Impact Analysis";
+    label.textContent = "Impact";
   } else {
-    el.impactToggleBtn.textContent = "Impact Analysis";
+    el.impactToggleBtn.textContent = "Impact";
   }
   el.impactToggleBtn.title = active
     ? "Impact mode ON - click any element to analyze its impact"

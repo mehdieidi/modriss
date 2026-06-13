@@ -65,44 +65,60 @@
           </button>
 
           <div class="topbar-collapse" id="topbarCollapse">
-            <div class="ide-menubar">
-              <button
-                class="ide-menu-trigger topbar-ide-btn"
-                id="impactToggleBtn"
-                title="Toggle change impact analysis mode"
-                type="button"
-              >
-                <span class="topbar-btn-label">Impact Analysis</span>
-              </button>
-              <button
-                class="ide-menu-trigger topbar-ide-btn topbar-validate-btn"
-                id="validateModelBtn"
-                title="Validate current model against metamodel and constraints"
-                type="button"
-              >
-                <span class="topbar-btn-label">Validate Model</span>
-              </button>
-              <button
-                class="ide-menu-trigger topbar-ide-btn topbar-generate-btn"
-                id="generateContextBtn"
-                title="Generate next model from active view"
-                type="button"
-              >
-                <span
-                  aria-hidden="true"
-                  class="topbar-btn-icon icon-svg icon-mask"
-                  style="--icon-src: url(&quot;/assets/icons/generate.svg&quot;)"
-                ></span>
-                <span class="topbar-btn-label">Generate PIM</span>
-              </button>
-              <button
-                class="ide-menu-trigger topbar-ide-btn topbar-artifact-btn"
-                id="deployGithubBtn"
-                title="Deploy artifact to GitHub"
-                type="button"
-              >
-                <span class="topbar-btn-label">Deploy to GitHub</span>
-              </button>
+            <div class="model-lifecycle" aria-label="Model lifecycle actions">
+              <div class="model-lifecycle-heading" aria-hidden="true">
+                <span>Model flow</span>
+                <strong>Assess to deliver</strong>
+              </div>
+              <div class="ide-menubar model-lifecycle-tools">
+                <div class="model-lifecycle-group model-lifecycle-group-assess">
+                  <span class="model-lifecycle-group-label">Assess</span>
+                  <div class="model-lifecycle-group-actions">
+                    <button
+                      class="ide-menu-trigger topbar-ide-btn"
+                      id="impactToggleBtn"
+                      title="Toggle change impact analysis mode"
+                      type="button"
+                    >
+                      <span class="topbar-btn-label">Impact</span>
+                    </button>
+                    <button
+                      class="ide-menu-trigger topbar-ide-btn topbar-validate-btn"
+                      id="validateModelBtn"
+                      title="Validate current model against metamodel and constraints"
+                      type="button"
+                    >
+                      <span class="topbar-btn-label">Validate</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="model-lifecycle-group model-lifecycle-group-deliver">
+                  <span class="model-lifecycle-group-label">Advance</span>
+                  <div class="model-lifecycle-group-actions">
+                    <button
+                      class="ide-menu-trigger topbar-ide-btn topbar-generate-btn"
+                      id="generateContextBtn"
+                      title="Generate next model from active view"
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="topbar-btn-icon icon-svg icon-mask"
+                        style="--icon-src: url(&quot;/assets/icons/generate.svg&quot;)"
+                      ></span>
+                      <span class="topbar-btn-label">Generate PIM</span>
+                    </button>
+                    <button
+                      class="ide-menu-trigger topbar-ide-btn topbar-artifact-btn"
+                      id="deployGithubBtn"
+                      title="Deploy artifact to GitHub"
+                      type="button"
+                    >
+                      <span class="topbar-btn-label">Deploy to GitHub</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="tabs" id="modelTabs">
