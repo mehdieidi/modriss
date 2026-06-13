@@ -1,4 +1,5 @@
 import { modelingElementDefinition, modelingTypeMatches } from "./modeling-config-data.js";
+import { genId } from "./utils.js";
 
 export const PIM_ROOT_CONTAINMENTS = Object.freeze([
   {
@@ -723,7 +724,7 @@ export function populatePimRootContainments(root, graph) {
   if (Array.isArray(existingTraceModel?.links) && existingTraceModel.links.length) {
     root.traceModel = {
       eClass: existingTraceModel.eClass || "TraceModel",
-      id: existingTraceModel.id || "trace-model",
+      id: existingTraceModel.id || genId(),
       name: existingTraceModel.name || "Trace Model",
       ...existingTraceModel,
       links: existingTraceModel.links,
@@ -781,7 +782,7 @@ export function populatePimRootContainments(root, graph) {
   if (traceLinks.length) {
     root.traceModel ??= {
       eClass: "TraceModel",
-      id: "trace-model",
+      id: genId(),
       name: "Trace Model",
       links: [],
     };
@@ -798,9 +799,8 @@ export function populatePimRootContainments(root, graph) {
   return root;
 }
 
-function generatedSemanticId(type, index, ownerId = "") {
-  const owner = ownerId ? `${String(ownerId).replaceAll(/[^a-z0-9_-]+/gi, "-")}-` : "";
-  return `${owner}${String(type || "element").toLowerCase()}-${index + 1}`;
+function generatedSemanticId() {
+  return genId();
 }
 
 function normalizeSemanticElement(raw, fallbackType, index, owner = null) {

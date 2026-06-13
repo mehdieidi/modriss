@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
 import org.eclipse.emf.common.util.Enumerator;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
@@ -1329,7 +1329,7 @@ final class XmiModelImportService {
     private final Set<EObject> serialized =
         java.util.Collections.newSetFromMap(new IdentityHashMap<>());
 
-    /** Ids already emitted in the imported JSON. */
+    /** Ids already emitted while repairing imported external models. */
     private final Set<String> usedIds = new LinkedHashSet<>();
 
     /** Graph element nodes reconstructed during serialization. */
@@ -1343,9 +1343,6 @@ final class XmiModelImportService {
 
     /** De-duplication keys for reconstructed graph relationships. */
     private final Set<String> graphRelationshipKeys = new LinkedHashSet<>();
-
-    /** Counter used for synthetic ids when source ids are unavailable. */
-    private final AtomicInteger syntheticIds = new AtomicInteger(1);
 
     /**
      * Creates a serialization context.
@@ -1389,12 +1386,7 @@ final class XmiModelImportService {
       serialized.add(object);
     }
 
-    /**
-     * Creates a stable id from explicit id, XMI id, or synthetic fallback.
-     *
-     * @param object EMF object
-     * @return unique id
-     */
+    /** Preserves an external id when possible and generates a UUID when one is unavailable. */
     private String createId(EObject object) {
       String existingId = explicitId(object);
       if (!existingId.isBlank() && usedIds.add(existingId)) {
@@ -1404,12 +1396,7 @@ final class XmiModelImportService {
       if (xmiId != null && !xmiId.isBlank() && usedIds.add(xmiId)) {
         return xmiId;
       }
-      String base = object.eClass().getName().toLowerCase(Locale.ROOT);
-      String candidate;
-      do {
-        candidate = base + "-" + syntheticIds.getAndIncrement();
-      } while (!usedIds.add(candidate));
-      return candidate;
+      return UUID.randomUUID().toString();
     }
 
     /**
@@ -1595,9 +1582,7 @@ final class XmiModelImportService {
         return;
       }
       ObjectNode relationship = objectMapper.createObjectNode();
-      relationship.put(
-          "id",
-          "ref-" + sanitizeId(sourceId) + "-" + sanitizeId(kind) + "-" + sanitizeId(targetId));
+      relationship.put("id", UUID.randomUUID().toString());
       relationship.put("kind", kind);
       relationship.put("source", sourceId);
       relationship.put("target", targetId);
@@ -1629,7 +1614,7 @@ final class XmiModelImportService {
         return;
       }
       ObjectNode relationship = objectMapper.createObjectNode();
-      relationship.put("id", "contains-" + sanitizeId(sourceId) + "-" + sanitizeId(targetId));
+      relationship.put("id", UUID.randomUUID().toString());
       relationship.put("kind", kind);
       relationship.put("source", sourceId);
       relationship.put("target", targetId);
@@ -1814,16 +1799,6 @@ final class XmiModelImportService {
         case "StepFunctionEventBridgeTargetView" -> "INVOKES";
         default -> relationshipClassKind(value);
       };
-    }
-
-    /**
-     * Sanitizes a value for generated graph edge ids.
-     *
-     * @param value raw id fragment
-     * @return sanitized id fragment
-     */
-    private String sanitizeId(String value) {
-      return String.valueOf(value).replaceAll("[^A-Za-z0-9_-]+", "-").replaceAll("^-+|-+$", "");
     }
 
     /**

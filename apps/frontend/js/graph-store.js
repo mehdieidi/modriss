@@ -515,9 +515,7 @@ function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
         }
         edgeKeys.add(key);
         additions.push({
-          id: `ref-${typeKey}-${sanitizeIdPart(kind)}-${sanitizeIdPart(
-            sourceId,
-          )}-${sanitizeIdPart(destinationId)}`,
+          id: genId(),
           kind,
           sourceElementId: sourceId,
           targetElementId: destinationId,

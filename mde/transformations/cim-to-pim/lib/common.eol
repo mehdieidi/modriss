@@ -8,6 +8,7 @@ operation initialiseCimToPimCaches() {
   cachedCimOwnerContextByElementId = new Map;
   cachedCimServiceBySourceId = new Map;
   cachedCimEquivalentByRule = new Map;
+  cachedGeneratedIdByKey = new Map;
   cachedCimFallbackService = null;
   cachedCimPolicyTargetsBySourceId = new Map;
   cachedPimObservabilityById = new Map;
@@ -274,11 +275,7 @@ operation pluralize(value) {
 
 /** Computes id for. */
 operation idFor(prefix : String, source) {
-  var seed = source.id;
-  if (not hasText(seed)) {
-    seed = source.name;
-  }
-  return prefix + "_" + slug(seed);
+  return generatedId(prefix, cacheKeyFor(source));
 }
 
 /** Computes name for. */
@@ -292,7 +289,16 @@ operation nameFor(source, suffix : String) {
 
 /** Creates new id. */
 operation newId(prefix : String, seed) {
-  return prefix + "_" + slug(seed);
+  return generatedId(prefix, seed);
+}
+
+/** Generates one UUID per transformation key and reuses it for within-run lookups. */
+operation generatedId(prefix : String, seed) {
+  var key = prefix + "::" + seed.asString();
+  if (not cachedGeneratedIdByKey.containsKey(key)) {
+    cachedGeneratedIdByKey.put(key, modelElementIdGenerator.nextId());
+  }
+  return cachedGeneratedIdByKey.get(key);
 }
 
 /** Adds or records collection text. */

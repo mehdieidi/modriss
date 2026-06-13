@@ -4,7 +4,7 @@ import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
 import { flushCurrentModelPatch } from "./model-patch.js";
 import { setBusy, setError, setStatus } from "./status.js";
-import { emptyDiagram } from "./utils.js";
+import { emptyDiagram, genId } from "./utils.js";
 import { serializeModel } from "./diagram.js";
 import {
   activeView,
@@ -327,7 +327,7 @@ function ensureManualBacklogIdentity(model) {
       return;
     }
     if (!String(task.id || "").trim()) {
-      task.id = manualTaskIdentity(task, index);
+      task.id = genId();
     }
     if (!String(task.status || "").trim()) {
       task.status = "OPEN";

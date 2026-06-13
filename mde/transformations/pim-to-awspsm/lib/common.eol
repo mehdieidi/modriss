@@ -1,7 +1,6 @@
 /** Provides reusable common operations. */
 /** Initializes shared roots, lookup maps, and deduplication sets for the PIM-to-AWS-PSM run. */
 operation initialisePimToAwsPsmCaches() {
-  usedModelElementIds = Set{};
   usedAwsLogicalIds = Set{};
   cachedPimRoot = PIM!PIMModel.all.first();
   cachedAwsRoot = null;
@@ -17,7 +16,6 @@ operation initialisePimToAwsPsmCaches() {
   cachedAwsGeneratedResources = Sequence{};
   cachedAwsGeneratedResourceObjects = Set{};
   cachedGeneratedIdByKey = new Map;
-  cachedNextUniqueIdIndexBySeed = new Map;
   cachedNextLogicalIdIndexBySeed = new Map;
   cachedDataAccessesByFunctionId = new Map;
   cachedStageStackLinks = Set{};
@@ -42,9 +40,6 @@ operation initialisePimToAwsPsmCaches() {
   cachedAwsTargetHadPreloadedContent =
     AWSPSM!AwsPsmModel.all.notEmpty() or AWSPSMCORE!AwsResource.all.notEmpty() or KERNEL!TraceableElement.all.notEmpty();
 
-  for (element in KERNEL!ModelElement.all.select(e | hasText(e.id))) {
-    usedModelElementIds.add(element.id);
-  }
   for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.logicalId))) {
     usedAwsLogicalIds.add(resource.logicalId);
   }
@@ -301,17 +296,7 @@ operation generatedStableId(prefix : String, source, suffix : String) {
 
 /** Computes unique id. */
 operation uniqueId(base : String) {
-  var seed = slug(base);
-  var candidate = seed;
-  var index = cachedNextUniqueIdIndexBySeed.get(seed);
-  if (index.isUndefined()) index = 2;
-  while (usedModelElementIds.includes(candidate)) {
-    candidate = seed + "_" + index.asString();
-    index = index + 1;
-  }
-  cachedNextUniqueIdIndexBySeed.put(seed, index);
-  usedModelElementIds.add(candidate);
-  return candidate;
+  return modelElementIdGenerator.nextId();
 }
 
 /** Returns whether the receiver is true. */

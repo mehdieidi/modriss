@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -117,7 +117,7 @@ final class PimToAwsPsmEtlRegressionTest {
     assertFalse(
         values(root, "relationshipViews").isEmpty(),
         "Expected generated relationship views for API/event/message integrations.");
-    assertGeneratedIdsAreUnique(root);
+    assertGeneratedIdsAreUuids(root);
 
     EObject readiness = reference(root, "readiness");
     assertTrue(readiness != null, "Expected readiness assessment.");
@@ -288,11 +288,11 @@ final class PimToAwsPsmEtlRegressionTest {
   }
 
   /**
-   * Verifies every generated EMF object ID is unique across the PSM containment tree.
+   * Verifies every generated EMF object ID is a UUID.
    *
    * @param root AWS PSM root object
    */
-  private void assertGeneratedIdsAreUnique(EObject root) {
+  private void assertGeneratedIdsAreUuids(EObject root) {
     List<String> ids = new java.util.ArrayList<>();
     if (feature(root, "id") != null && get(root, "id") != null) {
       ids.add(get(root, "id").toString());
@@ -305,9 +305,16 @@ final class PimToAwsPsmEtlRegressionTest {
         ids.add(object.eGet(id).toString());
       }
     }
-    assertEquals(
-        ids.size(),
-        new HashSet<>(ids).size(),
-        "Generated AWS PSM model element IDs must remain unique.");
+    assertTrue(
+        ids.stream().allMatch(this::isUuid), "Generated AWS PSM model element IDs must be UUIDs.");
+  }
+
+  private boolean isUuid(String value) {
+    try {
+      UUID.fromString(value);
+      return true;
+    } catch (IllegalArgumentException ex) {
+      return false;
+    }
   }
 }

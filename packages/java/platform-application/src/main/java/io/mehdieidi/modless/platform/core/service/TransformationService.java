@@ -933,7 +933,6 @@ public final class TransformationService {
     if (backlog.isEmpty()) {
       backlog.add(
           manualTask(
-              "review-generated-pim",
               "Review generated PIM responsibilities and integration contracts.",
               "Semi-automated transformations require human review before promotion.",
               true,
@@ -959,7 +958,6 @@ public final class TransformationService {
         decision ->
             backlog.add(
                 manualTask(
-                    "decision-" + text(decision, "id", UUID.randomUUID().toString()),
                     text(decision, "name", "Manual transformation decision"),
                     firstNonBlank(
                         text(decision, "question", ""),
@@ -973,7 +971,6 @@ public final class TransformationService {
   /**
    * Builds a manual backlog task object.
    *
-   * @param id task identifier seed
    * @param title task title
    * @param rationale task rationale
    * @param required whether completion is required
@@ -982,9 +979,9 @@ public final class TransformationService {
    * @return task JSON object
    */
   private ObjectNode manualTask(
-      String id, String title, String rationale, boolean required, String category, String status) {
+      String title, String rationale, boolean required, String category, String status) {
     ObjectNode task = store.objectMapper().createObjectNode();
-    task.put("id", slug(id));
+    task.put("id", UUID.randomUUID().toString());
     task.put("name", title);
     task.put("title", title);
     task.put("status", status);
@@ -1004,7 +1001,7 @@ public final class TransformationService {
     model
         .withArray("manualBacklog")
         .addObject()
-        .put("id", "review-" + System.currentTimeMillis())
+        .put("id", UUID.randomUUID().toString())
         .put("name", title)
         .put("status", "OPEN")
         .put("required", true)

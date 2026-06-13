@@ -1,7 +1,35 @@
 // ── Pure utility functions (no imports) ───────────────────────────────────────
 
-export function genId(prefix = "n") {
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+const ULID_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+function encodeUlidTime(time) {
+  let value = time;
+  let encoded = "";
+  for (let index = 0; index < 10; index++) {
+    encoded = ULID_ALPHABET[value % 32] + encoded;
+    value = Math.floor(value / 32);
+  }
+  return encoded;
+}
+
+export function genId() {
+  if (globalThis.crypto?.getRandomValues) {
+    const random = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(random);
+    return (
+      encodeUlidTime(Date.now()) +
+      Array.from(random, (value) => ULID_ALPHABET[value & 31])
+        .join("")
+        .slice(0, 16)
+    );
+  }
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (token) => {
+    const random = Math.floor(Math.random() * 16);
+    return (token === "x" ? random : (random & 0x3) | 0x8).toString(16);
+  });
 }
 
 export function escapeHtml(value) {

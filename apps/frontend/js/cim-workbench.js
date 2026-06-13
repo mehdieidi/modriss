@@ -1,6 +1,6 @@
 import { state } from "./state.js";
 import { el } from "./dom.js";
-import { escapeHtml } from "./utils.js";
+import { escapeHtml, genId } from "./utils.js";
 import { getDefaultNode } from "./diagram.js";
 import {
   activeView,
@@ -1526,7 +1526,7 @@ function connect(source, target, kind) {
     return null;
   }
   const edge = {
-    id: `e-${source.id}-${target.id}-${kind}-${Date.now()}`,
+    id: genId(),
     sourceId: source.id,
     targetId: target.id,
     kind,

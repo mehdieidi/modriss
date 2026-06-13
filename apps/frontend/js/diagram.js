@@ -23,18 +23,8 @@ import {
   pimSemanticRelationshipsFromRoot,
 } from "./pim-model-utils.js";
 
-function sanitizeConnectionIdPart(value) {
-  const normalized = String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9_-]+/g, "_");
-  return normalized || "na";
-}
-
 function connectionIdFor(modelType, index, sourceId, targetId, kind) {
-  return `rel-${modelType}-${index}-${sanitizeConnectionIdPart(
-    kind,
-  )}-${sanitizeConnectionIdPart(sourceId)}-${sanitizeConnectionIdPart(targetId)}`;
+  return genId();
 }
 
 function connectionRecords(modelJson, modelType = state.activeType) {
@@ -175,6 +165,7 @@ export function defaultRootModel(typeKey, modelName) {
     throw new Error(`Missing backend rootTemplate for ${typeKey.toUpperCase()}.`);
   }
   configured.name = modelName;
+  configured.id ??= genId();
   configured.diagram ??= { elements: [], relationships: [] };
   configured.diagram.elements ??= [];
   configured.diagram.relationships ??= [];
@@ -262,26 +253,7 @@ export function toDiagram(modelType, modelJson, fallbackName) {
   const rawElements = elementRecords(modelJson, modelType);
   const rawRelationships = connectionRecords(modelJson, modelType);
 
-  // Deduplicate elements by ID, keeping only the first occurrence.
-  // This prevents duplicate node IDs in the layout endpoint which would cause validation errors.
-  const seenIds = new Set();
-  const duplicateIds = new Set();
-  const deduplicatedElements = [];
-
-  for (const element of rawElements) {
-    const elementId = element.id || genId("node");
-    if (seenIds.has(elementId)) {
-      duplicateIds.add(elementId);
-      console.warn(
-        `Duplicate element ID detected: "${elementId}" (${element.eClass} "${element.name}"). Skipping duplicate.`,
-      );
-    } else {
-      seenIds.add(elementId);
-      deduplicatedElements.push(element);
-    }
-  }
-
-  diagram.nodes = deduplicatedElements.map((element) => ({
+  diagram.nodes = rawElements.map((element) => ({
     id: element.id || genId("node"),
     type: element.eClass || "Element",
     label: element.name || element.label || "Element",
@@ -334,16 +306,7 @@ export function toDiagram(modelType, modelJson, fallbackName) {
       }
       return edge;
     })
-    .filter((edge) => {
-      // Filter out edges that reference duplicate nodes
-      if (duplicateIds.has(edge.sourceId) || duplicateIds.has(edge.targetId)) {
-        console.warn(
-          `Skipping edge "${edge.id}" because it references a duplicate node (source: "${edge.sourceId}", target: "${edge.targetId}").`,
-        );
-        return false;
-      }
-      return !!(edge.sourceId && edge.targetId);
-    });
+    .filter((edge) => !!(edge.sourceId && edge.targetId));
 
   ensureReadableLayout(diagram.nodes, diagram.connections, nodeSizeForType(modelType));
   return diagram;

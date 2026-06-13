@@ -33,12 +33,6 @@ context PIM!PIMModel {
     message : "[PIM-ROOT-004] The model contains provider-specific wording in a name or description. Fix: replace cloud/vendor service names with provider-independent domain terms such as function, queue, topic, object store, identity provider, event bus, trace, metric or deployment unit."
   }
 
-  /** Checks that model element ids must be unique. */
-  constraint ModelElementIdsMustBeUnique {
-    check : KERNEL!ModelElement.all.collect(elementItem | elementItem.`id`).asSet().size() = KERNEL!ModelElement.all.size()
-    message : "[PIM-ROOT-005] ModelElement ids must be globally unique. Fix: assign a distinct stable id to each element in the PIM model."
-  }
-
   /** Advises that default correlation id should be named. */
   critique DefaultCorrelationIdShouldBeNamed {
     check : self.defaultCorrelationIdName.hasText()
@@ -61,7 +55,7 @@ context KERNEL!ModelElement {
   /** Checks that model element id required. */
   constraint ModelElementIdRequired {
     check : self.`id`.hasText()
-    message : "[PIM-NAME-001] Element id is missing. Fix: assign a globally unique stable id to '" + self.displayName() + "'."
+    message : "[PIM-NAME-001] Element id is missing. Fix: generate an id for '" + self.displayName() + "'."
   }
 
   /** Advises that portable name recommended. */

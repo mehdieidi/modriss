@@ -791,7 +791,7 @@ export function populateCimRootContainments(root, graph) {
     );
   });
   if (traceLinks.length) {
-    root.traceModel ??= { eClass: "TraceModel", id: "trace-model", links: [] };
+    root.traceModel ??= { eClass: "TraceModel", id: genId(), links: [] };
     const existing = new Set(refIds(root.traceModel.links));
     const existingIds = new Set(
       (Array.isArray(root.traceModel.links) ? root.traceModel.links : [])
@@ -807,9 +807,8 @@ export function populateCimRootContainments(root, graph) {
   return root;
 }
 
-function generatedSemanticId(type, index, ownerId = "") {
-  const owner = ownerId ? `${String(ownerId).replaceAll(/[^a-z0-9_-]+/gi, "-")}-` : "";
-  return `${owner}${String(type || "element").toLowerCase()}-${index + 1}`;
+function generatedSemanticId() {
+  return genId();
 }
 
 function normalizeSemanticElement(raw, fallbackType, index, owner = null) {
@@ -958,3 +957,4 @@ export function cimSemanticRelationshipsFromRoot(modelJson) {
   });
   return result;
 }
+import { genId } from "./utils.js";

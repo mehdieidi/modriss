@@ -436,8 +436,8 @@ public final class EpsilonEtlExecutor {
                 new EtlTextChecks(),
                 org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable(
-                "usedModelElementIds",
-                new java.util.LinkedHashSet<>(),
+                "modelElementIdGenerator",
+                new ModelElementIdGenerator(),
                 org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable(
                 "usedAwsLogicalIds",
@@ -576,10 +576,6 @@ public final class EpsilonEtlExecutor {
                 org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable(
                 "cachedGeneratedIdByKey", null, org.eclipse.epsilon.eol.types.EolAnyType.Instance),
-            new Variable(
-                "cachedNextUniqueIdIndexBySeed",
-                null,
-                org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable(
                 "cachedNextLogicalIdIndexBySeed",
                 null,
