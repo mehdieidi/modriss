@@ -1,26 +1,41 @@
+import { state } from "../state.js";
+
 let drawFrame = 0;
 let pendingRender = false;
 let renderAgain = false;
 const DEFAULT_SPATIAL_CELL_SIZE = 256;
 
+function canvasPolicy() {
+  const level = state.modelingConfig?.config?.levels?.[state.activeType];
+  return level?.canvasPolicy && typeof level.canvasPolicy === "object" ? level.canvasPolicy : {};
+}
+
 export function detailLevelForZoom(zoom = 1) {
-  if (zoom < 0.35) {
+  const policy = canvasPolicy();
+  if (zoom < Number(policy.lowDetailBelow ?? 0.35)) {
     return "low";
   }
-  if (zoom >= 1.45) {
+  if (zoom >= Number(policy.highDetailAtOrAbove ?? 1.45)) {
     return "high";
   }
   return "normal";
 }
 
 export function shouldShowEdgeLabels(zoom = 1, edgeCount = 0) {
-  if (zoom < 0.75) {
+  const policy = canvasPolicy();
+  if (zoom < Number(policy.edgeLabelsAtOrAbove ?? 0.75)) {
     return false;
   }
-  if (edgeCount > 1200 && zoom < 1.25) {
+  if (
+    edgeCount > Number(policy.denseEdgeThreshold ?? 1200) &&
+    zoom < Number(policy.denseEdgeLabelsAtOrAbove ?? 1.25)
+  ) {
     return false;
   }
-  if (edgeCount > 2500 && zoom < 1.65) {
+  if (
+    edgeCount > Number(policy.veryDenseEdgeThreshold ?? 2500) &&
+    zoom < Number(policy.veryDenseEdgeLabelsAtOrAbove ?? 1.65)
+  ) {
     return false;
   }
   return true;

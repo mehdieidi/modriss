@@ -375,14 +375,26 @@ function relationshipsForActiveView(view) {
   const fromViewEdges = safeArray(view?.edges)
     .filter((edge) => edge?.visible !== false)
     .map((edge) => edge.relationshipId || edge.id)
-    .filter((id) => id && !hiddenRelationshipIds.has(id));
-  const relationshipIds = fromVisibleState.length ? fromVisibleState : fromViewEdges;
+    .filter(Boolean);
+  const relationshipIds = [
+    ...new Set([...fromVisibleState, ...fromViewEdges, ...hiddenRelationshipIds]),
+  ];
   const relationshipMap = state.graph.relationshipsById;
-  const rows = relationshipIds.map((id) => relationshipMap.get(id)).filter(Boolean);
+  const visibleElementIds = new Set(safeArray(view?.nodes).map((node) => node.elementId));
+  const rows = relationshipIds
+    .map((id) => relationshipMap.get(id))
+    .filter((relationship) => {
+      if (!relationship) {
+        return false;
+      }
+      return (
+        visibleElementIds.has(relationshipEndpointId(relationship, "source")) &&
+        visibleElementIds.has(relationshipEndpointId(relationship, "target"))
+      );
+    });
   if (rows.length) {
     return rows;
   }
-  const visibleElementIds = new Set(safeArray(view?.nodes).map((node) => node.elementId));
   if (!visibleElementIds.size) {
     return [];
   }
@@ -414,6 +426,7 @@ function relationshipRowsMarkup(view) {
       targetLabel,
       kind,
       label,
+      checked: !new Set(safeArray(view?.hidden?.relationshipIds)).has(relationship.id),
       search: normalizeLabel(
         `${label} ${kind} ${sourceLabel} ${targetLabel} ${relationship.id || ""}`,
       ),
@@ -432,7 +445,11 @@ function relationshipRowsMarkup(view) {
     ${filtered
       .map(
         (row) => `
-      <div class="model-tree-relationship">
+      <label class="model-tree-relationship${row.checked ? "" : " is-hidden"}">
+        <input class="model-tree-node-toggle"
+               data-tree-relationship-id="${escapeHtml(row.id)}"
+               type="checkbox"
+               ${row.checked ? "checked" : ""}>
         <div class="model-tree-relationship-main">
           <span class="model-tree-relationship-label">${escapeHtml(
             row.sourceLabel,
@@ -440,7 +457,7 @@ function relationshipRowsMarkup(view) {
           <span class="model-tree-relationship-name">${escapeHtml(row.label)}</span>
         </div>
         <span class="model-tree-relationship-kind">${escapeHtml(row.kind)}</span>
-      </div>`,
+      </label>`,
       )
       .join("")}
     </div>`;
@@ -767,6 +784,28 @@ async function toggleTreeElement(elementId, checked) {
   saveCurrentTabGraphState();
 }
 
+async function toggleTreeRelationship(relationshipId, checked) {
+  const view = activeView();
+  if (!view || !relationshipId) {
+    return;
+  }
+  syncActiveViewFromVisibleGraph();
+  view.hidden ??= { elementIds: [], relationshipIds: [] };
+  const hidden = new Set(safeArray(view.hidden.relationshipIds));
+  if (checked) {
+    hidden.delete(relationshipId);
+  } else {
+    hidden.add(relationshipId);
+  }
+  view.hidden.relationshipIds = [...hidden];
+  materializeActiveView();
+  renderDiagramCallback?.();
+  renderViewWorkbench();
+  saveCurrentTabGraphState();
+  markModelDirty();
+  setStatus(checked ? "Relationship shown in this view." : "Relationship hidden from this view.");
+}
+
 function bindTreeEvents() {
   if (treeBound) {
     return;
@@ -781,6 +820,11 @@ function bindTreeEvents() {
     const elementId = target?.dataset?.treeElementId;
     if (elementId) {
       toggleTreeElement(elementId, Boolean(target.checked));
+      return;
+    }
+    const relationshipId = target?.dataset?.treeRelationshipId;
+    if (relationshipId) {
+      toggleTreeRelationship(relationshipId, Boolean(target.checked));
     }
   });
   el.modelTreeBody?.addEventListener("input", (event) => {

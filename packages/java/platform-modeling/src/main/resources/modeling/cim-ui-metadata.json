@@ -124,10 +124,41 @@
         "icon": "tag",
         "color": "#475569",
         "category": "Kernel / Trace",
+        "supportOnly": true,
+        "creatable": false,
         "notation": {
           "tag": "META",
           "shape": "metadata-chip",
           "lineFields": ["linkType", "reviewStatus", "sourceReference"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceModel"]
+      },
+      "metadata": {
+        "supportOnly": false,
+        "creatable": true,
+        "notation": {
+          "tag": "TRACE",
+          "shape": "trace-container",
+          "lineFields": ["name", "description"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceLink"]
+      },
+      "metadata": {
+        "supportOnly": false,
+        "creatable": false,
+        "relationshipElement": true,
+        "notation": {
+          "tag": "TRACE",
+          "shape": "relationship-edge",
+          "lineFields": ["linkType", "confidence", "rationale"]
         }
       }
     },
@@ -267,6 +298,15 @@
       "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
     }
   ],
+  "canvasPolicy": {
+    "lowDetailBelow": 0.42,
+    "highDetailAtOrAbove": 1.35,
+    "edgeLabelsAtOrAbove": 0.8,
+    "denseEdgeThreshold": 700,
+    "denseEdgeLabelsAtOrAbove": 1.3,
+    "veryDenseEdgeThreshold": 1600,
+    "veryDenseEdgeLabelsAtOrAbove": 1.7
+  },
   "relationshipKinds": [
     "CONTAINS",
     "CONTAINS_COMMAND",

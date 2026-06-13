@@ -149,6 +149,7 @@ export const state = {
   impactMode: false,
   impactData: null,
   paletteCollapsed: false,
+  paletteDragType: "",
   paletteSearch: {
     cim: "",
     pim: "",

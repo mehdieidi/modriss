@@ -85,6 +85,7 @@ public final class ModelingConfigService {
     Map<String, Object> metadata = readMetadata(key);
     metadata = mergeEcoreStructure(key, metadata);
     List<String> relationshipKinds = relationshipKinds(metadata);
+    Map<String, Object> syntaxCoverage = syntaxCoverage(metadata);
     return Map.ofEntries(
         Map.entry("displayName", metadata.getOrDefault("displayName", key.toUpperCase())),
         Map.entry("elementsPath", "/diagram/elements"),
@@ -108,6 +109,8 @@ public final class ModelingConfigService {
             metadata.getOrDefault(
                 "kernelNotation", metadata.getOrDefault("kernelSyntax", List.of()))),
         Map.entry("complexityManagement", metadata.getOrDefault("complexityManagement", List.of())),
+        Map.entry("canvasPolicy", metadata.getOrDefault("canvasPolicy", Map.of())),
+        Map.entry("syntaxCoverage", syntaxCoverage),
         Map.entry(
             "strictnessModes",
             metadata.getOrDefault(
@@ -138,6 +141,10 @@ public final class ModelingConfigService {
         mergeSemanticReferenceRules(
             optionalList(metadata, "semanticReferenceRules"), metamodel.semanticReferenceRules()));
     merged.put(
+        "viewDefinitions",
+        normalizeViewDefinitions(
+            requireList(metadata, "viewDefinitions", key), requireList(merged, "elements", key)));
+    merged.put(
         "relationshipKinds",
         mergeRelationshipKinds(metadata, requireList(merged, "relationshipRules", key)));
     merged.put(
@@ -148,6 +155,78 @@ public final class ModelingConfigService {
     requireList(merged, "viewDefinitions", key);
     requireMap(merged, "rootTemplate", key);
     return merged;
+  }
+
+  /**
+   * Completes each view palette from its related element types and ensures every palette type is
+   * visible in that view. Only standalone node/container concepts are draggable from the canvas
+   * palette; relationship, contained-detail, support, and abstract concepts use their dedicated
+   * syntax.
+   *
+   * @param configuredViews JSON-owned view definitions
+   * @param elements merged Ecore/UI element definitions
+   * @return normalized view definitions
+   */
+  private List<Map<String, Object>> normalizeViewDefinitions(
+      List<?> configuredViews, List<?> elements) {
+    Map<String, Map<String, Object>> elementsByType = new LinkedHashMap<>();
+    for (Object item : elements) {
+      if (item instanceof Map<?, ?> raw) {
+        Map<String, Object> element = stringKeyMap(raw);
+        elementsByType.put(String.valueOf(element.getOrDefault("type", "")), element);
+      }
+    }
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object item : configuredViews) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        throw new PlatformException(500, "Modeling viewDefinitions entries must be objects.");
+      }
+      Map<String, Object> view = stringKeyMap(raw);
+      LinkedHashSet<String> relatedTypes =
+          new LinkedHashSet<>(objectStringList(view.get("elementTypes")));
+      relatedTypes.addAll(objectStringList(view.get("palette")));
+      LinkedHashSet<String> palette = new LinkedHashSet<>();
+      for (String relatedType : relatedTypes) {
+        for (Map<String, Object> element : elementsByType.values()) {
+          if (typeMatches(relatedType, element) && standalonePaletteElement(element)) {
+            palette.add(String.valueOf(element.get("type")));
+          }
+        }
+      }
+      relatedTypes.addAll(palette);
+      view.put("elementTypes", new ArrayList<>(relatedTypes));
+      view.put("palette", new ArrayList<>(palette));
+      result.add(view);
+    }
+    return result;
+  }
+
+  /**
+   * Checks whether an element type satisfies an exact or inherited view type.
+   *
+   * @param expectedType view type selector
+   * @param element merged element definition
+   * @return whether the element belongs to the selector
+   */
+  private boolean typeMatches(String expectedType, Map<String, Object> element) {
+    return expectedType.equals(element.get("type"))
+        || objectStringList(element.get("supertypes")).contains(expectedType);
+  }
+
+  /**
+   * Checks whether an element is valid as a standalone draggable canvas item.
+   *
+   * @param element merged element definition
+   * @return whether the element belongs in a view palette
+   */
+  private boolean standalonePaletteElement(Map<String, Object> element) {
+    return Boolean.TRUE.equals(element.get("creatable"))
+        && !Boolean.TRUE.equals(element.get("abstract"))
+        && !Boolean.TRUE.equals(element.get("relationshipElement"))
+        && !Boolean.TRUE.equals(element.get("containedOnly"))
+        && !Boolean.TRUE.equals(element.get("supportOnly"))
+        && ("node".equals(element.get("visualRole"))
+            || "container".equals(element.get("visualRole")));
   }
 
   /**
@@ -337,6 +416,111 @@ public final class ModelingConfigService {
     element.putIfAbsent("relationshipElement", Boolean.FALSE);
     element.putIfAbsent("containedOnly", Boolean.FALSE);
     element.putIfAbsent("supportOnly", Boolean.FALSE);
+    element.putIfAbsent("visualRole", visualRole(element));
+  }
+
+  /**
+   * Derives the primary visual role used by generic frontend interactions.
+   *
+   * @param element merged structural and visual element metadata
+   * @return relationship, support, detail, container, or node
+   */
+  private String visualRole(Map<String, Object> element) {
+    if (Boolean.TRUE.equals(element.get("relationshipElement"))) {
+      return "relationship";
+    }
+    if (Boolean.TRUE.equals(element.get("supportOnly"))
+        || Boolean.TRUE.equals(element.get("abstract"))) {
+      return "support";
+    }
+    if (Boolean.TRUE.equals(element.get("containedOnly"))) {
+      return "detail";
+    }
+    Map<String, Object> notation = optionalMap(element, "notation");
+    String shape = String.valueOf(notation.getOrDefault("shape", ""));
+    if (shape.contains("container") || hasContainment(element)) {
+      return "container";
+    }
+    return "node";
+  }
+
+  /**
+   * Checks whether an element owns at least one mutable containment feature.
+   *
+   * @param element merged element metadata
+   * @return whether the element acts as a semantic container
+   */
+  private boolean hasContainment(Map<String, Object> element) {
+    for (Object item : optionalList(element, "references")) {
+      if (item instanceof Map<?, ?> raw
+          && Boolean.TRUE.equals(raw.get("containment"))
+          && !Boolean.TRUE.equals(raw.get("readonly"))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Builds a machine-readable coverage report for the delivered concrete syntax.
+   *
+   * @param metadata complete merged level metadata
+   * @return syntax coverage counts and uncovered view types
+   */
+  private Map<String, Object> syntaxCoverage(Map<String, Object> metadata) {
+    List<?> elements = optionalList(metadata, "elements");
+    int attributes = 0;
+    int references = 0;
+    int containments = 0;
+    int relationshipElements = 0;
+    int containers = 0;
+    LinkedHashSet<String> viewTypes = new LinkedHashSet<>();
+    for (Object item : optionalList(metadata, "viewDefinitions")) {
+      if (item instanceof Map<?, ?> raw) {
+        viewTypes.addAll(objectStringList(raw.get("elementTypes")));
+        viewTypes.addAll(objectStringList(raw.get("palette")));
+      }
+    }
+    List<String> uncoveredViewTypes = new ArrayList<>();
+    for (Object item : elements) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        continue;
+      }
+      attributes += optionalList(stringKeyMap(raw), "attributes").size();
+      List<?> elementReferences = optionalList(stringKeyMap(raw), "references");
+      references += elementReferences.size();
+      containments +=
+          (int)
+              elementReferences.stream()
+                  .filter(
+                      reference ->
+                          reference instanceof Map<?, ?> referenceMap
+                              && Boolean.TRUE.equals(referenceMap.get("containment")))
+                  .count();
+      if (Boolean.TRUE.equals(raw.get("relationshipElement"))) {
+        relationshipElements++;
+      }
+      if ("container".equals(raw.get("visualRole"))) {
+        containers++;
+      }
+      String type = String.valueOf(raw.containsKey("type") ? raw.get("type") : "");
+      if (Boolean.TRUE.equals(raw.get("creatable"))
+          && !Boolean.TRUE.equals(raw.get("containedOnly"))
+          && !Boolean.TRUE.equals(raw.get("supportOnly"))
+          && !Boolean.TRUE.equals(raw.get("relationshipElement"))
+          && !viewTypes.contains(type)) {
+        uncoveredViewTypes.add(type);
+      }
+    }
+    return Map.ofEntries(
+        Map.entry("elementCount", elements.size()),
+        Map.entry("attributeCount", attributes),
+        Map.entry("referenceCount", references),
+        Map.entry("containmentCount", containments),
+        Map.entry("relationshipElementCount", relationshipElements),
+        Map.entry("containerCount", containers),
+        Map.entry("viewCount", optionalList(metadata, "viewDefinitions").size()),
+        Map.entry("uncoveredViewTypes", uncoveredViewTypes));
   }
 
   /**

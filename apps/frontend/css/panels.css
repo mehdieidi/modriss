@@ -164,7 +164,7 @@
 
 .model-tree-relationship {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-height: 42px;
@@ -173,6 +173,10 @@
   border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
   background: color-mix(in srgb, var(--surface-3) 90%, var(--surface-high) 10%);
   color: var(--text);
+}
+
+.model-tree-relationship.is-hidden {
+  opacity: 0.48;
 }
 
 .model-tree-relationship-main {

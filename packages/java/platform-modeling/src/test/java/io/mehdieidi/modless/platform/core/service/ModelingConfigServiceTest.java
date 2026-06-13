@@ -59,6 +59,7 @@ class ModelingConfigServiceTest {
         assertFalse(String.valueOf(element.get("color")).isBlank());
         assertFalse(String.valueOf(element.get("category")).isBlank());
         assertNotNull(element.get("notation"));
+        assertNotNull(element.get("visualRole"));
       }
     }
 
@@ -66,6 +67,66 @@ class ModelingConfigServiceTest {
         element(listOfMaps(level("pim").get("elements")), "ModelElement");
     assertEquals(Boolean.TRUE, modelElement.get("supportOnly"));
     assertEquals(Boolean.FALSE, modelElement.get("creatable"));
+  }
+
+  /** Verifies that the API reports structural and view coverage for every concrete syntax. */
+  @Test
+  void exposesConcreteSyntaxCoverage() {
+    for (String key : List.of("cim", "pim", "psm")) {
+      Map<String, Object> level = level(key);
+      Map<String, Object> coverage = map(level.get("syntaxCoverage"));
+      assertEquals(listOfMaps(level.get("elements")).size(), coverage.get("elementCount"));
+      assertTrue(((Number) coverage.get("attributeCount")).intValue() > 0);
+      assertTrue(((Number) coverage.get("referenceCount")).intValue() > 0);
+      assertTrue(((Number) coverage.get("containmentCount")).intValue() > 0);
+      assertTrue(((Number) coverage.get("containerCount")).intValue() > 0);
+      List<String> uncovered = stringList(coverage.get("uncoveredViewTypes"));
+      assertTrue(uncovered.isEmpty(), key.toUpperCase() + " uncovered view types: " + uncovered);
+    }
+  }
+
+  /** Verifies that view palettes are complete, visible, and safe for standalone drag/drop. */
+  @Test
+  void exposesCompleteStandaloneViewPalettes() {
+    for (String key : List.of("cim", "pim", "psm")) {
+      Map<String, Object> level = level(key);
+      Map<String, Map<String, Object>> elementsByType =
+          listOfMaps(level.get("elements")).stream()
+              .collect(
+                  java.util.stream.Collectors.toMap(
+                      item -> String.valueOf(item.get("type")), item -> item));
+      for (Map<String, Object> view : listOfMaps(level.get("viewDefinitions"))) {
+        List<String> elementTypes = stringList(view.get("elementTypes"));
+        List<String> palette = stringList(view.get("palette"));
+        assertTrue(elementTypes.containsAll(palette), view.get("id") + " palette must be visible");
+        for (Map<String, Object> element : elementsByType.values()) {
+          String type = String.valueOf(element.get("type"));
+          boolean related =
+              elementTypes.contains(type)
+                  || stringList(element.get("supertypes")).stream()
+                      .anyMatch(elementTypes::contains);
+          boolean standalone =
+              Boolean.TRUE.equals(element.get("creatable"))
+                  && !Boolean.TRUE.equals(element.get("abstract"))
+                  && !Boolean.TRUE.equals(element.get("relationshipElement"))
+                  && !Boolean.TRUE.equals(element.get("containedOnly"))
+                  && !Boolean.TRUE.equals(element.get("supportOnly"));
+          if (related && standalone) {
+            assertTrue(
+                palette.contains(type), view.get("id") + " missing related palette type " + type);
+          }
+        }
+        for (String type : palette) {
+          Map<String, Object> element = elementsByType.get(type);
+          assertNotNull(element, view.get("id") + " unknown palette type " + type);
+          assertEquals(Boolean.TRUE, element.get("creatable"));
+          assertFalse(Boolean.TRUE.equals(element.get("abstract")));
+          assertFalse(Boolean.TRUE.equals(element.get("relationshipElement")));
+          assertFalse(Boolean.TRUE.equals(element.get("containedOnly")));
+          assertFalse(Boolean.TRUE.equals(element.get("supportOnly")));
+        }
+      }
+    }
   }
 
   /** Verifies that root templates are sourced from JSON metadata. */

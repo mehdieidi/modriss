@@ -115,6 +115,16 @@
   padding-bottom: 1px;
 }
 
+.workbench-action-group:has(.workbench-layout-select-wrap.is-open) {
+  position: relative;
+  z-index: 71;
+  overflow: visible;
+}
+
+.model-workbench-commandbar:has(.workbench-layout-select-wrap.is-open) {
+  overflow: visible;
+}
+
 .workbench-persist-group {
   flex: 0 0 auto;
   gap: 4px;

@@ -44,6 +44,8 @@ function emptyLevel(displayName) {
     kernelSyntax: [],
     kernelNotation: [],
     complexityManagement: [],
+    canvasPolicy: {},
+    syntaxCoverage: {},
     strictnessModes: ["exploration", "methodology", "production"],
     constraints: [],
     rootTemplate: {
@@ -127,6 +129,14 @@ function ensureConfigShape(raw) {
       complexityManagement: Array.isArray(incoming.complexityManagement)
         ? incoming.complexityManagement
         : [],
+      canvasPolicy:
+        incoming.canvasPolicy && typeof incoming.canvasPolicy === "object"
+          ? incoming.canvasPolicy
+          : {},
+      syntaxCoverage:
+        incoming.syntaxCoverage && typeof incoming.syntaxCoverage === "object"
+          ? incoming.syntaxCoverage
+          : {},
       strictnessModes: Array.isArray(incoming.strictnessModes)
         ? incoming.strictnessModes
         : ["exploration", "methodology", "production"],
@@ -188,7 +198,16 @@ export function modelingLevelConfig(typeKey = state.activeType) {
 
 export function modelingPalette(typeKey = state.activeType) {
   return (modelingLevelConfig(typeKey).elements || [])
-    .map((entry) => (entry?.creatable === false ? "" : String(entry.type || "").trim()))
+    .map((entry) =>
+      entry?.creatable === true &&
+      !entry?.abstract &&
+      !entry?.relationshipElement &&
+      !entry?.containedOnly &&
+      !entry?.supportOnly &&
+      ["node", "container"].includes(String(entry?.visualRole || "node"))
+        ? String(entry.type || "").trim()
+        : "",
+    )
     .filter(Boolean);
 }
 

@@ -7,24 +7,6 @@ import {
 } from "./graph-store.js";
 import { modelingElementDefinition } from "./modeling-config-data.js";
 
-const CONTAINER_TYPES = {
-  cim: new Set([
-    "BoundedContextCandidate",
-    "BusinessCapability",
-    "BusinessProcess",
-    "AggregateCandidate",
-  ]),
-  pim: new Set(["ServerlessService", "DeploymentUnit", "Workflow", "Api", "EventChannel"]),
-  psm: new Set([
-    "SamStack",
-    "AwsStage",
-    "ApiGatewayApi",
-    "EventBridgeBus",
-    "StepFunctionStateMachine",
-    "IamRole",
-  ]),
-};
-
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -70,6 +52,7 @@ function pruneIsolatedGeneratedNodes(graph, view, elementIds, relationshipIds) {
     return elementIds;
   }
   const connected = new Set();
+  const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
   relationshipIds.forEach((relationshipId) => {
     const relationship = graph.relationshipsById.get(relationshipId);
     if (!relationship) {
@@ -78,14 +61,11 @@ function pruneIsolatedGeneratedNodes(graph, view, elementIds, relationshipIds) {
     connected.add(relationship.sourceElementId);
     connected.add(relationship.targetElementId);
   });
-  return elementIds.filter((elementId) => connected.has(elementId));
+  return elementIds.filter((elementId) => connected.has(elementId) || pinned.has(elementId));
 }
 
 export function isContainerElement(elementOrType, typeKey = state.activeType) {
   const type = typeof elementOrType === "string" ? elementOrType : elementType(elementOrType);
-  if (CONTAINER_TYPES[typeKey]?.has(type)) {
-    return true;
-  }
   try {
     const definition = modelingElementDefinition(typeKey, type);
     if (
@@ -96,8 +76,11 @@ export function isContainerElement(elementOrType, typeKey = state.activeType) {
     ) {
       return false;
     }
-    return safeArray(definition.references).some(
-      (reference) => reference?.containment === true && reference?.many !== false,
+    return (
+      definition.visualRole === "container" ||
+      safeArray(definition.references).some(
+        (reference) => reference?.containment === true && reference?.many !== false,
+      )
     );
   } catch {
     return false;

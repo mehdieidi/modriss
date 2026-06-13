@@ -3394,22 +3394,8 @@ function activeViewElementTypeFilter() {
   return new Set((activeView()?.filters?.elementTypes || []).map(String));
 }
 
-function isActionableScopedPaletteType(typeKey, type, creatableTypes) {
-  if (creatableTypes.has(type)) {
-    return true;
-  }
-  let definition = null;
-  try {
-    definition = modelingElementDefinition(typeKey, type);
-  } catch {
-    definition = null;
-  }
-  if (!definition) {
-    return false;
-  }
-  return (
-    Boolean(definition.containedOnly) && !definition.relationshipElement && !definition.abstract
-  );
+function isActionableScopedPaletteType(type, creatableTypes) {
+  return creatableTypes.has(type);
 }
 
 function filterScopedPaletteTypes(typeKey, scopedTypes, allTypes) {
@@ -3424,7 +3410,7 @@ function filterScopedPaletteTypes(typeKey, scopedTypes, allTypes) {
     result.push(type);
   };
   scopedTypes.forEach((type) => {
-    if (isActionableScopedPaletteType(typeKey, type, creatableTypes)) {
+    if (isActionableScopedPaletteType(type, creatableTypes)) {
       add(type);
       return;
     }
@@ -3456,12 +3442,10 @@ function availableCimPaletteTypes(allTypes) {
   } catch {
     viewDefinition = null;
   }
-  const scoped =
-    Array.isArray(viewDefinition?.palette) && viewDefinition.palette.length
-      ? viewDefinition.palette
-      : Array.isArray(viewDefinition?.elementTypes)
-        ? viewDefinition.elementTypes
-        : [];
+  const scoped = [
+    ...(Array.isArray(viewDefinition?.palette) ? viewDefinition.palette : []),
+    ...(Array.isArray(viewDefinition?.elementTypes) ? viewDefinition.elementTypes : []),
+  ];
   return filterScopedPaletteTypes("cim", scoped, allTypes);
 }
 
@@ -3480,10 +3464,12 @@ function availablePimPaletteTypes(allTypes) {
   } catch {
     viewDefinition = null;
   }
-  const scoped =
-    Array.isArray(viewDefinition?.palette) && viewDefinition.palette.length
-      ? viewDefinition.palette
-      : [...activeViewElementTypeFilter()];
+  const scoped = viewDefinition
+    ? [
+        ...(Array.isArray(viewDefinition.palette) ? viewDefinition.palette : []),
+        ...(Array.isArray(viewDefinition.elementTypes) ? viewDefinition.elementTypes : []),
+      ]
+    : [...activeViewElementTypeFilter()];
   const filtered = filterScopedPaletteTypes("pim", scoped, allTypes);
   return viewDefinition || scoped.length ? filtered : allTypes;
 }
@@ -3503,10 +3489,12 @@ function availablePsmPaletteTypes(allTypes) {
   } catch {
     viewDefinition = null;
   }
-  const scoped =
-    Array.isArray(viewDefinition?.palette) && viewDefinition.palette.length
-      ? viewDefinition.palette
-      : [...activeViewElementTypeFilter()];
+  const scoped = viewDefinition
+    ? [
+        ...(Array.isArray(viewDefinition.palette) ? viewDefinition.palette : []),
+        ...(Array.isArray(viewDefinition.elementTypes) ? viewDefinition.elementTypes : []),
+      ]
+    : [...activeViewElementTypeFilter()];
   const filtered = filterScopedPaletteTypes("psm", scoped, allTypes);
   return viewDefinition || scoped.length ? filtered : allTypes;
 }
@@ -3551,7 +3539,7 @@ function renderWizardActions() {
 function isPaletteGroupCollapsed(groupName) {
   const levelState = state.paletteGroupCollapsed?.[state.activeType] || {};
   if (!Object.prototype.hasOwnProperty.call(levelState, groupName)) {
-    return true;
+    return false;
   }
   return Boolean(levelState[groupName]);
 }
@@ -3616,6 +3604,16 @@ function createBoundedContextActionControls() {
   return [row];
 }
 
+function appendPaletteGuidance() {
+  const guide = document.createElement("div");
+  guide.className = "palette-guidance";
+  guide.innerHTML = `
+    <strong>Build this view</strong>
+    <span>Drag standalone concepts. Open containers to work inside them. Add contained details in
+    the inspector, and create relationships from node connection handles.</span>`;
+  el.palette.appendChild(guide);
+}
+
 export function renderPalette() {
   const config = MODEL_TYPES[state.activeType];
   if (!config || !el.palette) {
@@ -3659,6 +3657,9 @@ export function renderPalette() {
   syncPaletteCollapsedUi();
   el.palette.innerHTML = "";
   el.palette.dataset.activeType = state.activeType;
+  if (isModelingType) {
+    appendPaletteGuidance();
+  }
   const hasQuickActionsGroup = renderWizardActions();
   const namedGroups = groupedTypes.map(([groupName]) => groupName).filter(Boolean);
   if (hasQuickActionsGroup) {
@@ -3745,11 +3746,32 @@ export function renderPalette() {
       labelSpan.textContent = label;
       item.appendChild(iconImg);
       item.appendChild(labelSpan);
-      item.title = description;
+      const visualRole = String(definition?.visualRole || "node");
+      if (visualRole === "container") {
+        const roleBadge = document.createElement("span");
+        roleBadge.className = "palette-item-role";
+        roleBadge.textContent = "Open";
+        item.appendChild(roleBadge);
+      }
+      item.title =
+        visualRole === "container"
+          ? `${description}\nDrag to create; open it to model contained concepts.`
+          : `${description}\nDrag to create.`;
       item.addEventListener("dragstart", (event) => {
         el.workspace?.classList.remove("mobile-left-open");
         el.mobileBackdrop?.classList.add("hidden");
+        state.paletteDragType = type;
+        event.dataTransfer.effectAllowed = "copy";
+        event.dataTransfer.setData(
+          "application/x-modless-palette-item",
+          JSON.stringify({ level: state.activeType, type }),
+        );
+        event.dataTransfer.setData("application/x-modless-node-type", type);
         event.dataTransfer.setData("text/node-type", type);
+        event.dataTransfer.setData("text/plain", type);
+      });
+      item.addEventListener("dragend", () => {
+        state.paletteDragType = "";
       });
       items.appendChild(item);
     });
@@ -4169,7 +4191,18 @@ function groupPaletteTypes(types) {
     }
     buckets.get(groupName).push(type);
   });
-  return [...buckets.entries()];
+  return [...buckets.entries()]
+    .sort(([left], [right]) => String(left).localeCompare(String(right)))
+    .map(([groupName, members]) => [
+      groupName,
+      [...members].sort((left, right) => {
+        const leftDefinition = modelingElementDefinition(state.activeType, left);
+        const rightDefinition = modelingElementDefinition(state.activeType, right);
+        return String(leftDefinition?.displayName || left).localeCompare(
+          String(rightDefinition?.displayName || right),
+        );
+      }),
+    ]);
 }
 
 // ── Node rendering ────────────────────────────────────────────────────────────
@@ -4766,11 +4799,33 @@ export function closeBoundedContextSpecialView() {
 export function setupDnD() {
   ensureG6Canvas();
   renderG6Diagram();
-  el.canvasViewport.addEventListener("dragover", (e) => e.preventDefault());
+  el.canvasViewport.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  });
   el.canvasViewport.addEventListener("drop", async (e) => {
     e.preventDefault();
-    const type = e.dataTransfer.getData("text/node-type");
-    if (!type) {
+    let paletteItem = null;
+    try {
+      paletteItem = JSON.parse(e.dataTransfer.getData("application/x-modless-palette-item"));
+    } catch {
+      paletteItem = null;
+    }
+    const type = String(
+      paletteItem?.type ||
+        e.dataTransfer.getData("application/x-modless-node-type") ||
+        e.dataTransfer.getData("text/node-type") ||
+        state.paletteDragType ||
+        "",
+    ).trim();
+    state.paletteDragType = "";
+    const allowedTypes = new Set(modelingPalette(state.activeType));
+    if (
+      !type ||
+      (paletteItem?.level && paletteItem.level !== state.activeType) ||
+      !allowedTypes.has(type)
+    ) {
+      setStatus(type ? `${type} is not a standalone palette element` : "Invalid palette drop");
       return;
     }
     pushDiagramUndoSnapshot();
@@ -4780,7 +4835,6 @@ export function setupDnD() {
     const node = getDefaultNode(state.activeType, type, Math.round(pos.x), Math.round(pos.y));
     state.diagram.nodes.push(node);
     addNodeToGraphAndActiveView(node);
-    createRequiredCimCompanions(node);
     materializeActiveView();
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].diagram = state.diagram;
@@ -4799,7 +4853,8 @@ export function setupDnD() {
     updateG6Selection();
     updateG6ContextBoxes();
     workbenchSurfaces();
-    setStatus(`Added ${type}`);
+    const created = state.graph.elementsById.get(node.id);
+    setStatus(`Added ${created?.eClass || type}`);
     markModelDirty();
   });
 }

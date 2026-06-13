@@ -55,42 +55,6 @@ const MAIN_SURFACE_ROOT_TYPES = {
   psm: new Set(["AwsPsmModel", "PsmModel"]),
 };
 
-const CONTAINER_TYPES = {
-  cim: new Set([
-    "BoundedContextCandidate",
-    "BusinessCapability",
-    "BusinessProcess",
-    "AggregateCandidate",
-  ]),
-  pim: new Set(["ServerlessService", "DeploymentUnit", "Workflow", "Api", "EventChannel"]),
-  psm: new Set([
-    "SamStack",
-    "AwsStage",
-    "ApiGatewayApi",
-    "EventBridgeBus",
-    "StepFunctionStateMachine",
-    "IamRole",
-  ]),
-};
-
-const FRAGMENT_KIND_BY_TYPE = {
-  BoundedContextCandidate: "BOUNDED_CONTEXT",
-  BusinessCapability: "CAPABILITY",
-  BusinessProcess: "BUSINESS_PROCESS",
-  AggregateCandidate: "AGGREGATE",
-  ServerlessService: "SERVERLESS_SERVICE",
-  DeploymentUnit: "DEPLOYMENT_UNIT",
-  Workflow: "WORKFLOW",
-  Api: "API_SURFACE",
-  EventChannel: "EVENT_FLOW",
-  SamStack: "SAM_STACK",
-  AwsStage: "AWS_STAGE",
-  ApiGatewayApi: "API_SURFACE",
-  EventBridgeBus: "EVENT_FLOW",
-  StepFunctionStateMachine: "WORKFLOW",
-  IamRole: "IAM_SLICE",
-};
-
 const CONTAINMENT_KINDS = new Set(["CONTAINS", "OWNS", "DEPLOYS"]);
 
 function clone(value) {
@@ -898,6 +862,7 @@ function neighborhoodElementIds(graph, rootElementId, depth) {
 
 export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
+  const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
   const filterTypes = new Set(safeArray(view?.filters?.elementTypes));
   const metadataBacked = Boolean(matchingViewDefinition(typeKey, view));
   let candidates;
@@ -928,6 +893,11 @@ export function selectElementIdsForView(graph, view, typeKey) {
   } else {
     candidates = new Set(graph.elementsById.keys());
   }
+  pinned.forEach((elementId) => {
+    if (graph.elementsById.has(elementId)) {
+      candidates.add(elementId);
+    }
+  });
   const selected = [];
   candidates.forEach((elementId) => {
     const element = graph.elementsById.get(elementId);
@@ -935,6 +905,10 @@ export function selectElementIdsForView(graph, view, typeKey) {
       return;
     }
     if (hasExplicitNodes) {
+      selected.push(elementId);
+      return;
+    }
+    if (pinned.has(elementId)) {
       selected.push(elementId);
       return;
     }
@@ -1096,7 +1070,11 @@ function buildViewFromDefinition(typeKey, graph, definition, scopeElement = null
   const scope = scopeElement
     ? {
         rootElementId: scopeElement.id,
-        scopeKind: FRAGMENT_KIND_BY_TYPE[semanticType(scopeElement)] || "ELEMENT",
+        scopeKind:
+          modelingElementDefinition(typeKey, semanticType(scopeElement))?.notation?.fragmentKind ||
+          semanticType(scopeElement)
+            .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
+            .toUpperCase(),
         depth: definition.defaultDepth ?? 2,
       }
     : {
@@ -1121,6 +1099,7 @@ function buildViewFromDefinition(typeKey, graph, definition, scopeElement = null
     viewpoint: String(definition.viewpoint || ""),
     description: String(definition.description || ""),
     palette: safeArray(definition.palette),
+    pinnedElementIds: [],
     edgeLayers: safeArray(definition.edgeLayers),
     layoutProfile: definition.layoutProfile || definition.layoutHint || "DEFAULT_LAYERED",
     defaultDepth: definition.defaultDepth ?? 1,
@@ -1184,6 +1163,7 @@ function defaultMainView(typeKey, graph, modelName) {
       visible: true,
     })),
     hidden: { elementIds: [], relationshipIds: [] },
+    pinnedElementIds: [],
   };
 }
 
@@ -1236,6 +1216,7 @@ function normalizeView(view, graph, typeKey, modelName) {
           }
         : null,
     palette: safeArray(view?.palette).map(String),
+    pinnedElementIds: safeArray(view?.pinnedElementIds).map(String),
     edgeLayers: safeArray(view?.edgeLayers).map(String),
     layoutProfile: String(view?.layoutProfile || "DEFAULT_LAYERED"),
     defaultDepth: view?.defaultDepth,
@@ -1267,6 +1248,9 @@ function normalizeView(view, graph, typeKey, modelName) {
     String,
   );
   const definition = matchingViewDefinition(typeKey, normalized);
+  normalized.pinnedElementIds = normalized.pinnedElementIds.filter((elementId) =>
+    graph.elementsById.has(elementId),
+  );
   if (definition) {
     if (!normalized.definitionId) {
       normalized.definitionId = String(definition.id || "");
@@ -1274,12 +1258,19 @@ function normalizeView(view, graph, typeKey, modelName) {
     if (!normalized.viewpoint) {
       normalized.viewpoint = String(definition.viewpoint || "");
     }
-    if (!normalized.filters.elementTypes.length) {
-      normalized.filters.elementTypes = safeArray(definition.elementTypes).map(String);
-    }
-    if (!normalized.filters.relationshipKinds.length) {
-      normalized.filters.relationshipKinds = safeArray(definition.relationshipKinds).map(String);
-    }
+    normalized.filters.elementTypes = [
+      ...new Set([
+        ...normalized.filters.elementTypes,
+        ...safeArray(definition.elementTypes).map(String),
+        ...safeArray(definition.palette).map(String),
+      ]),
+    ];
+    normalized.filters.relationshipKinds = [
+      ...new Set([
+        ...normalized.filters.relationshipKinds,
+        ...safeArray(definition.relationshipKinds).map(String),
+      ]),
+    ];
     if (!view?.layoutProfile && (definition.layoutProfile || definition.layoutHint)) {
       normalized.layoutProfile = String(definition.layoutProfile || definition.layoutHint);
     }
@@ -1366,7 +1357,6 @@ function relationshipIdsTouching(graph, elementIds) {
 }
 
 function deriveFragments(typeKey, graph, views) {
-  const containerTypes = CONTAINER_TYPES[typeKey] || new Set();
   const viewsByScope = new Map();
   safeArray(views).forEach((view) => {
     const rootElementId = String(view?.scope?.rootElementId || "");
@@ -1377,7 +1367,8 @@ function deriveFragments(typeKey, graph, views) {
   const fragments = [];
   graph.elementsById.forEach((element) => {
     const elementType = semanticType(element);
-    if (!containerTypes.has(elementType)) {
+    const definition = modelingElementDefinition(typeKey, elementType);
+    if (definition?.visualRole !== "container") {
       return;
     }
     const elementIds = [...recursivelyCollectChildren(graph, element.id)];
@@ -1386,7 +1377,9 @@ function deriveFragments(typeKey, graph, views) {
       id: `fragment-${sanitizeIdPart(element.id)}`,
       name: semanticLabel(element),
       level: MODEL_LEVEL[typeKey],
-      fragmentKind: FRAGMENT_KIND_BY_TYPE[elementType] || "ELEMENT",
+      fragmentKind:
+        definition?.notation?.fragmentKind ||
+        elementType.replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2").toUpperCase(),
       ownerElementId: element.id,
       elementIds,
       relationshipIds,
@@ -1901,6 +1894,11 @@ export function addNodeToGraphAndActiveView(node) {
   if (view && !safeArray(view.nodes).some((entry) => entry.elementId === node.id)) {
     view.nodes.push({ elementId: node.id, x: node.x, y: node.y });
   }
+  if (view) {
+    view.pinnedElementIds = [...new Set([...safeArray(view.pinnedElementIds), node.id])];
+    view.hidden ??= { elementIds: [], relationshipIds: [] };
+    view.hidden.elementIds = safeArray(view.hidden.elementIds).filter((id) => id !== node.id);
+  }
 }
 
 export function removeElementFromGraph(elementId) {
@@ -1926,6 +1924,7 @@ export function removeElementFromGraph(elementId) {
     view.hidden.relationshipIds = safeArray(view.hidden.relationshipIds).filter(
       (item) => !relationshipIds.includes(item),
     );
+    view.pinnedElementIds = safeArray(view.pinnedElementIds).filter((item) => item !== id);
   });
   rebuildGraphIndexes(state.graph);
 }

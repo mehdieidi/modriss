@@ -215,10 +215,41 @@
         "icon": "tag",
         "color": "#475569",
         "category": "Kernel / Trace",
+        "supportOnly": true,
+        "creatable": false,
         "notation": {
           "tag": "META",
           "shape": "metadata-chip",
           "lineFields": ["linkType", "reviewStatus", "sourceReference"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceModel"]
+      },
+      "metadata": {
+        "supportOnly": false,
+        "creatable": true,
+        "notation": {
+          "tag": "TRACE",
+          "shape": "trace-container",
+          "lineFields": ["name", "description"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceLink"]
+      },
+      "metadata": {
+        "supportOnly": false,
+        "creatable": false,
+        "relationshipElement": true,
+        "notation": {
+          "tag": "TRACE",
+          "shape": "relationship-edge",
+          "lineFields": ["linkType", "confidence", "rationale"]
         }
       }
     },
@@ -369,6 +400,15 @@
       "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
     }
   ],
+  "canvasPolicy": {
+    "lowDetailBelow": 0.32,
+    "highDetailAtOrAbove": 1.55,
+    "edgeLabelsAtOrAbove": 0.85,
+    "denseEdgeThreshold": 1200,
+    "denseEdgeLabelsAtOrAbove": 1.45,
+    "veryDenseEdgeThreshold": 2500,
+    "veryDenseEdgeLabelsAtOrAbove": 1.8
+  },
   "relationshipKinds": [
     "CONTAINS",
     "DEPENDS_ON",
@@ -1163,6 +1203,7 @@
       "viewType": "TRACEABILITY_READINESS",
       "viewpoint": "readiness",
       "elementTypes": [
+        "TraceModel",
         "TraceLink",
         "ProductionReadinessAssessment",
         "ReadinessFinding",
@@ -1175,7 +1216,7 @@
         "S3Bucket",
         "IamRole"
       ],
-      "palette": ["ProductionReadinessAssessment", "StructuredDocument"],
+      "palette": ["TraceModel", "ProductionReadinessAssessment", "StructuredDocument"],
       "relationshipKinds": ["TRACE", "CONSTRAINS", "ATTACHED_TO"],
       "layoutHint": "MATRIX"
     },
@@ -1919,6 +1960,7 @@
     },
     {
       "type": "IamInlinePolicy",
+      "containedOnly": true,
       "label": "Iam Inline Policy",
       "displayName": "Iam Inline Policy",
       "category": "Security, IAM, and Secrets View",
@@ -1945,6 +1987,7 @@
     },
     {
       "type": "IamPolicyDocument",
+      "containedOnly": true,
       "label": "Iam Policy Document",
       "displayName": "Iam Policy Document",
       "category": "Security, IAM, and Secrets View",
@@ -1958,6 +2001,7 @@
     },
     {
       "type": "IamPrincipal",
+      "containedOnly": true,
       "label": "Iam Principal",
       "displayName": "Iam Principal",
       "category": "Security, IAM, and Secrets View",
@@ -1971,6 +2015,7 @@
     },
     {
       "type": "IamCondition",
+      "containedOnly": true,
       "label": "Iam Condition",
       "displayName": "Iam Condition",
       "category": "Security, IAM, and Secrets View",
@@ -1997,6 +2042,7 @@
     },
     {
       "type": "GenerateSecretStringConfig",
+      "containedOnly": true,
       "label": "Generate Secret String Config",
       "displayName": "Generate Secret String Config",
       "category": "Security, IAM, and Secrets View",
@@ -2010,6 +2056,7 @@
     },
     {
       "type": "SecretRotationRules",
+      "containedOnly": true,
       "label": "Secret Rotation Rules",
       "displayName": "Secret Rotation Rules",
       "category": "Security, IAM, and Secrets View",
@@ -2049,6 +2096,7 @@
     },
     {
       "type": "SsmParameterValueExpression",
+      "containedOnly": true,
       "label": "Ssm Parameter Value Expression",
       "displayName": "Ssm Parameter Value Expression",
       "category": "Security, IAM, and Secrets View",
@@ -2062,6 +2110,7 @@
     },
     {
       "type": "SecretValueExpression",
+      "containedOnly": true,
       "label": "Secret Value Expression",
       "displayName": "Secret Value Expression",
       "category": "Security, IAM, and Secrets View",
@@ -2088,6 +2137,7 @@
     },
     {
       "type": "CloudWatchMetricTransformation",
+      "containedOnly": true,
       "label": "Cloud Watch Metric Transformation",
       "displayName": "Cloud Watch Metric Transformation",
       "category": "Observability and Networking View",
@@ -2300,6 +2350,7 @@
     },
     {
       "type": "SnsFilterRule",
+      "containedOnly": true,
       "label": "Sns Filter Rule",
       "displayName": "Sns Filter Rule",
       "category": "EventBridge and Messaging View",

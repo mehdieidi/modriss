@@ -199,10 +199,41 @@
         "icon": "tag",
         "color": "#475569",
         "category": "Kernel / Trace",
+        "supportOnly": true,
+        "creatable": false,
         "notation": {
           "tag": "META",
           "shape": "metadata-chip",
           "lineFields": ["linkType", "reviewStatus", "sourceReference"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceModel"]
+      },
+      "metadata": {
+        "supportOnly": false,
+        "creatable": true,
+        "notation": {
+          "tag": "TRACE",
+          "shape": "trace-container",
+          "lineFields": ["name", "description"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceLink"]
+      },
+      "metadata": {
+        "supportOnly": false,
+        "creatable": false,
+        "relationshipElement": true,
+        "notation": {
+          "tag": "TRACE",
+          "shape": "relationship-edge",
+          "lineFields": ["linkType", "confidence", "rationale"]
         }
       }
     },
@@ -348,6 +379,15 @@
       "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
     }
   ],
+  "canvasPolicy": {
+    "lowDetailBelow": 0.36,
+    "highDetailAtOrAbove": 1.45,
+    "edgeLabelsAtOrAbove": 0.8,
+    "denseEdgeThreshold": 1000,
+    "denseEdgeLabelsAtOrAbove": 1.35,
+    "veryDenseEdgeThreshold": 2200,
+    "veryDenseEdgeLabelsAtOrAbove": 1.7
+  },
   "relationshipKinds": [
     "CONTAINS",
     "OWNS",
@@ -927,9 +967,18 @@
         "Workflow",
         "DataStore",
         "Queue",
-        "ArchitecturePolicy"
+        "ArchitecturePolicy",
+        "ImplementationProfile",
+        "PlatformCapability",
+        "PlatformMappingAssessment"
       ],
-      "palette": ["TraceModel", "ProductionReadinessAssessment"],
+      "palette": [
+        "TraceModel",
+        "ProductionReadinessAssessment",
+        "ImplementationProfile",
+        "PlatformCapability",
+        "PlatformMappingAssessment"
+      ],
       "relationshipKinds": ["TRACE", "ATTACHED_TO", "CONSTRAINS"],
       "layoutHint": "MATRIX"
     }
@@ -1580,6 +1629,7 @@
     },
     {
       "type": "EventEnvelope",
+      "containedOnly": true,
       "label": "Event Envelope",
       "displayName": "Event Envelope",
       "category": "Event and Flow View",

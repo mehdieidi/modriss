@@ -213,6 +213,13 @@ function renderPlaceholderIcon(shape, container, { left, top, low = false } = {}
   shape.upsert("iconMark", "path", false, container);
 }
 
+function clearPlaceholderIcon(shape, container) {
+  shape.upsert("placeholderIcon", "image", false, container);
+  shape.upsert("iconTile", "rect", false, container);
+  shape.upsert("iconSky", "circle", false, container);
+  shape.upsert("iconMark", "path", false, container);
+}
+
 function renderOpenControl(
   shape,
   container,
@@ -350,6 +357,81 @@ function states(attributes) {
   return new Set(Array.isArray(attributes?.states) ? attributes.states : []);
 }
 
+function notationGlyphPath(shape, left, top, width, height) {
+  const name = String(shape || "").toLowerCase();
+  const right = left + width;
+  const bottom = top + height;
+  const midX = left + width / 2;
+  const midY = top + height / 2;
+  const close = (points) => [
+    ["M", points[0][0], points[0][1]],
+    ...points.slice(1).map(([x, y]) => ["L", x, y]),
+    ["Z"],
+  ];
+  if (name.includes("diamond")) {
+    return close([
+      [midX, top],
+      [right, midY],
+      [midX, bottom],
+      [left, midY],
+    ]);
+  }
+  if (name.includes("hexagon") || name.includes("event")) {
+    const inset = width * 0.24;
+    return close([
+      [left + inset, top],
+      [right - inset, top],
+      [right, midY],
+      [right - inset, bottom],
+      [left + inset, bottom],
+      [left, midY],
+    ]);
+  }
+  if (name.includes("octagon") || name.includes("error")) {
+    const insetX = width * 0.2;
+    const insetY = height * 0.2;
+    return close([
+      [left + insetX, top],
+      [right - insetX, top],
+      [right, top + insetY],
+      [right, bottom - insetY],
+      [right - insetX, bottom],
+      [left + insetX, bottom],
+      [left, bottom - insetY],
+      [left, top + insetY],
+    ]);
+  }
+  if (name.includes("lozenge") || name.includes("command")) {
+    const inset = width * 0.18;
+    return close([
+      [left + inset, top],
+      [right - inset, top],
+      [right, midY],
+      [right - inset, bottom],
+      [left + inset, bottom],
+      [left, midY],
+    ]);
+  }
+  if (name.includes("trapezoid") || name.includes("query")) {
+    const inset = width * 0.18;
+    return close([
+      [left + inset, top],
+      [right, top],
+      [right - inset, bottom],
+      [left, bottom],
+    ]);
+  }
+  if (name.includes("circle") || name.includes("state-node") || name.includes("timer")) {
+    return [
+      ["M", midX, top],
+      ["A", width / 2, height / 2, 0, 1, 1, midX, bottom],
+      ["A", width / 2, height / 2, 0, 1, 1, midX, top],
+      ["Z"],
+    ];
+  }
+  return null;
+}
+
 function registerModlessG6Extensions() {
   if (extensionsRegistered) {
     return;
@@ -398,6 +480,9 @@ function registerModlessG6Extensions() {
       const badges = Array.isArray(attributes.badges) ? attributes.badges.slice(0, 4) : [];
       const headerHeight = low ? 0 : 32;
       const tagStripHeight = low ? 0 : 24;
+      const notationGlyph = low
+        ? null
+        : notationGlyphPath(attributes.notationShape, left + 10, top + 7, 20, 18);
 
       if (diagramType === "cim") {
         const fill = attributes.sticky || "#fde68a";
@@ -462,17 +547,34 @@ function registerModlessG6Extensions() {
               },
           container,
         );
-        this.upsert("semanticShape", "path", false, container);
+        this.upsert(
+          "semanticShape",
+          "path",
+          notationGlyph
+            ? {
+                d: notationGlyph,
+                fill: "rgba(255,255,255,0.2)",
+                stroke: accent,
+                lineWidth: 1.6,
+                pointerEvents: "none",
+              }
+            : false,
+          container,
+        );
         this.upsert("corner", "path", false, container);
         this.upsert("icon", "rect", false, container);
         this.upsert("dot", "circle", false, container);
-        renderPlaceholderIcon(this, container, {
-          left,
-          top,
-          accent,
-          diagramType,
-          low,
-        });
+        if (notationGlyph) {
+          clearPlaceholderIcon(this, container);
+        } else {
+          renderPlaceholderIcon(this, container, {
+            left,
+            top,
+            accent,
+            diagramType,
+            low,
+          });
+        }
         this.upsert(
           "type",
           "text",
@@ -625,13 +727,17 @@ function registerModlessG6Extensions() {
           container,
         );
         this.upsert("icon", "rect", false, container);
-        renderPlaceholderIcon(this, container, {
-          left,
-          top,
-          accent,
-          diagramType,
-          low,
-        });
+        if (notationGlyph) {
+          clearPlaceholderIcon(this, container);
+        } else {
+          renderPlaceholderIcon(this, container, {
+            left,
+            top,
+            accent,
+            diagramType,
+            low,
+          });
+        }
         this.upsert(
           "type",
           "text",
@@ -656,7 +762,20 @@ function registerModlessG6Extensions() {
           container,
         );
         this.upsert("dot", "circle", false, container);
-        this.upsert("semanticShape", "path", false, container);
+        this.upsert(
+          "semanticShape",
+          "path",
+          notationGlyph
+            ? {
+                d: notationGlyph,
+                fill: "rgba(255,255,255,0.04)",
+                stroke: accent,
+                lineWidth: 1.6,
+                pointerEvents: "none",
+              }
+            : false,
+          container,
+        );
         const labelText = lineBreak(attributes.labelText || "", low ? 28 : 30, low ? 1 : 2);
         const labelLineHeight = low ? 12.5 : 14;
         const labelY = top + (low ? 18 : 42);

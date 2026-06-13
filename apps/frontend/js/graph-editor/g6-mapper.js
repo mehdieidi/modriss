@@ -238,7 +238,7 @@ export function mapNodeToG6(
   const definition = cachedElementDefinition(typeKey, node.type);
   const notation = notationFromDefinition(typeKey, node, definition);
   const accent = nodeAccent(node, definition);
-  const sticky = typeKey === "cim" ? stickyColor(node, notation) : "";
+  const sticky = typeKey === "cim" ? stickyColor(node, definition) : "";
   const kindText = humanizeType(node.type);
   const detailText = nodeDetailLine(node, notation, definition);
   const token = nodeToken(typeKey, node, notation);
@@ -255,6 +255,7 @@ export function mapNodeToG6(
       meta: node.meta || {},
       diagramType: typeKey,
       notation: notation?.tag || "",
+      notationShape: definition?.notation?.shape || "concept-card",
       kindText,
       detailText,
       tokenText: token,
@@ -288,6 +289,7 @@ export function mapNodeToG6(
       fullTypeText: node.type,
       notationText: detailText,
       notation: notation?.tag || "",
+      notationShape: definition?.notation?.shape || "concept-card",
       badges,
       showHandles: Boolean(node.showHandles),
       accent,
