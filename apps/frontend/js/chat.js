@@ -192,13 +192,6 @@ function appendChat(role, text) {
   msg.dataset.chatKind = "message";
   msg.dataset.chatText = text;
 
-  const avatar = document.createElement("div");
-  avatar.className = "chat-msg-avatar";
-  avatar.innerHTML =
-    role === "user"
-      ? '<span aria-hidden="true" class="chat-msg-avatar-icon icon-svg icon-mask" style="--icon-src: url(\'/assets/icons/placeholder.svg\');"></span>'
-      : '<span aria-hidden="true" class="chat-msg-avatar-icon icon-svg icon-mask" style="--icon-src: url(\'/assets/icons/placeholder.svg\');"></span>';
-
   const bubble = document.createElement("div");
   bubble.className = "chat-msg-bubble";
   if (role === "assistant") {
@@ -207,7 +200,6 @@ function appendChat(role, text) {
     bubble.textContent = text;
   }
 
-  msg.appendChild(avatar);
   msg.appendChild(bubble);
   el.chatMessages.appendChild(msg);
   el.chatMessages.scrollTop = el.chatMessages.scrollHeight;

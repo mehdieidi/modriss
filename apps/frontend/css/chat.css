@@ -232,44 +232,8 @@
   display: block;
 }
 
-.chat-msg-avatar {
-  width: 28px;
-  height: 28px;
-  margin-top: 2px;
-  border-radius: 8px;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  line-height: 1;
-}
-
-.chat-msg-avatar-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-}
-
-.chat-msg.user .chat-msg-avatar {
-  color: var(--chat-user-text);
-  background: color-mix(in srgb, var(--chat-user-bg) 88%, #fff 12%);
-}
-
-.chat-msg.assistant .chat-msg-avatar {
-  color: var(--accent-light);
-  border: 1px solid color-mix(in srgb, var(--accent) 54%, transparent);
-  background: color-mix(in srgb, var(--accent-glow) 66%, transparent);
-}
-
-.chat-msg.assistant[data-chat-kind="message"] .chat-msg-avatar {
-  float: left;
-  margin: 0 10px 4px 0;
-}
-
 .chat-msg-bubble {
-  max-width: calc(100% - 44px);
+  max-width: 100%;
   padding: 9px 12px;
   border-radius: 11px;
   font-size: 12px;
