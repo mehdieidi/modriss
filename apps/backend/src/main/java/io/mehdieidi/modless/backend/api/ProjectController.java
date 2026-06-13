@@ -24,183 +24,186 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Provides authenticated project lifecycle and membership endpoints.
- */
+/** Provides authenticated project lifecycle and membership endpoints. */
 @RestController
 @RequestMapping("/api/projects")
 public class ProjectController {
 
-    private final ProjectService projects;
-    private final AuthSupport auth;
+  private final ProjectService projects;
+  private final AuthSupport auth;
 
-    /**
-     * Creates the project controller.
-     *
-     * @param projects project service
-     * @param auth     controller authentication support
-     */
-    public ProjectController(ProjectService projects, AuthSupport auth) {
-        this.projects = projects;
-        this.auth = auth;
-    }
+  /**
+   * Creates the project controller.
+   *
+   * @param projects project service
+   * @param auth controller authentication support
+   */
+  public ProjectController(ProjectService projects, AuthSupport auth) {
+    this.projects = projects;
+    this.auth = auth;
+  }
 
-    /**
-     * Lists projects accessible to the current user.
-     *
-     * @param token session token
-     * @return accessible projects
-     */
-    @GetMapping
-    List<ProjectRecord> list(@RequestHeader("X-Auth-Token") String token) {
-        return projects.list(auth.user(token));
-    }
+  /**
+   * Lists projects accessible to the current user.
+   *
+   * @param token session token
+   * @return accessible projects
+   */
+  @GetMapping
+  List<ProjectRecord> list(@RequestHeader("X-Auth-Token") String token) {
+    return projects.list(auth.user(token));
+  }
 
-    /**
-     * Creates a project owned by the current user.
-     *
-     * @param token   session token
-     * @param request project details
-     * @return created project
-     */
-    @PostMapping
-    ProjectRecord create(@RequestHeader("X-Auth-Token") String token,
-            @Valid @RequestBody SaveProjectRequest request) {
-        return projects.create(auth.user(token), request.name(), request.description());
-    }
+  /**
+   * Creates a project owned by the current user.
+   *
+   * @param token session token
+   * @param request project details
+   * @return created project
+   */
+  @PostMapping
+  ProjectRecord create(
+      @RequestHeader("X-Auth-Token") String token, @Valid @RequestBody SaveProjectRequest request) {
+    return projects.create(auth.user(token), request.name(), request.description());
+  }
 
-    /**
-     * Returns an accessible project by identifier.
-     *
-     * @param token session token
-     * @param id    project identifier
-     * @return requested project
-     */
-    @GetMapping("/{id}")
-    ProjectRecord get(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
-        return projects.get(auth.user(token), id);
-    }
+  /**
+   * Returns an accessible project by identifier.
+   *
+   * @param token session token
+   * @param id project identifier
+   * @return requested project
+   */
+  @GetMapping("/{id}")
+  ProjectRecord get(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
+    return projects.get(auth.user(token), id);
+  }
 
-    /**
-     * Downloads the complete project repository and generated artifact files as a ZIP archive.
-     *
-     * @param token session token
-     * @param id    project identifier
-     * @return ZIP download response
-     */
-    @GetMapping("/{id}/download")
-    ResponseEntity<byte[]> download(@RequestHeader("X-Auth-Token") String token,
-            @PathVariable("id") String id) {
-        UserRecord user = auth.user(token);
-        ProjectRecord project = projects.get(user, id);
-        byte[] bytes = projects.zip(user, id);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("application/zip"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
-                        .filename(downloadFileName(project), StandardCharsets.UTF_8).build()
-                        .toString())
-                .body(bytes);
-    }
+  /**
+   * Downloads the complete project repository and generated artifact files as a ZIP archive.
+   *
+   * @param token session token
+   * @param id project identifier
+   * @return ZIP download response
+   */
+  @GetMapping("/{id}/download")
+  ResponseEntity<byte[]> download(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
+    UserRecord user = auth.user(token);
+    ProjectRecord project = projects.get(user, id);
+    byte[] bytes = projects.zip(user, id);
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType("application/zip"))
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            ContentDisposition.attachment()
+                .filename(downloadFileName(project), StandardCharsets.UTF_8)
+                .build()
+                .toString())
+        .body(bytes);
+  }
 
-    /**
-     * Updates an existing project.
-     *
-     * @param token   session token
-     * @param id      project identifier
-     * @param request replacement project details
-     * @return updated project
-     */
-    @PutMapping("/{id}")
-    ProjectRecord update(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id,
-            @Valid @RequestBody SaveProjectRequest request) {
-        return projects.update(auth.user(token), id, request.name(), request.description(),
-                request.activeModelIds());
-    }
+  /**
+   * Updates an existing project.
+   *
+   * @param token session token
+   * @param id project identifier
+   * @param request replacement project details
+   * @return updated project
+   */
+  @PutMapping("/{id}")
+  ProjectRecord update(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @Valid @RequestBody SaveProjectRequest request) {
+    return projects.update(
+        auth.user(token), id, request.name(), request.description(), request.activeModelIds());
+  }
 
-    /**
-     * Deletes a project.
-     *
-     * @param token session token
-     * @param id    project identifier
-     */
-    @DeleteMapping("/{id}")
-    void delete(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
-        projects.delete(auth.user(token), id);
-    }
+  /**
+   * Deletes a project.
+   *
+   * @param token session token
+   * @param id project identifier
+   */
+  @DeleteMapping("/{id}")
+  void delete(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
+    projects.delete(auth.user(token), id);
+  }
 
-    /**
-     * Lists project members.
-     *
-     * @param token session token
-     * @param id    project identifier
-     * @return project members
-     */
-    @GetMapping("/{id}/members")
-    List<ProjectMember> members(@RequestHeader("X-Auth-Token") String token,
-            @PathVariable("id") String id) {
-        return projects.members(auth.user(token), id);
-    }
+  /**
+   * Lists project members.
+   *
+   * @param token session token
+   * @param id project identifier
+   * @return project members
+   */
+  @GetMapping("/{id}/members")
+  List<ProjectMember> members(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
+    return projects.members(auth.user(token), id);
+  }
 
-    /**
-     * Invites a user to a project with the requested role.
-     *
-     * @param token   session token
-     * @param id      project identifier
-     * @param request invitee and role
-     * @return created project membership
-     */
-    @PostMapping("/{id}/invite")
-    ProjectMember invite(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id,
-            @Valid @RequestBody InviteRequest request) {
-        UserRecord user = auth.user(token);
-        return projects.invite(user, id, request.email(), request.role());
-    }
+  /**
+   * Invites a user to a project with the requested role.
+   *
+   * @param token session token
+   * @param id project identifier
+   * @param request invitee and role
+   * @return created project membership
+   */
+  @PostMapping("/{id}/invite")
+  ProjectMember invite(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @Valid @RequestBody InviteRequest request) {
+    UserRecord user = auth.user(token);
+    return projects.invite(user, id, request.email(), request.role());
+  }
 
-    /**
-     * Revokes a user's project membership.
-     *
-     * @param token  session token
-     * @param id     project identifier
-     * @param userId member user identifier
-     */
-    @DeleteMapping("/{id}/members/{userId}")
-    void revoke(@RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id,
-            @PathVariable("userId") String userId) {
-        projects.revoke(auth.user(token), id, userId);
-    }
+  /**
+   * Revokes a user's project membership.
+   *
+   * @param token session token
+   * @param id project identifier
+   * @param userId member user identifier
+   */
+  @DeleteMapping("/{id}/members/{userId}")
+  void revoke(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @PathVariable("userId") String userId) {
+    projects.revoke(auth.user(token), id, userId);
+  }
 
-    /**
-     * Creates a safe project archive filename.
-     *
-     * @param project project metadata
-     * @return ZIP filename
-     */
-    private String downloadFileName(ProjectRecord project) {
-        String name = project.name() == null || project.name().isBlank() ? project.id()
-                : project.name();
-        String safe = name.replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("^-+|-+$", "");
-        return (safe.isBlank() ? "project" : safe) + ".zip";
-    }
+  /**
+   * Creates a safe project archive filename.
+   *
+   * @param project project metadata
+   * @return ZIP filename
+   */
+  private String downloadFileName(ProjectRecord project) {
+    String name =
+        project.name() == null || project.name().isBlank() ? project.id() : project.name();
+    String safe = name.replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("^-+|-+$", "");
+    return (safe.isBlank() ? "project" : safe) + ".zip";
+  }
 
-    /**
-     * Project create or update payload.
-     *
-     * @param name           project name
-     * @param description    project description
-     * @param activeModelIds active model identifiers keyed by model level
-     */
-    public record SaveProjectRequest(@NotBlank String name, String description,
-                                     Map<String, String> activeModelIds) {
+  /**
+   * Project create or update payload.
+   *
+   * @param name project name
+   * @param description project description
+   * @param activeModelIds active model identifiers keyed by model level
+   */
+  public record SaveProjectRequest(
+      @NotBlank String name, String description, Map<String, String> activeModelIds) {}
 
-    }
-
-    /**
-     * Project invitation payload.
-     *
-     * @param email invitee email
-     * @param role  requested membership role
-     */
-    public record InviteRequest(@NotBlank String email, MemberRole role) {
-
-    }
+  /**
+   * Project invitation payload.
+   *
+   * @param email invitee email
+   * @param role requested membership role
+   */
+  public record InviteRequest(@NotBlank String email, MemberRole role) {}
 }

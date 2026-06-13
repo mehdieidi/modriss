@@ -116,4 +116,3 @@ context AWSPSM!EventBridgeConnection {
     message : 'EventBridge connection ' + self.resourceLabel() + ' uses authParameters that do not match authorizationType. Fix: use the concrete auth parameter class for the selected authorization type.'
   }
 }
-

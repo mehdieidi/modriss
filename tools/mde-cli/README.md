@@ -99,7 +99,7 @@ conventions such as `root.emf` or a single `*-root.emf`.
 ## Options
 
 | Option                  | Description                                 |
-|-------------------------|---------------------------------------------|
+| ----------------------- | ------------------------------------------- |
 | `-o`, `--output <path>` | Output `.ecore` file path                   |
 | `--root <path>`         | Root Emfatic file for directory conversion  |
 | `--overwrite`           | Replace an existing output file             |

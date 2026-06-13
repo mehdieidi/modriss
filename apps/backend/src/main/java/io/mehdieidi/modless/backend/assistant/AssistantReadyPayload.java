@@ -5,6 +5,4 @@ package io.mehdieidi.modless.backend.assistant;
  *
  * @param sessionId session ID
  */
-public record AssistantReadyPayload(String sessionId) {
-
-}
+public record AssistantReadyPayload(String sessionId) {}

@@ -1,4 +1,4 @@
-import {el} from './dom.js';
+import { el } from "./dom.js";
 
 // ── Theme management ───────────────────────────────────────────────────────────
 const THEME_DARK = "dark";

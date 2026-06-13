@@ -1,38 +1,40 @@
-import {state} from './state.js';
-import {emptyDiagram, genId} from './utils.js';
-import {ensureReadableLayout, nodeSizeForType} from './layout-engine.js';
+import { state } from "./state.js";
+import { emptyDiagram, genId } from "./utils.js";
+import { ensureReadableLayout, nodeSizeForType } from "./layout-engine.js";
 import {
   modelingElementDefinition,
   modelingLabelField,
   modelingLegalKinds,
   modelingLevelConfig,
-  modelingRootTemplate
-} from './modeling-config-data.js';
+  modelingRootTemplate,
+} from "./modeling-config-data.js";
 import {
   installGraphAndViews,
   persistEdgeLayoutInActiveView,
-  serializeGraphAndViewsInto
-} from './graph-store.js';
-import {materializeActiveView} from './view-materializer.js';
+  serializeGraphAndViewsInto,
+} from "./graph-store.js";
+import { materializeActiveView } from "./view-materializer.js";
 import {
   cimSemanticElementsFromRoot,
-  cimSemanticRelationshipsFromRoot
-} from './cim-model-utils.js';
+  cimSemanticRelationshipsFromRoot,
+} from "./cim-model-utils.js";
 import {
   pimSemanticElementsFromRoot,
-  pimSemanticRelationshipsFromRoot
-} from './pim-model-utils.js';
+  pimSemanticRelationshipsFromRoot,
+} from "./pim-model-utils.js";
 
 function sanitizeConnectionIdPart(value) {
-  const normalized = String(value ?? "").trim().toLowerCase().replaceAll(
-      /[^a-z0-9_-]+/g, "_");
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9_-]+/g, "_");
   return normalized || "na";
 }
 
 function connectionIdFor(modelType, index, sourceId, targetId, kind) {
   return `rel-${modelType}-${index}-${sanitizeConnectionIdPart(
-      kind)}-${sanitizeConnectionIdPart(sourceId)}-${sanitizeConnectionIdPart(
-      targetId)}`;
+    kind,
+  )}-${sanitizeConnectionIdPart(sourceId)}-${sanitizeConnectionIdPart(targetId)}`;
 }
 
 function connectionRecords(modelJson, modelType = state.activeType) {
@@ -46,9 +48,12 @@ function connectionRecords(modelJson, modelType = state.activeType) {
   if (Array.isArray(modelJson?.connectors)) {
     return modelJson.connectors;
   }
-  const semanticRelationships = modelType === "cim"
+  const semanticRelationships =
+    modelType === "cim"
       ? cimSemanticRelationshipsFromRoot(modelJson)
-      : modelType === "pim" ? pimSemanticRelationshipsFromRoot(modelJson) : [];
+      : modelType === "pim"
+        ? pimSemanticRelationshipsFromRoot(modelJson)
+        : [];
   if (semanticRelationships.length) {
     return semanticRelationships;
   }
@@ -69,9 +74,12 @@ function elementRecords(modelJson, modelType = state.activeType) {
   if (Array.isArray(modelJson?.resources)) {
     return modelJson.resources;
   }
-  const semanticElements = modelType === "cim"
+  const semanticElements =
+    modelType === "cim"
       ? cimSemanticElementsFromRoot(modelJson)
-      : modelType === "pim" ? pimSemanticElementsFromRoot(modelJson) : [];
+      : modelType === "pim"
+        ? pimSemanticElementsFromRoot(modelJson)
+        : [];
   if (semanticElements.length) {
     return semanticElements;
   }
@@ -80,13 +88,12 @@ function elementRecords(modelJson, modelType = state.activeType) {
 
 export function relationshipIdsFromModel(modelType, modelJson) {
   return connectionRecords(modelJson, modelType).map((connection, index) => {
-    const sourceId = typeof connection?.source === "string" ? connection.source
-        : connection?.source?.$ref;
-    const targetId = typeof connection?.target === "string" ? connection.target
-        : connection?.target?.$ref;
+    const sourceId =
+      typeof connection?.source === "string" ? connection.source : connection?.source?.$ref;
+    const targetId =
+      typeof connection?.target === "string" ? connection.target : connection?.target?.$ref;
     const fallbackKind = defaultRelationshipKind(modelType);
-    return connectionIdFor(modelType, index, sourceId, targetId,
-        connection?.kind || fallbackKind);
+    return connectionIdFor(modelType, index, sourceId, targetId, connection?.kind || fallbackKind);
   });
 }
 
@@ -103,10 +110,7 @@ function cloneDefault(value) {
 }
 
 function applyDefinitionDefaults(meta, definition) {
-  for (const field of [
-    ...(definition?.attributes || []),
-    ...(definition?.references || [])
-  ]) {
+  for (const field of [...(definition?.attributes || []), ...(definition?.references || [])]) {
     if (!field?.name || field.readonly) {
       continue;
     }
@@ -125,7 +129,7 @@ export function getDefaultNode(typeKey, nodeType, x, y) {
     y,
     status: "DRAFT",
     lifecycleStatus: "INCOMPLETE",
-    tags: []
+    tags: [],
   };
   const definition = modelingElementDefinition(typeKey, nodeType);
   applyDefinitionDefaults(meta, definition);
@@ -137,7 +141,7 @@ export function getDefaultNode(typeKey, nodeType, x, y) {
     meta.label = label;
   }
   meta.description ??= "";
-  return {id, type: nodeType, label, x, y, meta};
+  return { id, type: nodeType, label, x, y, meta };
 }
 
 export function legalKinds(typeKey, sourceType, targetType) {
@@ -168,11 +172,10 @@ function sanitizeRootForType(typeKey, root) {
 export function defaultRootModel(typeKey, modelName) {
   const configured = modelingRootTemplate(typeKey, modelName);
   if (!configured || !Object.keys(configured).length) {
-    throw new Error(
-        `Missing backend rootTemplate for ${typeKey.toUpperCase()}.`);
+    throw new Error(`Missing backend rootTemplate for ${typeKey.toUpperCase()}.`);
   }
   configured.name = modelName;
-  configured.diagram ??= {elements: [], relationships: []};
+  configured.diagram ??= { elements: [], relationships: [] };
   configured.diagram.elements ??= [];
   configured.diagram.relationships ??= [];
   configured.graph ??= {
@@ -181,7 +184,7 @@ export function defaultRootModel(typeKey, modelName) {
     traceLinks: [],
     assumptions: [],
     validationIssues: [],
-    manualBacklog: []
+    manualBacklog: [],
   };
   configured.fragments ??= [];
   configured.views ??= [];
@@ -189,10 +192,8 @@ export function defaultRootModel(typeKey, modelName) {
 }
 
 export function serializeModel() {
-  const name = (state.tabs[state.activeType]?.modelName
-      || `${state.activeType}-model`).trim();
-  const root = structuredClone(
-      state.baseModel || defaultRootModel(state.activeType, name));
+  const name = (state.tabs[state.activeType]?.modelName || `${state.activeType}-model`).trim();
+  const root = structuredClone(state.baseModel || defaultRootModel(state.activeType, name));
   sanitizeRootForType(state.activeType, root);
   if (!String(root.name || "").trim()) {
     root.name = name;
@@ -210,7 +211,7 @@ export function serializeModel() {
       y: node.y,
       status: "DRAFT",
       tags: [],
-      ...node.meta
+      ...node.meta,
     };
     if (!element.name && element.label) {
       element.name = element.label;
@@ -218,22 +219,22 @@ export function serializeModel() {
     return element;
   });
 
-  root.diagram.relationships = state.diagram.connections.filter(
-      (edge) => !edge.bundle
-          && String(edge.kind).toUpperCase() !== "EDGE_BUNDLE").map(
-      (edge, index) => {
-        // Create relationship without layout field (backend doesn't support it).
-        // Layout data is managed separately in frontend-only storage for rendering.
-        const relationship = {
-          id: edge.id || connectionIdFor(state.activeType, index, edge.sourceId,
-              edge.targetId, edge.kind),
-          kind: edge.kind,
-          source: edge.sourceId,
-          target: edge.targetId,
-          note: ""
-        };
-        return relationship;
-      });
+  root.diagram.relationships = state.diagram.connections
+    .filter((edge) => !edge.bundle && String(edge.kind).toUpperCase() !== "EDGE_BUNDLE")
+    .map((edge, index) => {
+      // Create relationship without layout field (backend doesn't support it).
+      // Layout data is managed separately in frontend-only storage for rendering.
+      const relationship = {
+        id:
+          edge.id ||
+          connectionIdFor(state.activeType, index, edge.sourceId, edge.targetId, edge.kind),
+        kind: edge.kind,
+        source: edge.sourceId,
+        target: edge.targetId,
+        note: "",
+      };
+      return relationship;
+    });
   serializeGraphAndViewsInto(root);
   return root;
 }
@@ -252,8 +253,7 @@ export function toDiagram(modelType, modelJson, fallbackName) {
   } finally {
     state.activeType = previousActiveType;
   }
-  if (materialized?.nodes?.length || modelJson?.graph || Array.isArray(
-      modelJson?.views)) {
+  if (materialized?.nodes?.length || modelJson?.graph || Array.isArray(modelJson?.views)) {
     return materialized;
   }
 
@@ -273,7 +273,8 @@ export function toDiagram(modelType, modelJson, fallbackName) {
     if (seenIds.has(elementId)) {
       duplicateIds.add(elementId);
       console.warn(
-          `Duplicate element ID detected: "${elementId}" (${element.eClass} "${element.name}"). Skipping duplicate.`);
+        `Duplicate element ID detected: "${elementId}" (${element.eClass} "${element.name}"). Skipping duplicate.`,
+      );
     } else {
       seenIds.add(elementId);
       deduplicatedElements.push(element);
@@ -286,70 +287,65 @@ export function toDiagram(modelType, modelJson, fallbackName) {
     label: element.name || element.label || "Element",
     x: Number.isFinite(element.x) ? element.x : 0,
     y: Number.isFinite(element.y) ? element.y : 0,
-    meta: structuredClone(element)
+    meta: structuredClone(element),
   }));
 
-  diagram.connections = rawRelationships.map((relation, index) => {
-    const edge = {
-      id:
-          relation.id
-          || connectionIdFor(
-              modelType,
-              index,
-              typeof relation.source === "string" ? relation.source
-                  : relation.source?.$ref,
-              typeof relation.target === "string" ? relation.target
-                  : relation.target?.$ref,
-              relation.kind || defaultRelationshipKind(modelType)
+  diagram.connections = rawRelationships
+    .map((relation, index) => {
+      const edge = {
+        id:
+          relation.id ||
+          connectionIdFor(
+            modelType,
+            index,
+            typeof relation.source === "string" ? relation.source : relation.source?.$ref,
+            typeof relation.target === "string" ? relation.target : relation.target?.$ref,
+            relation.kind || defaultRelationshipKind(modelType),
           ),
-      sourceId: typeof relation.source === "string" ? relation.source
-          : relation.source?.$ref,
-      targetId: typeof relation.target === "string" ? relation.target
-          : relation.target?.$ref,
-      kind: relation.kind || defaultRelationshipKind(modelType)
-    };
-    // Restore frontend-only edge presentation data (not persisted to backend).
-    // Newer versions store explicit pin points; older versions may still have ELK bend points.
-    const storedLayout = getStoredEdgeLayout(modelType, edge.id);
-    if (Array.isArray(storedLayout?.pinPoints)) {
-      edge.pinPoints = storedLayout.pinPoints.map((point) => ({
-        x: Number(point?.x) || 0,
-        y: Number(point?.y) || 0
-      }));
-    } else if (Array.isArray(storedLayout?.bendPoints)) {
-      edge.pinPoints = storedLayout.bendPoints.map((point) => ({
-        x: Number(point?.x) || 0,
-        y: Number(point?.y) || 0
-      }));
-    }
-    if (storedLayout?.sourceAnchor && typeof storedLayout.sourceAnchor
-        === "object") {
-      edge.sourceAnchor = {
-        side: storedLayout.sourceAnchor.side,
-        offsetY: Number(storedLayout.sourceAnchor.offsetY) || 0
+        sourceId: typeof relation.source === "string" ? relation.source : relation.source?.$ref,
+        targetId: typeof relation.target === "string" ? relation.target : relation.target?.$ref,
+        kind: relation.kind || defaultRelationshipKind(modelType),
       };
-    }
-    if (storedLayout?.targetAnchor && typeof storedLayout.targetAnchor
-        === "object") {
-      edge.targetAnchor = {
-        side: storedLayout.targetAnchor.side,
-        offsetY: Number(storedLayout.targetAnchor.offsetY) || 0
-      };
-    }
-    return edge;
-  })
-  .filter((edge) => {
-    // Filter out edges that reference duplicate nodes
-    if (duplicateIds.has(edge.sourceId) || duplicateIds.has(edge.targetId)) {
-      console.warn(
-          `Skipping edge "${edge.id}" because it references a duplicate node (source: "${edge.sourceId}", target: "${edge.targetId}").`);
-      return false;
-    }
-    return !!(edge.sourceId && edge.targetId);
-  });
+      // Restore frontend-only edge presentation data (not persisted to backend).
+      // Newer versions store explicit pin points; older versions may still have ELK bend points.
+      const storedLayout = getStoredEdgeLayout(modelType, edge.id);
+      if (Array.isArray(storedLayout?.pinPoints)) {
+        edge.pinPoints = storedLayout.pinPoints.map((point) => ({
+          x: Number(point?.x) || 0,
+          y: Number(point?.y) || 0,
+        }));
+      } else if (Array.isArray(storedLayout?.bendPoints)) {
+        edge.pinPoints = storedLayout.bendPoints.map((point) => ({
+          x: Number(point?.x) || 0,
+          y: Number(point?.y) || 0,
+        }));
+      }
+      if (storedLayout?.sourceAnchor && typeof storedLayout.sourceAnchor === "object") {
+        edge.sourceAnchor = {
+          side: storedLayout.sourceAnchor.side,
+          offsetY: Number(storedLayout.sourceAnchor.offsetY) || 0,
+        };
+      }
+      if (storedLayout?.targetAnchor && typeof storedLayout.targetAnchor === "object") {
+        edge.targetAnchor = {
+          side: storedLayout.targetAnchor.side,
+          offsetY: Number(storedLayout.targetAnchor.offsetY) || 0,
+        };
+      }
+      return edge;
+    })
+    .filter((edge) => {
+      // Filter out edges that reference duplicate nodes
+      if (duplicateIds.has(edge.sourceId) || duplicateIds.has(edge.targetId)) {
+        console.warn(
+          `Skipping edge "${edge.id}" because it references a duplicate node (source: "${edge.sourceId}", target: "${edge.targetId}").`,
+        );
+        return false;
+      }
+      return !!(edge.sourceId && edge.targetId);
+    });
 
-  ensureReadableLayout(diagram.nodes, diagram.connections,
-      nodeSizeForType(modelType));
+  ensureReadableLayout(diagram.nodes, diagram.connections, nodeSizeForType(modelType));
   return diagram;
 }
 
@@ -370,8 +366,7 @@ function edgeLayoutStorageKey(modelType, edgeId) {
  */
 function getStoredEdgeLayout(modelType, edgeId) {
   try {
-    const stored = localStorage.getItem(
-        edgeLayoutStorageKey(modelType, edgeId));
+    const stored = localStorage.getItem(edgeLayoutStorageKey(modelType, edgeId));
     return stored ? JSON.parse(stored) : null;
   } catch (e) {
     console.warn(`Failed to retrieve edge layout for ${edgeId}:`, e);
@@ -391,8 +386,7 @@ function saveStoredEdgeLayout(modelType, edgeId, layout) {
   }
   try {
     if (layout && typeof layout === "object") {
-      localStorage.setItem(edgeLayoutStorageKey(modelType, edgeId),
-          JSON.stringify(layout));
+      localStorage.setItem(edgeLayoutStorageKey(modelType, edgeId), JSON.stringify(layout));
     }
   } catch (e) {
     console.warn(`Failed to store edge layout for ${edgeId}:`, e);
@@ -412,10 +406,10 @@ function clearStoredEdgeLayouts(modelType) {
         keysToDelete.push(key);
       }
     }
-    keysToDelete.forEach(key => localStorage.removeItem(key));
+    keysToDelete.forEach((key) => localStorage.removeItem(key));
   } catch (e) {
     console.warn(`Failed to clear edge layouts for ${modelType}:`, e);
   }
 }
 
-export {getStoredEdgeLayout, saveStoredEdgeLayout, clearStoredEdgeLayouts};
+export { getStoredEdgeLayout, saveStoredEdgeLayout, clearStoredEdgeLayouts };

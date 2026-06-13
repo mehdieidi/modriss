@@ -1,27 +1,15 @@
 package io.mehdieidi.modless.platform.core.model;
 
-/**
- * Lifecycle status for an asynchronous MDE job.
- */
+/** Lifecycle status for an asynchronous MDE job. */
 public enum MdeJobStatus {
-    /**
-     * Job has been accepted but has not started executing.
-     */
-    QUEUED,
-    /**
-     * Job is currently executing.
-     */
-    RUNNING,
-    /**
-     * Job completed successfully.
-     */
-    SUCCEEDED,
-    /**
-     * Job completed with an error.
-     */
-    FAILED,
-    /**
-     * Job was cancelled before successful completion.
-     */
-    CANCELLED
+  /** Job has been accepted but has not started executing. */
+  QUEUED,
+  /** Job is currently executing. */
+  RUNNING,
+  /** Job completed successfully. */
+  SUCCEEDED,
+  /** Job completed with an error. */
+  FAILED,
+  /** Job was cancelled before successful completion. */
+  CANCELLED
 }

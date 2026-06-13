@@ -72,7 +72,9 @@
   color: inherit;
   text-decoration: none;
   cursor: pointer;
-  transition: opacity var(--transition), transform var(--transition);
+  transition:
+    opacity var(--transition),
+    transform var(--transition);
 }
 
 .app-brand:hover {
@@ -159,14 +161,22 @@ html.light .app-logo-img {
   color: color-mix(in srgb, var(--text) 82%, var(--muted) 18%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition), filter var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    transform var(--transition),
+    box-shadow var(--transition),
+    filter var(--transition);
 }
 
 .ide-menu-trigger:hover,
 .ide-menu.is-open .ide-menu-trigger {
   color: var(--text-strong);
   background: color-mix(in srgb, var(--surface-high) 82%, var(--surface-3) 18%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--shadow-sm);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    var(--shadow-sm);
   transform: translateY(-1px);
 }
 
@@ -270,7 +280,10 @@ html.light .app-logo-img {
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition);
 }
 
 .ide-menu-item:hover:not(:disabled) {
@@ -333,7 +346,10 @@ html.light .app-logo-img {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color var(--transition), border-color var(--transition), background var(--transition);
+  transition:
+    color var(--transition),
+    border-color var(--transition),
+    background var(--transition);
 }
 
 .tab:hover {

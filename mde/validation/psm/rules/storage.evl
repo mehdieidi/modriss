@@ -148,4 +148,3 @@ context AWSPSM!S3ReplicationConfiguration {
     message : 'S3 replication configuration lacks role or rules. Fix: attach an IAM role and define replication rules or rulesJson.'
   }
 }
-

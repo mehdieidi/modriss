@@ -11,6 +11,16 @@ mvnw text eol=lf
 mvnw.cmd text eol=crlf
 
 # Source files
+*.css text eol=lf
+*.html text eol=lf
+*.java text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sql text eol=lf
+*.xml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
 *.emf text
 *.emfatic text
 *.evl text

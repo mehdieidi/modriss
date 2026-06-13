@@ -1,0 +1,22 @@
+**/target/**
+**/vendor/**
+**/node_modules/**
+**/.idea/**
+**/.vscode/**
+storage/**
+
+# Epsilon and EMF files require domain-aware parsers and are normalized separately.
+**/*.ecore
+**/*.egl
+**/*.emf
+**/*.eol
+**/*.egx
+**/*.etl
+**/*.evl
+**/*.xmi
+
+# Preserve generated or externally maintained assets.
+**/*.svg
+**/*.txt
+LICENSE
+

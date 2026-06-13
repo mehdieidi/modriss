@@ -1,7 +1,4 @@
-import {
-  createTimeline,
-  stagger,
-} from "https://cdn.jsdelivr.net/npm/animejs@4.4.1/+esm";
+import { createTimeline, stagger } from "https://cdn.jsdelivr.net/npm/animejs@4.4.1/+esm";
 
 export const STORY_DURATION = 16500;
 const TRANSFORM_ENGINE_SELECTOR = "#transform-engine";
@@ -18,8 +15,7 @@ function setEngineLabel(label) {
 }
 
 function centerInCanvas(element) {
-  const canvasRect = document.querySelector(".model-canvas")
-  .getBoundingClientRect();
+  const canvasRect = document.querySelector(".model-canvas").getBoundingClientRect();
   const rect = element.getBoundingClientRect();
   return {
     x: rect.left - canvasRect.left + rect.width / 2,
@@ -32,9 +28,9 @@ function engineCenter() {
 }
 
 function nodeLabel(node) {
-  return node.querySelector(".model-node-title strong")?.textContent
-      || node.dataset.nodeType
-      || "model";
+  return (
+    node.querySelector(".model-node-title strong")?.textContent || node.dataset.nodeType || "model"
+  );
 }
 
 function nodeColor(node) {
@@ -57,19 +53,11 @@ function createTraveler(label, color, className) {
 function createModelTravelers(sourceNodes, targetNodes) {
   clearTravelers();
   sourceNodes.forEach((node, index) => {
-    const traveler = createTraveler(
-        nodeLabel(node),
-        nodeColor(node),
-        "traveler-source",
-    );
+    const traveler = createTraveler(nodeLabel(node), nodeColor(node), "traveler-source");
     traveler.dataset.index = String(index);
   });
   targetNodes.forEach((node, index) => {
-    const traveler = createTraveler(
-        nodeLabel(node),
-        nodeColor(node),
-        "traveler-target",
-    );
+    const traveler = createTraveler(nodeLabel(node), nodeColor(node), "traveler-target");
     traveler.dataset.index = String(index);
   });
 }
@@ -91,11 +79,7 @@ function placeModelTravelers(sourceNodes, targetNodes) {
 function createArtifactTravelers(sourceNodes, targets) {
   clearTravelers();
   sourceNodes.forEach((node, index) => {
-    const traveler = createTraveler(
-        nodeLabel(node),
-        nodeColor(node),
-        "traveler-source",
-    );
+    const traveler = createTraveler(nodeLabel(node), nodeColor(node), "traveler-source");
     traveler.dataset.index = String(index);
   });
   targets.forEach(([label, color], index) => {
@@ -127,25 +111,25 @@ function placeArtifactTravelers(sourceNodes) {
 function addCopyTransition(timeline, phase, showAt, hideAt) {
   const target = `.story-copy-card[data-phase="${phase}"]`;
   timeline.add(
-      target,
-      {
-        opacity: 1,
-        y: 0,
-        duration: 360,
-        ease: "out(3)",
-      },
-      showAt,
+    target,
+    {
+      opacity: 1,
+      y: 0,
+      duration: 360,
+      ease: "out(3)",
+    },
+    showAt,
   );
   if (hideAt) {
     timeline.add(
-        target,
-        {
-          opacity: 0,
-          y: -18,
-          duration: 280,
-          ease: "in(3)",
-        },
-        hideAt,
+      target,
+      {
+        opacity: 0,
+        y: -18,
+        duration: 280,
+        ease: "in(3)",
+      },
+      hideAt,
     );
   }
 }
@@ -153,7 +137,7 @@ function addCopyTransition(timeline, phase, showAt, hideAt) {
 function addEngineRun(timeline, start, end) {
   const duration = end - start;
   timeline
-  .add(
+    .add(
       TRANSFORM_ENGINE_SELECTOR,
       {
         opacity: 1,
@@ -162,8 +146,8 @@ function addEngineRun(timeline, start, end) {
         ease: "out(4)",
       },
       start,
-  )
-  .add(
+    )
+    .add(
       ".engine-gear.gear-left",
       {
         rotate: "3turn",
@@ -171,8 +155,8 @@ function addEngineRun(timeline, start, end) {
         ease: "linear",
       },
       start,
-  )
-  .add(
+    )
+    .add(
       ".engine-gear.gear-right",
       {
         rotate: "-3turn",
@@ -180,62 +164,62 @@ function addEngineRun(timeline, start, end) {
         ease: "linear",
       },
       start,
-  )
-  .add(
+    )
+    .add(
       ".engine-piston.piston-one",
       {
         y: [
-          {to: -8, duration: duration * 0.2},
-          {to: 8, duration: duration * 0.2},
-          {to: -8, duration: duration * 0.2},
-          {to: 8, duration: duration * 0.2},
-          {to: 0, duration: duration * 0.2},
+          { to: -8, duration: duration * 0.2 },
+          { to: 8, duration: duration * 0.2 },
+          { to: -8, duration: duration * 0.2 },
+          { to: 8, duration: duration * 0.2 },
+          { to: 0, duration: duration * 0.2 },
         ],
         ease: "inOut(2)",
       },
       start,
-  )
-  .add(
+    )
+    .add(
       ".engine-piston.piston-two",
       {
         y: [
-          {to: 8, duration: duration * 0.2},
-          {to: -8, duration: duration * 0.2},
-          {to: 8, duration: duration * 0.2},
-          {to: -8, duration: duration * 0.2},
-          {to: 0, duration: duration * 0.2},
+          { to: 8, duration: duration * 0.2 },
+          { to: -8, duration: duration * 0.2 },
+          { to: 8, duration: duration * 0.2 },
+          { to: -8, duration: duration * 0.2 },
+          { to: 0, duration: duration * 0.2 },
         ],
         ease: "inOut(2)",
       },
       start,
-  )
-  .add(
+    )
+    .add(
       ".engine-pulse",
       {
         scaleX: [
-          {to: 0.35, duration: duration * 0.2},
-          {to: 1.2, duration: duration * 0.2},
-          {to: 0.45, duration: duration * 0.2},
-          {to: 1.3, duration: duration * 0.2},
-          {to: 0.6, duration: duration * 0.2},
+          { to: 0.35, duration: duration * 0.2 },
+          { to: 1.2, duration: duration * 0.2 },
+          { to: 0.45, duration: duration * 0.2 },
+          { to: 1.3, duration: duration * 0.2 },
+          { to: 0.6, duration: duration * 0.2 },
         ],
         opacity: [
-          {to: 0.4, duration: duration * 0.2},
-          {to: 1, duration: duration * 0.2},
-          {to: 0.5, duration: duration * 0.2},
-          {to: 1, duration: duration * 0.2},
-          {to: 0.6, duration: duration * 0.2},
+          { to: 0.4, duration: duration * 0.2 },
+          { to: 1, duration: duration * 0.2 },
+          { to: 0.5, duration: duration * 0.2 },
+          { to: 1, duration: duration * 0.2 },
+          { to: 0.6, duration: duration * 0.2 },
         ],
         ease: "inOut(2)",
       },
       start,
-  );
+    );
 }
 
 function addRuleTokens(timeline, batch, start, hideAt) {
   const targets = `.mapping-token[data-batch="${batch}"]`;
   timeline
-  .add(
+    .add(
       targets,
       {
         opacity: 1,
@@ -245,8 +229,8 @@ function addRuleTokens(timeline, batch, start, hideAt) {
         ease: "out(4)",
       },
       start,
-  )
-  .add(
+    )
+    .add(
       targets,
       {
         opacity: 0,
@@ -256,7 +240,7 @@ function addRuleTokens(timeline, batch, start, hideAt) {
         ease: "in(3)",
       },
       hideAt,
-  );
+    );
 }
 
 function addFlowTokens(timeline, batch, start, stepGap = 250) {
@@ -268,12 +252,12 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
     const stepStart = start + index * stepGap;
     const input = inputs[index];
     const output = outputs[index];
-    const laneOffset = (index % 3 - 1) * 7;
+    const laneOffset = ((index % 3) - 1) * 7;
     const tokenTop = `${50 + laneOffset}%`;
 
     if (input) {
       timeline
-      .add(
+        .add(
           input,
           {
             opacity: 1,
@@ -284,8 +268,8 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
             ease: "inOut(3)",
           },
           stepStart,
-      )
-      .add(
+        )
+        .add(
           input,
           {
             opacity: 0,
@@ -295,12 +279,12 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
             ease: "in(4)",
           },
           stepStart + 300,
-      );
+        );
     }
 
     if (output) {
       timeline
-      .add(
+        .add(
           output,
           {
             opacity: 1,
@@ -311,8 +295,8 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
             ease: "out(4)",
           },
           stepStart + 340,
-      )
-      .add(
+        )
+        .add(
           output,
           {
             opacity: 0,
@@ -321,7 +305,7 @@ function addFlowTokens(timeline, batch, start, stepGap = 250) {
             ease: "inOut(3)",
           },
           stepStart + 620,
-      );
+        );
     }
   }
 }
@@ -338,25 +322,20 @@ function addModelTransformation({
   targetEdgeSelector,
 }) {
   const sourceNodes = selector(`#model-${source} .model-node`);
-  const sourceEdges = selector(
-      `#model-${source} .model-edge, #model-${source} .edge-label`,
-  );
-  const targetNodes = selector(
-      targetNodeSelector || `#model-${target} .model-node`,
-  );
+  const sourceEdges = selector(`#model-${source} .model-edge, #model-${source} .edge-label`);
+  const targetNodes = selector(targetNodeSelector || `#model-${target} .model-node`);
   const targetEdges = selector(
-      targetEdgeSelector
-      || `#model-${target} .model-edge, #model-${target} .edge-label`,
+    targetEdgeSelector || `#model-${target} .model-edge, #model-${target} .edge-label`,
   );
   const stepCount = Math.max(sourceNodes.length, targetNodes.length);
   const stepGap = Math.max(105, (finish - start - 1400) / stepCount);
   const feedStart = start + 620;
   const targetNodeIndexes = new Map(
-      [...targetNodes].map((node, index) => [node.dataset.nodeId, index]),
+    [...targetNodes].map((node, index) => [node.dataset.nodeId, index]),
   );
 
   timeline
-  .add(
+    .add(
       {},
       {
         duration: 1,
@@ -366,8 +345,8 @@ function addModelTransformation({
         },
       },
       start,
-  )
-  .add(
+    )
+    .add(
       `#model-${source}`,
       {
         opacity: 0.84,
@@ -378,8 +357,8 @@ function addModelTransformation({
         ease: "out(4)",
       },
       start,
-  )
-  .add(
+    )
+    .add(
       `#model-${target}`,
       {
         opacity: 1,
@@ -390,8 +369,8 @@ function addModelTransformation({
         ease: "out(2)",
       },
       start,
-  )
-  .add(
+    )
+    .add(
       targetNodes,
       {
         opacity: 0,
@@ -401,16 +380,16 @@ function addModelTransformation({
         duration: 1,
       },
       start,
-  )
-  .add(
+    )
+    .add(
       {},
       {
         duration: 1,
         onBegin: () => placeModelTravelers(sourceNodes, targetNodes),
       },
       start + 470,
-  )
-  .add(
+    )
+    .add(
       `#model-${source}`,
       {
         opacity: 0,
@@ -420,8 +399,8 @@ function addModelTransformation({
         ease: "in(2)",
       },
       finish - 700,
-  )
-  .add(
+    )
+    .add(
       TRANSFORM_ENGINE_SELECTOR,
       {
         opacity: 0,
@@ -430,16 +409,16 @@ function addModelTransformation({
         ease: "in(3)",
       },
       finish - 450,
-  )
-  .add(
+    )
+    .add(
       targetEdges,
       {
         opacity: 0,
         duration: 1,
       },
       start,
-  )
-  .add(
+    )
+    .add(
       `#model-${target}`,
       {
         x: 0,
@@ -450,8 +429,8 @@ function addModelTransformation({
         ease: "out(4)",
       },
       finish - 360,
-  )
-  .add(
+    )
+    .add(
       targetNodes,
       {
         x: 0,
@@ -463,17 +442,17 @@ function addModelTransformation({
         ease: "out(4)",
       },
       finish - 350,
-  );
+    );
 
   sourceEdges.forEach((edge, index) => {
     timeline.add(
-        edge,
-        {
-          opacity: 0,
-          duration: 220,
-          ease: "in(2)",
-        },
-        start + 220 + index * Math.max(38, stepGap * 0.34),
+      edge,
+      {
+        opacity: 0,
+        duration: 220,
+        ease: "in(2)",
+      },
+      start + 220 + index * Math.max(38, stepGap * 0.34),
     );
   });
 
@@ -487,69 +466,69 @@ function addModelTransformation({
     if (sourceNode) {
       const engine = engineCenter;
       timeline.add(
-          sourceTraveler,
-          {
-            opacity: [
-              {to: 1, duration: 60},
-              {to: 1, duration: 180},
-              {to: 0, duration: 80},
-            ],
-            left: () => `${engine().x}px`,
-            top: () => `${engine().y}px`,
-            scale: 0.38,
-            duration: 380,
-            ease: "in(4)",
-          },
-          stepStart,
+        sourceTraveler,
+        {
+          opacity: [
+            { to: 1, duration: 60 },
+            { to: 1, duration: 180 },
+            { to: 0, duration: 80 },
+          ],
+          left: () => `${engine().x}px`,
+          top: () => `${engine().y}px`,
+          scale: 0.38,
+          duration: 380,
+          ease: "in(4)",
+        },
+        stepStart,
       );
       timeline.add(
-          sourceNode,
-          {
-            opacity: 0.12,
-            scale: 0.76,
-            duration: 260,
-            ease: "in(3)",
-          },
-          stepStart + 110,
+        sourceNode,
+        {
+          opacity: 0.12,
+          scale: 0.76,
+          duration: 260,
+          ease: "in(3)",
+        },
+        stepStart + 110,
       );
     }
 
     if (targetNode) {
       const targetPoint = () => centerInCanvas(targetNode);
       timeline.add(
-          targetTraveler,
-          {
-            opacity: 1,
-            left: () => `${targetPoint().x}px`,
-            top: () => `${targetPoint().y}px`,
-            scale: 1,
-            duration: 420,
-            ease: "out(4)",
-          },
-          stepStart + 260,
+        targetTraveler,
+        {
+          opacity: 1,
+          left: () => `${targetPoint().x}px`,
+          top: () => `${targetPoint().y}px`,
+          scale: 1,
+          duration: 420,
+          ease: "out(4)",
+        },
+        stepStart + 260,
       );
       timeline.add(
-          targetNode,
-          {
-            opacity: 1,
-            scale: [
-              {to: 1.08, duration: 120},
-              {to: 1, duration: 180},
-            ],
-            duration: 300,
-            ease: "out(4)",
-          },
-          stepStart + 520,
+        targetNode,
+        {
+          opacity: 1,
+          scale: [
+            { to: 1.08, duration: 120 },
+            { to: 1, duration: 180 },
+          ],
+          duration: 300,
+          ease: "out(4)",
+        },
+        stepStart + 520,
       );
       timeline.add(
-          targetTraveler,
-          {
-            opacity: 0,
-            scale: 0.74,
-            duration: 180,
-            ease: "in(2)",
-          },
-          stepStart + 760,
+        targetTraveler,
+        {
+          opacity: 0,
+          scale: 0.74,
+          duration: 180,
+          ease: "in(2)",
+        },
+        stepStart + 760,
       );
     }
   }
@@ -558,29 +537,30 @@ function addModelTransformation({
     const sourceIndex = targetNodeIndexes.get(edge.dataset.source);
     const targetIndex = targetNodeIndexes.get(edge.dataset.target);
     const nodeRevealIndex = Math.max(sourceIndex ?? 0, targetIndex ?? 0);
-    const revealAt = sourceIndex == null && targetIndex == null
+    const revealAt =
+      sourceIndex == null && targetIndex == null
         ? finish - 840 + index * Math.max(24, stepGap * 0.16)
         : feedStart + nodeRevealIndex * stepGap + 780;
     timeline.add(
-        edge,
-        {
-          opacity: edge.classList.contains("edge-label") ? 0.84 : 0.72,
-          duration: 260,
-          ease: "out(2)",
-        },
-        Math.min(revealAt, finish - 430),
+      edge,
+      {
+        opacity: edge.classList.contains("edge-label") ? 0.84 : 0.72,
+        duration: 260,
+        ease: "out(2)",
+      },
+      Math.min(revealAt, finish - 430),
     );
   });
 
   addEngineRun(timeline, start + 80, finish - 360);
   timeline.add(
-      ".traveler-source, .traveler-target",
-      {
-        opacity: 0,
-        duration: 220,
-        ease: "in(2)",
-      },
-      finish - 430,
+    ".traveler-source, .traveler-target",
+    {
+      opacity: 0,
+      duration: 220,
+      ease: "in(2)",
+    },
+    finish - 430,
   );
 }
 
@@ -602,7 +582,7 @@ export function createStoryTimeline() {
   addCopyTransition(timeline, "ready", 15180);
 
   timeline
-  .add(
+    .add(
       "#model-cim .model-node",
       {
         opacity: 1,
@@ -612,8 +592,8 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       140,
-  )
-  .add(
+    )
+    .add(
       "#model-cim .model-edge, #model-cim .edge-label",
       {
         opacity: 0.8,
@@ -622,7 +602,7 @@ export function createStoryTimeline() {
         ease: "out(2)",
       },
       720,
-  );
+    );
 
   addModelTransformation({
     timeline,
@@ -633,19 +613,19 @@ export function createStoryTimeline() {
     finish: 4200,
     targetNodeSelector: "#model-pim .model-node:not(.ai-addition)",
     targetEdgeSelector:
-        "#model-pim .model-edge:not(.ai-addition-edge), #model-pim .edge-label:not(.ai-addition-edge)",
+      "#model-pim .model-edge:not(.ai-addition-edge), #model-pim .edge-label:not(.ai-addition-edge)",
   });
 
   timeline
-  .add(
+    .add(
       "#model-pim .ai-addition-edge",
       {
         opacity: 0,
         duration: 1,
       },
       4150,
-  )
-  .add(
+    )
+    .add(
       "#assistant-demo",
       {
         opacity: 1,
@@ -654,8 +634,8 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       4650,
-  )
-  .add(
+    )
+    .add(
       ".chat-window",
       {
         scale: 1,
@@ -663,8 +643,8 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       4720,
-  )
-  .add(
+    )
+    .add(
       ".chat-user",
       {
         opacity: 1,
@@ -673,8 +653,8 @@ export function createStoryTimeline() {
         ease: "out(3)",
       },
       4900,
-  )
-  .add(
+    )
+    .add(
       ".chat-bot",
       {
         opacity: 1,
@@ -683,8 +663,8 @@ export function createStoryTimeline() {
         ease: "out(3)",
       },
       5260,
-  )
-  .add(
+    )
+    .add(
       ".chat-action",
       {
         opacity: 1,
@@ -692,24 +672,24 @@ export function createStoryTimeline() {
         ease: "out(2)",
       },
       5550,
-  )
-  .add(
+    )
+    .add(
       "#model-pim .ai-addition",
       {
         opacity: 1,
         x: 0,
         y: 0,
         scale: [
-          {to: 1.08, duration: 300},
-          {to: 1, duration: 280},
+          { to: 1.08, duration: 300 },
+          { to: 1, duration: 280 },
         ],
         duration: 580,
         delay: stagger(160),
         ease: "out(4)",
       },
       5530,
-  )
-  .add(
+    )
+    .add(
       "#model-pim .ai-addition-edge",
       {
         opacity: 0.85,
@@ -718,8 +698,8 @@ export function createStoryTimeline() {
         ease: "out(2)",
       },
       5850,
-  )
-  .add(
+    )
+    .add(
       "#assistant-demo",
       {
         opacity: 0,
@@ -728,7 +708,7 @@ export function createStoryTimeline() {
         ease: "in(3)",
       },
       6250,
-  );
+    );
 
   addModelTransformation({
     timeline,
@@ -740,7 +720,7 @@ export function createStoryTimeline() {
   });
 
   timeline
-  .add(
+    .add(
       TRANSFORM_ENGINE_SELECTOR,
       {
         opacity: 0,
@@ -748,8 +728,8 @@ export function createStoryTimeline() {
         duration: 1,
       },
       9300,
-  )
-  .add(
+    )
+    .add(
       "#model-psm",
       {
         opacity: 1,
@@ -760,8 +740,8 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       9280,
-  )
-  .add(
+    )
+    .add(
       "#manual-refinement",
       {
         opacity: 1,
@@ -769,8 +749,8 @@ export function createStoryTimeline() {
         ease: "out(2)",
       },
       9580,
-  )
-  .add(
+    )
+    .add(
       ".model-cursor",
       {
         x: "-4vw",
@@ -779,8 +759,8 @@ export function createStoryTimeline() {
         ease: "inOut(4)",
       },
       9700,
-  )
-  .add(
+    )
+    .add(
       ".refinement-inspector",
       {
         x: 0,
@@ -788,21 +768,21 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       9850,
-  )
-  .add(
+    )
+    .add(
       ".manual-target",
       {
         scale: [
-          {to: 1.08, duration: 240},
-          {to: 1, duration: 320},
+          { to: 1.08, duration: 240 },
+          { to: 1, duration: 320 },
         ],
         borderColor: "var(--accent)",
         duration: 560,
         ease: "out(4)",
       },
       10000,
-  )
-  .add(
+    )
+    .add(
       ".manual-target .node-badge",
       {
         opacity: 1,
@@ -810,16 +790,16 @@ export function createStoryTimeline() {
         ease: "out(2)",
       },
       10220,
-  )
-  .add(
+    )
+    .add(
       ".value-before",
       {
         opacity: 0,
         duration: 220,
       },
       10260,
-  )
-  .add(
+    )
+    .add(
       ".value-after",
       {
         opacity: 1,
@@ -827,8 +807,8 @@ export function createStoryTimeline() {
         ease: "out(3)",
       },
       10300,
-  )
-  .add(
+    )
+    .add(
       ".toggle i",
       {
         x: 13,
@@ -837,8 +817,8 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       10380,
-  )
-  .add(
+    )
+    .add(
       ".inspector-save",
       {
         opacity: 1,
@@ -846,8 +826,8 @@ export function createStoryTimeline() {
         ease: "out(3)",
       },
       10600,
-  )
-  .add(
+    )
+    .add(
       "#manual-refinement",
       {
         opacity: 0,
@@ -855,7 +835,7 @@ export function createStoryTimeline() {
         ease: "in(3)",
       },
       10950,
-  );
+    );
 
   const artifactSourceNodes = selector("#model-psm .model-node");
   const artifactTargets = [
@@ -867,7 +847,7 @@ export function createStoryTimeline() {
   ];
 
   timeline
-  .add(
+    .add(
       {},
       {
         duration: 1,
@@ -877,8 +857,8 @@ export function createStoryTimeline() {
         },
       },
       11280,
-  )
-  .add(
+    )
+    .add(
       "#model-psm",
       {
         opacity: 0.84,
@@ -889,16 +869,16 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       11280,
-  )
-  .add(
+    )
+    .add(
       {},
       {
         duration: 1,
         onBegin: () => placeArtifactTravelers(artifactSourceNodes),
       },
       11740,
-  )
-  .add(
+    )
+    .add(
       "#model-psm .model-edge, #model-psm .edge-label",
       {
         opacity: 0,
@@ -907,8 +887,8 @@ export function createStoryTimeline() {
         ease: "in(2)",
       },
       11520,
-  )
-  .add(
+    )
+    .add(
       ".artifact-tree-panel",
       {
         opacity: 1,
@@ -917,8 +897,8 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       11800,
-  )
-  .add(
+    )
+    .add(
       ".tree-row",
       {
         opacity: 1,
@@ -928,8 +908,8 @@ export function createStoryTimeline() {
         ease: "out(3)",
       },
       11980,
-  )
-  .add(
+    )
+    .add(
       ".generation-summary",
       {
         opacity: 1,
@@ -937,8 +917,8 @@ export function createStoryTimeline() {
         ease: "out(2)",
       },
       12700,
-  )
-  .add(
+    )
+    .add(
       `#model-psm, ${TRANSFORM_ENGINE_SELECTOR}`,
       {
         opacity: 0,
@@ -946,8 +926,8 @@ export function createStoryTimeline() {
         ease: "in(3)",
       },
       12940,
-  )
-  .add(
+    )
+    .add(
       ".artifact-tree-panel",
       {
         x: "-48vw",
@@ -955,8 +935,8 @@ export function createStoryTimeline() {
         ease: "inOut(4)",
       },
       13020,
-  )
-  .add(
+    )
+    .add(
       ".code-panel",
       {
         opacity: 1,
@@ -965,8 +945,8 @@ export function createStoryTimeline() {
         ease: "out(4)",
       },
       13100,
-  )
-  .add(
+    )
+    .add(
       ".code-line:not(.manual-code)",
       {
         opacity: 1,
@@ -976,8 +956,8 @@ export function createStoryTimeline() {
         ease: "out(2)",
       },
       13320,
-  )
-  .add(
+    )
+    .add(
       ".todo-code",
       {
         opacity: 0,
@@ -987,8 +967,8 @@ export function createStoryTimeline() {
         ease: "in(3)",
       },
       14100,
-  )
-  .add(
+    )
+    .add(
       ".manual-code",
       {
         opacity: 1,
@@ -998,26 +978,26 @@ export function createStoryTimeline() {
         ease: "out(3)",
       },
       14300,
-  )
-  .add(
+    )
+    .add(
       ".code-line.protected",
       {
         backgroundColor: [
           {
             to: "color-mix(in srgb, var(--accent) 12%, transparent)",
-            duration: 320
+            duration: 320,
           },
           {
             to: "color-mix(in srgb, var(--accent) 4%, transparent)",
-            duration: 420
+            duration: 420,
           },
         ],
         duration: 740,
         ease: "inOut(2)",
       },
       14500,
-  )
-  .add(
+    )
+    .add(
       ".artifact-tree-panel, .code-panel",
       {
         opacity: 0.18,
@@ -1026,8 +1006,8 @@ export function createStoryTimeline() {
         ease: "inOut(3)",
       },
       15200,
-  )
-  .add(
+    )
+    .add(
       ".deploy-ready",
       {
         opacity: 1,
@@ -1037,20 +1017,17 @@ export function createStoryTimeline() {
         ease: "out(5)",
       },
       15300,
-  )
-  .add(
+    )
+    .add(
       {
         duration: 600,
       },
       STORY_DURATION - 600,
-  );
+    );
 
   addEngineRun(timeline, 11280, 12940);
   const artifactRows = selector(".tree-row");
-  const artifactStepCount = Math.max(
-      artifactSourceNodes.length,
-      artifactTargets.length,
-  );
+  const artifactStepCount = Math.max(artifactSourceNodes.length, artifactTargets.length);
   for (let index = 0; index < artifactStepCount; index += 1) {
     const stepStart = 11820 + index * 160;
     const sourceTraveler = `.traveler-source[data-index="${index}"]`;
@@ -1060,13 +1037,13 @@ export function createStoryTimeline() {
 
     if (sourceNode) {
       timeline
-      .add(
+        .add(
           sourceTraveler,
           {
             opacity: [
-              {to: 1, duration: 50},
-              {to: 1, duration: 120},
-              {to: 0, duration: 50},
+              { to: 1, duration: 50 },
+              { to: 1, duration: 120 },
+              { to: 0, duration: 50 },
             ],
             left: () => `${engineCenter().x}px`,
             top: () => `${engineCenter().y}px`,
@@ -1075,8 +1052,8 @@ export function createStoryTimeline() {
             ease: "in(4)",
           },
           stepStart,
-      )
-      .add(
+        )
+        .add(
           sourceNode,
           {
             opacity: 0.12,
@@ -1085,12 +1062,12 @@ export function createStoryTimeline() {
             ease: "in(3)",
           },
           stepStart + 70,
-      );
+        );
     }
 
     if (targetRow && index < artifactTargets.length) {
       timeline
-      .add(
+        .add(
           targetTraveler,
           {
             opacity: 1,
@@ -1101,8 +1078,8 @@ export function createStoryTimeline() {
             ease: "out(4)",
           },
           stepStart + 120,
-      )
-      .add(
+        )
+        .add(
           targetTraveler,
           {
             opacity: 0,
@@ -1111,27 +1088,27 @@ export function createStoryTimeline() {
             ease: "in(2)",
           },
           stepStart + 330,
-      );
+        );
     }
   }
   timeline.add(
-      ".traveler-source, .traveler-target",
-      {
-        opacity: 0,
-        duration: 220,
-        ease: "in(2)",
-      },
-      13080,
+    ".traveler-source, .traveler-target",
+    {
+      opacity: 0,
+      duration: 220,
+      ease: "in(2)",
+    },
+    13080,
   );
   timeline.add(
-      TRANSFORM_ENGINE_SELECTOR,
-      {
-        opacity: 0,
-        scale: 0.72,
-        duration: 320,
-        ease: "in(3)",
-      },
-      12950,
+    TRANSFORM_ENGINE_SELECTOR,
+    {
+      opacity: 0,
+      scale: 0.72,
+      duration: 320,
+      ease: "in(3)",
+    },
+    12950,
   );
 
   timeline.seek(0, true);

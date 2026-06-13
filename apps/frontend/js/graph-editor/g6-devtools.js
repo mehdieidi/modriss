@@ -1,8 +1,8 @@
-import {state} from '../state.js';
-import {defaultRootModel, getDefaultNode, toDiagram} from '../diagram.js';
-import {modelingLegalKinds, modelingPalette} from '../modeling-config-data.js';
-import {setStatus} from '../status.js';
-import {genId} from '../utils.js';
+import { state } from "../state.js";
+import { defaultRootModel, getDefaultNode, toDiagram } from "../diagram.js";
+import { modelingLegalKinds, modelingPalette } from "../modeling-config-data.js";
+import { setStatus } from "../status.js";
+import { genId } from "../utils.js";
 
 const DEFAULT_TYPES = {
   cim: [
@@ -15,7 +15,7 @@ const DEFAULT_TYPES = {
     "DomainEntity",
     "ValueObject",
     "AggregateCandidate",
-    "Requirement"
+    "Requirement",
   ],
   pim: [
     "Api",
@@ -27,7 +27,7 @@ const DEFAULT_TYPES = {
     "Queue",
     "Topic",
     "Workflow",
-    "Policy"
+    "Policy",
   ],
   psm: [
     "ApiGatewayApi",
@@ -39,8 +39,8 @@ const DEFAULT_TYPES = {
     "SnsTopic",
     "EventBridgeRule",
     "StepFunctionStateMachine",
-    "IamRole"
-  ]
+    "IamRole",
+  ],
 };
 
 function activeTypes(typeKey) {
@@ -79,14 +79,14 @@ function buildRoot(typeKey, nodes, edges, name) {
     y: node.y,
     status: "DRAFT",
     tags: [],
-    ...node.meta
+    ...node.meta,
   }));
   root.diagram.relationships = edges.map((edge) => ({
     id: edge.id,
     kind: edge.kind,
     source: edge.sourceId,
     target: edge.targetId,
-    note: "Synthetic G6 performance edge"
+    note: "Synthetic G6 performance edge",
   }));
   root.name = name;
   return root;
@@ -98,7 +98,7 @@ function generateLargeGraph({
   edgeCount = 2000,
   columns = 40,
   spacingX = 260,
-  spacingY = 150
+  spacingY = 150,
 } = {}) {
   const types = activeTypes(typeKey);
   const nodes = [];
@@ -135,30 +135,26 @@ function generateLargeGraph({
       id: genId("perf-edge"),
       sourceId: source.id,
       targetId: target.id,
-      kind: legalKind(typeKey, source.type, target.type)
+      kind: legalKind(typeKey, source.type, target.type),
     });
   }
-  return {nodes, edges};
+  return { nodes, edges };
 }
 
 export function installG6LargeGraphDevHelper({
-  renderDiagram = () => {
-  },
-  renderWorkbench = () => {
-  }
+  renderDiagram = () => {},
+  renderWorkbench = () => {},
 } = {}) {
   window.modlessGenerateLargeGraph = (options = {}) => {
     const typeKey = options.typeKey || state.activeType || "cim";
-    const nodeCount = Math.max(1, Number(options.nodes || options.nodeCount)
-        || 1000);
-    const edgeCount = Math.max(0, Number(options.edges || options.edgeCount)
-        || 2000);
+    const nodeCount = Math.max(1, Number(options.nodes || options.nodeCount) || 1000);
+    const edgeCount = Math.max(0, Number(options.edges || options.edgeCount) || 2000);
     const name = `G6 performance ${nodeCount}n ${edgeCount}e`;
-    const {nodes, edges} = generateLargeGraph({
+    const { nodes, edges } = generateLargeGraph({
       ...options,
       typeKey,
       nodeCount,
-      edgeCount
+      edgeCount,
     });
     const root = buildRoot(typeKey, nodes, edges, name);
     state.activeType = typeKey;
@@ -178,10 +174,11 @@ export function installG6LargeGraphDevHelper({
     renderDiagram();
     renderWorkbench();
     setStatus(
-        `Loaded synthetic G6 graph: ${state.diagram.nodes.length} nodes, ${state.diagram.connections.length} edges`);
+      `Loaded synthetic G6 graph: ${state.diagram.nodes.length} nodes, ${state.diagram.connections.length} edges`,
+    );
     return {
       nodes: state.diagram.nodes.length,
-      edges: state.diagram.connections.length
+      edges: state.diagram.connections.length,
     };
   };
 }

@@ -87,15 +87,11 @@ export const el = {
   artifactEditorFileName: document.getElementById("artifactEditorFileName"),
   artifactEditorContent: document.getElementById("artifactEditorContent"),
   artifactEditorStatusBar: document.getElementById("artifactEditorStatusBar"),
-  artifactEditorStatusPosition: document.getElementById(
-      "artifactEditorStatusPosition"),
-  artifactEditorStatusIndent: document.getElementById(
-      "artifactEditorStatusIndent"),
-  artifactEditorStatusEncoding: document.getElementById(
-      "artifactEditorStatusEncoding"),
+  artifactEditorStatusPosition: document.getElementById("artifactEditorStatusPosition"),
+  artifactEditorStatusIndent: document.getElementById("artifactEditorStatusIndent"),
+  artifactEditorStatusEncoding: document.getElementById("artifactEditorStatusEncoding"),
   artifactEditorStatusEol: document.getElementById("artifactEditorStatusEol"),
-  artifactEditorStatusLanguage: document.getElementById(
-      "artifactEditorStatusLanguage"),
+  artifactEditorStatusLanguage: document.getElementById("artifactEditorStatusLanguage"),
   saveFileBtn: document.getElementById("saveFileBtn"),
   // admin workspace
   adminScopeSelect: document.getElementById("adminScopeSelect"),
@@ -176,13 +172,10 @@ export const el = {
   validationSubtitle: document.getElementById("validationSubtitle"),
   validationIssues: document.getElementById("validationIssues"),
   validationCloseBtn: document.getElementById("validationCloseBtn"),
-  boundedContextNameOverlay: document.getElementById(
-      "boundedContextNameOverlay"),
+  boundedContextNameOverlay: document.getElementById("boundedContextNameOverlay"),
   boundedContextNameInput: document.getElementById("boundedContextNameInput"),
-  boundedContextNameSaveBtn: document.getElementById(
-      "boundedContextNameSaveBtn"),
-  boundedContextNameCancelBtn: document.getElementById(
-      "boundedContextNameCancelBtn"),
+  boundedContextNameSaveBtn: document.getElementById("boundedContextNameSaveBtn"),
+  boundedContextNameCancelBtn: document.getElementById("boundedContextNameCancelBtn"),
   notFoundOverlay: document.getElementById("notFoundOverlay"),
-  notFoundGoHomeBtn: document.getElementById("notFoundGoHomeBtn")
+  notFoundGoHomeBtn: document.getElementById("notFoundGoHomeBtn"),
 };

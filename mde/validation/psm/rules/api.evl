@@ -173,4 +173,3 @@ context AWSPSM!ApiGatewayUsagePlanKey {
     message : 'Usage plan key ' + self.resourceLabel() + ' has invalid keyType. Fix: set keyType to API_KEY.'
   }
 }
-

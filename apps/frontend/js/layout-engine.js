@@ -16,7 +16,7 @@ function normalizeNodeSize(nodeSize = {}) {
   const height = numeric(nodeSize.height, DEFAULT_NODE_H);
   return {
     width: width > 0 ? width : DEFAULT_NODE_W,
-    height: height > 0 ? height : DEFAULT_NODE_H
+    height: height > 0 ? height : DEFAULT_NODE_H,
   };
 }
 
@@ -28,7 +28,7 @@ function spacingFor(nodeSize, options = {}) {
     stepX: size.width + numeric(options.gapX, GAP_X),
     stepY: size.height + numeric(options.gapY, GAP_Y),
     marginX: numeric(options.marginX, GAP_X / 2),
-    marginY: numeric(options.marginY, GAP_Y / 2)
+    marginY: numeric(options.marginY, GAP_Y / 2),
   };
 }
 
@@ -38,13 +38,12 @@ function rectFor(node, nodeSize, options = {}) {
     minX: numeric(node.x) - spacing.marginX,
     minY: numeric(node.y) - spacing.marginY,
     maxX: numeric(node.x) + spacing.width + spacing.marginX,
-    maxY: numeric(node.y) + spacing.height + spacing.marginY
+    maxY: numeric(node.y) + spacing.height + spacing.marginY,
   };
 }
 
 function rectsOverlap(a, b) {
-  return a.minX < b.maxX && a.maxX > b.minX
-      && a.minY < b.maxY && a.maxY > b.minY;
+  return a.minX < b.maxX && a.maxX > b.minX && a.minY < b.maxY && a.maxY > b.minY;
 }
 
 function sortNodes(nodes) {
@@ -73,30 +72,29 @@ function syncNodeMeta(node) {
 function clampPosition(position, options = {}) {
   return {
     x: Math.max(numeric(options.minX, LAYOUT_MARGIN), Math.round(position.x)),
-    y: Math.max(numeric(options.minY, LAYOUT_MARGIN), Math.round(position.y))
+    y: Math.max(numeric(options.minY, LAYOUT_MARGIN), Math.round(position.y)),
   };
 }
 
 function candidateScore(dx, dy, preferDx, preferDy) {
   const distance = Math.abs(dx) + Math.abs(dy);
-  const biasPenalty = (preferDx && Math.sign(dx) !== Math.sign(preferDx)
-          ? 0.75 : 0)
-      + (preferDy && Math.sign(dy) !== Math.sign(preferDy) ? 0.5 : 0);
+  const biasPenalty =
+    (preferDx && Math.sign(dx) !== Math.sign(preferDx) ? 0.75 : 0) +
+    (preferDy && Math.sign(dy) !== Math.sign(preferDy) ? 0.5 : 0);
   const verticalPenalty = Math.abs(dy) * 0.12;
   return distance + biasPenalty + verticalPenalty;
 }
 
 function findFreePosition(origin, occupiedRects, nodeSize, options = {}) {
   const spacing = spacingFor(nodeSize, options);
-  const overlaps = options.overlaps
-      || ((rect) => occupiedRects.some((occupied) =>
-          rectsOverlap(rect, occupied)));
+  const overlaps =
+    options.overlaps || ((rect) => occupiedRects.some((occupied) => rectsOverlap(rect, occupied)));
   const start = clampPosition(origin, options);
   const originRect = {
     minX: start.x - spacing.marginX,
     minY: start.y - spacing.marginY,
     maxX: start.x + spacing.width + spacing.marginX,
-    maxY: start.y + spacing.height + spacing.marginY
+    maxY: start.y + spacing.height + spacing.marginY,
   };
   if (!overlaps(originRect)) {
     return start;
@@ -115,21 +113,24 @@ function findFreePosition(origin, occupiedRects, nodeSize, options = {}) {
         candidates.push({
           dx,
           dy,
-          score: candidateScore(dx, dy, preferDx, preferDy)
+          score: candidateScore(dx, dy, preferDx, preferDy),
         });
       }
     }
     candidates.sort((left, right) => left.score - right.score);
     for (const candidate of candidates) {
-      const position = clampPosition({
-        x: start.x + candidate.dx * spacing.stepX,
-        y: start.y + candidate.dy * spacing.stepY
-      }, options);
+      const position = clampPosition(
+        {
+          x: start.x + candidate.dx * spacing.stepX,
+          y: start.y + candidate.dy * spacing.stepY,
+        },
+        options,
+      );
       const rect = {
         minX: position.x - spacing.marginX,
         minY: position.y - spacing.marginY,
         maxX: position.x + spacing.width + spacing.marginX,
-        maxY: position.y + spacing.height + spacing.marginY
+        maxY: position.y + spacing.height + spacing.marginY,
       };
       if (!overlaps(rect)) {
         return position;
@@ -137,23 +138,31 @@ function findFreePosition(origin, occupiedRects, nodeSize, options = {}) {
     }
   }
 
-  const fallback = clampPosition({
-    x: start.x,
-    y: numeric(options.fallbackY, start.y + spacing.stepY)
-  }, options);
-  while (overlaps({
-    minX: fallback.x - spacing.marginX,
-    minY: fallback.y - spacing.marginY,
-    maxX: fallback.x + spacing.width + spacing.marginX,
-    maxY: fallback.y + spacing.height + spacing.marginY
-  })) {
+  const fallback = clampPosition(
+    {
+      x: start.x,
+      y: numeric(options.fallbackY, start.y + spacing.stepY),
+    },
+    options,
+  );
+  while (
+    overlaps({
+      minX: fallback.x - spacing.marginX,
+      minY: fallback.y - spacing.marginY,
+      maxX: fallback.x + spacing.width + spacing.marginX,
+      maxY: fallback.y + spacing.height + spacing.marginY,
+    })
+  ) {
     fallback.y += spacing.stepY;
   }
   return fallback;
 }
 
 function componentOrderKey(component) {
-  return component.map((node) => String(node.id || "")).sort().join("|");
+  return component
+    .map((node) => String(node.id || ""))
+    .sort()
+    .join("|");
 }
 
 function connectedComponents(nodes, edges) {
@@ -268,16 +277,18 @@ function stronglyConnectedComponents(component, edgesBySource) {
 function layerComponent(component, edgesBySource) {
   const sccs = stronglyConnectedComponents(component, edgesBySource);
   const sccByNodeId = new Map();
-  sccs.forEach((scc, index) => scc.forEach((nodeId) =>
-      sccByNodeId.set(nodeId, index)));
+  sccs.forEach((scc, index) => scc.forEach((nodeId) => sccByNodeId.set(nodeId, index)));
   const outgoing = sccs.map(() => new Set());
   const indegree = sccs.map(() => 0);
   component.forEach((node) => {
     (edgesBySource.get(node.id) || []).forEach((targetId) => {
       const sourceScc = sccByNodeId.get(node.id);
       const targetScc = sccByNodeId.get(targetId);
-      if (targetScc === undefined || sourceScc === targetScc
-          || outgoing[sourceScc].has(targetScc)) {
+      if (
+        targetScc === undefined ||
+        sourceScc === targetScc ||
+        outgoing[sourceScc].has(targetScc)
+      ) {
         return;
       }
       outgoing[sourceScc].add(targetScc);
@@ -302,29 +313,26 @@ function layerComponent(component, edgesBySource) {
       }
     });
   }
-  return new Map(component.map((node) => [
-    node.id, depth[sccByNodeId.get(node.id)] || 0
-  ]));
+  return new Map(component.map((node) => [node.id, depth[sccByNodeId.get(node.id)] || 0]));
 }
 
 function sortLayerNodes(nodes, edgesBySource, edgesByTarget) {
   return [...nodes].sort((left, right) => {
-    const leftWeight = (edgesByTarget.get(left.id)?.size || 0)
-        - (edgesBySource.get(left.id)?.size || 0);
-    const rightWeight = (edgesByTarget.get(right.id)?.size || 0)
-        - (edgesBySource.get(right.id)?.size || 0);
+    const leftWeight =
+      (edgesByTarget.get(left.id)?.size || 0) - (edgesBySource.get(left.id)?.size || 0);
+    const rightWeight =
+      (edgesByTarget.get(right.id)?.size || 0) - (edgesBySource.get(right.id)?.size || 0);
     if (leftWeight !== rightWeight) {
       return leftWeight - rightWeight;
     }
-    return String(left.label || left.id || "").localeCompare(
-        String(right.label || right.id || ""));
+    return String(left.label || left.id || "").localeCompare(String(right.label || right.id || ""));
   });
 }
 
 export function nodeSizeForType(typeKey) {
   return typeKey === "cim"
-      ? {width: CIM_NODE_W, height: CIM_NODE_H}
-      : {width: DEFAULT_NODE_W, height: DEFAULT_NODE_H};
+    ? { width: CIM_NODE_W, height: CIM_NODE_H }
+    : { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H };
 }
 
 export function layoutLooksStacked(nodes, nodeSize, options = {}) {
@@ -332,13 +340,14 @@ export function layoutLooksStacked(nodes, nodeSize, options = {}) {
     return false;
   }
   const spacing = spacingFor(nodeSize, options);
-  const allZero = nodes.every((node) => numeric(node.x) === 0
-      && numeric(node.y) === 0);
-  const coarsePositions = new Set(nodes.map((node) => {
-    const x = Math.round(numeric(node.x) / Math.max(spacing.stepX, 1));
-    const y = Math.round(numeric(node.y) / Math.max(spacing.stepY, 1));
-    return `${x},${y}`;
-  }));
+  const allZero = nodes.every((node) => numeric(node.x) === 0 && numeric(node.y) === 0);
+  const coarsePositions = new Set(
+    nodes.map((node) => {
+      const x = Math.round(numeric(node.x) / Math.max(spacing.stepX, 1));
+      const y = Math.round(numeric(node.y) / Math.max(spacing.stepY, 1));
+      return `${x},${y}`;
+    }),
+  );
   const rectIndex = createRectIndex(spacing.stepX, spacing.stepY);
   for (const node of nodes) {
     const rect = rectFor(node, nodeSize, options);
@@ -388,7 +397,7 @@ function createRectIndex(cellWidth, cellHeight) {
         }
       }
       return false;
-    }
+    },
   };
 }
 
@@ -397,33 +406,32 @@ export function resolveNodeOverlaps(nodes, nodeSize, options = {}) {
     return new Set();
   }
   const movableNodeIds = options.movableNodeIds
-      ? new Set(options.movableNodeIds) : new Set(nodes.map((node) => node.id));
-  const fixedNodes = sortNodes(nodes.filter((node) => !movableNodeIds.has(
-      node.id)));
-  const movableNodes = sortNodes(nodes.filter((node) => movableNodeIds.has(
-      node.id)));
+    ? new Set(options.movableNodeIds)
+    : new Set(nodes.map((node) => node.id));
+  const fixedNodes = sortNodes(nodes.filter((node) => !movableNodeIds.has(node.id)));
+  const movableNodes = sortNodes(nodes.filter((node) => movableNodeIds.has(node.id)));
   const spacing = spacingFor(nodeSize, options);
-  const occupiedRects = fixedNodes.map((node) => rectFor(node, nodeSize,
-      options));
+  const occupiedRects = fixedNodes.map((node) => rectFor(node, nodeSize, options));
   const rectIndex = createRectIndex(spacing.stepX, spacing.stepY);
   occupiedRects.forEach((rect) => rectIndex.add(rect));
-  let fallbackY = occupiedRects.reduce((maxValue, rect) =>
-      Math.max(maxValue, rect.maxY + spacing.marginY), LAYOUT_MARGIN);
+  let fallbackY = occupiedRects.reduce(
+    (maxValue, rect) => Math.max(maxValue, rect.maxY + spacing.marginY),
+    LAYOUT_MARGIN,
+  );
   const movedNodeIds = new Set();
   for (const node of movableNodes) {
     const preferred = {
       x: numeric(node.x, LAYOUT_MARGIN),
-      y: numeric(node.y, LAYOUT_MARGIN)
+      y: numeric(node.y, LAYOUT_MARGIN),
     };
     const resolved = findFreePosition(preferred, occupiedRects, nodeSize, {
       ...options,
       overlaps: (rect) => rectIndex.overlaps(rect),
       fallbackY,
       preferDx: options.preferDxByNodeId?.get(node.id) ?? options.preferDx,
-      preferDy: options.preferDyByNodeId?.get(node.id) ?? options.preferDy
+      preferDy: options.preferDyByNodeId?.get(node.id) ?? options.preferDy,
     });
-    if (resolved.x !== Math.round(numeric(node.x))
-        || resolved.y !== Math.round(numeric(node.y))) {
+    if (resolved.x !== Math.round(numeric(node.x)) || resolved.y !== Math.round(numeric(node.y))) {
       movedNodeIds.add(node.id);
     }
     node.x = resolved.x;
@@ -437,15 +445,18 @@ export function resolveNodeOverlaps(nodes, nodeSize, options = {}) {
   return movedNodeIds;
 }
 
-export function applyDeterministicLayout(nodes, edges = [], nodeSize,
-    options = {}) {
+export function applyDeterministicLayout(nodes, edges = [], nodeSize, options = {}) {
   if (!Array.isArray(nodes) || !nodes.length) {
     return new Set();
   }
   const size = normalizeNodeSize(nodeSize);
   const validNodesById = new Map(nodes.map((node) => [node.id, node]));
-  const validEdges = edges.filter((edge) => validNodesById.has(edge.sourceId)
-      && validNodesById.has(edge.targetId) && edge.sourceId !== edge.targetId);
+  const validEdges = edges.filter(
+    (edge) =>
+      validNodesById.has(edge.sourceId) &&
+      validNodesById.has(edge.targetId) &&
+      edge.sourceId !== edge.targetId,
+  );
   const edgesBySource = new Map(nodes.map((node) => [node.id, new Set()]));
   const edgesByTarget = new Map(nodes.map((node) => [node.id, new Set()]));
   validEdges.forEach((edge) => {
@@ -468,18 +479,15 @@ export function applyDeterministicLayout(nodes, edges = [], nodeSize,
       }
       layers.get(layerIndex).push(node);
     });
-    const sortedLayers = [...layers.entries()].sort(([left], [right]) =>
-        left - right);
-    const maxRows = Math.max(...sortedLayers.map(([, layerNodes]) =>
-        layerNodes.length));
+    const sortedLayers = [...layers.entries()].sort(([left], [right]) => left - right);
+    const maxRows = Math.max(...sortedLayers.map(([, layerNodes]) => layerNodes.length));
     const componentStartX = numeric(options.startX, LAYOUT_MARGIN);
     sortedLayers.forEach(([layerIndex, layerNodes]) => {
       const ordered = sortLayerNodes(layerNodes, edgesBySource, edgesByTarget);
       const rowOffset = (maxRows - ordered.length) / 2;
       ordered.forEach((node, rowIndex) => {
         node.x = componentStartX + layerIndex * (size.width + GAP_X + 28);
-        node.y = currentY + Math.round((rowOffset + rowIndex) * (size.height
-            + GAP_Y));
+        node.y = currentY + Math.round((rowOffset + rowIndex) * (size.height + GAP_Y));
         syncNodeMeta(node);
         movedNodeIds.add(node.id);
       });
@@ -487,13 +495,11 @@ export function applyDeterministicLayout(nodes, edges = [], nodeSize,
     currentY += maxRows * (size.height + GAP_Y) + size.height + GAP_Y * 2;
   });
 
-  resolveNodeOverlaps(nodes, size, options).forEach((id) => movedNodeIds.add(
-      id));
+  resolveNodeOverlaps(nodes, size, options).forEach((id) => movedNodeIds.add(id));
   return movedNodeIds;
 }
 
-export function ensureReadableLayout(nodes, edges = [], nodeSize,
-    options = {}) {
+export function ensureReadableLayout(nodes, edges = [], nodeSize, options = {}) {
   if (layoutLooksStacked(nodes, nodeSize, options)) {
     return applyDeterministicLayout(nodes, edges, nodeSize, options);
   }

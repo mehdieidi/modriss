@@ -1,0 +1,13 @@
+{
+  "name": "modless-formatting",
+  "private": true,
+  "scripts": {
+    "format": "python scripts/format.py",
+    "format:check": "python scripts/format.py --check",
+    "format:prettier": "prettier --write --ignore-unknown",
+    "format:prettier:check": "prettier --check --ignore-unknown"
+  },
+  "devDependencies": {
+    "prettier": "3.5.3"
+  }
+}

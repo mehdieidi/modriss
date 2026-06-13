@@ -170,3 +170,23 @@ maintainability and extensibility.
 The overall goal is to provide a novel, rigorous, and practical platform that combines model-driven
 engineering, low-code development, serverless architecture, and AI-assisted modeling into a unified
 environment for developing applications that follow the serverless paradigm.
+
+## Formatting
+
+The repository uses pinned formatters and shared configuration so formatting is identical across
+machines. Java is formatted by Spotless with Google Java Format, web/docs/config files by Prettier,
+and Epsilon/EMF sources receive conservative whitespace normalization.
+
+Install Java 17+, Maven, Python 3, and Node.js/npm, then run:
+
+```bash
+python scripts/format.py
+```
+
+The script installs the exact locked Prettier version automatically when `node_modules` is absent.
+
+To verify formatting without changing files:
+
+```bash
+python scripts/format.py --check
+```

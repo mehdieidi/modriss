@@ -1,25 +1,24 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {api, apiAuthHeaders} from './api.js';
-import {setBusy, setError, setStatus} from './status.js';
-import {emptyDiagram, escapeHtml} from './utils.js';
-import {toDiagram} from './diagram.js';
-import {renderDiagram, renderPalette, resetCanvasView} from './canvas.js';
-import {updateGenerateButtonState} from './model-ops.js';
-import {renderViewWorkbench} from './view-explorer.js';
-import {restoreTabGraphState} from './graph-store.js';
-import {materializeActiveView} from './view-materializer.js';
-import {clearArtifactState} from './artifact.js';
-import {apiUrl, MODEL_TYPES} from './config.js';
-import {confirmAction} from './confirm-action.js';
-import {resetModelSaveState, updateModelSaveUi} from './model-save-ui.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { api, apiAuthHeaders } from "./api.js";
+import { setBusy, setError, setStatus } from "./status.js";
+import { emptyDiagram, escapeHtml } from "./utils.js";
+import { toDiagram } from "./diagram.js";
+import { renderDiagram, renderPalette, resetCanvasView } from "./canvas.js";
+import { updateGenerateButtonState } from "./model-ops.js";
+import { renderViewWorkbench } from "./view-explorer.js";
+import { restoreTabGraphState } from "./graph-store.js";
+import { materializeActiveView } from "./view-materializer.js";
+import { clearArtifactState } from "./artifact.js";
+import { apiUrl, MODEL_TYPES } from "./config.js";
+import { confirmAction } from "./confirm-action.js";
+import { resetModelSaveState, updateModelSaveUi } from "./model-save-ui.js";
 
 function resolveProjectId(project) {
   return project?.id || project?.projectId || project?.uuid || null;
 }
 
-const getElementTarget = (event) => (event.target instanceof Element
-    ? event.target : null);
+const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
 const LAST_PROJECT_STORAGE_PREFIX = "modless.lastProjectId";
 
 function lastProjectStorageKey() {
@@ -43,14 +42,12 @@ function clearLastProjectId() {
 }
 
 export function bindProjectDialogActions() {
-  if (el.createProjectBtn && el.createProjectBtn.dataset.boundProjectCreate
-      !== "true") {
+  if (el.createProjectBtn && el.createProjectBtn.dataset.boundProjectCreate !== "true") {
     el.createProjectBtn.dataset.boundProjectCreate = "true";
     el.createProjectBtn.addEventListener("click", createProject);
   }
 
-  if (el.newProjectName && el.newProjectName.dataset.boundProjectEnter
-      !== "true") {
+  if (el.newProjectName && el.newProjectName.dataset.boundProjectEnter !== "true") {
     el.newProjectName.dataset.boundProjectEnter = "true";
     el.newProjectName.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -59,8 +56,7 @@ export function bindProjectDialogActions() {
     });
   }
 
-  if (el.projectList && el.projectList.dataset.boundProjectListClick
-      !== "true") {
+  if (el.projectList && el.projectList.dataset.boundProjectListClick !== "true") {
     el.projectList.dataset.boundProjectListClick = "true";
     el.projectList.addEventListener("click", async (event) => {
       const target = getElementTarget(event);
@@ -81,8 +77,7 @@ export function bindProjectDialogActions() {
     });
   }
 
-  if (el.editProjectNameBtn
-      && el.editProjectNameBtn.dataset.boundEditProjectName !== "true") {
+  if (el.editProjectNameBtn && el.editProjectNameBtn.dataset.boundEditProjectName !== "true") {
     el.editProjectNameBtn.dataset.boundEditProjectName = "true";
     el.editProjectNameBtn.addEventListener("click", (event) => {
       event.preventDefault();
@@ -91,20 +86,20 @@ export function bindProjectDialogActions() {
     });
   }
 
-  if (el.projectNameCancelBtn
-      && el.projectNameCancelBtn.dataset.boundProjectNameCancel !== "true") {
+  if (
+    el.projectNameCancelBtn &&
+    el.projectNameCancelBtn.dataset.boundProjectNameCancel !== "true"
+  ) {
     el.projectNameCancelBtn.dataset.boundProjectNameCancel = "true";
     el.projectNameCancelBtn.addEventListener("click", hideProjectNameDialog);
   }
 
-  if (el.projectNameSaveBtn
-      && el.projectNameSaveBtn.dataset.boundProjectNameSave !== "true") {
+  if (el.projectNameSaveBtn && el.projectNameSaveBtn.dataset.boundProjectNameSave !== "true") {
     el.projectNameSaveBtn.dataset.boundProjectNameSave = "true";
     el.projectNameSaveBtn.addEventListener("click", saveProjectName);
   }
 
-  if (el.projectNameInput
-      && el.projectNameInput.dataset.boundProjectNameInput !== "true") {
+  if (el.projectNameInput && el.projectNameInput.dataset.boundProjectNameInput !== "true") {
     el.projectNameInput.dataset.boundProjectNameInput = "true";
     el.projectNameInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -117,8 +112,7 @@ export function bindProjectDialogActions() {
     });
   }
 
-  if (el.projectNameOverlay
-      && el.projectNameOverlay.dataset.boundProjectNameOverlay !== "true") {
+  if (el.projectNameOverlay && el.projectNameOverlay.dataset.boundProjectNameOverlay !== "true") {
     el.projectNameOverlay.dataset.boundProjectNameOverlay = "true";
     el.projectNameOverlay.addEventListener("click", (event) => {
       if (event.target === el.projectNameOverlay) {
@@ -126,7 +120,6 @@ export function bindProjectDialogActions() {
       }
     });
   }
-
 }
 
 // ── Show / hide project dialog ────────────────────────────────────────────────
@@ -198,12 +191,12 @@ async function saveProjectName() {
       body: JSON.stringify({
         name,
         description: state.project.description || "",
-        activeModelIds: state.project.activeModelIds || {}
-      })
+        activeModelIds: state.project.activeModelIds || {},
+      }),
     });
     state.project = {
       ...state.project,
-      ...updated
+      ...updated,
     };
     if (el.projectLabel) {
       el.projectLabel.textContent = updated?.name || name;
@@ -238,8 +231,8 @@ export async function refreshProjectList() {
         item.setAttribute("data-project-id", String(projectId));
       }
       const createdDate = p.createdAt ? new Date(p.createdAt) : null;
-      const date = createdDate && !Number.isNaN(createdDate.getTime())
-          ? createdDate.toLocaleDateString() : "";
+      const date =
+        createdDate && !Number.isNaN(createdDate.getTime()) ? createdDate.toLocaleDateString() : "";
       item.innerHTML = `
         <span class="project-item-icon">📁</span>
         <div class="project-item-info">
@@ -251,7 +244,8 @@ export async function refreshProjectList() {
     });
   } catch (err) {
     el.projectList.innerHTML = `<div class="project-list-empty">Could not load projects: ${escapeHtml(
-        err.message)}</div>`;
+      err.message,
+    )}</div>`;
   }
 }
 
@@ -267,7 +261,7 @@ export async function createProject() {
     setBusy("Creating project…");
     const project = await api("/projects", {
       method: "POST",
-      body: JSON.stringify({name, description: el.newProjectDesc.value.trim()})
+      body: JSON.stringify({ name, description: el.newProjectDesc.value.trim() }),
     });
     el.newProjectName.value = "";
     el.newProjectDesc.value = "";
@@ -289,7 +283,7 @@ export async function loadProject(project) {
     ...project,
     id: projectId,
     ownerUserId: project?.ownerUserId || project?.ownerId || null,
-    activeModelIds: project?.activeModelIds || {}
+    activeModelIds: project?.activeModelIds || {},
   };
   const projectName = project?.name || "Unnamed project";
   setBusy(`Loading project "${projectName}"…`);
@@ -304,20 +298,22 @@ export async function loadProject(project) {
 
     const typeKeys = ["cim", "pim", "psm"];
     const recordsByType = {};
-    await Promise.all(typeKeys.map(async (type) => {
-      try {
-        const records = await api(
-            `/${MODEL_TYPES[type].apiType}?projectId=${projectId}`);
-        state.modelsCache[type] = records;
-        recordsByType[type] = records;
-      } catch (error) {
-        state.modelsCache[type] = [];
-        recordsByType[type] = [];
-        console.warn(
+    await Promise.all(
+      typeKeys.map(async (type) => {
+        try {
+          const records = await api(`/${MODEL_TYPES[type].apiType}?projectId=${projectId}`);
+          state.modelsCache[type] = records;
+          recordsByType[type] = records;
+        } catch (error) {
+          state.modelsCache[type] = [];
+          recordsByType[type] = [];
+          console.warn(
             `Failed to load ${type.toUpperCase()} models for project ${projectId}.`,
-            error);
-      }
-    }));
+            error,
+          );
+        }
+      }),
+    );
 
     // Reset all tab states
     for (const type of typeKeys) {
@@ -330,22 +326,21 @@ export async function loadProject(project) {
         views: null,
         fragments: null,
         activeViewId: null,
-        dirty: false
+        dirty: false,
       };
     }
 
     // Load active models for each tab
     for (const type of typeKeys) {
       // Support legacy projects that stored active-model keys as uppercase tab types.
-      const activeModelId = normalizedProject.activeModelIds?.[type]
-          || normalizedProject.activeModelIds?.[type.toUpperCase()];
-      const fallbackModelId = type === "cim" ? (recordsByType[type]?.[0]?.id
-          || null) : null;
+      const activeModelId =
+        normalizedProject.activeModelIds?.[type] ||
+        normalizedProject.activeModelIds?.[type.toUpperCase()];
+      const fallbackModelId = type === "cim" ? recordsByType[type]?.[0]?.id || null : null;
       const modelIdToLoad = activeModelId || fallbackModelId;
       if (modelIdToLoad) {
         try {
-          const record = await api(
-              `/${MODEL_TYPES[type].apiType}/${modelIdToLoad}`);
+          const record = await api(`/${MODEL_TYPES[type].apiType}/${modelIdToLoad}`);
           state.tabs[type] = {
             modelId: record.id,
             modelRevision: Number(record.revision) || 1,
@@ -356,7 +351,7 @@ export async function loadProject(project) {
             views: null,
             fragments: null,
             activeViewId: null,
-            dirty: false
+            dirty: false,
           };
         } catch (_) {
           // model not found or deleted – leave blank
@@ -378,8 +373,9 @@ export async function loadProject(project) {
     restoreTabGraphState("cim");
     materializeActiveView();
 
-    Array.from(el.modelTabs.querySelectorAll(".tab")).forEach(
-        (t) => t.classList.toggle("active", t.dataset.type === "cim"));
+    Array.from(el.modelTabs.querySelectorAll(".tab")).forEach((t) =>
+      t.classList.toggle("active", t.dataset.type === "cim"),
+    );
     const topbar = document.querySelector(".topbar");
     topbar?.classList.remove("artifact-mode");
     el.workspace?.classList.remove("artifact-mode");
@@ -430,14 +426,14 @@ export async function deleteCurrentProject() {
     title: "Delete Project",
     message: `Delete project "${projectName}"? This cannot be undone.`,
     confirmLabel: "Delete Project",
-    danger: true
+    danger: true,
   });
   if (!confirmed) {
     return;
   }
 
   try {
-    await api(`/projects/${projectId}`, {method: "DELETE"});
+    await api(`/projects/${projectId}`, { method: "DELETE" });
     state.project = null;
     clearArtifactState();
     state.modelId = null;
@@ -450,7 +446,7 @@ export async function deleteCurrentProject() {
       baseModel: null,
       diagram: emptyDiagram("cim"),
       modelName: "cim-model",
-      dirty: false
+      dirty: false,
     };
     state.tabs.pim = {
       modelId: null,
@@ -458,7 +454,7 @@ export async function deleteCurrentProject() {
       baseModel: null,
       diagram: emptyDiagram("pim"),
       modelName: "pim-model",
-      dirty: false
+      dirty: false,
     };
     state.tabs.psm = {
       modelId: null,
@@ -466,7 +462,7 @@ export async function deleteCurrentProject() {
       baseModel: null,
       diagram: emptyDiagram("psm"),
       modelName: "psm-model",
-      dirty: false
+      dirty: false,
     };
     state.diagram = state.tabs.cim.diagram;
     state.selectedNodeId = null;
@@ -511,13 +507,13 @@ export async function downloadCurrentProject() {
     return;
   }
   const projectName = state.project.name || "project";
-  const fallbackFilename = `${projectName.replaceAll(/[^A-Za-z0-9._-]+/g,
-      "-").replaceAll(/^-+|-+$/g, "") || "project"}.zip`;
+  const fallbackFilename = `${
+    projectName.replaceAll(/[^A-Za-z0-9._-]+/g, "-").replaceAll(/^-+|-+$/g, "") || "project"
+  }.zip`;
   try {
-    const response = await fetch(
-        apiUrl(`/projects/${state.project.id}/download`), {
-          headers: apiAuthHeaders()
-        });
+    const response = await fetch(apiUrl(`/projects/${state.project.id}/download`), {
+      headers: apiAuthHeaders(),
+    });
     if (!response.ok) {
       let message = `Download failed (${response.status})`;
       try {
@@ -535,7 +531,9 @@ export async function downloadCurrentProject() {
     }
     const blob = await response.blob();
     const filename = filenameFromContentDisposition(
-        response.headers.get("content-disposition") || "", fallbackFilename);
+      response.headers.get("content-disposition") || "",
+      fallbackFilename,
+    );
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = objectUrl;
@@ -555,15 +553,16 @@ export async function updateProjectActiveModel(type, modelId) {
     return;
   }
   try {
-    const activeModelIds = Object.assign({}, state.project.activeModelIds,
-        {[type]: String(modelId)});
+    const activeModelIds = Object.assign({}, state.project.activeModelIds, {
+      [type]: String(modelId),
+    });
     const updated = await api(`/projects/${state.project.id}`, {
       method: "PUT",
       body: JSON.stringify({
         name: state.project.name,
         description: state.project.description || "",
-        activeModelIds
-      })
+        activeModelIds,
+      }),
     });
     state.project = updated;
   } catch (_) {

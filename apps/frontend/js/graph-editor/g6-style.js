@@ -1,12 +1,12 @@
-import {state} from '../state.js';
+import { state } from "../state.js";
 
 export const MODLESS_NODE_TYPE = "modless-node";
 export const MODLESS_EDGE_TYPE = "modless-edge";
 export const G6_BASE_NODE_TYPE = MODLESS_NODE_TYPE;
 export const G6_BASE_EDGE_TYPE = MODLESS_EDGE_TYPE;
 export const NODE_SIZE = {
-  default: {width: 228, height: 112},
-  cim: {width: 176, height: 96}
+  default: { width: 228, height: 112 },
+  cim: { width: 176, height: 96 },
 };
 
 const FALLBACK_ACCENTS = {
@@ -41,7 +41,7 @@ const FALLBACK_ACCENTS = {
   EventBridgeRule: "#9333ea",
   DynamoDbTable: "#84cc16",
   S3Bucket: "#22d3ee",
-  IamRole: "#f43f5e"
+  IamRole: "#f43f5e",
 };
 
 const STICKY_BY_NOTATION = {
@@ -70,7 +70,7 @@ const STICKY_BY_NOTATION = {
   security: "#ddd6fe",
   privacy: "#ddd6fe",
   compliance: "#ddd6fe",
-  quality: "#ddd6fe"
+  quality: "#ddd6fe",
 };
 
 const STICKY_BY_TYPE = {
@@ -108,7 +108,7 @@ const STICKY_BY_TYPE = {
   Risk: "#fda4af",
   RequirementLink: "#c7d2fe",
   GoalSatisfactionLink: "#bfdbfe",
-  Assumption: "#ddd6fe"
+  Assumption: "#ddd6fe",
 };
 
 let cssVarCacheKey = "";
@@ -134,8 +134,7 @@ export function cssVar(name, fallback = "") {
     return cssVarCache.get(cacheKey);
   }
   const root = document.documentElement;
-  const value = root ? getComputedStyle(root).getPropertyValue(name).trim()
-      : "";
+  const value = root ? getComputedStyle(root).getPropertyValue(name).trim() : "";
   const resolved = value || fallback;
   cssVarCache.set(cacheKey, resolved);
   return resolved;
@@ -147,14 +146,17 @@ export function normalizeColor(value, fallback) {
 }
 
 export function nodeAccent(node, definition = null) {
-  const ui = definition?.ui && typeof definition.ui === "object"
-      ? definition.ui : {};
-  return normalizeColor(ui.color || definition?.color,
-      FALLBACK_ACCENTS[node?.type] || cssVar("--accent", "#00a6e0"));
+  const ui = definition?.ui && typeof definition.ui === "object" ? definition.ui : {};
+  return normalizeColor(
+    ui.color || definition?.color,
+    FALLBACK_ACCENTS[node?.type] || cssVar("--accent", "#00a6e0"),
+  );
 }
 
 export function stickyColor(node, notation = null) {
-  const key = String(notation?.tag || "").trim().toLowerCase();
+  const key = String(notation?.tag || "")
+    .trim()
+    .toLowerCase();
   return STICKY_BY_NOTATION[key] || STICKY_BY_TYPE[node?.type] || "#fde68a";
 }
 
@@ -163,9 +165,9 @@ export function edgeStyleForKind(kind, presentation = {}) {
     stroke: cssVar("--accent", "#00a6e0"),
     lineWidth: 1.7,
     opacity: 0.9,
-    lineDash: undefined
+    lineDash: undefined,
   };
-  return {...base, ...(presentation.style || {})};
+  return { ...base, ...(presentation.style || {}) };
 }
 
 export function isLightTheme() {

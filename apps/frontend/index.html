@@ -1,753 +1,1161 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>Modless</title>
-  <link href="/assets/icons/favicon.svg" rel="icon" type="image/x-icon">
-  <link href="/css/variables.css" rel="stylesheet"/>
-  <link href="/css/base.css" rel="stylesheet"/>
-  <link href="/css/topbar.css" rel="stylesheet"/>
-  <link href="/css/buttons.css" rel="stylesheet"/>
-  <link href="/css/sidebar.css" rel="stylesheet"/>
-  <link href="/css/canvas.css" rel="stylesheet"/>
-  <link href="/css/chat.css" rel="stylesheet"/>
-  <link href="/css/artifact.css" rel="stylesheet"/>
-  <link href="/css/panels.css" rel="stylesheet"/>
-  <link href="/css/project.css" rel="stylesheet"/>
-  <script>
-    window.modlessFrontendBoot = {
-      renderer: "antv-g6",
-      build: "g6-wired-2026-05-31-02"
-    };
-  </script>
-  <script src="/vendor/antv/g6.min.js?v=g6wired-20260531c"></script>
-  <script>
-    window.modlessFrontendBoot.g6GlobalAfterScript = Boolean(window.G6?.Graph);
-    window.modlessFrontendBoot.g6Version = window.G6?.version || "";
-  </script>
-  <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js"></script>
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Modless</title>
+    <link href="/assets/icons/favicon.svg" rel="icon" type="image/x-icon" />
+    <link href="/css/variables.css" rel="stylesheet" />
+    <link href="/css/base.css" rel="stylesheet" />
+    <link href="/css/topbar.css" rel="stylesheet" />
+    <link href="/css/buttons.css" rel="stylesheet" />
+    <link href="/css/sidebar.css" rel="stylesheet" />
+    <link href="/css/canvas.css" rel="stylesheet" />
+    <link href="/css/chat.css" rel="stylesheet" />
+    <link href="/css/artifact.css" rel="stylesheet" />
+    <link href="/css/panels.css" rel="stylesheet" />
+    <link href="/css/project.css" rel="stylesheet" />
+    <script>
+      window.modlessFrontendBoot = {
+        renderer: "antv-g6",
+        build: "g6-wired-2026-05-31-02",
+      };
+    </script>
+    <script src="/vendor/antv/g6.min.js?v=g6wired-20260531c"></script>
+    <script>
+      window.modlessFrontendBoot.g6GlobalAfterScript = Boolean(window.G6?.Graph);
+      window.modlessFrontendBoot.g6Version = window.G6?.version || "";
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js"></script>
+  </head>
 
-<body>
-<div class="app-shell">
-  <header class="topbar">
-    <div class="topbar-menu-strip">
-      <div class="topbar-left">
-        <a aria-label="Open Modless landing page" class="app-brand" href="/landing/">
-          <img alt="ServerlessFlow logo" class="app-logo-img"
-               src="/assets/icons/hexagon_white.svg"/>
-          <span class="app-brand-text">
-            <span class="app-brand-name">MODELESS</span>
-            <!--            <span class="app-brand-subtitle">Model Engineering Studio</span>-->
-          </span>
-        </a>
-        <button class="btn btn-secondary btn-sm mobile-only" id="mobileSidebarToggleBtn"
-                title="Toggle model palette" type="button">
-          Palette
-        </button>
-      </div>
-
-      <button class="btn btn-secondary btn-sm topbar-menu-toggle" id="topbarMenuToggleBtn"
-              title="Toggle topbar menu" type="button">
-        Menu
-      </button>
-
-      <div class="topbar-collapse" id="topbarCollapse">
-        <div class="ide-menubar">
-          <button class="ide-menu-trigger topbar-ide-btn" id="impactToggleBtn"
-                  title="Toggle change impact analysis mode" type="button">
-            <span class="topbar-btn-label">Impact Analysis</span>
-          </button>
-          <button class="ide-menu-trigger topbar-ide-btn topbar-validate-btn"
-                  id="validateModelBtn"
-                  title="Validate current model against metamodel and constraints" type="button">
-            <span class="topbar-btn-label">Validate Model</span>
-          </button>
-          <button class="ide-menu-trigger topbar-ide-btn topbar-generate-btn"
-                  id="generateContextBtn"
-                  title="Generate next model from active view" type="button">
-            <span aria-hidden="true" class="topbar-btn-icon icon-svg icon-mask"
-                  style="--icon-src: url('/assets/icons/generate.svg');"></span>
-            <span class="topbar-btn-label">Generate PIM</span>
-          </button>
-          <button class="ide-menu-trigger topbar-ide-btn topbar-artifact-btn"
-                  id="deployGithubBtn"
-                  title="Deploy artifact to GitHub" type="button">
-            <span class="topbar-btn-label">Deploy to GitHub</span>
-          </button>
-        </div>
-
-        <div class="tabs" id="modelTabs">
-          <button class="tab active" data-type="cim" title="Computational Independent Model"
-                  type="button">CIM
-          </button>
-          <button class="tab" data-type="pim" title="Platform Independent Model"
-                  type="button">PIM
-          </button>
-          <button class="tab" data-type="psm" title="Platform Specific Model" type="button">PSM
-          </button>
-          <button class="tab" data-type="artifact" title="Generated artifacts" type="button">
-            Artifacts
-          </button>
-          <div class="project-name-badge" title="Current project">
-            <span class="project-name-badge-label">Project: </span>
-            <span class="project-name-label" id="projectLabel">No project</span>
-          </div>
-        </div>
-
-        <div class="topbar-right">
-          <button class="btn btn-secondary btn-sm mobile-only" id="mobileInspectorToggleBtn"
-                  title="Toggle details panel" type="button">
-            Inspector
-          </button>
-
-          <div class="ide-menu user-menu">
-            <button class="ide-menu-trigger user-menu-trigger"
-                    id="userMenuTrigger" title="User menu" type="button">
-              <span aria-hidden="true" class="user-menu-icon icon-svg icon-mask"
-                    style="--icon-src: url('/assets/icons/user_profile.svg');"></span>
-              <span class="user-display-name" id="currentUserLabel">Guest</span>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="topbar-menu-strip">
+          <div class="topbar-left">
+            <a aria-label="Open Modless landing page" class="app-brand" href="/landing/">
+              <img
+                alt="ServerlessFlow logo"
+                class="app-logo-img"
+                src="/assets/icons/hexagon_white.svg"
+              />
+              <span class="app-brand-text">
+                <span class="app-brand-name">MODELESS</span>
+                <!--            <span class="app-brand-subtitle">Model Engineering Studio</span>-->
+              </span>
+            </a>
+            <button
+              class="btn btn-secondary btn-sm mobile-only"
+              id="mobileSidebarToggleBtn"
+              title="Toggle model palette"
+              type="button"
+            >
+              Palette
             </button>
-            <div class="ide-menu-items">
-              <button class="ide-menu-item" id="userMenuEditProfileBtn"
-                      title="Edit profile" type="button">Edit Profile
+          </div>
+
+          <button
+            class="btn btn-secondary btn-sm topbar-menu-toggle"
+            id="topbarMenuToggleBtn"
+            title="Toggle topbar menu"
+            type="button"
+          >
+            Menu
+          </button>
+
+          <div class="topbar-collapse" id="topbarCollapse">
+            <div class="ide-menubar">
+              <button
+                class="ide-menu-trigger topbar-ide-btn"
+                id="impactToggleBtn"
+                title="Toggle change impact analysis mode"
+                type="button"
+              >
+                <span class="topbar-btn-label">Impact Analysis</span>
               </button>
-              <div class="ide-menu-separator"></div>
-              <button class="ide-menu-item" id="userMenuLogoutBtn"
-                      title="Sign out" type="button">Sign Out
+              <button
+                class="ide-menu-trigger topbar-ide-btn topbar-validate-btn"
+                id="validateModelBtn"
+                title="Validate current model against metamodel and constraints"
+                type="button"
+              >
+                <span class="topbar-btn-label">Validate Model</span>
               </button>
+              <button
+                class="ide-menu-trigger topbar-ide-btn topbar-generate-btn"
+                id="generateContextBtn"
+                title="Generate next model from active view"
+                type="button"
+              >
+                <span
+                  aria-hidden="true"
+                  class="topbar-btn-icon icon-svg icon-mask"
+                  style="--icon-src: url(&quot;/assets/icons/generate.svg&quot;)"
+                ></span>
+                <span class="topbar-btn-label">Generate PIM</span>
+              </button>
+              <button
+                class="ide-menu-trigger topbar-ide-btn topbar-artifact-btn"
+                id="deployGithubBtn"
+                title="Deploy artifact to GitHub"
+                type="button"
+              >
+                <span class="topbar-btn-label">Deploy to GitHub</span>
+              </button>
+            </div>
+
+            <div class="tabs" id="modelTabs">
+              <button
+                class="tab active"
+                data-type="cim"
+                title="Computational Independent Model"
+                type="button"
+              >
+                CIM
+              </button>
+              <button class="tab" data-type="pim" title="Platform Independent Model" type="button">
+                PIM
+              </button>
+              <button class="tab" data-type="psm" title="Platform Specific Model" type="button">
+                PSM
+              </button>
+              <button class="tab" data-type="artifact" title="Generated artifacts" type="button">
+                Artifacts
+              </button>
+              <div class="project-name-badge" title="Current project">
+                <span class="project-name-badge-label">Project: </span>
+                <span class="project-name-label" id="projectLabel">No project</span>
+              </div>
+            </div>
+
+            <div class="topbar-right">
+              <button
+                class="btn btn-secondary btn-sm mobile-only"
+                id="mobileInspectorToggleBtn"
+                title="Toggle details panel"
+                type="button"
+              >
+                Inspector
+              </button>
+
+              <div class="ide-menu user-menu">
+                <button
+                  class="ide-menu-trigger user-menu-trigger"
+                  id="userMenuTrigger"
+                  title="User menu"
+                  type="button"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="user-menu-icon icon-svg icon-mask"
+                    style="--icon-src: url(&quot;/assets/icons/user_profile.svg&quot;)"
+                  ></span>
+                  <span class="user-display-name" id="currentUserLabel">Guest</span>
+                </button>
+                <div class="ide-menu-items">
+                  <button
+                    class="ide-menu-item"
+                    id="userMenuEditProfileBtn"
+                    title="Edit profile"
+                    type="button"
+                  >
+                    Edit Profile
+                  </button>
+                  <div class="ide-menu-separator"></div>
+                  <button
+                    class="ide-menu-item"
+                    id="userMenuLogoutBtn"
+                    title="Sign out"
+                    type="button"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </header>
+      </header>
 
-  <main class="workspace" id="workspace">
-    <nav aria-label="Workspace tools" class="workspace-rail">
-      <button class="workspace-rail-item active" id="paletteRailToggleBtn" title="Toggle Palette"
-              type="button">
-        <span aria-hidden="true" class="workspace-rail-icon icon-svg icon-mask"
-              style="--icon-src: url('/assets/icons/palette.svg');"></span>
-      </button>
-      <button class="workspace-rail-item" id="fileBtn" title="File"
-              type="button">
-        <span aria-hidden="true" class="workspace-rail-icon icon-svg icon-mask"
-              style="--icon-src: url('/assets/icons/file.svg');"></span>
-      </button>
-      <button class="workspace-rail-item" id="themeRailToggleBtn" title="Toggle Theme"
-              type="button">
-        <span aria-hidden="true" class="workspace-rail-icon icon-svg icon-mask"
+      <main class="workspace" id="workspace">
+        <nav aria-label="Workspace tools" class="workspace-rail">
+          <button
+            class="workspace-rail-item active"
+            id="paletteRailToggleBtn"
+            title="Toggle Palette"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="workspace-rail-icon icon-svg icon-mask"
+              style="--icon-src: url(&quot;/assets/icons/palette.svg&quot;)"
+            ></span>
+          </button>
+          <button class="workspace-rail-item" id="fileBtn" title="File" type="button">
+            <span
+              aria-hidden="true"
+              class="workspace-rail-icon icon-svg icon-mask"
+              style="--icon-src: url(&quot;/assets/icons/file.svg&quot;)"
+            ></span>
+          </button>
+          <button
+            class="workspace-rail-item"
+            id="themeRailToggleBtn"
+            title="Toggle Theme"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="workspace-rail-icon icon-svg icon-mask"
               id="themeRailToggleIcon"
-              style="--icon-src: url('/assets/icons/dark_mode.svg');"></span>
-      </button>
-      <button class="workspace-rail-item workspace-rail-item-bottom" id="settingsRailBtn"
-              title="Settings" type="button">
-        <span aria-hidden="true" class="workspace-rail-icon icon-svg icon-mask"
-              style="--icon-src: url('/assets/icons/settings.svg');"></span>
-      </button>
-      <button class="workspace-rail-item" id="helpRailBtn" title="Help" type="button">
-        <span aria-hidden="true" class="workspace-rail-icon icon-svg icon-mask"
-              style="--icon-src: url('/assets/icons/help.svg');"></span>
-      </button>
-
-      <div class="rail-menu-panel hidden" id="fileRailMenu" role="menu">
-        <button class="ide-menu-item" id="undoModelReplaceBtn"
-                title="Undo the latest canvas or model change" type="button">
-          Undo
-        </button>
-        <div class="rail-submenu-group">
-          <button aria-expanded="false" class="ide-menu-item rail-submenu-trigger"
-                  id="exportModelBtn" title="Export current model" type="button">
-            <span>Export</span>
-            <span aria-hidden="true" class="rail-submenu-chevron">›</span>
+              style="--icon-src: url(&quot;/assets/icons/dark_mode.svg&quot;)"
+            ></span>
           </button>
-          <div class="rail-submenu-panel hidden" id="exportModelSubmenu" role="menu">
-            <button class="ide-menu-item rail-submenu-item" id="exportModelJsonBtn"
-                    title="Export current level model as JSON" type="button">
-              JSON
-            </button>
-            <button class="ide-menu-item rail-submenu-item" id="exportModelXmiBtn"
-                    title="Export current level model as XMI" type="button">
-              XMI
-            </button>
-          </div>
-        </div>
-        <div class="rail-submenu-group">
-          <button aria-expanded="false" class="ide-menu-item rail-submenu-trigger"
-                  id="importModelBtn" title="Import model into current view" type="button">
-            <span>Import</span>
-            <span aria-hidden="true" class="rail-submenu-chevron">›</span>
+          <button
+            class="workspace-rail-item workspace-rail-item-bottom"
+            id="settingsRailBtn"
+            title="Settings"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="workspace-rail-icon icon-svg icon-mask"
+              style="--icon-src: url(&quot;/assets/icons/settings.svg&quot;)"
+            ></span>
           </button>
-          <div class="rail-submenu-panel hidden" id="importModelSubmenu" role="menu">
-            <button class="ide-menu-item rail-submenu-item" id="importModelJsonBtn"
-                    title="Import current level model from JSON" type="button">
-              JSON
+          <button class="workspace-rail-item" id="helpRailBtn" title="Help" type="button">
+            <span
+              aria-hidden="true"
+              class="workspace-rail-icon icon-svg icon-mask"
+              style="--icon-src: url(&quot;/assets/icons/help.svg&quot;)"
+            ></span>
+          </button>
+
+          <div class="rail-menu-panel hidden" id="fileRailMenu" role="menu">
+            <button
+              class="ide-menu-item"
+              id="undoModelReplaceBtn"
+              title="Undo the latest canvas or model change"
+              type="button"
+            >
+              Undo
             </button>
-            <button class="ide-menu-item rail-submenu-item" id="importModelXmiBtn"
-                    title="Import current level model from XMI" type="button">
-              XMI
+            <div class="rail-submenu-group">
+              <button
+                aria-expanded="false"
+                class="ide-menu-item rail-submenu-trigger"
+                id="exportModelBtn"
+                title="Export current model"
+                type="button"
+              >
+                <span>Export</span>
+                <span aria-hidden="true" class="rail-submenu-chevron">›</span>
+              </button>
+              <div class="rail-submenu-panel hidden" id="exportModelSubmenu" role="menu">
+                <button
+                  class="ide-menu-item rail-submenu-item"
+                  id="exportModelJsonBtn"
+                  title="Export current level model as JSON"
+                  type="button"
+                >
+                  JSON
+                </button>
+                <button
+                  class="ide-menu-item rail-submenu-item"
+                  id="exportModelXmiBtn"
+                  title="Export current level model as XMI"
+                  type="button"
+                >
+                  XMI
+                </button>
+              </div>
+            </div>
+            <div class="rail-submenu-group">
+              <button
+                aria-expanded="false"
+                class="ide-menu-item rail-submenu-trigger"
+                id="importModelBtn"
+                title="Import model into current view"
+                type="button"
+              >
+                <span>Import</span>
+                <span aria-hidden="true" class="rail-submenu-chevron">›</span>
+              </button>
+              <div class="rail-submenu-panel hidden" id="importModelSubmenu" role="menu">
+                <button
+                  class="ide-menu-item rail-submenu-item"
+                  id="importModelJsonBtn"
+                  title="Import current level model from JSON"
+                  type="button"
+                >
+                  JSON
+                </button>
+                <button
+                  class="ide-menu-item rail-submenu-item"
+                  id="importModelXmiBtn"
+                  title="Import current level model from XMI"
+                  type="button"
+                >
+                  XMI
+                </button>
+              </div>
+            </div>
+            <input
+              accept=".json,.xmi,application/json,application/xml,text/xml"
+              hidden
+              id="importModelFileInput"
+              type="file"
+            />
+          </div>
+
+          <div class="rail-menu-panel hidden" id="projectRailMenu" role="menu">
+            <button
+              class="ide-menu-item"
+              id="switchProjectBtn"
+              title="Switch project"
+              type="button"
+            >
+              Switch Project
+            </button>
+            <button
+              class="ide-menu-item"
+              id="editProjectNameBtn"
+              title="Edit project name"
+              type="button"
+            >
+              Edit Project Name
+            </button>
+            <button
+              class="ide-menu-item"
+              id="deleteProjectBtn"
+              title="Delete current project"
+              type="button"
+            >
+              Delete Project
             </button>
           </div>
-        </div>
-        <input accept=".json,.xmi,application/json,application/xml,text/xml" hidden
-               id="importModelFileInput" type="file"/>
-      </div>
 
-      <div class="rail-menu-panel hidden" id="projectRailMenu" role="menu">
-        <button class="ide-menu-item" id="switchProjectBtn" title="Switch project"
-                type="button">Switch Project
-        </button>
-        <button class="ide-menu-item" id="editProjectNameBtn" title="Edit project name"
-                type="button">Edit Project Name
-        </button>
-        <button class="ide-menu-item" id="deleteProjectBtn"
-                title="Delete current project" type="button">Delete Project
-        </button>
-      </div>
-
-      <div aria-label="Modless help" class="rail-menu-panel help-rail-panel hidden"
-           id="helpRailPanel"
-           role="region">
-        <div class="help-panel-kicker">Modeling Flow</div>
-        <div class="help-panel-title">From intent to deployable shape</div>
-        <p class="help-panel-copy">
-          Work left to right: capture the business model in CIM, generate PIM, refine PSM, then
-          inspect artifacts. Save before each jump so traceability stays intact.
-        </p>
-        <div class="help-panel-steps">
-          <div class="help-panel-step">
-            <span>1</span>
-            <strong>CIM</strong>
-            <em>Describe capabilities, processes, actors, goals, and policies.</em>
-          </div>
-          <div class="help-panel-step">
-            <span>2</span>
-            <strong>PIM</strong>
-            <em>Shape platform-neutral services, contracts, data, and workflows.</em>
-          </div>
-          <div class="help-panel-step">
-            <span>3</span>
-            <strong>PSM</strong>
-            <em>Map the design to AWS serverless resources and security boundaries.</em>
-          </div>
-          <div class="help-panel-step">
-            <span>4</span>
-            <strong>Artifacts</strong>
-            <em>Review generated code, infrastructure, docs, tests, and deployment output.</em>
-          </div>
-        </div>
-        <div class="help-panel-note">
-          Tip: use validation before generation, Impact Analysis before changing shared elements,
-          and the assistant when you want model edits explained or drafted.
-        </div>
-      </div>
-    </nav>
-
-    <div class="workspace-main">
-      <aside class="left-pane" id="leftPane">
-        <div class="pane-shell">
-          <div id="modelingPanel">
-            <div class="sidebar-section">
-              <div class="sidebar-section-header">
-                <span class="sidebar-section-title">Palette</span>
-                <span class="sidebar-section-hint">drag to canvas</span>
+          <div
+            aria-label="Modless help"
+            class="rail-menu-panel help-rail-panel hidden"
+            id="helpRailPanel"
+            role="region"
+          >
+            <div class="help-panel-kicker">Modeling Flow</div>
+            <div class="help-panel-title">From intent to deployable shape</div>
+            <p class="help-panel-copy">
+              Work left to right: capture the business model in CIM, generate PIM, refine PSM, then
+              inspect artifacts. Save before each jump so traceability stays intact.
+            </p>
+            <div class="help-panel-steps">
+              <div class="help-panel-step">
+                <span>1</span>
+                <strong>CIM</strong>
+                <em>Describe capabilities, processes, actors, goals, and policies.</em>
               </div>
-              <div class="palette-search-row">
-                <input autocomplete="off" class="sidebar-select palette-search-input"
-                       id="paletteSearchInput" placeholder="Search elements..."
-                       type="search"/>
+              <div class="help-panel-step">
+                <span>2</span>
+                <strong>PIM</strong>
+                <em>Shape platform-neutral services, contracts, data, and workflows.</em>
               </div>
-              <div class="palette" id="palette"></div>
+              <div class="help-panel-step">
+                <span>3</span>
+                <strong>PSM</strong>
+                <em>Map the design to AWS serverless resources and security boundaries.</em>
+              </div>
+              <div class="help-panel-step">
+                <span>4</span>
+                <strong>Artifacts</strong>
+                <em>Review generated code, infrastructure, docs, tests, and deployment output.</em>
+              </div>
+            </div>
+            <div class="help-panel-note">
+              Tip: use validation before generation, Impact Analysis before changing shared
+              elements, and the assistant when you want model edits explained or drafted.
             </div>
           </div>
+        </nav>
 
-          <div class="hidden" id="artifactPanel">
-            <div class="artifact-explorer-header">
-              <span class="artifact-explorer-title">Explorer</span>
-              <button class="artifact-explorer-action" id="artifactTreeToggleBtn"
-                      title="Collapse folders" type="button">
-                <span aria-hidden="true"
+        <div class="workspace-main">
+          <aside class="left-pane" id="leftPane">
+            <div class="pane-shell">
+              <div id="modelingPanel">
+                <div class="sidebar-section">
+                  <div class="sidebar-section-header">
+                    <span class="sidebar-section-title">Palette</span>
+                    <span class="sidebar-section-hint">drag to canvas</span>
+                  </div>
+                  <div class="palette-search-row">
+                    <input
+                      autocomplete="off"
+                      class="sidebar-select palette-search-input"
+                      id="paletteSearchInput"
+                      placeholder="Search elements..."
+                      type="search"
+                    />
+                  </div>
+                  <div class="palette" id="palette"></div>
+                </div>
+              </div>
+
+              <div class="hidden" id="artifactPanel">
+                <div class="artifact-explorer-header">
+                  <span class="artifact-explorer-title">Explorer</span>
+                  <button
+                    class="artifact-explorer-action"
+                    id="artifactTreeToggleBtn"
+                    title="Collapse folders"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
                       class="artifact-tree-toggle-icon icon-svg icon-mask"
-                      style="--icon-src: url('/assets/icons/collapse.svg');"></span>
-              </button>
-            </div>
-            <div class="artifact-explorer-root" id="artifactExplorerRoot">
-              <span aria-hidden="true"
+                      style="--icon-src: url(&quot;/assets/icons/collapse.svg&quot;)"
+                    ></span>
+                  </button>
+                </div>
+                <div class="artifact-explorer-root" id="artifactExplorerRoot">
+                  <span
+                    aria-hidden="true"
                     class="artifact-explorer-root-icon icon-svg icon-mask"
-                    style="--icon-src: url('/assets/icons/folder_open.svg');"></span>
-              <span>No artifact loaded</span>
-            </div>
-            <div class="file-tree" id="fileTree"></div>
-            <div class="artifact-explorer-footer">
-              <div class="github-deploy-status" id="githubDeployStatus"></div>
-              <div class="github-deploy-meta" id="githubDeployMeta"></div>
-              <div class="github-deploy-links">
-                <a class="github-link hidden" id="githubRepoLink" rel="noopener noreferrer"
-                   target="_blank">Open Repository</a>
-                <a class="github-link hidden" id="githubCommitLink" rel="noopener noreferrer"
-                   target="_blank">Last Commit</a>
+                    style="--icon-src: url(&quot;/assets/icons/folder_open.svg&quot;)"
+                  ></span>
+                  <span>No artifact loaded</span>
+                </div>
+                <div class="file-tree" id="fileTree"></div>
+                <div class="artifact-explorer-footer">
+                  <div class="github-deploy-status" id="githubDeployStatus"></div>
+                  <div class="github-deploy-meta" id="githubDeployMeta"></div>
+                  <div class="github-deploy-links">
+                    <a
+                      class="github-link hidden"
+                      id="githubRepoLink"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                      >Open Repository</a
+                    >
+                    <a
+                      class="github-link hidden"
+                      id="githubCommitLink"
+                      rel="noopener noreferrer"
+                      target="_blank"
+                      >Last Commit</a
+                    >
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div class="hidden" id="adminPanel">
-            <div class="sidebar-section">
-              <div class="sidebar-section-header">
-                <span aria-hidden="true" class="sidebar-section-icon icon-svg icon-mask"
-                      style="--icon-src: url('/assets/icons/placeholder.svg');"></span>
-                <span class="sidebar-section-title">Workspace Scope</span>
-              </div>
-              <select class="sidebar-select" id="adminScopeSelect"></select>
-            </div>
+              <div class="hidden" id="adminPanel">
+                <div class="sidebar-section">
+                  <div class="sidebar-section-header">
+                    <span
+                      aria-hidden="true"
+                      class="sidebar-section-icon icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                    ></span>
+                    <span class="sidebar-section-title">Workspace Scope</span>
+                  </div>
+                  <select class="sidebar-select" id="adminScopeSelect"></select>
+                </div>
 
-            <div class="sidebar-section">
-              <div class="sidebar-section-header">
-                <span aria-hidden="true" class="sidebar-section-icon icon-svg icon-mask"
-                      style="--icon-src: url('/assets/icons/placeholder.svg');"></span>
-                <span class="sidebar-section-title">Files</span>
+                <div class="sidebar-section">
+                  <div class="sidebar-section-header">
+                    <span
+                      aria-hidden="true"
+                      class="sidebar-section-icon icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                    ></span>
+                    <span class="sidebar-section-title">Files</span>
+                  </div>
+                  <div class="artifact-actions">
+                    <button
+                      class="btn btn-secondary btn-sm btn-half"
+                      id="adminRefreshBtn"
+                      type="button"
+                    >
+                      Refresh
+                    </button>
+                    <button class="btn btn-secondary btn-sm btn-half" id="adminUpBtn" type="button">
+                      Up
+                    </button>
+                  </div>
+                  <div class="artifact-actions">
+                    <button
+                      class="btn btn-secondary btn-sm btn-half"
+                      id="adminNewFileBtn"
+                      type="button"
+                    >
+                      New File
+                    </button>
+                    <button
+                      class="btn btn-secondary btn-sm btn-half"
+                      id="adminNewDirBtn"
+                      type="button"
+                    >
+                      New Folder
+                    </button>
+                  </div>
+                  <div class="artifact-actions">
+                    <button
+                      class="btn btn-secondary btn-sm btn-half"
+                      id="adminRenameBtn"
+                      type="button"
+                    >
+                      Rename
+                    </button>
+                    <button
+                      class="btn btn-danger btn-sm btn-half"
+                      id="adminDeleteBtn"
+                      type="button"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  <div class="admin-path-label" id="adminPathLabel">/</div>
+                  <div class="file-tree" id="adminTree"></div>
+                </div>
               </div>
-              <div class="artifact-actions">
-                <button class="btn btn-secondary btn-sm btn-half" id="adminRefreshBtn"
-                        type="button">Refresh
-                </button>
-                <button class="btn btn-secondary btn-sm btn-half" id="adminUpBtn"
-                        type="button">Up
-                </button>
-              </div>
-              <div class="artifact-actions">
-                <button class="btn btn-secondary btn-sm btn-half" id="adminNewFileBtn"
-                        type="button">New File
-                </button>
-                <button class="btn btn-secondary btn-sm btn-half" id="adminNewDirBtn"
-                        type="button">New Folder
-                </button>
-              </div>
-              <div class="artifact-actions">
-                <button class="btn btn-secondary btn-sm btn-half" id="adminRenameBtn"
-                        type="button">Rename
-                </button>
-                <button class="btn btn-danger btn-sm btn-half" id="adminDeleteBtn"
-                        type="button">Delete
-                </button>
-              </div>
-              <div class="admin-path-label" id="adminPathLabel">/</div>
-              <div class="file-tree" id="adminTree"></div>
             </div>
-          </div>
-        </div>
-      </aside>
-
-      <section class="canvas-pane">
-        <div class="canvas-stage">
-          <div class="model-workbench-strip" id="modelWorkbenchPanel"></div>
-          <button class="validation-fab validation-state-ok" id="validationFab"
-                  title="Validation issues">
-            <span class="validation-fab-content">
-              <span class="validation-fab-dot" id="validationFabDot"></span>
-              <span class="validation-fab-text" id="validationFabText">No Issues</span>
-            </span>
-            <span aria-hidden="true" class="validation-fab-progress hidden"
-                  id="validationFabProgress"></span>
-          </button>
-          <aside class="validation-drawer hidden" id="validationDrawer">
-            <div class="validation-drawer-header">
-              <div class="validation-drawer-title" id="validationDrawerTitle">Model Validation</div>
-              <button class="btn-icon-xs" id="validationDrawerCloseBtn" type="button">Close</button>
-            </div>
-            <div class="validation-drawer-meta" id="validationDrawerMeta"></div>
-            <div aria-hidden="true" class="validation-drawer-progress hidden"
-                 id="validationDrawerProgress"></div>
-            <div class="validation-drawer-body" id="validationDrawerIssues"></div>
           </aside>
-          <div class="canvas-viewport" id="canvasViewport">
-            <div class="canvas-grid" id="canvasGrid">
-              <div class="g6-editor-host" id="g6EditorHost"></div>
-            </div>
-            <div aria-label="Canvas zoom controls" class="canvas-zoom-control"
-                 id="canvasZoomControl">
-              <button aria-label="Zoom out" class="canvas-zoom-btn"
-                      id="canvasZoomOutBtn" title="Zoom out" type="button">-
-              </button>
-              <button class="canvas-zoom-value" id="canvasZoomResetBtn"
-                      title="Reset zoom" type="button">
-                <span id="canvasZoomValue">100%</span>
-              </button>
-              <button aria-label="Zoom in" class="canvas-zoom-btn"
-                      id="canvasZoomInBtn" title="Zoom in" type="button">+
-              </button>
-              <button class="canvas-zoom-fit" id="canvasZoomFitBtn"
-                      title="Fit to canvas" type="button">Fit
-              </button>
-            </div>
-            <div class="edge-kind-picker hidden" id="edgeKindPicker">
-              <label class="edge-kind-picker-label" for="edgeKindSelect">Relationship</label>
-              <select id="edgeKindSelect"></select>
-            </div>
-          </div>
 
-          <div class="artifact-editor hidden" id="artifactEditor">
-            <div class="artifact-editor-tabs">
-              <div class="artifact-editor-tab active">
-                <span aria-hidden="true"
+          <section class="canvas-pane">
+            <div class="canvas-stage">
+              <div class="model-workbench-strip" id="modelWorkbenchPanel"></div>
+              <button
+                class="validation-fab validation-state-ok"
+                id="validationFab"
+                title="Validation issues"
+              >
+                <span class="validation-fab-content">
+                  <span class="validation-fab-dot" id="validationFabDot"></span>
+                  <span class="validation-fab-text" id="validationFabText">No Issues</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  class="validation-fab-progress hidden"
+                  id="validationFabProgress"
+                ></span>
+              </button>
+              <aside class="validation-drawer hidden" id="validationDrawer">
+                <div class="validation-drawer-header">
+                  <div class="validation-drawer-title" id="validationDrawerTitle">
+                    Model Validation
+                  </div>
+                  <button class="btn-icon-xs" id="validationDrawerCloseBtn" type="button">
+                    Close
+                  </button>
+                </div>
+                <div class="validation-drawer-meta" id="validationDrawerMeta"></div>
+                <div
+                  aria-hidden="true"
+                  class="validation-drawer-progress hidden"
+                  id="validationDrawerProgress"
+                ></div>
+                <div class="validation-drawer-body" id="validationDrawerIssues"></div>
+              </aside>
+              <div class="canvas-viewport" id="canvasViewport">
+                <div class="canvas-grid" id="canvasGrid">
+                  <div class="g6-editor-host" id="g6EditorHost"></div>
+                </div>
+                <div
+                  aria-label="Canvas zoom controls"
+                  class="canvas-zoom-control"
+                  id="canvasZoomControl"
+                >
+                  <button
+                    aria-label="Zoom out"
+                    class="canvas-zoom-btn"
+                    id="canvasZoomOutBtn"
+                    title="Zoom out"
+                    type="button"
+                  >
+                    -
+                  </button>
+                  <button
+                    class="canvas-zoom-value"
+                    id="canvasZoomResetBtn"
+                    title="Reset zoom"
+                    type="button"
+                  >
+                    <span id="canvasZoomValue">100%</span>
+                  </button>
+                  <button
+                    aria-label="Zoom in"
+                    class="canvas-zoom-btn"
+                    id="canvasZoomInBtn"
+                    title="Zoom in"
+                    type="button"
+                  >
+                    +
+                  </button>
+                  <button
+                    class="canvas-zoom-fit"
+                    id="canvasZoomFitBtn"
+                    title="Fit to canvas"
+                    type="button"
+                  >
+                    Fit
+                  </button>
+                </div>
+                <div class="edge-kind-picker hidden" id="edgeKindPicker">
+                  <label class="edge-kind-picker-label" for="edgeKindSelect">Relationship</label>
+                  <select id="edgeKindSelect"></select>
+                </div>
+              </div>
+
+              <div class="artifact-editor hidden" id="artifactEditor">
+                <div class="artifact-editor-tabs">
+                  <div class="artifact-editor-tab active">
+                    <span
+                      aria-hidden="true"
                       class="artifact-editor-tab-icon icon-svg icon-mask"
-                      style="--icon-src: url('/assets/icons/description.svg');"></span>
-                <span class="artifact-editor-filename"
-                      id="artifactEditorFileName">No file selected</span>
+                      style="--icon-src: url(&quot;/assets/icons/description.svg&quot;)"
+                    ></span>
+                    <span class="artifact-editor-filename" id="artifactEditorFileName"
+                      >No file selected</span
+                    >
+                  </div>
+                  <button
+                    class="btn btn-primary btn-sm hidden artifact-editor-save-btn"
+                    id="saveFileBtn"
+                    type="button"
+                  >
+                    Save
+                  </button>
+                </div>
+                <div class="artifact-editor-body">
+                  <div
+                    aria-label="Artifact code editor"
+                    class="artifact-editor-host"
+                    id="artifactEditorContent"
+                  ></div>
+                </div>
+                <div class="artifact-editor-statusbar" id="artifactEditorStatusBar">
+                  <div class="artifact-editor-status-left">
+                    <span id="artifactEditorStatusPosition">Ln 1, Col 1</span>
+                    <span class="artifact-editor-status-sep">|</span>
+                    <span id="artifactEditorStatusIndent">Spaces: 2</span>
+                  </div>
+                  <div class="artifact-editor-status-right">
+                    <span id="artifactEditorStatusEncoding">UTF-8</span>
+                    <span class="artifact-editor-status-sep">|</span>
+                    <span id="artifactEditorStatusEol">LF</span>
+                    <span class="artifact-editor-status-sep">|</span>
+                    <span id="artifactEditorStatusLanguage">Plain Text</span>
+                  </div>
+                </div>
               </div>
-              <button class="btn btn-primary btn-sm hidden artifact-editor-save-btn"
-                      id="saveFileBtn"
-                      type="button">
-                Save
-              </button>
-            </div>
-            <div class="artifact-editor-body">
-              <div aria-label="Artifact code editor" class="artifact-editor-host"
-                   id="artifactEditorContent"></div>
-            </div>
-            <div class="artifact-editor-statusbar" id="artifactEditorStatusBar">
-              <div class="artifact-editor-status-left">
-                <span id="artifactEditorStatusPosition">Ln 1, Col 1</span>
-                <span class="artifact-editor-status-sep">|</span>
-                <span id="artifactEditorStatusIndent">Spaces: 2</span>
-              </div>
-              <div class="artifact-editor-status-right">
-                <span id="artifactEditorStatusEncoding">UTF-8</span>
-                <span class="artifact-editor-status-sep">|</span>
-                <span id="artifactEditorStatusEol">LF</span>
-                <span class="artifact-editor-status-sep">|</span>
-                <span id="artifactEditorStatusLanguage">Plain Text</span>
-              </div>
-            </div>
-          </div>
 
-          <div class="artifact-editor hidden" id="adminEditor">
-            <div class="artifact-editor-header">
-              <span class="artifact-editor-fileicon">ADM</span>
-              <span class="artifact-editor-filename"
-                    id="adminEditorFileName">No file selected</span>
-              <button class="btn btn-primary btn-sm hidden" id="adminSaveFileBtn" type="button">
-                Save File
-              </button>
-            </div>
-            <div class="artifact-editor-body">
-              <div aria-hidden="true" class="artifact-editor-line-numbers"
-                   id="adminEditorLineNumbers">1
-              </div>
-              <textarea class="artifact-editor-content" id="adminEditorContent"
-                        placeholder="Select a file to view or edit."
-                        spellcheck="false"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <button class="chat-toggle" id="chatToggle" title="Open modeling assistant" type="button">
-          <span aria-hidden="true" class="chat-toggle-icon icon-svg icon-mask"
-                style="--icon-src: url('/assets/icons/chatbot.svg');"></span>
-          <span class="chat-toggle-label">AI Assistant</span>
-        </button>
-
-        <div class="chat-window hidden" id="chatWindow">
-          <div class="chat-header">
-            <div class="chat-header-info">
-              <span aria-hidden="true" class="chat-avatar-icon icon-svg icon-mask"
-                    style="--icon-src: url('/assets/icons/placeholder.svg');"></span>
-              <div>
-                <div class="chat-header-title">Modeling Assistant</div>
-                <div class="chat-header-subtitle" id="chatHeaderSubtitle">Ready to help</div>
+              <div class="artifact-editor hidden" id="adminEditor">
+                <div class="artifact-editor-header">
+                  <span class="artifact-editor-fileicon">ADM</span>
+                  <span class="artifact-editor-filename" id="adminEditorFileName"
+                    >No file selected</span
+                  >
+                  <button class="btn btn-primary btn-sm hidden" id="adminSaveFileBtn" type="button">
+                    Save File
+                  </button>
+                </div>
+                <div class="artifact-editor-body">
+                  <div
+                    aria-hidden="true"
+                    class="artifact-editor-line-numbers"
+                    id="adminEditorLineNumbers"
+                  >
+                    1
+                  </div>
+                  <textarea
+                    class="artifact-editor-content"
+                    id="adminEditorContent"
+                    placeholder="Select a file to view or edit."
+                    spellcheck="false"
+                  ></textarea>
+                </div>
               </div>
             </div>
-            <div class="chat-header-actions">
-              <button aria-label="Expand chat window" aria-pressed="false"
-                      class="btn-icon-xs chat-expand-btn" id="chatExpandBtn"
-                      title="Expand chat window" type="button">
-                <span aria-hidden="true" class="chat-expand-icon icon-svg icon-mask"
+
+            <button
+              class="chat-toggle"
+              id="chatToggle"
+              title="Open modeling assistant"
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="chat-toggle-icon icon-svg icon-mask"
+                style="--icon-src: url(&quot;/assets/icons/chatbot.svg&quot;)"
+              ></span>
+              <span class="chat-toggle-label">AI Assistant</span>
+            </button>
+
+            <div class="chat-window hidden" id="chatWindow">
+              <div class="chat-header">
+                <div class="chat-header-info">
+                  <span
+                    aria-hidden="true"
+                    class="chat-avatar-icon icon-svg icon-mask"
+                    style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                  ></span>
+                  <div>
+                    <div class="chat-header-title">Modeling Assistant</div>
+                    <div class="chat-header-subtitle" id="chatHeaderSubtitle">Ready to help</div>
+                  </div>
+                </div>
+                <div class="chat-header-actions">
+                  <button
+                    aria-label="Expand chat window"
+                    aria-pressed="false"
+                    class="btn-icon-xs chat-expand-btn"
+                    id="chatExpandBtn"
+                    title="Expand chat window"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chat-expand-icon icon-svg icon-mask"
                       id="chatExpandIcon"
-                      style="--icon-src: url('/assets/icons/expand.svg');"></span>
-              </button>
-              <button class="btn-icon-xs" id="chatClearBtn" title="Clear conversation"
-                      type="button">Clear
-              </button>
-              <button class="btn-icon-xs" id="chatCloseBtn" title="Close" type="button">Close
-              </button>
+                      style="--icon-src: url(&quot;/assets/icons/expand.svg&quot;)"
+                    ></span>
+                  </button>
+                  <button
+                    class="btn-icon-xs"
+                    id="chatClearBtn"
+                    title="Clear conversation"
+                    type="button"
+                  >
+                    Clear
+                  </button>
+                  <button class="btn-icon-xs" id="chatCloseBtn" title="Close" type="button">
+                    Close
+                  </button>
+                </div>
+              </div>
+              <div class="chat-messages" id="chatMessages">
+                <div class="chat-welcome">
+                  <span
+                    aria-hidden="true"
+                    class="chat-welcome-icon icon-svg icon-mask"
+                    style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                  ></span>
+                  <div class="chat-welcome-title">Modeling Assistant</div>
+                  <div class="chat-welcome-text">
+                    I can help create, modify, and explain your models. Describe what you want to
+                    build.
+                  </div>
+                </div>
+              </div>
+              <div class="chat-typing hidden" id="chatTypingIndicator">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="chat-attach-bar" id="chatAttachBar">
+                <label class="chat-attach-btn" title="Attach a file to your message">
+                  <span
+                    aria-hidden="true"
+                    class="chat-attach-icon icon-svg icon-mask"
+                    style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                  ></span>
+                  <span>Attach</span>
+                  <input
+                    accept=".txt,.md,.json,.yaml,.yml,.xml,.eventstorming,.serverless,.awsserverless,.req,.requirements"
+                    id="chatFileInput"
+                    type="file"
+                  />
+                </label>
+                <div class="chat-file-tag hidden" id="chatFileName">
+                  <span id="chatFileNameText">file.txt</span>
+                  <button
+                    class="chat-file-clear"
+                    id="chatFileClearBtn"
+                    title="Remove attachment"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chat-file-clear-icon icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                    ></span>
+                  </button>
+                </div>
+              </div>
+              <div class="chat-input-row" id="chatInputRow">
+                <textarea
+                  aria-label="Chat message input"
+                  autocomplete="off"
+                  id="chatInput"
+                  placeholder="Ask the assistant..."
+                  rows="1"
+                ></textarea>
+                <button class="chat-send-btn" id="chatSendBtn" title="Send message" type="button">
+                  <span
+                    aria-hidden="true"
+                    class="chat-send-icon icon-svg icon-mask"
+                    style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                  ></span>
+                </button>
+              </div>
             </div>
+          </section>
+
+          <aside class="right-pane model-tree-pane hidden" id="modelTreePanel">
+            <div class="right-pane-shell">
+              <div class="attr-panel-header">
+                <div>
+                  <div class="attr-panel-type">Model Tree</div>
+                  <div class="attr-panel-title" id="modelTreeTitle">Current view</div>
+                </div>
+                <button class="attr-panel-close" id="modelTreeCloseBtn" title="Close" type="button">
+                  Close
+                </button>
+              </div>
+              <div class="model-tree-panel-body" id="modelTreeBody"></div>
+            </div>
+          </aside>
+
+          <aside class="right-pane hidden" id="attributePanel">
+            <div class="right-pane-shell">
+              <div class="attr-panel-header">
+                <div>
+                  <div class="attr-panel-type" id="attrPanelType"></div>
+                  <div class="attr-panel-title" id="attrPanelTitle"></div>
+                </div>
+                <button class="attr-panel-close" id="attrPanelCloseBtn" title="Close" type="button">
+                  Close
+                </button>
+              </div>
+              <div class="attr-panel-body" id="attrPanelBody"></div>
+              <div class="attr-panel-footer">
+                <button class="btn btn-primary btn-full" id="attrPanelApplyBtn" type="button">
+                  Apply Changes
+                </button>
+                <button
+                  class="btn btn-danger btn-full attr-panel-delete"
+                  id="attrPanelDeleteBtn"
+                  type="button"
+                >
+                  Delete Element
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          <aside class="right-pane impact-panel hidden" id="impactPanel">
+            <div class="right-pane-shell">
+              <div class="impact-panel-header">
+                <div class="impact-panel-title">Change Impact Analysis</div>
+                <button
+                  class="attr-panel-close"
+                  id="impactPanelCloseBtn"
+                  title="Close"
+                  type="button"
+                >
+                  Close
+                </button>
+              </div>
+              <div class="impact-panel-body" id="impactPanelBody">
+                <div class="impact-placeholder">
+                  <span
+                    >Click an element on the canvas while Impact mode is active to inspect
+                    impact.</span
+                  >
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div aria-hidden="true" class="mobile-backdrop hidden" id="mobileBackdrop"></div>
+      </main>
+
+      <div class="project-overlay hidden" id="projectOverlay">
+        <div class="project-dialog">
+          <div class="project-dialog-brand">
+            <img
+              alt="ServerlessFlow logo"
+              class="app-logo-img"
+              src="/assets/icons/hexagon_white.svg"
+            />
+            <span class="app-brand-name">MODELESS</span>
           </div>
-          <div class="chat-messages" id="chatMessages">
-            <div class="chat-welcome">
-              <span aria-hidden="true" class="chat-welcome-icon icon-svg icon-mask"
-                    style="--icon-src: url('/assets/icons/placeholder.svg');"></span>
-              <div class="chat-welcome-title">Modeling Assistant</div>
-              <div class="chat-welcome-text">
-                I can help create, modify, and explain your models. Describe what you want to build.
+          <h2 class="project-dialog-title">Welcome</h2>
+          <p class="project-dialog-subtitle">
+            Select a project or create a new one to start modeling.
+          </p>
+
+          <div class="project-dialog-body">
+            <div class="project-col">
+              <div class="project-col-header">Recent Projects</div>
+              <div class="project-list" id="projectList">
+                <div class="project-list-empty">No projects yet. Create one.</div>
+              </div>
+            </div>
+
+            <div class="project-divider"></div>
+
+            <div class="project-col">
+              <div class="project-col-header">New Project</div>
+              <div class="project-create-form">
+                <input
+                  autocomplete="off"
+                  class="project-input"
+                  id="newProjectName"
+                  placeholder="Project name..."
+                  type="text"
+                />
+                <input
+                  autocomplete="off"
+                  class="project-input"
+                  id="newProjectDesc"
+                  placeholder="Description (optional)"
+                  type="text"
+                />
+                <button
+                  class="btn btn-primary btn-full project-create-btn"
+                  id="createProjectBtn"
+                  type="button"
+                >
+                  Create Project
+                </button>
               </div>
             </div>
           </div>
-          <div class="chat-typing hidden" id="chatTypingIndicator">
-            <span></span><span></span><span></span>
-          </div>
-          <div class="chat-attach-bar" id="chatAttachBar">
-            <label class="chat-attach-btn" title="Attach a file to your message">
-              <span aria-hidden="true" class="chat-attach-icon icon-svg icon-mask"
-                    style="--icon-src: url('/assets/icons/placeholder.svg');"></span>
-              <span>Attach</span>
-              <input
-                  accept=".txt,.md,.json,.yaml,.yml,.xml,.eventstorming,.serverless,.awsserverless,.req,.requirements"
-                  id="chatFileInput"
-                  type="file"/>
-            </label>
-            <div class="chat-file-tag hidden" id="chatFileName">
-              <span id="chatFileNameText">file.txt</span>
-              <button class="chat-file-clear" id="chatFileClearBtn"
-                      title="Remove attachment" type="button">
-                <span aria-hidden="true" class="chat-file-clear-icon icon-svg icon-mask"
-                      style="--icon-src: url('/assets/icons/placeholder.svg');"></span>
-              </button>
-            </div>
-          </div>
-          <div class="chat-input-row" id="chatInputRow">
-            <textarea aria-label="Chat message input" autocomplete="off" id="chatInput"
-                      placeholder="Ask the assistant..." rows="1"></textarea>
-            <button class="chat-send-btn" id="chatSendBtn" title="Send message" type="button">
-              <span aria-hidden="true" class="chat-send-icon icon-svg icon-mask"
-                    style="--icon-src: url('/assets/icons/placeholder.svg');"></span>
-            </button>
-          </div>
         </div>
-      </section>
-
-      <aside class="right-pane model-tree-pane hidden" id="modelTreePanel">
-        <div class="right-pane-shell">
-          <div class="attr-panel-header">
-            <div>
-              <div class="attr-panel-type">Model Tree</div>
-              <div class="attr-panel-title" id="modelTreeTitle">Current view</div>
-            </div>
-            <button class="attr-panel-close" id="modelTreeCloseBtn" title="Close" type="button">
-              Close
-            </button>
-          </div>
-          <div class="model-tree-panel-body" id="modelTreeBody"></div>
-        </div>
-      </aside>
-
-      <aside class="right-pane hidden" id="attributePanel">
-        <div class="right-pane-shell">
-          <div class="attr-panel-header">
-            <div>
-              <div class="attr-panel-type" id="attrPanelType"></div>
-              <div class="attr-panel-title" id="attrPanelTitle"></div>
-            </div>
-            <button class="attr-panel-close" id="attrPanelCloseBtn" title="Close" type="button">
-              Close
-            </button>
-          </div>
-          <div class="attr-panel-body" id="attrPanelBody"></div>
-          <div class="attr-panel-footer">
-            <button class="btn btn-primary btn-full" id="attrPanelApplyBtn" type="button">
-              Apply Changes
-            </button>
-            <button class="btn btn-danger btn-full attr-panel-delete" id="attrPanelDeleteBtn"
-                    type="button">Delete Element
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      <aside class="right-pane impact-panel hidden" id="impactPanel">
-        <div class="right-pane-shell">
-          <div class="impact-panel-header">
-            <div class="impact-panel-title">Change Impact Analysis</div>
-            <button class="attr-panel-close" id="impactPanelCloseBtn" title="Close" type="button">
-              Close
-            </button>
-          </div>
-          <div class="impact-panel-body" id="impactPanelBody">
-            <div class="impact-placeholder">
-              <span>Click an element on the canvas while Impact mode is active to inspect impact.</span>
-            </div>
-          </div>
-        </div>
-      </aside>
-    </div>
-
-    <div aria-hidden="true" class="mobile-backdrop hidden" id="mobileBackdrop"></div>
-  </main>
-
-  <div class="project-overlay hidden" id="projectOverlay">
-    <div class="project-dialog">
-      <div class="project-dialog-brand">
-        <img alt="ServerlessFlow logo" class="app-logo-img"
-             src="/assets/icons/hexagon_white.svg"/>
-        <span class="app-brand-name">MODELESS</span>
       </div>
-      <h2 class="project-dialog-title">Welcome</h2>
-      <p class="project-dialog-subtitle">Select a project or create a new one to start modeling.</p>
 
-      <div class="project-dialog-body">
-        <div class="project-col">
-          <div class="project-col-header">Recent Projects</div>
-          <div class="project-list" id="projectList">
-            <div class="project-list-empty">No projects yet. Create one.</div>
-          </div>
-        </div>
-
-        <div class="project-divider"></div>
-
-        <div class="project-col">
-          <div class="project-col-header">New Project</div>
-          <div class="project-create-form">
-            <input autocomplete="off" class="project-input" id="newProjectName"
-                   placeholder="Project name..." type="text"/>
-            <input autocomplete="off" class="project-input" id="newProjectDesc"
-                   placeholder="Description (optional)" type="text"/>
-            <button class="btn btn-primary btn-full project-create-btn" id="createProjectBtn"
-                    type="button">Create Project
+      <div
+        aria-labelledby="authTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="authOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog auth-dialog">
+          <h3 class="modal-title" id="authTitle">Sign in to MODLESS</h3>
+          <p class="modal-subtitle" id="authSubtitle">Use your account to continue.</p>
+          <div aria-label="Authentication mode" class="auth-mode-switch" role="tablist">
+            <button
+              class="btn btn-secondary btn-sm auth-mode-btn active"
+              id="authLoginTabBtn"
+              type="button"
+            >
+              Login
             </button>
+            <button
+              class="btn btn-secondary btn-sm auth-mode-btn"
+              id="authRegisterTabBtn"
+              type="button"
+            >
+              Register
+            </button>
+          </div>
+          <div class="auth-message auth-message-error hidden" id="authError"></div>
+          <div class="auth-message auth-message-success hidden" id="authSuccess"></div>
+          <div class="auth-form">
+            <input
+              autocomplete="name"
+              class="project-input hidden"
+              id="authDisplayNameInput"
+              maxlength="80"
+              placeholder="Display name"
+              type="text"
+            />
+            <input
+              autocomplete="email"
+              class="project-input"
+              id="authEmailInput"
+              placeholder="Email address"
+              type="email"
+            />
+            <input
+              autocomplete="current-password"
+              class="project-input"
+              id="authPasswordInput"
+              maxlength="128"
+              minlength="8"
+              placeholder="Password (min 8 chars)"
+              type="password"
+            />
+            <input
+              autocomplete="new-password"
+              class="project-input hidden"
+              id="authConfirmPasswordInput"
+              maxlength="128"
+              minlength="8"
+              placeholder="Confirm password"
+              type="password"
+            />
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" id="authSubmitBtn" type="button">Login</button>
           </div>
         </div>
       </div>
+
+      <div
+        aria-labelledby="profileTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="profileOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog auth-dialog">
+          <h3 class="modal-title" id="profileTitle">Edit Profile</h3>
+          <p class="modal-subtitle">Update your display name.</p>
+          <div class="auth-message auth-message-error hidden" id="profileError"></div>
+          <div class="auth-form">
+            <input
+              autocomplete="name"
+              class="project-input"
+              id="profileDisplayNameInput"
+              maxlength="80"
+              placeholder="Display name"
+              type="text"
+            />
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="profileCancelBtn" type="button">Cancel</button>
+            <button class="btn btn-primary" id="profileSaveBtn" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        aria-labelledby="boundedContextNameTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="boundedContextNameOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog">
+          <h3 class="modal-title" id="boundedContextNameTitle">Create Bounded Context</h3>
+          <p class="modal-subtitle">Enter a bounded context name for selected CIM elements.</p>
+          <input
+            autocomplete="off"
+            class="project-input"
+            id="boundedContextNameInput"
+            placeholder="Bounded context name..."
+            type="text"
+          />
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="boundedContextNameCancelBtn" type="button">
+              Cancel
+            </button>
+            <button class="btn btn-primary" id="boundedContextNameSaveBtn" type="button">
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        aria-labelledby="validationTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="validationOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog">
+          <h3 class="modal-title" id="validationTitle">Methodology Constraints</h3>
+          <p class="modal-subtitle" id="validationSubtitle"></p>
+          <div class="validation-issues" id="validationIssues"></div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" id="validationCloseBtn" type="button">
+              Review Model
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        aria-labelledby="projectNameTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="projectNameOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog">
+          <h3 class="modal-title" id="projectNameTitle">Edit Project Name</h3>
+          <p class="modal-subtitle">Update the current project name.</p>
+          <div class="auth-message auth-message-error hidden" id="projectNameError"></div>
+          <input
+            autocomplete="off"
+            class="project-input"
+            id="projectNameInput"
+            maxlength="120"
+            placeholder="Project name..."
+            type="text"
+          />
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="projectNameCancelBtn" type="button">
+              Cancel
+            </button>
+            <button class="btn btn-primary" id="projectNameSaveBtn" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        aria-labelledby="confirmActionTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="confirmActionOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog">
+          <h3 class="modal-title" id="confirmActionTitle">Confirm Action</h3>
+          <p class="modal-subtitle" id="confirmActionMessage"></p>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="confirmActionCancelBtn" type="button">
+              Cancel
+            </button>
+            <button class="btn btn-danger" id="confirmActionConfirmBtn" type="button">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        aria-labelledby="unsavedModelTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="unsavedModelOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog">
+          <h3 class="modal-title" id="unsavedModelTitle">Model Not Saved</h3>
+          <p class="modal-subtitle">
+            Your current model has unsaved changes. Save it before closing this browser tab.
+          </p>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="unsavedModelDismissBtn" type="button">
+              Keep Editing
+            </button>
+            <button class="btn btn-primary" id="unsavedModelSaveBtn" type="button">
+              Save Model
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="not-found-overlay hidden" id="notFoundOverlay">
+        <div class="not-found-panel">
+          <div class="not-found-code">404</div>
+          <h1 class="not-found-title">This model wandered off the map.</h1>
+          <p class="not-found-copy">
+            The route you opened does not match a Modless workspace. The canvas is still here; the
+            address just needs a clean starting point.
+          </p>
+          <button class="btn btn-primary" id="notFoundGoHomeBtn" type="button">
+            Return to Workspace
+          </button>
+        </div>
+      </div>
+
+      <div aria-atomic="false" aria-live="polite" class="toast-host" id="toastHost"></div>
     </div>
-  </div>
 
-  <div aria-labelledby="authTitle" aria-modal="true" class="modal-overlay hidden" id="authOverlay"
-       role="dialog">
-    <div class="modal-dialog auth-dialog">
-      <h3 class="modal-title" id="authTitle">Sign in to MODLESS</h3>
-      <p class="modal-subtitle" id="authSubtitle">Use your account to continue.</p>
-      <div aria-label="Authentication mode" class="auth-mode-switch" role="tablist">
-        <button class="btn btn-secondary btn-sm auth-mode-btn active" id="authLoginTabBtn"
-                type="button">Login
-        </button>
-        <button class="btn btn-secondary btn-sm auth-mode-btn" id="authRegisterTabBtn"
-                type="button">Register
-        </button>
-      </div>
-      <div class="auth-message auth-message-error hidden" id="authError"></div>
-      <div class="auth-message auth-message-success hidden" id="authSuccess"></div>
-      <div class="auth-form">
-        <input autocomplete="name" class="project-input hidden" id="authDisplayNameInput"
-               maxlength="80" placeholder="Display name" type="text"/>
-        <input autocomplete="email" class="project-input" id="authEmailInput"
-               placeholder="Email address" type="email"/>
-        <input autocomplete="current-password" class="project-input" id="authPasswordInput"
-               maxlength="128" minlength="8" placeholder="Password (min 8 chars)" type="password"/>
-        <input autocomplete="new-password" class="project-input hidden"
-               id="authConfirmPasswordInput"
-               maxlength="128" minlength="8" placeholder="Confirm password" type="password"/>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-primary" id="authSubmitBtn" type="button">Login</button>
-      </div>
-    </div>
-  </div>
-
-  <div aria-labelledby="profileTitle" aria-modal="true" class="modal-overlay hidden"
-       id="profileOverlay" role="dialog">
-    <div class="modal-dialog auth-dialog">
-      <h3 class="modal-title" id="profileTitle">Edit Profile</h3>
-      <p class="modal-subtitle">Update your display name.</p>
-      <div class="auth-message auth-message-error hidden" id="profileError"></div>
-      <div class="auth-form">
-        <input autocomplete="name" class="project-input" id="profileDisplayNameInput"
-               maxlength="80" placeholder="Display name" type="text"/>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="profileCancelBtn" type="button">Cancel</button>
-        <button class="btn btn-primary" id="profileSaveBtn" type="button">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div aria-labelledby="boundedContextNameTitle" aria-modal="true" class="modal-overlay hidden"
-       id="boundedContextNameOverlay" role="dialog">
-    <div class="modal-dialog">
-      <h3 class="modal-title" id="boundedContextNameTitle">Create Bounded Context</h3>
-      <p class="modal-subtitle">Enter a bounded context name for selected CIM elements.</p>
-      <input autocomplete="off" class="project-input" id="boundedContextNameInput"
-             placeholder="Bounded context name..." type="text"/>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="boundedContextNameCancelBtn" type="button">Cancel
-        </button>
-        <button class="btn btn-primary" id="boundedContextNameSaveBtn" type="button">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <div aria-labelledby="validationTitle" aria-modal="true" class="modal-overlay hidden"
-       id="validationOverlay" role="dialog">
-    <div class="modal-dialog">
-      <h3 class="modal-title" id="validationTitle">Methodology Constraints</h3>
-      <p class="modal-subtitle" id="validationSubtitle"></p>
-      <div class="validation-issues" id="validationIssues"></div>
-      <div class="modal-actions">
-        <button class="btn btn-primary" id="validationCloseBtn" type="button">Review Model</button>
-      </div>
-    </div>
-  </div>
-
-  <div aria-labelledby="projectNameTitle" aria-modal="true" class="modal-overlay hidden"
-       id="projectNameOverlay" role="dialog">
-    <div class="modal-dialog">
-      <h3 class="modal-title" id="projectNameTitle">Edit Project Name</h3>
-      <p class="modal-subtitle">Update the current project name.</p>
-      <div class="auth-message auth-message-error hidden" id="projectNameError"></div>
-      <input autocomplete="off" class="project-input" id="projectNameInput"
-             maxlength="120" placeholder="Project name..." type="text"/>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="projectNameCancelBtn" type="button">Cancel</button>
-        <button class="btn btn-primary" id="projectNameSaveBtn" type="button">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div aria-labelledby="confirmActionTitle" aria-modal="true" class="modal-overlay hidden"
-       id="confirmActionOverlay" role="dialog">
-    <div class="modal-dialog">
-      <h3 class="modal-title" id="confirmActionTitle">Confirm Action</h3>
-      <p class="modal-subtitle" id="confirmActionMessage"></p>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="confirmActionCancelBtn" type="button">Cancel
-        </button>
-        <button class="btn btn-danger" id="confirmActionConfirmBtn" type="button">Delete</button>
-      </div>
-    </div>
-  </div>
-
-  <div aria-labelledby="unsavedModelTitle" aria-modal="true" class="modal-overlay hidden"
-       id="unsavedModelOverlay" role="dialog">
-    <div class="modal-dialog">
-      <h3 class="modal-title" id="unsavedModelTitle">Model Not Saved</h3>
-      <p class="modal-subtitle">
-        Your current model has unsaved changes. Save it before closing this browser tab.
-      </p>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="unsavedModelDismissBtn" type="button">Keep Editing
-        </button>
-        <button class="btn btn-primary" id="unsavedModelSaveBtn" type="button">Save Model</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="not-found-overlay hidden" id="notFoundOverlay">
-    <div class="not-found-panel">
-      <div class="not-found-code">404</div>
-      <h1 class="not-found-title">This model wandered off the map.</h1>
-      <p class="not-found-copy">
-        The route you opened does not match a Modless workspace. The canvas is still here; the
-        address just needs a clean starting point.
-      </p>
-      <button class="btn btn-primary" id="notFoundGoHomeBtn" type="button">Return to Workspace
-      </button>
-    </div>
-  </div>
-
-  <div aria-atomic="false" aria-live="polite" class="toast-host" id="toastHost"></div>
-
-</div>
-
-<script src="/backend-config.js?v=g6wired-20260531c"></script>
-<script src="/js/main.js?v=g6wired-20260531c" type="module"></script>
-</body>
+    <script src="/backend-config.js?v=g6wired-20260531c"></script>
+    <script src="/js/main.js?v=g6wired-20260531c" type="module"></script>
+  </body>
 </html>

@@ -1,6 +1,6 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {api} from './api.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { api } from "./api.js";
 
 const AUTH_TOKEN_KEY = "modless.authToken";
 
@@ -25,12 +25,10 @@ export function clearAuthSession() {
 function setAuthMode(mode) {
   const registerMode = mode === "register";
   if (el.authLoginTabBtn) {
-    el.authLoginTabBtn.classList.toggle("active",
-        !registerMode);
+    el.authLoginTabBtn.classList.toggle("active", !registerMode);
   }
   if (el.authRegisterTabBtn) {
-    el.authRegisterTabBtn.classList.toggle("active",
-        registerMode);
+    el.authRegisterTabBtn.classList.toggle("active", registerMode);
   }
   if (el.authDisplayNameInput) {
     el.authDisplayNameInput.classList.toggle("hidden", !registerMode);
@@ -39,17 +37,15 @@ function setAuthMode(mode) {
     el.authConfirmPasswordInput.classList.toggle("hidden", !registerMode);
   }
   if (el.authTitle) {
-    el.authTitle.textContent = registerMode ? "Create your Modless account"
-        : "Sign in to Modless";
+    el.authTitle.textContent = registerMode ? "Create your Modless account" : "Sign in to Modless";
   }
   if (el.authSubtitle) {
     el.authSubtitle.textContent = registerMode
-        ? "Register to create and manage projects."
-        : "Use your account to continue.";
+      ? "Register to create and manage projects."
+      : "Use your account to continue.";
   }
   if (el.authPasswordInput) {
-    el.authPasswordInput.autocomplete = registerMode ? "new-password"
-        : "current-password";
+    el.authPasswordInput.autocomplete = registerMode ? "new-password" : "current-password";
   }
   if (el.authSubmitBtn) {
     el.authSubmitBtn.textContent = registerMode ? "Register" : "Login";
@@ -112,7 +108,7 @@ function validateAuthForm(mode) {
       throw new Error("Password confirmation does not match");
     }
   }
-  return {email, password, displayName};
+  return { email, password, displayName };
 }
 
 async function showAuthDialog() {
@@ -210,8 +206,8 @@ async function showAuthDialog() {
             body: JSON.stringify({
               email: payload.email,
               password: payload.password,
-              displayName: payload.displayName
-            })
+              displayName: payload.displayName,
+            }),
           });
           showAuthSuccess("Registration successful. Signing you in…");
           resolveSession(result);
@@ -221,8 +217,8 @@ async function showAuthDialog() {
           method: "POST",
           body: JSON.stringify({
             email: payload.email,
-            password: payload.password
-          })
+            password: payload.password,
+          }),
         });
         resolveSession(result);
       } catch (error) {
@@ -255,11 +251,11 @@ export async function ensureAuthenticated() {
   if (existingToken) {
     try {
       const me = await api("/auth/me", {
-        headers: {"X-Auth-Token": existingToken}
+        headers: { "X-Auth-Token": existingToken },
       });
       state.auth.token = existingToken;
       state.auth.user = me;
-      return {user: me, promptedLogin: false};
+      return { user: me, promptedLogin: false };
     } catch {
       setAuthToken("");
     }
@@ -268,7 +264,7 @@ export async function ensureAuthenticated() {
   setAuthToken(result.token);
   state.auth.token = result.token;
   state.auth.user = result.user;
-  return {user: result.user, promptedLogin: true};
+  return { user: result.user, promptedLogin: true };
 }
 
 export async function logout() {
@@ -277,11 +273,10 @@ export async function logout() {
     try {
       await api("/auth/logout", {
         method: "POST",
-        headers: {"X-Auth-Token": token}
+        headers: { "X-Auth-Token": token },
       });
     } catch (error) {
-      console.warn("Logout request failed; clearing local session anyway.",
-          error);
+      console.warn("Logout request failed; clearing local session anyway.", error);
     }
   }
   clearAuthSession();
@@ -298,8 +293,8 @@ export async function updateDisplayName(displayName) {
   }
   const updated = await api("/auth/me", {
     method: "PUT",
-    headers: {"X-Auth-Token": token},
-    body: JSON.stringify({displayName: normalized})
+    headers: { "X-Auth-Token": token },
+    body: JSON.stringify({ displayName: normalized }),
   });
   state.auth.user = updated;
   return updated;

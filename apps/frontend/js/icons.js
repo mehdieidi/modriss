@@ -87,6 +87,6 @@ export function initSvgIconMasks() {
 
   observer.observe(document.documentElement, {
     childList: true,
-    subtree: true
+    subtree: true,
   });
 }

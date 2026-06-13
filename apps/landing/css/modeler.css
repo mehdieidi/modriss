@@ -74,10 +74,12 @@
   border-radius: 0.8rem;
   opacity: 0;
   color: var(--paper);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--node-color) 9%, transparent), transparent 45%),
-  rgba(44, 42, 40, 0.96);
-  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.32),
-  inset 0 1px rgba(255, 255, 255, 0.03);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--node-color) 9%, transparent), transparent 45%),
+    rgba(44, 42, 40, 0.96);
+  box-shadow:
+    0 1rem 2.5rem rgba(0, 0, 0, 0.32),
+    inset 0 1px rgba(255, 255, 255, 0.03);
   transform: translateY(1.5rem);
   transform-origin: 50% 50%;
 }
@@ -123,9 +125,10 @@
 
 .model-node.is-selected {
   border-color: var(--lime);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent),
-  0 1rem 2.5rem rgba(0, 0, 0, 0.36),
-  0 0 2.5rem color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent),
+    0 1rem 2.5rem rgba(0, 0, 0, 0.36),
+    0 0 2.5rem color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .model-node.is-refined .node-port-right {
@@ -289,8 +292,9 @@
   opacity: 0;
   color: var(--token-color);
   background: #201f1e;
-  box-shadow: 0 0.7rem 1.4rem rgba(0, 0, 0, 0.25),
-  0 0 1.1rem color-mix(in srgb, var(--token-color) 22%, transparent);
+  box-shadow:
+    0 0.7rem 1.4rem rgba(0, 0, 0, 0.25),
+    0 0 1.1rem color-mix(in srgb, var(--token-color) 22%, transparent);
   font-size: 0.42rem;
   font-weight: 750;
   letter-spacing: 0.06em;
@@ -324,10 +328,16 @@
   border-radius: 0.38rem;
   opacity: 0;
   color: var(--traveler-color);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--traveler-color) 10%, transparent), transparent 52%),
-  #201f1e;
-  box-shadow: 0 0.65rem 1.3rem rgba(0, 0, 0, 0.28),
-  0 0 1rem color-mix(in srgb, var(--traveler-color) 24%, transparent);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--traveler-color) 10%, transparent),
+      transparent 52%
+    ),
+    #201f1e;
+  box-shadow:
+    0 0.65rem 1.3rem rgba(0, 0, 0, 0.28),
+    0 0 1rem color-mix(in srgb, var(--traveler-color) 24%, transparent);
   font-size: 0.48rem;
   font-weight: 760;
   letter-spacing: 0.04em;
@@ -371,10 +381,12 @@
   inset: 22% 19% 18%;
   border: 1px solid rgba(246, 244, 242, 0.24);
   border-radius: 0.35rem;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.09), transparent 18%, rgba(0, 0, 0, 0.24) 82%),
-  linear-gradient(180deg, #4a4745, #2c2a28 62%, #1f1e1d);
-  box-shadow: inset 0 0 1.5rem rgba(0, 0, 0, 0.55),
-  0 2rem 3rem rgba(0, 0, 0, 0.35);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09), transparent 18%, rgba(0, 0, 0, 0.24) 82%),
+    linear-gradient(180deg, #4a4745, #2c2a28 62%, #1f1e1d);
+  box-shadow:
+    inset 0 0 1.5rem rgba(0, 0, 0, 0.55),
+    0 2rem 3rem rgba(0, 0, 0, 0.35);
 }
 
 .engine-body::before,
@@ -429,10 +441,17 @@
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
   border-radius: 0.28rem;
   color: var(--lime);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 18%, transparent), transparent),
-  #1b1c18;
-  box-shadow: inset 0 0 1.5rem color-mix(in srgb, var(--accent) 12%, transparent),
-  0 0 2rem color-mix(in srgb, var(--accent) 12%, transparent);
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent
+    ),
+    #1b1c18;
+  box-shadow:
+    inset 0 0 1.5rem color-mix(in srgb, var(--accent) 12%, transparent),
+    0 0 2rem color-mix(in srgb, var(--accent) 12%, transparent);
   font-size: clamp(0.7rem, 1.2vw, 1.05rem);
   letter-spacing: 0.08em;
 }
@@ -518,10 +537,17 @@
   width: 30%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, #1d1c1b 0 16%, #706e69 17% 26%, transparent 27%),
-  repeating-conic-gradient(#706e69 0 6deg, #252423 6deg 14deg, #5b5855 14deg 20deg, #252423 20deg 28deg);
-  box-shadow: inset 0 0 0 0.25rem #34312f,
-  0 0.7rem 1.4rem rgba(0, 0, 0, 0.35);
+  background:
+    radial-gradient(circle, #1d1c1b 0 16%, #706e69 17% 26%, transparent 27%),
+    repeating-conic-gradient(
+      #706e69 0 6deg,
+      #252423 6deg 14deg,
+      #5b5855 14deg 20deg,
+      #252423 20deg 28deg
+    );
+  box-shadow:
+    inset 0 0 0 0.25rem #34312f,
+    0 0.7rem 1.4rem rgba(0, 0, 0, 0.35);
 }
 
 .engine-gear::after {
@@ -613,10 +639,12 @@
   height: 4.5rem;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
   border-radius: 1.4rem;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 52%),
-  #34312f;
-  box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.38),
-  0 0 2rem color-mix(in srgb, var(--accent) 13%, transparent);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 52%),
+    #34312f;
+  box-shadow:
+    0 1.2rem 3rem rgba(0, 0, 0, 0.38),
+    0 0 2rem color-mix(in srgb, var(--accent) 13%, transparent);
 }
 
 .chatbot-face {
@@ -1169,10 +1197,16 @@
   border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   border-radius: 1.2rem;
   opacity: 0;
-  background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--accent) 13%, transparent), transparent 50%),
-  rgba(37, 36, 35, 0.96);
-  box-shadow: 0 2rem 7rem rgba(0, 0, 0, 0.5),
-  0 0 4rem color-mix(in srgb, var(--accent) 8%, transparent);
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      color-mix(in srgb, var(--accent) 13%, transparent),
+      transparent 50%
+    ),
+    rgba(37, 36, 35, 0.96);
+  box-shadow:
+    0 2rem 7rem rgba(0, 0, 0, 0.5),
+    0 0 4rem color-mix(in srgb, var(--accent) 8%, transparent);
   text-align: center;
   translate: -50% -50%;
   transform: scale(0.82);

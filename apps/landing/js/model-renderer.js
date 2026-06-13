@@ -11,10 +11,10 @@ const EDGE_CONTROL_MIN = 42;
 const EDGE_CONTROL_MAX = 132;
 const renderedModels = [];
 const PORT_VECTORS = {
-  bottom: {x: 0, y: 1},
-  left: {x: -1, y: 0},
-  right: {x: 1, y: 0},
-  top: {x: 0, y: -1},
+  bottom: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+  top: { x: 0, y: -1 },
 };
 
 function createElement(tagName, className) {
@@ -27,17 +27,13 @@ function createElement(tagName, className) {
 
 function createSvgElement(tagName, attributes = {}) {
   const element = document.createElementNS(SVG_NS, tagName);
-  Object.entries(attributes).forEach(
-      ([name, value]) => element.setAttribute(name, value));
+  Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
   return element;
 }
 
 function edgePath(source, target) {
   const distance = Math.hypot(target.x - source.x, target.y - source.y);
-  const controlDistance = Math.min(
-      EDGE_CONTROL_MAX,
-      Math.max(EDGE_CONTROL_MIN, distance * 0.34),
-  );
+  const controlDistance = Math.min(EDGE_CONTROL_MAX, Math.max(EDGE_CONTROL_MIN, distance * 0.34));
   const sourceControl = {
     x: source.x + source.vector.x * controlDistance,
     y: source.y + source.vector.y * controlDistance,
@@ -76,20 +72,13 @@ function canvasPointFromPort(port, mount, side) {
 }
 
 function nodePort(mount, node, side) {
-  const anchor = mount.querySelector(
-      `.model-node-anchor[data-node-id="${node.id}"]`,
-  );
+  const anchor = mount.querySelector(`.model-node-anchor[data-node-id="${node.id}"]`);
   const port = anchor.querySelector(`.node-port-${side}`);
   return canvasPointFromPort(port, mount, side);
 }
 
 function updateModelEdges(renderedModel) {
-  const {
-    edges,
-    model,
-    mount,
-    nodesById,
-  } = renderedModel;
+  const { edges, model, mount, nodesById } = renderedModel;
 
   model.edges.forEach((edge) => {
     const sourceNode = nodesById.get(edge.source);
@@ -98,11 +87,19 @@ function updateModelEdges(renderedModel) {
     const deltaY = targetNode.y - sourceNode.y;
     const usesHorizontalPorts = Math.abs(deltaX) >= Math.abs(deltaY) * 0.72;
     const sourceSide = usesHorizontalPorts
-        ? (deltaX >= 0 ? "right" : "left")
-        : (deltaY >= 0 ? "bottom" : "top");
+      ? deltaX >= 0
+        ? "right"
+        : "left"
+      : deltaY >= 0
+        ? "bottom"
+        : "top";
     const targetSide = usesHorizontalPorts
-        ? (deltaX >= 0 ? "left" : "right")
-        : (deltaY >= 0 ? "top" : "bottom");
+      ? deltaX >= 0
+        ? "left"
+        : "right"
+      : deltaY >= 0
+        ? "top"
+        : "bottom";
     const source = nodePort(mount, sourceNode, sourceSide);
     const target = nodePort(mount, targetNode, targetSide);
 
@@ -196,10 +193,10 @@ function renderModel(mount, model, modelId) {
     orient: "auto-start-reverse",
   });
   marker.append(
-      createSvgElement("path", {
-        d: "M 0 0 L 10 5 L 0 10 z",
-        fill: "context-stroke",
-      }),
+    createSvgElement("path", {
+      d: "M 0 0 L 10 5 L 0 10 z",
+      fill: "context-stroke",
+    }),
   );
   definitions.append(marker);
   edges.append(definitions);
@@ -212,8 +209,8 @@ function renderModel(mount, model, modelId) {
         edge.kind ? `edge-${edge.kind}` : "",
         edge.aiAddition ? "ai-addition-edge" : "",
       ]
-      .filter(Boolean)
-      .join(" "),
+        .filter(Boolean)
+        .join(" "),
       "data-edge-id": edge.id,
       "data-source": edge.source,
       "data-target": edge.target,
@@ -222,12 +219,7 @@ function renderModel(mount, model, modelId) {
     edges.append(path);
 
     const label = createSvgElement("text", {
-      class: [
-        "edge-label",
-        edge.aiAddition ? "ai-addition-edge" : "",
-      ]
-      .filter(Boolean)
-      .join(" "),
+      class: ["edge-label", edge.aiAddition ? "ai-addition-edge" : ""].filter(Boolean).join(" "),
       "data-edge-id": edge.id,
       "data-source": edge.source,
       "data-target": edge.target,
@@ -312,8 +304,7 @@ function renderArtifacts() {
 function renderCode() {
   const mount = document.querySelector("#code-editor");
   codeLines.forEach((line, index) => {
-    const row = createElement("span",
-        `code-line ${line.className || ""}`.trim());
+    const row = createElement("span", `code-line ${line.className || ""}`.trim());
     row.dataset.line = String(index + 1).padStart(2, "0");
     row.innerHTML = line.html || " ";
     mount.append(row);
@@ -331,7 +322,11 @@ export function renderCaseStudy() {
   renderArtifacts();
   renderCode();
 
-  window.addEventListener("resize", () => {
-    window.requestAnimationFrame(updateRenderedModelEdges);
-  }, {passive: true});
+  window.addEventListener(
+    "resize",
+    () => {
+      window.requestAnimationFrame(updateRenderedModelEdges);
+    },
+    { passive: true },
+  );
 }

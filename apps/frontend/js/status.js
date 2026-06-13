@@ -1,4 +1,4 @@
-import {el} from './dom.js';
+import { el } from "./dom.js";
 
 const TOAST_TTL_MS = 4600;
 let toastHost = null;
@@ -43,14 +43,14 @@ export function showProgressNotification({
   title = "Processing",
   subtitle = "",
   label = "Starting...",
-  progress = 0
+  progress = 0,
 } = {}) {
   const host = ensureToastHost();
   if (progressToast?.isConnected && progressToastParts) {
     progressToastParts.kicker.textContent = kicker;
     progressToastParts.title.textContent = title;
     progressToastParts.message.textContent = subtitle;
-    updateProgressNotification({label, progress});
+    updateProgressNotification({ label, progress });
     return;
   }
 
@@ -104,12 +104,12 @@ export function showProgressNotification({
     title: titleEl,
     message: messageEl,
     fill,
-    caption
+    caption,
   };
-  updateProgressNotification({label, progress});
+  updateProgressNotification({ label, progress });
 }
 
-export function updateProgressNotification({label, progress} = {}) {
+export function updateProgressNotification({ label, progress } = {}) {
   if (!progressToast?.isConnected || !progressToastParts) {
     return;
   }
@@ -118,12 +118,11 @@ export function updateProgressNotification({label, progress} = {}) {
   }
   if (progress !== undefined) {
     const normalized = normalizeProgress(progress);
-    progressToastParts.fill.style.transform =
-        `scaleX(${(normalized / 100).toFixed(4)})`;
+    progressToastParts.fill.style.transform = `scaleX(${(normalized / 100).toFixed(4)})`;
   }
 }
 
-export function hideProgressNotification({delayMs = 0} = {}) {
+export function hideProgressNotification({ delayMs = 0 } = {}) {
   if (!progressToast?.isConnected) {
     progressToast = null;
     progressToastParts = null;
@@ -138,7 +137,7 @@ export function hideProgressNotification({delayMs = 0} = {}) {
 }
 
 // ── Status bar helpers ─────────────────────────────────────────────────────────
-export function setStatus(message, {busy = false, error = false} = {}) {
+export function setStatus(message, { busy = false, error = false } = {}) {
   void el;
   const text = String(message || "").trim();
   if (!text) {
@@ -146,7 +145,7 @@ export function setStatus(message, {busy = false, error = false} = {}) {
   }
 
   if (busy && progressToast?.isConnected) {
-    updateProgressNotification({label: text});
+    updateProgressNotification({ label: text });
     return;
   }
 
@@ -185,9 +184,9 @@ export function setStatus(message, {busy = false, error = false} = {}) {
 }
 
 export function setBusy(message) {
-  setStatus(message, {busy: true});
+  setStatus(message, { busy: true });
 }
 
 export function setError(message) {
-  setStatus(message, {error: true});
+  setStatus(message, { error: true });
 }

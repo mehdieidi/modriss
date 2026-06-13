@@ -6,6 +6,4 @@ package io.mehdieidi.modless.mdecli.service;
  * @param kind Emfatic feature kind
  * @param name feature name
  */
-public record StubFeatureDefinition(String kind, String name) {
-
-}
+public record StubFeatureDefinition(String kind, String name) {}

@@ -99,4 +99,3 @@ context AWSPSM!SnsFilterRule {
     message : 'SNS filter rule is incomplete. Fix: set fieldPath, operator, and at least one value.'
   }
 }
-

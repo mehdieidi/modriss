@@ -1,12 +1,12 @@
-import {emptyDiagram} from './utils.js';
+import { emptyDiagram } from "./utils.js";
 
 // ── Mutable application state (singleton) ─────────────────────────────────────
 export const state = {
   auth: {
     token: null,
-    user: null
+    user: null,
   },
-  project: null,   // active Project object from backend
+  project: null, // active Project object from backend
   activeType: "cim",
   modelId: null,
   modelRevision: 0,
@@ -15,7 +15,7 @@ export const state = {
     dirty: false,
     saving: false,
     lastSavedAt: null,
-    error: ""
+    error: "",
   },
   diagram: emptyDiagram("cim"),
   nodesById: new Map(),
@@ -28,18 +28,18 @@ export const state = {
     relationshipsByTarget: new Map(),
     relationshipsByKind: new Map(),
     containmentByParent: new Map(),
-    parentByChild: new Map()
+    parentByChild: new Map(),
   },
   views: {
     byId: new Map(),
     activeViewId: null,
     visibleNodeIds: new Set(),
     visibleRelationshipIds: new Set(),
-    expandedContainers: new Set()
+    expandedContainers: new Set(),
   },
   fragments: {
     byId: new Map(),
-    rootIds: []
+    rootIds: [],
   },
   visibleGraph: emptyDiagram("cim"),
   modelingStrictness: "methodology",
@@ -56,7 +56,7 @@ export const state = {
       views: null,
       fragments: null,
       activeViewId: null,
-      dirty: false
+      dirty: false,
     },
     pim: {
       modelId: null,
@@ -68,7 +68,7 @@ export const state = {
       views: null,
       fragments: null,
       activeViewId: null,
-      dirty: false
+      dirty: false,
     },
     psm: {
       modelId: null,
@@ -80,15 +80,15 @@ export const state = {
       views: null,
       fragments: null,
       activeViewId: null,
-      dirty: false
-    }
+      dirty: false,
+    },
   },
-  modelsCache: {cim: [], pim: [], psm: []},
+  modelsCache: { cim: [], pim: [], psm: [] },
   modelingConfig: {
     config: null,
-    draft: null
+    draft: null,
   },
-  viewport: {x: 0, y: 0, scale: 1},
+  viewport: { x: 0, y: 0, scale: 1 },
   connectMode: false,
   connectSourceId: null,
   preferredConnectionKind: null,
@@ -100,7 +100,7 @@ export const state = {
     available: true,
     sessions: new Map(),
     channels: new Map(),
-    attachment: null
+    attachment: null,
   },
   artifact: {
     id: null,
@@ -108,7 +108,7 @@ export const state = {
     files: [],
     activeFile: null,
     dirty: false,
-    treeCollapsed: false
+    treeCollapsed: false,
   },
   github: {
     available: true,
@@ -121,7 +121,7 @@ export const state = {
     lastDeploymentAt: "",
     repositoryUrl: "",
     commitUrl: "",
-    loading: false
+    loading: false,
   },
   admin: {
     unavailable: false,
@@ -131,7 +131,7 @@ export const state = {
     entries: [],
     selectedEntry: null,
     activeFile: null,
-    dirty: false
+    dirty: false,
   },
   selectedNodeId: null,
   selectedNodeIds: new Set(),
@@ -152,7 +152,7 @@ export const state = {
   paletteSearch: {
     cim: "",
     pim: "",
-    psm: ""
+    psm: "",
   },
   cimWorkbench: {
     representationByViewId: {},
@@ -163,7 +163,7 @@ export const state = {
     sliceValue: "",
     edgeMode: "both",
     sortKey: "name",
-    hidPalette: false
+    hidPalette: false,
   },
   pimWorkbench: {
     representationByViewId: {},
@@ -174,7 +174,7 @@ export const state = {
     sliceValue: "",
     edgeMode: "both",
     sortKey: "name",
-    hidPalette: false
+    hidPalette: false,
   },
   psmWorkbench: {
     representationByViewId: {},
@@ -185,12 +185,12 @@ export const state = {
     sliceValue: "",
     edgeMode: "both",
     sortKey: "name",
-    hidPalette: false
+    hidPalette: false,
   },
   paletteGroupCollapsed: {
     cim: {},
     pim: {},
-    psm: {}
+    psm: {},
   },
   validation: {
     issues: [],
@@ -198,21 +198,21 @@ export const state = {
     panelOpen: false,
     firstIssueShown: false,
     lastValidatedAt: null,
-    issueView: "errors"
+    issueView: "errors",
   },
   edgeKindPicker: {
     open: false,
     edgeId: null,
     x: 0,
     y: 0,
-    options: []
+    options: [],
   },
   undo: {
     modelReplacements: [],
     diagramHistory: {
       cim: [],
       pim: [],
-      psm: []
-    }
-  }
+      psm: [],
+    },
+  },
 };

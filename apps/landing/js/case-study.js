@@ -486,10 +486,10 @@ export const transformationBatches = [
   {
     id: "cim-pim",
     rules: [
-      {label: "TR-070 Command -> Function", x: 3, y: 12, color: "#ffa828"},
-      {label: "TR-040 Entity -> Schema", x: 60, y: 7, color: "#4ce6e0"},
-      {label: "TR-050 Aggregate -> DataStore", x: 64, y: 78, color: "#4ce6e0"},
-      {label: "TR-090 Event -> EventType", x: 1, y: 80, color: "#ff79b0"},
+      { label: "TR-070 Command -> Function", x: 3, y: 12, color: "#ffa828" },
+      { label: "TR-040 Entity -> Schema", x: 60, y: 7, color: "#4ce6e0" },
+      { label: "TR-050 Aggregate -> DataStore", x: 64, y: 78, color: "#4ce6e0" },
+      { label: "TR-090 Event -> EventType", x: 1, y: 80, color: "#ff79b0" },
     ],
     inputs: [
       ["CMD", "#ffa828"],
@@ -509,10 +509,10 @@ export const transformationBatches = [
   {
     id: "pim-psm",
     rules: [
-      {label: "Function -> AWS Lambda", x: 2, y: 12, color: "#ffa828"},
-      {label: "Api -> HTTP API", x: 64, y: 8, color: "#b497ff"},
-      {label: "DataStore -> DynamoDB", x: 64, y: 79, color: "#4ce6e0"},
-      {label: "Topic -> SNS Topic", x: 2, y: 81, color: "#ff79b0"},
+      { label: "Function -> AWS Lambda", x: 2, y: 12, color: "#ffa828" },
+      { label: "Api -> HTTP API", x: 64, y: 8, color: "#b497ff" },
+      { label: "DataStore -> DynamoDB", x: 64, y: 79, color: "#4ce6e0" },
+      { label: "Topic -> SNS Topic", x: 2, y: 81, color: "#ff79b0" },
     ],
     inputs: [
       ["FN", "#8dff55"],
@@ -532,10 +532,10 @@ export const transformationBatches = [
   {
     id: "psm-artifacts",
     rules: [
-      {label: "Lambda -> Go handler", x: 2, y: 12, color: "#71a7ff"},
-      {label: "SamStack -> template.yaml", x: 59, y: 8, color: "#ffa828"},
-      {label: "Api -> OpenAPI", x: 66, y: 79, color: "#b497ff"},
-      {label: "Trace -> reports", x: 3, y: 81, color: "#b7ff54"},
+      { label: "Lambda -> Go handler", x: 2, y: 12, color: "#71a7ff" },
+      { label: "SamStack -> template.yaml", x: 59, y: 8, color: "#ffa828" },
+      { label: "Api -> OpenAPI", x: 66, y: 79, color: "#b497ff" },
+      { label: "Trace -> reports", x: 3, y: 81, color: "#b7ff54" },
     ],
     inputs: [
       ["LAMBDA", "#ffa828"],
@@ -555,27 +555,27 @@ export const transformationBatches = [
 ];
 
 export const artifactTree = [
-  {name: ".github", type: "folder", depth: 0, color: "#b497ff"},
-  {name: "workflows", type: "folder", depth: 1, color: "#b497ff"},
-  {name: "validate.yml", type: "file", depth: 2, color: "#b497ff"},
-  {name: "docs", type: "folder", depth: 0, color: "#71a7ff"},
-  {name: "architecture.md", type: "file", depth: 1, color: "#71a7ff"},
-  {name: "traceability.md", type: "file", depth: 1, color: "#71a7ff"},
-  {name: "schemas", type: "folder", depth: 0, color: "#ff79b0"},
-  {name: "openapi.yaml", type: "file", depth: 1, color: "#ff79b0"},
-  {name: "src", type: "folder", depth: 0, color: "#8dff55"},
-  {name: "functions", type: "folder", depth: 1, color: "#8dff55"},
-  {name: "submit-ticket", type: "folder", depth: 2, color: "#8dff55"},
-  {name: "handler.go", type: "file", depth: 3, color: "#71a7ff", active: true},
-  {name: "notify-support", type: "folder", depth: 2, color: "#8dff55"},
-  {name: "handler.go", type: "file", depth: 3, color: "#71a7ff"},
-  {name: "shared", type: "folder", depth: 1, color: "#8dff55"},
-  {name: "data-access.go", type: "file", depth: 2, color: "#71a7ff"},
-  {name: "event-publisher.go", type: "file", depth: 2, color: "#71a7ff"},
-  {name: "tests", type: "folder", depth: 0, color: "#4ce6e0"},
-  {name: "template.yaml", type: "file", depth: 0, color: "#ffa828"},
-  {name: "samconfig.toml", type: "file", depth: 0, color: "#ffa828"},
-  {name: "go.mod", type: "file", depth: 0, color: "#71a7ff"},
+  { name: ".github", type: "folder", depth: 0, color: "#b497ff" },
+  { name: "workflows", type: "folder", depth: 1, color: "#b497ff" },
+  { name: "validate.yml", type: "file", depth: 2, color: "#b497ff" },
+  { name: "docs", type: "folder", depth: 0, color: "#71a7ff" },
+  { name: "architecture.md", type: "file", depth: 1, color: "#71a7ff" },
+  { name: "traceability.md", type: "file", depth: 1, color: "#71a7ff" },
+  { name: "schemas", type: "folder", depth: 0, color: "#ff79b0" },
+  { name: "openapi.yaml", type: "file", depth: 1, color: "#ff79b0" },
+  { name: "src", type: "folder", depth: 0, color: "#8dff55" },
+  { name: "functions", type: "folder", depth: 1, color: "#8dff55" },
+  { name: "submit-ticket", type: "folder", depth: 2, color: "#8dff55" },
+  { name: "handler.go", type: "file", depth: 3, color: "#71a7ff", active: true },
+  { name: "notify-support", type: "folder", depth: 2, color: "#8dff55" },
+  { name: "handler.go", type: "file", depth: 3, color: "#71a7ff" },
+  { name: "shared", type: "folder", depth: 1, color: "#8dff55" },
+  { name: "data-access.go", type: "file", depth: 2, color: "#71a7ff" },
+  { name: "event-publisher.go", type: "file", depth: 2, color: "#71a7ff" },
+  { name: "tests", type: "folder", depth: 0, color: "#4ce6e0" },
+  { name: "template.yaml", type: "file", depth: 0, color: "#ffa828" },
+  { name: "samconfig.toml", type: "file", depth: 0, color: "#ffa828" },
+  { name: "go.mod", type: "file", depth: 0, color: "#71a7ff" },
 ];
 
 export const codeLines = [
@@ -607,40 +607,40 @@ export const codeLines = [
     html: "  correlationID := shared.ExtractCorrelationID(evt)",
   },
   {
-    html: "  logObj := shared.NewLogger(correlationID, <span class=\"token-string\">\"SubmitTicket\"</span>, configObj.Stage)",
+    html: '  logObj := shared.NewLogger(correlationID, <span class="token-string">"SubmitTicket"</span>, configObj.Stage)',
   },
   {
-    html: "  <span class=\"token-comment\">// validation, tracing, metrics, and idempotency are generated</span>",
+    html: '  <span class="token-comment">// validation, tracing, metrics, and idempotency are generated</span>',
   },
   {
     html: "",
   },
   {
-    html: "  <span class=\"token-comment\">/* protected region submit-ticket-function.business-logic on begin */</span>",
+    html: '  <span class="token-comment">/* protected region submit-ticket-function.business-logic on begin */</span>',
     className: "protected",
   },
   {
-    html: "  <span class=\"token-comment\">// TODO: add developer-owned business logic.</span>",
+    html: '  <span class="token-comment">// TODO: add developer-owned business logic.</span>',
     className: "todo-code",
   },
   {
-    html: "  <span class=\"token-keyword\">return</span> GeneratedResult{}, shared.NewGeneratedHandlerError(<span class=\"token-string\">\"NOT_IMPLEMENTED\"</span>)",
+    html: '  <span class="token-keyword">return</span> GeneratedResult{}, shared.NewGeneratedHandlerError(<span class="token-string">"NOT_IMPLEMENTED"</span>)',
     className: "todo-code",
   },
   {
-    html: "  ticket := map[<span class=\"token-keyword\">string</span>]any{",
+    html: '  ticket := map[<span class="token-keyword">string</span>]any{',
     className: "manual-code",
   },
   {
-    html: "    <span class=\"token-string\">\"subject\"</span>: validatedInput.Payload,",
+    html: '    <span class="token-string">"subject"</span>: validatedInput.Payload,',
     className: "manual-code",
   },
   {
-    html: "    <span class=\"token-string\">\"status\"</span>: <span class=\"token-string\">\"OPEN\"</span>,",
+    html: '    <span class="token-string">"status"</span>: <span class="token-string">"OPEN"</span>,',
     className: "manual-code",
   },
   {
-    html: "    <span class=\"token-string\">\"correlationId\"</span>: correlationID,",
+    html: '    <span class="token-string">"correlationId"</span>: correlationID,',
     className: "manual-code",
   },
   {
@@ -648,21 +648,21 @@ export const codeLines = [
     className: "manual-code",
   },
   {
-    html: "  <span class=\"token-keyword\">return</span> GeneratedResult{StatusCode: <span class=\"token-number\">201</span>, Body: ticket}, <span class=\"token-keyword\">nil</span>",
+    html: '  <span class="token-keyword">return</span> GeneratedResult{StatusCode: <span class="token-number">201</span>, Body: ticket}, <span class="token-keyword">nil</span>',
     className: "manual-code",
   },
   {
-    html: "  <span class=\"token-comment\">/* protected region submit-ticket-function.business-logic end */</span>",
+    html: '  <span class="token-comment">/* protected region submit-ticket-function.business-logic end */</span>',
     className: "protected",
   },
   {
     html: "",
   },
   {
-    html: "  <span class=\"token-comment\">// modeled events are published by generated runtime code</span>",
+    html: '  <span class="token-comment">// modeled events are published by generated runtime code</span>',
   },
   {
-    html: "  logObj.Info(<span class=\"token-string\">\"ticket submitted\"</span>, ticket)",
+    html: '  logObj.Info(<span class="token-string">"ticket submitted"</span>, ticket)',
   },
   {
     html: "}",
@@ -676,54 +676,54 @@ export const codeLines = [
 ];
 
 export const phases = [
-  {id: "cim", label: "CIM model", level: "cim", count: "01 / 08", start: 0},
+  { id: "cim", label: "CIM model", level: "cim", count: "01 / 08", start: 0 },
   {
     id: "cim-pim",
     label: "CIM to PIM",
     level: "pim",
     count: "02 / 08",
-    start: 0.105
+    start: 0.105,
   },
   {
     id: "assistant",
     label: "AI assistant",
     level: "pim",
     count: "03 / 08",
-    start: 0.28
+    start: 0.28,
   },
   {
     id: "pim-psm",
     label: "PIM to AWS PSM",
     level: "psm",
     count: "04 / 08",
-    start: 0.39
+    start: 0.39,
   },
   {
     id: "refine",
     label: "Manual refinement",
     level: "psm",
     count: "05 / 08",
-    start: 0.57
+    start: 0.57,
   },
   {
     id: "generate",
     label: "PSM to artifacts",
     level: "artifacts",
     count: "06 / 08",
-    start: 0.665
+    start: 0.665,
   },
   {
     id: "protected",
     label: "Protected region",
     level: "artifacts",
     count: "07 / 08",
-    start: 0.805
+    start: 0.805,
   },
   {
     id: "ready",
     label: "Ready to deploy",
     level: "artifacts",
     count: "08 / 08",
-    start: 0.91
+    start: 0.91,
   },
 ];

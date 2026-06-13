@@ -21,26 +21,31 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 @ExtendWith(MockitoExtension.class)
 class AssistantMemoryRepositoryTest {
 
-    @Mock
-    private JdbcTemplate jdbc;
+  @Mock private JdbcTemplate jdbc;
 
-    @Mock
-    private ObjectMapper mapper;
+  @Mock private ObjectMapper mapper;
 
-    @Test
-    void ensureThreadBindsJdbcTimestamps() {
-        AssistantMemoryRepository repository = new AssistantMemoryRepository(jdbc, mapper);
-        doReturn(null).when(jdbc).query(anyString(), any(ResultSetExtractor.class), any());
+  @Test
+  void ensureThreadBindsJdbcTimestamps() {
+    AssistantMemoryRepository repository = new AssistantMemoryRepository(jdbc, mapper);
+    doReturn(null).when(jdbc).query(anyString(), any(ResultSetExtractor.class), any());
 
-        UserRecord user = new UserRecord("user-1", "user@example.com", "User", "", "",
-                Instant.EPOCH, Instant.EPOCH);
+    UserRecord user =
+        new UserRecord("user-1", "user@example.com", "User", "", "", Instant.EPOCH, Instant.EPOCH);
 
-        repository.ensureThread(user, "project-1", ModelLevel.PIM, "Assistant", "model-1",
-                7L);
+    repository.ensureThread(user, "project-1", ModelLevel.PIM, "Assistant", "model-1", 7L);
 
-        verify(jdbc).update(anyString(), eq("user-1:project-1:PIM"), eq("user-1"),
-                eq("project-1"), eq("PIM"), eq("model-1"), eq(7L), eq("Assistant"),
-                org.mockito.ArgumentMatchers.<Timestamp>any(),
-                org.mockito.ArgumentMatchers.<Timestamp>any());
-    }
+    verify(jdbc)
+        .update(
+            anyString(),
+            eq("user-1:project-1:PIM"),
+            eq("user-1"),
+            eq("project-1"),
+            eq("PIM"),
+            eq("model-1"),
+            eq(7L),
+            eq("Assistant"),
+            org.mockito.ArgumentMatchers.<Timestamp>any(),
+            org.mockito.ArgumentMatchers.<Timestamp>any());
+  }
 }

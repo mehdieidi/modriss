@@ -1,4 +1,4 @@
-import {state} from './state.js';
+import { state } from "./state.js";
 
 function isModelingType(typeKey = state.activeType) {
   return ["cim", "pim", "psm"].includes(typeKey);
@@ -9,7 +9,7 @@ function saveState() {
     dirty: false,
     saving: false,
     lastSavedAt: null,
-    error: ""
+    error: "",
   };
   return state.modelSave;
 }
@@ -33,16 +33,14 @@ export function updateModelSaveUi() {
     current.dirty = Boolean(tab.dirty);
   }
   const isModeling = isModelingType();
-  const label = current.saving ? "Saving..." : current.dirty ? "Save *"
-      : "Save";
+  const label = current.saving ? "Saving..." : current.dirty ? "Save *" : "Save";
   const saveButton = document.getElementById("saveModelBtn");
   const saveLabel = document.getElementById("saveModelBtnLabel");
 
   if (saveButton) {
     saveButton.disabled = !isModeling || current.saving;
     saveButton.classList.toggle("is-saving", current.saving);
-    saveButton.classList.toggle("is-dirty", current.dirty
-        && !current.saving);
+    saveButton.classList.toggle("is-dirty", current.dirty && !current.saving);
     saveButton.classList.toggle("is-error", Boolean(current.error));
     saveButton.classList.toggle("hidden", !isModeling);
     saveButton.title = current.error || "Save current model (Ctrl+S)";
@@ -98,7 +96,7 @@ export function failModelSave(message = "Save failed") {
   updateModelSaveUi();
 }
 
-export function resetModelSaveState({dirty = false} = {}) {
+export function resetModelSaveState({ dirty = false } = {}) {
   const current = saveState();
   const tab = activeTab();
   current.dirty = dirty;

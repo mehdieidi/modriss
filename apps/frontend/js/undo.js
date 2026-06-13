@@ -1,12 +1,12 @@
-import {state} from './state.js';
-import {serializeModel} from './diagram.js';
+import { state } from "./state.js";
+import { serializeModel } from "./diagram.js";
 import {
   restoreTabGraphState,
   serializeRuntimeFragments,
   serializeRuntimeGraph,
   serializeRuntimeViews,
-  syncActiveViewFromVisibleGraph
-} from './graph-store.js';
+  syncActiveViewFromVisibleGraph,
+} from "./graph-store.js";
 
 const MAX_DIAGRAM_HISTORY = 100;
 
@@ -19,7 +19,7 @@ function defaultModelName(typeKey = state.activeType) {
 }
 
 function signatureForDiagram(diagram) {
-  return JSON.stringify(diagram || {nodes: [], connections: []});
+  return JSON.stringify(diagram || { nodes: [], connections: [] });
 }
 
 function historyStack(typeKey = state.activeType) {
@@ -53,29 +53,26 @@ export function captureDiagramUndoSnapshot(typeKey = state.activeType) {
     views: structuredClone(serializeRuntimeViews()),
     fragments: structuredClone(serializeRuntimeFragments()),
     activeViewId: state.views?.activeViewId || null,
-    signature: signatureForDiagram(state.diagram)
+    signature: signatureForDiagram(state.diagram),
   };
 }
 
 function positionSignature(positions) {
-  return JSON.stringify(positions.map((position) => [
-    position.id,
-    position.x,
-    position.y
-  ]));
+  return JSON.stringify(positions.map((position) => [position.id, position.x, position.y]));
 }
 
-export function captureNodePositionUndoSnapshot(nodeIds = [],
-    typeKey = state.activeType) {
+export function captureNodePositionUndoSnapshot(nodeIds = [], typeKey = state.activeType) {
   if (!isModelingType(typeKey)) {
     return null;
   }
   const ids = [...new Set(nodeIds.map(String).filter(Boolean))];
-  const positions = ids.map((id) => {
-    const node = state.nodesById.get(id) || state.diagram.nodes.find(
-        (candidate) => candidate.id === id);
-    return node ? {id, x: Math.round(node.x), y: Math.round(node.y)} : null;
-  }).filter(Boolean);
+  const positions = ids
+    .map((id) => {
+      const node =
+        state.nodesById.get(id) || state.diagram.nodes.find((candidate) => candidate.id === id);
+      return node ? { id, x: Math.round(node.x), y: Math.round(node.y) } : null;
+    })
+    .filter(Boolean);
   if (!positions.length) {
     return null;
   }
@@ -87,7 +84,7 @@ export function captureNodePositionUndoSnapshot(nodeIds = [],
     modelName: state.tabs[typeKey]?.modelName || defaultModelName(typeKey),
     activeViewId: state.views?.activeViewId || null,
     positions,
-    signature: `node-position:${positionSignature(positions)}`
+    signature: `node-position:${positionSignature(positions)}`,
   };
 }
 
@@ -130,8 +127,8 @@ function applyNodePositionUndoSnapshot(snapshot) {
     if (!id || !Number.isFinite(x) || !Number.isFinite(y)) {
       return;
     }
-    const node = state.nodesById.get(id) || state.diagram.nodes.find(
-        (candidate) => candidate.id === id);
+    const node =
+      state.nodesById.get(id) || state.diagram.nodes.find((candidate) => candidate.id === id);
     if (node) {
       node.x = x;
       node.y = y;
@@ -146,10 +143,7 @@ function applyNodePositionUndoSnapshot(snapshot) {
     }
   });
   state.views?.byId?.forEach((view) => {
-    const byId = new Map(positions.map((position) => [
-      String(position.id),
-      position
-    ]));
+    const byId = new Map(positions.map((position) => [String(position.id), position]));
     (Array.isArray(view.nodes) ? view.nodes : []).forEach((viewNode) => {
       const position = byId.get(String(viewNode.elementId || ""));
       if (!position) {
@@ -181,16 +175,14 @@ export function applyDiagramUndoSnapshot(snapshot) {
   if (state.tabs[snapshot.typeKey]) {
     state.tabs[snapshot.typeKey].modelId = snapshot.modelId;
     state.tabs[snapshot.typeKey].modelRevision = snapshot.modelRevision || 0;
-    state.tabs[snapshot.typeKey].baseModel = structuredClone(
-        snapshot.baseModel);
+    state.tabs[snapshot.typeKey].baseModel = structuredClone(snapshot.baseModel);
     state.tabs[snapshot.typeKey].diagram = structuredClone(snapshot.diagram);
     state.tabs[snapshot.typeKey].graph = structuredClone(snapshot.graph);
     state.tabs[snapshot.typeKey].views = structuredClone(snapshot.views);
-    state.tabs[snapshot.typeKey].fragments = structuredClone(
-        snapshot.fragments);
+    state.tabs[snapshot.typeKey].fragments = structuredClone(snapshot.fragments);
     state.tabs[snapshot.typeKey].activeViewId = snapshot.activeViewId;
-    state.tabs[snapshot.typeKey].modelName = snapshot.modelName
-        || defaultModelName(snapshot.typeKey);
+    state.tabs[snapshot.typeKey].modelName =
+      snapshot.modelName || defaultModelName(snapshot.typeKey);
   }
   restoreTabGraphState(snapshot.typeKey);
   return true;

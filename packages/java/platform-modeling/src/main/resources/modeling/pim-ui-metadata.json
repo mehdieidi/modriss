@@ -7,19 +7,13 @@
     "notation": {
       "tag": "PIM",
       "shape": "concept-card",
-      "lineFields": [
-        "summary",
-        "description",
-        "lifecycleStatus"
-      ]
+      "lineFields": ["summary", "description", "lifecycleStatus"]
     }
   },
   "elementVisualRules": [
     {
       "match": {
-        "packages": [
-          "pim"
-        ]
+        "packages": ["pim"]
       },
       "metadata": {
         "icon": "dashboard",
@@ -28,19 +22,13 @@
         "notation": {
           "tag": "ROOT",
           "shape": "workspace-container",
-          "lineFields": [
-            "architectureStyle",
-            "validationProfile",
-            "domainName"
-          ]
+          "lineFields": ["architectureStyle", "validationProfile", "domainName"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "deployment"
-        ]
+        "packages": ["deployment"]
       },
       "metadata": {
         "icon": "inventory_2",
@@ -49,20 +37,13 @@
         "notation": {
           "tag": "DPL",
           "shape": "container-card",
-          "lineFields": [
-            "unitType",
-            "environmentClass",
-            "ownerTeam",
-            "supportLevel"
-          ]
+          "lineFields": ["unitType", "environmentClass", "ownerTeam", "supportLevel"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "api"
-        ]
+        "packages": ["api"]
       },
       "metadata": {
         "icon": "api",
@@ -71,20 +52,13 @@
         "notation": {
           "tag": "API",
           "shape": "api-card",
-          "lineFields": [
-            "apiStyle",
-            "method",
-            "pathTemplate",
-            "operationId"
-          ]
+          "lineFields": ["apiStyle", "method", "pathTemplate", "operationId"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "compute"
-        ]
+        "packages": ["compute"]
       },
       "metadata": {
         "icon": "functions",
@@ -93,19 +67,13 @@
         "notation": {
           "tag": "FN",
           "shape": "function-card",
-          "lineFields": [
-            "functionKind",
-            "handlerResponsibility",
-            "computeProfile"
-          ]
+          "lineFields": ["functionKind", "handlerResponsibility", "computeProfile"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "contracts"
-        ]
+        "packages": ["contracts"]
       },
       "metadata": {
         "icon": "description",
@@ -114,20 +82,13 @@
         "notation": {
           "tag": "SCHEMA",
           "shape": "table-tree",
-          "lineFields": [
-            "schemaKind",
-            "semanticVersion",
-            "fieldType",
-            "contractVersion"
-          ]
+          "lineFields": ["schemaKind", "semanticVersion", "fieldType", "contractVersion"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "data"
-        ]
+        "packages": ["data"]
       },
       "metadata": {
         "icon": "database",
@@ -136,20 +97,13 @@
         "notation": {
           "tag": "DATA",
           "shape": "data-card",
-          "lineFields": [
-            "storeKind",
-            "dataModelKind",
-            "operation",
-            "fieldType"
-          ]
+          "lineFields": ["storeKind", "dataModelKind", "operation", "fieldType"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "integration"
-        ]
+        "packages": ["integration"]
       },
       "metadata": {
         "icon": "hub",
@@ -158,20 +112,13 @@
         "notation": {
           "tag": "FLOW",
           "shape": "event-flow",
-          "lineFields": [
-            "channelKind",
-            "deliverySemantics",
-            "flowPurpose",
-            "scheduleExpression"
-          ]
+          "lineFields": ["channelKind", "deliverySemantics", "flowPurpose", "scheduleExpression"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "workflow"
-        ]
+        "packages": ["workflow"]
       },
       "metadata": {
         "icon": "schema",
@@ -180,20 +127,13 @@
         "notation": {
           "tag": "WF",
           "shape": "workflow-node",
-          "lineFields": [
-            "workflowKind",
-            "stateKind",
-            "taskDescription",
-            "conditionExpression"
-          ]
+          "lineFields": ["workflowKind", "stateKind", "taskDescription", "conditionExpression"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "external"
-        ]
+        "packages": ["external"]
       },
       "metadata": {
         "icon": "language",
@@ -202,19 +142,13 @@
         "notation": {
           "tag": "EXT",
           "shape": "external-boundary",
-          "lineFields": [
-            "externalSystemName",
-            "protocolFamily",
-            "endpointDescription"
-          ]
+          "lineFields": ["externalSystemName", "protocolFamily", "endpointDescription"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "security"
-        ]
+        "packages": ["security"]
       },
       "metadata": {
         "icon": "security",
@@ -223,20 +157,13 @@
         "notation": {
           "tag": "SEC",
           "shape": "security-card",
-          "lineFields": [
-            "identityKind",
-            "principalKind",
-            "effect",
-            "authScheme"
-          ]
+          "lineFields": ["identityKind", "principalKind", "effect", "authScheme"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "policy"
-        ]
+        "packages": ["policy"]
       },
       "metadata": {
         "icon": "policy",
@@ -245,20 +172,13 @@
         "notation": {
           "tag": "POL",
           "shape": "policy-badge-card",
-          "lineFields": [
-            "policyScope",
-            "productionRequired",
-            "timeoutSeconds",
-            "retentionPeriod"
-          ]
+          "lineFields": ["policyScope", "productionRequired", "timeoutSeconds", "retentionPeriod"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "config"
-        ]
+        "packages": ["config"]
       },
       "metadata": {
         "icon": "tune",
@@ -267,20 +187,13 @@
         "notation": {
           "tag": "CFG",
           "shape": "table-row-card",
-          "lineFields": [
-            "scope",
-            "variableName",
-            "secretKind",
-            "valueKind"
-          ]
+          "lineFields": ["scope", "variableName", "secretKind", "valueKind"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "kernel"
-        ]
+        "packages": ["kernel"]
       },
       "metadata": {
         "icon": "tag",
@@ -289,19 +202,13 @@
         "notation": {
           "tag": "META",
           "shape": "metadata-chip",
-          "lineFields": [
-            "linkType",
-            "reviewStatus",
-            "sourceReference"
-          ]
+          "lineFields": ["linkType", "reviewStatus", "sourceReference"]
         }
       }
     },
     {
       "match": {
-        "supertypes": [
-          "SemanticRelationship"
-        ]
+        "supertypes": ["SemanticRelationship"]
       },
       "metadata": {
         "relationshipElement": true,
@@ -309,12 +216,7 @@
         "notation": {
           "tag": "REL",
           "shape": "relationship-edge",
-          "lineFields": [
-            "kind",
-            "flowPurpose",
-            "ownershipKind",
-            "effect"
-          ]
+          "lineFields": ["kind", "flowPurpose", "ownershipKind", "effect"]
         }
       }
     },
@@ -385,44 +287,27 @@
     {
       "element": "ModelElement / TraceableElement",
       "notation": "Hidden metadata layer with lifecycle, generated, rationale, review, and trace badges.",
-      "surfaces": [
-        "inspector",
-        "search",
-        "trace overlay",
-        "status badges"
-      ]
+      "surfaces": ["inspector", "search", "trace overlay", "status badges"]
     },
     {
       "element": "Annotation / KeyValue",
       "notation": "Key-value chips attached to a card or listed in an annotations tab.",
-      "surfaces": [
-        "inspector",
-        "detail projection"
-      ]
+      "surfaces": ["inspector", "detail projection"]
     },
     {
       "element": "TraceModel / TraceLink",
       "notation": "Separate traceability overlay with dashed labeled links and confidence filtering.",
-      "surfaces": [
-        "trace view",
-        "relationship matrix"
-      ]
+      "surfaces": ["trace view", "relationship matrix"]
     },
     {
       "element": "Expression / StructuredDocument",
       "notation": "Expandable expression or document editor with compact card badge.",
-      "surfaces": [
-        "inspector",
-        "detail modal"
-      ]
+      "surfaces": ["inspector", "detail modal"]
     },
     {
       "element": "ProductionReadinessAssessment / findings / checks / decisions",
       "notation": "Readiness board and severity markers on affected elements.",
-      "surfaces": [
-        "readiness board",
-        "validation overlay"
-      ]
+      "surfaces": ["readiness board", "validation overlay"]
     }
   ],
   "complexityManagement": [
@@ -527,30 +412,16 @@
   },
   "relationshipVisualRules": [
     {
-      "matchKinds": [
-        "CONTAINS",
-        "OWNS",
-        "DEPLOYS",
-        "DEPLOYS_TO"
-      ],
+      "matchKinds": ["CONTAINS", "OWNS", "DEPLOYS", "DEPLOYS_TO"],
       "className": "edge-domain-ownership",
       "stroke": "#475569",
       "lineWidth": 2.6
     },
     {
-      "matchKinds": [
-        "EXTERNAL_CALL",
-        "CALLS",
-        "FLOW",
-        "REQUEST_RESPONSE",
-        "ORCHESTRATES"
-      ],
+      "matchKinds": ["EXTERNAL_CALL", "CALLS", "FLOW", "REQUEST_RESPONSE", "ORCHESTRATES"],
       "className": "edge-domain-dependency",
       "stroke": "#0f766e",
-      "lineDash": [
-        7,
-        4
-      ]
+      "lineDash": [7, 4]
     },
     {
       "matchKinds": [
@@ -567,61 +438,29 @@
       "stroke": "#0891b2"
     },
     {
-      "matchKinds": [
-        "READS",
-        "WRITES",
-        "READ_WRITE",
-        "DATA_ACCESS",
-        "APPEND",
-        "DELETE"
-      ],
+      "matchKinds": ["READS", "WRITES", "READ_WRITE", "DATA_ACCESS", "APPEND", "DELETE"],
       "className": "edge-pim-data",
       "stroke": "#15803d",
-      "lineDash": [
-        4,
-        3
-      ]
+      "lineDash": [4, 3]
     },
     {
-      "matchKinds": [
-        "PERMISSION",
-        "AUTHORIZED_BY",
-        "USES_SECRET",
-        "CONSTRAINS",
-        "ATTACHED_TO"
-      ],
+      "matchKinds": ["PERMISSION", "AUTHORIZED_BY", "USES_SECRET", "CONSTRAINS", "ATTACHED_TO"],
       "className": "edge-conflict",
       "stroke": "#dc2626",
-      "lineDash": [
-        8,
-        3,
-        2,
-        3
-      ]
+      "lineDash": [8, 3, 2, 3]
     },
     {
-      "matchKinds": [
-        "TRANSITION"
-      ],
-      "matchEClasses": [
-        "WorkflowTransition"
-      ],
+      "matchKinds": ["TRANSITION"],
+      "matchEClasses": ["WorkflowTransition"],
       "className": "edge-process-transition",
       "stroke": "#0f766e"
     },
     {
-      "matchKinds": [
-        "TRACE"
-      ],
-      "matchEClasses": [
-        "TraceLink"
-      ],
+      "matchKinds": ["TRACE"],
+      "matchEClasses": ["TraceLink"],
       "className": "edge-trace-link",
       "stroke": "#7c3aed",
-      "lineDash": [
-        2,
-        5
-      ]
+      "lineDash": [2, 5]
     }
   ],
   "relationshipRules": [
@@ -742,12 +581,7 @@
         "Topic",
         "EventBus"
       ],
-      "relationshipKinds": [
-        "OWNS",
-        "DEPLOYS",
-        "DEPLOYS_TO",
-        "CONTAINS"
-      ],
+      "relationshipKinds": ["OWNS", "DEPLOYS", "DEPLOYS_TO", "CONTAINS"],
       "layoutHint": "CONTAINER"
     },
     {
@@ -777,13 +611,7 @@
         "CorsPolicy",
         "RateLimitPolicy"
       ],
-      "relationshipKinds": [
-        "ROUTES_TO",
-        "INVOKES",
-        "AUTHORIZED_BY",
-        "USES",
-        "CONTAINS"
-      ],
+      "relationshipKinds": ["ROUTES_TO", "INVOKES", "AUTHORIZED_BY", "USES", "CONTAINS"],
       "layoutHint": "TABLE"
     },
     {
@@ -913,13 +741,7 @@
         "AccessPattern",
         "IndexCandidate"
       ],
-      "relationshipKinds": [
-        "READS",
-        "WRITES",
-        "DATA_ACCESS",
-        "USES",
-        "CONTAINS"
-      ],
+      "relationshipKinds": ["READS", "WRITES", "DATA_ACCESS", "USES", "CONTAINS"],
       "layoutHint": "TABLE"
     },
     {
@@ -1020,19 +842,8 @@
         "Function",
         "ExternalAdapter"
       ],
-      "palette": [
-        "Workflow",
-        "WorkflowState",
-        "HumanTask",
-        "ApprovalTask"
-      ],
-      "relationshipKinds": [
-        "TRANSITION",
-        "INVOKES",
-        "ORCHESTRATES",
-        "EXTERNAL_CALL",
-        "CONTAINS"
-      ],
+      "palette": ["Workflow", "WorkflowState", "HumanTask", "ApprovalTask"],
+      "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
       "layoutHint": "PROCESS"
     },
     {
@@ -1095,12 +906,7 @@
         "CredentialRequirement",
         "Environment"
       ],
-      "relationshipKinds": [
-        "HAS_ENV",
-        "USES_SECRET",
-        "ATTACHED_TO",
-        "DEPLOYS_TO"
-      ],
+      "relationshipKinds": ["HAS_ENV", "USES_SECRET", "ATTACHED_TO", "DEPLOYS_TO"],
       "layoutHint": "TABLE"
     },
     {
@@ -1123,15 +929,8 @@
         "Queue",
         "ArchitecturePolicy"
       ],
-      "palette": [
-        "TraceModel",
-        "ProductionReadinessAssessment"
-      ],
-      "relationshipKinds": [
-        "TRACE",
-        "ATTACHED_TO",
-        "CONSTRAINS"
-      ],
+      "palette": ["TraceModel", "ProductionReadinessAssessment"],
+      "relationshipKinds": ["TRACE", "ATTACHED_TO", "CONSTRAINS"],
       "layoutHint": "MATRIX"
     }
   ],
@@ -1167,11 +966,7 @@
       "notation": {
         "tag": "FN",
         "shape": "function-card",
-        "lineFields": [
-          "functionKind",
-          "handlerResponsibility",
-          "sourceNameSuggestion"
-        ]
+        "lineFields": ["functionKind", "handlerResponsibility", "sourceNameSuggestion"]
       }
     },
     {
@@ -1184,11 +979,7 @@
       "notation": {
         "tag": "CON",
         "shape": "contract-row",
-        "lineFields": [
-          "contractVersion",
-          "inputSchema",
-          "outputSchema"
-        ]
+        "lineFields": ["contractVersion", "inputSchema", "outputSchema"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1203,12 +994,7 @@
       "notation": {
         "tag": "API",
         "shape": "api-container",
-        "lineFields": [
-          "apiStyle",
-          "publicName",
-          "version",
-          "basePath"
-        ]
+        "lineFields": ["apiStyle", "publicName", "version", "basePath"]
       }
     },
     {
@@ -1221,11 +1007,7 @@
       "notation": {
         "tag": "ROUTE",
         "shape": "route-row",
-        "lineFields": [
-          "method",
-          "pathTemplate",
-          "operationId"
-        ]
+        "lineFields": ["method", "pathTemplate", "operationId"]
       }
     },
     {
@@ -1247,11 +1029,7 @@
       "notation": {
         "tag": "TRG",
         "shape": "trigger-connector",
-        "lineFields": [
-          "triggerKind",
-          "invocationMode",
-          "enabled"
-        ]
+        "lineFields": ["triggerKind", "invocationMode", "enabled"]
       }
     },
     {
@@ -1264,10 +1042,7 @@
       "notation": {
         "tag": "CH",
         "shape": "event-channel-card",
-        "lineFields": [
-          "channelKind",
-          "deliverySemantics"
-        ]
+        "lineFields": ["channelKind", "deliverySemantics"]
       },
       "supportOnly": true,
       "creatable": false
@@ -1282,10 +1057,7 @@
       "notation": {
         "tag": "RULE",
         "shape": "routing-rule-row",
-        "lineFields": [
-          "eventPattern",
-          "enabled"
-        ]
+        "lineFields": ["eventPattern", "enabled"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1300,11 +1072,7 @@
       "notation": {
         "tag": "QUEUE",
         "shape": "queue-card",
-        "lineFields": [
-          "fifoRequired",
-          "deadLetterRequired",
-          "maxReceiveAttempts"
-        ]
+        "lineFields": ["fifoRequired", "deadLetterRequired", "maxReceiveAttempts"]
       }
     },
     {
@@ -1317,10 +1085,7 @@
       "notation": {
         "tag": "TOPIC",
         "shape": "topic-card",
-        "lineFields": [
-          "subscriptionMode",
-          "filteringRequired"
-        ]
+        "lineFields": ["subscriptionMode", "filteringRequired"]
       }
     },
     {
@@ -1333,9 +1098,7 @@
       "notation": {
         "tag": "BUS",
         "shape": "event-bus-card",
-        "lineFields": [
-          "routingExpressionLanguage"
-        ]
+        "lineFields": ["routingExpressionLanguage"]
       }
     },
     {
@@ -1348,10 +1111,7 @@
       "notation": {
         "tag": "EVT",
         "shape": "event-type-card",
-        "lineFields": [
-          "semanticName",
-          "version"
-        ]
+        "lineFields": ["semanticName", "version"]
       }
     },
     {
@@ -1364,11 +1124,7 @@
       "notation": {
         "tag": "SVC",
         "shape": "service-container",
-        "lineFields": [
-          "boundaryType",
-          "responsibility",
-          "ownerTeam"
-        ]
+        "lineFields": ["boundaryType", "responsibility", "ownerTeam"]
       }
     },
     {
@@ -1381,11 +1137,7 @@
       "notation": {
         "tag": "DPL",
         "shape": "deployment-container",
-        "lineFields": [
-          "unitType",
-          "lifecycle",
-          "releaseStrategy"
-        ]
+        "lineFields": ["unitType", "lifecycle", "releaseStrategy"]
       }
     },
     {
@@ -1398,11 +1150,7 @@
       "notation": {
         "tag": "WF",
         "shape": "workflow-container",
-        "lineFields": [
-          "workflowKind",
-          "executionSemantics",
-          "longRunning"
-        ]
+        "lineFields": ["workflowKind", "executionSemantics", "longRunning"]
       }
     },
     {
@@ -1415,11 +1163,7 @@
       "notation": {
         "tag": "STATE",
         "shape": "workflow-state-node",
-        "lineFields": [
-          "stateKind",
-          "orderIndex",
-          "terminal"
-        ]
+        "lineFields": ["stateKind", "orderIndex", "terminal"]
       }
     },
     {
@@ -1432,10 +1176,7 @@
       "notation": {
         "tag": "FLOW",
         "shape": "flow-edge",
-        "lineFields": [
-          "flowPurpose",
-          "criticalPath"
-        ]
+        "lineFields": ["flowPurpose", "criticalPath"]
       },
       "supportOnly": true,
       "creatable": false
@@ -1450,10 +1191,7 @@
       "notation": {
         "tag": "REQ/RES",
         "shape": "request-response-edge",
-        "lineFields": [
-          "synchronous",
-          "flowPurpose"
-        ]
+        "lineFields": ["synchronous", "flowPurpose"]
       }
     },
     {
@@ -1466,10 +1204,7 @@
       "notation": {
         "tag": "EVT FLOW",
         "shape": "event-flow-edge",
-        "lineFields": [
-          "eventType",
-          "channel"
-        ]
+        "lineFields": ["eventType", "channel"]
       }
     },
     {
@@ -1482,10 +1217,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "message-flow-edge",
-        "lineFields": [
-          "messageSchema",
-          "queue"
-        ]
+        "lineFields": ["messageSchema", "queue"]
       }
     },
     {
@@ -1498,9 +1230,7 @@
       "notation": {
         "tag": "ORCH",
         "shape": "orchestration-flow-edge",
-        "lineFields": [
-          "workflow"
-        ]
+        "lineFields": ["workflow"]
       }
     },
     {
@@ -1513,10 +1243,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "data-store-card",
-        "lineFields": [
-          "storeKind",
-          "consistencyModel"
-        ]
+        "lineFields": ["storeKind", "consistencyModel"]
       }
     },
     {
@@ -1529,10 +1256,7 @@
       "notation": {
         "tag": "OBJ",
         "shape": "object-store-card",
-        "lineFields": [
-          "objectStoreKind",
-          "versioningRequired"
-        ]
+        "lineFields": ["objectStoreKind", "versioningRequired"]
       }
     },
     {
@@ -1545,10 +1269,7 @@
       "notation": {
         "tag": "IDP",
         "shape": "identity-card",
-        "lineFields": [
-          "providerType",
-          "issuer"
-        ]
+        "lineFields": ["providerType", "issuer"]
       }
     },
     {
@@ -1561,10 +1282,7 @@
       "notation": {
         "tag": "PRN",
         "shape": "principal-card",
-        "lineFields": [
-          "principalKind",
-          "external"
-        ]
+        "lineFields": ["principalKind", "external"]
       }
     },
     {
@@ -1577,11 +1295,7 @@
       "notation": {
         "tag": "PERM",
         "shape": "permission-row",
-        "lineFields": [
-          "effect",
-          "action",
-          "targetResource"
-        ]
+        "lineFields": ["effect", "action", "targetResource"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1596,10 +1310,7 @@
       "notation": {
         "tag": "SECRET",
         "shape": "secret-card",
-        "lineFields": [
-          "secretKind",
-          "rotationRequired"
-        ]
+        "lineFields": ["secretKind", "rotationRequired"]
       }
     },
     {
@@ -1612,10 +1323,7 @@
       "notation": {
         "tag": "PARAM",
         "shape": "config-row",
-        "lineFields": [
-          "parameterName",
-          "valueKind"
-        ]
+        "lineFields": ["parameterName", "valueKind"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1630,10 +1338,7 @@
       "notation": {
         "tag": "ENV",
         "shape": "config-row",
-        "lineFields": [
-          "variableName",
-          "valueKind"
-        ]
+        "lineFields": ["variableName", "valueKind"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1648,10 +1353,7 @@
       "notation": {
         "tag": "RES",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "failureMode",
-          "productionRequired"
-        ]
+        "lineFields": ["failureMode", "productionRequired"]
       }
     },
     {
@@ -1664,11 +1366,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "ops-card",
-        "lineFields": [
-          "loggingEnabled",
-          "metricsEnabled",
-          "tracingEnabled"
-        ]
+        "lineFields": ["loggingEnabled", "metricsEnabled", "tracingEnabled"]
       }
     },
     {
@@ -1681,9 +1379,7 @@
       "notation": {
         "tag": "IDEM",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "idempotencyKeyExpression"
-        ]
+        "lineFields": ["idempotencyKeyExpression"]
       }
     },
     {
@@ -1696,10 +1392,7 @@
       "notation": {
         "tag": "CONC",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "reservedConcurrency",
-          "maxConcurrency"
-        ]
+        "lineFields": ["reservedConcurrency", "maxConcurrency"]
       }
     },
     {
@@ -1712,10 +1405,7 @@
       "notation": {
         "tag": "COST",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "costCenter",
-          "budgetLimit"
-        ]
+        "lineFields": ["costCenter", "budgetLimit"]
       }
     },
     {
@@ -1728,11 +1418,7 @@
       "notation": {
         "tag": "PIM",
         "shape": "workspace-container",
-        "lineFields": [
-          "architectureStyle",
-          "validationProfile",
-          "domainName"
-        ]
+        "lineFields": ["architectureStyle", "validationProfile", "domainName"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1747,9 +1433,7 @@
       "notation": {
         "tag": "MEM",
         "shape": "membership-row",
-        "lineFields": [
-          "ownershipKind"
-        ]
+        "lineFields": ["ownershipKind"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1764,11 +1448,7 @@
       "notation": {
         "tag": "ENV",
         "shape": "environment-card",
-        "lineFields": [
-          "environmentClass",
-          "regionStrategy",
-          "supportLevel"
-        ]
+        "lineFields": ["environmentClass", "regionStrategy", "supportLevel"]
       }
     },
     {
@@ -1781,10 +1461,7 @@
       "notation": {
         "tag": "IMPL",
         "shape": "settings-panel",
-        "lineFields": [
-          "runtimeProfile",
-          "packagingProfile"
-        ]
+        "lineFields": ["runtimeProfile", "packagingProfile"]
       }
     },
     {
@@ -1797,10 +1474,7 @@
       "notation": {
         "tag": "CAP",
         "shape": "capability-badge",
-        "lineFields": [
-          "capabilityKind",
-          "required"
-        ]
+        "lineFields": ["capabilityKind", "required"]
       }
     },
     {
@@ -1813,10 +1487,7 @@
       "notation": {
         "tag": "MAP",
         "shape": "assessment-row",
-        "lineFields": [
-          "mappingStatus",
-          "manualDecisionRequired"
-        ]
+        "lineFields": ["mappingStatus", "manualDecisionRequired"]
       }
     },
     {
@@ -1829,10 +1500,7 @@
       "notation": {
         "tag": "SCHEMA",
         "shape": "schema-tree",
-        "lineFields": [
-          "schemaKind",
-          "semanticVersion"
-        ]
+        "lineFields": ["schemaKind", "semanticVersion"]
       }
     },
     {
@@ -1845,11 +1513,7 @@
       "notation": {
         "tag": "FIELD",
         "shape": "field-row",
-        "lineFields": [
-          "fieldType",
-          "required",
-          "nullable"
-        ]
+        "lineFields": ["fieldType", "required", "nullable"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1864,10 +1528,7 @@
       "notation": {
         "tag": "ENUM",
         "shape": "enum-row",
-        "lineFields": [
-          "value",
-          "description"
-        ]
+        "lineFields": ["value", "description"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1882,10 +1543,7 @@
       "notation": {
         "tag": "VAL",
         "shape": "constraint-row",
-        "lineFields": [
-          "constraintKind",
-          "value"
-        ]
+        "lineFields": ["constraintKind", "value"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1900,10 +1558,7 @@
       "notation": {
         "tag": "VAL",
         "shape": "constraint-row",
-        "lineFields": [
-          "constraintKind",
-          "value"
-        ]
+        "lineFields": ["constraintKind", "value"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1918,10 +1573,7 @@
       "notation": {
         "tag": "API CON",
         "shape": "contract-row",
-        "lineFields": [
-          "contractVersion",
-          "basePath"
-        ]
+        "lineFields": ["contractVersion", "basePath"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1936,10 +1588,7 @@
       "notation": {
         "tag": "ENV",
         "shape": "event-envelope",
-        "lineFields": [
-          "eventTypeField",
-          "correlationIdField"
-        ]
+        "lineFields": ["eventTypeField", "correlationIdField"]
       }
     },
     {
@@ -1952,10 +1601,7 @@
       "notation": {
         "tag": "POL",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "policyScope",
-          "productionRequired"
-        ]
+        "lineFields": ["policyScope", "productionRequired"]
       }
     },
     {
@@ -1968,10 +1614,7 @@
       "notation": {
         "tag": "SET",
         "shape": "policy-row",
-        "lineFields": [
-          "key",
-          "value"
-        ]
+        "lineFields": ["key", "value"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1986,10 +1629,7 @@
       "notation": {
         "tag": "DATA POL",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "encryptionRequired",
-          "retentionPeriod"
-        ]
+        "lineFields": ["encryptionRequired", "retentionPeriod"]
       }
     },
     {
@@ -2002,10 +1642,7 @@
       "notation": {
         "tag": "QUAL",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "qualityRule",
-          "severity"
-        ]
+        "lineFields": ["qualityRule", "severity"]
       }
     },
     {
@@ -2018,10 +1655,7 @@
       "notation": {
         "tag": "COMP",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "regulation",
-          "controlId"
-        ]
+        "lineFields": ["regulation", "controlId"]
       }
     },
     {
@@ -2034,10 +1668,7 @@
       "notation": {
         "tag": "RULE",
         "shape": "rule-card",
-        "lineFields": [
-          "naturalLanguage",
-          "expressionLanguage"
-        ]
+        "lineFields": ["naturalLanguage", "expressionLanguage"]
       }
     },
     {
@@ -2050,10 +1681,7 @@
       "notation": {
         "tag": "DEC",
         "shape": "decision-table",
-        "lineFields": [
-          "hitPolicy",
-          "defaultOutcome"
-        ]
+        "lineFields": ["hitPolicy", "defaultOutcome"]
       }
     },
     {
@@ -2066,11 +1694,7 @@
       "notation": {
         "tag": "RULE",
         "shape": "decision-rule-row",
-        "lineFields": [
-          "priorityOrder",
-          "condition",
-          "outcome"
-        ]
+        "lineFields": ["priorityOrder", "condition", "outcome"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2085,10 +1709,7 @@
       "notation": {
         "tag": "RETRY",
         "shape": "policy-row",
-        "lineFields": [
-          "maxAttempts",
-          "backoffStrategy"
-        ]
+        "lineFields": ["maxAttempts", "backoffStrategy"]
       }
     },
     {
@@ -2101,10 +1722,7 @@
       "notation": {
         "tag": "DLQ",
         "shape": "policy-row",
-        "lineFields": [
-          "enabled",
-          "maxReceiveCount"
-        ]
+        "lineFields": ["enabled", "maxReceiveCount"]
       }
     },
     {
@@ -2117,9 +1735,7 @@
       "notation": {
         "tag": "TIME",
         "shape": "clock-badge-card",
-        "lineFields": [
-          "timeoutSeconds"
-        ]
+        "lineFields": ["timeoutSeconds"]
       }
     },
     {
@@ -2132,10 +1748,7 @@
       "notation": {
         "tag": "RATE",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "rateLimit",
-          "burstLimit"
-        ]
+        "lineFields": ["rateLimit", "burstLimit"]
       }
     },
     {
@@ -2148,10 +1761,7 @@
       "notation": {
         "tag": "BATCH",
         "shape": "policy-row",
-        "lineFields": [
-          "batchSize",
-          "maximumBatchingWindowSeconds"
-        ]
+        "lineFields": ["batchSize", "maximumBatchingWindowSeconds"]
       }
     },
     {
@@ -2164,9 +1774,7 @@
       "notation": {
         "tag": "ORDER",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "orderingKeyExpression"
-        ]
+        "lineFields": ["orderingKeyExpression"]
       }
     },
     {
@@ -2179,9 +1787,7 @@
       "notation": {
         "tag": "CACHE",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "ttlSeconds"
-        ]
+        "lineFields": ["ttlSeconds"]
       }
     },
     {
@@ -2194,10 +1800,7 @@
       "notation": {
         "tag": "BAK",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "frequency",
-          "retentionPeriod"
-        ]
+        "lineFields": ["frequency", "retentionPeriod"]
       }
     },
     {
@@ -2210,9 +1813,7 @@
       "notation": {
         "tag": "RET",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "retentionPeriod"
-        ]
+        "lineFields": ["retentionPeriod"]
       }
     },
     {
@@ -2225,10 +1826,7 @@
       "notation": {
         "tag": "LOG",
         "shape": "policy-row",
-        "lineFields": [
-          "logLevel",
-          "retentionPeriod"
-        ]
+        "lineFields": ["logLevel", "retentionPeriod"]
       }
     },
     {
@@ -2241,10 +1839,7 @@
       "notation": {
         "tag": "MET",
         "shape": "metric-row",
-        "lineFields": [
-          "metricName",
-          "namespace"
-        ]
+        "lineFields": ["metricName", "namespace"]
       }
     },
     {
@@ -2257,10 +1852,7 @@
       "notation": {
         "tag": "DIM",
         "shape": "metric-row",
-        "lineFields": [
-          "name",
-          "value"
-        ]
+        "lineFields": ["name", "value"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2275,10 +1867,7 @@
       "notation": {
         "tag": "TRACE",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "enabled",
-          "samplingRate"
-        ]
+        "lineFields": ["enabled", "samplingRate"]
       }
     },
     {
@@ -2291,10 +1880,7 @@
       "notation": {
         "tag": "ALERT",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "severity",
-          "threshold"
-        ]
+        "lineFields": ["severity", "threshold"]
       }
     },
     {
@@ -2307,10 +1893,7 @@
       "notation": {
         "tag": "SLO",
         "shape": "slo-card",
-        "lineFields": [
-          "objective",
-          "target"
-        ]
+        "lineFields": ["objective", "target"]
       }
     },
     {
@@ -2323,10 +1906,7 @@
       "notation": {
         "tag": "CORS",
         "shape": "policy-badge-card",
-        "lineFields": [
-          "allowedOrigins",
-          "allowedMethods"
-        ]
+        "lineFields": ["allowedOrigins", "allowedMethods"]
       }
     },
     {
@@ -2339,10 +1919,7 @@
       "notation": {
         "tag": "CFG",
         "shape": "config-set-card",
-        "lineFields": [
-          "scope",
-          "environment"
-        ]
+        "lineFields": ["scope", "environment"]
       }
     },
     {
@@ -2355,10 +1932,7 @@
       "notation": {
         "tag": "CRED",
         "shape": "credential-row",
-        "lineFields": [
-          "credentialKind",
-          "usedForCredentials"
-        ]
+        "lineFields": ["credentialKind", "usedForCredentials"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2373,10 +1947,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "security-card",
-        "lineFields": [
-          "policyScope",
-          "enforcementStrength"
-        ]
+        "lineFields": ["policyScope", "enforcementStrength"]
       }
     },
     {
@@ -2389,10 +1960,7 @@
       "notation": {
         "tag": "AUTH",
         "shape": "auth-badge-card",
-        "lineFields": [
-          "authScheme",
-          "required"
-        ]
+        "lineFields": ["authScheme", "required"]
       }
     },
     {
@@ -2405,10 +1973,7 @@
       "notation": {
         "tag": "AUTHZ",
         "shape": "authz-card",
-        "lineFields": [
-          "authorizationRule",
-          "effect"
-        ]
+        "lineFields": ["authorizationRule", "effect"]
       }
     },
     {
@@ -2421,9 +1986,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "storage-card",
-        "lineFields": [
-          "storeKind"
-        ]
+        "lineFields": ["storeKind"]
       }
     },
     {
@@ -2436,10 +1999,7 @@
       "notation": {
         "tag": "STREAM",
         "shape": "stream-badge",
-        "lineFields": [
-          "enabled",
-          "eventType"
-        ]
+        "lineFields": ["enabled", "eventType"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2454,11 +2014,7 @@
       "notation": {
         "tag": "NOTIF",
         "shape": "notification-row",
-        "lineFields": [
-          "eventPattern",
-          "prefix",
-          "suffix"
-        ]
+        "lineFields": ["eventPattern", "prefix", "suffix"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2473,10 +2029,7 @@
       "notation": {
         "tag": "MODEL",
         "shape": "data-model-table",
-        "lineFields": [
-          "dataModelKind",
-          "primaryKey"
-        ]
+        "lineFields": ["dataModelKind", "primaryKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2491,10 +2044,7 @@
       "notation": {
         "tag": "FIELD",
         "shape": "field-row",
-        "lineFields": [
-          "fieldType",
-          "required"
-        ]
+        "lineFields": ["fieldType", "required"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2509,10 +2059,7 @@
       "notation": {
         "tag": "ACCESS",
         "shape": "access-row",
-        "lineFields": [
-          "operation",
-          "purpose"
-        ]
+        "lineFields": ["operation", "purpose"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2527,10 +2074,7 @@
       "notation": {
         "tag": "INDEX",
         "shape": "index-row",
-        "lineFields": [
-          "indexPurpose",
-          "partitionKeyField"
-        ]
+        "lineFields": ["indexPurpose", "partitionKeyField"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2545,11 +2089,7 @@
       "notation": {
         "tag": "ACCESS",
         "shape": "data-access-edge",
-        "lineFields": [
-          "mode",
-          "transactional",
-          "purpose"
-        ]
+        "lineFields": ["mode", "transactional", "purpose"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2564,10 +2104,7 @@
       "notation": {
         "tag": "CMP",
         "shape": "compute-card",
-        "lineFields": [
-          "computeProfile",
-          "executionModel"
-        ]
+        "lineFields": ["computeProfile", "executionModel"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2582,10 +2119,7 @@
       "notation": {
         "tag": "ERR MAP",
         "shape": "error-mapping-row",
-        "lineFields": [
-          "domainErrorCode",
-          "abstractStatusClass"
-        ]
+        "lineFields": ["domainErrorCode", "abstractStatusClass"]
       }
     },
     {
@@ -2598,10 +2132,7 @@
       "notation": {
         "tag": "EXT",
         "shape": "external-boundary",
-        "lineFields": [
-          "externalSystemName",
-          "protocolFamily"
-        ]
+        "lineFields": ["externalSystemName", "protocolFamily"]
       }
     },
     {
@@ -2614,9 +2145,7 @@
       "notation": {
         "tag": "ADAPT",
         "shape": "adapter-card",
-        "lineFields": [
-          "responsibility"
-        ]
+        "lineFields": ["responsibility"]
       }
     },
     {
@@ -2629,10 +2158,7 @@
       "notation": {
         "tag": "FLOW",
         "shape": "state-transition-edge",
-        "lineFields": [
-          "conditionExpression",
-          "defaultTransition"
-        ]
+        "lineFields": ["conditionExpression", "defaultTransition"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2647,10 +2173,7 @@
       "notation": {
         "tag": "CATCH",
         "shape": "catch-row",
-        "lineFields": [
-          "errorSelector",
-          "recoveryAction"
-        ]
+        "lineFields": ["errorSelector", "recoveryAction"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2665,9 +2188,7 @@
       "notation": {
         "tag": "BRANCH",
         "shape": "branch-container",
-        "lineFields": [
-          "name"
-        ]
+        "lineFields": ["name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2682,10 +2203,7 @@
       "notation": {
         "tag": "MAP",
         "shape": "map-config-panel",
-        "lineFields": [
-          "itemsPath",
-          "maxConcurrency"
-        ]
+        "lineFields": ["itemsPath", "maxConcurrency"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2700,9 +2218,7 @@
       "notation": {
         "tag": "CALLBACK",
         "shape": "callback-config-panel",
-        "lineFields": [
-          "taskTokenPath"
-        ]
+        "lineFields": ["taskTokenPath"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2717,10 +2233,7 @@
       "notation": {
         "tag": "ESC",
         "shape": "escalation-row",
-        "lineFields": [
-          "escalationRule",
-          "afterSeconds"
-        ]
+        "lineFields": ["escalationRule", "afterSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2735,10 +2248,7 @@
       "notation": {
         "tag": "TASK",
         "shape": "human-task-card",
-        "lineFields": [
-          "taskDescription",
-          "completionEvidence"
-        ]
+        "lineFields": ["taskDescription", "completionEvidence"]
       }
     },
     {
@@ -2751,10 +2261,7 @@
       "notation": {
         "tag": "APPROVE",
         "shape": "approval-task-card",
-        "lineFields": [
-          "explicitApprovalRequired",
-          "approvalOutcomeField"
-        ]
+        "lineFields": ["explicitApprovalRequired", "approvalOutcomeField"]
       }
     },
     {
@@ -2767,10 +2274,7 @@
       "notation": {
         "tag": "COMP",
         "shape": "compensation-badge-card",
-        "lineFields": [
-          "compensationStrategy",
-          "automatic"
-        ]
+        "lineFields": ["compensationStrategy", "automatic"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2785,9 +2289,7 @@
       "notation": {
         "tag": "INT",
         "shape": "integration-card",
-        "lineFields": [
-          "integrationPurpose"
-        ]
+        "lineFields": ["integrationPurpose"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2802,11 +2304,7 @@
       "notation": {
         "tag": "SCHED",
         "shape": "schedule-card",
-        "lineFields": [
-          "scheduleExpression",
-          "enabled",
-          "timeZone"
-        ]
+        "lineFields": ["scheduleExpression", "enabled", "timeZone"]
       }
     },
     {
@@ -2819,10 +2317,7 @@
       "notation": {
         "tag": "SUB",
         "shape": "subscription-row",
-        "lineFields": [
-          "filterExpression",
-          "rawDelivery"
-        ]
+        "lineFields": ["filterExpression", "rawDelivery"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2837,9 +2332,7 @@
       "notation": {
         "tag": "PUB/SUB",
         "shape": "pubsub-flow-edge",
-        "lineFields": [
-          "topic"
-        ]
+        "lineFields": ["topic"]
       }
     },
     {
@@ -2852,9 +2345,7 @@
       "notation": {
         "tag": "EXT FLOW",
         "shape": "external-flow-edge",
-        "lineFields": [
-          "adapter"
-        ]
+        "lineFields": ["adapter"]
       }
     }
   ]

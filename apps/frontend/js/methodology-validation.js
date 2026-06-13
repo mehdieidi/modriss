@@ -1,13 +1,13 @@
-import {el} from './dom.js';
-import {state} from './state.js';
+import { el } from "./dom.js";
+import { state } from "./state.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;")
-  .replace(/"/g, "&quot;")
-  .replace(/'/g, "&#39;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function severityOf(issue) {
@@ -20,8 +20,12 @@ function isManualIssue(issue) {
 
 function issueTargetId(issue) {
   return String(
-      issue?.elementId || issue?.relationshipId || issue?.targetElementId
-      || issue?.sourceElementId || "").trim();
+    issue?.elementId ||
+      issue?.relationshipId ||
+      issue?.targetElementId ||
+      issue?.sourceElementId ||
+      "",
+  ).trim();
 }
 
 function manualRequirementLabel(issue) {
@@ -35,20 +39,18 @@ function manualRequirementLabel(issue) {
   return severityOf(issue) === "ERROR" ? "Mandatory" : "Optional";
 }
 
-function preferredIssueView({errors, warnings, openManual, closedManual}) {
+function preferredIssueView({ errors, warnings, openManual, closedManual }) {
   const current = state.validation.issueView || "errors";
   const counts = {
     errors: errors.length,
     warnings: warnings.length,
     "manual-open": openManual.length,
-    "manual-closed": closedManual.length
+    "manual-closed": closedManual.length,
   };
-  if (counts[current] > 0 || Object.prototype.hasOwnProperty.call(counts,
-      current)) {
+  if (counts[current] > 0 || Object.prototype.hasOwnProperty.call(counts, current)) {
     return current;
   }
-  return Object.entries(counts).find(([, count]) => count > 0)?.[0]
-      || "errors";
+  return Object.entries(counts).find(([, count]) => count > 0)?.[0] || "errors";
 }
 
 function defaultIssueViewForIssues(issues) {
@@ -78,48 +80,46 @@ function statusFromIssues(issues) {
     return {
       stateClass: "validation-state-ok",
       label: "OK",
-      meta: "No issues found."
+      meta: "No issues found.",
     };
   }
   const manualIssues = issues.filter(isManualIssue);
   const openManual = manualIssues.filter((issue) => !issue?.resolved);
   const nonManual = issues.filter((issue) => !isManualIssue(issue));
-  const errorCount = nonManual.filter((issue) => severityOf(issue)
-      === "ERROR").length;
-  const warningCount = nonManual.filter((issue) => severityOf(issue)
-      === "WARNING").length;
+  const errorCount = nonManual.filter((issue) => severityOf(issue) === "ERROR").length;
+  const warningCount = nonManual.filter((issue) => severityOf(issue) === "WARNING").length;
   if (errorCount) {
     return {
       stateClass: "validation-state-error",
       label: `Errors (${errorCount})`,
-      meta: `${errorCount} error issue(s): fix required before generation.`
+      meta: `${errorCount} error issue(s): fix required before generation.`,
     };
   }
   if (warningCount) {
     return {
       stateClass: "validation-state-warning",
       label: `Warnings (${warningCount})`,
-      meta: `${warningCount} warning(s): review recommended.`
+      meta: `${warningCount} warning(s): review recommended.`,
     };
   }
   if (openManual.length) {
     return {
       stateClass: "validation-state-warning",
       label: `Manual Tasks (${openManual.length})`,
-      meta: `${openManual.length} manual task(s): review before promotion.`
+      meta: `${openManual.length} manual task(s): review before promotion.`,
     };
   }
   if (manualIssues.length) {
     return {
       stateClass: "validation-state-ok",
       label: `Manual Tasks (${manualIssues.length})`,
-      meta: `${manualIssues.length} manual task(s) resolved.`
+      meta: `${manualIssues.length} manual task(s) resolved.`,
     };
   }
   return {
     stateClass: "validation-state-ok",
     label: `Issues (${nonManual.length})`,
-    meta: `${nonManual.length} informational issue(s).`
+    meta: `${nonManual.length} informational issue(s).`,
   };
 }
 
@@ -133,47 +133,42 @@ function renderIssues(issues) {
   }
   const manualIssues = issues.filter(isManualIssue);
   const openManual = manualIssues.filter((issue) => !issue?.resolved);
-  const resolvedManual = manualIssues.filter(
-      (issue) => Boolean(issue?.resolved));
+  const resolvedManual = manualIssues.filter((issue) => Boolean(issue?.resolved));
   const nonManual = issues.filter((issue) => !isManualIssue(issue));
   const openErrors = nonManual.filter((issue) => severityOf(issue) === "ERROR");
-  const openWarnings = nonManual.filter((issue) => severityOf(issue)
-      === "WARNING");
-  const openOther = nonManual.filter((issue) => !["ERROR", "WARNING"].includes(
-      severityOf(issue)));
+  const openWarnings = nonManual.filter((issue) => severityOf(issue) === "WARNING");
+  const openOther = nonManual.filter((issue) => !["ERROR", "WARNING"].includes(severityOf(issue)));
 
   const renderIssue = (issue, sectionType = "validation") => {
     const rawClass = String(issue.issueClass || issue.code || "").toUpperCase();
     const manual = isManualIssue(issue);
-    const issueClass = manual ? "Manual Task"
-        : rawClass.includes("GENERATION") || rawClass.includes("SYSTEM")
-            ? "System Error"
-            : "Validation";
+    const issueClass = manual
+      ? "Manual Task"
+      : rawClass.includes("GENERATION") || rawClass.includes("SYSTEM")
+        ? "System Error"
+        : "Validation";
     const severity = severityOf(issue);
     const title = issue.constraint || issue.code || "Constraint";
     const message = issue.message || "Invalid model state.";
-    const guide = issue.guidance || issue.suggestedFix
-        || "Review and fix this element.";
+    const guide = issue.guidance || issue.suggestedFix || "Review and fix this element.";
     const targetId = issueTargetId(issue);
     const element = issue.elementName || targetId || "";
     const toggle = manual
-        ? `<label class="validation-manual-toggle"><input data-manual-task-id="${escapeHtml(
-            issue.manualTaskId || "")}" type="checkbox" ${issue.resolved
-            ? "checked" : ""}/> Resolve</label>`
-        : "";
-    const tags = [
-      manual ? manualRequirementLabel(issue) : severity,
-      issueClass
-    ];
-    const itemClass = `validation-issue-item validation-issue-${escapeHtml(
-        sectionType)}${issue.resolved
-        ? " validation-issue-item-resolved" : ""}`;
+      ? `<label class="validation-manual-toggle"><input data-manual-task-id="${escapeHtml(
+          issue.manualTaskId || "",
+        )}" type="checkbox" ${issue.resolved ? "checked" : ""}/> Resolve</label>`
+      : "";
+    const tags = [manual ? manualRequirementLabel(issue) : severity, issueClass];
+    const itemClass = `validation-issue-item validation-issue-${escapeHtml(sectionType)}${
+      issue.resolved ? " validation-issue-item-resolved" : ""
+    }`;
     return `<li class="${itemClass}">
       <div class="validation-issue-head-row">
         <div class="validation-issue-head">${escapeHtml(title)}</div>
         <div class="validation-issue-tags">
-          ${tags.map((tag) => `<span class="validation-issue-kind">${escapeHtml(
-        tag)}</span>`).join("")}
+          ${tags
+            .map((tag) => `<span class="validation-issue-kind">${escapeHtml(tag)}</span>`)
+            .join("")}
         </div>
         ${toggle}
         <button class="validation-issue-locate" ${targetId ? "" : "disabled"}
@@ -182,54 +177,57 @@ function renderIssues(issues) {
             data-issue-element-type="${escapeHtml(issue.elementType || "")}"
             type="button">Locate</button>
       </div>
-      ${element ? `<div class="validation-issue-element">${escapeHtml(
-        element)}</div>` : ""}
+      ${element ? `<div class="validation-issue-element">${escapeHtml(element)}</div>` : ""}
       <div class="validation-issue-message">${escapeHtml(message)}</div>
       <div class="validation-issue-guide">${escapeHtml(guide)}</div>
     </li>`;
   };
   const renderSection = (title, sectionIssues, sectionType) => {
     if (!sectionIssues.length) {
-      return `<div class="validation-issue-message">No ${escapeHtml(
-          title.toLowerCase())}.</div>`;
+      return `<div class="validation-issue-message">No ${escapeHtml(title.toLowerCase())}.</div>`;
     }
     return `<section class="validation-issue-section validation-issue-section-${escapeHtml(
-        sectionType)}">
+      sectionType,
+    )}">
       <div class="validation-issue-section-head">
         <span>${escapeHtml(title)}</span>
         <span>${sectionIssues.length}</span>
       </div>
-      <ul class="validation-issue-list">${sectionIssues.map((issue) =>
-        renderIssue(issue, sectionType)).join("")}</ul>
+      <ul class="validation-issue-list">${sectionIssues
+        .map((issue) => renderIssue(issue, sectionType))
+        .join("")}</ul>
     </section>`;
   };
   const issueView = preferredIssueView({
     errors: openErrors,
     warnings: openWarnings,
     openManual,
-    closedManual: resolvedManual
+    closedManual: resolvedManual,
   });
   state.validation.issueView = issueView;
   const tabs = [
     ["errors", "Errors", openErrors.length],
     ["warnings", "Warnings", openWarnings.length],
     ["manual-open", "Manual Tasks", openManual.length],
-    ["manual-closed", "Closed Manual", resolvedManual.length]
-  ].map(([id, label, count]) =>
-      `<button class="validation-manual-tab${issueView === id ? " active" : ""}"
-        data-issue-view="${escapeHtml(id)}" type="button">${escapeHtml(
-          label)} (${count})</button>`).join("");
-  const content = issueView === "warnings"
+    ["manual-closed", "Closed Manual", resolvedManual.length],
+  ]
+    .map(
+      ([id, label, count]) =>
+        `<button class="validation-manual-tab${issueView === id ? " active" : ""}"
+        data-issue-view="${escapeHtml(id)}" type="button">${escapeHtml(label)} (${count})</button>`,
+    )
+    .join("");
+  const content =
+    issueView === "warnings"
       ? renderSection("Warnings", openWarnings, "warning")
       : issueView === "manual-open"
-          ? renderSection("Open Manual Tasks", openManual, "manual")
-          : issueView === "manual-closed"
-              ? renderSection("Closed Manual Tasks", resolvedManual, "manual")
-              : [
-                renderSection("Errors", openErrors, "error"),
-                openOther.length ? renderSection("Other", openOther, "other")
-                    : ""
-              ].join("");
+        ? renderSection("Open Manual Tasks", openManual, "manual")
+        : issueView === "manual-closed"
+          ? renderSection("Closed Manual Tasks", resolvedManual, "manual")
+          : [
+              renderSection("Errors", openErrors, "error"),
+              openOther.length ? renderSection("Other", openOther, "other") : "",
+            ].join("");
   el.validationDrawerIssues.innerHTML = `<div class="validation-manual-tabs">${tabs}</div>${content}`;
 }
 
@@ -247,45 +245,40 @@ function renderValidationCenter() {
   }
   const issues = state.validation.issues || [];
   const status = statusFromIssues(issues);
-  el.validationFab.classList.remove("validation-state-ok",
-      "validation-state-warning", "validation-state-error");
+  el.validationFab.classList.remove(
+    "validation-state-ok",
+    "validation-state-warning",
+    "validation-state-error",
+  );
   el.validationFab.classList.add(status.stateClass);
   if (el.validationFabText) {
     el.validationFabText.textContent = status.label;
   }
-  el.validationFab.classList.toggle("validation-is-running",
-      !!state.validation.inProgress);
-  el.validationFabProgress?.classList.toggle("hidden",
-      !state.validation.inProgress);
+  el.validationFab.classList.toggle("validation-is-running", !!state.validation.inProgress);
+  el.validationFabProgress?.classList.toggle("hidden", !state.validation.inProgress);
   if (el.validationDrawerMeta) {
     const ts = state.validation.lastValidatedAt
-        ? new Date(state.validation.lastValidatedAt).toLocaleTimeString()
-        : "Not validated";
+      ? new Date(state.validation.lastValidatedAt).toLocaleTimeString()
+      : "Not validated";
     el.validationDrawerMeta.textContent = `${status.meta} Last check: ${ts}`;
   }
-  el.validationDrawer?.classList.toggle("validation-is-running",
-      !!state.validation.inProgress);
-  el.validationDrawerProgress?.classList.toggle("hidden",
-      !state.validation.inProgress);
+  el.validationDrawer?.classList.toggle("validation-is-running", !!state.validation.inProgress);
+  el.validationDrawerProgress?.classList.toggle("hidden", !state.validation.inProgress);
   renderIssues(issues);
   el.validationDrawer?.classList.toggle("hidden", !state.validation.panelOpen);
 }
 
 export function isMethodologyValidationError(error) {
   return Boolean(
-      error
-      && error.status === 400
-      && Array.isArray(error.issues)
-      && error.issues.length > 0
+    error && error.status === 400 && Array.isArray(error.issues) && error.issues.length > 0,
   );
 }
 
-export function applyValidationIssues(issues, {openOnFirst = false} = {}) {
+export function applyValidationIssues(issues, { openOnFirst = false } = {}) {
   state.validation.issues = Array.isArray(issues) ? issues : [];
   applyIssueView(state.validation.issues);
   state.validation.lastValidatedAt = Date.now();
-  if (state.validation.issues.length && openOnFirst
-      && !state.validation.firstIssueShown) {
+  if (state.validation.issues.length && openOnFirst && !state.validation.firstIssueShown) {
     state.validation.panelOpen = true;
     state.validation.firstIssueShown = true;
   }
@@ -295,7 +288,7 @@ export function applyValidationIssues(issues, {openOnFirst = false} = {}) {
   renderValidationCenter();
 }
 
-export function clearValidationIssues({keepPanelState = true} = {}) {
+export function clearValidationIssues({ keepPanelState = true } = {}) {
   state.validation.issues = [];
   state.validation.lastValidatedAt = Date.now();
   state.validation.issueView = "errors";
@@ -328,14 +321,12 @@ export function bindValidationCenterUi() {
     return;
   }
   el.validationFab.addEventListener("click", () => toggleValidationDrawer());
-  el.validationDrawerCloseBtn.addEventListener("click",
-      () => toggleValidationDrawer(false));
+  el.validationDrawerCloseBtn.addEventListener("click", () => toggleValidationDrawer(false));
   el.validationDrawerIssues?.addEventListener("click", (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     const tab = target?.closest("[data-issue-view]");
     if (tab) {
-      state.validation.issueView = tab.getAttribute("data-issue-view")
-          || "errors";
+      state.validation.issueView = tab.getAttribute("data-issue-view") || "errors";
       renderValidationCenter();
       return;
     }
@@ -347,24 +338,27 @@ export function bindValidationCenterUi() {
     if (!id) {
       return;
     }
-    window.dispatchEvent(new CustomEvent("modless:locate-issue-target", {
-      detail: {
-        id,
-        elementName: button.getAttribute("data-issue-element-name") || "",
-        elementType: button.getAttribute("data-issue-element-type") || ""
-      }
-    }));
+    window.dispatchEvent(
+      new CustomEvent("modless:locate-issue-target", {
+        detail: {
+          id,
+          elementName: button.getAttribute("data-issue-element-name") || "",
+          elementType: button.getAttribute("data-issue-element-type") || "",
+        },
+      }),
+    );
   });
   el.validationDrawerIssues?.addEventListener("change", (event) => {
-    const input = event.target instanceof HTMLInputElement ? event.target
-        : null;
+    const input = event.target instanceof HTMLInputElement ? event.target : null;
     if (!input || !input.matches("[data-manual-task-id]")) {
       return;
     }
     const manualTaskId = input.getAttribute("data-manual-task-id") || "";
-    window.dispatchEvent(new CustomEvent("modless:manual-task-toggle", {
-      detail: {manualTaskId, resolved: input.checked}
-    }));
+    window.dispatchEvent(
+      new CustomEvent("modless:manual-task-toggle", {
+        detail: { manualTaskId, resolved: input.checked },
+      }),
+    );
   });
   renderValidationCenter();
 }

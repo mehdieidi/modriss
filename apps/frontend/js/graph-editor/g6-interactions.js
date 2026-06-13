@@ -1,11 +1,8 @@
-import {state} from '../state.js';
-import {el} from '../dom.js';
-import {nodeSizeForDiagram} from './g6-style.js';
-import {
-  clearConnectionPreview,
-  updateConnectionPreview
-} from './g6-overlays.js';
-import {fingerprintElement, scheduleGraphDraw} from './g6-performance.js';
+import { state } from "../state.js";
+import { el } from "../dom.js";
+import { nodeSizeForDiagram } from "./g6-style.js";
+import { clearConnectionPreview, updateConnectionPreview } from "./g6-overlays.js";
+import { fingerprintElement, scheduleGraphDraw } from "./g6-performance.js";
 
 let currentCanvasCursorMode = "";
 
@@ -22,7 +19,7 @@ function eventClientPoint(event) {
   const source = originalEvent(event);
   return {
     x: Number(source?.clientX),
-    y: Number(source?.clientY)
+    y: Number(source?.clientY),
   };
 }
 
@@ -35,10 +32,13 @@ function targetId(event, editor = null) {
     target?.parentNode?.id,
     target?.id,
     event?.item?.id,
-    event?.element?.id
+    event?.element?.id,
   ];
-  return candidates.find((id) => state.nodesById.has(id)
-      || editor?.dataSnapshot?.edgesById?.has?.(id)) || "";
+  return (
+    candidates.find(
+      (id) => state.nodesById.has(id) || editor?.dataSnapshot?.edgesById?.has?.(id),
+    ) || ""
+  );
 }
 
 function nodeIdFromEvent(event, editor, sourceId = null) {
@@ -56,21 +56,15 @@ function setCanvasCursor(mode) {
     return;
   }
   currentCanvasCursorMode = nextMode;
-  const classes = [
-    "canvas-cursor-grab",
-    "canvas-cursor-grabbing",
-    "canvas-cursor-pointer"
-  ];
-  const targets = [el.canvasViewport, el.canvasGrid, el.g6EditorHost]
-  .filter(Boolean);
+  const classes = ["canvas-cursor-grab", "canvas-cursor-grabbing", "canvas-cursor-pointer"];
+  const targets = [el.canvasViewport, el.canvasGrid, el.g6EditorHost].filter(Boolean);
   targets.forEach((target) => {
     target.classList.remove(...classes);
     if (mode) {
       target.classList.add(`canvas-cursor-${mode}`);
     }
   });
-  const cursor = nextMode === "grabbing" ? "grabbing"
-      : nextMode === "pointer" ? "pointer" : "grab";
+  const cursor = nextMode === "grabbing" ? "grabbing" : nextMode === "pointer" ? "pointer" : "grab";
   el.g6EditorHost?.style.setProperty("cursor", cursor);
   el.g6EditorHost?.querySelectorAll("canvas").forEach((canvas) => {
     canvas.style.cursor = cursor;
@@ -83,16 +77,15 @@ function graphCanvasPoint(graph, clientX, clientY) {
     converted = graph?.getCanvasByClient?.([clientX, clientY]);
   } catch {
     try {
-      converted = graph?.getCanvasByClient?.({x: clientX, y: clientY});
+      converted = graph?.getCanvasByClient?.({ x: clientX, y: clientY });
     } catch {
       converted = null;
     }
   }
   if (Array.isArray(converted)) {
-    return {x: converted[0], y: converted[1]};
+    return { x: converted[0], y: converted[1] };
   }
-  if (converted && Number.isFinite(converted.x)
-      && Number.isFinite(converted.y)) {
+  if (converted && Number.isFinite(converted.x) && Number.isFinite(converted.y)) {
     return converted;
   }
   const rect = graph?.getCanvas?.()?.getContainer?.()?.getBoundingClientRect?.();
@@ -100,7 +93,7 @@ function graphCanvasPoint(graph, clientX, clientY) {
   const localY = clientY - (rect?.top || 0);
   return {
     x: (localX - state.viewport.x) / state.viewport.scale,
-    y: (localY - state.viewport.y) / state.viewport.scale
+    y: (localY - state.viewport.y) / state.viewport.scale,
   };
 }
 
@@ -112,7 +105,7 @@ function findNodeAtClientPoint(editor, sourceId, clientX, clientY) {
   const point = graphCanvasPoint(graph, clientX, clientY);
   if (editor?.spatialIndex?.size?.()) {
     return editor.spatialIndex.findAt(point.x, point.y, {
-      excludeId: sourceId || ""
+      excludeId: sourceId || "",
     });
   }
   const size = nodeSizeForDiagram(state.activeType);
@@ -122,8 +115,12 @@ function findNodeAtClientPoint(editor, sourceId, clientX, clientY) {
     }
     const width = Number(node?.width) || size.width;
     const height = Number(node?.height) || size.height;
-    if (point.x >= node.x && point.x <= node.x + width
-        && point.y >= node.y && point.y <= node.y + height) {
+    if (
+      point.x >= node.x &&
+      point.x <= node.x + width &&
+      point.y >= node.y &&
+      point.y <= node.y + height
+    ) {
       return nodeId;
     }
   }
@@ -137,21 +134,18 @@ function graphNodeTopLeft(graph, nodeId) {
   const y = Number(data?.style?.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     const node = state.nodesById.get(nodeId);
-    return node ? {x: node.x, y: node.y, width: size.width, height: size.height}
-        : null;
+    return node ? { x: node.x, y: node.y, width: size.width, height: size.height } : null;
   }
   const width = Number(data?.style?.width) || size.width;
   const height = Number(data?.style?.height) || size.height;
-  return {x: x - width / 2, y: y - height / 2, width, height};
+  return { x: x - width / 2, y: y - height / 2, width, height };
 }
 
 function openControlBounds(graph, nodeId) {
   const topLeft = graphNodeTopLeft(graph, nodeId);
   const data = graph?.getNodeData?.(nodeId);
-  const detailLevel = String(data?.style?.detailLevel
-      || data?.data?.detailLevel || "");
-  const low = detailLevel ? detailLevel === "low"
-      : (Number(state.viewport.scale) || 1) < 0.35;
+  const detailLevel = String(data?.style?.detailLevel || data?.data?.detailLevel || "");
+  const low = detailLevel ? detailLevel === "low" : (Number(state.viewport.scale) || 1) < 0.35;
   if (!topLeft) {
     return null;
   }
@@ -161,7 +155,7 @@ function openControlBounds(graph, nodeId) {
     x: topLeft.x + topLeft.width - controlWidth - 9,
     y: topLeft.y + (low ? 8 : 7),
     width: controlWidth,
-    height: controlHeight
+    height: controlHeight,
   };
 }
 
@@ -172,7 +166,7 @@ function nodePositionFromGraph(graph, nodeId) {
   }
   return {
     x: Math.round(topLeft.x),
-    y: Math.round(topLeft.y)
+    y: Math.round(topLeft.y),
   };
 }
 
@@ -182,20 +176,20 @@ function moveGraphNode(editor, nodeId, x, y) {
   if (!data) {
     return;
   }
-  const width = Number(data?.style?.width) || nodeSizeForDiagram(
-      state.activeType).width;
-  const height = Number(data?.style?.height) || nodeSizeForDiagram(
-      state.activeType).height;
+  const width = Number(data?.style?.width) || nodeSizeForDiagram(state.activeType).width;
+  const height = Number(data?.style?.height) || nodeSizeForDiagram(state.activeType).height;
   const roundedX = Math.round(x);
   const roundedY = Math.round(y);
-  graph.updateNodeData?.([{
-    id: nodeId,
-    style: {
-      ...(data.style || {}),
-      x: Math.round(roundedX + width / 2),
-      y: Math.round(roundedY + height / 2)
-    }
-  }]);
+  graph.updateNodeData?.([
+    {
+      id: nodeId,
+      style: {
+        ...(data.style || {}),
+        x: Math.round(roundedX + width / 2),
+        y: Math.round(roundedY + height / 2),
+      },
+    },
+  ]);
   const snapshotNode = editor?.dataSnapshot?.nodesById?.get?.(nodeId);
   if (snapshotNode) {
     const nextSnapshotNode = {
@@ -203,30 +197,31 @@ function moveGraphNode(editor, nodeId, x, y) {
       style: {
         ...(snapshotNode.style || {}),
         x: Math.round(roundedX + width / 2),
-        y: Math.round(roundedY + height / 2)
-      }
+        y: Math.round(roundedY + height / 2),
+      },
     };
     editor.dataSnapshot.nodesById.set(nodeId, nextSnapshotNode);
-    editor.dataSnapshot.nodeFingerprints?.set?.(nodeId,
-        fingerprintElement(nextSnapshotNode));
+    editor.dataSnapshot.nodeFingerprints?.set?.(nodeId, fingerprintElement(nextSnapshotNode));
   }
   editor?.spatialIndex?.update?.({
     id: nodeId,
     x: roundedX,
     y: roundedY,
     width,
-    height
+    height,
   });
   scheduleGraphDraw(graph);
 }
 
 function isLinkHandleVisible(editor, nodeId) {
-  return editor?.hoveredNodeId === nodeId
-      || state.hoveredNodeId === nodeId
-      || state.selectedNodeIds?.has?.(nodeId)
-      || state.selectedNodeId === nodeId
-      || state.connectSourceId === nodeId
-      || state.linkDrag?.sourceId === nodeId;
+  return (
+    editor?.hoveredNodeId === nodeId ||
+    state.hoveredNodeId === nodeId ||
+    state.selectedNodeIds?.has?.(nodeId) ||
+    state.selectedNodeId === nodeId ||
+    state.connectSourceId === nodeId ||
+    state.linkDrag?.sourceId === nodeId
+  );
 }
 
 function isLinkHandleHit(graph, nodeId, clientX, clientY, editor) {
@@ -237,8 +232,7 @@ function isLinkHandleHit(graph, nodeId, clientX, clientY, editor) {
   const point = graphCanvasPoint(graph, clientX, clientY);
   const centerY = topLeft.y + topLeft.height / 2;
   const leftDistance = Math.hypot(point.x - topLeft.x, point.y - centerY);
-  const rightDistance = Math.hypot(point.x - (topLeft.x + topLeft.width),
-      point.y - centerY);
+  const rightDistance = Math.hypot(point.x - (topLeft.x + topLeft.width), point.y - centerY);
   return Math.min(leftDistance, rightDistance) <= 16;
 }
 
@@ -251,10 +245,12 @@ function isOpenControlHit(graph, nodeId, clientX, clientY, editor) {
   const point = graphCanvasPoint(graph, clientX, clientY);
   const zoom = Math.max(0.01, Number(state.viewport.scale) || 1);
   const padding = Math.max(3, 6 / zoom);
-  return point.x >= bounds.x - padding
-      && point.x <= bounds.x + bounds.width + padding
-      && point.y >= bounds.y - padding
-      && point.y <= bounds.y + bounds.height + padding;
+  return (
+    point.x >= bounds.x - padding &&
+    point.x <= bounds.x + bounds.width + padding &&
+    point.y >= bounds.y - padding &&
+    point.y <= bounds.y + bounds.height + padding
+  );
 }
 
 export function bindG6Interactions(editor, callbacks = {}) {
@@ -297,8 +293,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     state.viewport.y += dy;
     try {
       const result = graph.translateBy?.([dx, dy], false);
-      result?.then?.(() => scheduleGraphDraw(graph))?.catch?.(() =>
-          scheduleGraphDraw(graph));
+      result?.then?.(() => scheduleGraphDraw(graph))?.catch?.(() => scheduleGraphDraw(graph));
       if (!result?.then) {
         scheduleGraphDraw(graph);
       }
@@ -341,7 +336,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     canvasPan = {
       pointerId: event.pointerId,
       lastX: event.clientX,
-      lastY: event.clientY
+      lastY: event.clientY,
     };
     canvasDragging = true;
     setCanvasCursor("grabbing");
@@ -364,11 +359,11 @@ export function bindG6Interactions(editor, callbacks = {}) {
       return;
     }
     moveGraphNode(editor, move.nodeId, move.x, move.y);
-    callbacks.onNodeDrag?.(move.nodeId, {x: move.x, y: move.y});
+    callbacks.onNodeDrag?.(move.nodeId, { x: move.x, y: move.y });
   };
 
   const queueNodeDragMove = (nodeId, x, y) => {
-    pendingNodeDragMove = {nodeId, x, y};
+    pendingNodeDragMove = { nodeId, x, y };
     if (!nodeDragFrame) {
       nodeDragFrame = window.requestAnimationFrame(flushNodeDragMove);
     }
@@ -378,14 +373,12 @@ export function bindG6Interactions(editor, callbacks = {}) {
     const setHoveredOpenControl = (nodeId) => {
       editor?.setOpenControlHover?.(nodeId || null);
     };
-    if (nodeDrag && (!nodeDrag.pointerId
-        || event.pointerId === nodeDrag.pointerId)) {
+    if (nodeDrag && (!nodeDrag.pointerId || event.pointerId === nodeDrag.pointerId)) {
       setHoveredOpenControl(null);
       const point = graphCanvasPoint(graph, event.clientX, event.clientY);
       const nextX = Math.round(nodeDrag.nodeX + point.x - nodeDrag.startX);
       const nextY = Math.round(nodeDrag.nodeY + point.y - nodeDrag.startY);
-      const moved = Math.abs(nextX - nodeDrag.nodeX) > 1
-          || Math.abs(nextY - nodeDrag.nodeY) > 1;
+      const moved = Math.abs(nextX - nodeDrag.nodeX) > 1 || Math.abs(nextY - nodeDrag.nodeY) > 1;
       if (moved) {
         dragged = true;
       }
@@ -398,27 +391,24 @@ export function bindG6Interactions(editor, callbacks = {}) {
       const point = eventClientPoint(event);
       linkDrag.clientX = point.x;
       linkDrag.clientY = point.y;
-      hoveredNodeId = findNodeAtClientPoint(editor, linkDrag.sourceId,
-          point.x, point.y);
-      updateConnectionPreview(graph, state.nodesById.get(linkDrag.sourceId),
-          point.x, point.y);
+      hoveredNodeId = findNodeAtClientPoint(editor, linkDrag.sourceId, point.x, point.y);
+      updateConnectionPreview(graph, state.nodesById.get(linkDrag.sourceId), point.x, point.y);
       callbacks.onConnectionPointerMove?.(linkDrag.sourceId, hoveredNodeId);
       event.preventDefault();
       return;
     }
     if (!canvasPan || event.pointerId !== canvasPan.pointerId) {
-      const hoveredId = findNodeAtClientPoint(editor, null, event.clientX,
-          event.clientY);
+      const hoveredId = findNodeAtClientPoint(editor, null, event.clientX, event.clientY);
       if (hoveredId !== hoveredNodeId) {
         hoveredNodeId = hoveredId || null;
         hoveredInteractive = Boolean(hoveredNodeId);
         callbacks.onNodeHover?.(hoveredNodeId);
         setCanvasCursor(hoveredNodeId ? "pointer" : "grab");
       }
-      const openHover = hoveredId
-      && isOpenControlHit(graph, hoveredId, event.clientX, event.clientY,
-          editor)
-          ? hoveredId : null;
+      const openHover =
+        hoveredId && isOpenControlHit(graph, hoveredId, event.clientX, event.clientY, editor)
+          ? hoveredId
+          : null;
       setHoveredOpenControl(openHover);
       return;
     }
@@ -454,7 +444,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     flushNodeDragMove();
     const nodeId = nodeDrag.nodeId;
     const position = nodePositionFromGraph(graph, nodeId);
-    callbacks.onNodeDragEnd?.(nodeId, position, {moved: dragged});
+    callbacks.onNodeDragEnd?.(nodeId, position, { moved: dragged });
     lastClickSuppressedNodeId = nodeId;
     window.setTimeout(() => {
       if (lastClickSuppressedNodeId === nodeId) {
@@ -486,10 +476,8 @@ export function bindG6Interactions(editor, callbacks = {}) {
     const source = originalEvent(event);
     const clientX = Number(source?.clientX);
     const clientY = Number(source?.clientY);
-    const moved = Math.hypot(clientX - press.clientX,
-        clientY - press.clientY) > 5;
-    if (!moved && isOpenControlHit(graph, press.nodeId, clientX, clientY,
-        editor)) {
+    const moved = Math.hypot(clientX - press.clientX, clientY - press.clientY) > 5;
+    if (!moved && isOpenControlHit(graph, press.nodeId, clientX, clientY, editor)) {
       source?.preventDefault?.();
       source?.stopPropagation?.();
       suppressOpenControlClickNodeId = press.nodeId;
@@ -548,10 +536,10 @@ export function bindG6Interactions(editor, callbacks = {}) {
       return;
     }
     const sourceId = linkDrag.sourceId;
-    const target = hoveredNodeId && hoveredNodeId !== sourceId
+    const target =
+      hoveredNodeId && hoveredNodeId !== sourceId
         ? hoveredNodeId
-        : findNodeAtClientPoint(editor, sourceId, linkDrag.clientX,
-            linkDrag.clientY);
+        : findNodeAtClientPoint(editor, sourceId, linkDrag.clientX, linkDrag.clientY);
     clearConnectionPreview();
     linkDrag = null;
     callbacks.onConnectionDragEnd?.(target);
@@ -575,7 +563,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
         nodeId: id,
         pointerId: originalEvent(event)?.pointerId,
         clientX: point.x,
-        clientY: point.y
+        clientY: point.y,
       };
       editor?.setOpenControlHover?.(id);
       originalEvent(event)?.preventDefault?.();
@@ -584,7 +572,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
     if (id && isLinkHandleHit(graph, id, point.x, point.y, editor)) {
       const sourceNode = state.nodesById.get(id);
-      linkDrag = {sourceId: id, clientX: point.x, clientY: point.y};
+      linkDrag = { sourceId: id, clientX: point.x, clientY: point.y };
       updateConnectionPreview(graph, sourceNode, point.x, point.y);
       callbacks.onConnectionDragStart?.(id);
       originalEvent(event)?.preventDefault?.();
@@ -604,7 +592,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
           startX: canvasPoint.x,
           startY: canvasPoint.y,
           nodeX: topLeft.x,
-          nodeY: topLeft.y
+          nodeY: topLeft.y,
         };
         callbacks.onNodeDragStart?.(id);
         if (nodeDrag.pointerId) {
@@ -624,9 +612,11 @@ export function bindG6Interactions(editor, callbacks = {}) {
     hoveredNodeId = nodeIdFromEvent(event, editor) || null;
     hoveredInteractive = true;
     const point = eventClientPoint(event);
-    editor?.setOpenControlHover?.(hoveredNodeId
-    && isOpenControlHit(graph, hoveredNodeId, point.x, point.y, editor)
-        ? hoveredNodeId : null);
+    editor?.setOpenControlHover?.(
+      hoveredNodeId && isOpenControlHit(graph, hoveredNodeId, point.x, point.y, editor)
+        ? hoveredNodeId
+        : null,
+    );
     if (!canvasDragging) {
       setCanvasCursor("pointer");
     }
@@ -654,8 +644,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
     draggedNodeId = nodeIdFromEvent(event, editor);
     const point = eventClientPoint(event);
-    if (draggedNodeId && isOpenControlHit(graph, draggedNodeId, point.x,
-        point.y, editor)) {
+    if (draggedNodeId && isOpenControlHit(graph, draggedNodeId, point.x, point.y, editor)) {
       draggedNodeId = null;
       dragged = false;
       return;
@@ -688,7 +677,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     const id = draggedNodeId || nodeIdFromEvent(event, editor);
     const position = id ? nodePositionFromGraph(graph, id) : null;
     if (id && position) {
-      callbacks.onNodeDragEnd?.(id, position, {moved: dragged});
+      callbacks.onNodeDragEnd?.(id, position, { moved: dragged });
       if (dragged) {
         lastClickSuppressedNodeId = id;
         window.setTimeout(() => {
@@ -731,8 +720,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     linkDrag.clientX = point.x;
     linkDrag.clientY = point.y;
     hoveredNodeId = nodeIdFromEvent(event, editor, linkDrag.sourceId) || null;
-    updateConnectionPreview(graph, state.nodesById.get(linkDrag.sourceId),
-        point.x, point.y);
+    updateConnectionPreview(graph, state.nodesById.get(linkDrag.sourceId), point.x, point.y);
     callbacks.onConnectionPointerMove?.(linkDrag.sourceId, hoveredNodeId);
   });
 
@@ -791,8 +779,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     if (linkDrag) {
       linkDrag.clientX = point.x;
       linkDrag.clientY = point.y;
-      updateConnectionPreview(graph, state.nodesById.get(linkDrag.sourceId),
-          point.x, point.y);
+      updateConnectionPreview(graph, state.nodesById.get(linkDrag.sourceId), point.x, point.y);
       callbacks.onConnectionPointerMove?.(linkDrag.sourceId, hoveredNodeId);
       return;
     }

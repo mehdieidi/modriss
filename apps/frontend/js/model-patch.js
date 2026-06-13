@@ -1,11 +1,8 @@
-import {MODEL_TYPES} from './config.js';
-import {state} from './state.js';
-import {api} from './api.js';
-import {serializeModel} from './diagram.js';
-import {
-  saveCurrentTabGraphState,
-  syncActiveViewFromVisibleGraph
-} from './graph-store.js';
+import { MODEL_TYPES } from "./config.js";
+import { state } from "./state.js";
+import { api } from "./api.js";
+import { serializeModel } from "./diagram.js";
+import { saveCurrentTabGraphState, syncActiveViewFromVisibleGraph } from "./graph-store.js";
 
 const MAX_PATCH_OPERATIONS = 500;
 
@@ -25,8 +22,7 @@ function keyedById(array) {
   if (!Array.isArray(array) || !array.length) {
     return null;
   }
-  if (!array.every((item) => item && typeof item === "object"
-      && String(item.id || "").trim())) {
+  if (!array.every((item) => item && typeof item === "object" && String(item.id || "").trim())) {
     return null;
   }
   const ids = array.map((item) => String(item.id));
@@ -38,14 +34,13 @@ function diffJson(previous, next, path = "") {
     return [];
   }
   if (previous === undefined) {
-    return [{op: "add", path: path || "/", value: next}];
+    return [{ op: "add", path: path || "/", value: next }];
   }
   if (next === undefined) {
-    return [{op: "remove", path: path || "/"}];
+    return [{ op: "remove", path: path || "/" }];
   }
-  if (!previous || !next || typeof previous !== "object"
-      || typeof next !== "object") {
-    return [{op: "replace", path: path || "/", value: next}];
+  if (!previous || !next || typeof previous !== "object" || typeof next !== "object") {
+    return [{ op: "replace", path: path || "/", value: next }];
   }
   if (Array.isArray(previous) || Array.isArray(next)) {
     return diffArrays(previous, next, path);
@@ -53,49 +48,60 @@ function diffJson(previous, next, path = "") {
   const operations = [];
   const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
   for (const key of keys) {
-    operations.push(
-        ...diffJson(previous[key], next[key], pointerJoin(path, key)));
+    operations.push(...diffJson(previous[key], next[key], pointerJoin(path, key)));
   }
   return operations;
 }
 
 function diffArrays(previous, next, path) {
   if (!Array.isArray(previous) || !Array.isArray(next)) {
-    return [{op: "replace", path: path || "/", value: next}];
+    return [{ op: "replace", path: path || "/", value: next }];
   }
   const previousIds = keyedById(previous);
   const nextIds = keyedById(next);
   if (!previousIds || !nextIds) {
-    return [{op: "replace", path: path || "/", value: next}];
+    return [{ op: "replace", path: path || "/", value: next }];
   }
-  const previousById = new Map(previous.map((item, index) => [String(item.id), {
-    item,
-    index
-  }]));
-  const nextById = new Map(next.map((item, index) => [String(item.id), {
-    item,
-    index
-  }]));
-  if (previousIds.filter((id) => nextById.has(id)).join("\u0000")
-      !== nextIds.filter((id) => previousById.has(id)).join("\u0000")) {
-    return [{op: "replace", path: path || "/", value: next}];
+  const previousById = new Map(
+    previous.map((item, index) => [
+      String(item.id),
+      {
+        item,
+        index,
+      },
+    ]),
+  );
+  const nextById = new Map(
+    next.map((item, index) => [
+      String(item.id),
+      {
+        item,
+        index,
+      },
+    ]),
+  );
+  if (
+    previousIds.filter((id) => nextById.has(id)).join("\u0000") !==
+    nextIds.filter((id) => previousById.has(id)).join("\u0000")
+  ) {
+    return [{ op: "replace", path: path || "/", value: next }];
   }
   const operations = [];
   for (let index = previous.length - 1; index >= 0; index--) {
     const id = String(previous[index].id);
     if (!nextById.has(id)) {
-      operations.push({op: "remove", path: pointerJoin(path, index)});
+      operations.push({ op: "remove", path: pointerJoin(path, index) });
     }
   }
   for (const [id, entry] of nextById.entries()) {
     const previousEntry = previousById.get(id);
     if (!previousEntry) {
-      operations.push(
-          {op: "add", path: pointerJoin(path, "-"), value: entry.item});
+      operations.push({ op: "add", path: pointerJoin(path, "-"), value: entry.item });
       continue;
     }
-    operations.push(...diffJson(previousEntry.item, entry.item,
-        pointerJoin(path, previousEntry.index)));
+    operations.push(
+      ...diffJson(previousEntry.item, entry.item, pointerJoin(path, previousEntry.index)),
+    );
   }
   return operations;
 }
@@ -105,14 +111,16 @@ export function buildModelPatch(previousModel, nextModel) {
   if (!operations.length) {
     return [];
   }
-  if (operations.length > MAX_PATCH_OPERATIONS
-      || operations.some((operation) => operation.path === "/")) {
+  if (
+    operations.length > MAX_PATCH_OPERATIONS ||
+    operations.some((operation) => operation.path === "/")
+  ) {
     return null;
   }
   return operations;
 }
 
-export async function flushCurrentModelPatch({name, rethrow = false} = {}) {
+export async function flushCurrentModelPatch({ name, rethrow = false } = {}) {
   if (!state.modelId || !MODEL_TYPES[state.activeType]) {
     return false;
   }
@@ -127,15 +135,14 @@ export async function flushCurrentModelPatch({name, rethrow = false} = {}) {
     return true;
   }
   try {
-    const updated = await api(
-        `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            name,
-            operations,
-            expectedRevision: state.modelRevision || 1
-          })
-        });
+    const updated = await api(`/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name,
+        operations,
+        expectedRevision: state.modelRevision || 1,
+      }),
+    });
     state.baseModel = structuredClone(nextModel);
     if (updated && typeof updated === "object") {
       state.modelRevision = Number(updated.revision) || state.modelRevision;
@@ -149,9 +156,9 @@ export async function flushCurrentModelPatch({name, rethrow = false} = {}) {
     }
     return updated || true;
   } catch (error) {
-    const stalePatchPath = error?.status === 400
-        && /Patch (replace|remove) path does not exist:/i.test(
-            String(error?.message || ""));
+    const stalePatchPath =
+      error?.status === 400 &&
+      /Patch (replace|remove) path does not exist:/i.test(String(error?.message || ""));
     if (stalePatchPath) {
       return false;
     }

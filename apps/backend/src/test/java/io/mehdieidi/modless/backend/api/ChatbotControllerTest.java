@@ -16,29 +16,28 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ChatbotControllerTest {
 
-    @Mock
-    private AssistantOrchestrator assistant;
+  @Mock private AssistantOrchestrator assistant;
 
-    @Mock
-    private AssistantRealtimeHub realtime;
+  @Mock private AssistantRealtimeHub realtime;
 
-    @Mock
-    private AuthSupport auth;
+  @Mock private AuthSupport auth;
 
-    @Mock
-    private ProjectService projects;
+  @Mock private ProjectService projects;
 
-    @Test
-    void createSessionRejectsMissingProjectIdBeforeProjectLookup() {
-        ChatbotController controller = new ChatbotController(assistant, realtime, auth, projects);
+  @Test
+  void createSessionRejectsMissingProjectIdBeforeProjectLookup() {
+    ChatbotController controller = new ChatbotController(assistant, realtime, auth, projects);
 
-        PlatformException ex = assertThrows(PlatformException.class, () ->
-                controller.createSession("token",
-                        new ChatbotController.CreateSessionRequest("pim", "Assistant",
-                                null, null)));
+    PlatformException ex =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                controller.createSession(
+                    "token",
+                    new ChatbotController.CreateSessionRequest("pim", "Assistant", null, null)));
 
-        assertEquals(400, ex.status());
-        assertEquals("Project id is required.", ex.getMessage());
-        verifyNoInteractions(auth, projects, assistant);
-    }
+    assertEquals(400, ex.status());
+    assertEquals("Project id is required.", ex.getMessage());
+    verifyNoInteractions(auth, projects, assistant);
+  }
 }

@@ -122,10 +122,11 @@ a {
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 650;
-  transition: color 220ms ease,
-  background-color 220ms ease,
-  border-color 220ms ease,
-  transform 220ms ease;
+  transition:
+    color 220ms ease,
+    background-color 220ms ease,
+    border-color 220ms ease,
+    transform 220ms ease;
 }
 
 .button:hover {

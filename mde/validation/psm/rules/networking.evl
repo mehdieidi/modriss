@@ -50,4 +50,3 @@ context AWSPSM!SecurityGroupRule {
     message : 'Security group rule exposes SSH/RDP to the public internet. Fix: restrict cidrIp, use a bastion/VPN/SSM access pattern, or add an approved exception in ruleDescription.'
   }
 }
-

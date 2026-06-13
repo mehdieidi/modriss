@@ -1,11 +1,11 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {api, isPlannedFeatureError} from './api.js';
-import {setError, setStatus} from './status.js';
-import {apiUrl, MODEL_TYPES, websocketUrl} from './config.js';
-import {toDiagram} from './diagram.js';
-import {renderDiagram} from './canvas.js';
-import {renderMarkdown} from './markdown.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { api, isPlannedFeatureError } from "./api.js";
+import { setError, setStatus } from "./status.js";
+import { apiUrl, MODEL_TYPES, websocketUrl } from "./config.js";
+import { toDiagram } from "./diagram.js";
+import { renderDiagram } from "./canvas.js";
+import { renderMarkdown } from "./markdown.js";
 
 // ── Chat session / realtime ───────────────────────────────────────────────────
 
@@ -29,11 +29,10 @@ export async function ensureChatSession() {
       method: "POST",
       body: JSON.stringify({
         modelType: MODEL_TYPES[typeKey].chatType,
-        modelName: (state.tabs[typeKey]?.modelName
-            || `${typeKey}-assistant`).trim(),
+        modelName: (state.tabs[typeKey]?.modelName || `${typeKey}-assistant`).trim(),
         initialDocument: "Initialized from web modeling editor",
-        projectId: state.project.id
-      })
+        projectId: state.project.id,
+      }),
     });
   } catch (error) {
     if (isPlannedFeatureError(error)) {
@@ -46,7 +45,7 @@ export async function ensureChatSession() {
 
   const session = {
     sessionId: response.sessionId,
-    modelId: response.modelId || null
+    modelId: response.modelId || null,
   };
   state.chat.sessions.set(typeKey, session);
   await connectChatRealtime(typeKey, session.sessionId);
@@ -60,7 +59,7 @@ export async function clearChatConversation() {
   if (session?.sessionId) {
     try {
       await api(`/chatbot/sessions/${session.sessionId}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
     } catch (error) {
       if (!error?.featureUnavailable) {
@@ -112,16 +111,14 @@ async function connectChatRealtime(typeKey, sessionId) {
         setStatus("Chat websocket disconnected");
       }
     };
-    state.chat.channels.set(typeKey, {kind: "websocket", handle: socket});
+    state.chat.channels.set(typeKey, { kind: "websocket", handle: socket });
     return;
   } catch {
     // fallback to SSE
   }
 
-  const stream = new EventSource(
-      apiUrl(`/chatbot/sessions/${sessionId}/events`));
-  stream.onmessage = () => {
-  };
+  const stream = new EventSource(apiUrl(`/chatbot/sessions/${sessionId}/events`));
+  stream.onmessage = () => {};
   stream.addEventListener("chat.assistant", (event) => {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "chat.assistant", payload);
@@ -141,7 +138,7 @@ async function connectChatRealtime(typeKey, sessionId) {
   stream.onerror = () => {
     setStatus("Chat realtime stream disconnected");
   };
-  state.chat.channels.set(typeKey, {kind: "sse", handle: stream});
+  state.chat.channels.set(typeKey, { kind: "sse", handle: stream });
 }
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
@@ -196,7 +193,8 @@ function appendChat(role, text) {
 
   const avatar = document.createElement("div");
   avatar.className = "chat-msg-avatar";
-  avatar.innerHTML = role === "user"
+  avatar.innerHTML =
+    role === "user"
       ? '<span aria-hidden="true" class="chat-msg-avatar-icon icon-svg icon-mask" style="--icon-src: url(\'/assets/icons/placeholder.svg\');"></span>'
       : '<span aria-hidden="true" class="chat-msg-avatar-icon icon-svg icon-mask" style="--icon-src: url(\'/assets/icons/placeholder.svg\');"></span>';
 
@@ -218,8 +216,9 @@ function appendAssistantDeduped(text) {
   if (!text) {
     return;
   }
-  const messages = [...el.chatMessages.querySelectorAll(
-      '.chat-msg.assistant[data-chat-kind="message"]')];
+  const messages = [
+    ...el.chatMessages.querySelectorAll('.chat-msg.assistant[data-chat-kind="message"]'),
+  ];
   const last = messages[messages.length - 1];
   if (last?.dataset.chatText === text) {
     return;
@@ -228,8 +227,12 @@ function appendAssistantDeduped(text) {
 }
 
 function unwrapAssistantModel(model) {
-  if (model && typeof model === "object" && model.modelJson
-      && typeof model.modelJson === "object") {
+  if (
+    model &&
+    typeof model === "object" &&
+    model.modelJson &&
+    typeof model.modelJson === "object"
+  ) {
     return model.modelJson;
   }
   return model;
@@ -239,8 +242,10 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   if (!proposal) {
     return;
   }
-  if (proposal.id && el.chatMessages.querySelector(
-      `[data-chat-proposal-id="${CSS.escape(proposal.id)}"]`)) {
+  if (
+    proposal.id &&
+    el.chatMessages.querySelector(`[data-chat-proposal-id="${CSS.escape(proposal.id)}"]`)
+  ) {
     return;
   }
   const card = document.createElement("div");
@@ -254,27 +259,27 @@ function appendProposalCard(typeKey, sessionId, proposal) {
 
   const title = document.createElement("div");
   title.className = "chat-proposal-title";
-  title.textContent = `Proposal ${proposal.riskLevel
-  || "HIGH"}${proposal.approvalRequired ? " requires approval" : ""}`;
+  title.textContent = `Proposal ${
+    proposal.riskLevel || "HIGH"
+  }${proposal.approvalRequired ? " requires approval" : ""}`;
   bubble.appendChild(title);
 
   const summary = document.createElement("div");
   summary.className = "chat-proposal-summary";
-  summary.textContent = `Affected: ${(proposal.affectedElements || []).join(
-      ", ") || "n/a"}`;
+  summary.textContent = `Affected: ${(proposal.affectedElements || []).join(", ") || "n/a"}`;
   bubble.appendChild(summary);
 
   const validation = document.createElement("div");
   validation.className = "chat-proposal-validation";
-  const issues = Array.isArray(proposal.validation?.issues)
-      ? proposal.validation.issues : [];
-  validation.textContent = `Validation: ${proposal.validation?.mandatoryPassed
+  const issues = Array.isArray(proposal.validation?.issues) ? proposal.validation.issues : [];
+  validation.textContent = `Validation: ${
+    proposal.validation?.mandatoryPassed
       ? "mandatory constraints pass"
-      : "mandatory constraints fail"}; ${issues.length} issue(s)`;
+      : "mandatory constraints fail"
+  }; ${issues.length} issue(s)`;
   bubble.appendChild(validation);
 
-  const operations = Array.isArray(proposal.patch?.operations)
-      ? proposal.patch.operations : [];
+  const operations = Array.isArray(proposal.patch?.operations) ? proposal.patch.operations : [];
   if (operations.length) {
     const details = document.createElement("details");
     details.className = "chat-proposal-preview";
@@ -288,8 +293,10 @@ function appendProposalCard(typeKey, sessionId, proposal) {
         operation.type,
         operation.targetElementId,
         operation.sourceElementId && `from ${operation.sourceElementId}`,
-        operation.referenceName && `via ${operation.referenceName}`
-      ].filter(Boolean).join(" ");
+        operation.referenceName && `via ${operation.referenceName}`,
+      ]
+        .filter(Boolean)
+        .join(" ");
       list.appendChild(item);
     }
     details.appendChild(list);
@@ -314,12 +321,13 @@ function appendProposalCard(typeKey, sessionId, proposal) {
         try {
           setProposalActionsDisabled(actions, true);
           const response = await api(
-              `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`, {
-                method: "POST"
-              });
+            `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`,
+            {
+              method: "POST",
+            },
+          );
           setProposalDecision(card, "Applied");
-          appendAssistantDeduped(
-              response.assistantMessage || "Proposal approved");
+          appendAssistantDeduped(response.assistantMessage || "Proposal approved");
           await applyAssistantModelResponse(typeKey, response);
         } catch (error) {
           setProposalActionsDisabled(actions, false);
@@ -340,10 +348,9 @@ function appendProposalCard(typeKey, sessionId, proposal) {
     reject.addEventListener("click", async () => {
       try {
         setProposalActionsDisabled(actions, true);
-        await api(
-            `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/reject`, {
-              method: "POST"
-            });
+        await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/reject`, {
+          method: "POST",
+        });
         setProposalDecision(card, "Rejected");
         appendChat("assistant", "Proposal rejected.");
       } catch (error) {
@@ -359,10 +366,9 @@ function appendProposalCard(typeKey, sessionId, proposal) {
     undo.addEventListener("click", async () => {
       try {
         setProposalActionsDisabled(actions, true);
-        const response = await api(
-            `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
-              method: "POST"
-            });
+        const response = await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
+          method: "POST",
+        });
         setProposalDecision(card, "Undone");
         appendAssistantDeduped(response.assistantMessage || "Proposal undone");
         await applyAssistantModelResponse(typeKey, response);
@@ -402,8 +408,10 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
     return;
   }
   const choice = choices[0];
-  if (choice.id && el.chatMessages.querySelector(
-      `[data-chat-choice-id="${CSS.escape(choice.id)}"]`)) {
+  if (
+    choice.id &&
+    el.chatMessages.querySelector(`[data-chat-choice-id="${CSS.escape(choice.id)}"]`)
+  ) {
     return;
   }
   const card = document.createElement("div");
@@ -427,8 +435,8 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
           method: "POST",
           body: JSON.stringify({
             choiceId: choice.id,
-            optionId: option.id
-          })
+            optionId: option.id,
+          }),
         });
         setProposalActionsDisabled(actions, true);
         appendChat("assistant", `Selected ${option.label || option.id}.`);
@@ -444,9 +452,12 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
   el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
 }
 
-async function applyAssistantModelResponse(typeKey, response,
-    requestedModelId = null,
-    requestDiagramFingerprint = null) {
+async function applyAssistantModelResponse(
+  typeKey,
+  response,
+  requestedModelId = null,
+  requestDiagramFingerprint = null,
+) {
   if (!response) {
     return;
   }
@@ -454,21 +465,26 @@ async function applyAssistantModelResponse(typeKey, response,
   const liveModelId = String(state.modelId || "").trim();
   const requestedModelIdValue = String(requestedModelId || "").trim();
   const liveDiagramFingerprint = JSON.stringify(state.diagram || {});
-  const hasLocalEditsSinceRequest = requestDiagramFingerprint != null
-      && liveDiagramFingerprint !== requestDiagramFingerprint;
+  const hasLocalEditsSinceRequest =
+    requestDiagramFingerprint != null && liveDiagramFingerprint !== requestDiagramFingerprint;
   let model = unwrapAssistantModel(response.model || null);
   if (!model && responseModelId) {
     try {
       model = unwrapAssistantModel(
-          await api(`/${MODEL_TYPES[typeKey].apiType}/${responseModelId}`));
+        await api(`/${MODEL_TYPES[typeKey].apiType}/${responseModelId}`),
+      );
     } catch {
       model = null;
     }
   }
-  if (responseModelId && liveModelId && responseModelId !== liveModelId
-      && requestedModelIdValue && liveModelId !== requestedModelIdValue) {
-    setStatus(
-        "Assistant response received for another model; skipped auto-apply");
+  if (
+    responseModelId &&
+    liveModelId &&
+    responseModelId !== liveModelId &&
+    requestedModelIdValue &&
+    liveModelId !== requestedModelIdValue
+  ) {
+    setStatus("Assistant response received for another model; skipped auto-apply");
     return;
   }
   if (hasLocalEditsSinceRequest) {
@@ -529,25 +545,26 @@ export async function sendChatMessage() {
       el.chatHeaderSubtitle.textContent = "Thinking…";
     }
 
-    const response = await api(
-        `/chatbot/sessions/${session.sessionId}/messages`, {
-          method: "POST",
-          body: JSON.stringify({
-            message: text,
-            modelId: state.modelId,
-            revision: state.modelRevision || null,
-            activeView: state.activeType,
-            selectedElementIds: [...new Set([
-              ...(state.selectedNodeIds instanceof Set
-                  ? [...state.selectedNodeIds]
-                  : []),
+    const response = await api(`/chatbot/sessions/${session.sessionId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({
+        message: text,
+        modelId: state.modelId,
+        revision: state.modelRevision || null,
+        activeView: state.activeType,
+        selectedElementIds: [
+          ...new Set(
+            [
+              ...(state.selectedNodeIds instanceof Set ? [...state.selectedNodeIds] : []),
               state.selectedNodeId,
-              state.selectedConnectionId
-            ].filter(Boolean))],
-            attachmentName: state.chat.attachment?.name || null,
-            attachmentContent: state.chat.attachment?.content || null
-          })
-        });
+              state.selectedConnectionId,
+            ].filter(Boolean),
+          ),
+        ],
+        attachmentName: state.chat.attachment?.name || null,
+        attachmentContent: state.chat.attachment?.content || null,
+      }),
+    });
 
     el.chatTypingIndicator.classList.add("hidden");
     if (el.chatHeaderSubtitle) {
@@ -558,9 +575,12 @@ export async function sendChatMessage() {
     if (!response.proposal) {
       appendChoiceButtons(state.activeType, session.sessionId, response.choices);
     }
-    await applyAssistantModelResponse(state.activeType, response,
-        requestedModelId,
-        requestDiagramFingerprint);
+    await applyAssistantModelResponse(
+      state.activeType,
+      response,
+      requestedModelId,
+      requestDiagramFingerprint,
+    );
     state.chat.attachment = null;
     if (el.chatFileInput) {
       el.chatFileInput.value = "";

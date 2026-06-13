@@ -1,14 +1,18 @@
-import {el} from './dom.js';
+import { el } from "./dom.js";
 
 export function confirmAction({
   title = "Confirm Action",
   message = "Are you sure?",
   confirmLabel = "Confirm",
-  danger = false
+  danger = false,
 } = {}) {
-  if (!el.confirmActionOverlay || !el.confirmActionTitle
-      || !el.confirmActionMessage || !el.confirmActionCancelBtn
-      || !el.confirmActionConfirmBtn) {
+  if (
+    !el.confirmActionOverlay ||
+    !el.confirmActionTitle ||
+    !el.confirmActionMessage ||
+    !el.confirmActionCancelBtn ||
+    !el.confirmActionConfirmBtn
+  ) {
     return Promise.resolve(window.confirm(message));
   }
 

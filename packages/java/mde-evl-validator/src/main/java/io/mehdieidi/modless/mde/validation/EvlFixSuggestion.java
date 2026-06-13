@@ -7,10 +7,8 @@ package io.mehdieidi.modless.mde.validation;
  */
 public record EvlFixSuggestion(String title) {
 
-    /**
-     * Normalizes a nullable title to an empty string.
-     */
-    public EvlFixSuggestion {
-        title = title == null ? "" : title;
-    }
+  /** Normalizes a nullable title to an empty string. */
+  public EvlFixSuggestion {
+    title = title == null ? "" : title;
+  }
 }

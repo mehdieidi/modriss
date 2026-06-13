@@ -27,109 +27,109 @@ import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
  */
 public final class FileMetamodelResolver implements MetamodelResolver {
 
-    /**
-     * Runtime paths used to locate metamodel files.
-     */
-    private final MdeRuntimePaths paths;
-    /**
-     * Thread-safe descriptor cache by model level.
-     */
-    private final ConcurrentMap<ModelLevel, MetamodelDescriptor> cache = new ConcurrentHashMap<>();
+  /** Runtime paths used to locate metamodel files. */
+  private final MdeRuntimePaths paths;
 
-    /**
-     * Creates a file-backed metamodel resolver.
-     *
-     * @param paths runtime path resolver
-     */
-    public FileMetamodelResolver(MdeRuntimePaths paths) {
-        this.paths = paths;
-    }
+  /** Thread-safe descriptor cache by model level. */
+  private final ConcurrentMap<ModelLevel, MetamodelDescriptor> cache = new ConcurrentHashMap<>();
 
-    /**
-     * Resolves and caches the descriptor for the requested level.
-     *
-     * @param level model level
-     * @return loaded metamodel descriptor
-     */
-    @Override
-    public MetamodelDescriptor resolve(ModelLevel level) {
-        return cache.computeIfAbsent(level, this::loadDescriptor);
-    }
+  /**
+   * Creates a file-backed metamodel resolver.
+   *
+   * @param paths runtime path resolver
+   */
+  public FileMetamodelResolver(MdeRuntimePaths paths) {
+    this.paths = paths;
+  }
 
-    /**
-     * Loads and hashes the metamodel descriptor for a model level.
-     *
-     * @param level model level
-     * @return loaded descriptor
-     */
-    private MetamodelDescriptor loadDescriptor(ModelLevel level) {
-        Path file = paths.metamodelFile(level).toAbsolutePath().normalize();
-        if (!Files.isRegularFile(file)) {
-            throw new PlatformException(500, "Metamodel file not found: " + file);
-        }
-        try {
-            ResourceSet resourceSet = new ResourceSetImpl();
-            resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap()
-                    .put("ecore", new EcoreResourceFactoryImpl());
-            resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
-            Resource resource = resourceSet.createResource(URI.createFileURI(file.toString()));
-            try (InputStream input = Files.newInputStream(file)) {
-                resource.load(input, Map.of());
-            }
-            EcoreUtil.resolveAll(resourceSet);
-            List<EPackage> packages = new ArrayList<>();
-            resource.getContents().stream()
-                    .filter(EPackage.class::isInstance)
-                    .map(EPackage.class::cast)
-                    .forEach(root -> collectPackages(root, packages));
-            if (packages.isEmpty()) {
-                throw new PlatformException(500, "Metamodel has no EPackage content: " + file);
-            }
-            return new MetamodelDescriptor(level, file.toUri(), file, List.copyOf(packages),
-                    version(packages), sha256(file));
-        } catch (PlatformException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new PlatformException(500, "Could not load metamodel: "
-                    + (ex.getMessage() == null ? ex.getClass().getSimpleName()
-                    : ex.getMessage()));
-        }
-    }
+  /**
+   * Resolves and caches the descriptor for the requested level.
+   *
+   * @param level model level
+   * @return loaded metamodel descriptor
+   */
+  @Override
+  public MetamodelDescriptor resolve(ModelLevel level) {
+    return cache.computeIfAbsent(level, this::loadDescriptor);
+  }
 
-    /**
-     * Recursively appends an EPackage and its subpackages.
-     *
-     * @param ePackage package to collect
-     * @param packages mutable package sink
-     */
-    private void collectPackages(EPackage ePackage, List<EPackage> packages) {
-        packages.add(ePackage);
-        ePackage.getESubpackages().forEach(child -> collectPackages(child, packages));
+  /**
+   * Loads and hashes the metamodel descriptor for a model level.
+   *
+   * @param level model level
+   * @return loaded descriptor
+   */
+  private MetamodelDescriptor loadDescriptor(ModelLevel level) {
+    Path file = paths.metamodelFile(level).toAbsolutePath().normalize();
+    if (!Files.isRegularFile(file)) {
+      throw new PlatformException(500, "Metamodel file not found: " + file);
     }
+    try {
+      ResourceSet resourceSet = new ResourceSetImpl();
+      resourceSet
+          .getResourceFactoryRegistry()
+          .getExtensionToFactoryMap()
+          .put("ecore", new EcoreResourceFactoryImpl());
+      resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
+      Resource resource = resourceSet.createResource(URI.createFileURI(file.toString()));
+      try (InputStream input = Files.newInputStream(file)) {
+        resource.load(input, Map.of());
+      }
+      EcoreUtil.resolveAll(resourceSet);
+      List<EPackage> packages = new ArrayList<>();
+      resource.getContents().stream()
+          .filter(EPackage.class::isInstance)
+          .map(EPackage.class::cast)
+          .forEach(root -> collectPackages(root, packages));
+      if (packages.isEmpty()) {
+        throw new PlatformException(500, "Metamodel has no EPackage content: " + file);
+      }
+      return new MetamodelDescriptor(
+          level, file.toUri(), file, List.copyOf(packages), version(packages), sha256(file));
+    } catch (PlatformException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new PlatformException(
+          500,
+          "Could not load metamodel: "
+              + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()));
+    }
+  }
 
-    /**
-     * Selects a version string from the first non-blank namespace URI.
-     *
-     * @param packages loaded packages
-     * @return namespace/version string or {@code unknown}
-     */
-    private String version(List<EPackage> packages) {
-        return packages.stream()
-                .map(EPackage::getNsURI)
-                .filter(nsUri -> nsUri != null && !nsUri.isBlank())
-                .findFirst()
-                .orElse("unknown");
-    }
+  /**
+   * Recursively appends an EPackage and its subpackages.
+   *
+   * @param ePackage package to collect
+   * @param packages mutable package sink
+   */
+  private void collectPackages(EPackage ePackage, List<EPackage> packages) {
+    packages.add(ePackage);
+    ePackage.getESubpackages().forEach(child -> collectPackages(child, packages));
+  }
 
-    /**
-     * Computes a SHA-256 hash for a file.
-     *
-     * @param path file to hash
-     * @return lowercase hexadecimal digest
-     * @throws Exception when hashing or reading fails
-     */
-    private String sha256(Path path) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        return HexFormat.of().formatHex(digest.digest(Files.readAllBytes(path)));
-    }
+  /**
+   * Selects a version string from the first non-blank namespace URI.
+   *
+   * @param packages loaded packages
+   * @return namespace/version string or {@code unknown}
+   */
+  private String version(List<EPackage> packages) {
+    return packages.stream()
+        .map(EPackage::getNsURI)
+        .filter(nsUri -> nsUri != null && !nsUri.isBlank())
+        .findFirst()
+        .orElse("unknown");
+  }
+
+  /**
+   * Computes a SHA-256 hash for a file.
+   *
+   * @param path file to hash
+   * @return lowercase hexadecimal digest
+   * @throws Exception when hashing or reading fails
+   */
+  private String sha256(Path path) throws Exception {
+    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    return HexFormat.of().formatHex(digest.digest(Files.readAllBytes(path)));
+  }
 }

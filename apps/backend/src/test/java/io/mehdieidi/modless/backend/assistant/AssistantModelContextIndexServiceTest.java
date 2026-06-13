@@ -24,33 +24,52 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 @ExtendWith(MockitoExtension.class)
 class AssistantModelContextIndexServiceTest {
 
-    @Mock
-    private JdbcTemplate jdbc;
+  @Mock private JdbcTemplate jdbc;
 
-    @Test
-    void snapshotBindsJdbcTimestampWhenPersistingContext() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        AssistantModelContextIndexService service = new AssistantModelContextIndexService(jdbc,
-                mapper);
-        doReturn(null).when(jdbc).query(anyString(), any(ResultSetExtractor.class),
-                anyString(), anyLong(), anyString());
-        ModelRecord model = new ModelRecord("model-1", "project-1", ModelLevel.CIM,
-                "Imported CIM", mapper.readTree("""
-                        {
-                          "id": "root",
-                          "eClass": "BusinessModel",
-                          "name": "Imported CIM",
-                          "nodes": [
-                            {"id": "actor-1", "eClass": "Actor", "name": "Customer"}
-                          ]
-                        }
-                        """), "v1", "hash", 3, null, "CURRENT", Instant.EPOCH,
-                Instant.EPOCH);
+  @Test
+  void snapshotBindsJdbcTimestampWhenPersistingContext() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    AssistantModelContextIndexService service = new AssistantModelContextIndexService(jdbc, mapper);
+    doReturn(null)
+        .when(jdbc)
+        .query(anyString(), any(ResultSetExtractor.class), anyString(), anyLong(), anyString());
+    ModelRecord model =
+        new ModelRecord(
+            "model-1",
+            "project-1",
+            ModelLevel.CIM,
+            "Imported CIM",
+            mapper.readTree(
+                """
+                {
+                  "id": "root",
+                  "eClass": "BusinessModel",
+                  "name": "Imported CIM",
+                  "nodes": [
+                    {"id": "actor-1", "eClass": "Actor", "name": "Customer"}
+                  ]
+                }
+                """),
+            "v1",
+            "hash",
+            3,
+            null,
+            "CURRENT",
+            Instant.EPOCH,
+            Instant.EPOCH);
 
-        service.snapshot(model, new ModelService.ValidationResult(true, List.of()));
+    service.snapshot(model, new ModelService.ValidationResult(true, List.of()));
 
-        verify(jdbc).update(anyString(), eq("model-1"), eq("project-1"), eq("CIM"), eq(3L),
-                anyString(), anyString(), anyString(),
-                org.mockito.ArgumentMatchers.<Timestamp>any());
-    }
+    verify(jdbc)
+        .update(
+            anyString(),
+            eq("model-1"),
+            eq("project-1"),
+            eq("CIM"),
+            eq(3L),
+            anyString(),
+            anyString(),
+            anyString(),
+            org.mockito.ArgumentMatchers.<Timestamp>any());
+  }
 }

@@ -1,6 +1,6 @@
-import {state} from '../state.js';
-import {el} from '../dom.js';
-import {nodeSizeForDiagram} from './g6-style.js';
+import { state } from "../state.js";
+import { el } from "../dom.js";
+import { nodeSizeForDiagram } from "./g6-style.js";
 
 let overlayRoot = null;
 let labelInput = null;
@@ -23,7 +23,7 @@ function viewportPointFromClient(clientX, clientY) {
   const rect = el.canvasViewport?.getBoundingClientRect();
   return {
     x: clientX - (rect?.left || 0),
-    y: clientY - (rect?.top || 0)
+    y: clientY - (rect?.top || 0),
   };
 }
 
@@ -33,22 +33,21 @@ function graphClientPoint(graph, x, y) {
     converted = graph?.getClientByCanvas?.([x, y]);
   } catch {
     try {
-      converted = graph?.getClientByCanvas?.({x, y});
+      converted = graph?.getClientByCanvas?.({ x, y });
     } catch {
       converted = null;
     }
   }
   if (Array.isArray(converted)) {
-    return {x: converted[0], y: converted[1]};
+    return { x: converted[0], y: converted[1] };
   }
-  if (converted && Number.isFinite(converted.x)
-      && Number.isFinite(converted.y)) {
+  if (converted && Number.isFinite(converted.x) && Number.isFinite(converted.y)) {
     return converted;
   }
   const rect = el.canvasViewport?.getBoundingClientRect();
   return {
     x: (rect?.left || 0) + x * state.viewport.scale + state.viewport.x,
-    y: (rect?.top || 0) + y * state.viewport.scale + state.viewport.y
+    y: (rect?.top || 0) + y * state.viewport.scale + state.viewport.y,
   };
 }
 
@@ -62,12 +61,11 @@ export function clearInlineLabelEditor() {
   labelInput = null;
 }
 
-export function showInlineLabelEditor(graph, node, {
-  onCommit = () => {
-  },
-  onCancel = () => {
-  }
-} = {}) {
+export function showInlineLabelEditor(
+  graph,
+  node,
+  { onCommit = () => {}, onCancel = () => {} } = {},
+) {
   if (!node) {
     return;
   }
@@ -135,8 +133,11 @@ export function updateConnectionPreview(graph, sourceNode, clientX, clientY) {
     return;
   }
   const size = nodeSizeForDiagram(state.activeType);
-  const startClient = graphClientPoint(graph, sourceNode.x + size.width,
-      sourceNode.y + size.height / 2);
+  const startClient = graphClientPoint(
+    graph,
+    sourceNode.x + size.width,
+    sourceNode.y + size.height / 2,
+  );
   const start = viewportPointFromClient(startClient.x, startClient.y);
   const end = viewportPointFromClient(clientX, clientY);
   const svg = ensurePreviewSvg();
@@ -158,18 +159,16 @@ function ensureContextLayer() {
   return contextLayer;
 }
 
-export function renderNodeIcons(graph, nodes = [], {
-  visibleNode = () => true
-} = {}) {
+export function renderNodeIcons(graph, nodes = [], { visibleNode = () => true } = {}) {
   nodeIconLayer?.remove();
   nodeIconLayer = null;
 }
 
-export function renderContextBoxes(graph, boxes = [], {
-  selectedContextName = "",
-  onSelect = () => {
-  }
-} = {}) {
+export function renderContextBoxes(
+  graph,
+  boxes = [],
+  { selectedContextName = "", onSelect = () => {} } = {},
+) {
   if (!boxes.length) {
     contextLayer?.remove();
     contextLayer = null;
@@ -197,7 +196,7 @@ export function renderContextBoxes(graph, boxes = [], {
       const name = document.createElement("span");
       label.append(name);
       item.appendChild(label);
-      record = {item, name, contextName: key, onSelect};
+      record = { item, name, contextName: key, onSelect };
       item.addEventListener("click", (event) => {
         record.onSelect(record.contextName);
       });
@@ -211,10 +210,8 @@ export function renderContextBoxes(graph, boxes = [], {
     record.item.dataset.contextName = key;
     record.item.style.left = `${Math.round(Math.min(a.x, b.x))}px`;
     record.item.style.top = `${Math.round(Math.min(a.y, b.y))}px`;
-    record.item.style.width = `${Math.max(1,
-        Math.round(Math.abs(b.x - a.x)))}px`;
-    record.item.style.height = `${Math.max(1,
-        Math.round(Math.abs(b.y - a.y)))}px`;
+    record.item.style.width = `${Math.max(1, Math.round(Math.abs(b.x - a.x)))}px`;
+    record.item.style.height = `${Math.max(1, Math.round(Math.abs(b.y - a.y)))}px`;
   });
   contextBoxItems.forEach((record, key) => {
     if (keep.has(key)) {

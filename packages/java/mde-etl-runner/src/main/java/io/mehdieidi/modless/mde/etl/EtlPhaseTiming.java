@@ -4,232 +4,220 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Mutable accumulator for ETL phase timing values in milliseconds.
- */
+/** Mutable accumulator for ETL phase timing values in milliseconds. */
 public final class EtlPhaseTiming {
 
-    /**
-     * Time spent validating the request.
-     */
-    private long validationMs;
-    /**
-     * Time spent preparing writable output paths.
-     */
-    private long prepareOutputsMs;
-    /**
-     * Time spent parsing the ETL module.
-     */
-    private long parseMs;
-    /**
-     * Time spent loading read-only source models.
-     */
-    private long sourceModelLoadMs;
-    /**
-     * Time spent loading writable target models.
-     */
-    private long targetModelLoadMs;
-    /**
-     * Time spent executing ETL rules.
-     */
-    private long etlExecuteMs;
-    /**
-     * Time spent storing target models.
-     */
-    private long modelStoreMs;
-    /**
-     * Time spent disposing models and runtime context.
-     */
-    private long disposeMs;
-    /**
-     * Total elapsed execution time.
-     */
-    private long totalMs;
+  /** Time spent validating the request. */
+  private long validationMs;
 
-    /**
-     * Returns request validation time.
-     *
-     * @return elapsed milliseconds
-     */
-    public long validationMs() {
-        return validationMs;
-    }
+  /** Time spent preparing writable output paths. */
+  private long prepareOutputsMs;
 
-    /**
-     * Returns output preparation time.
-     *
-     * @return elapsed milliseconds
-     */
-    public long prepareOutputsMs() {
-        return prepareOutputsMs;
-    }
+  /** Time spent parsing the ETL module. */
+  private long parseMs;
 
-    /**
-     * Returns ETL parse time.
-     *
-     * @return elapsed milliseconds
-     */
-    public long parseMs() {
-        return parseMs;
-    }
+  /** Time spent loading read-only source models. */
+  private long sourceModelLoadMs;
 
-    /**
-     * Returns source model loading time.
-     *
-     * @return elapsed milliseconds
-     */
-    public long sourceModelLoadMs() {
-        return sourceModelLoadMs;
-    }
+  /** Time spent loading writable target models. */
+  private long targetModelLoadMs;
 
-    /**
-     * Returns target model loading time.
-     *
-     * @return elapsed milliseconds
-     */
-    public long targetModelLoadMs() {
-        return targetModelLoadMs;
-    }
+  /** Time spent executing ETL rules. */
+  private long etlExecuteMs;
 
-    /**
-     * Returns ETL execution time.
-     *
-     * @return elapsed milliseconds
-     */
-    public long etlExecuteMs() {
-        return etlExecuteMs;
-    }
+  /** Time spent storing target models. */
+  private long modelStoreMs;
 
-    /**
-     * Returns target model persistence time.
-     *
-     * @return elapsed milliseconds
-     */
-    public long modelStoreMs() {
-        return modelStoreMs;
-    }
+  /** Time spent disposing models and runtime context. */
+  private long disposeMs;
 
-    /**
-     * Returns model/context disposal time.
-     *
-     * @return elapsed milliseconds
-     */
-    public long disposeMs() {
-        return disposeMs;
-    }
+  /** Total elapsed execution time. */
+  private long totalMs;
 
-    /**
-     * Returns total ETL runtime.
-     *
-     * @return elapsed milliseconds
-     */
-    public long totalMs() {
-        return totalMs;
-    }
+  /**
+   * Returns request validation time.
+   *
+   * @return elapsed milliseconds
+   */
+  public long validationMs() {
+    return validationMs;
+  }
 
-    /**
-     * Exposes timing values in report serialization order.
-     *
-     * @return unmodifiable timing map
-     */
-    public Map<String, Long> asMap() {
-        Map<String, Long> values = new LinkedHashMap<>();
-        values.put("validationMs", validationMs);
-        values.put("prepareOutputsMs", prepareOutputsMs);
-        values.put("parseMs", parseMs);
-        values.put("sourceModelLoadMs", sourceModelLoadMs);
-        values.put("targetModelLoadMs", targetModelLoadMs);
-        values.put("etlExecuteMs", etlExecuteMs);
-        values.put("modelStoreMs", modelStoreMs);
-        values.put("disposeMs", disposeMs);
-        values.put("totalMs", totalMs);
-        return Collections.unmodifiableMap(values);
-    }
+  /**
+   * Returns output preparation time.
+   *
+   * @return elapsed milliseconds
+   */
+  public long prepareOutputsMs() {
+    return prepareOutputsMs;
+  }
 
-    /**
-     * Adds request validation time.
-     *
-     * @param elapsedNanos elapsed nanoseconds
-     */
-    void addValidation(long elapsedNanos) {
-        validationMs += millis(elapsedNanos);
-    }
+  /**
+   * Returns ETL parse time.
+   *
+   * @return elapsed milliseconds
+   */
+  public long parseMs() {
+    return parseMs;
+  }
 
-    /**
-     * Adds output preparation time.
-     *
-     * @param elapsedNanos elapsed nanoseconds
-     */
-    void addPrepareOutputs(long elapsedNanos) {
-        prepareOutputsMs += millis(elapsedNanos);
-    }
+  /**
+   * Returns source model loading time.
+   *
+   * @return elapsed milliseconds
+   */
+  public long sourceModelLoadMs() {
+    return sourceModelLoadMs;
+  }
 
-    /**
-     * Adds parse time.
-     *
-     * @param elapsedNanos elapsed nanoseconds
-     */
-    void addParse(long elapsedNanos) {
-        parseMs += millis(elapsedNanos);
-    }
+  /**
+   * Returns target model loading time.
+   *
+   * @return elapsed milliseconds
+   */
+  public long targetModelLoadMs() {
+    return targetModelLoadMs;
+  }
 
-    /**
-     * Adds model loading time to the source or target bucket.
-     *
-     * @param source       {@code true} for source/read-only model time
-     * @param elapsedNanos elapsed nanoseconds
-     */
-    void addModelLoad(boolean source, long elapsedNanos) {
-        if (source) {
-            sourceModelLoadMs += millis(elapsedNanos);
-        } else {
-            targetModelLoadMs += millis(elapsedNanos);
-        }
-    }
+  /**
+   * Returns ETL execution time.
+   *
+   * @return elapsed milliseconds
+   */
+  public long etlExecuteMs() {
+    return etlExecuteMs;
+  }
 
-    /**
-     * Adds ETL execution time.
-     *
-     * @param elapsedNanos elapsed nanoseconds
-     */
-    void addExecute(long elapsedNanos) {
-        etlExecuteMs += millis(elapsedNanos);
-    }
+  /**
+   * Returns target model persistence time.
+   *
+   * @return elapsed milliseconds
+   */
+  public long modelStoreMs() {
+    return modelStoreMs;
+  }
 
-    /**
-     * Adds model store time.
-     *
-     * @param elapsedNanos elapsed nanoseconds
-     */
-    void addStore(long elapsedNanos) {
-        modelStoreMs += millis(elapsedNanos);
-    }
+  /**
+   * Returns model/context disposal time.
+   *
+   * @return elapsed milliseconds
+   */
+  public long disposeMs() {
+    return disposeMs;
+  }
 
-    /**
-     * Adds runtime disposal time.
-     *
-     * @param elapsedNanos elapsed nanoseconds
-     */
-    void addDispose(long elapsedNanos) {
-        disposeMs += millis(elapsedNanos);
-    }
+  /**
+   * Returns total ETL runtime.
+   *
+   * @return elapsed milliseconds
+   */
+  public long totalMs() {
+    return totalMs;
+  }
 
-    /**
-     * Replaces total runtime with the supplied elapsed time.
-     *
-     * @param elapsedNanos elapsed nanoseconds
-     */
-    void setTotal(long elapsedNanos) {
-        totalMs = millis(elapsedNanos);
-    }
+  /**
+   * Exposes timing values in report serialization order.
+   *
+   * @return unmodifiable timing map
+   */
+  public Map<String, Long> asMap() {
+    Map<String, Long> values = new LinkedHashMap<>();
+    values.put("validationMs", validationMs);
+    values.put("prepareOutputsMs", prepareOutputsMs);
+    values.put("parseMs", parseMs);
+    values.put("sourceModelLoadMs", sourceModelLoadMs);
+    values.put("targetModelLoadMs", targetModelLoadMs);
+    values.put("etlExecuteMs", etlExecuteMs);
+    values.put("modelStoreMs", modelStoreMs);
+    values.put("disposeMs", disposeMs);
+    values.put("totalMs", totalMs);
+    return Collections.unmodifiableMap(values);
+  }
 
-    /**
-     * Converts nanoseconds to a non-negative millisecond value.
-     *
-     * @param elapsedNanos elapsed nanoseconds
-     * @return elapsed milliseconds
-     */
-    private long millis(long elapsedNanos) {
-        return Math.max(0L, elapsedNanos / 1_000_000L);
+  /**
+   * Adds request validation time.
+   *
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void addValidation(long elapsedNanos) {
+    validationMs += millis(elapsedNanos);
+  }
+
+  /**
+   * Adds output preparation time.
+   *
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void addPrepareOutputs(long elapsedNanos) {
+    prepareOutputsMs += millis(elapsedNanos);
+  }
+
+  /**
+   * Adds parse time.
+   *
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void addParse(long elapsedNanos) {
+    parseMs += millis(elapsedNanos);
+  }
+
+  /**
+   * Adds model loading time to the source or target bucket.
+   *
+   * @param source {@code true} for source/read-only model time
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void addModelLoad(boolean source, long elapsedNanos) {
+    if (source) {
+      sourceModelLoadMs += millis(elapsedNanos);
+    } else {
+      targetModelLoadMs += millis(elapsedNanos);
     }
+  }
+
+  /**
+   * Adds ETL execution time.
+   *
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void addExecute(long elapsedNanos) {
+    etlExecuteMs += millis(elapsedNanos);
+  }
+
+  /**
+   * Adds model store time.
+   *
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void addStore(long elapsedNanos) {
+    modelStoreMs += millis(elapsedNanos);
+  }
+
+  /**
+   * Adds runtime disposal time.
+   *
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void addDispose(long elapsedNanos) {
+    disposeMs += millis(elapsedNanos);
+  }
+
+  /**
+   * Replaces total runtime with the supplied elapsed time.
+   *
+   * @param elapsedNanos elapsed nanoseconds
+   */
+  void setTotal(long elapsedNanos) {
+    totalMs = millis(elapsedNanos);
+  }
+
+  /**
+   * Converts nanoseconds to a non-negative millisecond value.
+   *
+   * @param elapsedNanos elapsed nanoseconds
+   * @return elapsed milliseconds
+   */
+  private long millis(long elapsedNanos) {
+    return Math.max(0L, elapsedNanos / 1_000_000L);
+  }
 }

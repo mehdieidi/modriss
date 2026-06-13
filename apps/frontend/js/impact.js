@@ -1,29 +1,29 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {api, isPlannedFeatureError} from './api.js';
-import {setStatus} from './status.js';
-import {escapeHtml} from './utils.js';
-import {MODEL_TYPES} from './config.js';
-import {highlightImpactedNodes, scrollToNodeAndHighlight} from './canvas.js';
-import {loadModelById, switchTab} from './model-ops.js';
-import {closeAttributePanel} from './attr-panel.js';
-import {loadArtifactById, openArtifactFile} from './artifact.js';
-import {isMobileViewport} from './responsive.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { api, isPlannedFeatureError } from "./api.js";
+import { setStatus } from "./status.js";
+import { escapeHtml } from "./utils.js";
+import { MODEL_TYPES } from "./config.js";
+import { highlightImpactedNodes, scrollToNodeAndHighlight } from "./canvas.js";
+import { loadModelById, switchTab } from "./model-ops.js";
+import { closeAttributePanel } from "./attr-panel.js";
+import { loadArtifactById, openArtifactFile } from "./artifact.js";
+import { isMobileViewport } from "./responsive.js";
 
 function setImpactButtonState(active) {
   if (!el.impactToggleBtn) {
     return;
   }
-  el.impactToggleBtn.classList.toggle('active', !!active);
-  const label = el.impactToggleBtn.querySelector('.topbar-btn-label');
+  el.impactToggleBtn.classList.toggle("active", !!active);
+  const label = el.impactToggleBtn.querySelector(".topbar-btn-label");
   if (label) {
-    label.textContent = 'Impact Analysis';
+    label.textContent = "Impact Analysis";
   } else {
-    el.impactToggleBtn.textContent = 'Impact Analysis';
+    el.impactToggleBtn.textContent = "Impact Analysis";
   }
   el.impactToggleBtn.title = active
-      ? 'Impact mode ON - click any element to analyze its impact'
-      : 'Toggle change impact analysis mode';
+    ? "Impact mode ON - click any element to analyze its impact"
+    : "Toggle change impact analysis mode";
 }
 
 // ── Toggle impact mode ────────────────────────────────────────────────────────
@@ -39,21 +39,21 @@ export function toggleImpactMode() {
   } else {
     closeAttributePanel();
     openImpactPanel();
-    setStatus('Impact mode ON — click any element to see its change impact');
+    setStatus("Impact mode ON — click any element to see its change impact");
   }
 }
 
 export function openImpactPanel() {
-  el.modelTreePanel?.classList.add('hidden');
-  el.attributePanel?.classList.add('hidden');
-  el.impactPanel.classList.remove('hidden');
-  el.workspace.classList.remove('views-open', 'attr-open');
-  el.workspace.classList.add('impact-open');
+  el.modelTreePanel?.classList.add("hidden");
+  el.attributePanel?.classList.add("hidden");
+  el.impactPanel.classList.remove("hidden");
+  el.workspace.classList.remove("views-open", "attr-open");
+  el.workspace.classList.add("impact-open");
   if (isMobileViewport()) {
-    el.workspace.classList.remove('mobile-left-open');
-    el.workspace.classList.add('mobile-right-open');
+    el.workspace.classList.remove("mobile-left-open");
+    el.workspace.classList.add("mobile-right-open");
     if (el.mobileBackdrop) {
-      el.mobileBackdrop.classList.remove('hidden');
+      el.mobileBackdrop.classList.remove("hidden");
     }
   }
 }
@@ -62,11 +62,11 @@ export function closeImpactPanel() {
   state.impactMode = false;
   state.impactData = null;
   setImpactButtonState(false);
-  el.impactPanel.classList.add('hidden');
-  el.workspace.classList.remove('impact-open');
-  el.workspace.classList.remove('mobile-right-open');
+  el.impactPanel.classList.add("hidden");
+  el.workspace.classList.remove("impact-open");
+  el.workspace.classList.remove("mobile-right-open");
   if (el.mobileBackdrop) {
-    el.mobileBackdrop.classList.add('hidden');
+    el.mobileBackdrop.classList.add("hidden");
   }
   highlightImpactedNodes();
   renderImpactPanel(null);
@@ -76,21 +76,20 @@ export function closeImpactPanel() {
 
 export async function fetchImpact(elementId) {
   if (!state.modelId) {
-    setStatus('Save or load a model first');
+    setStatus("Save or load a model first");
     return;
   }
-  setStatus('Analysing impact…');
+  setStatus("Analysing impact…");
   try {
     const typeKey = MODEL_TYPES[state.activeType].apiType;
     const data = await api(
-        `/impact/${typeKey}/${state.modelId}/element/${encodeURIComponent(
-            elementId)}`);
+      `/impact/${typeKey}/${state.modelId}/element/${encodeURIComponent(elementId)}`,
+    );
     const enriched = await enrichImpactWithArtifactFiles(data);
     state.impactData = enriched;
     renderImpactPanel(enriched);
     highlightImpactedNodes();
-    setStatus(`Impact analysis complete for ${enriched.focalElement?.elementName
-    || elementId}`);
+    setStatus(`Impact analysis complete for ${enriched.focalElement?.elementName || elementId}`);
   } catch (error) {
     if (isPlannedFeatureError(error)) {
       setStatus("Impact analysis is not available in this backend build.");
@@ -104,55 +103,55 @@ export async function fetchImpact(elementId) {
 
 async function enrichImpactWithArtifactFiles(data) {
   const downstream = Array.isArray(data?.downstream) ? data.downstream : [];
-  const focalElementId = String(data?.focalElement?.elementId || '').trim();
+  const focalElementId = String(data?.focalElement?.elementId || "").trim();
   const artifacts = downstream.filter((item) => {
     const modelId = item?.modelId;
-    return (item?.modelType || '').toLowerCase() === 'artifact'
-        && modelId != null
-        && String(modelId).trim() !== '';
+    return (
+      (item?.modelType || "").toLowerCase() === "artifact" &&
+      modelId != null &&
+      String(modelId).trim() !== ""
+    );
   });
 
-  const pairs = await Promise.all(artifacts.map(async (artifact) => {
-    const id = String(artifact.modelId);
-    try {
-      const record = await api(`/artifact/${id}`);
-      const filesMap = record?.files || record?.modelJson?.files || {};
-      const allFiles = Object.keys(filesMap)
-      .map((path) => String(path || '').trim())
-      .filter(Boolean);
-      const traceability = record?.modelJson?.traceability || {};
-      const tracedFiles = focalElementId
-          ? extractTracedFiles(traceability, focalElementId)
-          : [];
+  const pairs = await Promise.all(
+    artifacts.map(async (artifact) => {
+      const id = String(artifact.modelId);
+      try {
+        const record = await api(`/artifact/${id}`);
+        const filesMap = record?.files || record?.modelJson?.files || {};
+        const allFiles = Object.keys(filesMap)
+          .map((path) => String(path || "").trim())
+          .filter(Boolean);
+        const traceability = record?.modelJson?.traceability || {};
+        const tracedFiles = focalElementId ? extractTracedFiles(traceability, focalElementId) : [];
 
-      const sorted = (tracedFiles.length > 0 ? tracedFiles : allFiles)
-      .sort((a, b) => a.localeCompare(b));
-      return [id, sorted];
-    } catch {
-      return [id, []];
-    }
-  }));
+        const sorted = (tracedFiles.length > 0 ? tracedFiles : allFiles).sort((a, b) =>
+          a.localeCompare(b),
+        );
+        return [id, sorted];
+      } catch {
+        return [id, []];
+      }
+    }),
+  );
 
-  return {...data, artifactFilesById: Object.fromEntries(pairs)};
+  return { ...data, artifactFilesById: Object.fromEntries(pairs) };
 }
 
 function extractTracedFiles(traceability, elementId) {
-  if (!traceability || typeof traceability !== 'object'
-      || !elementId) {
+  if (!traceability || typeof traceability !== "object" || !elementId) {
     return [];
   }
-  const direct = Array.isArray(traceability[elementId])
-      ? traceability[elementId] : [];
-  return direct
-  .map((path) => String(path || '').trim())
-  .filter(Boolean);
+  const direct = Array.isArray(traceability[elementId]) ? traceability[elementId] : [];
+  return direct.map((path) => String(path || "").trim()).filter(Boolean);
 }
 
 // ── Render impact panel ───────────────────────────────────────────────────────
 
 function renderImpactPanel(data) {
   if (!data) {
-    el.impactPanelBody.innerHTML = '<div class="impact-placeholder"><span>Click an element on the canvas while Impact mode is active to see its change impact.</span></div>';
+    el.impactPanelBody.innerHTML =
+      '<div class="impact-placeholder"><span>Click an element on the canvas while Impact mode is active to see its change impact.</span></div>';
     return;
   }
 
@@ -165,23 +164,21 @@ function renderImpactPanel(data) {
 
   html.push(`<div class="impact-focal-card">
     <div class="impact-focal-label">Selected Element</div>
-    <div class="impact-focal-name">${escapeHtml(
-      focal.elementName || focal.elementId || '')}</div>
+    <div class="impact-focal-name">${escapeHtml(focal.elementName || focal.elementId || "")}</div>
     <div class="impact-focal-meta">
       <span class="tier-badge tier-badge-${String(
-      focal.modelType || '').toLowerCase()}">${escapeHtml(
-      focal.modelType || '')}</span>
-      &nbsp;${escapeHtml(focal.elementType || '')}
-      <br><span style="opacity:0.7">${escapeHtml(focal.modelName || '')}</span>
+        focal.modelType || "",
+      ).toLowerCase()}">${escapeHtml(focal.modelType || "")}</span>
+      &nbsp;${escapeHtml(focal.elementType || "")}
+      <br><span style="opacity:0.7">${escapeHtml(focal.modelName || "")}</span>
     </div>
   </div>`);
 
   html.push(buildUpstreamTreeHtml(upstreamPath, focal));
-  html.push(
-      buildDownstreamTreeHtml(downstreamTree, data.artifactFilesById || {}));
+  html.push(buildDownstreamTreeHtml(downstreamTree, data.artifactFilesById || {}));
   html.push(buildConnectedSectionHtml(connected));
 
-  el.impactPanelBody.innerHTML = html.join('');
+  el.impactPanelBody.innerHTML = html.join("");
 
   wireActionButtons();
   wireSectionToggles();
@@ -189,13 +186,11 @@ function renderImpactPanel(data) {
 
 function buildUpstreamPath(data) {
   const upstream = Array.isArray(data?.upstream) ? data.upstream : [];
-  const byModelId = new Map(
-      upstream.filter((i) => i.modelId).map((i) => [String(i.modelId), i]));
+  const byModelId = new Map(upstream.filter((i) => i.modelId).map((i) => [String(i.modelId), i]));
 
   const chain = [];
   const visited = new Set();
-  let cursor = data?.focalElement?.sourceModelId ? String(
-      data.focalElement.sourceModelId) : null;
+  let cursor = data?.focalElement?.sourceModelId ? String(data.focalElement.sourceModelId) : null;
 
   while (cursor && !visited.has(cursor)) {
     visited.add(cursor);
@@ -214,8 +209,7 @@ function buildUpstreamPath(data) {
 }
 
 function buildDownstreamTree(data) {
-  const focalModelId = data?.focalElement?.modelId ? String(
-      data.focalElement.modelId) : null;
+  const focalModelId = data?.focalElement?.modelId ? String(data.focalElement.modelId) : null;
   if (!focalModelId) {
     return [];
   }
@@ -236,23 +230,23 @@ function buildDownstreamTree(data) {
   function buildChildren(parentId, visited) {
     const children = byParent.get(parentId) || [];
     return children
-    .sort((a, b) => String(a.modelType || '').localeCompare(
-        String(b.modelType || '')) || String(a.modelName || '').localeCompare(
-        String(b.modelName || '')))
-    .map((item, index) => {
-      const fallback = item.elementName || item.elementId || `unknown-${index}`;
-      const id = item.modelId ? String(item.modelId)
-          : `${parentId}:${fallback}`;
-      const nextVisited = new Set(visited);
-      if (item.modelId) {
-        nextVisited.add(id);
-      }
-      return {
-        item,
-        children: item.modelId && !visited.has(id) ? buildChildren(id,
-            nextVisited) : []
-      };
-    });
+      .sort(
+        (a, b) =>
+          String(a.modelType || "").localeCompare(String(b.modelType || "")) ||
+          String(a.modelName || "").localeCompare(String(b.modelName || "")),
+      )
+      .map((item, index) => {
+        const fallback = item.elementName || item.elementId || `unknown-${index}`;
+        const id = item.modelId ? String(item.modelId) : `${parentId}:${fallback}`;
+        const nextVisited = new Set(visited);
+        if (item.modelId) {
+          nextVisited.add(id);
+        }
+        return {
+          item,
+          children: item.modelId && !visited.has(id) ? buildChildren(id, nextVisited) : [],
+        };
+      });
   }
 
   return buildChildren(focalModelId, new Set([focalModelId]));
@@ -263,19 +257,18 @@ function buildUpstreamTreeHtml(path, focal) {
   const isOpen = true;
 
   const nodes = [
-    ...path.map((item) => buildTreeNodeRow(item, {direction: 'upstream'})),
-    buildTreeNodeRow(focal, {direction: 'focal', isFocal: true})
+    ...path.map((item) => buildTreeNodeRow(item, { direction: "upstream" })),
+    buildTreeNodeRow(focal, { direction: "focal", isFocal: true }),
   ];
 
-  return `<div class="impact-section ${isOpen ? 'open' : ''}">
+  return `<div class="impact-section ${isOpen ? "open" : ""}">
     <div class="impact-section-header" title="All upstream chain nodes that lead to the selected element">
       <span class="impact-section-icon">▶</span>
       <span class="impact-section-title">⬆ Upstream Chain</span>
       <span class="impact-section-count">${count}</span>
     </div>
     <div class="impact-section-body">
-      <div class="impact-tree">${nodes.join(
-      '<div class="impact-tree-link"></div>')}</div>
+      <div class="impact-tree">${nodes.join('<div class="impact-tree-link"></div>')}</div>
     </div>
   </div>`;
 }
@@ -285,7 +278,7 @@ function buildDownstreamTreeHtml(tree, artifactFilesById) {
   const isOpen = true;
 
   if (count === 0) {
-    return `<div class="impact-section ${isOpen ? 'open' : ''}">
+    return `<div class="impact-section ${isOpen ? "open" : ""}">
       <div class="impact-section-header" title="All downstream impacted nodes and generated files">
         <span class="impact-section-icon">▶</span>
         <span class="impact-section-title">⬇ Downstream Impact Tree</span>
@@ -297,7 +290,7 @@ function buildDownstreamTreeHtml(tree, artifactFilesById) {
     </div>`;
   }
 
-  return `<div class="impact-section ${isOpen ? 'open' : ''}">
+  return `<div class="impact-section ${isOpen ? "open" : ""}">
     <div class="impact-section-header" title="All downstream impacted nodes and generated files">
       <span class="impact-section-icon">▶</span>
       <span class="impact-section-title">⬇ Downstream Impact Tree</span>
@@ -305,24 +298,27 @@ function buildDownstreamTreeHtml(tree, artifactFilesById) {
     </div>
     <div class="impact-section-body">
       <div class="impact-tree impact-tree-branching">${buildDownstreamBranchHtml(
-      tree, artifactFilesById)}</div>
+        tree,
+        artifactFilesById,
+      )}</div>
     </div>
   </div>`;
 }
 
 function buildDownstreamBranchHtml(nodes, artifactFilesById) {
-  return nodes.map((node) => {
-    const item = node.item;
-    const modelType = String(item.modelType || '').toLowerCase();
-    const files = modelType === 'artifact' ? (artifactFilesById[String(
-        item.modelId)] || []) : [];
+  return nodes
+    .map((node) => {
+      const item = node.item;
+      const modelType = String(item.modelType || "").toLowerCase();
+      const files = modelType === "artifact" ? artifactFilesById[String(item.modelId)] || [] : [];
 
-    const row = buildTreeNodeRow(item, {direction: 'downstream'});
+      const row = buildTreeNodeRow(item, { direction: "downstream" });
 
-    const fileRows = files.map((path) => {
-      const artifactId = escapeHtml(String(item.modelId || ''));
-      const safePath = escapeHtml(path);
-      return `<div class="impact-tree-file-row">
+      const fileRows = files
+        .map((path) => {
+          const artifactId = escapeHtml(String(item.modelId || ""));
+          const safePath = escapeHtml(path);
+          return `<div class="impact-tree-file-row">
       <span class="impact-tree-file-dot"></span>
       <button
         class="impact-tree-file-btn"
@@ -332,68 +328,74 @@ function buildDownstreamBranchHtml(nodes, artifactFilesById) {
         title="Open ${safePath} and show file impact chain"
       >📄 ${safePath}</button>
     </div>`;
-    }).join('');
+        })
+        .join("");
 
-    const children = node.children?.length
+      const children = node.children?.length
         ? `<div class="impact-tree-children">${buildDownstreamBranchHtml(
-            node.children, artifactFilesById)}</div>` : '';
-    const fileTree = fileRows
+            node.children,
+            artifactFilesById,
+          )}</div>`
+        : "";
+      const fileTree = fileRows
         ? `<div class="impact-tree-children impact-tree-files">${fileRows}</div>`
-        : '';
+        : "";
 
-    return `<div class="impact-tree-branch-node">${row}${fileTree}${children}</div>`;
-  }).join('');
+      return `<div class="impact-tree-branch-node">${row}${fileTree}${children}</div>`;
+    })
+    .join("");
 }
 
 function buildConnectedSectionHtml(items) {
   const isOpen = items.length > 0;
   const body = items.length
-      ? items.map(
-          (item) => buildTreeNodeRow(item, {direction: 'connected'})).join('')
-      : '<div class="impact-empty">No same-model connected peers found.</div>';
+    ? items.map((item) => buildTreeNodeRow(item, { direction: "connected" })).join("")
+    : '<div class="impact-empty">No same-model connected peers found.</div>';
 
-  return `<div class="impact-section ${isOpen ? 'open' : ''}">
+  return `<div class="impact-section ${isOpen ? "open" : ""}">
     <div class="impact-section-header" title="Same-model neighbors connected by relations/connectors">
       <span class="impact-section-icon">▶</span>
       <span class="impact-section-title">↔ Connected Peers</span>
       <span class="impact-section-count">${items.length}</span>
     </div>
-    <div class="impact-section-body" style="${isOpen ? ''
-      : 'display:none'}">${body}</div>
+    <div class="impact-section-body" style="${isOpen ? "" : "display:none"}">${body}</div>
   </div>`;
 }
 
-function buildTreeNodeRow(item, {direction, isFocal = false} = {}) {
-  const modelType = String(item?.modelType || '').toLowerCase();
-  const elementName = item?.elementName || item?.elementId || item?.modelName
-      || 'Unnamed';
-  const elementType = item?.elementType || (modelType === 'artifact'
-      ? 'Generated Artifact' : 'Model Element');
-  const canNavigateModel = !!item?.modelId && modelType !== 'artifact';
-  const canOpenArtifact = !!item?.modelId && modelType === 'artifact';
+function buildTreeNodeRow(item, { direction, isFocal = false } = {}) {
+  const modelType = String(item?.modelType || "").toLowerCase();
+  const elementName = item?.elementName || item?.elementId || item?.modelName || "Unnamed";
+  const elementType =
+    item?.elementType || (modelType === "artifact" ? "Generated Artifact" : "Model Element");
+  const canNavigateModel = !!item?.modelId && modelType !== "artifact";
+  const canOpenArtifact = !!item?.modelId && modelType === "artifact";
 
   const action = canNavigateModel
-      ? `<button class="impact-tree-action" data-impact-action="open-model" data-model-id="${escapeHtml(
-          String(item.modelId))}" data-model-type="${escapeHtml(
-          modelType)}" data-element-id="${escapeHtml(item?.elementId
-          || '')}" title="Load model and locate element">→ navigate</button>`
-      : canOpenArtifact
-          ? `<button class="impact-tree-action" data-impact-action="open-artifact" data-artifact-id="${escapeHtml(
-              String(
-                  item.modelId))}" title="Open artifact explorer">→ open</button>`
-          : '';
+    ? `<button class="impact-tree-action" data-impact-action="open-model" data-model-id="${escapeHtml(
+        String(item.modelId),
+      )}" data-model-type="${escapeHtml(modelType)}" data-element-id="${escapeHtml(
+        item?.elementId || "",
+      )}" title="Load model and locate element">→ navigate</button>`
+    : canOpenArtifact
+      ? `<button class="impact-tree-action" data-impact-action="open-artifact" data-artifact-id="${escapeHtml(
+          String(item.modelId),
+        )}" title="Open artifact explorer">→ open</button>`
+      : "";
 
-  return `<div class="impact-tree-node ${isFocal ? 'impact-tree-node-focal'
-      : ''} impact-tree-node-${escapeHtml(direction || 'node')}">
+  return `<div class="impact-tree-node ${
+    isFocal ? "impact-tree-node-focal" : ""
+  } impact-tree-node-${escapeHtml(direction || "node")}">
     <div class="impact-tree-node-main">
       <span class="tier-badge tier-badge-${escapeHtml(modelType)}">${escapeHtml(
-      item?.modelType || '')}</span>
+        item?.modelType || "",
+      )}</span>
       <div class="impact-tree-node-text">
         <div class="impact-tree-node-title" title="${escapeHtml(
-      elementName)}">${escapeHtml(elementName)}</div>
+          elementName,
+        )}">${escapeHtml(elementName)}</div>
         <div class="impact-tree-node-meta" title="${escapeHtml(
-      item?.modelName || '')}">${escapeHtml(elementType)} · ${escapeHtml(
-      item?.modelName || '')}</div>
+          item?.modelName || "",
+        )}">${escapeHtml(elementType)} · ${escapeHtml(item?.modelName || "")}</div>
       </div>
     </div>
     ${action}
@@ -401,29 +403,27 @@ function buildTreeNodeRow(item, {direction, isFocal = false} = {}) {
 }
 
 function countTreeNodes(nodes) {
-  return nodes.reduce(
-      (acc, node) => acc + 1 + countTreeNodes(node.children || []), 0);
+  return nodes.reduce((acc, node) => acc + 1 + countTreeNodes(node.children || []), 0);
 }
 
 function wireSectionToggles() {
-  el.impactPanelBody.querySelectorAll('.impact-section-header').forEach(
-      (header) => {
-        header.addEventListener('click', () => {
-          const section = header.closest('.impact-section');
-          const body = section.querySelector('.impact-section-body');
-          const isOpen = section.classList.toggle('open');
-          body.style.display = isOpen ? '' : 'none';
-        });
-      });
+  el.impactPanelBody.querySelectorAll(".impact-section-header").forEach((header) => {
+    header.addEventListener("click", () => {
+      const section = header.closest(".impact-section");
+      const body = section.querySelector(".impact-section-body");
+      const isOpen = section.classList.toggle("open");
+      body.style.display = isOpen ? "" : "none";
+    });
+  });
 }
 
 function wireActionButtons() {
-  el.impactPanelBody.querySelectorAll('[data-impact-action]').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
+  el.impactPanelBody.querySelectorAll("[data-impact-action]").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       const action = btn.dataset.impactAction;
 
-      if (action === 'open-model') {
+      if (action === "open-model") {
         const modelId = btn.dataset.modelId;
         const modelType = btn.dataset.modelType;
         const elementId = btn.dataset.elementId;
@@ -443,28 +443,28 @@ function wireActionButtons() {
         return;
       }
 
-      if (action === 'open-artifact') {
+      if (action === "open-artifact") {
         const artifactId = btn.dataset.artifactId;
         if (!artifactId) {
           return;
         }
         try {
           const artifactImpact = await buildArtifactImpact(artifactId);
-          await switchTab('artifact');
+          await switchTab("artifact");
           await loadArtifactById(artifactId);
           state.impactData = artifactImpact;
           state.impactMode = true;
           setImpactButtonState(true);
           openImpactPanel();
           renderImpactPanel(artifactImpact);
-          setStatus('Artifact opened with upstream impact lineage');
+          setStatus("Artifact opened with upstream impact lineage");
         } catch (error) {
           setStatus(`Artifact navigation failed: ${error.message}`);
         }
         return;
       }
 
-      if (action === 'open-artifact-file') {
+      if (action === "open-artifact-file") {
         const artifactId = btn.dataset.artifactId;
         const filePath = btn.dataset.filePath;
         if (!artifactId || !filePath) {
@@ -472,7 +472,7 @@ function wireActionButtons() {
         }
         try {
           const fileImpact = await buildArtifactImpact(artifactId, filePath);
-          await switchTab('artifact');
+          await switchTab("artifact");
           await loadArtifactById(artifactId);
           await openArtifactFile(filePath);
           state.impactData = fileImpact;
@@ -495,55 +495,51 @@ async function buildArtifactImpact(artifactId, filePath = null) {
     chain = await api(`/impact/artifact/${artifactId}`);
   } catch (error) {
     if (isPlannedFeatureError(error)) {
-      throw new Error(
-          "Impact analysis is not available in this backend build.");
+      throw new Error("Impact analysis is not available in this backend build.");
     }
     throw new Error(`Failed to load artifact impact data: ${error.message}`);
   }
 
   const ancestors = Array.isArray(chain?.ancestors) ? chain.ancestors : [];
-  const psm = ancestors.find(
-      (a) => String(a.type || '').toUpperCase() === 'PSM');
-  const lineage = filePath && psm
-      ? await resolveArtifactFileLineage(artifactId, filePath, psm.id)
-      : null;
+  const psm = ancestors.find((a) => String(a.type || "").toUpperCase() === "PSM");
+  const lineage =
+    filePath && psm ? await resolveArtifactFileLineage(artifactId, filePath, psm.id) : null;
 
   const focal = {
     modelId: chain.modelId,
-    modelType: chain.modelType || 'ARTIFACT',
-    modelName: chain.modelName || 'Artifact',
+    modelType: chain.modelType || "ARTIFACT",
+    modelName: chain.modelName || "Artifact",
     sourceModelId: ancestors[0]?.id || null,
     elementId: filePath || String(chain.modelId || artifactId),
-    elementType: filePath ? 'Artifact File' : 'Artifact',
-    elementName: filePath || (chain.modelName || 'Artifact'),
-    relationship: filePath ? 'FOCAL_ARTIFACT_FILE' : 'FOCAL_ARTIFACT'
+    elementType: filePath ? "Artifact File" : "Artifact",
+    elementName: filePath || chain.modelName || "Artifact",
+    relationship: filePath ? "FOCAL_ARTIFACT_FILE" : "FOCAL_ARTIFACT",
   };
 
-  const upstream = Array.isArray(lineage?.upstream) && lineage.upstream.length
-  > 0
+  const upstream =
+    Array.isArray(lineage?.upstream) && lineage.upstream.length > 0
       ? lineage.upstream
       : ancestors.map((ancestor, index) => ({
-        modelId: ancestor.id,
-        modelType: ancestor.type,
-        modelName: ancestor.name,
-        sourceModelId: ancestors[index + 1]?.id || null,
-        elementId: null,
-        elementType: 'Model',
-        elementName: ancestor.name,
-        relationship: 'UPSTREAM_MODEL'
-      }));
+          modelId: ancestor.id,
+          modelType: ancestor.type,
+          modelName: ancestor.name,
+          sourceModelId: ancestors[index + 1]?.id || null,
+          elementId: null,
+          elementType: "Model",
+          elementName: ancestor.name,
+          relationship: "UPSTREAM_MODEL",
+        }));
 
-  const cim = ancestors.find(
-      (a) => String(a.type || '').toUpperCase() === 'CIM');
+  const cim = ancestors.find((a) => String(a.type || "").toUpperCase() === "CIM");
   let connectedElements = Array.isArray(lineage?.connectedElements)
-      ? lineage.connectedElements : [];
+    ? lineage.connectedElements
+    : [];
   if (cim) {
     try {
       const requirements = await fetchCimRequirements(cim.id, cim.name);
       connectedElements = [...connectedElements, ...requirements];
     } catch (error) {
-      throw new Error(
-          `Failed to fetch CIM model requirements: ${error.message}`);
+      throw new Error(`Failed to fetch CIM model requirements: ${error.message}`);
     }
   }
 
@@ -552,22 +548,21 @@ async function buildArtifactImpact(artifactId, filePath = null) {
     upstream,
     downstream: [],
     connectedElements,
-    artifactFilesById: {}
+    artifactFilesById: {},
   };
 }
 
 async function resolveArtifactFileLineage(artifactId, filePath, psmId) {
   const artifactRecord = await api(`/artifact/${artifactId}`);
   const traceability = artifactRecord?.modelJson?.traceability || {};
-  const normalizedPath = String(filePath || '').trim();
+  const normalizedPath = String(filePath || "").trim();
   if (!normalizedPath) {
     return null;
   }
 
   const impactingElementId = Object.keys(traceability).find((elementId) => {
-    const files = Array.isArray(traceability[elementId])
-        ? traceability[elementId] : [];
-    return files.some((path) => String(path || '').trim() === normalizedPath);
+    const files = Array.isArray(traceability[elementId]) ? traceability[elementId] : [];
+    return files.some((path) => String(path || "").trim() === normalizedPath);
   });
 
   if (!impactingElementId) {
@@ -576,46 +571,46 @@ async function resolveArtifactFileLineage(artifactId, filePath, psmId) {
 
   let exactImpact;
   try {
-    exactImpact = await api(`/impact/psm/${psmId}/element/${encodeURIComponent(
-        impactingElementId)}`);
+    exactImpact = await api(
+      `/impact/psm/${psmId}/element/${encodeURIComponent(impactingElementId)}`,
+    );
   } catch (error) {
     if (isPlannedFeatureError(error)) {
-      throw new Error(
-          "Impact analysis is not available in this backend build.");
+      throw new Error("Impact analysis is not available in this backend build.");
     }
     throw new Error(
-        `Failed to resolve element ${impactingElementId} lineage for file ${normalizedPath}: ${error.message}`);
+      `Failed to resolve element ${impactingElementId} lineage for file ${normalizedPath}: ${error.message}`,
+    );
   }
   const upstream = [
     ...(Array.isArray(exactImpact?.upstream) ? exactImpact.upstream : []),
-    ...(exactImpact?.focalElement ? [exactImpact.focalElement] : [])
+    ...(exactImpact?.focalElement ? [exactImpact.focalElement] : []),
   ];
 
   return {
     upstream,
     connectedElements: Array.isArray(exactImpact?.connectedElements)
-        ? exactImpact.connectedElements : []
+      ? exactImpact.connectedElements
+      : [],
   };
 }
 
 async function fetchCimRequirements(cimId, cimName) {
   const record = await api(`/cim/${cimId}`);
   const elements = Array.isArray(record?.modelJson?.diagram?.elements)
-      ? record.modelJson.diagram.elements
-      : [];
+    ? record.modelJson.diagram.elements
+    : [];
 
   return elements
-  .filter((element) => /(requirement|constraint|goal|kpi)/i.test(
-      String(element?.eClass || '')))
-  .map((element) => ({
-    modelId: record.id,
-    modelType: 'CIM',
-    modelName: cimName || record.name || 'CIM',
-    sourceModelId: null,
-    elementId: String(element?.id || ''),
-    elementType: String(element?.eClass || 'Requirement'),
-    elementName: String(
-        element?.label || element?.name || element?.id || 'Requirement'),
-    relationship: 'UPSTREAM_REQUIREMENT'
-  }));
+    .filter((element) => /(requirement|constraint|goal|kpi)/i.test(String(element?.eClass || "")))
+    .map((element) => ({
+      modelId: record.id,
+      modelType: "CIM",
+      modelName: cimName || record.name || "CIM",
+      sourceModelId: null,
+      elementId: String(element?.id || ""),
+      elementType: String(element?.eClass || "Requirement"),
+      elementName: String(element?.label || element?.name || element?.id || "Requirement"),
+      relationship: "UPSTREAM_REQUIREMENT",
+    }));
 }

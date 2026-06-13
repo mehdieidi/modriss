@@ -10,7 +10,7 @@ servers:
   - url: http://127.0.0.1:8080
     description: Local development
 security:
-  - AuthToken: [ ]
+  - AuthToken: []
 tags:
   - name: Health
     description: Backend status checks.
@@ -31,196 +31,196 @@ tags:
 paths:
   /api/health:
     get:
-      tags: [ Health ]
+      tags: [Health]
       summary: Get backend health
-      security: [ ]
+      security: []
       responses:
-        '200':
+        "200":
           description: Backend health status
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
+                $ref: "#/components/schemas/HealthResponse"
   /api/auth/register:
     post:
-      tags: [ Auth ]
+      tags: [Auth]
       summary: Register a user
-      security: [ ]
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterRequest'
+              $ref: "#/components/schemas/RegisterRequest"
       responses:
-        '200':
+        "200":
           description: Created auth session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/auth/login:
     post:
-      tags: [ Auth ]
+      tags: [Auth]
       summary: Create an auth session
-      security: [ ]
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
       responses:
-        '200':
+        "200":
           description: Created auth session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/auth/me:
     get:
-      tags: [ Auth ]
+      tags: [Auth]
       summary: Get current user
       responses:
-        '200':
+        "200":
           description: Current user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDto'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/UserDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     put:
-      tags: [ Auth ]
+      tags: [Auth]
       summary: Update current user profile
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateMeRequest'
+              $ref: "#/components/schemas/UpdateMeRequest"
       responses:
-        '200':
+        "200":
           description: Updated user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDto'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/UserDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/auth/logout:
     post:
-      tags: [ Auth ]
+      tags: [Auth]
       summary: End the current auth session
       responses:
-        '200':
+        "200":
           description: Session ended
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/projects:
     get:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: List projects visible to the current user
       responses:
-        '200':
+        "200":
           description: Projects
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ProjectRecord'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                  $ref: "#/components/schemas/ProjectRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     post:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: Create a project
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SaveProjectRequest'
+              $ref: "#/components/schemas/SaveProjectRequest"
       responses:
-        '200':
+        "200":
           description: Created project
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectRecord'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/ProjectRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/projects/{id}:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
     get:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: Get a project
       responses:
-        '200':
+        "200":
           description: Project
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectRecord'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ProjectRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     put:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: Update a project
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SaveProjectRequest'
+              $ref: "#/components/schemas/SaveProjectRequest"
       responses:
-        '200':
+        "200":
           description: Updated project
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectRecord'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/ProjectRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     delete:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: Delete a project
       responses:
-        '200':
+        "200":
           description: Project deleted
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/projects/{id}/download:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
     get:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: Download project ZIP
       responses:
-        '200':
+        "200":
           description: Project ZIP archive
           headers:
             Content-Disposition:
@@ -231,83 +231,83 @@ paths:
               schema:
                 type: string
                 format: binary
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/projects/{id}/members:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
     get:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: List project members
       responses:
-        '200':
+        "200":
           description: Project members
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ProjectMember'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                  $ref: "#/components/schemas/ProjectMember"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/projects/{id}/invite:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
     post:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: Invite an existing user to a project
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InviteRequest'
+              $ref: "#/components/schemas/InviteRequest"
       responses:
-        '200':
+        "200":
           description: Added member
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProjectMember'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ProjectMember"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/projects/{id}/members/{userId}:
     parameters:
-      - $ref: '#/components/parameters/ProjectId'
+      - $ref: "#/components/parameters/ProjectId"
       - name: userId
         in: path
         required: true
         schema:
           type: string
     delete:
-      tags: [ Projects ]
+      tags: [Projects]
       summary: Revoke project access
       responses:
-        '200':
+        "200":
           description: Access revoked
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/{level}:
     parameters:
-      - $ref: '#/components/parameters/ModelLevelPath'
+      - $ref: "#/components/parameters/ModelLevelPath"
     get:
-      tags: [ Models ]
+      tags: [Models]
       summary: List CIM, PIM, or PSM model summaries
       parameters:
         - name: projectId
@@ -316,60 +316,60 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Model summaries
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ModelSummary'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                  $ref: "#/components/schemas/ModelSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     post:
-      tags: [ Models ]
+      tags: [Models]
       summary: Create a CIM, PIM, or PSM model
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SaveModelRequest'
+              $ref: "#/components/schemas/SaveModelRequest"
       responses:
-        '200':
+        "200":
           description: Created model summary
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ModelSummary'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/ModelSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/{level}/{id}:
     parameters:
-      - $ref: '#/components/parameters/ModelLevelPath'
-      - $ref: '#/components/parameters/ModelId'
+      - $ref: "#/components/parameters/ModelLevelPath"
+      - $ref: "#/components/parameters/ModelId"
     get:
-      tags: [ Models ]
+      tags: [Models]
       summary: Get a stored model
       responses:
-        '200':
+        "200":
           description: Model
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ModelRecord'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ModelRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     put:
-      tags: [ Models ]
+      tags: [Models]
       summary: Replace a stored model
       description: Requires `expectedRevision`; returns 409 if the model has changed.
       requestBody:
@@ -377,24 +377,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SaveModelRequest'
+              $ref: "#/components/schemas/SaveModelRequest"
       responses:
-        '200':
+        "200":
           description: Updated model summary
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ModelSummary'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
+                $ref: "#/components/schemas/ModelSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
     patch:
-      tags: [ Models ]
+      tags: [Models]
       summary: Patch a stored model
       description: Supports JSON Pointer `add`, `replace`, and `remove` operations. Root replacement is not supported.
       requestBody:
@@ -402,91 +402,91 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchModelRequest'
+              $ref: "#/components/schemas/PatchModelRequest"
       responses:
-        '200':
+        "200":
           description: Updated model summary
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ModelSummary'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
+                $ref: "#/components/schemas/ModelSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
     delete:
-      tags: [ Models ]
+      tags: [Models]
       summary: Delete a stored model
       responses:
-        '200':
+        "200":
           description: Model deleted
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/{level}/validate:
     parameters:
-      - $ref: '#/components/parameters/ModelLevelPath'
+      - $ref: "#/components/parameters/ModelLevelPath"
     post:
-      tags: [ Models ]
+      tags: [Models]
       summary: Validate unsaved model JSON
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SaveModelRequest'
+              $ref: "#/components/schemas/SaveModelRequest"
       responses:
-        '200':
+        "200":
           description: Validation result
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidationResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/ValidationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/{level}/{id}/validate:
     parameters:
-      - $ref: '#/components/parameters/ModelLevelPath'
-      - $ref: '#/components/parameters/ModelId'
+      - $ref: "#/components/parameters/ModelLevelPath"
+      - $ref: "#/components/parameters/ModelId"
     post:
-      tags: [ Models ]
+      tags: [Models]
       summary: Validate a stored model
       responses:
-        '200':
+        "200":
           description: Validation result
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidationResult'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ValidationResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/{level}/export:
     parameters:
-      - $ref: '#/components/parameters/ModelLevelPath'
+      - $ref: "#/components/parameters/ModelLevelPath"
     post:
-      tags: [ Models ]
+      tags: [Models]
       summary: Export unsaved model JSON
       requestBody:
         required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ExportRequest'
+              $ref: "#/components/schemas/ExportRequest"
       responses:
-        '200':
+        "200":
           description: Exported model file
           headers:
             Content-Disposition:
@@ -499,25 +499,25 @@ paths:
             application/xml:
               schema:
                 type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/{level}/{id}/export:
     parameters:
-      - $ref: '#/components/parameters/ModelLevelPath'
-      - $ref: '#/components/parameters/ModelId'
+      - $ref: "#/components/parameters/ModelLevelPath"
+      - $ref: "#/components/parameters/ModelId"
     post:
-      tags: [ Models ]
+      tags: [Models]
       summary: Export a stored model
       requestBody:
         required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ExportRequest'
+              $ref: "#/components/schemas/ExportRequest"
       responses:
-        '200':
+        "200":
           description: Exported model file
           headers:
             Content-Disposition:
@@ -530,19 +530,19 @@ paths:
             application/xml:
               schema:
                 type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/{level}/import:
     parameters:
-      - $ref: '#/components/parameters/ModelLevelPath'
+      - $ref: "#/components/parameters/ModelLevelPath"
     post:
-      tags: [ Models ]
+      tags: [Models]
       summary: Import model JSON or XMI
       requestBody:
         required: true
@@ -550,85 +550,85 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [ projectId, file ]
+              required: [projectId, file]
               properties:
                 projectId:
                   type: string
                 format:
                   type: string
-                  enum: [ json, xmi ]
+                  enum: [json, xmi]
                   default: json
                 file:
                   type: string
                   format: binary
       responses:
-        '200':
+        "200":
           description: Imported model payload
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '413':
-          $ref: '#/components/responses/PayloadTooLarge'
+                $ref: "#/components/schemas/ImportResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
   /api/transformations/cim-to-pim:
     post:
-      tags: [ Transformations ]
+      tags: [Transformations]
       summary: Generate a PIM model from a CIM model
       requestBody:
-        $ref: '#/components/requestBodies/TransformRequest'
+        $ref: "#/components/requestBodies/TransformRequest"
       responses:
-        '200':
-          $ref: '#/components/responses/TransformationResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
+        "200":
+          $ref: "#/components/responses/TransformationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/transformations/pim-to-psm:
     post:
-      tags: [ Transformations ]
+      tags: [Transformations]
       summary: Generate a PSM model from a PIM model
       requestBody:
-        $ref: '#/components/requestBodies/TransformRequest'
+        $ref: "#/components/requestBodies/TransformRequest"
       responses:
-        '200':
-          $ref: '#/components/responses/TransformationResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
+        "200":
+          $ref: "#/components/responses/TransformationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/transformations/psm-to-artifact:
     post:
-      tags: [ Transformations ]
+      tags: [Transformations]
       summary: Generate deployable artifacts from a PSM model
       requestBody:
-        $ref: '#/components/requestBodies/TransformRequest'
+        $ref: "#/components/requestBodies/TransformRequest"
       responses:
-        '200':
-          $ref: '#/components/responses/TransformationResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '413':
-          $ref: '#/components/responses/PayloadTooLarge'
+        "200":
+          $ref: "#/components/responses/TransformationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
   /api/transformations/jobs/{id}:
     parameters:
       - name: id
@@ -637,21 +637,21 @@ paths:
         schema:
           type: string
     get:
-      tags: [ Transformations ]
+      tags: [Transformations]
       summary: Get a transformation job
       responses:
-        '200':
+        "200":
           description: Job record
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MdeJobRecord'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/MdeJobRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/transformations/jobs/{id}/cancel:
     parameters:
       - name: id
@@ -660,24 +660,24 @@ paths:
         schema:
           type: string
     post:
-      tags: [ Transformations ]
+      tags: [Transformations]
       summary: Cancel a transformation job
       responses:
-        '200':
+        "200":
           description: Cancelled job record
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MdeJobRecord'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/MdeJobRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/artifact:
     get:
-      tags: [ Artifacts ]
+      tags: [Artifacts]
       summary: List artifacts for a project
       parameters:
         - name: projectId
@@ -686,98 +686,98 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Artifacts
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ArtifactRecord'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                  $ref: "#/components/schemas/ArtifactRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/artifact/{id}:
     parameters:
-      - $ref: '#/components/parameters/ArtifactId'
+      - $ref: "#/components/parameters/ArtifactId"
     get:
-      tags: [ Artifacts ]
+      tags: [Artifacts]
       summary: Get an artifact
       responses:
-        '200':
+        "200":
           description: Artifact
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArtifactRecord'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ArtifactRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/artifact/{id}/file:
     parameters:
-      - $ref: '#/components/parameters/ArtifactId'
+      - $ref: "#/components/parameters/ArtifactId"
       - name: path
         in: query
         required: true
         schema:
           type: string
     get:
-      tags: [ Artifacts ]
+      tags: [Artifacts]
       summary: Read an artifact file
       responses:
-        '200':
+        "200":
           description: File contents
           content:
             text/plain:
               schema:
                 type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/artifact/{id}/files:
     parameters:
-      - $ref: '#/components/parameters/ArtifactId'
+      - $ref: "#/components/parameters/ArtifactId"
     put:
-      tags: [ Artifacts ]
+      tags: [Artifacts]
       summary: Save or replace an artifact file
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SaveFileRequest'
+              $ref: "#/components/schemas/SaveFileRequest"
       responses:
-        '200':
+        "200":
           description: Updated artifact
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArtifactRecord'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ArtifactRecord"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/artifact/{id}/download:
     parameters:
-      - $ref: '#/components/parameters/ArtifactId'
+      - $ref: "#/components/parameters/ArtifactId"
     get:
-      tags: [ Artifacts ]
+      tags: [Artifacts]
       summary: Download an artifact as a ZIP archive
       responses:
-        '200':
+        "200":
           description: ZIP archive
           headers:
             Content-Disposition:
@@ -788,19 +788,19 @@ paths:
               schema:
                 type: string
                 format: binary
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/modeling/config:
     get:
-      tags: [ Modeling ]
+      tags: [Modeling]
       summary: Get modeling palette and UI metadata
-      security: [ ]
+      security: []
       responses:
-        '200':
+        "200":
           description: Modeling configuration
           content:
             application/json:
@@ -809,25 +809,25 @@ paths:
                 additionalProperties: true
   /api/layout:
     post:
-      tags: [ Modeling ]
+      tags: [Modeling]
       summary: Auto-layout diagram nodes and edges
-      security: [ ]
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LayoutRequest'
+              $ref: "#/components/schemas/LayoutRequest"
       responses:
-        '200':
+        "200":
           description: Layout result
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LayoutResponse'
+                $ref: "#/components/schemas/LayoutResponse"
   /api/{level}/{modelId}/views/{viewId}/layout:
     post:
-      tags: [ Modeling ]
+      tags: [Modeling]
       summary: Lazily auto-layout and persist one stored model view
       parameters:
         - name: level
@@ -835,7 +835,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [ cim, pim, psm ]
+            enum: [cim, pim, psm]
         - name: modelId
           in: path
           required: true
@@ -857,61 +857,70 @@ paths:
           required: false
           schema:
             type: string
-            enum: [ SPACIOUS_LAYERED, BALANCED_LAYERED, RELAXED_SPLINES, VERTICAL_FLOW, TREE, RADIAL, FORCE ]
+            enum:
+              [
+                SPACIOUS_LAYERED,
+                BALANCED_LAYERED,
+                RELAXED_SPLINES,
+                VERTICAL_FLOW,
+                TREE,
+                RADIAL,
+                FORCE,
+              ]
             default: SPACIOUS_LAYERED
       responses:
-        '200':
+        "200":
           description: Persisted view layout result
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /api/github/{path}:
     parameters:
-      - $ref: '#/components/parameters/WildcardPath'
+      - $ref: "#/components/parameters/WildcardPath"
     get:
-      tags: [ Future ]
+      tags: [Future]
       summary: Planned GitHub integration endpoint
       description: Represents the Spring `/api/github/**` placeholder. Other HTTP methods return the same 501 response.
       responses:
-        '501':
-          $ref: '#/components/responses/NotImplemented'
+        "501":
+          $ref: "#/components/responses/NotImplemented"
     post:
-      tags: [ Future ]
+      tags: [Future]
       summary: Planned GitHub integration endpoint
       responses:
-        '501':
-          $ref: '#/components/responses/NotImplemented'
+        "501":
+          $ref: "#/components/responses/NotImplemented"
   /api/impact/{path}:
     parameters:
-      - $ref: '#/components/parameters/WildcardPath'
+      - $ref: "#/components/parameters/WildcardPath"
     get:
-      tags: [ Future ]
+      tags: [Future]
       summary: Planned impact analysis endpoint
       description: Represents the Spring `/api/impact/**` placeholder. Other HTTP methods return the same 501 response.
       responses:
-        '501':
-          $ref: '#/components/responses/NotImplemented'
+        "501":
+          $ref: "#/components/responses/NotImplemented"
     post:
-      tags: [ Future ]
+      tags: [Future]
       summary: Planned impact analysis endpoint
       responses:
-        '501':
-          $ref: '#/components/responses/NotImplemented'
+        "501":
+          $ref: "#/components/responses/NotImplemented"
   /api/admin/{path}:
     parameters:
-      - $ref: '#/components/parameters/WildcardPath'
+      - $ref: "#/components/parameters/WildcardPath"
     get:
-      tags: [ Future ]
+      tags: [Future]
       summary: Planned admin endpoint
       description: Represents the Spring `/api/admin/**` placeholder. Other HTTP methods return the same 501 response.
       responses:
-        '501':
-          $ref: '#/components/responses/NotImplemented'
+        "501":
+          $ref: "#/components/responses/NotImplemented"
     post:
-      tags: [ Future ]
+      tags: [Future]
       summary: Planned admin endpoint
       responses:
-        '501':
-          $ref: '#/components/responses/NotImplemented'
+        "501":
+          $ref: "#/components/responses/NotImplemented"
 components:
   securitySchemes:
     AuthToken:
@@ -943,7 +952,7 @@ components:
       required: true
       schema:
         type: string
-        enum: [ cim, pim, psm ]
+        enum: [cim, pim, psm]
     WildcardPath:
       name: path
       in: path
@@ -957,60 +966,60 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TransformRequest'
+            $ref: "#/components/schemas/TransformRequest"
   responses:
     BadRequest:
       description: Invalid request
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiErrorResponse'
+            $ref: "#/components/schemas/ApiErrorResponse"
     Unauthorized:
       description: Missing, invalid, or expired auth session
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiErrorResponse'
+            $ref: "#/components/schemas/ApiErrorResponse"
     Forbidden:
       description: Authenticated user does not have permission
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiErrorResponse'
+            $ref: "#/components/schemas/ApiErrorResponse"
     NotFound:
       description: Record or file not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiErrorResponse'
+            $ref: "#/components/schemas/ApiErrorResponse"
     Conflict:
       description: Revision or state conflict
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiErrorResponse'
+            $ref: "#/components/schemas/ApiErrorResponse"
     PayloadTooLarge:
       description: Upload or generated payload exceeds configured limits
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiErrorResponse'
+            $ref: "#/components/schemas/ApiErrorResponse"
     NotImplemented:
       description: Planned feature placeholder
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiErrorResponse'
+            $ref: "#/components/schemas/ApiErrorResponse"
     TransformationResponse:
       description: Transformation result
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TransformationResponse'
+            $ref: "#/components/schemas/TransformationResponse"
   schemas:
     ApiErrorResponse:
       type: object
-      required: [ message, status, timestamp, issues ]
+      required: [message, status, timestamp, issues]
       properties:
         message:
           type: string
@@ -1021,10 +1030,10 @@ components:
           format: date-time
         issues:
           type: array
-          items: { }
+          items: {}
     HealthResponse:
       type: object
-      required: [ status, service, timestamp ]
+      required: [status, service, timestamp]
       properties:
         status:
           type: string
@@ -1037,7 +1046,7 @@ components:
           format: date-time
     RegisterRequest:
       type: object
-      required: [ email, password, displayName ]
+      required: [email, password, displayName]
       properties:
         email:
           type: string
@@ -1050,7 +1059,7 @@ components:
           maxLength: 80
     LoginRequest:
       type: object
-      required: [ email, password ]
+      required: [email, password]
       properties:
         email:
           type: string
@@ -1060,22 +1069,22 @@ components:
           minLength: 8
     UpdateMeRequest:
       type: object
-      required: [ displayName ]
+      required: [displayName]
       properties:
         displayName:
           type: string
           maxLength: 80
     AuthResponse:
       type: object
-      required: [ token, user ]
+      required: [token, user]
       properties:
         token:
           type: string
         user:
-          $ref: '#/components/schemas/UserDto'
+          $ref: "#/components/schemas/UserDto"
     UserDto:
       type: object
-      required: [ id, email, displayName ]
+      required: [id, email, displayName]
       properties:
         id:
           type: string
@@ -1086,7 +1095,7 @@ components:
           type: string
     SaveProjectRequest:
       type: object
-      required: [ name ]
+      required: [name]
       properties:
         name:
           type: string
@@ -1099,15 +1108,15 @@ components:
           description: Map of active model level or view keys to model ids.
     InviteRequest:
       type: object
-      required: [ email ]
+      required: [email]
       properties:
         email:
           type: string
         role:
-          $ref: '#/components/schemas/MemberRole'
+          $ref: "#/components/schemas/MemberRole"
     ProjectRecord:
       type: object
-      required: [ id, name, ownerUserId, activeModelIds, members, createdAt, updatedAt ]
+      required: [id, name, ownerUserId, activeModelIds, members, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -1124,7 +1133,7 @@ components:
         members:
           type: array
           items:
-            $ref: '#/components/schemas/ProjectMember'
+            $ref: "#/components/schemas/ProjectMember"
         createdAt:
           type: string
           format: date-time
@@ -1133,7 +1142,7 @@ components:
           format: date-time
     ProjectMember:
       type: object
-      required: [ userId, email, displayName, role, addedAt ]
+      required: [userId, email, displayName, role, addedAt]
       properties:
         userId:
           type: string
@@ -1143,19 +1152,19 @@ components:
         displayName:
           type: string
         role:
-          $ref: '#/components/schemas/MemberRole'
+          $ref: "#/components/schemas/MemberRole"
         addedAt:
           type: string
           format: date-time
     MemberRole:
       type: string
-      enum: [ OWNER, EDITOR, VIEWER ]
+      enum: [OWNER, EDITOR, VIEWER]
     ModelLevel:
       type: string
-      enum: [ CIM, PIM, PSM ]
+      enum: [CIM, PIM, PSM]
     SaveModelRequest:
       type: object
-      required: [ name ]
+      required: [name]
       properties:
         name:
           type: string
@@ -1169,24 +1178,24 @@ components:
           description: Required for PUT updates.
     PatchModelRequest:
       type: object
-      required: [ expectedRevision ]
+      required: [expectedRevision]
       properties:
         name:
           type: string
         operations:
           type: array
           items:
-            $ref: '#/components/schemas/ModelPatchOperation'
+            $ref: "#/components/schemas/ModelPatchOperation"
         expectedRevision:
           type: integer
           format: int64
     ModelPatchOperation:
       type: object
-      required: [ op, path ]
+      required: [op, path]
       properties:
         op:
           type: string
-          enum: [ add, replace, remove ]
+          enum: [add, replace, remove]
         path:
           type: string
           description: JSON Pointer path.
@@ -1201,18 +1210,18 @@ components:
           description: Model JSON used by unsaved export.
         format:
           type: string
-          enum: [ json, xmi ]
+          enum: [json, xmi]
           default: json
     ModelSummary:
       type: object
-      required: [ id, projectId, level, name, revision, createdAt, updatedAt ]
+      required: [id, projectId, level, name, revision, createdAt, updatedAt]
       properties:
         id:
           type: string
         projectId:
           type: string
         level:
-          $ref: '#/components/schemas/ModelLevel'
+          $ref: "#/components/schemas/ModelLevel"
         name:
           type: string
         revision:
@@ -1230,7 +1239,7 @@ components:
           format: date-time
     ModelRecord:
       allOf:
-        - $ref: '#/components/schemas/ModelSummary'
+        - $ref: "#/components/schemas/ModelSummary"
         - type: object
           properties:
             modelJson:
@@ -1241,14 +1250,14 @@ components:
               type: string
     ValidationResult:
       type: object
-      required: [ valid, issues ]
+      required: [valid, issues]
       properties:
         valid:
           type: boolean
         issues:
           type: array
           items:
-            $ref: '#/components/schemas/ValidationIssue'
+            $ref: "#/components/schemas/ValidationIssue"
     ValidationIssue:
       type: object
       properties:
@@ -1268,7 +1277,7 @@ components:
           type: string
     ImportResult:
       type: object
-      required: [ name, modelJson, issues ]
+      required: [name, modelJson, issues]
       properties:
         name:
           type: string
@@ -1277,10 +1286,10 @@ components:
         issues:
           type: array
           items:
-            $ref: '#/components/schemas/ValidationIssue'
+            $ref: "#/components/schemas/ValidationIssue"
     TransformRequest:
       type: object
-      required: [ sourceModelId ]
+      required: [sourceModelId]
       properties:
         sourceModelId:
           type: string
@@ -1289,7 +1298,7 @@ components:
           format: int64
     TransformationResponse:
       type: object
-      required: [ success, status, diagnostics ]
+      required: [success, status, diagnostics]
       properties:
         success:
           type: boolean
@@ -1302,17 +1311,17 @@ components:
           type: string
         model:
           allOf:
-            - $ref: '#/components/schemas/ModelRecord'
+            - $ref: "#/components/schemas/ModelRecord"
         artifact:
           allOf:
-            - $ref: '#/components/schemas/ArtifactRecord'
+            - $ref: "#/components/schemas/ArtifactRecord"
         diagnostics:
           type: array
           items:
             type: string
     ArtifactRecord:
       type: object
-      required: [ id, projectId, name, modelJson, files, createdAt, updatedAt ]
+      required: [id, projectId, name, modelJson, files, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -1334,7 +1343,7 @@ components:
           format: date-time
     SaveFileRequest:
       type: object
-      required: [ path ]
+      required: [path]
       properties:
         path:
           type: string
@@ -1342,7 +1351,20 @@ components:
           type: string
     MdeJobRecord:
       type: object
-      required: [ id, projectId, userId, sourceModelId, sourceLevel, sourceRevision, operation, status, progressPercent, diagnostics, createdAt ]
+      required:
+        [
+          id,
+          projectId,
+          userId,
+          sourceModelId,
+          sourceLevel,
+          sourceRevision,
+          operation,
+          status,
+          progressPercent,
+          diagnostics,
+          createdAt,
+        ]
       properties:
         id:
           type: string
@@ -1353,7 +1375,7 @@ components:
         sourceModelId:
           type: string
         sourceLevel:
-          $ref: '#/components/schemas/ModelLevel'
+          $ref: "#/components/schemas/ModelLevel"
         sourceRevision:
           type: integer
           format: int64
@@ -1361,10 +1383,10 @@ components:
           type: string
         operation:
           type: string
-          enum: [ CIM_TO_PIM, PIM_TO_PSM, PSM_TO_ARTIFACT, VALIDATE ]
+          enum: [CIM_TO_PIM, PIM_TO_PSM, PSM_TO_ARTIFACT, VALIDATE]
         status:
           type: string
-          enum: [ QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED ]
+          enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED]
         progressPercent:
           type: integer
           minimum: 0
@@ -1405,14 +1427,14 @@ components:
         nodes:
           type: array
           items:
-            $ref: '#/components/schemas/LayoutNode'
+            $ref: "#/components/schemas/LayoutNode"
         edges:
           type: array
           items:
-            $ref: '#/components/schemas/LayoutEdge'
+            $ref: "#/components/schemas/LayoutEdge"
     LayoutNode:
       type: object
-      required: [ id, width, height ]
+      required: [id, width, height]
       properties:
         id:
           type: string
@@ -1433,10 +1455,10 @@ components:
         ports:
           type: array
           items:
-            $ref: '#/components/schemas/LayoutPort'
+            $ref: "#/components/schemas/LayoutPort"
     LayoutPort:
       type: object
-      required: [ id, width, height ]
+      required: [id, width, height]
       properties:
         id:
           type: string
@@ -1456,7 +1478,7 @@ components:
           format: double
     LayoutEdge:
       type: object
-      required: [ id, sourceNodeId, targetNodeId ]
+      required: [id, sourceNodeId, targetNodeId]
       properties:
         id:
           type: string
@@ -1472,23 +1494,23 @@ components:
           type: string
     LayoutResponse:
       type: object
-      required: [ nodes, edges, warnings ]
+      required: [nodes, edges, warnings]
       properties:
         nodes:
           type: array
           items:
-            $ref: '#/components/schemas/LaidOutNode'
+            $ref: "#/components/schemas/LaidOutNode"
         edges:
           type: array
           items:
-            $ref: '#/components/schemas/RoutedEdge'
+            $ref: "#/components/schemas/RoutedEdge"
         warnings:
           type: array
           items:
             type: string
     LaidOutNode:
       type: object
-      required: [ id, x, y, width, height ]
+      required: [id, x, y, width, height]
       properties:
         id:
           type: string
@@ -1506,33 +1528,33 @@ components:
           format: double
     RoutedEdge:
       type: object
-      required: [ id, sections, bendPoints ]
+      required: [id, sections, bendPoints]
       properties:
         id:
           type: string
         sections:
           type: array
           items:
-            $ref: '#/components/schemas/EdgeSection'
+            $ref: "#/components/schemas/EdgeSection"
         bendPoints:
           type: array
           items:
-            $ref: '#/components/schemas/LayoutPoint'
+            $ref: "#/components/schemas/LayoutPoint"
     EdgeSection:
       type: object
-      required: [ startPoint, endPoint, bendPoints ]
+      required: [startPoint, endPoint, bendPoints]
       properties:
         startPoint:
-          $ref: '#/components/schemas/LayoutPoint'
+          $ref: "#/components/schemas/LayoutPoint"
         endPoint:
-          $ref: '#/components/schemas/LayoutPoint'
+          $ref: "#/components/schemas/LayoutPoint"
         bendPoints:
           type: array
           items:
-            $ref: '#/components/schemas/LayoutPoint'
+            $ref: "#/components/schemas/LayoutPoint"
     LayoutPoint:
       type: object
-      required: [ x, y ]
+      required: [x, y]
       properties:
         x:
           type: number

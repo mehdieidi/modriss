@@ -117,8 +117,9 @@
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 8px;
   background: color-mix(in srgb, var(--surface-3) 66%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
-  0 1px 0 color-mix(in srgb, #000 18%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
+    0 1px 0 color-mix(in srgb, #000 18%, transparent);
 }
 
 .workbench-layout-select-wrap {
@@ -316,7 +317,9 @@
   border-bottom: 2px solid color-mix(in srgb, var(--accent-light) 74%, var(--text) 26%);
   transform: translateY(-65%) rotate(45deg);
   pointer-events: none;
-  transition: transform var(--transition), border-color var(--transition);
+  transition:
+    transform var(--transition),
+    border-color var(--transition);
 }
 
 .workbench-view-select-wrap:hover .workbench-view-select-caret,
@@ -359,7 +362,10 @@
   color: var(--text);
   text-align: left;
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition);
 }
 
 .workbench-view-option:hover,
@@ -654,7 +660,13 @@
 .validation-fab {
   position: absolute;
   right: 16px;
-  top: var(--validation-fab-top, calc(var(--topbar-h) + var(--workbench-top-offset) + var(--workbench-strip-h) + var(--workbench-gap)));
+  top: var(
+    --validation-fab-top,
+    calc(
+      var(--topbar-h) + var(--workbench-top-offset) + var(--workbench-strip-h) +
+        var(--workbench-gap)
+    )
+  );
   z-index: 180;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   background: color-mix(in srgb, var(--glass-pane-bg) 94%, var(--surface-2) 6%);
@@ -725,10 +737,12 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg,
-  transparent 0%,
-  color-mix(in srgb, var(--accent-light) 88%, #fff 12%) 45%,
-  transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent-light) 88%, #fff 12%) 45%,
+    transparent 100%
+  );
   transform: translateX(-100%);
   animation: validation-progress-sweep 1.15s linear infinite;
 }
@@ -755,10 +769,18 @@
 .validation-drawer {
   position: absolute;
   right: 16px;
-  top: calc(var(--topbar-h) + var(--workbench-top-offset) + var(--workbench-strip-h) + var(--workbench-gap));
+  top: calc(
+    var(--topbar-h) + var(--workbench-top-offset) + var(--workbench-strip-h) + var(--workbench-gap)
+  );
   z-index: 181;
   width: min(420px, calc(100vw - 40px));
-  max-height: min(calc(100% - var(--topbar-h) - var(--workbench-top-offset) - var(--workbench-strip-h) - var(--workbench-gap) - 18px), 560px);
+  max-height: min(
+    calc(
+      100% - var(--topbar-h) - var(--workbench-top-offset) - var(--workbench-strip-h) -
+        var(--workbench-gap) - 18px
+    ),
+    560px
+  );
   border: var(--glass-pane-border);
   background: var(--glass-pane-bg);
   box-shadow: var(--glass-pane-highlight);
@@ -772,7 +794,10 @@
 
 .model-workbench-strip.model-workbench-minimized ~ .validation-drawer {
   top: calc(var(--topbar-h) + var(--workbench-top-offset) + 30px + var(--workbench-gap));
-  max-height: min(calc(100% - var(--topbar-h) - var(--workbench-top-offset) - 30px - var(--workbench-gap) - 18px), 560px);
+  max-height: min(
+    calc(100% - var(--topbar-h) - var(--workbench-top-offset) - 30px - var(--workbench-gap) - 18px),
+    560px
+  );
 }
 
 .validation-drawer.hidden {
@@ -824,7 +849,9 @@
   border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   background: color-mix(in srgb, var(--surface-high) 94%, #000 6%);
   border-radius: 8px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.26),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   padding: 8px;
   display: grid;
   gap: 6px;
@@ -854,9 +881,12 @@
   min-height: 34px;
   border-radius: 6px;
   border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background: linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 17px) 14px / 5px 5px no-repeat,
-  linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 12px) 14px / 5px 5px no-repeat,
-  color-mix(in srgb, var(--surface-3) 88%, #000 12%);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 17px) 14px / 5px 5px
+      no-repeat,
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 12px) 14px / 5px 5px
+      no-repeat,
+    color-mix(in srgb, var(--surface-3) 88%, #000 12%);
   color: var(--text-strong);
   font-size: 12px;
   font-weight: 650;
@@ -977,10 +1007,21 @@
   height: 100%;
   overflow: hidden;
   background-color: var(--canvas-custom-bg, var(--canvas-bg));
-  background-image: linear-gradient(color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px, transparent 1px),
-  linear-gradient(90deg, color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px, transparent 1px),
-  radial-gradient(circle at 1px 1px, var(--canvas-dot) 1px, transparent 1px);
-  background-size: 88px 88px, 88px 88px, 22px 22px;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--grid-line-minor) 100%, transparent) 1px,
+      transparent 1px
+    ),
+    radial-gradient(circle at 1px 1px, var(--canvas-dot) 1px, transparent 1px);
+  background-size:
+    88px 88px,
+    88px 88px,
+    22px 22px;
 }
 
 .cim-workbench-surface {
@@ -1004,7 +1045,10 @@
 }
 
 .canvas-stage.cim-surface-active .cim-workbench-surface {
-  max-height: calc(100vh - var(--topbar-h) - var(--workbench-strip-h) - var(--validation-fab-bottom) - var(--validation-fab-h) - 48px);
+  max-height: calc(
+    100vh - var(--topbar-h) - var(--workbench-strip-h) - var(--validation-fab-bottom) -
+      var(--validation-fab-h) - 48px
+  );
 }
 
 .cim-workbench-surface.hidden {
@@ -1786,7 +1830,10 @@
   position: absolute;
   inset: 0;
   z-index: 6;
-  color: var(--g6-modeling-element-icon-color, color-mix(in srgb, var(--text-strong) 84%, var(--accent) 16%));
+  color: var(
+    --g6-modeling-element-icon-color,
+    color-mix(in srgb, var(--text-strong) 84%, var(--accent) 16%)
+  );
   pointer-events: none;
 }
 

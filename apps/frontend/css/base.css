@@ -10,7 +10,11 @@ body {
   height: 100%;
   font-family: var(--font-ui);
   font-size: 14px;
-  background: radial-gradient(circle at top, color-mix(in srgb, var(--surface-high) 24%, var(--bg) 76%), var(--bg) 45%);
+  background: radial-gradient(
+    circle at top,
+    color-mix(in srgb, var(--surface-high) 24%, var(--bg) 76%),
+    var(--bg) 45%
+  );
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
@@ -112,7 +116,11 @@ body {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    transform var(--transition);
 }
 
 .workspace-rail-icon {
@@ -314,9 +322,11 @@ body {
   min-height: 112px;
   padding: 12px;
   border-color: color-mix(in srgb, var(--accent) 34%, var(--border) 66%);
-  background: linear-gradient(180deg,
-  color-mix(in srgb, var(--glass-pane-bg) 98%, var(--surface-high) 2%),
-  color-mix(in srgb, var(--glass-pane-bg) 92%, var(--surface-2) 8%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--glass-pane-bg) 98%, var(--surface-high) 2%),
+    color-mix(in srgb, var(--glass-pane-bg) 92%, var(--surface-2) 8%)
+  );
 }
 
 .toast-leaving {
@@ -390,9 +400,11 @@ body {
   inset: 0 auto 0 0;
   width: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg,
-  color-mix(in srgb, var(--accent) 84%, #fff 16%),
-  color-mix(in srgb, var(--accent-light) 70%, #fff 30%));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 84%, #fff 16%),
+    color-mix(in srgb, var(--accent-light) 70%, #fff 30%)
+  );
   box-shadow: 0 0 16px color-mix(in srgb, var(--accent-glow) 66%, transparent);
   transform: scaleX(0);
   transform-origin: left center;
@@ -402,7 +414,12 @@ body {
 .toast-progress-sheen {
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, transparent 22%, rgba(255, 255, 255, 0.2) 50%, transparent 78%);
+  background: linear-gradient(
+    115deg,
+    transparent 22%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 78%
+  );
   transform: translateX(-120%);
   animation: toast-progress-sheen 1.6s ease-in-out infinite;
   pointer-events: none;
@@ -445,8 +462,13 @@ body.modal-open {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-glow) 26%, transparent), transparent 42%),
-  color-mix(in srgb, var(--bg) 94%, #000 6%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-glow) 26%, transparent),
+      transparent 42%
+    ),
+    color-mix(in srgb, var(--bg) 94%, #000 6%);
 }
 
 .not-found-panel {

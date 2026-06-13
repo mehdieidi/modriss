@@ -1,6 +1,6 @@
-import {el} from './dom.js';
-import {state} from './state.js';
-import {initTheme, toggleTheme} from './theme.js';
+import { el } from "./dom.js";
+import { state } from "./state.js";
+import { initTheme, toggleTheme } from "./theme.js";
 import {
   applyViewport,
   centerViewportOnDiagram,
@@ -11,7 +11,7 @@ import {
   resetCanvasView,
   setupDnD,
   zoomCanvasBy,
-} from './canvas.js';
+} from "./canvas.js";
 import {
   exportActiveModel,
   generateForCurrentContext,
@@ -19,65 +19,59 @@ import {
   saveCurrentModel,
   switchTab,
   undoLastEdit,
-  validateCurrentModel
-} from './model-ops.js';
-import {
-  initArtifactEditor,
-  saveCurrentFile,
-  toggleArtifactTreeCollapsed
-} from './artifact.js';
+  validateCurrentModel,
+} from "./model-ops.js";
+import { initArtifactEditor, saveCurrentFile, toggleArtifactTreeCollapsed } from "./artifact.js";
 import {
   applyAttributePanel,
   closeAttributePanel,
   deleteSelection,
   openAttributePanel,
-  openConnectionPanel
-} from './attr-panel.js';
-import {closeImpactPanel, toggleImpactMode} from './impact.js';
+  openConnectionPanel,
+} from "./attr-panel.js";
+import { closeImpactPanel, toggleImpactMode } from "./impact.js";
 import {
   clearChatConversation,
   ensureChatSession,
   sendChatMessage,
-  updateChatAttachmentLabel
-} from './chat.js';
+  updateChatAttachmentLabel,
+} from "./chat.js";
 import {
   bindProjectDialogActions,
   deleteCurrentProject,
   downloadCurrentProject,
   restoreLastProjectIfPossible,
-  showProjectDialog
-} from './project.js';
-import {setError, setStatus} from './status.js';
-import {CHAT_ATTACHMENT_MAX_BYTES} from './config.js';
-import {isMobileViewport} from './responsive.js';
-import {ensureAuthenticated, logout, updateDisplayName} from './auth.js';
-import {initSvgIconMasks} from './icons.js';
-import {
-  deployToGithubFromArtifacts,
-  refreshGithubConnection
-} from './github.js';
-import {loadModelingConfig} from './modeling-config-data.js';
-import {hasUnsavedModelChanges, updateModelSaveUi} from './model-save-ui.js';
-import {initViewWorkbench, renderViewWorkbench} from './view-explorer.js';
-import {initCimWorkbenchSurface} from './cim-workbench.js';
-import {initPimWorkbenchSurface} from './pim-workbench.js';
-import {initPsmWorkbenchSurface} from './psm-workbench.js';
-import {installG6LargeGraphDevHelper} from './graph-editor/g6-devtools.js';
+  showProjectDialog,
+} from "./project.js";
+import { setError, setStatus } from "./status.js";
+import { CHAT_ATTACHMENT_MAX_BYTES } from "./config.js";
+import { isMobileViewport } from "./responsive.js";
+import { ensureAuthenticated, logout, updateDisplayName } from "./auth.js";
+import { initSvgIconMasks } from "./icons.js";
+import { deployToGithubFromArtifacts, refreshGithubConnection } from "./github.js";
+import { loadModelingConfig } from "./modeling-config-data.js";
+import { hasUnsavedModelChanges, updateModelSaveUi } from "./model-save-ui.js";
+import { initViewWorkbench, renderViewWorkbench } from "./view-explorer.js";
+import { initCimWorkbenchSurface } from "./cim-workbench.js";
+import { initPimWorkbenchSurface } from "./pim-workbench.js";
+import { initPsmWorkbenchSurface } from "./psm-workbench.js";
+import { installG6LargeGraphDevHelper } from "./graph-editor/g6-devtools.js";
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
 const CHAT_INPUT_MAX_HEIGHT = 132;
-const getElementTarget = (event) => (event.target instanceof Element
-    ? event.target : null);
+const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
 
 window.modlessFrontendBoot = {
   ...(window.modlessFrontendBoot || {}),
   mainModuleLoaded: true,
-  mainBuild: "g6-wired-2026-05-31-02"
+  mainBuild: "g6-wired-2026-05-31-02",
 };
-window.modlessG6Debug = window.modlessG6Debug || (() => ({
-  bootstrap: window.modlessFrontendBoot || null,
-  ...getModelingRendererDebug()
-}));
+window.modlessG6Debug =
+  window.modlessG6Debug ||
+  (() => ({
+    bootstrap: window.modlessFrontendBoot || null,
+    ...getModelingRendererDebug(),
+  }));
 
 function shouldShowNotFoundPage() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
@@ -91,10 +85,14 @@ function showNotFoundPage() {
   document.title = "Not Found - Modless";
   el.notFoundOverlay.classList.remove("hidden");
   document.body.classList.add("modal-open");
-  el.notFoundGoHomeBtn?.addEventListener("click", () => {
-    window.history.replaceState({}, "", "/");
-    window.location.reload();
-  }, {once: true});
+  el.notFoundGoHomeBtn?.addEventListener(
+    "click",
+    () => {
+      window.history.replaceState({}, "", "/");
+      window.location.reload();
+    },
+    { once: true },
+  );
   return true;
 }
 
@@ -102,13 +100,12 @@ function refreshCurrentUserLabel() {
   if (!el.currentUserLabel) {
     return;
   }
-  el.currentUserLabel.textContent = state.auth.user?.displayName
-      || state.auth.user?.email || "User";
+  el.currentUserLabel.textContent =
+    state.auth.user?.displayName || state.auth.user?.email || "User";
 }
 
 function showUnsavedModelDialog() {
-  if (!el.unsavedModelOverlay || !el.unsavedModelSaveBtn
-      || !el.unsavedModelDismissBtn) {
+  if (!el.unsavedModelOverlay || !el.unsavedModelSaveBtn || !el.unsavedModelDismissBtn) {
     return;
   }
   el.unsavedModelOverlay.classList.remove("hidden");
@@ -137,8 +134,7 @@ function bindUnsavedModelGuard() {
     event.returnValue = "";
   });
 
-  el.unsavedModelDismissBtn?.addEventListener("click",
-      hideUnsavedModelDialog);
+  el.unsavedModelDismissBtn?.addEventListener("click", hideUnsavedModelDialog);
   el.unsavedModelOverlay?.addEventListener("click", (event) => {
     if (event.target === el.unsavedModelOverlay) {
       hideUnsavedModelDialog();
@@ -148,7 +144,7 @@ function bindUnsavedModelGuard() {
     try {
       el.unsavedModelSaveBtn.disabled = true;
       el.unsavedModelSaveBtn.textContent = "Saving...";
-      await saveCurrentModel({rethrow: true});
+      await saveCurrentModel({ rethrow: true });
       hideUnsavedModelDialog();
     } catch {
       el.unsavedModelSaveBtn.disabled = false;
@@ -158,8 +154,12 @@ function bindUnsavedModelGuard() {
 }
 
 function showProfileDialog() {
-  if (!el.profileOverlay || !el.profileDisplayNameInput || !el.profileSaveBtn
-      || !el.profileCancelBtn) {
+  if (
+    !el.profileOverlay ||
+    !el.profileDisplayNameInput ||
+    !el.profileSaveBtn ||
+    !el.profileCancelBtn
+  ) {
     setError("Profile editor is unavailable");
     return;
   }
@@ -193,16 +193,14 @@ function showProfileDialog() {
   const onSave = async () => {
     try {
       setBusy(true);
-      const updatedUser = await updateDisplayName(
-          el.profileDisplayNameInput.value);
+      const updatedUser = await updateDisplayName(el.profileDisplayNameInput.value);
       state.auth.user = updatedUser;
       refreshCurrentUserLabel();
       close();
       setStatus("Profile updated");
     } catch (error) {
       if (el.profileError) {
-        el.profileError.textContent = error.message
-            || "Failed to update profile";
+        el.profileError.textContent = error.message || "Failed to update profile";
         el.profileError.classList.remove("hidden");
       }
       setBusy(false);
@@ -368,7 +366,7 @@ function setupIdeMenus() {
   });
 
   window.addEventListener("resize", positionOpenMenus);
-  window.addEventListener("scroll", positionOpenMenus, {passive: true});
+  window.addEventListener("scroll", positionOpenMenus, { passive: true });
 }
 
 function closeTopbarMenu() {
@@ -421,9 +419,9 @@ function toggleMobileInspector() {
     return;
   }
   const inspectorVisible =
-      !el.attributePanel.classList.contains("hidden")
-      || !el.impactPanel.classList.contains("hidden")
-      || (el.modelTreePanel && !el.modelTreePanel.classList.contains("hidden"));
+    !el.attributePanel.classList.contains("hidden") ||
+    !el.impactPanel.classList.contains("hidden") ||
+    (el.modelTreePanel && !el.modelTreePanel.classList.contains("hidden"));
   if (!inspectorVisible) {
     setStatus("Select an element or enable Impact mode first");
     return;
@@ -465,11 +463,9 @@ function closeRailMenus() {
 }
 
 function toggleFileSubmenu(kind) {
-  const targetMenu = kind === "export" ? el.exportModelSubmenu
-      : el.importModelSubmenu;
+  const targetMenu = kind === "export" ? el.exportModelSubmenu : el.importModelSubmenu;
   const targetBtn = kind === "export" ? el.exportModelBtn : el.importModelBtn;
-  const otherMenu = kind === "export" ? el.importModelSubmenu
-      : el.exportModelSubmenu;
+  const otherMenu = kind === "export" ? el.importModelSubmenu : el.exportModelSubmenu;
   const otherBtn = kind === "export" ? el.importModelBtn : el.exportModelBtn;
   if (!targetMenu || !targetBtn) {
     return;
@@ -486,9 +482,9 @@ function toggleRailMenu(kind) {
     return;
   }
   const menus = {
-    file: {menu: el.fileRailMenu, button: el.fileBtn},
-    project: {menu: el.projectRailMenu, button: el.settingsRailBtn},
-    help: {menu: el.helpRailPanel, button: el.helpRailBtn}
+    file: { menu: el.fileRailMenu, button: el.fileBtn },
+    project: { menu: el.projectRailMenu, button: el.settingsRailBtn },
+    help: { menu: el.helpRailPanel, button: el.helpRailBtn },
   };
   const targetMenu = menus[kind]?.menu;
   const targetBtn = menus[kind]?.button;
@@ -496,7 +492,7 @@ function toggleRailMenu(kind) {
     return;
   }
   const willOpen = targetMenu.classList.contains("hidden");
-  Object.values(menus).forEach(({menu, button}) => {
+  Object.values(menus).forEach(({ menu, button }) => {
     if (menu !== targetMenu) {
       menu?.classList.add("hidden");
       button?.classList.remove("active");
@@ -520,10 +516,7 @@ function toggleRailMenu(kind) {
   const gutter = 8;
   const menuRect = targetMenu.getBoundingClientRect();
   const minTop = gutter;
-  const maxTop = Math.max(
-      minTop,
-      window.innerHeight - railRect.top - menuRect.height - gutter
-  );
+  const maxTop = Math.max(minTop, window.innerHeight - railRect.top - menuRect.height - gutter);
   const preferredTop = btnRect.top - railRect.top;
   const clampedTop = Math.min(maxTop, Math.max(minTop, preferredTop));
   targetMenu.style.top = `${Math.round(clampedTop)}px`;
@@ -693,8 +686,7 @@ function bindEvents() {
   }
 
   if (el.mobileInspectorToggleBtn) {
-    el.mobileInspectorToggleBtn.addEventListener("click",
-        toggleMobileInspector);
+    el.mobileInspectorToggleBtn.addEventListener("click", toggleMobileInspector);
   }
 
   if (el.mobileBackdrop) {
@@ -715,7 +707,7 @@ function bindEvents() {
   document.addEventListener("click", (event) => {
     if (getElementTarget(event)?.closest("#saveModelBtn")) {
       event.preventDefault();
-      void saveCurrentModel({rethrow: true}).catch(() => {
+      void saveCurrentModel({ rethrow: true }).catch(() => {
         // saveCurrentModel updates the visible save status.
       });
       return;
@@ -740,16 +732,16 @@ function bindEvents() {
     }
     const target = getElementTarget(event);
     if (
-        key === "z" && (target?.closest(
-                'input, textarea, select, [contenteditable="true"]')
-            || target?.isContentEditable)
+      key === "z" &&
+      (target?.closest('input, textarea, select, [contenteditable="true"]') ||
+        target?.isContentEditable)
     ) {
       return;
     }
     event.preventDefault();
     try {
       if (key === "s") {
-        await saveCurrentModel({rethrow: true});
+        await saveCurrentModel({ rethrow: true });
       } else {
         await undoLastEdit();
       }
@@ -761,17 +753,15 @@ function bindEvents() {
   });
 
   // Canvas interaction
-  el.canvasZoomControl?.addEventListener("mousedown",
-      (event) => event.stopPropagation());
-  el.canvasZoomControl?.addEventListener("pointerdown",
-      (event) => event.stopPropagation());
-  el.canvasZoomControl?.addEventListener("touchstart",
-      (event) => event.stopPropagation(), {passive: true});
+  el.canvasZoomControl?.addEventListener("mousedown", (event) => event.stopPropagation());
+  el.canvasZoomControl?.addEventListener("pointerdown", (event) => event.stopPropagation());
+  el.canvasZoomControl?.addEventListener("touchstart", (event) => event.stopPropagation(), {
+    passive: true,
+  });
   el.canvasZoomOutBtn?.addEventListener("click", () => zoomCanvasBy(0.85));
   el.canvasZoomInBtn?.addEventListener("click", () => zoomCanvasBy(1.18));
   el.canvasZoomResetBtn?.addEventListener("click", resetCanvasView);
-  el.canvasZoomFitBtn?.addEventListener("click", () =>
-      centerViewportOnDiagram({fit: true}));
+  el.canvasZoomFitBtn?.addEventListener("click", () => centerViewportOnDiagram({ fit: true }));
 
   const collapseChatInput = () => {
     el.chatInputRow?.classList.remove("chat-input-expanded");
@@ -788,8 +778,7 @@ function bindEvents() {
     }
     el.chatInput.rows = 1;
     el.chatInput.style.height = "auto";
-    el.chatInput.style.height = `${Math.min(el.chatInput.scrollHeight,
-        CHAT_INPUT_MAX_HEIGHT)}px`;
+    el.chatInput.style.height = `${Math.min(el.chatInput.scrollHeight, CHAT_INPUT_MAX_HEIGHT)}px`;
   };
 
   const clearExpandedChatBounds = () => {
@@ -811,15 +800,18 @@ function bindEvents() {
       clearExpandedChatBounds();
     }
     el.chatExpandBtn?.setAttribute("aria-pressed", String(expanded));
-    el.chatExpandBtn?.setAttribute("aria-label",
-        expanded ? "Restore chat window size" : "Expand chat window");
+    el.chatExpandBtn?.setAttribute(
+      "aria-label",
+      expanded ? "Restore chat window size" : "Expand chat window",
+    );
     if (el.chatExpandBtn) {
-      el.chatExpandBtn.title = expanded ? "Restore chat window size"
-          : "Expand chat window";
+      el.chatExpandBtn.title = expanded ? "Restore chat window size" : "Expand chat window";
     }
     if (el.chatExpandIcon) {
-      el.chatExpandIcon.style.setProperty("--icon-src",
-          `url('/assets/icons/${expanded ? "collapse" : "expand"}.svg')`);
+      el.chatExpandIcon.style.setProperty(
+        "--icon-src",
+        `url('/assets/icons/${expanded ? "collapse" : "expand"}.svg')`,
+      );
     }
   };
 
@@ -829,38 +821,41 @@ function bindEvents() {
       return;
     }
     const anchor = el.canvasViewport?.classList.contains("hidden")
-        ? el.artifactEditor : el.canvasViewport;
+      ? el.artifactEditor
+      : el.canvasViewport;
     const parentRect = el.chatWindow.offsetParent?.getBoundingClientRect();
     const canvasRect = anchor?.getBoundingClientRect();
-    if (!parentRect || !canvasRect || canvasRect.width <= 0
-        || canvasRect.height <= 0) {
+    if (!parentRect || !canvasRect || canvasRect.width <= 0 || canvasRect.height <= 0) {
       return;
     }
 
     const rootStyles = getComputedStyle(document.documentElement);
     const stageStyles = getComputedStyle(el.canvasViewport);
-    const gap = Number.parseFloat(stageStyles.getPropertyValue(
-        "--workbench-gap"))
-        || Number.parseFloat(rootStyles.getPropertyValue("--workbench-gap"))
-        || 6;
+    const gap =
+      Number.parseFloat(stageStyles.getPropertyValue("--workbench-gap")) ||
+      Number.parseFloat(rootStyles.getPropertyValue("--workbench-gap")) ||
+      6;
     const topbarRect = document.querySelector(".topbar")?.getBoundingClientRect();
     const railRect = document.querySelector(".workspace-rail")?.getBoundingClientRect();
-    const rightPaneRect = document.querySelector(
-        ".right-pane:not(.hidden), .impact-panel:not(.hidden)")?.getBoundingClientRect();
+    const rightPaneRect = document
+      .querySelector(".right-pane:not(.hidden), .impact-panel:not(.hidden)")
+      ?.getBoundingClientRect();
 
     const left = Math.max(canvasRect.left, railRect?.right || 0) + gap;
     const top = Math.max(canvasRect.top, topbarRect?.bottom || 0) + gap;
     const right = (rightPaneRect?.left || canvasRect.right) - gap;
     const bottom = canvasRect.bottom - gap;
 
-    el.chatWindow.style.setProperty("--chat-expanded-left",
-        `${Math.max(gap, left - parentRect.left)}px`);
-    el.chatWindow.style.setProperty("--chat-expanded-top",
-        `${Math.max(gap, top - parentRect.top)}px`);
-    el.chatWindow.style.setProperty("--chat-expanded-width",
-        `${Math.max(320, right - left)}px`);
-    el.chatWindow.style.setProperty("--chat-expanded-height",
-        `${Math.max(280, bottom - top)}px`);
+    el.chatWindow.style.setProperty(
+      "--chat-expanded-left",
+      `${Math.max(gap, left - parentRect.left)}px`,
+    );
+    el.chatWindow.style.setProperty(
+      "--chat-expanded-top",
+      `${Math.max(gap, top - parentRect.top)}px`,
+    );
+    el.chatWindow.style.setProperty("--chat-expanded-width", `${Math.max(320, right - left)}px`);
+    el.chatWindow.style.setProperty("--chat-expanded-height", `${Math.max(280, bottom - top)}px`);
   };
 
   // Chat
@@ -869,8 +864,7 @@ function bindEvents() {
     el.chatWindow.classList.toggle("hidden", !willOpen);
     if (willOpen) {
       syncExpandedChatBounds();
-      ensureChatSession().catch(
-          (error) => setStatus(`Chat setup failed: ${error.message}`));
+      ensureChatSession().catch((error) => setStatus(`Chat setup failed: ${error.message}`));
       el.chatInput.focus();
     } else {
       setChatExpanded(false);
@@ -900,7 +894,7 @@ function bindEvents() {
     chatPanelObserver.observe(el.workspace, {
       attributes: true,
       attributeFilter: ["class"],
-      subtree: true
+      subtree: true,
     });
   }
 
@@ -937,13 +931,12 @@ function bindEvents() {
       state.chat.attachment = null;
       event.target.value = "";
       updateChatAttachmentLabel();
-      setError(
-          `File too large (${file.size} bytes). Max ${CHAT_ATTACHMENT_MAX_BYTES} bytes.`);
+      setError(`File too large (${file.size} bytes). Max ${CHAT_ATTACHMENT_MAX_BYTES} bytes.`);
       return;
     }
     try {
       const content = await file.text();
-      state.chat.attachment = {name: file.name, content};
+      state.chat.attachment = { name: file.name, content };
       updateChatAttachmentLabel();
       setStatus(`Attached: ${file.name}`);
     } catch (error) {
@@ -974,8 +967,7 @@ function bindEvents() {
   });
 
   // Artifact explorer
-  el.artifactTreeToggleBtn?.addEventListener("click",
-      toggleArtifactTreeCollapsed);
+  el.artifactTreeToggleBtn?.addEventListener("click", toggleArtifactTreeCollapsed);
 
   el.deployGithubBtn?.addEventListener("click", deployToGithubFromArtifacts);
 
@@ -991,13 +983,12 @@ function bindEvents() {
     }
     const target = getElementTarget(event);
     if (
-        target?.closest('input, textarea, select, [contenteditable="true"]') ||
-        target?.isContentEditable
+      target?.closest('input, textarea, select, [contenteditable="true"]') ||
+      target?.isContentEditable
     ) {
       return;
     }
-    if (!state.selectedNodeId && !state.selectedConnectionId
-        && !state.selectedBoundedContextName) {
+    if (!state.selectedNodeId && !state.selectedConnectionId && !state.selectedBoundedContextName) {
       return;
     }
     event.preventDefault();
@@ -1007,7 +998,6 @@ function bindEvents() {
   // Impact analysis
   el.impactToggleBtn?.addEventListener("click", toggleImpactMode);
   el.impactPanelCloseBtn?.addEventListener("click", closeImpactPanel);
-
 }
 
 // ── Application init ──────────────────────────────────────────────────────────
@@ -1024,27 +1014,26 @@ async function init() {
   bindProjectDialogActions();
   setupIdeMenus();
   bindEvents();
-  installG6LargeGraphDevHelper(
-      {renderDiagram, renderWorkbench: renderViewWorkbench});
+  installG6LargeGraphDevHelper({ renderDiagram, renderWorkbench: renderViewWorkbench });
   bindUnsavedModelGuard();
-  initViewWorkbench({renderDiagram, renderPalette});
+  initViewWorkbench({ renderDiagram, renderPalette });
   initCimWorkbenchSurface({
     renderDiagram,
     renderPalette,
     openAttributePanel,
-    openConnectionPanel
+    openConnectionPanel,
   });
   initPimWorkbenchSurface({
     renderDiagram,
     renderPalette,
     openAttributePanel,
-    openConnectionPanel
+    openConnectionPanel,
   });
   initPsmWorkbenchSurface({
     renderDiagram,
     renderPalette,
     openAttributePanel,
-    openConnectionPanel
+    openConnectionPanel,
   });
   syncPaletteRailToggleState();
   syncResponsiveUi();
@@ -1071,5 +1060,6 @@ async function init() {
 init().catch((error) => {
   console.error("Application initialization failed", error);
   setError(
-      `Application initialization failed: ${error.message}. Check backend logs and /api/modeling/config.`);
+    `Application initialization failed: ${error.message}. Check backend logs and /api/modeling/config.`,
+  );
 });

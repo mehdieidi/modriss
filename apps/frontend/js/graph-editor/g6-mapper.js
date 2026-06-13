@@ -1,9 +1,9 @@
-import {state} from '../state.js';
+import { state } from "../state.js";
 import {
   modelingElementDefinition,
   modelingRelationshipKindLabel,
-  modelingRelationshipPresentation
-} from '../modeling-config-data.js';
+  modelingRelationshipPresentation,
+} from "../modeling-config-data.js";
 import {
   canvasBackgroundColor,
   cssVar,
@@ -12,8 +12,8 @@ import {
   G6_BASE_NODE_TYPE,
   nodeAccent,
   nodeSizeForDiagram,
-  stickyColor
-} from './g6-style.js';
+  stickyColor,
+} from "./g6-style.js";
 
 const elementDefinitionCache = new Map();
 
@@ -60,20 +60,22 @@ function notationFromDefinition(typeKey, node, definition) {
     return null;
   }
   const lineFields = Array.isArray(definition.notation.lineFields)
-      ? definition.notation.lineFields : [];
+    ? definition.notation.lineFields
+    : [];
   return {
     tag: definition.notation.tag || "element",
     line: (meta) => {
       for (const field of lineFields) {
         const value = meta?.[field];
-        const text = Array.isArray(value) ? value.map(refLabel).filter(Boolean)
-        .slice(0, 3).join(", ") : compactRefCount(value);
+        const text = Array.isArray(value)
+          ? value.map(refLabel).filter(Boolean).slice(0, 3).join(", ")
+          : compactRefCount(value);
         if (String(text || "").trim()) {
           return text;
         }
       }
       return "";
-    }
+    },
   };
 }
 
@@ -87,16 +89,17 @@ function nodeToken(typeKey, node, notation) {
   if (token) {
     return token;
   }
-  return String(node?.type || "element").replaceAll(/([a-z])([A-Z])/g,
-      "$1 $2").toLowerCase();
+  return String(node?.type || "element")
+    .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
+    .toLowerCase();
 }
 
 function humanizeType(value) {
   return String(value || "Element")
-  .replaceAll("_", " ")
-  .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
-  .replace(/\s+/g, " ")
-  .trim();
+    .replaceAll("_", " ")
+    .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function nodeDetailLine(node, notation, definition) {
@@ -107,13 +110,17 @@ function nodeDetailLine(node, notation, definition) {
     meta.lifecycle,
     meta.status,
     meta.reviewStatus,
-    definition?.category
-  ].map((value) => String(value || "").trim()).filter(Boolean);
+    definition?.category,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
   return candidates.find((value) => value !== node?.label) || "";
 }
 
 function badgeText(value) {
-  return String(value || "").trim().replaceAll("_", " ");
+  return String(value || "")
+    .trim()
+    .replaceAll("_", " ");
 }
 
 function addBadge(badges, text) {
@@ -130,12 +137,15 @@ function nodeBadges(typeKey, node, definition) {
   if (meta.generated || meta.generatedFrom || meta.transformationRuleId) {
     addBadge(badges, "generated");
   }
-  if (meta.manual || meta.manualReviewRequired || meta.requiresManualReview
-      || meta.reviewStatus === "NEEDS_REVIEW") {
+  if (
+    meta.manual ||
+    meta.manualReviewRequired ||
+    meta.requiresManualReview ||
+    meta.reviewStatus === "NEEDS_REVIEW"
+  ) {
     addBadge(badges, "review");
   }
-  if (meta.productionBlocking || meta.blocksTransformation
-      || meta.blocking === true) {
+  if (meta.productionBlocking || meta.blocksTransformation || meta.blocking === true) {
     addBadge(badges, "blocking");
   }
   if (meta.severity) {
@@ -144,8 +154,13 @@ function nodeBadges(typeKey, node, definition) {
   if (meta.lifecycle || meta.lifecycleStatus || meta.status) {
     addBadge(badges, meta.lifecycle || meta.lifecycleStatus || meta.status);
   }
-  if (meta.required || meta.productionRequired || meta.authRequired
-      || meta.authenticationRequired || meta.authorizationRequired) {
+  if (
+    meta.required ||
+    meta.productionRequired ||
+    meta.authRequired ||
+    meta.authenticationRequired ||
+    meta.authorizationRequired
+  ) {
     addBadge(badges, "required");
   }
   if (meta.encryptionRequired || meta.encryption || meta.sseEnabled) {
@@ -198,25 +213,27 @@ function routeEndpoint(node, anchor, typeKey) {
     return null;
   }
   const size = nodeSizeForDiagram(typeKey);
-  const side = anchor.side === "left" ? "left"
-      : anchor.side === "right" ? "right" : null;
+  const side = anchor.side === "left" ? "left" : anchor.side === "right" ? "right" : null;
   const offsetY = Number(anchor.offsetY);
   if (!side || !Number.isFinite(offsetY)) {
     return null;
   }
   return {
     x: Math.round(node.x + (side === "right" ? size.width : 0)),
-    y: Math.round(node.y + Math.max(8, Math.min(size.height - 8, offsetY)))
+    y: Math.round(node.y + Math.max(8, Math.min(size.height - 8, offsetY))),
   };
 }
 
-export function mapNodeToG6(node, {
-  typeKey = state.activeType,
-  detailLevel = "normal",
-  isContainer = () => false,
-  contextNameFromNode = () => "",
-  viewProfile = ""
-} = {}) {
+export function mapNodeToG6(
+  node,
+  {
+    typeKey = state.activeType,
+    detailLevel = "normal",
+    isContainer = () => false,
+    contextNameFromNode = () => "",
+    viewProfile = "",
+  } = {},
+) {
   const size = nodeSizeForDiagram(typeKey);
   const definition = cachedElementDefinition(typeKey, node.type);
   const notation = notationFromDefinition(typeKey, node, definition);
@@ -248,7 +265,7 @@ export function mapNodeToG6(node, {
       viewProfile,
       contextName,
       container,
-      detailLevel
+      detailLevel,
     },
     style: {
       x: Math.round(Number(node.x || 0) + size.width / 2),
@@ -260,8 +277,7 @@ export function mapNodeToG6(node, {
       elementId: node.id,
       nodeType: node.type,
       labelText: node.label || node.id,
-      labelFill: typeKey === "cim" ? "rgba(24, 20, 14, 0.92)"
-          : "rgba(227, 232, 242, 0.96)",
+      labelFill: typeKey === "cim" ? "rgba(24, 20, 14, 0.92)" : "rgba(227, 232, 242, 0.96)",
       labelFontSize: 12,
       labelFontWeight: 700,
       labelPlacement: "center",
@@ -277,32 +293,26 @@ export function mapNodeToG6(node, {
       accent,
       sticky,
       fill: typeKey === "cim" ? sticky : "rgba(19, 25, 35, 0.98)",
-      stroke: typeKey === "cim" ? "rgba(21, 28, 40, 0.24)"
-          : "rgba(61, 73, 95, 0.92)",
+      stroke: typeKey === "cim" ? "rgba(21, 28, 40, 0.24)" : "rgba(61, 73, 95, 0.92)",
       lineWidth: 1,
       radius: 2,
-      shadowColor: typeKey === "cim" ? "rgba(12, 18, 28, 0.28)"
-          : "rgba(6, 11, 20, 0.32)",
+      shadowColor: typeKey === "cim" ? "rgba(12, 18, 28, 0.28)" : "rgba(6, 11, 20, 0.32)",
       shadowBlur: typeKey === "cim" ? 10 : 8,
       detailLevel,
-      isContainer: container
-    }
+      isContainer: container,
+    },
   };
 }
 
-export function mapEdgeToG6(edge, {
-  typeKey = state.activeType,
-  showLabels = true,
-  selected = false,
-  hovered = false
-} = {}) {
+export function mapEdgeToG6(
+  edge,
+  { typeKey = state.activeType, showLabels = true, selected = false, hovered = false } = {},
+) {
   const presentation = edgePresentation(edge, typeKey);
   const style = edgeStyleForKind(edge.kind, presentation);
   const label = edgeLabel(edge, typeKey);
-  const sourceNode = state.diagram.nodes.find((node) =>
-      node.id === edge.sourceId);
-  const targetNode = state.diagram.nodes.find((node) =>
-      node.id === edge.targetId);
+  const sourceNode = state.diagram.nodes.find((node) => node.id === edge.sourceId);
+  const targetNode = state.diagram.nodes.find((node) => node.id === edge.targetId);
   const routeStart = routeEndpoint(sourceNode, edge.sourceAnchor, typeKey);
   const routeEnd = routeEndpoint(targetNode, edge.targetAnchor, typeKey);
   return {
@@ -321,7 +331,7 @@ export function mapEdgeToG6(edge, {
       sourceAnchor: edge.sourceAnchor || null,
       targetAnchor: edge.targetAnchor || null,
       routeStart,
-      routeEnd
+      routeEnd,
     },
     style: {
       stroke: style.stroke,
@@ -331,7 +341,7 @@ export function mapEdgeToG6(edge, {
       endArrow: presentation.markerEnd !== "",
       startArrow: Boolean(presentation.markerStart),
       router: {
-        type: "orth"
+        type: "orth",
       },
       pinPoints: Array.isArray(edge.pinPoints) ? edge.pinPoints : [],
       routeStart,
@@ -346,18 +356,19 @@ export function mapEdgeToG6(edge, {
       labelFontSize: selected || hovered ? 12 : 11,
       labelFontWeight: selected || hovered ? 800 : 750,
       labelFill: selected
-          ? cssVar("--accent-light", "#7bd0ff")
-          : cssVar("--text-strong", "#e7ecf5"),
+        ? cssVar("--accent-light", "#7bd0ff")
+        : cssVar("--text-strong", "#e7ecf5"),
       labelBackground: Boolean(showLabels || selected || hovered),
       labelBackgroundFill: cssVar("--surface-high", canvasBackgroundColor()),
       labelBackgroundFillOpacity: 0.96,
       labelBackgroundStroke: selected
-          ? cssVar("--accent-select", "#5ecbff")
-          : cssVar("--border", "#344055"),
+        ? cssVar("--accent-select", "#5ecbff")
+        : cssVar("--border", "#344055"),
       labelBackgroundLineWidth: selected ? 1.4 : 1,
       labelBackgroundRadius: 6,
       labelBackgroundShadowBlur: selected || hovered ? 10 : 5,
-      labelBackgroundShadowColor: selected || hovered
+      labelBackgroundShadowColor:
+        selected || hovered
           ? cssVar("--accent-glow", "rgba(0, 166, 224, 0.28)")
           : "rgba(8, 14, 24, 0.24)",
       labelPadding: [4, 8],
@@ -368,8 +379,8 @@ export function mapEdgeToG6(edge, {
       labelBackgroundZIndex: 1,
       edgeKind: edge.kind,
       selected,
-      hovered
-    }
+      hovered,
+    },
   };
 }
 
@@ -391,19 +402,23 @@ export function mapDiagramToG6({
       return;
     }
     visibleNodeIds.add(node.id);
-    g6Nodes.push(mapNodeToG6(node, {
-      typeKey,
-      detailLevel,
-      ...nodeOptions
-    }));
+    g6Nodes.push(
+      mapNodeToG6(node, {
+        typeKey,
+        detailLevel,
+        ...nodeOptions,
+      }),
+    );
   });
-  const g6Edges = edges.filter((edge) =>
-      visibleNodeIds.has(edge.sourceId) && visibleNodeIds.has(edge.targetId))
-  .map((edge) => mapEdgeToG6(edge, {
-    typeKey,
-    showLabels,
-    selected: selectedEdgeId === edge.id,
-    hovered: hoveredEdgeId === edge.id
-  }));
-  return {nodes: g6Nodes, edges: g6Edges};
+  const g6Edges = edges
+    .filter((edge) => visibleNodeIds.has(edge.sourceId) && visibleNodeIds.has(edge.targetId))
+    .map((edge) =>
+      mapEdgeToG6(edge, {
+        typeKey,
+        showLabels,
+        selected: selectedEdgeId === edge.id,
+        hovered: hoveredEdgeId === edge.id,
+      }),
+    );
+  return { nodes: g6Nodes, edges: g6Edges };
 }

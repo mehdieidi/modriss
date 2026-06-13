@@ -31,14 +31,14 @@ export const TOUCH_MOVE_THRESHOLD = 6;
 export const MODEL_TYPES = {
   cim: {
     apiType: "cim",
-    chatType: "CIM"
+    chatType: "CIM",
   },
   pim: {
     apiType: "pim",
-    chatType: "PIM"
+    chatType: "PIM",
   },
   psm: {
     apiType: "psm",
-    chatType: "PSM"
-  }
+    chatType: "PSM",
+  },
 };

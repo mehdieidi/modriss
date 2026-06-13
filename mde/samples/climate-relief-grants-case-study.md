@@ -123,16 +123,17 @@ The case study centers on three strategic goals:
 The case study uses two primary bounded-context candidates:
 
 1. **Intake and Eligibility**
-    - application capture
-    - document requests
-    - identity and household checks
-    - eligibility decision support
+
+   - application capture
+   - document requests
+   - identity and household checks
+   - eligibility decision support
 
 2. **Disbursement and Appeals**
-    - payment scheduling
-    - supplier reimbursement
-    - appeal submission and resolution
-    - audit evidence assembly
+   - payment scheduling
+   - supplier reimbursement
+   - appeal submission and resolution
+   - audit evidence assembly
 
 These contexts are intentionally distinct but strongly connected through events and shared business
 language, making them useful for evaluating service-boundary inference.
@@ -169,12 +170,13 @@ paths, and transformation hotspots.
 ### Aggregate candidates
 
 - **ApplicationCaseAggregate**
-    - root: `GrantApplication`
-    - members: `GrantApplication`, `ReviewCase`, `AppealCase`
+
+  - root: `GrantApplication`
+  - members: `GrantApplication`, `ReviewCase`, `AppealCase`
 
 - **PaymentSettlementAggregate**
-    - root: `Disbursement`
-    - members: `Disbursement`, `SupplierInvoice`, `GrantAward`
+  - root: `Disbursement`
+  - members: `Disbursement`, `SupplierInvoice`, `GrantAward`
 
 These aggregates are chosen to create deliberate evaluation tension between strong consistency,
 eventual consistency, human approval, and compensation.
@@ -221,10 +223,11 @@ CIM-level and provider-neutral.
 Two long-running processes are central:
 
 1. **Emergency Grant Case Lifecycle**
-    - from intake through eligibility review and approval/rejection
+
+   - from intake through eligibility review and approval/rejection
 
 2. **Appeal and Recovery Lifecycle**
-    - from appeal intake through reassessment, compensation, and closure
+   - from appeal intake through reassessment, compensation, and closure
 
 Both processes include start/end, command, query, event, policy, human task, external interaction,
 decision, and wait steps so they are useful for full process metamodel coverage.

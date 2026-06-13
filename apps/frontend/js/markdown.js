@@ -1,7 +1,8 @@
 const SAFE_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
 
 function appendInlineMarkdown(parent, text) {
-  const pattern = /(`[^`\n]+`|\[([^\]]+)]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*\n]+)\*\*|__([^_\n]+)__|\*([^*\n]+)\*|_([^_\n]+)_|~~([^~\n]+)~~)/g;
+  const pattern =
+    /(`[^`\n]+`|\[([^\]]+)]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*\n]+)\*\*|__([^_\n]+)__|\*([^*\n]+)\*|_([^_\n]+)_|~~([^~\n]+)~~)/g;
   let cursor = 0;
   let match;
 
@@ -62,19 +63,23 @@ function appendParagraph(container, lines) {
 }
 
 function isBlockStart(line) {
-  return /^(```|#{1,6}\s+|>\s?|[-*_](?:\s*[-*_]){2,}\s*$|(?:[-+*]|\d+\.)\s+)/.test(
-      line);
+  return /^(```|#{1,6}\s+|>\s?|[-*_](?:\s*[-*_]){2,}\s*$|(?:[-+*]|\d+\.)\s+)/.test(line);
 }
 
 function tableCells(line) {
-  return line.trim().replace(/^\||\|$/g, "").split("|").map(
-      (cell) => cell.trim());
+  return line
+    .trim()
+    .replace(/^\||\|$/g, "")
+    .split("|")
+    .map((cell) => cell.trim());
 }
 
 export function renderMarkdown(text) {
   const root = document.createElement("div");
   root.className = "chat-markdown";
-  const lines = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+  const lines = String(text || "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n");
   let index = 0;
 
   while (index < lines.length) {
@@ -131,9 +136,11 @@ export function renderMarkdown(text) {
       continue;
     }
 
-    if (index + 1 < lines.length && line.includes("|")
-        && /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(
-            lines[index + 1])) {
+    if (
+      index + 1 < lines.length &&
+      line.includes("|") &&
+      /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[index + 1])
+    ) {
       const headers = tableCells(line);
       const table = document.createElement("table");
       const headRow = document.createElement("tr");
@@ -147,8 +154,7 @@ export function renderMarkdown(text) {
       table.append(head);
       const body = document.createElement("tbody");
       index += 2;
-      while (index < lines.length && lines[index].includes("|")
-          && lines[index].trim()) {
+      while (index < lines.length && lines[index].includes("|") && lines[index].trim()) {
         const row = document.createElement("tr");
         tableCells(lines[index]).forEach((value) => {
           const cell = document.createElement("td");
@@ -183,8 +189,7 @@ export function renderMarkdown(text) {
 
     const paragraphLines = [line];
     index += 1;
-    while (index < lines.length && lines[index].trim()
-        && !isBlockStart(lines[index])) {
+    while (index < lines.length && lines[index].trim() && !isBlockStart(lines[index])) {
       paragraphLines.push(lines[index]);
       index += 1;
     }

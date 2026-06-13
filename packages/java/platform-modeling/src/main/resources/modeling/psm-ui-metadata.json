@@ -7,20 +7,13 @@
     "notation": {
       "tag": "AWS",
       "shape": "resource-card",
-      "lineFields": [
-        "logicalId",
-        "awsResourceType",
-        "physicalName",
-        "lifecycleStatus"
-      ]
+      "lineFields": ["logicalId", "awsResourceType", "physicalName", "lifecycleStatus"]
     }
   },
   "elementVisualRules": [
     {
       "match": {
-        "packages": [
-          "awspsm"
-        ]
+        "packages": ["awspsm"]
       },
       "metadata": {
         "icon": "dashboard",
@@ -29,20 +22,13 @@
         "notation": {
           "tag": "ROOT",
           "shape": "workspace-container",
-          "lineFields": [
-            "partition",
-            "defaultRegion",
-            "accountStrategy",
-            "productionMode"
-          ]
+          "lineFields": ["partition", "defaultRegion", "accountStrategy", "productionMode"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmcore"
-        ]
+        "packages": ["awspsmcore"]
       },
       "metadata": {
         "icon": "inventory",
@@ -51,20 +37,13 @@
         "notation": {
           "tag": "CFN",
           "shape": "stack-card",
-          "lineFields": [
-            "logicalId",
-            "stackName",
-            "templatePath",
-            "parameterName"
-          ]
+          "lineFields": ["logicalId", "stackName", "templatePath", "parameterName"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmcompute"
-        ]
+        "packages": ["awspsmcompute"]
       },
       "metadata": {
         "icon": "functions",
@@ -73,20 +52,13 @@
         "notation": {
           "tag": "LAMBDA",
           "shape": "resource-card",
-          "lineFields": [
-            "logicalId",
-            "functionName",
-            "runtimeIdentifier",
-            "timeoutSeconds"
-          ]
+          "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmapi"
-        ]
+        "packages": ["awspsmapi"]
       },
       "metadata": {
         "icon": "api",
@@ -95,21 +67,13 @@
         "notation": {
           "tag": "API",
           "shape": "api-card",
-          "lineFields": [
-            "logicalId",
-            "apiName",
-            "method",
-            "path",
-            "routeKey"
-          ]
+          "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmevents"
-        ]
+        "packages": ["awspsmevents"]
       },
       "metadata": {
         "icon": "event",
@@ -118,20 +82,13 @@
         "notation": {
           "tag": "EVB",
           "shape": "event-card",
-          "lineFields": [
-            "logicalId",
-            "busName",
-            "ruleName",
-            "scheduleExpression"
-          ]
+          "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmmessaging"
-        ]
+        "packages": ["awspsmmessaging"]
       },
       "metadata": {
         "icon": "hub",
@@ -140,20 +97,13 @@
         "notation": {
           "tag": "MSG",
           "shape": "messaging-card",
-          "lineFields": [
-            "logicalId",
-            "queueName",
-            "topicName",
-            "protocol"
-          ]
+          "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmstorage"
-        ]
+        "packages": ["awspsmstorage"]
       },
       "metadata": {
         "icon": "database",
@@ -162,21 +112,13 @@
         "notation": {
           "tag": "STORE",
           "shape": "storage-card",
-          "lineFields": [
-            "logicalId",
-            "tableName",
-            "bucketName",
-            "billingMode",
-            "publicAccessMode"
-          ]
+          "lineFields": ["logicalId", "tableName", "bucketName", "billingMode", "publicAccessMode"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmsecurity"
-        ]
+        "packages": ["awspsmsecurity"]
       },
       "metadata": {
         "icon": "security",
@@ -185,21 +127,13 @@
         "notation": {
           "tag": "SEC",
           "shape": "security-card",
-          "lineFields": [
-            "logicalId",
-            "roleName",
-            "policyName",
-            "secretName",
-            "effect"
-          ]
+          "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmidentity"
-        ]
+        "packages": ["awspsmidentity"]
       },
       "metadata": {
         "icon": "supervised_user_circle",
@@ -208,20 +142,13 @@
         "notation": {
           "tag": "ID",
           "shape": "identity-card",
-          "lineFields": [
-            "logicalId",
-            "userPoolName",
-            "clientName",
-            "groupName"
-          ]
+          "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmworkflow"
-        ]
+        "packages": ["awspsmworkflow"]
       },
       "metadata": {
         "icon": "alt_route",
@@ -230,20 +157,13 @@
         "notation": {
           "tag": "SFN",
           "shape": "workflow-node",
-          "lineFields": [
-            "logicalId",
-            "stateMachineName",
-            "stateName",
-            "stateType"
-          ]
+          "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmobservability"
-        ]
+        "packages": ["awspsmobservability"]
       },
       "metadata": {
         "icon": "monitoring",
@@ -252,20 +172,13 @@
         "notation": {
           "tag": "OBS",
           "shape": "ops-card",
-          "lineFields": [
-            "logicalId",
-            "logGroupName",
-            "alarmName",
-            "metricName"
-          ]
+          "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmnetworking"
-        ]
+        "packages": ["awspsmnetworking"]
       },
       "metadata": {
         "icon": "lan",
@@ -274,20 +187,13 @@
         "notation": {
           "tag": "NET",
           "shape": "network-card",
-          "lineFields": [
-            "logicalId",
-            "vpcId",
-            "subnetId",
-            "securityGroupId"
-          ]
+          "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "awspsmintegrations"
-        ]
+        "packages": ["awspsmintegrations"]
       },
       "metadata": {
         "icon": "link",
@@ -297,19 +203,13 @@
         "notation": {
           "tag": "VIEW",
           "shape": "relationship-edge",
-          "lineFields": [
-            "generated",
-            "source",
-            "target"
-          ]
+          "lineFields": ["generated", "source", "target"]
         }
       }
     },
     {
       "match": {
-        "packages": [
-          "kernel"
-        ]
+        "packages": ["kernel"]
       },
       "metadata": {
         "icon": "tag",
@@ -318,38 +218,25 @@
         "notation": {
           "tag": "META",
           "shape": "metadata-chip",
-          "lineFields": [
-            "linkType",
-            "reviewStatus",
-            "sourceReference"
-          ]
+          "lineFields": ["linkType", "reviewStatus", "sourceReference"]
         }
       }
     },
     {
       "match": {
-        "supertypes": [
-          "AwsResource"
-        ]
+        "supertypes": ["AwsResource"]
       },
       "metadata": {
         "notation": {
           "tag": "AWS",
           "shape": "resource-card",
-          "lineFields": [
-            "logicalId",
-            "awsResourceType",
-            "physicalName",
-            "deletionPolicy"
-          ]
+          "lineFields": ["logicalId", "awsResourceType", "physicalName", "deletionPolicy"]
         }
       }
     },
     {
       "match": {
-        "supertypes": [
-          "SemanticRelationship"
-        ]
+        "supertypes": ["SemanticRelationship"]
       },
       "metadata": {
         "relationshipElement": true,
@@ -357,12 +244,7 @@
         "notation": {
           "tag": "REL",
           "shape": "relationship-edge",
-          "lineFields": [
-            "kind",
-            "generated",
-            "source",
-            "target"
-          ]
+          "lineFields": ["kind", "generated", "source", "target"]
         }
       }
     },
@@ -426,44 +308,27 @@
     {
       "element": "ModelElement / TraceableElement",
       "notation": "Hidden metadata layer with lifecycle, generated, rationale, review, and trace badges.",
-      "surfaces": [
-        "inspector",
-        "search",
-        "trace overlay",
-        "status badges"
-      ]
+      "surfaces": ["inspector", "search", "trace overlay", "status badges"]
     },
     {
       "element": "Annotation / KeyValue",
       "notation": "Key-value chips attached to a card or listed in an annotations tab.",
-      "surfaces": [
-        "inspector",
-        "detail projection"
-      ]
+      "surfaces": ["inspector", "detail projection"]
     },
     {
       "element": "TraceModel / TraceLink",
       "notation": "Separate traceability overlay with dashed labeled links and confidence filtering.",
-      "surfaces": [
-        "trace view",
-        "relationship matrix"
-      ]
+      "surfaces": ["trace view", "relationship matrix"]
     },
     {
       "element": "Expression / StructuredDocument",
       "notation": "Expandable expression or document editor with compact card badge.",
-      "surfaces": [
-        "inspector",
-        "detail modal"
-      ]
+      "surfaces": ["inspector", "detail modal"]
     },
     {
       "element": "ProductionReadinessAssessment / findings / checks / decisions",
       "notation": "Readiness board and severity markers on affected elements.",
-      "surfaces": [
-        "readiness board",
-        "validation overlay"
-      ]
+      "surfaces": ["readiness board", "validation overlay"]
     }
   ],
   "complexityManagement": [
@@ -554,49 +419,27 @@
   },
   "relationshipVisualRules": [
     {
-      "matchKinds": [
-        "CONTAINS",
-        "DEPLOYS",
-        "DEPLOYS_TO"
-      ],
+      "matchKinds": ["CONTAINS", "DEPLOYS", "DEPLOYS_TO"],
       "className": "edge-domain-ownership",
       "stroke": "#475569",
       "lineWidth": 2.6
     },
     {
-      "matchKinds": [
-        "DEPENDS_ON",
-        "NETWORKS_WITH",
-        "TARGETS"
-      ],
+      "matchKinds": ["DEPENDS_ON", "NETWORKS_WITH", "TARGETS"],
       "className": "edge-domain-dependency",
       "stroke": "#0f766e",
-      "lineDash": [
-        7,
-        4
-      ]
+      "lineDash": [7, 4]
     },
     {
-      "matchKinds": [
-        "ROUTES_TO",
-        "INVOKES",
-        "EVENT_FLOW",
-        "MESSAGE_FLOW"
-      ],
+      "matchKinds": ["ROUTES_TO", "INVOKES", "EVENT_FLOW", "MESSAGE_FLOW"],
       "className": "edge-pim-event",
       "stroke": "#0891b2"
     },
     {
-      "matchKinds": [
-        "READS",
-        "WRITES"
-      ],
+      "matchKinds": ["READS", "WRITES"],
       "className": "edge-pim-data",
       "stroke": "#15803d",
-      "lineDash": [
-        4,
-        3
-      ]
+      "lineDash": [4, 3]
     },
     {
       "matchKinds": [
@@ -609,33 +452,17 @@
       ],
       "className": "edge-conflict",
       "stroke": "#dc2626",
-      "lineDash": [
-        8,
-        3,
-        2,
-        3
-      ]
+      "lineDash": [8, 3, 2, 3]
     },
     {
-      "matchKinds": [
-        "OBSERVES",
-        "WRITES_LOGS_TO",
-        "TRACE"
-      ],
-      "matchEClasses": [
-        "TraceLink"
-      ],
+      "matchKinds": ["OBSERVES", "WRITES_LOGS_TO", "TRACE"],
+      "matchEClasses": ["TraceLink"],
       "className": "edge-trace-link",
       "stroke": "#7c3aed",
-      "lineDash": [
-        2,
-        5
-      ]
+      "lineDash": [2, 5]
     },
     {
-      "matchKinds": [
-        "TRANSITION"
-      ],
+      "matchKinds": ["TRANSITION"],
       "className": "edge-process-transition",
       "stroke": "#0f766e"
     }
@@ -664,13 +491,8 @@
       "targetType": "AwsLambdaFunction",
       "label": "API route invokes Lambda",
       "viewType": "ApiGatewayLambdaIntegrationView",
-      "intermediateTypes": [
-        "ApiGatewayIntegration"
-      ],
-      "edgeKinds": [
-        "ROUTES_TO",
-        "INVOKES"
-      ],
+      "intermediateTypes": ["ApiGatewayIntegration"],
+      "edgeKinds": ["ROUTES_TO", "INVOKES"],
       "viewReferences": [
         {
           "feature": "route",
@@ -691,15 +513,8 @@
       "targetType": "AwsLambdaFunction",
       "label": "SNS invokes Lambda",
       "viewType": "SnsLambdaSubscriptionView",
-      "intermediateTypes": [
-        "SnsSubscription",
-        "LambdaPermission"
-      ],
-      "edgeKinds": [
-        "EVENT_FLOW",
-        "PERMISSION",
-        "INVOKES"
-      ],
+      "intermediateTypes": ["SnsSubscription", "LambdaPermission"],
+      "edgeKinds": ["EVENT_FLOW", "PERMISSION", "INVOKES"],
       "viewReferences": [
         {
           "feature": "topic",
@@ -724,13 +539,8 @@
       "targetType": "AwsLambdaFunction",
       "label": "SQS event source invokes Lambda",
       "viewType": "SqsLambdaEventSourceView",
-      "intermediateTypes": [
-        "SqsLambdaEventSourceMapping"
-      ],
-      "edgeKinds": [
-        "EVENT_FLOW",
-        "INVOKES"
-      ],
+      "intermediateTypes": ["SqsLambdaEventSourceMapping"],
+      "edgeKinds": ["EVENT_FLOW", "INVOKES"],
       "viewReferences": [
         {
           "feature": "queue",
@@ -751,15 +561,8 @@
       "targetType": "AwsLambdaFunction",
       "label": "EventBridge targets Lambda",
       "viewType": "EventBridgeLambdaTargetView",
-      "intermediateTypes": [
-        "EventBridgeTarget",
-        "LambdaPermission"
-      ],
-      "edgeKinds": [
-        "TARGETS",
-        "PERMISSION",
-        "INVOKES"
-      ],
+      "intermediateTypes": ["EventBridgeTarget", "LambdaPermission"],
+      "edgeKinds": ["TARGETS", "PERMISSION", "INVOKES"],
       "viewReferences": [
         {
           "feature": "rule",
@@ -784,13 +587,8 @@
       "targetType": "StepFunctionStateMachine",
       "label": "EventBridge starts state machine",
       "viewType": "StepFunctionEventBridgeTargetView",
-      "intermediateTypes": [
-        "EventBridgeTarget"
-      ],
-      "edgeKinds": [
-        "TARGETS",
-        "INVOKES"
-      ],
+      "intermediateTypes": ["EventBridgeTarget"],
+      "edgeKinds": ["TARGETS", "INVOKES"],
       "viewReferences": [
         {
           "feature": "rule",
@@ -811,15 +609,8 @@
       "targetType": "AwsLambdaFunction",
       "label": "S3 notification invokes Lambda",
       "viewType": "S3LambdaNotificationView",
-      "intermediateTypes": [
-        "S3NotificationRule",
-        "LambdaPermission"
-      ],
-      "edgeKinds": [
-        "EVENT_FLOW",
-        "PERMISSION",
-        "INVOKES"
-      ],
+      "intermediateTypes": ["S3NotificationRule", "LambdaPermission"],
+      "edgeKinds": ["EVENT_FLOW", "PERMISSION", "INVOKES"],
       "viewReferences": [
         {
           "feature": "bucket",
@@ -844,15 +635,8 @@
       "targetType": "SqsQueue",
       "label": "S3 notification sends to SQS",
       "viewType": "S3QueueNotificationView",
-      "intermediateTypes": [
-        "S3NotificationRule",
-        "SqsQueuePolicy"
-      ],
-      "edgeKinds": [
-        "EVENT_FLOW",
-        "PERMISSION",
-        "MESSAGE_FLOW"
-      ],
+      "intermediateTypes": ["S3NotificationRule", "SqsQueuePolicy"],
+      "edgeKinds": ["EVENT_FLOW", "PERMISSION", "MESSAGE_FLOW"],
       "viewReferences": [
         {
           "feature": "bucket",
@@ -877,15 +661,8 @@
       "targetType": "SnsTopic",
       "label": "S3 notification publishes to SNS",
       "viewType": "S3TopicNotificationView",
-      "intermediateTypes": [
-        "S3NotificationRule",
-        "SnsTopicPolicy"
-      ],
-      "edgeKinds": [
-        "EVENT_FLOW",
-        "PERMISSION",
-        "TARGETS"
-      ],
+      "intermediateTypes": ["S3NotificationRule", "SnsTopicPolicy"],
+      "edgeKinds": ["EVENT_FLOW", "PERMISSION", "TARGETS"],
       "viewReferences": [
         {
           "feature": "bucket",
@@ -1052,13 +829,7 @@
         "AwsLambdaFunction",
         "StepFunctionStateMachine"
       ],
-      "relationshipKinds": [
-        "ROUTES_TO",
-        "INVOKES",
-        "AUTHORIZED_BY",
-        "OBSERVES",
-        "CONTAINS"
-      ],
+      "relationshipKinds": ["ROUTES_TO", "INVOKES", "AUTHORIZED_BY", "OBSERVES", "CONTAINS"],
       "layoutHint": "TABLE"
     },
     {
@@ -1150,13 +921,7 @@
         "SnsTopic",
         "SnsSubscription"
       ],
-      "relationshipKinds": [
-        "EVENT_FLOW",
-        "MESSAGE_FLOW",
-        "INVOKES",
-        "TARGETS",
-        "CONTAINS"
-      ],
+      "relationshipKinds": ["EVENT_FLOW", "MESSAGE_FLOW", "INVOKES", "TARGETS", "CONTAINS"],
       "layoutHint": "EVENT_FLOW"
     },
     {
@@ -1184,13 +949,7 @@
         "AslCatchRule",
         "AslChoiceRule"
       ],
-      "relationshipKinds": [
-        "TRANSITION",
-        "INVOKES",
-        "EVENT_FLOW",
-        "CONTAINS",
-        "OBSERVES"
-      ],
+      "relationshipKinds": ["TRANSITION", "INVOKES", "EVENT_FLOW", "CONTAINS", "OBSERVES"],
       "layoutHint": "PROCESS"
     },
     {
@@ -1277,13 +1036,7 @@
         "SecretRotationSchedule",
         "SsmParameter"
       ],
-      "relationshipKinds": [
-        "PERMISSION",
-        "AUTHORIZED_BY",
-        "USES_ROLE",
-        "USES_SECRET",
-        "CONTAINS"
-      ],
+      "relationshipKinds": ["PERMISSION", "AUTHORIZED_BY", "USES_ROLE", "USES_SECRET", "CONTAINS"],
       "layoutHint": "GOVERNANCE"
     },
     {
@@ -1311,12 +1064,7 @@
         "CognitoUserPoolDomain",
         "CognitoIdentityPool"
       ],
-      "relationshipKinds": [
-        "AUTHORIZED_BY",
-        "PERMISSION",
-        "CONTAINS",
-        "USES_ROLE"
-      ],
+      "relationshipKinds": ["AUTHORIZED_BY", "PERMISSION", "CONTAINS", "USES_ROLE"],
       "layoutHint": "GOVERNANCE"
     },
     {
@@ -1334,17 +1082,8 @@
         "SecurityGroupRule",
         "AwsLambdaFunction"
       ],
-      "palette": [
-        "Vpc",
-        "Subnet",
-        "VpcEndpoint",
-        "SecurityGroup",
-        "AwsLambdaFunction"
-      ],
-      "relationshipKinds": [
-        "NETWORKS_WITH",
-        "CONTAINS"
-      ],
+      "palette": ["Vpc", "Subnet", "VpcEndpoint", "SecurityGroup", "AwsLambdaFunction"],
+      "relationshipKinds": ["NETWORKS_WITH", "CONTAINS"],
       "layoutHint": "CONTAINER"
     },
     {
@@ -1385,12 +1124,7 @@
         "Subnet",
         "SecurityGroup"
       ],
-      "relationshipKinds": [
-        "OBSERVES",
-        "WRITES_LOGS_TO",
-        "NETWORKS_WITH",
-        "CONTAINS"
-      ],
+      "relationshipKinds": ["OBSERVES", "WRITES_LOGS_TO", "NETWORKS_WITH", "CONTAINS"],
       "layoutHint": "TABLE"
     },
     {
@@ -1420,11 +1154,7 @@
         "SamGlobals",
         "AwsNativeResource"
       ],
-      "relationshipKinds": [
-        "CONTAINS",
-        "DEPLOYS",
-        "TRACE"
-      ],
+      "relationshipKinds": ["CONTAINS", "DEPLOYS", "TRACE"],
       "layoutHint": "TABLE"
     },
     {
@@ -1445,15 +1175,8 @@
         "S3Bucket",
         "IamRole"
       ],
-      "palette": [
-        "ProductionReadinessAssessment",
-        "StructuredDocument"
-      ],
-      "relationshipKinds": [
-        "TRACE",
-        "CONSTRAINS",
-        "ATTACHED_TO"
-      ],
+      "palette": ["ProductionReadinessAssessment", "StructuredDocument"],
+      "relationshipKinds": ["TRACE", "CONSTRAINS", "ATTACHED_TO"],
       "layoutHint": "MATRIX"
     },
     {
@@ -1546,12 +1269,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -1573,12 +1291,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -1600,13 +1313,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -1622,13 +1329,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -1644,12 +1345,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       }
     },
     {
@@ -1662,12 +1358,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       }
     },
     {
@@ -1680,12 +1371,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "queueName",
-          "topicName",
-          "protocol"
-        ]
+        "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       }
     },
     {
@@ -1698,12 +1384,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "queueName",
-          "topicName",
-          "protocol"
-        ]
+        "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       }
     },
     {
@@ -1725,12 +1406,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       }
     },
     {
@@ -1743,12 +1419,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       }
     },
     {
@@ -1761,12 +1432,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1781,12 +1447,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1801,12 +1462,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       }
     },
     {
@@ -1819,12 +1475,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -1837,12 +1488,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -1855,12 +1501,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -1875,12 +1516,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       }
     },
     {
@@ -1893,13 +1529,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -1912,13 +1542,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -1931,13 +1555,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -1950,13 +1568,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -1969,13 +1581,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -1988,13 +1594,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2025,12 +1625,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2045,12 +1640,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "logGroupName",
-          "alarmName",
-          "metricName"
-        ]
+        "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
       }
     },
     {
@@ -2063,12 +1653,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "logGroupName",
-          "alarmName",
-          "metricName"
-        ]
+        "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
       }
     },
     {
@@ -2090,12 +1675,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2108,12 +1688,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -2129,12 +1704,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2149,12 +1719,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2169,12 +1734,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2189,12 +1749,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2209,12 +1764,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2229,12 +1779,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2249,12 +1794,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -2270,12 +1810,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2288,12 +1823,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2306,12 +1836,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2324,12 +1849,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2342,12 +1862,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2360,12 +1875,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2378,12 +1888,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2396,12 +1901,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2414,12 +1914,7 @@
       "notation": {
         "tag": "CFN",
         "shape": "structured-property-row",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2432,13 +1927,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2451,13 +1940,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2470,13 +1953,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2489,13 +1966,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2508,13 +1979,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2527,13 +1992,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2546,12 +2005,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2564,12 +2018,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2582,12 +2031,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2600,13 +2044,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2619,13 +2057,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "roleName",
-          "policyName",
-          "secretName",
-          "effect"
-        ]
+        "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
       }
     },
     {
@@ -2638,12 +2070,7 @@
       "notation": {
         "tag": "SEC",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -2656,12 +2083,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "logGroupName",
-          "alarmName",
-          "metricName"
-        ]
+        "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
       }
     },
     {
@@ -2674,12 +2096,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "logGroupName",
-          "alarmName",
-          "metricName"
-        ]
+        "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
       }
     },
     {
@@ -2692,12 +2109,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "logGroupName",
-          "alarmName",
-          "metricName"
-        ]
+        "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
       }
     },
     {
@@ -2710,12 +2122,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "logGroupName",
-          "alarmName",
-          "metricName"
-        ]
+        "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
       }
     },
     {
@@ -2728,12 +2135,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "logGroupName",
-          "alarmName",
-          "metricName"
-        ]
+        "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
       }
     },
     {
@@ -2746,12 +2148,7 @@
       "notation": {
         "tag": "OBS",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "logGroupName",
-          "alarmName",
-          "metricName"
-        ]
+        "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
       }
     },
     {
@@ -2764,12 +2161,7 @@
       "notation": {
         "tag": "NET",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "vpcId",
-          "subnetId",
-          "securityGroupId"
-        ]
+        "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
       }
     },
     {
@@ -2782,12 +2174,7 @@
       "notation": {
         "tag": "NET",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "vpcId",
-          "subnetId",
-          "securityGroupId"
-        ]
+        "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
       }
     },
     {
@@ -2800,12 +2187,7 @@
       "notation": {
         "tag": "NET",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "vpcId",
-          "subnetId",
-          "securityGroupId"
-        ]
+        "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
       }
     },
     {
@@ -2818,12 +2200,7 @@
       "notation": {
         "tag": "NET",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "vpcId",
-          "subnetId",
-          "securityGroupId"
-        ]
+        "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
       }
     },
     {
@@ -2836,12 +2213,7 @@
       "notation": {
         "tag": "NET",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "vpcId",
-          "subnetId",
-          "securityGroupId"
-        ]
+        "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
       }
     },
     {
@@ -2854,12 +2226,7 @@
       "notation": {
         "tag": "NET",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "vpcId",
-          "subnetId",
-          "securityGroupId"
-        ]
+        "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
       }
     },
     {
@@ -2872,12 +2239,7 @@
       "notation": {
         "tag": "NET",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "vpcId",
-          "subnetId",
-          "securityGroupId"
-        ]
+        "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
       }
     },
     {
@@ -2890,12 +2252,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "queueName",
-          "topicName",
-          "protocol"
-        ]
+        "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2910,12 +2267,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "queueName",
-          "topicName",
-          "protocol"
-        ]
+        "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       },
       "containedOnly": true,
       "creatable": false
@@ -2930,12 +2282,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "queueName",
-          "topicName",
-          "protocol"
-        ]
+        "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       }
     },
     {
@@ -2948,12 +2295,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "queueName",
-          "topicName",
-          "protocol"
-        ]
+        "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       }
     },
     {
@@ -2966,12 +2308,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "queueName",
-          "topicName",
-          "protocol"
-        ]
+        "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       }
     },
     {
@@ -2984,12 +2321,7 @@
       "notation": {
         "tag": "MSG",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "queueName",
-          "topicName",
-          "protocol"
-        ]
+        "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       }
     },
     {
@@ -3002,12 +2334,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3022,12 +2349,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3042,12 +2364,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3062,12 +2379,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3082,12 +2394,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3102,12 +2409,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3122,12 +2424,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3142,12 +2439,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3162,12 +2454,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3182,12 +2469,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3202,12 +2484,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3222,12 +2499,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3242,12 +2514,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3262,12 +2529,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3282,12 +2544,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3302,12 +2559,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3322,12 +2574,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3342,12 +2589,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3362,12 +2604,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3382,12 +2619,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3402,12 +2634,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3422,12 +2649,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3442,12 +2664,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3462,12 +2679,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3482,12 +2694,7 @@
       "notation": {
         "tag": "STORE",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       }
     },
     {
@@ -3500,12 +2707,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3520,12 +2722,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3540,12 +2737,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3560,12 +2752,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3580,12 +2767,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3600,12 +2782,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3620,12 +2797,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       }
     },
     {
@@ -3638,12 +2810,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3658,12 +2825,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       }
     },
     {
@@ -3676,12 +2838,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       }
     },
     {
@@ -3694,12 +2851,7 @@
       "notation": {
         "tag": "ID",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       }
     },
     {
@@ -3712,12 +2864,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3732,12 +2879,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -3753,12 +2895,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3773,12 +2910,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3793,12 +2925,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3813,12 +2940,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3833,12 +2955,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3853,12 +2970,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       }
     },
     {
@@ -3871,12 +2983,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       }
     },
     {
@@ -3889,12 +2996,7 @@
       "notation": {
         "tag": "SFN",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3909,12 +3011,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -3930,12 +3027,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3950,12 +3042,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3970,12 +3057,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -3990,12 +3072,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -4011,12 +3088,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4031,12 +3103,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -4049,12 +3116,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -4067,12 +3129,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4087,12 +3144,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4107,12 +3159,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4127,12 +3174,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4147,12 +3189,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4167,12 +3204,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -4185,12 +3217,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4205,12 +3232,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -4223,12 +3245,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -4241,12 +3258,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4261,12 +3273,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -4279,12 +3286,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -4297,12 +3299,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4317,12 +3314,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4337,12 +3329,7 @@
       "notation": {
         "tag": "LAMBDA",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -4355,13 +3342,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4374,13 +3355,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4393,13 +3368,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4412,13 +3381,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4431,13 +3394,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4450,13 +3407,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4471,13 +3422,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4492,13 +3437,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4511,13 +3450,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4532,13 +3465,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4553,13 +3480,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4574,13 +3495,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4595,13 +3510,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4616,13 +3525,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4635,13 +3538,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4656,13 +3553,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4677,13 +3568,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -4699,13 +3584,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4718,13 +3597,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4737,13 +3610,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4756,13 +3623,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -4778,12 +3639,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -4796,12 +3652,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "userPoolName",
-          "clientName",
-          "groupName"
-        ]
+        "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       }
     },
     {
@@ -4814,12 +3665,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       }
     },
     {
@@ -4832,13 +3678,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4851,13 +3691,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4872,13 +3706,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4891,13 +3719,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       }
     },
     {
@@ -4910,13 +3732,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4931,13 +3747,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4952,13 +3762,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -4973,12 +3777,7 @@
       "notation": {
         "tag": "API",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       }
     },
     {
@@ -4991,12 +3790,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5011,12 +3805,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5031,12 +3820,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5051,12 +3835,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -5072,12 +3851,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5092,12 +3866,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5112,13 +3881,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "apiName",
-          "method",
-          "path",
-          "routeKey"
-        ]
+        "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5133,12 +3896,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5153,12 +3911,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5173,12 +3926,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       }
     },
     {
@@ -5191,12 +3939,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       }
     },
     {
@@ -5209,12 +3952,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5229,12 +3967,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       }
     },
     {
@@ -5247,12 +3980,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -5268,12 +3996,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5288,12 +4011,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5308,12 +4026,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5328,12 +4041,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
       "creatable": false,
@@ -5349,12 +4057,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       }
     },
     {
@@ -5367,12 +4070,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "busName",
-          "ruleName",
-          "scheduleExpression"
-        ]
+        "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       }
     },
     {
@@ -5385,12 +4083,7 @@
       "notation": {
         "tag": "EVB",
         "shape": "resource-card",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
       "creatable": false
@@ -5405,12 +4098,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "physicalName",
-          "awsResourceType",
-          "name"
-        ]
+        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "relationshipElement": true
     },
@@ -5424,12 +4112,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "relationshipElement": true
     },
@@ -5443,12 +4126,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "relationshipElement": true
     },
@@ -5462,12 +4140,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "relationshipElement": true
     },
@@ -5481,12 +4154,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "relationshipElement": true
     },
@@ -5500,12 +4168,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "stateMachineName",
-          "stateName",
-          "stateType"
-        ]
+        "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "relationshipElement": true
     },
@@ -5519,12 +4182,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "functionName",
-          "runtimeIdentifier",
-          "timeoutSeconds"
-        ]
+        "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "relationshipElement": true
     },
@@ -5538,12 +4196,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "relationshipElement": true
     },
@@ -5557,12 +4210,7 @@
       "notation": {
         "tag": "VIEW",
         "shape": "relationship-edge",
-        "lineFields": [
-          "logicalId",
-          "tableName",
-          "bucketName",
-          "billingMode"
-        ]
+        "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "relationshipElement": true
     },
@@ -5579,10 +4227,7 @@
       "notation": {
         "tag": "WAR",
         "shape": "concept-card",
-        "lineFields": [
-          "summary",
-          "description"
-        ]
+        "lineFields": ["summary", "description"]
       }
     },
     {

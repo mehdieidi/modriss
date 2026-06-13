@@ -78,4 +78,3 @@ context AWSPSM!StepFunctionEventBridgeTargetView {
     message : 'EventBridge to Step Functions relationship view is inconsistent. Fix: ensure targetRow belongs to rule, targetResource references stateMachine, and view source/target match.'
   }
 }
-

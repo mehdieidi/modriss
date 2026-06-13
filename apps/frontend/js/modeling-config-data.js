@@ -1,6 +1,6 @@
-import {api} from './api.js';
-import {state} from './state.js';
-import {setError} from './status.js';
+import { api } from "./api.js";
+import { state } from "./state.js";
+import { setError } from "./status.js";
 
 const EMPTY_CONFIG = Object.freeze({
   version: 0,
@@ -8,7 +8,7 @@ const EMPTY_CONFIG = Object.freeze({
   levels: Object.freeze({
     cim: Object.freeze(emptyLevel("CIM")),
     pim: Object.freeze(emptyLevel("PIM")),
-    psm: Object.freeze(emptyLevel("PSM"))
+    psm: Object.freeze(emptyLevel("PSM")),
   }),
   transformations: Object.freeze({
     cim_to_pim: Object.freeze(emptyTransformation()),
@@ -23,11 +23,11 @@ const EMPTY_CONFIG = Object.freeze({
         directories: Object.freeze([]),
         pathMappings: Object.freeze([]),
         passthroughUnmatched: true,
-        emitGitkeep: true
+        emitGitkeep: true,
       }),
-      templates: Object.freeze([])
-    })
-  })
+      templates: Object.freeze([]),
+    }),
+  }),
 });
 
 function emptyLevel(displayName) {
@@ -50,9 +50,9 @@ function emptyLevel(displayName) {
       name: "",
       diagram: {
         elements: [],
-        relationships: []
-      }
-    }
+        relationships: [],
+      },
+    },
   };
 }
 
@@ -60,7 +60,7 @@ function emptyTransformation() {
   return {
     enabled: false,
     elementMappings: [],
-    relationshipMappings: []
+    relationshipMappings: [],
   };
 }
 
@@ -77,60 +77,64 @@ function configLoadError(message) {
 function ensureConfigShape(raw) {
   if (!raw || typeof raw !== "object") {
     throw configLoadError(
-        "Backend modeling config is missing or malformed. Check /api/modeling/config and backend logs.");
+      "Backend modeling config is missing or malformed. Check /api/modeling/config and backend logs.",
+    );
   }
   const normalized = clone(EMPTY_CONFIG);
   normalized.version = Number(raw.version || 0);
-  normalized.dynamicPersistenceEnabled = raw.dynamicPersistenceEnabled
-      !== false;
+  normalized.dynamicPersistenceEnabled = raw.dynamicPersistenceEnabled !== false;
 
   for (const level of ["cim", "pim", "psm"]) {
     const incoming = raw.levels?.[level];
     if (!incoming || typeof incoming !== "object") {
       throw configLoadError(
-          `Backend modeling config is missing the '${level.toUpperCase()}' level definition.`);
+        `Backend modeling config is missing the '${level.toUpperCase()}' level definition.`,
+      );
     }
     normalized.levels[level] = {
       displayName: String(incoming.displayName || level.toUpperCase()),
       elementsPath: String(incoming.elementsPath || "/diagram/elements"),
-      relationshipsPath: String(
-          incoming.relationshipsPath || "/diagram/relationships"),
+      relationshipsPath: String(incoming.relationshipsPath || "/diagram/relationships"),
       labelField: String(incoming.labelField || "name"),
       relationshipKinds: Array.isArray(incoming.relationshipKinds)
-          ? incoming.relationshipKinds.map((kind) => String(kind))
-          : [],
+        ? incoming.relationshipKinds.map((kind) => String(kind))
+        : [],
       elements: Array.isArray(incoming.elements) ? incoming.elements : [],
       relationshipRules: Array.isArray(incoming.relationshipRules)
-          ? incoming.relationshipRules : [],
-      relationshipKindLabels: incoming.relationshipKindLabels
-      && typeof incoming.relationshipKindLabels === "object"
-          ? incoming.relationshipKindLabels : {},
+        ? incoming.relationshipRules
+        : [],
+      relationshipKindLabels:
+        incoming.relationshipKindLabels && typeof incoming.relationshipKindLabels === "object"
+          ? incoming.relationshipKindLabels
+          : {},
       relationshipVisualRules: Array.isArray(incoming.relationshipVisualRules)
-          ? incoming.relationshipVisualRules : [],
+        ? incoming.relationshipVisualRules
+        : [],
       semanticReferenceRules: Array.isArray(incoming.semanticReferenceRules)
-          ? incoming.semanticReferenceRules : [],
+        ? incoming.semanticReferenceRules
+        : [],
       shortcutConnectorRules: Array.isArray(incoming.shortcutConnectorRules)
-          ? incoming.shortcutConnectorRules : [],
-      viewDefinitions: Array.isArray(incoming.viewDefinitions)
-          ? incoming.viewDefinitions : [],
-      universalSyntax: Array.isArray(incoming.universalSyntax)
-          ? incoming.universalSyntax : [],
-      kernelSyntax: Array.isArray(incoming.kernelSyntax)
-          ? incoming.kernelSyntax : [],
+        ? incoming.shortcutConnectorRules
+        : [],
+      viewDefinitions: Array.isArray(incoming.viewDefinitions) ? incoming.viewDefinitions : [],
+      universalSyntax: Array.isArray(incoming.universalSyntax) ? incoming.universalSyntax : [],
+      kernelSyntax: Array.isArray(incoming.kernelSyntax) ? incoming.kernelSyntax : [],
       kernelNotation: Array.isArray(incoming.kernelNotation)
-          ? incoming.kernelNotation : (Array.isArray(incoming.kernelSyntax)
-              ? incoming.kernelSyntax : []),
+        ? incoming.kernelNotation
+        : Array.isArray(incoming.kernelSyntax)
+          ? incoming.kernelSyntax
+          : [],
       complexityManagement: Array.isArray(incoming.complexityManagement)
-          ? incoming.complexityManagement : [],
+        ? incoming.complexityManagement
+        : [],
       strictnessModes: Array.isArray(incoming.strictnessModes)
-          ? incoming.strictnessModes : ["exploration", "methodology",
-            "production"],
-      constraints: Array.isArray(incoming.constraints)
-          ? incoming.constraints : [],
-      rootTemplate: incoming.rootTemplate && typeof incoming.rootTemplate
-      === "object"
+        ? incoming.strictnessModes
+        : ["exploration", "methodology", "production"],
+      constraints: Array.isArray(incoming.constraints) ? incoming.constraints : [],
+      rootTemplate:
+        incoming.rootTemplate && typeof incoming.rootTemplate === "object"
           ? incoming.rootTemplate
-          : clone(EMPTY_CONFIG.levels[level].rootTemplate)
+          : clone(EMPTY_CONFIG.levels[level].rootTemplate),
     };
   }
 
@@ -144,16 +148,16 @@ function ensureConfigShape(raw) {
       ...normalized.transformations[key],
       ...incoming,
       enabled: Boolean(incoming.enabled),
-      elementMappings: Array.isArray(incoming.elementMappings)
-          ? incoming.elementMappings : [],
+      elementMappings: Array.isArray(incoming.elementMappings) ? incoming.elementMappings : [],
       relationshipMappings: Array.isArray(incoming.relationshipMappings)
-          ? incoming.relationshipMappings : []
+        ? incoming.relationshipMappings
+        : [],
     };
   }
   return normalized;
 }
 
-export async function loadModelingConfig({silent = false} = {}) {
+export async function loadModelingConfig({ silent = false } = {}) {
   try {
     const config = await api("/modeling/config");
     state.modelingConfig.config = ensureConfigShape(config);
@@ -165,7 +169,8 @@ export async function loadModelingConfig({silent = false} = {}) {
     if (!silent) {
       console.error("Modeling config load failed", error);
       setError(
-          `Backend modeling config unavailable: ${error.message}. Check backend logs and /api/modeling/config.`);
+        `Backend modeling config unavailable: ${error.message}. Check backend logs and /api/modeling/config.`,
+      );
     }
     throw error;
   }
@@ -175,39 +180,48 @@ export function modelingLevelConfig(typeKey = state.activeType) {
   const config = state.modelingConfig.config;
   if (!config?.levels?.[typeKey]) {
     throw configLoadError(
-        `No backend modeling config is loaded for ${String(
-            typeKey).toUpperCase()}.`);
+      `No backend modeling config is loaded for ${String(typeKey).toUpperCase()}.`,
+    );
   }
   return config.levels[typeKey];
 }
 
 export function modelingPalette(typeKey = state.activeType) {
-  return (modelingLevelConfig(typeKey).elements || []).map(
-      (entry) => entry?.creatable === false ? "" : String(entry.type
-          || "").trim()).filter(Boolean);
+  return (modelingLevelConfig(typeKey).elements || [])
+    .map((entry) => (entry?.creatable === false ? "" : String(entry.type || "").trim()))
+    .filter(Boolean);
 }
 
 export function modelingElementDefinition(typeKey, elementType) {
   const level = modelingLevelConfig(typeKey);
-  return (level.elements || []).find((entry) => entry.type === elementType)
-      || null;
+  return (level.elements || []).find((entry) => entry.type === elementType) || null;
 }
 
 export function modelingViewDefinition(typeKey, view) {
   const level = modelingLevelConfig(typeKey);
-  const viewId = String(view?.definitionId || view?.sourceDefinitionId
-      || view?.id || "").toLowerCase();
+  const viewId = String(
+    view?.definitionId || view?.sourceDefinitionId || view?.id || "",
+  ).toLowerCase();
   const viewpoint = String(view?.viewpoint || "").toLowerCase();
-  const kind = String(view?.kind || "").toLowerCase().replaceAll("_", "-");
-  return (level.viewDefinitions || []).find((entry) => {
-    const entryId = String(entry.id || "").toLowerCase();
-    const entryKind = String(entry.viewType || "").toLowerCase().replaceAll("_",
-        "-");
-    const entryViewpoint = String(entry.viewpoint || "").toLowerCase();
-    return entryId && (viewId.includes(entryId) || kind.includes(entryId)
-        || kind.includes(entryKind) || (viewpoint && viewpoint
-            === entryViewpoint));
-  }) || null;
+  const kind = String(view?.kind || "")
+    .toLowerCase()
+    .replaceAll("_", "-");
+  return (
+    (level.viewDefinitions || []).find((entry) => {
+      const entryId = String(entry.id || "").toLowerCase();
+      const entryKind = String(entry.viewType || "")
+        .toLowerCase()
+        .replaceAll("_", "-");
+      const entryViewpoint = String(entry.viewpoint || "").toLowerCase();
+      return (
+        entryId &&
+        (viewId.includes(entryId) ||
+          kind.includes(entryId) ||
+          kind.includes(entryKind) ||
+          (viewpoint && viewpoint === entryViewpoint))
+      );
+    }) || null
+  );
 }
 
 export function modelingRelationshipKindLabel(typeKey, kind) {
@@ -230,8 +244,9 @@ function readRuleValue(edge, field) {
   if (!key) {
     return undefined;
   }
-  return key.split(".").reduce((value, part) =>
-      value && typeof value === "object" ? value[part] : undefined, edge);
+  return key
+    .split(".")
+    .reduce((value, part) => (value && typeof value === "object" ? value[part] : undefined), edge);
 }
 
 function stringListMatches(values, actual) {
@@ -239,8 +254,7 @@ function stringListMatches(values, actual) {
     return false;
   }
   const text = String(actual || "").toUpperCase();
-  return values.map((value) => String(value || "").toUpperCase())
-  .includes(text);
+  return values.map((value) => String(value || "").toUpperCase()).includes(text);
 }
 
 function fieldMatcherMatches(matcher, edge) {
@@ -252,8 +266,7 @@ function fieldMatcherMatches(matcher, edge) {
     return stringListMatches(matcher.values, actual);
   }
   if (Object.hasOwn(matcher, "equals")) {
-    return String(actual || "").toUpperCase()
-        === String(matcher.equals || "").toUpperCase();
+    return String(actual || "").toUpperCase() === String(matcher.equals || "").toUpperCase();
   }
   if (matcher.exists) {
     return actual !== undefined && actual !== null && actual !== "";
@@ -271,13 +284,14 @@ function visualRuleMatches(rule, edge, kind) {
   if (stringListMatches(rule.matchEClasses, edge?.eClass)) {
     return true;
   }
-  return Array.isArray(rule.matchFields)
-      && rule.matchFields.some((matcher) => fieldMatcherMatches(matcher, edge));
+  return (
+    Array.isArray(rule.matchFields) &&
+    rule.matchFields.some((matcher) => fieldMatcherMatches(matcher, edge))
+  );
 }
 
 function applyVisualRule(presentation, rule) {
-  presentation.className = appendClassName(presentation.className,
-      rule.className);
+  presentation.className = appendClassName(presentation.className, rule.className);
   if (Object.hasOwn(rule, "markerStart")) {
     presentation.markerStart = String(rule.markerStart || "");
   }
@@ -290,18 +304,17 @@ function applyVisualRule(presentation, rule) {
       style[field] = rule[field];
     }
   });
-  presentation.style = {...presentation.style, ...style};
+  presentation.style = { ...presentation.style, ...style };
 }
 
 export function modelingRelationshipPresentation(typeKey, edge) {
   const kind = String(edge?.kind || "").toUpperCase();
-  const relationship = state.graph?.relationshipsById?.get(edge?.id) || edge
-      || {};
+  const relationship = state.graph?.relationshipsById?.get(edge?.id) || edge || {};
   const presentation = {
     className: "",
     markerStart: "",
     markerEnd: "arrow",
-    style: {}
+    style: {},
   };
   const rules = modelingLevelConfig(typeKey).relationshipVisualRules || [];
   for (const rule of rules) {
@@ -329,55 +342,65 @@ export function modelingShortcutConnectorRules(typeKey = state.activeType) {
 
 export function modelingRootType(typeKey = state.activeType) {
   const root = modelingLevelConfig(typeKey).rootTemplate || {};
-  return String(root.eClass || root.type || ({
-    cim: "CIMModel",
-    pim: "PIMModel",
-    psm: "AwsPsmModel"
-  })[typeKey] || "");
+  return String(
+    root.eClass ||
+      root.type ||
+      {
+        cim: "CIMModel",
+        pim: "PIMModel",
+        psm: "AwsPsmModel",
+      }[typeKey] ||
+      "",
+  );
 }
 
 export function modelingConcreteTypesFor(typeKey, expectedType) {
   const level = modelingLevelConfig(typeKey);
-  return (level.elements || []).filter((entry) => {
-    if (!entry?.type || entry.abstract || entry.supportOnly) {
-      return false;
-    }
-    return modelingTypeMatches(typeKey, expectedType, entry.type);
-  }).map((entry) => entry.type);
+  return (level.elements || [])
+    .filter((entry) => {
+      if (!entry?.type || entry.abstract || entry.supportOnly) {
+        return false;
+      }
+      return modelingTypeMatches(typeKey, expectedType, entry.type);
+    })
+    .map((entry) => entry.type);
 }
 
 export function modelingRelationshipElementTypes(typeKey = state.activeType) {
-  return (modelingLevelConfig(typeKey).elements || []).filter((entry) =>
-      entry?.relationshipElement).map((entry) => entry.type);
+  return (modelingLevelConfig(typeKey).elements || [])
+    .filter((entry) => entry?.relationshipElement)
+    .map((entry) => entry.type);
 }
 
 function containmentTitle(feature) {
-  return String(feature || "").replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
-  .replaceAll(/[-_]+/g, " ").replace(/\b\w/g, (letter) =>
-      letter.toUpperCase());
+  return String(feature || "")
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replaceAll(/[-_]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export function modelingContainmentsForType(typeKey, ownerType) {
   const definition = modelingElementDefinition(typeKey, ownerType);
   const relationshipTypes = new Set(modelingRelationshipElementTypes(typeKey));
-  return (definition?.references || []).filter((reference) =>
-      reference?.containment && !reference.readonly && reference.name
-      && reference.targetType).map((reference) => {
-    const concreteTypes = modelingConcreteTypesFor(typeKey,
-        reference.targetType);
-    const types = concreteTypes.length ? concreteTypes : [reference.targetType];
-    return {
-      feature: reference.name,
-      targetType: reference.targetType,
-      types,
-      required: Boolean(reference.required),
-      many: reference.many !== false,
-      singleton: reference.many === false,
-      title: containmentTitle(reference.name),
-      relationshipOnly: types.length > 0 && types.every((type) =>
-          relationshipTypes.has(type))
-    };
-  });
+  return (definition?.references || [])
+    .filter(
+      (reference) =>
+        reference?.containment && !reference.readonly && reference.name && reference.targetType,
+    )
+    .map((reference) => {
+      const concreteTypes = modelingConcreteTypesFor(typeKey, reference.targetType);
+      const types = concreteTypes.length ? concreteTypes : [reference.targetType];
+      return {
+        feature: reference.name,
+        targetType: reference.targetType,
+        types,
+        required: Boolean(reference.required),
+        many: reference.many !== false,
+        singleton: reference.many === false,
+        title: containmentTitle(reference.name),
+        relationshipOnly: types.length > 0 && types.every((type) => relationshipTypes.has(type)),
+      };
+    });
 }
 
 export function modelingRootContainments(typeKey = state.activeType) {
@@ -394,7 +417,8 @@ export function modelingTypeMatches(typeKey, expected, actual) {
   try {
     const definition = modelingElementDefinition(typeKey, actual);
     const configured = Array.isArray(definition?.supertypes)
-        ? definition.supertypes.map(String) : [];
+      ? definition.supertypes.map(String)
+      : [];
     if (configured.includes(expected)) {
       return true;
     }
@@ -421,7 +445,7 @@ function isMethodologyWildcardExempt(rule) {
     "Risk",
     "Assumption",
     "RequirementLink",
-    "GoalSatisfactionLink"
+    "GoalSatisfactionLink",
   ]);
   return exemptSources.has(rule?.sourceType);
 }
@@ -442,13 +466,18 @@ export function modelingLegalKinds(typeKey, sourceType, targetType) {
   const strictness = state.modelingStrictness || "methodology";
   const matched = [];
   for (const rule of rules) {
-    if (strictness !== "exploration" && isWildcardRule(rule)
-        && !isMethodologyWildcardExempt(rule)) {
+    if (
+      strictness !== "exploration" &&
+      isWildcardRule(rule) &&
+      !isMethodologyWildcardExempt(rule)
+    ) {
       continue;
     }
-    if (modelingTypeMatches(typeKey, rule.sourceType, sourceType)
-        && modelingTypeMatches(typeKey, rule.targetType, targetType)
-        && Array.isArray(rule.allowedKinds)) {
+    if (
+      modelingTypeMatches(typeKey, rule.sourceType, sourceType) &&
+      modelingTypeMatches(typeKey, rule.targetType, targetType) &&
+      Array.isArray(rule.allowedKinds)
+    ) {
       matched.push(rule);
     }
   }
@@ -459,15 +488,14 @@ export function modelingLegalKinds(typeKey, sourceType, targetType) {
     return [];
   }
   const bestSpecificity = Math.max(...matched.map(ruleSpecificity));
-  const winners = matched.filter(
-      (rule) => ruleSpecificity(rule) === bestSpecificity);
+  const winners = matched.filter((rule) => ruleSpecificity(rule) === bestSpecificity);
   return normalizeKinds(winners.flatMap((rule) => rule.allowedKinds));
 }
 
 export function modelingRootTemplate(typeKey, modelName) {
   const root = clone(modelingLevelConfig(typeKey).rootTemplate || {});
   root.name = modelName;
-  root.diagram ??= {elements: [], relationships: []};
+  root.diagram ??= { elements: [], relationships: [] };
   root.diagram.elements ??= [];
   root.diagram.relationships ??= [];
   root.graph ??= {
@@ -476,7 +504,7 @@ export function modelingRootTemplate(typeKey, modelName) {
     traceLinks: [],
     assumptions: [],
     validationIssues: [],
-    manualBacklog: []
+    manualBacklog: [],
   };
   root.views ??= [];
   root.fragments ??= [];

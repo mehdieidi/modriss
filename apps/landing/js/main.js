@@ -1,14 +1,9 @@
-import {
-  animate,
-  createTimeline,
-  stagger,
-} from "https://cdn.jsdelivr.net/npm/animejs@4.4.1/+esm";
-import {phases} from "./case-study.js";
-import {renderCaseStudy, updateRenderedModelEdges} from "./model-renderer.js";
-import {createStoryTimeline, STORY_DURATION} from "./story-timeline.js";
+import { animate, createTimeline, stagger } from "https://cdn.jsdelivr.net/npm/animejs@4.4.1/+esm";
+import { phases } from "./case-study.js";
+import { renderCaseStudy, updateRenderedModelEdges } from "./model-renderer.js";
+import { createStoryTimeline, STORY_DURATION } from "./story-timeline.js";
 
-const clamp = (value, minimum = 0, maximum = 1) =>
-    Math.min(maximum, Math.max(minimum, value));
+const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 
 function prepareHero() {
   const revealTargets = document.querySelectorAll(".hero-reveal");
@@ -18,8 +13,8 @@ function prepareHero() {
   });
 
   animate(".hero-copy .hero-reveal", {
-    opacity: {from: 0},
-    y: {from: 24},
+    opacity: { from: 0 },
+    y: { from: 24 },
     duration: 850,
     delay: stagger(90),
     ease: "out(4)",
@@ -34,10 +29,10 @@ function createHeroScrollTimeline() {
       ease: "inOut(3)",
     },
   })
-  .add(".site-nav", {opacity: 0, y: -28}, 0)
-  .add(".hero-copy", {opacity: 0, y: -52, scale: 0.97}, 0)
-  .add(".hero-visual", {opacity: 0, y: 70, scale: 1.12}, 0)
-  .add(".method-strip", {opacity: 0, y: 45}, 0);
+    .add(".site-nav", { opacity: 0, y: -28 }, 0)
+    .add(".hero-copy", { opacity: 0, y: -52, scale: 0.97 }, 0)
+    .add(".hero-visual", { opacity: 0, y: 70, scale: 1.12 }, 0)
+    .add(".method-strip", { opacity: 0, y: 45 }, 0);
 }
 
 function startAmbientAnimations() {
@@ -83,10 +78,7 @@ function startAmbientAnimations() {
 }
 
 function activePhaseFor(progress) {
-  return phases.reduce(
-      (active, phase) => (progress >= phase.start ? phase : active),
-      phases[0],
-  );
+  return phases.reduce((active, phase) => (progress >= phase.start ? phase : active), phases[0]);
 }
 
 function updateStoryMetadata(progress) {
@@ -117,8 +109,7 @@ function updateStoryMetadata(progress) {
   const refinedNode = document.querySelector(".manual-target");
   if (refinedNode) {
     refinedNode.classList.toggle("is-refined", progress >= 0.63);
-    refinedNode.classList.toggle("is-selected",
-        progress >= 0.585 && progress < 0.665);
+    refinedNode.classList.toggle("is-selected", progress >= 0.585 && progress < 0.665);
   }
 }
 
@@ -150,8 +141,8 @@ function setupScrollScrubbing(storyTimeline, heroTimeline) {
     }
   };
 
-  window.addEventListener("scroll", requestUpdate, {passive: true});
-  window.addEventListener("resize", requestUpdate, {passive: true});
+  window.addEventListener("scroll", requestUpdate, { passive: true });
+  window.addEventListener("resize", requestUpdate, { passive: true });
   requestUpdate();
 }
 

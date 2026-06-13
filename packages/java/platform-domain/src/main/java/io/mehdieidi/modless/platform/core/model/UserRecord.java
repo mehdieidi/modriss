@@ -5,21 +5,19 @@ import java.time.Instant;
 /**
  * Persisted platform user account.
  *
- * @param id           user identifier
- * @param email        normalized email address
- * @param displayName  display name
+ * @param id user identifier
+ * @param email normalized email address
+ * @param displayName display name
  * @param passwordHash password hash
- * @param salt         password salt
- * @param createdAt    creation timestamp
- * @param updatedAt    last update timestamp
+ * @param salt password salt
+ * @param createdAt creation timestamp
+ * @param updatedAt last update timestamp
  */
 public record UserRecord(
-        String id,
-        String email,
-        String displayName,
-        String passwordHash,
-        String salt,
-        Instant createdAt,
-        Instant updatedAt) {
-
-}
+    String id,
+    String email,
+    String displayName,
+    String passwordHash,
+    String salt,
+    Instant createdAt,
+    Instant updatedAt) {}

@@ -7,17 +7,17 @@ import org.junit.jupiter.api.Test;
 
 class OpenApiControllerTest {
 
-    @Test
-    @SuppressWarnings("unchecked")
-    void includesAssistantRoutes() {
-        Map<String, Object> document = new OpenApiController().docs();
-        Map<String, Object> paths = (Map<String, Object>) document.get("paths");
+  @Test
+  @SuppressWarnings("unchecked")
+  void includesAssistantRoutes() {
+    Map<String, Object> document = new OpenApiController().docs();
+    Map<String, Object> paths = (Map<String, Object>) document.get("paths");
 
-        assertTrue(paths.containsKey("/api/chatbot/sessions"));
-        assertTrue(paths.containsKey("/api/chatbot/sessions/{sessionId}/messages"));
-        assertTrue(paths.containsKey("/api/chatbot/sessions/{sessionId}/events"));
-        assertTrue(paths.containsKey(
-                "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve"));
-        assertTrue(paths.containsKey("/ws/chatbot/sessions/{sessionId}"));
-    }
+    assertTrue(paths.containsKey("/api/chatbot/sessions"));
+    assertTrue(paths.containsKey("/api/chatbot/sessions/{sessionId}/messages"));
+    assertTrue(paths.containsKey("/api/chatbot/sessions/{sessionId}/events"));
+    assertTrue(
+        paths.containsKey("/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve"));
+    assertTrue(paths.containsKey("/ws/chatbot/sessions/{sessionId}"));
+  }
 }

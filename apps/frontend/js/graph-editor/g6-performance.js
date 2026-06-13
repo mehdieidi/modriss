@@ -44,7 +44,7 @@ export function createAdjacencyIndex(edges = []) {
       byNode.get(nodeId).add(edge.id);
     });
   });
-  return {byNode, byId};
+  return { byNode, byId };
 }
 
 function finiteNumber(value, fallback = 0) {
@@ -58,20 +58,24 @@ function nodeBoundsForIndex(node, fallbackSize = {}) {
   }
   const style = node.style && typeof node.style === "object" ? node.style : {};
   const size = Array.isArray(style.size) ? style.size : [];
-  const width = Math.max(1,
-      finiteNumber(style.width, finiteNumber(size[0],
-          finiteNumber(node.width, fallbackSize.width || 1))));
-  const height = Math.max(1,
-      finiteNumber(style.height, finiteNumber(size[1],
-          finiteNumber(node.height, fallbackSize.height || 1))));
+  const width = Math.max(
+    1,
+    finiteNumber(
+      style.width,
+      finiteNumber(size[0], finiteNumber(node.width, fallbackSize.width || 1)),
+    ),
+  );
+  const height = Math.max(
+    1,
+    finiteNumber(
+      style.height,
+      finiteNumber(size[1], finiteNumber(node.height, fallbackSize.height || 1)),
+    ),
+  );
   const centerX = Number(style.x);
   const centerY = Number(style.y);
-  const x = Number.isFinite(centerX)
-      ? centerX - width / 2
-      : finiteNumber(node.x, 0);
-  const y = Number.isFinite(centerY)
-      ? centerY - height / 2
-      : finiteNumber(node.y, 0);
+  const x = Number.isFinite(centerX) ? centerX - width / 2 : finiteNumber(node.x, 0);
+  const y = Number.isFinite(centerY) ? centerY - height / 2 : finiteNumber(node.y, 0);
   return {
     id: node.id,
     x,
@@ -79,20 +83,19 @@ function nodeBoundsForIndex(node, fallbackSize = {}) {
     width,
     height,
     maxX: x + width,
-    maxY: y + height
+    maxY: y + height,
   };
 }
 
-export function createSpatialIndex(nodes = [], {
-  cellSize = DEFAULT_SPATIAL_CELL_SIZE,
-  fallbackSize = {}
-} = {}) {
+export function createSpatialIndex(
+  nodes = [],
+  { cellSize = DEFAULT_SPATIAL_CELL_SIZE, fallbackSize = {} } = {},
+) {
   const cells = new Map();
   const entries = new Map();
   let orderCounter = 0;
 
-  const keyFor = (x, y) =>
-      `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
+  const keyFor = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
 
   const cellKeysForBounds = (bounds) => {
     const minCellX = Math.floor(bounds.x / cellSize);
@@ -142,7 +145,7 @@ export function createSpatialIndex(nodes = [], {
     entries.set(bounds.id, {
       ...bounds,
       cells: keys,
-      order: Number.isFinite(order) ? order : orderCounter
+      order: Number.isFinite(order) ? order : orderCounter,
     });
     if (!Number.isFinite(order)) {
       orderCounter += 1;
@@ -174,7 +177,7 @@ export function createSpatialIndex(nodes = [], {
     size() {
       return entries.size;
     },
-    findAt(x, y, {excludeId = ""} = {}) {
+    findAt(x, y, { excludeId = "" } = {}) {
       if (!Number.isFinite(x) || !Number.isFinite(y)) {
         return null;
       }
@@ -189,8 +192,7 @@ export function createSpatialIndex(nodes = [], {
           return;
         }
         const entry = entries.get(id);
-        if (!entry || x < entry.x || x > entry.maxX || y < entry.y
-            || y > entry.maxY) {
+        if (!entry || x < entry.x || x > entry.maxX || y < entry.y || y > entry.maxY) {
           return;
         }
         if (entry.order >= bestOrder) {
@@ -199,14 +201,13 @@ export function createSpatialIndex(nodes = [], {
         }
       });
       return best;
-    }
+    },
   };
-  return index.rebuild(nodes, {fallbackSize});
+  return index.rebuild(nodes, { fallbackSize });
 }
 
 export function fingerprintElement(element) {
-  const data = element?.data && typeof element.data === "object"
-      ? element.data : {};
+  const data = element?.data && typeof element.data === "object" ? element.data : {};
   const renderData = {
     nodeType: data.nodeType,
     label: data.label,
@@ -229,7 +230,7 @@ export function fingerprintElement(element) {
     markerEnd: data.markerEnd,
     pinPoints: data.pinPoints,
     sourceAnchor: data.sourceAnchor,
-    targetAnchor: data.targetAnchor
+    targetAnchor: data.targetAnchor,
   };
   return JSON.stringify({
     id: element.id,
@@ -237,7 +238,7 @@ export function fingerprintElement(element) {
     target: element.target,
     data: renderData,
     style: element.style,
-    type: element.type
+    type: element.type,
   });
 }
 
@@ -298,8 +299,8 @@ export function diffGraphData(previous, next) {
       nodesById: nextNodes,
       edgesById: nextEdges,
       nodeFingerprints,
-      edgeFingerprints
-    }
+      edgeFingerprints,
+    },
   };
 }
 
@@ -314,7 +315,7 @@ export function scheduleGraphDraw(graph) {
       console.error("G6 draw failed", error);
       window.modlessG6State = {
         ...(window.modlessG6State || {}),
-        lastError: error.message || String(error)
+        lastError: error.message || String(error),
       };
     });
   });
@@ -336,7 +337,7 @@ export function scheduleGraphRender(graph) {
       console.error("G6 render failed", error);
       window.modlessG6State = {
         ...(window.modlessG6State || {}),
-        lastError: error.message || String(error)
+        lastError: error.message || String(error),
       };
     });
     if (renderAgain) {

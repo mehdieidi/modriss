@@ -8,12 +8,12 @@ package io.mehdieidi.modless.platform.core.service;
  */
 record XmiExportOptions(boolean strictReferences, boolean strictAttributes) {
 
-    /**
-     * Returns the default strict export behavior.
-     *
-     * @return strict export options
-     */
-    static XmiExportOptions strict() {
-        return new XmiExportOptions(true, true);
-    }
+  /**
+   * Returns the default strict export behavior.
+   *
+   * @return strict export options
+   */
+  static XmiExportOptions strict() {
+    return new XmiExportOptions(true, true);
+  }
 }

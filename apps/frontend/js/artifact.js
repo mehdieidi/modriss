@@ -1,8 +1,8 @@
-import {state} from "./state.js";
-import {el} from "./dom.js";
-import {api, apiAuthHeaders} from "./api.js";
-import {apiUrl} from "./config.js";
-import {setStatus} from "./status.js";
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { api, apiAuthHeaders } from "./api.js";
+import { apiUrl } from "./config.js";
+import { setStatus } from "./status.js";
 
 const MONACO_CDN_VERSION = "0.52.2";
 const MONACO_VS_PATH = `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_CDN_VERSION}/min/vs`;
@@ -35,7 +35,7 @@ const LANGUAGE_BY_EXTENSION = {
   bash: "shell",
   sql: "sql",
   dockerfile: "dockerfile",
-  txt: "plaintext"
+  txt: "plaintext",
 };
 
 let monacoLoaderPromise = null;
@@ -95,8 +95,7 @@ function updateArtifactEditorStatusPosition() {
 
 function updateArtifactEditorStatusModelDetails() {
   if (!monacoModel) {
-    setStatusField(el.artifactEditorStatusIndent,
-        `Spaces: ${DEFAULT_TAB_SIZE}`);
+    setStatusField(el.artifactEditorStatusIndent, `Spaces: ${DEFAULT_TAB_SIZE}`);
     setStatusField(el.artifactEditorStatusEncoding, "UTF-8");
     setStatusField(el.artifactEditorStatusEol, "LF");
     setStatusField(el.artifactEditorStatusLanguage, FALLBACK_LANGUAGE_LABEL);
@@ -104,12 +103,13 @@ function updateArtifactEditorStatusModelDetails() {
   }
   const options = monacoModel.getOptions();
   const indentKind = options.insertSpaces ? "Spaces" : "Tab Size";
-  setStatusField(el.artifactEditorStatusIndent,
-      `${indentKind}: ${options.tabSize || DEFAULT_TAB_SIZE}`);
+  setStatusField(
+    el.artifactEditorStatusIndent,
+    `${indentKind}: ${options.tabSize || DEFAULT_TAB_SIZE}`,
+  );
   setStatusField(el.artifactEditorStatusEncoding, "UTF-8");
   setStatusField(el.artifactEditorStatusEol, eolLabel(monacoModel.getEOL()));
-  setStatusField(el.artifactEditorStatusLanguage,
-      currentLanguageLabel || FALLBACK_LANGUAGE_LABEL);
+  setStatusField(el.artifactEditorStatusLanguage, currentLanguageLabel || FALLBACK_LANGUAGE_LABEL);
 }
 
 function syncArtifactEditorStatusBar() {
@@ -140,8 +140,10 @@ function ensureMonacoThemeSync(monaco) {
   monacoThemeObserver = new MutationObserver(() => {
     applyMonacoTheme(monaco);
   });
-  monacoThemeObserver.observe(document.documentElement,
-      {attributes: true, attributeFilter: ["class"]});
+  monacoThemeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
 }
 
 function getFileExtension(filePath) {
@@ -154,7 +156,12 @@ function getFileExtension(filePath) {
 }
 
 function getBaseName(filePath) {
-  return String(filePath || "").split("/").pop()?.toLowerCase() || "";
+  return (
+    String(filePath || "")
+      .split("/")
+      .pop()
+      ?.toLowerCase() || ""
+  );
 }
 
 function detectLanguageId(monaco, filePath) {
@@ -181,8 +188,7 @@ function detectLanguageId(monaco, filePath) {
 }
 
 function languageLabelForId(monaco, languageId) {
-  const language = monaco.languages.getLanguages().find(
-      (entry) => entry.id === languageId);
+  const language = monaco.languages.getLanguages().find((entry) => entry.id === languageId);
   if (language?.aliases?.length) {
     return language.aliases[0];
   }
@@ -209,13 +215,12 @@ function setArtifactEditorValue(value, filePath = "") {
 
   applyingProgrammaticEdit = true;
   disposeArtifactModel();
-  const uri = monaco.Uri.parse(
-      `artifact:///${encodeURI(filePath || "untitled.txt")}`);
+  const uri = monaco.Uri.parse(`artifact:///${encodeURI(filePath || "untitled.txt")}`);
   const model = monaco.editor.createModel(value || "", languageId, uri);
   monacoModel = model;
   monacoEditor.setModel(model);
   monacoEditor.updateOptions({
-    readOnly: !state.artifact.activeFile
+    readOnly: !state.artifact.activeFile,
   });
   monacoEditor.setScrollTop(0);
   monacoEditor.setScrollLeft(0);
@@ -234,7 +239,7 @@ function resetArtifactEditor() {
   currentLanguageLabel = FALLBACK_LANGUAGE_LABEL;
   if (monacoEditor) {
     setArtifactEditorValue("", "");
-    monacoEditor.updateOptions({readOnly: true});
+    monacoEditor.updateOptions({ readOnly: true });
   }
   if (el.saveFileBtn) {
     el.saveFileBtn.classList.add("hidden");
@@ -244,18 +249,18 @@ function resetArtifactEditor() {
 }
 
 function createTree(files) {
-  const root = {dirs: new Map(), files: []};
-  files.forEach(({path}) => {
+  const root = { dirs: new Map(), files: [] };
+  files.forEach(({ path }) => {
     const parts = String(path).split("/").filter(Boolean);
     let node = root;
     parts.forEach((part, index) => {
       const isLeaf = index === parts.length - 1;
       if (isLeaf) {
-        node.files.push({name: part, path});
+        node.files.push({ name: part, path });
         return;
       }
       if (!node.dirs.has(part)) {
-        node.dirs.set(part, {dirs: new Map(), files: []});
+        node.dirs.set(part, { dirs: new Map(), files: [] });
       }
       node = node.dirs.get(part);
     });
@@ -282,7 +287,7 @@ function setIconSource(icon, iconName) {
     chevron_right: "/assets/icons/chevron_right.svg",
     chevron_down: "/assets/icons/chevron_down.svg",
     expand: "/assets/icons/expand.svg",
-    collapse: "/assets/icons/collapse.svg"
+    collapse: "/assets/icons/collapse.svg",
   };
   const iconSrc = iconMap[iconName] || iconMap.description;
   icon.style.setProperty("--icon-src", `url('${iconSrc}')`);
@@ -314,10 +319,8 @@ function updateTreeToggleButton() {
     return;
   }
   const collapsed = !!state.artifact.treeCollapsed;
-  el.artifactTreeToggleBtn.title = collapsed ? "Expand folders"
-      : "Collapse folders";
-  const icon = el.artifactTreeToggleBtn.querySelector(
-      ".artifact-tree-toggle-icon");
+  el.artifactTreeToggleBtn.title = collapsed ? "Expand folders" : "Collapse folders";
+  const icon = el.artifactTreeToggleBtn.querySelector(".artifact-tree-toggle-icon");
   if (icon) {
     setIconSource(icon, collapsed ? "expand" : "collapse");
   }
@@ -333,14 +336,14 @@ function buildTreeNode(node, depth = 0) {
 
     const dirHeader = document.createElement("button");
     dirHeader.type = "button";
-    dirHeader.className = initiallyOpen ? "file-tree-dir open"
-        : "file-tree-dir";
+    dirHeader.className = initiallyOpen ? "file-tree-dir open" : "file-tree-dir";
     dirHeader.appendChild(createIndent(depth));
-    const chevronIcon = createIcon(initiallyOpen ? "chevron_down"
-        : "chevron_right", "file-tree-dir-chevron");
+    const chevronIcon = createIcon(
+      initiallyOpen ? "chevron_down" : "chevron_right",
+      "file-tree-dir-chevron",
+    );
     dirHeader.appendChild(chevronIcon);
-    const folderIcon = createIcon(initiallyOpen ? "folder_open" : "folder",
-        "file-tree-icon");
+    const folderIcon = createIcon(initiallyOpen ? "folder_open" : "folder", "file-tree-icon");
     dirHeader.appendChild(folderIcon);
     const label = document.createElement("span");
     label.className = "file-tree-label";
@@ -364,22 +367,24 @@ function buildTreeNode(node, depth = 0) {
     fragment.appendChild(wrapper);
   });
 
-  node.files.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach(
-      (file) => {
-        const item = document.createElement("button");
-        item.type = "button";
-        item.className = "file-tree-item";
-        item.dataset.path = file.path;
-        item.title = file.path;
-        item.appendChild(createIndent(depth));
-        item.appendChild(createIcon(fileIconForPath(file.path)));
-        const label = document.createElement("span");
-        label.className = "file-tree-label";
-        label.textContent = file.name;
-        item.appendChild(label);
-        item.addEventListener("click", () => openArtifactFile(file.path));
-        fragment.appendChild(item);
-      });
+  node.files
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach((file) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "file-tree-item";
+      item.dataset.path = file.path;
+      item.title = file.path;
+      item.appendChild(createIndent(depth));
+      item.appendChild(createIcon(fileIconForPath(file.path)));
+      const label = document.createElement("span");
+      label.className = "file-tree-label";
+      label.textContent = file.name;
+      item.appendChild(label);
+      item.addEventListener("click", () => openArtifactFile(file.path));
+      fragment.appendChild(item);
+    });
 
   return fragment;
 }
@@ -402,20 +407,23 @@ function ensureMonacoLoaded() {
 self.MonacoEnvironment = { baseUrl: '${MONACO_VS_PATH}/' };
 importScripts('${MONACO_VS_PATH}/base/worker/workerMain.js');
 `;
-        return `data:text/javascript;charset=utf-8,${encodeURIComponent(
-            workerSource)}`;
-      }
+        return `data:text/javascript;charset=utf-8,${encodeURIComponent(workerSource)}`;
+      },
     };
-    window.require.config({paths: {vs: MONACO_VS_PATH}});
-    window.require(["vs/editor/editor.main"], () => {
-      if (window.monaco?.editor) {
-        resolve(window.monaco);
-      } else {
-        reject(new Error("Monaco editor failed to initialize"));
-      }
-    }, (error) => {
-      reject(new Error(error?.message || "Failed to load Monaco editor"));
-    });
+    window.require.config({ paths: { vs: MONACO_VS_PATH } });
+    window.require(
+      ["vs/editor/editor.main"],
+      () => {
+        if (window.monaco?.editor) {
+          resolve(window.monaco);
+        } else {
+          reject(new Error("Monaco editor failed to initialize"));
+        }
+      },
+      (error) => {
+        reject(new Error(error?.message || "Failed to load Monaco editor"));
+      },
+    );
   }).catch((error) => {
     monacoLoaderPromise = null;
     throw error;
@@ -461,14 +469,14 @@ export async function initArtifactEditor() {
       lineHeight: 21,
       tabSize: DEFAULT_TAB_SIZE,
       insertSpaces: true,
-      minimap: {enabled: false},
+      minimap: { enabled: false },
       scrollBeyondLastLine: false,
       roundedSelection: false,
       renderWhitespace: "selection",
       wordWrap: "off",
       smoothScrolling: true,
       cursorBlinking: "smooth",
-      padding: {top: 10, bottom: 10}
+      padding: { top: 10, bottom: 10 },
     });
 
     attachMonacoListeners();
@@ -508,14 +516,14 @@ export function toggleArtifactTreeCollapsed() {
   setArtifactTreeCollapsed(!state.artifact.treeCollapsed);
 }
 
-export async function loadArtifactRecord(record, {collapseTree = true} = {}) {
+export async function loadArtifactRecord(record, { collapseTree = true } = {}) {
   await initArtifactEditor();
   state.artifact.id = record.id;
   state.artifact.name = record.name || "artifact";
   setArtifactDirty(false);
 
   const files = record.files || record.modelJson?.files || {};
-  state.artifact.files = Object.keys(files).map((path) => ({path}));
+  state.artifact.files = Object.keys(files).map((path) => ({ path }));
   if (typeof collapseTree === "boolean") {
     state.artifact.treeCollapsed = collapseTree;
   }
@@ -524,27 +532,26 @@ export async function loadArtifactRecord(record, {collapseTree = true} = {}) {
   updateTreeToggleButton();
   resetArtifactEditor();
   renderFileTree(state.artifact.files);
-  setStatus(
-      `Loaded artifact: ${state.artifact.name} (${state.artifact.files.length} files)`);
+  setStatus(`Loaded artifact: ${state.artifact.name} (${state.artifact.files.length} files)`);
 }
 
-export async function loadArtifactById(id, {collapseTree = true} = {}) {
+export async function loadArtifactById(id, { collapseTree = true } = {}) {
   try {
     const record = await api(`/artifact/${id}`);
-    await loadArtifactRecord(record, {collapseTree});
+    await loadArtifactRecord(record, { collapseTree });
     if (state.project?.id) {
       try {
         const activeModelIds = {
           ...(state.project.activeModelIds || {}),
-          artifact: String(record.id)
+          artifact: String(record.id),
         };
         const updatedProject = await api(`/projects/${state.project.id}`, {
           method: "PUT",
           body: JSON.stringify({
             name: state.project.name,
             description: state.project.description || "",
-            activeModelIds
-          })
+            activeModelIds,
+          }),
         });
         state.project = updatedProject;
       } catch (error) {
@@ -561,12 +568,11 @@ export async function loadCurrentProjectArtifact(options = {}) {
     clearArtifactState();
     return null;
   }
-  if (!options.forceReload && state.artifact.id
-      && state.artifact.files.length) {
+  if (!options.forceReload && state.artifact.id && state.artifact.files.length) {
     return {
       id: state.artifact.id,
       name: state.artifact.name,
-      files: state.artifact.files
+      files: state.artifact.files,
     };
   }
   try {
@@ -577,8 +583,7 @@ export async function loadCurrentProjectArtifact(options = {}) {
       setStatus("No artifact has been generated for this project yet");
       return null;
     }
-    await loadArtifactById(record.id,
-        {...options, collapseTree: options.collapseTree ?? true});
+    await loadArtifactById(record.id, { ...options, collapseTree: options.collapseTree ?? true });
     return record;
   } catch (error) {
     clearArtifactState();
@@ -612,14 +617,12 @@ export async function openArtifactFile(filePath) {
   }
   try {
     await initArtifactEditor();
-    const url = apiUrl(
-        `/artifact/${state.artifact.id}/file?path=${encodeURIComponent(
-            filePath)}`);
+    const url = apiUrl(`/artifact/${state.artifact.id}/file?path=${encodeURIComponent(filePath)}`);
     const response = await fetch(url, {
       headers: {
-        "Accept": "text/plain",
-        ...apiAuthHeaders()
-      }
+        Accept: "text/plain",
+        ...apiAuthHeaders(),
+      },
     });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -652,7 +655,7 @@ export async function saveCurrentFile() {
   try {
     await api(`/artifact/${state.artifact.id}/files`, {
       method: "PUT",
-      body: JSON.stringify({path: state.artifact.activeFile, content})
+      body: JSON.stringify({ path: state.artifact.activeFile, content }),
     });
     setArtifactDirty(false);
     setStatus(`Saved: ${state.artifact.activeFile}`);
@@ -668,16 +671,14 @@ export async function downloadCurrentArtifact() {
   }
   const url = apiUrl(`/artifact/${state.artifact.id}/download`);
   try {
-    const response = await fetch(url, {headers: apiAuthHeaders()});
+    const response = await fetch(url, { headers: apiAuthHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const blob = await response.blob();
-    const contentDisposition = response.headers.get("content-disposition")
-        || "";
+    const contentDisposition = response.headers.get("content-disposition") || "";
     const filenameMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
-    const filename = filenameMatch?.[1] || `${state.artifact.name
-    || "artifact"}.zip`;
+    const filename = filenameMatch?.[1] || `${state.artifact.name || "artifact"}.zip`;
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = objectUrl;

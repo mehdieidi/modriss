@@ -1,17 +1,17 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {escapeHtml} from './utils.js';
-import {setStatus} from './status.js';
-import {markModelDirty, updateModelSaveUi} from './model-save-ui.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { escapeHtml } from "./utils.js";
+import { setStatus } from "./status.js";
+import { markModelDirty, updateModelSaveUi } from "./model-save-ui.js";
 import {
   activeView,
   ensureActiveGraphAndViews,
   saveCurrentTabGraphState,
   setActiveViewId,
-  syncActiveViewFromVisibleGraph
-} from './graph-store.js';
-import {materializeActiveView} from './view-materializer.js';
-import {modelingLevelConfig} from './modeling-config-data.js';
+  syncActiveViewFromVisibleGraph,
+} from "./graph-store.js";
+import { materializeActiveView } from "./view-materializer.js";
+import { modelingLevelConfig } from "./modeling-config-data.js";
 import {
   activeCanvasFocus,
   canvasFocusLabel,
@@ -21,8 +21,8 @@ import {
   finalizeBoundedContextDraft,
   openNeighborhoodFocus,
   restoreCanvasCamera,
-  setContextCreateMode
-} from './canvas.js';
+  setContextCreateMode,
+} from "./canvas.js";
 
 let renderDiagramCallback = null;
 let renderPaletteCallback = null;
@@ -38,38 +38,38 @@ const LAYOUT_STRATEGIES = [
   {
     id: "SPACIOUS_LAYERED",
     label: "Spacious",
-    title: "Wide layered layout with stronger node and edge separation"
+    title: "Wide layered layout with stronger node and edge separation",
   },
   {
     id: "RELAXED_SPLINES",
     label: "Relaxed",
-    title: "Curved routes with extra spacing for dense relationship maps"
+    title: "Curved routes with extra spacing for dense relationship maps",
   },
   {
     id: "VERTICAL_FLOW",
     label: "Vertical",
-    title: "Top-down flow for process-like views"
+    title: "Top-down flow for process-like views",
   },
   {
     id: "BALANCED_LAYERED",
     label: "Balanced",
-    title: "Moderate layered layout for smaller views"
+    title: "Moderate layered layout for smaller views",
   },
   {
     id: "TREE",
     label: "Tree",
-    title: "Tree layout for hierarchy-heavy views"
+    title: "Tree layout for hierarchy-heavy views",
   },
   {
     id: "RADIAL",
     label: "Radial",
-    title: "Radial layout for hub-and-spoke views"
+    title: "Radial layout for hub-and-spoke views",
   },
   {
     id: "FORCE",
     label: "Force",
-    title: "Force-directed layout for exploratory relationship maps"
-  }
+    title: "Force-directed layout for exploratory relationship maps",
+  },
 ];
 
 function safeArray(value) {
@@ -77,22 +77,23 @@ function safeArray(value) {
 }
 
 function normalizeLabel(value) {
-  return String(value || "").trim().toLowerCase().replaceAll(/[^a-z0-9]+/g,
-      " ");
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, " ");
 }
 
 function ensureHost() {
-  host = el.modelWorkbenchPanel || document.getElementById(
-      "modelWorkbenchPanel");
+  host = el.modelWorkbenchPanel || document.getElementById("modelWorkbenchPanel");
   return host;
 }
 
 async function runManualAutoLayout() {
   try {
-    const {autoLayoutCurrentDiagram} = await import('./model-ops.js');
+    const { autoLayoutCurrentDiagram } = await import("./model-ops.js");
     await autoLayoutCurrentDiagram({
       strategy: selectedLayoutStrategy(),
-      force: true
+      force: true,
     });
   } catch (error) {
     console.warn("Auto layout failed", error);
@@ -101,48 +102,44 @@ async function runManualAutoLayout() {
 
 function selectedLayoutStrategy() {
   const view = activeView();
-  const stored = window.localStorage.getItem(
-      `modless.layoutStrategy.${state.activeType}`);
-  const value = String(view?.layoutStrategy || stored || "SPACIOUS_LAYERED")
-  .toUpperCase();
-  return LAYOUT_STRATEGIES.some((strategy) => strategy.id === value)
-      ? value : "SPACIOUS_LAYERED";
+  const stored = window.localStorage.getItem(`modless.layoutStrategy.${state.activeType}`);
+  const value = String(view?.layoutStrategy || stored || "SPACIOUS_LAYERED").toUpperCase();
+  return LAYOUT_STRATEGIES.some((strategy) => strategy.id === value) ? value : "SPACIOUS_LAYERED";
 }
 
 function selectedLayoutStrategyConfig() {
   const selected = selectedLayoutStrategy();
-  return LAYOUT_STRATEGIES.find((strategy) => strategy.id === selected)
-      || LAYOUT_STRATEGIES[0];
+  return LAYOUT_STRATEGIES.find((strategy) => strategy.id === selected) || LAYOUT_STRATEGIES[0];
 }
 
 function layoutStrategyMenuMarkup() {
   const selected = selectedLayoutStrategy();
-  return LAYOUT_STRATEGIES.map((strategy) =>
-      `<button class="workbench-view-option workbench-layout-option${strategy.id
-      === selected
-          ? " is-active" : ""}"
+  return LAYOUT_STRATEGIES.map(
+    (strategy) =>
+      `<button class="workbench-view-option workbench-layout-option${
+        strategy.id === selected ? " is-active" : ""
+      }"
                type="button"
                role="option"
                aria-selected="${strategy.id === selected ? "true" : "false"}"
                data-layout-strategy="${escapeHtml(strategy.id)}"
                title="${escapeHtml(strategy.title)}">
-         <span class="workbench-view-option-label">${escapeHtml(
-          strategy.label)}</span>
-         <span class="workbench-view-option-kind">${escapeHtml(
-          strategy.title)}</span>
-       </button>`).join("");
+         <span class="workbench-view-option-label">${escapeHtml(strategy.label)}</span>
+         <span class="workbench-view-option-kind">${escapeHtml(strategy.title)}</span>
+       </button>`,
+  ).join("");
 }
 
 function setLayoutStrategy(strategyId) {
   const strategy = String(strategyId || "SPACIOUS_LAYERED").toUpperCase();
   const selected = LAYOUT_STRATEGIES.some((item) => item.id === strategy)
-      ? strategy : "SPACIOUS_LAYERED";
+    ? strategy
+    : "SPACIOUS_LAYERED";
   const view = activeView();
   if (view) {
     view.layoutStrategy = selected;
   }
-  window.localStorage.setItem(`modless.layoutStrategy.${state.activeType}`,
-      selected);
+  window.localStorage.setItem(`modless.layoutStrategy.${state.activeType}`, selected);
   layoutMenuOpen = false;
   renderViewWorkbench();
   setStatus("Layout strategy selected. Run Auto Layout to apply it.");
@@ -158,29 +155,29 @@ function viewMatchesLevel(view) {
 
 function metadataViewKeys() {
   try {
-    return safeArray(modelingLevelConfig(state.activeType).viewDefinitions).map(
-        (definition) => normalizeLabel([
-          definition?.displayName,
-          definition?.name,
-          definition?.id
-        ].filter(Boolean).join(" ")));
+    return safeArray(modelingLevelConfig(state.activeType).viewDefinitions).map((definition) =>
+      normalizeLabel(
+        [definition?.displayName, definition?.name, definition?.id].filter(Boolean).join(" "),
+      ),
+    );
   } catch {
     return [];
   }
 }
 
 function viewMetadataKey(view) {
-  return normalizeLabel([
-    view?.name,
-    view?.displayName,
-    view?.definitionId,
-    view?.sourceDefinitionId
-  ].filter(Boolean).join(" "));
+  return normalizeLabel(
+    [view?.name, view?.displayName, view?.definitionId, view?.sourceDefinitionId]
+      .filter(Boolean)
+      .join(" "),
+  );
 }
 
 function metadataKeyMatches(viewKey, metadataKey) {
-  return Boolean(viewKey && metadataKey)
-      && (viewKey.includes(metadataKey) || metadataKey.includes(viewKey));
+  return (
+    Boolean(viewKey && metadataKey) &&
+    (viewKey.includes(metadataKey) || metadataKey.includes(viewKey))
+  );
 }
 
 function levelViews() {
@@ -195,8 +192,7 @@ function levelViews() {
     if (kind === "SAVED_VIEWPOINT") {
       return 350;
     }
-    const specIndex = wanted.findIndex((key) =>
-        metadataKeyMatches(viewMetadataKey(view), key));
+    const specIndex = wanted.findIndex((key) => metadataKeyMatches(viewMetadataKey(view), key));
     if (specIndex >= 0) {
       return specIndex;
     }
@@ -204,14 +200,16 @@ function levelViews() {
   };
   const filtered = all.filter((view) => {
     const kind = String(view?.kind || "").toUpperCase();
-    return kind === "MAIN"
-        || kind === "SAVED_VIEWPOINT"
-        || [...wantedSet].some((key) =>
-            metadataKeyMatches(viewMetadataKey(view), key))
-        || !view.scope?.rootElementId;
+    return (
+      kind === "MAIN" ||
+      kind === "SAVED_VIEWPOINT" ||
+      [...wantedSet].some((key) => metadataKeyMatches(viewMetadataKey(view), key)) ||
+      !view.scope?.rootElementId
+    );
   });
-  return filtered.sort((a, b) => rank(a) - rank(b)
-      || String(a.name || "").localeCompare(String(b.name || "")));
+  return filtered.sort(
+    (a, b) => rank(a) - rank(b) || String(a.name || "").localeCompare(String(b.name || "")),
+  );
 }
 
 function activeViewLabel() {
@@ -270,8 +268,7 @@ function boundedContextToolMarkup() {
     return `<div class="workbench-context-actions workbench-focus-actions">
       <button class="sidebar-inline-action context-action-primary"
               id="canvasFocusBackBtn" type="button">Back</button>
-      <span class="workbench-focus-label">${escapeHtml(
-        canvasFocusLabel())}</span>
+      <span class="workbench-focus-label">${escapeHtml(canvasFocusLabel())}</span>
     </div>`;
   }
   if (state.activeType !== "cim") {
@@ -298,19 +295,21 @@ function viewMenuMarkup() {
   const options = levelViews();
   if (!options.length) {
     return `<div class="workbench-view-option-empty">No ${escapeHtml(
-        state.activeType.toUpperCase())} views</div>`;
+      state.activeType.toUpperCase(),
+    )} views</div>`;
   }
-  return options.map((view) => `
-    <button class="workbench-view-option${view.id === state.views.activeViewId
-      ? " is-active" : ""}"
+  return options
+    .map(
+      (view) => `
+    <button class="workbench-view-option${view.id === state.views.activeViewId ? " is-active" : ""}"
             type="button"
             data-view-option="${escapeHtml(view.id)}"
             role="option"
-            aria-selected="${view.id === state.views.activeViewId ? "true"
-      : "false"}">
-      <span class="workbench-view-option-label">${escapeHtml(
-      view.name || view.id)}</span>
-    </button>`).join("");
+            aria-selected="${view.id === state.views.activeViewId ? "true" : "false"}">
+      <span class="workbench-view-option-label">${escapeHtml(view.name || view.id)}</span>
+    </button>`,
+    )
+    .join("");
 }
 
 function elementLabel(element) {
@@ -323,37 +322,40 @@ function elementType(element) {
 
 function activeViewElementRows(view) {
   const hiddenIds = new Set(safeArray(view?.hidden?.elementIds));
-  const visibleIds = new Set(
-      safeArray(view?.nodes).map((node) => node.elementId));
-  return safeArray(view?.nodes).map((viewNode) => {
-    const element = state.graph.elementsById.get(viewNode.elementId);
-    if (!element) {
-      return null;
-    }
-    const id = viewNode.elementId;
-    return {
-      id,
-      element,
-      checked: visibleIds.has(id) && !hiddenIds.has(id),
-      search: normalizeLabel(
-          `${elementLabel(element)} ${elementType(element)} ${id}`)
-    };
-  }).filter(Boolean);
+  const visibleIds = new Set(safeArray(view?.nodes).map((node) => node.elementId));
+  return safeArray(view?.nodes)
+    .map((viewNode) => {
+      const element = state.graph.elementsById.get(viewNode.elementId);
+      if (!element) {
+        return null;
+      }
+      const id = viewNode.elementId;
+      return {
+        id,
+        element,
+        checked: visibleIds.has(id) && !hiddenIds.has(id),
+        search: normalizeLabel(`${elementLabel(element)} ${elementType(element)} ${id}`),
+      };
+    })
+    .filter(Boolean);
 }
 
 function relationshipLabel(relationship) {
-  return String(relationship?.name || relationship?.label
-      || relationship?.kind || relationship?.eClass || "Relationship");
+  return String(
+    relationship?.name ||
+      relationship?.label ||
+      relationship?.kind ||
+      relationship?.eClass ||
+      "Relationship",
+  );
 }
 
 function relationshipKind(relationship) {
-  return String(relationship?.kind || relationship?.eClass
-      || relationship?.type || "Relationship");
+  return String(relationship?.kind || relationship?.eClass || relationship?.type || "Relationship");
 }
 
 function relationshipEndpointId(relationship, key) {
-  const direct = relationship?.[`${key}ElementId`]
-      || relationship?.[`${key}Id`];
+  const direct = relationship?.[`${key}ElementId`] || relationship?.[`${key}Id`];
   if (direct) {
     return String(direct);
   }
@@ -365,33 +367,33 @@ function relationshipEndpointId(relationship, key) {
 }
 
 function relationshipsForActiveView(view) {
-  const fromVisibleState = state.views?.visibleRelationshipIds instanceof Set
+  const fromVisibleState =
+    state.views?.visibleRelationshipIds instanceof Set
       ? [...state.views.visibleRelationshipIds]
       : [];
-  const hiddenRelationshipIds = new Set(
-      safeArray(view?.hidden?.relationshipIds));
+  const hiddenRelationshipIds = new Set(safeArray(view?.hidden?.relationshipIds));
   const fromViewEdges = safeArray(view?.edges)
-  .filter((edge) => edge?.visible !== false)
-  .map((edge) => edge.relationshipId || edge.id)
-  .filter((id) => id && !hiddenRelationshipIds.has(id));
-  const relationshipIds = fromVisibleState.length ? fromVisibleState
-      : fromViewEdges;
+    .filter((edge) => edge?.visible !== false)
+    .map((edge) => edge.relationshipId || edge.id)
+    .filter((id) => id && !hiddenRelationshipIds.has(id));
+  const relationshipIds = fromVisibleState.length ? fromVisibleState : fromViewEdges;
   const relationshipMap = state.graph.relationshipsById;
-  const rows = relationshipIds.map((id) => relationshipMap.get(id)).filter(
-      Boolean);
+  const rows = relationshipIds.map((id) => relationshipMap.get(id)).filter(Boolean);
   if (rows.length) {
     return rows;
   }
-  const visibleElementIds = new Set(
-      safeArray(view?.nodes).map((node) => node.elementId));
+  const visibleElementIds = new Set(safeArray(view?.nodes).map((node) => node.elementId));
   if (!visibleElementIds.size) {
     return [];
   }
   return [...relationshipMap.values()].filter((relationship) => {
     const sourceId = relationshipEndpointId(relationship, "source");
     const targetId = relationshipEndpointId(relationship, "target");
-    return !hiddenRelationshipIds.has(relationship.id)
-        && visibleElementIds.has(sourceId) && visibleElementIds.has(targetId);
+    return (
+      !hiddenRelationshipIds.has(relationship.id) &&
+      visibleElementIds.has(sourceId) &&
+      visibleElementIds.has(targetId)
+    );
   });
 }
 
@@ -413,13 +415,13 @@ function relationshipRowsMarkup(view) {
       kind,
       label,
       search: normalizeLabel(
-          `${label} ${kind} ${sourceLabel} ${targetLabel} ${relationship.id
-          || ""}`)
+        `${label} ${kind} ${sourceLabel} ${targetLabel} ${relationship.id || ""}`,
+      ),
     };
   });
   const filtered = filter
-      ? relationships.filter((row) => row.search.includes(filter))
-      : relationships;
+    ? relationships.filter((row) => row.search.includes(filter))
+    : relationships;
   if (!relationships.length) {
     return `<div class="model-tree-empty">No relationships in this view.</div>`;
   }
@@ -427,23 +429,27 @@ function relationshipRowsMarkup(view) {
     return `<div class="model-tree-empty">No matching relationships.</div>`;
   }
   return `<div class="model-tree-panel-list">
-    ${filtered.map((row) => `
+    ${filtered
+      .map(
+        (row) => `
       <div class="model-tree-relationship">
         <div class="model-tree-relationship-main">
           <span class="model-tree-relationship-label">${escapeHtml(
-      row.sourceLabel)} -> ${escapeHtml(row.targetLabel)}</span>
+            row.sourceLabel,
+          )} -> ${escapeHtml(row.targetLabel)}</span>
           <span class="model-tree-relationship-name">${escapeHtml(row.label)}</span>
         </div>
         <span class="model-tree-relationship-kind">${escapeHtml(row.kind)}</span>
-      </div>`).join("")}
+      </div>`,
+      )
+      .join("")}
     </div>`;
 }
 
 function elementRowsMarkup(view) {
   const filter = normalizeLabel(modelTreeFilter);
   const rows = activeViewElementRows(view);
-  const filtered = filter ? rows.filter((row) => row.search.includes(filter))
-      : rows;
+  const filtered = filter ? rows.filter((row) => row.search.includes(filter)) : rows;
   if (!rows.length) {
     return `<div class="model-tree-empty">No elements in this view.</div>`;
   }
@@ -451,14 +457,18 @@ function elementRowsMarkup(view) {
     return `<div class="model-tree-empty">No matching elements.</div>`;
   }
   return `<div class="model-tree-panel-list">
-    ${filtered.map(({id, element, checked}) => `
+    ${filtered
+      .map(
+        ({ id, element, checked }) => `
       <label class="model-tree-node${checked ? "" : " is-hidden"}">
         <input class="model-tree-node-toggle" data-tree-element-id="${escapeHtml(
-      id)}" type="checkbox" ${checked ? "checked" : ""}>
-        <span class="model-tree-node-label">${escapeHtml(
-      elementLabel(element))}</span>
+          id,
+        )}" type="checkbox" ${checked ? "checked" : ""}>
+        <span class="model-tree-node-label">${escapeHtml(elementLabel(element))}</span>
         <span class="model-tree-node-type">${escapeHtml(elementType(element))}</span>
-      </label>`).join("")}
+      </label>`,
+      )
+      .join("")}
     </div>`;
 }
 
@@ -470,8 +480,7 @@ function renderModelTree() {
   const view = activeView();
   const isRelationshipMode = modelTreeMode === "relationships";
   const title = isRelationshipMode ? "Relationships" : "Elements";
-  const placeholder = isRelationshipMode ? "Filter relationships..."
-      : "Filter elements...";
+  const placeholder = isRelationshipMode ? "Filter relationships..." : "Filter elements...";
   if (el.modelTreeTitle) {
     el.modelTreeTitle.textContent = title;
   }
@@ -491,8 +500,7 @@ function renderModelTree() {
     </div>
     <div class="model-tree-section">
       <div class="model-tree-section-title">${title}</div>
-      ${isRelationshipMode ? relationshipRowsMarkup(view) : elementRowsMarkup(
-      view)}
+      ${isRelationshipMode ? relationshipRowsMarkup(view) : elementRowsMarkup(view)}
     </div>`;
   el.modelTreeBody.scrollTop = treeBodyScrollTop;
 }
@@ -507,8 +515,7 @@ function setTreeOpen(open, mode = modelTreeMode) {
   if (open) {
     el.attributePanel?.classList.add("hidden");
     el.impactPanel?.classList.add("hidden");
-    el.workspace?.classList.remove("attr-open", "impact-open",
-        "mobile-right-open");
+    el.workspace?.classList.remove("attr-open", "impact-open", "mobile-right-open");
     if (window.innerWidth <= 920) {
       el.workspace?.classList.add("mobile-right-open");
       el.mobileBackdrop?.classList.remove("hidden");
@@ -531,8 +538,7 @@ export function renderViewWorkbench() {
     return;
   }
   normalizeBoundedContextToolState();
-  panel.classList.toggle("model-workbench-minimized", Boolean(
-      state.modelingToolsMinimized));
+  panel.classList.toggle("model-workbench-minimized", Boolean(state.modelingToolsMinimized));
   if (state.modelingToolsMinimized) {
     panel.innerHTML = `
       <button class="model-tools-restore" id="modelToolsRestoreBtn"
@@ -561,8 +567,7 @@ export function renderViewWorkbench() {
                   title="${escapeHtml(state.activeType.toUpperCase())} view"
                   aria-haspopup="listbox"
                   aria-expanded="${viewMenuOpen ? "true" : "false"}">
-            <span class="workbench-view-select-label">${escapeHtml(
-      activeViewLabel())}</span>
+            <span class="workbench-view-select-label">${escapeHtml(activeViewLabel())}</span>
           </button>
           <span class="workbench-view-select-caret" aria-hidden="true"></span>
           <div class="workbench-view-menu${viewMenuOpen ? "" : " hidden"}"
@@ -573,8 +578,7 @@ export function renderViewWorkbench() {
           </div>
         </div>
       </div>
-      ${contextTools
-      ? `<div class="workbench-context-slot">${contextTools}</div>` : ""}
+      ${contextTools ? `<div class="workbench-context-slot">${contextTools}</div>` : ""}
       <div class="workbench-action-group">
         <button class="sidebar-inline-action" id="focusDepthOneBtn" type="button"
                 title="Open selected element neighborhood depth 1">Focus 1</button>
@@ -582,12 +586,16 @@ export function renderViewWorkbench() {
                 title="Open selected element neighborhood depth 2">Focus 2</button>
         <button class="sidebar-inline-action" id="saveViewpointBtn" type="button"
                 title="Save filters, layout, and camera as a viewpoint">Save View</button>
-        <button class="sidebar-inline-action${modelTreeMode === "elements"
-  && !el.modelTreePanel?.classList.contains("hidden") ? " is-active"
-      : ""}" id="modelTreeToggleBtn" type="button">Tree</button>
-        <button class="sidebar-inline-action${modelTreeMode === "relationships"
-  && !el.modelTreePanel?.classList.contains("hidden") ? " is-active"
-      : ""}" id="relationshipTreeToggleBtn" type="button">Relationships</button>
+        <button class="sidebar-inline-action${
+          modelTreeMode === "elements" && !el.modelTreePanel?.classList.contains("hidden")
+            ? " is-active"
+            : ""
+        }" id="modelTreeToggleBtn" type="button">Tree</button>
+        <button class="sidebar-inline-action${
+          modelTreeMode === "relationships" && !el.modelTreePanel?.classList.contains("hidden")
+            ? " is-active"
+            : ""
+        }" id="relationshipTreeToggleBtn" type="button">Relationships</button>
       </div>
       <div class="workbench-persist-group">
         <button class="sidebar-inline-action model-save-btn"
@@ -599,8 +607,7 @@ export function renderViewWorkbench() {
             <span class="model-save-btn-progress-bar"></span>
           </span>
         </button>
-        <div class="workbench-layout-select-wrap${layoutMenuOpen ? " is-open"
-      : ""}">
+        <div class="workbench-layout-select-wrap${layoutMenuOpen ? " is-open" : ""}">
           <span class="workbench-layout-select-label">Layout</span>
           <button class="sidebar-select workbench-view-select workbench-layout-select"
                   id="layoutStrategySelect"
@@ -609,12 +616,12 @@ export function renderViewWorkbench() {
                   aria-haspopup="listbox"
                   aria-expanded="${layoutMenuOpen ? "true" : "false"}">
             <span class="workbench-view-select-label">${escapeHtml(
-      selectedLayoutStrategyConfig().label)}</span>
+              selectedLayoutStrategyConfig().label,
+            )}</span>
           </button>
           <span class="workbench-view-select-caret workbench-layout-select-caret"
                 aria-hidden="true"></span>
-          <div class="workbench-view-menu workbench-layout-menu${layoutMenuOpen
-      ? "" : " hidden"}"
+          <div class="workbench-view-menu workbench-layout-menu${layoutMenuOpen ? "" : " hidden"}"
                id="layoutStrategyMenu"
                role="listbox"
                aria-label="Auto layout strategies">
@@ -644,8 +651,7 @@ export function renderViewWorkbench() {
 
 function savedViewpointId(name) {
   const normalized = normalizeLabel(name).replaceAll(" ", "-") || "viewpoint";
-  return `view-${state.activeType}-saved-${normalized}-${Date.now().toString(
-      36)}`;
+  return `view-${state.activeType}-saved-${normalized}-${Date.now().toString(36)}`;
 }
 
 function saveCurrentViewpoint() {
@@ -655,8 +661,7 @@ function saveCurrentViewpoint() {
     return;
   }
   syncActiveViewFromVisibleGraph();
-  const defaultName = `${view.name
-  || state.activeType.toUpperCase()} Viewpoint`;
+  const defaultName = `${view.name || state.activeType.toUpperCase()} Viewpoint`;
   const name = window.prompt("Viewpoint name", defaultName);
   if (!String(name || "").trim()) {
     return;
@@ -671,7 +676,7 @@ function saveCurrentViewpoint() {
   viewpoint.camera = {
     x: Number(state.viewport?.x) || 0,
     y: Number(state.viewport?.y) || 0,
-    scale: Number(state.viewport?.scale) || 1
+    scale: Number(state.viewport?.scale) || 1,
   };
   state.views.byId.set(viewpoint.id, viewpoint);
   state.views.activeViewId = viewpoint.id;
@@ -697,24 +702,24 @@ async function openWorkbenchView(viewId) {
     saveCurrentTabGraphState();
     if (needsInitialLayout) {
       try {
-        const {autoLayoutCurrentDiagram} = await import('./model-ops.js');
+        const { autoLayoutCurrentDiagram } = await import("./model-ops.js");
         await autoLayoutCurrentDiagram({
           progress: true,
           status: false,
-          force: false
+          force: false,
         });
         setStatus("View selected and arranged.");
       } catch (error) {
         console.warn("Initial view auto layout failed", error);
         if (!restoreCanvasCamera(targetView?.camera)) {
-          centerViewportOnDiagram({fit: true});
+          centerViewportOnDiagram({ fit: true });
         }
         setStatus("View selected. Auto layout failed.");
       }
       return;
     }
     if (!restoreCanvasCamera(targetView?.camera)) {
-      centerViewportOnDiagram({fit: true});
+      centerViewportOnDiagram({ fit: true });
     }
     setStatus("View selected.");
   }
@@ -726,7 +731,7 @@ async function toggleTreeElement(elementId, checked) {
     return;
   }
   syncActiveViewFromVisibleGraph();
-  view.hidden ??= {elementIds: [], relationshipIds: []};
+  view.hidden ??= { elementIds: [], relationshipIds: [] };
   const hidden = new Set(safeArray(view.hidden.elementIds));
   if (checked) {
     hidden.delete(elementId);
@@ -845,14 +850,12 @@ function bindWorkbenchEvents() {
       setStatus("Bounded context assignment canceled");
       return;
     }
-    const selectedView = target?.closest(
-        "[data-view-option]")?.dataset?.viewOption;
+    const selectedView = target?.closest("[data-view-option]")?.dataset?.viewOption;
     if (selectedView) {
       void openWorkbenchView(selectedView);
       return;
     }
-    const selectedLayout = target?.closest(
-        "[data-layout-strategy]")?.dataset?.layoutStrategy;
+    const selectedLayout = target?.closest("[data-layout-strategy]")?.dataset?.layoutStrategy;
     if (selectedLayout) {
       setLayoutStrategy(selectedLayout);
       return;
@@ -862,15 +865,14 @@ function bindWorkbenchEvents() {
       return;
     }
     if (target?.closest("#modelTreeToggleBtn")) {
-      const open = el.modelTreePanel?.classList.contains("hidden")
-          || modelTreeMode !== "elements";
+      const open = el.modelTreePanel?.classList.contains("hidden") || modelTreeMode !== "elements";
       setTreeOpen(open, "elements");
       renderViewWorkbench();
       return;
     }
     if (target?.closest("#relationshipTreeToggleBtn")) {
-      const open = el.modelTreePanel?.classList.contains("hidden")
-          || modelTreeMode !== "relationships";
+      const open =
+        el.modelTreePanel?.classList.contains("hidden") || modelTreeMode !== "relationships";
       setTreeOpen(open, "relationships");
       renderViewWorkbench();
     }
@@ -898,7 +900,7 @@ function bindWorkbenchEvents() {
   });
 }
 
-export function initViewWorkbench({renderDiagram, renderPalette} = {}) {
+export function initViewWorkbench({ renderDiagram, renderPalette } = {}) {
   renderDiagramCallback = renderDiagram || renderDiagramCallback;
   renderPaletteCallback = renderPalette || renderPaletteCallback;
   ensureHost();

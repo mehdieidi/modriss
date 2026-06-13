@@ -1,21 +1,18 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {escapeHtml} from './utils.js';
-import {getDefaultNode} from './diagram.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { escapeHtml } from "./utils.js";
+import { getDefaultNode } from "./diagram.js";
 import {
   activeView,
   addConnectionToGraphAndActiveView,
   addNodeToGraphAndActiveView,
   saveCurrentTabGraphState,
   setActiveViewId,
-  syncActiveViewFromVisibleGraph
-} from './graph-store.js';
-import {
-  modelingElementDefinition,
-  modelingViewDefinition
-} from './modeling-config-data.js';
-import {markModelDirty} from './model-save-ui.js';
-import {setStatus} from './status.js';
+  syncActiveViewFromVisibleGraph,
+} from "./graph-store.js";
+import { modelingElementDefinition, modelingViewDefinition } from "./modeling-config-data.js";
+import { markModelDirty } from "./model-save-ui.js";
+import { setStatus } from "./status.js";
 import {
   activeWorkbenchRepresentation,
   applyWorkbenchEdgeMode,
@@ -36,8 +33,8 @@ import {
   renderWorkbenchSliceSelect,
   renderWorkbenchSurfaceLayout,
   renderWorkbenchToolbar,
-  setWorkbenchRepresentation
-} from './workbench-common.js';
+  setWorkbenchRepresentation,
+} from "./workbench-common.js";
 import {
   addReferenceValue,
   CIM_ROOT_CONTAINMENTS,
@@ -47,8 +44,8 @@ import {
   isPresent,
   missingRequiredFeatures,
   refIds,
-  removeReferenceValue
-} from './cim-model-utils.js';
+  removeReferenceValue,
+} from "./cim-model-utils.js";
 
 let surface = null;
 let bound = false;
@@ -69,7 +66,7 @@ const CIM_SLICE_KINDS = [
   ["classification", "Classification"],
   ["lifecycle", "Lifecycle"],
   ["blocking", "Blocking"],
-  ["traceType", "Trace type"]
+  ["traceType", "Trace type"],
 ];
 
 function scheduleSearchRender() {
@@ -96,7 +93,7 @@ const DEFAULT_REPRESENTATION_BY_PROFILE = {
   decision: "matrix",
   governance: "matrix",
   readiness: "board",
-  traceability: "matrix"
+  traceability: "matrix",
 };
 
 const PROFILE_REGISTERS = {
@@ -113,7 +110,7 @@ const PROFILE_REGISTERS = {
   decision: "decisionTables",
   governance: "requirements",
   readiness: "risks",
-  traceability: "traceLinks"
+  traceability: "traceLinks",
 };
 
 const REGISTER_COLUMNS = {
@@ -127,83 +124,244 @@ const REGISTER_COLUMNS = {
     "supportsGoals",
     "constrains",
     "dependsOn",
-    "conflictsWith"
+    "conflictsWith",
   ],
-  goals: ["successCriterion", "businessValue", "priority", "measuredBy",
-    "refinedBy", "owners"],
+  goals: ["successCriterion", "businessValue", "priority", "measuredBy", "refinedBy", "owners"],
   kpis: ["metricName", "operator", "targetValue", "unit", "measures"],
-  stakeholders: ["stakeholderType", "influenceLevel", "ownsGoals",
-    "providesRequirements"],
-  actors: ["actorType", "trustLevel", "playsRoles", "issuesCommands",
-    "issuesQueries", "observesEvents", "producedEvents", "consumedEvents",
-    "exchangedInformation"],
-  roles: ["responsibility", "businessPermissionSummary", "privileged",
-    "assignedTo"],
-  capabilities: ["criticality", "supports", "owner",
-    "realizesRequirements", "containsCommands", "containsQueries",
-    "containsEvents", "managesEntities", "ownsProcesses", "constrainedBy"],
-  boundedContexts: ["capabilities", "entities", "commands", "queries",
-    "events", "policies", "languageBoundary", "ownershipBoundary"],
-  glossary: ["term", "definition", "synonyms", "forbiddenSynonyms",
-    "exampleUsage", "context"],
-  entities: ["identityDescription", "identityAttribute", "attributes",
-    "lifecycleDescription", "auditRelevant", "owningCapability",
-    "lifecycleStates", "invariants"],
-  valueObjects: ["glossaryDefinition", "valueType", "immutable", "attributes",
-    "equalityAttributes"],
-  relationships: ["relationshipType", "source", "target", "sourceRole",
-    "sourceMultiplicity", "targetRole", "targetMultiplicity", "ownership"],
-  aggregates: ["root", "members", "handledCommands", "emittedEvents",
-    "strongConsistencyRequired", "consistencyExpectation",
-    "conflictResolutionPolicy", "idempotencyBusinessKey"],
-  informationItems: ["businessName", "type", "required", "collection",
-    "multiplicity", "allowedValues", "formatHint", "minValue", "maxValue",
-    "pattern", "unit", "sourceOfTruth", "derived", "classification",
-    "privacyConstraints", "complianceConstraints", "externallyShared",
-    "auditRelevant", "searchRelevant", "reportingRelevant",
-    "retentionRelevant"],
-  classifications: ["kind", "confidentialityLevel", "identifiability",
-    "regulatoryCategory", "encryptionExpected", "maskingExpected",
-    "minimizationRequired", "consentRequired", "auditAccessRequired"],
-  commands: ["commandType", "intent", "issuedBy", "targetCapability",
-    "targetAggregate", "input", "preconditions", "expectedEvents",
-    "rejectionEvents", "possibleErrors", "authorizationRequired",
-    "authorizationRule", "auditRequired", "idempotencyBusinessKey",
-    "duplicateSubmissionPossible", "interactionExpectation", "priority"],
-  queries: ["queryType", "intent", "issuedBy", "targetCapability", "input",
-    "output", "reads", "freshnessNeed", "containsPersonalData",
-    "authorizationRequired", "auditRequired", "paginationExpectation",
-    "filteringExpectation", "sortingExpectation"],
-  events: ["occurredInPastTenseName", "payload", "affects",
-    "causedByPolicies", "causedByExternalSystems", "consumedByPolicies",
-    "consumedByProcesses", "consumedByExternalSystems",
-    "correlationBusinessKey", "causationBusinessKey", "externallyVisible",
-    "auditRelevant", "retentionRelevant"],
-  businessErrors: ["errorCode", "userVisibleMessage", "recoverable",
-    "emittedEvents"],
-  conditions: ["naturalLanguage", "expressionLanguage", "expression",
-    "referencedInformation", "referencedConcepts"],
-  processes: ["processKind", "criticality", "owningCapability", "trigger",
-    "longRunning", "humanApprovalPossible", "compensationExpected", "steps",
-    "preconditions", "postconditions", "exceptions", "temporalConstraints"],
-  policies: ["policyType", "naturalLanguageRule", "triggeredBy", "guards",
-    "constrainsQueries", "emitsCommands", "emitsEvents", "decisionTable"],
-  decisionTables: ["hitPolicy", "inputs", "outputs", "defaultOutcome",
-    "complete", "rules"],
-  risks: ["riskStatement", "probability", "impact", "mitigation",
-    "productionBlocking", "affectedElements"],
-  assumptions: ["assumptionStatement", "businessArea", "accepted",
-    "validationApproach", "affectedElements"],
-  hotspots: ["question", "impact", "owner", "dueDate",
-    "blocksTransformation", "blocksProduction", "attachedTo"],
-  traceLinks: ["linkType", "source", "target", "sourceElementId",
-    "targetElementId", "transformationRule", "confidence"],
-  readiness: ["readinessStatus", "transformationReady", "deploymentReady",
-    "productionReady", "findings", "checks", "manualDecisions"],
-  documents: ["format", "content", "externalUri", "sourceReference",
-    "sourceUri", "reviewStatus"],
-  annotations: ["key", "value", "source", "__ownerId",
-    "__containmentFeature"]
+  stakeholders: ["stakeholderType", "influenceLevel", "ownsGoals", "providesRequirements"],
+  actors: [
+    "actorType",
+    "trustLevel",
+    "playsRoles",
+    "issuesCommands",
+    "issuesQueries",
+    "observesEvents",
+    "producedEvents",
+    "consumedEvents",
+    "exchangedInformation",
+  ],
+  roles: ["responsibility", "businessPermissionSummary", "privileged", "assignedTo"],
+  capabilities: [
+    "criticality",
+    "supports",
+    "owner",
+    "realizesRequirements",
+    "containsCommands",
+    "containsQueries",
+    "containsEvents",
+    "managesEntities",
+    "ownsProcesses",
+    "constrainedBy",
+  ],
+  boundedContexts: [
+    "capabilities",
+    "entities",
+    "commands",
+    "queries",
+    "events",
+    "policies",
+    "languageBoundary",
+    "ownershipBoundary",
+  ],
+  glossary: ["term", "definition", "synonyms", "forbiddenSynonyms", "exampleUsage", "context"],
+  entities: [
+    "identityDescription",
+    "identityAttribute",
+    "attributes",
+    "lifecycleDescription",
+    "auditRelevant",
+    "owningCapability",
+    "lifecycleStates",
+    "invariants",
+  ],
+  valueObjects: [
+    "glossaryDefinition",
+    "valueType",
+    "immutable",
+    "attributes",
+    "equalityAttributes",
+  ],
+  relationships: [
+    "relationshipType",
+    "source",
+    "target",
+    "sourceRole",
+    "sourceMultiplicity",
+    "targetRole",
+    "targetMultiplicity",
+    "ownership",
+  ],
+  aggregates: [
+    "root",
+    "members",
+    "handledCommands",
+    "emittedEvents",
+    "strongConsistencyRequired",
+    "consistencyExpectation",
+    "conflictResolutionPolicy",
+    "idempotencyBusinessKey",
+  ],
+  informationItems: [
+    "businessName",
+    "type",
+    "required",
+    "collection",
+    "multiplicity",
+    "allowedValues",
+    "formatHint",
+    "minValue",
+    "maxValue",
+    "pattern",
+    "unit",
+    "sourceOfTruth",
+    "derived",
+    "classification",
+    "privacyConstraints",
+    "complianceConstraints",
+    "externallyShared",
+    "auditRelevant",
+    "searchRelevant",
+    "reportingRelevant",
+    "retentionRelevant",
+  ],
+  classifications: [
+    "kind",
+    "confidentialityLevel",
+    "identifiability",
+    "regulatoryCategory",
+    "encryptionExpected",
+    "maskingExpected",
+    "minimizationRequired",
+    "consentRequired",
+    "auditAccessRequired",
+  ],
+  commands: [
+    "commandType",
+    "intent",
+    "issuedBy",
+    "targetCapability",
+    "targetAggregate",
+    "input",
+    "preconditions",
+    "expectedEvents",
+    "rejectionEvents",
+    "possibleErrors",
+    "authorizationRequired",
+    "authorizationRule",
+    "auditRequired",
+    "idempotencyBusinessKey",
+    "duplicateSubmissionPossible",
+    "interactionExpectation",
+    "priority",
+  ],
+  queries: [
+    "queryType",
+    "intent",
+    "issuedBy",
+    "targetCapability",
+    "input",
+    "output",
+    "reads",
+    "freshnessNeed",
+    "containsPersonalData",
+    "authorizationRequired",
+    "auditRequired",
+    "paginationExpectation",
+    "filteringExpectation",
+    "sortingExpectation",
+  ],
+  events: [
+    "occurredInPastTenseName",
+    "payload",
+    "affects",
+    "causedByPolicies",
+    "causedByExternalSystems",
+    "consumedByPolicies",
+    "consumedByProcesses",
+    "consumedByExternalSystems",
+    "correlationBusinessKey",
+    "causationBusinessKey",
+    "externallyVisible",
+    "auditRelevant",
+    "retentionRelevant",
+  ],
+  businessErrors: ["errorCode", "userVisibleMessage", "recoverable", "emittedEvents"],
+  conditions: [
+    "naturalLanguage",
+    "expressionLanguage",
+    "expression",
+    "referencedInformation",
+    "referencedConcepts",
+  ],
+  processes: [
+    "processKind",
+    "criticality",
+    "owningCapability",
+    "trigger",
+    "longRunning",
+    "humanApprovalPossible",
+    "compensationExpected",
+    "steps",
+    "preconditions",
+    "postconditions",
+    "exceptions",
+    "temporalConstraints",
+  ],
+  policies: [
+    "policyType",
+    "naturalLanguageRule",
+    "triggeredBy",
+    "guards",
+    "constrainsQueries",
+    "emitsCommands",
+    "emitsEvents",
+    "decisionTable",
+  ],
+  decisionTables: ["hitPolicy", "inputs", "outputs", "defaultOutcome", "complete", "rules"],
+  risks: [
+    "riskStatement",
+    "probability",
+    "impact",
+    "mitigation",
+    "productionBlocking",
+    "affectedElements",
+  ],
+  assumptions: [
+    "assumptionStatement",
+    "businessArea",
+    "accepted",
+    "validationApproach",
+    "affectedElements",
+  ],
+  hotspots: [
+    "question",
+    "impact",
+    "owner",
+    "dueDate",
+    "blocksTransformation",
+    "blocksProduction",
+    "attachedTo",
+  ],
+  traceLinks: [
+    "linkType",
+    "source",
+    "target",
+    "sourceElementId",
+    "targetElementId",
+    "transformationRule",
+    "confidence",
+  ],
+  readiness: [
+    "readinessStatus",
+    "transformationReady",
+    "deploymentReady",
+    "productionReady",
+    "findings",
+    "checks",
+    "manualDecisions",
+  ],
+  documents: ["format", "content", "externalUri", "sourceReference", "sourceUri", "reviewStatus"],
+  annotations: ["key", "value", "source", "__ownerId", "__containmentFeature"],
 };
 
 function safeArray(value) {
@@ -216,8 +374,10 @@ function ensureSurface() {
 }
 
 function normalizeViewText(value) {
-  return String(value || "").trim().toLowerCase().replaceAll(/[^a-z0-9]+/g,
-      " ");
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, " ");
 }
 
 function activeCimViewProfile() {
@@ -230,8 +390,9 @@ function activeCimViewProfile() {
   } catch {
     // fall through to name inference
   }
-  const text = normalizeViewText([view?.id, view?.name, view?.kind,
-    view?.layoutProfile].filter(Boolean).join(" "));
+  const text = normalizeViewText(
+    [view?.id, view?.name, view?.kind, view?.layoutProfile].filter(Boolean).join(" "),
+  );
   if (text.includes("dashboard")) {
     return "dashboard";
   }
@@ -262,8 +423,7 @@ function activeCimViewProfile() {
   if (text.includes("decision") || text.includes("policy")) {
     return "decision";
   }
-  if (text.includes("governance") || text.includes("security")
-      || text.includes("privacy")) {
+  if (text.includes("governance") || text.includes("security") || text.includes("privacy")) {
     return "governance";
   }
   if (text.includes("readiness")) {
@@ -277,14 +437,24 @@ function activeCimViewProfile() {
 
 function activeRepresentation(profile) {
   const viewId = activeView()?.id || "cim";
-  return activeWorkbenchRepresentation(state.cimWorkbench, viewId, profile,
-      DEFAULT_REPRESENTATION_BY_PROFILE);
+  return activeWorkbenchRepresentation(
+    state.cimWorkbench,
+    viewId,
+    profile,
+    DEFAULT_REPRESENTATION_BY_PROFILE,
+  );
 }
 
 function setActiveRepresentation(mode) {
   const viewId = activeView()?.id || "cim";
-  setWorkbenchRepresentation(state.cimWorkbench, viewId, mode,
-      renderCimWorkbenchSurface, renderDiagramCallback, renderPaletteCallback);
+  setWorkbenchRepresentation(
+    state.cimWorkbench,
+    viewId,
+    mode,
+    renderCimWorkbenchSurface,
+    renderDiagramCallback,
+    renderPaletteCallback,
+  );
 }
 
 function applyCimEdgeMode(mode) {
@@ -295,14 +465,15 @@ function applyCimEdgeMode(mode) {
     graph: state.graph,
     renderWorkbench: renderCimWorkbenchSurface,
     renderDiagram: renderDiagramCallback,
-    renderPalette: renderPaletteCallback
+    renderPalette: renderPaletteCallback,
   });
 }
 
 function activeRegister(profile) {
   const viewId = activeView()?.id || "cim";
-  return state.cimWorkbench.registerByViewId[viewId]
-      || PROFILE_REGISTERS[profile] || "requirements";
+  return (
+    state.cimWorkbench.registerByViewId[viewId] || PROFILE_REGISTERS[profile] || "requirements"
+  );
 }
 
 function setActiveRegister(feature) {
@@ -324,21 +495,25 @@ function elementsMatchingTypes(types) {
 }
 
 function rootContainment(feature) {
-  return CIM_ROOT_CONTAINMENTS.find((entry) => entry.feature === feature)
-      || null;
+  return CIM_ROOT_CONTAINMENTS.find((entry) => entry.feature === feature) || null;
 }
 
 function registerRows(feature) {
   if (feature === "traceLinks") {
     return [
-      ...relationships().filter((relationship) => relationship.eClass
-          === "TraceLink" || relationship.kind === "TRACE"),
-      ...elementsMatchingTypes(["TraceLink"])
+      ...relationships().filter(
+        (relationship) => relationship.eClass === "TraceLink" || relationship.kind === "TRACE",
+      ),
+      ...elementsMatchingTypes(["TraceLink"]),
     ];
   }
   if (feature === "readiness") {
-    return elementsMatchingTypes(["ProductionReadinessAssessment",
-      "ReadinessFinding", "ReadinessCheck", "ManualDecision"]);
+    return elementsMatchingTypes([
+      "ProductionReadinessAssessment",
+      "ReadinessFinding",
+      "ReadinessCheck",
+      "ManualDecision",
+    ]);
   }
   if (feature === "documents") {
     return elementsMatchingTypes(["StructuredDocument"]);
@@ -352,8 +527,9 @@ function registerRows(feature) {
   }
   const rows = elementsMatchingTypes(containment.types);
   if (containment.relationshipOnly) {
-    rows.push(...relationships().filter((relationship) => containment.types
-    .includes(relationship.eClass)));
+    rows.push(
+      ...relationships().filter((relationship) => containment.types.includes(relationship.eClass)),
+    );
   }
   return dedupeById(rows);
 }
@@ -381,14 +557,15 @@ function valueText(value) {
 }
 
 function refIdLabel(value) {
-  const id = typeof value === "string" ? value
-      : (value?.$ref || value?.id || value?.elementId || "");
+  const id = typeof value === "string" ? value : value?.$ref || value?.id || value?.elementId || "";
   const element = state.graph.elementsById.get(id);
   return element ? elementLabel(element) : String(id || "");
 }
 
 function matchesSearch(row) {
-  const query = String(state.cimWorkbench.search || "").trim().toLowerCase();
+  const query = String(state.cimWorkbench.search || "")
+    .trim()
+    .toLowerCase();
   if (!query) {
     return true;
   }
@@ -403,8 +580,10 @@ function matchesSearch(row) {
     row.sourceReference,
     row.sourceUri,
     row.term,
-    ...Object.values(row).filter((value) => typeof value === "string")
-  ].join(" ").toLowerCase();
+    ...Object.values(row).filter((value) => typeof value === "string"),
+  ]
+    .join(" ")
+    .toLowerCase();
   return haystack.includes(query);
 }
 
@@ -418,46 +597,55 @@ function rowInSlice(row) {
     return String(row.lifecycleStatus || "") === value;
   }
   if (kind === "classification") {
-    return refIds(row.classification).includes(value)
-        || refIds(row.classificationId).includes(value);
+    return (
+      refIds(row.classification).includes(value) || refIds(row.classificationId).includes(value)
+    );
   }
   if (kind === "blocking") {
-    return Boolean(row.productionBlocking || row.blocksTransformation
-        || row.blocksProduction || row.blocking);
+    return Boolean(
+      row.productionBlocking || row.blocksTransformation || row.blocksProduction || row.blocking,
+    );
   }
   if (kind === "traceType") {
     return String(row.linkType || "") === value;
   }
   const featureByKind = {
     context: ["context", "boundedContext", "boundedContexts"],
-    capability: ["targetCapability", "owningCapability", "supports",
-      "containsCommands", "containsQueries", "containsEvents",
-      "managesEntities", "ownsProcesses"],
-    actor: ["issuedBy", "owner", "assignedTo", "playsRoles",
-      "constrainedActors", "dataSubjects"],
+    capability: [
+      "targetCapability",
+      "owningCapability",
+      "supports",
+      "containsCommands",
+      "containsQueries",
+      "containsEvents",
+      "managesEntities",
+      "ownsProcesses",
+    ],
+    actor: ["issuedBy", "owner", "assignedTo", "playsRoles", "constrainedActors", "dataSubjects"],
     aggregate: ["targetAggregate", "root", "members"],
-    process: ["consumedByProcesses", "process", "trigger"]
+    process: ["consumedByProcesses", "process", "trigger"],
   };
-  return (featureByKind[kind] || []).some((feature) => refIds(row[feature])
-  .includes(value));
+  return (featureByKind[kind] || []).some((feature) => refIds(row[feature]).includes(value));
 }
 
 function filteredRows(feature) {
   const rows = registerRows(feature).filter(matchesSearch).filter(rowInSlice);
   const missingOnly = Boolean(state.cimWorkbench.missingOnly);
-  const filtered = missingOnly ? rows.filter((row) => missingRequiredFeatures(
-      row).length) : rows;
+  const filtered = missingOnly ? rows.filter((row) => missingRequiredFeatures(row).length) : rows;
   const sortKey = state.cimWorkbench.sortKey || "name";
-  return filtered.sort((a, b) => valueText(a?.[sortKey] || a.name)
-  .localeCompare(valueText(b?.[sortKey] || b.name)));
+  return filtered.sort((a, b) =>
+    valueText(a?.[sortKey] || a.name).localeCompare(valueText(b?.[sortKey] || b.name)),
+  );
 }
 
 function fieldDefinition(type, fieldName) {
   try {
     const definition = modelingElementDefinition("cim", type);
-    return [...safeArray(definition?.attributes),
-      ...safeArray(definition?.references)].find((field) => field.name
-        === fieldName) || null;
+    return (
+      [...safeArray(definition?.attributes), ...safeArray(definition?.references)].find(
+        (field) => field.name === fieldName,
+      ) || null
+    );
   } catch {
     return null;
   }
@@ -467,8 +655,7 @@ function normalizeOppositeName(value) {
   const raw = String(value || "").trim();
   const slashIndex = raw.lastIndexOf("/");
   const hashIndex = raw.lastIndexOf("#");
-  return raw.substring(Math.max(slashIndex, hashIndex) + 1).replace(/^@?/,
-      "");
+  return raw.substring(Math.max(slashIndex, hashIndex) + 1).replace(/^@?/, "");
 }
 
 function syncOppositeReference(source, feature, targetId, checked) {
@@ -496,89 +683,112 @@ function controlForField(row, field) {
   const value = row[field];
   const readonly = definition.readonly || field === "id";
   if (readonly) {
-    return `<span class="cim-cell-readonly">${escapeHtml(
-        valueText(value))}</span>`;
+    return `<span class="cim-cell-readonly">${escapeHtml(valueText(value))}</span>`;
   }
-  if (definition.kind === "reference" || Array.isArray(value)
-      || (value && typeof value === "object")) {
-    return `<span class="cim-ref-cell">${escapeHtml(compactRefLabels(value,
-        state.graph.elementsById, 4) || "")}</span>`;
+  if (
+    definition.kind === "reference" ||
+    Array.isArray(value) ||
+    (value && typeof value === "object")
+  ) {
+    return `<span class="cim-ref-cell">${escapeHtml(
+      compactRefLabels(value, state.graph.elementsById, 4) || "",
+    )}</span>`;
   }
   if (definition.fieldType === "boolean" || typeof value === "boolean") {
     return `<input class="cim-table-check" data-cim-field="${escapeHtml(
-        field)}" data-cim-row="${escapeHtml(row.id)}" type="checkbox" ${
-        value ? "checked" : ""}>`;
+      field,
+    )}" data-cim-row="${escapeHtml(row.id)}" type="checkbox" ${value ? "checked" : ""}>`;
   }
   if (definition.fieldType === "select" && Array.isArray(definition.options)) {
     return `<select class="cim-table-input" data-cim-field="${escapeHtml(
-        field)}" data-cim-row="${escapeHtml(row.id)}">
+      field,
+    )}" data-cim-row="${escapeHtml(row.id)}">
       <option value=""></option>
-      ${definition.options.map((option) => `<option value="${escapeHtml(
-        option)}" ${String(value || "") === String(option) ? "selected"
-        : ""}>${escapeHtml(option)}</option>`).join("")}
+      ${definition.options
+        .map(
+          (option) =>
+            `<option value="${escapeHtml(option)}" ${
+              String(value || "") === String(option) ? "selected" : ""
+            }>${escapeHtml(option)}</option>`,
+        )
+        .join("")}
     </select>`;
   }
-  const type = definition.fieldType === "number" || typeof value === "number"
-      ? "number" : "text";
+  const type = definition.fieldType === "number" || typeof value === "number" ? "number" : "text";
   return `<input class="cim-table-input" data-cim-field="${escapeHtml(field)}"
-      data-cim-row="${escapeHtml(row.id)}" type="${type}" value="${escapeHtml(
-      valueText(value))}">`;
+      data-cim-row="${escapeHtml(row.id)}" type="${type}" value="${escapeHtml(valueText(value))}">`;
 }
 
 function rowTypeBadge(row) {
   const missing = missingRequiredFeatures(row);
-  return `<span class="cim-type-badge">${escapeHtml(row.eClass || row.kind
-      || "Element")}</span>${missing.length ? `<span class="cim-missing-badge"
+  return `<span class="cim-type-badge">${escapeHtml(row.eClass || row.kind || "Element")}</span>${
+    missing.length
+      ? `<span class="cim-missing-badge"
       title="${escapeHtml(missing.join(", "))}">${missing.length}</span>`
-      : ""}`;
+      : ""
+  }`;
 }
 
 function registerOptionsMarkup(activeFeature) {
   const entries = [
     ...CIM_ROOT_CONTAINMENTS.map((entry) => ({
       feature: entry.feature,
-      title: entry.title
+      title: entry.title,
     })),
-    {feature: "traceLinks", title: "Trace Links"},
-    {feature: "readiness", title: "Readiness Items"},
-    {feature: "documents", title: "Structured Documents"},
-    {feature: "annotations", title: "Annotations"}
+    { feature: "traceLinks", title: "Trace Links" },
+    { feature: "readiness", title: "Readiness Items" },
+    { feature: "documents", title: "Structured Documents" },
+    { feature: "annotations", title: "Annotations" },
   ];
-  return entries.map((entry) => `<option value="${escapeHtml(entry.feature)}" ${
-      activeFeature === entry.feature ? "selected" : ""}>${escapeHtml(
-      entry.title)}</option>`).join("");
+  return entries
+    .map(
+      (entry) =>
+        `<option value="${escapeHtml(entry.feature)}" ${
+          activeFeature === entry.feature ? "selected" : ""
+        }>${escapeHtml(entry.title)}</option>`,
+    )
+    .join("");
 }
 
 function renderRegister(profile) {
   const feature = activeRegister(profile);
   const rows = filteredRows(feature);
   const containment = rootContainment(feature);
-  const columns = ["name", "lifecycleStatus",
-    ...(REGISTER_COLUMNS[feature] || safeArray(containment?.types).flatMap(
-        (type) => safeArray(modelingElementDefinition("cim", type)
-            ?.visibleFields)))].filter(Boolean);
+  const columns = [
+    "name",
+    "lifecycleStatus",
+    ...(REGISTER_COLUMNS[feature] ||
+      safeArray(containment?.types).flatMap((type) =>
+        safeArray(modelingElementDefinition("cim", type)?.visibleFields),
+      )),
+  ].filter(Boolean);
   const uniqueColumns = [...new Set(columns)].slice(0, 13);
-  const virtualAddType = ({
+  const virtualAddType = {
     documents: "StructuredDocument",
-    annotations: "Annotation"
-  })[feature];
-  const addType = virtualAddType || containment?.types?.find((type) => {
-    try {
-      return modelingElementDefinition("cim", type)?.creatable !== false;
-    } catch {
-      return false;
-    }
-  });
+    annotations: "Annotation",
+  }[feature];
+  const addType =
+    virtualAddType ||
+    containment?.types?.find((type) => {
+      try {
+        return modelingElementDefinition("cim", type)?.creatable !== false;
+      } catch {
+        return false;
+      }
+    });
   const toolbarHtml = renderWorkbenchToolbar([
-    `<select class="cim-select" data-cim-register>${registerOptionsMarkup(
-        feature)}</select>`,
-    addType ? `<button class="cim-action" data-cim-add-type="${escapeHtml(
-        addType)}" type="button">Add ${escapeHtml(addType)}</button>` : "",
+    `<select class="cim-select" data-cim-register>${registerOptionsMarkup(feature)}</select>`,
+    addType
+      ? `<button class="cim-action" data-cim-add-type="${escapeHtml(
+          addType,
+        )}" type="button">Add ${escapeHtml(addType)}</button>`
+      : "",
     `<button class="cim-action" data-cim-export="${escapeHtml(
-        feature)}" type="button">Export CSV</button>`,
+      feature,
+    )}" type="button">Export CSV</button>`,
     `<label class="cim-action cim-file-action">Import CSV
         <input class="hidden" data-cim-import="${escapeHtml(feature)}" type="file" accept=".csv,text/csv">
-      </label>`
+      </label>`,
   ]);
   return renderWorkbenchRegister({
     typeKey: "cim",
@@ -588,7 +798,7 @@ function renderRegister(profile) {
     getLabel: elementLabel,
     getBadgeHtml: rowTypeBadge,
     renderCell: controlForField,
-    emptyText: "No rows in this slice."
+    emptyText: "No rows in this slice.",
   });
 }
 
@@ -605,7 +815,7 @@ function rootMissing() {
     !isPresent(rootValue("domainName")) ? "domainName" : "",
     count("BusinessGoal") < 1 ? "goals" : "",
     count(["Actor", "ExternalSystem"]) < 1 ? "actors" : "",
-    count("BusinessCapability") < 1 ? "capabilities" : ""
+    count("BusinessCapability") < 1 ? "capabilities" : "",
   ].filter(Boolean);
 }
 
@@ -621,40 +831,55 @@ function renderDashboard() {
     ["Policies", count("Policy")],
     ["Risks", count("Risk")],
     ["Hotspots", count("Hotspot")],
-    ["Errors", state.validation?.issues?.filter((issue) => String(
-        issue?.severity || "").toUpperCase() === "ERROR").length || 0]
+    [
+      "Errors",
+      state.validation?.issues?.filter(
+        (issue) => String(issue?.severity || "").toUpperCase() === "ERROR",
+      ).length || 0,
+    ],
   ];
-  const views = [...state.views.byId.values()].filter((view) => !view.scope
-      ?.rootElementId);
+  const views = [...state.views.byId.values()].filter((view) => !view.scope?.rootElementId);
   const rootHtml = `<section class="cim-root-form">
         <div class="cim-section-title">Model Root</div>
-        ${["domainName", "businessScope", "organizationName", "modelingDate",
-    "language"].map((field) => `
+        ${["domainName", "businessScope", "organizationName", "modelingDate", "language"]
+          .map(
+            (field) => `
           <label class="cim-form-field">
             <span>${escapeHtml(field)}</span>
             <input data-cim-root-field="${escapeHtml(field)}" type="${
-      field === "modelingDate" ? "date" : "text"}" value="${escapeHtml(
-      rootValue(field))}">
-          </label>`).join("")}
-        ${missing.length ? `<div class="cim-alert">Missing required root data:
+              field === "modelingDate" ? "date" : "text"
+            }" value="${escapeHtml(rootValue(field))}">
+          </label>`,
+          )
+          .join("")}
+        ${
+          missing.length
+            ? `<div class="cim-alert">Missing required root data:
           ${escapeHtml(missing.join(", "))}</div>
           <button class="cim-action cim-action-primary" data-cim-create-root
-                  type="button">Create Required Root Elements</button>` : `
-          <div class="cim-ok">Root requirements are satisfied.</div>`}
+                  type="button">Create Required Root Elements</button>`
+            : `
+          <div class="cim-ok">Root requirements are satisfied.</div>`
+        }
       </section>`;
   const viewsHtml = `<section class="cim-view-entry-list">
         <div class="cim-section-title">Views</div>
-        ${views.map((view) => `<button class="cim-view-entry"
+        ${views
+          .map(
+            (view) => `<button class="cim-view-entry"
             data-cim-view="${escapeHtml(view.id)}" type="button">
           <span>${escapeHtml(view.name || view.id)}</span>
-          <strong>${escapeHtml(String(view.layoutProfile || view.kind
-      || "view").toLowerCase())}</strong>
-        </button>`).join("")}
+          <strong>${escapeHtml(
+            String(view.layoutProfile || view.kind || "view").toLowerCase(),
+          )}</strong>
+        </button>`,
+          )
+          .join("")}
       </section>`;
   return renderWorkbenchDashboard({
     metrics,
     primaryHtml: rootHtml,
-    secondaryHtml: viewsHtml
+    secondaryHtml: viewsHtml,
   });
 }
 
@@ -662,15 +887,16 @@ function matrixCell(row, feature, column) {
   const checked = hasReferenceValue(row, feature, column.id);
   return `<td><input data-cim-toggle-ref="${escapeHtml(row.id)}"
       data-cim-feature="${escapeHtml(feature)}"
-      data-cim-target="${escapeHtml(column.id)}" type="checkbox" ${
-      checked ? "checked" : ""}></td>`;
+      data-cim-target="${escapeHtml(column.id)}" type="checkbox" ${checked ? "checked" : ""}></td>`;
 }
 
 function matrixTable(title, rows, columns, featureForColumn, empty = "") {
   if (!rows.length || !columns.length) {
-    return `<section class="cim-matrix-section"><div class="cim-section-title">${
-        escapeHtml(title)}</div><div class="cim-empty">${escapeHtml(empty
-        || "No rows or columns available.")}</div></section>`;
+    return `<section class="cim-matrix-section"><div class="cim-section-title">${escapeHtml(
+      title,
+    )}</div><div class="cim-empty">${escapeHtml(
+      empty || "No rows or columns available.",
+    )}</div></section>`;
   }
   return renderWorkbenchMatrixSection({
     title,
@@ -680,9 +906,8 @@ function matrixTable(title, rows, columns, featureForColumn, empty = "") {
     getRowLabel: elementLabel,
     getColumnLabel: elementLabel,
     getColumnMeta: (column) => column.eClass,
-    getCellHtml: (row, column) => matrixCell(row, featureForColumn(column,
-        row), column),
-    emptyText: empty || "No rows or columns available."
+    getCellHtml: (row, column) => matrixCell(row, featureForColumn(column, row), column),
+    emptyText: empty || "No rows or columns available.",
   });
 }
 
@@ -692,76 +917,132 @@ function renderMatrix(profile) {
     const commands = elementsMatchingTypes(["Command"]);
     const queries = elementsMatchingTypes(["Query"]);
     const events = elementsMatchingTypes(["BusinessEvent"]);
-    return matrixTable("Actors by Commands", actors, commands,
-            () => "issuesCommands")
-        + matrixTable("Actors by Queries", actors, queries,
-            () => "issuesQueries")
-        + matrixTable("Actors by Observed Events", actors, events,
-            () => "observesEvents");
+    return (
+      matrixTable("Actors by Commands", actors, commands, () => "issuesCommands") +
+      matrixTable("Actors by Queries", actors, queries, () => "issuesQueries") +
+      matrixTable("Actors by Observed Events", actors, events, () => "observesEvents")
+    );
   }
   if (profile === "capability") {
     const capabilities = elementsMatchingTypes(["BusinessCapability"]);
-    const contents = elementsMatchingTypes(["Command", "Query",
-      "BusinessEvent", "DomainEntity", "BusinessProcess"]);
-    const feature = (column) => ({
-      Command: "containsCommands",
-      Query: "containsQueries",
-      BusinessEvent: "containsEvents",
-      DomainEntity: "managesEntities",
-      BusinessProcess: "ownsProcesses"
-    }[column.eClass] || "supports");
-    return matrixTable("Capability Contents", capabilities, contents, feature)
-        + matrixTable("Goals Supported by Capabilities", capabilities,
-            elementsMatchingTypes(["BusinessGoal"]), () => "supports");
+    const contents = elementsMatchingTypes([
+      "Command",
+      "Query",
+      "BusinessEvent",
+      "DomainEntity",
+      "BusinessProcess",
+    ]);
+    const feature = (column) =>
+      ({
+        Command: "containsCommands",
+        Query: "containsQueries",
+        BusinessEvent: "containsEvents",
+        DomainEntity: "managesEntities",
+        BusinessProcess: "ownsProcesses",
+      })[column.eClass] || "supports";
+    return (
+      matrixTable("Capability Contents", capabilities, contents, feature) +
+      matrixTable(
+        "Goals Supported by Capabilities",
+        capabilities,
+        elementsMatchingTypes(["BusinessGoal"]),
+        () => "supports",
+      )
+    );
   }
   if (profile === "bounded-context") {
     const contexts = elementsMatchingTypes(["BoundedContextCandidate"]);
-    const members = elementsMatchingTypes(["BusinessCapability",
-      "DomainEntity", "Command", "Query", "BusinessEvent", "Policy"]);
-    const feature = (column) => ({
-      BusinessCapability: "capabilities",
-      DomainEntity: "entities",
-      Command: "commands",
-      Query: "queries",
-      BusinessEvent: "events",
-      Policy: "policies"
-    }[column.eClass] || "entities");
-    return matrixTable("Bounded Context Membership", contexts, members,
-        feature);
+    const members = elementsMatchingTypes([
+      "BusinessCapability",
+      "DomainEntity",
+      "Command",
+      "Query",
+      "BusinessEvent",
+      "Policy",
+    ]);
+    const feature = (column) =>
+      ({
+        BusinessCapability: "capabilities",
+        DomainEntity: "entities",
+        Command: "commands",
+        Query: "queries",
+        BusinessEvent: "events",
+        Policy: "policies",
+      })[column.eClass] || "entities";
+    return matrixTable("Bounded Context Membership", contexts, members, feature);
   }
   if (profile === "aggregate") {
     const aggregates = elementsMatchingTypes(["AggregateCandidate"]);
-    return matrixTable("Aggregate Members", aggregates,
-            elementsMatchingTypes(["DomainEntity"]), () => "members")
-        + matrixTable("Aggregate Commands", aggregates,
-            elementsMatchingTypes(["Command"]), () => "handledCommands")
-        + matrixTable("Aggregate Events", aggregates,
-            elementsMatchingTypes(["BusinessEvent"]), () => "emittedEvents");
+    return (
+      matrixTable(
+        "Aggregate Members",
+        aggregates,
+        elementsMatchingTypes(["DomainEntity"]),
+        () => "members",
+      ) +
+      matrixTable(
+        "Aggregate Commands",
+        aggregates,
+        elementsMatchingTypes(["Command"]),
+        () => "handledCommands",
+      ) +
+      matrixTable(
+        "Aggregate Events",
+        aggregates,
+        elementsMatchingTypes(["BusinessEvent"]),
+        () => "emittedEvents",
+      )
+    );
   }
   if (profile === "data") {
-    return matrixTable("Query Outputs", elementsMatchingTypes(["Query"]),
-            elementsMatchingTypes(["InformationItem"]), () => "output")
-        + matrixTable("Command Inputs", elementsMatchingTypes(["Command"]),
-            elementsMatchingTypes(["InformationItem"]), () => "input")
-        + matrixTable("Event Payloads", elementsMatchingTypes(
-                ["BusinessEvent"]), elementsMatchingTypes(["InformationItem"]),
-            () => "payload")
-        + matrixTable("Privacy and Compliance Data",
-            elementsMatchingTypes(["PrivacyConstraint",
-              "ComplianceConstraint", "SecurityConstraint"]),
-            elementsMatchingTypes(["InformationItem"]), (column, row) => ({
-              PrivacyConstraint: "dataItems",
-              SecurityConstraint: "constrainedInformation",
-              ComplianceConstraint: "scopedElements"
-            })[row.eClass] || "constrainedElements");
+    return (
+      matrixTable(
+        "Query Outputs",
+        elementsMatchingTypes(["Query"]),
+        elementsMatchingTypes(["InformationItem"]),
+        () => "output",
+      ) +
+      matrixTable(
+        "Command Inputs",
+        elementsMatchingTypes(["Command"]),
+        elementsMatchingTypes(["InformationItem"]),
+        () => "input",
+      ) +
+      matrixTable(
+        "Event Payloads",
+        elementsMatchingTypes(["BusinessEvent"]),
+        elementsMatchingTypes(["InformationItem"]),
+        () => "payload",
+      ) +
+      matrixTable(
+        "Privacy and Compliance Data",
+        elementsMatchingTypes(["PrivacyConstraint", "ComplianceConstraint", "SecurityConstraint"]),
+        elementsMatchingTypes(["InformationItem"]),
+        (column, row) =>
+          ({
+            PrivacyConstraint: "dataItems",
+            SecurityConstraint: "constrainedInformation",
+            ComplianceConstraint: "scopedElements",
+          })[row.eClass] || "constrainedElements",
+      )
+    );
   }
   if (profile === "governance") {
-    const constraints = elementsMatchingTypes(["PrivacyConstraint",
-      "ComplianceConstraint", "SecurityConstraint",
-      "NonFunctionalRequirement"]);
-    const targets = elementsMatchingTypes(["InformationItem", "Actor",
-      "Command", "Query", "ExternalSystem", "BusinessCapability",
-      "DomainEntity"]);
+    const constraints = elementsMatchingTypes([
+      "PrivacyConstraint",
+      "ComplianceConstraint",
+      "SecurityConstraint",
+      "NonFunctionalRequirement",
+    ]);
+    const targets = elementsMatchingTypes([
+      "InformationItem",
+      "Actor",
+      "Command",
+      "Query",
+      "ExternalSystem",
+      "BusinessCapability",
+      "DomainEntity",
+    ]);
     const feature = (column, row) => {
       if (row.eClass === "PrivacyConstraint") {
         return "dataItems";
@@ -778,8 +1059,7 @@ function renderMatrix(profile) {
       if (row.eClass === "SecurityConstraint" && column.eClass === "Query") {
         return "constrainedQueries";
       }
-      if (row.eClass === "SecurityConstraint"
-          && column.eClass === "InformationItem") {
+      if (row.eClass === "SecurityConstraint" && column.eClass === "InformationItem") {
         return "constrainedInformation";
       }
       return "constrainedElements";
@@ -788,22 +1068,50 @@ function renderMatrix(profile) {
   }
   if (profile === "decision") {
     const policies = elementsMatchingTypes(["Policy"]);
-    return matrixTable("Policy Triggers", policies,
-            elementsMatchingTypes(["BusinessEvent"]), () => "triggeredBy")
-        + matrixTable("Policy Guards Commands", policies,
-            elementsMatchingTypes(["Command"]), () => "guards")
-        + matrixTable("Policy Emits Commands", policies,
-            elementsMatchingTypes(["Command"]), () => "emitsCommands")
-        + matrixTable("Policy Emits Events", policies,
-            elementsMatchingTypes(["BusinessEvent"]), () => "emitsEvents")
-        + matrixTable("Policy Constrains Queries", policies,
-            elementsMatchingTypes(["Query"]), () => "constrainsQueries")
-        + matrixTable("Decision Table Inputs", elementsMatchingTypes(
-                ["DecisionTable"]), elementsMatchingTypes(["InformationItem"]),
-            () => "inputs")
-        + matrixTable("Decision Table Outputs", elementsMatchingTypes(
-                ["DecisionTable"]), elementsMatchingTypes(["InformationItem"]),
-            () => "outputs");
+    return (
+      matrixTable(
+        "Policy Triggers",
+        policies,
+        elementsMatchingTypes(["BusinessEvent"]),
+        () => "triggeredBy",
+      ) +
+      matrixTable(
+        "Policy Guards Commands",
+        policies,
+        elementsMatchingTypes(["Command"]),
+        () => "guards",
+      ) +
+      matrixTable(
+        "Policy Emits Commands",
+        policies,
+        elementsMatchingTypes(["Command"]),
+        () => "emitsCommands",
+      ) +
+      matrixTable(
+        "Policy Emits Events",
+        policies,
+        elementsMatchingTypes(["BusinessEvent"]),
+        () => "emitsEvents",
+      ) +
+      matrixTable(
+        "Policy Constrains Queries",
+        policies,
+        elementsMatchingTypes(["Query"]),
+        () => "constrainsQueries",
+      ) +
+      matrixTable(
+        "Decision Table Inputs",
+        elementsMatchingTypes(["DecisionTable"]),
+        elementsMatchingTypes(["InformationItem"]),
+        () => "inputs",
+      ) +
+      matrixTable(
+        "Decision Table Outputs",
+        elementsMatchingTypes(["DecisionTable"]),
+        elementsMatchingTypes(["InformationItem"]),
+        () => "outputs",
+      )
+    );
   }
   if (profile === "process") {
     return renderProcessStepTable();
@@ -812,18 +1120,33 @@ function renderMatrix(profile) {
     return renderTraceMatrix();
   }
   if (profile === "requirements") {
-    return matrixTable("Goals measured by KPIs", elementsMatchingTypes(
-            ["BusinessGoal"]), elementsMatchingTypes(["KPI"]), () => "measuredBy")
-        + matrixTable("Requirements constraining elements",
-            elementsMatchingTypes(["Requirement", "NonFunctionalRequirement",
-              "SecurityConstraint", "PrivacyConstraint",
-              "ComplianceConstraint"]),
-            elements().filter((element) => !element.eClass?.includes(
-                "Requirement")), () => "constrains");
+    return (
+      matrixTable(
+        "Goals measured by KPIs",
+        elementsMatchingTypes(["BusinessGoal"]),
+        elementsMatchingTypes(["KPI"]),
+        () => "measuredBy",
+      ) +
+      matrixTable(
+        "Requirements constraining elements",
+        elementsMatchingTypes([
+          "Requirement",
+          "NonFunctionalRequirement",
+          "SecurityConstraint",
+          "PrivacyConstraint",
+          "ComplianceConstraint",
+        ]),
+        elements().filter((element) => !element.eClass?.includes("Requirement")),
+        () => "constrains",
+      )
+    );
   }
-  return matrixTable("Command to Event Outcomes", elementsMatchingTypes(
-          ["Command"]), elementsMatchingTypes(["BusinessEvent"]),
-      () => "expectedEvents");
+  return matrixTable(
+    "Command to Event Outcomes",
+    elementsMatchingTypes(["Command"]),
+    elementsMatchingTypes(["BusinessEvent"]),
+    () => "expectedEvents",
+  );
 }
 
 function renderProcessStepTable() {
@@ -831,53 +1154,62 @@ function renderProcessStepTable() {
   if (!processes.length) {
     return `<section class="cim-matrix-section"><div class="cim-section-title">Process Steps</div><div class="cim-empty">No business processes available.</div></section>`;
   }
-  return processes.map((process) => {
-    const steps = childElements(process, "steps", "ProcessStep");
-    const rows = steps.map((step) => {
-      const requiredRef = ({
-        CommandStep: "command",
-        QueryStep: "query",
-        EventStep: "event",
-        PolicyStep: "policy",
-        ExternalInteractionStep: "externalSystem"
-      })[step.eClass] || "";
-      return `<tr>
+  return processes
+    .map((process) => {
+      const steps = childElements(process, "steps", "ProcessStep");
+      const rows = steps.map((step) => {
+        const requiredRef =
+          {
+            CommandStep: "command",
+            QueryStep: "query",
+            EventStep: "event",
+            PolicyStep: "policy",
+            ExternalInteractionStep: "externalSystem",
+          }[step.eClass] || "";
+        return `<tr>
             <td>${escapeHtml(elementLabel(step))}</td>
             <td>${escapeHtml(step.eClass || "ProcessStep")}</td>
             <td>${controlForField(step, "orderIndex")}</td>
             <td>${controlForField(step, "responsibility")}</td>
-            <td>${requiredRef ? controlForField(step, requiredRef)
-          : `<span class="cim-cell-readonly">none</span>`}</td>
+            <td>${
+              requiredRef
+                ? controlForField(step, requiredRef)
+                : `<span class="cim-cell-readonly">none</span>`
+            }</td>
             <td><button class="cim-icon-action" data-cim-open="${escapeHtml(
-          step.id)}" type="button">Open</button></td>
+              step.id,
+            )}" type="button">Open</button></td>
           </tr>`;
-    });
-    return renderWorkbenchDataTable({
-      title: `${elementLabel(process)} Steps`,
-      columns: ["Step", "Type", "Order", "Responsibility", "Required ref", ""],
-      rows,
-      emptyText: "No steps."
-    });
-  }).join("");
+      });
+      return renderWorkbenchDataTable({
+        title: `${elementLabel(process)} Steps`,
+        columns: ["Step", "Type", "Order", "Responsibility", "Required ref", ""],
+        rows,
+        emptyText: "No steps.",
+      });
+    })
+    .join("");
 }
 
 function renderTraceMatrix() {
   const links = registerRows("traceLinks").filter(matchesSearch);
-  const modelElements = elements().filter((element) => element.eClass
-      !== "TraceLink");
+  const modelElements = elements().filter((element) => element.eClass !== "TraceLink");
   return renderWorkbenchDataTable({
     title: "Trace Links",
     columns: ["Link", "Type", "Source", "Target", "Confidence", ""],
-    rows: links.map((link) => `<tr>
+    rows: links.map(
+      (link) => `<tr>
           <td>${escapeHtml(elementLabel(link))}</td>
           <td>${controlForField(link, "linkType")}</td>
           <td>${traceEndpointSelect(link, "source", modelElements)}</td>
           <td>${traceEndpointSelect(link, "target", modelElements)}</td>
           <td>${controlForField(link, "confidence")}</td>
           <td><button class="cim-icon-action" data-cim-open="${escapeHtml(
-        link.id)}" type="button">Open</button></td>
-        </tr>`),
-    emptyText: "No trace links."
+            link.id,
+          )}" type="button">Open</button></td>
+        </tr>`,
+    ),
+    emptyText: "No trace links.",
   });
 }
 
@@ -886,78 +1218,102 @@ function traceEndpointSelect(link, field, options) {
   return `<select class="cim-table-input" data-cim-field="${escapeHtml(field)}"
       data-cim-row="${escapeHtml(link.id)}">
       <option value=""></option>
-      ${options.map((option) => `<option value="${escapeHtml(option.id)}" ${
-      current === option.id ? "selected" : ""}>${escapeHtml(elementLabel(
-      option))} (${escapeHtml(option.eClass)})</option>`).join("")}
+      ${options
+        .map(
+          (option) =>
+            `<option value="${escapeHtml(option.id)}" ${
+              current === option.id ? "selected" : ""
+            }>${escapeHtml(elementLabel(option))} (${escapeHtml(option.eClass)})</option>`,
+        )
+        .join("")}
     </select>`;
 }
 
 function childElements(parent, feature, fallbackType) {
   const ids = refIds(parent?.[feature]);
-  const byId = ids.map((id) => state.graph.elementsById.get(id)).filter(
-      Boolean);
-  const owned = elements().filter((element) => element.__ownerId === parent.id
-      && element.__containmentFeature === feature);
-  const inline = safeArray(parent?.[feature]).filter((item) => item
-      && typeof item === "object").map((item, index) => ({
-    eClass: item.eClass || item.type || fallbackType,
-    id: item.id || `${parent.id}-${feature}-${index + 1}`,
-    name: item.name || item.label || `${fallbackType} ${index + 1}`,
-    ...item
-  }));
+  const byId = ids.map((id) => state.graph.elementsById.get(id)).filter(Boolean);
+  const owned = elements().filter(
+    (element) => element.__ownerId === parent.id && element.__containmentFeature === feature,
+  );
+  const inline = safeArray(parent?.[feature])
+    .filter((item) => item && typeof item === "object")
+    .map((item, index) => ({
+      eClass: item.eClass || item.type || fallbackType,
+      id: item.id || `${parent.id}-${feature}-${index + 1}`,
+      name: item.name || item.label || `${fallbackType} ${index + 1}`,
+      ...item,
+    }));
   return dedupeById([...byId, ...owned, ...inline]);
 }
 
 function renderReadinessBoard() {
   const lanes = [
-    ["Blocking", (item) => item.productionBlocking || item.blocksTransformation
-        || item.blocksProduction || item.blocking],
+    [
+      "Blocking",
+      (item) =>
+        item.productionBlocking ||
+        item.blocksTransformation ||
+        item.blocksProduction ||
+        item.blocking,
+    ],
     ["Open", (item) => !item.accepted && !item.decision && !item.passed],
-    ["Accepted / Passed", (item) => item.accepted || item.decision
-        || item.passed]
+    ["Accepted / Passed", (item) => item.accepted || item.decision || item.passed],
   ];
-  const cards = elementsMatchingTypes(["Risk", "Assumption", "Hotspot",
-    "ManualDecision", "ReadinessFinding", "ReadinessCheck"]);
+  const cards = elementsMatchingTypes([
+    "Risk",
+    "Assumption",
+    "Hotspot",
+    "ManualDecision",
+    "ReadinessFinding",
+    "ReadinessCheck",
+  ]);
   return renderWorkbenchBoard({
     lanes: lanes.map(([title, predicate]) => {
       const laneCards = cards.filter(predicate);
       return {
         title,
         count: laneCards.length,
-        cards: laneCards.map((item) => renderWorkbenchBoardCard({
-          typeKey: "cim",
-          id: item.id,
-          title: elementLabel(item),
-          meta: item.eClass,
-          body: item.riskStatement || item.question || item.message
-              || item.assumptionStatement || item.recommendation || ""
-        })),
-        emptyText: "No items"
+        cards: laneCards.map((item) =>
+          renderWorkbenchBoardCard({
+            typeKey: "cim",
+            id: item.id,
+            title: elementLabel(item),
+            meta: item.eClass,
+            body:
+              item.riskStatement ||
+              item.question ||
+              item.message ||
+              item.assumptionStatement ||
+              item.recommendation ||
+              "",
+          }),
+        ),
+        emptyText: "No items",
       };
-    })
+    }),
   });
 }
 
 function renderDetailProjection(profile) {
-  const selected = state.selectedNodeId
-      ? state.graph.elementsById.get(state.selectedNodeId) : null;
-  const row = selected || filteredRows(activeRegister(profile))[0]
-      || elements()[0];
+  const selected = state.selectedNodeId ? state.graph.elementsById.get(state.selectedNodeId) : null;
+  const row = selected || filteredRows(activeRegister(profile))[0] || elements()[0];
   if (!row) {
     return renderWorkbenchDetail({
       typeKey: "cim",
       row: null,
       valueText,
-      emptyText: "Select an element on the diagram or open one from a register."
+      emptyText: "Select an element on the diagram or open one from a register.",
     });
   }
   const definition = modelingElementDefinition("cim", row.eClass);
-  const fields = [...safeArray(definition?.attributes),
-    ...safeArray(definition?.references)].map((field) => field.name);
+  const fields = [...safeArray(definition?.attributes), ...safeArray(definition?.references)].map(
+    (field) => field.name,
+  );
   const missing = missingRequiredFeatures(row);
-  const traces = relationships().filter((relationship) =>
-      relationship.sourceElementId === row.id
-      || relationship.targetElementId === row.id);
+  const traces = relationships().filter(
+    (relationship) =>
+      relationship.sourceElementId === row.id || relationship.targetElementId === row.id,
+  );
   return renderWorkbenchDetail({
     typeKey: "cim",
     row,
@@ -967,8 +1323,8 @@ function renderDetailProjection(profile) {
     valueText,
     stats: [
       ["missing required", missing.join(", ") || "none"],
-      ["trace links", traces.length]
-    ]
+      ["trace links", traces.length],
+    ],
   });
 }
 
@@ -981,14 +1337,24 @@ function sliceItems() {
     aggregate: elementsMatchingTypes(["AggregateCandidate"]),
     process: elementsMatchingTypes(["BusinessProcess"]),
     classification: elementsMatchingTypes(["DataClassification"]),
-    lifecycle: [...new Set(elements().map((item) => item.lifecycleStatus)
-    .filter(Boolean))].map((value) => ({id: value, name: value})),
-    traceType: [...new Set(registerRows("traceLinks").map(
-        (item) => item.linkType).filter(Boolean))].map((value) => ({
+    lifecycle: [
+      ...new Set(
+        elements()
+          .map((item) => item.lifecycleStatus)
+          .filter(Boolean),
+      ),
+    ].map((value) => ({ id: value, name: value })),
+    traceType: [
+      ...new Set(
+        registerRows("traceLinks")
+          .map((item) => item.linkType)
+          .filter(Boolean),
+      ),
+    ].map((value) => ({
       id: value,
-      name: value
+      name: value,
     })),
-    blocking: [{id: "true", name: "Blocking items"}]
+    blocking: [{ id: "true", name: "Blocking items" }],
   };
   return collections[kind] || [];
 }
@@ -1006,32 +1372,38 @@ function cimSliceValueLabel() {
   return item ? elementLabel(item) : value;
 }
 
-function sliceOptionButton({value, label, selected, optionKind}) {
+function sliceOptionButton({ value, label, selected, optionKind }) {
   return renderWorkbenchSliceOption({
     typeKey: "cim",
     optionKind,
     value,
     label,
-    selected
+    selected,
   });
 }
 
 function cimSliceMenuMarkup(optionKind) {
   if (optionKind === "kind") {
-    return CIM_SLICE_KINDS.map(([value, label]) => sliceOptionButton({
-      value,
-      label,
-      selected: state.cimWorkbench.sliceKind === value,
-      optionKind
-    })).join("");
+    return CIM_SLICE_KINDS.map(([value, label]) =>
+      sliceOptionButton({
+        value,
+        label,
+        selected: state.cimWorkbench.sliceKind === value,
+        optionKind,
+      }),
+    ).join("");
   }
-  const options = [{id: "", name: "Any"}, ...sliceItems()];
-  return options.map((item) => sliceOptionButton({
-    value: item.id,
-    label: item.id ? elementLabel(item) : item.name,
-    selected: (state.cimWorkbench.sliceValue || "") === item.id,
-    optionKind
-  })).join("");
+  const options = [{ id: "", name: "Any" }, ...sliceItems()];
+  return options
+    .map((item) =>
+      sliceOptionButton({
+        value: item.id,
+        label: item.id ? elementLabel(item) : item.name,
+        selected: (state.cimWorkbench.sliceValue || "") === item.id,
+        optionKind,
+      }),
+    )
+    .join("");
 }
 
 function cimSliceSelectMarkup(optionKind) {
@@ -1043,7 +1415,7 @@ function cimSliceSelectMarkup(optionKind) {
     optionKind,
     open,
     label,
-    menuHtml: cimSliceMenuMarkup(optionKind)
+    menuHtml: cimSliceMenuMarkup(optionKind),
   });
 }
 
@@ -1054,8 +1426,7 @@ function renderControls(profile, representation) {
     profile,
     representation,
     workbenchState: state.cimWorkbench,
-    sliceControlsHtml: `${cimSliceSelectMarkup("kind")}${cimSliceSelectMarkup(
-        "value")}`,
+    sliceControlsHtml: `${cimSliceSelectMarkup("kind")}${cimSliceSelectMarkup("value")}`,
     modes: [
       ["diagram", "Diagram"],
       ["dashboard", "Dashboard"],
@@ -1063,9 +1434,9 @@ function renderControls(profile, representation) {
       ["matrix", "Matrix"],
       ["board", "Board"],
       ["detail", "Detail"],
-      ["guide", "Guide"]
+      ["guide", "Guide"],
     ],
-    searchPlaceholder: "Search CIM"
+    searchPlaceholder: "Search CIM",
   });
 }
 
@@ -1106,18 +1477,18 @@ export function renderCimWorkbenchSurface() {
     bodyHtml: renderBody(profile, representation),
     workbenchState: state.cimWorkbench,
     surfaceActiveClass: "cim-surface-active",
-    surfaceDockClass: "cim-surface-dock"
+    surfaceDockClass: "cim-surface-dock",
   });
 }
 
 function currentCenter() {
   const rect = el.canvasViewport?.getBoundingClientRect();
   if (!rect) {
-    return {x: 120, y: 120};
+    return { x: 120, y: 120 };
   }
   return {
     x: Math.round((rect.width / 2 - state.viewport.x) / state.viewport.scale),
-    y: Math.round((rect.height / 2 - state.viewport.y) / state.viewport.scale)
+    y: Math.round((rect.height / 2 - state.viewport.y) / state.viewport.scale),
   };
 }
 
@@ -1147,8 +1518,7 @@ function attachChildToParent(childNode, parent, feature) {
 }
 
 function firstElementOfType(types) {
-  return elementsMatchingTypes(Array.isArray(types) ? types : [types])[0]
-      || null;
+  return elementsMatchingTypes(Array.isArray(types) ? types : [types])[0] || null;
 }
 
 function connect(source, target, kind) {
@@ -1159,7 +1529,7 @@ function connect(source, target, kind) {
     id: `e-${source.id}-${target.id}-${kind}-${Date.now()}`,
     sourceId: source.id,
     targetId: target.id,
-    kind
+    kind,
   };
   state.diagram.connections.push(edge);
   addConnectionToGraphAndActiveView(edge);
@@ -1172,31 +1542,28 @@ function createCimElement(type) {
   const node = addNode(type, center.x, center.y, type);
   switch (type) {
     case "BusinessCapability": {
-      const goal = elementsMatchingTypes(["BusinessGoal"])[0]
-          || addNode("BusinessGoal", center.x - 260, center.y,
-              "Business Goal");
+      const goal =
+        elementsMatchingTypes(["BusinessGoal"])[0] ||
+        addNode("BusinessGoal", center.x - 260, center.y, "Business Goal");
       node.meta.supports = [goal.id];
       connect(node, goal, "SUPPORTS");
       break;
     }
     case "Command": {
-      const event = addNode("BusinessEvent", center.x + 260, center.y,
-          `${node.label} Completed`);
+      const event = addNode("BusinessEvent", center.x + 260, center.y, `${node.label} Completed`);
       event.meta.occurredInPastTenseName = event.label;
       node.meta.expectedEvents = [event.id];
       connect(node, event, "EXPECTS");
       break;
     }
     case "Query": {
-      const output = addNode("InformationItem", center.x + 260, center.y,
-          `${node.label} Result`);
+      const output = addNode("InformationItem", center.x + 260, center.y, `${node.label} Result`);
       node.meta.output = [output.id];
       connect(node, output, "OUTPUT");
       break;
     }
     case "DomainEntity": {
-      const idItem = addNode("InformationItem", center.x + 260, center.y,
-          `${node.label}Id`);
+      const idItem = addNode("InformationItem", center.x + 260, center.y, `${node.label}Id`);
       idItem.meta.type = "IDENTIFIER";
       idItem.meta.required = true;
       node.meta.identityAttribute = idItem.id;
@@ -1205,16 +1572,14 @@ function createCimElement(type) {
       break;
     }
     case "AggregateCandidate": {
-      const root = addNode("DomainEntity", center.x + 260, center.y,
-          `${node.label} Root`);
+      const root = addNode("DomainEntity", center.x + 260, center.y, `${node.label} Root`);
       node.meta.root = root.id;
       node.meta.members = [root.id];
       connect(node, root, "ROOT");
       break;
     }
     case "BusinessProcess": {
-      const start = addNode("StartStep", center.x - 220, center.y,
-          "Start");
+      const start = addNode("StartStep", center.x - 220, center.y, "Start");
       const end = addNode("EndStep", center.x + 220, center.y, "End");
       start.meta.__ownerId = node.id;
       start.meta.__containmentFeature = "steps";
@@ -1228,9 +1593,9 @@ function createCimElement(type) {
       addContainedChild(node.id, "rules", "DecisionRule");
       break;
     case "PrivacyConstraint": {
-      const item = elementsMatchingTypes(["InformationItem"])[0]
-          || addNode("InformationItem", center.x + 260, center.y,
-              "Protected Data");
+      const item =
+        elementsMatchingTypes(["InformationItem"])[0] ||
+        addNode("InformationItem", center.x + 260, center.y, "Protected Data");
       node.meta.dataItems = [item.id];
       break;
     }
@@ -1246,24 +1611,41 @@ function createCimElement(type) {
       break;
     case "ManualDecision":
       node.meta.question = node.label;
-      attachChildToParent(node, firstElementOfType("TransformationProfile")
-          || addNode("TransformationProfile", center.x - 260, center.y,
-              "Transformation Profile"), "requiredDecisions");
+      attachChildToParent(
+        node,
+        firstElementOfType("TransformationProfile") ||
+          addNode("TransformationProfile", center.x - 260, center.y, "Transformation Profile"),
+        "requiredDecisions",
+      );
       break;
     case "ReadinessFinding":
       node.meta.severity = node.meta.severity || "WARNING";
-      attachChildToParent(node,
-          firstElementOfType("ProductionReadinessAssessment")
-          || addNode("ProductionReadinessAssessment", center.x - 260,
-              center.y, "Readiness Assessment"), "findings");
+      attachChildToParent(
+        node,
+        firstElementOfType("ProductionReadinessAssessment") ||
+          addNode(
+            "ProductionReadinessAssessment",
+            center.x - 260,
+            center.y,
+            "Readiness Assessment",
+          ),
+        "findings",
+      );
       break;
     case "ReadinessCheck":
       node.meta.checkId = node.meta.checkId || node.id;
       node.meta.severity = node.meta.severity || "WARNING";
-      attachChildToParent(node,
-          firstElementOfType("ProductionReadinessAssessment")
-          || addNode("ProductionReadinessAssessment", center.x - 260,
-              center.y, "Readiness Assessment"), "checks");
+      attachChildToParent(
+        node,
+        firstElementOfType("ProductionReadinessAssessment") ||
+          addNode(
+            "ProductionReadinessAssessment",
+            center.x - 260,
+            center.y,
+            "Readiness Assessment",
+          ),
+        "checks",
+      );
       break;
     case "StructuredDocument":
       node.meta.format = node.meta.format || "TEXT";
@@ -1301,8 +1683,12 @@ function addContainedChild(parentId, feature, type) {
     return null;
   }
   const center = currentCenter();
-  const child = addNode(type, center.x + 180, center.y + 120,
-      `${type} ${childElements(parent, feature, type).length + 1}`);
+  const child = addNode(
+    type,
+    center.x + 180,
+    center.y + 120,
+    `${type} ${childElements(parent, feature, type).length + 1}`,
+  );
   child.meta.__ownerId = parent.id;
   child.meta.__containmentFeature = feature;
   if (type === "DecisionRule") {
@@ -1352,16 +1738,18 @@ function createRequiredRoot() {
   state.baseModel.organizationName ||= "Organization";
   state.baseModel.language ||= "en";
   const center = currentCenter();
-  const goal = elementsMatchingTypes(["BusinessGoal"])[0]
-      || addNode("BusinessGoal", center.x - 260, center.y - 80,
-          "Fulfill Business Outcome");
-  const actor = elementsMatchingTypes(["Actor", "ExternalSystem"])[0]
-      || addNode("Actor", center.x - 260, center.y + 80, "Business Actor");
-  const capability = elementsMatchingTypes(["BusinessCapability"])[0]
-      || addNode("BusinessCapability", center.x, center.y,
-          "Core Capability");
+  const goal =
+    elementsMatchingTypes(["BusinessGoal"])[0] ||
+    addNode("BusinessGoal", center.x - 260, center.y - 80, "Fulfill Business Outcome");
+  const actor =
+    elementsMatchingTypes(["Actor", "ExternalSystem"])[0] ||
+    addNode("Actor", center.x - 260, center.y + 80, "Business Actor");
+  const capability =
+    elementsMatchingTypes(["BusinessCapability"])[0] ||
+    addNode("BusinessCapability", center.x, center.y, "Core Capability");
   capability.meta.supports = refIds(capability.meta.supports).length
-      ? capability.meta.supports : [goal.id];
+    ? capability.meta.supports
+    : [goal.id];
   connect(capability, goal, "SUPPORTS");
   commitModelChange("Completed CIM root model");
   openAttributePanelCallback?.(capability.id);
@@ -1377,13 +1765,12 @@ function commitModelChange(message) {
     syncActiveViewFromVisibleGraph,
     saveCurrentTabGraphState,
     markModelDirty,
-    setStatus
+    setStatus,
   });
 }
 
 function updateField(rowId, field, rawValue, inputType = "text") {
-  const row = state.graph.elementsById.get(rowId)
-      || state.graph.relationshipsById.get(rowId);
+  const row = state.graph.elementsById.get(rowId) || state.graph.relationshipsById.get(rowId);
   if (!row) {
     return;
   }
@@ -1394,8 +1781,7 @@ function updateField(rowId, field, rawValue, inputType = "text") {
   } else if (definition?.fieldType === "number") {
     value = Number(rawValue);
   } else if (definition?.kind === "reference") {
-    value = definition.many ? (rawValue ? [rawValue] : []) : (rawValue
-        || null);
+    value = definition.many ? (rawValue ? [rawValue] : []) : rawValue || null;
     if (field === "source" || field === "target") {
       row[`${field}ElementId`] = rawValue || "";
     }
@@ -1414,8 +1800,8 @@ function updateField(rowId, field, rawValue, inputType = "text") {
 }
 
 function toggleReference(sourceId, feature, targetId, checked) {
-  const source = state.graph.elementsById.get(sourceId)
-      || state.graph.relationshipsById.get(sourceId);
+  const source =
+    state.graph.elementsById.get(sourceId) || state.graph.relationshipsById.get(sourceId);
   if (!source || !feature || !targetId) {
     return;
   }
@@ -1440,8 +1826,7 @@ function updateRootField(field, value) {
 
 function exportCsv(feature) {
   const rows = filteredRows(feature);
-  const columns = ["id", "eClass", "name",
-    ...(REGISTER_COLUMNS[feature] || [])];
+  const columns = ["id", "eClass", "name", ...(REGISTER_COLUMNS[feature] || [])];
   downloadWorkbenchCsv(`cim-${feature}.csv`, rows, columns, valueText);
 }
 
@@ -1471,8 +1856,7 @@ async function importCsv(feature, file) {
 function createImportedNode(type, index) {
   const center = currentCenter();
   const offset = index * 34;
-  const node = getDefaultNode("cim", type, center.x + offset,
-      center.y + offset);
+  const node = getDefaultNode("cim", type, center.x + offset, center.y + offset);
   state.diagram.nodes.push(node);
   addNodeToGraphAndActiveView(node);
   return node;
@@ -1492,14 +1876,12 @@ function bindSurfaceEvents() {
       setActiveRepresentation(mode);
       return;
     }
-    const edgeMode = target?.closest("[data-cim-edge-mode]")?.dataset
-        ?.cimEdgeMode;
+    const edgeMode = target?.closest("[data-cim-edge-mode]")?.dataset?.cimEdgeMode;
     if (edgeMode) {
       applyCimEdgeMode(edgeMode);
       return;
     }
-    const addType = target?.closest("[data-cim-add-type]")?.dataset
-        ?.cimAddType;
+    const addType = target?.closest("[data-cim-add-type]")?.dataset?.cimAddType;
     if (addType) {
       createCimElement(addType);
       return;
@@ -1520,8 +1902,7 @@ function bindSurfaceEvents() {
       createRequiredRoot();
       return;
     }
-    const exportFeature = target?.closest("[data-cim-export]")?.dataset
-        ?.cimExport;
+    const exportFeature = target?.closest("[data-cim-export]")?.dataset?.cimExport;
     if (exportFeature) {
       exportCsv(exportFeature);
       return;
@@ -1532,8 +1913,7 @@ function bindSurfaceEvents() {
       renderCimWorkbenchSurface();
       return;
     }
-    const sliceToggle = target?.closest("[data-cim-slice-toggle]")?.dataset
-        ?.cimSliceToggle;
+    const sliceToggle = target?.closest("[data-cim-slice-toggle]")?.dataset?.cimSliceToggle;
     if (sliceToggle) {
       cimSliceMenuOpen = cimSliceMenuOpen === sliceToggle ? "" : sliceToggle;
       renderCimWorkbenchSurface();
@@ -1555,14 +1935,18 @@ function bindSurfaceEvents() {
     }
     const childButton = target?.closest("[data-cim-add-child]");
     if (childButton) {
-      addContainedChild(childButton.dataset.cimAddChild,
-          childButton.dataset.cimFeature, childButton.dataset.cimChildType);
+      addContainedChild(
+        childButton.dataset.cimAddChild,
+        childButton.dataset.cimFeature,
+        childButton.dataset.cimChildType,
+      );
     }
   });
   host.addEventListener("change", (event) => {
-    const target = event.target instanceof HTMLInputElement
-    || event.target instanceof HTMLSelectElement
-        ? event.target : null;
+    const target =
+      event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement
+        ? event.target
+        : null;
     if (!target) {
       return;
     }
@@ -1597,14 +1981,21 @@ function bindSurfaceEvents() {
       return;
     }
     if (target.dataset.cimToggleRef) {
-      toggleReference(target.dataset.cimToggleRef, target.dataset.cimFeature,
-          target.dataset.cimTarget, target.checked);
+      toggleReference(
+        target.dataset.cimToggleRef,
+        target.dataset.cimFeature,
+        target.dataset.cimTarget,
+        target.checked,
+      );
       return;
     }
     if (target.dataset.cimField && target.dataset.cimRow) {
-      updateField(target.dataset.cimRow, target.dataset.cimField,
-          target.type === "checkbox" ? target.checked : target.value,
-          target.type);
+      updateField(
+        target.dataset.cimRow,
+        target.dataset.cimField,
+        target.type === "checkbox" ? target.checked : target.value,
+        target.type,
+      );
       return;
     }
     if (target.dataset.cimImport && target.files?.[0]) {
@@ -1612,8 +2003,7 @@ function bindSurfaceEvents() {
     }
   });
   host.addEventListener("input", (event) => {
-    const target = event.target instanceof HTMLInputElement ? event.target
-        : null;
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
     if (target?.dataset?.cimSearch !== undefined) {
       state.cimWorkbench.search = target.value;
       scheduleSearchRender();
@@ -1632,13 +2022,12 @@ export function initCimWorkbenchSurface({
   renderDiagram,
   renderPalette,
   openAttributePanel,
-  openConnectionPanel
+  openConnectionPanel,
 } = {}) {
   renderDiagramCallback = renderDiagram || renderDiagramCallback;
   renderPaletteCallback = renderPalette || renderPaletteCallback;
   openAttributePanelCallback = openAttributePanel || openAttributePanelCallback;
-  openConnectionPanelCallback = openConnectionPanel
-      || openConnectionPanelCallback;
+  openConnectionPanelCallback = openConnectionPanel || openConnectionPanelCallback;
   ensureSurface();
   bindSurfaceEvents();
 }

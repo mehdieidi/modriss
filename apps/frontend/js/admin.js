@@ -1,11 +1,11 @@
-import {api, isPlannedFeatureError} from './api.js';
-import {el} from './dom.js';
-import {state} from './state.js';
-import {escapeHtml} from './utils.js';
-import {setError, setStatus} from './status.js';
+import { api, isPlannedFeatureError } from "./api.js";
+import { el } from "./dom.js";
+import { state } from "./state.js";
+import { escapeHtml } from "./utils.js";
+import { setError, setStatus } from "./status.js";
 
 function lineNumberText(lineCount) {
-  return Array.from({length: lineCount}, (_, i) => String(i + 1)).join("\n");
+  return Array.from({ length: lineCount }, (_, i) => String(i + 1)).join("\n");
 }
 
 function joinPath(basePath, childName) {
@@ -58,8 +58,7 @@ function resetAdminEditor() {
 }
 
 function setAdminPathLabel() {
-  el.adminPathLabel.textContent = state.admin.currentPath
-      ? `/${state.admin.currentPath}` : "/";
+  el.adminPathLabel.textContent = state.admin.currentPath ? `/${state.admin.currentPath}` : "/";
 }
 
 function renderAdminTree(entries) {
@@ -95,9 +94,8 @@ async function loadEntries() {
     return;
   }
   const query = state.admin.currentPath
-      ? `?scope=${encodeURIComponent(scope)}&path=${encodeURIComponent(
-          state.admin.currentPath)}`
-      : `?scope=${encodeURIComponent(scope)}`;
+    ? `?scope=${encodeURIComponent(scope)}&path=${encodeURIComponent(state.admin.currentPath)}`
+    : `?scope=${encodeURIComponent(scope)}`;
   const entries = await api(`/admin/workspace/entries${query}`);
   state.admin.entries = entries;
   state.admin.selectedEntry = null;
@@ -131,8 +129,8 @@ export async function openAdminFile(path) {
       return;
     }
     const response = await api(
-        `/admin/workspace/file?scope=${encodeURIComponent(
-            scope)}&path=${encodeURIComponent(path)}`);
+      `/admin/workspace/file?scope=${encodeURIComponent(scope)}&path=${encodeURIComponent(path)}`,
+    );
     state.admin.activeFile = response.path;
     state.admin.dirty = false;
     el.adminEditorFileName.textContent = response.path;
@@ -161,8 +159,8 @@ export async function saveAdminFile() {
       body: JSON.stringify({
         scope: adminScope(),
         path: state.admin.activeFile,
-        content: el.adminEditorContent.value
-      })
+        content: el.adminEditorContent.value,
+      }),
     });
     state.admin.dirty = false;
     el.adminSaveFileBtn.textContent = "Save File";
@@ -190,9 +188,10 @@ export async function initAdminWorkspace() {
     if (!state.admin.scopes.length) {
       state.admin.scopes = await api("/admin/workspace/scopes");
       el.adminScopeSelect.innerHTML = state.admin.scopes
-      .map((scope) => `<option value="${escapeHtml(scope.key)}">${escapeHtml(
-          scope.label)}</option>`)
-      .join("");
+        .map(
+          (scope) => `<option value="${escapeHtml(scope.key)}">${escapeHtml(scope.label)}</option>`,
+        )
+        .join("");
       state.admin.scope = state.admin.scopes[0]?.key || null;
       if (state.admin.scope) {
         el.adminScopeSelect.value = state.admin.scope;
@@ -241,8 +240,7 @@ export async function createAdminFile() {
     setStatus("Admin workspace is not available in this backend build.");
     return;
   }
-  const fileName = window.prompt("New file name (relative to current folder):",
-      "new-file");
+  const fileName = window.prompt("New file name (relative to current folder):", "new-file");
   if (!fileName) {
     return;
   }
@@ -253,7 +251,7 @@ export async function createAdminFile() {
   try {
     await api("/admin/workspace/file", {
       method: "POST",
-      body: JSON.stringify({scope: adminScope(), path, content: ""})
+      body: JSON.stringify({ scope: adminScope(), path, content: "" }),
     });
     await reloadAdminEntries();
     await openAdminFile(path);
@@ -267,8 +265,7 @@ export async function createAdminDirectory() {
     setStatus("Admin workspace is not available in this backend build.");
     return;
   }
-  const folderName = window.prompt(
-      "New folder name (relative to current folder):", "new-folder");
+  const folderName = window.prompt("New folder name (relative to current folder):", "new-folder");
   if (!folderName) {
     return;
   }
@@ -279,7 +276,7 @@ export async function createAdminDirectory() {
   try {
     await api("/admin/workspace/directory", {
       method: "POST",
-      body: JSON.stringify({scope: adminScope(), path})
+      body: JSON.stringify({ scope: adminScope(), path }),
     });
     await reloadAdminEntries();
   } catch (error) {
@@ -309,8 +306,7 @@ export async function renameAdminEntry() {
   try {
     await api("/admin/workspace/rename", {
       method: "POST",
-      body: JSON.stringify(
-          {scope: adminScope(), path: currentPath, newPath: destination})
+      body: JSON.stringify({ scope: adminScope(), path: currentPath, newPath: destination }),
     });
     if (state.admin.activeFile === currentPath) {
       state.admin.activeFile = destination;
@@ -336,10 +332,14 @@ export async function deleteAdminEntry() {
     return;
   }
   try {
-    await api(`/admin/workspace/path?scope=${encodeURIComponent(
-        adminScope())}&path=${encodeURIComponent(target)}`, {
-      method: "DELETE"
-    });
+    await api(
+      `/admin/workspace/path?scope=${encodeURIComponent(
+        adminScope(),
+      )}&path=${encodeURIComponent(target)}`,
+      {
+        method: "DELETE",
+      },
+    );
     if (state.admin.activeFile === target) {
       resetAdminEditor();
     }

@@ -141,4 +141,3 @@ context AWSPSM!SsmParameter {
     message : 'Secure SSM parameter ' + self.parameterName + ' has no explicit KMS key. Fix: attach kmsKey where customer-managed key control is required.'
   }
 }
-

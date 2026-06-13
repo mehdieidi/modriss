@@ -1,22 +1,22 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {escapeHtml} from './utils.js';
-import {getDefaultNode} from './diagram.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { escapeHtml } from "./utils.js";
+import { getDefaultNode } from "./diagram.js";
 import {
   activeView,
   addConnectionToGraphAndActiveView,
   addNodeToGraphAndActiveView,
   saveCurrentTabGraphState,
-  syncActiveViewFromVisibleGraph
-} from './graph-store.js';
-import {materializeActiveView} from './view-materializer.js';
+  syncActiveViewFromVisibleGraph,
+} from "./graph-store.js";
+import { materializeActiveView } from "./view-materializer.js";
 import {
   modelingElementDefinition,
   modelingLevelConfig,
-  modelingViewDefinition
-} from './modeling-config-data.js';
-import {markModelDirty} from './model-save-ui.js';
-import {setStatus} from './status.js';
+  modelingViewDefinition,
+} from "./modeling-config-data.js";
+import { markModelDirty } from "./model-save-ui.js";
+import { setStatus } from "./status.js";
 import {
   activeWorkbenchRepresentation,
   bindWorkbenchInteractionShield,
@@ -35,16 +35,16 @@ import {
   renderWorkbenchSliceSelect,
   renderWorkbenchSurfaceLayout,
   renderWorkbenchToolbar,
-  setWorkbenchRepresentation
-} from './workbench-common.js';
+  setWorkbenchRepresentation,
+} from "./workbench-common.js";
 import {
   addReferenceValue,
   elementLabel,
   missingRequiredFeatures,
   PIM_ROOT_CONTAINMENTS,
   refId,
-  refIds
-} from './pim-model-utils.js';
+  refIds,
+} from "./pim-model-utils.js";
 
 let surface = null;
 let bound = false;
@@ -61,7 +61,7 @@ const PIM_SLICE_KINDS = [
   ["environment", "Environment"],
   ["security", "Security"],
   ["production", "Production"],
-  ["lifecycle", "Lifecycle"]
+  ["lifecycle", "Lifecycle"],
 ];
 
 function scheduleSearchRender() {
@@ -86,7 +86,7 @@ const DEFAULT_REPRESENTATION_BY_PROFILE = {
   deployment: "matrix",
   policy: "register",
   configuration: "register",
-  readiness: "board"
+  readiness: "board",
 };
 
 const PROFILE_REGISTERS = {
@@ -101,90 +101,275 @@ const PROFILE_REGISTERS = {
   deployment: "deploymentUnits",
   policy: "policies",
   configuration: "configurations",
-  readiness: "readiness"
+  readiness: "readiness",
 };
 
 const REGISTER_COLUMNS = {
-  services: ["boundaryType", "ownerTeam", "externallyExposed", "ownsFunctions",
-    "ownsApis", "ownsChannels", "ownsStores", "ownsWorkflows"],
-  deploymentUnits: ["unitType", "independentlyDeployable", "contains",
-    "targetEnvironments", "releaseStrategy", "versioningStrategy"],
-  environments: ["environmentClass", "nameSuffix", "productionLike",
-    "requiresApproval", "configurationSets", "parameters", "variables"],
-  implementationProfile: ["primaryLanguage", "languageVersion",
-    "packageManager", "sourceLayout", "testFramework", "buildCommand"],
-  functions: ["functionKind", "executionModel", "publicEntryPoint",
-    "stateless", "readsState", "writesState", "publishesEvents",
-    "requiresIdempotency", "contract", "reads", "writes", "publishes",
-    "subscribesTo", "callsAdapters", "usesSecrets"],
-  apis: ["apiStyle", "publicName", "version", "basePath", "authRequired",
-    "corsRequired", "externalConsumerFacing", "routes", "auth", "cors",
-    "rateLimit"],
-  schemas: ["schemaKind", "semanticVersion", "compatibility",
-    "additionalPropertiesAllowed", "fields", "constraints",
-    "externalSchemaUri"],
-  eventTypes: ["semanticName", "version", "schema", "externalEvent",
-    "auditEvent", "replayable", "containsPersonalData", "producedBy",
-    "consumedBy"],
-  channels: ["channelKind", "orderingRequirement", "deliverySemantics",
-    "encrypted", "replayRequired", "deadLetterRequired", "eventTypes",
-    "producers", "consumers"],
+  services: [
+    "boundaryType",
+    "ownerTeam",
+    "externallyExposed",
+    "ownsFunctions",
+    "ownsApis",
+    "ownsChannels",
+    "ownsStores",
+    "ownsWorkflows",
+  ],
+  deploymentUnits: [
+    "unitType",
+    "independentlyDeployable",
+    "contains",
+    "targetEnvironments",
+    "releaseStrategy",
+    "versioningStrategy",
+  ],
+  environments: [
+    "environmentClass",
+    "nameSuffix",
+    "productionLike",
+    "requiresApproval",
+    "configurationSets",
+    "parameters",
+    "variables",
+  ],
+  implementationProfile: [
+    "primaryLanguage",
+    "languageVersion",
+    "packageManager",
+    "sourceLayout",
+    "testFramework",
+    "buildCommand",
+  ],
+  functions: [
+    "functionKind",
+    "executionModel",
+    "publicEntryPoint",
+    "stateless",
+    "readsState",
+    "writesState",
+    "publishesEvents",
+    "requiresIdempotency",
+    "contract",
+    "reads",
+    "writes",
+    "publishes",
+    "subscribesTo",
+    "callsAdapters",
+    "usesSecrets",
+  ],
+  apis: [
+    "apiStyle",
+    "publicName",
+    "version",
+    "basePath",
+    "authRequired",
+    "corsRequired",
+    "externalConsumerFacing",
+    "routes",
+    "auth",
+    "cors",
+    "rateLimit",
+  ],
+  schemas: [
+    "schemaKind",
+    "semanticVersion",
+    "compatibility",
+    "additionalPropertiesAllowed",
+    "fields",
+    "constraints",
+    "externalSchemaUri",
+  ],
+  eventTypes: [
+    "semanticName",
+    "version",
+    "schema",
+    "externalEvent",
+    "auditEvent",
+    "replayable",
+    "containsPersonalData",
+    "producedBy",
+    "consumedBy",
+  ],
+  channels: [
+    "channelKind",
+    "orderingRequirement",
+    "deliverySemantics",
+    "encrypted",
+    "replayRequired",
+    "deadLetterRequired",
+    "eventTypes",
+    "producers",
+    "consumers",
+  ],
   schedules: ["scheduleExpression", "enabled", "timeZone"],
-  triggers: ["triggerKind", "invocationMode", "enabled", "source",
-    "invokesFunction", "startsWorkflow", "filterExpression"],
-  dataStores: ["storeKind", "consistencyNeed", "persistent", "encrypted",
-    "containsPersonalData", "ownedDataModels", "accessPatterns",
-    "indexCandidates", "expectedDataVolume", "expectedAccessRate"],
-  objectStores: ["objectTypes", "versioningRequired",
+  triggers: [
+    "triggerKind",
+    "invocationMode",
+    "enabled",
+    "source",
+    "invokesFunction",
+    "startsWorkflow",
+    "filterExpression",
+  ],
+  dataStores: [
+    "storeKind",
+    "consistencyNeed",
+    "persistent",
+    "encrypted",
+    "containsPersonalData",
+    "ownedDataModels",
+    "accessPatterns",
+    "indexCandidates",
+    "expectedDataVolume",
+    "expectedAccessRate",
+  ],
+  objectStores: [
+    "objectTypes",
+    "versioningRequired",
     "eventNotificationRequired",
-    "objectMetadataSchemas", "emittedEvents"],
-  dataAccesses: ["mode", "function", "store", "dataModels", "accessPatterns",
-    "transactional", "purpose"],
-  workflows: ["workflowKind", "executionSemantics", "longRunning",
-    "stateful", "states", "startState", "endStates", "transitions",
-    "humanApprovalRequired"],
-  externalAdapters: ["externalSystemName", "protocolFamily",
-    "endpointDescription", "credentialsRequired", "adapterFunctions",
-    "credentials"],
-  identityProviders: ["identityKind", "federationRequired", "mfaRequired",
-    "tokenType", "principals"],
+    "objectMetadataSchemas",
+    "emittedEvents",
+  ],
+  dataAccesses: [
+    "mode",
+    "function",
+    "store",
+    "dataModels",
+    "accessPatterns",
+    "transactional",
+    "purpose",
+  ],
+  workflows: [
+    "workflowKind",
+    "executionSemantics",
+    "longRunning",
+    "stateful",
+    "states",
+    "startState",
+    "endStates",
+    "transitions",
+    "humanApprovalRequired",
+  ],
+  externalAdapters: [
+    "externalSystemName",
+    "protocolFamily",
+    "endpointDescription",
+    "credentialsRequired",
+    "adapterFunctions",
+    "credentials",
+  ],
+  identityProviders: [
+    "identityKind",
+    "federationRequired",
+    "mfaRequired",
+    "tokenType",
+    "principals",
+  ],
   principals: ["principalKind", "externalRef", "privileged", "permissions"],
-  policies: ["policyScope", "productionRequired", "attachedTo",
-    "authenticationRequired", "authorizationRequired",
+  policies: [
+    "policyScope",
+    "productionRequired",
+    "attachedTo",
+    "authenticationRequired",
+    "authorizationRequired",
     "encryptionAtRestRequired",
-    "loggingEnabled", "metricsEnabled", "timeoutSeconds"],
-  flows: ["flowPurpose", "criticalPath", "containsPersonalData", "source",
-    "target", "eventType", "channel", "queue", "topic", "workflow", "adapter"],
-  configurations: ["scope", "parameters", "environmentVariables",
-    "environments", "appliesTo"],
-  secrets: ["secretKind", "rotationRequired", "rotationFrequency",
-    "environmentSpecific", "ownerTeam", "usedForCredentials"],
-  readiness: ["readinessStatus", "transformationReady", "deploymentReady",
-    "productionReady", "findings", "checks", "manualDecisions"],
-  traceLinks: ["linkType", "source", "target", "sourceElementId",
-    "targetElementId", "transformationRule", "confidence"]
+    "loggingEnabled",
+    "metricsEnabled",
+    "timeoutSeconds",
+  ],
+  flows: [
+    "flowPurpose",
+    "criticalPath",
+    "containsPersonalData",
+    "source",
+    "target",
+    "eventType",
+    "channel",
+    "queue",
+    "topic",
+    "workflow",
+    "adapter",
+  ],
+  configurations: ["scope", "parameters", "environmentVariables", "environments", "appliesTo"],
+  secrets: [
+    "secretKind",
+    "rotationRequired",
+    "rotationFrequency",
+    "environmentSpecific",
+    "ownerTeam",
+    "usedForCredentials",
+  ],
+  readiness: [
+    "readinessStatus",
+    "transformationReady",
+    "deploymentReady",
+    "productionReady",
+    "findings",
+    "checks",
+    "manualDecisions",
+  ],
+  traceLinks: [
+    "linkType",
+    "source",
+    "target",
+    "sourceElementId",
+    "targetElementId",
+    "transformationRule",
+    "confidence",
+  ],
 };
 
 const POLICY_REGISTER_TYPES = [
-  "DataProtectionPolicy", "CompliancePolicy", "ResiliencePolicy",
-  "TimeoutPolicy", "IdempotencyPolicy", "ConcurrencyPolicy",
-  "RateLimitPolicy", "BatchPolicy", "OrderingPolicy", "CachePolicy",
-  "BackupPolicy", "RetentionPolicy", "CostPolicy", "ObservabilityConfig",
-  "CorsPolicy", "SecurityPolicy", "AuthPolicy", "AuthorizationPolicy",
-  "RetryPolicy", "DeadLetterPolicy", "LoggingPolicy", "MetricPolicy",
-  "MetricDimension", "TracingPolicy", "AlertPolicy", "Slo"
+  "DataProtectionPolicy",
+  "CompliancePolicy",
+  "ResiliencePolicy",
+  "TimeoutPolicy",
+  "IdempotencyPolicy",
+  "ConcurrencyPolicy",
+  "RateLimitPolicy",
+  "BatchPolicy",
+  "OrderingPolicy",
+  "CachePolicy",
+  "BackupPolicy",
+  "RetentionPolicy",
+  "CostPolicy",
+  "ObservabilityConfig",
+  "CorsPolicy",
+  "SecurityPolicy",
+  "AuthPolicy",
+  "AuthorizationPolicy",
+  "RetryPolicy",
+  "DeadLetterPolicy",
+  "LoggingPolicy",
+  "MetricPolicy",
+  "MetricDimension",
+  "TracingPolicy",
+  "AlertPolicy",
+  "Slo",
 ];
 
 const PROTECTED_RESOURCE_TYPES = [
-  "Api", "ApiRoute", "Function", "Secret", "DataStore", "ObjectStore",
-  "ExternalAdapter", "Queue", "Topic", "EventBus", "Schedule",
-  "IdentityProvider", "Principal", "Workflow", "WorkflowState"
+  "Api",
+  "ApiRoute",
+  "Function",
+  "Secret",
+  "DataStore",
+  "ObjectStore",
+  "ExternalAdapter",
+  "Queue",
+  "Topic",
+  "EventBus",
+  "Schedule",
+  "IdentityProvider",
+  "Principal",
+  "Workflow",
+  "WorkflowState",
 ];
 
 const PIM_EDGE_MODES = {
-  both: {label: "Both"},
-  flows: {label: "Flows"},
-  references: {label: "Refs"}
+  both: { label: "Both" },
+  flows: { label: "Flows" },
+  references: { label: "Refs" },
 };
 
 function safeArray(value) {
@@ -197,8 +382,10 @@ function ensureSurface() {
 }
 
 function normalizeViewText(value) {
-  return String(value || "").trim().toLowerCase().replaceAll(/[^a-z0-9]+/g,
-      " ");
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, " ");
 }
 
 function activePimViewProfile() {
@@ -211,8 +398,9 @@ function activePimViewProfile() {
   } catch {
     // infer from view text
   }
-  const text = normalizeViewText([view?.id, view?.name, view?.kind,
-    view?.layoutProfile].filter(Boolean).join(" "));
+  const text = normalizeViewText(
+    [view?.id, view?.name, view?.kind, view?.layoutProfile].filter(Boolean).join(" "),
+  );
   if (text.includes("api")) {
     return "api";
   }
@@ -225,8 +413,7 @@ function activePimViewProfile() {
   if (text.includes("data")) {
     return "data";
   }
-  if (text.includes("integration") || text.includes(
-      "channel")) {
+  if (text.includes("integration") || text.includes("channel")) {
     return "integration";
   }
   if (text.includes("workflow")) {
@@ -235,15 +422,13 @@ function activePimViewProfile() {
   if (text.includes("security") || text.includes("access")) {
     return "security";
   }
-  if (text.includes("deployment") || text.includes(
-      "environment")) {
+  if (text.includes("deployment") || text.includes("environment")) {
     return "deployment";
   }
   if (text.includes("policy") || text.includes("operation")) {
     return "policy";
   }
-  if (text.includes("configuration") || text.includes(
-      "secret")) {
+  if (text.includes("configuration") || text.includes("secret")) {
     return "configuration";
   }
   if (text.includes("readiness") || text.includes("trace")) {
@@ -254,20 +439,29 @@ function activePimViewProfile() {
 
 function activeRepresentation(profile) {
   const viewId = activeView()?.id || "pim";
-  return activeWorkbenchRepresentation(state.pimWorkbench, viewId, profile,
-      DEFAULT_REPRESENTATION_BY_PROFILE);
+  return activeWorkbenchRepresentation(
+    state.pimWorkbench,
+    viewId,
+    profile,
+    DEFAULT_REPRESENTATION_BY_PROFILE,
+  );
 }
 
 function setActiveRepresentation(mode) {
   const viewId = activeView()?.id || "pim";
-  setWorkbenchRepresentation(state.pimWorkbench, viewId, mode,
-      renderPimWorkbenchSurface, renderDiagramCallback, renderPaletteCallback);
+  setWorkbenchRepresentation(
+    state.pimWorkbench,
+    viewId,
+    mode,
+    renderPimWorkbenchSurface,
+    renderDiagramCallback,
+    renderPaletteCallback,
+  );
 }
 
 function activeRegister(profile) {
   const viewId = activeView()?.id || "pim";
-  return state.pimWorkbench.registerByViewId[viewId]
-      || PROFILE_REGISTERS[profile] || "functions";
+  return state.pimWorkbench.registerByViewId[viewId] || PROFILE_REGISTERS[profile] || "functions";
 }
 
 function setActiveRegister(feature) {
@@ -289,18 +483,22 @@ function elementsMatchingTypes(types) {
 }
 
 function rootContainment(feature) {
-  return PIM_ROOT_CONTAINMENTS.find((entry) => entry.feature === feature)
-      || null;
+  return PIM_ROOT_CONTAINMENTS.find((entry) => entry.feature === feature) || null;
 }
 
 function registerRows(feature) {
   if (feature === "traceLinks") {
-    return relationships().filter((relationship) =>
-        relationship.eClass === "TraceLink" || relationship.kind === "TRACE");
+    return relationships().filter(
+      (relationship) => relationship.eClass === "TraceLink" || relationship.kind === "TRACE",
+    );
   }
   if (feature === "readiness") {
-    return elementsMatchingTypes(["ProductionReadinessAssessment",
-      "ReadinessFinding", "ReadinessCheck", "ManualDecision"]);
+    return elementsMatchingTypes([
+      "ProductionReadinessAssessment",
+      "ReadinessFinding",
+      "ReadinessCheck",
+      "ManualDecision",
+    ]);
   }
   if (feature === "policies") {
     return dedupeById(elementsMatchingTypes(POLICY_REGISTER_TYPES));
@@ -311,8 +509,9 @@ function registerRows(feature) {
   }
   const rows = elementsMatchingTypes(containment.types);
   if (containment.relationshipOnly) {
-    rows.push(...relationships().filter((relationship) =>
-        containment.types.includes(relationship.eClass)));
+    rows.push(
+      ...relationships().filter((relationship) => containment.types.includes(relationship.eClass)),
+    );
   }
   return dedupeById(rows);
 }
@@ -346,15 +545,24 @@ function valueText(value) {
 }
 
 function matchesSearch(row) {
-  const query = String(state.pimWorkbench.search || "").trim().toLowerCase();
+  const query = String(state.pimWorkbench.search || "")
+    .trim()
+    .toLowerCase();
   if (!query) {
     return true;
   }
   const haystack = [
-    row.id, row.eClass, row.name, row.label, row.summary, row.description,
-    row.modelTags, ...Object.values(row).filter((value) => typeof value
-        === "string")
-  ].join(" ").toLowerCase();
+    row.id,
+    row.eClass,
+    row.name,
+    row.label,
+    row.summary,
+    row.description,
+    row.modelTags,
+    ...Object.values(row).filter((value) => typeof value === "string"),
+  ]
+    .join(" ")
+    .toLowerCase();
   return haystack.includes(query);
 }
 
@@ -371,24 +579,35 @@ function rowInSlice(row) {
     if (!value) {
       return true;
     }
-    return refIds(row.targetEnvironments).includes(value)
-        || refIds(row.environments).includes(value);
+    return (
+      refIds(row.targetEnvironments).includes(value) || refIds(row.environments).includes(value)
+    );
   }
   if (kind === "service") {
     if (!value) {
       return true;
     }
-    return ["ownsFunctions", "ownsApis", "ownsChannels", "ownsStores",
-      "ownsWorkflows", "ownsAdapters", "services"].some((feature) =>
-        refIds(row[feature]).includes(value));
+    return [
+      "ownsFunctions",
+      "ownsApis",
+      "ownsChannels",
+      "ownsStores",
+      "ownsWorkflows",
+      "ownsAdapters",
+      "services",
+    ].some((feature) => refIds(row[feature]).includes(value));
   }
   if (kind === "security") {
-    return Boolean(row.privileged || row.authRequired || row.secretsRequired
-        || row.encryptionAtRestRequired || row.encrypted);
+    return Boolean(
+      row.privileged ||
+        row.authRequired ||
+        row.secretsRequired ||
+        row.encryptionAtRestRequired ||
+        row.encrypted,
+    );
   }
   if (kind === "production") {
-    return Boolean(row.productionRequired || row.requiredForProduction
-        || row.productionLike);
+    return Boolean(row.productionRequired || row.requiredForProduction || row.productionLike);
   }
   return true;
 }
@@ -403,7 +622,8 @@ function pimFlowRelationshipKinds(allKinds) {
   return safeArray(allKinds).filter((kind) => {
     const text = `${kind} ${labels[kind] || ""}`.toLowerCase();
     return /flow|invoke|route|target|transition|subscription|event|message|request|response|data access|external/.test(
-        text);
+      text,
+    );
   });
 }
 
@@ -423,13 +643,13 @@ function applyPimEdgeMode(mode) {
   if (mode === "both") {
     view.filters.relationshipKinds = [];
   } else if (mode === "flows") {
-    view.filters.relationshipKinds = flowKinds.length ? flowKinds
-        : ["__PIM_NO_FLOW_EDGES__"];
+    view.filters.relationshipKinds = flowKinds.length ? flowKinds : ["__PIM_NO_FLOW_EDGES__"];
   } else {
     const flowKindSet = new Set(flowKinds);
     const referenceKinds = allKinds.filter((kind) => !flowKindSet.has(kind));
-    view.filters.relationshipKinds = referenceKinds.length ? referenceKinds
-        : ["__PIM_NO_REFERENCE_EDGES__"];
+    view.filters.relationshipKinds = referenceKinds.length
+      ? referenceKinds
+      : ["__PIM_NO_REFERENCE_EDGES__"];
   }
   materializeActiveView();
   saveCurrentTabGraphState("pim");
@@ -441,19 +661,23 @@ function applyPimEdgeMode(mode) {
 
 function filteredRows(feature) {
   const rows = registerRows(feature).filter(matchesSearch).filter(rowInSlice);
-  const filtered = state.pimWorkbench.missingOnly ? rows.filter((row) =>
-      missingRequiredFeatures(row).length) : rows;
+  const filtered = state.pimWorkbench.missingOnly
+    ? rows.filter((row) => missingRequiredFeatures(row).length)
+    : rows;
   const sortKey = state.pimWorkbench.sortKey || "name";
-  return filtered.sort((a, b) => valueText(a?.[sortKey] || a.name)
-  .localeCompare(valueText(b?.[sortKey] || b.name)));
+  return filtered.sort((a, b) =>
+    valueText(a?.[sortKey] || a.name).localeCompare(valueText(b?.[sortKey] || b.name)),
+  );
 }
 
 function fieldDefinition(type, fieldName) {
   try {
     const definition = modelingElementDefinition("pim", type);
-    return [...safeArray(definition?.attributes),
-      ...safeArray(definition?.references)].find((field) => field.name
-        === fieldName) || null;
+    return (
+      [...safeArray(definition?.attributes), ...safeArray(definition?.references)].find(
+        (field) => field.name === fieldName,
+      ) || null
+    );
   } catch {
     return null;
   }
@@ -464,63 +688,78 @@ function controlForField(row, field) {
   const value = row[field];
   const readonly = definition.readonly || field === "id";
   if (readonly) {
-    return `<span class="cim-cell-readonly">${escapeHtml(
-        valueText(value))}</span>`;
+    return `<span class="cim-cell-readonly">${escapeHtml(valueText(value))}</span>`;
   }
-  if (definition.kind === "reference" || Array.isArray(value)
-      || (value && typeof value === "object")) {
+  if (
+    definition.kind === "reference" ||
+    Array.isArray(value) ||
+    (value && typeof value === "object")
+  ) {
     return `<span class="cim-ref-cell">${escapeHtml(valueText(value))}</span>`;
   }
   if (definition.fieldType === "boolean" || typeof value === "boolean") {
     return `<input class="cim-table-check" data-pim-field="${escapeHtml(field)}"
-        data-pim-row="${escapeHtml(row.id)}" type="checkbox" ${
-        value ? "checked" : ""}>`;
+        data-pim-row="${escapeHtml(row.id)}" type="checkbox" ${value ? "checked" : ""}>`;
   }
   if (definition.fieldType === "select" && Array.isArray(definition.options)) {
     return `<select class="cim-table-input" data-pim-field="${escapeHtml(field)}"
         data-pim-row="${escapeHtml(row.id)}">
       <option value=""></option>
-      ${definition.options.map((option) => `<option value="${escapeHtml(option)}"
-          ${String(value || "") === String(option) ? "selected" : ""}>${
-        escapeHtml(option)}</option>`).join("")}
+      ${definition.options
+        .map(
+          (option) => `<option value="${escapeHtml(option)}"
+          ${String(value || "") === String(option) ? "selected" : ""}>${escapeHtml(
+            option,
+          )}</option>`,
+        )
+        .join("")}
     </select>`;
   }
-  const type = definition.fieldType === "number" || typeof value === "number"
-      ? "number" : "text";
+  const type = definition.fieldType === "number" || typeof value === "number" ? "number" : "text";
   return `<input class="cim-table-input" data-pim-field="${escapeHtml(field)}"
-      data-pim-row="${escapeHtml(row.id)}" type="${type}" value="${escapeHtml(
-      valueText(value))}">`;
+      data-pim-row="${escapeHtml(row.id)}" type="${type}" value="${escapeHtml(valueText(value))}">`;
 }
 
 function rowTypeBadge(row) {
   const missing = missingRequiredFeatures(row);
-  return `<span class="cim-type-badge">${escapeHtml(row.eClass || row.kind
-      || "Element")}</span>${missing.length ? `<span class="cim-missing-badge"
+  return `<span class="cim-type-badge">${escapeHtml(row.eClass || row.kind || "Element")}</span>${
+    missing.length
+      ? `<span class="cim-missing-badge"
       title="${escapeHtml(missing.join(", "))}">${missing.length}</span>`
-      : ""}`;
+      : ""
+  }`;
 }
 
 function registerOptionsMarkup(activeFeature) {
   const entries = [
     ...PIM_ROOT_CONTAINMENTS.map((entry) => ({
       feature: entry.feature,
-      title: entry.title
+      title: entry.title,
     })),
-    {feature: "traceLinks", title: "Trace Links"}
+    { feature: "traceLinks", title: "Trace Links" },
   ];
-  return entries.map((entry) => `<option value="${escapeHtml(entry.feature)}" ${
-      activeFeature === entry.feature ? "selected" : ""}>${escapeHtml(
-      entry.title)}</option>`).join("");
+  return entries
+    .map(
+      (entry) =>
+        `<option value="${escapeHtml(entry.feature)}" ${
+          activeFeature === entry.feature ? "selected" : ""
+        }>${escapeHtml(entry.title)}</option>`,
+    )
+    .join("");
 }
 
 function renderRegister(profile) {
   const feature = activeRegister(profile);
   const rows = filteredRows(feature);
   const containment = rootContainment(feature);
-  const columns = ["name", "lifecycleStatus",
-    ...(REGISTER_COLUMNS[feature] || safeArray(containment?.types).flatMap(
-        (type) => safeArray(modelingElementDefinition("pim", type)
-            ?.visibleFields)))].filter(Boolean);
+  const columns = [
+    "name",
+    "lifecycleStatus",
+    ...(REGISTER_COLUMNS[feature] ||
+      safeArray(containment?.types).flatMap((type) =>
+        safeArray(modelingElementDefinition("pim", type)?.visibleFields),
+      )),
+  ].filter(Boolean);
   const uniqueColumns = [...new Set(columns)].slice(0, 13);
   const addType = containment?.types?.find((type) => {
     try {
@@ -530,15 +769,18 @@ function renderRegister(profile) {
     }
   });
   const toolbarHtml = renderWorkbenchToolbar([
-    `<select class="cim-select" data-pim-register>${registerOptionsMarkup(
-        feature)}</select>`,
-    addType ? `<button class="cim-action" data-pim-add-type="${escapeHtml(
-        addType)}" type="button">Add ${escapeHtml(addType)}</button>` : "",
+    `<select class="cim-select" data-pim-register>${registerOptionsMarkup(feature)}</select>`,
+    addType
+      ? `<button class="cim-action" data-pim-add-type="${escapeHtml(
+          addType,
+        )}" type="button">Add ${escapeHtml(addType)}</button>`
+      : "",
     `<button class="cim-action" data-pim-export="${escapeHtml(
-        feature)}" type="button">Export CSV</button>`,
+      feature,
+    )}" type="button">Export CSV</button>`,
     `<label class="cim-action cim-file-action">Import CSV
         <input class="hidden" data-pim-import="${escapeHtml(feature)}" type="file" accept=".csv,text/csv">
-      </label>`
+      </label>`,
   ]);
   return renderWorkbenchRegister({
     typeKey: "pim",
@@ -548,7 +790,7 @@ function renderRegister(profile) {
     getLabel: elementLabel,
     getBadgeHtml: rowTypeBadge,
     renderCell: controlForField,
-    emptyText: "No rows in this slice."
+    emptyText: "No rows in this slice.",
   });
 }
 
@@ -579,16 +821,27 @@ function renderDashboard() {
     ["Channels", count(["Queue", "Topic", "EventBus"])],
     ["Stores", count(["DataStore", "ObjectStore"])],
     ["Workflows", count("Workflow")],
-    ["Policies", count(["ResiliencePolicy", "ObservabilityConfig",
-      "SecurityPolicy", "AuthPolicy", "AuthorizationPolicy"])],
-    ["Missing",
-      elements().filter((item) => missingRequiredFeatures(item).length).length]
+    [
+      "Policies",
+      count([
+        "ResiliencePolicy",
+        "ObservabilityConfig",
+        "SecurityPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy",
+      ]),
+    ],
+    ["Missing", elements().filter((item) => missingRequiredFeatures(item).length).length],
   ];
   const foundationHtml = `<section class="cim-root-form">
     <div class="cim-section-title">Model Foundation</div>
-    ${rootMissing.length ? `<div class="cim-alert">Missing required foundation:
-      ${escapeHtml(rootMissing.join(", "))}</div>` : `<div class="cim-ok">
-      Foundation requirements are satisfied.</div>`}
+    ${
+      rootMissing.length
+        ? `<div class="cim-alert">Missing required foundation:
+      ${escapeHtml(rootMissing.join(", "))}</div>`
+        : `<div class="cim-ok">
+      Foundation requirements are satisfied.</div>`
+    }
     <label class="cim-form-field">
       <span>architectureStyle</span>
       <input data-pim-root-field="architectureStyle" type="text"
@@ -597,8 +850,7 @@ function renderDashboard() {
     <label class="cim-form-field">
       <span>providerIndependent</span>
       <input data-pim-root-field="providerIndependent" type="text"
-          value="${escapeHtml(
-      String(state.baseModel?.providerIndependent ?? ""))}">
+          value="${escapeHtml(String(state.baseModel?.providerIndependent ?? ""))}">
     </label>
   </section>`;
   const actionsHtml = `<section class="cim-view-entry-list">
@@ -611,7 +863,7 @@ function renderDashboard() {
   return renderWorkbenchDashboard({
     metrics: cards,
     primaryHtml: foundationHtml,
-    secondaryHtml: actionsHtml
+    secondaryHtml: actionsHtml,
   });
 }
 
@@ -619,60 +871,97 @@ function renderMatrix(profile) {
   if (profile === "deployment") {
     const units = filteredRows("deploymentUnits");
     const environments = elementsMatchingTypes(["Environment"]);
-    return matrixTable("Deployment Units by Environment", units, environments,
-        (unit, environment) => refIds(unit.targetEnvironments).includes(
-            environment.id) ? "target" : false,
-        "Create deployment units and environments to populate the matrix.");
+    return matrixTable(
+      "Deployment Units by Environment",
+      units,
+      environments,
+      (unit, environment) =>
+        refIds(unit.targetEnvironments).includes(environment.id) ? "target" : false,
+      "Create deployment units and environments to populate the matrix.",
+    );
   }
   if (profile === "security") {
     const principals = filteredRows("principals");
     const resources = elementsMatchingTypes(PROTECTED_RESOURCE_TYPES);
-    return matrixTable("Principal Permissions by Protected Resource",
-        principals, resources, (principal, resource) => {
-          const permissionIds = refIds(principal.permissions);
-          const matches = elementsMatchingTypes(["Permission"]).filter(
-              (permission) => permissionIds.includes(permission.id)
-                  && refIds(permission.targetResource).includes(resource.id));
-          return matches.length ? `${matches.length}` : false;
-        },
-        "Create principals, permissions and protected resources to populate the matrix.");
+    return matrixTable(
+      "Principal Permissions by Protected Resource",
+      principals,
+      resources,
+      (principal, resource) => {
+        const permissionIds = refIds(principal.permissions);
+        const matches = elementsMatchingTypes(["Permission"]).filter(
+          (permission) =>
+            permissionIds.includes(permission.id) &&
+            refIds(permission.targetResource).includes(resource.id),
+        );
+        return matches.length ? `${matches.length}` : false;
+      },
+      "Create principals, permissions and protected resources to populate the matrix.",
+    );
   }
   if (profile === "policy") {
     const policies = filteredRows("policies");
-    const targets = elements().filter((item) => item.id && item.eClass
-        && !POLICY_REGISTER_TYPES.includes(item.eClass));
-    return matrixTable("Policy Attachments", policies, targets,
-        (policy, target) => refIds(policy.attachedTo).includes(target.id)
-            ? (policy.productionRequired ? "prod" : "x") : false,
-        "Create policies and attach them to targets to populate the matrix.");
+    const targets = elements().filter(
+      (item) => item.id && item.eClass && !POLICY_REGISTER_TYPES.includes(item.eClass),
+    );
+    return matrixTable(
+      "Policy Attachments",
+      policies,
+      targets,
+      (policy, target) =>
+        refIds(policy.attachedTo).includes(target.id)
+          ? policy.productionRequired
+            ? "prod"
+            : "x"
+          : false,
+      "Create policies and attach them to targets to populate the matrix.",
+    );
   }
   if (profile === "data") {
-    return matrixTable("Functions by Data Stores",
-        elementsMatchingTypes(["Function"]),
-        elementsMatchingTypes(["DataStore", "ObjectStore"]),
-        (fn, store) => refIds(fn.reads).includes(store.id) ? "read"
-            : refIds(fn.writes).includes(store.id) ? "write"
-                : relationshipExists(fn.id, store.id),
-        "Create functions and stores to populate the matrix.");
+    return matrixTable(
+      "Functions by Data Stores",
+      elementsMatchingTypes(["Function"]),
+      elementsMatchingTypes(["DataStore", "ObjectStore"]),
+      (fn, store) =>
+        refIds(fn.reads).includes(store.id)
+          ? "read"
+          : refIds(fn.writes).includes(store.id)
+            ? "write"
+            : relationshipExists(fn.id, store.id),
+      "Create functions and stores to populate the matrix.",
+    );
   }
   if (profile === "integration") {
-    return matrixTable("Event Channels by Consumers",
-        elementsMatchingTypes(["Queue", "Topic", "EventBus"]),
-        elementsMatchingTypes(["Function", "Workflow", "ExternalAdapter"]),
-        (channel, target) => refIds(channel.consumers).includes(target.id)
-            || refIds(channel.workflowConsumers).includes(target.id)
-            || relationshipExists(channel.id, target.id),
-        "Create channels and consumers to populate the matrix.");
+    return matrixTable(
+      "Event Channels by Consumers",
+      elementsMatchingTypes(["Queue", "Topic", "EventBus"]),
+      elementsMatchingTypes(["Function", "Workflow", "ExternalAdapter"]),
+      (channel, target) =>
+        refIds(channel.consumers).includes(target.id) ||
+        refIds(channel.workflowConsumers).includes(target.id) ||
+        relationshipExists(channel.id, target.id),
+      "Create channels and consumers to populate the matrix.",
+    );
   }
   const register = activeRegister(profile);
   const rows = filteredRows(register).slice(0, 80);
-  const columns = profile === "deployment"
+  const columns =
+    profile === "deployment"
       ? elementsMatchingTypes(["Environment"])
       : profile === "security"
-          ? elementsMatchingTypes(["Api", "ApiRoute", "Function", "Secret",
-            "DataStore", "ObjectStore", "Workflow", "Queue", "Topic",
-            "EventBus"])
-          : elements().slice(0, 16);
+        ? elementsMatchingTypes([
+            "Api",
+            "ApiRoute",
+            "Function",
+            "Secret",
+            "DataStore",
+            "ObjectStore",
+            "Workflow",
+            "Queue",
+            "Topic",
+            "EventBus",
+          ])
+        : elements().slice(0, 16);
   return renderWorkbenchMatrixSection({
     title: register,
     rows,
@@ -681,26 +970,27 @@ function renderMatrix(profile) {
     getRowLabel: elementLabel,
     getColumnLabel: elementLabel,
     getCellHtml: (row, column) => {
-      const linked = rowReferences(row).has(column.id)
-          || relationshipExists(row.id, column.id)
-          || relationshipExists(column.id, row.id);
-      return `<td class="${linked ? "is-linked" : ""}">${linked ? "x"
-          : ""}</td>`;
+      const linked =
+        rowReferences(row).has(column.id) ||
+        relationshipExists(row.id, column.id) ||
+        relationshipExists(column.id, row.id);
+      return `<td class="${linked ? "is-linked" : ""}">${linked ? "x" : ""}</td>`;
     },
-    emptyText: "No matrix rows."
+    emptyText: "No matrix rows.",
   });
 }
 
 function rowReferences(row) {
   const ids = new Set();
-  Object.values(row || {}).forEach((value) => refIds(value).forEach((id) =>
-      ids.add(id)));
+  Object.values(row || {}).forEach((value) => refIds(value).forEach((id) => ids.add(id)));
   return ids;
 }
 
 function relationshipExists(sourceId, targetId) {
-  return relationships().some((relationship) => relationship.sourceElementId
-      === sourceId && relationship.targetElementId === targetId);
+  return relationships().some(
+    (relationship) =>
+      relationship.sourceElementId === sourceId && relationship.targetElementId === targetId,
+  );
 }
 
 function matrixTable(title, rows, columns, linked, empty = "No matrix rows.") {
@@ -714,22 +1004,39 @@ function matrixTable(title, rows, columns, linked, empty = "No matrix rows.") {
     getCellHtml: (row, column) => {
       const value = linked(row, column);
       return `<td class="${value ? "is-linked" : ""}">${
-          value ? escapeHtml(value === true ? "x" : value) : ""}</td>`;
+        value ? escapeHtml(value === true ? "x" : value) : ""
+      }</td>`;
     },
-    emptyText: empty
+    emptyText: empty,
   });
 }
 
 function renderReadinessBoard() {
-  const rows = elementsMatchingTypes(["ReadinessFinding", "ReadinessCheck",
-    "ManualDecision"]);
+  const rows = elementsMatchingTypes(["ReadinessFinding", "ReadinessCheck", "ManualDecision"]);
   const groups = [
-    ["Blocking", (row) => Boolean(row.productionBlocking || row.blocking
-        || String(row.severity || "").toUpperCase() === "BLOCKER")],
-    ["Open", (row) => !/ready|complete|accepted|passed/i.test(String(
-        row.lifecycleStatus || row.readinessStatus || row.status || ""))],
-    ["Accepted / Passed", (row) => /ready|complete|accepted|passed/i.test(
-        String(row.lifecycleStatus || row.readinessStatus || row.status || ""))]
+    [
+      "Blocking",
+      (row) =>
+        Boolean(
+          row.productionBlocking ||
+            row.blocking ||
+            String(row.severity || "").toUpperCase() === "BLOCKER",
+        ),
+    ],
+    [
+      "Open",
+      (row) =>
+        !/ready|complete|accepted|passed/i.test(
+          String(row.lifecycleStatus || row.readinessStatus || row.status || ""),
+        ),
+    ],
+    [
+      "Accepted / Passed",
+      (row) =>
+        /ready|complete|accepted|passed/i.test(
+          String(row.lifecycleStatus || row.readinessStatus || row.status || ""),
+        ),
+    ],
   ];
   return renderWorkbenchBoard({
     lanes: groups.map(([title, predicate]) => {
@@ -737,36 +1044,46 @@ function renderReadinessBoard() {
       return {
         title,
         count: laneRows.length,
-        cards: laneRows.map((row) => renderWorkbenchBoardCard({
-          typeKey: "pim",
-          id: row.id,
-          title: elementLabel(row),
-          meta: row.eClass,
-          body: row.message || row.question || row.checkId || row.severity || ""
-        })),
-        emptyText: "No items."
+        cards: laneRows.map((row) =>
+          renderWorkbenchBoardCard({
+            typeKey: "pim",
+            id: row.id,
+            title: elementLabel(row),
+            meta: row.eClass,
+            body: row.message || row.question || row.checkId || row.severity || "",
+          }),
+        ),
+        emptyText: "No items.",
       };
-    })
+    }),
   });
 }
 
 function detailRowsFor(row) {
   const definition = modelingElementDefinition("pim", row.eClass);
   const fields = [
-    "id", "name", "summary", "description", "lifecycleStatus",
+    "id",
+    "name",
+    "summary",
+    "description",
+    "lifecycleStatus",
     ...safeArray(definition?.visibleFields),
-    ...safeArray(definition?.attributes).filter((field) => field?.required)
-    .map((field) => field.name),
-    ...safeArray(definition?.references).filter((field) => field?.required)
-    .map((field) => field.name)
+    ...safeArray(definition?.attributes)
+      .filter((field) => field?.required)
+      .map((field) => field.name),
+    ...safeArray(definition?.references)
+      .filter((field) => field?.required)
+      .map((field) => field.name),
   ];
-  return [...new Set(fields)].filter((field) =>
-      Object.prototype.hasOwnProperty.call(row, field)).slice(0, 18);
+  return [...new Set(fields)]
+    .filter((field) => Object.prototype.hasOwnProperty.call(row, field))
+    .slice(0, 18);
 }
 
 function renderDetailProjection(profile) {
   const selected = state.selectedNodeId
-      ? state.graph?.elementsById?.get(state.selectedNodeId) : null;
+    ? state.graph?.elementsById?.get(state.selectedNodeId)
+    : null;
   const register = activeRegister(profile);
   const row = selected || filteredRows(register)[0] || elements()[0];
   if (!row) {
@@ -774,18 +1091,21 @@ function renderDetailProjection(profile) {
       typeKey: "pim",
       row: null,
       valueText,
-      emptyText: "No PIM element selected."
+      emptyText: "No PIM element selected.",
     });
   }
   const missing = missingRequiredFeatures(row);
-  const traces = relationships().filter((relationship) =>
-      relationship.eClass === "TraceLink" || relationship.kind
-      === "TRACE").filter(
-      (relationship) => relationship.sourceElementId === row.id
-          || relationship.targetElementId === row.id);
-  const readiness = elementsMatchingTypes(["ReadinessFinding", "ReadinessCheck",
-    "ManualDecision"]).filter((item) => refIds(item.affectedElements).includes(
-      row.id));
+  const traces = relationships()
+    .filter((relationship) => relationship.eClass === "TraceLink" || relationship.kind === "TRACE")
+    .filter(
+      (relationship) =>
+        relationship.sourceElementId === row.id || relationship.targetElementId === row.id,
+    );
+  const readiness = elementsMatchingTypes([
+    "ReadinessFinding",
+    "ReadinessCheck",
+    "ManualDecision",
+  ]).filter((item) => refIds(item.affectedElements).includes(row.id));
   const fields = detailRowsFor(row);
   return renderWorkbenchDetail({
     typeKey: "pim",
@@ -797,8 +1117,8 @@ function renderDetailProjection(profile) {
     stats: [
       ["missing required", missing.join(", ") || "none"],
       ["trace links", traces.length],
-      ["readiness items", readiness.length]
-    ]
+      ["readiness items", readiness.length],
+    ],
   });
 }
 
@@ -809,10 +1129,9 @@ function renderControls(profile, representation) {
     profile,
     representation,
     workbenchState: state.pimWorkbench,
-    sliceControlsHtml: `${pimSliceSelectMarkup("kind")}${pimSliceSelectMarkup(
-        "value")}`,
+    sliceControlsHtml: `${pimSliceSelectMarkup("kind")}${pimSliceSelectMarkup("value")}`,
     edgeModes: PIM_EDGE_MODES,
-    searchPlaceholder: "Search PIM"
+    searchPlaceholder: "Search PIM",
   });
 }
 
@@ -825,15 +1144,19 @@ function sliceItems() {
     return elementsMatchingTypes(["Environment"]);
   }
   if (kind === "lifecycle") {
-    return [...new Set(elements().map((item) =>
-        String(item.lifecycleStatus || "")).filter(Boolean))]
-    .map((status) => ({id: status, name: status}));
+    return [
+      ...new Set(
+        elements()
+          .map((item) => String(item.lifecycleStatus || ""))
+          .filter(Boolean),
+      ),
+    ].map((status) => ({ id: status, name: status }));
   }
   if (kind === "security") {
-    return [{id: "true", name: "Security-sensitive items"}];
+    return [{ id: "true", name: "Security-sensitive items" }];
   }
   if (kind === "production") {
-    return [{id: "true", name: "Production items"}];
+    return [{ id: "true", name: "Production items" }];
   }
   return [];
 }
@@ -851,32 +1174,38 @@ function pimSliceValueLabel() {
   return item ? elementLabel(item) : value;
 }
 
-function sliceOptionButton({value, label, selected, optionKind}) {
+function sliceOptionButton({ value, label, selected, optionKind }) {
   return renderWorkbenchSliceOption({
     typeKey: "pim",
     optionKind,
     value,
     label,
-    selected
+    selected,
   });
 }
 
 function pimSliceMenuMarkup(optionKind) {
   if (optionKind === "kind") {
-    return PIM_SLICE_KINDS.map(([value, label]) => sliceOptionButton({
-      value,
-      label,
-      selected: state.pimWorkbench.sliceKind === value,
-      optionKind
-    })).join("");
+    return PIM_SLICE_KINDS.map(([value, label]) =>
+      sliceOptionButton({
+        value,
+        label,
+        selected: state.pimWorkbench.sliceKind === value,
+        optionKind,
+      }),
+    ).join("");
   }
-  const options = [{id: "", name: "Any"}, ...sliceItems()];
-  return options.map((item) => sliceOptionButton({
-    value: item.id,
-    label: item.id ? elementLabel(item) : item.name,
-    selected: (state.pimWorkbench.sliceValue || "") === item.id,
-    optionKind
-  })).join("");
+  const options = [{ id: "", name: "Any" }, ...sliceItems()];
+  return options
+    .map((item) =>
+      sliceOptionButton({
+        value: item.id,
+        label: item.id ? elementLabel(item) : item.name,
+        selected: (state.pimWorkbench.sliceValue || "") === item.id,
+        optionKind,
+      }),
+    )
+    .join("");
 }
 
 function pimSliceSelectMarkup(optionKind) {
@@ -888,7 +1217,7 @@ function pimSliceSelectMarkup(optionKind) {
     optionKind,
     open,
     label,
-    menuHtml: pimSliceMenuMarkup(optionKind)
+    menuHtml: pimSliceMenuMarkup(optionKind),
   });
 }
 
@@ -929,18 +1258,18 @@ export function renderPimWorkbenchSurface() {
     bodyHtml: renderBody(profile, representation),
     workbenchState: state.pimWorkbench,
     surfaceActiveClass: "pim-surface-active",
-    surfaceDockClass: "pim-surface-dock"
+    surfaceDockClass: "pim-surface-dock",
   });
 }
 
 function currentCenter() {
   const rect = el.canvasViewport?.getBoundingClientRect();
   if (!rect) {
-    return {x: 120, y: 120};
+    return { x: 120, y: 120 };
   }
   return {
     x: Math.round((rect.width / 2 - state.viewport.x) / state.viewport.scale),
-    y: Math.round((rect.height / 2 - state.viewport.y) / state.viewport.scale)
+    y: Math.round((rect.height / 2 - state.viewport.y) / state.viewport.scale),
   };
 }
 
@@ -964,7 +1293,7 @@ function connect(source, target, kind) {
     id: `e-${source.id}-${target.id}-${kind}-${Date.now()}`,
     sourceId: source.id,
     targetId: target.id,
-    kind
+    kind,
   };
   state.diagram.connections.push(edge);
   addConnectionToGraphAndActiveView(edge);
@@ -989,8 +1318,7 @@ function createPimElement(type) {
   switch (type) {
     case "Function": {
       node.meta.functionKind = node.meta.functionKind || "COMMAND_HANDLER";
-      const contract = addNode("FunctionContract", center.x - 260, center.y,
-          "Function Contract");
+      const contract = addNode("FunctionContract", center.x - 260, center.y, "Function Contract");
       contract.meta.contractVersion = "1.0.0";
       attachChildToParent(contract, node, "contract");
       break;
@@ -1005,8 +1333,9 @@ function createPimElement(type) {
     }
     case "EventType": {
       node.meta.semanticName ||= node.label;
-      const schema = elementsMatchingTypes(["Schema"])[0]
-          || addNode("Schema", center.x - 260, center.y, "Event Schema");
+      const schema =
+        elementsMatchingTypes(["Schema"])[0] ||
+        addNode("Schema", center.x - 260, center.y, "Event Schema");
       schema.meta.schemaKind ||= "EVENT";
       node.meta.schema = schema.id;
       connect(node, schema, "USES");
@@ -1015,11 +1344,9 @@ function createPimElement(type) {
     case "DataStore": {
       node.meta.storeKind ||= "DOCUMENT";
       node.meta.consistencyNeed ||= "EVENTUAL";
-      const model = addNode("DataModel", center.x - 220, center.y + 140,
-          "Data Model");
+      const model = addNode("DataModel", center.x - 220, center.y + 140, "Data Model");
       model.meta.dataModelKind = "ENTITY";
-      const access = addNode("AccessPattern", center.x + 220, center.y + 140,
-          "Access Pattern");
+      const access = addNode("AccessPattern", center.x + 220, center.y + 140, "Access Pattern");
       access.meta.patternName = "Primary lookup";
       attachChildToParent(model, node, "ownedDataModels");
       attachChildToParent(access, node, "accessPatterns");
@@ -1027,10 +1354,8 @@ function createPimElement(type) {
     }
     case "Workflow": {
       node.meta.workflowKind ||= "ORCHESTRATION";
-      const start = addNode("WorkflowState", center.x - 220, center.y + 140,
-          "Start");
-      const end = addNode("WorkflowState", center.x + 220, center.y + 140,
-          "End");
+      const start = addNode("WorkflowState", center.x - 220, center.y + 140, "Start");
+      const end = addNode("WorkflowState", center.x + 220, center.y + 140, "End");
       start.meta.stateKind = "TASK";
       end.meta.stateKind = "SUCCESS";
       end.meta.terminal = true;
@@ -1058,8 +1383,9 @@ function createPimElement(type) {
       break;
     case "DeploymentUnit": {
       node.meta.unitType ||= "SERVICE";
-      const env = elementsMatchingTypes(["Environment"])[0]
-          || addNode("Environment", center.x + 260, center.y, "Dev");
+      const env =
+        elementsMatchingTypes(["Environment"])[0] ||
+        addNode("Environment", center.x + 260, center.y, "Dev");
       env.meta.environmentClass ||= "DEV";
       node.meta.targetEnvironments = [env.id];
       connect(node, env, "DEPLOYS_TO");
@@ -1100,26 +1426,25 @@ function createRequiredRoot() {
   state.baseModel.architectureStyle ||= "EVENT_DRIVEN_SERVERLESS";
   state.baseModel.providerIndependent = true;
   const center = currentCenter();
-  const service = elementsMatchingTypes(["ServerlessService"])[0]
-      || addNode("ServerlessService", center.x - 280, center.y,
-          "Serverless Service");
+  const service =
+    elementsMatchingTypes(["ServerlessService"])[0] ||
+    addNode("ServerlessService", center.x - 280, center.y, "Serverless Service");
   service.meta.boundaryType ||= "CAPABILITY_BASED";
-  const fn = elementsMatchingTypes(["Function"])[0]
-      || addNode("Function", center.x, center.y, "Function");
+  const fn =
+    elementsMatchingTypes(["Function"])[0] || addNode("Function", center.x, center.y, "Function");
   fn.meta.functionKind ||= "COMMAND_HANDLER";
-  service.meta.ownsFunctions = [...new Set(
-      [...refIds(service.meta.ownsFunctions), fn.id])];
+  service.meta.ownsFunctions = [...new Set([...refIds(service.meta.ownsFunctions), fn.id])];
   connect(service, fn, "OWNS");
-  const env = elementsMatchingTypes(["Environment"])[0]
-      || addNode("Environment", center.x + 300, center.y - 90, "Dev");
+  const env =
+    elementsMatchingTypes(["Environment"])[0] ||
+    addNode("Environment", center.x + 300, center.y - 90, "Dev");
   env.meta.environmentClass ||= "DEV";
-  const unit = elementsMatchingTypes(["DeploymentUnit"])[0]
-      || addNode("DeploymentUnit", center.x + 300, center.y + 90,
-          "Deployment Unit");
+  const unit =
+    elementsMatchingTypes(["DeploymentUnit"])[0] ||
+    addNode("DeploymentUnit", center.x + 300, center.y + 90, "Deployment Unit");
   unit.meta.unitType ||= "SERVICE";
   unit.meta.contains = [...new Set([...refIds(unit.meta.contains), fn.id])];
-  unit.meta.targetEnvironments = [...new Set(
-      [...refIds(unit.meta.targetEnvironments), env.id])];
+  unit.meta.targetEnvironments = [...new Set([...refIds(unit.meta.targetEnvironments), env.id])];
   connect(unit, fn, "DEPLOYS");
   connect(unit, env, "DEPLOYS_TO");
   commitModelChange("Completed PIM root model");
@@ -1146,13 +1471,12 @@ function commitModelChange(message) {
     syncActiveViewFromVisibleGraph,
     saveCurrentTabGraphState,
     markModelDirty,
-    setStatus
+    setStatus,
   });
 }
 
 function updateField(rowId, field, rawValue, inputType = "text") {
-  const row = state.graph.elementsById.get(rowId)
-      || state.graph.relationshipsById.get(rowId);
+  const row = state.graph.elementsById.get(rowId) || state.graph.relationshipsById.get(rowId);
   if (!row) {
     return;
   }
@@ -1178,15 +1502,13 @@ function updateField(rowId, field, rawValue, inputType = "text") {
 
 function updateRootField(field, value) {
   state.baseModel ??= {};
-  state.baseModel[field] = field === "providerIndependent"
-      ? value !== "false" : value;
+  state.baseModel[field] = field === "providerIndependent" ? value !== "false" : value;
   commitModelChange(`Updated ${field}`);
 }
 
 function exportCsv(feature) {
   const rows = filteredRows(feature);
-  const columns = ["id", "eClass", "name",
-    ...(REGISTER_COLUMNS[feature] || [])];
+  const columns = ["id", "eClass", "name", ...(REGISTER_COLUMNS[feature] || [])];
   downloadWorkbenchCsv(`pim-${feature}.csv`, rows, columns, valueText);
 }
 
@@ -1202,8 +1524,12 @@ async function importCsv(feature, file) {
   const center = currentCenter();
   lines.forEach((line, index) => {
     const values = line.split(",");
-    const node = addNode(type, center.x + index * 34, center.y + index * 34,
-        `${type} ${index + 1}`);
+    const node = addNode(
+      type,
+      center.x + index * 34,
+      center.y + index * 34,
+      `${type} ${index + 1}`,
+    );
     headers.forEach((header, columnIndex) => {
       if (header && values[columnIndex] !== undefined) {
         node.meta[header] = values[columnIndex];
@@ -1230,8 +1556,7 @@ function bindSurfaceEvents() {
       setActiveRepresentation(mode);
       return;
     }
-    const edgeMode = target?.closest("[data-pim-edge-mode]")?.dataset
-        ?.pimEdgeMode;
+    const edgeMode = target?.closest("[data-pim-edge-mode]")?.dataset?.pimEdgeMode;
     if (edgeMode) {
       applyPimEdgeMode(edgeMode);
       return;
@@ -1250,8 +1575,7 @@ function bindSurfaceEvents() {
       createRequiredRoot();
       return;
     }
-    const exportFeature = target?.closest(
-        "[data-pim-export]")?.dataset?.pimExport;
+    const exportFeature = target?.closest("[data-pim-export]")?.dataset?.pimExport;
     if (exportFeature) {
       exportCsv(exportFeature);
       return;
@@ -1262,8 +1586,7 @@ function bindSurfaceEvents() {
       renderPimWorkbenchSurface();
       return;
     }
-    const sliceToggle = target?.closest("[data-pim-slice-toggle]")?.dataset
-        ?.pimSliceToggle;
+    const sliceToggle = target?.closest("[data-pim-slice-toggle]")?.dataset?.pimSliceToggle;
     if (sliceToggle) {
       pimSliceMenuOpen = pimSliceMenuOpen === sliceToggle ? "" : sliceToggle;
       renderPimWorkbenchSurface();
@@ -1284,8 +1607,10 @@ function bindSurfaceEvents() {
     }
   });
   host.addEventListener("change", (event) => {
-    const target = event.target instanceof HTMLInputElement
-    || event.target instanceof HTMLSelectElement ? event.target : null;
+    const target =
+      event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement
+        ? event.target
+        : null;
     if (!target) {
       return;
     }
@@ -1320,9 +1645,12 @@ function bindSurfaceEvents() {
       return;
     }
     if (target.dataset.pimField && target.dataset.pimRow) {
-      updateField(target.dataset.pimRow, target.dataset.pimField,
-          target.type === "checkbox" ? target.checked : target.value,
-          target.type);
+      updateField(
+        target.dataset.pimRow,
+        target.dataset.pimField,
+        target.type === "checkbox" ? target.checked : target.value,
+        target.type,
+      );
       return;
     }
     if (target.dataset.pimImport && target.files?.[0]) {
@@ -1330,8 +1658,7 @@ function bindSurfaceEvents() {
     }
   });
   host.addEventListener("input", (event) => {
-    const target = event.target instanceof HTMLInputElement ? event.target
-        : null;
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
     if (target?.dataset?.pimSearch !== undefined) {
       state.pimWorkbench.search = target.value;
       scheduleSearchRender();
@@ -1350,13 +1677,12 @@ export function initPimWorkbenchSurface({
   renderDiagram,
   renderPalette,
   openAttributePanel,
-  openConnectionPanel
+  openConnectionPanel,
 } = {}) {
   renderDiagramCallback = renderDiagram || renderDiagramCallback;
   renderPaletteCallback = renderPalette || renderPaletteCallback;
   openAttributePanelCallback = openAttributePanel || openAttributePanelCallback;
-  openConnectionPanelCallback = openConnectionPanel
-      || openConnectionPanelCallback;
+  openConnectionPanelCallback = openConnectionPanel || openConnectionPanelCallback;
   ensureSurface();
   bindSurfaceEvents();
 }

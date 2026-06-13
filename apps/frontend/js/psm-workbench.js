@@ -1,21 +1,21 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {escapeHtml} from './utils.js';
-import {getDefaultNode} from './diagram.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { escapeHtml } from "./utils.js";
+import { getDefaultNode } from "./diagram.js";
 import {
   activeView,
   addNodeToGraphAndActiveView,
   saveCurrentTabGraphState,
-  syncActiveViewFromVisibleGraph
-} from './graph-store.js';
+  syncActiveViewFromVisibleGraph,
+} from "./graph-store.js";
 import {
   modelingElementDefinition,
   modelingLevelConfig,
   modelingTypeMatches,
-  modelingViewDefinition
-} from './modeling-config-data.js';
-import {markModelDirty} from './model-save-ui.js';
-import {setStatus} from './status.js';
+  modelingViewDefinition,
+} from "./modeling-config-data.js";
+import { markModelDirty } from "./model-save-ui.js";
+import { setStatus } from "./status.js";
 import {
   activeWorkbenchRepresentation,
   applyWorkbenchEdgeMode,
@@ -36,8 +36,8 @@ import {
   renderWorkbenchSurfaceLayout,
   renderWorkbenchToolbar,
   setWorkbenchRepresentation,
-  STANDARD_EDGE_MODES
-} from './workbench-common.js';
+  STANDARD_EDGE_MODES,
+} from "./workbench-common.js";
 
 let surface = null;
 let bound = false;
@@ -52,7 +52,7 @@ const PSM_SLICE_KINDS = [
   ["", "All slices"],
   ["security", "Security"],
   ["production", "Production"],
-  ["lifecycle", "Lifecycle"]
+  ["lifecycle", "Lifecycle"],
 ];
 
 function scheduleSearchRender() {
@@ -77,7 +77,7 @@ const DEFAULT_REPRESENTATION_BY_PROFILE = {
   networking: "diagram",
   observability: "register",
   configuration: "register",
-  readiness: "board"
+  readiness: "board",
 };
 
 const DEFAULT_REGISTER_BY_PROFILE = {
@@ -92,7 +92,7 @@ const DEFAULT_REGISTER_BY_PROFILE = {
   networking: "VpcConfig",
   observability: "CloudWatchLogGroup",
   configuration: "EnvironmentConfig",
-  readiness: "ProductionReadinessAssessment"
+  readiness: "ProductionReadinessAssessment",
 };
 
 function safeArray(value) {
@@ -117,9 +117,10 @@ function activeProfile() {
   if (definition?.viewpoint) {
     return String(definition.viewpoint);
   }
-  const text = [activeView()?.id, activeView()?.name,
-    activeView()?.kind].filter(
-      Boolean).join(" ").toLowerCase();
+  const text = [activeView()?.id, activeView()?.name, activeView()?.kind]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
   for (const key of Object.keys(DEFAULT_REPRESENTATION_BY_PROFILE)) {
     if (text.includes(key)) {
       return key;
@@ -130,14 +131,19 @@ function activeProfile() {
 
 function activeRepresentation(profile) {
   const viewId = activeView()?.id || "psm";
-  return activeWorkbenchRepresentation(state.psmWorkbench, viewId, profile,
-      DEFAULT_REPRESENTATION_BY_PROFILE);
+  return activeWorkbenchRepresentation(
+    state.psmWorkbench,
+    viewId,
+    profile,
+    DEFAULT_REPRESENTATION_BY_PROFILE,
+  );
 }
 
 function activeRegister(profile) {
   const viewId = activeView()?.id || "psm";
-  return state.psmWorkbench.registerByViewId[viewId]
-      || DEFAULT_REGISTER_BY_PROFILE[profile] || "all";
+  return (
+    state.psmWorkbench.registerByViewId[viewId] || DEFAULT_REGISTER_BY_PROFILE[profile] || "all"
+  );
 }
 
 function resolveActiveRegister(profile = activeProfile()) {
@@ -147,7 +153,7 @@ function resolveActiveRegister(profile = activeProfile()) {
   }
   const available = new Set([
     ...rowsForActiveView().map((row) => String(row.eClass || "")),
-    ...viewTypes().map(String)
+    ...viewTypes().map(String),
   ]);
   return available.has(requested) ? requested : "all";
 }
@@ -160,8 +166,14 @@ function setActiveRegister(typeName) {
 
 function setActiveRepresentation(mode) {
   const viewId = activeView()?.id || "psm";
-  setWorkbenchRepresentation(state.psmWorkbench, viewId, mode,
-      renderPsmWorkbenchSurface, renderDiagramCallback, renderPaletteCallback);
+  setWorkbenchRepresentation(
+    state.psmWorkbench,
+    viewId,
+    mode,
+    renderPsmWorkbenchSurface,
+    renderDiagramCallback,
+    renderPaletteCallback,
+  );
 }
 
 function applyPsmEdgeMode(mode) {
@@ -172,7 +184,7 @@ function applyPsmEdgeMode(mode) {
     graph: state.graph,
     renderWorkbench: renderPsmWorkbenchSurface,
     renderDiagram: renderDiagramCallback,
-    renderPalette: renderPaletteCallback
+    renderPalette: renderPaletteCallback,
   });
 }
 
@@ -211,15 +223,18 @@ function refIds(value) {
 function typeMatchesAny(actual, expectedTypes) {
   const actualType = String(actual || "");
   return safeArray(expectedTypes).some((expected) =>
-      modelingTypeMatches("psm", expected, actualType));
+    modelingTypeMatches("psm", expected, actualType),
+  );
 }
 
 function fieldDefinition(type, fieldName) {
   try {
     const definition = modelingElementDefinition("psm", type);
-    return [...safeArray(definition?.attributes),
-      ...safeArray(definition?.references)].find((field) =>
-        field.name === fieldName) || null;
+    return (
+      [...safeArray(definition?.attributes), ...safeArray(definition?.references)].find(
+        (field) => field.name === fieldName,
+      ) || null
+    );
   } catch {
     return null;
   }
@@ -232,13 +247,23 @@ function viewTypes() {
 }
 
 function matchesSearch(row) {
-  const query = String(state.psmWorkbench.search || "").trim().toLowerCase();
+  const query = String(state.psmWorkbench.search || "")
+    .trim()
+    .toLowerCase();
   if (!query) {
     return true;
   }
-  return [row.id, row.eClass, row.name, row.label, row.logicalId,
-    ...Object.values(row).filter((value) => typeof value === "string")]
-  .join(" ").toLowerCase().includes(query);
+  return [
+    row.id,
+    row.eClass,
+    row.name,
+    row.label,
+    row.logicalId,
+    ...Object.values(row).filter((value) => typeof value === "string"),
+  ]
+    .join(" ")
+    .toLowerCase()
+    .includes(query);
 }
 
 function rowInSlice(row) {
@@ -251,16 +276,26 @@ function rowInSlice(row) {
     return !value || String(row.lifecycleStatus || "") === value;
   }
   if (kind === "security") {
-    return Boolean(row.encryptionRequired || row.encrypted
-        || row.authRequired || row.publicAccessMode === "BLOCK"
-        || row.principal || row.role || row.kmsKey
-        || /iam|kms|secret|ssm|cognito|authorizer|security/i.test(String(
-            row.eClass || "")));
+    return Boolean(
+      row.encryptionRequired ||
+        row.encrypted ||
+        row.authRequired ||
+        row.publicAccessMode === "BLOCK" ||
+        row.principal ||
+        row.role ||
+        row.kmsKey ||
+        /iam|kms|secret|ssm|cognito|authorizer|security/i.test(String(row.eClass || "")),
+    );
   }
   if (kind === "production") {
-    return Boolean(row.productionCritical || row.productionMode
-        || row.retainInProduction || row.deletionProtectionEnabled
-        || row.backupEnabled || row.pointInTimeRecoveryEnabled);
+    return Boolean(
+      row.productionCritical ||
+        row.productionMode ||
+        row.retainInProduction ||
+        row.deletionProtectionEnabled ||
+        row.backupEnabled ||
+        row.pointInTimeRecoveryEnabled,
+    );
   }
   return true;
 }
@@ -272,16 +307,18 @@ function rowsForActiveView() {
       return true;
     }
     const type = row.eClass || row.type;
-    return [...allowed].some((expected) =>
-        modelingTypeMatches("psm", expected, type));
+    return [...allowed].some((expected) => modelingTypeMatches("psm", expected, type));
   });
   const filtered = rows.filter(matchesSearch).filter(rowInSlice);
   const missingFiltered = state.psmWorkbench.missingOnly
-      ? filtered.filter((row) => missingRequiredFields(row).length) : filtered;
+    ? filtered.filter((row) => missingRequiredFields(row).length)
+    : filtered;
   const sortKey = state.psmWorkbench.sortKey || "name";
-  return missingFiltered.sort((a, b) => valueText(a?.[sortKey]
-      || elementLabel(a)).localeCompare(valueText(b?.[sortKey]
-      || elementLabel(b))));
+  return missingFiltered.sort((a, b) =>
+    valueText(a?.[sortKey] || elementLabel(a)).localeCompare(
+      valueText(b?.[sortKey] || elementLabel(b)),
+    ),
+  );
 }
 
 function registerRows(profile = activeProfile()) {
@@ -294,17 +331,26 @@ function registerRows(profile = activeProfile()) {
 }
 
 function registerTypeOptions(profile = activeProfile()) {
-  const fromRows = [...new Set(rowsForActiveView().map((row) =>
-      String(row.eClass || "")).filter(Boolean))];
+  const fromRows = [
+    ...new Set(
+      rowsForActiveView()
+        .map((row) => String(row.eClass || ""))
+        .filter(Boolean),
+    ),
+  ];
   const fromView = [...new Set(viewTypes().map(String).filter(Boolean))];
   const types = (fromRows.length ? fromRows : fromView).sort((left, right) =>
-      left.localeCompare(right));
+    left.localeCompare(right),
+  );
   const active = resolveActiveRegister(profile);
   return [
-    `<option value="all"${active === "all" ? " selected"
-        : ""}>All Visible Types</option>`,
-    ...types.map((type) => `<option value="${escapeHtml(type)}"${
-        active === type ? " selected" : ""}>${escapeHtml(type)}</option>`)
+    `<option value="all"${active === "all" ? " selected" : ""}>All Visible Types</option>`,
+    ...types.map(
+      (type) =>
+        `<option value="${escapeHtml(type)}"${
+          active === type ? " selected" : ""
+        }>${escapeHtml(type)}</option>`,
+    ),
   ].join("");
 }
 
@@ -313,48 +359,62 @@ function columnsForRows(rows) {
   const preferred = ["name", "logicalId", "physicalName"];
   const configured = rows.flatMap((row) => {
     try {
-      return safeArray(modelingElementDefinition("psm", row.eClass)
-          ?.visibleFields);
+      return safeArray(modelingElementDefinition("psm", row.eClass)?.visibleFields);
     } catch {
       return [];
     }
   });
-  const extras = ["stack", "role", "kmsKey", "runtime", "timeoutSeconds",
-    "memorySizeMb", "billingMode", "publicAccessMode", "retentionInDays",
-    "productionCritical"];
-  return [...new Set([...preferred, ...configured, ...extras])].filter(
-      (column) => rows.some((row) => row[column] !== undefined)
-          || safeArray(definition?.elementTypes).length).slice(0, 12);
+  const extras = [
+    "stack",
+    "role",
+    "kmsKey",
+    "runtime",
+    "timeoutSeconds",
+    "memorySizeMb",
+    "billingMode",
+    "publicAccessMode",
+    "retentionInDays",
+    "productionCritical",
+  ];
+  return [...new Set([...preferred, ...configured, ...extras])]
+    .filter(
+      (column) =>
+        rows.some((row) => row[column] !== undefined) || safeArray(definition?.elementTypes).length,
+    )
+    .slice(0, 12);
 }
 
 function controlForField(row, field) {
   const definition = fieldDefinition(row.eClass, field) || {};
   const value = row[field];
   if (definition.readonly || field === "id") {
-    return `<span class="cim-cell-readonly">${escapeHtml(
-        valueText(value))}</span>`;
+    return `<span class="cim-cell-readonly">${escapeHtml(valueText(value))}</span>`;
   }
-  if (definition.kind === "reference" || Array.isArray(value)
-      || (value && typeof value === "object")) {
+  if (
+    definition.kind === "reference" ||
+    Array.isArray(value) ||
+    (value && typeof value === "object")
+  ) {
     return `<span class="cim-ref-cell">${escapeHtml(valueText(value))}</span>`;
   }
   if (definition.fieldType === "boolean" || typeof value === "boolean") {
     return `<input class="cim-table-check" data-psm-field="${escapeHtml(field)}"
-        data-psm-row="${escapeHtml(row.id)}" type="checkbox" ${
-        value ? "checked" : ""}>`;
+        data-psm-row="${escapeHtml(row.id)}" type="checkbox" ${value ? "checked" : ""}>`;
   }
   if (definition.fieldType === "select" && Array.isArray(definition.options)) {
     return `<select class="cim-table-input" data-psm-field="${escapeHtml(field)}"
-        data-psm-row="${escapeHtml(row.id)}"><option value=""></option>${
-        definition.options.map((option) => `<option value="${escapeHtml(option)}"
-          ${String(value || "") === String(option) ? "selected" : ""}>${
-            escapeHtml(option)}</option>`).join("")}</select>`;
+        data-psm-row="${escapeHtml(row.id)}"><option value=""></option>${definition.options
+          .map(
+            (option) => `<option value="${escapeHtml(option)}"
+          ${String(value || "") === String(option) ? "selected" : ""}>${escapeHtml(
+            option,
+          )}</option>`,
+          )
+          .join("")}</select>`;
   }
-  const type = definition.fieldType === "number" || typeof value === "number"
-      ? "number" : "text";
+  const type = definition.fieldType === "number" || typeof value === "number" ? "number" : "text";
   return `<input class="cim-table-input" data-psm-field="${escapeHtml(field)}"
-      data-psm-row="${escapeHtml(row.id)}" type="${type}" value="${escapeHtml(
-      valueText(value))}">`;
+      data-psm-row="${escapeHtml(row.id)}" type="${type}" value="${escapeHtml(valueText(value))}">`;
 }
 
 function missingRequiredFields(row) {
@@ -364,26 +424,31 @@ function missingRequiredFields(row) {
   } catch {
     return [];
   }
-  return [...safeArray(definition?.attributes),
-    ...safeArray(definition?.references)].filter((field) =>
-      field.required && !field.containment && !valueText(row[field]).trim())
-  .map((field) => field.name);
+  return [...safeArray(definition?.attributes), ...safeArray(definition?.references)]
+    .filter((field) => field.required && !field.containment && !valueText(row[field]).trim())
+    .map((field) => field.name);
 }
 
 function rowBadge(row) {
   const missing = missingRequiredFields(row);
-  return `<span class="cim-type-badge">${escapeHtml(
-      row.eClass || "PSM")}</span>${
-      missing.length ? `<span class="cim-missing-badge" title="${escapeHtml(
-          missing.join(", "))}">${missing.length}</span>` : ""}`;
+  return `<span class="cim-type-badge">${escapeHtml(row.eClass || "PSM")}</span>${
+    missing.length
+      ? `<span class="cim-missing-badge" title="${escapeHtml(
+          missing.join(", "),
+        )}">${missing.length}</span>`
+      : ""
+  }`;
 }
 
 function exportCsv(profile = activeProfile()) {
   const rows = registerRows(profile);
   const columns = ["id", "eClass", ...columnsForRows(rows)];
   downloadWorkbenchCsv(
-      `psm-${resolveActiveRegister(profile).toLowerCase()}.csv`,
-      rows, columns, valueText);
+    `psm-${resolveActiveRegister(profile).toLowerCase()}.csv`,
+    rows,
+    columns,
+    valueText,
+  );
 }
 
 function activeAddType(profile = activeProfile()) {
@@ -399,14 +464,14 @@ function renderRegister(profile) {
   const columns = columnsForRows(rows);
   const addType = activeAddType(profile);
   const toolbarHtml = renderWorkbenchToolbar([
-    `<select class="cim-select" data-psm-register>${registerTypeOptions(
-        profile)}</select>`,
+    `<select class="cim-select" data-psm-register>${registerTypeOptions(profile)}</select>`,
     `<button class="cim-action cim-action-primary" data-psm-add-type="${escapeHtml(
-        addType)}" type="button">Add ${escapeHtml(addType)}</button>`,
+      addType,
+    )}" type="button">Add ${escapeHtml(addType)}</button>`,
     `<button class="cim-action" data-psm-export type="button">Export CSV</button>`,
     `<label class="cim-action cim-file-action">Import CSV
       <input class="hidden" data-psm-import type="file" accept=".csv,text/csv">
-    </label>`
+    </label>`,
   ]);
   return renderWorkbenchRegister({
     typeKey: "psm",
@@ -416,7 +481,7 @@ function renderRegister(profile) {
     getLabel: elementLabel,
     getBadgeHtml: rowBadge,
     renderCell: controlForField,
-    emptyText: "No PSM elements in this view."
+    emptyText: "No PSM elements in this view.",
   });
 }
 
@@ -424,12 +489,11 @@ function renderMatrix() {
   const rows = rowsForActiveView();
   const rels = relationships();
   const visibleIds = new Set(rows.map((row) => row.id));
-  const scopedRels = rels.filter((rel) => visibleIds.has(rel.sourceElementId)
-      || visibleIds.has(rel.targetElementId));
-  const sources = rows.filter((row) => scopedRels.some((rel) =>
-      rel.sourceElementId === row.id));
-  const targets = rows.filter((row) => scopedRels.some((rel) =>
-      rel.targetElementId === row.id));
+  const scopedRels = rels.filter(
+    (rel) => visibleIds.has(rel.sourceElementId) || visibleIds.has(rel.targetElementId),
+  );
+  const sources = rows.filter((row) => scopedRels.some((rel) => rel.sourceElementId === row.id));
+  const targets = rows.filter((row) => scopedRels.some((rel) => rel.targetElementId === row.id));
   return renderWorkbenchMatrixSection({
     title: "Resource Connectors",
     rows: sources,
@@ -439,9 +503,10 @@ function renderMatrix() {
     getColumnLabel: elementLabel,
     getColumnMeta: (column) => column.eClass || "",
     getCellHtml: (row, column) => {
-      const rel = scopedRels.find((candidate) =>
-          candidate.sourceElementId === row.id
-          && candidate.targetElementId === column.id);
+      const rel = scopedRels.find(
+        (candidate) =>
+          candidate.sourceElementId === row.id && candidate.targetElementId === column.id,
+      );
       if (!rel) {
         return `<td></td>`;
       }
@@ -450,19 +515,36 @@ function renderMatrix() {
           data-psm-open-relationship="${escapeHtml(rel.id)}"
           type="button">${escapeHtml(label)}</button></td>`;
     },
-    emptyText: "No connectors in this view."
+    emptyText: "No connectors in this view.",
   });
 }
 
 function renderBoard() {
   const rows = rowsForActiveView();
   const groups = [
-    ["Blocking", (row) => Boolean(row.productionBlocking || row.blocking
-        || String(row.severity || "").toUpperCase() === "BLOCKER")],
-    ["Open", (row) => !/ready|complete|accepted|passed/i.test(String(
-        row.lifecycleStatus || row.readinessStatus || row.status || ""))],
-    ["Accepted / Passed", (row) => /ready|complete|accepted|passed/i.test(
-        String(row.lifecycleStatus || row.readinessStatus || row.status || ""))]
+    [
+      "Blocking",
+      (row) =>
+        Boolean(
+          row.productionBlocking ||
+            row.blocking ||
+            String(row.severity || "").toUpperCase() === "BLOCKER",
+        ),
+    ],
+    [
+      "Open",
+      (row) =>
+        !/ready|complete|accepted|passed/i.test(
+          String(row.lifecycleStatus || row.readinessStatus || row.status || ""),
+        ),
+    ],
+    [
+      "Accepted / Passed",
+      (row) =>
+        /ready|complete|accepted|passed/i.test(
+          String(row.lifecycleStatus || row.readinessStatus || row.status || ""),
+        ),
+    ],
   ];
   return renderWorkbenchBoard({
     lanes: groups.map(([group, predicate]) => {
@@ -470,30 +552,32 @@ function renderBoard() {
       return {
         title: group,
         count: items.length,
-        cards: items.map((row) => renderWorkbenchBoardCard({
-          typeKey: "psm",
-          id: row.id,
-          title: elementLabel(row),
-          meta: row.eClass || "",
-          body: row.severity || row.readinessStatus || row.lifecycleStatus || ""
-        })),
-        emptyText: "No items"
+        cards: items.map((row) =>
+          renderWorkbenchBoardCard({
+            typeKey: "psm",
+            id: row.id,
+            title: elementLabel(row),
+            meta: row.eClass || "",
+            body: row.severity || row.readinessStatus || row.lifecycleStatus || "",
+          }),
+        ),
+        emptyText: "No items",
       };
-    })
+    }),
   });
 }
 
 function renderDetail() {
   const selected = state.selectedNodeId
-      ? state.graph?.elementsById?.get(state.selectedNodeId) : null;
-  const row = selected || registerRows(activeProfile())[0]
-      || rowsForActiveView()[0];
+    ? state.graph?.elementsById?.get(state.selectedNodeId)
+    : null;
+  const row = selected || registerRows(activeProfile())[0] || rowsForActiveView()[0];
   if (!row) {
     return renderWorkbenchDetail({
       typeKey: "psm",
       row: null,
       valueText,
-      emptyText: "No PSM elements in this view."
+      emptyText: "No PSM elements in this view.",
     });
   }
   return renderWorkbenchDetail({
@@ -505,9 +589,9 @@ function renderDetail() {
     valueText,
     stats: [
       ["missing required", missingRequiredFields(row).join(", ") || "none"],
-      ["references", Object.values(row).flatMap(refIds).length]
+      ["references", Object.values(row).flatMap(refIds).length],
     ],
-    emptyText: "No PSM elements in this view."
+    emptyText: "No PSM elements in this view.",
   });
 }
 
@@ -523,34 +607,31 @@ function renderDashboard() {
     ["Connectors", relationships().length],
     ["Stacks", stacks],
     ["Stages", stages],
-    ["Missing", elements().filter((item) =>
-        missingRequiredFields(item).length).length]
+    ["Missing", elements().filter((item) => missingRequiredFields(item).length).length],
   ];
-  const missing = [
-    stacks ? "" : "stack",
-    stages ? "" : "stage"
-  ].filter(Boolean);
+  const missing = [stacks ? "" : "stack", stages ? "" : "stage"].filter(Boolean);
   const foundationHtml = `<section class="cim-root-form">
     <div class="cim-section-title">Model Foundation</div>
-    ${missing.length ? `<div class="cim-alert">Missing required foundation:
-      ${escapeHtml(missing.join(", "))}</div>` : `<div class="cim-ok">
-      Foundation requirements are satisfied.</div>`}
+    ${
+      missing.length
+        ? `<div class="cim-alert">Missing required foundation:
+      ${escapeHtml(missing.join(", "))}</div>`
+        : `<div class="cim-ok">
+      Foundation requirements are satisfied.</div>`
+    }
     <label class="cim-form-field">
       <span>stack</span>
-      <input readonly type="text" value="${escapeHtml(
-      stacks ? "Configured" : "")}">
+      <input readonly type="text" value="${escapeHtml(stacks ? "Configured" : "")}">
     </label>
     <label class="cim-form-field">
       <span>stage</span>
-      <input readonly type="text" value="${escapeHtml(
-      stages ? "Configured" : "")}">
+      <input readonly type="text" value="${escapeHtml(stages ? "Configured" : "")}">
     </label>
   </section>`;
   const actionsHtml = `<section class="cim-view-entry-list">
     <div class="cim-section-title">Actions</div>
     <button class="cim-view-entry" data-psm-create-root type="button">
-      <span>${stacks && stages ? "Refresh PSM Foundation"
-      : "Create PSM Foundation"}</span>
+      <span>${stacks && stages ? "Refresh PSM Foundation" : "Create PSM Foundation"}</span>
       <strong>foundation</strong>
     </button>
     <button class="cim-view-entry" data-psm-mode="diagram" type="button">
@@ -561,7 +642,7 @@ function renderDashboard() {
   return renderWorkbenchDashboard({
     metrics: cards,
     primaryHtml: foundationHtml,
-    secondaryHtml: actionsHtml
+    secondaryHtml: actionsHtml,
   });
 }
 
@@ -573,18 +654,21 @@ function renderControls(profile, representation) {
     profile,
     representation,
     workbenchState: state.psmWorkbench,
-    sliceControlsHtml: `${psmSliceSelectMarkup("kind")}${psmSliceSelectMarkup(
-        "value")}`,
+    sliceControlsHtml: `${psmSliceSelectMarkup("kind")}${psmSliceSelectMarkup("value")}`,
     edgeModes: STANDARD_EDGE_MODES,
-    searchPlaceholder: "Search PSM"
+    searchPlaceholder: "Search PSM",
   });
 }
 
 function sliceItems() {
   if (state.psmWorkbench.sliceKind === "lifecycle") {
-    return [...new Set(elements().map((item) =>
-        String(item.lifecycleStatus || "")).filter(Boolean))]
-    .map((status) => ({id: status, name: status}));
+    return [
+      ...new Set(
+        elements()
+          .map((item) => String(item.lifecycleStatus || ""))
+          .filter(Boolean),
+      ),
+    ].map((status) => ({ id: status, name: status }));
   }
   return [];
 }
@@ -602,32 +686,38 @@ function psmSliceValueLabel() {
   return item ? elementLabel(item) : value;
 }
 
-function sliceOptionButton({value, label, selected, optionKind}) {
+function sliceOptionButton({ value, label, selected, optionKind }) {
   return renderWorkbenchSliceOption({
     typeKey: "psm",
     optionKind,
     value,
     label,
-    selected
+    selected,
   });
 }
 
 function psmSliceMenuMarkup(optionKind) {
   if (optionKind === "kind") {
-    return PSM_SLICE_KINDS.map(([value, label]) => sliceOptionButton({
-      value,
-      label,
-      selected: state.psmWorkbench.sliceKind === value,
-      optionKind
-    })).join("");
+    return PSM_SLICE_KINDS.map(([value, label]) =>
+      sliceOptionButton({
+        value,
+        label,
+        selected: state.psmWorkbench.sliceKind === value,
+        optionKind,
+      }),
+    ).join("");
   }
-  const options = [{id: "", name: "Any"}, ...sliceItems()];
-  return options.map((item) => sliceOptionButton({
-    value: item.id,
-    label: item.id ? elementLabel(item) : item.name,
-    selected: (state.psmWorkbench.sliceValue || "") === item.id,
-    optionKind
-  })).join("");
+  const options = [{ id: "", name: "Any" }, ...sliceItems()];
+  return options
+    .map((item) =>
+      sliceOptionButton({
+        value: item.id,
+        label: item.id ? elementLabel(item) : item.name,
+        selected: (state.psmWorkbench.sliceValue || "") === item.id,
+        optionKind,
+      }),
+    )
+    .join("");
 }
 
 function psmSliceSelectMarkup(optionKind) {
@@ -639,7 +729,7 @@ function psmSliceSelectMarkup(optionKind) {
     optionKind,
     open,
     label,
-    menuHtml: psmSliceMenuMarkup(optionKind)
+    menuHtml: psmSliceMenuMarkup(optionKind),
   });
 }
 
@@ -687,7 +777,7 @@ export function renderPsmWorkbenchSurface() {
     workbenchState: state.psmWorkbench,
     surfaceActiveClass: "psm-surface-active",
     surfaceDockClass: "psm-surface-dock",
-    hasLevelConfig
+    hasLevelConfig,
   });
 }
 
@@ -701,7 +791,7 @@ function commitModelChange(message) {
     syncActiveViewFromVisibleGraph,
     saveCurrentTabGraphState,
     markModelDirty,
-    setStatus
+    setStatus,
   });
 }
 
@@ -733,11 +823,11 @@ function updateField(rowId, field, rawValue, inputType = "text") {
 function currentCenter() {
   const rect = el.canvasViewport?.getBoundingClientRect();
   if (!rect) {
-    return {x: 120, y: 120};
+    return { x: 120, y: 120 };
   }
   return {
     x: Math.round((rect.width / 2 - state.viewport.x) / state.viewport.scale),
-    y: Math.round((rect.height / 2 - state.viewport.y) / state.viewport.scale)
+    y: Math.round((rect.height / 2 - state.viewport.y) / state.viewport.scale),
   };
 }
 
@@ -798,10 +888,12 @@ function createPsmElement(type) {
 
 function createRequiredRoot() {
   const center = currentCenter();
-  const stack = elements().find((row) => row.eClass === "SamStack")
-      || addNode("SamStack", center.x - 140, center.y, "Main Stack");
-  const stage = elements().find((row) => row.eClass === "AwsStage")
-      || addNode("AwsStage", center.x + 140, center.y, "Dev Stage");
+  const stack =
+    elements().find((row) => row.eClass === "SamStack") ||
+    addNode("SamStack", center.x - 140, center.y, "Main Stack");
+  const stage =
+    elements().find((row) => row.eClass === "AwsStage") ||
+    addNode("AwsStage", center.x + 140, center.y, "Dev Stage");
   const deployedStacks = new Set(refIds(stage.deploysStacks));
   deployedStacks.add(stack.id);
   stage.deploysStacks = [...deployedStacks];
@@ -824,8 +916,12 @@ async function importCsv(file, profile = activeProfile()) {
   lines.forEach((line, index) => {
     const values = line.split(",");
     const center = currentCenter();
-    const node = addNode(type, center.x + index * 34, center.y + index * 34,
-        `${type} ${index + 1}`);
+    const node = addNode(
+      type,
+      center.x + index * 34,
+      center.y + index * 34,
+      `${type} ${index + 1}`,
+    );
     headers.forEach((header, columnIndex) => {
       if (header && values[columnIndex] !== undefined) {
         node.meta[header] = values[columnIndex];
@@ -852,8 +948,7 @@ function bindSurfaceEvents() {
       setActiveRepresentation(mode);
       return;
     }
-    const edgeMode = target?.closest("[data-psm-edge-mode]")?.dataset
-        ?.psmEdgeMode;
+    const edgeMode = target?.closest("[data-psm-edge-mode]")?.dataset?.psmEdgeMode;
     if (edgeMode) {
       applyPsmEdgeMode(edgeMode);
       return;
@@ -868,8 +963,8 @@ function bindSurfaceEvents() {
       openAttributePanelCallback?.(openId);
       return;
     }
-    const openRelationship = target?.closest(
-        "[data-psm-open-relationship]")?.dataset?.psmOpenRelationship;
+    const openRelationship = target?.closest("[data-psm-open-relationship]")?.dataset
+      ?.psmOpenRelationship;
     if (openRelationship) {
       openConnectionPanelCallback?.(openRelationship);
       return;
@@ -888,8 +983,7 @@ function bindSurfaceEvents() {
       renderPsmWorkbenchSurface();
       return;
     }
-    const sliceToggle = target?.closest("[data-psm-slice-toggle]")?.dataset
-        ?.psmSliceToggle;
+    const sliceToggle = target?.closest("[data-psm-slice-toggle]")?.dataset?.psmSliceToggle;
     if (sliceToggle) {
       psmSliceMenuOpen = psmSliceMenuOpen === sliceToggle ? "" : sliceToggle;
       renderPsmWorkbenchSurface();
@@ -910,8 +1004,10 @@ function bindSurfaceEvents() {
     }
   });
   host.addEventListener("change", (event) => {
-    const target = event.target instanceof HTMLInputElement
-    || event.target instanceof HTMLSelectElement ? event.target : null;
+    const target =
+      event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement
+        ? event.target
+        : null;
     if (!target) {
       return;
     }
@@ -941,9 +1037,12 @@ function bindSurfaceEvents() {
       return;
     }
     if (target.dataset.psmField && target.dataset.psmRow) {
-      updateField(target.dataset.psmRow, target.dataset.psmField,
-          target.type === "checkbox" ? target.checked : target.value,
-          target.type);
+      updateField(
+        target.dataset.psmRow,
+        target.dataset.psmField,
+        target.type === "checkbox" ? target.checked : target.value,
+        target.type,
+      );
       return;
     }
     if (target.dataset.psmImport !== undefined && target.files?.[0]) {
@@ -951,8 +1050,7 @@ function bindSurfaceEvents() {
     }
   });
   host.addEventListener("input", (event) => {
-    const target = event.target instanceof HTMLInputElement ? event.target
-        : null;
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
     if (target?.dataset?.psmSearch !== undefined) {
       state.psmWorkbench.search = target.value;
       scheduleSearchRender();
@@ -971,13 +1069,12 @@ export function initPsmWorkbenchSurface({
   renderDiagram,
   renderPalette,
   openAttributePanel,
-  openConnectionPanel
+  openConnectionPanel,
 } = {}) {
   renderDiagramCallback = renderDiagram || renderDiagramCallback;
   renderPaletteCallback = renderPalette || renderPaletteCallback;
   openAttributePanelCallback = openAttributePanel || openAttributePanelCallback;
-  openConnectionPanelCallback = openConnectionPanel
-      || openConnectionPanelCallback;
+  openConnectionPanelCallback = openConnectionPanel || openConnectionPanelCallback;
   ensureSurface();
   bindSurfaceEvents();
 }

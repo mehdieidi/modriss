@@ -242,4 +242,3 @@ context AWSPSM!LambdaFunctionUrl {
     message : 'Production-scoped Lambda function URL for ' + self.`function`.resourceLabel() + ' has authType NONE. Fix: use AWS_IAM or expose the function through an authenticated API Gateway route.'
   }
 }
-

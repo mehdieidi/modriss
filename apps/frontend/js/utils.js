@@ -6,15 +6,15 @@ export function genId(prefix = "n") {
 
 export function escapeHtml(value) {
   return String(value)
-  .replaceAll("&", "&amp;")
-  .replaceAll("<", "&lt;")
-  .replaceAll(">", "&gt;")
-  .replaceAll('"', "&quot;")
-  .replaceAll("'", "&#39;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 export function emptyDiagram(type) {
-  return {type, name: `${type}-model`, nodes: [], connections: []};
+  return { type, name: `${type}-model`, nodes: [], connections: [] };
 }
 
 export function autoLayoutIfStacked(nodes) {
@@ -27,8 +27,7 @@ export function autoLayoutIfStacked(nodes) {
   }
   const positions = new Set(nodes.map((n) => `${n.x},${n.y}`));
   const allZero = nodes.every((n) => n.x === 0 && n.y === 0);
-  if (!allZero && positions.size > nodes.length
-      * DUPLICATE_POSITION_THRESHOLD) {
+  if (!allZero && positions.size > nodes.length * DUPLICATE_POSITION_THRESHOLD) {
     return nodes;
   }
   const cols = Math.ceil(Math.sqrt(nodes.length));
@@ -50,8 +49,7 @@ export function autoLayout(nodes, connections = []) {
 
   const nodeSet = new Set(nodes.map((n) => n.id));
   const validConns = connections.filter(
-      (c) => nodeSet.has(c.sourceId) && nodeSet.has(c.targetId) && c.sourceId
-          !== c.targetId
+    (c) => nodeSet.has(c.sourceId) && nodeSet.has(c.targetId) && c.sourceId !== c.targetId,
   );
 
   // Assign column depth via longest-path edge relaxation (handles DAGs and cycles)

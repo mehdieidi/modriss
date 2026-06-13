@@ -1,0 +1,33 @@
+{
+  "excludedDirectories": [
+    ".git",
+    ".idea",
+    ".vscode",
+    "node_modules",
+    "storage",
+    "target",
+    "vendor"
+  ],
+  "normalizedExtensions": [
+    ".ecore",
+    ".egl",
+    ".emf",
+    ".eol",
+    ".egx",
+    ".etl",
+    ".evl",
+    ".properties",
+    ".py",
+    ".sql",
+    ".xmi"
+  ],
+  "prettierPatterns": [
+    "**/*.css",
+    "**/*.html",
+    "**/*.js",
+    "**/*.json",
+    "**/*.md",
+    "**/*.yaml",
+    "**/*.yml"
+  ]
+}

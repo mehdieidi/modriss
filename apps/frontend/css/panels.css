@@ -74,10 +74,11 @@
   z-index: 2;
   padding-bottom: 10px;
   background: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--glass-pane-bg) 96%, transparent),
-      color-mix(in srgb, var(--glass-pane-bg) 82%, transparent) 72%,
-      transparent);
+    to bottom,
+    color-mix(in srgb, var(--glass-pane-bg) 96%, transparent),
+    color-mix(in srgb, var(--glass-pane-bg) 82%, transparent) 72%,
+    transparent
+  );
 }
 
 .model-tree-filter-input {
@@ -256,7 +257,10 @@
   letter-spacing: 0.07em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color var(--transition), background var(--transition), border-color var(--transition);
+  transition:
+    color var(--transition),
+    background var(--transition),
+    border-color var(--transition);
 }
 
 .attr-panel-close:hover {
@@ -495,7 +499,9 @@
   background: color-mix(in srgb, var(--input-bg) 88%, var(--surface-contrast) 12%);
   color: var(--text);
   font: 500 12px/1.35 var(--font-ui);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .attr-field input[type="text"]:focus,

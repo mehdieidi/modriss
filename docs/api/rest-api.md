@@ -30,9 +30,7 @@ Errors are returned as JSON:
   "message": "Request validation failed.",
   "status": 400,
   "timestamp": "2026-06-05T12:00:00Z",
-  "issues": [
-    "field: detail"
-  ]
+  "issues": ["field: detail"]
 }
 ```
 
@@ -43,7 +41,7 @@ project permission failures, `404` for missing records, `409` for conflicts such
 ## Auth
 
 | Method | Path                 | Body                               | Response       |
-|--------|----------------------|------------------------------------|----------------|
+| ------ | -------------------- | ---------------------------------- | -------------- |
 | `POST` | `/api/auth/register` | `email`, `password`, `displayName` | `AuthResponse` |
 | `POST` | `/api/auth/login`    | `email`, `password`                | `AuthResponse` |
 | `GET`  | `/api/auth/me`       | none                               | `UserDto`      |
@@ -56,7 +54,7 @@ characters.
 ## Projects
 
 | Method   | Path                                  | Query/Body                              | Response          |
-|----------|---------------------------------------|-----------------------------------------|-------------------|
+| -------- | ------------------------------------- | --------------------------------------- | ----------------- |
 | `GET`    | `/api/projects`                       | none                                    | `ProjectRecord[]` |
 | `POST`   | `/api/projects`                       | `name`, `description`                   | `ProjectRecord`   |
 | `GET`    | `/api/projects/{id}`                  | none                                    | `ProjectRecord`   |
@@ -75,7 +73,7 @@ members. Editors can update project-owned models and artifacts.
 Model-level routes use `{level}` with one of `cim`, `pim`, or `psm`.
 
 | Method   | Path                         | Query/Body                               | Response           |
-|----------|------------------------------|------------------------------------------|--------------------|
+| -------- | ---------------------------- | ---------------------------------------- | ------------------ |
 | `GET`    | `/api/{level}`               | optional `projectId` query               | `ModelSummary[]`   |
 | `POST`   | `/api/{level}`               | `name`, `projectId`, `model`             | `ModelSummary`     |
 | `GET`    | `/api/{level}/{id}`          | none                                     | `ModelRecord`      |
@@ -96,7 +94,7 @@ default is `json`. The default upload limit is 20 MiB unless configured otherwis
 ## Transformations
 
 | Method | Path                                    | Body                                | Response                                 |
-|--------|-----------------------------------------|-------------------------------------|------------------------------------------|
+| ------ | --------------------------------------- | ----------------------------------- | ---------------------------------------- |
 | `POST` | `/api/transformations/cim-to-pim`       | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model`    |
 | `POST` | `/api/transformations/pim-to-psm`       | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model`    |
 | `POST` | `/api/transformations/psm-to-artifact`  | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `artifact` |
@@ -109,7 +107,7 @@ Transformation responses currently return synchronously with `success: true` and
 ## Artifacts
 
 | Method | Path                          | Query/Body                 | Response                  |
-|--------|-------------------------------|----------------------------|---------------------------|
+| ------ | ----------------------------- | -------------------------- | ------------------------- |
 | `GET`  | `/api/artifact`               | required `projectId` query | `ArtifactRecord[]`        |
 | `GET`  | `/api/artifact/{id}`          | none                       | `ArtifactRecord`          |
 | `GET`  | `/api/artifact/{id}/file`     | required `path` query      | `text/plain` file content |
@@ -122,7 +120,7 @@ paths.
 ## Modeling And Layout
 
 | Method | Path                                                                                 | Body            | Response                         |
-|--------|--------------------------------------------------------------------------------------|-----------------|----------------------------------|
+| ------ | ------------------------------------------------------------------------------------ | --------------- | -------------------------------- |
 | `GET`  | `/api/modeling/config`                                                               | none            | modeling palette and UI metadata |
 | `POST` | `/api/layout`                                                                        | `LayoutRequest` | `LayoutResponse`                 |
 | `POST` | `/api/{level}/{modelId}/views/{viewId}/layout?force=false&strategy=SPACIOUS_LAYERED` | none            | Persisted lazy view layout       |

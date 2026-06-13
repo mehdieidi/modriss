@@ -19,7 +19,11 @@
   color: var(--text);
   font: 600 12px/1.2 var(--font-ui);
   cursor: pointer;
-  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition), background var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition),
+    background var(--transition);
 }
 
 .chat-toggle:hover {
@@ -57,9 +61,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: width var(--transition), height var(--transition),
-    left var(--transition), right var(--transition), top var(--transition),
-    bottom var(--transition), border-radius var(--transition);
+  transition:
+    width var(--transition),
+    height var(--transition),
+    left var(--transition),
+    right var(--transition),
+    top var(--transition),
+    bottom var(--transition),
+    border-radius var(--transition);
 }
 
 .chat-window.chat-window-expanded {
@@ -93,9 +102,9 @@
   padding: 12px 12px 11px;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--chat-custom-bg, var(--surface-3)) 36%, transparent),
-      color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 64%, transparent)
+    180deg,
+    color-mix(in srgb, var(--chat-custom-bg, var(--surface-3)) 36%, transparent),
+    color-mix(in srgb, var(--chat-custom-bg, var(--surface-2)) 64%, transparent)
   );
   display: flex;
   align-items: center;
@@ -273,9 +282,9 @@
   border-radius: 11px 6px 11px 11px;
   color: var(--chat-user-text);
   background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--chat-user-bg) 82%, #fff 18%),
-      color-mix(in srgb, var(--chat-user-bg) 92%, #000 8%)
+    180deg,
+    color-mix(in srgb, var(--chat-user-bg) 82%, #fff 18%),
+    color-mix(in srgb, var(--chat-user-bg) 92%, #000 8%)
   );
 }
 
@@ -503,7 +512,9 @@
 }
 
 @keyframes typing-dot {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: translateY(0);
     opacity: 0.4;
   }
@@ -534,7 +545,10 @@
   color: var(--muted);
   font: 600 11px/1.2 var(--font-ui);
   cursor: pointer;
-  transition: border-color var(--transition), color var(--transition), background var(--transition);
+  transition:
+    border-color var(--transition),
+    color var(--transition),
+    background var(--transition);
 }
 
 .chat-attach-icon {
@@ -603,7 +617,9 @@
   padding: 10px 11px;
   border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   background: color-mix(in srgb, var(--surface-2) 38%, transparent);
-  transition: padding var(--transition), box-shadow var(--transition);
+  transition:
+    padding var(--transition),
+    box-shadow var(--transition);
 }
 
 .chat-input-row.chat-input-expanded {
@@ -623,7 +639,11 @@
   font: 500 12px/1.45 var(--font-ui);
   padding: 8px 12px;
   overflow-y: auto;
-  transition: border-color var(--transition), box-shadow var(--transition), min-height var(--transition), padding var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition),
+    min-height var(--transition),
+    padding var(--transition);
 }
 
 .chat-input-row.chat-input-expanded textarea {
@@ -651,16 +671,19 @@
   border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--accent-dark) 76%, transparent);
   background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-light) 70%, var(--accent) 30%),
-      var(--accent-dark)
+    180deg,
+    color-mix(in srgb, var(--accent-light) 70%, var(--accent) 30%),
+    var(--accent-dark)
   );
   color: #f4fbff;
   font: 700 11px/1 var(--font-display);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: box-shadow var(--transition), transform var(--transition), filter var(--transition);
+  transition:
+    box-shadow var(--transition),
+    transform var(--transition),
+    filter var(--transition);
 }
 
 .chat-send-icon {

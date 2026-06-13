@@ -1,8 +1,8 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {api, isPlannedFeatureError} from './api.js';
-import {backendOrigin} from './config.js';
-import {setError, setStatus} from './status.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { api, isPlannedFeatureError } from "./api.js";
+import { backendOrigin } from "./config.js";
+import { setError, setStatus } from "./status.js";
 
 const OAUTH_MESSAGE_SOURCE = "modless-github-oauth";
 const OAUTH_POPUP_TIMEOUT_MS = 180000;
@@ -31,10 +31,8 @@ function renderGithubPanel() {
     el.githubDeployStatus.textContent = "GitHub integration is unavailable in this backend build";
   } else if (g.connected) {
     el.githubDeployStatus.textContent = g.selectedRepository
-        ? `Connected as ${g.githubLogin
-        || "GitHub user"} - ${g.selectedRepository}`
-        : `Connected as ${g.githubLogin
-        || "GitHub user"} - repository not selected`;
+      ? `Connected as ${g.githubLogin || "GitHub user"} - ${g.selectedRepository}`
+      : `Connected as ${g.githubLogin || "GitHub user"} - repository not selected`;
   } else {
     el.githubDeployStatus.textContent = "Not connected to GitHub";
   }
@@ -109,8 +107,7 @@ export async function refreshGithubConnection() {
     return true;
   } catch (error) {
     if (isPlannedFeatureError(error)) {
-      setGithubUnavailable(
-          "GitHub integration is not available in this backend build.");
+      setGithubUnavailable("GitHub integration is not available in this backend build.");
       return false;
     }
     state.github.connected = false;
@@ -131,9 +128,9 @@ async function openGithubOAuthPopup() {
   }
 
   const popup = window.open(
-      oauthStart.authorizeUrl,
-      "modless-github-oauth",
-      "popup=yes,width=640,height=760,noopener,noreferrer"
+    oauthStart.authorizeUrl,
+    "modless-github-oauth",
+    "popup=yes,width=640,height=760,noopener,noreferrer",
   );
   if (!popup) {
     throw new Error("Popup blocked. Allow popups and try again.");
@@ -182,23 +179,24 @@ async function openGithubOAuthPopup() {
 async function chooseOrCreateRepository() {
   const repos = await api("/github/repositories");
   if (!Array.isArray(repos) || repos.length === 0) {
-    const createName = window.prompt(
-        "No repositories found. Enter a new repository name:");
+    const createName = window.prompt("No repositories found. Enter a new repository name:");
     if (!createName || !createName.trim()) {
       throw new Error("Repository selection canceled");
     }
     const created = await api("/github/repositories", {
       method: "POST",
-      body: JSON.stringify({name: createName.trim(), privateRepo: false})
+      body: JSON.stringify({ name: createName.trim(), privateRepo: false }),
     });
     return created?.fullName || "";
   }
 
   const defaultRepo = state.github.selectedRepository || repos[0].fullName;
   const picked = window.prompt(
-      `Choose repository (owner/repo).\nRecent: ${repos.slice(0, 8).map(
-          (r) => r.fullName).join(", ")}`,
-      defaultRepo
+    `Choose repository (owner/repo).\nRecent: ${repos
+      .slice(0, 8)
+      .map((r) => r.fullName)
+      .join(", ")}`,
+    defaultRepo,
   );
   if (!picked || !picked.trim()) {
     throw new Error("Repository selection canceled");
@@ -207,8 +205,7 @@ async function chooseOrCreateRepository() {
 }
 
 export async function deployToGithubFromArtifacts() {
-  const artifactId = state.artifact.id
-      || state.project?.activeModelIds?.artifact;
+  const artifactId = state.artifact.id || state.project?.activeModelIds?.artifact;
   if (!artifactId) {
     setError("Load the current artifact before deploying");
     return;
@@ -218,8 +215,7 @@ export async function deployToGithubFromArtifacts() {
     return;
   }
 
-  setDeployButtonBusy(true,
-      state.github.connected ? "Deploying..." : "Connecting...");
+  setDeployButtonBusy(true, state.github.connected ? "Deploying..." : "Connecting...");
   try {
     if (!state.github.connected) {
       await openGithubOAuthPopup();
@@ -234,37 +230,30 @@ export async function deployToGithubFromArtifacts() {
     const payload = {
       artifactId,
       repositoryFullName,
-      commitMessage: null
+      commitMessage: null,
     };
     const deployResult = await api("/github/deploy", {
       method: "POST",
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
-    state.github.selectedRepository = deployResult.repositoryFullName
-        || repositoryFullName;
-    state.github.selectedBranch = deployResult.branch
-        || state.github.selectedBranch;
-    state.github.lastDeploymentStatus = deployResult.noChanges ? "NO_CHANGES"
-        : "SUCCESS";
-    state.github.lastDeploymentMessage = deployResult.message
-        || "Deployment completed";
+    state.github.selectedRepository = deployResult.repositoryFullName || repositoryFullName;
+    state.github.selectedBranch = deployResult.branch || state.github.selectedBranch;
+    state.github.lastDeploymentStatus = deployResult.noChanges ? "NO_CHANGES" : "SUCCESS";
+    state.github.lastDeploymentMessage = deployResult.message || "Deployment completed";
     state.github.lastDeploymentAt = deployResult.deployedAt || "";
-    state.github.repositoryUrl = deployResult.repositoryUrl
-        || state.github.repositoryUrl;
+    state.github.repositoryUrl = deployResult.repositoryUrl || state.github.repositoryUrl;
     state.github.commitUrl = deployResult.commitUrl || state.github.commitUrl;
     renderGithubPanel();
     setStatus(deployResult.message || "Deployment completed");
   } catch (error) {
     if (isPlannedFeatureError(error)) {
-      setGithubUnavailable(
-          "GitHub integration is not available in this backend build.");
+      setGithubUnavailable("GitHub integration is not available in this backend build.");
       setStatus("GitHub integration is not available in this backend build.");
       return;
     }
     state.github.lastDeploymentStatus = "ERROR";
-    state.github.lastDeploymentMessage = error.message
-        || "GitHub deployment failed";
+    state.github.lastDeploymentMessage = error.message || "GitHub deployment failed";
     renderGithubPanel();
     setError(`GitHub deployment failed: ${error.message}`);
   } finally {

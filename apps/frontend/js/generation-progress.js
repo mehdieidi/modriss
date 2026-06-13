@@ -1,8 +1,8 @@
 import {
   hideProgressNotification,
   showProgressNotification,
-  updateProgressNotification
-} from './status.js';
+  updateProgressNotification,
+} from "./status.js";
 
 const STATE = {
   active: false,
@@ -12,7 +12,7 @@ const STATE = {
   rafId: 0,
   lastTick: 0,
   startedAt: 0,
-  trickleLimit: 0
+  trickleLimit: 0,
 };
 
 function clampProgress(value) {
@@ -20,7 +20,7 @@ function clampProgress(value) {
 }
 
 function renderProgress() {
-  updateProgressNotification({progress: STATE.progress});
+  updateProgressNotification({ progress: STATE.progress });
 }
 
 function stopAnimation() {
@@ -43,9 +43,11 @@ function tick(timestamp) {
   STATE.lastTick = timestamp;
   const elapsed = timestamp - STATE.startedAt;
   if (STATE.target < STATE.trickleLimit && elapsed > 320) {
-    const trickle = Math.min(STATE.trickleLimit,
-        STATE.target + Math.max(0.008, (STATE.trickleLimit - STATE.target)
-            * 0.0025 * (delta / 16.67)));
+    const trickle = Math.min(
+      STATE.trickleLimit,
+      STATE.target +
+        Math.max(0.008, (STATE.trickleLimit - STATE.target) * 0.0025 * (delta / 16.67)),
+    );
     STATE.target = trickle;
   }
   const distance = STATE.target - STATE.progress;
@@ -91,7 +93,7 @@ export function showGenerationProgress({
   kicker = "Generation in Progress",
   title = "Generating model",
   subtitle = "Preparing the next step in your modeling flow.",
-  label = "Starting generation..."
+  label = "Starting generation...",
 } = {}) {
   STATE.active = true;
   STATE.progress = 6;
@@ -104,7 +106,7 @@ export function showGenerationProgress({
     title,
     subtitle,
     label,
-    progress: STATE.progress
+    progress: STATE.progress,
   });
   animateTo(18);
 }
@@ -113,19 +115,17 @@ export function setGenerationProgressPhase(label, targetProgress) {
   if (!STATE.active) {
     return;
   }
-  updateProgressNotification({label});
+  updateProgressNotification({ label });
   animateTo(targetProgress);
 }
 
-export async function waitForGenerationProgress(
-    minimumProgress, {timeoutMs = 700} = {}) {
+export async function waitForGenerationProgress(minimumProgress, { timeoutMs = 700 } = {}) {
   if (!STATE.active || typeof window.requestAnimationFrame !== "function") {
     return;
   }
   const target = clampProgress(minimumProgress);
   const started = performance.now();
-  while (STATE.active && STATE.progress < target
-  && performance.now() - started < timeoutMs) {
+  while (STATE.active && STATE.progress < target && performance.now() - started < timeoutMs) {
     await new Promise((resolve) => window.requestAnimationFrame(resolve));
   }
 }
@@ -134,7 +134,7 @@ export async function completeGenerationProgress(label = "Generation complete.")
   if (!STATE.active) {
     return;
   }
-  updateProgressNotification({label});
+  updateProgressNotification({ label });
   animateTo(100);
   const started = performance.now();
   while (STATE.progress < 99.4 && performance.now() - started < 850) {

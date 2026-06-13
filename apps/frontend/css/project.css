@@ -146,7 +146,10 @@
   background: color-mix(in srgb, var(--surface-3) 82%, #000 18%);
   padding: 10px 12px;
   cursor: pointer;
-  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    transform var(--transition);
 }
 
 .project-item:hover {
@@ -213,7 +216,9 @@
   background: color-mix(in srgb, var(--input-bg) 88%, var(--surface-contrast) 12%);
   color: var(--text);
   font: 500 13px/1.3 var(--font-ui);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 .project-input:focus {
@@ -474,5 +479,4 @@ body.canvas-panning * {
     height: 1px;
     margin: 0;
   }
-
 }

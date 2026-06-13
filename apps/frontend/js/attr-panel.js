@@ -1,8 +1,8 @@
-import {state} from './state.js';
-import {el} from './dom.js';
-import {MODEL_TYPES} from './config.js';
-import {api} from './api.js';
-import {setStatus} from './status.js';
+import { state } from "./state.js";
+import { el } from "./dom.js";
+import { MODEL_TYPES } from "./config.js";
+import { api } from "./api.js";
+import { setStatus } from "./status.js";
 import {
   contextNameFromNode,
   deleteBoundedContext,
@@ -10,31 +10,27 @@ import {
   renameBoundedContext,
   startConnectionFromNode,
   syncDiagramRenderer,
-  syncRendererSelection
-} from './canvas.js';
-import {markModelDirty} from './model-save-ui.js';
-import {isMobileViewport} from './responsive.js';
-import {
-  getDefaultNode,
-  relationshipIdsFromModel,
-  toDiagram
-} from './diagram.js';
-import {confirmAction} from './confirm-action.js';
-import {escapeHtml} from './utils.js';
+  syncRendererSelection,
+} from "./canvas.js";
+import { markModelDirty } from "./model-save-ui.js";
+import { isMobileViewport } from "./responsive.js";
+import { getDefaultNode, relationshipIdsFromModel, toDiagram } from "./diagram.js";
+import { confirmAction } from "./confirm-action.js";
+import { escapeHtml } from "./utils.js";
 import {
   modelingContainmentsForType,
   modelingElementDefinition,
   modelingLegalKinds,
   modelingLevelConfig,
   modelingRelationshipKindLabel,
-  modelingTypeMatches
-} from './modeling-config-data.js';
+  modelingTypeMatches,
+} from "./modeling-config-data.js";
 import {
   addNodeToGraphAndActiveView,
   removeElementFromGraph,
   removeRelationshipFromGraph,
-  syncActiveViewFromVisibleGraph
-} from './graph-store.js';
+  syncActiveViewFromVisibleGraph,
+} from "./graph-store.js";
 import {
   addReferenceValue,
   CIM_ABSTRACT_TYPES,
@@ -43,15 +39,15 @@ import {
   cimTypeMatches,
   elementLabel,
   missingRequiredFeatures as cimMissingRequiredFeatures,
-  refIds
-} from './cim-model-utils.js';
+  refIds,
+} from "./cim-model-utils.js";
 import {
   missingRequiredFeatures as pimMissingRequiredFeatures,
   nestedContainmentsForType as pimNestedContainmentsForType,
   PIM_ABSTRACT_TYPES,
-  refIds as pimRefIds
-} from './pim-model-utils.js';
-import {captureDiagramUndoSnapshot, pushDiagramUndoSnapshot} from './undo.js';
+  refIds as pimRefIds,
+} from "./pim-model-utils.js";
+import { captureDiagramUndoSnapshot, pushDiagramUndoSnapshot } from "./undo.js";
 // Fields managed by canvas – shown read-only
 const READONLY_ATTR_KEYS = new Set(["id", "eClass", "x", "y"]);
 // Fields skipped entirely (rendered via canvas label editing)
@@ -68,44 +64,115 @@ const TRACE_ATTR_KEYS = new Set([
   "rationale",
   "reviewStatus",
   "reviewNotes",
-  "manuallyMaintained"
+  "manuallyMaintained",
 ]);
 const PIM_IDENTITY_FIELDS = new Set([
-  "id", "name", "summary", "description", "documentation", "modelTags",
-  "externalId", "lifecycleStatus"
+  "id",
+  "name",
+  "summary",
+  "description",
+  "documentation",
+  "modelTags",
+  "externalId",
+  "lifecycleStatus",
 ]);
-const CIM_IDENTITY_FIELDS = new Set([
-  ...CIM_COMMON_METADATA_FIELDS,
-  "label"
-]);
+const CIM_IDENTITY_FIELDS = new Set([...CIM_COMMON_METADATA_FIELDS, "label"]);
 const CIM_GOVERNANCE_FIELDS = new Set([
-  "requirementType", "sourceType", "priority", "mandatory",
-  "fitCriterion", "qualityType", "securityGoal", "authorizationRule",
-  "auditRequired", "purpose", "legalBasis", "retentionPolicy",
-  "crossBorderTransferExpected", "regulation", "controlId",
-  "constraintStrength", "policyType", "naturalLanguageRule", "riskStatement",
-  "probability", "impact", "mitigation", "productionBlocking",
-  "blocksTransformation", "blocksProduction", "blocking", "severity",
-  "findingType", "recommendation", "readinessStatus", "transformationReady",
-  "deploymentReady", "productionReady"
+  "requirementType",
+  "sourceType",
+  "priority",
+  "mandatory",
+  "fitCriterion",
+  "qualityType",
+  "securityGoal",
+  "authorizationRule",
+  "auditRequired",
+  "purpose",
+  "legalBasis",
+  "retentionPolicy",
+  "crossBorderTransferExpected",
+  "regulation",
+  "controlId",
+  "constraintStrength",
+  "policyType",
+  "naturalLanguageRule",
+  "riskStatement",
+  "probability",
+  "impact",
+  "mitigation",
+  "productionBlocking",
+  "blocksTransformation",
+  "blocksProduction",
+  "blocking",
+  "severity",
+  "findingType",
+  "recommendation",
+  "readinessStatus",
+  "transformationReady",
+  "deploymentReady",
+  "productionReady",
 ]);
 const PIM_POLICY_SECURITY_FIELDS = new Set([
-  "auth", "authorization", "cors", "rateLimit", "timeout", "resilience",
-  "observability", "idempotency", "concurrency", "security", "policies",
-  "dataProtectionPolicies", "backupPolicy", "retentionPolicy",
-  "constrainedBy", "attachedTo", "targetResource", "allowedPrincipals",
-  "permissions", "identityProvider", "principals", "usesSecrets",
-  "usedForCredentials", "secret", "secretReference", "credentials",
-  "credentialRequirements", "requiresNetworkAccess", "authRequired",
-  "authorizationRequired", "encrypted", "encryptionAtRestRequired",
-  "containsPersonalData", "privileged", "mfaRequired"
+  "auth",
+  "authorization",
+  "cors",
+  "rateLimit",
+  "timeout",
+  "resilience",
+  "observability",
+  "idempotency",
+  "concurrency",
+  "security",
+  "policies",
+  "dataProtectionPolicies",
+  "backupPolicy",
+  "retentionPolicy",
+  "constrainedBy",
+  "attachedTo",
+  "targetResource",
+  "allowedPrincipals",
+  "permissions",
+  "identityProvider",
+  "principals",
+  "usesSecrets",
+  "usedForCredentials",
+  "secret",
+  "secretReference",
+  "credentials",
+  "credentialRequirements",
+  "requiresNetworkAccess",
+  "authRequired",
+  "authorizationRequired",
+  "encrypted",
+  "encryptionAtRestRequired",
+  "containsPersonalData",
+  "privileged",
+  "mfaRequired",
 ]);
 const OVERVIEW_BADGE_FIELDS = [
-  "priority", "severity", "status", "requirementType", "qualityType",
-  "commandType", "queryType", "eventType", "processKind", "policyType",
-  "criticality", "maturity", "boundaryType", "functionKind", "runtime",
-  "languageBoundary", "ownershipBoundary", "trustLevel", "actorType",
-  "valueType", "consistencyExpectation", "publicAccessMode", "xrayDefault"
+  "priority",
+  "severity",
+  "status",
+  "requirementType",
+  "qualityType",
+  "commandType",
+  "queryType",
+  "eventType",
+  "processKind",
+  "policyType",
+  "criticality",
+  "maturity",
+  "boundaryType",
+  "functionKind",
+  "runtime",
+  "languageBoundary",
+  "ownershipBoundary",
+  "trustLevel",
+  "actorType",
+  "valueType",
+  "consistencyExpectation",
+  "publicAccessMode",
+  "xrayDefault",
 ];
 const OVERVIEW_BOOLEAN_BADGES = new Map([
   ["mandatory", "mandatory"],
@@ -124,7 +191,7 @@ const OVERVIEW_BOOLEAN_BADGES = new Map([
   ["pointInTimeRecoveryEnabled", "point in time recovery"],
   ["eventBridgeNotificationEnabled", "eventbridge notifications"],
   ["enableKeyRotation", "key rotation"],
-  ["rotationRequired", "rotation required"]
+  ["rotationRequired", "rotation required"],
 ]);
 
 // ── Open / close ──────────────────────────────────────────────────────────────
@@ -182,8 +249,7 @@ export function closeAttributePanel() {
 }
 
 export function openConnectionPanel(connectionId) {
-  const connection = state.diagram.connections.find(
-      (edge) => edge.id === connectionId);
+  const connection = state.diagram.connections.find((edge) => edge.id === connectionId);
   if (!connection) {
     return;
   }
@@ -195,8 +261,9 @@ export function openConnectionPanel(connectionId) {
   const source = state.nodesById.get(connection.sourceId);
   const target = state.nodesById.get(connection.targetId);
   el.attrPanelType.textContent = "Connection";
-  el.attrPanelTitle.textContent = `${source?.label
-  || connection.sourceId} → ${target?.label || connection.targetId}`;
+  el.attrPanelTitle.textContent = `${
+    source?.label || connection.sourceId
+  } → ${target?.label || connection.targetId}`;
   if (el.attrPanelApplyBtn) {
     el.attrPanelApplyBtn.hidden = false;
     el.attrPanelApplyBtn.textContent = "✓ Apply Connection";
@@ -228,33 +295,42 @@ function renderConnectionFields(connection, source, target) {
     return;
   }
   el.attrPanelBody.innerHTML = "";
-  const relationship = state.graph?.relationshipsById?.get(connection.id)
-      || connection;
+  const relationship = state.graph?.relationshipsById?.get(connection.id) || connection;
   const semanticType = relationship.eClass || "Connection";
   el.attrPanelBody.appendChild(buildAttrSectionTitle("Connection"));
   el.attrPanelBody.appendChild(
-      buildAttrField("kind", connection.kind, {
-        fieldType: "text",
-        readonly: true
-      }));
+    buildAttrField("kind", connection.kind, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
   el.attrPanelBody.appendChild(
-      buildAttrField("source", source?.label || connection.sourceId,
-          {fieldType: "text", readonly: true}));
+    buildAttrField("source", source?.label || connection.sourceId, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
   el.attrPanelBody.appendChild(
-      buildAttrField("target", target?.label || connection.targetId,
-          {fieldType: "text", readonly: true}));
+    buildAttrField("target", target?.label || connection.targetId, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
   el.attrPanelBody.appendChild(
-      buildAttrField("id", connection.id, {
-        fieldType: "text",
-        readonly: true
-      }));
+    buildAttrField("id", connection.id, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
   if (semanticType !== "Connection") {
     el.attrPanelBody.appendChild(buildAttrSectionTitle(semanticType));
   }
   let definition = null;
   try {
-    definition = semanticType !== "Connection"
-        ? modelingElementDefinition(state.activeType, semanticType) : null;
+    definition =
+      semanticType !== "Connection"
+        ? modelingElementDefinition(state.activeType, semanticType)
+        : null;
   } catch {
     definition = null;
   }
@@ -263,93 +339,125 @@ function renderConnectionFields(connection, source, target) {
     ...(definition?.attributes || []),
     ...(definition?.references || []).map((reference) => ({
       ...reference,
-      fieldType: "reference"
-    }))
+      fieldType: "reference",
+    })),
   ];
   fields.forEach((field) => {
     if (!field?.name || rendered.has(field.name) || field.readonly) {
       return;
     }
     rendered.add(field.name);
-    const value = Object.prototype.hasOwnProperty.call(relationship,
-        field.name) ? relationship[field.name] : field.defaultValue;
+    const value = Object.prototype.hasOwnProperty.call(relationship, field.name)
+      ? relationship[field.name]
+      : field.defaultValue;
     el.attrPanelBody.appendChild(buildAttrField(field.name, value, field));
   });
   Object.entries(relationship).forEach(([key, value]) => {
-    if (rendered.has(key) || ["sourceElementId", "targetElementId",
-      "sourceType", "targetType", "semanticFeature", "semanticSourceElementId",
-      "semanticTargetElementId", "visualOnly"].includes(key)) {
+    if (
+      rendered.has(key) ||
+      [
+        "sourceElementId",
+        "targetElementId",
+        "sourceType",
+        "targetType",
+        "semanticFeature",
+        "semanticSourceElementId",
+        "semanticTargetElementId",
+        "visualOnly",
+      ].includes(key)
+    ) {
       return;
     }
-    el.attrPanelBody.appendChild(buildAttrField(key, value, {
-      fieldType: inferFieldType(value),
-      readonly: READONLY_ATTR_KEYS.has(key)
-    }));
+    el.attrPanelBody.appendChild(
+      buildAttrField(key, value, {
+        fieldType: inferFieldType(value),
+        readonly: READONLY_ATTR_KEYS.has(key),
+      }),
+    );
   });
 }
 
 function renderPimConnectionFields(connection, source, target) {
   el.attrPanelBody.innerHTML = "";
-  const relationship = state.graph?.relationshipsById?.get(connection.id)
-      || connection;
+  const relationship = state.graph?.relationshipsById?.get(connection.id) || connection;
   const semanticType = relationship.eClass || "Connection";
   let definition = null;
   try {
-    definition = semanticType !== "Connection"
-        ? modelingElementDefinition(state.activeType, semanticType) : null;
+    definition =
+      semanticType !== "Connection"
+        ? modelingElementDefinition(state.activeType, semanticType)
+        : null;
   } catch {
     definition = null;
   }
   const sections = pimInspectorSections();
-  sections.identity.appendChild(buildAttrField("kind", connection.kind, {
-    fieldType: "text",
-    readonly: true
-  }));
   sections.identity.appendChild(
-      buildAttrField("source", source?.label || connection.sourceId, {
-        fieldType: "text",
-        readonly: true
-      }));
+    buildAttrField("kind", connection.kind, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
   sections.identity.appendChild(
-      buildAttrField("target", target?.label || connection.targetId, {
-        fieldType: "text",
-        readonly: true
-      }));
-  sections.identity.appendChild(buildAttrField("id", connection.id, {
-    fieldType: "text",
-    readonly: true
-  }));
+    buildAttrField("source", source?.label || connection.sourceId, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
+  sections.identity.appendChild(
+    buildAttrField("target", target?.label || connection.targetId, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
+  sections.identity.appendChild(
+    buildAttrField("id", connection.id, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
 
   const rendered = new Set(["id", "kind", "source", "target", "name"]);
   const fields = [
     ...(definition?.attributes || []),
     ...(definition?.references || []).map((reference) => ({
       ...reference,
-      fieldType: "reference"
-    }))
+      fieldType: "reference",
+    })),
   ];
   fields.forEach((field) => {
     if (!field?.name || rendered.has(field.name) || field.readonly) {
       return;
     }
     rendered.add(field.name);
-    const value = Object.prototype.hasOwnProperty.call(relationship,
-        field.name) ? relationship[field.name] : field.defaultValue;
-    const section = field.fieldType === "reference"
-        ? sections.relationships : sections.core;
+    const value = Object.prototype.hasOwnProperty.call(relationship, field.name)
+      ? relationship[field.name]
+      : field.defaultValue;
+    const section = field.fieldType === "reference" ? sections.relationships : sections.core;
     section.appendChild(buildAttrField(field.name, value, field));
   });
   Object.entries(relationship).forEach(([key, value]) => {
-    if (rendered.has(key) || ["sourceElementId", "targetElementId",
-      "sourceType", "targetType", "semanticFeature", "semanticSourceElementId",
-      "semanticTargetElementId", "visualOnly"].includes(key)) {
+    if (
+      rendered.has(key) ||
+      [
+        "sourceElementId",
+        "targetElementId",
+        "sourceType",
+        "targetType",
+        "semanticFeature",
+        "semanticSourceElementId",
+        "semanticTargetElementId",
+        "visualOnly",
+      ].includes(key)
+    ) {
       return;
     }
     const section = TRACE_ATTR_KEYS.has(key) ? sections.trace : sections.core;
-    section.appendChild(buildAttrField(key, value, {
-      fieldType: inferFieldType(value),
-      readonly: READONLY_ATTR_KEYS.has(key)
-    }));
+    section.appendChild(
+      buildAttrField(key, value, {
+        fieldType: inferFieldType(value),
+        readonly: READONLY_ATTR_KEYS.has(key),
+      }),
+    );
   });
   appendPimValidationSummary(sections.validation, relationship, semanticType);
   appendEmptyHints(sections);
@@ -375,33 +483,38 @@ export function openBoundedContextPanel(contextName) {
     el.attrPanelDeleteBtn.textContent = "🗑 Delete Context";
   }
   el.attrPanelBody.innerHTML = "";
-  el.attrPanelBody.appendChild(
-      buildAttrField("contextName", contextName, {fieldType: "text"}));
-  const members = [...state.diagram.nodes].filter((node) =>
-      contextNameFromNode(node) === contextName);
+  el.attrPanelBody.appendChild(buildAttrField("contextName", contextName, { fieldType: "text" }));
+  const members = [...state.diagram.nodes].filter(
+    (node) => contextNameFromNode(node) === contextName,
+  );
   const memberSection = document.createElement("div");
   memberSection.className = "attr-section bounded-context-members";
   memberSection.innerHTML = `
     <div class="attr-section-title">Members</div>
-    ${members.length ? members.map((node) => `
+    ${
+      members.length
+        ? members
+            .map(
+              (node) => `
       <div class="bounded-context-member-row">
-        <span>${escapeHtml(node.label || node.id)} <em>${escapeHtml(
-          node.type)}</em></span>
+        <span>${escapeHtml(node.label || node.id)} <em>${escapeHtml(node.type)}</em></span>
         <button class="btn btn-secondary btn-sm"
                 data-remove-context-member="${escapeHtml(node.id)}"
                 type="button">Remove</button>
-      </div>`).join("")
-      : `<div class="attr-empty">No elements assigned.</div>`}`;
+      </div>`,
+            )
+            .join("")
+        : `<div class="attr-empty">No elements assigned.</div>`
+    }`;
   el.attrPanelBody.appendChild(memberSection);
-  memberSection.querySelectorAll("[data-remove-context-member]").forEach(
-      (button) => {
-        button.addEventListener("click", () => {
-          const nodeId = button.dataset.removeContextMember;
-          if (removeElementFromBoundedContext(nodeId, contextName)) {
-            openBoundedContextPanel(contextName);
-          }
-        });
-      });
+  memberSection.querySelectorAll("[data-remove-context-member]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nodeId = button.dataset.removeContextMember;
+      if (removeElementFromBoundedContext(nodeId, contextName)) {
+        openBoundedContextPanel(contextName);
+      }
+    });
+  });
   el.modelTreePanel?.classList.add("hidden");
   el.attributePanel.classList.remove("hidden");
   el.workspace.classList.remove("views-open", "impact-open");
@@ -442,8 +555,7 @@ function renderAttributeFields(node) {
   const labelKey = state.activeType === "cim" ? "label" : "name";
   appendElementOverviewSection(el.attrPanelBody, node, definition);
   el.attrPanelBody.appendChild(buildAttrSectionTitle("Identity"));
-  el.attrPanelBody.appendChild(
-      buildAttrField(labelKey, node.label, {fieldType: "text"}));
+  el.attrPanelBody.appendChild(buildAttrField(labelKey, node.label, { fieldType: "text" }));
 
   const rendered = new Set([labelKey, "label", "name"]);
   el.attrPanelBody.appendChild(buildAttrSectionTitle("Type Specific"));
@@ -451,18 +563,16 @@ function renderAttributeFields(node) {
     ...(definition?.attributes || []),
     ...(definition?.references || []).map((reference) => ({
       ...reference,
-      fieldType: "reference"
-    }))
+      fieldType: "reference",
+    })),
   ];
   configuredFields.forEach((field) => {
     const key = field?.name;
-    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key)
-        || TRACE_ATTR_KEYS.has(key)) {
+    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key) || TRACE_ATTR_KEYS.has(key)) {
       return;
     }
     rendered.add(key);
-    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key]
-        : field.defaultValue;
+    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
     el.attrPanelBody.appendChild(buildAttrField(key, value, field));
   });
 
@@ -470,16 +580,16 @@ function renderAttributeFields(node) {
     if (key === labelKey || key === "label" || key === "name") {
       return;
     }
-    if (SKIP_ATTR_KEYS.has(key) || TRACE_ATTR_KEYS.has(key)
-        || rendered.has(key)) {
+    if (SKIP_ATTR_KEYS.has(key) || TRACE_ATTR_KEYS.has(key) || rendered.has(key)) {
       return;
     }
     const readonly = READONLY_ATTR_KEYS.has(key);
     el.attrPanelBody.appendChild(
-        buildAttrField(key, value, {
-          fieldType: inferFieldType(value),
-          readonly
-        }));
+      buildAttrField(key, value, {
+        fieldType: inferFieldType(value),
+        readonly,
+      }),
+    );
   });
   appendLegalOutgoingRelationships(node);
   appendContainmentSections(node);
@@ -491,23 +601,26 @@ function renderCimAttributeFields(node, meta, definition) {
   const sections = cimInspectorSections();
   const rendered = new Set(["label", "name"]);
 
-  appendElementOverviewSection(sections.overview, node, definition,
-      {includeTitle: false});
-  sections.identity.appendChild(buildAttrField("label", node.label, {
-    fieldType: "text"
-  }));
-  sections.identity.appendChild(buildAttrField("id", node.id, {
-    fieldType: "text",
-    readonly: true
-  }));
+  appendElementOverviewSection(sections.overview, node, definition, { includeTitle: false });
+  sections.identity.appendChild(
+    buildAttrField("label", node.label, {
+      fieldType: "text",
+    }),
+  );
+  sections.identity.appendChild(
+    buildAttrField("id", node.id, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
   rendered.add("id");
 
   const configuredFields = [
     ...(definition?.attributes || []),
     ...(definition?.references || []).map((reference) => ({
       ...reference,
-      fieldType: "reference"
-    }))
+      fieldType: "reference",
+    })),
   ];
   configuredFields.forEach((field) => {
     const key = field?.name;
@@ -515,10 +628,8 @@ function renderCimAttributeFields(node, meta, definition) {
       return;
     }
     rendered.add(key);
-    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key]
-        : field.defaultValue;
-    cimSectionForField(sections, key, field).appendChild(
-        buildAttrField(key, value, field));
+    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
+    cimSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
   });
 
   Object.entries(meta).forEach(([key, value]) => {
@@ -528,15 +639,17 @@ function renderCimAttributeFields(node, meta, definition) {
     rendered.add(key);
     cimSectionForField(sections, key, {
       fieldType: inferFieldType(value),
-      readonly: READONLY_ATTR_KEYS.has(key)
-    }).appendChild(buildAttrField(key, value, {
-      fieldType: inferFieldType(value),
-      readonly: READONLY_ATTR_KEYS.has(key)
-    }));
+      readonly: READONLY_ATTR_KEYS.has(key),
+    }).appendChild(
+      buildAttrField(key, value, {
+        fieldType: inferFieldType(value),
+        readonly: READONLY_ATTR_KEYS.has(key),
+      }),
+    );
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
-  appendTraceabilitySection(node, sections.trace, {includeTitle: false});
+  appendTraceabilitySection(node, sections.trace, { includeTitle: false });
   appendCimValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -547,25 +660,28 @@ function renderPimAttributeFields(node, meta, definition) {
   const sections = pimInspectorSections();
   const rendered = new Set(["label", "name"]);
 
-  appendElementOverviewSection(sections.overview, node, definition,
-      {includeTitle: false});
-  sections.identity.appendChild(buildAttrField("name", node.label, {
-    fieldType: "text"
-  }));
+  appendElementOverviewSection(sections.overview, node, definition, { includeTitle: false });
+  sections.identity.appendChild(
+    buildAttrField("name", node.label, {
+      fieldType: "text",
+    }),
+  );
   rendered.add("name");
   rendered.add("label");
-  sections.identity.appendChild(buildAttrField("id", node.id, {
-    fieldType: "text",
-    readonly: true
-  }));
+  sections.identity.appendChild(
+    buildAttrField("id", node.id, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
   rendered.add("id");
 
   const configuredFields = [
     ...(definition?.attributes || []),
     ...(definition?.references || []).map((reference) => ({
       ...reference,
-      fieldType: "reference"
-    }))
+      fieldType: "reference",
+    })),
   ];
   configuredFields.forEach((field) => {
     const key = field?.name;
@@ -573,10 +689,8 @@ function renderPimAttributeFields(node, meta, definition) {
       return;
     }
     rendered.add(key);
-    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key]
-        : field.defaultValue;
-    pimSectionForField(sections, key, field).appendChild(
-        buildAttrField(key, value, field));
+    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
+    pimSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
   });
 
   Object.entries(meta).forEach(([key, value]) => {
@@ -586,15 +700,17 @@ function renderPimAttributeFields(node, meta, definition) {
     rendered.add(key);
     pimSectionForField(sections, key, {
       fieldType: inferFieldType(value),
-      readonly: READONLY_ATTR_KEYS.has(key)
-    }).appendChild(buildAttrField(key, value, {
-      fieldType: inferFieldType(value),
-      readonly: READONLY_ATTR_KEYS.has(key)
-    }));
+      readonly: READONLY_ATTR_KEYS.has(key),
+    }).appendChild(
+      buildAttrField(key, value, {
+        fieldType: inferFieldType(value),
+        readonly: READONLY_ATTR_KEYS.has(key),
+      }),
+    );
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
-  appendTraceabilitySection(node, sections.trace, {includeTitle: false});
+  appendTraceabilitySection(node, sections.trace, { includeTitle: false });
   appendPimValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -605,25 +721,28 @@ function renderPsmAttributeFields(node, meta, definition) {
   const sections = psmInspectorSections();
   const rendered = new Set(["label", "name"]);
 
-  appendElementOverviewSection(sections.overview, node, definition,
-      {includeTitle: false});
-  sections.identity.appendChild(buildAttrField("name", node.label, {
-    fieldType: "text"
-  }));
+  appendElementOverviewSection(sections.overview, node, definition, { includeTitle: false });
+  sections.identity.appendChild(
+    buildAttrField("name", node.label, {
+      fieldType: "text",
+    }),
+  );
   rendered.add("name");
   rendered.add("label");
-  sections.identity.appendChild(buildAttrField("id", node.id, {
-    fieldType: "text",
-    readonly: true
-  }));
+  sections.identity.appendChild(
+    buildAttrField("id", node.id, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
   rendered.add("id");
 
   const configuredFields = [
     ...(definition?.attributes || []),
     ...(definition?.references || []).map((reference) => ({
       ...reference,
-      fieldType: "reference"
-    }))
+      fieldType: "reference",
+    })),
   ];
   configuredFields.forEach((field) => {
     const key = field?.name;
@@ -631,10 +750,8 @@ function renderPsmAttributeFields(node, meta, definition) {
       return;
     }
     rendered.add(key);
-    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key]
-        : field.defaultValue;
-    psmSectionForField(sections, key, field).appendChild(
-        buildAttrField(key, value, field));
+    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
+    psmSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
   });
 
   Object.entries(meta).forEach(([key, value]) => {
@@ -644,15 +761,17 @@ function renderPsmAttributeFields(node, meta, definition) {
     rendered.add(key);
     psmSectionForField(sections, key, {
       fieldType: inferFieldType(value),
-      readonly: READONLY_ATTR_KEYS.has(key)
-    }).appendChild(buildAttrField(key, value, {
-      fieldType: inferFieldType(value),
-      readonly: READONLY_ATTR_KEYS.has(key)
-    }));
+      readonly: READONLY_ATTR_KEYS.has(key),
+    }).appendChild(
+      buildAttrField(key, value, {
+        fieldType: inferFieldType(value),
+        readonly: READONLY_ATTR_KEYS.has(key),
+      }),
+    );
   });
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.containment);
-  appendTraceabilitySection(node, sections.trace, {includeTitle: false});
+  appendTraceabilitySection(node, sections.trace, { includeTitle: false });
   appendPsmValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
@@ -667,7 +786,7 @@ function pimInspectorSections() {
     relationships: createAttrTabSection("relationships", "Relationships"),
     policies: createAttrTabSection("policies", "Policies / Security"),
     trace: createAttrTabSection("trace", "Trace & Review"),
-    validation: createAttrTabSection("validation", "Validation")
+    validation: createAttrTabSection("validation", "Validation"),
   };
 }
 
@@ -679,7 +798,7 @@ function cimInspectorSections() {
     relationships: createAttrTabSection("relationships", "Relationships"),
     governance: createAttrTabSection("governance", "Governance"),
     trace: createAttrTabSection("trace", "Trace & Review"),
-    validation: createAttrTabSection("validation", "Validation")
+    validation: createAttrTabSection("validation", "Validation"),
   };
 }
 
@@ -692,7 +811,7 @@ function psmInspectorSections() {
     relationships: createAttrTabSection("relationships", "References"),
     containment: createAttrTabSection("containment", "Contained Details"),
     trace: createAttrTabSection("trace", "Trace & Review"),
-    validation: createAttrTabSection("validation", "Validation")
+    validation: createAttrTabSection("validation", "Validation"),
   };
 }
 
@@ -756,27 +875,32 @@ function psmSectionForField(sections, key, field = {}) {
 function isPsmSecurityField(key, field = {}) {
   const targetType = String(field.targetType || "");
   return /role|policy|principal|auth|kms|secret|permission|public|cors|vpc|subnet|security/i.test(
-      `${key} ${targetType}`);
+    `${key} ${targetType}`,
+  );
 }
 
 function isPimPolicySecurityField(key, field = {}) {
   const targetType = String(field.targetType || "");
-  return PIM_POLICY_SECURITY_FIELDS.has(key)
-      || targetType.includes("Policy")
-      || targetType.includes("Principal")
-      || targetType.includes("ProtectedResource")
-      || targetType.includes("IdentityProvider")
-      || targetType.includes("Secret");
+  return (
+    PIM_POLICY_SECURITY_FIELDS.has(key) ||
+    targetType.includes("Policy") ||
+    targetType.includes("Principal") ||
+    targetType.includes("ProtectedResource") ||
+    targetType.includes("IdentityProvider") ||
+    targetType.includes("Secret")
+  );
 }
 
 function isCimGovernanceField(key, field = {}) {
   const targetType = String(field.targetType || "");
-  return CIM_GOVERNANCE_FIELDS.has(key)
-      || targetType.includes("Requirement")
-      || targetType.includes("Constraint")
-      || targetType.includes("Policy")
-      || targetType.includes("Risk")
-      || targetType.includes("Readiness");
+  return (
+    CIM_GOVERNANCE_FIELDS.has(key) ||
+    targetType.includes("Requirement") ||
+    targetType.includes("Constraint") ||
+    targetType.includes("Policy") ||
+    targetType.includes("Risk") ||
+    targetType.includes("Readiness")
+  );
 }
 
 function appendEmptyHints(sections) {
@@ -808,8 +932,7 @@ function renderAttrTabs(sections) {
   entries.forEach(([, section]) => el.attrPanelBody.appendChild(section));
 }
 
-function appendElementOverviewSection(host, node, definition,
-    {includeTitle = true} = {}) {
+function appendElementOverviewSection(host, node, definition, { includeTitle = true } = {}) {
   const overview = buildElementOverview(node, definition);
   if (!overview) {
     return;
@@ -829,7 +952,7 @@ function buildElementOverview(node, definition) {
   if (badges.length) {
     const badgeRow = document.createElement("div");
     badgeRow.className = "attr-overview-badges";
-    badges.forEach(({label, issue}) => {
+    badges.forEach(({ label, issue }) => {
       const badge = document.createElement("span");
       badge.className = `attr-overview-badge${issue ? " issue" : ""}`;
       badge.textContent = label;
@@ -843,8 +966,7 @@ function buildElementOverview(node, definition) {
   let hasSummary = false;
 
   const overviewRows = [];
-  const visibleFields = Array.isArray(definition?.visibleFields)
-      ? definition.visibleFields : [];
+  const visibleFields = Array.isArray(definition?.visibleFields) ? definition.visibleFields : [];
   visibleFields.slice(0, 8).forEach((field) => {
     const text = overviewValueText(meta[field]);
     if (text) {
@@ -856,11 +978,14 @@ function buildElementOverview(node, definition) {
     summary.appendChild(buildOverviewGroup("Key Fields", overviewRows));
   }
 
-  const referenceRows = (definition?.references || []).filter((reference) =>
-      !reference.containment).map((reference) => [
-    formatOverviewKey(reference.name),
-    overviewValueText(meta[reference.name])
-  ]).filter(([, value]) => value).slice(0, 6);
+  const referenceRows = (definition?.references || [])
+    .filter((reference) => !reference.containment)
+    .map((reference) => [
+      formatOverviewKey(reference.name),
+      overviewValueText(meta[reference.name]),
+    ])
+    .filter(([, value]) => value)
+    .slice(0, 6);
   if (referenceRows.length) {
     hasSummary = true;
     summary.appendChild(buildOverviewGroup("References", referenceRows));
@@ -905,7 +1030,7 @@ function overviewBadges(node, definition) {
       return;
     }
     seen.add(`${issue}:${text}`);
-    badges.push({label: text, issue});
+    badges.push({ label: text, issue });
   };
 
   OVERVIEW_BADGE_FIELDS.forEach((field) => {
@@ -924,8 +1049,7 @@ function overviewBadges(node, definition) {
     cimOverviewIssueBadges(node).forEach((label) => pushBadge(label, true));
   }
 
-  const visibleFields = Array.isArray(definition?.visibleFields)
-      ? definition.visibleFields : [];
+  const visibleFields = Array.isArray(definition?.visibleFields) ? definition.visibleFields : [];
   visibleFields.slice(0, 6).forEach((field) => {
     const value = meta[field];
     if (typeof value === "boolean" && value) {
@@ -938,32 +1062,48 @@ function overviewBadges(node, definition) {
 
 function cimOverviewIssueBadges(node) {
   const issues = [];
-  const values = [node?.label, node?.type, ...Object.values(node?.meta || {})
-  .flatMap((value) => Array.isArray(value) ? value : [value])];
-  if (values.some((value) => typeof value === "string"
-      && /aws|lambda|dynamodb|eventbridge|step function|api gateway|sns|sqs|cognito|cloudwatch|iam|kms|s3/i.test(
-          value))) {
+  const values = [
+    node?.label,
+    node?.type,
+    ...Object.values(node?.meta || {}).flatMap((value) => (Array.isArray(value) ? value : [value])),
+  ];
+  if (
+    values.some(
+      (value) =>
+        typeof value === "string" &&
+        /aws|lambda|dynamodb|eventbridge|step function|api gateway|sns|sqs|cognito|cloudwatch|iam|kms|s3/i.test(
+          value,
+        ),
+    )
+  ) {
     issues.push("provider-independent");
   }
-  if (node.type === "BusinessEvent"
-      && !isPastTenseBusinessEventName(node.meta?.occurredInPastTenseName
-          || node.label)) {
+  if (
+    node.type === "BusinessEvent" &&
+    !isPastTenseBusinessEventName(node.meta?.occurredInPastTenseName || node.label)
+  ) {
     issues.push("past tense");
   }
   return issues;
 }
 
 function isPastTenseBusinessEventName(value) {
-  const text = String(value || "").trim().toLowerCase();
+  const text = String(value || "")
+    .trim()
+    .toLowerCase();
   if (!text) {
     return false;
   }
   const words = text.split(/\s+/).filter(Boolean);
   const first = words[0] || "";
   const last = words[words.length - 1] || "";
-  return first.endsWith("ed") || last.endsWith("ed")
-      || /(?:submitted|created|updated|deleted|confirmed|rejected|approved|cancelled|canceled|completed|failed|paid|sent|received|placed|registered|enrolled|verified|accepted|declined)$/.test(
-          first);
+  return (
+    first.endsWith("ed") ||
+    last.endsWith("ed") ||
+    /(?:submitted|created|updated|deleted|confirmed|rejected|approved|cancelled|canceled|completed|failed|paid|sent|received|placed|registered|enrolled|verified|accepted|declined)$/.test(
+      first,
+    )
+  );
 }
 
 function overviewValueText(value) {
@@ -971,9 +1111,13 @@ function overviewValueText(value) {
     if (!value.length) {
       return "";
     }
-    return value.slice(0, 3).map((item) => refSummaryLabel(item)).filter(
-        Boolean).join(", ") + (value.length > 3 ? ` +${value.length - 3}`
-        : "");
+    return (
+      value
+        .slice(0, 3)
+        .map((item) => refSummaryLabel(item))
+        .filter(Boolean)
+        .join(", ") + (value.length > 3 ? ` +${value.length - 3}` : "")
+    );
   }
   if (typeof value === "boolean") {
     return value ? "Yes" : "";
@@ -998,19 +1142,20 @@ function refSummaryLabel(value) {
 }
 
 function formatOverviewKey(value) {
-  return String(value || "").replaceAll(/([A-Z])/g, " $1").replaceAll(
-      /[_-]+/g, " ").trim().replace(/^./, (match) => match.toUpperCase());
+  return String(value || "")
+    .replaceAll(/([A-Z])/g, " $1")
+    .replaceAll(/[_-]+/g, " ")
+    .trim()
+    .replace(/^./, (match) => match.toUpperCase());
 }
 
 function activateAttrTab(tab) {
   el.attrPanelBody.querySelectorAll("[data-attr-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.attrTab === tab);
   });
-  el.attrPanelBody.querySelectorAll("[data-attr-tab-panel]").forEach(
-      (section) => {
-        section.classList.toggle("hidden", section.dataset.attrTabPanel
-            !== tab);
-      });
+  el.attrPanelBody.querySelectorAll("[data-attr-tab-panel]").forEach((section) => {
+    section.classList.toggle("hidden", section.dataset.attrTabPanel !== tab);
+  });
 }
 
 function buildAttrSectionTitle(title) {
@@ -1020,8 +1165,7 @@ function buildAttrSectionTitle(title) {
   return section;
 }
 
-function appendTraceabilitySection(node, host = el.attrPanelBody,
-    {includeTitle = true} = {}) {
+function appendTraceabilitySection(node, host = el.attrPanelBody, { includeTitle = true } = {}) {
   if (!["cim", "pim", "psm"].includes(state.activeType)) {
     return;
   }
@@ -1033,41 +1177,59 @@ function appendTraceabilitySection(node, host = el.attrPanelBody,
     if (relationship.kind !== "TRACE" && relationship.eClass !== "TraceLink") {
       return;
     }
-    if (relationship.sourceElementId === node.id
-        || relationship.targetElementId === node.id
-        || relationship.source === node.id || relationship.target === node.id) {
+    if (
+      relationship.sourceElementId === node.id ||
+      relationship.targetElementId === node.id ||
+      relationship.source === node.id ||
+      relationship.target === node.id
+    ) {
       traceLinks.push(relationship);
     }
   });
   const summary = document.createElement("div");
   summary.className = "attr-trace-summary";
-  summary.innerHTML = traceLinks.length ? traceLinks.map((link) => {
-        const direction = (link.sourceElementId || link.source) === node.id
-            ? "outgoing" : "incoming";
-        const otherId = direction === "outgoing"
-            ? (link.targetElementId || link.target)
-            : (link.sourceElementId || link.source);
-        const other = state.graph?.elementsById?.get(otherId);
-        return `<div class="attr-trace-row"><span>${direction}</span><strong>${
-            escapeAttr(link.linkType || link.kind || "TRACE")}</strong><em>${
-            escapeAttr(
-                other?.name || other?.label || otherId || "external")}</em></div>`;
-      }).join("")
-      : `<div class="attr-field-hint">No trace links for this element.</div>`;
+  summary.innerHTML = traceLinks.length
+    ? traceLinks
+        .map((link) => {
+          const direction =
+            (link.sourceElementId || link.source) === node.id ? "outgoing" : "incoming";
+          const otherId =
+            direction === "outgoing"
+              ? link.targetElementId || link.target
+              : link.sourceElementId || link.source;
+          const other = state.graph?.elementsById?.get(otherId);
+          return `<div class="attr-trace-row"><span>${direction}</span><strong>${escapeAttr(
+            link.linkType || link.kind || "TRACE",
+          )}</strong><em>${escapeAttr(
+            other?.name || other?.label || otherId || "external",
+          )}</em></div>`;
+        })
+        .join("")
+    : `<div class="attr-field-hint">No trace links for this element.</div>`;
   host.appendChild(summary);
   [
-    "sourceReference", "sourceExcerpt", "sourceQualifiedName", "sourceUri",
-    "sourceLine", "traceId", "generatedFrom", "generatedByTransformation",
-    "rationale", "reviewStatus", "reviewNotes", "manuallyMaintained"
+    "sourceReference",
+    "sourceExcerpt",
+    "sourceQualifiedName",
+    "sourceUri",
+    "sourceLine",
+    "traceId",
+    "generatedFrom",
+    "generatedByTransformation",
+    "rationale",
+    "reviewStatus",
+    "reviewNotes",
+    "manuallyMaintained",
   ].forEach((key) => {
-    const booleanField = key === "generatedByTransformation"
-        || key === "manuallyMaintained";
+    const booleanField = key === "generatedByTransformation" || key === "manuallyMaintained";
     if (!Object.prototype.hasOwnProperty.call(node.meta || {}, key)) {
       node.meta[key] = booleanField ? false : "";
     }
-    host.appendChild(buildAttrField(key, node.meta?.[key], {
-      fieldType: booleanField ? "boolean" : inferFieldType(node.meta?.[key])
-    }));
+    host.appendChild(
+      buildAttrField(key, node.meta?.[key], {
+        fieldType: booleanField ? "boolean" : inferFieldType(node.meta?.[key]),
+      }),
+    );
   });
 }
 
@@ -1081,16 +1243,19 @@ function legalOutgoingRelationshipOptions(node) {
   } catch {
     return [];
   }
-  const targetTypes = (level.elements || []).map((entry) => String(entry?.type
-      || "").trim()).filter(Boolean).filter((type) => {
-    try {
-      const definition = modelingElementDefinition(state.activeType, type);
-      return !definition?.relationshipElement && !definition?.abstract
-          && !definition?.supportOnly;
-    } catch {
-      return true;
-    }
-  });
+  const targetTypes = (level.elements || [])
+    .map((entry) => String(entry?.type || "").trim())
+    .filter(Boolean)
+    .filter((type) => {
+      try {
+        const definition = modelingElementDefinition(state.activeType, type);
+        return (
+          !definition?.relationshipElement && !definition?.abstract && !definition?.supportOnly
+        );
+      } catch {
+        return true;
+      }
+    });
   const byKind = new Map();
   targetTypes.forEach((targetType) => {
     let kinds = [];
@@ -1107,17 +1272,18 @@ function legalOutgoingRelationshipOptions(node) {
       const entry = byKind.get(key) || {
         kind: key,
         label: modelingRelationshipKindLabel(state.activeType, key),
-        targets: new Set()
+        targets: new Set(),
       };
       entry.targets.add(targetType);
       byKind.set(key, entry);
     });
   });
-  return [...byKind.values()].map((entry) => ({
-    ...entry,
-    targets: [...entry.targets].sort((a, b) => a.localeCompare(b))
-  })).sort((a, b) => a.label.localeCompare(b.label)
-      || a.kind.localeCompare(b.kind));
+  return [...byKind.values()]
+    .map((entry) => ({
+      ...entry,
+      targets: [...entry.targets].sort((a, b) => a.localeCompare(b)),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label) || a.kind.localeCompare(b.kind));
 }
 
 function appendLegalOutgoingRelationships(node, host = el.attrPanelBody) {
@@ -1144,8 +1310,9 @@ function appendLegalOutgoingRelationships(node, host = el.attrPanelBody) {
     title.textContent = option.label || option.kind;
     const targets = document.createElement("span");
     const visibleTargets = option.targets.slice(0, 5).join(", ");
-    targets.textContent = `${visibleTargets}${option.targets.length > 5
-        ? ` +${option.targets.length - 5}` : ""}`;
+    targets.textContent = `${visibleTargets}${
+      option.targets.length > 5 ? ` +${option.targets.length - 5}` : ""
+    }`;
     body.append(title, targets);
     const action = document.createElement("button");
     action.type = "button";
@@ -1166,31 +1333,34 @@ function containmentEntriesForType(type) {
   try {
     const configured = modelingContainmentsForType(state.activeType, type);
     if (configured.length) {
-      return configured.filter((entry) => !entry.relationshipOnly
-          && entry.types?.length);
+      return configured.filter((entry) => !entry.relationshipOnly && entry.types?.length);
     }
   } catch {
     // fall back to legacy local containment catalogs below
   }
   if (state.activeType === "pim") {
-    return pimNestedContainmentsForType(type).map((entry) => ({
-      ...entry,
-      types: (entry.types || []).filter((childType) => childType
-          && !PIM_ABSTRACT_TYPES.includes(childType))
-    })).filter((entry) => entry.types.length && !entry.relationshipOnly);
+    return pimNestedContainmentsForType(type)
+      .map((entry) => ({
+        ...entry,
+        types: (entry.types || []).filter(
+          (childType) => childType && !PIM_ABSTRACT_TYPES.includes(childType),
+        ),
+      }))
+      .filter((entry) => entry.types.length && !entry.relationshipOnly);
   }
   if (state.activeType !== "cim") {
     return [];
   }
   const entries = [];
-  Object.entries(CIM_NESTED_CONTAINMENTS).forEach(
-      ([ownerType, containments]) => {
-        if (ownerType === "ModelElement"
-            ? cimTypeMatches({eClass: type}, "ModelElement")
-            : cimTypeMatches({eClass: type}, ownerType)) {
-          entries.push(...containments);
-        }
-      });
+  Object.entries(CIM_NESTED_CONTAINMENTS).forEach(([ownerType, containments]) => {
+    if (
+      ownerType === "ModelElement"
+        ? cimTypeMatches({ eClass: type }, "ModelElement")
+        : cimTypeMatches({ eClass: type }, ownerType)
+    ) {
+      entries.push(...containments);
+    }
+  });
   const byFeature = new Map();
   entries.forEach((entry) => {
     if (!entry?.feature) {
@@ -1198,11 +1368,11 @@ function containmentEntriesForType(type) {
     }
     const current = byFeature.get(entry.feature) || {
       feature: entry.feature,
-      types: []
+      types: [],
     };
-    current.types = [...new Set([...current.types, ...(entry.types || [])])]
-    .filter((childType) => childType
-        && !CIM_ABSTRACT_TYPES.includes(childType));
+    current.types = [...new Set([...current.types, ...(entry.types || [])])].filter(
+      (childType) => childType && !CIM_ABSTRACT_TYPES.includes(childType),
+    );
     byFeature.set(entry.feature, current);
   });
   return [...byFeature.values()].filter((entry) => entry.types.length);
@@ -1210,13 +1380,17 @@ function containmentEntriesForType(type) {
 
 function containmentChildren(parent, feature) {
   const parentElement = state.graph?.elementsById?.get(parent.id);
-  const ids = new Set((state.activeType === "pim" ? pimRefIds : refIds)(
-      parentElement?.[feature] ?? parent.meta?.[feature]));
+  const ids = new Set(
+    (state.activeType === "pim" ? pimRefIds : refIds)(
+      parentElement?.[feature] ?? parent.meta?.[feature],
+    ),
+  );
   const children = [];
   state.graph?.elementsById?.forEach((element) => {
-    if (ids.has(element.id)
-        || (element.__ownerId === parent.id
-            && element.__containmentFeature === feature)) {
+    if (
+      ids.has(element.id) ||
+      (element.__ownerId === parent.id && element.__containmentFeature === feature)
+    ) {
       children.push(element);
     }
   });
@@ -1242,15 +1416,23 @@ function appendContainmentSections(node, host = el.attrPanelBody) {
     section.innerHTML = `
       <div class="attr-section-title">${escapeAttr(entry.feature)}</div>
       <div class="attr-containment-actions">
-        ${entry.types.map((type) => `<button class="btn btn-secondary btn-sm"
+        ${entry.types
+          .map(
+            (type) => `<button class="btn btn-secondary btn-sm"
             data-add-contained-child="${escapeAttr(node.id)}"
             data-containment-feature="${escapeAttr(entry.feature)}"
-            data-contained-type="${escapeAttr(type)}" type="button">Add ${
-        escapeAttr(type)}</button>`).join("")}
+            data-contained-type="${escapeAttr(type)}" type="button">Add ${escapeAttr(
+              type,
+            )}</button>`,
+          )
+          .join("")}
       </div>
       <div class="attr-contained-list">
-        ${children.length ? containmentTableMarkup(children)
-        : `<div class="attr-field-hint">No contained children.</div>`}
+        ${
+          children.length
+            ? containmentTableMarkup(children)
+            : `<div class="attr-field-hint">No contained children.</div>`
+        }
       </div>`;
     host.appendChild(section);
   });
@@ -1261,53 +1443,76 @@ function containmentTableMarkup(children) {
   return `<div class="attr-contained-table-wrap">
     <table class="attr-contained-table">
       <thead>
-        <tr><th>Element</th>${columns.map((column) => `<th>${escapeAttr(
-      column)}</th>`).join("")}<th></th></tr>
+        <tr><th>Element</th>${columns
+          .map((column) => `<th>${escapeAttr(column)}</th>`)
+          .join("")}<th></th></tr>
       </thead>
       <tbody>
-        ${children.map((child) => `<tr>
+        ${children
+          .map(
+            (child) => `<tr>
           <td>
             <button class="attr-contained-link"
                     data-open-contained-child="${escapeAttr(child.id)}"
                     type="button">${escapeAttr(elementLabel(child))}</button>
             <span>${escapeAttr(child.eClass || child.type || "Element")}</span>
           </td>
-          ${columns.map((column) => `<td>${containedCellMarkup(child,
-      column)}</td>`).join("")}
+          ${columns.map((column) => `<td>${containedCellMarkup(child, column)}</td>`).join("")}
           <td>
             <button class="btn btn-secondary btn-sm"
                     data-delete-contained-child="${escapeAttr(child.id)}"
                     type="button">Delete</button>
           </td>
-        </tr>`).join("")}
+        </tr>`,
+          )
+          .join("")}
       </tbody>
     </table>
   </div>`;
 }
 
 function containmentColumns(children) {
-  const preferred = ["name", "logicalId", "stageName", "stackName",
-    "method", "pathTemplate", "fieldType", "literal", "stateKind", "effect",
-    "targetResource", "propertyName", "key", "value", "lifecycleStatus"];
+  const preferred = [
+    "name",
+    "logicalId",
+    "stageName",
+    "stackName",
+    "method",
+    "pathTemplate",
+    "fieldType",
+    "literal",
+    "stateKind",
+    "effect",
+    "targetResource",
+    "propertyName",
+    "key",
+    "value",
+    "lifecycleStatus",
+  ];
   const configured = children.flatMap((child) => {
     try {
-      return modelingElementDefinition(state.activeType, child.eClass)
-          ?.visibleFields || [];
+      return modelingElementDefinition(state.activeType, child.eClass)?.visibleFields || [];
     } catch {
       return [];
     }
   });
-  return [...new Set([...preferred, ...configured])].filter((column) =>
-      children.some((child) => child[column] !== undefined)).slice(0, 6);
+  return [...new Set([...preferred, ...configured])]
+    .filter((column) => children.some((child) => child[column] !== undefined))
+    .slice(0, 6);
 }
 
 function containedFieldDefinition(child, fieldName) {
   try {
-    const definition = modelingElementDefinition(state.activeType,
-        child.eClass || child.type);
-    return [...(definition?.attributes || []), ...(definition?.references
-        || []).map((reference) => ({...reference, fieldType: "reference"}))]
-    .find((field) => field.name === fieldName) || null;
+    const definition = modelingElementDefinition(state.activeType, child.eClass || child.type);
+    return (
+      [
+        ...(definition?.attributes || []),
+        ...(definition?.references || []).map((reference) => ({
+          ...reference,
+          fieldType: "reference",
+        })),
+      ].find((field) => field.name === fieldName) || null
+    );
   } catch {
     return null;
   }
@@ -1317,22 +1522,24 @@ function containedCellMarkup(child, fieldName) {
   const field = containedFieldDefinition(child, fieldName) || {};
   const value = child[fieldName];
   if (field.readonly || READONLY_ATTR_KEYS.has(fieldName)) {
-    return `<span class="attr-contained-readonly">${escapeAttr(
-        overviewValueText(value))}</span>`;
+    return `<span class="attr-contained-readonly">${escapeAttr(overviewValueText(value))}</span>`;
   }
   if (field.kind === "reference" || field.fieldType === "reference") {
-    return `<span class="attr-contained-readonly">${escapeAttr(
-        overviewValueText(value))}</span>`;
+    return `<span class="attr-contained-readonly">${escapeAttr(overviewValueText(value))}</span>`;
   }
-  if (field.fieldType === "select" && Array.isArray(field.options)
-      && field.options.length) {
+  if (field.fieldType === "select" && Array.isArray(field.options) && field.options.length) {
     return `<select class="attr-contained-input"
                     data-contained-edit="${escapeAttr(child.id)}"
                     data-contained-field="${escapeAttr(fieldName)}">
       <option value=""></option>
-      ${field.options.map((option) => `<option value="${escapeAttr(option)}" ${
-        String(value ?? "") === String(option) ? "selected" : ""}>${
-        escapeAttr(option)}</option>`).join("")}
+      ${field.options
+        .map(
+          (option) =>
+            `<option value="${escapeAttr(option)}" ${
+              String(value ?? "") === String(option) ? "selected" : ""
+            }>${escapeAttr(option)}</option>`,
+        )
+        .join("")}
     </select>`;
   }
   if (field.fieldType === "boolean" || typeof value === "boolean") {
@@ -1341,8 +1548,7 @@ function containedCellMarkup(child, fieldName) {
                    data-contained-field="${escapeAttr(fieldName)}"
                    type="checkbox" ${value ? "checked" : ""}>`;
   }
-  const inputType = field.fieldType === "number" || typeof value === "number"
-      ? "number" : "text";
+  const inputType = field.fieldType === "number" || typeof value === "number" ? "number" : "text";
   return `<input class="attr-contained-input"
                  data-contained-edit="${escapeAttr(child.id)}"
                  data-contained-field="${escapeAttr(fieldName)}"
@@ -1352,13 +1558,12 @@ function containedCellMarkup(child, fieldName) {
 function appendPimValidationSummary(section, element, type) {
   const missing = pimMissingRequiredFeatures({
     ...(element || {}),
-    eClass: type || element?.eClass || element?.type
+    eClass: type || element?.eClass || element?.type,
   });
   const impactedBy = [];
   state.graph?.elementsById?.forEach((candidate) => {
     const candidateType = candidate.eClass || candidate.type;
-    if (!["ReadinessFinding", "ReadinessCheck", "ManualDecision"].includes(
-        candidateType)) {
+    if (!["ReadinessFinding", "ReadinessCheck", "ManualDecision"].includes(candidateType)) {
       return;
     }
     if (pimRefIds(candidate.affectedElements).includes(element?.id)) {
@@ -1368,110 +1573,162 @@ function appendPimValidationSummary(section, element, type) {
   const summary = document.createElement("div");
   summary.className = "attr-validation-summary";
   summary.innerHTML = `
-    ${missing.length ? `<div class="attr-validation-block is-error">
+    ${
+      missing.length
+        ? `<div class="attr-validation-block is-error">
       <strong>Missing required</strong>
       ${missing.map((field) => `<span>${escapeAttr(field)}</span>`).join("")}
-    </div>` : `<div class="attr-validation-block is-ok">
-      <strong>Required fields complete</strong>
-    </div>`}
-    ${impactedBy.length ? `<div class="attr-validation-block">
-      <strong>Readiness links</strong>
-      ${impactedBy.map((item) => `<span>${escapeAttr(item.name || item.label
-          || item.checkId || item.question || item.id)}</span>`).join("")}
     </div>`
-      : `<div class="attr-field-hint">No linked readiness findings.</div>`}`;
+        : `<div class="attr-validation-block is-ok">
+      <strong>Required fields complete</strong>
+    </div>`
+    }
+    ${
+      impactedBy.length
+        ? `<div class="attr-validation-block">
+      <strong>Readiness links</strong>
+      ${impactedBy
+        .map(
+          (item) =>
+            `<span>${escapeAttr(
+              item.name || item.label || item.checkId || item.question || item.id,
+            )}</span>`,
+        )
+        .join("")}
+    </div>`
+        : `<div class="attr-field-hint">No linked readiness findings.</div>`
+    }`;
   section.appendChild(summary);
 }
 
 function appendCimValidationSummary(section, element, type) {
   const normalized = {
     ...(element || {}),
-    eClass: type || element?.eClass || element?.type
+    eClass: type || element?.eClass || element?.type,
   };
   const missing = cimMissingRequiredFeatures(normalized);
   const impactedBy = [];
   state.graph?.elementsById?.forEach((candidate) => {
     const candidateType = candidate.eClass || candidate.type;
-    if (!["Risk", "Hotspot", "ReadinessFinding", "ReadinessCheck",
-      "ManualDecision"].includes(candidateType)) {
+    if (
+      !["Risk", "Hotspot", "ReadinessFinding", "ReadinessCheck", "ManualDecision"].includes(
+        candidateType,
+      )
+    ) {
       return;
     }
-    if (refIds(candidate.affectedElements).includes(element?.id)
-        || refIds(candidate.attachedTo).includes(element?.id)) {
+    if (
+      refIds(candidate.affectedElements).includes(element?.id) ||
+      refIds(candidate.attachedTo).includes(element?.id)
+    ) {
       impactedBy.push(candidate);
     }
   });
   const summary = document.createElement("div");
   summary.className = "attr-validation-summary";
   summary.innerHTML = `
-    ${missing.length ? `<div class="attr-validation-block is-error">
+    ${
+      missing.length
+        ? `<div class="attr-validation-block is-error">
       <strong>Missing required</strong>
       ${missing.map((field) => `<span>${escapeAttr(field)}</span>`).join("")}
-    </div>` : `<div class="attr-validation-block is-ok">
-      <strong>Required fields complete</strong>
-    </div>`}
-    ${impactedBy.length ? `<div class="attr-validation-block">
-      <strong>Readiness and risk links</strong>
-      ${impactedBy.map((item) => `<span>${escapeAttr(item.name || item.label
-          || item.checkId || item.question || item.id)}</span>`).join("")}
     </div>`
-      : `<div class="attr-field-hint">No linked risks, hotspots, or readiness findings.</div>`}`;
+        : `<div class="attr-validation-block is-ok">
+      <strong>Required fields complete</strong>
+    </div>`
+    }
+    ${
+      impactedBy.length
+        ? `<div class="attr-validation-block">
+      <strong>Readiness and risk links</strong>
+      ${impactedBy
+        .map(
+          (item) =>
+            `<span>${escapeAttr(
+              item.name || item.label || item.checkId || item.question || item.id,
+            )}</span>`,
+        )
+        .join("")}
+    </div>`
+        : `<div class="attr-field-hint">No linked risks, hotspots, or readiness findings.</div>`
+    }`;
   section.appendChild(summary);
 }
 
 function appendPsmValidationSummary(section, element, type) {
   const normalized = {
     ...(element || {}),
-    eClass: type || element?.eClass || element?.type
+    eClass: type || element?.eClass || element?.type,
   };
   const missing = metadataMissingRequiredFeatures("psm", normalized);
   const impactedBy = [];
   state.graph?.elementsById?.forEach((candidate) => {
     const candidateType = candidate.eClass || candidate.type;
-    if (!["ProductionReadinessAssessment", "ReadinessFinding",
-      "ReadinessCheck", "ManualDecision"].includes(candidateType)) {
+    if (
+      ![
+        "ProductionReadinessAssessment",
+        "ReadinessFinding",
+        "ReadinessCheck",
+        "ManualDecision",
+      ].includes(candidateType)
+    ) {
       return;
     }
-    if (refIds(candidate.affectedElements).includes(element?.id)
-        || refIds(candidate.attachedTo).includes(element?.id)) {
+    if (
+      refIds(candidate.affectedElements).includes(element?.id) ||
+      refIds(candidate.attachedTo).includes(element?.id)
+    ) {
       impactedBy.push(candidate);
     }
   });
   const summary = document.createElement("div");
   summary.className = "attr-validation-summary";
   summary.innerHTML = `
-    ${missing.length ? `<div class="attr-validation-block is-error">
+    ${
+      missing.length
+        ? `<div class="attr-validation-block is-error">
       <strong>Missing required</strong>
       ${missing.map((field) => `<span>${escapeAttr(field)}</span>`).join("")}
-    </div>` : `<div class="attr-validation-block is-ok">
-      <strong>Required fields complete</strong>
-    </div>`}
-    ${impactedBy.length ? `<div class="attr-validation-block">
-      <strong>Readiness links</strong>
-      ${impactedBy.map((item) => `<span>${escapeAttr(item.name || item.label
-          || item.checkId || item.question || item.id)}</span>`).join("")}
     </div>`
-      : `<div class="attr-field-hint">No linked readiness findings.</div>`}`;
+        : `<div class="attr-validation-block is-ok">
+      <strong>Required fields complete</strong>
+    </div>`
+    }
+    ${
+      impactedBy.length
+        ? `<div class="attr-validation-block">
+      <strong>Readiness links</strong>
+      ${impactedBy
+        .map(
+          (item) =>
+            `<span>${escapeAttr(
+              item.name || item.label || item.checkId || item.question || item.id,
+            )}</span>`,
+        )
+        .join("")}
+    </div>`
+        : `<div class="attr-field-hint">No linked readiness findings.</div>`
+    }`;
   section.appendChild(summary);
 }
 
 function metadataMissingRequiredFeatures(typeKey, element) {
   let definition = null;
   try {
-    definition = modelingElementDefinition(typeKey, element.eClass
-        || element.type);
+    definition = modelingElementDefinition(typeKey, element.eClass || element.type);
   } catch {
     return [];
   }
   return [...(definition?.attributes || []), ...(definition?.references || [])]
-  .filter((field) => field.required && !field.readonly)
-  .filter((field) => {
-    const value = element[field.name];
-    if (Array.isArray(value)) {
-      return !value.length;
-    }
-    return value === null || value === undefined || String(value).trim() === "";
-  }).map((field) => field.name);
+    .filter((field) => field.required && !field.readonly)
+    .filter((field) => {
+      const value = element[field.name];
+      if (Array.isArray(value)) {
+        return !value.length;
+      }
+      return value === null || value === undefined || String(value).trim() === "";
+    })
+    .map((field) => field.name);
 }
 
 function initializeContainedChildDefaults(child, parent, feature) {
@@ -1527,11 +1784,11 @@ function initializePimContainedChildDefaults(child, parent, feature) {
   } else if (child.type === "WorkflowState") {
     child.meta.stateKind ||= "TASK";
     if (parent?.meta && feature === "states") {
-      parent.meta.states = [...new Set(
-          [...(pimRefIds(parent.meta.states)), child.id])];
+      parent.meta.states = [...new Set([...pimRefIds(parent.meta.states), child.id])];
       parent.meta.startState ||= child.id;
       parent.meta.endStates = pimRefIds(parent.meta.endStates).length
-          ? parent.meta.endStates : [child.id];
+        ? parent.meta.endStates
+        : [child.id];
     }
   } else if (child.type === "WorkflowTransition") {
     child.meta.defaultTransition ||= false;
@@ -1540,8 +1797,7 @@ function initializePimContainedChildDefaults(child, parent, feature) {
   } else if (child.type === "ConfigParameter") {
     child.meta.scope ||= "APPLICATION";
   } else if (child.type === "EnvironmentVariable") {
-    child.meta.variableName ||= child.label.replaceAll(/[^A-Za-z0-9_]+/g, "_")
-    .toUpperCase();
+    child.meta.variableName ||= child.label.replaceAll(/[^A-Za-z0-9_]+/g, "_").toUpperCase();
   } else if (child.type === "CredentialRequirement") {
     child.meta.secretKind ||= "TOKEN";
   } else if (child.type === "MetricDimension") {
@@ -1562,10 +1818,8 @@ function addContainedChildFromDrawer(parentId, feature, childType) {
   if (!parentNode || !parentElement || !feature || !childType) {
     return;
   }
-  const child = getDefaultNode(state.activeType, childType, parentNode.x + 180,
-      parentNode.y + 120);
-  child.label = `${childType} ${containmentChildren(parentNode, feature).length
-  + 1}`;
+  const child = getDefaultNode(state.activeType, childType, parentNode.x + 180, parentNode.y + 120);
+  child.label = `${childType} ${containmentChildren(parentNode, feature).length + 1}`;
   child.meta.name = child.label;
   child.meta.label = child.label;
   initializeContainedChildDefaults(child, parentNode, feature);
@@ -1574,7 +1828,7 @@ function addContainedChildFromDrawer(parentId, feature, childType) {
   addReferenceValue(parentElement, feature, child.id, true);
   parentNode.meta[feature] = parentElement[feature];
   markModelDirty();
-  syncDiagramRenderer({workbench: true});
+  syncDiagramRenderer({ workbench: true });
   openAttributePanel(parentId);
   setStatus(`Added ${childType}`);
 }
@@ -1595,8 +1849,12 @@ function updateContainedChildField(childId, fieldName, rawValue, inputType) {
   child[fieldName] = value;
   if (node?.meta) {
     node.meta[fieldName] = value;
-    if (fieldName === "name" || fieldName === "logicalId"
-        || fieldName === "stageName" || fieldName === "stackName") {
+    if (
+      fieldName === "name" ||
+      fieldName === "logicalId" ||
+      fieldName === "stageName" ||
+      fieldName === "stackName"
+    ) {
       node.label = String(value || node.label);
       node.meta.name = node.label;
       node.meta.label = node.label;
@@ -1605,7 +1863,7 @@ function updateContainedChildField(childId, fieldName, rawValue, inputType) {
     }
   }
   markModelDirty();
-  syncDiagramRenderer({workbench: true});
+  syncDiagramRenderer({ workbench: true });
   setStatus(`Updated ${fieldName}`);
 }
 
@@ -1619,24 +1877,24 @@ function deleteContainedChild(childId) {
   const parent = parentId ? state.graph?.elementsById?.get(parentId) : null;
   const parentNode = parentId ? state.nodesById.get(parentId) : null;
   if (parent && feature) {
-    const nextIds = (state.activeType === "pim" ? pimRefIds : refIds)(
-        parent[feature]).filter((id) => id !== childId);
+    const nextIds = (state.activeType === "pim" ? pimRefIds : refIds)(parent[feature]).filter(
+      (id) => id !== childId,
+    );
     parent[feature] = nextIds;
     if (parentNode?.meta) {
       parentNode.meta[feature] = nextIds;
     }
   }
   removeElementFromGraph(childId);
-  const diagramNode = state.diagram?.nodes?.find((node) => node.id
-      === childId);
+  const diagramNode = state.diagram?.nodes?.find((node) => node.id === childId);
   if (diagramNode) {
-    state.diagram.nodes = state.diagram.nodes.filter((node) => node.id
-        !== childId);
-    state.diagram.connections = state.diagram.connections.filter((edge) =>
-        edge.sourceId !== childId && edge.targetId !== childId);
+    state.diagram.nodes = state.diagram.nodes.filter((node) => node.id !== childId);
+    state.diagram.connections = state.diagram.connections.filter(
+      (edge) => edge.sourceId !== childId && edge.targetId !== childId,
+    );
   }
   markModelDirty();
-  syncDiagramRenderer({workbench: true});
+  syncDiagramRenderer({ workbench: true });
   if (parentId && state.nodesById.has(parentId)) {
     openAttributePanel(parentId);
   }
@@ -1644,56 +1902,60 @@ function deleteContainedChild(childId) {
 }
 
 function bindContainmentSectionActions() {
-  el.attrPanelBody.querySelectorAll("[data-add-contained-child]").forEach(
-      (button) => {
-        button.addEventListener("click", () => {
-          addContainedChildFromDrawer(button.dataset.addContainedChild,
-              button.dataset.containmentFeature,
-              button.dataset.containedType);
-        });
+  el.attrPanelBody.querySelectorAll("[data-add-contained-child]").forEach((button) => {
+    button.addEventListener("click", () => {
+      addContainedChildFromDrawer(
+        button.dataset.addContainedChild,
+        button.dataset.containmentFeature,
+        button.dataset.containedType,
+      );
+    });
+  });
+  el.attrPanelBody.querySelectorAll("[data-open-contained-child]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openAttributePanel(button.dataset.openContainedChild);
+    });
+  });
+  el.attrPanelBody.querySelectorAll("[data-delete-contained-child]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const childId = button.dataset.deleteContainedChild;
+      const child = state.graph?.elementsById?.get(childId);
+      const label = child ? elementLabel(child) : childId;
+      const confirmed = await confirmAction({
+        title: "Delete Contained Element",
+        message: `Delete contained element "${label}"?`,
+        confirmLabel: "Delete",
+        danger: true,
       });
-  el.attrPanelBody.querySelectorAll("[data-open-contained-child]").forEach(
-      (button) => {
-        button.addEventListener("click", () => {
-          openAttributePanel(button.dataset.openContainedChild);
-        });
-      });
-  el.attrPanelBody.querySelectorAll("[data-delete-contained-child]").forEach(
-      (button) => {
-        button.addEventListener("click", async () => {
-          const childId = button.dataset.deleteContainedChild;
-          const child = state.graph?.elementsById?.get(childId);
-          const label = child ? elementLabel(child) : childId;
-          const confirmed = await confirmAction({
-            title: "Delete Contained Element",
-            message: `Delete contained element "${label}"?`,
-            confirmLabel: "Delete",
-            danger: true
-          });
-          if (confirmed) {
-            deleteContainedChild(childId);
-          }
-        });
-      });
-  el.attrPanelBody.querySelectorAll("[data-contained-edit]").forEach(
-      (input) => {
-        input.addEventListener("change", () => {
-          updateContainedChildField(input.dataset.containedEdit,
-              input.dataset.containedField,
-              input.type === "checkbox" ? input.checked : input.value,
-              input.type);
-        });
-      });
+      if (confirmed) {
+        deleteContainedChild(childId);
+      }
+    });
+  });
+  el.attrPanelBody.querySelectorAll("[data-contained-edit]").forEach((input) => {
+    input.addEventListener("change", () => {
+      updateContainedChildField(
+        input.dataset.containedEdit,
+        input.dataset.containedField,
+        input.type === "checkbox" ? input.checked : input.value,
+        input.type,
+      );
+    });
+  });
 }
 
 function escapeAttr(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "\"": "&quot;",
-    "'": "&#39;"
-  }[char]));
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[char],
+  );
 }
 
 function inferFieldType(value) {
@@ -1713,12 +1975,27 @@ function inferFieldType(value) {
 }
 
 const PIM_EXPRESSION_FIELDS = new Set([
-  "pathTemplate", "filterExpression", "eventPattern", "routingExpression",
-  "routingExpressionLanguage", "inputTransformation", "inputMapping",
-  "outputMapping", "conditionExpression", "expression", "authorizationRule",
-  "retryableErrors", "nonRetryableErrors", "queryBy", "sortBy", "filterBy",
-  "projection", "scheduleExpression", "validationPattern", "condition",
-  "valueExpression"
+  "pathTemplate",
+  "filterExpression",
+  "eventPattern",
+  "routingExpression",
+  "routingExpressionLanguage",
+  "inputTransformation",
+  "inputMapping",
+  "outputMapping",
+  "conditionExpression",
+  "expression",
+  "authorizationRule",
+  "retryableErrors",
+  "nonRetryableErrors",
+  "queryBy",
+  "sortBy",
+  "filterBy",
+  "projection",
+  "scheduleExpression",
+  "validationPattern",
+  "condition",
+  "valueExpression",
 ]);
 
 function isPimExpressionField(key, fieldType) {
@@ -1726,9 +2003,13 @@ function isPimExpressionField(key, fieldType) {
     return false;
   }
   const normalized = String(key || "");
-  return fieldType !== "reference" && (PIM_EXPRESSION_FIELDS.has(normalized)
-      || /expression|pattern|condition|mapping|query|filter|projection|json|document|definition|policy/i.test(
-          normalized));
+  return (
+    fieldType !== "reference" &&
+    (PIM_EXPRESSION_FIELDS.has(normalized) ||
+      /expression|pattern|condition|mapping|query|filter|projection|json|document|definition|policy/i.test(
+        normalized,
+      ))
+  );
 }
 
 function buildAttrField(key, value, field) {
@@ -1775,8 +2056,7 @@ function buildAttrField(key, value, field) {
   wrapper.appendChild(lbl);
 
   let input;
-  if (fieldType === "select" && Array.isArray(field?.options)
-      && field.options.length) {
+  if (fieldType === "select" && Array.isArray(field?.options) && field.options.length) {
     input = document.createElement("select");
     const empty = document.createElement("option");
     empty.value = "";
@@ -1828,14 +2108,16 @@ function buildAttrField(key, value, field) {
   if (field?.kind === "reference" && field?.targetType) {
     const hint = document.createElement("div");
     hint.className = "attr-field-hint";
-    hint.textContent = field.many ? `References ${field.targetType}[]`
-        : `References ${field.targetType}`;
+    hint.textContent = field.many
+      ? `References ${field.targetType}[]`
+      : `References ${field.targetType}`;
     wrapper.appendChild(hint);
   }
   if (expressionField) {
     const hint = document.createElement("div");
     hint.className = "attr-field-hint";
-    hint.textContent = "Expression text is preserved exactly; use the related language field when one exists.";
+    hint.textContent =
+      "Expression text is preserved exactly; use the related language field when one exists.";
     wrapper.appendChild(hint);
   }
   return wrapper;
@@ -1852,22 +2134,30 @@ function referenceValueId(value) {
 }
 
 function referenceValueIds(value) {
-  return Array.isArray(value) ? value.map(referenceValueId).filter(Boolean)
-      : [referenceValueId(value)].filter(Boolean);
+  return Array.isArray(value)
+    ? value.map(referenceValueId).filter(Boolean)
+    : [referenceValueId(value)].filter(Boolean);
 }
 
 function elementMatchesReferenceTarget(element, targetType) {
   const expected = String(targetType || "").trim();
-  if (!expected || expected === "*" || expected === "ModelElement"
-      || expected === "TraceableElement" || expected
-      === "SemanticRelationship") {
+  if (
+    !expected ||
+    expected === "*" ||
+    expected === "ModelElement" ||
+    expected === "TraceableElement" ||
+    expected === "SemanticRelationship"
+  ) {
     return true;
   }
   if (state.activeType === "cim") {
     return cimTypeMatches(element, expected);
   }
-  return modelingTypeMatches(state.activeType, expected,
-      String(element?.eClass || element?.type || ""));
+  return modelingTypeMatches(
+    state.activeType,
+    expected,
+    String(element?.eClass || element?.type || ""),
+  );
 }
 
 function referenceOptions(targetType) {
@@ -1877,12 +2167,11 @@ function referenceOptions(targetType) {
       options.push({
         id: element.id,
         label: element.name || element.label || element.id,
-        type: element.eClass || element.type || "Element"
+        type: element.eClass || element.type || "Element",
       });
     }
   });
-  return options.sort((a, b) => a.type.localeCompare(b.type)
-      || a.label.localeCompare(b.label));
+  return options.sort((a, b) => a.type.localeCompare(b.type) || a.label.localeCompare(b.label));
 }
 
 function buildReferenceInput(key, value, field) {
@@ -1891,8 +2180,7 @@ function buildReferenceInput(key, value, field) {
   const selectedIds = new Set(referenceValueIds(value));
   input.multiple = many;
   if (many) {
-    input.size = Math.min(8, Math.max(3,
-        referenceOptions(field?.targetType).length || 3));
+    input.size = Math.min(8, Math.max(3, referenceOptions(field?.targetType).length || 3));
   } else {
     const empty = document.createElement("option");
     empty.value = "";
@@ -1916,8 +2204,7 @@ function buildReferenceInput(key, value, field) {
 export function applyAttributePanel() {
   if (state.selectedBoundedContextName) {
     const currentName = state.selectedBoundedContextName;
-    const input = el.attrPanelBody.querySelector(
-        '[data-attr-key="contextName"]');
+    const input = el.attrPanelBody.querySelector('[data-attr-key="contextName"]');
     const nextName = String(input?.value ?? "").trim();
     if (!nextName) {
       setStatus("Bounded context name cannot be empty");
@@ -1956,8 +2243,7 @@ export function applyAttributePanel() {
         value = Number(input.value);
       } else if (attrType === "reference") {
         if (input.dataset.attrMany === "true") {
-          value = [...input.selectedOptions].map((option) => option.value)
-          .filter(Boolean);
+          value = [...input.selectedOptions].map((option) => option.value).filter(Boolean);
         } else {
           value = input.value || null;
         }
@@ -1985,8 +2271,7 @@ export function applyAttributePanel() {
     syncActiveViewFromVisibleGraph();
     synchronizeOppositeReferences(node);
   } catch {
-    setStatus(
-        "One property contains invalid JSON. Fix it before applying changes.");
+    setStatus("One property contains invalid JSON. Fix it before applying changes.");
     return;
   }
 
@@ -1994,7 +2279,7 @@ export function applyAttributePanel() {
     pushDiagramUndoSnapshot(undoSnapshot);
   }
 
-  syncDiagramRenderer({workbench: true});
+  syncDiagramRenderer({ workbench: true });
 
   el.attrPanelTitle.textContent = node.label;
   markModelDirty();
@@ -2011,8 +2296,7 @@ function readInputValue(input) {
   }
   if (attrType === "reference") {
     if (input.dataset.attrMany === "true") {
-      return [...input.selectedOptions].map((option) => option.value).filter(
-          Boolean);
+      return [...input.selectedOptions].map((option) => option.value).filter(Boolean);
     }
     return input.value || null;
   }
@@ -2026,8 +2310,7 @@ function readInputValue(input) {
 }
 
 function applyConnectionPanel() {
-  const edge = state.diagram.connections.find(
-      (item) => item.id === state.selectedConnectionId);
+  const edge = state.diagram.connections.find((item) => item.id === state.selectedConnectionId);
   if (!edge) {
     return;
   }
@@ -2044,18 +2327,18 @@ function applyConnectionPanel() {
       relationship[key] = readInputValue(input);
     });
   } catch {
-    setStatus(
-        "One connection property contains invalid JSON. Fix it before applying changes.");
+    setStatus("One connection property contains invalid JSON. Fix it before applying changes.");
     return;
   }
-  syncDiagramRenderer({workbench: true});
+  syncDiagramRenderer({ workbench: true });
   markModelDirty();
   setStatus(`Connection updated: ${edge.kind}`);
 }
 
 function asReferenceIds(value) {
-  return Array.isArray(value) ? value.map(referenceValueId).filter(Boolean)
-      : [referenceValueId(value)].filter(Boolean);
+  return Array.isArray(value)
+    ? value.map(referenceValueId).filter(Boolean)
+    : [referenceValueId(value)].filter(Boolean);
 }
 
 function setElementReference(element, key, sourceId, many) {
@@ -2084,8 +2367,11 @@ function removeElementReference(element, key, sourceId, many) {
 
 function referenceDefinition(type, name) {
   try {
-    return (modelingElementDefinition(state.activeType, type)?.references || [])
-    .find((reference) => reference.name === name) || null;
+    return (
+      (modelingElementDefinition(state.activeType, type)?.references || []).find(
+        (reference) => reference.name === name,
+      ) || null
+    );
   } catch {
     return null;
   }
@@ -2111,8 +2397,10 @@ function synchronizeOppositeReferences(node) {
       if (!elementMatchesReferenceTarget(targetElement, reference.targetType)) {
         return;
       }
-      const targetDefinition = referenceDefinition(targetElement.eClass
-          || targetElement.type, opposite);
+      const targetDefinition = referenceDefinition(
+        targetElement.eClass || targetElement.type,
+        opposite,
+      );
       const oppositeMany = targetDefinition?.many !== false;
       if (selectedIds.has(targetId)) {
         setElementReference(targetElement, opposite, node.id, oppositeMany);
@@ -2134,7 +2422,7 @@ export async function deleteSelection() {
       title: "Delete Bounded Context",
       message: `Delete bounded context "${contextName}"?`,
       confirmLabel: "Delete",
-      danger: true
+      danger: true,
     });
     if (!confirmed) {
       return;
@@ -2164,7 +2452,7 @@ export async function deleteSelection() {
     title: "Delete Element",
     message: `Delete "${node.label}" (${node.type})?`,
     confirmLabel: "Delete",
-    danger: true
+    danger: true,
   });
   if (!confirmed) {
     return;
@@ -2173,12 +2461,12 @@ export async function deleteSelection() {
   pushDiagramUndoSnapshot();
   state.diagram.nodes = state.diagram.nodes.filter((n) => n.id !== nodeId);
   state.diagram.connections = state.diagram.connections.filter(
-      (c) => c.sourceId !== nodeId && c.targetId !== nodeId
+    (c) => c.sourceId !== nodeId && c.targetId !== nodeId,
   );
   removeElementFromGraph(nodeId);
 
   closeAttributePanel();
-  syncDiagramRenderer({workbench: true});
+  syncDiagramRenderer({ workbench: true });
   markModelDirty();
   setStatus(`Deleted ${node.type}: ${nodeId}`);
 }
@@ -2190,8 +2478,7 @@ export async function deleteSelectedConnection() {
   if (!connectionId) {
     return;
   }
-  const connection = state.diagram.connections.find(
-      (edge) => edge.id === connectionId);
+  const connection = state.diagram.connections.find((edge) => edge.id === connectionId);
   if (!connection) {
     return;
   }
@@ -2199,7 +2486,7 @@ export async function deleteSelectedConnection() {
     title: "Delete Connection",
     message: `Delete connection "${connection.kind}"?`,
     confirmLabel: "Delete",
-    danger: true
+    danger: true,
   });
   if (!confirmed) {
     return;
@@ -2207,28 +2494,33 @@ export async function deleteSelectedConnection() {
 
   const undoSnapshot = captureDiagramUndoSnapshot();
   const persistedConnectionIds = new Set(
-      relationshipIdsFromModel(state.activeType, state.baseModel || {}));
+    relationshipIdsFromModel(state.activeType, state.baseModel || {}),
+  );
   const shouldDeletePersistedRelationship = Boolean(
-      state.modelId && persistedConnectionIds.has(connectionId));
+    state.modelId && persistedConnectionIds.has(connectionId),
+  );
 
   if (shouldDeletePersistedRelationship) {
     const updated = await api(
-        `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/relationships/${encodeURIComponent(
-            connectionId)}`, {
-          method: "DELETE"
-        });
+      `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}/relationships/${encodeURIComponent(
+        connectionId,
+      )}`,
+      {
+        method: "DELETE",
+      },
+    );
     state.baseModel = structuredClone(updated.modelJson);
-    state.diagram = toDiagram(state.activeType, updated.modelJson,
-        updated.name);
+    state.diagram = toDiagram(state.activeType, updated.modelJson, updated.name);
   } else {
     state.diagram.connections = state.diagram.connections.filter(
-        (edge) => edge.id !== connectionId);
+      (edge) => edge.id !== connectionId,
+    );
   }
   removeRelationshipFromGraph(connectionId);
   pushDiagramUndoSnapshot(undoSnapshot);
 
   closeAttributePanel();
-  syncDiagramRenderer({workbench: true});
+  syncDiagramRenderer({ workbench: true });
   markModelDirty();
   setStatus(`Deleted connection: ${connection.kind}`);
 }

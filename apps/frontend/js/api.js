@@ -1,8 +1,7 @@
-import {apiUrl, LOG_HINT} from './config.js';
+import { apiUrl, LOG_HINT } from "./config.js";
 
 export class ApiError extends Error {
-  constructor(message,
-      {status = 0, path = "", method = "GET", issues = []} = {}) {
+  constructor(message, { status = 0, path = "", method = "GET", issues = [] } = {}) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -16,16 +15,18 @@ export class ApiError extends Error {
 export function apiAuthHeaders(extraHeaders = {}) {
   const token = window.localStorage.getItem("modless.authToken");
   return {
-    ...(token ? {"X-Auth-Token": token} : {}),
-    ...extraHeaders
+    ...(token ? { "X-Auth-Token": token } : {}),
+    ...extraHeaders,
   };
 }
 
 function isBodyWithoutContentType(body) {
-  return body instanceof FormData
-      || body instanceof Blob
-      || body instanceof ArrayBuffer
-      || body instanceof URLSearchParams;
+  return (
+    body instanceof FormData ||
+    body instanceof Blob ||
+    body instanceof ArrayBuffer ||
+    body instanceof URLSearchParams
+  );
 }
 
 function buildHeaders(extraHeaders = {}, body = null) {
@@ -35,8 +36,7 @@ function buildHeaders(extraHeaders = {}, body = null) {
       headers.set(name, value);
     }
   });
-  if (body != null && !headers.has("Content-Type")
-      && !isBodyWithoutContentType(body)) {
+  if (body != null && !headers.has("Content-Type") && !isBodyWithoutContentType(body)) {
     headers.set("Content-Type", "application/json");
   }
   return headers;
@@ -61,7 +61,7 @@ export async function api(path, options = {}) {
   const body = options.body ?? null;
   const response = await fetch(apiUrl(path), {
     ...options,
-    headers: buildHeaders(options.headers || {}, body)
+    headers: buildHeaders(options.headers || {}, body),
   });
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
@@ -86,7 +86,7 @@ export async function api(path, options = {}) {
       status: response.status,
       path,
       method,
-      issues
+      issues,
     });
   }
   return readResponseBody(response);

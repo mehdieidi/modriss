@@ -126,4 +126,3 @@ context AWSPSM!AslChoiceRule {
     message : 'ASL choice rule lacks condition/variable or nextState. Fix: define the condition and target state for the choice branch.'
   }
 }
-

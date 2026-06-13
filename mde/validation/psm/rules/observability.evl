@@ -52,4 +52,3 @@ context AWSPSM!CloudWatchCompositeAlarm {
     message : 'Composite alarm ' + self.resourceLabel() + ' has no alarm actions. Fix: add notification or incident actions, or document why observation-only is acceptable.'
   }
 }
-

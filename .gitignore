@@ -63,3 +63,6 @@ build/
 
 # Temporary file storage
 storage/
+
+# Node tooling
+node_modules/

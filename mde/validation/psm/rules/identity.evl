@@ -50,4 +50,3 @@ context AWSPSM!CognitoIdentityPool {
     message : 'Cognito identity pool ' + self.resourceLabel() + ' allows unauthenticated identities. Fix: disable unauthenticated identities or add rationale and least-privilege roles.'
   }
 }
-
