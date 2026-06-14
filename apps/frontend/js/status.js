@@ -17,7 +17,7 @@ function ensureToastHost() {
     toastHost.className = "toast-host";
     toastHost.setAttribute("aria-live", "polite");
     toastHost.setAttribute("aria-atomic", "false");
-    document.body.appendChild(toastHost);
+    (document.querySelector(".canvas-stage") || document.body).appendChild(toastHost);
   }
   return toastHost;
 }
