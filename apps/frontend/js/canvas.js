@@ -9,8 +9,9 @@ import {
   activeView,
   addConnectionToGraphAndActiveView,
   addNodeToGraphAndActiveView,
+  persistNodePositionInActiveView,
+  prepareViewNodeIndex,
   removeElementFromGraph,
-  saveCurrentTabGraphState,
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { isContainerElement, materializeActiveView } from "./view-materializer.js";
@@ -78,7 +79,7 @@ const CIM_NODE_H = 96;
 const DEFAULT_BOUNDED_CONTEXT_NAME = "Core";
 const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
-const connectionsById = new Map();
+const connectionsById = state.connectionsById;
 let hoveredEdgeId = null;
 let inlineLabelEditStartLabel = "";
 let inlineLabelEditUndoSnapshot = null;
@@ -1187,8 +1188,11 @@ function persistEdgePinPoints(edge) {
   });
 }
 
-function clearTransientEdgeLayouts() {
-  state.diagram.connections.forEach((edge) => {
+function clearTransientEdgeLayouts(edgeIds = null) {
+  const edges = edgeIds
+    ? [...edgeIds].map((edgeId) => connectionsById.get(edgeId)).filter(Boolean)
+    : state.diagram.connections;
+  edges.forEach((edge) => {
     if (!Array.isArray(edge.pinPoints) && edge.layout) {
       const presentation = edgePresentationFromLayout(edge.layout, null, null);
       edge.pinPoints = presentation.pinPoints;
@@ -1754,30 +1758,6 @@ function createNeighborhoodFocusView(node, depth = 1) {
   };
 }
 
-function scheduleInitialFocusAutoLayout(focusView) {
-  if (!focusView || focusView.autoLayoutApplied) {
-    return;
-  }
-  window.setTimeout(() => {
-    if (state.views?.activeViewId !== focusView.id || focusView.autoLayoutApplied) {
-      return;
-    }
-    void import("./model-ops.js")
-      .then(({ autoLayoutCurrentDiagram }) =>
-        autoLayoutCurrentDiagram({
-          progress: true,
-          status: false,
-          force: false,
-        }).then(() => {
-          setStatus(`Opened ${focusView.name || "view"} and arranged it.`);
-        }),
-      )
-      .catch((error) => {
-        console.warn("Initial focus auto layout failed", error);
-      });
-  }, 0);
-}
-
 export function openContainerFocus(elementId) {
   const node =
     state.nodesById.get(elementId) ||
@@ -1790,9 +1770,9 @@ export function openContainerFocus(elementId) {
     setStatus("This container has no contained elements yet.");
     return false;
   }
-  syncActiveViewFromVisibleGraph();
   const previousViewId = state.views.activeViewId;
   const focusView = createContainerFocusView(node);
+  prepareViewNodeIndex(focusView);
   state.views.byId.set(focusView.id, focusView);
   state.views.activeViewId = focusView.id;
   focusStack().push({
@@ -1808,7 +1788,6 @@ export function openContainerFocus(elementId) {
   state.selectedConnectionId = null;
   materializeActiveView();
   renderDiagram();
-  scheduleInitialFocusAutoLayout(focusView);
   notifyModelToolsChanged();
   setStatus(`Opened ${node.label || node.id}. Use Back to return.`);
   return true;
@@ -1827,10 +1806,10 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
     setStatus("This element has no connected neighbors in the current model.");
     return false;
   }
-  syncActiveViewFromVisibleGraph();
   const previousViewId = state.views.activeViewId;
   const normalizedDepth = Math.max(1, Math.min(2, Number(depth) || 1));
   const focusView = createNeighborhoodFocusView(node, normalizedDepth);
+  prepareViewNodeIndex(focusView);
   state.views.byId.set(focusView.id, focusView);
   state.views.activeViewId = focusView.id;
   focusStack().push({
@@ -1846,7 +1825,6 @@ export function openNeighborhoodFocus(elementId, depth = 1) {
   state.selectedConnectionId = null;
   materializeActiveView();
   renderDiagram();
-  scheduleInitialFocusAutoLayout(focusView);
   notifyModelToolsChanged();
   setStatus(`Opened ${node.label || node.id} neighborhood depth ${normalizedDepth}.`);
   return true;
@@ -1858,7 +1836,6 @@ export function closeCanvasFocus() {
     focusStack().length = 0;
     return false;
   }
-  syncActiveViewFromVisibleGraph();
   state.views.byId.delete(focus.focusViewId);
   focusStack().pop();
   state.views.activeViewId =
@@ -4406,7 +4383,7 @@ function openEdgeKindPicker(edgeId, options, canvasX, canvasY) {
 }
 
 function openG6EdgeKindPicker(edgeId) {
-  const edge = state.diagram.connections.find((item) => item.id === edgeId);
+  const edge = connectionsById.get(edgeId);
   if (!edge || edge.bundle) {
     return;
   }
@@ -4498,7 +4475,7 @@ export function syncDiagramRenderer({ full = false, workbench = false } = {}) {
 export function syncRendererSelection() {
   ensureG6Canvas();
   updateG6Selection();
-  updateG6ContextBoxes();
+  updateG6ContextBoxes(null, { useCache: true });
 }
 
 // ── Canvas event handlers ─────────────────────────────────────────────────────
@@ -4598,7 +4575,7 @@ function startG6NodeDrag(nodeId) {
   }
   clearHoveredEdge();
   closeEdgeKindPicker();
-  clearTransientEdgeLayouts();
+  clearTransientEdgeLayouts(edgeIdsByNodeId.get(nodeId));
   state.dragNode = {
     id: nodeId,
     startX: 0,
@@ -4641,8 +4618,7 @@ function endG6NodeDrag(nodeId, position, { moved = false } = {}) {
   syncNodeMetaToGraph(node);
   if (moved || state.dragNode?.moved) {
     commitUndoSnapshot(state.dragNode?.undoSnapshot);
-    syncActiveViewFromVisibleGraph();
-    saveCurrentTabGraphState(state.activeType);
+    persistNodePositionInActiveView(node);
     markModelDirty();
   }
   refreshG6Edges([...(edgeIdsByNodeId.get(node.id) || [])]);

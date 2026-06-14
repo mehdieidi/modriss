@@ -56,6 +56,7 @@ const MAIN_SURFACE_ROOT_TYPES = {
 };
 
 const CONTAINMENT_KINDS = new Set(["CONTAINS", "OWNS", "DEPLOYS"]);
+const viewNodeIndexes = new WeakMap();
 
 function clone(value) {
   return value == null ? value : structuredClone(value);
@@ -63,6 +64,15 @@ function clone(value) {
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+export function prepareViewNodeIndex(view) {
+  if (!view) {
+    return new Map();
+  }
+  const index = new Map(safeArray(view.nodes).map((entry) => [entry.elementId, entry]));
+  viewNodeIndexes.set(view, index);
+  return index;
 }
 
 function sanitizeIdPart(value) {
@@ -1451,6 +1461,7 @@ function installViews(views, activeViewId, typeKey = state.activeType, modelName
     visibleRelationshipIds: new Set(),
     expandedContainers: new Set(),
   };
+  byId.forEach(prepareViewNodeIndex);
 }
 
 function installFragments(fragments) {
@@ -1675,6 +1686,7 @@ export function syncActiveViewFromVisibleGraph({ rebuildIndexes = true } = {}) {
   view.nodes = [...viewNodesById.values()].filter((node) =>
     state.graph.elementsById.has(node.elementId),
   );
+  viewNodeIndexes.set(view, new Map(view.nodes.map((node) => [node.elementId, node])));
 
   const viewEdgesById = new Map(safeArray(view.edges).map((edge) => [edge.relationshipId, edge]));
   safeArray(state.diagram.connections).forEach((edge) => {
@@ -1712,6 +1724,23 @@ export function syncActiveViewFromVisibleGraph({ rebuildIndexes = true } = {}) {
   if (rebuildIndexes) {
     rebuildGraphIndexes(state.graph);
   }
+}
+
+export function persistNodePositionInActiveView(node) {
+  const view = activeView();
+  if (!view || !node?.id) {
+    return false;
+  }
+  const index = viewNodeIndexes.get(view) || prepareViewNodeIndex(view);
+  let viewNode = index.get(node.id);
+  if (!viewNode) {
+    viewNode = { elementId: node.id };
+    view.nodes = [...safeArray(view.nodes), viewNode];
+    index.set(node.id, viewNode);
+  }
+  viewNode.x = node.x;
+  viewNode.y = node.y;
+  return true;
 }
 
 export function serializeGraphAndViewsInto(root) {
@@ -1889,8 +1918,11 @@ export function addNodeToGraphAndActiveView(node) {
   });
   state.graph.elementsById.set(node.id, element);
   const view = activeView();
-  if (view && !safeArray(view.nodes).some((entry) => entry.elementId === node.id)) {
-    view.nodes.push({ elementId: node.id, x: node.x, y: node.y });
+  const viewNodeIndex = view ? viewNodeIndexes.get(view) || prepareViewNodeIndex(view) : null;
+  if (view && !viewNodeIndex.has(node.id)) {
+    const viewNode = { elementId: node.id, x: node.x, y: node.y };
+    view.nodes.push(viewNode);
+    viewNodeIndex.set(node.id, viewNode);
   }
   if (view) {
     view.pinnedElementIds = [...new Set([...safeArray(view.pinnedElementIds), node.id])];
@@ -1914,6 +1946,7 @@ export function removeElementFromGraph(elementId) {
   relationshipIds.forEach((relationshipId) => state.graph.relationshipsById.delete(relationshipId));
   state.views.byId.forEach((view) => {
     view.nodes = safeArray(view.nodes).filter((node) => node.elementId !== id);
+    viewNodeIndexes.delete(view);
     view.edges = safeArray(view.edges).filter(
       (edge) => !relationshipIds.includes(edge.relationshipId),
     );

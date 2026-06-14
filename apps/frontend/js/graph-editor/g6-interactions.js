@@ -292,11 +292,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     state.viewport.x += dx;
     state.viewport.y += dy;
     try {
-      const result = graph.translateBy?.([dx, dy], false);
-      result?.then?.(() => scheduleGraphDraw(graph))?.catch?.(() => scheduleGraphDraw(graph));
-      if (!result?.then) {
-        scheduleGraphDraw(graph);
-      }
+      graph.translateBy?.([dx, dy], false);
     } catch {
       scheduleGraphDraw(graph);
     }

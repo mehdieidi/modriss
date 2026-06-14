@@ -44,10 +44,26 @@ export function shouldShowEdgeLabels(zoom = 1, edgeCount = 0) {
 export function createAdjacencyIndex(edges = []) {
   const byNode = new Map();
   const byId = new Map();
-  edges.forEach((edge) => {
-    if (!edge?.id) {
-      return;
+  const remove = (edgeId) => {
+    const edge = byId.get(edgeId);
+    if (!edge) {
+      return false;
     }
+    [edge.sourceId, edge.targetId].forEach((nodeId) => {
+      const bucket = byNode.get(nodeId);
+      bucket?.delete(edgeId);
+      if (bucket && !bucket.size) {
+        byNode.delete(nodeId);
+      }
+    });
+    byId.delete(edgeId);
+    return true;
+  };
+  const add = (edge) => {
+    if (!edge?.id) {
+      return false;
+    }
+    remove(edge.id);
     byId.set(edge.id, edge);
     [edge.sourceId, edge.targetId].forEach((nodeId) => {
       if (!nodeId) {
@@ -58,8 +74,10 @@ export function createAdjacencyIndex(edges = []) {
       }
       byNode.get(nodeId).add(edge.id);
     });
-  });
-  return { byNode, byId };
+    return true;
+  };
+  edges.forEach(add);
+  return { byNode, byId, add, remove };
 }
 
 function finiteNumber(value, fallback = 0) {

@@ -38,6 +38,7 @@ let pendingLodTimer = 0;
 let pendingLodState = null;
 const CONNECT_GLOBAL_TARGET_NODE_LIMIT = 240;
 const CONNECT_ILLEGAL_STATE_NODE_LIMIT = 800;
+const HOVER_FOCUS_EDGE_LIMIT = 64;
 const LOD_UPDATE_IDLE_DELAY_MS = 140;
 
 function g6() {
@@ -1247,7 +1248,8 @@ function runViewportSync({ syncSelection = false } = {}) {
   syncViewportStateFromGraph();
   setCanvasZoomIndicator();
   updateViewportChrome();
-  updateG6Lod({ defer: true });
+  // Keep live viewport transforms independent of graph size. Remapping LOD here
+  // makes crossing a zoom threshold rebuild and diff every node and edge.
   updateG6ContextBoxes(null, { useCache: true });
   if (syncSelection) {
     updateG6Selection();
@@ -1446,7 +1448,11 @@ function hoverFocusSets(nodeId) {
     return { nodeIds, edgeIds };
   }
   nodeIds.add(nodeId);
-  (editor.adjacency?.byNode?.get(nodeId) || new Set()).forEach((edgeId) => {
+  const adjacentEdgeIds = editor.adjacency?.byNode?.get(nodeId) || new Set();
+  if (adjacentEdgeIds.size > HOVER_FOCUS_EDGE_LIMIT) {
+    return { nodeIds, edgeIds };
+  }
+  adjacentEdgeIds.forEach((edgeId) => {
     edgeIds.add(edgeId);
     const edge =
       editor.adjacency?.byId?.get(edgeId) ||
@@ -1459,23 +1465,6 @@ function hoverFocusSets(nodeId) {
     }
   });
   return { nodeIds, edgeIds };
-}
-
-function setGraphDimmed(enabled, changedNodes, changedEdges) {
-  if (editor.hoverDimmedActive === enabled) {
-    return;
-  }
-  editor.hoverDimmedActive = enabled;
-  (editor.dataSnapshot?.nodesById?.keys?.() || []).forEach((id) => {
-    if (setFlag(editor.nodeStateFlags, id, "dimmed", enabled)) {
-      changedNodes.add(id);
-    }
-  });
-  (editor.dataSnapshot?.edgesById?.keys?.() || []).forEach((id) => {
-    if (setFlag(editor.edgeStateFlags, id, "dimmed", enabled)) {
-      changedEdges.add(id);
-    }
-  });
 }
 
 function clearHoverFlagSet(map, id, flags) {
@@ -1495,48 +1484,25 @@ function clearG6HoverFocusState() {
   const changedNodes = new Set();
   const changedEdges = new Set();
   const previous = editor.hoveredNodeId;
-  const nodeIds = new Set();
-  const edgeIds = new Set();
+  const nodeIds = new Set(editor.hoverFocusNodeIds || []);
+  const edgeIds = new Set(editor.hoverFocusEdgeIds || []);
   if (previous) {
     nodeIds.add(previous);
     setG6NodeHandleVisibility(previous, false);
   }
-  (editor.hoverFocusNodeIds || new Set()).forEach((id) => nodeIds.add(id));
-  (editor.hoverFocusEdgeIds || new Set()).forEach((id) => edgeIds.add(id));
-  editor.nodeStateFlags.forEach((flags, id) => {
-    if (flags.has("hover") || flags.has("focus") || flags.has("dimmed")) {
-      nodeIds.add(id);
-    }
-  });
-  editor.edgeStateFlags.forEach((flags, id) => {
-    if (flags.has("hover") || flags.has("focus") || flags.has("dimmed")) {
-      edgeIds.add(id);
-    }
-  });
-  (editor.dataSnapshot?.nodesById?.keys?.() || []).forEach((id) => {
-    if (editor.hoverDimmedActive) {
-      nodeIds.add(id);
-    }
-  });
-  (editor.dataSnapshot?.edgesById?.keys?.() || []).forEach((id) => {
-    if (editor.hoverDimmedActive) {
-      edgeIds.add(id);
-    }
-  });
   nodeIds.forEach((id) => {
-    if (clearHoverFlagSet(editor.nodeStateFlags, id, ["hover", "focus", "dimmed"])) {
+    if (clearHoverFlagSet(editor.nodeStateFlags, id, ["hover", "focus"])) {
       changedNodes.add(id);
     }
   });
   edgeIds.forEach((id) => {
-    if (clearHoverFlagSet(editor.edgeStateFlags, id, ["hover", "focus", "dimmed"])) {
+    if (clearHoverFlagSet(editor.edgeStateFlags, id, ["hover", "focus"])) {
       changedEdges.add(id);
     }
   });
   editor.hoveredNodeId = null;
   editor.hoverFocusNodeIds = new Set();
   editor.hoverFocusEdgeIds = new Set();
-  editor.hoverDimmedActive = false;
   flushElementStates(changedNodes, editor.nodeStateFlags);
   flushElementStates(changedEdges, editor.edgeStateFlags);
   if (changedEdges.size) {
@@ -1601,7 +1567,7 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
     zoomRange: [0.01, 2.5],
     cursor: "grab",
     data: { nodes: [], edges: [] },
-    behaviors: ["zoom-canvas", "optimize-viewport-transform"],
+    behaviors: ["zoom-canvas"],
     node: {
       type: G6_BASE_NODE_TYPE,
       state: {
@@ -1659,7 +1625,8 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
     hoveredEdgeId: null,
     hoverFocusNodeIds: new Set(),
     hoverFocusEdgeIds: new Set(),
-    hoverDimmedActive: false,
+    selectedNodeStateIds: new Set(),
+    selectedEdgeStateIds: new Set(),
     adjacency: createAdjacencyIndex(state.diagram.connections),
     spatialIndex: createSpatialIndex([], {
       fallbackSize: spatialIndexFallbackSize(),
@@ -1872,7 +1839,7 @@ export function addG6Edge(edge) {
   }
   const mapped = mapEdgeToG6(edge, mapperOptions());
   editor.graph.addEdgeData?.([mapped]);
-  editor.adjacency = createAdjacencyIndex(state.diagram.connections);
+  editor.adjacency.add(edge);
   rememberEdgeData(mapped);
   scheduleGraphRender(editor.graph);
 }
@@ -1902,7 +1869,7 @@ export function removeG6Edge(edgeId) {
   editor.dataSnapshot?.edgesById?.delete(edgeId);
   editor.dataSnapshot?.edgeFingerprints?.delete(edgeId);
   editor.edgeStateFlags.delete(edgeId);
-  editor.adjacency = createAdjacencyIndex(state.diagram.connections);
+  editor.adjacency.remove(edgeId);
   scheduleGraphRender(editor.graph);
 }
 
@@ -1939,16 +1906,14 @@ export function updateG6Selection() {
   if (!editor?.graph) {
     return;
   }
-  const changedNodes = replaceFlagSet(
-    editor.nodeStateFlags,
-    "selected",
-    state.selectedNodeIds || [],
-  );
-  const changedEdges = replaceFlagSet(
-    editor.edgeStateFlags,
-    "selected",
-    state.selectedConnectionId ? [state.selectedConnectionId] : [],
-  );
+  const nextNodeIds = new Set(state.selectedNodeIds || []);
+  const nextEdgeIds = new Set(state.selectedConnectionId ? [state.selectedConnectionId] : []);
+  const changedNodes = symmetricDifference(editor.selectedNodeStateIds, nextNodeIds);
+  const changedEdges = symmetricDifference(editor.selectedEdgeStateIds, nextEdgeIds);
+  changedNodes.forEach((id) => setFlag(editor.nodeStateFlags, id, "selected", nextNodeIds.has(id)));
+  changedEdges.forEach((id) => setFlag(editor.edgeStateFlags, id, "selected", nextEdgeIds.has(id)));
+  editor.selectedNodeStateIds = nextNodeIds;
+  editor.selectedEdgeStateIds = nextEdgeIds;
   flushElementStates(changedNodes, editor.nodeStateFlags);
   flushElementStates(changedEdges, editor.edgeStateFlags);
   if (changedEdges.size) {
@@ -2094,10 +2059,7 @@ export function setG6HoverNode(nodeId) {
   }
   if (
     editor.hoveredNodeId === normalizedNodeId &&
-    (normalizedNodeId ||
-      (!editor.hoverDimmedActive &&
-        !editor.hoverFocusNodeIds?.size &&
-        !editor.hoverFocusEdgeIds?.size))
+    (normalizedNodeId || (!editor.hoverFocusNodeIds?.size && !editor.hoverFocusEdgeIds?.size))
   ) {
     return;
   }
@@ -2114,11 +2076,6 @@ export function setG6HoverNode(nodeId) {
     setG6NodeHandleVisibility(previous, false);
   }
   const nextFocus = hoverFocusSets(normalizedNodeId);
-  if (normalizedNodeId && !editor.hoverDimmedActive) {
-    setGraphDimmed(true, changedNodes, changedEdges);
-  } else if (!normalizedNodeId) {
-    setGraphDimmed(false, changedNodes, changedEdges);
-  }
   symmetricDifference(previousFocusNodeIds, nextFocus.nodeIds).forEach((id) => {
     if (setFlag(editor.nodeStateFlags, id, "focus", nextFocus.nodeIds.has(id))) {
       changedNodes.add(id);

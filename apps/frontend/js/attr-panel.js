@@ -249,7 +249,7 @@ export function closeAttributePanel() {
 }
 
 export function openConnectionPanel(connectionId) {
-  const connection = state.diagram.connections.find((edge) => edge.id === connectionId);
+  const connection = state.connectionsById.get(connectionId);
   if (!connection) {
     return;
   }
@@ -2310,7 +2310,7 @@ function readInputValue(input) {
 }
 
 function applyConnectionPanel() {
-  const edge = state.diagram.connections.find((item) => item.id === state.selectedConnectionId);
+  const edge = state.connectionsById.get(state.selectedConnectionId);
   if (!edge) {
     return;
   }
@@ -2478,7 +2478,7 @@ export async function deleteSelectedConnection() {
   if (!connectionId) {
     return;
   }
-  const connection = state.diagram.connections.find((edge) => edge.id === connectionId);
+  const connection = state.connectionsById.get(connectionId);
   if (!connection) {
     return;
   }

@@ -19,6 +19,7 @@ export const state = {
   },
   diagram: emptyDiagram("cim"),
   nodesById: new Map(),
+  connectionsById: new Map(),
   graph: {
     elementsById: new Map(),
     relationshipsById: new Map(),

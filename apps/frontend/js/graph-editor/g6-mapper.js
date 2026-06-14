@@ -308,13 +308,19 @@ export function mapNodeToG6(
 
 export function mapEdgeToG6(
   edge,
-  { typeKey = state.activeType, showLabels = true, selected = false, hovered = false } = {},
+  {
+    typeKey = state.activeType,
+    showLabels = true,
+    selected = false,
+    hovered = false,
+    nodesById = state.nodesById,
+  } = {},
 ) {
   const presentation = edgePresentation(edge, typeKey);
   const style = edgeStyleForKind(edge.kind, presentation);
   const label = edgeLabel(edge, typeKey);
-  const sourceNode = state.diagram.nodes.find((node) => node.id === edge.sourceId);
-  const targetNode = state.diagram.nodes.find((node) => node.id === edge.targetId);
+  const sourceNode = nodesById?.get?.(edge.sourceId);
+  const targetNode = nodesById?.get?.(edge.targetId);
   const routeStart = routeEndpoint(sourceNode, edge.sourceAnchor, typeKey);
   const routeEnd = routeEndpoint(targetNode, edge.targetAnchor, typeKey);
   return {
@@ -398,12 +404,14 @@ export function mapDiagramToG6({
   ...nodeOptions
 } = {}) {
   const visibleNodeIds = new Set();
+  const nodesById = new Map();
   const g6Nodes = [];
   nodes.forEach((node) => {
     if (!visibleNode(node)) {
       return;
     }
     visibleNodeIds.add(node.id);
+    nodesById.set(node.id, node);
     g6Nodes.push(
       mapNodeToG6(node, {
         typeKey,
@@ -420,6 +428,7 @@ export function mapDiagramToG6({
         showLabels,
         selected: selectedEdgeId === edge.id,
         hovered: hoveredEdgeId === edge.id,
+        nodesById,
       }),
     );
   return { nodes: g6Nodes, edges: g6Edges };
