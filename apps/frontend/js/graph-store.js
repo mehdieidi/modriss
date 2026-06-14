@@ -1201,6 +1201,15 @@ function generateViews(typeKey, graph, modelName) {
   });
 }
 
+function generateGlobalViews(typeKey, graph, modelName) {
+  return [
+    defaultMainView(typeKey, graph, modelName),
+    ...viewDefinitions(typeKey).map((definition) =>
+      buildViewFromDefinition(typeKey, graph, definition),
+    ),
+  ];
+}
+
 function normalizeView(view, graph, typeKey, modelName) {
   const normalized = {
     id: String(view?.id || genId("view")),
@@ -1313,7 +1322,10 @@ function normalizeView(view, graph, typeKey, modelName) {
 function buildViews(typeKey, graph, modelJson, fallbackName) {
   const rawViews = safeArray(modelJson?.views);
   if (rawViews.length) {
-    const generatedViews = generateViews(typeKey, graph, modelJson?.name || fallbackName);
+    // Persisted models only need missing global defaults filled in. Generating every
+    // scoped view here performs repeated selection and layout work, then discards
+    // those scoped views below.
+    const generatedViews = generateGlobalViews(typeKey, graph, modelJson?.name || fallbackName);
     const normalizedViews = rawViews
       .map((view) => normalizeView(view, graph, typeKey, fallbackName))
       .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view));

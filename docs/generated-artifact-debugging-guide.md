@@ -36,17 +36,17 @@ This usually reveals which model element or relationship triggers the failure.
 
 Classify the failure before editing code:
 
-| Observation | Most likely owner |
-| --- | --- |
-| CIM -> PIM fails or PIM contains incorrect concepts | `mde/transformations/cim-to-pim` |
-| PIM -> PSM fails or PSM contains an incorrect AWS mapping | `mde/transformations/pim-to-awspsm` |
-| Artifact generation fails before producing the ZIP | EGX orchestration, EGL/EOL, or invalid PSM |
-| A file is missing, duplicated, or at the wrong path | `awspsm2artifacts.egx`, `paths.eol`, or an EGX guard |
-| Correct PSM produces incorrect artifact text | EGL template or shared generator EOL library |
-| The same incorrect value appears in many artifact types | shared EOL library, usually `contracts.eol`, `cfn.eol`, `values.eol`, or `naming.eol` |
-| Generated artifact is valid but customized business logic fails | developer-owned protected region |
-| Artifact works on AWS but not LocalStack | LocalStack compatibility or configuration |
-| Artifact fails both SAM/AWS validation and LocalStack deployment | generator or source-model defect |
+| Observation                                                      | Most likely owner                                                                     |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| CIM -> PIM fails or PIM contains incorrect concepts              | `mde/transformations/cim-to-pim`                                                      |
+| PIM -> PSM fails or PSM contains an incorrect AWS mapping        | `mde/transformations/pim-to-awspsm`                                                   |
+| Artifact generation fails before producing the ZIP               | EGX orchestration, EGL/EOL, or invalid PSM                                            |
+| A file is missing, duplicated, or at the wrong path              | `awspsm2artifacts.egx`, `paths.eol`, or an EGX guard                                  |
+| Correct PSM produces incorrect artifact text                     | EGL template or shared generator EOL library                                          |
+| The same incorrect value appears in many artifact types          | shared EOL library, usually `contracts.eol`, `cfn.eol`, `values.eol`, or `naming.eol` |
+| Generated artifact is valid but customized business logic fails  | developer-owned protected region                                                      |
+| Artifact works on AWS but not LocalStack                         | LocalStack compatibility or configuration                                             |
+| Artifact fails both SAM/AWS validation and LocalStack deployment | generator or source-model defect                                                      |
 
 Do not classify unimplemented protected-region logic as a generator defect.
 Check `generated/reports/manual-actions.md` and
@@ -304,13 +304,13 @@ both pass.
 
 ## 7. Common Root-Cause Examples
 
-| Symptom | Trace path | Correct fix location |
-| --- | --- | --- |
-| `Uploaded XMI must contain exactly one model root` | output XMI -> extra root object -> creating ETL rule | ETL rule lifecycle/containment plus one-root regression test |
-| Duplicate OpenAPI `400` response | OpenAPI file -> artifact rule -> source route -> generated definition | PIM -> PSM API mapping or `contracts.eol`, plus duplicate-status test |
-| CloudFormation secret resolution failure | failed logical ID -> `model-trace.json` -> PSM secret | secret transformation or CloudFormation serializer |
-| Step Functions reports invalid `FunctionName` | execution state -> ASL file -> source workflow state | ASL contract generation and CloudFormation substitutions |
-| Manual handler returns `NOT_IMPLEMENTED` | Lambda log -> protected-region trace | developer-owned protected region |
+| Symptom                                            | Trace path                                                            | Correct fix location                                                  |
+| -------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `Uploaded XMI must contain exactly one model root` | output XMI -> extra root object -> creating ETL rule                  | ETL rule lifecycle/containment plus one-root regression test          |
+| Duplicate OpenAPI `400` response                   | OpenAPI file -> artifact rule -> source route -> generated definition | PIM -> PSM API mapping or `contracts.eol`, plus duplicate-status test |
+| CloudFormation secret resolution failure           | failed logical ID -> `model-trace.json` -> PSM secret                 | secret transformation or CloudFormation serializer                    |
+| Step Functions reports invalid `FunctionName`      | execution state -> ASL file -> source workflow state                  | ASL contract generation and CloudFormation substitutions              |
+| Manual handler returns `NOT_IMPLEMENTED`           | Lambda log -> protected-region trace                                  | developer-owned protected region                                      |
 
 ## 8. Future Defect Report Template
 

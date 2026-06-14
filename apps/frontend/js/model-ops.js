@@ -641,7 +641,11 @@ export async function saveCurrentModel({ rethrow = false, quiet = false } = {}) 
   }
 }
 
-export async function loadModelById(typeKey, id, { showManualGuidance = false } = {}) {
+export async function loadModelById(
+  typeKey,
+  id,
+  { showManualGuidance = false, autoLayout = true } = {},
+) {
   if (state.activeType !== typeKey) {
     await switchTab(typeKey);
   }
@@ -675,7 +679,7 @@ export async function loadModelById(typeKey, id, { showManualGuidance = false } 
   renderViewWorkbench();
   centerCurrentDiagram();
   resetModelSaveState();
-  if (!activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
+  if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
     await autoLayoutCurrentDiagram({
       progress: true,
       status: false,
@@ -687,9 +691,13 @@ export async function loadModelById(typeKey, id, { showManualGuidance = false } 
   }
 }
 
-async function loadModelRecord(typeKey, record, { showManualGuidance = false } = {}) {
+async function loadModelRecord(
+  typeKey,
+  record,
+  { showManualGuidance = false, autoLayout = true } = {},
+) {
   if (!record?.id || !record?.modelJson) {
-    await loadModelById(typeKey, record?.id, { showManualGuidance });
+    await loadModelById(typeKey, record?.id, { showManualGuidance, autoLayout });
     return;
   }
   if (state.activeType !== typeKey) {
@@ -718,7 +726,7 @@ async function loadModelRecord(typeKey, record, { showManualGuidance = false } =
   renderViewWorkbench();
   centerCurrentDiagram();
   resetModelSaveState();
-  if (!activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
+  if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
     await autoLayoutCurrentDiagram({
       progress: true,
       status: false,
@@ -728,6 +736,23 @@ async function loadModelRecord(typeKey, record, { showManualGuidance = false } =
   if (showManualGuidance) {
     applyManualGuidanceFromLoadedModel();
   }
+}
+
+async function autoLayoutGeneratedModel(typeLabel) {
+  if (activeView()?.autoLayoutApplied || !state.diagram.nodes.length) {
+    return;
+  }
+  setGenerationProgressPhase(`Auto-layouting the generated ${typeLabel} model…`, 86);
+  await waitForCanvasPaint(1);
+  await autoLayoutCurrentDiagram({
+    progress: false,
+    status: false,
+    busy: false,
+    rethrow: true,
+    force: false,
+  });
+  setGenerationProgressPhase(`Rendering the arranged ${typeLabel} model…`, 96);
+  await waitForCanvasPaint(1);
 }
 
 // ── Transformation / generation ───────────────────────────────────────────────
@@ -1177,12 +1202,20 @@ export async function generateCimToPim() {
     setBusy("Generating PIM…");
     setGenerationProgressPhase("Translating the CIM into a draft PIM model…", 68);
     const result = await runTransformation("cim-to-pim", state.modelId);
+    setGenerationProgressPhase("Preparing the generated PIM model…", 76);
+    await waitForCanvasPaint(1);
     if (result.model) {
-      await loadModelRecord("pim", result.model, { showManualGuidance: true });
+      await loadModelRecord("pim", result.model, {
+        showManualGuidance: true,
+        autoLayout: false,
+      });
     } else {
-      await loadModelById("pim", result.resultModelId, { showManualGuidance: true });
+      await loadModelById("pim", result.resultModelId, {
+        showManualGuidance: true,
+        autoLayout: false,
+      });
     }
-    setGenerationProgressPhase("Opening the generated PIM model…", 94);
+    await autoLayoutGeneratedModel("PIM");
     await completeGenerationProgress("PIM ready.");
     if (!state.validation.issues.length) {
       setStatus("PIM generated and loaded");
@@ -1235,12 +1268,20 @@ export async function generatePimToPsm() {
     setBusy("Generating PSM…");
     setGenerationProgressPhase("Transforming the PIM into a platform-specific design…", 68);
     const result = await runTransformation("pim-to-psm", state.modelId);
+    setGenerationProgressPhase("Preparing the generated PSM model…", 76);
+    await waitForCanvasPaint(1);
     if (result.model) {
-      await loadModelRecord("psm", result.model, { showManualGuidance: true });
+      await loadModelRecord("psm", result.model, {
+        showManualGuidance: true,
+        autoLayout: false,
+      });
     } else {
-      await loadModelById("psm", result.resultModelId, { showManualGuidance: true });
+      await loadModelById("psm", result.resultModelId, {
+        showManualGuidance: true,
+        autoLayout: false,
+      });
     }
-    setGenerationProgressPhase("Opening the generated PSM model…", 94);
+    await autoLayoutGeneratedModel("PSM");
     await completeGenerationProgress("PSM ready.");
     if (!state.validation.issues.length) {
       setStatus("PSM generated and loaded");

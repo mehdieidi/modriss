@@ -135,9 +135,11 @@ export async function completeGenerationProgress(label = "Generation complete.")
     return;
   }
   updateProgressNotification({ label });
-  animateTo(100);
-  const started = performance.now();
-  while (STATE.progress < 99.4 && performance.now() - started < 850) {
+  STATE.target = 100;
+  STATE.progress = 100;
+  STATE.velocity = 0;
+  renderProgress();
+  if (typeof window.requestAnimationFrame === "function") {
     await new Promise((resolve) => window.requestAnimationFrame(resolve));
   }
 }

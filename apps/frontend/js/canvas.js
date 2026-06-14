@@ -85,9 +85,30 @@ let inlineLabelEditStartLabel = "";
 let inlineLabelEditUndoSnapshot = null;
 
 function workbenchSurfaces() {
-  renderCimWorkbenchSurface();
-  renderPimWorkbenchSurface();
-  renderPsmWorkbenchSurface();
+  const canvasStage = el.canvasGrid?.closest(".canvas-stage");
+  const surfaceClasses = [
+    "cim-surface-active",
+    "cim-surface-dock",
+    "pim-surface-active",
+    "pim-surface-dock",
+    "psm-surface-active",
+    "psm-surface-dock",
+  ];
+  el.canvasGrid?.classList.remove(...surfaceClasses);
+  canvasStage?.classList.remove(...surfaceClasses);
+  el.workspace?.classList.remove("palette-hidden");
+  el.paletteRailToggleBtn?.classList.add("active");
+  state.cimWorkbench.hidPalette = false;
+  state.pimWorkbench.hidPalette = false;
+  state.psmWorkbench.hidPalette = false;
+
+  if (state.activeType === "cim") {
+    renderCimWorkbenchSurface();
+  } else if (state.activeType === "pim") {
+    renderPimWorkbenchSurface();
+  } else if (state.activeType === "psm") {
+    renderPsmWorkbenchSurface();
+  }
 }
 
 function syncCanvasIndexesFromState() {
