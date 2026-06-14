@@ -94,6 +94,9 @@ rule Principal2IamRole
     if (pol.document.statements.notEmpty()) {
       role.inlinePolicies.add(pol);
     }
+    else {
+      delete pol;
+    }
   }
   createTrace(p, role, "Principal2IamRole", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }
@@ -108,7 +111,11 @@ rule Secret2SecretsManagerSecret
   sec.secretName = sec.physicalName;
   sec.descriptionText = firstText(s.summary, "Secret reference generated from PIM.");
   if (isTrue(s.generatedReferenceOnly)) {
-    sec.secretValue = secretReferenceValue(firstText(s.externalId, sec.secretName));
+    sec.generateSecretStringJson = "{ \"GenerateStringKey\": \"value\", \"PasswordLength\": 32 }";
+    manualDecision("EXTERNAL_SECRET_VALUE_REQUIRED",
+      "Replace the generated placeholder value for external secret " + s.name + ".",
+      KERNEL!Severity#ERROR, isProductionRoot(), Sequence{s, sec},
+      "Set the deployed Secrets Manager secret value to the credential issued by the external system.");
   }
   else {
     sec.generateSecretStringJson = "{ \"GenerateStringKey\": \"value\", \"PasswordLength\": 32 }";
@@ -230,21 +237,25 @@ operation createAslState(w, ws) {
   st.stateName = firstText(ws.name, "State");
   st.type = mapAslStateType(ws.stateKind);
   st.timeoutSeconds = ws.timeoutSeconds;
-  st.inputPath = firstText(ws.inputMapping, "$");
-  st.outputPath = firstText(ws.outputMapping, "$");
+  st.inputPath = aslJsonPathOrRoot(ws.inputMapping);
+  st.outputPath = aslJsonPathOrRoot(ws.outputMapping);
   st.end = isTrue(ws.terminal) or w.endStates.includes(ws);
-  if (ws.invokesFunction.isDefined()) {
+  if (st.type = AWSPSMENUMS!AslStateType#TASK and ws.invokesFunction.isDefined()) {
     st.invokedResource = awsEquivalent(ws.invokesFunction);
     st.resource = "arn:aws:states:::lambda:invoke";
   }
   else {
-    if (ws.nestedWorkflow.isDefined()) {
+    if (st.type = AWSPSMENUMS!AslStateType#TASK and ws.nestedWorkflow.isDefined()) {
       st.invokedResource = awsEquivalent(ws.nestedWorkflow);
       st.resource = "arn:aws:states:::states:startExecution.sync";
     }
     else {
       if (st.type = AWSPSMENUMS!AslStateType#TASK) {
-        st.resource = "arn:aws:states:::aws-sdk:executeAwsApi";
+        st.type = AWSPSMENUMS!AslStateType#PASS;
+        manualDecision("WORKFLOW_TASK_TARGET_REQUIRED",
+          "Provide an executable target for workflow task " + ws.name + ".",
+          KERNEL!Severity#ERROR, isProductionRoot(), Sequence{w, ws},
+          "Set WorkflowState.invokesFunction or nestedWorkflow. The generated ASL uses a deployable Pass state until a target is modeled.");
       }
     }
   }
@@ -264,6 +275,14 @@ operation createAslState(w, ws) {
       "The PIM identifies a map state but does not carry full ASL item processor structure.");
   }
   return st;
+}
+
+/** Returns a valid JSONPath root when an upstream mapping is absent or still a placeholder. */
+operation aslJsonPathOrRoot(mapping) {
+  if (not hasText(mapping) or mapping = "TBD" or not mapping.startsWith("$")) {
+    return "$";
+  }
+  return mapping;
 }
 
 /** Computes complete asl state transitions. */
@@ -327,7 +346,7 @@ operation createAslChoice(tr, stateByPimId) {
   c.id = generatedId("asl_choice", tr, "choice");
   c.name = firstText(tr.name, "Choice");
   c.conditionExpression = tr.conditionExpression;
-  c.variable = "$";
+  c.variable = "$.condition";
   c.nextState = resolvedNextState;
   if (not hasText(c.conditionExpression) and not isTrue(tr.defaultTransition)) {
     manualDecision("WORKFLOW_TRANSITION_AMBIGUOUS",

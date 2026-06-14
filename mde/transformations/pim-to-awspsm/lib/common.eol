@@ -446,9 +446,8 @@ operation applyProductionDefaults(resource) {
       and resource.eGet(resource.eClass().getEStructuralFeature("kmsKey")).isUndefined()) {
     resource.eSet(resource.eClass().getEStructuralFeature("kmsKey"), defaultKmsKey());
   }
-  if (resource.eClass().getName() = "IamRole" and not hasText(resource.permissionsBoundaryArn)) {
-    resource.permissionsBoundaryArn = "REVIEW_REQUIRED_PERMISSIONS_BOUNDARY_ARN";
-  }
+  // An unknown permissions boundary must remain absent. A review marker is not a valid ARN and
+  // makes otherwise deployable CloudFormation fail before reviewers can supply their boundary.
 }
 
 /** Creates default kms key. */

@@ -146,7 +146,7 @@ rule ApiRoute2HttpApiRoute
   transform r : API!ApiRoute
   to gr : AWSPSMAPI!HttpApiRoute {
 
-  guard : r.api.apiStyle = PIMTYPES!ApiStyle#RESOURCE_ORIENTED_HTTP or r.api.apiStyle = PIMTYPES!ApiStyle#RPC_HTTP
+  guard : awsEquivalent(r.api).isDefined() and awsEquivalent(r.api).eClass().getName() = "HttpApi"
 
   copyAwsResource(r, gr, "Route", "AWS::ApiGatewayV2::Route");
   gr.id = idFor("http_route", r);
@@ -738,13 +738,19 @@ operation openApiRequestBody(r) {
 
 /** Computes open api responses. */
 operation openApiResponses(r) {
-  var responses = "\"" + positiveOr(r.expectedSuccessStatus, 200).asString() + "\": { \"description\": \"Success\"";
+  var successStatus = positiveOr(r.expectedSuccessStatus, 200).asString();
+  var emittedStatuses = Set{successStatus};
+  var responses = "\"" + successStatus + "\": { \"description\": \"Success\"";
   if (r.responseSchema.isDefined()) {
     responses = responses + ", \"content\": { \"application/json\": { \"schema\": { \"$ref\": \"#/components/schemas/" + escapeJson(pascalCase(r.responseSchema.name)) + "\" } } }";
   }
   responses = responses + " }";
   for (e in r.errorMappings) {
-    responses = responses + ", \"" + statusForError(e) + "\": { \"description\": \"" + escapeJson(firstText(e.responseMessage, e.domainErrorCode)) + "\" }";
+    var errorStatus = statusForError(e);
+    if (not emittedStatuses.includes(errorStatus)) {
+      responses = responses + ", \"" + errorStatus + "\": { \"description\": \"" + escapeJson(firstText(e.responseMessage, e.domainErrorCode)) + "\" }";
+      emittedStatuses.add(errorStatus);
+    }
   }
   return "{ " + responses + " }";
 }

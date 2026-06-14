@@ -70,6 +70,38 @@ services:
       - ./apps/frontend:/app:ro
     restart: unless-stopped
 
+  localstack:
+    image: localstack/localstack:latest
+    environment:
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      DEBUG: ${LOCALSTACK_DEBUG:-0}
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:-}
+      # Clean state is the reliable default for repeatable full-stack deployment tests.
+      # Set LOCALSTACK_PERSISTENCE=1 when retained simulator state is more important.
+      PERSISTENCE: ${LOCALSTACK_PERSISTENCE:-0}
+      CFN_IGNORE_UNSUPPORTED_RESOURCE_TYPES: ${LOCALSTACK_CFN_IGNORE_UNSUPPORTED_RESOURCE_TYPES:-1}
+      HTTP_PROXY: ${LOCALSTACK_HTTP_PROXY:-http://host.docker.internal:2081}
+      HTTPS_PROXY: ${LOCALSTACK_HTTPS_PROXY:-http://host.docker.internal:2081}
+      NO_PROXY: ${LOCALSTACK_NO_PROXY:-localhost,127.0.0.1,localstack}
+    ports:
+      - "${LOCALSTACK_GATEWAY_PORT:-4566}:4566"
+      - "4510-4559:4510-4559"
+    volumes:
+      - modless-localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
   landing:
     image: python:3.13-alpine
     command: ["python3", "-m", "http.server", "--bind", "0.0.0.0", "8083", "--directory", "/app"]
@@ -88,4 +120,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  modless-localstack-data:
   modless-postgres-data:

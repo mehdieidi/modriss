@@ -49,6 +49,28 @@ operation AWSPSMAPI!ApiGatewayDeployment omitFromCfnTemplate() : Boolean {
     stageObj.deployment = self and stageObj.api.isDefined() and stageObj.api.stages.notEmpty() and stageObj.api.stages.first() = stageObj);
 }
 
+/** OpenAPI DefinitionBody owns modeled HTTP/REST routes and their integrations. */
+operation AWSPSMAPI!ApiGatewayRoute omitFromCfnTemplate() : Boolean {
+  return self.api.isDefined()
+    and (self.api.eClass().getName() = "HttpApi" or self.api.eClass().getName() = "RestApi")
+    and self.api.routes.includes(self);
+}
+
+/** Integrations embedded in an OpenAPI-owned route must not be emitted a second time. */
+operation AWSPSMAPI!ApiGatewayIntegration omitFromCfnTemplate() : Boolean {
+  return AWSPSMAPI!ApiGatewayRoute.all.exists(routeObj |
+    routeObj.integration = self and routeObj.omitFromCfnTemplate());
+}
+
+/** Placeholder custom resources remain in reports until a real provider token is modeled. */
+operation AWSPSMCORE!AwsNativeResource omitFromCfnTemplate() : Boolean {
+  return self.cloudFormationType.startsWith("Custom::")
+    and self.properties.exists(propObj |
+      propObj.propertyName = "ServiceToken"
+      and propObj.value.isDefined()
+      and firstText(propObj.value.expression, propObj.value.literal).startsWith("REVIEW_REQUIRED_"));
+}
+
 /** Invalid Scheduler resources stay represented in reports, but must not poison the generated template. */
 operation AWSPSMEVENTS!EventBridgeSchedule omitFromCfnTemplate() : Boolean {
   return self.target.isUndefined()
@@ -56,6 +78,20 @@ operation AWSPSMEVENTS!EventBridgeSchedule omitFromCfnTemplate() : Boolean {
     or (not self.scheduleExpression.startsWith("at(")
       and not self.scheduleExpression.startsWith("rate(")
       and not self.scheduleExpression.startsWith("cron("));
+}
+
+/** External SNS subscriptions without a protocol-compatible endpoint remain manual actions. */
+operation AWSPSMMESSAGING!SnsSubscription omitFromCfnTemplate() : Boolean {
+  if (self.endpointResource.isDefined()) {
+    return false;
+  }
+  if (self.protocol.asString() = "HTTP") {
+    return not self.endpoint.isPresent() or not self.endpoint.startsWith("http://");
+  }
+  if (self.protocol.asString() = "HTTPS") {
+    return not self.endpoint.isPresent() or not self.endpoint.startsWith("https://");
+  }
+  return not self.endpoint.isPresent();
 }
 
 /** Renders emit cfn resource yaml. */
@@ -597,7 +633,7 @@ operation AWSPSMSECURITY!SecretsManagerSecret emitCfnPropertiesYaml(emitCtx : Ma
     outText = outText + spaces(6) + "KmsKeyId: !Ref " + self.kmsKey.cfnLogicalId() + "\n";
   }
   if (self.generateSecretStringJson.isPresent()) {
-    outText = outText + yamlBlock("GenerateSecretString", self.generateSecretStringJson, 6);
+    outText = outText + structuredYamlProperty("GenerateSecretString", self.generateSecretStringJson, 6);
   }
   else if (self.secretValue.isDefined() and self.secretValue.sourceKind.asString() <> "PLAINTEXT") {
     outText = outText + self.secretValue.emitCfnValueProperty("SecretString", 6);
@@ -777,7 +813,11 @@ operation AWSPSMMESSAGING!SnsSubscription emitCfnPropertiesYaml(emitCtx : Map) :
     }
   }
   if (self.filterPolicyScope.isDefined()) {
-    outText = outText + emitYamlScalarProperty("FilterPolicyScope", self.filterPolicyScope.asString().replace("_", ""), 6);
+    var scopeText = "MessageAttributes";
+    if (self.filterPolicyScope.asString() = "MESSAGE_BODY") {
+      scopeText = "MessageBody";
+    }
+    outText = outText + emitYamlScalarProperty("FilterPolicyScope", scopeText, 6);
   }
   if (self.deliveryPolicyJson.isPresent()) {
     outText = outText + yamlBlock("DeliveryPolicy", self.deliveryPolicyJson, 6);
@@ -834,7 +874,7 @@ operation AWSPSMEVENTS!EventBridgeBusPolicy cfnTypeText(emitCtx : Map) : String 
 /** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeBusPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("StatementId", self.statementId, 6);
-  outText = outText + spaces(6) + "EventBusName: " + refForResource(self.bus) + "\n";
+  outText = outText + spaces(6) + "EventBusName: " + self.refForResourceInSameStack(self.bus) + "\n";
   if (self.policyJson.isPresent()) {
     outText = outText + yamlBlock("Statement", self.policyJson, 6);
   }
@@ -854,7 +894,7 @@ operation AWSPSMEVENTS!EventBridgeRule emitCfnPropertiesYaml(emitCtx : Map) : St
   var outText = emitYamlScalarProperty("Name", firstText(self.ruleName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
   if (self.bus.isDefined()) {
-    outText = outText + spaces(6) + "EventBusName: " + refForResource(self.bus) + "\n";
+    outText = outText + spaces(6) + "EventBusName: " + self.refForResourceInSameStack(self.bus) + "\n";
   }
   outText = outText + emitYamlScalarProperty("ScheduleExpression", self.scheduleExpression, 6);
   outText = outText + emitYamlScalarProperty("State", self.state, 6);
@@ -1355,7 +1395,7 @@ operation AWSPSMAPI!ApiGatewayApi emitApiCommonPropertiesYaml(emitCtx : Map) : S
   var outText = emitYamlScalarProperty("Name", firstText(self.apiName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
   if (self.routes.notEmpty() and (self.eClass().getName() = "HttpApi" or self.eClass().getName() = "RestApi")) {
-    outText = outText + emitYamlScalarProperty("DefinitionUri", self.openApiPath(), 6);
+    outText = outText + structuredYamlProperty("DefinitionBody", self.emitOpenApiDocument(self.routes), 6);
   }
   else if (self.definitionUri.isPresent()) {
     outText = outText + emitYamlScalarProperty("DefinitionUri", self.definitionUri, 6);
@@ -1554,6 +1594,15 @@ operation AWSPSMAPI!ApiGatewayStage emitApiGatewayStagePropertiesYaml(emitCtx : 
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
+/** Uses a CloudFormation reference when both resources belong to the same generated stack. */
+operation AWSPSMCORE!AwsResource refForResourceInSameStack(resObj) : String {
+  if (resObj.isDefined() and AWSPSMCORE!SamStack.all.exists(stackObj |
+      stackObj.resources.includes(self) and stackObj.resources.includes(resObj))) {
+    return "!Ref " + resObj.cfnLogicalId();
+  }
+  return refForResource(resObj);
+}
+
 /** Returns targets that map to an actual AWS service resource. */
 operation AWSPSMEVENTS!EventBridgeRule deployableEventBridgeTargets() : Sequence {
   return self.targets.select(targetObj |
@@ -1749,6 +1798,10 @@ operation AWSPSMIDENTITY!CognitoUserPool emitCfnPropertiesYaml(emitCtx : Map) : 
   var outText = emitYamlScalarProperty("UserPoolName", firstText(self.userPoolName, self.physicalName), 6);
   if (self.mfaConfiguration.isDefined()) {
     outText = outText + emitYamlScalarProperty("MfaConfiguration", self.mfaConfiguration.asString(), 6);
+    if (self.mfaConfiguration.asString() = "ON" or self.mfaConfiguration.asString() = "OPTIONAL") {
+      outText = outText + spaces(6) + "EnabledMfas:\n";
+      outText = outText + spaces(8) + "- SOFTWARE_TOKEN_MFA\n";
+    }
   }
   outText = outText + emitYamlStringListProperty("UsernameAttributes", self.usernameAttributes, 6);
   outText = outText + emitYamlStringListProperty("AliasAttributes", self.aliasAttributes, 6);
@@ -2067,7 +2120,8 @@ operation AWSPSMOBSERVABILITY!CloudWatchDashboard cfnTypeText(emitCtx : Map) : S
 operation AWSPSMOBSERVABILITY!CloudWatchDashboard emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("DashboardName", firstText(self.dashboardName, self.physicalName), 6);
   outText = outText + yamlBlock("DashboardBody", self.dashboardBodyJson, 6);
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  // AWS::CloudWatch::Dashboard does not support the Tags property.
+  return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Computes cfn type text. */
@@ -2088,7 +2142,24 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx 
   else if (self.definitionString.isPresent()) {
     outText = outText + yamlBlock("Definition", self.definitionString, 6);
   }
-  if (self.definitionSubstitutionsJson.isPresent()) {
+  if (self.aslDocument.isDefined() and self.aslDocument.states.exists(stateObj | stateObj.invokedResource.isDefined())) {
+    outText = outText + spaces(6) + "DefinitionSubstitutions:\n";
+    for (targetObj in self.aslDocument.states.select(stateObj | stateObj.invokedResource.isDefined())
+      .collect(stateObj | stateObj.invokedResource).asSet().asSequence().sortBy(targetObj | targetObj.cfnLogicalId())) {
+      if (AWSPSMCORE!SamStack.all.exists(stackObj | stackObj.resources.includes(self) and stackObj.resources.includes(targetObj))) {
+        outText = outText + spaces(8) + targetObj.cfnLogicalId() + "Arn: !GetAtt " + targetObj.cfnLogicalId() + ".Arn\n";
+      }
+      else if (targetObj.isKindOf(AWSPSMCOMPUTE!AwsLambdaFunction)) {
+        outText = outText + spaces(8) + targetObj.cfnLogicalId() + "Arn: !Sub " +
+          ("arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:" + firstText(targetObj.functionName, targetObj.physicalName)).yamlScalar() + "\n";
+      }
+      else if (targetObj.isKindOf(AWSPSMWORKFLOW!StepFunctionStateMachine)) {
+        outText = outText + spaces(8) + targetObj.cfnLogicalId() + "Arn: !Sub " +
+          ("arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:" + firstText(targetObj.stateMachineName, targetObj.physicalName)).yamlScalar() + "\n";
+      }
+    }
+  }
+  else if (self.definitionSubstitutionsJson.isPresent()) {
     outText = outText + yamlBlock("DefinitionSubstitutions", self.definitionSubstitutionsJson, 6);
   }
   if (self.stateMachineType.isDefined()) {

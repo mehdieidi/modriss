@@ -331,7 +331,7 @@ class TransformationServiceTest {
             .filter(path -> path.startsWith("src/functions/") && path.endsWith("/handler.go"))
             .findFirst()
             .orElseThrow();
-    String customLogic = "\treturn GeneratedResult{Status: \"developer-owned\"}, nil";
+    String customLogic = "\t// Developer-owned validation.";
     artifactService.updateFile(
         user,
         artifact.id(),
@@ -340,8 +340,8 @@ class TransformationServiceTest {
             .files()
             .get(handlerPath)
             .replace(
-                "\treturn GeneratedResult{}, shared.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\","
-                    + " \"Business logic has not been implemented yet.\")",
+                "\t// TODO: add developer-owned validation that cannot be derived from JSON"
+                    + " Schema.",
                 customLogic));
 
     ArtifactRecord regenerated = transformations.psmToArtifact(user, psm.id());

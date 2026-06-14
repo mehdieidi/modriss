@@ -1333,6 +1333,7 @@ operation addIamStatementMergedBySid(doc, statementObj) {
   if (not hasText(existing.wildcardJustification) and hasText(statementObj.wildcardJustification)) {
     existing.wildcardJustification = statementObj.wildcardJustification;
   }
+  delete statementObj;
 }
 
 /** Computes if defined int. */

@@ -167,13 +167,16 @@ operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : St
     outText = outText + spaces(indentCount + 2) + "x-amazon-apigateway-integration:\n";
     outText = outText + spaces(indentCount + 4) + "type: " + self.integration.integrationType.asString().toLowerCase().yamlScalar() + "\n";
     if (self.integration.lambdaTarget.isDefined()) {
-      outText = outText + spaces(indentCount + 4) + "uri: " + arnForResource(self.integration.lambdaTarget) + "\n";
+      outText = outText + spaces(indentCount + 4) + "uri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${" +
+        self.integration.lambdaTarget.cfnLogicalId() + ".Arn}/invocations'\n";
     }
     else if (self.integration.integrationUri.isPresent()) {
       outText = outText + spaces(indentCount + 4) + "uri: " + self.integration.integrationUri.yamlScalar() + "\n";
     }
     outText = outText + spaces(indentCount + 4) + "httpMethod: " + self.integration.integrationMethod.orElseText("POST").yamlScalar() + "\n";
-    outText = outText + spaces(indentCount + 4) + "payloadFormatVersion: " + self.integration.payloadFormatVersion.orElseText("2.0").yamlScalar() + "\n";
+    if (self.api.eClass().getName() = "HttpApi") {
+      outText = outText + spaces(indentCount + 4) + "payloadFormatVersion: " + self.integration.payloadFormatVersion.orElseText("2.0").yamlScalar() + "\n";
+    }
   }
   return outText;
 }
@@ -233,11 +236,11 @@ operation AWSPSMAPI!ApiGatewayResponseModel openapiModelName() : String {
 operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + self.stateName.jsonString() + ": {\n";
   outText = outText + spaces(indentCount + 2) + "\"Type\": " + self.modelFeatureValue("type").asString().firstToUpperCase().toLowerCase().firstToUpperCase().jsonString();
-  if (self.resource.isPresent()) {
-    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + self.resource.jsonString();
-  }
-  else if (self.invokedResource.isDefined()) {
+  if (self.modelFeatureValue("type").asString() = "TASK" and self.invokedResource.isDefined()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + ("${" + self.invokedResource.cfnLogicalId() + "Arn}").jsonString();
+  }
+  else if (self.resource.isPresent()) {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Resource\": " + self.resource.jsonString();
   }
   if (self.inputPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"InputPath\": " + self.inputPath.jsonString();
@@ -257,13 +260,13 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
   if (self.assignJson.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Assign\": " + self.assignJson;
   }
-  if (self.timeoutSeconds.isDefined()) {
+  if (self.modelFeatureValue("type").asString() = "TASK" and self.timeoutSeconds.isDefined() and self.timeoutSeconds > 0) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"TimeoutSeconds\": " + self.timeoutSeconds.asString();
   }
-  if (self.heartbeatSeconds.isDefined()) {
+  if (self.modelFeatureValue("type").asString() = "TASK" and self.heartbeatSeconds.isDefined() and self.heartbeatSeconds > 0) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"HeartbeatSeconds\": " + self.heartbeatSeconds.asString();
   }
-  if (self.retry.notEmpty()) {
+  if (self.modelFeatureValue("type").asString() = "TASK" and self.retry.notEmpty()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Retry\": [\n";
     for (retryObj in self.retry) {
       outText = outText + retryObj.emitAslRetryJson(indentCount + 4);
@@ -274,7 +277,7 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
     }
     outText = outText + spaces(indentCount + 2) + "]";
   }
-  if (self.`catch`.notEmpty()) {
+  if (self.modelFeatureValue("type").asString() = "TASK" and self.`catch`.notEmpty()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Catch\": [\n";
     for (catchObj in self.`catch`) {
       outText = outText + catchObj.emitAslCatchJson(indentCount + 4);
@@ -296,13 +299,16 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
     }
     outText = outText + spaces(indentCount + 2) + "]";
   }
+  if (self.modelFeatureValue("type").asString() = "WAIT") {
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Seconds\": 0";
+  }
   if (self.nextState.isDefined()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Next\": " + self.nextState.stateName.jsonString();
   }
   else if (self.nextStateName.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"Next\": " + self.nextStateName.jsonString();
   }
-  else if (self.end = true) {
+  else if (self.end = true and self.modelFeatureValue("type").asString() <> "SUCCEED" and self.modelFeatureValue("type").asString() <> "FAIL") {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"End\": true";
   }
   outText = outText + "\n" + spaces(indentCount) + "}";
@@ -312,7 +318,7 @@ operation AWSPSMWORKFLOW!AslState emitAslStateJson(indentCount : Integer) : Stri
 /** Renders emit asl retry json. */
 operation AWSPSMWORKFLOW!AslRetryRule emitAslRetryJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
-  outText = outText + self.errorEquals.emitJsonStringArray("ErrorEquals", indentCount + 2);
+  outText = outText + self.errorEquals.emitAslStringArray("ErrorEquals", indentCount + 2);
   if (self.intervalSeconds.isDefined()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"IntervalSeconds\": " + self.intervalSeconds.asString();
   }
@@ -334,7 +340,7 @@ operation AWSPSMWORKFLOW!AslRetryRule emitAslRetryJson(indentCount : Integer) : 
 /** Renders emit asl catch json. */
 operation AWSPSMWORKFLOW!AslCatchRule emitAslCatchJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
-  outText = outText + self.errorEquals.emitJsonStringArray("ErrorEquals", indentCount + 2);
+  outText = outText + self.errorEquals.emitAslStringArray("ErrorEquals", indentCount + 2);
   if (self.resultPath.isPresent()) {
     outText = outText + ",\n" + spaces(indentCount + 2) + "\"ResultPath\": " + self.resultPath.jsonString();
   }
@@ -346,7 +352,8 @@ operation AWSPSMWORKFLOW!AslCatchRule emitAslCatchJson(indentCount : Integer) : 
 operation AWSPSMWORKFLOW!AslChoiceRule emitAslChoiceJson(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "{\n";
   if (self.conditionExpression.isPresent()) {
-    outText = outText + spaces(indentCount + 2) + "\"Condition\": " + self.conditionExpression.jsonString() + ",\n";
+    outText = outText + spaces(indentCount + 2) + "\"Variable\": " + self.variable.orElseText("$.condition").jsonString() + ",\n";
+    outText = outText + spaces(indentCount + 2) + "\"StringEquals\": " + self.conditionExpression.jsonString() + ",\n";
   }
   else {
     outText = outText + spaces(indentCount + 2) + "\"Variable\": " + self.variable.orElseText("$").jsonString() + ",\n";
@@ -354,6 +361,18 @@ operation AWSPSMWORKFLOW!AslChoiceRule emitAslChoiceJson(indentCount : Integer) 
   }
   outText = outText + spaces(indentCount + 2) + "\"Next\": " + self.nextState.stateName.jsonString() + "\n";
   return outText + spaces(indentCount) + "}";
+}
+
+/** Renders an ASL string-array field, including when it contains exactly one item. */
+operation Collection emitAslStringArray(nameText : String, indentCount : Integer) : String {
+  var outText = spaces(indentCount) + nameText.jsonString() + ": [";
+  for (itemText in self) {
+    if (itemText <> self.first()) {
+      outText = outText + ", ";
+    }
+    outText = outText + itemText.jsonString();
+  }
+  return outText + "]";
 }
 
 /** Computes schema title. */

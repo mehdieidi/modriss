@@ -71,7 +71,12 @@ final class PimToAwsPsmEtlRegressionTest {
         Files.isRegularFile(psmModel),
         "The PIM-to-AWS-PSM profile should persist an AWS PSM model.");
 
-    EObject root = loadModel(psmMetamodel, psmModel).getContents().get(0);
+    Resource generatedResource = loadModel(psmMetamodel, psmModel);
+    assertEquals(
+        1,
+        generatedResource.getContents().size(),
+        "The generated PSM XMI must contain exactly one model root.");
+    EObject root = generatedResource.getContents().get(0);
     assertEquals("AwsPsmModel", root.eClass().getName());
     assertEquals(
         3,
