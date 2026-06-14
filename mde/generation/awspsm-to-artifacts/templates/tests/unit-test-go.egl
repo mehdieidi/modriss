@@ -6,7 +6,7 @@ import (
 )
 
 [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("unit-custom-fixtures"), true)%]
-var fixtureObj = map[string]any{"id": "unit-fixture", "sourceStableId": "[%= awsFn.stableKey() %]"}
+var fixtureObj[%= awsFn.cfnLogicalId() %] = map[string]any{"id": "unit-fixture", "sourceStableId": "[%= awsFn.stableKey() %]"}
 [%=out.stopPreserve()%]
 
 func Test[%= awsFn.cfnLogicalId() %]GeneratedHandlerArtifactsExist(t *testing.T) {
@@ -17,7 +17,7 @@ func Test[%= awsFn.cfnLogicalId() %]GeneratedHandlerArtifactsExist(t *testing.T)
 		t.Fatalf("schema.json should exist: %v", err)
 	}
 [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("unit-custom-assertions"), true)%]
-	if fixtureObj["id"] == "" {
+	if fixtureObj[%= awsFn.cfnLogicalId() %]["id"] == "" {
 		t.Fatal("fixture id is required")
 	}
 [%=out.stopPreserve()%]

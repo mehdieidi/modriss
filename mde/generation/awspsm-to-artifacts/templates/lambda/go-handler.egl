@@ -32,7 +32,9 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 	logObj := shared.NewLogger(correlationID, "[%= awsFn.functionName.orElseText(awsFn.cfnLogicalId()) %]", configObj.Stage)
 	traceObj := shared.NewTracer(correlationID, "[%= awsFn.stableKey() %]")
 	metricObj := shared.NewMetrics("[%= emitCtx.get("projectSlug") %]")
+[% if (awsFn.requiresIdempotency()) { %]
 	idemStoreObj := shared.NewIdempotencyStore(configObj)
+[% } %]
 	eventPublisherObj := shared.NewEventPublisher(configObj, logObj)
 	metricObj.AddMetric("Invocation", 1)
 
@@ -40,7 +42,7 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 	if err := shared.ValidatePayload(lambdaEvt, &validatedInput); err != nil {
 		metricObj.AddMetric("ValidationError", 1)
 		logObj.Error("validation failed", err)
-		return shared.MapKnownError(err, correlationID), nil
+		return mapKnownError(err, correlationID), nil
 	}
 
 [% if (awsFn.requiresIdempotency()) { %]
@@ -58,7 +60,10 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 [%=out.stopPreserve()%]
 
 [%=out.startPreserve("/*", "*/", awsFn.manualRegionId("business-logic"), true)%]
-	return GeneratedResult{}, shared.NewGeneratedHandlerError("NOT_IMPLEMENTED", "Business logic has not been implemented yet.")
+	return mapKnownError(
+		shared.NewGeneratedHandlerError("NOT_IMPLEMENTED", "Business logic has not been implemented yet."),
+		correlationID,
+	), nil
 [%=out.stopPreserve()%]
 
 	generatedResult := GeneratedResult{
@@ -73,7 +78,7 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 	if err := eventPublisherObj.PublishModeledEvents(ctx, "[%= awsFn.stableKey() %]", generatedResult); err != nil {
 		metricObj.AddMetric("Error", 1)
 		logObj.Error("event publishing failed", err)
-		return shared.MapKnownError(err, correlationID), nil
+		return mapKnownError(err, correlationID), nil
 	}
 [% if (awsFn.requiresIdempotency()) { %]
 	idemStoreObj.Put(idemKeyText, generatedResult)
@@ -82,6 +87,15 @@ func Handler(ctx context.Context, lambdaEvt map[string]any) (GeneratedResult, er
 	traceObj.Flush()
 	metricObj.Flush()
 	return generatedResult, nil
+}
+
+func mapKnownError(err error, correlationID string) GeneratedResult {
+	mappedResult := shared.MapKnownError(err, correlationID)
+	return GeneratedResult{
+		StatusCode: mappedResult.StatusCode,
+		Headers:    mappedResult.Headers,
+		Body:       mappedResult.Body,
+	}
 }
 
 func main() {

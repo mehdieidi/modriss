@@ -2,18 +2,27 @@
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 func TestTemplateHasNoPlaintextSecretMarker(t *testing.T) {
-	templateBytes, err := os.ReadFile("../../template.yaml")
+	templatePaths, err := filepath.Glob("../../template*.yaml")
 	if err != nil {
-		t.Fatalf("template.yaml should be readable: %v", err)
+		t.Fatalf("generated template lookup failed: %v", err)
 	}
-	templateText := string(templateBytes)
-	if strings.Contains(templateText, "PLAINTEXT_SECRET") {
-		t.Fatal("template.yaml contains plaintext secret marker")
+	if len(templatePaths) == 0 {
+		t.Fatal("expected at least one generated SAM template")
+	}
+	for _, templatePath := range templatePaths {
+		templateBytes, err := os.ReadFile(templatePath)
+		if err != nil {
+			t.Fatalf("%s should be readable: %v", templatePath, err)
+		}
+		if strings.Contains(string(templateBytes), "PLAINTEXT_SECRET") {
+			t.Fatalf("%s contains plaintext secret marker", templatePath)
+		}
 	}
 [%=out.startPreserve("/*", "*/", awsRoot.manualRegionId("security-custom-assertions"), true)%]
 	if false {

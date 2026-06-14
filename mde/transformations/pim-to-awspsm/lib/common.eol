@@ -2,6 +2,7 @@
 /** Initializes shared roots, lookup maps, and deduplication sets for the PIM-to-AWS-PSM run. */
 operation initialisePimToAwsPsmCaches() {
   usedAwsLogicalIds = Set{};
+  usedAwsPhysicalNames = Set{};
   cachedPimRoot = PIM!PIMModel.all.first();
   cachedAwsRoot = null;
   cachedDefaultStack = null;
@@ -17,6 +18,7 @@ operation initialisePimToAwsPsmCaches() {
   cachedAwsGeneratedResourceObjects = Set{};
   cachedGeneratedIdByKey = new Map;
   cachedNextLogicalIdIndexBySeed = new Map;
+  cachedNextPhysicalNameIndexBySeed = new Map;
   cachedDataAccessesByFunctionId = new Map;
   cachedStageStackLinks = Set{};
   cachedApiGatewayRoutesWithLambdaIntegration = Sequence{};
@@ -42,6 +44,9 @@ operation initialisePimToAwsPsmCaches() {
 
   for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.logicalId))) {
     usedAwsLogicalIds.add(resource.logicalId);
+  }
+  for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.physicalName))) {
+    usedAwsPhysicalNames.add(resource.physicalName);
   }
   if (cachedAwsTargetHadPreloadedContent) {
     for (resource in AWSPSMCORE!AwsResource.all.select(r | hasText(r.generatedFrom))) {
@@ -483,6 +488,62 @@ operation defaultKmsKey() {
   return key;
 }
 
+/** Ensures each independently deployable stack owns the generated default CMK it references. */
+operation alignDefaultKmsKeysWithStacks() {
+  var provisionalKey = cachedAwsEquivalentBySourceId.get("__platform_default_kms_key__");
+  if (provisionalKey.isUndefined()) {
+    return;
+  }
+  for (stackObj in AWSPSMCORE!SamStack.all) {
+    var encryptedResources = stackObj.resources.select(resourceObj |
+      resourceObj.eClass().getEStructuralFeature("kmsKey").isDefined()
+      and resourceObj.eGet(resourceObj.eClass().getEStructuralFeature("kmsKey")) = provisionalKey);
+    if (encryptedResources.isEmpty()) {
+      continue;
+    }
+    var stackKey = provisionalKey;
+    if (provisionalKey.stack <> stackObj) {
+      stackKey = createStackDefaultKmsKey(stackObj);
+    }
+    for (resourceObj in encryptedResources) {
+      resourceObj.eSet(resourceObj.eClass().getEStructuralFeature("kmsKey"), stackKey);
+    }
+  }
+}
+
+/** Creates a generated default CMK owned by one stack. */
+operation createStackDefaultKmsKey(stackObj) {
+  var key = new AWSPSMSECURITY!KmsKey;
+  registerAwsGeneratedResource(key);
+  key.id = uniqueId("kms_key_platform_default_" + slug(stackObj.stackName));
+  key.name = "Platform default KMS key for " + stackObj.name;
+  key.generatedFrom = firstText(stackObj.generatedFrom, stackObj.id);
+  key.generatedByTransformation = true;
+  key.manuallyMaintained = false;
+  key.logicalId = uniqueLogicalId("PlatformDefaultKmsKey" + pascalCase(stackObj.name));
+  key.physicalName = physicalName(pimRoot(), "kms-key-" + kebab(stackObj.name), defaultStage());
+  key.awsResourceType = "AWS::KMS::Key";
+  key.resourceDescription = "Generated customer-managed key scoped to " + stackObj.name + ".";
+  key.deletionPolicy = AWSPSMENUMS!CloudFormationDeletionPolicy#RETAIN;
+  key.updateReplacePolicy = AWSPSMENUMS!CloudFormationUpdateReplacePolicy#RETAIN;
+  key.retainInProduction = true;
+  key.productionCritical = true;
+  key.importedResource = false;
+  key.descriptionText = "Default generated CMK for resources in " + stackObj.name + ".";
+  key.keyUsage = "ENCRYPT_DECRYPT";
+  key.keySpec = "SYMMETRIC_DEFAULT";
+  key.enabled = true;
+  key.enableKeyRotation = true;
+  key.multiRegion = false;
+  key.pendingWindowInDays = 30;
+  key.tags.add(tag("GeneratedFromPIM", firstText(pimRoot().name, pimRoot().id)));
+  key.tags.add(tag("Service", firstText(stackObj.name, "Application")));
+  key.tags.add(tag("Owner", "REVIEW_REQUIRED_OWNER"));
+  key.tags.add(tag("Environment", defaultStageName()));
+  stackObj.resources.add(key);
+  return key;
+}
+
 /** Creates default alarm topic. */
 operation defaultAlarmTopic() {
   var cacheKey = "__platform_alarm_topic__";
@@ -545,10 +606,21 @@ operation physicalName(source, awsKind : String, stage) {
     prefix = stage.stageName;
   }
   var name = kebab(prefix + "-" + rootName() + "-" + firstText(source.name, source.id) + "-" + awsKind);
-  if (name.length() > 64) {
-    return name.substring(0, 64);
+  var seed = name;
+  if (seed.length() > 64) {
+    seed = seed.substring(0, 64);
   }
-  return name;
+  var candidate = seed;
+  var index = cachedNextPhysicalNameIndexBySeed.get(seed);
+  if (index.isUndefined()) index = 2;
+  while (usedAwsPhysicalNames.includes(candidate)) {
+    var suffix = "-" + index.asString();
+    candidate = seed.substring(0, 64 - suffix.length()) + suffix;
+    index = index + 1;
+  }
+  cachedNextPhysicalNameIndexBySeed.put(seed, index);
+  usedAwsPhysicalNames.add(candidate);
+  return candidate;
 }
 
 /** Computes owning service name. */
@@ -683,16 +755,21 @@ operation schemaToObjectSchemaVisited(schema, includeDialect : Boolean, visited)
   }
   var required = "";
   var properties = "";
+  var emittedFieldNames = new Set;
   for (field in schema.fields) {
-    if (hasText(properties)) {
-      properties = properties + ", ";
-    }
-    properties = properties + "\"" + escapeJson(field.name) + "\": " + schemaFieldToJsonVisited(field, nestedVisited);
-    if (isTrue(field.required)) {
-      if (hasText(required)) {
-        required = required + ", ";
+    var normalizedFieldName = field.name.toLowerCase();
+    if (not emittedFieldNames.includes(normalizedFieldName)) {
+      emittedFieldNames.add(normalizedFieldName);
+      if (hasText(properties)) {
+        properties = properties + ", ";
       }
-      required = required + "\"" + escapeJson(field.name) + "\"";
+      properties = properties + "\"" + escapeJson(field.name) + "\": " + schemaFieldToJsonVisited(field, nestedVisited);
+      if (isTrue(field.required)) {
+        if (hasText(required)) {
+          required = required + ", ";
+        }
+        required = required + "\"" + escapeJson(field.name) + "\"";
+      }
     }
   }
   var prefix = "";

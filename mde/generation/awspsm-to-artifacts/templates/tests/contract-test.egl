@@ -2,8 +2,11 @@
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -20,6 +23,9 @@ func TestGeneratedJSONContractsParse(t *testing.T) {
 			if err != nil {
 				return err
 			}
+			if err := rejectCaseInsensitiveDuplicateJSONKeys(strings.NewReader(string(encodedBytes))); err != nil {
+				return fmt.Errorf("%s: %w", pathText, err)
+			}
 			var decodedObj any
 			return json.Unmarshal(encodedBytes, &decodedObj)
 		})
@@ -32,4 +38,57 @@ func TestGeneratedJSONContractsParse(t *testing.T) {
 		t.Fatal("unreachable custom assertion guard")
 	}
 [%=out.stopPreserve()%]
+}
+
+func rejectCaseInsensitiveDuplicateJSONKeys(readerObj io.Reader) error {
+	decoderObj := json.NewDecoder(readerObj)
+	if err := scanJSONValue(decoderObj); err != nil {
+		return err
+	}
+	if _, err := decoderObj.Token(); err != io.EOF {
+		return fmt.Errorf("expected end of JSON document")
+	}
+	return nil
+}
+
+func scanJSONValue(decoderObj *json.Decoder) error {
+	tokenObj, err := decoderObj.Token()
+	if err != nil {
+		return err
+	}
+	delimiterObj, isDelimiter := tokenObj.(json.Delim)
+	if !isDelimiter {
+		return nil
+	}
+
+	switch delimiterObj {
+	case '{':
+		seenKeys := map[string]string{}
+		for decoderObj.More() {
+			keyToken, err := decoderObj.Token()
+			if err != nil {
+				return err
+			}
+			keyText := keyToken.(string)
+			normalizedKey := strings.ToLower(keyText)
+			if previousKey, exists := seenKeys[normalizedKey]; exists {
+				return fmt.Errorf("object keys %q and %q differ only by case", previousKey, keyText)
+			}
+			seenKeys[normalizedKey] = keyText
+			if err := scanJSONValue(decoderObj); err != nil {
+				return err
+			}
+		}
+	case '[':
+		for decoderObj.More() {
+			if err := scanJSONValue(decoderObj); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("unexpected JSON delimiter %q", delimiterObj)
+	}
+
+	_, err = decoderObj.Token()
+	return err
 }

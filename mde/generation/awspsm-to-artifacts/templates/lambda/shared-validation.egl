@@ -2,6 +2,20 @@
 
 import "encoding/json"
 
+func ExtractCorrelationID(eventObj map[string]any) string {
+	if correlationID, ok := eventObj["correlationId"].(string); ok && correlationID != "" {
+		return correlationID
+	}
+	if headersObj, ok := eventObj["headers"].(map[string]any); ok {
+		for _, headerName := range []string{"x-correlation-id", "X-Correlation-Id"} {
+			if correlationID, ok := headersObj[headerName].(string); ok && correlationID != "" {
+				return correlationID
+			}
+		}
+	}
+	return "generated-correlation-id"
+}
+
 func ValidatePayload(payloadObj any, targetObj any) error {
 	encodedBytes, err := json.Marshal(payloadObj)
 	if err != nil {

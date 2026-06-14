@@ -1,8 +1,8 @@
-[% /* Generates the openapi artifact. */ %][% if (apiObj.definitionBody.isPresent()) { %]
-[%= apiObj.definitionBody %]
-[% } else { %]
+[% /* Generates the openapi artifact. Modeled routes are authoritative when present. */ %][% if (routeSeq.notEmpty()) { %]
 [%= apiObj.emitOpenApiDocument(routeSeq) %]
 [%= out.startPreserve("#", "", apiObj.manualRegionId("openapi-extension"), true) %]
 # Add vendor extensions that cannot yet be represented in the PSM here.
 [%= out.stopPreserve() %]
+[% } else if (apiObj.definitionBody.isPresent()) { %]
+[%= apiObj.definitionBody %]
 [% } %]

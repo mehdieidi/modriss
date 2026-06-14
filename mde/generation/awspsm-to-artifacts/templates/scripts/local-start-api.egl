@@ -2,7 +2,19 @@
 set -euo pipefail
 
 stage_text="${1:-[%= emitCtx.get("defaultStageName") %]}"
-sam local start-api --env-vars "env/${stage_text}.json"
+template_path="${2:-}"
+if [[ -z "$template_path" ]]; then
+  mapfile -t api_templates < <(grep -l "Type: AWS::Serverless::Api" template*.yaml | sort)
+  if [[ "${#api_templates[@]}" -ne 1 ]]; then
+    echo "Multiple API templates exist. Usage: scripts/local-start-api.sh <stage> <template-path>" >&2
+    printf '  %s\n' "${api_templates[@]}" >&2
+    exit 2
+  fi
+  template_path="${api_templates[0]}"
+fi
+build_dir=".aws-sam/local-api-$(basename "$template_path" .yaml)"
+sam build --template-file "$template_path" --build-dir "$build_dir"
+sam local start-api --template "$build_dir/template.yaml" --env-vars "env/${stage_text}.json"
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("local-start-api-customizations"), true)%]
 # Add local API options here.

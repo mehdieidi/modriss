@@ -23,14 +23,39 @@ operation AWSPSMCORE!SamStack orderedResources() : Sequence {
     "AwsNativeResource"
   };
   for (groupText in groupSeq) {
-    for (resObj in self.resources.select(resObj | resObj.eClass().getName() = groupText).sortBy(resObj | resObj.cfnLogicalId())) {
+    for (resObj in self.resources.select(resObj | resObj.eClass().getName() = groupText and not resObj.omitFromCfnTemplate()).sortBy(resObj | resObj.cfnLogicalId())) {
       resSeq.add(resObj);
     }
   }
-  for (resObj in self.resources.reject(resObj | groupSeq.includes(resObj.eClass().getName())).sortBy(resObj | resObj.cfnLogicalId())) {
+  for (resObj in self.resources.reject(resObj | groupSeq.includes(resObj.eClass().getName()) or resObj.omitFromCfnTemplate()).sortBy(resObj | resObj.cfnLogicalId())) {
     resSeq.add(resObj);
   }
   return resSeq;
+}
+
+/** Returns whether a modeled resource must be omitted because another construct owns it or it is not deployable. */
+operation AWSPSMCORE!AwsResource omitFromCfnTemplate() : Boolean {
+  return false;
+}
+
+/** SAM creates the stage named by AWS::Serverless::Api.StageName. */
+operation AWSPSMAPI!RestApiStage omitFromCfnTemplate() : Boolean {
+  return self.api.isDefined() and self.api.stages.notEmpty() and self.api.stages.first() = self;
+}
+
+/** SAM creates the deployment used by its implicit REST API stage. */
+operation AWSPSMAPI!ApiGatewayDeployment omitFromCfnTemplate() : Boolean {
+  return AWSPSMAPI!RestApiStage.all.exists(stageObj |
+    stageObj.deployment = self and stageObj.api.isDefined() and stageObj.api.stages.notEmpty() and stageObj.api.stages.first() = stageObj);
+}
+
+/** Invalid Scheduler resources stay represented in reports, but must not poison the generated template. */
+operation AWSPSMEVENTS!EventBridgeSchedule omitFromCfnTemplate() : Boolean {
+  return self.target.isUndefined()
+    or self.target.targetResource.isUndefined()
+    or (not self.scheduleExpression.startsWith("at(")
+      and not self.scheduleExpression.startsWith("rate(")
+      and not self.scheduleExpression.startsWith("cron("));
 }
 
 /** Renders emit cfn resource yaml. */
@@ -125,23 +150,10 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) :
       }
     }
     else {
-      outText = outText + emitYamlScalarProperty("Runtime", firstText(self.code.runtimeIdentifier, emitCtx.get("primaryLanguage").defaultRuntimeIdentifier()), 6);
-      outText = outText + emitYamlScalarProperty("Handler", firstText(self.code.handler, self.generatedHandlerName(emitCtx)), 6);
-      if (self.code.codeUri.isPresent()) {
-        outText = outText + emitYamlScalarProperty("CodeUri", self.code.codeUri, 6);
-      }
-      else if (self.code.s3Bucket.isPresent() and self.code.s3Key.isPresent()) {
-        outText = outText + spaces(6) + "CodeUri:\n";
-        outText = outText + emitYamlScalarProperty("Bucket", self.code.s3Bucket, 8);
-        outText = outText + emitYamlScalarProperty("Key", self.code.s3Key, 8);
-        outText = outText + emitYamlScalarProperty("Version", self.code.s3ObjectVersion, 8);
-      }
-      else {
-        outText = outText + emitYamlScalarProperty("CodeUri", self.generatedCodeUri(emitCtx), 6);
-      }
-      if (self.code.inlineZipFile.isPresent()) {
-        outText = outText + yamlBlock("InlineCode", self.code.inlineZipFile, 6);
-      }
+      // This profile emits Go bootstrap binaries, so stale source-model code hints cannot be used.
+      outText = outText + emitYamlScalarProperty("Runtime", emitCtx.get("primaryLanguage").defaultRuntimeIdentifier(), 6);
+      outText = outText + emitYamlScalarProperty("Handler", self.generatedHandlerName(emitCtx), 6);
+      outText = outText + emitYamlScalarProperty("CodeUri", self.generatedCodeUri(emitCtx), 6);
     }
   }
   outText = outText + emitYamlIntegerProperty("MemorySize", self.memorySizeMb, 6);
@@ -228,11 +240,11 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction emitCfnPropertiesYaml(emitCtx : Map) :
   if (self.autoPublishAlias.isPresent()) {
     outText = outText + emitYamlScalarProperty("AutoPublishAlias", self.autoPublishAlias, 6);
   }
-  if (self.snapStartApplyOn.isDefined() and self.snapStartApplyOn.asString() <> "NONE") {
+  if (emitCtx.get("primaryLanguage") <> "GO" and self.snapStartApplyOn.isDefined() and self.snapStartApplyOn.asString() = "PUBLISHED_VERSIONS") {
     outText = outText + spaces(6) + "SnapStart:\n";
-    outText = outText + spaces(8) + "ApplyOn: " + self.snapStartApplyOn.asString().replace("_", "").yamlScalar() + "\n";
+    outText = outText + spaces(8) + "ApplyOn: 'PublishedVersions'\n";
   }
-  outText = outText + self.tags.emitTagsYaml(6);
+  outText = outText + self.tags.emitSamTagsYaml(6);
   outText = outText + self.overrides.emitNativePropertiesYaml(6);
   return outText;
 }
@@ -248,7 +260,7 @@ operation AWSPSMCOMPUTE!LambdaEventSourceMapping cfnTypeText(emitCtx : Map) : St
 }
 
 /** Renders emit cfn properties yaml. */
-operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitCfnPropertiesYaml(emitCtx : Map) : String {
+operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitLambdaEventSourceMappingPropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
   outText = outText + emitYamlIntegerProperty("BatchSize", self.batchSize, 6);
@@ -278,6 +290,21 @@ operation AWSPSMCOMPUTE!LambdaEventSourceMapping emitCfnPropertiesYaml(emitCtx :
   outText = outText + self.tags.emitTagsYaml(6);
   outText = outText + self.overrides.emitNativePropertiesYaml(6);
   return outText;
+}
+
+/** Dispatches shared event-source mapping rendering for a concrete SQS mapping. */
+operation AWSPSMCOMPUTE!SqsLambdaEventSourceMapping emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitLambdaEventSourceMappingPropertiesYaml(emitCtx);
+}
+
+/** Dispatches shared event-source mapping rendering for a concrete DynamoDB mapping. */
+operation AWSPSMCOMPUTE!DynamoDbStreamLambdaEventSourceMapping emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitLambdaEventSourceMappingPropertiesYaml(emitCtx);
+}
+
+/** Dispatches shared event-source mapping rendering for a concrete generic mapping. */
+operation AWSPSMCOMPUTE!GenericLambdaEventSourceMapping emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitLambdaEventSourceMappingPropertiesYaml(emitCtx);
 }
 
 /** Renders emit event source arn yaml. */
@@ -314,7 +341,7 @@ operation AWSPSMCOMPUTE!LambdaPermission emitCfnPropertiesYaml(emitCtx : Map) : 
   outText = outText + spaces(6) + "FunctionName: !Ref " + self.modelFeatureValue("function").cfnLogicalId() + "\n";
   outText = outText + emitYamlScalarProperty("Action", self.action, 6);
   outText = outText + emitYamlScalarProperty("Principal", self.principal, 6);
-  outText = outText + emitYamlScalarProperty("SourceArn", self.sourceArn, 6);
+  outText = outText + emitYamlScalarProperty("SourceArn", self.sourceArn.normalizeCfnArnReference(), 6);
   outText = outText + emitYamlScalarProperty("SourceAccount", self.sourceAccount, 6);
   outText = outText + emitYamlScalarProperty("FunctionUrlAuthType", self.functionUrlAuthType, 6);
   return outText + self.overrides.emitNativePropertiesYaml(6);
@@ -591,7 +618,7 @@ operation AWSPSMSECURITY!SecretRotationSchedule emitCfnPropertiesYaml(emitCtx : 
     outText = outText + spaces(6) + "RotationLambdaARN: " + arnForResource(self.rotationLambda) + "\n";
   }
   if (self.rotationRulesJson.isPresent()) {
-    outText = outText + yamlBlock("RotationRules", self.rotationRulesJson, 6);
+    outText = outText + structuredYamlProperty("RotationRules", self.rotationRulesJson, 6);
   }
   return outText + self.overrides.emitNativePropertiesYaml(6);
 }
@@ -646,18 +673,22 @@ operation AWSPSMMESSAGING!SqsQueue emitCfnPropertiesYaml(emitCtx : Map) : String
   if (self.queueType.asString() = "FIFO") {
     outText = outText + "      FifoQueue: true\n";
   }
-  outText = outText + emitYamlBooleanProperty("ContentBasedDeduplication", self.contentBasedDeduplication, 6);
-  outText = outText + emitYamlScalarProperty("DeduplicationScope", self.deduplicationScope, 6);
-  outText = outText + emitYamlScalarProperty("FifoThroughputLimit", self.fifoThroughputLimit, 6);
+  if (self.queueType.isDefined() and self.queueType.asString() = "FIFO") {
+    outText = outText + emitYamlBooleanProperty("ContentBasedDeduplication", self.contentBasedDeduplication, 6);
+    outText = outText + emitYamlScalarProperty("DeduplicationScope", self.deduplicationScope, 6);
+    outText = outText + emitYamlScalarProperty("FifoThroughputLimit", self.fifoThroughputLimit, 6);
+  }
   outText = outText + emitYamlIntegerProperty("DelaySeconds", self.delaySeconds, 6);
   outText = outText + emitYamlIntegerProperty("MaximumMessageSize", self.maximumMessageSize, 6);
   outText = outText + emitYamlIntegerProperty("MessageRetentionPeriod", self.messageRetentionPeriodSeconds, 6);
   outText = outText + emitYamlIntegerProperty("ReceiveMessageWaitTimeSeconds", self.receiveMessageWaitTimeSeconds, 6);
   outText = outText + emitYamlIntegerProperty("VisibilityTimeout", self.visibilityTimeoutSeconds, 6);
-  outText = outText + emitYamlIntegerProperty("KmsDataKeyReusePeriodSeconds", self.kmsDataKeyReusePeriodSeconds, 6);
-  outText = outText + emitYamlBooleanProperty("SqsManagedSseEnabled", self.sqsManagedSseEnabled, 6);
   if (self.kmsKey.isDefined()) {
+    outText = outText + emitYamlIntegerProperty("KmsDataKeyReusePeriodSeconds", self.kmsDataKeyReusePeriodSeconds, 6);
     outText = outText + spaces(6) + "KmsMasterKeyId: !Ref " + self.kmsKey.cfnLogicalId() + "\n";
+  }
+  else {
+    outText = outText + emitYamlBooleanProperty("SqsManagedSseEnabled", self.sqsManagedSseEnabled, 6);
   }
   if (self.redrivePolicy.isDefined()) {
     outText = outText + spaces(6) + "RedrivePolicy:\n";
@@ -789,7 +820,9 @@ operation AWSPSMEVENTS!EventBridgeBus cfnTypeText(emitCtx : Map) : String {
 /** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeBus emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.busName, self.physicalName), 6);
-  outText = outText + emitYamlScalarProperty("EventSourceName", self.eventSourceName, 6);
+  if (self.eventSourceName.isPresent() and self.eventSourceName.startsWith("aws.partner/")) {
+    outText = outText + emitYamlScalarProperty("EventSourceName", self.eventSourceName, 6);
+  }
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
@@ -801,7 +834,7 @@ operation AWSPSMEVENTS!EventBridgeBusPolicy cfnTypeText(emitCtx : Map) : String 
 /** Renders emit cfn properties yaml. */
 operation AWSPSMEVENTS!EventBridgeBusPolicy emitCfnPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("StatementId", self.statementId, 6);
-  outText = outText + spaces(6) + "EventBusName: !Ref " + self.bus.cfnLogicalId() + "\n";
+  outText = outText + spaces(6) + "EventBusName: " + refForResource(self.bus) + "\n";
   if (self.policyJson.isPresent()) {
     outText = outText + yamlBlock("Statement", self.policyJson, 6);
   }
@@ -821,7 +854,7 @@ operation AWSPSMEVENTS!EventBridgeRule emitCfnPropertiesYaml(emitCtx : Map) : St
   var outText = emitYamlScalarProperty("Name", firstText(self.ruleName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
   if (self.bus.isDefined()) {
-    outText = outText + spaces(6) + "EventBusName: !Ref " + self.bus.cfnLogicalId() + "\n";
+    outText = outText + spaces(6) + "EventBusName: " + refForResource(self.bus) + "\n";
   }
   outText = outText + emitYamlScalarProperty("ScheduleExpression", self.scheduleExpression, 6);
   outText = outText + emitYamlScalarProperty("State", self.state, 6);
@@ -831,9 +864,9 @@ operation AWSPSMEVENTS!EventBridgeRule emitCfnPropertiesYaml(emitCtx : Map) : St
   else if (self.eventPattern.isDefined()) {
     outText = outText + spaces(6) + "EventPattern:\n" + self.eventPattern.emitEventPatternYaml(8);
   }
-  if (self.targets.notEmpty()) {
+  if (self.deployableEventBridgeTargets().notEmpty()) {
     outText = outText + spaces(6) + "Targets:\n";
-    for (targetObj in self.targets.sortBy(targetObj | targetObj.targetId)) {
+    for (targetObj in self.deployableEventBridgeTargets().sortBy(targetObj | targetObj.targetId)) {
       outText = outText + targetObj.emitEventBridgeTargetYaml(8);
     }
   }
@@ -924,7 +957,7 @@ operation AWSPSMEVENTS!EventBridgeSchedule emitCfnPropertiesYaml(emitCtx : Map) 
   outText = outText + emitYamlScalarProperty("ScheduleExpressionTimezone", self.scheduleExpressionTimezone, 6);
   outText = outText + emitYamlScalarProperty("State", self.state, 6);
   if (self.flexibleTimeWindowJson.isPresent()) {
-    outText = outText + yamlBlock("FlexibleTimeWindow", self.flexibleTimeWindowJson, 6);
+    outText = outText + structuredYamlProperty("FlexibleTimeWindow", self.flexibleTimeWindowJson, 6);
   }
   else {
     outText = outText + spaces(6) + "FlexibleTimeWindow:\n";
@@ -936,7 +969,7 @@ operation AWSPSMEVENTS!EventBridgeSchedule emitCfnPropertiesYaml(emitCtx : Map) 
   if (self.target.input.isDefined()) {
     outText = outText + self.target.input.emitCfnValueProperty("Input", 8);
   }
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Computes cfn type text. */
@@ -1060,19 +1093,21 @@ operation AWSPSMSTORAGE!DynamoDbTable emitCfnPropertiesYaml(emitCtx : Map) : Str
     outText = outText + emitYamlScalarProperty("AttributeName", self.timeToLiveSpecification.attributeName, 8);
     outText = outText + emitYamlBooleanProperty("Enabled", self.timeToLiveSpecification.enabled, 8);
   }
-  if (self.sseSpecification.isDefined()) {
-    outText = outText + spaces(6) + "SSESpecification:\n";
-    outText = outText + emitYamlBooleanProperty("SSEEnabled", self.sseSpecification.enabled, 8);
-    outText = outText + emitYamlScalarProperty("SSEType", self.sseSpecification.sseType, 8);
-    if (self.sseSpecification.kmsKey.isDefined()) {
-      outText = outText + spaces(8) + "KMSMasterKeyId: !Ref " + self.sseSpecification.kmsKey.cfnLogicalId() + "\n";
-    }
-  else if (self.kmsKey.isDefined()) {
+  if (self.kmsKey.isDefined()) {
     outText = outText + spaces(6) + "SSESpecification:\n";
     outText = outText + spaces(8) + "SSEEnabled: true\n";
     outText = outText + spaces(8) + "SSEType: KMS\n";
     outText = outText + spaces(8) + "KMSMasterKeyId: !Ref " + self.kmsKey.cfnLogicalId() + "\n";
   }
+  else if (self.sseSpecification.isDefined()) {
+    outText = outText + spaces(6) + "SSESpecification:\n";
+    outText = outText + emitYamlBooleanProperty("SSEEnabled", self.sseSpecification.enabled, 8);
+    if (self.sseSpecification.sseType.isPresent() and self.sseSpecification.sseType = "KMS") {
+      outText = outText + emitYamlScalarProperty("SSEType", self.sseSpecification.sseType, 8);
+    }
+    if (self.sseSpecification.kmsKey.isDefined()) {
+      outText = outText + spaces(8) + "KMSMasterKeyId: !Ref " + self.sseSpecification.kmsKey.cfnLogicalId() + "\n";
+    }
   }
   if (self.pointInTimeRecoveryEnabled.isDefined()) {
     outText = outText + spaces(6) + "PointInTimeRecoverySpecification:\n";
@@ -1224,7 +1259,7 @@ operation AWSPSMSTORAGE!S3Bucket emitCfnPropertiesYaml(emitCtx : Map) : String {
   if (self.replicationConfiguration.isDefined() and self.replicationConfiguration.rulesJson.isPresent()) {
     outText = outText + yamlBlock("ReplicationConfiguration", self.replicationConfiguration.rulesJson, 6);
   }
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Computes cfn type text. */
@@ -1319,19 +1354,19 @@ operation AWSPSMAPI!WebSocketApi cfnTypeText(emitCtx : Map) : String {
 operation AWSPSMAPI!ApiGatewayApi emitApiCommonPropertiesYaml(emitCtx : Map) : String {
   var outText = emitYamlScalarProperty("Name", firstText(self.apiName, self.physicalName), 6);
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
-  if (self.definitionUri.isPresent()) {
+  if (self.routes.notEmpty() and (self.eClass().getName() = "HttpApi" or self.eClass().getName() = "RestApi")) {
+    outText = outText + emitYamlScalarProperty("DefinitionUri", self.openApiPath(), 6);
+  }
+  else if (self.definitionUri.isPresent()) {
     outText = outText + emitYamlScalarProperty("DefinitionUri", self.definitionUri, 6);
   }
   else if (self.definitionBody.isPresent()) {
-    outText = outText + yamlBlock("DefinitionBody", self.definitionBody, 6);
-  }
-  else if (self.routes.notEmpty() and (self.eClass().getName() = "HttpApi" or self.eClass().getName() = "RestApi")) {
-    outText = outText + emitYamlScalarProperty("DefinitionUri", self.openApiPath(), 6);
+    outText = outText + structuredYamlProperty("DefinitionBody", self.definitionBody, 6);
   }
   if (self.corsEnabled = true and self.cors.isDefined()) {
     outText = outText + spaces(6) + "CorsConfiguration:\n" + self.cors.emitCorsYaml(8);
   }
-  if (self.accessLogsEnabled = true and self.accessLogGroup.isDefined()) {
+  if (self.eClass().getName() = "HttpApi" and self.accessLogsEnabled = true and self.accessLogGroup.isDefined()) {
     outText = outText + spaces(6) + "AccessLogSettings:\n";
     outText = outText + spaces(8) + "DestinationArn: " + arnForResource(self.accessLogGroup) + "\n";
   }
@@ -1351,7 +1386,7 @@ operation AWSPSMAPI!HttpApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   outText = outText + emitYamlBooleanProperty("DisableExecuteApiEndpoint", self.disableExecuteApiEndpoint, 6);
   outText = outText + emitYamlIntegerProperty("MinimumCompressionSize", self.minimumCompressionSize, 6);
   outText = outText + emitYamlBooleanProperty("FailOnWarnings", self.failOnWarnings, 6);
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.tags.emitSamTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Renders emit cfn properties yaml. */
@@ -1365,7 +1400,7 @@ operation AWSPSMAPI!RestApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   if (self.stages.notEmpty()) {
     outText = outText + emitYamlScalarProperty("StageName", self.stages.first().stageName, 6);
   }
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.tags.emitSamTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Renders emit cfn properties yaml. */
@@ -1374,7 +1409,7 @@ operation AWSPSMAPI!WebSocketApi emitCfnPropertiesYaml(emitCtx : Map) : String {
   outText = outText + emitYamlScalarProperty("Description", self.descriptionText, 6);
   outText = outText + "      ProtocolType: WEBSOCKET\n";
   outText = outText + emitYamlScalarProperty("RouteSelectionExpression", self.routeSelectionExpression, 6);
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.tags.emitSamTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Computes cfn type text. */
@@ -1415,7 +1450,7 @@ operation AWSPSMAPI!ApiGatewayIntegration emitCfnPropertiesYaml(emitCtx : Map) :
   if (self.responseParametersJson.isPresent()) {
     outText = outText + yamlBlock("ResponseParameters", self.responseParametersJson, 6);
   }
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Computes cfn type text. */
@@ -1434,7 +1469,7 @@ operation AWSPSMAPI!RestApiRoute cfnTypeText(emitCtx : Map) : String {
 }
 
 /** Renders emit cfn properties yaml. */
-operation AWSPSMAPI!ApiGatewayRoute emitCfnPropertiesYaml(emitCtx : Map) : String {
+operation AWSPSMAPI!ApiGatewayRoute emitApiGatewayV2RoutePropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   outText = outText + spaces(6) + "ApiId: !Ref " + self.api.cfnLogicalId() + "\n";
   if (self.eClass().getName() = "HttpApiRoute") {
@@ -1454,7 +1489,17 @@ operation AWSPSMAPI!ApiGatewayRoute emitCfnPropertiesYaml(emitCtx : Map) : Strin
   if (self.requestParametersJson.isPresent()) {
     outText = outText + yamlBlock("RequestParameters", self.requestParametersJson, 6);
   }
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.overrides.emitNativePropertiesYaml(6);
+}
+
+/** Dispatches shared API Gateway v2 route rendering for a concrete HTTP route. */
+operation AWSPSMAPI!HttpApiRoute emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitApiGatewayV2RoutePropertiesYaml(emitCtx);
+}
+
+/** Dispatches shared API Gateway v2 route rendering for a concrete WebSocket route. */
+operation AWSPSMAPI!WebSocketRoute emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitApiGatewayV2RoutePropertiesYaml(emitCtx);
 }
 
 /** Renders emit cfn properties yaml. */
@@ -1475,7 +1520,7 @@ operation AWSPSMAPI!RestApiRoute emitCfnPropertiesYaml(emitCtx : Map) : String {
       outText = outText + emitYamlScalarProperty("Uri", self.integration.integrationUri, 8);
     }
   }
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Computes cfn type text. */
@@ -1487,7 +1532,7 @@ operation AWSPSMAPI!ApiGatewayStage cfnTypeText(emitCtx : Map) : String {
 }
 
 /** Renders emit cfn properties yaml. */
-operation AWSPSMAPI!ApiGatewayStage emitCfnPropertiesYaml(emitCtx : Map) : String {
+operation AWSPSMAPI!ApiGatewayStage emitApiGatewayStagePropertiesYaml(emitCtx : Map) : String {
   var outText = "";
   if (self.eClass().getName() = "RestApiStage") {
     outText = outText + spaces(6) + "RestApiId: !Ref " + self.api.cfnLogicalId() + "\n";
@@ -1507,6 +1552,28 @@ operation AWSPSMAPI!ApiGatewayStage emitCfnPropertiesYaml(emitCtx : Map) : Strin
   }
   outText = outText + emitYamlScalarProperty("Variables", self.variablesJson, 6);
   return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+}
+
+/** Returns targets that map to an actual AWS service resource. */
+operation AWSPSMEVENTS!EventBridgeRule deployableEventBridgeTargets() : Sequence {
+  return self.targets.select(targetObj |
+    targetObj.targetResource.isDefined()
+    and not targetObj.targetResource.isKindOf(AWSPSMCORE!AwsNativeResource)).asSequence();
+}
+
+/** Dispatches shared stage rendering for a concrete HTTP API stage. */
+operation AWSPSMAPI!HttpApiStage emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitApiGatewayStagePropertiesYaml(emitCtx);
+}
+
+/** Dispatches shared stage rendering for a concrete REST API stage. */
+operation AWSPSMAPI!RestApiStage emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitApiGatewayStagePropertiesYaml(emitCtx);
+}
+
+/** Dispatches shared stage rendering for a concrete WebSocket API stage. */
+operation AWSPSMAPI!WebSocketStage emitCfnPropertiesYaml(emitCtx : Map) : String {
+  return self.emitApiGatewayStagePropertiesYaml(emitCtx);
 }
 
 /** Computes cfn type text. */
@@ -1702,13 +1769,13 @@ operation AWSPSMIDENTITY!CognitoUserPool emitCfnPropertiesYaml(emitCtx : Map) : 
     outText = outText + yamlBlock("LambdaConfig", self.lambdaConfigJson, 6);
   }
   if (self.policiesJson.isPresent()) {
-    outText = outText + yamlBlock("Policies", self.policiesJson, 6);
+    outText = outText + structuredYamlProperty("Policies", self.policiesJson, 6);
   }
   if (self.schemaJson.isPresent()) {
     outText = outText + yamlBlock("Schema", self.schemaJson, 6);
   }
   outText = outText + emitYamlBooleanProperty("DeletionProtection", self.deletionProtection, 6);
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.tags.emitTagMapYaml("UserPoolTags", 6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Computes cfn type text. */
@@ -1962,7 +2029,7 @@ operation AWSPSMOBSERVABILITY!CloudWatchAlarm emitCfnPropertiesYaml(emitCtx : Ma
   outText = outText + emitYamlIntegerProperty("DatapointsToAlarm", self.datapointsToAlarm, 6);
   outText = outText + emitYamlIntegerProperty("Threshold", self.threshold, 6);
   if (self.comparisonOperator.isDefined()) {
-    outText = outText + emitYamlScalarProperty("ComparisonOperator", self.comparisonOperator.asString(), 6);
+    outText = outText + emitYamlScalarProperty("ComparisonOperator", self.comparisonOperator.cloudWatchComparisonOperatorText(), 6);
   }
   outText = outText + emitYamlScalarProperty("TreatMissingData", self.treatMissingData, 6);
   if (self.dimensions.notEmpty()) {
@@ -2036,7 +2103,7 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx 
     outText = outText + emitYamlScalarProperty("Level", self.logging.level, 8);
     outText = outText + spaces(8) + "Destinations:\n";
     outText = outText + spaces(10) + "- CloudWatchLogsLogGroup:\n";
-    outText = outText + spaces(12) + "LogGroupArn: " + arnForResource(self.logging.logGroup) + "\n";
+    outText = outText + spaces(14) + "LogGroupArn: " + arnForResource(self.logging.logGroup) + "\n";
   }
   if (self.tracing.isDefined()) {
     outText = outText + spaces(6) + "Tracing:\n";
@@ -2052,7 +2119,7 @@ operation AWSPSMWORKFLOW!StepFunctionStateMachine emitCfnPropertiesYaml(emitCtx 
       }
     }
   }
-  return outText + self.tags.emitTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
+  return outText + self.tags.emitSamTagsYaml(6) + self.overrides.emitNativePropertiesYaml(6);
 }
 
 /** Computes cfn type text. */

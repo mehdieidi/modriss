@@ -1,29 +1,8 @@
-[% /* Generates the samconfig artifact. */ %]version = 0.1
+[% /* Generates the samconfig artifact. Multi-stack commands pass stack-specific settings explicitly. */ %]version = 0.1
 
 [default.global.parameters]
-stack_name = "[%= emitCtx.get("projectSlug") %]"
+region = "[%= awsRoot.defaultRegion.orElseText("us-east-1") %]"
 
-[% for (stackObj in awsRoot.stacks.sortBy(stackObj | stackObj.stackName)) { %]
-[% for (stageObj in awsRoot.stages.select(stageObj | stageObj.deploysStacks.includes(stackObj) or stageObj.deploysStacks.isEmpty()).sortBy(stageObj | stageObj.stageName)) { %]
-[%= stageObj.samConfigEnvironment(stackObj) %][% } %]
-[% } %]
 [%= out.startPreserve("#", "", awsRoot.manualRegionId("samconfig-local-overrides"), true) %]
 # Local deploy overrides may be added here. Do not commit account secrets.
 [%= out.stopPreserve() %]
-
-[%
-@template
-/** Computes sam config environment. */
-operation AWSPSMCORE!AwsStage samConfigEnvironment(stackObj : AWSPSMCORE!SamStack) { %]
-[[%= self.stageSlug() %].deploy.parameters]
-stack_name = [%= self.stackDeployName(stackObj).jsonString() %]
-[% if (self.region.isPresent()) { %]region = [%= self.region.jsonString() %]
-[% } %][% if (self.artifactBucketName.isPresent()) { %]s3_bucket = [%= self.artifactBucketName.jsonString() %]
-[% } %][% if (self.deploymentRoleArn.isPresent()) { %]role_arn = [%= self.deploymentRoleArn.jsonString() %]
-[% } %]capabilities = [%= stackObj.capabilitiesText().jsonString() %]
-confirm_changeset = [%= self.confirmChangeset.orElseText("true").toLowerCase() %]
-fail_on_empty_changeset = [%= self.failOnEmptyChangeset.orElseText("false").toLowerCase() %]
-[% if (self.parameterOverrides.notEmpty()) { %]parameter_overrides = [%= self.parameterOverrideText().jsonString() %]
-[% } %]
-[% }
-%]

@@ -1,6 +1,7 @@
 [% /* Generates the test artifact. */ %]#!/usr/bin/env bash
 set -euo pipefail
 
+bash scripts/build.sh --install-only
 bash scripts/validate-contracts.sh
 go test ./...
 

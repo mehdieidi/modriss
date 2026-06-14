@@ -25,6 +25,8 @@ post ResolveAndValidate {
   etlProfiler.mark("psm.resolve.iam");
   placeUncontainedAwsResources();
   etlProfiler.mark("psm.resolve.placeResources");
+  alignDefaultKmsKeysWithStacks();
+  etlProfiler.mark("psm.resolve.alignKmsKeys");
   generateRelationshipViews();
   etlProfiler.mark("psm.resolve.relationshipViews");
   generateReadinessChecks();

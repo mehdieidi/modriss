@@ -782,6 +782,7 @@ operation createStorageResourcePolicy(source, resource) {
   st.resources.add(cfnArnExpression(resource));
   st.wildcardAction = true;
   st.wildcardJustification = "Deny statement covers all actions only when aws:SecureTransport is false.";
+  addWildcardPrincipal(st);
   var cond = new AWSPSMSECURITY!IamCondition;
   cond.id = generatedId("iam_condition", source, "secure_transport");
   cond.name = "Secure transport";
@@ -803,6 +804,7 @@ operation createDenyInsecureTransportPolicy(resource) {
   st.resources.add(cfnArnSubExpression(resource, "/*"));
   st.wildcardAction = true;
   st.wildcardJustification = "Deny statement covers all actions only when aws:SecureTransport is false.";
+  addWildcardPrincipal(st);
   var cond = new AWSPSMSECURITY!IamCondition;
   cond.id = uniqueId("condition_secure_transport_" + slug(resource.logicalId));
   cond.name = "Secure transport";
@@ -812,4 +814,14 @@ operation createDenyInsecureTransportPolicy(resource) {
   st.conditions.add(cond);
   doc.statements.add(st);
   return doc;
+}
+
+/** Adds the wildcard principal required by a deny-only resource policy statement. */
+operation addWildcardPrincipal(statementObj) {
+  var principalObj = new AWSPSMSECURITY!IamPrincipal;
+  principalObj.id = uniqueId("principal_all_" + slug(statementObj.id));
+  principalObj.name = "All principals";
+  principalObj.principalType = "AWS";
+  principalObj.identifiers.add("*");
+  statementObj.principals.add(principalObj);
 }

@@ -3,7 +3,7 @@ set -euo pipefail
 
 mode_text="${1:-}"
 
-go mod download
+go mod tidy
 if [[ "$mode_text" == "--install-only" ]]; then
   exit 0
 fi

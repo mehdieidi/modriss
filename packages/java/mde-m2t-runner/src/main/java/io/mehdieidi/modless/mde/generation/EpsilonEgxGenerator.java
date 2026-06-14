@@ -117,6 +117,7 @@ public final class EpsilonEgxGenerator {
       }
 
       executeModule(module);
+      normalizeGeneratedTextFiles(request.outputDirectory());
       finalizeGeneratedTraceFiles(request);
       return report(
           GenerationStatus.SUCCEEDED, request, startedAt, diagnostics, stdout, warnings, stderr);
@@ -200,6 +201,51 @@ public final class EpsilonEgxGenerator {
         module.getContext().dispose();
       }
     }
+  }
+
+  /**
+   * Normalizes generated text artifacts to UTF-8 with LF line endings.
+   *
+   * <p>EGL inherits the host platform line separator. Generated projects are deployed and executed
+   * on Linux even when generation runs on Windows, so leaving CRLF in shell scripts makes an
+   * otherwise valid export unusable. Files containing a NUL byte are treated as binary and left
+   * untouched.
+   *
+   * @param outputDirectory generated project root
+   * @throws Exception when generated files cannot be inspected or rewritten
+   */
+  private void normalizeGeneratedTextFiles(Path outputDirectory) throws Exception {
+    if (!Files.isDirectory(outputDirectory)) {
+      return;
+    }
+    try (Stream<Path> files = Files.walk(outputDirectory)) {
+      for (Path file : files.filter(Files::isRegularFile).toList()) {
+        byte[] bytes = Files.readAllBytes(file);
+        if (containsNullByte(bytes)) {
+          continue;
+        }
+        String text = new String(bytes, StandardCharsets.UTF_8);
+        String normalized = text.replace("\r\n", "\n").replace('\r', '\n');
+        if (!normalized.equals(text)) {
+          Files.writeString(file, normalized, StandardCharsets.UTF_8);
+        }
+      }
+    }
+  }
+
+  /**
+   * Checks whether content is likely binary.
+   *
+   * @param bytes file content
+   * @return whether the content contains a NUL byte
+   */
+  private boolean containsNullByte(byte[] bytes) {
+    for (byte value : bytes) {
+      if (value == 0) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -535,7 +581,8 @@ public final class EpsilonEgxGenerator {
       }
       updatedLines.add(line);
     }
-    Files.write(artifactTrace, updatedLines, StandardCharsets.UTF_8);
+    Files.writeString(
+        artifactTrace, String.join("\n", updatedLines) + "\n", StandardCharsets.UTF_8);
   }
 
   /**

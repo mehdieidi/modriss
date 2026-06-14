@@ -6,17 +6,32 @@ import "values.eol";
 operation AWSPSMSECURITY!IamPolicyDocument emitIamPolicyDocumentYaml(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "Version: " + self.version.orElseText("2012-10-17").yamlScalar() + "\n";
   outText = outText + spaces(indentCount) + "Statement:\n";
-  for (stmtObj in self.statements) {
+  for (stmtObj in self.uniqueIamStatements()) {
     outText = outText + stmtObj.emitIamStatementYaml(indentCount + 2);
   }
   return outText;
+}
+
+/** Returns the first statement for each Sid so emitted policy documents remain valid. */
+operation AWSPSMSECURITY!IamPolicyDocument uniqueIamStatements() : Sequence {
+  var statementSeq = new Sequence;
+  var seenSidSet = new Set;
+  for (stmtObj in self.statements) {
+    if (not stmtObj.sid.isPresent() or not seenSidSet.includes(stmtObj.sid)) {
+      statementSeq.add(stmtObj);
+      if (stmtObj.sid.isPresent()) {
+        seenSidSet.add(stmtObj.sid);
+      }
+    }
+  }
+  return statementSeq;
 }
 
 /** Renders emit iam statement yaml. */
 operation AWSPSMSECURITY!IamStatement emitIamStatementYaml(indentCount : Integer) : String {
   var outText = spaces(indentCount) + "- Effect: " + self.effect.iamEffectText() + "\n";
   if (self.sid.isPresent()) {
-    outText = outText + spaces(indentCount + 2) + "Sid: " + self.sid.yamlScalar() + "\n";
+    outText = outText + spaces(indentCount + 2) + "Sid: " + self.sid.toCfnLogicalId().yamlScalar() + "\n";
   }
   outText = outText + self.actions.emitIamListYaml("Action", indentCount + 2);
   outText = outText + self.notActions.emitIamListYaml("NotAction", indentCount + 2);
@@ -50,13 +65,44 @@ operation Collection emitIamListYaml(nameText : String, indentCount : Integer) :
     return "";
   }
   if (self.size() = 1) {
-    return spaces(indentCount) + nameText + ": " + self.first().yamlScalar() + "\n";
+    return spaces(indentCount) + nameText + ": " + self.first().normalizeIamResourceReference().yamlScalar() + "\n";
   }
   var outText = spaces(indentCount) + nameText + ":\n";
   for (itemText in self) {
-    outText = outText + spaces(indentCount + 2) + "- " + itemText.yamlScalar() + "\n";
+    outText = outText + spaces(indentCount + 2) + "- " + itemText.normalizeIamResourceReference().yamlScalar() + "\n";
   }
   return outText;
+}
+
+/** Normalizes resource references whose CloudFormation return value is already the ARN. */
+operation Any normalizeIamResourceReference() : String {
+  var resourceText = self.asString();
+  for (resourceObj in AWSPSMCORE!AwsResource.all) {
+    if (resourceText = "!GetAtt " + resourceObj.cfnLogicalId() + ".Arn") {
+      return arnForResource(resourceObj);
+    }
+  }
+  for (topicObj in AWSPSMMESSAGING!SnsTopic.all) {
+    if (resourceText = "!GetAtt " + topicObj.cfnLogicalId() + ".Arn") {
+      return "!Ref " + topicObj.cfnLogicalId();
+    }
+    if (resourceText = "!Sub '${" + topicObj.cfnLogicalId() + ".Arn}/*'") {
+      return "!Ref " + topicObj.cfnLogicalId();
+    }
+  }
+  for (tableObj in AWSPSMSTORAGE!DynamoDbTable.all) {
+    var tableNameText = firstText(tableObj.tableName, tableObj.physicalName);
+    if (tableNameText.isPresent() and resourceText = "!GetAtt " + tableObj.cfnLogicalId() + ".Arn") {
+      return "!Sub 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/" + tableNameText + "'";
+    }
+    if (tableNameText.isPresent() and resourceText = "!Sub '${" + tableObj.cfnLogicalId() + ".Arn}/*'") {
+      return "!Sub 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/" + tableNameText + "/*'";
+    }
+    if (tableNameText.isPresent() and resourceText = "!Sub '${" + tableObj.cfnLogicalId() + ".Arn}/index/*'") {
+      return "!Sub 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/" + tableNameText + "/index/*'";
+    }
+  }
+  return resourceText;
 }
 
 /** Renders emit iam policy document json. */
@@ -64,9 +110,10 @@ operation AWSPSMSECURITY!IamPolicyDocument emitIamPolicyDocumentJson(indentCount
   var outText = spaces(indentCount) + "{\n";
   outText = outText + spaces(indentCount + 2) + "\"Version\": " + self.version.orElseText("2012-10-17").jsonString() + ",\n";
   outText = outText + spaces(indentCount + 2) + "\"Statement\": [\n";
-  for (stmtObj in self.statements) {
+  var statementSeq = self.uniqueIamStatements();
+  for (stmtObj in statementSeq) {
     outText = outText + stmtObj.emitIamStatementJson(indentCount + 4);
-    if (stmtObj <> self.statements.last()) {
+    if (stmtObj <> statementSeq.last()) {
       outText = outText + ",";
     }
     outText = outText + "\n";
@@ -81,7 +128,7 @@ operation AWSPSMSECURITY!IamStatement emitIamStatementJson(indentCount : Integer
   var outText = spaces(indentCount) + "{\n";
   outText = outText + spaces(indentCount + 2) + "\"Effect\": " + self.effect.iamEffectText().jsonString();
   if (self.sid.isPresent()) {
-    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Sid\": " + self.sid.jsonString();
+    outText = outText + ",\n" + spaces(indentCount + 2) + "\"Sid\": " + self.sid.toCfnLogicalId().jsonString();
   }
   if (self.actions.notEmpty()) {
     outText = outText + ",\n" + self.actions.emitJsonStringArray("Action", indentCount + 2);

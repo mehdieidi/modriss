@@ -12,6 +12,16 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
   if (self.stacks.isEmpty()) {
     issueSeq.add(self.issueTuple("PSM_ROOT_NO_STACKS", "BLOCKER", "Root model has no SamStack instances.", self, true));
   }
+  if (self.readiness.isDefined()) {
+    for (decisionObj in self.readiness.manualDecisions) {
+      issueSeq.add(self.issueTuple(
+        decisionObj.name.orElseText("PSM_MANUAL_DECISION"),
+        decisionObj.severity.asString(),
+        decisionObj.question,
+        decisionObj,
+        decisionObj.blocking));
+    }
+  }
 
   for (stackObj in self.stacks) {
     if (stackObj.resources.isEmpty()) {
@@ -22,6 +32,17 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
   for (resObj in self.allModeledResources()) {
     if (not resObj.logicalId.isPresent() and not resObj.physicalName.isPresent() and not resObj.name.isPresent() and not resObj.traceId.isPresent()) {
       issueSeq.add(self.issueTuple("AWS_RESOURCE_NO_STABLE_ID", "BLOCKER", "Resource cannot be deterministically named: " + resObj.eClass().getName(), resObj, true));
+    }
+    for (referenceObj in resObj.eClass().getEAllReferences().select(referenceObj | not referenceObj.isContainment())) {
+      var referencedValue = resObj.eGet(referenceObj);
+      if (referenceObj.isMany()) {
+        for (targetObj in referencedValue.select(targetObj | targetObj.isKindOf(AWSPSMCORE!AwsResource) and targetObj.stack.isDefined() and targetObj.stack <> resObj.stack and not targetObj.supportsStableCrossStackReference())) {
+          issueSeq.add(self.issueTuple("CROSS_STACK_RESOURCE_REFERENCE", "BLOCKER", "Resource reference crosses stack boundary without an export/import contract: " + resObj.stableKey() + "." + referenceObj.getName() + " -> " + targetObj.stableKey(), resObj, true));
+        }
+      }
+      else if (referencedValue.isDefined() and referencedValue.isKindOf(AWSPSMCORE!AwsResource) and referencedValue.stack.isDefined() and referencedValue.stack <> resObj.stack and not referencedValue.supportsStableCrossStackReference()) {
+        issueSeq.add(self.issueTuple("CROSS_STACK_RESOURCE_REFERENCE", "BLOCKER", "Resource reference crosses stack boundary without an export/import contract: " + resObj.stableKey() + "." + referenceObj.getName() + " -> " + referencedValue.stableKey(), resObj, true));
+      }
     }
   }
 
@@ -38,6 +59,9 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     if (profileMap.get("productionMode") = true and awsFn.codeSigningDecision.asString() = "UNDECIDED") {
       issueSeq.add(self.issueTuple("LAMBDA_CODE_SIGNING_UNDECIDED", "WARNING", "Production Lambda code signing decision is undecided: " + awsFn.stableKey(), awsFn, false));
     }
+    if (profileMap.get("primaryLanguage") = "GO" and awsFn.snapStartApplyOn.isDefined() and awsFn.snapStartApplyOn.asString() <> "NONE") {
+      issueSeq.add(self.issueTuple("LAMBDA_SNAPSTART_UNSUPPORTED_FOR_GO", "BLOCKER", "Lambda SnapStart is not supported by the generated Go runtime and has been omitted: " + awsFn.stableKey(), awsFn, true));
+    }
   }
 
   for (routeObj in AWSPSMAPI!ApiGatewayRoute.all.sortBy(routeObj | routeObj.cfnLogicalId())) {
@@ -47,11 +71,28 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     if (routeObj.authorizationType.asString() <> "NONE" and routeObj.authorizer.isUndefined()) {
       issueSeq.add(self.issueTuple("API_ROUTE_AUTHORIZER_MISSING", "BLOCKER", "Protected API route has no authorizer: " + routeObj.stableKey(), routeObj, profileMap.get("productionMode") = true));
     }
+    for (statusCodeText in routeObj.responseModels.collect(responseObj | responseObj.statusCode).asSet()) {
+      if (routeObj.responseModels.select(responseObj | responseObj.statusCode = statusCodeText).size() > 1) {
+        issueSeq.add(self.issueTuple("API_RESPONSE_STATUS_DUPLICATE", "BLOCKER", "Route defines more than one response for HTTP status " + statusCodeText + ": " + routeObj.stableKey(), routeObj, true));
+      }
+    }
   }
 
   for (ruleObj in AWSPSMEVENTS!EventBridgeRule.all.sortBy(ruleObj | ruleObj.cfnLogicalId())) {
     if (ruleObj.eventPattern.isUndefined() and not ruleObj.eventPatternJson.isPresent() and not ruleObj.scheduleExpression.isPresent()) {
       issueSeq.add(self.issueTuple("EVENTBRIDGE_RULE_TRIGGER_MISSING", "BLOCKER", "EventBridge rule has neither event pattern nor schedule: " + ruleObj.stableKey(), ruleObj, profileMap.get("productionMode") = true));
+    }
+    for (targetObj in ruleObj.targets.select(targetObj | targetObj.targetResource.isDefined() and targetObj.targetResource.isKindOf(AWSPSMCORE!AwsNativeResource))) {
+      issueSeq.add(self.issueTuple("EVENTBRIDGE_TARGET_UNDEPLOYABLE", "BLOCKER", "EventBridge target is metadata-only and cannot be deployed as an AWS target: " + targetObj.stableKey(), targetObj, true));
+    }
+  }
+
+  for (scheduleObj in AWSPSMEVENTS!EventBridgeSchedule.all.sortBy(scheduleObj | scheduleObj.cfnLogicalId())) {
+    if (scheduleObj.target.isUndefined() or scheduleObj.target.targetResource.isUndefined()) {
+      issueSeq.add(self.issueTuple("EVENTBRIDGE_SCHEDULE_TARGET_MISSING", "BLOCKER", "EventBridge Scheduler schedule has no deployable target resource: " + scheduleObj.stableKey(), scheduleObj, true));
+    }
+    if (not scheduleObj.scheduleExpression.startsWith("at(") and not scheduleObj.scheduleExpression.startsWith("rate(") and not scheduleObj.scheduleExpression.startsWith("cron(")) {
+      issueSeq.add(self.issueTuple("EVENTBRIDGE_SCHEDULE_EXPRESSION_INVALID", "BLOCKER", "EventBridge Scheduler expression must use at(...), rate(...), or cron(...): " + scheduleObj.stableKey(), scheduleObj, true));
     }
   }
 
@@ -91,6 +132,49 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     if ((stmtObj.wildcardAction = true or stmtObj.actions.includes("*") or stmtObj.wildcardResource = true or stmtObj.resources.includes("*")) and not stmtObj.wildcardJustification.isPresent()) {
       issueSeq.add(self.issueTuple("IAM_WILDCARD_UNJUSTIFIED", "BLOCKER", "IAM wildcard lacks justification: " + stmtObj.stableKey(), stmtObj, profileMap.get("productionMode") = true));
     }
+    if (stmtObj.sid.isPresent() and not stmtObj.sid.matches("^[A-Za-z0-9]+$")) {
+      issueSeq.add(self.issueTuple("IAM_STATEMENT_SID_INVALID", "BLOCKER", "IAM statement Sid must contain only letters and digits: " + stmtObj.sid, stmtObj, true));
+    }
+    for (actionText in stmtObj.actions.select(actionText | not actionText.validIamActionText())) {
+      issueSeq.add(self.issueTuple("IAM_ACTION_INVALID", "BLOCKER", "IAM action must be '*' or an AWS service:operation value: " + actionText, stmtObj, true));
+    }
+    for (resourceText in stmtObj.resources.select(resourceText | not resourceText.validIamResourceText())) {
+      issueSeq.add(self.issueTuple("IAM_RESOURCE_INVALID", "BLOCKER", "IAM resource must be '*', an ARN, or a CloudFormation intrinsic: " + resourceText, stmtObj, true));
+    }
+  }
+
+  for (roleObj in AWSPSMSECURITY!IamRole.all.sortBy(roleObj | roleObj.cfnLogicalId())) {
+    var roleNameText = firstText(roleObj.roleName, roleObj.physicalName);
+    if (roleNameText.isPresent() and AWSPSMSECURITY!IamRole.all.select(otherRole | firstText(otherRole.roleName, otherRole.physicalName) = roleNameText).size() > 1) {
+      issueSeq.add(self.issueTuple("IAM_ROLE_NAME_DUPLICATE", "BLOCKER", "IAM RoleName must be unique within an account: " + roleNameText, roleObj, true));
+    }
+  }
+
+  for (documentObj in AWSPSMSECURITY!IamPolicyDocument.all) {
+    for (sidText in documentObj.statements.select(stmtObj | stmtObj.sid.isPresent()).collect(stmtObj | stmtObj.sid).asSet()) {
+      if (documentObj.statements.select(stmtObj | stmtObj.sid = sidText).size() > 1) {
+        issueSeq.add(self.issueTuple("IAM_STATEMENT_SID_DUPLICATE", "BLOCKER", "IAM policy document contains duplicate Sid: " + sidText, documentObj, true));
+      }
+    }
+  }
+
+  for (policyObj in AWSPSMMESSAGING!SqsQueuePolicy.all) {
+    issueSeq.addAll(self.missingResourcePolicyPrincipalIssues(policyObj.policyDocument, policyObj));
+  }
+  for (policyObj in AWSPSMMESSAGING!SnsTopicPolicy.all) {
+    issueSeq.addAll(self.missingResourcePolicyPrincipalIssues(policyObj.policyDocument, policyObj));
+  }
+  for (policyObj in AWSPSMSTORAGE!S3BucketPolicy.all) {
+    issueSeq.addAll(self.missingResourcePolicyPrincipalIssues(policyObj.policyDocument, policyObj));
+  }
+  for (policyObj in AWSPSMSECURITY!SecretsManagerResourcePolicy.all) {
+    issueSeq.addAll(self.missingResourcePolicyPrincipalIssues(policyObj.resourcePolicy, policyObj));
+  }
+  for (tableObj in AWSPSMSTORAGE!DynamoDbTable.all) {
+    issueSeq.addAll(self.missingResourcePolicyPrincipalIssues(tableObj.resourcePolicy, tableObj));
+  }
+  for (keyObj in AWSPSMSECURITY!KmsKey.all) {
+    issueSeq.addAll(self.missingResourcePolicyPrincipalIssues(keyObj.keyPolicy, keyObj));
   }
 
   for (valueObj in AWSPSMCORE!ValueExpression.all) {
@@ -105,6 +189,36 @@ operation AWSPSM!AwsPsmModel collectBlockingIssues(profileMap : Map) : Sequence 
     }
   }
 
+  return issueSeq;
+}
+
+/** Returns whether the target has a deterministic physical name from which the renderer builds a stable ARN or name. */
+operation AWSPSMCORE!AwsResource supportsStableCrossStackReference() : Boolean {
+  return self.physicalName.isPresent() and Sequence{
+    "AwsLambdaFunction", "SqsQueue", "SnsTopic", "EventBridgeBus", "EventBridgeRule",
+    "DynamoDbTable", "IamRole", "StepFunctionStateMachine"
+  }.includes(self.eClass().getName());
+}
+
+/** Returns whether text is a valid deployable IAM action expression. */
+operation Any validIamActionText() : Boolean {
+  return self.isPresent() and (self.asString() = "*" or self.asString().matches("^[A-Za-z0-9-]+:[A-Za-z0-9*]+$"));
+}
+
+/** Returns whether text is a valid deployable IAM resource expression. */
+operation Any validIamResourceText() : Boolean {
+  return self.isPresent() and (self.asString() = "*" or self.asString().startsWith("arn:") or self.asString().startsWith("!"));
+}
+
+/** Returns blocker diagnostics for statements in a resource policy that omit Principal. */
+operation AWSPSM!AwsPsmModel missingResourcePolicyPrincipalIssues(documentObj, sourceObj) : Sequence {
+  var issueSeq = new Sequence;
+  if (documentObj.isUndefined()) {
+    return issueSeq;
+  }
+  for (stmtObj in documentObj.statements.select(stmtObj | stmtObj.principals.isEmpty())) {
+    issueSeq.add(self.issueTuple("RESOURCE_POLICY_PRINCIPAL_MISSING", "BLOCKER", "Resource-based IAM policy statement must define Principal: " + stmtObj.stableKey(), sourceObj, true));
+  }
   return issueSeq;
 }
 

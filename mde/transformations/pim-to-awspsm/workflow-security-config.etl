@@ -86,9 +86,14 @@ rule Principal2IamRole
     pol.policyName = pascalCase(p.name) + "Policy";
     pol.document = policyDocument();
     for (perm in p.permissions) {
-      pol.document.statements.add(permissionStatement(perm));
+      var statementObj = permissionStatement(perm);
+      if (statementObj.isDefined()) {
+        pol.document.statements.add(statementObj);
+      }
     }
-    role.inlinePolicies.add(pol);
+    if (pol.document.statements.notEmpty()) {
+      role.inlinePolicies.add(pol);
+    }
   }
   createTrace(p, role, "Principal2IamRole", "MEDIUM", KERNEL!TraceLinkType#REALIZES);
 }

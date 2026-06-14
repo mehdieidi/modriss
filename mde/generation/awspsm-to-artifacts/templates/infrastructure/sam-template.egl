@@ -22,7 +22,7 @@ operation AWSPSMCORE!SamStack parametersSection() { %]
 Parameters:
 [% for (paramObj in self.uniqueParameters()) { %]
   [%= paramObj.parameterName.toCfnLogicalId() %]:
-[%= emitYamlScalarProperty("Type", paramObj.type, 4) %]
+[%= emitYamlScalarProperty("Type", paramObj.cloudFormationType(), 4) %]
 [%= emitYamlScalarProperty("Description", paramObj.parameterDescription, 4) %]
 [% if (paramObj.defaultValue.isDefined()) { %][%= paramObj.defaultValue.emitCfnValueProperty("Default", 4) %][% } %]
 [%= emitYamlStringListProperty("AllowedValues", paramObj.allowedValues, 4) %]
@@ -32,6 +32,16 @@ Parameters:
 
 [% } %]
 [% }
+
+/** Maps common model-friendly aliases to valid CloudFormation parameter type names. */
+operation AWSPSMCORE!CfnParameter cloudFormationType() : String {
+  var typeText = self.type.trim();
+  if (typeText.toUpperCase() = "STRING") return "String";
+  if (typeText.toUpperCase() = "NUMBER") return "Number";
+  if (typeText.toUpperCase() = "LIST_NUMBER" or typeText.toUpperCase() = "LIST<NUMBER>") return "List<Number>";
+  if (typeText.toUpperCase() = "STRING_LIST" or typeText.toUpperCase() = "COMMA_DELIMITED_LIST") return "CommaDelimitedList";
+  return typeText;
+}
 
 @template
 /** Computes mappings section. */
@@ -73,7 +83,11 @@ Globals:
 /** Computes sam globals body. */
 operation AWSPSMCORE!SamGlobals samGlobalsBody() { %]
 [% if (self.functionGlobals.notEmpty()) { %]  Function:
-[%= self.functionGlobals.emitNativePropertiesYaml(4) %][% } %]
+[% for (globalObj in self.functionGlobals) { %]
+[% if (globalObj.propertyName = "RuntimeManagementConfig") { %]    RuntimeManagementConfig:
+      UpdateRuntimeOn: [%= globalObj.value.cfnInlineYaml() %]
+[% } else { %][%= globalObj.emitNativePropertyYaml(4) %][% } %]
+[% } %][% } %]
 [% if (self.apiGlobals.notEmpty()) { %]  Api:
 [%= self.apiGlobals.emitNativePropertiesYaml(4) %][% } %]
 [% if (self.httpApiGlobals.notEmpty()) { %]  HttpApi:

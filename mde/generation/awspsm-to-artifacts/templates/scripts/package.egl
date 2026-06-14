@@ -2,8 +2,31 @@
 set -euo pipefail
 
 stage_text="${1:-[%= emitCtx.get("defaultStageName") %]}"
-sam build
-sam package --config-env "$stage_text"
+bash scripts/validate-models.sh
+bash scripts/build.sh
+[% for (stackObj in awsRoot.stacks.sortBy(stackObj | stackObj.stackName)) { %]
+sam build \
+  --template-file "[%= stackObj.stackTemplatePath() %]" \
+  --build-dir ".aws-sam/[%= stackObj.stackName.toSlug() %]"
+[% } %]
+
+case "$stage_text" in
+[% for (stageObj in awsRoot.stages.sortBy(stageObj | stageObj.stageName)) { %]
+  [%= stageObj.stageSlug() %])
+[% for (stackObj in awsRoot.stacks.select(stackObj | stageObj.deploysStacks.includes(stackObj) or stageObj.deploysStacks.isEmpty()).sortBy(stackObj | stackObj.stackName)) { %]
+    sam package \
+      --template-file ".aws-sam/[%= stackObj.stackName.toSlug() %]/template.yaml" \
+      --output-template-file "packaged-[%= stageObj.stageSlug() %]-[%= stackObj.stackName.toSlug() %].yaml" \
+      --region "[%= stageObj.region.orElseText(awsRoot.defaultRegion.orElseText("us-east-1")) %]" \
+      --resolve-s3
+[% } %]
+    ;;
+[% } %]
+  *)
+    echo "Unknown stage: $stage_text" >&2
+    exit 2
+    ;;
+esac
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("package-customizations"), true)%]
 # Add artifact signing or upload hooks here.

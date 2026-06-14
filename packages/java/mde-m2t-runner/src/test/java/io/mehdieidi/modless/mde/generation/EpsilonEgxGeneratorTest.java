@@ -114,9 +114,10 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(
         Files.readString(outputDirectory.resolve("template.yaml"))
             .contains("Handler: 'bootstrap'"));
+    assertTrue(Files.readString(outputDirectory.resolve("template.yaml")).contains("CodeUri: '.'"));
     assertTrue(
-        Files.readString(outputDirectory.resolve("template.yaml"))
-            .contains("CodeUri: 'bin/order-handler'"));
+        Files.readString(outputDirectory.resolve("Makefile"))
+            .contains("$(ARTIFACTS_DIR)/bootstrap"));
     assertRequiredProjectTreeWasGenerated(outputDirectory);
     assertGoOnlyArtifactsWereGenerated(outputDirectory);
     assertTraceFilesAreFinalized(outputDirectory);
@@ -145,6 +146,11 @@ final class EpsilonEgxGeneratorTest {
         report.generatedFiles().isEmpty(), "Expected sample generation to write artifacts.");
     assertTraceCoversEveryGeneratedFile(outputDirectory, report);
     assertGeneratedSamTemplatesDoNotRepeatParameterKeys(outputDirectory);
+    assertGeneratedSamTemplatesUseGeneratedGoArtifacts(outputDirectory);
+    assertGeneratedSamTemplatesDoNotRepeatSseSpecification(outputDirectory);
+    assertGeneratedSamTemplatesUseValidParameterTypes(outputDirectory);
+    assertGeneratedSamTemplatesRenderConcreteResourceProperties(outputDirectory);
+    assertGeneratedFilesUseLfLineEndings(outputDirectory);
   }
 
   /** Ensures merge-enabled EGL templates preserve developer-owned protected-region content. */
@@ -163,8 +169,11 @@ final class EpsilonEgxGeneratorTest {
         handler,
         Files.readString(handler)
             .replace(
-                "\treturn GeneratedResult{}, shared.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\","
-                    + " \"Business logic has not been implemented yet.\")",
+                "\treturn mapKnownError(\n"
+                    + "\t\tshared.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\", \"Business logic"
+                    + " has not been implemented yet.\"),\n"
+                    + "\t\tcorrelationID,\n"
+                    + "\t), nil",
                 customLogic));
 
     generateOrFail(
@@ -214,12 +223,12 @@ final class EpsilonEgxGeneratorTest {
             "schemas/messages/generated-message.schema.json",
             "schemas/errors/generated-error.schema.json",
             "schemas/data/generated-data.schema.json",
-            "tests/unit/order-handler.test.go",
-            "tests/integration/order-handler.integration.test.go",
-            "tests/contract/generated-contracts.test.go",
-            "tests/events/generated-events.test.go",
-            "tests/e2e/security.generated.test.go",
-            "tests/e2e/generated-flows.test.go",
+            "tests/unit/order-handler_test.go",
+            "tests/integration/order-handler_integration_test.go",
+            "tests/contract/generated_contracts_test.go",
+            "tests/events/generated_events_test.go",
+            "tests/e2e/security_generated_test.go",
+            "tests/e2e/generated_flows_test.go",
             "tests/fixtures/README.md",
             "env/local.json",
             "env/dev.json",
@@ -292,6 +301,10 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(handler.contains("package main"));
     assertTrue(handler.contains("lambda.Start(Handler)"));
     assertTrue(handler.contains("\"example.com/representative-aws-psm/src/shared\""));
+    assertTrue(handler.contains("return mapKnownError("));
+    assertFalse(
+        handler.contains(
+            "return GeneratedResult{}, shared.NewGeneratedHandlerError(\"NOT_IMPLEMENTED\""));
   }
 
   /**
@@ -410,6 +423,65 @@ final class EpsilonEgxGeneratorTest {
   }
 
   /**
+   * Checks that model-friendly parameter aliases are rendered using valid CloudFormation names.
+   *
+   * @param outputDirectory generated project root
+   * @throws IOException when generated templates cannot be inspected
+   */
+  private void assertGeneratedSamTemplatesUseValidParameterTypes(Path outputDirectory)
+      throws IOException {
+    boolean foundNormalizedStringParameter = false;
+    try (var files = Files.walk(outputDirectory)) {
+      for (Path templateFile :
+          files
+              .filter(Files::isRegularFile)
+              .filter(path -> path.getFileName().toString().startsWith("template"))
+              .filter(path -> path.getFileName().toString().endsWith(".yaml"))
+              .toList()) {
+        String template = Files.readString(templateFile);
+        assertFalse(
+            template.contains("Type: 'STRING'"),
+            () -> "Invalid CloudFormation parameter type alias in " + templateFile);
+        foundNormalizedStringParameter |= template.contains("Type: 'String'");
+      }
+    }
+    assertTrue(
+        foundNormalizedStringParameter, "Expected a normalized CloudFormation String parameter.");
+  }
+
+  /**
+   * Ensures concrete subclasses do not fall back to the generic tags-only resource renderer.
+   *
+   * @param outputDirectory generated project root
+   * @throws IOException when generated templates cannot be inspected
+   */
+  private void assertGeneratedSamTemplatesRenderConcreteResourceProperties(Path outputDirectory)
+      throws IOException {
+    String templates;
+    try (var files = Files.walk(outputDirectory)) {
+      templates =
+          files
+              .filter(Files::isRegularFile)
+              .filter(path -> path.getFileName().toString().startsWith("template"))
+              .filter(path -> path.getFileName().toString().endsWith(".yaml"))
+              .map(
+                  path -> {
+                    try {
+                      return Files.readString(path);
+                    } catch (IOException exception) {
+                      throw new java.io.UncheckedIOException(exception);
+                    }
+                  })
+              .reduce("", String::concat);
+    }
+
+    assertTrue(templates.contains("RuntimeManagementConfig:\n      UpdateRuntimeOn: 'Auto'"));
+    assertFalse(templates.contains("RuntimeManagementConfig: 'Auto'"));
+    assertTrue(templates.contains("RouteKey: 'POST /grantapplications/approveemergencygrant'"));
+    assertTrue(templates.contains("FunctionName: !Ref Submitgrantapplicationhandlerlambda"));
+  }
+
+  /**
    * Verifies the generated Markdown report summarizes manual actions and export gates.
    *
    * @param outputDirectory generated project root
@@ -453,9 +525,25 @@ final class EpsilonEgxGeneratorTest {
 
     String buildScript = Files.readString(outputDirectory.resolve("scripts/build.sh"));
     assertTrue(buildScript.contains("--install-only"));
-    assertTrue(buildScript.contains("go mod download"));
+    assertTrue(buildScript.contains("go mod tidy"));
     assertTrue(buildScript.contains("go test ./..."));
     assertTrue(buildScript.contains("go build"));
+
+    String testScript = Files.readString(outputDirectory.resolve("scripts/test.sh"));
+    assertTrue(testScript.contains("bash scripts/build.sh --install-only"));
+
+    String deployScript = Files.readString(outputDirectory.resolve("scripts/deploy.sh"));
+    String packageScript = Files.readString(outputDirectory.resolve("scripts/package.sh"));
+    assertTrue(deployScript.contains("sam build"));
+    assertTrue(deployScript.contains(".aws-sam/"));
+    assertTrue(deployScript.contains("bash scripts/validate-models.sh"));
+    assertTrue(packageScript.contains("sam build"));
+    assertTrue(packageScript.contains(".aws-sam/"));
+    assertTrue(packageScript.contains("bash scripts/validate-models.sh"));
+
+    String localInvokeScript = Files.readString(outputDirectory.resolve("scripts/local-invoke.sh"));
+    assertTrue(localInvokeScript.contains("matching_templates"));
+    assertTrue(localInvokeScript.contains("sam build"));
 
     String validateModelsScript =
         Files.readString(outputDirectory.resolve("scripts/validate-models.sh"));
@@ -479,6 +567,73 @@ final class EpsilonEgxGeneratorTest {
     assertTrue(validateWorkflow.contains("bash scripts/validate-template.sh"));
     assertTrue(validateWorkflow.contains("bash scripts/test.sh"));
     assertTrue(validateWorkflow.contains("bash scripts/validate-models.sh --security"));
+  }
+
+  /**
+   * Ensures generated text artifacts are portable to Linux even when generation runs on Windows.
+   *
+   * @param outputDirectory generated project root
+   * @throws IOException when generated files cannot be read
+   */
+  private void assertGeneratedFilesUseLfLineEndings(Path outputDirectory) throws IOException {
+    try (var files = Files.walk(outputDirectory)) {
+      for (Path file : files.filter(Files::isRegularFile).toList()) {
+        String text = Files.readString(file);
+        assertFalse(text.contains("\r"), () -> "Generated file must use LF line endings: " + file);
+      }
+    }
+  }
+
+  /**
+   * Ensures the Go-only profile never leaves stale source-model runtime and handler hints in SAM.
+   *
+   * @param outputDirectory generated project root
+   * @throws IOException when templates cannot be read
+   */
+  private void assertGeneratedSamTemplatesUseGeneratedGoArtifacts(Path outputDirectory)
+      throws IOException {
+    try (var files = Files.list(outputDirectory)) {
+      for (Path template :
+          files
+              .filter(path -> path.getFileName().toString().startsWith("template"))
+              .filter(path -> path.getFileName().toString().endsWith(".yaml"))
+              .toList()) {
+        String text = Files.readString(template);
+        assertFalse(text.contains("Runtime: 'nodejs"), () -> "Stale runtime in " + template);
+        assertFalse(text.contains("CodeUri: 'TBD'"), () -> "Stale code URI in " + template);
+        assertTrue(text.contains("Runtime: 'provided.al2023'"));
+        assertTrue(text.contains("Handler: 'bootstrap'"));
+      }
+    }
+  }
+
+  /**
+   * Ensures each generated resource has at most one DynamoDB encryption configuration block.
+   *
+   * @param outputDirectory generated project root
+   * @throws IOException when templates cannot be read
+   */
+  private void assertGeneratedSamTemplatesDoNotRepeatSseSpecification(Path outputDirectory)
+      throws IOException {
+    try (var files = Files.list(outputDirectory)) {
+      for (Path template :
+          files
+              .filter(path -> path.getFileName().toString().startsWith("template"))
+              .filter(path -> path.getFileName().toString().endsWith(".yaml"))
+              .toList()) {
+        boolean inResource = false;
+        boolean sawSse = false;
+        for (String line : Files.readAllLines(template)) {
+          if (line.startsWith("  ") && !line.startsWith("    ") && line.endsWith(":")) {
+            inResource = true;
+            sawSse = false;
+          } else if (inResource && line.startsWith("      SSESpecification:")) {
+            assertFalse(sawSse, () -> "Duplicate SSESpecification in " + template);
+            sawSse = true;
+          }
+        }
+      }
+    }
   }
 
   /**

@@ -53,19 +53,19 @@ operation AWSPSMCOMPUTE!AwsLambdaFunction generatedHandlerName(profileMap : Map)
 
 /** Computes generated code uri. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction generatedCodeUri(profileMap : Map) : String {
-  return "bin/" + self.functionPathSegment(profileMap);
+  return ".";
 }
 
 /** Computes unit test path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction unitTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  return "tests/unit/" + self.functionSlug() + ".test." + extText;
+  return "tests/unit/" + self.functionSlug() + "_test." + extText;
 }
 
 /** Computes integration test path. */
 operation AWSPSMCOMPUTE!AwsLambdaFunction integrationTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  return "tests/integration/" + self.functionSlug() + ".integration.test." + extText;
+  return "tests/integration/" + self.functionSlug() + "_integration_test." + extText;
 }
 
 /** Computes open api path. */
@@ -105,7 +105,7 @@ operation KERNEL!StructuredDocument documentPath() : String {
 /** Computes workflow test path. */
 operation AWSPSMWORKFLOW!StepFunctionStateMachine workflowTestPath(profileMap : Map) : String {
   var extText = profileMap.testExtension();
-  return "tests/workflows/" + self.workflowSlug() + ".workflow.test." + extText;
+  return "tests/workflows/" + self.workflowSlug() + "_workflow_test." + extText;
 }
 
 /** Computes fixture slug. */

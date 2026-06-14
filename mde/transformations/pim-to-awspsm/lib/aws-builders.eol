@@ -389,12 +389,21 @@ operation allowStatement(sid : String) {
 
 /** Computes permission statement. */
 operation permissionStatement(perm) {
+  var actionText = firstText(perm.action, "*");
+  var resourceText = firstText(perm.resource, "*");
+  if (not actionText.validAwsIamActionText() or not resourceText.validAwsIamResourceText()) {
+    manualDecision("IAM_PERMISSION_AWS_BINDING_REQUIRED",
+      "Permission " + firstText(perm.name, perm.id) + " is provider-independent and cannot be emitted as an AWS IAM statement.",
+      KERNEL!Severity#ERROR, true, Sequence{perm},
+      "Bind the permission to an AWS service:operation action and an ARN, CloudFormation intrinsic, or justified wildcard resource.");
+    return null;
+  }
   var st = allowStatement(firstText(perm.name, "Permission"));
   if (perm.effect = PIMTYPES!PermissionEffect#DENY) {
     st.effect = AWSPSMENUMS!IamEffect#DENY;
   }
-  st.actions.add(firstText(perm.action, "*"));
-  st.resources.add(firstText(perm.resource, "*"));
+  st.actions.add(actionText);
+  st.resources.add(resourceText);
   st.wildcardAction = st.actions.includes("*") or st.actions.exists(a | a.endsWith(":*"));
   st.wildcardResource = st.resources.includes("*");
   if (st.wildcardAction or st.wildcardResource or not isTrue(perm.leastPrivilegeConfirmed)) {
@@ -404,6 +413,16 @@ operation permissionStatement(perm) {
       "Replace wildcard action/resource with AWS-specific actions and generated resource ARNs.");
   }
   return st;
+}
+
+/** Returns whether text can be emitted as an AWS IAM action. */
+operation Any validAwsIamActionText() {
+  return hasText(self) and (self.asString() = "*" or self.asString().matches("^[A-Za-z0-9-]+:[A-Za-z0-9*]+$"));
+}
+
+/** Returns whether text can be emitted as an AWS IAM resource. */
+operation Any validAwsIamResourceText() {
+  return hasText(self) and (self.asString() = "*" or self.asString().startsWith("arn:") or self.asString().startsWith("!"));
 }
 
 /** Creates create lambda permission for. */
@@ -563,17 +582,39 @@ operation defaultStack() {
 operation placeUncontainedAwsResources() {
   flagUnassignedDeployables();
   var st = defaultStack();
+
+  // Place resources with explicit PIM deployment-unit ownership first.
   for (r in cachedAwsGeneratedResources) {
     if (r.stack.isUndefined()) {
       var targetStack = stackForGeneratedResource(r);
-      if (targetStack.isUndefined()) {
-        targetStack = st;
-      }
       if (targetStack.isDefined()) {
         targetStack.resources.add(r);
       }
     }
   }
+
+  // Supporting resources inherit ownership from the resources they reference.
+  // Iterate because routes, integrations, permissions, policies, and DLQs form
+  // short dependency chains whose owner may only become known in a prior pass.
+  var madeProgress = true;
+  while (madeProgress) {
+    madeProgress = false;
+    for (r in cachedAwsGeneratedResources.select(r | r.stack.isUndefined())) {
+      var inferredStack = inferredStackForGeneratedResource(r);
+      if (inferredStack.isDefined()) {
+        inferredStack.resources.add(r);
+        madeProgress = true;
+      }
+    }
+  }
+
+  // Truly unowned resources remain reviewable in the default stack.
+  for (r in cachedAwsGeneratedResources.select(r | r.stack.isUndefined())) {
+    if (st.isDefined()) {
+      st.resources.add(r);
+    }
+  }
+
   if (st.isDefined()) {
     for (p in AWSPSMCORE!CfnParameter.all) {
       if (p.eContainer().isUndefined()) {
@@ -591,6 +632,26 @@ operation placeUncontainedAwsResources() {
       addStageStackOnce(stage, stack);
     }
   }
+}
+
+/** Infers one unambiguous owner stack from already placed referenced resources. */
+operation inferredStackForGeneratedResource(resource) {
+  var candidateStacks = new Set;
+  for (referenceObj in resource.eClass().getEAllReferences().select(referenceObj | not referenceObj.isContainment())) {
+    var referencedValue = resource.eGet(referenceObj);
+    if (referenceObj.isMany()) {
+      for (targetObj in referencedValue.select(targetObj | targetObj.isKindOf(AWSPSMCORE!AwsResource) and targetObj.stack.isDefined())) {
+        candidateStacks.add(targetObj.stack);
+      }
+    }
+    else if (referencedValue.isDefined() and referencedValue.isKindOf(AWSPSMCORE!AwsResource) and referencedValue.stack.isDefined()) {
+      candidateStacks.add(referencedValue.stack);
+    }
+  }
+  if (candidateStacks.size() = 1) {
+    return candidateStacks.first();
+  }
+  return null;
 }
 
 /** Adds or records add stage stack once. */
@@ -1171,7 +1232,7 @@ operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
     st.resources.add(cfnArnExpression(res));
     st.resources.add(cfnArnSubExpression(res, "/index/*"));
     if (st.actions.notEmpty()) {
-      doc.statements.add(st);
+      addIamStatementMergedBySid(doc, st);
     }
     return;
   }
@@ -1186,7 +1247,7 @@ operation addResourceStatement(doc, storage, read : Boolean, write : Boolean) {
     s3st.resources.add(cfnArnExpression(res));
     s3st.resources.add(cfnArnSubExpression(res, "/*"));
     if (s3st.actions.notEmpty()) {
-      doc.statements.add(s3st);
+      addIamStatementMergedBySid(doc, s3st);
     }
   }
 }
@@ -1215,7 +1276,7 @@ operation addPublishStatement(doc, eventType) {
       var st = allowStatement("Publish" + sns.logicalId);
       st.actions.add("sns:Publish");
       st.resources.add(cfnArnExpression(sns));
-      doc.statements.add(st);
+      addIamStatementMergedBySid(doc, st);
     }
   }
   for (bus in indexedValues(cachedEventBusesByEventTypeId, cacheKeyFor(eventType))) {
@@ -1224,7 +1285,7 @@ operation addPublishStatement(doc, eventType) {
       var st2 = allowStatement("PutEvents" + eb.logicalId);
       st2.actions.add("events:PutEvents");
       st2.resources.add(cfnArnExpression(eb));
-      doc.statements.add(st2);
+      addIamStatementMergedBySid(doc, st2);
     }
   }
 }
@@ -1237,7 +1298,7 @@ operation addSubscribeStatement(doc, eventType) {
       var st = allowStatement("Consume" + sqs.logicalId);
       st.actions.add("sqs:ReceiveMessage"); st.actions.add("sqs:DeleteMessage"); st.actions.add("sqs:GetQueueAttributes");
       st.resources.add(cfnArnExpression(sqs));
-      doc.statements.add(st);
+      addIamStatementMergedBySid(doc, st);
     }
   }
 }
@@ -1251,7 +1312,27 @@ operation addSecretStatement(doc, secret) {
   var st = allowStatement("ReadSecret" + sec.logicalId);
   st.actions.add("secretsmanager:GetSecretValue");
   st.resources.add(cfnArnExpression(sec));
-  doc.statements.add(st);
+  addIamStatementMergedBySid(doc, st);
+}
+
+/** Adds a statement or merges repeated generation paths into the existing statement with the same Sid. */
+operation addIamStatementMergedBySid(doc, statementObj) {
+  var existing = doc.statements.selectOne(existingObj | existingObj.sid = statementObj.sid);
+  if (existing.isUndefined()) {
+    doc.statements.add(statementObj);
+    return;
+  }
+  for (actionText in statementObj.actions) {
+    if (not existing.actions.includes(actionText)) existing.actions.add(actionText);
+  }
+  for (resourceText in statementObj.resources) {
+    if (not existing.resources.includes(resourceText)) existing.resources.add(resourceText);
+  }
+  existing.wildcardAction = existing.wildcardAction or statementObj.wildcardAction;
+  existing.wildcardResource = existing.wildcardResource or statementObj.wildcardResource;
+  if (not hasText(existing.wildcardJustification) and hasText(statementObj.wildcardJustification)) {
+    existing.wildcardJustification = statementObj.wildcardJustification;
+  }
 }
 
 /** Computes if defined int. */

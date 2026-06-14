@@ -180,7 +180,15 @@ operation AWSPSMAPI!ApiGatewayRoute openApiOperation(indentCount : Integer) : St
 
 /** Derives sorted open api response models. */
 operation AWSPSMAPI!ApiGatewayRoute sortedOpenApiResponseModels() : Sequence {
-  return self.responseModels.asSequence().sortBy(responseModel | responseModel.statusCode);
+  var uniqueModels = new Sequence;
+  var seenStatusCodes = new Set;
+  for (responseModel in self.responseModels.asSequence().sortBy(responseModel | responseModel.statusCode + responseModel.stableKey())) {
+    if (not seenStatusCodes.includes(responseModel.statusCode)) {
+      uniqueModels.add(responseModel);
+      seenStatusCodes.add(responseModel.statusCode);
+    }
+  }
+  return uniqueModels;
 }
 
 /** Computes open api response description. */
@@ -208,7 +216,7 @@ operation AWSPSMAPI!ApiGatewayRoute openApiSecuritySchemeName() : String {
 
 /** Computes openapi schema name. */
 operation AWSPSMAPI!ApiGatewayResponseModel openapiSchemaName() : String {
-  return pascalCase(firstText(self.name, self.id));
+  return firstText(self.name, self.id).toCfnLogicalId();
 }
 
 /** Computes openapi model name. */

@@ -3,7 +3,15 @@ set -euo pipefail
 
 function_logical_id="${1:?Usage: scripts/local-invoke.sh <FunctionLogicalId> <event-json>}"
 event_path="${2:?Usage: scripts/local-invoke.sh <FunctionLogicalId> <event-json>}"
-sam local invoke "$function_logical_id" --event "$event_path"
+mapfile -t matching_templates < <(grep -l "^  ${function_logical_id}:$" template*.yaml | sort)
+if [[ "${#matching_templates[@]}" -ne 1 ]]; then
+  echo "Expected exactly one template containing ${function_logical_id}; found ${#matching_templates[@]}." >&2
+  exit 2
+fi
+template_path="${matching_templates[0]}"
+build_dir=".aws-sam/local-invoke-${function_logical_id}"
+sam build --template-file "$template_path" --build-dir "$build_dir"
+sam local invoke "$function_logical_id" --template "$build_dir/template.yaml" --event "$event_path"
 
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("local-invoke-customizations"), true)%]
 # Add local environment wiring here.

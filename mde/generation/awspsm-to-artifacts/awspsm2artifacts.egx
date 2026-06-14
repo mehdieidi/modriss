@@ -585,48 +585,48 @@ rule SharedRuntimeDataAccess {
 rule ContractTests {
   guard : emitCtx().get("enableTests") = true
   template : "tests/contract-test.egl"
-  target : "tests/contract/generated-contracts.test." + emitCtx().testExtension()
+  target : "tests/contract/generated_contracts_test." + emitCtx().testExtension()
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/contract/generated-contracts.test." + emitCtx().testExtension(), "CONTRACT_TEST", "AWSPSM2ART_ContractTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("contract-custom-assertions")}); }
+  post { emitCtx().recordArtifact("tests/contract/generated_contracts_test." + emitCtx().testExtension(), "CONTRACT_TEST", "AWSPSM2ART_ContractTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("contract-custom-assertions")}); }
 }
 
 /** Generates artifacts or model elements for Event Tests. */
 rule EventTests {
   guard : emitCtx().get("enableTests") = true
   template : "tests/event-test.egl"
-  target : "tests/events/generated-events.test." + emitCtx().testExtension()
+  target : "tests/events/generated_events_test." + emitCtx().testExtension()
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/events/generated-events.test." + emitCtx().testExtension(), "EVENT_TEST", "AWSPSM2ART_EventTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("event-custom-assertions")}); }
+  post { emitCtx().recordArtifact("tests/events/generated_events_test." + emitCtx().testExtension(), "EVENT_TEST", "AWSPSM2ART_EventTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("event-custom-assertions")}); }
 }
 
 /** Generates artifacts or model elements for Security Tests. */
 rule SecurityTests {
   guard : emitCtx().get("enableTests") = true
   template : "tests/security-test.egl"
-  target : "tests/e2e/security.generated.test." + emitCtx().testExtension()
+  target : "tests/e2e/security_generated_test." + emitCtx().testExtension()
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/e2e/security.generated.test." + emitCtx().testExtension(), "SECURITY_TEST", "AWSPSM2ART_SecurityTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("security-custom-assertions")}); }
+  post { emitCtx().recordArtifact("tests/e2e/security_generated_test." + emitCtx().testExtension(), "SECURITY_TEST", "AWSPSM2ART_SecurityTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("security-custom-assertions")}); }
 }
 
 /** Transforms E elements into e Tests elements. */
 rule E2eTests {
   guard : emitCtx().get("enableTests") = true
   template : "tests/e2e-test.egl"
-  target : "tests/e2e/generated-flows.test." + emitCtx().testExtension()
+  target : "tests/e2e/generated_flows_test." + emitCtx().testExtension()
   merge : true
   overwrite : true
   parameters : Map {"awsRoot" = awsRoot(), "emitCtx" = emitCtx()}
   /** Records or verifies results after execution. */
-  post { emitCtx().recordArtifact("tests/e2e/generated-flows.test." + emitCtx().testExtension(), "E2E_TEST", "AWSPSM2ART_E2eTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("e2e-business-flow-assertions")}); }
+  post { emitCtx().recordArtifact("tests/e2e/generated_flows_test." + emitCtx().testExtension(), "E2E_TEST", "AWSPSM2ART_E2eTests", Sequence{awsRoot().stableKey()}, "PRESERVE_PROTECTED_REGIONS", Sequence{awsRoot().manualRegionId("e2e-business-flow-assertions")}); }
 }
 
 /** Generates artifacts or model elements for Validate Models Script. */

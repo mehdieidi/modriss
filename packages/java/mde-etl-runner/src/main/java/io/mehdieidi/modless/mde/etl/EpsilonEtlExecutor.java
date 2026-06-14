@@ -443,6 +443,10 @@ public final class EpsilonEtlExecutor {
                 "usedAwsLogicalIds",
                 new java.util.LinkedHashSet<>(),
                 org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+            new Variable(
+                "usedAwsPhysicalNames",
+                new java.util.LinkedHashSet<>(),
+                org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable("cachedPimRoot", null, org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable("cachedCimRoot", null, org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable("cachedAwsRoot", null, org.eclipse.epsilon.eol.types.EolAnyType.Instance),
@@ -578,6 +582,10 @@ public final class EpsilonEtlExecutor {
                 "cachedGeneratedIdByKey", null, org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable(
                 "cachedNextLogicalIdIndexBySeed",
+                null,
+                org.eclipse.epsilon.eol.types.EolAnyType.Instance),
+            new Variable(
+                "cachedNextPhysicalNameIndexBySeed",
                 null,
                 org.eclipse.epsilon.eol.types.EolAnyType.Instance),
             new Variable(

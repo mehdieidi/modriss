@@ -144,6 +144,19 @@ operation Any lambdaTracingModeText() : String {
   return "";
 }
 
+/** Maps model enum literals to the exact CloudWatch comparison operator spelling. */
+operation Any cloudWatchComparisonOperatorText() : String {
+  var operatorText = self.asString();
+  if (operatorText = "GREATER_THAN_OR_EQUAL_TO_THRESHOLD") return "GreaterThanOrEqualToThreshold";
+  if (operatorText = "GREATER_THAN_THRESHOLD") return "GreaterThanThreshold";
+  if (operatorText = "GREATER_THAN_UPPER_THRESHOLD") return "GreaterThanUpperThreshold";
+  if (operatorText = "LESS_THAN_LOWER_OR_GREATER_THAN_UPPER_THRESHOLD") return "LessThanLowerOrGreaterThanUpperThreshold";
+  if (operatorText = "LESS_THAN_LOWER_THRESHOLD") return "LessThanLowerThreshold";
+  if (operatorText = "LESS_THAN_OR_EQUAL_TO_THRESHOLD") return "LessThanOrEqualToThreshold";
+  if (operatorText = "LESS_THAN_THRESHOLD") return "LessThanThreshold";
+  return operatorText;
+}
+
 /** Computes iam effect text. */
 operation Any iamEffectText() : String {
   var text = self.orElseText("ALLOW").asString();
@@ -171,6 +184,12 @@ operation refForResource(resObj) : String {
   if (resObj.isUndefined()) {
     return "";
   }
+  if (resObj.eClass().getName() = "SnsTopic") {
+    return arnForResource(resObj);
+  }
+  if (resObj.eClass().getName() = "EventBridgeBus") {
+    return firstText(resObj.busName, resObj.physicalName).yamlScalar();
+  }
   return "!Ref " + resObj.cfnLogicalId();
 }
 
@@ -180,12 +199,59 @@ operation arnForResource(resObj) : String {
     return "";
   }
   var classText = resObj.eClass().getName();
+  var physicalNameText = resObj.physicalName;
+  if (classText = "AwsLambdaFunction") {
+    physicalNameText = firstText(resObj.functionName, physicalNameText);
+    if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:" + physicalNameText + "'";
+  }
+  if (classText = "SqsQueue") {
+    physicalNameText = firstText(resObj.queueName, physicalNameText);
+    if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:" + physicalNameText + "'";
+  }
+  if (classText = "SnsTopic") {
+    physicalNameText = firstText(resObj.topicName, physicalNameText);
+    if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:" + physicalNameText + "'";
+  }
+  if (classText = "EventBridgeBus") {
+    physicalNameText = firstText(resObj.busName, physicalNameText);
+    if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/" + physicalNameText + "'";
+  }
+  if (classText = "EventBridgeRule") {
+    physicalNameText = firstText(resObj.ruleName, physicalNameText);
+    if (physicalNameText.isPresent() and resObj.bus.isDefined()) {
+      return "!Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/" + firstText(resObj.bus.busName, resObj.bus.physicalName) + "/" + physicalNameText + "'";
+    }
+    if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/" + physicalNameText + "'";
+  }
+  if (classText = "DynamoDbTable") {
+    physicalNameText = firstText(resObj.tableName, physicalNameText);
+    if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/" + physicalNameText + "'";
+  }
+  if (classText = "IamRole") {
+    physicalNameText = firstText(resObj.roleName, physicalNameText);
+    if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role" + resObj.path.orElseText("/") + physicalNameText + "'";
+  }
+  if (classText = "StepFunctionStateMachine") {
+    physicalNameText = firstText(resObj.stateMachineName, physicalNameText);
+    if (physicalNameText.isPresent()) return "!Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:" + physicalNameText + "'";
+  }
   if (classText = "SqsQueue" or classText = "DynamoDbTable" or classText = "AwsLambdaFunction" or
-      classText = "SnsTopic" or classText = "KmsKey" or classText = "CloudWatchLogGroup" or
+      classText = "KmsKey" or classText = "CloudWatchLogGroup" or
       classText = "StepFunctionStateMachine") {
     return "!GetAtt " + resObj.cfnLogicalId() + ".Arn";
   }
   return "!GetAtt " + resObj.cfnLogicalId() + ".Arn";
+}
+
+/** Replaces a modeled GetAtt-Arn expression with its deployable stable ARN form. */
+operation Any normalizeCfnArnReference() : String {
+  var expressionText = self.textOrEmpty();
+  for (resourceObj in AWSPSMCORE!AwsResource.all) {
+    if (expressionText = "!GetAtt " + resourceObj.cfnLogicalId() + ".Arn") {
+      return arnForResource(resourceObj);
+    }
+  }
+  return expressionText;
 }
 
 @cached
@@ -330,6 +396,34 @@ operation Collection emitTagsYaml(indentCount : Integer) : String {
   for (tagObj in self.sortBy(tagObj | tagObj.key)) {
     outText = outText + spaces(indentCount + 2) + "- Key: " + tagObj.key.yamlScalar() + "\n";
     outText = outText + spaces(indentCount + 4) + "Value: " + tagObj.value.orElseText("").yamlScalar() + "\n";
+  }
+  return outText;
+}
+
+/** Renders JSON or YAML content as a structured YAML property instead of a block scalar string. */
+operation structuredYamlProperty(nameText : String, contentText : String, indentCount : Integer) : String {
+  var lineIndent = spaces(indentCount);
+  var contentIndent = spaces(indentCount + 2);
+  var outText = lineIndent + nameText + ":\n";
+  for (lineText in contentText.split("\n")) {
+    outText = outText + contentIndent + lineText + "\n";
+  }
+  return outText;
+}
+
+/** Renders the string-to-string tag map required by AWS SAM resources. */
+operation Collection emitSamTagsYaml(indentCount : Integer) : String {
+  return self.emitTagMapYaml("Tags", indentCount);
+}
+
+/** Renders a string-to-string tag map under the requested CloudFormation property name. */
+operation Collection emitTagMapYaml(nameText : String, indentCount : Integer) : String {
+  if (self.isEmpty()) {
+    return "";
+  }
+  var outText = spaces(indentCount) + nameText + ":\n";
+  for (tagObj in self.sortBy(tagObj | tagObj.key)) {
+    outText = outText + spaces(indentCount + 2) + tagObj.key + ": " + tagObj.value.orElseText("").yamlScalar() + "\n";
   }
   return outText;
 }

@@ -1,7 +1,7 @@
 [% /* Generates the makefile artifact. */ %]SHELL := /usr/bin/env bash
 STAGE ?= [%= emitCtx.get("defaultStageName") %]
 
-.PHONY: validate build test deploy package local-api local-invoke
+.PHONY: validate build test deploy package local-api local-invoke[% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %] build-[%= awsFn.cfnLogicalId() %][% } %]
 
 validate:
 	bash scripts/validate-models.sh
@@ -26,6 +26,11 @@ local-api:
 local-invoke:
 	bash scripts/local-invoke.sh "$(FUNCTION)" "$(EVENT)"
 
+[% for (awsFn in AWSPSMCOMPUTE!AwsLambdaFunction.all.sortBy(awsFn | awsFn.cfnLogicalId())) { %]
+build-[%= awsFn.cfnLogicalId() %]:
+	GOFLAGS=-mod=mod GOOS=linux GOARCH=[%= awsFn.architecture.lambdaArchitectureText() %] go build -o "$(ARTIFACTS_DIR)/[%= awsFn.generatedHandlerName(emitCtx) %]" "./src/functions/[%= awsFn.functionPathSegment(emitCtx) %]"
+
+[% } %]
 [%=out.startPreserve("#", "", awsRoot.manualRegionId("makefile-customizations"), true)%]
 # Add project-specific make targets here.
 [%=out.stopPreserve()%]
