@@ -1,0 +1,65 @@
+site_name: Modless Documentation
+site_description: Public documentation for the Modless AI-assisted model-driven serverless platform
+repo_name: modless
+theme:
+  name: material
+  features:
+    - navigation.indexes
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.tabs.link
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: indigo
+    - scheme: slate
+      primary: deep purple
+      accent: indigo
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Overview: getting-started/overview.md
+      - Quickstart: getting-started/quickstart.md
+      - Local Development: getting-started/local-development.md
+  - Core Concepts:
+      - Model-Driven Engineering: concepts/model-driven-engineering.md
+      - Modeling Levels: concepts/modeling-levels.md
+      - Validation, Transformation, and Generation: concepts/pipeline.md
+  - User Guides:
+      - Modeling Workflow: guides/modeling-workflow.md
+      - AI Assistant: guides/ai-assistant.md
+      - Generated AWS Projects: guides/generated-artifacts.md
+  - Reference:
+      - REST API: reference/rest-api.md
+      - Realtime Assistant API: reference/realtime-api.md
+      - Configuration: reference/configuration.md
+      - Data and Storage: reference/data-storage.md
+      - CLI Tools: reference/cli-tools.md
+      - Repository Layout: reference/repository-layout.md
+  - Architecture:
+      - System Architecture: architecture/system.md
+      - Backend and Storage: architecture/backend-storage.md
+      - Frontend: architecture/frontend.md
+  - Operations:
+      - Deployment: operations/deployment.md
+      - Security: operations/security.md
+      - Testing: operations/testing.md
+      - Troubleshooting: operations/troubleshooting.md
+  - Contributing:
+      - Change Guide: contributing/change-guide.md
+      - Status and Roadmap: contributing/status-roadmap.md

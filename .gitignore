@@ -71,3 +71,6 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# MkDocs output directory
+site/

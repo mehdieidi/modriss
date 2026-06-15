@@ -1,0 +1,47 @@
+# Frontend Architecture
+
+The frontend is a static ES-module application under `apps/frontend`. It uses AntV G6 for graph
+rendering and communicates with the backend through REST, SSE, and WebSocket.
+
+## Main Areas
+
+- Authentication and project management
+- CIM, PIM, and PSM workbenches
+- Metadata-driven palette and attribute panels
+- Graph editing, relationship creation, layout, views, and focus
+- Validation and generation progress
+- Assistant chat and proposal controls
+- Artifact explorer and file editor
+- Planned GitHub, impact-analysis, and admin surfaces
+
+## Metadata-Driven Modeling
+
+At startup, the frontend loads `GET /api/modeling/config`. This response merges formal Ecore
+structure with UI-owned metadata. Frontend modules normalize and query it for:
+
+- Creatable concepts
+- Attributes and enums
+- Containment and legal relationship rules
+- Visual roles and notation
+- Palette categories
+- Viewpoint definitions
+
+This avoids hard-coding a second full copy of each language in JavaScript. Specialized workbenches
+still contain level-specific behavior where a generic editor is insufficient.
+
+## State and Persistence
+
+The browser maintains working state, graph state, selections, view state, and undo history. Saved
+models are persisted through revision-aware API calls. Generated layouts can be persisted per model
+and view.
+
+## Backend Address
+
+The static frontend reads its backend base URL from:
+
+```javascript
+window.MODLESS_BACKEND_BASE_URL = "http://127.0.0.1:8080";
+```
+
+Configure the deployed frontend and backend origins together, including CORS and WebSocket allowed
+origins.
