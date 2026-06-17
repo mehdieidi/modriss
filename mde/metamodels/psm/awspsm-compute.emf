@@ -1,4 +1,3 @@
-/** Defines the awspsm compute metamodel package. */
 @namespace(uri="https://modless.org/awspsm/compute/1.0", prefix="awspsmcompute")
 package awspsmcompute;
 
@@ -11,33 +10,31 @@ import "awspsm-networking.ecore";
 import "awspsm-messaging.ecore";
 import "awspsm-storage.ecore";
 
-/** Represents the Aws Lambda Function concept in this model. */
 class AwsLambdaFunction extends awspsmcore.AwsResource, awspsmcore.S3NotificationDestination {
-  val LambdaCodeConfig[1] code;
-  attr awspsmenums.PackageType packageType;
   attr String functionName;
   attr String descriptionText;
   attr Integer memorySizeMb;
   attr Integer timeoutSeconds;
-  attr awspsmenums.LambdaArchitecture architecture;
   attr Integer ephemeralStorageMb;
   attr Integer reservedConcurrentExecutions;
+  attr String autoPublishAlias;
+  attr Boolean publishVersion;
+  attr awspsmenums.Decision codeSigningDecision;
+  attr awspsmenums.LambdaArchitecture architecture;
+  attr awspsmenums.PackageType packageType;
   attr awspsmenums.LambdaRecursiveLoopMode recursiveLoopMode;
   attr awspsmenums.LambdaSnapStartApplyOn snapStartApplyOn;
   attr awspsmenums.LambdaRuntimeManagementMode runtimeManagementMode;
-  attr Boolean publishVersion;
-  attr String autoPublishAlias;
-  attr awspsmenums.Decision codeSigningDecision;
 
+  val LambdaCodeConfig[1] code;
   val LambdaEnvironmentVariable[*] environment;
   val LambdaDeadLetterConfig[?] deadLetterConfig;
   val LambdaTracingConfig[?] tracing;
   val LambdaLoggingConfig[?] logging;
-  val awspsmnetworking.VpcAttachmentConfig[?] vpcConfig;
   val LambdaFileSystemConfig[*] fileSystemConfigs;
   val SamFunctionEvent[*]#targetFunction samEvents;
+  val awspsmnetworking.VpcAttachmentConfig[?] vpcConfig;
 
-  ref awspsmsecurity.IamRole[1] role;
   ref LambdaLayerVersion[*] layers;
   ref LambdaPermission[*]#function permissions;
   ref LambdaVersion[*]#function versions;
@@ -45,16 +42,15 @@ class AwsLambdaFunction extends awspsmcore.AwsResource, awspsmcore.S3Notificatio
   ref LambdaEventInvokeConfig[*]#function eventInvokeConfigs;
   ref LambdaEventSourceMapping[*]#function eventSourceMappings;
   ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
+  ref awspsmsecurity.IamRole[1] role;
   ref awspsmsecurity.KmsKey[?] kmsKey;
   ref LambdaFunctionUrl[?]#function functionUrl;
   ref CodeSigningConfig[?] codeSigningConfig;
 }
 
-/** Represents the Lambda Code Config concept in this model. */
 abstract class LambdaCodeConfig extends kernel.TraceableElement {
 }
 
-/** Represents the Lambda Zip Code Config concept in this model. */
 class LambdaZipCodeConfig extends LambdaCodeConfig {
   attr String codeUri;
   attr String s3Bucket;
@@ -65,44 +61,41 @@ class LambdaZipCodeConfig extends LambdaCodeConfig {
   attr String handler;
 }
 
-/** Represents the Lambda Image Code Config concept in this model. */
 class LambdaImageCodeConfig extends LambdaCodeConfig {
   attr String[1] imageUri;
+
   val LambdaImageConfig[?] imageConfig;
 }
 
-/** Represents the Lambda Image Config concept in this model. */
 class LambdaImageConfig extends kernel.TraceableElement {
   attr String[*] command;
   attr String[*] entryPoint;
   attr String workingDirectory;
 }
 
-/** Represents the Lambda Environment Variable concept in this model. */
 class LambdaEnvironmentVariable extends kernel.TraceableElement {
   attr String[1] variableName;
-  val awspsmcore.ValueExpression[1] value;
   attr Boolean stageSpecific;
+
+  val awspsmcore.ValueExpression[1] value;
 }
 
-/** Represents the Lambda Invocation Binding concept in this model. */
 abstract class LambdaInvocationBinding extends kernel.TraceableElement {
   attr Boolean enabled;
 }
 
-/** Represents the Sam Function Event concept in this model. */
 class SamFunctionEvent extends LambdaInvocationBinding {
   attr String[1] eventName;
   attr String[1] eventType;
+
   val awspsmcore.NativeProperty[*] properties;
+
   readonly transient ref AwsLambdaFunction[1]#samEvents targetFunction;
 }
 
-/** Represents the Lambda Event Source Mapping concept in this model. */
 abstract class LambdaEventSourceMapping extends awspsmcore.AwsResource {
   attr Integer batchSize;
   attr Integer maximumBatchingWindowSeconds;
-  attr awspsmenums.StartingPosition startingPosition;
   attr String startingPositionTimestamp;
   attr Boolean bisectBatchOnFunctionError;
   attr Integer maximumRecordAgeInSeconds;
@@ -114,56 +107,55 @@ abstract class LambdaEventSourceMapping extends awspsmcore.AwsResource {
   attr Boolean reportBatchItemFailures;
   attr Integer maximumConcurrency;
   attr String metricsConfig;
+  attr awspsmenums.StartingPosition startingPosition;
+
   val LambdaDestinationConfig[?] destinationConfig;
+
   ref AwsLambdaFunction[1]#eventSourceMappings function;
 }
 
-/** Represents the Sqs Lambda Event Source Mapping concept in this model. */
 class SqsLambdaEventSourceMapping extends LambdaEventSourceMapping {
   attr awspsmenums.Decision partialBatchFailureHandlingDecision;
   attr String partialBatchFailureHandlingRationale;
+
   ref awspsmmessaging.SqsQueue[1] queue;
 }
 
-/** Represents the Dynamo Db Stream Lambda Event Source Mapping concept in this model. */
 class DynamoDbStreamLambdaEventSourceMapping extends LambdaEventSourceMapping {
   ref awspsmstorage.DynamoDbTable[1] table;
 }
 
-/** Represents the Generic Lambda Event Source Mapping concept in this model. */
 class GenericLambdaEventSourceMapping extends LambdaEventSourceMapping {
   attr awspsmenums.LambdaEventSourceKind[1] sourceKind;
   attr String[1] sourceArnExpression;
+
   ref awspsmcore.AwsResource[?] eventSourceResource;
 }
 
-/** Represents the Lambda Dead Letter Config concept in this model. */
 class LambdaDeadLetterConfig extends kernel.TraceableElement {
   ref awspsmmessaging.SqsQueue[?] targetQueue;
   ref awspsmmessaging.SnsTopic[?] targetTopic;
 }
 
-/** Represents the Lambda Event Invoke Config concept in this model. */
 class LambdaEventInvokeConfig extends awspsmcore.AwsResource {
   attr Integer maximumRetryAttempts;
   attr Integer maximumEventAgeInSeconds;
+
   val LambdaDestinationConfig[?] destinationConfig;
+
   ref AwsLambdaFunction[1]#eventInvokeConfigs function;
   ref LambdaAlias[?] qualifierAlias;
 }
 
-/** Represents the Lambda Destination Config concept in this model. */
 class LambdaDestinationConfig extends kernel.TraceableElement {
   ref awspsmcore.AwsResource[?] onSuccess;
   ref awspsmcore.AwsResource[?] onFailure;
 }
 
-/** Represents the Lambda Tracing Config concept in this model. */
 class LambdaTracingConfig extends awspsmcore.TracingConfig {
   attr awspsmenums.LambdaTracingMode[1] mode;
 }
 
-/** Represents the Lambda Logging Config concept in this model. */
 class LambdaLoggingConfig extends kernel.TraceableElement {
   attr String applicationLogLevel;
   attr String systemLogLevel;
@@ -171,74 +163,72 @@ class LambdaLoggingConfig extends kernel.TraceableElement {
   attr String logGroupName;
 }
 
-/** Represents the Lambda Layer Version concept in this model. */
 class LambdaLayerVersion extends awspsmcore.AwsResource {
   attr String layerName;
   attr String contentUri;
   attr String[*] compatibleRuntimes;
-  attr awspsmenums.LambdaArchitecture[*] compatibleArchitectures;
   attr String licenseInfo;
+  attr awspsmenums.LambdaArchitecture[*] compatibleArchitectures;
 }
 
-/** Represents the Lambda Layer Permission concept in this model. */
 class LambdaLayerPermission extends awspsmcore.AwsResource {
   attr String action;
   attr String principal;
   attr String organizationId;
+
   ref LambdaLayerVersion[1] layerVersion;
 }
 
-/** Represents the Lambda Version concept in this model. */
 class LambdaVersion extends awspsmcore.AwsResource {
   attr String versionDescription;
+
   val LambdaProvisionedConcurrencyConfig[?] provisionedConcurrencyConfig;
+
   ref AwsLambdaFunction[1]#versions function;
 }
 
-/** Represents the Lambda Alias concept in this model. */
 class LambdaAlias extends awspsmcore.AwsResource {
   attr String[1] aliasName;
   attr String functionVersion;
   attr String routingConfig;
+
   val LambdaProvisionedConcurrencyConfig[?] provisionedConcurrencyConfig;
+
   ref AwsLambdaFunction[1]#aliases function;
   ref LambdaVersion[?] version;
 }
 
-/** Represents the Lambda Provisioned Concurrency Config concept in this model. */
 class LambdaProvisionedConcurrencyConfig extends kernel.TraceableElement {
   attr Integer[1] provisionedConcurrentExecutions;
 }
 
-/** Represents the Lambda Permission concept in this model. */
 class LambdaPermission extends awspsmcore.AwsResource {
   attr String[1] action;
   attr String[1] principal;
   attr String sourceArn;
   attr String sourceAccount;
   attr awspsmenums.LambdaFunctionUrlAuthType functionUrlAuthType;
+
   ref AwsLambdaFunction[1]#permissions function;
 }
 
-/** Represents the Lambda Function Url concept in this model. */
 class LambdaFunctionUrl extends awspsmcore.AwsResource {
   attr awspsmenums.LambdaFunctionUrlAuthType[1] authType;
   attr awspsmenums.LambdaInvokeMode invokeMode;
+
   val LambdaUrlCorsConfiguration[?] cors;
+
   ref AwsLambdaFunction[1]#functionUrl function;
 }
 
-/** Represents the Lambda Url Cors Configuration concept in this model. */
 class LambdaUrlCorsConfiguration extends awspsmcore.CorsConfiguration {
 }
 
-/** Represents the Lambda File System Config concept in this model. */
 class LambdaFileSystemConfig extends kernel.TraceableElement {
   attr String[1] arn;
   attr String[1] localMountPath;
 }
 
-/** Represents the Code Signing Config concept in this model. */
 class CodeSigningConfig extends awspsmcore.AwsResource {
   attr String allowedPublishers;
   attr String codeSigningPolicies;

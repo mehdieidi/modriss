@@ -1,4 +1,3 @@
-/** Defines the awspsm workflow metamodel package. */
 @namespace(uri="https://modless.org/awspsm/workflow/1.0", prefix="awspsmworkflow")
 package awspsmworkflow;
 
@@ -8,34 +7,33 @@ import "awspsm-core.ecore";
 import "awspsm-security.ecore";
 import "awspsm-observability.ecore";
 
-/** Represents the Step Function State Machine concept in this model. */
 class StepFunctionStateMachine extends awspsmcore.AwsResource {
   attr String stateMachineName;
-  attr awspsmenums.StepFunctionType[1] stateMachineType;
   attr String definitionUri;
   attr String definitionString;
   attr String definitionSubstitutionsJson;
   attr Boolean publishAlias;
   attr String aliasName;
-  ref awspsmsecurity.IamRole[1] role;
+  attr awspsmenums.StepFunctionType[1] stateMachineType;
+
   val StepFunctionLoggingConfig[?] logging;
   val StepFunctionTracingConfig[?] tracing;
   val AslDocument[?] aslDocument;
   val SamStateMachineEvent[*] samEvents;
+
+  ref awspsmsecurity.IamRole[1] role;
 }
 
-/** Represents the Asl Document concept in this model. */
 class AslDocument extends kernel.StructuredDocument {
   attr String comment;
   attr String queryLanguage;
   attr String[1] startAt;
+
   val AslState[+] states;
 }
 
-/** Represents the Asl State concept in this model. */
 class AslState extends kernel.TraceableElement {
   attr String[1] stateName;
-  attr awspsmenums.AslStateType[1] type;
   attr String resource;
   attr String nextStateName;
   attr Boolean end;
@@ -47,32 +45,34 @@ class AslState extends kernel.TraceableElement {
   attr String assignJson;
   attr Integer timeoutSeconds;
   attr Integer heartbeatSeconds;
+  attr awspsmenums.AslStateType[1] type;
+
   val AslRetryRule[*] retry;
   val AslCatchRule[*] catch;
   val AslChoiceRule[*] choices;
   val AslBranch[*] branches;
   val AslMapConfig[?] mapConfig;
+
   ref AslState[?] nextState;
   ref awspsmcore.AwsResource[?] invokedResource;
 }
 
-/** Represents the Asl Branch concept in this model. */
 class AslBranch extends kernel.TraceableElement {
   attr String[1] startAt;
+
   val AslState[+] states;
 }
 
-/** Represents the Asl Map Config concept in this model. */
 class AslMapConfig extends kernel.TraceableElement {
   attr String itemsPath;
   attr String itemSelectorJson;
   attr Integer maxConcurrency;
   attr Boolean distributed;
   attr String resultWriterJson;
+
   val AslBranch[?] itemProcessor;
 }
 
-/** Represents the Asl Retry Rule concept in this model. */
 class AslRetryRule extends kernel.TraceableElement {
   attr String[*] errorEquals;
   attr Integer intervalSeconds;
@@ -82,34 +82,33 @@ class AslRetryRule extends kernel.TraceableElement {
   attr String jitterStrategy;
 }
 
-/** Represents the Asl Catch Rule concept in this model. */
 class AslCatchRule extends kernel.TraceableElement {
   attr String[*] errorEquals;
   attr String resultPath;
+
   ref AslState[1] nextState;
 }
 
-/** Represents the Asl Choice Rule concept in this model. */
 class AslChoiceRule extends kernel.TraceableElement {
   attr String conditionExpression;
   attr String variable;
+
   ref AslState[1] nextState;
 }
 
-/** Represents the Step Function Logging Config concept in this model. */
 class StepFunctionLoggingConfig extends kernel.TraceableElement {
   attr Boolean includeExecutionData;
   attr String level;
+
   ref awspsmobservability.CloudWatchLogGroup[1] logGroup;
 }
 
-/** Represents the Step Function Tracing Config concept in this model. */
 class StepFunctionTracingConfig extends awspsmcore.TracingConfig {
 }
 
-/** Represents the Sam State Machine Event concept in this model. */
 class SamStateMachineEvent extends kernel.TraceableElement {
   attr String[1] eventName;
   attr String[1] eventType;
+
   val awspsmcore.NativeProperty[*] properties;
 }

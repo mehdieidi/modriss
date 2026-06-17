@@ -1,4 +1,3 @@
-/** Defines the awspsm integrations metamodel package. */
 @namespace(uri="https://modless.org/awspsm/integrations/1.0", prefix="awspsmintegrations")
 package awspsmintegrations;
 
@@ -12,18 +11,13 @@ import "awspsm-storage.ecore";
 import "awspsm-security.ecore";
 import "awspsm-workflow.ecore";
 
-/**
- * Non-deployable visual relationship objects for editors.
- * Deployable relationships remain stack-contained resources such as LambdaPermission,
- * SnsSubscription, QueuePolicy, TopicPolicy, and EventSourceMapping.
- */
 abstract class AwsRelationshipView extends kernel.TraceableElement {
   attr Boolean generated;
+
   ref awspsmcore.AwsResource[1] source;
   ref awspsmcore.AwsResource[1] target;
 }
 
-/** Represents the Api Gateway Lambda Integration View concept in this model. */
 class ApiGatewayLambdaIntegrationView extends AwsRelationshipView {
   ref awspsmapi.ApiGatewayRoute[1] route;
   ref awspsmcompute.AwsLambdaFunction[1] function;
@@ -31,7 +25,6 @@ class ApiGatewayLambdaIntegrationView extends AwsRelationshipView {
   ref awspsmcompute.LambdaPermission[?] permission;
 }
 
-/** Represents the Event Bridge Lambda Target View concept in this model. */
 class EventBridgeLambdaTargetView extends AwsRelationshipView {
   ref awspsmevents.EventBridgeRule[1] rule;
   ref awspsmevents.EventBridgeTarget[1] targetRow;
@@ -39,7 +32,6 @@ class EventBridgeLambdaTargetView extends AwsRelationshipView {
   ref awspsmcompute.LambdaPermission[?] permission;
 }
 
-/** Represents the Sns Lambda Subscription View concept in this model. */
 class SnsLambdaSubscriptionView extends AwsRelationshipView {
   ref awspsmmessaging.SnsTopic[1] topic;
   ref awspsmcompute.AwsLambdaFunction[1] function;
@@ -47,21 +39,18 @@ class SnsLambdaSubscriptionView extends AwsRelationshipView {
   ref awspsmcompute.LambdaPermission[?] permission;
 }
 
-/** Represents the Sqs Lambda Event Source View concept in this model. */
 class SqsLambdaEventSourceView extends AwsRelationshipView {
   ref awspsmmessaging.SqsQueue[1] queue;
   ref awspsmcompute.AwsLambdaFunction[1] function;
   ref awspsmcompute.SqsLambdaEventSourceMapping[1] mapping;
 }
 
-/** Represents the Step Function Event Bridge Target View concept in this model. */
 class StepFunctionEventBridgeTargetView extends AwsRelationshipView {
   ref awspsmevents.EventBridgeRule[1] rule;
   ref awspsmworkflow.StepFunctionStateMachine[1] stateMachine;
   ref awspsmevents.EventBridgeTarget[1] targetRow;
 }
 
-/** Represents the S3 Lambda Notification View concept in this model. */
 class S3LambdaNotificationView extends AwsRelationshipView {
   ref awspsmstorage.S3Bucket[1] bucket;
   ref awspsmcompute.AwsLambdaFunction[1] function;
@@ -69,7 +58,6 @@ class S3LambdaNotificationView extends AwsRelationshipView {
   ref awspsmcompute.LambdaPermission[1] permission;
 }
 
-/** Represents the S3 Queue Notification View concept in this model. */
 class S3QueueNotificationView extends AwsRelationshipView {
   ref awspsmstorage.S3Bucket[1] bucket;
   ref awspsmmessaging.SqsQueue[1] queue;
@@ -77,7 +65,6 @@ class S3QueueNotificationView extends AwsRelationshipView {
   ref awspsmmessaging.SqsQueuePolicy[?] queuePolicy;
 }
 
-/** Represents the S3 Topic Notification View concept in this model. */
 class S3TopicNotificationView extends AwsRelationshipView {
   ref awspsmstorage.S3Bucket[1] bucket;
   ref awspsmmessaging.SnsTopic[1] topic;

@@ -1,8 +1,6 @@
-/** Defines the awspsm enums metamodel package. */
 @namespace(uri="https://modless.org/awspsm/enums/1.0", prefix="awspsmenums")
 package awspsmenums;
 
-/** Defines the supported Aws Environment Class values. */
 enum AwsEnvironmentClass {
   DEV;
   TEST;
@@ -12,14 +10,12 @@ enum AwsEnvironmentClass {
   DR;
 }
 
-/** Defines the supported Aws Partition values. */
 enum AwsPartition {
   AWS;
   AWS_US_GOV;
   AWS_CN;
 }
 
-/** Defines the supported Cloud Formation Deletion Policy values. */
 enum CloudFormationDeletionPolicy {
   DELETE;
   RETAIN;
@@ -27,14 +23,12 @@ enum CloudFormationDeletionPolicy {
   SNAPSHOT;
 }
 
-/** Defines the supported Cloud Formation Update Replace Policy values. */
 enum CloudFormationUpdateReplacePolicy {
   DELETE;
   RETAIN;
   SNAPSHOT;
 }
 
-/** Defines the supported Decision values. */
 enum Decision {
   UNDECIDED;
   REQUIRED;
@@ -44,58 +38,49 @@ enum Decision {
   GENERATOR_OWNED;
 }
 
-/** Defines the supported Package Type values. */
 enum PackageType {
   ZIP;
   IMAGE;
 }
 
-/** Defines the supported Lambda Architecture values. */
 enum LambdaArchitecture {
   X86_64;
   ARM64;
 }
 
-/** Defines the supported Lambda Tracing Mode values. */
 enum LambdaTracingMode {
   ACTIVE;
   PASS_THROUGH;
   DISABLED;
 }
 
-/** Defines the supported Lambda Runtime Management Mode values. */
 enum LambdaRuntimeManagementMode {
   AUTO;
   FUNCTION_UPDATE;
   MANUAL;
 }
 
-/** Defines the supported Lambda Snap Start Apply On values. */
 enum LambdaSnapStartApplyOn {
   NONE;
   PUBLISHED_VERSIONS;
 }
 
-/** Defines the supported Lambda Invoke Mode values. */
 enum LambdaInvokeMode {
   BUFFERED;
   RESPONSE_STREAM;
 }
 
-/** Defines the supported Lambda Function Url Auth Type values. */
 enum LambdaFunctionUrlAuthType {
   NONE;
   AWS_IAM;
 }
 
-/** Defines the supported Lambda Recursive Loop Mode values. */
 enum LambdaRecursiveLoopMode {
   ALLOW;
   TERMINATE;
   UNSPECIFIED;
 }
 
-/** Defines the supported Lambda Event Source Kind values. */
 enum LambdaEventSourceKind {
   SQS;
   DYNAMODB_STREAM;
@@ -107,28 +92,24 @@ enum LambdaEventSourceKind {
   OTHER;
 }
 
-/** Defines the supported Starting Position values. */
 enum StartingPosition {
   TRIM_HORIZON;
   LATEST;
   AT_TIMESTAMP;
 }
 
-/** Defines the supported Api Gateway Kind values. */
 enum ApiGatewayKind {
   HTTP_API;
   REST_API;
   WEBSOCKET_API;
 }
 
-/** Defines the supported Api Gateway Endpoint Type values. */
 enum ApiGatewayEndpointType {
   REGIONAL;
   EDGE;
   PRIVATE;
 }
 
-/** Defines the supported Api Gateway Authorization Type values. */
 enum ApiGatewayAuthorizationType {
   NONE;
   AWS_IAM;
@@ -138,7 +119,6 @@ enum ApiGatewayAuthorizationType {
   API_KEY;
 }
 
-/** Defines the supported Api Gateway Integration Type values. */
 enum ApiGatewayIntegrationType {
   AWS_PROXY;
   AWS;
@@ -147,7 +127,6 @@ enum ApiGatewayIntegrationType {
   MOCK;
 }
 
-/** Defines the supported Api Gateway Http Method values. */
 enum ApiGatewayHttpMethod {
   GET;
   POST;
@@ -159,7 +138,6 @@ enum ApiGatewayHttpMethod {
   ANY;
 }
 
-/** Defines the supported Event Bridge Http Method values. */
 enum EventBridgeHttpMethod {
   GET;
   POST;
@@ -170,7 +148,6 @@ enum EventBridgeHttpMethod {
   OPTIONS;
 }
 
-/** Defines the supported Event Bridge Target Kind values. */
 enum EventBridgeTargetKind {
   LAMBDA;
   SQS;
@@ -182,20 +159,17 @@ enum EventBridgeTargetKind {
   OTHER_AWS_RESOURCE;
 }
 
-/** Defines the supported Event Bridge Connection Authorization Type values. */
 enum EventBridgeConnectionAuthorizationType {
   API_KEY;
   BASIC;
   OAUTH_CLIENT_CREDENTIALS;
 }
 
-/** Defines the supported Sqs Queue Type values. */
 enum SqsQueueType {
   STANDARD;
   FIFO;
 }
 
-/** Defines the supported Sns Protocol values. */
 enum SnsProtocol {
   LAMBDA;
   SQS;
@@ -207,19 +181,16 @@ enum SnsProtocol {
   APPLICATION;
 }
 
-/** Defines the supported Sns Filter Policy Scope values. */
 enum SnsFilterPolicyScope {
   MESSAGE_ATTRIBUTES;
   MESSAGE_BODY;
 }
 
-/** Defines the supported Step Function Type values. */
 enum StepFunctionType {
   STANDARD;
   EXPRESS;
 }
 
-/** Defines the supported Asl State Type values. */
 enum AslStateType {
   PASS;
   TASK;
@@ -231,33 +202,28 @@ enum AslStateType {
   MAP;
 }
 
-/** Defines the supported Dynamo Db Billing Mode values. */
 enum DynamoDbBillingMode {
   PAY_PER_REQUEST;
   PROVISIONED;
 }
 
-/** Defines the supported Dynamo Db Attribute Type values. */
 enum DynamoDbAttributeType {
   S;
   N;
   B;
 }
 
-/** Defines the supported Dynamo Db Key Type values. */
 enum DynamoDbKeyType {
   HASH;
   RANGE;
 }
 
-/** Defines the supported Dynamo Db Projection Type values. */
 enum DynamoDbProjectionType {
   ALL;
   KEYS_ONLY;
   INCLUDE;
 }
 
-/** Defines the supported Dynamo Db Stream View Type values. */
 enum DynamoDbStreamViewType {
   KEYS_ONLY;
   NEW_IMAGE;
@@ -265,53 +231,45 @@ enum DynamoDbStreamViewType {
   NEW_AND_OLD_IMAGES;
 }
 
-/** Defines the supported Dynamo Db Table Class values. */
 enum DynamoDbTableClass {
   STANDARD;
   STANDARD_INFREQUENT_ACCESS;
 }
 
-/** Defines the supported S3 Versioning Status values. */
 enum S3VersioningStatus {
   ENABLED;
   SUSPENDED;
 }
 
-/** Defines the supported S3 Block Public Access Mode values. */
 enum S3BlockPublicAccessMode {
   STRICT_BLOCK_ALL;
   CUSTOM;
   DISABLED_NOT_RECOMMENDED;
 }
 
-/** Defines the supported Cognito Mfa Configuration values. */
 enum CognitoMfaConfiguration {
   OFF;
   ON;
   OPTIONAL;
 }
 
-/** Defines the supported Iam Effect values. */
 enum IamEffect {
   ALLOW;
   DENY;
 }
 
-/** Defines the supported Parameter Type values. */
 enum ParameterType {
   STRING;
   STRING_LIST;
   SECURE_STRING;
 }
 
-/** Defines the supported Ssm Parameter Tier values. */
 enum SsmParameterTier {
   STANDARD;
   ADVANCED;
   INTELLIGENT_TIERING;
 }
 
-/** Defines the supported Value Source Kind values. */
 enum ValueSourceKind {
   PLAINTEXT;
   CLOUDFORMATION_REF;
@@ -327,7 +285,6 @@ enum ValueSourceKind {
   MAP;
 }
 
-/** Defines the supported Value Type values. */
 enum ValueType {
   STRING;
   NUMBER;
@@ -341,7 +298,6 @@ enum ValueType {
   SECRET;
 }
 
-/** Defines the supported Cloud Watch Comparison Operator values. */
 enum CloudWatchComparisonOperator {
   GREATER_THAN_OR_EQUAL_TO_THRESHOLD;
   GREATER_THAN_THRESHOLD;
@@ -352,14 +308,12 @@ enum CloudWatchComparisonOperator {
   GREATER_THAN_UPPER_THRESHOLD;
 }
 
-/** Defines the supported Log Group Class values. */
 enum LogGroupClass {
   STANDARD;
   INFREQUENT_ACCESS;
   DELIVERY;
 }
 
-/** Defines the supported Sam Capability values. */
 enum SamCapability {
   CAPABILITY_IAM;
   CAPABILITY_NAMED_IAM;

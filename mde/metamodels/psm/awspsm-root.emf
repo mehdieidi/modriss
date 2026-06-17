@@ -1,4 +1,3 @@
-/** Defines the awspsm root metamodel package. */
 @namespace(uri="https://modless.org/awspsm/1.0", prefix="awspsm")
 package awspsm;
 
@@ -17,19 +16,17 @@ import "awspsm-api.ecore";
 import "awspsm-events.ecore";
 import "awspsm-integrations.ecore";
 
-/** Represents the Aws Psm Model concept in this model. */
 class AwsPsmModel extends kernel.TraceableElement {
-  attr awspsmenums.AwsPartition[1] partition;
   attr String accountStrategy;
   attr String regionStrategy;
   attr String defaultRegion;
   attr String namingConvention;
   attr String taggingStrategy;
   attr Boolean productionMode;
+  attr awspsmenums.AwsPartition[1] partition;
 
   val awspsmcore.AwsStage[+] stages;
   val awspsmcore.SamStack[+] stacks;
-  readonly transient volatile derived ref awspsmcore.AwsResource[*] allResources;
   val awspsmcore.SamGlobals[?] samGlobals;
   val awspsmcore.AwsNamingPolicy[?] namingPolicy;
   val awspsmcore.AwsTaggingPolicy[?] taggingPolicy;
@@ -38,4 +35,6 @@ class AwsPsmModel extends kernel.TraceableElement {
   val kernel.ProductionReadinessAssessment[?] readiness;
   val kernel.StructuredDocument[*] documents;
   val awspsmintegrations.AwsRelationshipView[*] relationshipViews;
+
+  readonly transient volatile derived ref awspsmcore.AwsResource[*] allResources;
 }
