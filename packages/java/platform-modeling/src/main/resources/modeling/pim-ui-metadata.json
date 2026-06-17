@@ -22,7 +22,7 @@
         "notation": {
           "tag": "ROOT",
           "shape": "workspace-container",
-          "lineFields": ["architectureStyle", "validationProfile", "domainName"]
+          "lineFields": ["architectureStyle", "domainName"]
         }
       }
     },
@@ -108,7 +108,7 @@
       "metadata": {
         "icon": "hub",
         "color": "#DB2777",
-        "category": "Eventing",
+        "category": "Messaging",
         "notation": {
           "tag": "FLOW",
           "shape": "event-flow",
@@ -988,7 +988,6 @@
     "modelLevel": "PIM",
     "name": "",
     "architectureStyle": "EVENT_DRIVEN_SERVERLESS",
-    "providerIndependent": true,
     "diagram": {
       "elements": [],
       "relationships": []
@@ -1064,7 +1063,7 @@
       "label": "Event Source",
       "icon": "input",
       "color": "#DB2777",
-      "category": "Eventing",
+      "category": "Messaging",
       "supportOnly": true,
       "creatable": false
     },
@@ -1467,7 +1466,7 @@
       "notation": {
         "tag": "PIM",
         "shape": "workspace-container",
-        "lineFields": ["architectureStyle", "validationProfile", "domainName"]
+        "lineFields": ["architectureStyle", "domainName"]
       },
       "containedOnly": true,
       "creatable": false

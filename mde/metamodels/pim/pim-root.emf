@@ -1,34 +1,24 @@
-/** Defines the pim root metamodel package. */
 @namespace(uri="https://modless.org/pim/1.0", prefix="pim")
 package pim;
 
-import "../shared/kernel.ecore";
 import "pim-types.ecore";
+import "pim-deployment.ecore";
 import "pim-contracts.ecore";
 import "pim-policy.ecore";
-import "pim-config.ecore";
-import "pim-security.ecore";
-import "pim-data.ecore";
-import "pim-external.ecore";
 import "pim-compute.ecore";
 import "pim-api.ecore";
-import "pim-workflow.ecore";
 import "pim-integration.ecore";
-import "pim-deployment.ecore";
-
-/*
- * Root assembly model for the provider-independent serverless PIM v1.0.
- * Root containment is permissive for draft and AI-assisted editing; readiness
- * constraints decide when the model is transformation/deployment/production-ready.
- */
+import "pim-data.ecore";
+import "pim-workflow.ecore";
+import "pim-external.ecore";
+import "pim-security.ecore";
+import "pim-config.ecore";
+import "../shared/kernel.ecore";
 
 class PIMModel extends kernel.TraceableElement {
-  attr pimtypes.ArchitectureStyle[1] architectureStyle;
-  attr pimtypes.ValidationProfile validationProfile;
   attr String domainName;
-  attr String architectureRationale;
+  attr pimtypes.ArchitectureStyle[1] architectureStyle;
   attr String defaultCorrelationIdName;
-  attr Boolean providerIndependent = true;
 
   val deployment.ServerlessService[*] services;
   val deployment.ServiceElementMembership[*] serviceMemberships;
@@ -39,28 +29,34 @@ class PIMModel extends kernel.TraceableElement {
   val deployment.PlatformMappingAssessment[*] platformMappingAssessments;
 
   val contracts.Schema[*] schemas;
+  val contracts.EventType[*] eventTypes;
+
   val policy.BusinessRule[*] businessRules;
   val policy.DecisionModel[*] decisionModels;
+  val policy.ArchitecturePolicy[*] policies;
+
   val compute.Function[*] functions;
+  val compute.Trigger[*] triggers;
+
   val api.Api[*] apis;
-  val contracts.EventType[*] eventTypes;
+
   val integration.EventChannel[*] channels;
   val integration.Schedule[*] schedules;
-  val compute.Trigger[*] triggers;
+  val integration.Flow[*] flows;
 
   val data.DataStore[*] dataStores;
   val data.ObjectStore[*] objectStores;
   val data.DataAccess[*] dataAccesses;
+
   val workflow.Workflow[*] workflows;
   val workflow.HumanTask[*] humanTasks;
+
   val external.ExternalEndpoint[*] externalEndpoints;
   val external.ExternalAdapter[*] externalAdapters;
 
   val security.IdentityProvider[*] identityProviders;
   val security.Principal[*] principals;
-  val policy.ArchitecturePolicy[*] policies;
 
-  val integration.Flow[*] flows;
   val config.ConfigurationSet[*] configurations;
   val config.Secret[*] secrets;
 

@@ -90,7 +90,7 @@ stacks, integrations, IAM, operations, and generated infrastructure relationship
 | Reference edges       | Examples include `ROUTES_TO`, `INVOKES`, `TARGETS`, `PERMISSION`, `NETWORKS_WITH`, `OBSERVES`, `USES_ROLE`, and `USES_SECRET`.                                                                                                        |
 | Contained details     | IAM documents/statements/principals/conditions, secret-generation settings, SNS filters, metric transformations, value expressions, native properties, parameters, mappings, and ASL/OpenAPI structures use structured detail syntax. |
 | Integration shortcuts | Common AWS integrations are displayed as concise semantic edges while preserving their underlying deployable resource objects.                                                                                                        |
-| Complexity views      | Overview, stage/stack, API Gateway, Lambda, eventing/messaging, Step Functions, storage, IAM/secrets, Cognito, networking, observability, CloudFormation/SAM, trace/readiness, and integration shortcuts.                             |
+| Complexity views      | Overview, stage/stack, API Gateway, Lambda, event/messaging, Step Functions, storage, IAM/secrets, Cognito, networking, observability, CloudFormation/SAM, trace/readiness, and integration shortcuts.                                |
 
 PSM deliberately keeps deeply nested CloudFormation-style configuration out of the main topology.
 Such objects remain fully editable through contained tables, trees, and structured panels.

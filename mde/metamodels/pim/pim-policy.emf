@@ -1,4 +1,3 @@
-/** Defines the pim policy metamodel package. */
 @namespace(uri="https://modless.org/pim/policy/1.0", prefix="policy")
 package policy;
 
@@ -6,18 +5,16 @@ import "../shared/kernel.ecore";
 import "pim-types.ecore";
 import "pim-contracts.ecore";
 
-/** Represents the Architecture Policy concept in this model. */
 abstract class ArchitecturePolicy extends kernel.TraceableElement {
   attr String policyScope;
   attr Boolean productionRequired;
+
   ref kernel.PolicyTarget[*] attachedTo;
 }
 
-/** Represents the Policy Setting concept in this model. */
 abstract class PolicySetting extends kernel.TraceableElement {
 }
 
-/** Represents the Data Protection Policy concept in this model. */
 class DataProtectionPolicy extends ArchitecturePolicy {
   attr String classification;
   attr Boolean encryptionRequired;
@@ -29,7 +26,6 @@ class DataProtectionPolicy extends ArchitecturePolicy {
   attr String residencyRequirement;
 }
 
-/** Represents the Data Quality Policy concept in this model. */
 class DataQualityPolicy extends ArchitecturePolicy {
   attr Boolean validationRequired;
   attr Boolean completenessCheckRequired;
@@ -39,7 +35,6 @@ class DataQualityPolicy extends ArchitecturePolicy {
   attr String measurementRule;
 }
 
-/** Represents the Compliance Policy concept in this model. */
 class CompliancePolicy extends ArchitecturePolicy {
   attr String regulation;
   attr String controlId;
@@ -47,42 +42,43 @@ class CompliancePolicy extends ArchitecturePolicy {
   attr Boolean auditReportRequired;
 }
 
-/** Represents the Business Rule concept in this model. */
 class BusinessRule extends kernel.TraceableElement, kernel.PolicyTarget {
   attr String naturalLanguageRule;
+
   val kernel.Expression[?] expression;
+
   ref contracts.Schema[*] inputSchemas;
   ref contracts.Schema[*] outputSchemas;
   ref kernel.FunctionTarget[*] enforcedBy;
 }
 
-/** Represents the Decision Model concept in this model. */
 class DecisionModel extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget {
   attr String hitPolicy;
+
+  val DecisionRule[+] rules;
+
   ref contracts.Schema[*] inputs;
   ref contracts.Schema[*] outputs;
-  val DecisionRule[+] rules;
 }
 
-/** Represents the Decision Rule concept in this model. */
 class DecisionRule extends kernel.TraceableElement {
   val kernel.Expression[1] condition;
   val kernel.Expression[1] outcome;
 }
 
-/** Represents the Resilience Policy concept in this model. */
 class ResiliencePolicy extends ArchitecturePolicy {
   attr Boolean retryEnabled;
   attr Boolean deadLetterRequired;
   attr Boolean fallbackRequired;
   attr Boolean circuitBreakerRequired;
   attr Boolean timeoutRequired;
+
   val RetryPolicy[?] retry;
   val DeadLetterPolicy[?] deadLetter;
+
   ref TimeoutPolicy[?] timeout;
 }
 
-/** Represents the Retry Policy concept in this model. */
 class RetryPolicy extends PolicySetting {
   attr Integer maxAttempts;
   attr Integer initialDelaySeconds;
@@ -92,22 +88,20 @@ class RetryPolicy extends PolicySetting {
   attr String[*] nonRetryableErrors;
 }
 
-/** Represents the Dead Letter Policy concept in this model. */
 class DeadLetterPolicy extends PolicySetting {
   attr Boolean required;
   attr String reason;
   attr String retentionPeriod;
   attr Boolean alarmRequired;
+
   ref kernel.EventCarrier[?] deadLetterChannel;
 }
 
-/** Represents the Timeout Policy concept in this model. */
 class TimeoutPolicy extends ArchitecturePolicy {
   attr Integer timeoutSeconds;
   attr Integer clientTimeoutSeconds;
 }
 
-/** Represents the Idempotency Policy concept in this model. */
 class IdempotencyPolicy extends ArchitecturePolicy {
   attr String keySource;
   attr Boolean storeRequired;
@@ -117,7 +111,6 @@ class IdempotencyPolicy extends ArchitecturePolicy {
   attr Boolean appliesToDuplicateRequests;
 }
 
-/** Represents the Concurrency Policy concept in this model. */
 class ConcurrencyPolicy extends ArchitecturePolicy {
   attr Integer maxConcurrency;
   attr Integer reservedConcurrencyHint;
@@ -126,7 +119,6 @@ class ConcurrencyPolicy extends ArchitecturePolicy {
   attr String scalingRationale;
 }
 
-/** Represents the Rate Limit Policy concept in this model. */
 class RateLimitPolicy extends ArchitecturePolicy {
   attr Integer requestsPerSecond;
   attr Integer burstLimit;
@@ -134,24 +126,21 @@ class RateLimitPolicy extends ArchitecturePolicy {
   attr Boolean clientSpecific;
 }
 
-/** Represents the Batch Policy concept in this model. */
 class BatchPolicy extends ArchitecturePolicy {
   attr Integer batchSize;
   attr Integer maxBatchingWindowSeconds;
-  attr pimtypes.Decision[1] partialFailureHandling;
-  attr pimtypes.Decision[1] bisectOnError;
   attr Integer parallelizationFactor;
   attr String decisionRationale;
+  attr pimtypes.Decision[1] bisectOnError;
+  attr pimtypes.Decision[1] partialFailureHandling;
 }
 
-/** Represents the Ordering Policy concept in this model. */
 class OrderingPolicy extends ArchitecturePolicy {
-  attr pimtypes.OrderingRequirement[1] orderingRequirement;
   attr String orderingKey;
   attr Boolean strictOrderingRequired;
+  attr pimtypes.OrderingRequirement[1] orderingRequirement;
 }
 
-/** Represents the Cache Policy concept in this model. */
 class CachePolicy extends ArchitecturePolicy {
   attr Boolean cacheRequired;
   attr Integer ttlSeconds;
@@ -159,7 +148,6 @@ class CachePolicy extends ArchitecturePolicy {
   attr Boolean privateCache;
 }
 
-/** Represents the Backup Policy concept in this model. */
 class BackupPolicy extends ArchitecturePolicy {
   attr Boolean backupRequired;
   attr String backupFrequency;
@@ -167,14 +155,12 @@ class BackupPolicy extends ArchitecturePolicy {
   attr String recoveryTimeObjective;
 }
 
-/** Represents the Retention Policy concept in this model. */
 class RetentionPolicy extends ArchitecturePolicy {
   attr String retentionPeriod;
   attr Boolean deletionAfterRetention;
   attr Boolean legalHoldPossible;
 }
 
-/** Represents the Cost Policy concept in this model. */
 class CostPolicy extends ArchitecturePolicy {
   attr String budget;
   attr String costDriver;
@@ -182,7 +168,6 @@ class CostPolicy extends ArchitecturePolicy {
   attr Boolean alarmsRequired;
 }
 
-/** Represents the Observability Config concept in this model. */
 class ObservabilityConfig extends ArchitecturePolicy {
   attr Boolean loggingEnabled;
   attr Boolean metricsEnabled;
@@ -191,6 +176,7 @@ class ObservabilityConfig extends ArchitecturePolicy {
   attr Boolean dashboardRequired;
   attr Boolean correlationIdRequired;
   attr String correlationIdField;
+
   val LoggingPolicy[?] logging;
   val MetricPolicy[*]#observability metrics;
   val TracingPolicy[?] tracing;
@@ -198,7 +184,6 @@ class ObservabilityConfig extends ArchitecturePolicy {
   val Slo[*]#observability slos;
 }
 
-/** Represents the Logging Policy concept in this model. */
 class LoggingPolicy extends PolicySetting {
   attr String logFormat;
   attr String logLevel;
@@ -208,53 +193,53 @@ class LoggingPolicy extends PolicySetting {
   attr String retentionPeriod;
 }
 
-/** Represents the Metric Policy concept in this model. */
 class MetricPolicy extends PolicySetting {
   attr String metricName;
   attr String unit;
   attr String statistic;
   attr Boolean businessMetric;
+
   readonly transient ref ObservabilityConfig[1]#metrics observability;
+
   val MetricDimension[*]#metric dimensions;
 }
 
-/** Represents the Metric Dimension concept in this model. */
 class MetricDimension extends kernel.TraceableElement {
   attr String[1] key;
   attr String valueExpression;
+
   readonly transient ref MetricPolicy[1]#dimensions metric;
 }
 
-/** Represents the Tracing Policy concept in this model. */
 class TracingPolicy extends PolicySetting {
   attr Boolean tracingRequired;
   attr String samplingPolicy;
   attr Boolean propagateTraceContext;
 }
 
-/** Represents the Alert Policy concept in this model. */
 class AlertPolicy extends PolicySetting {
   attr String metricName;
   attr String condition;
-  val kernel.Expression[?] conditionExpression;
   attr String threshold;
   attr Integer evaluationPeriods;
   attr String severity;
   attr String notificationTarget;
+
+  val kernel.Expression[?] conditionExpression;
+
   readonly transient ref ObservabilityConfig[1]#alerts observability;
 }
 
-/** Represents the Slo concept in this model. */
 class Slo extends kernel.TraceableElement {
   attr String objectiveName;
   attr String metric;
   attr String target;
   attr String measurementWindow;
   attr String errorBudgetPolicy;
+
   readonly transient ref ObservabilityConfig[1]#slos observability;
 }
 
-/** Represents the Cors Policy concept in this model. */
 class CorsPolicy extends ArchitecturePolicy {
   attr String[*] allowedOrigins;
   attr String[*] allowedMethods;

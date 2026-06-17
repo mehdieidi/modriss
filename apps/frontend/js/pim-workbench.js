@@ -847,11 +847,6 @@ function renderDashboard() {
       <input data-pim-root-field="architectureStyle" type="text"
           value="${escapeHtml(state.baseModel?.architectureStyle || "")}">
     </label>
-    <label class="cim-form-field">
-      <span>providerIndependent</span>
-      <input data-pim-root-field="providerIndependent" type="text"
-          value="${escapeHtml(String(state.baseModel?.providerIndependent ?? ""))}">
-    </label>
   </section>`;
   const actionsHtml = `<section class="cim-view-entry-list">
     <div class="cim-section-title">Actions</div>
@@ -1424,7 +1419,6 @@ function createPimElement(type) {
 function createRequiredRoot() {
   state.baseModel ??= {};
   state.baseModel.architectureStyle ||= "EVENT_DRIVEN_SERVERLESS";
-  state.baseModel.providerIndependent = true;
   const center = currentCenter();
   const service =
     elementsMatchingTypes(["ServerlessService"])[0] ||
@@ -1502,7 +1496,7 @@ function updateField(rowId, field, rawValue, inputType = "text") {
 
 function updateRootField(field, value) {
   state.baseModel ??= {};
-  state.baseModel[field] = field === "providerIndependent" ? value !== "false" : value;
+  state.baseModel[field] = value;
   commitModelChange(`Updated ${field}`);
 }
 

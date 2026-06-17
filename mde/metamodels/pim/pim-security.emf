@@ -1,4 +1,3 @@
-/** Defines the pim security metamodel package. */
 @namespace(uri="https://modless.org/pim/security/1.0", prefix="security")
 package security;
 
@@ -6,9 +5,7 @@ import "../shared/kernel.ecore";
 import "pim-types.ecore";
 import "pim-policy.ecore";
 
-/** Represents the Identity Provider concept in this model. */
 class IdentityProvider extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr pimtypes.IdentityKind[1] identityKind;
   attr Boolean federationRequired;
   attr Boolean mfaRequired;
   attr String issuer;
@@ -18,34 +15,36 @@ class IdentityProvider extends kernel.TraceableElement, kernel.DeployableElement
   attr String jwksUri;
   attr String userAttributeRequirements;
   attr String passwordPolicyDescription;
+  attr pimtypes.IdentityKind[1] identityKind;
+
   ref Principal[*] principals;
 }
 
-/** Represents the Principal concept in this model. */
 class Principal extends kernel.TraceableElement, kernel.PolicyTarget, kernel.ProtectedResource {
   attr pimtypes.PrincipalKind[1] principalKind;
   attr String externalRef;
   attr Boolean privileged;
+
   val Permission[*]#principal permissions;
 }
 
-/** Represents the Permission concept in this model. */
 class Permission extends kernel.TraceableElement {
-  attr pimtypes.PermissionEffect[1] effect;
-  attr pimtypes.PermissionActionKind actionKind;
   attr String providerActionOverride;
   attr String action;
   attr String resource;
   attr String condition;
   attr String conditionExpression;
-  attr pimtypes.LeastPrivilegeStatus leastPrivilegeStatus;
   attr String leastPrivilegeRationale;
   attr Boolean leastPrivilegeConfirmed;
+  attr pimtypes.LeastPrivilegeStatus leastPrivilegeStatus;
+  attr pimtypes.PermissionEffect[1] effect;
+  attr pimtypes.PermissionActionKind actionKind;
+
   readonly transient ref Principal[1]#permissions principal;
+
   ref kernel.ProtectedResource[1] targetResource;
 }
 
-/** Represents the Security Policy concept in this model. */
 class SecurityPolicy extends policy.ArchitecturePolicy {
   attr Boolean authenticationRequired;
   attr Boolean authorizationRequired;
@@ -57,22 +56,23 @@ class SecurityPolicy extends policy.ArchitecturePolicy {
   attr String threatModelNotes;
 }
 
-/** Represents the Auth Policy concept in this model. */
 class AuthPolicy extends SecurityPolicy {
   attr String authScheme;
   attr Boolean mfaRequired;
   attr String tokenValidationRules;
   attr String scopesRequired;
   attr String requiredClaimsExpression;
+
   ref IdentityProvider[?] identityProvider;
 }
 
-/** Represents the Authorization Policy concept in this model. */
 class AuthorizationPolicy extends SecurityPolicy {
   attr String ruleExpression;
-  val kernel.Expression[?] rule;
   attr String roleOrScopeRequired;
   attr Boolean resourceLevelAuthorization;
+
+  val kernel.Expression[?] rule;
+
   ref Principal[*] allowedPrincipals;
   ref Permission[*] permissions;
 }

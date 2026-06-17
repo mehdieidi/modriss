@@ -717,7 +717,6 @@ export function populatePimRootContainments(root, graph) {
   root.eClass ||= "PIMModel";
   root.modelLevel ||= "PIM";
   root.architectureStyle ||= "EVENT_DRIVEN_SERVERLESS";
-  root.providerIndependent = root.providerIndependent !== false;
   PIM_ROOT_CONTAINMENTS.forEach((entry) => {
     root[entry.feature] = entry.singleton ? null : [];
   });

@@ -303,11 +303,6 @@ Example:
 ```evl
 context PIM!PIMModel {
 
-  constraint ProviderIndependentFlagMustBeTrue {
-    check : self.providerIndependent.isTrue()
-    message : "The PIM model must remain provider-independent."
-  }
-
   critique DefaultCorrelationIdShouldBeNamed {
     check : self.defaultCorrelationIdName.hasText()
     message : "A default correlation ID name is recommended."

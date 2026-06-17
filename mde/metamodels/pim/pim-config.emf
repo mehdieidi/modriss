@@ -1,20 +1,19 @@
-/** Defines the pim config metamodel package. */
 @namespace(uri="https://modless.org/pim/config/1.0", prefix="config")
 package config;
 
 import "../shared/kernel.ecore";
 import "pim-types.ecore";
 
-/** Represents the Configuration Set concept in this model. */
 class ConfigurationSet extends kernel.TraceableElement, kernel.DeployableElement, kernel.PolicyTarget, kernel.ConfigurableElement {
   attr pimtypes.ConfigScope[1] scope;
+
   val ConfigParameter[*]#configurationSet parameters;
   val EnvironmentVariable[*]#configurationSet environmentVariables;
+
   ref kernel.EnvironmentTarget[*] environments;
   ref kernel.ConfigurableElement[*] appliesTo;
 }
 
-/** Represents the Config Parameter concept in this model. */
 class ConfigParameter extends kernel.TraceableElement {
   attr pimtypes.ConfigScope scope;
   attr String valueKind;
@@ -23,36 +22,38 @@ class ConfigParameter extends kernel.TraceableElement {
   attr Boolean secret;
   attr Boolean required;
   attr String validationPattern;
+
   readonly transient ref ConfigurationSet[1]#parameters configurationSet;
 }
 
-/** Represents the Environment Variable concept in this model. */
 class EnvironmentVariable extends kernel.TraceableElement {
   attr String[1] variableName;
   attr String valueSource;
   attr Boolean secretReference;
+
   readonly transient ref ConfigurationSet[1]#environmentVariables configurationSet;
+
   ref ConfigParameter[?] parameter;
   ref Secret[?] secret;
 }
 
-/** Represents the Secret concept in this model. */
 class Secret extends kernel.TraceableElement, kernel.ProtectedResource, kernel.PolicyTarget {
-  attr pimtypes.SecretKind[1] secretKind;
   attr Boolean rotationRequired;
   attr String rotationFrequency;
   attr Boolean generatedReferenceOnly;
   attr Boolean environmentSpecific;
   attr String ownerTeam;
+  attr pimtypes.SecretKind[1] secretKind;
+
   ref CredentialRequirement[*]#secret usedForCredentials;
 }
 
-/** Represents the Credential Requirement concept in this model. */
 class CredentialRequirement extends kernel.TraceableElement, kernel.CredentialRequirementLike {
-  attr pimtypes.SecretKind[1] secretKind;
   attr String purpose;
   attr Boolean rotationRequired;
   attr String rotationFrequency;
   attr Boolean sharedAcrossEnvironments;
+  attr pimtypes.SecretKind[1] secretKind;
+
   ref Secret[?]#usedForCredentials secret;
 }

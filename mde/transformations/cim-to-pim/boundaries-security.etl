@@ -49,7 +49,6 @@ operation ensurePrivilegedPrincipalPermission(p : SECURITY!Principal, seed, perm
   traceGenerated(seed, permission, "TR-020", "MEDIUM");
 }
 
-/** Transforms Bounded Context elements into Service elements. */
 rule BoundedContext2Service
   transform bc : CIMORG!BoundedContextCandidate
   to s : DEPLOY!ServerlessService {
@@ -67,7 +66,6 @@ rule BoundedContext2Service
   traceGenerated(bc, s, "TR-010", "HIGH");
 }
 
-/** Transforms Capability elements into Service elements. */
 rule Capability2Service
   transform cap : CIMORG!BusinessCapability
   to s : DEPLOY!ServerlessService {

@@ -4,12 +4,6 @@ import "../lib/pim-validation-helpers.eol";
 /** Validates PIM Model elements. */
 context PIM!PIMModel {
 
-  /** Checks that provider independent flag must be true. */
-  constraint ProviderIndependentFlagMustBeTrue {
-    check : self.providerIndependent.isTrue()
-    message : "[PIM-ROOT-001] The PIM model must remain provider-independent. Fix: set providerIndependent to true and move provider-specific implementation details to a PSM or implementation profile extension."
-  }
-
   /** Checks that domain name required. */
   constraint DomainNameRequired {
     check : self.domainName.hasText()
@@ -33,19 +27,17 @@ context PIM!PIMModel {
     message : "[PIM-ROOT-004] The model contains provider-specific wording in a name or description. Fix: replace cloud/vendor service names with provider-independent domain terms such as function, queue, topic, object store, identity provider, event bus, trace, metric or deployment unit."
   }
 
-  /** Advises that default correlation id should be named. */
   critique DefaultCorrelationIdShouldBeNamed {
     check : self.defaultCorrelationIdName.hasText()
-    message : "[PIM-ROOT-006] No defaultCorrelationIdName is defined. Suggested fix: set a portable name such as correlationId so APIs, events, workflows and logs can share the same correlation convention."
+    message : "No defaultCorrelationIdName is defined. Suggested fix: set a portable name such as correlationId so APIs, events, workflows and logs can share the same correlation convention."
   }
 
-  /** Advises that architecture style should match contents. */
   critique ArchitectureStyleShouldMatchContents {
     check :
       (not self.architectureStyle.enumIs("API_FIRST_SERVERLESS") or self.apis.notEmpty()) and
       (not self.architectureStyle.enumIs("EVENT_DRIVEN_SERVERLESS") or self.eventTypes.notEmpty() or self.channels.notEmpty()) and
       (not self.architectureStyle.enumIs("WORKFLOW_ORCHESTRATED_SERVERLESS") or self.workflows.notEmpty())
-    message : "[PIM-ROOT-007] The selected architectureStyle does not match the model contents. Suggested fix: add the matching APIs/events/workflows or choose HYBRID_SERVERLESS if multiple styles are intentionally combined."
+    message : "The selected architectureStyle does not match the model contents. Suggested fix: add the matching APIs/events/workflows or choose HYBRID_SERVERLESS if multiple styles are intentionally combined."
   }
 }
 

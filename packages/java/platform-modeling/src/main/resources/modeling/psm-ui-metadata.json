@@ -926,10 +926,10 @@
       "layoutHint": "DEFAULT_LAYERED"
     },
     {
-      "id": "psm-eventing-messaging",
+      "id": "psm-messaging",
       "displayName": "EventBridge and Messaging View",
-      "viewType": "EVENTING_MESSAGING",
-      "viewpoint": "eventing",
+      "viewType": "MESSAGING",
+      "viewpoint": "messaging",
       "elementTypes": [
         "EventBridgeBus",
         "EventBridgeBusPolicy",
@@ -1340,7 +1340,7 @@
       "label": "EventBridge Lambda Target",
       "icon": "track_changes",
       "color": "#DB2777",
-      "category": "Eventing",
+      "category": "messaging",
       "supportOnly": true,
       "creatable": false
     },
@@ -1433,7 +1433,7 @@
       "label": "Event Schema",
       "icon": "rule",
       "color": "#DB2777",
-      "category": "Eventing",
+      "category": "messaging",
       "supportOnly": true,
       "creatable": false
     },

@@ -1,4 +1,3 @@
-/** Defines the pim workflow metamodel package. */
 @namespace(uri="https://modless.org/pim/workflow/1.0", prefix="workflow")
 package workflow;
 
@@ -10,9 +9,7 @@ import "pim-policy.ecore";
 import "pim-contracts.ecore";
 import "pim-security.ecore";
 
-/** Represents the Workflow concept in this model. */
 class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel.InvocationTarget, kernel.WorkflowTarget, kernel.SubscriptionTarget, kernel.RoutingTarget, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource, kernel.ConfigurableElement {
-  attr pimtypes.WorkflowKind[1] workflowKind;
   attr String executionSemantics;
   attr Boolean longRunning;
   attr Boolean stateful;
@@ -20,112 +17,120 @@ class Workflow extends kernel.TraceableElement, kernel.DeployableElement, kernel
   attr Boolean humanApprovalRequired;
   attr Integer expectedMaxDurationSeconds;
   attr Boolean expressLowLatencyRequired;
+  attr pimtypes.WorkflowKind[1] workflowKind;
+
   val WorkflowState[*]#workflow states;
+  val WorkflowTransition[*]#workflow transitions;
+
   ref WorkflowState[?] startState;
   ref WorkflowState[*] endStates;
-  val WorkflowTransition[*]#workflow transitions;
   ref policy.ObservabilityConfig[?] observability;
   ref policy.ResiliencePolicy[?] resilience;
   ref policy.IdempotencyPolicy[?] idempotency;
 }
 
-/** Represents the Workflow State concept in this model. */
 class WorkflowState extends kernel.TraceableElement, kernel.FlowEndpoint, kernel.PolicyTarget, kernel.ProtectedResource {
-  attr pimtypes.WorkflowStateKind[1] stateKind;
   attr Integer orderIndex;
   attr Integer timeoutSeconds;
   attr String inputMapping;
   attr String outputMapping;
   attr String conditionExpression;
-  val kernel.Expression[?] condition;
   attr Boolean terminal;
-  readonly transient ref Workflow[1]#states workflow;
-  ref compute.Function[?] invokesFunction;
-  ref external.ExternalAdapter[?] invokesAdapter;
-  ref Workflow[?] nestedWorkflow;
-  ref HumanTask[?] humanTask;
+  attr pimtypes.WorkflowStateKind[1] stateKind;
+
+  val kernel.Expression[?] condition;
   val ParallelBranch[*]#ownerState branches;
   val MapStateConfig[?] mapConfig;
   val CallbackTaskConfig[?] callbackConfig;
   val policy.RetryPolicy[?] retry;
   val ErrorHandler[*]#state catchHandlers;
+
+  readonly transient ref Workflow[1]#states workflow;
+
+  ref compute.Function[?] invokesFunction;
+  ref external.ExternalAdapter[?] invokesAdapter;
+  ref Workflow[?] nestedWorkflow;
+  ref HumanTask[?] humanTask;
   ref CompensationPolicy[?] compensation;
 }
 
-/** Represents the Workflow Transition concept in this model. */
 class WorkflowTransition extends kernel.TraceableElement {
   attr String conditionExpression;
-  val kernel.Expression[?] condition;
   attr Boolean defaultTransition;
+
+  val kernel.Expression[?] condition;
+
   readonly transient ref Workflow[1]#transitions workflow;
+
   ref WorkflowState[1] source;
   ref WorkflowState[1] target;
 }
 
-/** Represents the Error Handler concept in this model. */
 class ErrorHandler extends kernel.TraceableElement {
   attr String errorSelector;
   attr String recoveryAction;
   attr Boolean continueWorkflow;
+
   readonly transient ref WorkflowState[1]#catchHandlers state;
+
   ref WorkflowState[?] nextState;
   ref compute.Function[?] handlerFunction;
 }
 
-/** Represents the Parallel Branch concept in this model. */
 class ParallelBranch extends kernel.TraceableElement {
   readonly transient ref WorkflowState[1]#branches ownerState;
+
   val WorkflowState[+] states;
+  val WorkflowTransition[*] transitions;
+
   ref WorkflowState[1] startState;
   ref WorkflowState[+] endStates;
-  val WorkflowTransition[*] transitions;
 }
 
-/** Represents the Map State Config concept in this model. */
 class MapStateConfig extends kernel.TraceableElement {
   attr String itemsPath;
   attr String itemSelectorJson;
   attr Integer maxConcurrency;
   attr Boolean distributed;
-  val ParallelBranch[1] itemProcessor;
   attr String resultWriterJson;
+
+  val ParallelBranch[1] itemProcessor;
 }
 
-/** Represents the Callback Task Config concept in this model. */
 class CallbackTaskConfig extends kernel.TraceableElement {
   attr String taskTokenPath;
+
   ref kernel.RouteEndpoint[?] callbackRoute;
   ref contracts.EventType[*] completionEvents;
   ref policy.TimeoutPolicy[?] timeout;
 }
 
-/** Represents the Escalation Policy concept in this model. */
 class EscalationPolicy extends kernel.TraceableElement {
   attr String escalationRule;
   attr Integer afterSeconds;
+
   ref security.Principal[*] escalateTo;
 }
 
-/** Represents the Human Task concept in this model. */
 class HumanTask extends kernel.TraceableElement, kernel.PolicyTarget {
   attr String taskDescription;
   attr String completionEvidence;
+
   ref security.Principal[*] assignees;
   ref policy.TimeoutPolicy[?] timeout;
   ref EscalationPolicy[?] escalation;
   ref contracts.EventType[*] completionEvents;
 }
 
-/** Represents the Approval Task concept in this model. */
 class ApprovalTask extends HumanTask {
   attr Boolean explicitApprovalRequired;
   attr String approvalOutcomeField;
 }
 
-/** Represents the Compensation Policy concept in this model. */
 class CompensationPolicy extends policy.ArchitecturePolicy {
   attr String compensationStrategy;
   attr Boolean automatic;
+
   ref compute.Function[*] compensationFunctions;
   ref contracts.EventType[*] compensationEvents;
 }

@@ -1,8 +1,6 @@
-/** Defines the pim types metamodel package. */
 @namespace(uri="https://modless.org/pim/types/1.0", prefix="pimtypes")
 package pimtypes;
 
-/** Defines the supported Architecture Style values. */
 enum ArchitectureStyle {
   EVENT_DRIVEN_SERVERLESS;
   API_FIRST_SERVERLESS;
@@ -10,7 +8,6 @@ enum ArchitectureStyle {
   HYBRID_SERVERLESS;
 }
 
-/** Defines the supported Boundary Type values. */
 enum BoundaryType {
   CAPABILITY_BASED;
   BOUNDED_CONTEXT_BASED;
@@ -19,7 +16,6 @@ enum BoundaryType {
   TEAM_OWNERSHIP_BASED;
 }
 
-/** Defines the supported Deployment Unit Type values. */
 enum DeploymentUnitType {
   APPLICATION;
   SERVICE;
@@ -29,7 +25,6 @@ enum DeploymentUnitType {
   OBSERVABILITY;
 }
 
-/** Defines the supported Ownership Kind values. */
 enum OwnershipKind {
   OWNS;
   USES_SHARED;
@@ -37,7 +32,6 @@ enum OwnershipKind {
   EXPOSES;
 }
 
-/** Defines the supported Function Kind values. */
 enum FunctionKind {
   COMMAND_HANDLER;
   QUERY_HANDLER;
@@ -50,7 +44,6 @@ enum FunctionKind {
   MAINTENANCE_TASK;
 }
 
-/** Defines the supported Compute Profile values. */
 enum ComputeProfile {
   IO_BOUND;
   CPU_BOUND;
@@ -61,7 +54,6 @@ enum ComputeProfile {
   UNKNOWN;
 }
 
-/** Defines the supported Execution Model values. */
 enum ExecutionModel {
   REQUEST_RESPONSE;
   ASYNC_EVENT;
@@ -71,7 +63,6 @@ enum ExecutionModel {
   WORKFLOW_TASK;
 }
 
-/** Defines the supported Api Style values. */
 enum ApiStyle {
   RESOURCE_ORIENTED_HTTP;
   RPC_HTTP;
@@ -80,7 +71,6 @@ enum ApiStyle {
   WEBHOOK;
 }
 
-/** Defines the supported Http Method values. */
 enum HttpMethod {
   GET;
   POST;
@@ -92,7 +82,6 @@ enum HttpMethod {
   ANY;
 }
 
-/** Defines the supported Invocation Mode values. */
 enum InvocationMode {
   SYNCHRONOUS;
   ASYNCHRONOUS;
@@ -101,7 +90,6 @@ enum InvocationMode {
   ORCHESTRATED;
 }
 
-/** Defines the supported Channel Kind values. */
 enum ChannelKind {
   QUEUE;
   TOPIC;
@@ -110,7 +98,6 @@ enum ChannelKind {
   WEBHOOK;
 }
 
-/** Defines the supported Delivery Semantics values. */
 enum DeliverySemantics {
   AT_MOST_ONCE;
   AT_LEAST_ONCE;
@@ -118,14 +105,12 @@ enum DeliverySemantics {
   EXACTLY_ONCE_REQUIRED;
 }
 
-/** Defines the supported Ordering Requirement values. */
 enum OrderingRequirement {
   NONE;
   PER_KEY;
   GLOBAL;
 }
 
-/** Defines the supported Store Kind values. */
 enum StoreKind {
   KEY_VALUE;
   DOCUMENT;
@@ -137,7 +122,6 @@ enum StoreKind {
   OBJECT;
 }
 
-/** Defines the supported Consistency Need values. */
 enum ConsistencyNeed {
   EVENTUAL;
   STRONG;
@@ -145,7 +129,6 @@ enum ConsistencyNeed {
   READ_YOUR_WRITES;
 }
 
-/** Defines the supported Workflow Kind values. */
 enum WorkflowKind {
   ORCHESTRATION;
   LONG_RUNNING_PROCESS;
@@ -155,7 +138,6 @@ enum WorkflowKind {
   EVENT_ROUTING_PROCESS;
 }
 
-/** Defines the supported Workflow State Kind values. */
 enum WorkflowStateKind {
   TASK;
   CHOICE;
@@ -167,7 +149,6 @@ enum WorkflowStateKind {
   FAILURE;
 }
 
-/** Defines the supported Identity Kind values. */
 enum IdentityKind {
   USER_DIRECTORY;
   FEDERATED_IDENTITY;
@@ -177,7 +158,6 @@ enum IdentityKind {
   EXTERNAL_IDENTITY_PROVIDER;
 }
 
-/** Defines the supported Principal Kind values. */
 enum PrincipalKind {
   HUMAN_USER;
   GROUP;
@@ -187,13 +167,11 @@ enum PrincipalKind {
   ANONYMOUS;
 }
 
-/** Defines the supported Permission Effect values. */
 enum PermissionEffect {
   ALLOW;
   DENY;
 }
 
-/** Defines the supported Permission Action Kind values. */
 enum PermissionActionKind {
   INVOKE;
   READ;
@@ -209,7 +187,6 @@ enum PermissionActionKind {
   MANAGE;
 }
 
-/** Defines the supported Least Privilege Status values. */
 enum LeastPrivilegeStatus {
   UNREVIEWED;
   GENERATED_BROAD;
@@ -217,7 +194,6 @@ enum LeastPrivilegeStatus {
   CONFIRMED_LEAST_PRIVILEGE;
 }
 
-/** Defines the supported Secret Kind values. */
 enum SecretKind {
   API_KEY;
   PASSWORD;
@@ -228,7 +204,6 @@ enum SecretKind {
   OTHER;
 }
 
-/** Defines the supported Config Scope values. */
 enum ConfigScope {
   APPLICATION;
   SERVICE;
@@ -237,7 +212,6 @@ enum ConfigScope {
   DEPLOYMENT_UNIT;
 }
 
-/** Defines the supported Schema Kind values. */
 enum SchemaKind {
   REQUEST;
   RESPONSE;
@@ -250,7 +224,6 @@ enum SchemaKind {
   CONFIGURATION;
 }
 
-/** Defines the supported Schema Compatibility values. */
 enum SchemaCompatibility {
   NONE;
   BACKWARD;
@@ -258,7 +231,6 @@ enum SchemaCompatibility {
   FULL;
 }
 
-/** Defines the supported Field Type values. */
 enum FieldType {
   STRING;
   INTEGER;
@@ -279,7 +251,6 @@ enum FieldType {
   UNION;
 }
 
-/** Defines the supported Environment Class values. */
 enum EnvironmentClass {
   LOCAL;
   DEV;
@@ -289,7 +260,6 @@ enum EnvironmentClass {
   SANDBOX;
 }
 
-/** Defines the supported Runtime Language values. */
 enum RuntimeLanguage {
   TYPESCRIPT;
   JAVASCRIPT;
@@ -301,7 +271,6 @@ enum RuntimeLanguage {
   CUSTOM;
 }
 
-/** Defines the supported Package Manager values. */
 enum PackageManager {
   NPM;
   PNPM;
@@ -316,14 +285,12 @@ enum PackageManager {
   NONE;
 }
 
-/** Defines the supported Decision values. */
 enum Decision {
   UNDECIDED;
   REQUIRED;
   NOT_REQUIRED;
 }
 
-/** Defines the supported Data Access Mode values. */
 enum DataAccessMode {
   READ;
   WRITE;
@@ -332,7 +299,6 @@ enum DataAccessMode {
   DELETE;
 }
 
-/** Defines the supported Access Pattern Kind values. */
 enum AccessPatternKind {
   GET_BY_ID;
   QUERY_BY_KEY;
@@ -343,20 +309,10 @@ enum AccessPatternKind {
   APPEND_EVENT;
 }
 
-/** Defines the supported Support Level values. */
 enum SupportLevel {
   SUPPORTED_FIRST_CLASS;
   SUPPORTED_WITH_ASSUMPTIONS;
   REQUIRES_MANUAL_DECISION;
   METADATA_ONLY;
   UNSUPPORTED;
-}
-
-/** Defines the supported Validation Profile values. */
-enum ValidationProfile {
-  DRAFT_EDITING;
-  TRANSFORMATION_INPUT;
-  TRANSFORMATION_OUTPUT_REVIEW;
-  DEPLOYMENT_READY;
-  PRODUCTION_READY;
 }

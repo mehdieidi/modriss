@@ -3,7 +3,6 @@ import "lib/common.eol";
 import "lib/mapping.eol";
 import "lib/trace-readiness.eol";
 
-/** Derives infer architecture style. */
 operation inferArchitectureStyle(c : CIM!CIMModel) {
   if (c.processes.exists(p | p.longRunning or p.humanApprovalPossible or p.compensationExpected)) {
     return PIMTYPES!ArchitectureStyle#WORKFLOW_ORCHESTRATED_SERVERLESS;
@@ -15,15 +14,6 @@ operation inferArchitectureStyle(c : CIM!CIMModel) {
     return PIMTYPES!ArchitectureStyle#API_FIRST_SERVERLESS;
   }
   return PIMTYPES!ArchitectureStyle#HYBRID_SERVERLESS;
-}
-
-/** Creates build architecture rationale. */
-operation buildArchitectureRationale(c : CIM!CIMModel) {
-  return "Generated provider-independent serverless PIM from CIM intent: " +
-    c.commands.size() + " commands, " +
-    c.queries.size() + " queries, " +
-    c.events.size() + " events, " +
-    c.processes.size() + " processes.";
 }
 
 /** Computes requirement rule text. */
@@ -65,10 +55,8 @@ rule CIMModel2PIMModel
   p.id = idFor("pim", c);
   p.name = c.name.orDefault(c.domainName + " PIM");
   p.domainName = c.domainName;
-  p.providerIndependent = true;
   p.defaultCorrelationIdName = "correlationId";
   p.architectureStyle = inferArchitectureStyle(c);
-  p.architectureRationale = buildArchitectureRationale(c);
 
   p.traceModel = new KERNEL!TraceModel;
   p.traceModel.id = "trace_" + p.id;

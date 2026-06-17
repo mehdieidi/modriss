@@ -736,7 +736,6 @@ public class AssistantOrchestrator {
       root.put("architectureStyle", "HYBRID_SERVERLESS");
       root.put("domainName", modelName);
       root.put("defaultCorrelationIdName", "correlationId");
-      root.put("providerIndependent", true);
       initializePimCollections(root);
       ObjectNode implementationProfile = root.putObject("implementationProfile");
       implementationProfile.put("id", safeIdentifier(modelName + "-profile"));
@@ -1295,14 +1294,6 @@ public class AssistantOrchestrator {
     List<SemanticModelPatch.Operation> operations = new ArrayList<>();
     if (!rootId.isBlank()) {
       operations.add(setAttribute(rootId, "domainName", domain));
-      operations.add(
-          setAttribute(
-              rootId,
-              "architectureRationale",
-              "Provider-independent serverless backend with an HTTP API, request handler, "
-                  + "event queue, and owned state store for "
-                  + domain
-                  + "."));
     }
     operations.add(addElement(requestSchemaId, "Schema", requestSchemaAttrs(domain)));
     operations.add(addElement(inventorySchemaId, "Schema", inventorySchemaAttrs(domain)));

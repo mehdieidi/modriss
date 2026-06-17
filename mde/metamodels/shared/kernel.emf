@@ -1,13 +1,6 @@
-/** Defines the kernel metamodel package. */
 @namespace(uri="https://modless.org/kernel/1.0", prefix="kernel")
 package kernel;
 
-/*
- * Shared MDA kernel for CIM, PIM, and PSM metamodels.
- * Keep provider/domain-specific concepts outside this package.
- */
-
-/** Defines the supported Priority values. */
 enum Priority {
   LOW;
   MEDIUM;
@@ -15,7 +8,6 @@ enum Priority {
   CRITICAL;
 }
 
-/** Defines the supported Severity values. */
 enum Severity {
   INFO;
   WARNING;
@@ -24,7 +16,6 @@ enum Severity {
   BLOCKER;
 }
 
-/** Defines the supported Constraint Strength values. */
 enum ConstraintStrength {
   ADVISORY;
   RECOMMENDED;
@@ -32,7 +23,6 @@ enum ConstraintStrength {
   BLOCKING;
 }
 
-/** Defines the supported Lifecycle Status values. */
 enum LifecycleStatus {
   DRAFT;
   INCOMPLETE;
@@ -45,7 +35,6 @@ enum LifecycleStatus {
   DEPRECATED;
 }
 
-/** Defines the supported Trace Confidence values. */
 enum TraceConfidence {
   LOW;
   MEDIUM;
@@ -54,7 +43,6 @@ enum TraceConfidence {
   MANUAL;
 }
 
-/** Defines the supported Trace Link Type values. */
 enum TraceLinkType {
   DERIVES_FROM;
   REFINES;
@@ -73,7 +61,6 @@ enum TraceLinkType {
   OTHER;
 }
 
-/** Defines the supported Finding Type values. */
 enum FindingType {
   MISSING_INFORMATION;
   INCONSISTENCY;
@@ -88,7 +75,6 @@ enum FindingType {
   OTHER;
 }
 
-/** Defines the supported Structured Format values. */
 enum StructuredFormat {
   TEXT;
   JSON;
@@ -102,7 +88,6 @@ enum StructuredFormat {
   OTHER;
 }
 
-/** Defines the supported Expression Language values. */
 enum ExpressionLanguage {
   NATURAL_LANGUAGE;
   OCL;
@@ -117,7 +102,6 @@ enum ExpressionLanguage {
   OTHER;
 }
 
-/** Defines the supported Expression Phase values. */
 enum ExpressionPhase {
   DESIGN_TIME;
   VALIDATION_TIME;
@@ -125,7 +109,7 @@ enum ExpressionPhase {
   GENERATION_TIME;
 }
 
-/* PIM/serverless architectural marker interfaces. Other metamodels may ignore them. */
+// Marker interfaces
 interface DeployableElement {}
 interface InvocationSource {}
 interface InvocationTarget {}
@@ -144,19 +128,17 @@ interface RouteEndpoint {}
 interface EventCarrier {}
 interface ConfigurableElement {}
 
-/** Represents the Key Value concept in this model. */
 class KeyValue {
   attr String[1] key;
   attr String value;
 }
 
-/** Represents the Annotation concept in this model. */
 class Annotation extends KeyValue {
   attr String source;
+
   readonly transient ref ModelElement[1]#annotations owner;
 }
 
-/** Represents the Model Element concept in this model. */
 abstract class ModelElement {
   id attr String[1] ~id;
   attr String name;
@@ -168,16 +150,15 @@ abstract class ModelElement {
   attr LifecycleStatus lifecycleStatus;
 
   val Annotation[*]#owner annotations;
+
   ref TraceLink[*]#target incomingTraces;
   ref TraceLink[*]#source outgoingTraces;
 }
 
-/** Represents the Named Model Element concept in this model. */
 abstract class NamedModelElement extends ModelElement {
   attr String[1] displayName;
 }
 
-/** Represents the Traceable Element concept in this model. */
 abstract class TraceableElement extends ModelElement {
   attr String sourceReference;
   attr String sourceExcerpt;
@@ -193,11 +174,9 @@ abstract class TraceableElement extends ModelElement {
   attr Boolean manuallyMaintained;
 }
 
-/** Represents the Semantic Relationship concept in this model. */
 abstract class SemanticRelationship extends TraceableElement {
 }
 
-/** Represents the Multiplicity concept in this model. */
 class Multiplicity extends TraceableElement {
   attr Integer[1] lowerBound;
   attr Integer upperBound;
@@ -206,7 +185,6 @@ class Multiplicity extends TraceableElement {
   attr Boolean ~unique = true;
 }
 
-/** Represents the Cardinality concept in this model. */
 class Cardinality extends TraceableElement {
   attr Integer lowerBound;
   attr Integer upperBound;
@@ -215,36 +193,34 @@ class Cardinality extends TraceableElement {
   attr Boolean ~unique = true;
 }
 
-/** Represents the Expression concept in this model. */
 class Expression extends TraceableElement {
   attr ExpressionLanguage[1] language;
   attr String[1] body;
   attr ExpressionPhase phase;
   attr Boolean sideEffectFree;
+
   ref ModelElement[*] referencedElements;
 }
 
-/** Represents the Trace Model concept in this model. */
 class TraceModel extends TraceableElement {
   val TraceLink[*]#traceModel links;
 }
 
-/** Represents the Trace Link concept in this model. */
 class TraceLink extends TraceableElement {
-  attr TraceLinkType[1] linkType;
   attr String transformationRule;
-  attr TraceConfidence[1] confidence;
   attr String confidenceRationale;
   attr Double confidenceScore;
   attr String sourceElementId;
   attr String targetElementId;
+  attr TraceLinkType[1] linkType;
+  attr TraceConfidence[1] confidence;
 
   readonly transient ref TraceModel[1]#links traceModel;
+
   ref ModelElement[?]#outgoingTraces source;
   ref ModelElement[?]#incomingTraces target;
 }
 
-/** Represents the Transformation Assumption concept in this model. */
 abstract class TransformationAssumption extends TraceableElement {
   attr String assumptionStatement;
   attr String validationApproach;
@@ -253,53 +229,50 @@ abstract class TransformationAssumption extends TraceableElement {
   attr Date acceptedOn;
 }
 
-/** Represents the Structured Document concept in this model. */
 class StructuredDocument extends TraceableElement {
   attr StructuredFormat[1] format;
   attr String content;
   attr String externalUri;
 }
 
-/** Represents the Production Readiness Assessment concept in this model. */
 class ProductionReadinessAssessment extends TraceableElement {
-  attr LifecycleStatus readinessStatus;
   attr Date assessedAt;
   attr String assessedBy;
   attr Boolean transformationReady;
   attr Boolean deploymentReady;
   attr Boolean productionReady;
+  attr LifecycleStatus readinessStatus;
 
   val ReadinessFinding[*]#assessment findings;
   val ReadinessCheck[*]#assessment checks;
   val ManualDecision[*]#assessment manualDecisions;
 }
 
-/** Represents the Readiness Finding concept in this model. */
 class ReadinessFinding extends TraceableElement {
-  attr FindingType findingType;
-  attr Severity[1] severity;
   attr String ruleId;
   attr String message;
   attr String recommendation;
   attr Boolean blocking;
+  attr Severity[1] severity;
+  attr FindingType findingType;
 
   readonly transient ref ProductionReadinessAssessment[1]#findings assessment;
+
   ref ModelElement[*] affectedElements;
 }
 
-/** Represents the Readiness Check concept in this model. */
 class ReadinessCheck extends TraceableElement {
   attr String[1] checkId;
-  attr Severity[1] severity;
   attr Boolean passed;
   attr String message;
   attr String remediation;
+  attr Severity[1] severity;
 
   readonly transient ref ProductionReadinessAssessment[1]#checks assessment;
+
   ref ModelElement[*] affectedElements;
 }
 
-/** Represents the Manual Decision concept in this model. */
 class ManualDecision extends TraceableElement {
   attr String[1] question;
   attr String decision;
@@ -309,5 +282,6 @@ class ManualDecision extends TraceableElement {
   attr Severity severity;
 
   readonly transient ref ProductionReadinessAssessment[?]#manualDecisions assessment;
+
   ref ModelElement[*] affectedElements;
 }
