@@ -7,20 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
-import io.mehdieidi.modless.platform.core.model.ProjectRecord;
-import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.repository.TestPlatformStore;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 /** End-to-end regression tests for platform transformations backed by the MDE runners. */
+@Execution(ExecutionMode.SAME_THREAD)
+@ResourceLock("epsilon-runtime")
 class TransformationServiceTest {
 
   /** Isolated repository root used by the JSON store for each test. */
@@ -34,27 +34,27 @@ class TransformationServiceTest {
    */
   @Test
   void cimToPimCreatesPimSemanticModelInsteadOfRelabelingCimJson() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService modelService = new ModelService(store, projectService);
-    ArtifactService artifactService = new ArtifactService(store, projectService);
-    TransformationService transformations =
-        new TransformationService(store, modelService, artifactService);
-    UserRecord user = authService.register("owner@example.com", "password123", "Owner").user();
-    ProjectRecord project = projectService.create(user, "Climate", "");
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "owner@example.com", "Owner", "Climate");
 
-    byte[] sample =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
     ModelService.ImportResult imported =
-        modelService.importModel(ModelLevel.CIM, "cim.xmi", sample, "xmi");
+        services
+            .models()
+            .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi");
     ModelRecord cim =
-        modelService.create(
-            user, ModelLevel.CIM, project.id(), "climate-cim", imported.modelJson());
-    modelService.update(user, ModelLevel.CIM, cim.id(), cim.name(), cim.modelJson());
+        services
+            .models()
+            .create(
+                context.user(),
+                ModelLevel.CIM,
+                context.project().id(),
+                "climate-cim",
+                imported.modelJson());
+    services.models().update(context.user(), ModelLevel.CIM, cim.id(), cim.name(), cim.modelJson());
 
-    ModelRecord pim = transformations.cimToPim(user, cim.id());
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
 
     assertEquals(ModelLevel.PIM, pim.level());
     assertEquals("PIM", pim.modelJson().path("modelLevel").asText());
@@ -91,26 +91,26 @@ class TransformationServiceTest {
    */
   @Test
   void generatedPimValidationDoesNotCreateAdditionalManualTasks() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService modelService = new ModelService(store, projectService);
-    ArtifactService artifactService = new ArtifactService(store, projectService);
-    TransformationService transformations =
-        new TransformationService(store, modelService, artifactService);
-    UserRecord user = authService.register("owner@example.com", "password123", "Owner").user();
-    ProjectRecord project = projectService.create(user, "Climate", "");
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "owner@example.com", "Owner", "Climate");
 
-    byte[] sample =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
     ModelService.ImportResult imported =
-        modelService.importModel(ModelLevel.CIM, "cim.xmi", sample, "xmi");
+        services
+            .models()
+            .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi");
     ModelRecord cim =
-        modelService.create(
-            user, ModelLevel.CIM, project.id(), "climate-cim", imported.modelJson());
+        services
+            .models()
+            .create(
+                context.user(),
+                ModelLevel.CIM,
+                context.project().id(),
+                "climate-cim",
+                imported.modelJson());
 
-    ModelRecord pim = transformations.cimToPim(user, cim.id());
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
     int generatedManualTasks = pim.modelJson().path("manualBacklog").size();
     Set<String> manualDecisionIds = new HashSet<>();
     pim.modelJson()
@@ -123,10 +123,17 @@ class TransformationServiceTest {
             .count();
 
     ModelRecord saved =
-        modelService.update(
-            user, ModelLevel.PIM, pim.id(), pim.name(), pim.modelJson(), pim.revision());
+        services
+            .models()
+            .update(
+                context.user(),
+                ModelLevel.PIM,
+                pim.id(),
+                pim.name(),
+                pim.modelJson(),
+                pim.revision());
     ModelService.ValidationResult validation =
-        modelService.validate(user, ModelLevel.PIM, saved.id());
+        services.models().validate(context.user(), ModelLevel.PIM, saved.id());
     List<ModelService.ValidationIssue> readinessIssues =
         validation.issues().stream()
             .filter(issue -> issue.constraint().startsWith("PIM-READY-"))
@@ -160,28 +167,28 @@ class TransformationServiceTest {
    */
   @Test
   void pimToPsmRunsFormalEtlAndPreservesGeneratedRelationships() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService modelService = new ModelService(store, projectService);
-    ArtifactService artifactService = new ArtifactService(store, projectService);
-    TransformationService transformations =
-        new TransformationService(store, modelService, artifactService);
-    UserRecord user = authService.register("owner@example.com", "password123", "Owner").user();
-    ProjectRecord project = projectService.create(user, "Climate", "");
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "owner@example.com", "Owner", "Climate");
 
-    byte[] sample =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
     ModelService.ImportResult imported =
-        modelService.importModel(ModelLevel.CIM, "cim.xmi", sample, "xmi");
+        services
+            .models()
+            .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi");
     ModelRecord cim =
-        modelService.create(
-            user, ModelLevel.CIM, project.id(), "climate-cim", imported.modelJson());
-    ModelRecord pim = transformations.cimToPim(user, cim.id());
-    modelService.update(user, ModelLevel.PIM, pim.id(), pim.name(), pim.modelJson());
+        services
+            .models()
+            .create(
+                context.user(),
+                ModelLevel.CIM,
+                context.project().id(),
+                "climate-cim",
+                imported.modelJson());
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    services.models().update(context.user(), ModelLevel.PIM, pim.id(), pim.name(), pim.modelJson());
 
-    ModelRecord psm = transformations.pimToPsm(user, pim.id());
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
 
     assertEquals(ModelLevel.PSM, psm.level());
     assertEquals("PSM", psm.modelJson().path("modelLevel").asText());
@@ -232,7 +239,7 @@ class TransformationServiceTest {
         psm.modelJson().path("commands").isMissingNode(),
         "Generated PSM must not retain PIM/CIM root containments.");
     ModelService.ValidationResult validation =
-        modelService.validate(ModelLevel.PSM, psm.modelJson());
+        services.models().validate(ModelLevel.PSM, psm.modelJson());
     assertTrue(
         validation.issues().stream()
             .noneMatch(
@@ -261,50 +268,53 @@ class TransformationServiceTest {
    */
   @Test
   void psmToArtifactRunsFormalEgxGeneratorInsteadOfScaffold() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService modelService = new ModelService(store, projectService);
-    ArtifactService artifactService = new ArtifactService(store, projectService);
-    TransformationService transformations =
-        new TransformationService(store, modelService, artifactService);
-    UserRecord user = authService.register("owner@example.com", "password123", "Owner").user();
-    ProjectRecord project = projectService.create(user, "Climate", "");
+    PlatformTestFixtures.ServiceStack services =
+        PlatformTestFixtures.createServicesWithTransformations(tempDir);
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(services, "owner@example.com", "Owner", "Climate");
 
-    byte[] sample =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
     ModelService.ImportResult imported =
-        modelService.importModel(ModelLevel.CIM, "cim.xmi", sample, "xmi");
+        services
+            .models()
+            .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi");
     ModelRecord cim =
-        modelService.create(
-            user, ModelLevel.CIM, project.id(), "climate-cim", imported.modelJson());
-    ModelRecord pim = transformations.cimToPim(user, cim.id());
-    ModelRecord psm = transformations.pimToPsm(user, pim.id());
-    modelService.update(user, ModelLevel.PSM, psm.id(), psm.name(), psm.modelJson());
-    modelService.patch(
-        user,
-        ModelLevel.PSM,
-        psm.id(),
-        psm.name(),
-        java.util.List.of(
-            new ModelService.ModelPatchOperation(
-                "replace",
-                "/summary",
-                store
-                    .objectMapper()
-                    .getNodeFactory()
-                    .textNode("Saved before artifact generation."))));
+        services
+            .models()
+            .create(
+                context.user(),
+                ModelLevel.CIM,
+                context.project().id(),
+                "climate-cim",
+                imported.modelJson());
+    ModelRecord pim = services.transformations().cimToPim(context.user(), cim.id());
+    ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
+    services.models().update(context.user(), ModelLevel.PSM, psm.id(), psm.name(), psm.modelJson());
+    services
+        .models()
+        .patch(
+            context.user(),
+            ModelLevel.PSM,
+            psm.id(),
+            psm.name(),
+            java.util.List.of(
+                new ModelService.ModelPatchOperation(
+                    "replace",
+                    "/summary",
+                    services
+                        .store()
+                        .objectMapper()
+                        .getNodeFactory()
+                        .textNode("Saved before artifact generation."))));
 
-    ArtifactRecord artifact = transformations.psmToArtifact(user, psm.id());
+    ArtifactRecord artifact = services.transformations().psmToArtifact(context.user(), psm.id());
 
     assertFalse(artifact.files().isEmpty());
     assertTrue(
         artifact.modelJson().path("files").isMissingNode(),
         "Artifact metadata must not duplicate generated file contents.");
     assertEquals(artifact.files().size(), artifact.modelJson().path("fileCount").asInt());
-    assertEquals(artifact.id(), artifactService.get(user, artifact.id()).id());
-    assertFalse(artifactService.list(user, project.id()).isEmpty());
+    assertEquals(artifact.id(), services.artifacts().get(context.user(), artifact.id()).id());
+    assertFalse(services.artifacts().list(context.user(), context.project().id()).isEmpty());
     assertTrue(artifact.files().containsKey("generated/reports/generation-report.md"));
     assertTrue(
         artifact.files().keySet().stream().anyMatch(path -> path.startsWith("src/")),
@@ -332,19 +342,21 @@ class TransformationServiceTest {
             .findFirst()
             .orElseThrow();
     String customLogic = "\t// Developer-owned validation.";
-    artifactService.updateFile(
-        user,
-        artifact.id(),
-        handlerPath,
-        artifact
-            .files()
-            .get(handlerPath)
-            .replace(
-                "\t// TODO: add developer-owned validation that cannot be derived from JSON"
-                    + " Schema.",
-                customLogic));
+    services
+        .artifacts()
+        .updateFile(
+            context.user(),
+            artifact.id(),
+            handlerPath,
+            artifact
+                .files()
+                .get(handlerPath)
+                .replace(
+                    "\t// TODO: add developer-owned validation that cannot be derived from JSON"
+                        + " Schema.",
+                    customLogic));
 
-    ArtifactRecord regenerated = transformations.psmToArtifact(user, psm.id());
+    ArtifactRecord regenerated = services.transformations().psmToArtifact(context.user(), psm.id());
 
     assertEquals(psm.id(), regenerated.modelJson().path("sourceModelId").asText());
     assertTrue(

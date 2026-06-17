@@ -25,8 +25,10 @@ import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 /** Regression tests for EVL validation, diagnostics, and model-loading behavior. */
+@ResourceLock("epsilon-runtime")
 class EpsilonEvlValidatorTest {
 
   /** Repository root discovered from the current test working directory. */

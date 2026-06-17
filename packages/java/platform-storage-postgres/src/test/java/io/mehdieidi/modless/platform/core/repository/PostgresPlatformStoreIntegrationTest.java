@@ -29,14 +29,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ResourceLock("postgres")
 class PostgresPlatformStoreIntegrationTest {
 
   private final String baseUrl =
@@ -49,8 +54,8 @@ class PostgresPlatformStoreIntegrationTest {
   private JdbcTemplate jdbc;
   private PostgresPlatformStore store;
 
-  @BeforeEach
-  void setUp() throws Exception {
+  @BeforeAll
+  void setUpSchema() {
     assumeTrue(databaseAvailable(), "PostgreSQL test database is not available.");
     schema = "test_" + UUID.randomUUID().toString().replace("-", "");
     DriverManagerDataSource admin = dataSource(baseUrl);
@@ -74,8 +79,14 @@ class PostgresPlatformStoreIntegrationTest {
             jdbc, new TransactionTemplate(new DataSourceTransactionManager(dataSource)));
   }
 
-  @AfterEach
-  void tearDown() {
+  @BeforeEach
+  void cleanTables() {
+    assumeTrue(databaseAvailable(), "PostgreSQL test database is not available.");
+    truncateAllTables();
+  }
+
+  @AfterAll
+  void tearDownSchema() {
     if (schema != null && databaseAvailable()) {
       new JdbcTemplate(dataSource(baseUrl)).execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
     }
@@ -243,6 +254,25 @@ class PostgresPlatformStoreIntegrationTest {
                 Path.of("indexes", "models", "missing.json"),
                 io.mehdieidi.modless.platform.core.model.ModelIndexRecord.class)
             .isEmpty());
+  }
+
+  private void truncateAllTables() {
+    List<String> tables =
+        jdbc.queryForList(
+            "SELECT tablename FROM pg_tables WHERE schemaname = ?", String.class, schema);
+    if (tables.isEmpty()) {
+      return;
+    }
+    String tableList =
+        tables.stream()
+            .map(table -> quoteIdentifier(table))
+            .reduce((left, right) -> left + ", " + right)
+            .orElse("");
+    jdbc.execute("TRUNCATE TABLE " + tableList + " RESTART IDENTITY CASCADE");
+  }
+
+  private String quoteIdentifier(String identifier) {
+    return "\"" + identifier.replace("\"", "\"\"") + "\"";
   }
 
   private int count(String table) {

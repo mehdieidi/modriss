@@ -16,12 +16,14 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import picocli.CommandLine;
 
 /** Integration tests for repository-backed EVL CLI profiles. */
+@ResourceLock("epsilon-runtime")
 final class MdeEvlCliApplicationTest {
 
   /** Repository root containing validation profiles and sample models. */

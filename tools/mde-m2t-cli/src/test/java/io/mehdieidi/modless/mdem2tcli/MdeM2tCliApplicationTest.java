@@ -9,9 +9,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import picocli.CommandLine;
 
 /** Integration tests for the repository-backed model-to-text CLI profile. */
+@ResourceLock("epsilon-runtime")
 final class MdeM2tCliApplicationTest {
 
   /** Repository root containing the generation profile and sample models. */

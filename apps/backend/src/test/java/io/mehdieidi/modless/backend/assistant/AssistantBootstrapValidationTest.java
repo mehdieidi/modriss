@@ -15,7 +15,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
+@ResourceLock("epsilon-runtime")
 class AssistantBootstrapValidationTest {
 
   @Test

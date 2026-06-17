@@ -9,12 +9,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
-import io.mehdieidi.modless.platform.core.model.ProjectRecord;
-import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.repository.TestPlatformStore;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Map;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EPackage;
@@ -26,11 +21,14 @@ import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 /**
  * Regression coverage for importing, validating, and re-exporting the repository climate-relief
  * sample models.
  */
+@ResourceLock("emf-registry")
+@ResourceLock("epsilon-runtime")
 class ClimateReliefSampleXmiImportTest {
 
   /** Isolated store directory for persisted platform records created by tests. */
@@ -44,16 +42,11 @@ class ClimateReliefSampleXmiImportTest {
    */
   @Test
   void importsClimateReliefSample() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService service = new ModelService(store, projectService);
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    ModelService service = services.models();
 
-    byte[] bytes =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
-
-    ModelService.ImportResult result = service.importModel(ModelLevel.CIM, "cim.xmi", bytes, "xmi");
+    ModelService.ImportResult result =
+        service.importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi");
 
     assertFalse(result.modelJson().path("goals").isEmpty());
     assertFalse(result.modelJson().path("actors").isEmpty());
@@ -67,16 +60,11 @@ class ClimateReliefSampleXmiImportTest {
    */
   @Test
   void importedClimateReliefSampleHasNoValidationErrors() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService service = new ModelService(store, projectService);
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    ModelService service = services.models();
 
-    byte[] bytes =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
-
-    ModelService.ImportResult result = service.importModel(ModelLevel.CIM, "cim.xmi", bytes, "xmi");
+    ModelService.ImportResult result =
+        service.importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi");
 
     assertTrue(
         result.issues().isEmpty(),
@@ -92,16 +80,11 @@ class ClimateReliefSampleXmiImportTest {
    */
   @Test
   void importedClimateReliefSampleExportsWithoutDuplicateInformationItemIds() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService service = new ModelService(store, projectService);
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    ModelService service = services.models();
 
-    byte[] bytes =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
-
-    ModelService.ImportResult result = service.importModel(ModelLevel.CIM, "cim.xmi", bytes, "xmi");
+    ModelService.ImportResult result =
+        service.importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi");
 
     byte[] exported = service.exportModel(ModelLevel.CIM, result.modelJson(), "xmi");
 
@@ -116,23 +99,23 @@ class ClimateReliefSampleXmiImportTest {
    */
   @Test
   void validateButtonPathToleratesPreviouslyDuplicatedInformationItemJson() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService service = new ModelService(store, projectService);
-    UserRecord user =
-        authService.register("cim-validator@example.com", "password123", "Owner").user();
-    ProjectRecord project = projectService.create(user, "Climate", "");
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    ModelService service = services.models();
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "cim-validator@example.com", "Owner", "Climate");
 
-    byte[] bytes =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
     ObjectNode model =
-        (ObjectNode) service.importModel(ModelLevel.CIM, "cim.xmi", bytes, "xmi").modelJson();
+        (ObjectNode)
+            service
+                .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi")
+                .modelJson();
     duplicateInformationItemsUnderAddress(model);
-    ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "cim", model);
+    ModelRecord created =
+        service.create(context.user(), ModelLevel.CIM, context.project().id(), "cim", model);
 
-    ModelService.ValidationResult validation = service.validate(user, ModelLevel.CIM, created.id());
+    ModelService.ValidationResult validation =
+        service.validate(context.user(), ModelLevel.CIM, created.id());
 
     assertFalse(
         validation.issues().stream()
@@ -150,22 +133,22 @@ class ClimateReliefSampleXmiImportTest {
    */
   @Test
   void validateButtonPathPreservesTraceLinkEndpoints() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService service = new ModelService(store, projectService);
-    UserRecord user =
-        authService.register("trace-validator@example.com", "password123", "Owner").user();
-    ProjectRecord project = projectService.create(user, "Climate Trace", "");
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    ModelService service = services.models();
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "trace-validator@example.com", "Owner", "Climate Trace");
 
-    byte[] bytes =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
     ObjectNode model =
-        (ObjectNode) service.importModel(ModelLevel.CIM, "cim.xmi", bytes, "xmi").modelJson();
-    ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "cim", model);
+        (ObjectNode)
+            service
+                .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi")
+                .modelJson();
+    ModelRecord created =
+        service.create(context.user(), ModelLevel.CIM, context.project().id(), "cim", model);
 
-    ModelService.ValidationResult validation = service.validate(user, ModelLevel.CIM, created.id());
+    ModelService.ValidationResult validation =
+        service.validate(context.user(), ModelLevel.CIM, created.id());
 
     assertNoTraceLinkEndpointErrors(validation);
   }
@@ -178,32 +161,32 @@ class ClimateReliefSampleXmiImportTest {
    */
   @Test
   void validateButtonPathRepairsStaleTraceLinkSourceXmi() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService service = new ModelService(store, projectService);
-    UserRecord user =
-        authService.register("stale-trace-validator@example.com", "password123", "Owner").user();
-    ProjectRecord project = projectService.create(user, "Climate Stale Trace", "");
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    ModelService service = services.models();
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "stale-trace-validator@example.com", "Owner", "Climate Stale Trace");
 
-    byte[] bytes =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
+    byte[] sample = PlatformTestFixtures.climateCimXmi();
     ObjectNode model =
-        (ObjectNode) service.importModel(ModelLevel.CIM, "cim.xmi", bytes, "xmi").modelJson();
-    ModelRecord created = service.create(user, ModelLevel.CIM, project.id(), "cim", model);
+        (ObjectNode) service.importModel(ModelLevel.CIM, "cim.xmi", sample, "xmi").modelJson();
+    ModelRecord created =
+        service.create(context.user(), ModelLevel.CIM, context.project().id(), "cim", model);
     service.attachSourceXmi(
         created,
-        removeTraceLinkEndpoints(new String(bytes))
+        removeTraceLinkEndpoints(new String(sample))
             .getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-    ModelService.ValidationResult validation = service.validate(user, ModelLevel.CIM, created.id());
+    ModelService.ValidationResult validation =
+        service.validate(context.user(), ModelLevel.CIM, created.id());
 
     assertNoTraceLinkEndpointErrors(validation);
     ModelService.ValidationResult repairedSourceValidation =
         service.validateGeneratedXmi(
             ModelLevel.CIM,
-            service.sourceXmi(service.get(user, ModelLevel.CIM, created.id())).orElseThrow());
+            service
+                .sourceXmi(service.get(context.user(), ModelLevel.CIM, created.id()))
+                .orElseThrow());
     assertNoTraceLinkEndpointErrors(repairedSourceValidation);
   }
 
@@ -215,13 +198,10 @@ class ClimateReliefSampleXmiImportTest {
    */
   @Test
   void validationExportPreservesCimAssumptions() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService service = new ModelService(store, projectService);
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    ModelService service = services.models();
 
-    ObjectNode model = store.objectMapper().createObjectNode();
+    ObjectNode model = services.store().objectMapper().createObjectNode();
     model.put("eClass", "CIMModel");
     model.put("id", "cim-root");
     model.put("name", "Climate");
@@ -268,16 +248,11 @@ class ClimateReliefSampleXmiImportTest {
    */
   @Test
   void importsAwsPsmSampleWithNestedPsmPackages() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService authService = new AuthService(store, Duration.ofHours(1));
-    ProjectService projectService = new ProjectService(store, authService);
-    ModelService service = new ModelService(store, projectService);
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    ModelService service = services.models();
 
-    byte[] bytes =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "psm.xmi").normalize());
-
-    ModelService.ImportResult result = service.importModel(ModelLevel.PSM, "psm.xmi", bytes, "xmi");
+    ModelService.ImportResult result =
+        service.importModel(ModelLevel.PSM, "psm.xmi", PlatformTestFixtures.awsPsmXmi(), "xmi");
 
     assertEquals("AwsPsmModel", result.modelJson().path("eClass").asText());
     assertFalse(result.modelJson().path("allResources").isEmpty());

@@ -38,6 +38,13 @@ public final class EpsilonEgxGenerator {
   /** Default maximum captured bytes per Epsilon output stream. */
   private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
 
+  /**
+   * Serializes Epsilon EGX execution within a JVM. The Epsilon engine keeps mutable global state
+   * that is not safe under concurrent module execution.
+   */
+  private static final Object EPSILON_RUNTIME_MONITOR =
+      "io.mehdieidi.modless.mde.EPSILON_RUNTIME".intern();
+
   /** Optional execution timeout; {@code null} disables the watchdog. */
   private final Duration executionTimeout;
 
@@ -74,6 +81,13 @@ public final class EpsilonEgxGenerator {
    *     finalization fails
    */
   public EgxGenerationReport generate(EgxGenerationRequest request) throws EgxGenerationException {
+    synchronized (EPSILON_RUNTIME_MONITOR) {
+      return generateInternal(request);
+    }
+  }
+
+  private EgxGenerationReport generateInternal(EgxGenerationRequest request)
+      throws EgxGenerationException {
     Instant startedAt = Instant.now();
     List<GenerationDiagnostic> diagnostics = new ArrayList<>();
     BoundedByteArrayOutputStream stdout = new BoundedByteArrayOutputStream(maxCapturedOutputBytes);

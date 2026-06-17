@@ -11,12 +11,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
-import io.mehdieidi.modless.platform.core.model.ProjectRecord;
-import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.repository.TestPlatformStore;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -36,26 +31,29 @@ class StoredViewLayoutServiceTest {
    */
   @Test
   void lazilyLayoutsAndPersistsAStoredViewOnlyOnce() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService auth = new AuthService(store, Duration.ofHours(1));
-    ProjectService projects = new ProjectService(store, auth);
-    ModelService models = new ModelService(store, projects);
-    StoredViewLayoutService service = new StoredViewLayoutService(models, new LayoutService());
-    UserRecord user =
-        auth.register("layout-owner@example.com", "password123", "Layout Owner").user();
-    ProjectRecord project = projects.create(user, "Layout Project", "");
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    StoredViewLayoutService service =
+        new StoredViewLayoutService(services.models(), new LayoutService());
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "layout-owner@example.com", "Layout Owner", "Layout Project");
 
-    byte[] xmi =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
     ObjectNode model =
         (ObjectNode)
-            models.importModel(ModelLevel.CIM, "cim.xmi", xmi, "xmi").modelJson().deepCopy();
+            services
+                .models()
+                .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi")
+                .modelJson()
+                .deepCopy();
     addView(model);
-    ModelRecord created = models.create(user, ModelLevel.CIM, project.id(), "layout-cim", model);
+    ModelRecord created =
+        services
+            .models()
+            .create(context.user(), ModelLevel.CIM, context.project().id(), "layout-cim", model);
 
     StoredViewLayoutService.StoredViewLayoutResponse first =
-        service.layout(user, ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
+        service.layout(
+            context.user(), ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
     assertTrue(first.layoutApplied());
     assertTrue(first.view().path("autoLayoutApplied").asBoolean());
     assertTrue(first.view().path("nodes").findValuesAsText("x").size() >= 2);
@@ -69,7 +67,8 @@ class StoredViewLayoutServiceTest {
     assertEquals(created.revision() + 1, first.revision());
 
     StoredViewLayoutService.StoredViewLayoutResponse second =
-        service.layout(user, ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
+        service.layout(
+            context.user(), ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
     assertFalse(second.layoutApplied());
     assertEquals(first.revision(), second.revision());
     assertEquals(first.view().toString(), second.view().toString());
@@ -83,33 +82,48 @@ class StoredViewLayoutServiceTest {
    */
   @Test
   void dashboardViewKeepsSelectedAlgorithmGeometry() throws Exception {
-    TestPlatformStore store = new TestPlatformStore(tempDir);
-    store.initialize();
-    AuthService auth = new AuthService(store, Duration.ofHours(1));
-    ProjectService projects = new ProjectService(store, auth);
-    ModelService models = new ModelService(store, projects);
-    StoredViewLayoutService service = new StoredViewLayoutService(models, new LayoutService());
-    UserRecord user =
-        auth.register("dashboard-layout-owner@example.com", "password123", "Dashboard Layout Owner")
-            .user();
-    ProjectRecord project = projects.create(user, "Dashboard Layout Project", "");
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    StoredViewLayoutService service =
+        new StoredViewLayoutService(services.models(), new LayoutService());
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services,
+            "dashboard-layout-owner@example.com",
+            "Dashboard Layout Owner",
+            "Dashboard Layout Project");
 
-    byte[] xmi =
-        Files.readAllBytes(Path.of("..", "..", "..", "mde", "samples", "cim.xmi").normalize());
     ObjectNode model =
         (ObjectNode)
-            models.importModel(ModelLevel.CIM, "cim.xmi", xmi, "xmi").modelJson().deepCopy();
+            services
+                .models()
+                .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi")
+                .modelJson()
+                .deepCopy();
     addDashboardView(model);
     ModelRecord created =
-        models.create(user, ModelLevel.CIM, project.id(), "dashboard-layout-cim", model);
+        services
+            .models()
+            .create(
+                context.user(),
+                ModelLevel.CIM,
+                context.project().id(),
+                "dashboard-layout-cim",
+                model);
 
     StoredViewLayoutService.StoredViewLayoutResponse spacious =
         service.layout(
-            user, ModelLevel.CIM, created.id(), "dashboard-view", true, "SPACIOUS_LAYERED");
+            context.user(),
+            ModelLevel.CIM,
+            created.id(),
+            "dashboard-view",
+            true,
+            "SPACIOUS_LAYERED");
     StoredViewLayoutService.StoredViewLayoutResponse tree =
-        service.layout(user, ModelLevel.CIM, created.id(), "dashboard-view", true, "TREE");
+        service.layout(
+            context.user(), ModelLevel.CIM, created.id(), "dashboard-view", true, "TREE");
     StoredViewLayoutService.StoredViewLayoutResponse radial =
-        service.layout(user, ModelLevel.CIM, created.id(), "dashboard-view", true, "RADIAL");
+        service.layout(
+            context.user(), ModelLevel.CIM, created.id(), "dashboard-view", true, "RADIAL");
 
     assertEquals("SPACIOUS_LAYERED", spacious.view().path("layoutStrategy").asText());
     assertEquals("TREE", tree.view().path("layoutStrategy").asText());

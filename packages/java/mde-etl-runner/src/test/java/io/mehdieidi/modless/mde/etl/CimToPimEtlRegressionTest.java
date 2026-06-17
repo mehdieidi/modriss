@@ -31,11 +31,13 @@ import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 /**
  * Regression tests for the CIM-to-PIM ETL profile using both repository samples and synthetic EMF
  * fixtures.
  */
+@ResourceLock("epsilon-runtime")
 final class CimToPimEtlRegressionTest {
 
   /** Repository root discovered from the current test working directory. */

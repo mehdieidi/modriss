@@ -22,8 +22,10 @@ import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 /** Regression tests for the default PIM-to-AWS-PSM ETL profile and its emitted EMF model shape. */
+@ResourceLock("epsilon-runtime")
 final class PimToAwsPsmEtlRegressionTest {
 
   /** Repository root discovered from the current test working directory. */

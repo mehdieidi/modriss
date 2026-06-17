@@ -37,6 +37,13 @@ public final class EpsilonEtlExecutor {
   /** Default maximum captured bytes per Epsilon output stream. */
   private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
 
+  /**
+   * Serializes Epsilon ETL execution within a JVM. The Epsilon engine keeps mutable global state
+   * that is not safe under concurrent module execution.
+   */
+  private static final Object EPSILON_RUNTIME_MONITOR =
+      "io.mehdieidi.modless.mde.EPSILON_RUNTIME".intern();
+
   /** Optional execution timeout; {@code null} disables the watchdog. */
   private final Duration executionTimeout;
 
@@ -72,6 +79,13 @@ public final class EpsilonEtlExecutor {
    * @throws EtlExecutionException when validation, parsing, loading, execution, or storage fails
    */
   public EtlExecutionReport execute(EtlExecutionRequest request) throws EtlExecutionException {
+    synchronized (EPSILON_RUNTIME_MONITOR) {
+      return executeInternal(request);
+    }
+  }
+
+  private EtlExecutionReport executeInternal(EtlExecutionRequest request)
+      throws EtlExecutionException {
     Instant startedAt = Instant.now();
     long startedNanos = System.nanoTime();
     EtlPhaseTiming phaseTiming = new EtlPhaseTiming();

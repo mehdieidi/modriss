@@ -20,11 +20,13 @@ import java.nio.file.Path;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 /**
  * Regression tests for model import, export, validation, patching, and source-XMI preservation
  * across CIM, PIM, and PSM levels.
  */
+@ResourceLock("epsilon-runtime")
 class ModelServiceXmiImportTest {
 
   /** Isolated JSON-file store directory for each test case. */

@@ -16,8 +16,10 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 /** Integration tests for standalone and modular Emfatic conversion. */
+@ResourceLock("emf-registry")
 class EmfConversionServiceIntegrationTest {
 
   /** Detects unstable positional references in serialized modular Ecore output. */
