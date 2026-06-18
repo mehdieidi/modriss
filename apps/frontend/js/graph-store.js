@@ -4,6 +4,7 @@ import { ensureReadableLayout, nodeSizeForType } from "./layout-engine.js";
 import {
   modelingContainmentsForType,
   modelingElementDefinition,
+  isModelingLevel,
   modelingLevelConfig,
   modelingRelationshipElementTypes,
   modelingRootContainments,
@@ -13,47 +14,16 @@ import {
 } from "./modeling-config-data.js";
 import {
   addReferenceValue,
-  cimSemanticElementsFromRoot,
-  cimSemanticRelationshipsFromRoot,
-  cimTypeMatches,
-  cimTypeOf,
-  populateCimRootContainments,
+  modelTypeOf,
+  populateRootContainments,
+  relationshipSemanticCopy,
   removeReferenceValue,
   semanticEdgeObjectSpec,
-} from "./cim-model-utils.js";
-import {
-  pimRelationshipSemanticCopy,
-  pimSemanticEdgeObjectSpec,
-  pimSemanticElementsFromRoot,
-  pimSemanticRelationshipsFromRoot,
-  pimTypeMatches,
-  pimTypeOf,
-  populatePimRootContainments,
-} from "./pim-model-utils.js";
-
-const MODEL_LEVEL = {
-  cim: "CIM",
-  pim: "PIM",
-  psm: "AWS_PSM",
-};
-
-const LEVEL_ALIASES = {
-  cim: new Set(["", "CIM"]),
-  pim: new Set(["", "PIM"]),
-  psm: new Set(["", "PSM", "AWS_PSM"]),
-};
-
-const ROOT_SCOPE_TYPE = {
-  cim: "CIMModel",
-  pim: "PIMModel",
-  psm: "PsmModel",
-};
-
-const MAIN_SURFACE_ROOT_TYPES = {
-  cim: new Set(["CIMModel"]),
-  pim: new Set(["PIMModel"]),
-  psm: new Set(["AwsPsmModel", "PsmModel"]),
-};
+  semanticElementsFromRoot,
+  semanticRelationshipsFromRoot,
+  stripRuntimeFields,
+  modelTypeMatches,
+} from "./model-utils.js";
 
 const CONTAINMENT_KINDS = new Set(["CONTAINS", "OWNS", "DEPLOYS"]);
 const viewNodeIndexes = new WeakMap();
@@ -64,6 +34,14 @@ function clone(value) {
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function boundedContextTypes() {
+  return new Set(
+    Object.values(state.modelingConfig.config?.levels || {})
+      .map((level) => String(level?.boundedContext?.candidateType || ""))
+      .filter(Boolean),
+  );
 }
 
 export function prepareViewNodeIndex(view) {
@@ -92,11 +70,27 @@ function normalizeViewName(value) {
     .replaceAll(/[^a-z0-9]+/g, " ");
 }
 
+function modelLevelValue(typeKey) {
+  const root = modelingLevelConfig(typeKey).rootTemplate || {};
+  return String(root.modelLevel || modelingLevelConfig(typeKey).chatType || typeKey.toUpperCase());
+}
+
+function rootScopeType(typeKey) {
+  return modelingRootType(typeKey) || "";
+}
+
+function mainSurfaceRootTypes(typeKey) {
+  return new Set([rootScopeType(typeKey)].filter(Boolean));
+}
+
 function viewBelongsToLevel(view, typeKey) {
   const level = String(view?.level || "")
     .trim()
     .toUpperCase();
-  return (LEVEL_ALIASES[typeKey] || new Set([""])).has(level);
+  if (!level) {
+    return true;
+  }
+  return level === modelLevelValue(typeKey).toUpperCase();
 }
 
 function isFocusView(view) {
@@ -108,14 +102,9 @@ function isFocusView(view) {
 }
 
 function elementRecords(modelJson, typeKey = state.activeType) {
-  const semanticElements =
-    typeKey === "cim"
-      ? cimSemanticElementsFromRoot(modelJson)
-      : typeKey === "pim"
-        ? pimSemanticElementsFromRoot(modelJson)
-        : typeKey === "psm"
-          ? semanticElementsFromConfiguredRoot(typeKey, modelJson)
-          : [];
+  const semanticElements = isModelingLevel(typeKey)
+    ? semanticElementsFromRoot(typeKey, modelJson)
+    : [];
   const graphElements = Array.isArray(modelJson?.graph?.elements) ? modelJson.graph.elements : [];
   if (semanticElements.length) {
     if (!graphElements.length) {
@@ -164,12 +153,9 @@ function elementRecords(modelJson, typeKey = state.activeType) {
 }
 
 function relationshipRecords(modelJson, typeKey = state.activeType) {
-  const semanticRelationships =
-    typeKey === "cim"
-      ? cimSemanticRelationshipsFromRoot(modelJson)
-      : typeKey === "pim"
-        ? pimSemanticRelationshipsFromRoot(modelJson)
-        : [];
+  const semanticRelationships = isModelingLevel(typeKey)
+    ? semanticRelationshipsFromRoot(typeKey, modelJson)
+    : [];
   if (semanticRelationships.length) {
     const graphRelationships = Array.isArray(modelJson?.graph?.relationships)
       ? modelJson.graph.relationships
@@ -441,16 +427,7 @@ function referenceIds(value) {
 }
 
 function matchesSemanticType(element, expectedType, typeKey = state.activeType) {
-  if (!element) {
-    return false;
-  }
-  if (typeKey === "cim") {
-    return cimTypeMatches(element, expectedType);
-  }
-  if (typeKey === "pim") {
-    return pimTypeMatches(element, expectedType);
-  }
-  return modelingTypeMatches(typeKey, expectedType, semanticType(element));
+  return Boolean(element) && modelTypeMatches(typeKey, element, expectedType);
 }
 
 function relationshipKindMatches(kind, allowedKinds) {
@@ -597,8 +574,9 @@ function rebuildGraphIndexes(graph) {
   });
 
   const boundedContextsByName = new Map();
+  const contextTypes = boundedContextTypes();
   graph.elementsById.forEach((element) => {
-    if (semanticType(element) !== "BoundedContextCandidate") {
+    if (!contextTypes.has(semanticType(element))) {
       return;
     }
     const name = semanticLabel(element).trim().toLowerCase();
@@ -655,7 +633,7 @@ function buildGraph(typeKey, modelJson) {
     graph.relationshipsById.set(normalized.id, normalized);
   });
 
-  if (typeKey === "cim" || typeKey === "pim" || typeKey === "psm") {
+  if (isModelingLevel(typeKey)) {
     synthesizeSemanticRefRelationships(graph, typeKey);
   }
 
@@ -731,7 +709,7 @@ function configuredElementTypes(typeKey) {
         ...safeArray(modelingLevelConfig(typeKey).elements)
           .map((entry) => String(entry?.type || "").trim())
           .filter(Boolean),
-        ROOT_SCOPE_TYPE[typeKey],
+        rootScopeType(typeKey),
       ].filter(Boolean),
     );
   } catch {
@@ -877,7 +855,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
   const explicitNodeIds = safeArray(view?.nodes)
     .map((node) => String(node?.elementId || node?.id || ""))
     .filter(Boolean);
-  const rootType = ROOT_SCOPE_TYPE[typeKey];
+  const rootType = rootScopeType(typeKey);
   const hasOnlyRootExplicitNodes =
     explicitNodeIds.length > 0 &&
     explicitNodeIds.every(
@@ -935,7 +913,7 @@ export function selectElementIdsForView(graph, view, typeKey) {
     let parentId = graph.parentByChild.get(elementId);
     while (parentId && !selectedSet.has(parentId) && !hidden.has(parentId)) {
       const parent = graph.elementsById.get(parentId);
-      if (!parent || semanticType(parent) === ROOT_SCOPE_TYPE[typeKey]) {
+      if (!parent || semanticType(parent) === rootScopeType(typeKey)) {
         break;
       }
       if (!elementMatchesFilterTypes(parent, filterTypes, typeKey)) {
@@ -1050,7 +1028,7 @@ function layoutNodesForElements(graph, elementIds, existingNodes = [], typeKey =
 
 function isMainSurfaceElement(typeKey, element) {
   const type = semanticType(element);
-  if (MAIN_SURFACE_ROOT_TYPES[typeKey]?.has(type)) {
+  if (mainSurfaceRootTypes(typeKey).has(type)) {
     return true;
   }
   try {
@@ -1061,7 +1039,7 @@ function isMainSurfaceElement(typeKey, element) {
     if (definition?.creatable) {
       return true;
     }
-    return typeKey === "psm" && safeArray(definition?.supertypes).includes("AwsResource");
+    return false;
   } catch {
     return true;
   }
@@ -1094,7 +1072,7 @@ function buildViewFromDefinition(typeKey, graph, definition, scopeElement = null
     name: scopeElement
       ? `${semanticLabel(scopeElement)} - ${definition.displayName || id}`
       : definition.displayName || id,
-    level: MODEL_LEVEL[typeKey],
+    level: modelLevelValue(typeKey),
     kind: String(definition.id || "VIEW")
       .toUpperCase()
       .replaceAll("-", "_"),
@@ -1139,7 +1117,7 @@ function defaultMainView(typeKey, graph, modelName) {
   let elementIds = [...graph.elementsById.entries()]
     .filter(([, element]) => isMainSurfaceElement(typeKey, element))
     .map(([elementId]) => elementId);
-  if (typeKey === "psm") {
+  if (modelingLevelConfig(typeKey).canvasPolicy?.includeRelationshipEndpointsInMainView) {
     elementIds = withRelationshipEndpoints(
       graph,
       elementIds,
@@ -1157,7 +1135,7 @@ function defaultMainView(typeKey, graph, modelName) {
   return {
     id: `view-${typeKey}-main`,
     name: `${modelName || typeKey.toUpperCase()} Main View`,
-    level: MODEL_LEVEL[typeKey],
+    level: modelLevelValue(typeKey),
     kind: "MAIN",
     scope: { scopeKind: "MODEL" },
     filters: {
@@ -1214,7 +1192,7 @@ function normalizeView(view, graph, typeKey, modelName) {
   const normalized = {
     id: String(view?.id || genId("view")),
     name: String(view?.name || modelName || "View"),
-    level: String(view?.level || MODEL_LEVEL[typeKey]),
+    level: String(view?.level || modelLevelValue(typeKey)),
     kind: String(view?.kind || "MAIN"),
     scope: clone(view?.scope || { scopeKind: "MODEL" }),
     filters: clone(view?.filters || {}),
@@ -1396,7 +1374,7 @@ function deriveFragments(typeKey, graph, views) {
     fragments.push({
       id: `fragment-${sanitizeIdPart(element.id)}`,
       name: semanticLabel(element),
-      level: MODEL_LEVEL[typeKey],
+      level: modelLevelValue(typeKey),
       fragmentKind:
         definition?.notation?.fragmentKind ||
         elementType.replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2").toUpperCase(),
@@ -1506,7 +1484,7 @@ export function installGraphAndViews(typeKey, modelJson = {}, fallbackName = "")
 }
 
 export function ensureActiveGraphAndViews(typeKey = state.activeType) {
-  if (!["cim", "pim", "psm"].includes(typeKey)) {
+  if (!isModelingLevel(typeKey)) {
     return false;
   }
   const currentView = state.views?.byId?.get(state.views.activeViewId);
@@ -1778,18 +1756,10 @@ export function serializeGraphAndViewsInto(root) {
   root.validationIssues = [];
   root.manualBacklog = manualBacklog;
   delete root.diagram;
-  if (state.activeType === "cim") {
-    populateCimRootContainments(root, state.graph);
-  } else if (state.activeType === "pim") {
-    populatePimRootContainments(root, state.graph);
-  } else if (state.activeType === "psm") {
-    populatePsmRootContainments(root, state.graph);
+  if (isModelingLevel(state.activeType)) {
+    populateRootContainments(state.activeType, root, state.graph);
   }
   return root;
-}
-
-function populatePsmRootContainments(root, graph) {
-  populateConfiguredRootContainments("psm", root, graph);
 }
 
 function stripConfiguredRuntimeFields(element, typeKey) {
@@ -2080,7 +2050,7 @@ function removePreviousSemanticReference(edge, previous) {
 }
 
 function applySemanticReference(edge, previous = null) {
-  if (!["cim", "pim", "psm"].includes(state.activeType) || !edge?.sourceId || !edge?.targetId) {
+  if (!isModelingLevel(state.activeType) || !edge?.sourceId || !edge?.targetId) {
     return null;
   }
   const visualSource = state.graph.elementsById.get(edge.sourceId);
@@ -2134,51 +2104,40 @@ function applySemanticReference(edge, previous = null) {
   };
 }
 
-function materializeCimSemanticEdgeObject(edge, relationship) {
-  if (state.activeType !== "cim" || !edge?.sourceId || !edge?.targetId) {
+function materializeSemanticEdgeObject(edge, relationship) {
+  if (!isModelingLevel(state.activeType) || !edge?.sourceId || !edge?.targetId) {
     return relationship;
   }
   const source = state.graph.elementsById.get(edge.sourceId);
   const target = state.graph.elementsById.get(edge.targetId);
-  const spec = semanticEdgeObjectSpec(edge.kind, cimTypeOf(source), cimTypeOf(target));
-  if (!spec) {
-    return relationship;
-  }
-  const existing = state.graph.relationshipsById.get(edge.id) || {};
-  return {
-    ...spec.defaults,
-    ...existing,
-    ...relationship,
-    eClass: spec.eClass,
-    source: edge.sourceId,
-    target: edge.targetId,
-    sourceElementId: edge.sourceId,
-    targetElementId: edge.targetId,
-    name: existing.name || relationship.name || `${spec.eClass} ${edge.id}`,
-    rootFeature: spec.rootFeature,
-    relationshipType:
-      spec.eClass === "DomainRelationship"
-        ? existing.relationshipType ||
-          relationship.relationshipType ||
-          spec.defaults.relationshipType ||
-          "ASSOCIATION"
-        : existing.relationshipType,
-  };
-}
-
-function materializePimSemanticEdgeObject(edge, relationship) {
-  if (state.activeType !== "pim" || !edge?.sourceId || !edge?.targetId) {
-    return relationship;
-  }
-  const source = state.graph.elementsById.get(edge.sourceId);
-  const target = state.graph.elementsById.get(edge.targetId);
-  const spec = pimSemanticEdgeObjectSpec(edge.kind, pimTypeOf(source), pimTypeOf(target));
+  const spec = semanticEdgeObjectSpec(
+    state.activeType,
+    edge.kind,
+    modelTypeOf(source),
+    modelTypeOf(target),
+  );
   if (!spec) {
     return relationship;
   }
   const existing = state.graph.relationshipsById.get(edge.id) || {};
   const materialized = {
-    ...spec.defaults,
+    ...relationshipSemanticCopy(
+      state.activeType,
+      {
+        ...existing,
+        ...relationship,
+        ...spec.defaults,
+        eClass: spec.eClass,
+        kind: edge.kind,
+        source: edge.sourceId,
+        target: edge.targetId,
+        sourceElementId: edge.sourceId,
+        targetElementId: edge.targetId,
+        sourceType: modelTypeOf(source),
+        targetType: modelTypeOf(target),
+      },
+      state.graph,
+    ),
     ...existing,
     ...relationship,
     eClass: spec.eClass,
@@ -2190,70 +2149,14 @@ function materializePimSemanticEdgeObject(edge, relationship) {
     rootFeature: spec.rootFeature,
     visualOnly: false,
   };
-  if (
-    spec.eClass === "WorkflowTransition" &&
-    source?.__ownerId &&
-    source.__ownerId === target?.__ownerId
-  ) {
+  if (source?.__ownerId && source.__ownerId === target?.__ownerId && spec.rootFeature) {
     materialized.__ownerId = source.__ownerId;
-    materialized.__containmentFeature = "transitions";
-  } else if (spec.eClass === "Permission") {
+    materialized.__containmentFeature = spec.rootFeature;
+  } else if (spec.ownerAsSource && spec.rootFeature) {
     materialized.__ownerId = source.id;
-    materialized.__containmentFeature = "permissions";
-  } else if (spec.eClass === "Subscription") {
-    materialized.__ownerId = source.id;
-    materialized.__containmentFeature = "subscriptions";
+    materialized.__containmentFeature = spec.rootFeature;
   }
-  const semantic = pimRelationshipSemanticCopy(materialized, state.graph);
-  Object.assign(materialized, semantic, {
-    source: edge.sourceId,
-    target: edge.targetId,
-    sourceElementId: edge.sourceId,
-    targetElementId: edge.targetId,
-  });
-  materializePimSideEffects(materialized, source, target);
   return materialized;
-}
-
-function materializePimSideEffects(relationship, source, target) {
-  if (!source?.id || !target?.id) {
-    return;
-  }
-  const type = pimTypeOf(relationship);
-  if (type === "DataAccess") {
-    const mode = String(relationship.mode || "").toUpperCase();
-    if (mode === "READ" || mode === "READ_WRITE") {
-      addReferenceValue(source, "reads", target.id, true);
-    }
-    if (mode === "WRITE" || mode === "READ_WRITE" || mode === "APPEND" || mode === "DELETE") {
-      addReferenceValue(source, "writes", target.id, true);
-    }
-  } else if (type === "Trigger") {
-    addReferenceValue(target, "triggers", relationship.id, true);
-  } else if (type === "Subscription") {
-    addReferenceValue(source, "subscriptions", relationship.id, true);
-  } else if (type === "Permission") {
-    addReferenceValue(source, "permissions", relationship.id, true);
-  }
-}
-
-function removePimMaterializedSideEffects(relationship) {
-  if (state.activeType !== "pim" || !relationship) {
-    return;
-  }
-  const source = state.graph.elementsById.get(relationship.sourceElementId);
-  const target = state.graph.elementsById.get(relationship.targetElementId);
-  const type = pimTypeOf(relationship);
-  if (type === "DataAccess" && source && target) {
-    removeReferenceValue(source, "reads", target.id, true);
-    removeReferenceValue(source, "writes", target.id, true);
-  } else if (type === "Trigger" && target) {
-    removeReferenceValue(target, "triggers", relationship.id, true);
-  } else if (type === "Subscription" && source) {
-    removeReferenceValue(source, "subscriptions", relationship.id, true);
-  } else if (type === "Permission" && source) {
-    removeReferenceValue(source, "permissions", relationship.id, true);
-  }
 }
 
 export function addConnectionToGraphAndActiveView(edge) {
@@ -2285,8 +2188,7 @@ export function addConnectionToGraphAndActiveView(edge) {
     semanticType(state.graph.elementsById.get(edge.sourceId)) || relationship.sourceType;
   relationship.targetType =
     semanticType(state.graph.elementsById.get(edge.targetId)) || relationship.targetType;
-  relationship = materializeCimSemanticEdgeObject(edge, relationship);
-  relationship = materializePimSemanticEdgeObject(edge, relationship);
+  relationship = materializeSemanticEdgeObject(edge, relationship);
   const semanticReference = applySemanticReference(
     {
       ...relationship,
@@ -2328,7 +2230,6 @@ export function removeRelationshipFromGraph(relationshipId) {
       feature: relationship.semanticFeature,
     });
   }
-  removePimMaterializedSideEffects(relationship);
   state.graph.relationshipsById.delete(id);
   state.views.byId.forEach((view) => {
     view.edges = safeArray(view.edges).filter((edge) => edge.relationshipId !== id);

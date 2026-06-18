@@ -1,47 +1,12 @@
 import { state } from "../state.js";
 import { defaultRootModel, getDefaultNode, toDiagram } from "../diagram.js";
-import { modelingLegalKinds, modelingPalette } from "../modeling-config-data.js";
+import {
+  defaultModelingLevel,
+  modelingLegalKinds,
+  modelingPalette,
+} from "../modeling-config-data.js";
 import { setStatus } from "../status.js";
 import { genId } from "../utils.js";
-
-const DEFAULT_TYPES = {
-  cim: [
-    "Actor",
-    "Command",
-    "Query",
-    "BusinessEvent",
-    "Policy",
-    "BusinessCapability",
-    "DomainEntity",
-    "ValueObject",
-    "AggregateCandidate",
-    "Requirement",
-  ],
-  pim: [
-    "Api",
-    "Command",
-    "Query",
-    "Event",
-    "Function",
-    "DataStore",
-    "Queue",
-    "Topic",
-    "Workflow",
-    "Policy",
-  ],
-  psm: [
-    "ApiGatewayApi",
-    "ApiGatewayRoute",
-    "AwsLambdaFunction",
-    "DynamoDbTable",
-    "S3Bucket",
-    "SqsQueue",
-    "SnsTopic",
-    "EventBridgeRule",
-    "StepFunctionStateMachine",
-    "IamRole",
-  ],
-};
 
 function activeTypes(typeKey) {
   try {
@@ -50,9 +15,9 @@ function activeTypes(typeKey) {
       return configured.slice(0, 14);
     }
   } catch {
-    // Fall back to stable type names when config is not available yet.
+    // Fall back to a generic synthetic type when config is not available yet.
   }
-  return DEFAULT_TYPES[typeKey] || DEFAULT_TYPES.cim;
+  return ["Element"];
 }
 
 function legalKind(typeKey, sourceType, targetType) {
@@ -64,7 +29,7 @@ function legalKind(typeKey, sourceType, targetType) {
   } catch {
     // Use a generic fallback below for synthetic stress graphs.
   }
-  return typeKey === "cim" ? "TRACE" : "DEPENDS_ON";
+  return "DEPENDS_ON";
 }
 
 function buildRoot(typeKey, nodes, edges, name) {
@@ -93,7 +58,7 @@ function buildRoot(typeKey, nodes, edges, name) {
 }
 
 function generateLargeGraph({
-  typeKey = state.activeType || "cim",
+  typeKey = state.activeType || defaultModelingLevel(),
   nodeCount = 1000,
   edgeCount = 2000,
   columns = 40,
@@ -146,7 +111,7 @@ export function installG6LargeGraphDevHelper({
   renderWorkbench = () => {},
 } = {}) {
   window.modlessGenerateLargeGraph = (options = {}) => {
-    const typeKey = options.typeKey || state.activeType || "cim";
+    const typeKey = options.typeKey || state.activeType || defaultModelingLevel();
     const nodeCount = Math.max(1, Number(options.nodes || options.nodeCount) || 1000);
     const edgeCount = Math.max(0, Number(options.edges || options.edgeCount) || 2000);
     const name = `G6 performance ${nodeCount}n ${edgeCount}e`;

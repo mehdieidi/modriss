@@ -1,7 +1,10 @@
 package io.mehdieidi.modless.platform.core.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import java.io.InputStream;
@@ -35,44 +38,72 @@ public final class ModelingConfigService {
    * @return configuration map consumed by the platform UI
    */
   public Map<String, Object> config() {
-    return Map.of(
-        "version",
-        2,
-        "dynamicPersistenceEnabled",
-        true,
-        "levels",
-        Map.of(
-            "cim", level("cim"),
-            "pim", level("pim"),
-            "psm", level("psm")),
-        "transformations",
-        Map.of(
-            "cim_to_pim", transformation(),
-            "pim_to_psm", transformation(),
-            "psm_to_artifact",
-                Map.of(
-                    "enabled",
-                    true,
-                    "artifactType",
-                    "aws-sam",
-                    "generationMode",
-                    "serverless_mda",
-                    "elementMappings",
-                    List.of(),
-                    "relationshipMappings",
-                    List.of(),
-                    "templates",
-                    List.of(),
-                    "projectStructure",
-                    Map.of(
-                        "directories",
-                        List.of(),
-                        "pathMappings",
-                        List.of(),
-                        "passthroughUnmatched",
-                        true,
-                        "emitGitkeep",
-                        true))));
+    Map<String, Object> platform = readPlatformConfig();
+    Map<String, Object> configuredLevels = optionalMap(platform, "levels");
+    Map<String, Object> levels = new LinkedHashMap<>();
+    for (String key : configuredLevelOrder(platform, configuredLevels)) {
+      Map<String, Object> configuredLevel = optionalMap(configuredLevels, key);
+      Map<String, Object> mergedLevel = new LinkedHashMap<>(configuredLevel);
+      mergeInto(mergedLevel, level(key));
+      mergedLevel.putIfAbsent("apiType", key);
+      mergedLevel.putIfAbsent("chatType", key.toUpperCase());
+      mergedLevel.putIfAbsent("modelNameTemplate", key + "-model");
+      levels.put(key, mergedLevel);
+    }
+    return Map.ofEntries(
+        Map.entry("version", platform.getOrDefault("version", 0)),
+        Map.entry(
+            "dynamicPersistenceEnabled",
+            !Boolean.FALSE.equals(platform.get("dynamicPersistenceEnabled"))),
+        Map.entry("defaultLevel", platform.getOrDefault("defaultLevel", firstKey(levels))),
+        Map.entry("levelOrder", new ArrayList<>(levels.keySet())),
+        Map.entry("levels", levels),
+        Map.entry("transformations", optionalMap(platform, "transformations")),
+        Map.entry("artifactAction", optionalMap(platform, "artifactAction")),
+        Map.entry("impactAnalysis", optionalMap(platform, "impactAnalysis")));
+  }
+
+  /**
+   * Creates a starter model from the JSON-owned starter template for a level.
+   *
+   * @param level modeling level
+   * @param name model name
+   * @return interpolated starter model
+   */
+  public ObjectNode starterModel(ModelLevel level, String name) {
+    String key = level.apiName();
+    Map<String, Object> metadata = readMetadata(key);
+    Map<String, Object> template = optionalMap(metadata, "starterTemplate");
+    if (template.isEmpty()) {
+      template = requireMap(metadata, "rootTemplate", key);
+    }
+    String modelName = name == null || name.isBlank() ? key + "-starter-model" : name;
+    JsonNode node = objectMapper.valueToTree(template).deepCopy();
+    JsonNode interpolated = interpolateTemplate(node, modelName);
+    if (!(interpolated instanceof ObjectNode root)) {
+      throw new PlatformException(500, "Modeling starterTemplate for " + key + " must be object.");
+    }
+    root.put("name", modelName);
+    if (!root.hasNonNull("id")) {
+      root.put("id", safeIdentifier(modelName + "-root"));
+    }
+    ObjectNode diagram =
+        root.path("diagram").isObject()
+            ? (ObjectNode) root.path("diagram")
+            : root.putObject("diagram");
+    if (!diagram.path("elements").isArray()) {
+      diagram.putArray("elements");
+    }
+    if (!diagram.path("relationships").isArray()) {
+      diagram.putArray("relationships");
+    }
+    if (!root.path("views").isArray()) {
+      root.putArray("views");
+    }
+    if (!root.path("fragments").isArray()) {
+      root.putArray("fragments");
+    }
+    return root;
   }
 
   /**
@@ -100,7 +131,12 @@ public final class ModelingConfigService {
         Map.entry(
             "semanticReferenceRules", metadata.getOrDefault("semanticReferenceRules", List.of())),
         Map.entry(
+            "semanticEdgeObjectRules", metadata.getOrDefault("semanticEdgeObjectRules", List.of())),
+        Map.entry(
             "shortcutConnectorRules", metadata.getOrDefault("shortcutConnectorRules", List.of())),
+        Map.entry("workbench", metadata.getOrDefault("workbench", Map.of())),
+        Map.entry("scaffoldRecipes", metadata.getOrDefault("scaffoldRecipes", List.of())),
+        Map.entry("boundedContext", metadata.getOrDefault("boundedContext", Map.of())),
         Map.entry("viewDefinitions", requireList(metadata, "viewDefinitions", key)),
         Map.entry("universalSyntax", metadata.getOrDefault("universalSyntax", List.of())),
         Map.entry("kernelSyntax", metadata.getOrDefault("kernelSyntax", List.of())),
@@ -116,7 +152,8 @@ public final class ModelingConfigService {
             metadata.getOrDefault(
                 "strictnessModes", List.of("exploration", "methodology", "production"))),
         Map.entry("constraints", metadata.getOrDefault("constraints", List.of())),
-        Map.entry("rootTemplate", requireMap(metadata, "rootTemplate", key)));
+        Map.entry("rootTemplate", requireMap(metadata, "rootTemplate", key)),
+        Map.entry("starterTemplate", optionalMap(metadata, "starterTemplate")));
   }
 
   /**
@@ -747,6 +784,120 @@ public final class ModelingConfigService {
       labels.putIfAbsent(key, humanize(key));
     }
     return labels;
+  }
+
+  /**
+   * Reads the platform-level modeling configuration from the classpath.
+   *
+   * @return platform configuration map
+   */
+  private Map<String, Object> readPlatformConfig() {
+    String resource = "modeling/platform-config.json";
+    try (InputStream input =
+        Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)) {
+      if (input == null) {
+        throw new PlatformException(500, "Missing modeling platform config resource: " + resource);
+      }
+      return objectMapper.readValue(input, new TypeReference<>() {});
+    } catch (PlatformException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new PlatformException(500, "Could not load modeling platform config: " + resource);
+    }
+  }
+
+  /**
+   * Resolves the ordered level keys from platform configuration.
+   *
+   * @param platform platform configuration
+   * @param configuredLevels level metadata keyed by level
+   * @return ordered level keys
+   */
+  private List<String> configuredLevelOrder(
+      Map<String, Object> platform, Map<String, Object> configuredLevels) {
+    LinkedHashSet<String> result =
+        new LinkedHashSet<>(objectStringList(platform.get("levelOrder")));
+    result.addAll(configuredLevels.keySet());
+    if (result.isEmpty()) {
+      throw new PlatformException(500, "Modeling platform config must define at least one level.");
+    }
+    return new ArrayList<>(result);
+  }
+
+  /**
+   * Returns the first key from a map.
+   *
+   * @param values keyed values
+   * @return first key or an empty string
+   */
+  private String firstKey(Map<String, Object> values) {
+    return values.keySet().stream().findFirst().orElse("");
+  }
+
+  /**
+   * Interpolates supported placeholders in a JSON template.
+   *
+   * @param node template node
+   * @param modelName requested model name
+   * @return interpolated copy
+   */
+  private JsonNode interpolateTemplate(JsonNode node, String modelName) {
+    if (node == null || node.isNull()) {
+      return objectMapper.getNodeFactory().nullNode();
+    }
+    if (node.isTextual()) {
+      return objectMapper.getNodeFactory().textNode(interpolateText(node.asText(), modelName));
+    }
+    if (node.isArray()) {
+      ArrayNode array = objectMapper.getNodeFactory().arrayNode();
+      node.forEach(item -> array.add(interpolateTemplate(item, modelName)));
+      return array;
+    }
+    if (node.isObject()) {
+      ObjectNode object = objectMapper.getNodeFactory().objectNode();
+      node.fields()
+          .forEachRemaining(
+              entry ->
+                  object.set(entry.getKey(), interpolateTemplate(entry.getValue(), modelName)));
+      return object;
+    }
+    return node.deepCopy();
+  }
+
+  /**
+   * Interpolates placeholders in a scalar template string.
+   *
+   * @param text template text
+   * @param modelName requested model name
+   * @return interpolated text
+   */
+  private String interpolateText(String text, String modelName) {
+    String result = text.replace("${modelName}", modelName);
+    result = result.replace("${safeModelName}", safeIdentifier(modelName));
+    java.util.regex.Matcher matcher =
+        java.util.regex.Pattern.compile("\\$\\{safe:([^}]+)}").matcher(result);
+    StringBuffer buffer = new StringBuffer();
+    while (matcher.find()) {
+      String replacement = safeIdentifier(matcher.group(1).replace("modelName", modelName));
+      matcher.appendReplacement(buffer, java.util.regex.Matcher.quoteReplacement(replacement));
+    }
+    matcher.appendTail(buffer);
+    return buffer.toString();
+  }
+
+  /**
+   * Converts user-facing names into stable identifier-safe tokens.
+   *
+   * @param value raw value
+   * @return lowercase identifier token
+   */
+  private String safeIdentifier(String value) {
+    String normalized =
+        value == null
+            ? "model"
+            : value.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]+", "-");
+    normalized = normalized.replaceAll("^-+", "").replaceAll("-+$", "");
+    return normalized.isBlank() ? "model" : normalized;
   }
 
   /**

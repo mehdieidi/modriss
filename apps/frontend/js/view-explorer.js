@@ -11,7 +11,7 @@ import {
   syncActiveViewFromVisibleGraph,
 } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
-import { modelingLevelConfig } from "./modeling-config-data.js";
+import { isModelingLevel, modelingLevelConfig } from "./modeling-config-data.js";
 import {
   activeCanvasFocus,
   canvasFocusLabel,
@@ -147,10 +147,33 @@ function setLayoutStrategy(strategyId) {
 
 function viewMatchesLevel(view) {
   const level = String(view?.level || "").toLowerCase();
-  if (state.activeType === "psm") {
-    return !level || level === "psm" || level === "aws_psm";
+  const config = modelingLevelConfig(state.activeType);
+  const aliases = [
+    state.activeType,
+    config.apiType,
+    config.chatType,
+    config.displayName,
+    config.rootTemplate?.modelLevel,
+  ]
+    .map((value) => String(value || "").toLowerCase())
+    .filter(Boolean);
+  return !level || aliases.includes(level);
+}
+
+function supportsBoundedContext() {
+  try {
+    return Boolean(modelingLevelConfig(state.activeType).boundedContext?.enabled);
+  } catch {
+    return false;
   }
-  return !level || level === state.activeType;
+}
+
+function boundedContextType() {
+  try {
+    return String(modelingLevelConfig(state.activeType).boundedContext?.candidateType || "");
+  } catch {
+    return "";
+  }
 }
 
 function metadataViewKeys() {
@@ -221,7 +244,7 @@ function activeViewLabel() {
 }
 
 function normalizeBoundedContextToolState() {
-  if (state.activeType !== "cim") {
+  if (!supportsBoundedContext()) {
     state.boundedContextViewMode = "normal";
     state.activeBoundedContextName = "";
     state.boundedContextCreateMode = false;
@@ -236,8 +259,9 @@ function normalizeBoundedContextToolState() {
       contextNames.add(name);
     }
   });
+  const candidateType = boundedContextType();
   (state.diagram?.nodes || []).forEach((node) => {
-    if (node.type === "BoundedContextCandidate") {
+    if (candidateType && node.type === candidateType) {
       const name = String(node.label || node.meta?.name || "").trim();
       if (name) {
         contextNames.add(name);
@@ -271,7 +295,7 @@ function boundedContextToolMarkup() {
       <span class="workbench-focus-label">${escapeHtml(canvasFocusLabel())}</span>
     </div>`;
   }
-  if (state.activeType !== "cim") {
+  if (!supportsBoundedContext()) {
     return "";
   }
   if (state.boundedContextViewMode !== "normal") {
@@ -549,7 +573,7 @@ export function renderViewWorkbench() {
   if (!panel) {
     return;
   }
-  const isModeling = ["cim", "pim", "psm"].includes(state.activeType);
+  const isModeling = isModelingLevel(state.activeType);
   panel.classList.toggle("hidden", !isModeling);
   if (!isModeling) {
     return;

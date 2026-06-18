@@ -13,6 +13,7 @@ import { clearArtifactState } from "./artifact.js";
 import { apiUrl, MODEL_TYPES } from "./config.js";
 import { confirmAction } from "./confirm-action.js";
 import { resetModelSaveState, updateModelSaveUi } from "./model-save-ui.js";
+import { defaultModelingLevel, modelingLevelKeys } from "./modeling-config-data.js";
 
 function resolveProjectId(project) {
   return project?.id || project?.projectId || project?.uuid || null;
@@ -20,6 +21,25 @@ function resolveProjectId(project) {
 
 const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
 const LAST_PROJECT_STORAGE_PREFIX = "modless.lastProjectId";
+
+function defaultModelName(typeKey) {
+  return state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate || `${typeKey}-model`;
+}
+
+function resetModelingTab(typeKey) {
+  state.tabs[typeKey] = {
+    modelId: null,
+    modelRevision: 0,
+    baseModel: null,
+    diagram: emptyDiagram(typeKey),
+    modelName: defaultModelName(typeKey),
+    graph: null,
+    views: null,
+    fragments: null,
+    activeViewId: null,
+    dirty: false,
+  };
+}
 
 function lastProjectStorageKey() {
   const userId = state.auth?.user?.id || state.auth?.user?.email || "anonymous";
@@ -296,7 +316,7 @@ export async function loadProject(project) {
       el.projectLabel.textContent = projectName;
     }
 
-    const typeKeys = ["cim", "pim", "psm"];
+    const typeKeys = modelingLevelKeys();
     const recordsByType = {};
     await Promise.all(
       typeKeys.map(async (type) => {
@@ -317,17 +337,7 @@ export async function loadProject(project) {
 
     // Reset all tab states
     for (const type of typeKeys) {
-      state.tabs[type] = {
-        modelId: null,
-        baseModel: null,
-        diagram: emptyDiagram(type),
-        modelName: `${type}-model`,
-        graph: null,
-        views: null,
-        fragments: null,
-        activeViewId: null,
-        dirty: false,
-      };
+      resetModelingTab(type);
     }
 
     // Load active models for each tab
@@ -336,7 +346,9 @@ export async function loadProject(project) {
       const activeModelId =
         normalizedProject.activeModelIds?.[type] ||
         normalizedProject.activeModelIds?.[type.toUpperCase()];
-      const fallbackModelId = type === "cim" ? recordsByType[type]?.[0]?.id || null : null;
+      const fallbackModelId = state.modelingConfig.config?.levels?.[type]?.fallbackActiveModel
+        ? recordsByType[type]?.[0]?.id || null
+        : null;
       const modelIdToLoad = activeModelId || fallbackModelId;
       if (modelIdToLoad) {
         try {
@@ -359,22 +371,23 @@ export async function loadProject(project) {
       }
     }
 
-    // Apply CIM tab state (default start tab)
-    state.activeType = "cim";
-    state.modelId = state.tabs.cim.modelId;
-    state.modelRevision = state.tabs.cim.modelRevision || 0;
-    state.baseModel = state.tabs.cim.baseModel;
-    state.diagram = state.tabs.cim.diagram;
+    // Apply default modeling tab state
+    const defaultLevel = defaultModelingLevel();
+    state.activeType = defaultLevel;
+    state.modelId = state.tabs[defaultLevel]?.modelId || null;
+    state.modelRevision = state.tabs[defaultLevel]?.modelRevision || 0;
+    state.baseModel = state.tabs[defaultLevel]?.baseModel || null;
+    state.diagram = state.tabs[defaultLevel]?.diagram || emptyDiagram(defaultLevel);
     state.boundedContextCreateMode = false;
     state.boundedContextDraftNodeIds = new Set();
     state.boundedContextDraftName = "";
     state.boundedContextViewMode = "normal";
     state.activeBoundedContextName = "";
-    restoreTabGraphState("cim");
+    restoreTabGraphState(defaultLevel);
     materializeActiveView();
 
     Array.from(el.modelTabs.querySelectorAll(".tab")).forEach((t) =>
-      t.classList.toggle("active", t.dataset.type === "cim"),
+      t.classList.toggle("active", t.dataset.type === defaultLevel),
     );
     const topbar = document.querySelector(".topbar");
     topbar?.classList.remove("artifact-mode");
@@ -439,32 +452,12 @@ export async function deleteCurrentProject() {
     state.modelId = null;
     state.modelRevision = 0;
     state.baseModel = null;
-    state.activeType = "cim";
-    state.tabs.cim = {
-      modelId: null,
-      modelRevision: 0,
-      baseModel: null,
-      diagram: emptyDiagram("cim"),
-      modelName: "cim-model",
-      dirty: false,
-    };
-    state.tabs.pim = {
-      modelId: null,
-      modelRevision: 0,
-      baseModel: null,
-      diagram: emptyDiagram("pim"),
-      modelName: "pim-model",
-      dirty: false,
-    };
-    state.tabs.psm = {
-      modelId: null,
-      modelRevision: 0,
-      baseModel: null,
-      diagram: emptyDiagram("psm"),
-      modelName: "psm-model",
-      dirty: false,
-    };
-    state.diagram = state.tabs.cim.diagram;
+    for (const type of modelingLevelKeys()) {
+      resetModelingTab(type);
+    }
+    const defaultLevel = defaultModelingLevel();
+    state.activeType = defaultLevel;
+    state.diagram = state.tabs[defaultLevel]?.diagram || emptyDiagram(defaultLevel);
     state.selectedNodeId = null;
     state.selectedConnectionId = null;
     state.boundedContextCreateMode = false;
@@ -472,7 +465,7 @@ export async function deleteCurrentProject() {
     state.boundedContextDraftName = "";
     state.boundedContextViewMode = "normal";
     state.activeBoundedContextName = "";
-    restoreTabGraphState("cim");
+    restoreTabGraphState(defaultLevel);
     materializeActiveView();
     if (el.projectLabel) {
       el.projectLabel.textContent = "No project";

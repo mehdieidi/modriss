@@ -49,12 +49,16 @@ import { isMobileViewport } from "./responsive.js";
 import { ensureAuthenticated, logout, updateDisplayName } from "./auth.js";
 import { initSvgIconMasks } from "./icons.js";
 import { deployToGithubFromArtifacts, refreshGithubConnection } from "./github.js";
-import { loadModelingConfig } from "./modeling-config-data.js";
+import {
+  isModelingLevel,
+  loadModelingConfig,
+  modelingLevelConfig,
+  modelingLevelKeys,
+  modelingLevelListLabel,
+} from "./modeling-config-data.js";
 import { hasUnsavedModelChanges, updateModelSaveUi } from "./model-save-ui.js";
 import { initViewWorkbench, renderViewWorkbench } from "./view-explorer.js";
-import { initCimWorkbenchSurface } from "./cim-workbench.js";
-import { initPimWorkbenchSurface } from "./pim-workbench.js";
-import { initPsmWorkbenchSurface } from "./psm-workbench.js";
+import { initModelWorkbenchSurface } from "./model-workbench.js";
 import { installG6LargeGraphDevHelper } from "./graph-editor/g6-devtools.js";
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
@@ -532,6 +536,34 @@ function togglePaletteRail() {
   syncPaletteRailToggleState();
 }
 
+function renderConfiguredModelTabs() {
+  if (!el.modelTabs) {
+    return;
+  }
+  const projectBadge = el.modelTabs.querySelector(".project-name-badge");
+  el.modelTabs.querySelectorAll(".tab").forEach((tab) => tab.remove());
+  const fragment = document.createDocumentFragment();
+  for (const typeKey of modelingLevelKeys()) {
+    const level = modelingLevelConfig(typeKey);
+    const button = document.createElement("button");
+    button.className = "tab";
+    button.dataset.type = typeKey;
+    button.title = level.displayName || typeKey;
+    button.type = "button";
+    button.textContent = level.displayName || typeKey.toUpperCase();
+    fragment.appendChild(button);
+  }
+  const artifactButton = document.createElement("button");
+  artifactButton.className = "tab";
+  artifactButton.dataset.type = "artifact";
+  artifactButton.title =
+    state.modelingConfig.config?.artifactAction?.buttonTitle || "Generated artifacts";
+  artifactButton.type = "button";
+  artifactButton.textContent = "Artifacts";
+  fragment.appendChild(artifactButton);
+  el.modelTabs.insertBefore(fragment, projectBadge || null);
+}
+
 // ── Bind all DOM event handlers ───────────────────────────────────────────────
 
 function bindEvents() {
@@ -632,8 +664,8 @@ function bindEvents() {
   }
   if (el.importModelJsonBtn) {
     el.importModelJsonBtn.addEventListener("click", () => {
-      if (!["cim", "pim", "psm"].includes(state.activeType)) {
-        setStatus("Switch to CIM, PIM, or PSM to import model JSON.");
+      if (!isModelingLevel(state.activeType)) {
+        setStatus(`Switch to ${modelingLevelListLabel()} to import model JSON.`);
         return;
       }
       if (el.importModelFileInput) {
@@ -646,8 +678,8 @@ function bindEvents() {
   }
   if (el.importModelXmiBtn) {
     el.importModelXmiBtn.addEventListener("click", () => {
-      if (!["cim", "pim", "psm"].includes(state.activeType)) {
-        setStatus("Switch to CIM, PIM, or PSM to import model XMI.");
+      if (!isModelingLevel(state.activeType)) {
+        setStatus(`Switch to ${modelingLevelListLabel()} to import model XMI.`);
         return;
       }
       if (el.importModelFileInput) {
@@ -695,7 +727,7 @@ function bindEvents() {
 
   if (el.paletteSearchInput) {
     el.paletteSearchInput.addEventListener("input", () => {
-      if (!["cim", "pim", "psm"].includes(state.activeType)) {
+      if (!isModelingLevel(state.activeType)) {
         return;
       }
       state.paletteSearch[state.activeType] = el.paletteSearchInput.value || "";
@@ -1010,6 +1042,7 @@ async function init() {
   }
   const authState = await ensureAuthenticated();
   await loadModelingConfig();
+  renderConfiguredModelTabs();
   refreshCurrentUserLabel();
   bindProjectDialogActions();
   setupIdeMenus();
@@ -1017,19 +1050,7 @@ async function init() {
   installG6LargeGraphDevHelper({ renderDiagram, renderWorkbench: renderViewWorkbench });
   bindUnsavedModelGuard();
   initViewWorkbench({ renderDiagram, renderPalette });
-  initCimWorkbenchSurface({
-    renderDiagram,
-    renderPalette,
-    openAttributePanel,
-    openConnectionPanel,
-  });
-  initPimWorkbenchSurface({
-    renderDiagram,
-    renderPalette,
-    openAttributePanel,
-    openConnectionPanel,
-  });
-  initPsmWorkbenchSurface({
+  initModelWorkbenchSurface({
     renderDiagram,
     renderPalette,
     openAttributePanel,

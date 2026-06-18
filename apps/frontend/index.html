@@ -106,7 +106,7 @@
                         class="topbar-btn-icon icon-svg icon-mask"
                         style="--icon-src: url(&quot;/assets/icons/generate.svg&quot;)"
                       ></span>
-                      <span class="topbar-btn-label">Generate PIM</span>
+                      <span class="topbar-btn-label">Generate</span>
                     </button>
                     <button
                       class="ide-menu-trigger topbar-ide-btn topbar-artifact-btn"
@@ -122,20 +122,6 @@
             </div>
 
             <div class="tabs" id="modelTabs">
-              <button
-                class="tab active"
-                data-type="cim"
-                title="Computational Independent Model"
-                type="button"
-              >
-                CIM
-              </button>
-              <button class="tab" data-type="pim" title="Platform Independent Model" type="button">
-                PIM
-              </button>
-              <button class="tab" data-type="psm" title="Platform Specific Model" type="button">
-                PSM
-              </button>
               <button class="tab" data-type="artifact" title="Generated artifacts" type="button">
                 Artifacts
               </button>
@@ -361,24 +347,24 @@
             <div class="help-panel-kicker">Modeling Flow</div>
             <div class="help-panel-title">From intent to deployable shape</div>
             <p class="help-panel-copy">
-              Work left to right: capture the business model in CIM, generate PIM, refine PSM, then
-              inspect artifacts. Save before each jump so traceability stays intact.
+              Work through the configured modeling levels, generate the next output, then inspect
+              artifacts. Save before each jump so traceability stays intact.
             </p>
             <div class="help-panel-steps">
               <div class="help-panel-step">
                 <span>1</span>
-                <strong>CIM</strong>
-                <em>Describe capabilities, processes, actors, goals, and policies.</em>
+                <strong>Level 1</strong>
+                <em>Capture the first configured model perspective.</em>
               </div>
               <div class="help-panel-step">
                 <span>2</span>
-                <strong>PIM</strong>
-                <em>Shape platform-neutral services, contracts, data, and workflows.</em>
+                <strong>Level 2</strong>
+                <em>Generate or refine the next configured model perspective.</em>
               </div>
               <div class="help-panel-step">
                 <span>3</span>
-                <strong>PSM</strong>
-                <em>Map the design to AWS serverless resources and security boundaries.</em>
+                <strong>Level 3</strong>
+                <em>Prepare the configured implementation-specific model perspective.</em>
               </div>
               <div class="help-panel-step">
                 <span>4</span>
@@ -774,11 +760,7 @@
                     style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
                   ></span>
                   <span>Attach</span>
-                  <input
-                    accept=".txt,.md,.json,.yaml,.yml,.xml,.eventstorming,.serverless,.awsserverless,.req,.requirements"
-                    id="chatFileInput"
-                    type="file"
-                  />
+                  <input accept=".txt,.md,.json,.yaml,.yml,.xml" id="chatFileInput" type="file" />
                 </label>
                 <div class="chat-file-tag hidden" id="chatFileName">
                   <span id="chatFileNameText">file.txt</span>
@@ -1046,7 +1028,7 @@
       >
         <div class="modal-dialog">
           <h3 class="modal-title" id="boundedContextNameTitle">Create Bounded Context</h3>
-          <p class="modal-subtitle">Enter a bounded context name for selected CIM elements.</p>
+          <p class="modal-subtitle">Enter a bounded context name for selected model elements.</p>
           <input
             autocomplete="off"
             class="project-input"

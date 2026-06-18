@@ -181,7 +181,7 @@ function nodeBadges(typeKey, node, definition) {
   if (meta.deletionPolicy) {
     addBadge(badges, meta.deletionPolicy);
   }
-  if (typeKey === "psm" && definition?.category) {
+  if (definition?.category) {
     addBadge(badges, definition.category);
   }
   return badges;
@@ -238,7 +238,7 @@ export function mapNodeToG6(
   const definition = cachedElementDefinition(typeKey, node.type);
   const notation = notationFromDefinition(typeKey, node, definition);
   const accent = nodeAccent(node, definition);
-  const sticky = typeKey === "cim" ? stickyColor(node, definition) : "";
+  const sticky = stickyColor(node, definition);
   const kindText = humanizeType(node.type);
   const detailText = nodeDetailLine(node, notation, definition);
   const token = nodeToken(typeKey, node, notation);
@@ -278,7 +278,7 @@ export function mapNodeToG6(
       elementId: node.id,
       nodeType: node.type,
       labelText: node.label || node.id,
-      labelFill: typeKey === "cim" ? "rgba(24, 20, 14, 0.92)" : "rgba(227, 232, 242, 0.96)",
+      labelFill: "rgba(227, 232, 242, 0.96)",
       labelFontSize: 12,
       labelFontWeight: 700,
       labelPlacement: "center",
@@ -294,12 +294,12 @@ export function mapNodeToG6(
       showHandles: Boolean(node.showHandles),
       accent,
       sticky,
-      fill: typeKey === "cim" ? sticky : "rgba(19, 25, 35, 0.98)",
-      stroke: typeKey === "cim" ? "rgba(21, 28, 40, 0.24)" : "rgba(61, 73, 95, 0.92)",
+      fill: "rgba(19, 25, 35, 0.98)",
+      stroke: "rgba(61, 73, 95, 0.92)",
       lineWidth: 1,
       radius: 2,
-      shadowColor: typeKey === "cim" ? "rgba(12, 18, 28, 0.28)" : "rgba(6, 11, 20, 0.32)",
-      shadowBlur: typeKey === "cim" ? 10 : 8,
+      shadowColor: "rgba(6, 11, 20, 0.32)",
+      shadowBlur: 8,
       detailLevel,
       isContainer: container,
     },

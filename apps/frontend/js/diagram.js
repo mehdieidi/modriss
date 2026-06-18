@@ -7,6 +7,7 @@ import {
   modelingLegalKinds,
   modelingLevelConfig,
   modelingRootTemplate,
+  isModelingLevel,
 } from "./modeling-config-data.js";
 import {
   installGraphAndViews,
@@ -14,14 +15,7 @@ import {
   serializeGraphAndViewsInto,
 } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
-import {
-  cimSemanticElementsFromRoot,
-  cimSemanticRelationshipsFromRoot,
-} from "./cim-model-utils.js";
-import {
-  pimSemanticElementsFromRoot,
-  pimSemanticRelationshipsFromRoot,
-} from "./pim-model-utils.js";
+import { semanticElementsFromRoot, semanticRelationshipsFromRoot } from "./model-utils.js";
 
 function connectionIdFor(modelType, index, sourceId, targetId, kind) {
   return genId();
@@ -38,12 +32,9 @@ function connectionRecords(modelJson, modelType = state.activeType) {
   if (Array.isArray(modelJson?.connectors)) {
     return modelJson.connectors;
   }
-  const semanticRelationships =
-    modelType === "cim"
-      ? cimSemanticRelationshipsFromRoot(modelJson)
-      : modelType === "pim"
-        ? pimSemanticRelationshipsFromRoot(modelJson)
-        : [];
+  const semanticRelationships = isModelingLevel(modelType)
+    ? semanticRelationshipsFromRoot(modelType, modelJson)
+    : [];
   if (semanticRelationships.length) {
     return semanticRelationships;
   }
@@ -64,12 +55,9 @@ function elementRecords(modelJson, modelType = state.activeType) {
   if (Array.isArray(modelJson?.resources)) {
     return modelJson.resources;
   }
-  const semanticElements =
-    modelType === "cim"
-      ? cimSemanticElementsFromRoot(modelJson)
-      : modelType === "pim"
-        ? pimSemanticElementsFromRoot(modelJson)
-        : [];
+  const semanticElements = isModelingLevel(modelType)
+    ? semanticElementsFromRoot(modelType, modelJson)
+    : [];
   if (semanticElements.length) {
     return semanticElements;
   }
@@ -141,17 +129,6 @@ export function legalKinds(typeKey, sourceType, targetType) {
 function sanitizeRootForType(typeKey, root) {
   if (!root || typeof root !== "object") {
     return root;
-  }
-  if (typeKey === "cim") {
-    delete root.architectureStyle;
-    delete root.platform;
-    delete root.defaultRegion;
-  } else if (typeKey === "pim") {
-    delete root.platform;
-    delete root.defaultRegion;
-  } else if (typeKey === "psm") {
-    delete root.domainName;
-    delete root.architectureStyle;
   }
   delete root.nodes;
   delete root.connectors;
@@ -323,7 +300,7 @@ function edgeLayoutStorageKey(modelType, edgeId) {
 
 /**
  * Retrieve stored edge presentation data from browser storage.
- * @param {string} modelType - CIM, PIM, or PSM
+ * @param {string} modelType - configured modeling level key
  * @param {string} edgeId - The edge ID
  * @returns {object|null} The stored layout/presentation object or null
  */
@@ -339,7 +316,7 @@ function getStoredEdgeLayout(modelType, edgeId) {
 
 /**
  * Store edge presentation data in browser storage for persistence across reloads.
- * @param {string} modelType - CIM, PIM, or PSM
+ * @param {string} modelType - configured modeling level key
  * @param {string} edgeId - The edge ID
  * @param {object} layout - The presentation object (for example {pinPoints:[...]}).
  */
@@ -358,7 +335,7 @@ function saveStoredEdgeLayout(modelType, edgeId, layout) {
 
 /**
  * Clear all stored edge layouts for a given model type.
- * @param {string} modelType - CIM, PIM, or PSM
+ * @param {string} modelType - configured modeling level key
  */
 function clearStoredEdgeLayouts(modelType) {
   try {

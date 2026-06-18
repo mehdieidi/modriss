@@ -1080,7 +1080,7 @@
     22px 22px;
 }
 
-.cim-workbench-surface {
+.model-workbench-surface {
   position: relative;
   inset: auto;
   z-index: 20;
@@ -1100,31 +1100,29 @@
   box-sizing: border-box;
 }
 
-.canvas-stage.cim-surface-active .cim-workbench-surface {
+.canvas-stage.model-surface-active .model-workbench-surface {
   max-height: calc(
     100vh - var(--topbar-h) - var(--workbench-strip-h) - var(--validation-fab-bottom) -
       var(--validation-fab-h) - 48px
   );
 }
 
-.cim-workbench-surface.hidden {
+.model-workbench-surface.hidden {
   display: none;
 }
 
-.cim-workbench-dock {
+.model-workbench-dock {
   width: auto;
   min-height: 0;
   max-height: min(190px, calc(100vh - var(--topbar-h) - var(--workbench-strip-h) - 34px));
 }
 
-.canvas-grid.cim-surface-active .g6-editor-host,
-.canvas-grid.pim-surface-active .g6-editor-host,
-.canvas-grid.psm-surface-active .g6-editor-host {
+.canvas-grid.model-surface-active .g6-editor-host {
   opacity: 0.08;
   pointer-events: none;
 }
 
-.cim-surface-header {
+.model-surface-header {
   position: relative;
   z-index: 30;
   display: grid;
@@ -1136,31 +1134,31 @@
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
-.cim-workbench-dock .cim-surface-header {
+.model-workbench-dock .model-surface-header {
   grid-template-columns: minmax(190px, 0.8fr) minmax(260px, 1.2fr);
   border-bottom: none;
 }
 
-.cim-workbench-dock .cim-filter-row {
+.model-workbench-dock .model-filter-row {
   display: grid;
 }
 
-.cim-workbench-dock .pim-edge-toolbar {
+.model-workbench-dock .model-edge-toolbar {
   display: none;
 }
 
-.cim-workbench-dock .cim-guidance {
+.model-workbench-dock .model-guidance {
   max-width: 920px;
 }
 
-.cim-surface-title {
+.model-surface-title {
   min-width: 0;
   display: flex;
   align-items: baseline;
   gap: 8px;
 }
 
-.cim-surface-title strong {
+.model-surface-title strong {
   min-width: 0;
   overflow: hidden;
   color: var(--text-strong);
@@ -1169,15 +1167,15 @@
   white-space: nowrap;
 }
 
-.cim-surface-title span,
-.cim-section-title {
+.model-surface-title span,
+.model-section-title {
   color: var(--muted);
   font: 800 9px/1.15 var(--font-display);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.cim-mode-tabs {
+.model-mode-tabs {
   display: inline-flex;
   gap: 3px;
   padding: 2px;
@@ -1190,9 +1188,9 @@
   scrollbar-width: thin;
 }
 
-.cim-mode-tabs button,
-.cim-action,
-.cim-icon-action {
+.model-mode-tabs button,
+.model-action,
+.model-icon-action {
   min-height: 26px;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -1204,21 +1202,21 @@
   cursor: pointer;
 }
 
-.cim-mode-tabs button {
+.model-mode-tabs button {
   min-height: 24px;
   padding: 4px 7px;
 }
 
-.cim-mode-tabs button.is-active,
-.cim-mode-tabs button:hover,
-.cim-action:hover,
-.cim-icon-action:hover {
+.model-mode-tabs button.is-active,
+.model-mode-tabs button:hover,
+.model-action:hover,
+.model-icon-action:hover {
   border-color: color-mix(in srgb, var(--accent) 44%, transparent);
   background: color-mix(in srgb, var(--accent) 14%, var(--surface-3) 86%);
   color: var(--text-strong);
 }
 
-.cim-filter-row {
+.model-filter-row {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(132px, 0.35fr) minmax(132px, 0.35fr) auto;
@@ -1226,15 +1224,15 @@
   align-items: center;
 }
 
-.cim-filter-row .workbench-slice-select-wrap,
-.cim-filter-row .cim-slice-select-wrap {
+.model-filter-row .workbench-slice-select-wrap,
+.model-filter-row .model-slice-select-wrap {
   flex: none;
   width: 100%;
   min-width: 0;
 }
 
-.cim-filter-row .workbench-slice-select,
-.cim-filter-row .cim-slice-select {
+.model-filter-row .workbench-slice-select,
+.model-filter-row .model-slice-select {
   min-height: 28px;
   border-radius: 7px;
   font: 500 11px/1.3 var(--font-ui);
@@ -1242,14 +1240,14 @@
   padding-bottom: 5px;
 }
 
-.cim-filter-row .workbench-slice-menu,
-.cim-filter-row .cim-slice-menu {
+.model-filter-row .workbench-slice-menu,
+.model-filter-row .model-slice-menu {
   width: max(100%, 220px);
   max-height: min(300px, calc(100vh - var(--topbar-h) - 36px));
   padding: 7px;
 }
 
-.pim-edge-toolbar {
+.model-edge-toolbar {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -1258,14 +1256,14 @@
   min-width: 0;
 }
 
-.pim-edge-toolbar > span {
+.model-edge-toolbar > span {
   color: var(--muted);
   font: 800 9px/1 var(--font-display);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.pim-edge-buttons {
+.model-edge-buttons {
   display: flex;
   gap: 5px;
   min-width: 0;
@@ -1273,7 +1271,7 @@
   scrollbar-width: thin;
 }
 
-.pim-edge-buttons button {
+.model-edge-buttons button {
   flex: 0 0 auto;
   min-height: 24px;
   border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
@@ -1287,28 +1285,28 @@
   cursor: pointer;
 }
 
-.pim-edge-buttons button:hover,
-.pim-edge-buttons button.is-active {
+.model-edge-buttons button:hover,
+.model-edge-buttons button.is-active {
   border-color: color-mix(in srgb, var(--accent) 55%, transparent);
   background: color-mix(in srgb, var(--accent) 16%, var(--surface-3) 84%);
   color: var(--text-strong);
 }
 
-.cim-guidance {
+.model-guidance {
   grid-column: 1 / -1;
   color: var(--muted);
   font: 600 10px/1.3 var(--font-ui);
   max-width: 920px;
 }
 
-.cim-quick-help {
+.model-quick-help {
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.cim-quick-help span {
+.model-quick-help span {
   border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
   border-radius: 999px;
   padding: 4px 7px;
@@ -1317,11 +1315,11 @@
   font: 700 10px/1.2 var(--font-ui);
 }
 
-.cim-filter-row input,
-.cim-select,
-.cim-table-input,
-.cim-form-field input,
-.cim-form-field select {
+.model-filter-row input,
+.model-select,
+.model-table-input,
+.model-form-field input,
+.model-form-field select {
   min-height: 28px;
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
@@ -1332,7 +1330,7 @@
   padding: 5px 7px;
 }
 
-.cim-check-label {
+.model-check-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1341,7 +1339,7 @@
   white-space: nowrap;
 }
 
-.cim-surface-body {
+.model-surface-body {
   position: relative;
   z-index: 1;
   flex: 1 1 auto;
@@ -1350,41 +1348,41 @@
   padding: 12px;
 }
 
-.cim-guide-panel {
+.model-guide-panel {
   display: grid;
   gap: 12px;
 }
 
-.cim-guide-section {
+.model-guide-section {
   display: grid;
   gap: 9px;
 }
 
-.cim-guide-heading {
+.model-guide-heading {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
 }
 
-.cim-guide-heading strong {
+.model-guide-heading strong {
   color: var(--text);
   font: 800 13px/1.2 var(--font-display);
 }
 
-.cim-guide-heading span {
+.model-guide-heading span {
   color: var(--muted);
   font: 700 10px/1.2 var(--font-ui);
   text-transform: uppercase;
 }
 
-.cim-guide-grid {
+.model-guide-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 8px;
 }
 
-.cim-guide-card {
+.model-guide-card {
   display: grid;
   gap: 7px;
   min-width: 0;
@@ -1394,34 +1392,34 @@
   background: color-mix(in srgb, var(--surface) 84%, transparent);
 }
 
-.cim-guide-card div {
+.model-guide-card div {
   display: grid;
   gap: 3px;
 }
 
-.cim-guide-card strong {
+.model-guide-card strong {
   color: var(--text);
   font: 800 12px/1.2 var(--font-display);
 }
 
-.cim-guide-card span {
+.model-guide-card span {
   color: var(--muted);
   font: 700 10px/1.2 var(--font-ui);
 }
 
-.cim-guide-card p {
+.model-guide-card p {
   margin: 0;
   color: var(--text-soft);
   font: 500 11px/1.4 var(--font-ui);
 }
 
-.cim-guide-legend {
+.model-guide-legend {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 8px;
 }
 
-.cim-guide-legend-row {
+.model-guide-legend-row {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
   gap: 9px;
@@ -1432,28 +1430,28 @@
   background: color-mix(in srgb, var(--surface) 84%, transparent);
 }
 
-.cim-guide-edge-swatch {
+.model-guide-edge-swatch {
   width: 38px;
   height: 0;
   border-top: 2px solid var(--guide-edge-color, var(--accent));
 }
 
-.cim-guide-edge-swatch.is-dashed {
+.model-guide-edge-swatch.is-dashed {
   border-top-style: dashed;
 }
 
-.cim-guide-legend-row div {
+.model-guide-legend-row div {
   display: grid;
   gap: 3px;
   min-width: 0;
 }
 
-.cim-guide-legend-row strong {
+.model-guide-legend-row strong {
   color: var(--text);
   font: 800 11px/1.2 var(--font-display);
 }
 
-.cim-guide-legend-row span {
+.model-guide-legend-row span {
   overflow: hidden;
   color: var(--muted);
   font: 600 10px/1.25 var(--font-ui);
@@ -1461,7 +1459,7 @@
   white-space: nowrap;
 }
 
-.cim-toolbar {
+.model-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
@@ -1469,43 +1467,43 @@
   margin-bottom: 10px;
 }
 
-.cim-action,
-.cim-icon-action {
+.model-action,
+.model-icon-action {
   padding: 6px 9px;
   border-color: color-mix(in srgb, var(--border) 72%, transparent);
   background: color-mix(in srgb, var(--surface-3) 78%, transparent);
 }
 
-.cim-action-primary {
+.model-action-primary {
   border-color: color-mix(in srgb, var(--accent) 62%, transparent);
   background: color-mix(in srgb, var(--accent) 22%, var(--surface-3) 78%);
 }
 
-.cim-file-action {
+.model-file-action {
   position: relative;
   display: inline-flex;
   align-items: center;
 }
 
-.cim-table-wrap,
-.cim-matrix-wrap {
+.model-table-wrap,
+.model-matrix-wrap {
   min-width: 0;
   overflow: auto;
   border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
   border-radius: 7px;
 }
 
-.cim-table,
-.cim-matrix {
+.model-table,
+.model-matrix {
   width: 100%;
   border-collapse: collapse;
   background: color-mix(in srgb, var(--surface) 84%, transparent);
 }
 
-.cim-table th,
-.cim-table td,
-.cim-matrix th,
-.cim-matrix td {
+.model-table th,
+.model-table td,
+.model-matrix th,
+.model-matrix td {
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 76%, transparent);
   padding: 7px 8px;
   vertical-align: top;
@@ -1513,8 +1511,8 @@
   font: 500 11px/1.35 var(--font-ui);
 }
 
-.cim-table th,
-.cim-matrix th {
+.model-table th,
+.model-matrix th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -1526,18 +1524,18 @@
   text-transform: uppercase;
 }
 
-.cim-matrix th span {
+.model-matrix th span {
   display: block;
   margin-top: 3px;
   color: color-mix(in srgb, var(--muted) 80%, transparent);
   font: 700 8px/1 var(--font-display);
 }
 
-.cim-matrix td {
+.model-matrix td {
   text-align: center;
 }
 
-.cim-link {
+.model-link {
   max-width: 220px;
   overflow: hidden;
   border: none;
@@ -1550,18 +1548,18 @@
   cursor: pointer;
 }
 
-.cim-link:hover {
+.model-link:hover {
   text-decoration: underline;
 }
 
-.cim-row-meta {
+.model-row-meta {
   display: flex;
   gap: 5px;
   margin-top: 4px;
 }
 
-.cim-type-badge,
-.cim-missing-badge {
+.model-type-badge,
+.model-missing-badge {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
@@ -1571,47 +1569,47 @@
   text-transform: uppercase;
 }
 
-.cim-type-badge {
+.model-type-badge {
   background: color-mix(in srgb, var(--surface-high) 70%, transparent);
   color: var(--muted);
 }
 
-.cim-missing-badge,
-.cim-alert {
+.model-missing-badge,
+.model-alert {
   background: color-mix(in srgb, #dc2626 24%, var(--surface-3) 76%);
   color: #fecaca;
 }
 
-.cim-ref-cell,
-.cim-cell-readonly {
+.model-ref-cell,
+.model-cell-readonly {
   color: var(--muted);
   font-size: 11px;
 }
 
-.cim-empty,
-.cim-empty-block {
+.model-empty,
+.model-empty-block {
   color: var(--muted);
   font: 600 12px/1.45 var(--font-ui);
   text-align: center;
 }
 
-.cim-empty-block {
+.model-empty-block {
   padding: 42px 10px;
 }
 
-.cim-dashboard-grid {
+.model-dashboard-grid {
   display: grid;
   grid-template-columns: minmax(260px, 0.9fr) minmax(280px, 1.1fr);
   gap: 12px;
 }
 
-.cim-root-form,
-.cim-health,
-.cim-view-entry-list,
-.cim-matrix-section,
-.cim-decision-grid,
-.cim-detail-projection,
-.cim-board-lane {
+.model-root-form,
+.model-health,
+.model-view-entry-list,
+.model-matrix-section,
+.model-decision-grid,
+.model-detail-projection,
+.model-board-lane {
   min-width: 0;
   border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
   border-radius: 8px;
@@ -1619,65 +1617,65 @@
   padding: 10px;
 }
 
-.cim-root-form,
-.cim-view-entry-list,
-.cim-detail-grid {
+.model-root-form,
+.model-view-entry-list,
+.model-detail-grid {
   display: grid;
   gap: 8px;
 }
 
-.cim-form-field {
+.model-form-field {
   display: grid;
   gap: 4px;
 }
 
-.cim-form-field span {
+.model-form-field span {
   color: var(--muted);
   font: 700 9px/1.2 var(--font-display);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
-.cim-alert,
-.cim-ok {
+.model-alert,
+.model-ok {
   border-radius: 7px;
   padding: 8px 9px;
   font: 700 11px/1.35 var(--font-ui);
 }
 
-.cim-ok {
+.model-ok {
   background: color-mix(in srgb, #16a34a 18%, var(--surface-3) 82%);
   color: #bbf7d0;
 }
 
-.cim-metric-grid {
+.model-metric-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
   gap: 8px;
   margin-top: 9px;
 }
 
-.cim-metric {
+.model-metric {
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
   padding: 10px;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
 }
 
-.cim-metric strong {
+.model-metric strong {
   display: block;
   color: var(--text-strong);
   font: 800 20px/1 var(--font-display);
 }
 
-.cim-metric span {
+.model-metric span {
   display: block;
   margin-top: 4px;
   color: var(--muted);
   font-size: 10px;
 }
 
-.cim-view-entry {
+.model-view-entry {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1691,31 +1689,31 @@
   cursor: pointer;
 }
 
-.cim-view-entry span {
+.model-view-entry span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.cim-view-entry strong {
+.model-view-entry strong {
   color: var(--muted);
   font: 800 8px/1 var(--font-display);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
-.cim-matrix-section + .cim-matrix-section {
+.model-matrix-section + .model-matrix-section {
   margin-top: 12px;
 }
 
-.cim-board {
+.model-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(180px, 1fr));
   gap: 12px;
 }
 
-.cim-board-card {
+.model-board-card {
   display: grid;
   width: 100%;
   gap: 4px;
@@ -1729,81 +1727,81 @@
   cursor: pointer;
 }
 
-.cim-board-card strong {
+.model-board-card strong {
   color: var(--text-strong);
   font-size: 12px;
 }
 
-.cim-board-card span,
-.cim-board-card em {
+.model-board-card span,
+.model-board-card em {
   color: var(--muted);
   font-size: 10px;
   font-style: normal;
 }
 
-.cim-detail-title {
+.model-detail-title {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
 }
 
-.cim-detail-title strong {
+.model-detail-title strong {
   color: var(--text-strong);
   font-size: 14px;
 }
 
-.cim-detail-title span {
+.model-detail-title span {
   color: var(--muted);
   font-size: 11px;
 }
 
-.cim-detail-grid {
+.model-detail-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 @media (max-width: 980px) {
-  .cim-workbench-surface {
+  .model-workbench-surface {
     max-height: calc(100vh - var(--topbar-h) - var(--workbench-strip-h) - 30px);
   }
 
-  .cim-workbench-dock {
+  .model-workbench-dock {
     width: auto;
     max-height: min(340px, calc(100vh - var(--topbar-h) - var(--workbench-strip-h) - 14px));
   }
 
-  .cim-surface-header,
-  .cim-filter-row,
-  .cim-dashboard-grid,
-  .cim-board {
+  .model-surface-header,
+  .model-filter-row,
+  .model-dashboard-grid,
+  .model-board {
     grid-template-columns: 1fr;
   }
 
-  .cim-mode-tabs {
+  .model-mode-tabs {
     overflow-x: auto;
     justify-self: stretch;
   }
 }
 
 @media (max-width: 640px) {
-  .cim-surface-header {
+  .model-surface-header {
     gap: 7px;
     padding: 7px;
   }
 
-  .cim-filter-row {
+  .model-filter-row {
     grid-template-columns: 1fr 1fr;
   }
 
-  .cim-filter-row input {
+  .model-filter-row input {
     grid-column: 1 / -1;
   }
 
-  .cim-check-label {
+  .model-check-label {
     min-height: 28px;
   }
 
-  .cim-quick-help {
+  .model-quick-help {
     display: none;
   }
 }
@@ -1899,8 +1897,8 @@
   pointer-events: none;
 }
 
-.workspace.cim-view-active .g6-node-icon-layer {
-  color: var(--g6-cim-modeling-element-icon-color, rgba(24, 20, 14, 0.78));
+.workspace.model-view-active .g6-node-icon-layer {
+  color: var(--g6-model-modeling-element-icon-color, rgba(24, 20, 14, 0.78));
 }
 
 .g6-bounded-context-box {

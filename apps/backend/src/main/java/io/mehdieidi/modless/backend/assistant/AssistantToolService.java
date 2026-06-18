@@ -31,7 +31,7 @@ public class AssistantToolService {
       description = "Search compact backend-owned metamodel and EVL catalogs.")
   public List<AssistantModelProvider.ContextSnippet> searchCatalogs(
       @ToolParam(description = "Search query") String query,
-      @ToolParam(description = "Modeling level: CIM, PIM, or PSM") String level,
+      @ToolParam(description = "Configured modeling level key or display name") String level,
       @ToolParam(description = "Maximum snippets to return") int limit) {
     return catalogs.search(query, level, Math.min(Math.max(limit, 1), 8));
   }
@@ -65,7 +65,7 @@ public class AssistantToolService {
       name = "summarizeValidation",
       description = "Summarize structural and EVL validation issues without committing changes.")
   public AssistantValidationSummary summarizeValidation(
-      @ToolParam(description = "Modeling level: CIM, PIM, or PSM") String level,
+      @ToolParam(description = "Configured modeling level key or display name") String level,
       @ToolParam(description = "Validation issues JSON array") String issuesJson) {
     List<AssistantValidationSummary.Issue> issues = parseIssues(issuesJson);
     boolean mandatoryPassed =

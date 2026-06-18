@@ -1,0 +1,119 @@
+{
+  "version": 3,
+  "dynamicPersistenceEnabled": true,
+  "defaultLevel": "cim",
+  "levelOrder": ["cim", "pim", "psm"],
+  "levels": {
+    "cim": {
+      "apiType": "cim",
+      "chatType": "CIM",
+      "modelNameTemplate": "cim-model",
+      "fallbackActiveModel": true
+    },
+    "pim": {
+      "apiType": "pim",
+      "chatType": "PIM",
+      "modelNameTemplate": "pim-model",
+      "fallbackActiveModel": false
+    },
+    "psm": {
+      "apiType": "psm",
+      "chatType": "PSM",
+      "modelNameTemplate": "psm-model",
+      "fallbackActiveModel": false
+    }
+  },
+  "transformations": {
+    "cim_to_pim": {
+      "enabled": true,
+      "operation": "cim-to-pim",
+      "sourceLevel": "cim",
+      "targetLevel": "pim",
+      "buttonLabel": "Generate PIM",
+      "buttonTitle": "Transform active CIM model to PIM",
+      "progressTitle": "Generating PIM",
+      "progressSubtitle": "Turning the current CIM into a platform-independent model.",
+      "startLabel": "Starting backend transformation...",
+      "busyLabel": "Generating PIM...",
+      "runningLabel": "Translating the CIM into a draft PIM model...",
+      "preparingLabel": "Preparing the generated PIM model...",
+      "completeLabel": "PIM ready.",
+      "successStatus": "PIM generated and loaded",
+      "switchStatus": "Switch to CIM tab first",
+      "ensureStoredLabel": "Generate PIM",
+      "errorMessage": "CIM to PIM generation failed."
+    },
+    "pim_to_psm": {
+      "enabled": true,
+      "operation": "pim-to-psm",
+      "sourceLevel": "pim",
+      "targetLevel": "psm",
+      "buttonLabel": "Generate PSM",
+      "buttonTitle": "Transform active PIM model to PSM",
+      "progressTitle": "Generating PSM",
+      "progressSubtitle": "Converting the current PIM into a platform-specific model.",
+      "startLabel": "Starting backend transformation...",
+      "busyLabel": "Generating PSM...",
+      "runningLabel": "Transforming the PIM into a platform-specific design...",
+      "preparingLabel": "Preparing the generated PSM model...",
+      "completeLabel": "PSM ready.",
+      "successStatus": "PSM generated and loaded",
+      "switchStatus": "Switch to PIM tab first",
+      "ensureStoredLabel": "Generate PSM",
+      "errorMessage": "PIM to PSM generation failed."
+    },
+    "psm_to_artifact": {
+      "enabled": true,
+      "operation": "psm-to-artifact",
+      "sourceLevel": "psm",
+      "targetLevel": "artifact",
+      "artifactType": "aws-sam",
+      "generationMode": "serverless_mda",
+      "buttonLabel": "Generate Artifacts",
+      "buttonTitle": "Generate artifacts from active PSM model",
+      "progressTitle": "Generating Artifacts",
+      "progressSubtitle": "Building deployable project files from the current PSM.",
+      "startLabel": "Starting backend generation...",
+      "busyLabel": "Generating Artifact...",
+      "runningLabel": "Generating deployment-ready artifacts from the PSM...",
+      "preparingLabel": "Opening the generated project in the artifact explorer...",
+      "completeLabel": "Artifacts ready.",
+      "successStatus": "Artifact ready",
+      "loadingStatus": "Artifact generated - loading...",
+      "switchStatus": "Switch to PSM tab first",
+      "ensureStoredLabel": "Generate Artifacts",
+      "errorMessage": "PSM to Artifact generation failed.",
+      "elementMappings": [],
+      "relationshipMappings": [],
+      "templates": [],
+      "projectStructure": {
+        "directories": [],
+        "pathMappings": [],
+        "passthroughUnmatched": true,
+        "emitGitkeep": true
+      }
+    }
+  },
+  "artifactAction": {
+    "buttonLabel": "Download Project",
+    "buttonTitle": "Download the generated project"
+  },
+  "impactAnalysis": {
+    "elementImpactEndpoint": "/impact/{level}/{modelId}/element/{elementId}",
+    "artifactImpactEndpoint": "/impact/artifact/{artifactId}",
+    "artifactLineage": {
+      "upstreamLevel": "psm"
+    },
+    "connectedElementRules": [
+      {
+        "level": "cim",
+        "modelEndpoint": "/{level}/{modelId}",
+        "modelType": "CIM",
+        "typeIncludes": ["Requirement", "Constraint", "Goal", "Kpi"],
+        "fallbackElementType": "Requirement",
+        "fallbackElementName": "Requirement",
+        "relationship": "UPSTREAM_REQUIREMENT"
+      }
+    ]
+  }
+}

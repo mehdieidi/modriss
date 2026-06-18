@@ -1,7 +1,7 @@
+import { modelingLevelConfig } from "./modeling-config-data.js";
+
 const DEFAULT_NODE_W = 228;
 const DEFAULT_NODE_H = 112;
-const CIM_NODE_W = 176;
-const CIM_NODE_H = 96;
 const LAYOUT_MARGIN = 48;
 const GAP_X = 72;
 const GAP_Y = 56;
@@ -330,9 +330,15 @@ function sortLayerNodes(nodes, edgesBySource, edgesByTarget) {
 }
 
 export function nodeSizeForType(typeKey) {
-  return typeKey === "cim"
-    ? { width: CIM_NODE_W, height: CIM_NODE_H }
-    : { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H };
+  try {
+    const policy = modelingLevelConfig(typeKey).canvasPolicy || {};
+    return {
+      width: numeric(policy.nodeWidth, DEFAULT_NODE_W),
+      height: numeric(policy.nodeHeight, DEFAULT_NODE_H),
+    };
+  } catch {
+    return { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H };
+  }
 }
 
 export function layoutLooksStacked(nodes, nodeSize, options = {}) {

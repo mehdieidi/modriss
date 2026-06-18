@@ -1,5 +1,17 @@
 {
   "displayName": "CIM",
+  "boundedContext": {
+    "enabled": true,
+    "candidateType": "BoundedContextCandidate",
+    "membershipFeatures": [
+      { "sourceType": "BusinessCapability", "feature": "capabilities" },
+      { "sourceType": "DomainEntity", "feature": "entities" },
+      { "sourceType": "Command", "feature": "commands" },
+      { "sourceType": "Query", "feature": "queries" },
+      { "sourceType": "BusinessEvent", "feature": "events" },
+      { "sourceType": "Policy", "feature": "policies" }
+    ]
+  },
   "elementVisualDefaults": {
     "icon": "category",
     "color": "#475569",
@@ -784,10 +796,111 @@
       "layoutHint": "MATRIX"
     }
   ],
+  "semanticEdgeObjectRules": [
+    {
+      "eClass": "DomainRelationship",
+      "matchKinds": ["DOMAIN_RELATIONSHIP"],
+      "sourceType": "DomainConcept",
+      "targetType": "DomainConcept",
+      "rootFeature": "relationships",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "relationshipType": "ASSOCIATION" }
+    },
+    {
+      "eClass": "CapabilityDependency",
+      "matchKinds": ["DEPENDS_ON"],
+      "sourceType": "BusinessCapability",
+      "targetType": "BusinessCapability",
+      "rootFeature": "capabilityDependencies",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "dependencyReason": "", "criticalPath": false }
+    },
+    {
+      "eClass": "ProcessTransition",
+      "matchKinds": ["TRANSITION"],
+      "sourceType": "ProcessStep",
+      "targetType": "ProcessStep",
+      "rootFeature": "transitions",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "label": "", "conditionExpression": "", "orderIndex": 0 }
+    },
+    {
+      "eClass": "TraceLink",
+      "matchKinds": ["TRACE"],
+      "sourceType": "*",
+      "targetType": "*",
+      "rootFeature": "links",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "linkType": "OTHER", "confidence": "" }
+    }
+  ],
   "rootTemplate": {
     "eClass": "CIMModel",
     "modelLevel": "CIM",
     "name": "",
+    "diagram": {
+      "elements": [],
+      "relationships": []
+    },
+    "graph": {
+      "elements": [],
+      "relationships": [],
+      "traceLinks": [],
+      "assumptions": [],
+      "validationIssues": [],
+      "manualBacklog": []
+    },
+    "views": [],
+    "fragments": []
+  },
+  "starterTemplate": {
+    "id": "${safe:modelName-root}",
+    "name": "${modelName}",
+    "eClass": "CIMModel",
+    "modelLevel": "CIM",
+    "domainName": "${modelName}",
+    "businessScope": "Initial business scope for assisted modeling.",
+    "organizationName": "Modeling Team",
+    "summary": "Mandatory-valid starter model for assisted CIM modeling.",
+    "rationale": "Created as the initial bounded context for assistant changes.",
+    "goals": [
+      {
+        "id": "${safe:modelName-initial-goal}",
+        "name": "Deliver Business Value",
+        "eClass": "BusinessGoal",
+        "summary": "Initial goal for assisted modeling.",
+        "rationale": "Provides a mandatory-valid starting point.",
+        "successCriterion": "The modeled business capability delivers measurable value.",
+        "businessValue": "Creates a clear outcome for later refinement.",
+        "failureConsequence": "The model lacks a measurable business outcome."
+      }
+    ],
+    "actors": [
+      {
+        "id": "${safe:modelName-initial-actor}",
+        "name": "Primary Business Actor",
+        "eClass": "Actor",
+        "summary": "Initial actor for assisted modeling.",
+        "rationale": "Provides a mandatory-valid starting point.",
+        "actorType": "ORGANIZATION",
+        "trustLevel": "TRUSTED_INTERNAL"
+      }
+    ],
+    "capabilities": [
+      {
+        "id": "${safe:modelName-initial-capability}",
+        "name": "Core Business Capability",
+        "eClass": "BusinessCapability",
+        "summary": "Initial capability for assisted modeling.",
+        "rationale": "Provides a mandatory-valid starting point.",
+        "responsibility": "Own the initial business outcome.",
+        "supports": ["${safe:modelName-initial-goal}"]
+      }
+    ],
     "diagram": {
       "elements": [],
       "relationships": []

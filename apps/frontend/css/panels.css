@@ -1034,22 +1034,10 @@
   white-space: nowrap;
 }
 
-.tier-badge-cim {
-  color: #f59e0b;
-  background: rgba(28, 42, 58, 0.9);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-}
-
-.tier-badge-pim {
+.tier-badge-model {
   color: #5ea8ff;
   background: rgba(28, 34, 56, 0.9);
   border: 1px solid rgba(94, 168, 255, 0.35);
-}
-
-.tier-badge-psm {
-  color: #bf8dff;
-  background: rgba(35, 29, 56, 0.9);
-  border: 1px solid rgba(191, 141, 255, 0.35);
 }
 
 .tier-badge-artifact {
@@ -1058,22 +1046,10 @@
   border: 1px solid rgba(57, 202, 152, 0.35);
 }
 
-html.light .tier-badge-cim {
-  color: #8b5400;
-  background: #fce8bc;
-  border-color: rgba(176, 120, 0, 0.45);
-}
-
-html.light .tier-badge-pim {
+html.light .tier-badge-model {
   color: #1b4b8f;
   background: #dce9ff;
   border-color: rgba(59, 130, 246, 0.45);
-}
-
-html.light .tier-badge-psm {
-  color: #6f2ca0;
-  background: #f0e1ff;
-  border-color: rgba(168, 85, 247, 0.45);
 }
 
 html.light .tier-badge-artifact {

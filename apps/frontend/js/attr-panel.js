@@ -20,6 +20,7 @@ import { escapeHtml } from "./utils.js";
 import {
   modelingContainmentsForType,
   modelingElementDefinition,
+  isModelingLevel,
   modelingLegalKinds,
   modelingLevelConfig,
   modelingRelationshipKindLabel,
@@ -33,20 +34,12 @@ import {
 } from "./graph-store.js";
 import {
   addReferenceValue,
-  CIM_ABSTRACT_TYPES,
-  CIM_COMMON_METADATA_FIELDS,
-  CIM_NESTED_CONTAINMENTS,
-  cimTypeMatches,
+  modelTypeMatches,
   elementLabel,
-  missingRequiredFeatures as cimMissingRequiredFeatures,
+  missingRequiredFeatures,
+  nestedContainmentsForType,
   refIds,
-} from "./cim-model-utils.js";
-import {
-  missingRequiredFeatures as pimMissingRequiredFeatures,
-  nestedContainmentsForType as pimNestedContainmentsForType,
-  PIM_ABSTRACT_TYPES,
-  refIds as pimRefIds,
-} from "./pim-model-utils.js";
+} from "./model-utils.js";
 import { captureDiagramUndoSnapshot, pushDiagramUndoSnapshot } from "./undo.js";
 // Fields managed by canvas – shown read-only
 const READONLY_ATTR_KEYS = new Set(["id", "eClass", "x", "y"]);
@@ -66,9 +59,10 @@ const TRACE_ATTR_KEYS = new Set([
   "reviewNotes",
   "manuallyMaintained",
 ]);
-const PIM_IDENTITY_FIELDS = new Set([
+const IDENTITY_FIELDS = new Set([
   "id",
   "name",
+  "label",
   "summary",
   "description",
   "documentation",
@@ -76,123 +70,10 @@ const PIM_IDENTITY_FIELDS = new Set([
   "externalId",
   "lifecycleStatus",
 ]);
-const CIM_IDENTITY_FIELDS = new Set([...CIM_COMMON_METADATA_FIELDS, "label"]);
-const CIM_GOVERNANCE_FIELDS = new Set([
-  "requirementType",
-  "sourceType",
-  "priority",
-  "mandatory",
-  "fitCriterion",
-  "qualityType",
-  "securityGoal",
-  "authorizationRule",
-  "auditRequired",
-  "purpose",
-  "legalBasis",
-  "retentionPolicy",
-  "crossBorderTransferExpected",
-  "regulation",
-  "controlId",
-  "constraintStrength",
-  "policyType",
-  "naturalLanguageRule",
-  "riskStatement",
-  "probability",
-  "impact",
-  "mitigation",
-  "productionBlocking",
-  "blocksTransformation",
-  "blocksProduction",
-  "blocking",
-  "severity",
-  "findingType",
-  "recommendation",
-  "readinessStatus",
-  "transformationReady",
-  "deploymentReady",
-  "productionReady",
-]);
-const PIM_POLICY_SECURITY_FIELDS = new Set([
-  "auth",
-  "authorization",
-  "cors",
-  "rateLimit",
-  "timeout",
-  "resilience",
-  "observability",
-  "idempotency",
-  "concurrency",
-  "security",
-  "policies",
-  "dataProtectionPolicies",
-  "backupPolicy",
-  "retentionPolicy",
-  "constrainedBy",
-  "attachedTo",
-  "targetResource",
-  "allowedPrincipals",
-  "permissions",
-  "identityProvider",
-  "principals",
-  "usesSecrets",
-  "usedForCredentials",
-  "secret",
-  "secretReference",
-  "credentials",
-  "credentialRequirements",
-  "requiresNetworkAccess",
-  "authRequired",
-  "authorizationRequired",
-  "encrypted",
-  "encryptionAtRestRequired",
-  "containsPersonalData",
-  "privileged",
-  "mfaRequired",
-]);
-const OVERVIEW_BADGE_FIELDS = [
-  "priority",
-  "severity",
-  "status",
-  "requirementType",
-  "qualityType",
-  "commandType",
-  "queryType",
-  "eventType",
-  "processKind",
-  "policyType",
-  "criticality",
-  "maturity",
-  "boundaryType",
-  "functionKind",
-  "runtime",
-  "languageBoundary",
-  "ownershipBoundary",
-  "trustLevel",
-  "actorType",
-  "valueType",
-  "consistencyExpectation",
-  "publicAccessMode",
-  "xrayDefault",
-];
-const OVERVIEW_BOOLEAN_BADGES = new Map([
-  ["mandatory", "mandatory"],
-  ["immutable", "immutable"],
-  ["externallyExposed", "external"],
-  ["publicEntryPoint", "public"],
-  ["ownsData", "owns data"],
-  ["auditRequired", "audit"],
-  ["productionBlocking", "production blocking"],
-  ["blocksTransformation", "blocks transformation"],
-  ["blocksProduction", "blocks production"],
-  ["tracingEnabled", "tracing"],
-  ["metricsEnabled", "metrics"],
-  ["accessLogsEnabled", "access logs"],
-  ["deletionProtectionEnabled", "deletion protection"],
-  ["pointInTimeRecoveryEnabled", "point in time recovery"],
-  ["eventBridgeNotificationEnabled", "eventbridge notifications"],
-  ["enableKeyRotation", "key rotation"],
-  ["rotationRequired", "rotation required"],
-]);
+const GOVERNANCE_FIELDS = new Set();
+const POLICY_SECURITY_FIELDS = new Set();
+const OVERVIEW_BADGE_FIELDS = [];
+const OVERVIEW_BOOLEAN_BADGES = new Map();
 
 // ── Open / close ──────────────────────────────────────────────────────────────
 
@@ -290,94 +171,10 @@ export function openConnectionPanel(connectionId) {
 }
 
 function renderConnectionFields(connection, source, target) {
-  if (state.activeType === "pim") {
-    renderPimConnectionFields(connection, source, target);
-    return;
-  }
-  el.attrPanelBody.innerHTML = "";
-  const relationship = state.graph?.relationshipsById?.get(connection.id) || connection;
-  const semanticType = relationship.eClass || "Connection";
-  el.attrPanelBody.appendChild(buildAttrSectionTitle("Connection"));
-  el.attrPanelBody.appendChild(
-    buildAttrField("kind", connection.kind, {
-      fieldType: "text",
-      readonly: true,
-    }),
-  );
-  el.attrPanelBody.appendChild(
-    buildAttrField("source", source?.label || connection.sourceId, {
-      fieldType: "text",
-      readonly: true,
-    }),
-  );
-  el.attrPanelBody.appendChild(
-    buildAttrField("target", target?.label || connection.targetId, {
-      fieldType: "text",
-      readonly: true,
-    }),
-  );
-  el.attrPanelBody.appendChild(
-    buildAttrField("id", connection.id, {
-      fieldType: "text",
-      readonly: true,
-    }),
-  );
-  if (semanticType !== "Connection") {
-    el.attrPanelBody.appendChild(buildAttrSectionTitle(semanticType));
-  }
-  let definition = null;
-  try {
-    definition =
-      semanticType !== "Connection"
-        ? modelingElementDefinition(state.activeType, semanticType)
-        : null;
-  } catch {
-    definition = null;
-  }
-  const rendered = new Set(["id", "kind", "source", "target", "name"]);
-  const fields = [
-    ...(definition?.attributes || []),
-    ...(definition?.references || []).map((reference) => ({
-      ...reference,
-      fieldType: "reference",
-    })),
-  ];
-  fields.forEach((field) => {
-    if (!field?.name || rendered.has(field.name) || field.readonly) {
-      return;
-    }
-    rendered.add(field.name);
-    const value = Object.prototype.hasOwnProperty.call(relationship, field.name)
-      ? relationship[field.name]
-      : field.defaultValue;
-    el.attrPanelBody.appendChild(buildAttrField(field.name, value, field));
-  });
-  Object.entries(relationship).forEach(([key, value]) => {
-    if (
-      rendered.has(key) ||
-      [
-        "sourceElementId",
-        "targetElementId",
-        "sourceType",
-        "targetType",
-        "semanticFeature",
-        "semanticSourceElementId",
-        "semanticTargetElementId",
-        "visualOnly",
-      ].includes(key)
-    ) {
-      return;
-    }
-    el.attrPanelBody.appendChild(
-      buildAttrField(key, value, {
-        fieldType: inferFieldType(value),
-        readonly: READONLY_ATTR_KEYS.has(key),
-      }),
-    );
-  });
+  renderConfiguredConnectionFields(connection, source, target);
 }
 
-function renderPimConnectionFields(connection, source, target) {
+function renderConfiguredConnectionFields(connection, source, target) {
   el.attrPanelBody.innerHTML = "";
   const relationship = state.graph?.relationshipsById?.get(connection.id) || connection;
   const semanticType = relationship.eClass || "Connection";
@@ -390,7 +187,7 @@ function renderPimConnectionFields(connection, source, target) {
   } catch {
     definition = null;
   }
-  const sections = pimInspectorSections();
+  const sections = relationshipInspectorSections();
   sections.identity.appendChild(
     buildAttrField("kind", connection.kind, {
       fieldType: "text",
@@ -459,7 +256,7 @@ function renderPimConnectionFields(connection, source, target) {
       }),
     );
   });
-  appendPimValidationSummary(sections.validation, relationship, semanticType);
+  appendConfiguredValidationSummary(sections.validation, relationship, semanticType);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
 }
@@ -539,71 +336,17 @@ function renderAttributeFields(node) {
   } catch {
     definition = null;
   }
-  if (state.activeType === "pim") {
-    renderPimAttributeFields(node, meta, definition);
-    return;
-  }
-  if (state.activeType === "psm") {
-    renderPsmAttributeFields(node, meta, definition);
-    return;
-  }
-  if (state.activeType === "cim") {
-    renderCimAttributeFields(node, meta, definition);
-    return;
-  }
-
-  const labelKey = state.activeType === "cim" ? "label" : "name";
-  appendElementOverviewSection(el.attrPanelBody, node, definition);
-  el.attrPanelBody.appendChild(buildAttrSectionTitle("Identity"));
-  el.attrPanelBody.appendChild(buildAttrField(labelKey, node.label, { fieldType: "text" }));
-
-  const rendered = new Set([labelKey, "label", "name"]);
-  el.attrPanelBody.appendChild(buildAttrSectionTitle("Type Specific"));
-  const configuredFields = [
-    ...(definition?.attributes || []),
-    ...(definition?.references || []).map((reference) => ({
-      ...reference,
-      fieldType: "reference",
-    })),
-  ];
-  configuredFields.forEach((field) => {
-    const key = field?.name;
-    if (!key || rendered.has(key) || SKIP_ATTR_KEYS.has(key) || TRACE_ATTR_KEYS.has(key)) {
-      return;
-    }
-    rendered.add(key);
-    const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
-    el.attrPanelBody.appendChild(buildAttrField(key, value, field));
-  });
-
-  Object.entries(meta).forEach(([key, value]) => {
-    if (key === labelKey || key === "label" || key === "name") {
-      return;
-    }
-    if (SKIP_ATTR_KEYS.has(key) || TRACE_ATTR_KEYS.has(key) || rendered.has(key)) {
-      return;
-    }
-    const readonly = READONLY_ATTR_KEYS.has(key);
-    el.attrPanelBody.appendChild(
-      buildAttrField(key, value, {
-        fieldType: inferFieldType(value),
-        readonly,
-      }),
-    );
-  });
-  appendLegalOutgoingRelationships(node);
-  appendContainmentSections(node);
-  appendTraceabilitySection(node);
-  bindContainmentSectionActions();
+  renderConfiguredAttributeFields(node, meta, definition);
 }
 
-function renderCimAttributeFields(node, meta, definition) {
-  const sections = cimInspectorSections();
+function renderConfiguredAttributeFields(node, meta, definition) {
+  const sections = semanticInspectorSections();
   const rendered = new Set(["label", "name"]);
 
   appendElementOverviewSection(sections.overview, node, definition, { includeTitle: false });
+  const labelKey = identityFieldForNode(node, definition);
   sections.identity.appendChild(
-    buildAttrField("label", node.label, {
+    buildAttrField(labelKey, node.label, {
       fieldType: "text",
     }),
   );
@@ -629,7 +372,7 @@ function renderCimAttributeFields(node, meta, definition) {
     }
     rendered.add(key);
     const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
-    cimSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
+    semanticSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
   });
 
   Object.entries(meta).forEach(([key, value]) => {
@@ -637,7 +380,7 @@ function renderCimAttributeFields(node, meta, definition) {
       return;
     }
     rendered.add(key);
-    cimSectionForField(sections, key, {
+    semanticSectionForField(sections, key, {
       fieldType: inferFieldType(value),
       readonly: READONLY_ATTR_KEYS.has(key),
     }).appendChild(
@@ -650,14 +393,29 @@ function renderCimAttributeFields(node, meta, definition) {
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
   appendTraceabilitySection(node, sections.trace, { includeTitle: false });
-  appendCimValidationSummary(sections.validation, meta, node.type);
+  appendConfiguredValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
   bindContainmentSectionActions();
 }
 
-function renderPimAttributeFields(node, meta, definition) {
-  const sections = pimInspectorSections();
+function identityFieldForNode(node, definition) {
+  const configured = String(modelingLevelConfig(state.activeType).labelField || "").trim();
+  const fieldNames = new Set([
+    ...(definition?.attributes || []).map((field) => field.name),
+    ...(definition?.references || []).map((field) => field.name),
+  ]);
+  if (configured && fieldNames.has(configured)) {
+    return configured;
+  }
+  if (Object.prototype.hasOwnProperty.call(node?.meta || {}, "label")) {
+    return "label";
+  }
+  return "name";
+}
+
+function renderRelationshipAttributeFields(node, meta, definition) {
+  const sections = relationshipInspectorSections();
   const rendered = new Set(["label", "name"]);
 
   appendElementOverviewSection(sections.overview, node, definition, { includeTitle: false });
@@ -690,7 +448,9 @@ function renderPimAttributeFields(node, meta, definition) {
     }
     rendered.add(key);
     const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
-    pimSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
+    relationshipSectionForField(sections, key, field).appendChild(
+      buildAttrField(key, value, field),
+    );
   });
 
   Object.entries(meta).forEach(([key, value]) => {
@@ -698,7 +458,7 @@ function renderPimAttributeFields(node, meta, definition) {
       return;
     }
     rendered.add(key);
-    pimSectionForField(sections, key, {
+    relationshipSectionForField(sections, key, {
       fieldType: inferFieldType(value),
       readonly: READONLY_ATTR_KEYS.has(key),
     }).appendChild(
@@ -711,14 +471,14 @@ function renderPimAttributeFields(node, meta, definition) {
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.relationships);
   appendTraceabilitySection(node, sections.trace, { includeTitle: false });
-  appendPimValidationSummary(sections.validation, meta, node.type);
+  appendConfiguredValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
   bindContainmentSectionActions();
 }
 
-function renderPsmAttributeFields(node, meta, definition) {
-  const sections = psmInspectorSections();
+function renderPlatformAttributeFields(node, meta, definition) {
+  const sections = platformInspectorSections();
   const rendered = new Set(["label", "name"]);
 
   appendElementOverviewSection(sections.overview, node, definition, { includeTitle: false });
@@ -751,7 +511,7 @@ function renderPsmAttributeFields(node, meta, definition) {
     }
     rendered.add(key);
     const value = Object.prototype.hasOwnProperty.call(meta, key) ? meta[key] : field.defaultValue;
-    psmSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
+    platformSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
   });
 
   Object.entries(meta).forEach(([key, value]) => {
@@ -759,7 +519,7 @@ function renderPsmAttributeFields(node, meta, definition) {
       return;
     }
     rendered.add(key);
-    psmSectionForField(sections, key, {
+    platformSectionForField(sections, key, {
       fieldType: inferFieldType(value),
       readonly: READONLY_ATTR_KEYS.has(key),
     }).appendChild(
@@ -772,13 +532,13 @@ function renderPsmAttributeFields(node, meta, definition) {
   appendLegalOutgoingRelationships(node, sections.relationships);
   appendContainmentSections(node, sections.containment);
   appendTraceabilitySection(node, sections.trace, { includeTitle: false });
-  appendPsmValidationSummary(sections.validation, meta, node.type);
+  appendPlatformValidationSummary(sections.validation, meta, node.type);
   appendEmptyHints(sections);
   renderAttrTabs(sections);
   bindContainmentSectionActions();
 }
 
-function pimInspectorSections() {
+function relationshipInspectorSections() {
   return {
     overview: createAttrTabSection("overview", "Overview"),
     identity: createAttrTabSection("identity", "Identity"),
@@ -790,7 +550,7 @@ function pimInspectorSections() {
   };
 }
 
-function cimInspectorSections() {
+function semanticInspectorSections() {
   return {
     overview: createAttrTabSection("overview", "Overview"),
     identity: createAttrTabSection("identity", "Identity"),
@@ -802,7 +562,7 @@ function cimInspectorSections() {
   };
 }
 
-function psmInspectorSections() {
+function platformInspectorSections() {
   return {
     overview: createAttrTabSection("overview", "Overview"),
     identity: createAttrTabSection("identity", "Identity"),
@@ -824,14 +584,14 @@ function createAttrTabSection(tab, title) {
   return section;
 }
 
-function pimSectionForField(sections, key, field = {}) {
+function relationshipSectionForField(sections, key, field = {}) {
   if (TRACE_ATTR_KEYS.has(key)) {
     return sections.trace;
   }
-  if (PIM_IDENTITY_FIELDS.has(key)) {
+  if (IDENTITY_FIELDS.has(key)) {
     return sections.identity;
   }
-  if (isPimPolicySecurityField(key, field)) {
+  if (isPolicySecurityField(key, field)) {
     return sections.policies;
   }
   if (field.fieldType === "reference" || field.kind === "reference") {
@@ -840,14 +600,14 @@ function pimSectionForField(sections, key, field = {}) {
   return sections.core;
 }
 
-function cimSectionForField(sections, key, field = {}) {
+function semanticSectionForField(sections, key, field = {}) {
   if (TRACE_ATTR_KEYS.has(key)) {
     return sections.trace;
   }
-  if (CIM_IDENTITY_FIELDS.has(key)) {
+  if (IDENTITY_FIELDS.has(key)) {
     return sections.identity;
   }
-  if (isCimGovernanceField(key, field)) {
+  if (isGovernanceField(key, field)) {
     return sections.governance;
   }
   if (field.fieldType === "reference" || field.kind === "reference") {
@@ -856,7 +616,7 @@ function cimSectionForField(sections, key, field = {}) {
   return sections.core;
 }
 
-function psmSectionForField(sections, key, field = {}) {
+function platformSectionForField(sections, key, field = {}) {
   if (TRACE_ATTR_KEYS.has(key)) {
     return sections.trace;
   }
@@ -866,23 +626,23 @@ function psmSectionForField(sections, key, field = {}) {
   if (field.fieldType === "reference" || field.kind === "reference") {
     return sections.relationships;
   }
-  if (isPsmSecurityField(key, field)) {
+  if (isSecurityField(key, field)) {
     return sections.security;
   }
   return sections.operations;
 }
 
-function isPsmSecurityField(key, field = {}) {
+function isSecurityField(key, field = {}) {
   const targetType = String(field.targetType || "");
   return /role|policy|principal|auth|kms|secret|permission|public|cors|vpc|subnet|security/i.test(
     `${key} ${targetType}`,
   );
 }
 
-function isPimPolicySecurityField(key, field = {}) {
+function isPolicySecurityField(key, field = {}) {
   const targetType = String(field.targetType || "");
   return (
-    PIM_POLICY_SECURITY_FIELDS.has(key) ||
+    POLICY_SECURITY_FIELDS.has(key) ||
     targetType.includes("Policy") ||
     targetType.includes("Principal") ||
     targetType.includes("ProtectedResource") ||
@@ -891,10 +651,10 @@ function isPimPolicySecurityField(key, field = {}) {
   );
 }
 
-function isCimGovernanceField(key, field = {}) {
+function isGovernanceField(key, field = {}) {
   const targetType = String(field.targetType || "");
   return (
-    CIM_GOVERNANCE_FIELDS.has(key) ||
+    GOVERNANCE_FIELDS.has(key) ||
     targetType.includes("Requirement") ||
     targetType.includes("Constraint") ||
     targetType.includes("Policy") ||
@@ -1045,10 +805,6 @@ function overviewBadges(node, definition) {
     }
   });
 
-  if (state.activeType === "cim") {
-    cimOverviewIssueBadges(node).forEach((label) => pushBadge(label, true));
-  }
-
   const visibleFields = Array.isArray(definition?.visibleFields) ? definition.visibleFields : [];
   visibleFields.slice(0, 6).forEach((field) => {
     const value = meta[field];
@@ -1060,31 +816,8 @@ function overviewBadges(node, definition) {
   return badges;
 }
 
-function cimOverviewIssueBadges(node) {
-  const issues = [];
-  const values = [
-    node?.label,
-    node?.type,
-    ...Object.values(node?.meta || {}).flatMap((value) => (Array.isArray(value) ? value : [value])),
-  ];
-  if (
-    values.some(
-      (value) =>
-        typeof value === "string" &&
-        /aws|lambda|dynamodb|eventbridge|step function|api gateway|sns|sqs|cognito|cloudwatch|iam|kms|s3/i.test(
-          value,
-        ),
-    )
-  ) {
-    issues.push("provider-independent");
-  }
-  if (
-    node.type === "BusinessEvent" &&
-    !isPastTenseBusinessEventName(node.meta?.occurredInPastTenseName || node.label)
-  ) {
-    issues.push("past tense");
-  }
-  return issues;
+function semanticOverviewIssueBadges(node) {
+  return [];
 }
 
 function isPastTenseBusinessEventName(value) {
@@ -1166,7 +899,7 @@ function buildAttrSectionTitle(title) {
 }
 
 function appendTraceabilitySection(node, host = el.attrPanelBody, { includeTitle = true } = {}) {
-  if (!["cim", "pim", "psm"].includes(state.activeType)) {
+  if (!isModelingLevel(state.activeType)) {
     return;
   }
   if (includeTitle) {
@@ -1234,7 +967,7 @@ function appendTraceabilitySection(node, host = el.attrPanelBody, { includeTitle
 }
 
 function legalOutgoingRelationshipOptions(node) {
-  if (!node || !["cim", "pim", "psm"].includes(state.activeType)) {
+  if (!node || !isModelingLevel(state.activeType)) {
     return [];
   }
   let level = null;
@@ -1336,31 +1069,10 @@ function containmentEntriesForType(type) {
       return configured.filter((entry) => !entry.relationshipOnly && entry.types?.length);
     }
   } catch {
-    // fall back to legacy local containment catalogs below
-  }
-  if (state.activeType === "pim") {
-    return pimNestedContainmentsForType(type)
-      .map((entry) => ({
-        ...entry,
-        types: (entry.types || []).filter(
-          (childType) => childType && !PIM_ABSTRACT_TYPES.includes(childType),
-        ),
-      }))
-      .filter((entry) => entry.types.length && !entry.relationshipOnly);
-  }
-  if (state.activeType !== "cim") {
     return [];
   }
   const entries = [];
-  Object.entries(CIM_NESTED_CONTAINMENTS).forEach(([ownerType, containments]) => {
-    if (
-      ownerType === "ModelElement"
-        ? cimTypeMatches({ eClass: type }, "ModelElement")
-        : cimTypeMatches({ eClass: type }, ownerType)
-    ) {
-      entries.push(...containments);
-    }
-  });
+  entries.push(...nestedContainmentsForType(state.activeType, type));
   const byFeature = new Map();
   entries.forEach((entry) => {
     if (!entry?.feature) {
@@ -1371,7 +1083,7 @@ function containmentEntriesForType(type) {
       types: [],
     };
     current.types = [...new Set([...current.types, ...(entry.types || [])])].filter(
-      (childType) => childType && !CIM_ABSTRACT_TYPES.includes(childType),
+      (childType) => childType,
     );
     byFeature.set(entry.feature, current);
   });
@@ -1380,11 +1092,7 @@ function containmentEntriesForType(type) {
 
 function containmentChildren(parent, feature) {
   const parentElement = state.graph?.elementsById?.get(parent.id);
-  const ids = new Set(
-    (state.activeType === "pim" ? pimRefIds : refIds)(
-      parentElement?.[feature] ?? parent.meta?.[feature],
-    ),
-  );
+  const ids = new Set(refIds(parentElement?.[feature] ?? parent.meta?.[feature]));
   const children = [];
   state.graph?.elementsById?.forEach((element) => {
     if (
@@ -1555,68 +1263,14 @@ function containedCellMarkup(child, fieldName) {
                  type="${inputType}" value="${escapeAttr(value ?? "")}">`;
 }
 
-function appendPimValidationSummary(section, element, type) {
-  const missing = pimMissingRequiredFeatures({
-    ...(element || {}),
-    eClass: type || element?.eClass || element?.type,
-  });
-  const impactedBy = [];
-  state.graph?.elementsById?.forEach((candidate) => {
-    const candidateType = candidate.eClass || candidate.type;
-    if (!["ReadinessFinding", "ReadinessCheck", "ManualDecision"].includes(candidateType)) {
-      return;
-    }
-    if (pimRefIds(candidate.affectedElements).includes(element?.id)) {
-      impactedBy.push(candidate);
-    }
-  });
-  const summary = document.createElement("div");
-  summary.className = "attr-validation-summary";
-  summary.innerHTML = `
-    ${
-      missing.length
-        ? `<div class="attr-validation-block is-error">
-      <strong>Missing required</strong>
-      ${missing.map((field) => `<span>${escapeAttr(field)}</span>`).join("")}
-    </div>`
-        : `<div class="attr-validation-block is-ok">
-      <strong>Required fields complete</strong>
-    </div>`
-    }
-    ${
-      impactedBy.length
-        ? `<div class="attr-validation-block">
-      <strong>Readiness links</strong>
-      ${impactedBy
-        .map(
-          (item) =>
-            `<span>${escapeAttr(
-              item.name || item.label || item.checkId || item.question || item.id,
-            )}</span>`,
-        )
-        .join("")}
-    </div>`
-        : `<div class="attr-field-hint">No linked readiness findings.</div>`
-    }`;
-  section.appendChild(summary);
-}
-
-function appendCimValidationSummary(section, element, type) {
+function appendConfiguredValidationSummary(section, element, type) {
   const normalized = {
     ...(element || {}),
     eClass: type || element?.eClass || element?.type,
   };
-  const missing = cimMissingRequiredFeatures(normalized);
+  const missing = missingRequiredFeatures(state.activeType, normalized);
   const impactedBy = [];
   state.graph?.elementsById?.forEach((candidate) => {
-    const candidateType = candidate.eClass || candidate.type;
-    if (
-      !["Risk", "Hotspot", "ReadinessFinding", "ReadinessCheck", "ManualDecision"].includes(
-        candidateType,
-      )
-    ) {
-      return;
-    }
     if (
       refIds(candidate.affectedElements).includes(element?.id) ||
       refIds(candidate.attachedTo).includes(element?.id)
@@ -1640,76 +1294,26 @@ function appendCimValidationSummary(section, element, type) {
     ${
       impactedBy.length
         ? `<div class="attr-validation-block">
-      <strong>Readiness and risk links</strong>
+      <strong>Linked findings</strong>
       ${impactedBy
-        .map(
-          (item) =>
-            `<span>${escapeAttr(
-              item.name || item.label || item.checkId || item.question || item.id,
-            )}</span>`,
-        )
+        .map((item) => `<span>${escapeAttr(elementLabel(item) || item.id)}</span>`)
         .join("")}
     </div>`
-        : `<div class="attr-field-hint">No linked risks, hotspots, or readiness findings.</div>`
+        : `<div class="attr-field-hint">No linked findings.</div>`
     }`;
   section.appendChild(summary);
 }
 
-function appendPsmValidationSummary(section, element, type) {
-  const normalized = {
-    ...(element || {}),
-    eClass: type || element?.eClass || element?.type,
-  };
-  const missing = metadataMissingRequiredFeatures("psm", normalized);
-  const impactedBy = [];
-  state.graph?.elementsById?.forEach((candidate) => {
-    const candidateType = candidate.eClass || candidate.type;
-    if (
-      ![
-        "ProductionReadinessAssessment",
-        "ReadinessFinding",
-        "ReadinessCheck",
-        "ManualDecision",
-      ].includes(candidateType)
-    ) {
-      return;
-    }
-    if (
-      refIds(candidate.affectedElements).includes(element?.id) ||
-      refIds(candidate.attachedTo).includes(element?.id)
-    ) {
-      impactedBy.push(candidate);
-    }
-  });
-  const summary = document.createElement("div");
-  summary.className = "attr-validation-summary";
-  summary.innerHTML = `
-    ${
-      missing.length
-        ? `<div class="attr-validation-block is-error">
-      <strong>Missing required</strong>
-      ${missing.map((field) => `<span>${escapeAttr(field)}</span>`).join("")}
-    </div>`
-        : `<div class="attr-validation-block is-ok">
-      <strong>Required fields complete</strong>
-    </div>`
-    }
-    ${
-      impactedBy.length
-        ? `<div class="attr-validation-block">
-      <strong>Readiness links</strong>
-      ${impactedBy
-        .map(
-          (item) =>
-            `<span>${escapeAttr(
-              item.name || item.label || item.checkId || item.question || item.id,
-            )}</span>`,
-        )
-        .join("")}
-    </div>`
-        : `<div class="attr-field-hint">No linked readiness findings.</div>`
-    }`;
-  section.appendChild(summary);
+function appendRelationshipValidationSummary(section, element, type) {
+  appendConfiguredValidationSummary(section, element, type);
+}
+
+function appendSemanticValidationSummary(section, element, type) {
+  appendConfiguredValidationSummary(section, element, type);
+}
+
+function appendPlatformValidationSummary(section, element, type) {
+  appendConfiguredValidationSummary(section, element, type);
 }
 
 function metadataMissingRequiredFeatures(typeKey, element) {
@@ -1734,81 +1338,19 @@ function metadataMissingRequiredFeatures(typeKey, element) {
 function initializeContainedChildDefaults(child, parent, feature) {
   child.meta.__ownerId = parent.id;
   child.meta.__containmentFeature = feature;
-  if (child.type === "DecisionRule") {
-    child.meta.priorityOrder = containmentChildren(parent, feature).length + 1;
-    child.meta.condition = "";
-    child.meta.outcome = "";
-  } else if (child.type === "AcceptanceCriterion") {
-    child.meta.givenContext = "";
-    child.meta.whenAction = "";
-    child.meta.thenOutcome = "";
-  } else if (child.type === "LifecycleStateDefinition") {
-    child.meta.stateName = child.label;
-  } else if (child.type === "QualityScenario") {
-    child.meta.source = "";
-    child.meta.stimulus = "";
-    child.meta.response = "";
-  } else if (child.type === "BusinessInvariant") {
-    child.meta.naturalLanguageStatement = "";
-  } else if (child.type === "ReadinessFinding") {
-    child.meta.severity ||= "WARNING";
-  } else if (child.type === "ReadinessCheck") {
-    child.meta.checkId ||= child.id;
-    child.meta.severity ||= "WARNING";
-  } else if (child.type === "ManualDecision") {
-    child.meta.question ||= child.label;
-  } else if (child.type === "Annotation") {
-    child.meta.key ||= child.label;
-    child.meta.source ||= "frontend";
-  } else if (state.activeType === "pim") {
-    initializePimContainedChildDefaults(child, parent, feature);
-  }
-}
-
-function initializePimContainedChildDefaults(child, parent, feature) {
-  if (child.type === "FunctionContract") {
-    child.meta.contractVersion ||= "1.0.0";
-  } else if (child.type === "ApiRoute") {
-    child.meta.method ||= "GET";
-    child.meta.pathTemplate ||= "/";
-  } else if (child.type === "SchemaField" || child.type === "DataField") {
-    child.meta.fieldType ||= "STRING";
-  } else if (child.type === "SchemaEnumLiteral") {
-    child.meta.literal ||= child.label;
-  } else if (child.type === "SchemaConstraint") {
-    child.meta.severity ||= "WARNING";
-  } else if (child.type === "DataModel") {
-    child.meta.dataModelKind ||= "ENTITY";
-  } else if (child.type === "AccessPattern") {
-    child.meta.patternName ||= child.label;
-  } else if (child.type === "WorkflowState") {
-    child.meta.stateKind ||= "TASK";
-    if (parent?.meta && feature === "states") {
-      parent.meta.states = [...new Set([...pimRefIds(parent.meta.states), child.id])];
-      parent.meta.startState ||= child.id;
-      parent.meta.endStates = pimRefIds(parent.meta.endStates).length
-        ? parent.meta.endStates
-        : [child.id];
+  const definition = modelingElementDefinition(state.activeType, child.type);
+  [...safeArray(definition?.attributes), ...safeArray(definition?.references)].forEach((field) => {
+    if (!field?.name || field.readonly || child.meta[field.name] !== undefined) {
+      return;
     }
-  } else if (child.type === "WorkflowTransition") {
-    child.meta.defaultTransition ||= false;
-  } else if (child.type === "Permission") {
-    child.meta.effect ||= "ALLOW";
-  } else if (child.type === "ConfigParameter") {
-    child.meta.scope ||= "APPLICATION";
-  } else if (child.type === "EnvironmentVariable") {
-    child.meta.variableName ||= child.label.replaceAll(/[^A-Za-z0-9_]+/g, "_").toUpperCase();
-  } else if (child.type === "CredentialRequirement") {
-    child.meta.secretKind ||= "TOKEN";
-  } else if (child.type === "MetricDimension") {
-    child.meta.key ||= child.label;
-  } else if (child.type === "ReadinessFinding") {
-    child.meta.severity ||= "WARNING";
-  } else if (child.type === "ReadinessCheck") {
-    child.meta.checkId ||= child.id;
-    child.meta.severity ||= "WARNING";
-  } else if (child.type === "ManualDecision") {
-    child.meta.question ||= child.label;
+    child.meta[field.name] =
+      field.defaultValue == null ? field.defaultValue : structuredClone(field.defaultValue);
+  });
+  const containment = (modelingContainmentsForType(state.activeType, parent.type) || []).find(
+    (entry) => entry.feature === feature,
+  );
+  if (parent?.meta && containment?.many !== false) {
+    parent.meta[feature] = [...new Set([...refIds(parent.meta[feature]), child.id])];
   }
 }
 
@@ -1877,9 +1419,7 @@ function deleteContainedChild(childId) {
   const parent = parentId ? state.graph?.elementsById?.get(parentId) : null;
   const parentNode = parentId ? state.nodesById.get(parentId) : null;
   if (parent && feature) {
-    const nextIds = (state.activeType === "pim" ? pimRefIds : refIds)(parent[feature]).filter(
-      (id) => id !== childId,
-    );
+    const nextIds = refIds(parent[feature]).filter((id) => id !== childId);
     parent[feature] = nextIds;
     if (parentNode?.meta) {
       parentNode.meta[feature] = nextIds;
@@ -1974,38 +1514,13 @@ function inferFieldType(value) {
   return "text";
 }
 
-const PIM_EXPRESSION_FIELDS = new Set([
-  "pathTemplate",
-  "filterExpression",
-  "eventPattern",
-  "routingExpression",
-  "routingExpressionLanguage",
-  "inputTransformation",
-  "inputMapping",
-  "outputMapping",
-  "conditionExpression",
-  "expression",
-  "authorizationRule",
-  "retryableErrors",
-  "nonRetryableErrors",
-  "queryBy",
-  "sortBy",
-  "filterBy",
-  "projection",
-  "scheduleExpression",
-  "validationPattern",
-  "condition",
-  "valueExpression",
-]);
+const EXPRESSION_FIELDS = new Set();
 
-function isPimExpressionField(key, fieldType) {
-  if (!["pim", "psm"].includes(state.activeType)) {
-    return false;
-  }
+function isExpressionField(key, fieldType) {
   const normalized = String(key || "");
   return (
     fieldType !== "reference" &&
-    (PIM_EXPRESSION_FIELDS.has(normalized) ||
+    (EXPRESSION_FIELDS.has(normalized) ||
       /expression|pattern|condition|mapping|query|filter|projection|json|document|definition|policy/i.test(
         normalized,
       ))
@@ -2014,7 +1529,7 @@ function isPimExpressionField(key, fieldType) {
 
 function buildAttrField(key, value, field) {
   let fieldType = field?.fieldType || inferFieldType(value);
-  const expressionField = isPimExpressionField(key, fieldType);
+  const expressionField = isExpressionField(key, fieldType);
   if (expressionField && fieldType === "text") {
     fieldType = "textarea";
   }
@@ -2150,14 +1665,7 @@ function elementMatchesReferenceTarget(element, targetType) {
   ) {
     return true;
   }
-  if (state.activeType === "cim") {
-    return cimTypeMatches(element, expected);
-  }
-  return modelingTypeMatches(
-    state.activeType,
-    expected,
-    String(element?.eClass || element?.type || ""),
-  );
+  return modelTypeMatches(state.activeType, element, expected);
 }
 
 function referenceOptions(targetType) {
@@ -2228,7 +1736,10 @@ export function applyAttributePanel() {
     return;
   }
 
-  const labelKey = state.activeType === "cim" ? "label" : "name";
+  const labelKey = identityFieldForNode(
+    node,
+    modelingElementDefinition(state.activeType, node.type),
+  );
   const undoSnapshot = captureDiagramUndoSnapshot();
 
   try {

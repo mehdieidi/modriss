@@ -1,5 +1,6 @@
 import { state } from "./state.js";
 import { serializeModel } from "./diagram.js";
+import { isModelingLevel } from "./modeling-config-data.js";
 import {
   restoreTabGraphState,
   serializeRuntimeFragments,
@@ -11,11 +12,11 @@ import {
 const MAX_DIAGRAM_HISTORY = 100;
 
 function isModelingType(typeKey = state.activeType) {
-  return ["cim", "pim", "psm"].includes(typeKey);
+  return isModelingLevel(typeKey);
 }
 
 function defaultModelName(typeKey = state.activeType) {
-  return `${typeKey}-model`;
+  return state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate || `${typeKey}-model`;
 }
 
 function signatureForDiagram(diagram) {

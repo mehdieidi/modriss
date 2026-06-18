@@ -59,17 +59,43 @@ import {
   resetModelSaveState,
   updateModelSaveUi,
 } from "./model-save-ui.js";
+import {
+  isModelingLevel,
+  modelingLevelConfig,
+  modelingLevelListLabel,
+  transformationForLevel,
+} from "./modeling-config-data.js";
 
 let autoLayoutPromise = null;
 
 // ── Model list (sidebar select) ───────────────────────────────────────────────
 
 function defaultModelName(typeKey = state.activeType) {
-  return `${typeKey}-model`;
+  return (
+    state.modelingConfig.config?.levels?.[typeKey]?.modelNameTemplate ||
+    `${typeKey || "model"}-model`
+  );
 }
 
 function isModelingType(typeKey = state.activeType) {
-  return ["cim", "pim", "psm"].includes(typeKey);
+  return isModelingLevel(typeKey);
+}
+
+function supportsBoundedContext(typeKey = state.activeType) {
+  try {
+    return Boolean(modelingLevelConfig(typeKey).boundedContext?.enabled);
+  } catch {
+    return false;
+  }
+}
+
+function resetBoundedContextState() {
+  state.boundedContextCreateMode = false;
+  state.boundedContextDraftNodeIds = new Set();
+  state.boundedContextDraftName = "";
+  state.boundedContextViewMode = "normal";
+  state.activeBoundedContextName = "";
+  state.selectedBoundedContextName = null;
 }
 
 function centerCurrentDiagram({ fit = true } = {}) {
@@ -562,7 +588,7 @@ function buildSavePayload(selectedName) {
 export async function saveCurrentModel({ rethrow = false, quiet = false } = {}) {
   if (!isModelingType()) {
     if (!quiet) {
-      setStatus("Switch to CIM, PIM, or PSM to save a model.");
+      setStatus(`Switch to ${modelingLevelListLabel()} to save a model.`);
     }
     return;
   }
@@ -655,12 +681,8 @@ export async function loadModelById(
   state.baseModel = structuredClone(record.modelJson);
   installGraphAndViews(typeKey, record.modelJson, record.name || defaultModelName(typeKey));
   state.diagram = materializeActiveView();
-  if (typeKey === "cim") {
-    state.boundedContextCreateMode = false;
-    state.boundedContextDraftNodeIds = new Set();
-    state.boundedContextDraftName = "";
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
+  if (supportsBoundedContext(typeKey)) {
+    resetBoundedContextState();
   }
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
@@ -889,7 +911,7 @@ function moveLayoutNodes(nodes, dx, dy, movedNodeIds) {
 
 function separateBoundedContextOverlaps(nodeSize) {
   const movedNodeIds = new Set();
-  if (state.activeType !== "cim" || state.diagram.nodes.length < 2) {
+  if (!supportsBoundedContext() || state.diagram.nodes.length < 2) {
     return movedNodeIds;
   }
   const contextGroups = new Map();
@@ -1150,19 +1172,20 @@ export function updateGenerateButtonState() {
   if (!el.generateContextBtn) {
     return;
   }
-  const buttonByType = {
-    cim: { label: "Generate PIM", title: "Transform active CIM model to PIM" },
-    pim: { label: "Generate PSM", title: "Transform active PIM model to PSM" },
-    psm: {
-      label: "Generate Artifacts",
-      title: "Generate artifacts from active PSM model",
-    },
-    artifact: {
-      label: "Download Project",
-      title: "Download the generated project",
-    },
-  };
-  const buttonConfig = buttonByType[state.activeType];
+  const transformation = transformationForLevel(state.activeType);
+  const artifactAction = state.modelingConfig.config?.artifactAction || {};
+  const buttonConfig =
+    state.activeType === "artifact"
+      ? {
+          label: artifactAction.buttonLabel || "Download Project",
+          title: artifactAction.buttonTitle || "Download the generated project",
+        }
+      : transformation
+        ? {
+            label: transformation.buttonLabel || transformation.label || "Generate",
+            title: transformation.buttonTitle || transformation.title || "Run generation",
+          }
+        : null;
   const isVisible = Boolean(buttonConfig);
   el.generateContextBtn.classList.toggle("hidden", !isVisible);
   el.generateContextBtn.disabled = !isVisible;
@@ -1183,47 +1206,78 @@ export function updateGenerateButtonState() {
   el.generateContextBtn.title = buttonConfig.title;
 }
 
-export async function generateCimToPim() {
-  if (state.activeType !== "cim" || !state.modelId) {
-    if (state.activeType !== "cim") {
-      setStatus("Switch to CIM tab first");
+async function executeConfiguredTransformation(transformation) {
+  const sourceLevel = transformation?.sourceLevel || state.activeType;
+  const targetLevel = transformation?.targetLevel || "";
+  const operation = transformation?.operation || "";
+  if (!operation) {
+    setStatus("No backend transformation operation is configured for this context.");
+    return;
+  }
+  if (state.activeType !== sourceLevel || !state.modelId) {
+    if (state.activeType !== sourceLevel) {
+      setStatus(transformation.switchStatus || `Switch to ${sourceLevel.toUpperCase()} tab first`);
       return;
     }
   }
   try {
-    if (!(await ensureStoredModelForBackendOperation("Generate PIM"))) {
+    if (
+      !(await ensureStoredModelForBackendOperation(transformation.ensureStoredLabel || "Generate"))
+    ) {
       return;
     }
     showGenerationProgress({
-      title: "Generating PIM",
-      subtitle: "Turning the current CIM into a platform-independent model.",
-      label: "Starting backend transformation…",
+      title: transformation.progressTitle || "Generating",
+      subtitle: transformation.progressSubtitle || "",
+      label: transformation.startLabel || "Starting backend transformation...",
     });
-    setBusy("Generating PIM…");
-    setGenerationProgressPhase("Translating the CIM into a draft PIM model…", 68);
-    const result = await runTransformation("cim-to-pim", state.modelId);
-    setGenerationProgressPhase("Preparing the generated PIM model…", 76);
+    setBusy(transformation.busyLabel || "Generating...");
+    setGenerationProgressPhase(transformation.runningLabel || "Running backend generation...", 68);
+    const result = await runTransformation(operation, state.modelId);
+    if (targetLevel === "artifact") {
+      if (transformation.loadingStatus) {
+        setStatus(transformation.loadingStatus);
+      }
+      setGenerationProgressPhase(
+        transformation.preparingLabel || "Opening generated artifact...",
+        94,
+      );
+      if (result.artifact) {
+        await loadArtifactRecord(result.artifact, { collapseTree: true });
+      } else {
+        await loadArtifactById(result.resultArtifactId, { collapseTree: true });
+      }
+      await switchTab("artifact");
+      await completeGenerationProgress(transformation.completeLabel || "Artifacts ready.");
+      setStatus(transformation.successStatus || "Artifact ready");
+      return;
+    }
+    setGenerationProgressPhase(transformation.preparingLabel || "Preparing generated model...", 76);
     await waitForCanvasPaint(1);
     if (result.model) {
-      await loadModelRecord("pim", result.model, {
+      await loadModelRecord(targetLevel, result.model, {
         showManualGuidance: true,
         autoLayout: false,
       });
     } else {
-      await loadModelById("pim", result.resultModelId, {
+      await loadModelById(targetLevel, result.resultModelId, {
         showManualGuidance: true,
         autoLayout: false,
       });
     }
-    await autoLayoutGeneratedModel("PIM");
-    await completeGenerationProgress("PIM ready.");
+    await autoLayoutGeneratedModel(
+      (
+        state.modelingConfig.config?.levels?.[targetLevel]?.displayName || targetLevel
+      ).toUpperCase(),
+    );
+    await completeGenerationProgress(transformation.completeLabel || "Model ready.");
     if (!state.validation.issues.length) {
-      setStatus("PIM generated and loaded");
+      setStatus(transformation.successStatus || "Model generated and loaded");
     }
   } catch (error) {
     if (isMethodologyValidationError(error)) {
-      if (isTransformationApiError(error, "cim-to-pim")) {
-        await switchTab("pim");
+      if (targetLevel && targetLevel !== "artifact" && isTransformationApiError(error, operation)) {
+        await switchTab(targetLevel);
       }
       applyValidationIssues(error.issues, { openOnFirst: true });
       toggleValidationDrawer(true);
@@ -1234,7 +1288,7 @@ export async function generateCimToPim() {
             severity: "ERROR",
             constraint: "GenerationError",
             issueClass: "SYSTEM_ERROR",
-            message: error.message || "CIM to PIM generation failed.",
+            message: error.message || transformation.errorMessage || "Generation failed.",
             guidance:
               "Automatic generation was interrupted. Review highlighted items and continue with manual refinement.",
           },
@@ -1249,141 +1303,33 @@ export async function generateCimToPim() {
   }
 }
 
-export async function generatePimToPsm() {
-  if (state.activeType !== "pim" || !state.modelId) {
-    if (state.activeType !== "pim") {
-      setStatus("Switch to PIM tab first");
-      return;
-    }
-  }
-  try {
-    if (!(await ensureStoredModelForBackendOperation("Generate PSM"))) {
-      return;
-    }
-    showGenerationProgress({
-      title: "Generating PSM",
-      subtitle: "Converting the current PIM into a platform-specific model.",
-      label: "Starting backend transformation…",
-    });
-    setBusy("Generating PSM…");
-    setGenerationProgressPhase("Transforming the PIM into a platform-specific design…", 68);
-    const result = await runTransformation("pim-to-psm", state.modelId);
-    setGenerationProgressPhase("Preparing the generated PSM model…", 76);
-    await waitForCanvasPaint(1);
-    if (result.model) {
-      await loadModelRecord("psm", result.model, {
-        showManualGuidance: true,
-        autoLayout: false,
-      });
-    } else {
-      await loadModelById("psm", result.resultModelId, {
-        showManualGuidance: true,
-        autoLayout: false,
-      });
-    }
-    await autoLayoutGeneratedModel("PSM");
-    await completeGenerationProgress("PSM ready.");
-    if (!state.validation.issues.length) {
-      setStatus("PSM generated and loaded");
-    }
-  } catch (error) {
-    if (isMethodologyValidationError(error)) {
-      if (isTransformationApiError(error, "pim-to-psm")) {
-        await switchTab("psm");
-      }
-      applyValidationIssues(error.issues, { openOnFirst: true });
-      toggleValidationDrawer(true);
-    } else {
-      applyValidationIssues(
-        [
-          {
-            severity: "ERROR",
-            constraint: "GenerationError",
-            issueClass: "SYSTEM_ERROR",
-            message: error.message || "PIM to PSM generation failed.",
-            guidance:
-              "Automatic generation was interrupted. Review highlighted items and continue with manual refinement.",
-          },
-        ],
-        { openOnFirst: true },
-      );
-      toggleValidationDrawer(true);
-    }
-    setError(`Generation failed: ${error.message}`);
-  } finally {
-    hideGenerationProgress();
-  }
+export async function generateFirstConfiguredTransformation() {
+  await executeConfiguredTransformation(
+    Object.values(state.modelingConfig.config?.transformations || {})[0],
+  );
 }
 
-export async function generatePsmToArtifact() {
-  if (state.activeType !== "psm" || !state.modelId) {
-    if (state.activeType !== "psm") {
-      setStatus("Switch to PSM tab first");
-      return;
-    }
-  }
-  try {
-    if (!(await ensureStoredModelForBackendOperation("Generate Artifacts"))) {
-      return;
-    }
-    showGenerationProgress({
-      title: "Generating Artifacts",
-      subtitle: "Building deployable project files from the current PSM.",
-      label: "Starting backend generation…",
-    });
-    setBusy("Generating Artifact…");
-    setGenerationProgressPhase("Generating deployment-ready artifacts from the PSM…", 76);
-    const result = await runTransformation("psm-to-artifact", state.modelId);
-    setStatus("Artifact generated — loading…");
-    setGenerationProgressPhase("Opening the generated project in the artifact explorer…", 94);
-    if (result.artifact) {
-      await loadArtifactRecord(result.artifact, { collapseTree: true });
-    } else {
-      await loadArtifactById(result.resultArtifactId, { collapseTree: true });
-    }
-    await switchTab("artifact");
-    await completeGenerationProgress("Artifacts ready.");
-    setStatus("Artifact ready");
-  } catch (error) {
-    if (isMethodologyValidationError(error)) {
-      applyValidationIssues(error.issues, { openOnFirst: true });
-      toggleValidationDrawer(true);
-    } else {
-      applyValidationIssues(
-        [
-          {
-            severity: "ERROR",
-            constraint: "GenerationError",
-            issueClass: "SYSTEM_ERROR",
-            message: error.message || "PSM to Artifact generation failed.",
-            guidance:
-              "Automatic generation was interrupted. Review highlighted items and continue with manual refinement.",
-          },
-        ],
-        { openOnFirst: true },
-      );
-      toggleValidationDrawer(true);
-    }
-    setError(`Generation failed: ${error.message}`);
-  } finally {
-    hideGenerationProgress();
-  }
+export async function generateNextConfiguredTransformation() {
+  await executeConfiguredTransformation(
+    Object.values(state.modelingConfig.config?.transformations || {})[1],
+  );
+}
+
+export async function generateArtifactConfiguredTransformation() {
+  await executeConfiguredTransformation(
+    Object.values(state.modelingConfig.config?.transformations || {}).find(
+      (transformation) => transformation?.targetLevel === "artifact",
+    ),
+  );
 }
 
 export async function generateForCurrentContext() {
-  if (state.activeType === "cim") {
-    await generateCimToPim();
+  const transformation = transformationForLevel(state.activeType);
+  if (transformation) {
+    await executeConfiguredTransformation(transformation);
     return;
   }
-  if (state.activeType === "pim") {
-    await generatePimToPsm();
-    return;
-  }
-  if (state.activeType === "psm") {
-    await generatePsmToArtifact();
-    return;
-  }
-  setStatus("Switch to CIM, PIM, or PSM tab first");
+  setStatus(`Switch to ${modelingLevelListLabel()} tab first`);
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -1407,13 +1353,8 @@ export async function switchTab(type) {
   }
 
   state.activeType = type;
-  if (type !== "cim") {
-    state.boundedContextCreateMode = false;
-    state.boundedContextDraftNodeIds = new Set();
-    state.boundedContextDraftName = "";
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
-    state.selectedBoundedContextName = null;
+  if (!supportsBoundedContext(type)) {
+    resetBoundedContextState();
   }
   Array.from(el.modelTabs.querySelectorAll(".tab")).forEach((t) =>
     t.classList.toggle("active", t.dataset.type === type),
@@ -1460,12 +1401,8 @@ export async function switchTab(type) {
   state.modelRevision = tabState.modelRevision || 0;
   state.baseModel = tabState.baseModel;
   state.diagram = tabState.diagram || emptyDiagram(type);
-  if (type === "cim") {
-    state.boundedContextCreateMode = false;
-    state.boundedContextDraftNodeIds = new Set();
-    state.boundedContextDraftName = "";
-    state.boundedContextViewMode = "normal";
-    state.activeBoundedContextName = "";
+  if (supportsBoundedContext(type)) {
+    resetBoundedContextState();
   }
   restoreTabGraphState(type);
   materializeActiveView();
@@ -1485,7 +1422,7 @@ export async function switchTab(type) {
 
 export async function validateCurrentModel() {
   if (state.activeType === "artifact") {
-    setStatus("Validation is available for CIM, PIM, and PSM.");
+    setStatus(`Validation is available for ${modelingLevelListLabel()}.`);
     return;
   }
   try {
@@ -1568,7 +1505,7 @@ async function runAutoLayoutCurrentDiagram({
 } = {}) {
   if (!isModelingType()) {
     if (status) {
-      setStatus("Auto layout is available for CIM, PIM, and PSM.");
+      setStatus(`Auto layout is available for ${modelingLevelListLabel()}.`);
     }
     return;
   }
@@ -1685,7 +1622,7 @@ async function runAutoLayoutCurrentDiagram({
 
 export async function exportActiveModel(format = "json") {
   if (!isModelingType()) {
-    setStatus(`Switch to CIM, PIM, or PSM to export model ${format.toUpperCase()}.`);
+    setStatus(`Switch to ${modelingLevelListLabel()} to export model ${format.toUpperCase()}.`);
     return;
   }
   const normalizedFormat = String(format || "json").toLowerCase();
@@ -1739,7 +1676,7 @@ export async function exportActiveModel(format = "json") {
 
 export async function importActiveModel(file, format = "json", typeKey = state.activeType) {
   if (!isModelingType(typeKey)) {
-    setStatus(`Switch to CIM, PIM, or PSM to import model ${format.toUpperCase()}.`);
+    setStatus(`Switch to ${modelingLevelListLabel()} to import model ${format.toUpperCase()}.`);
     return;
   }
   if (!file) {
@@ -1800,12 +1737,8 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
     state.baseModel = structuredClone(body.modelJson);
     installGraphAndViews(state.activeType, body.modelJson, body.name || defaultModelName());
     state.diagram = materializeActiveView();
-    if (state.activeType === "cim") {
-      state.boundedContextCreateMode = false;
-      state.boundedContextDraftNodeIds = new Set();
-      state.boundedContextDraftName = "";
-      state.boundedContextViewMode = "normal";
-      state.activeBoundedContextName = "";
+    if (supportsBoundedContext()) {
+      resetBoundedContextState();
     }
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].baseModel = structuredClone(state.baseModel);
@@ -1884,7 +1817,7 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
 
 export async function undoLastModelReplacement() {
   if (!isModelingType()) {
-    setStatus("Switch to CIM, PIM, or PSM to undo model replacement.");
+    setStatus(`Switch to ${modelingLevelListLabel()} to undo model replacement.`);
     return;
   }
   const snapshot = state.undo.modelReplacements.pop();
@@ -1901,7 +1834,7 @@ export async function undoLastModelReplacement() {
 
 export async function undoLastEdit() {
   if (!isModelingType()) {
-    setStatus("Switch to CIM, PIM, or PSM to undo.");
+    setStatus(`Switch to ${modelingLevelListLabel()} to undo.`);
     return;
   }
   if (hasDiagramUndoHistory()) {

@@ -983,11 +983,196 @@
       "layoutHint": "MATRIX"
     }
   ],
+  "semanticEdgeObjectRules": [
+    {
+      "eClass": "DataAccess",
+      "matchKinds": ["READS", "WRITES", "READ_WRITE", "APPEND", "DELETE", "DATA_ACCESS"],
+      "sourceType": "FunctionTarget",
+      "targetType": "DataAccessTarget",
+      "rootFeature": "dataAccesses",
+      "sourceFeature": "function",
+      "targetFeature": "store",
+      "kindDefaults": {
+        "READS": { "mode": "READ" },
+        "WRITES": { "mode": "WRITE" },
+        "DATA_ACCESS": { "mode": "READ_WRITE" }
+      }
+    },
+    {
+      "eClass": "Trigger",
+      "matchKinds": ["INVOKES", "TRIGGERS"],
+      "sourceType": "InvocationSource",
+      "targetType": "InvocationTarget",
+      "rootFeature": "triggers",
+      "sourceFeature": "source",
+      "targetFeatures": ["invokesFunction", "startsWorkflow"],
+      "kindDefaults": {
+        "INVOKES": { "invocationMode": "SYNCHRONOUS" },
+        "TRIGGERS": { "invocationMode": "ASYNCHRONOUS" }
+      }
+    },
+    {
+      "eClass": "WorkflowTransition",
+      "matchKinds": ["TRANSITION"],
+      "sourceType": "WorkflowState",
+      "targetType": "WorkflowState",
+      "rootFeature": "transitions",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "conditionExpression": "", "defaultTransition": false }
+    },
+    {
+      "eClass": "Permission",
+      "matchKinds": ["PERMISSION"],
+      "sourceType": "Principal",
+      "targetType": "ProtectedResource",
+      "rootFeature": "permissions",
+      "ownerAsSource": true,
+      "targetFeature": "targetResource",
+      "defaults": { "effect": "ALLOW", "leastPrivilegeConfirmed": false }
+    },
+    {
+      "eClass": "Subscription",
+      "matchKinds": ["SUBSCRIBES_TO"],
+      "sourceType": "Topic",
+      "targetType": "SubscriptionTarget",
+      "rootFeature": "subscriptions",
+      "ownerAsSource": true,
+      "sourceFeature": "channel",
+      "targetFeature": "target",
+      "defaults": { "rawDelivery": false, "deadLetterRequired": false }
+    },
+    {
+      "eClass": "RequestResponseFlow",
+      "matchKinds": ["REQUEST_RESPONSE", "FLOW"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "flowPurpose": "", "criticalPath": false, "containsPersonalData": false }
+    },
+    {
+      "eClass": "EventFlow",
+      "matchKinds": ["EVENT_FLOW"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "flowPurpose": "", "criticalPath": false, "containsPersonalData": false }
+    },
+    {
+      "eClass": "MessageFlow",
+      "matchKinds": ["MESSAGE_FLOW"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "flowPurpose": "", "criticalPath": false, "containsPersonalData": false }
+    },
+    {
+      "eClass": "PubSubFlow",
+      "matchKinds": ["PUB_SUB"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "flowPurpose": "", "criticalPath": false, "containsPersonalData": false }
+    },
+    {
+      "eClass": "OrchestrationFlow",
+      "matchKinds": ["ORCHESTRATES"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "flowPurpose": "", "criticalPath": false, "containsPersonalData": false }
+    },
+    {
+      "eClass": "ExternalIntegrationFlow",
+      "matchKinds": ["EXTERNAL_CALL"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "flowPurpose": "", "criticalPath": false, "containsPersonalData": false }
+    },
+    {
+      "eClass": "TraceLink",
+      "matchKinds": ["TRACE"],
+      "sourceType": "*",
+      "targetType": "*",
+      "rootFeature": "links",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "linkType": "OTHER", "confidence": "" }
+    }
+  ],
   "rootTemplate": {
     "eClass": "PIMModel",
     "modelLevel": "PIM",
     "name": "",
     "architectureStyle": "EVENT_DRIVEN_SERVERLESS",
+    "diagram": {
+      "elements": [],
+      "relationships": []
+    },
+    "graph": {
+      "elements": [],
+      "relationships": [],
+      "traceLinks": [],
+      "assumptions": [],
+      "validationIssues": [],
+      "manualBacklog": []
+    },
+    "views": [],
+    "fragments": []
+  },
+  "starterTemplate": {
+    "id": "${safe:modelName-root}",
+    "name": "${modelName}",
+    "eClass": "PIMModel",
+    "modelLevel": "PIM",
+    "architectureStyle": "HYBRID_SERVERLESS",
+    "domainName": "${modelName}",
+    "defaultCorrelationIdName": "correlationId",
+    "services": [],
+    "serviceMemberships": [],
+    "deploymentUnits": [],
+    "environments": [],
+    "schemas": [],
+    "functions": [],
+    "apis": [],
+    "eventTypes": [],
+    "channels": [],
+    "schedules": [],
+    "triggers": [],
+    "dataStores": [],
+    "objectStores": [],
+    "dataAccesses": [],
+    "workflows": [],
+    "humanTasks": [],
+    "externalEndpoints": [],
+    "externalAdapters": [],
+    "identityProviders": [],
+    "principals": [],
+    "policies": [],
+    "implementationProfile": {
+      "id": "${safe:modelName-profile}",
+      "name": "${modelName} implementation profile",
+      "eClass": "ImplementationProfile",
+      "primaryLanguage": "JAVA",
+      "packageManager": "MAVEN",
+      "sourceLayout": "src/main/java",
+      "buildCommand": "./mvnw -q test",
+      "generateTypedContracts": true,
+      "generateRuntimeValidation": false
+    },
     "diagram": {
       "elements": [],
       "relationships": []

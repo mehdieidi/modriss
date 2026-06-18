@@ -407,7 +407,8 @@
     "denseEdgeThreshold": 1200,
     "denseEdgeLabelsAtOrAbove": 1.45,
     "veryDenseEdgeThreshold": 2500,
-    "veryDenseEdgeLabelsAtOrAbove": 1.8
+    "veryDenseEdgeLabelsAtOrAbove": 1.8,
+    "includeRelationshipEndpointsInMainView": true
   },
   "relationshipKinds": [
     "CONTAINS",
@@ -1283,6 +1284,81 @@
     "name": "",
     "stages": [],
     "stacks": [],
+    "relationshipViews": [],
+    "diagram": {
+      "elements": [],
+      "relationships": []
+    },
+    "graph": {
+      "elements": [],
+      "relationships": [],
+      "traceLinks": [],
+      "assumptions": [],
+      "validationIssues": [],
+      "manualBacklog": []
+    },
+    "views": [],
+    "fragments": []
+  },
+  "starterTemplate": {
+    "id": "${safe:modelName-root}",
+    "name": "${modelName}",
+    "eClass": "AwsPsmModel",
+    "modelLevel": "AWS_PSM",
+    "partition": "AWS",
+    "platform": "AWS",
+    "defaultRegion": "us-east-1",
+    "productionMode": false,
+    "summary": "Mandatory-valid starter model for assisted AWS PSM modeling.",
+    "rationale": "Created as the initial bounded context for assistant changes.",
+    "stages": [
+      {
+        "id": "${safe:modelName-dev-stage}",
+        "name": "Development",
+        "eClass": "AwsStage",
+        "stageName": "dev",
+        "environmentClass": "DEV",
+        "accountId": "REVIEW_REQUIRED_ACCOUNT_ID",
+        "region": "us-east-1",
+        "requiresManualApproval": false,
+        "confirmChangeset": false,
+        "failOnEmptyChangeset": false,
+        "deploysStacks": ["${safe:modelName-main-stack}"]
+      }
+    ],
+    "stacks": [
+      {
+        "id": "${safe:modelName-main-stack}",
+        "name": "Main Stack",
+        "eClass": "SamStack",
+        "stackName": "${safe:modelName-main}",
+        "templatePath": "template.yaml",
+        "templateDescription": "Starter stack for assisted modeling.",
+        "useSamTransform": true,
+        "packageIndividually": true,
+        "validateWithSam": true,
+        "validateWithCfnLint": true,
+        "resources": [
+          {
+            "id": "${safe:modelName-artifact-bucket}",
+            "name": "Artifact Bucket",
+            "eClass": "S3Bucket",
+            "logicalId": "ArtifactBucket",
+            "awsResourceType": "AWS::S3::Bucket",
+            "importedResource": false,
+            "productionCritical": false,
+            "retainInProduction": false,
+            "bucketName": "${safe:modelName-artifacts}",
+            "versioningStatus": "ENABLED",
+            "objectLockEnabled": false,
+            "transferAccelerationEnabled": false,
+            "eventBridgeNotificationEnabled": false,
+            "publicAccessMode": "STRICT_BLOCK_ALL",
+            "bucketKeyEnabled": true
+          }
+        ]
+      }
+    ],
     "relationshipViews": [],
     "diagram": {
       "elements": [],

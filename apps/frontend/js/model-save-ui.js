@@ -1,7 +1,8 @@
 import { state } from "./state.js";
+import { isModelingLevel } from "./modeling-config-data.js";
 
 function isModelingType(typeKey = state.activeType) {
-  return ["cim", "pim", "psm"].includes(typeKey);
+  return isModelingLevel(typeKey);
 }
 
 function saveState() {

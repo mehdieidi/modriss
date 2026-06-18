@@ -17,6 +17,9 @@ import {
 import { isContainerElement, materializeActiveView } from "./view-materializer.js";
 import {
   modelingElementDefinition,
+  modelingContainmentsForType,
+  isModelingLevel,
+  modelingLevelConfig,
   modelingPalette,
   modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
@@ -24,6 +27,7 @@ import {
   modelingTypeMatches,
   modelingViewDefinition,
 } from "./modeling-config-data.js";
+import { addReferenceValue, modelTypeMatches } from "./model-utils.js";
 import { setStatus } from "./status.js";
 // NOTE: These imports form intentional circular references (ES module live bindings).
 // All functions are only called at runtime (event handlers / async), never at module init.
@@ -40,9 +44,7 @@ import {
   captureNodePositionUndoSnapshot,
   pushDiagramUndoSnapshot,
 } from "./undo.js";
-import { renderCimWorkbenchSurface } from "./cim-workbench.js";
-import { renderPimWorkbenchSurface } from "./pim-workbench.js";
-import { renderPsmWorkbenchSurface } from "./psm-workbench.js";
+import { renderModelWorkbenchSurface } from "./model-workbench.js";
 import {
   addG6Edge,
   addG6Node,
@@ -74,11 +76,25 @@ import {
 
 const DEFAULT_NODE_W = 228;
 const DEFAULT_NODE_H = 112;
-const CIM_NODE_W = 176;
-const CIM_NODE_H = 96;
 const DEFAULT_BOUNDED_CONTEXT_NAME = "Core";
 const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
+
+function boundedContextConfig() {
+  try {
+    return modelingLevelConfig(state.activeType).boundedContext || {};
+  } catch {
+    return {};
+  }
+}
+
+function supportsBoundedContext() {
+  return Boolean(boundedContextConfig().enabled);
+}
+
+function boundedContextType() {
+  return String(boundedContextConfig().candidateType || "");
+}
 const connectionsById = state.connectionsById;
 let hoveredEdgeId = null;
 let inlineLabelEditStartLabel = "";
@@ -86,28 +102,23 @@ let inlineLabelEditUndoSnapshot = null;
 
 function workbenchSurfaces() {
   const canvasStage = el.canvasGrid?.closest(".canvas-stage");
-  const surfaceClasses = [
-    "cim-surface-active",
-    "cim-surface-dock",
-    "pim-surface-active",
-    "pim-surface-dock",
-    "psm-surface-active",
-    "psm-surface-dock",
-  ];
+  const surfaceClasses = Object.keys(MODEL_TYPES).flatMap((typeKey) => [
+    `${typeKey}-surface-active`,
+    `${typeKey}-surface-dock`,
+  ]);
   el.canvasGrid?.classList.remove(...surfaceClasses);
   canvasStage?.classList.remove(...surfaceClasses);
   el.workspace?.classList.remove("palette-hidden");
   el.paletteRailToggleBtn?.classList.add("active");
-  state.cimWorkbench.hidPalette = false;
-  state.pimWorkbench.hidPalette = false;
-  state.psmWorkbench.hidPalette = false;
+  Object.keys(MODEL_TYPES).forEach((typeKey) => {
+    const workbench = state.workbenchByType?.[typeKey] || state[`${typeKey}Workbench`];
+    if (workbench) {
+      workbench.hidPalette = false;
+    }
+  });
 
-  if (state.activeType === "cim") {
-    renderCimWorkbenchSurface();
-  } else if (state.activeType === "pim") {
-    renderPimWorkbenchSurface();
-  } else if (state.activeType === "psm") {
-    renderPsmWorkbenchSurface();
+  if (isModelingLevel(state.activeType)) {
+    renderModelWorkbenchSurface();
   }
 }
 
@@ -134,56 +145,6 @@ function syncCanvasIndexesFromState() {
   });
 }
 
-const CIM_PROVIDER_TERMS = [
-  "aws",
-  "amazon",
-  "lambda",
-  "dynamodb",
-  "dynamo",
-  "s3",
-  "sns",
-  "sqs",
-  "eventbridge",
-  "cognito",
-  "apigateway",
-  "api gateway",
-  "azure",
-  "gcp",
-  "google cloud",
-  "pubsub",
-  "cloud run",
-  "cloud functions",
-  "cosmos",
-  "firebase",
-  "kinesis",
-  "rds",
-  "cloudwatch",
-];
-
-const CIM_TABLE_LIKE_TYPES = new Set([
-  "AcceptanceCriterion",
-  "DecisionRule",
-  "QualityScenario",
-  "DataClassification",
-]);
-
-const CIM_PROFILE_LABELS = {
-  dashboard: "Model dashboard",
-  requirements: "Requirements and goals",
-  capability: "Capability and context",
-  actor: "Actor interactions",
-  "bounded-context": "Bounded context",
-  domain: "Domain model",
-  aggregate: "Aggregate consistency",
-  data: "Data dictionary",
-  eventstorming: "EventStorming behavior",
-  process: "Business process",
-  decision: "Decision",
-  governance: "Information and governance",
-  readiness: "Transformation readiness",
-  traceability: "Traceability",
-};
-
 function refLabel(value) {
   if (!value) {
     return "";
@@ -197,45 +158,30 @@ function refLabel(value) {
   return "";
 }
 
-function cimEdgeLabel(edge) {
-  if (state.activeType !== "cim") {
-    if (edge.bundle) {
-      return edge.label || "Bundled relations";
-    }
-    const key = String(edge.kind || "").toUpperCase();
-    try {
-      return (
-        modelingRelationshipKindLabel(state.activeType, key) ||
-        key.toLowerCase().replaceAll("_", " ")
-      );
-    } catch {
-      return key.toLowerCase().replaceAll("_", " ");
-    }
-  }
+function configuredEdgeLabel(edge) {
   if (edge.label) {
     return edge.label;
   }
   const key = String(edge.kind || "").toUpperCase();
-  let configuredLabel = "";
   try {
-    configuredLabel = modelingRelationshipKindLabel("cim", key);
+    return edge.bundle
+      ? edge.label || "Bundled relations"
+      : modelingRelationshipKindLabel(state.activeType, key) ||
+          key.toLowerCase().replaceAll("_", " ");
   } catch {
-    configuredLabel = "";
+    return edge.bundle ? edge.label || "Bundled relations" : key.toLowerCase().replaceAll("_", " ");
   }
-  return edge.bundle
-    ? edge.label || "Bundled relations"
-    : configuredLabel || key.toLowerCase().replaceAll("_", " ");
 }
 
-function cimEdgePresentation(edge) {
-  if (!["cim", "pim", "psm"].includes(state.activeType)) {
+function configuredEdgePresentation(edge) {
+  if (!isModelingLevel(state.activeType)) {
     return { className: "", markerStart: "", markerEnd: "arrow" };
   }
   return modelingRelationshipPresentation(state.activeType, edge);
 }
 
-function cimNodeNotation(node) {
-  if (!["cim", "pim", "psm"].includes(state.activeType)) {
+function configuredNodeNotation(node) {
+  if (!isModelingLevel(state.activeType)) {
     return null;
   }
   let definition = null;
@@ -272,147 +218,13 @@ function normalizeViewText(value) {
     .replaceAll(/[^a-z0-9]+/g, " ");
 }
 
-function activeCimViewProfile() {
-  if (state.activeType !== "cim") {
-    return null;
-  }
+function activeConfiguredViewProfile(typeKey = state.activeType) {
   const view = activeView();
-  let definition = null;
   try {
-    definition = modelingViewDefinition("cim", view);
+    return modelingViewDefinition(typeKey, view)?.viewpoint || view?.viewpoint || view?.kind || "";
   } catch {
-    definition = null;
+    return view?.viewpoint || view?.kind || "";
   }
-  if (definition?.viewpoint) {
-    return String(definition.viewpoint);
-  }
-  const text = normalizeViewText(
-    [view?.id, view?.name, view?.layoutProfile, view?.description].filter(Boolean).join(" "),
-  );
-  if (!text) {
-    return "eventstorming";
-  }
-  if (text.includes("readiness")) {
-    return "readiness";
-  }
-  if (text.includes("dashboard") || text.includes("model map")) {
-    return "dashboard";
-  }
-  if (text.includes("requirement") || text.includes("objective") || text.includes("goal")) {
-    return "requirements";
-  }
-  if (text.includes("bounded") || text.includes("ubiquitous") || text.includes("language")) {
-    return "bounded-context";
-  }
-  if (text.includes("capability") || text.includes("context")) {
-    return "capability";
-  }
-  if (text.includes("actor") || text.includes("role") || text.includes("external system")) {
-    return "actor";
-  }
-  if (text.includes("entity") || text.includes("aggregate") || text.includes("domain")) {
-    return text.includes("aggregate") ? "aggregate" : "domain";
-  }
-  if (text.includes("data") || text.includes("dictionary") || text.includes("classification")) {
-    return "data";
-  }
-  if (text.includes("process") || text.includes("timeline")) {
-    return "process";
-  }
-  if (text.includes("decision") || text.includes("policy") || text.includes("rule")) {
-    return "decision";
-  }
-  if (
-    text.includes("governance") ||
-    text.includes("security") ||
-    text.includes("privacy") ||
-    text.includes("nfr") ||
-    text.includes("information")
-  ) {
-    return "governance";
-  }
-  if (
-    text.includes("actor") ||
-    text.includes("command") ||
-    text.includes("query") ||
-    text.includes("event") ||
-    text.includes("storm")
-  ) {
-    return "eventstorming";
-  }
-  return "eventstorming";
-}
-
-function activePimViewProfile() {
-  if (state.activeType !== "pim") {
-    return null;
-  }
-  const view = activeView();
-  let definition = null;
-  try {
-    definition = modelingViewDefinition("pim", view);
-  } catch {
-    definition = null;
-  }
-  if (definition?.viewpoint) {
-    return String(definition.viewpoint);
-  }
-  const text = normalizeViewText(
-    [view?.id, view?.name, view?.layoutProfile, view?.description].filter(Boolean).join(" "),
-  );
-  if (text.includes("api")) {
-    return "api";
-  }
-  if (text.includes("compute") || text.includes("trigger")) {
-    return "compute";
-  }
-  if (text.includes("contract") || text.includes("schema") || text.includes("event type")) {
-    return "contracts";
-  }
-  if (text.includes("data")) {
-    return "data";
-  }
-  if (text.includes("integration") || text.includes("channel") || text.includes("event")) {
-    return "integration";
-  }
-  if (text.includes("workflow")) {
-    return "workflow";
-  }
-  if (text.includes("security") || text.includes("access")) {
-    return "security";
-  }
-  if (text.includes("deployment") || text.includes("environment")) {
-    return "deployment";
-  }
-  if (text.includes("policy") || text.includes("operation")) {
-    return "policy";
-  }
-  if (text.includes("configuration") || text.includes("secret")) {
-    return "configuration";
-  }
-  if (text.includes("readiness") || text.includes("trace")) {
-    return "readiness";
-  }
-  return "architecture";
-}
-
-function hasOwnValue(object, key) {
-  return (
-    object &&
-    Object.prototype.hasOwnProperty.call(object, key) &&
-    object[key] !== null &&
-    object[key] !== undefined &&
-    String(object[key]).trim() !== ""
-  );
-}
-
-function firstValue(meta, keys) {
-  for (const key of keys) {
-    if (hasOwnValue(meta, key)) {
-      return meta[key];
-    }
-  }
-  return "";
 }
 
 function compactRefCount(value) {
@@ -430,72 +242,13 @@ function compactList(value, limit = 3) {
   return values.slice(0, limit).map(refLabel).filter(Boolean).join(", ");
 }
 
-function refsArray(value) {
-  if (Array.isArray(value)) {
-    return value;
-  }
-  return value ? [value] : [];
-}
-
-function isPastTenseBusinessEventName(value) {
-  const text = String(value || "").trim();
-  if (!text) {
-    return false;
-  }
-  const words = text.split(/\s+/).filter(Boolean);
-  const first = words[0]?.toLowerCase() || "";
-  const last = words[words.length - 1]?.toLowerCase() || "";
-  return (
-    first.endsWith("ed") ||
-    last.endsWith("ed") ||
-    /(?:submitted|created|updated|deleted|confirmed|rejected|approved|cancelled|canceled|completed|failed|paid|sent|received|placed|registered|enrolled|verified|accepted|declined)$/.test(
-      first,
-    )
-  );
-}
-
-function hasProviderTermInText(value) {
-  const text = String(value || "").toLowerCase();
-  return CIM_PROVIDER_TERMS.some((term) => text.includes(term));
-}
-
-function nodeProviderTermHit(node) {
-  const meta = node?.meta || {};
-  const values = [
-    node?.label,
-    node?.type,
-    ...Object.values(meta).flatMap((value) => (Array.isArray(value) ? value : [value])),
-  ];
-  return values.some((value) => typeof value === "string" && hasProviderTermInText(value));
-}
-
-function cimNodeIssueBadges(node) {
-  const badges = [];
-  if (nodeProviderTermHit(node)) {
-    badges.push("provider-independent");
-  }
-  if (node.type === "BusinessEvent") {
-    const eventName = node.meta?.occurredInPastTenseName || node.label;
-    if (!isPastTenseBusinessEventName(eventName)) {
-      badges.push("past tense");
-    }
-  }
-  if (
-    node.type === "Hotspot" &&
-    (node.meta?.productionBlocking || node.meta?.blocksTransformation)
-  ) {
-    badges.push("blocking");
-  }
-  return badges;
-}
-
 function detailRow(label, value) {
   const normalized = Array.isArray(value) ? compactList(value) : value;
   const text = String(normalized || "").trim();
   if (!text) {
     return "";
   }
-  return `<div class="node-cim-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(
+  return `<div class="node-model-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(
     text,
   )}</strong></div>`;
 }
@@ -505,7 +258,7 @@ function detailBadge(label, issue = false) {
   if (!text) {
     return "";
   }
-  return `<span class="node-cim-badge${issue ? " node-cim-issue" : ""}">${escapeHtml(text)}</span>`;
+  return `<span class="node-model-badge${issue ? " node-model-issue" : ""}">${escapeHtml(text)}</span>`;
 }
 
 function detailCompartment(title, rows) {
@@ -513,274 +266,13 @@ function detailCompartment(title, rows) {
   if (!content) {
     return "";
   }
-  return `<div class="node-cim-compartment"><div class="node-cim-compartment-title">${escapeHtml(
+  return `<div class="node-model-compartment"><div class="node-model-compartment-title">${escapeHtml(
     title,
   )}</div>${content}</div>`;
 }
 
-function cimNodeDetailsHtml(node) {
-  if (state.activeType === "pim") {
-    return pimNodeDetailsHtml(node);
-  }
-  if (state.activeType === "psm") {
-    return metadataNodeDetailsHtml("psm", node);
-  }
-  if (state.activeType !== "cim") {
-    return "";
-  }
-  const meta = node.meta || {};
-  const badges = cimNodeIssueBadges(node).map((label) => detailBadge(label, true));
-  const addBadge = (value) => {
-    const text = String(value || "").trim();
-    if (text) {
-      badges.push(detailBadge(text));
-    }
-  };
-  const sections = [];
-  switch (node.type) {
-    case "Requirement":
-      addBadge(firstValue(meta, ["requirementType", "priority"]));
-      if (meta.mandatory) {
-        addBadge("mandatory");
-      }
-      if (meta.productionBlocking) {
-        badges.push(detailBadge("production blocking", true));
-      }
-      sections.push(
-        detailCompartment("Fit", [
-          detailRow("criterion", meta.fitCriterion),
-          detailRow("acceptance", compactRefCount(meta.acceptanceCriteria)),
-        ]),
-      );
-      break;
-    case "BusinessGoal":
-      addBadge(meta.priority);
-      sections.push(
-        detailCompartment("Outcome", [
-          detailRow("success", meta.successCriterion),
-          detailRow("value", meta.businessValue),
-          detailRow("measured by", compactList(meta.measuredBy)),
-        ]),
-      );
-      break;
-    case "KPI":
-      addBadge(firstValue(meta, ["metricType", "unit"]));
-      sections.push(
-        detailCompartment("Metric", [
-          detailRow("name", meta.metricName),
-          detailRow(
-            "target",
-            [meta.operator, meta.targetValue, meta.unit].filter(Boolean).join(" "),
-          ),
-          detailRow("measures", compactList(meta.measures)),
-        ]),
-      );
-      break;
-    case "Actor":
-    case "ExternalSystem":
-    case "Stakeholder":
-      addBadge(firstValue(meta, ["actorType", "trustLevel", "stakeholderType"]));
-      sections.push(
-        detailCompartment("Participant", [
-          detailRow("roles", compactList(meta.playsRoles)),
-          detailRow("commands", compactRefCount(meta.issuesCommands)),
-          detailRow("queries", compactRefCount(meta.issuesQueries)),
-          detailRow("events", compactRefCount(meta.producedEvents || meta.observesEvents)),
-        ]),
-      );
-      break;
-    case "BusinessCapability":
-      addBadge(firstValue(meta, ["criticality", "maturity"]));
-      sections.push(
-        detailCompartment("Scope", [
-          detailRow("supports", compactList(meta.supports)),
-          detailRow("realizes", compactRefCount(meta.realizesRequirements)),
-          detailRow("commands", compactRefCount(meta.containsCommands)),
-          detailRow("queries", compactRefCount(meta.containsQueries)),
-          detailRow("events", compactRefCount(meta.containsEvents)),
-          detailRow("entities", compactRefCount(meta.managesEntities)),
-        ]),
-      );
-      break;
-    case "BoundedContextCandidate":
-      addBadge(firstValue(meta, ["languageBoundary", "ownershipBoundary"]));
-      sections.push(
-        detailCompartment("Boundary", [
-          detailRow("capabilities", compactRefCount(meta.capabilities)),
-          detailRow("concepts", compactRefCount(meta.entities)),
-          detailRow("language", compactRefCount(meta.ubiquitousLanguage)),
-        ]),
-      );
-      break;
-    case "DomainEntity":
-    case "ValueObject":
-      addBadge(
-        node.type === "ValueObject" && meta.immutable
-          ? "immutable"
-          : firstValue(meta, ["identityAttribute", "valueType"]),
-      );
-      sections.push(
-        detailCompartment("Structure", [
-          detailRow("identity", meta.identityAttribute || meta.identityDescription),
-          detailRow("attributes", compactList(meta.attributes)),
-          detailRow("invariants", compactList(meta.invariants)),
-          detailRow("states", compactList(meta.lifecycleStates)),
-        ]),
-      );
-      break;
-    case "AggregateCandidate":
-      addBadge(firstValue(meta, ["consistencyExpectation", "consistencyBoundaryRationale"]));
-      sections.push(
-        detailCompartment("Aggregate", [
-          detailRow("root", refLabel(meta.root)),
-          detailRow("members", compactList(meta.members)),
-          detailRow("invariants", compactList(meta.invariants)),
-        ]),
-      );
-      break;
-    case "Command":
-      addBadge(firstValue(meta, ["commandType", "priority"]));
-      if (meta.auditRequired) {
-        addBadge("audit");
-      }
-      sections.push(
-        detailCompartment("Behavior", [
-          detailRow("intent", meta.intent),
-          detailRow("input", compactList(meta.input)),
-          detailRow("expects", compactList(meta.expectedEvents)),
-          detailRow("rejects", compactList(meta.rejectionEvents)),
-          detailRow("errors", compactList(meta.possibleErrors)),
-        ]),
-      );
-      break;
-    case "Query":
-      addBadge(firstValue(meta, ["queryType", "freshnessNeed"]));
-      sections.push(
-        detailCompartment("Read", [
-          detailRow("input", compactList(meta.input)),
-          detailRow("output", compactList(meta.output)),
-          detailRow("reads", compactList(meta.reads)),
-          detailRow("auth", meta.authorizationRule),
-        ]),
-      );
-      break;
-    case "BusinessEvent":
-      addBadge(firstValue(meta, ["occurredInPastTenseName", "eventType"]));
-      sections.push(
-        detailCompartment("Event", [
-          detailRow("payload", compactList(meta.payload)),
-          detailRow("caused by", compactList(meta.causedByExternalSystems)),
-          detailRow(
-            "consumed by",
-            compactList(meta.consumedByPolicies || meta.consumedByProcesses),
-          ),
-          detailRow("retention", meta.retentionNeed),
-        ]),
-      );
-      break;
-    case "Policy":
-      addBadge(firstValue(meta, ["severity", "policyType"]));
-      sections.push(
-        detailCompartment("Policy", [
-          detailRow("condition", meta.triggeringCondition || meta.expression),
-          detailRow("guards", compactList(meta.guards)),
-          detailRow(
-            "emits",
-            compactList([...refsArray(meta.emitsCommands), ...refsArray(meta.emitsEvents)]),
-          ),
-        ]),
-      );
-      break;
-    case "BusinessProcess":
-      addBadge(firstValue(meta, ["processKind", "completionCriterion"]));
-      sections.push(
-        detailCompartment("Flow", [
-          detailRow("steps", compactRefCount(meta.steps)),
-          detailRow("exceptions", compactRefCount(meta.exceptionScenarios)),
-          detailRow("deadlines", compactRefCount(meta.temporalConstraints)),
-        ]),
-      );
-      break;
-    case "DecisionTable":
-      addBadge(firstValue(meta, ["hitPolicy", "decisionOwner"]));
-      sections.push(
-        detailCompartment("Rules", [
-          detailRow("inputs", compactList(meta.inputs)),
-          detailRow("outputs", compactList(meta.outputs)),
-          detailRow("rules", compactRefCount(meta.rules)),
-        ]),
-      );
-      break;
-    case "InformationItem":
-      addBadge(firstValue(meta, ["type", "required"]));
-      sections.push(
-        detailCompartment("Data", [
-          detailRow("business", meta.businessName),
-          detailRow("classification", refLabel(meta.classification)),
-          detailRow("privacy", meta.privacyPurpose),
-          detailRow("retention", meta.retentionNeed),
-        ]),
-      );
-      break;
-    case "SecurityConstraint":
-    case "PrivacyConstraint":
-    case "ComplianceConstraint":
-    case "NonFunctionalRequirement":
-      addBadge(firstValue(meta, ["qualityType", "regulation", "law", "authenticationNeed"]));
-      sections.push(
-        detailCompartment("Constraint", [
-          detailRow(
-            "target",
-            compactList(meta.constrainedElements || meta.scopedElements || meta.dataItems),
-          ),
-          detailRow(
-            "rule",
-            meta.authorizationRule || meta.controlId || meta.purpose || meta.scenario,
-          ),
-          detailRow("metric", [meta.metric, meta.target].filter(Boolean).join(" ")),
-        ]),
-      );
-      break;
-    case "Risk":
-    case "Assumption":
-    case "Hotspot":
-      addBadge(firstValue(meta, ["severity", "impact", "status"]));
-      sections.push(
-        detailCompartment("Readiness", [
-          detailRow("owner", meta.owner),
-          detailRow("attached", compactList(meta.attachedTo || meta.affectedElements)),
-          detailRow("rationale", meta.rationale),
-        ]),
-      );
-      break;
-    default:
-      try {
-        const definition = modelingElementDefinition("cim", node.type);
-        const visibleFields = Array.isArray(definition?.visibleFields)
-          ? definition.visibleFields
-          : [];
-        sections.push(
-          detailCompartment(
-            "Fields",
-            visibleFields.slice(0, 7).map((field) => {
-              const value = meta[field];
-              return detailRow(
-                field,
-                Array.isArray(value) ? compactList(value) : compactRefCount(value),
-              );
-            }),
-          ),
-        );
-      } catch {
-        // Unknown CIM nodes remain editable through the property panel.
-      }
-  }
-  if (!badges.length && !sections.length) {
-    return "";
-  }
-  return `<div class="node-cim-details">${
-    badges.length ? `<div class="node-cim-badges">${badges.join("")}</div>` : ""
-  }${sections.join("")}</div>`;
+function configuredNodeDetailsHtml(node) {
+  return metadataNodeDetailsHtml(state.activeType, node);
 }
 
 function metadataNodeDetailsHtml(typeKey, node) {
@@ -798,33 +290,18 @@ function metadataNodeDetailsHtml(typeKey, node) {
       badges.push(detailBadge(text, issue));
     }
   };
-  const riskFields = [
-    "productionCritical",
-    "importedResource",
-    "retainInProduction",
-    "tracingEnabled",
-    "metricsEnabled",
-    "accessLogsEnabled",
-    "deletionProtectionEnabled",
-    "pointInTimeRecoveryEnabled",
-    "eventBridgeNotificationEnabled",
-    "enableKeyRotation",
-    "rotationRequired",
-    "publicAccessMode",
-    "xrayDefault",
-  ];
-  riskFields.forEach((field) => {
-    const value = meta[field];
-    if (value === true) {
-      addBadge(field.replaceAll(/([A-Z])/g, " $1").toLowerCase());
-    } else if (typeof value === "string" && value.trim()) {
-      addBadge(value, /disabled|public|not_recommended/i.test(value));
+  [...(definition?.attributes || []), ...(definition?.references || [])].forEach((field) => {
+    const value = meta[field.name];
+    if (field?.fieldType === "boolean" && value === true) {
+      addBadge(field.name.replaceAll(/([A-Z])/g, " $1").toLowerCase());
+    } else if (field?.required && !compactRefCount(value)) {
+      addBadge(`missing ${field.name}`, true);
     }
   });
   const visibleFields = Array.isArray(definition?.visibleFields) ? definition.visibleFields : [];
   const sections = [
     detailCompartment(
-      definition?.notation?.shape === "resource-card" ? "Resource" : "Detail",
+      "Detail",
       visibleFields
         .slice(0, 8)
         .map((field) =>
@@ -850,265 +327,8 @@ function metadataNodeDetailsHtml(typeKey, node) {
     sections.push(detailCompartment("References", referenceRows));
   }
   return badges.length || sections.some(Boolean)
-    ? `<div class="node-cim-details psm-node-details">${
-        badges.length ? `<div class="node-cim-badges">${badges.join("")}</div>` : ""
-      }${sections.join("")}</div>`
-    : "";
-}
-
-function pimNodeDetailsHtml(node) {
-  const meta = node.meta || {};
-  const badges = [];
-  const addBadge = (value, issue = false) => {
-    const text = String(value || "").trim();
-    if (text) {
-      badges.push(detailBadge(text, issue));
-    }
-  };
-  const boolBadge = (field, label = field) => {
-    if (meta[field]) {
-      addBadge(label);
-    }
-  };
-  const sections = [];
-  switch (node.type) {
-    case "ServerlessService":
-      addBadge(meta.boundaryType);
-      boolBadge("externallyExposed", "external");
-      boolBadge("ownsData", "owns data");
-      sections.push(
-        detailCompartment("Ownership", [
-          detailRow("functions", compactRefCount(meta.ownsFunctions)),
-          detailRow("apis", compactRefCount(meta.ownsApis)),
-          detailRow("channels", compactRefCount(meta.ownsChannels)),
-          detailRow("stores", compactRefCount(meta.ownsStores)),
-        ]),
-      );
-      break;
-    case "Function":
-      addBadge(meta.functionKind);
-      boolBadge("publicEntryPoint", "public");
-      boolBadge("requiresIdempotency", "idempotent");
-      sections.push(
-        detailCompartment("Function", [
-          detailRow("responsibility", meta.responsibility),
-          detailRow("handler", meta.handlerResponsibility),
-          detailRow("reads", compactRefCount(meta.reads)),
-          detailRow("writes", compactRefCount(meta.writes)),
-          detailRow("publishes", compactRefCount(meta.publishes)),
-        ]),
-      );
-      break;
-    case "Api":
-      addBadge(meta.apiStyle);
-      boolBadge("authRequired", "auth");
-      boolBadge("externalConsumerFacing", "external");
-      sections.push(
-        detailCompartment("Surface", [
-          detailRow("public", meta.publicName),
-          detailRow("base", meta.basePath),
-          detailRow("routes", compactRefCount(meta.routes)),
-        ]),
-      );
-      break;
-    case "ApiRoute":
-      addBadge([meta.method, meta.pathTemplate].filter(Boolean).join(" "));
-      boolBadge("publicRoute", "public");
-      boolBadge("authRequired", "auth");
-      sections.push(
-        detailCompartment("Integration", [
-          detailRow("operation", meta.operationId),
-          detailRow("function", refLabel(meta.functionIntegration)),
-          detailRow("workflow", refLabel(meta.workflowIntegration)),
-          detailRow("success", meta.expectedSuccessStatus),
-        ]),
-      );
-      break;
-    case "Schema":
-      addBadge(meta.schemaKind);
-      addBadge(meta.compatibility);
-      sections.push(
-        detailCompartment("Schema", [
-          detailRow("version", meta.semanticVersion),
-          detailRow("fields", compactRefCount(meta.fields)),
-          detailRow("constraints", compactRefCount(meta.constraints)),
-        ]),
-      );
-      break;
-    case "EventType":
-      addBadge(meta.semanticName);
-      boolBadge("replayable", "replayable");
-      boolBadge("containsPersonalData", "personal data");
-      sections.push(
-        detailCompartment("Event", [
-          detailRow("schema", refLabel(meta.schema)),
-          detailRow("producers", compactRefCount(meta.producedBy)),
-          detailRow("consumers", compactRefCount(meta.consumedBy)),
-        ]),
-      );
-      break;
-    case "DataStore":
-      addBadge(meta.storeKind);
-      addBadge(meta.consistencyNeed);
-      boolBadge("encrypted", "encrypted");
-      boolBadge("containsPersonalData", "personal data");
-      sections.push(
-        detailCompartment("Data", [
-          detailRow("models", compactRefCount(meta.ownedDataModels)),
-          detailRow("access", compactRefCount(meta.accessPatterns)),
-          detailRow("indexes", compactRefCount(meta.indexCandidates)),
-          detailRow("volume", meta.expectedDataVolume),
-        ]),
-      );
-      break;
-    case "ObjectStore":
-      addBadge("object store");
-      boolBadge("versioningRequired", "versioned");
-      boolBadge("eventNotificationRequired", "events");
-      sections.push(
-        detailCompartment("Objects", [
-          detailRow("types", compactList(meta.objectTypes)),
-          detailRow("schemas", compactRefCount(meta.objectMetadataSchemas)),
-        ]),
-      );
-      break;
-    case "Queue":
-    case "Topic":
-    case "EventBus":
-      addBadge(node.type);
-      addBadge(meta.deliverySemantics);
-      boolBadge("encrypted", "encrypted");
-      boolBadge("deadLetterRequired", "dlq");
-      sections.push(
-        detailCompartment("Channel", [
-          detailRow("events", compactRefCount(meta.eventTypes)),
-          detailRow("producers", compactRefCount(meta.producers)),
-          detailRow("consumers", compactRefCount(meta.consumers)),
-        ]),
-      );
-      break;
-    case "Schedule":
-      addBadge(meta.enabled === false ? "disabled" : "enabled");
-      sections.push(
-        detailCompartment("Timer", [
-          detailRow("expression", meta.scheduleExpression),
-          detailRow("time zone", meta.timeZone),
-        ]),
-      );
-      break;
-    case "Workflow":
-      addBadge(meta.workflowKind);
-      boolBadge("longRunning", "long running");
-      boolBadge("stateful", "stateful");
-      sections.push(
-        detailCompartment("States", [
-          detailRow("start", refLabel(meta.startState)),
-          detailRow("end", compactList(meta.endStates)),
-          detailRow("states", compactRefCount(meta.states)),
-          detailRow("transitions", compactRefCount(meta.transitions)),
-        ]),
-      );
-      break;
-    case "WorkflowState":
-      addBadge(meta.stateKind);
-      boolBadge("terminal", "terminal");
-      sections.push(
-        detailCompartment("Invocation", [
-          detailRow("function", refLabel(meta.invokesFunction)),
-          detailRow("adapter", refLabel(meta.invokesAdapter)),
-          detailRow("workflow", refLabel(meta.nestedWorkflow)),
-        ]),
-      );
-      break;
-    case "ExternalAdapter":
-      addBadge(meta.protocolFamily);
-      boolBadge("credentialsRequired", "credentials");
-      sections.push(
-        detailCompartment("External", [
-          detailRow("system", meta.externalSystemName),
-          detailRow("endpoint", meta.endpointDescription),
-          detailRow("sla", meta.expectedSla),
-        ]),
-      );
-      break;
-    case "DeploymentUnit":
-      addBadge(meta.unitType);
-      boolBadge("independentlyDeployable", "independent");
-      sections.push(
-        detailCompartment("Package", [
-          detailRow("contains", compactRefCount(meta.contains)),
-          detailRow("envs", compactRefCount(meta.targetEnvironments)),
-          detailRow("release", meta.releaseStrategy),
-        ]),
-      );
-      break;
-    case "Environment":
-      addBadge(meta.environmentClass);
-      boolBadge("productionLike", "prod-like");
-      boolBadge("requiresApproval", "approval");
-      sections.push(
-        detailCompartment("Config", [
-          detailRow("suffix", meta.nameSuffix),
-          detailRow("sets", compactRefCount(meta.configurationSets)),
-        ]),
-      );
-      break;
-    case "IdentityProvider":
-    case "Principal":
-      addBadge(meta.identityKind || meta.principalKind);
-      boolBadge("privileged", "privileged");
-      boolBadge("mfaRequired", "mfa");
-      sections.push(
-        detailCompartment("Access", [
-          detailRow("principals", compactRefCount(meta.principals)),
-          detailRow("permissions", compactRefCount(meta.permissions)),
-          detailRow("external", meta.externalRef),
-        ]),
-      );
-      break;
-    case "Secret":
-    case "ConfigurationSet":
-      addBadge(meta.secretKind || meta.scope);
-      boolBadge("rotationRequired", "rotation");
-      sections.push(
-        detailCompartment("Configuration", [
-          detailRow("parameters", compactRefCount(meta.parameters)),
-          detailRow("env vars", compactRefCount(meta.environmentVariables)),
-          detailRow("owner", meta.ownerTeam),
-        ]),
-      );
-      break;
-    default:
-      try {
-        const definition = modelingElementDefinition("pim", node.type);
-        const visibleFields = Array.isArray(definition?.visibleFields)
-          ? definition.visibleFields
-          : [];
-        sections.push(
-          detailCompartment(
-            "Fields",
-            visibleFields
-              .slice(0, 7)
-              .map((field) =>
-                detailRow(
-                  field,
-                  Array.isArray(meta[field])
-                    ? compactList(meta[field])
-                    : compactRefCount(meta[field]),
-                ),
-              ),
-          ),
-        );
-      } catch {
-        // Unknown PIM nodes remain editable through the property panel.
-      }
-  }
-  if (meta.lifecycleStatus) {
-    addBadge(meta.lifecycleStatus);
-  }
-  return badges.length || sections.length
-    ? `<div class="node-cim-details">${
-        badges.length ? `<div class="node-cim-badges">${badges.join("")}</div>` : ""
+    ? `<div class="node-model-details model-node-details">${
+        badges.length ? `<div class="node-model-badges">${badges.join("")}</div>` : ""
       }${sections.join("")}</div>`
     : "";
 }
@@ -1125,11 +345,19 @@ function dragUndoSnapshot(nodeIds = []) {
 }
 
 function getNodeWidth() {
-  return state.activeType === "cim" ? CIM_NODE_W : DEFAULT_NODE_W;
+  try {
+    return Number(modelingLevelConfig(state.activeType).canvasPolicy?.nodeWidth) || DEFAULT_NODE_W;
+  } catch {
+    return DEFAULT_NODE_W;
+  }
 }
 
 function getNodeHeight() {
-  return state.activeType === "cim" ? CIM_NODE_H : DEFAULT_NODE_H;
+  try {
+    return Number(modelingLevelConfig(state.activeType).canvasPolicy?.nodeHeight) || DEFAULT_NODE_H;
+  } catch {
+    return DEFAULT_NODE_H;
+  }
 }
 
 export function getCurrentDiagramNodeSize() {
@@ -1266,7 +494,8 @@ function contextNodes(contextName) {
 }
 
 function isBoundedContextNode(node) {
-  return node?.type === "BoundedContextCandidate";
+  const candidateType = boundedContextType();
+  return Boolean(candidateType && node?.type === candidateType);
 }
 
 function boundedContextNameFromContextNode(node) {
@@ -1303,7 +532,7 @@ function syncNodeMetaToGraph(node) {
 
 function boundedContextNameSet() {
   const names = new Set();
-  if (state.activeType !== "cim") {
+  if (!supportsBoundedContext()) {
     return names;
   }
   (state.baseModel?.boundedContexts || []).forEach((context) => {
@@ -1365,7 +594,8 @@ function contextNodePosition(contextName, memberIds = []) {
 
 function ensureBoundedContextNodeForName(contextName, memberIds = []) {
   const normalized = normalizeContextName(contextName);
-  if (!normalized || state.activeType !== "cim") {
+  const candidateType = boundedContextType();
+  if (!normalized || !supportsBoundedContext() || !candidateType) {
     return null;
   }
   const existing = contextNodeForName(normalized);
@@ -1373,7 +603,7 @@ function ensureBoundedContextNodeForName(contextName, memberIds = []) {
     return existing;
   }
   const position = contextNodePosition(normalized, memberIds);
-  const node = getDefaultNode("cim", "BoundedContextCandidate", position.x, position.y);
+  const node = getDefaultNode(state.activeType, candidateType, position.x, position.y);
   node.label = normalized;
   node.meta.name = normalized;
   node.meta.label = normalized;
@@ -1403,15 +633,12 @@ function ensureBoundedContextNodesForAllNames() {
 }
 
 function boundedContextFeatureForNode(node) {
+  const rules = Array.isArray(boundedContextConfig().membershipFeatures)
+    ? boundedContextConfig().membershipFeatures
+    : [];
   return (
-    {
-      BusinessCapability: "capabilities",
-      DomainEntity: "entities",
-      Command: "commands",
-      Query: "queries",
-      BusinessEvent: "events",
-      Policy: "policies",
-    }[node?.type] || ""
+    rules.find((rule) => modelTypeMatches(state.activeType, node, String(rule?.sourceType || "")))
+      ?.feature || ""
   );
 }
 
@@ -1445,7 +672,7 @@ function syncBoundedContextMembershipRefs(contextName) {
 }
 
 function nodeVisibleInBoundedContextMode(node) {
-  if (state.activeType !== "cim") {
+  if (!supportsBoundedContext()) {
     return true;
   }
   if (state.boundedContextViewMode === "overview") {
@@ -1887,7 +1114,7 @@ function notifyModelToolsChanged() {
 }
 
 function g6ContextBoxes() {
-  if (state.activeType !== "cim" || state.boundedContextViewMode === "overview") {
+  if (!supportsBoundedContext() || state.boundedContextViewMode === "overview") {
     return [];
   }
   const byContext = new Map();
@@ -2000,10 +1227,9 @@ function ensureG6Canvas() {
       mapper: {
         visibleNode: nodeVisibleInCurrentCanvasMode,
         isContainer: (node) =>
-          isContainerElement(node) && !(state.activeType === "cim" && isBoundedContextNode(node)),
+          isContainerElement(node) && !(supportsBoundedContext() && isBoundedContextNode(node)),
         contextNameFromNode,
-        viewProfile:
-          activeCimViewProfile() || activePimViewProfile() || activeView()?.viewpoint || "",
+        viewProfile: activeConfiguredViewProfile() || activeView()?.viewpoint || "",
       },
       callbacks: {
         onNodeClick: handleG6NodeClick,
@@ -2104,7 +1330,7 @@ export function getModelingRendererDebug() {
 }
 
 export function setContextCreateMode(enabled) {
-  const isEnabled = Boolean(enabled && state.activeType === "cim");
+  const isEnabled = Boolean(enabled && supportsBoundedContext());
   state.boundedContextCreateMode = isEnabled;
   if (!isEnabled) {
     clearContextDraftSelection();
@@ -2256,7 +1482,8 @@ function showBoundedContextNameModal(defaultValue = "") {
 export async function finalizeBoundedContextDraft() {
   const selectedIds = [...state.boundedContextDraftNodeIds];
   if (!selectedIds.length) {
-    setStatus("Select one or more CIM elements first");
+    const displayName = modelingLevelConfig(state.activeType).displayName || "model";
+    setStatus(`Select one or more ${displayName} elements first`);
     return;
   }
   const contextOptions = availableBoundedContexts();
@@ -2310,7 +1537,7 @@ function commitNodeLabel(node, rawText) {
   const resolved = next || previous;
   node.label = resolved;
   node.meta = node.meta && typeof node.meta === "object" ? node.meta : {};
-  if (state.activeType === "cim") {
+  if (supportsBoundedContext()) {
     node.meta.label = resolved;
   } else {
     node.meta.name = resolved;
@@ -2383,7 +1610,7 @@ function toggleNodeInSelection(nodeId) {
 
 function availableBoundedContexts() {
   const contexts = new Set();
-  if (state.activeType === "cim") {
+  if (supportsBoundedContext()) {
     (state.baseModel?.boundedContexts || []).forEach((context) => {
       const name = normalizeContextName(context?.name);
       if (name) {
@@ -2570,7 +1797,7 @@ function diagramBounds({ includeContexts = true } = {}) {
   let minY = Math.min(...state.diagram.nodes.map((node) => node.y));
   let maxX = Math.max(...state.diagram.nodes.map((node) => node.x + nodeW));
   let maxY = Math.max(...state.diagram.nodes.map((node) => node.y + nodeH));
-  if (includeContexts && state.activeType === "cim") {
+  if (includeContexts && supportsBoundedContext()) {
     const byContext = new Map();
     state.diagram.nodes.forEach((node) => {
       const contextName = contextNameFromNode(node);
@@ -2725,603 +1952,134 @@ function maybeCreateContainmentEdge(parent, child) {
   }
 }
 
+function containingFeaturesForChild(childType) {
+  const entries = [];
+  try {
+    modelingLevelConfig(state.activeType).elements.forEach((definition) => {
+      modelingContainmentsForType(state.activeType, definition.type).forEach((containment) => {
+        if (
+          containment.feature &&
+          containment.types?.some((type) => modelTypeMatches(state.activeType, childType, type))
+        ) {
+          entries.push({ ownerType: definition.type, feature: containment.feature });
+        }
+      });
+    });
+  } catch {
+    return [];
+  }
+  return entries;
+}
+
 function selectedOwnerNode(ownerTypes, childNode) {
   const selectedIds = [
     state.selectedNodeId,
     ...(state.selectedNodeIds instanceof Set ? [...state.selectedNodeIds] : []),
   ].filter(Boolean);
-  for (const id of selectedIds) {
-    const node = state.nodesById.get(id);
-    if (node && node.id !== childNode.id && ownerTypes.includes(node.type)) {
-      return node;
-    }
-  }
+  const candidates = [
+    ...selectedIds.map((id) => state.nodesById.get(id)).filter(Boolean),
+    ...state.diagram.nodes,
+  ];
   return (
-    state.diagram.nodes.find(
-      (node) => node.id !== childNode.id && ownerTypes.includes(node.type),
+    candidates.find(
+      (node) =>
+        node?.id &&
+        node.id !== childNode.id &&
+        ownerTypes.some((ownerType) => modelTypeMatches(state.activeType, node.type, ownerType)),
     ) || null
   );
 }
 
-function ensureOwnerNode(ownerTypes, childNode) {
-  const existing = selectedOwnerNode(ownerTypes, childNode);
-  if (existing) {
-    return existing;
-  }
-  const ownerType = ownerTypes[0];
-  const owner = addScaffoldNode(ownerType, childNode.x - 250, childNode.y, `${ownerType} Owner`);
-  createRequiredCimCompanions(owner);
-  return owner;
-}
-
-function attachNestedNode(node, { ownerTypes, feature }) {
-  if (!node || !ownerTypes?.length || !feature) {
+function attachNestedNode(node, containment) {
+  if (!node || !containment?.ownerType || !containment?.feature) {
     return null;
   }
-  const owner = ensureOwnerNode(ownerTypes, node);
+  const owner = selectedOwnerNode([containment.ownerType], node);
+  if (!owner) {
+    return null;
+  }
   node.meta.__ownerId = owner.id;
-  node.meta.__containmentFeature = feature;
-  addContainmentReference(owner, feature, node.id);
+  node.meta.__containmentFeature = containment.feature;
+  addContainmentReference(owner, containment.feature, node.id);
   syncNodeMetaToGraph(node);
   syncNodeMetaToGraph(owner);
   maybeCreateContainmentEdge(owner, node);
   return owner;
 }
 
-function createRequiredCimCompanions(node) {
-  if (state.activeType === "pim") {
-    createRequiredPimCompanions(node);
-    return;
-  }
-  if (state.activeType !== "cim" || !node) {
-    return;
-  }
-  const x = node.x;
-  const y = node.y;
-  switch (node.type) {
-    case "DomainEntity": {
-      const item = addScaffoldNode("InformationItem", x + 240, y, `${node.label}Id`);
-      item.meta.type = "IDENTIFIER";
-      item.meta.required = true;
-      node.meta.identityAttribute = item.id;
-      node.meta.attributes = [item.id];
-      createWizardEdge(node.id, item.id, "HAS_ATTRIBUTE");
-      break;
-    }
-    case "BusinessCapability": {
-      const goal = addScaffoldNode("BusinessGoal", x - 260, y, `${node.label} Goal`);
-      node.meta.supports = [goal.id];
-      createWizardEdge(node.id, goal.id, "SUPPORTS");
-      break;
-    }
-    case "Command": {
-      const event = addScaffoldNode("BusinessEvent", x + 260, y, `${node.label} Completed`);
-      event.meta.occurredInPastTenseName = event.label;
-      node.meta.expectedEvents = [event.id];
-      createWizardEdge(node.id, event.id, "EXPECTS");
-      break;
-    }
-    case "Query": {
-      const output = addScaffoldNode("InformationItem", x + 260, y, `${node.label} Result`);
-      node.meta.output = [output.id];
-      createWizardEdge(node.id, output.id, "OUTPUT");
-      break;
-    }
-    case "AggregateCandidate": {
-      const root = addScaffoldNode("DomainEntity", x + 260, y, `${node.label} Root`);
-      const identity = addScaffoldNode("InformationItem", x + 500, y, `${root.label}Id`);
-      identity.meta.type = "IDENTIFIER";
-      identity.meta.required = true;
-      root.meta.identityAttribute = identity.id;
-      root.meta.attributes = [identity.id];
-      node.meta.root = root.id;
-      node.meta.members = [root.id];
-      createWizardEdge(node.id, root.id, "ROOT");
-      createWizardEdge(root.id, identity.id, "HAS_ATTRIBUTE");
-      break;
-    }
-    case "PrivacyConstraint": {
-      const item = addScaffoldNode("InformationItem", x + 260, y, `${node.label} Data`);
-      node.meta.dataItems = [item.id];
-      createWizardEdge(node.id, item.id, "CONSTRAINS");
-      break;
-    }
-    case "NonFunctionalRequirement": {
-      const target = state.diagram.nodes.find((candidate) => candidate.id !== node.id);
-      if (target) {
-        node.meta.constrainedElements = [target.id];
-        createWizardEdge(node.id, target.id, "CONSTRAINS");
-      }
-      break;
-    }
-    case "UbiquitousLanguageTerm":
-      node.meta.term = node.label;
-      break;
-    case "LifecycleStateDefinition":
-      node.meta.stateName = node.label;
-      attachNestedNode(node, {
-        ownerTypes: ["DomainEntity"],
-        feature: "lifecycleStates",
-      });
-      break;
-    case "AcceptanceCriterion":
-      attachNestedNode(node, {
-        ownerTypes: [
-          "Requirement",
-          "NonFunctionalRequirement",
-          "SecurityConstraint",
-          "PrivacyConstraint",
-          "ComplianceConstraint",
-        ],
-        feature: "acceptanceCriteria",
-      });
-      break;
-    case "QualityScenario":
-      attachNestedNode(node, {
-        ownerTypes: [
-          "NonFunctionalRequirement",
-          "SecurityConstraint",
-          "PrivacyConstraint",
-          "ComplianceConstraint",
-        ],
-        feature: "scenarios",
-      });
-      break;
-    case "BusinessInvariant":
-      attachNestedNode(node, {
-        ownerTypes: ["DomainEntity", "AggregateCandidate"],
-        feature: "invariants",
-      });
-      break;
-    case "BusinessProcess": {
-      const start = addScaffoldNode("StartStep", x - 240, y + 150, "Start");
-      const end = addScaffoldNode("EndStep", x + 240, y + 150, "End");
-      start.meta.__ownerId = node.id;
-      start.meta.__containmentFeature = "steps";
-      end.meta.__ownerId = node.id;
-      end.meta.__containmentFeature = "steps";
-      node.meta.steps = [start.id, end.id];
-      createWizardEdge(start.id, end.id, "TRANSITION");
-      break;
-    }
-    case "StartStep":
-    case "EndStep":
-    case "HumanTaskStep":
-    case "WaitStep":
-    case "DecisionStep":
-      attachNestedNode(node, {
-        ownerTypes: ["BusinessProcess"],
-        feature: "steps",
-      });
-      break;
-    case "CommandStep": {
-      const command = addScaffoldNode("Command", x + 240, y, `${node.label} Command`);
-      const event = addScaffoldNode("BusinessEvent", x + 480, y, `${command.label} Completed`);
-      event.meta.occurredInPastTenseName = event.label;
-      command.meta.expectedEvents = [event.id];
-      node.meta.command = command.id;
-      createWizardEdge(command.id, event.id, "EXPECTS");
-      attachNestedNode(node, {
-        ownerTypes: ["BusinessProcess"],
-        feature: "steps",
-      });
-      break;
-    }
-    case "QueryStep": {
-      const query = addScaffoldNode("Query", x + 240, y, `${node.label} Query`);
-      const output = addScaffoldNode("InformationItem", x + 480, y, `${query.label} Result`);
-      query.meta.output = [output.id];
-      node.meta.query = query.id;
-      createWizardEdge(query.id, output.id, "OUTPUT");
-      attachNestedNode(node, {
-        ownerTypes: ["BusinessProcess"],
-        feature: "steps",
-      });
-      break;
-    }
-    case "EventStep": {
-      const event = addScaffoldNode("BusinessEvent", x + 240, y, `${node.label} Happened`);
-      event.meta.occurredInPastTenseName = event.label;
-      node.meta.event = event.id;
-      attachNestedNode(node, {
-        ownerTypes: ["BusinessProcess"],
-        feature: "steps",
-      });
-      break;
-    }
-    case "PolicyStep": {
-      const policy = addScaffoldNode("Policy", x + 240, y, `${node.label} Policy`);
-      node.meta.policy = policy.id;
-      attachNestedNode(node, {
-        ownerTypes: ["BusinessProcess"],
-        feature: "steps",
-      });
-      break;
-    }
-    case "ExternalInteractionStep": {
-      const system = addScaffoldNode("ExternalSystem", x + 240, y, `${node.label} System`);
-      node.meta.externalSystem = system.id;
-      attachNestedNode(node, {
-        ownerTypes: ["BusinessProcess"],
-        feature: "steps",
-      });
-      break;
-    }
-    case "DecisionTable": {
-      const rule = addScaffoldNode("DecisionRule", x + 240, y, `${node.label} Rule`);
-      rule.meta.__ownerId = node.id;
-      rule.meta.__containmentFeature = "rules";
-      rule.meta.priorityOrder = 1;
-      node.meta.rules = [rule.id];
-      break;
-    }
-    case "DecisionRule":
-      attachNestedNode(node, {
-        ownerTypes: ["DecisionTable"],
-        feature: "rules",
-      });
-      break;
-    case "ExceptionScenario":
-      attachNestedNode(node, {
-        ownerTypes: ["BusinessProcess"],
-        feature: "exceptions",
-      });
-      break;
-    case "TemporalConstraint":
-      attachNestedNode(node, {
-        ownerTypes: ["BusinessProcess"],
-        feature: "temporalConstraints",
-      });
-      break;
-    case "ManualDecision":
-      node.meta.question = node.label;
-      if (selectedOwnerNode(["ProductionReadinessAssessment"], node)) {
-        attachNestedNode(node, {
-          ownerTypes: ["ProductionReadinessAssessment"],
-          feature: "manualDecisions",
-        });
-      } else {
-        attachNestedNode(node, {
-          ownerTypes: ["TransformationProfile"],
-          feature: "requiredDecisions",
-        });
-      }
-      break;
-    case "ReadinessFinding":
-      node.meta.severity = node.meta.severity || "WARNING";
-      attachNestedNode(node, {
-        ownerTypes: ["ProductionReadinessAssessment"],
-        feature: "findings",
-      });
-      break;
-    case "ReadinessCheck":
-      node.meta.checkId = node.meta.checkId || node.id;
-      node.meta.severity = node.meta.severity || "WARNING";
-      attachNestedNode(node, {
-        ownerTypes: ["ProductionReadinessAssessment"],
-        feature: "checks",
-      });
-      break;
-    case "StructuredDocument":
-      node.meta.format = node.meta.format || "TEXT";
-      break;
-    case "Annotation":
-      node.meta.key = node.meta.key || node.label;
-      node.meta.source = node.meta.source || "frontend";
-      attachNestedNode(node, {
-        ownerTypes: state.diagram.nodes
-          .filter((candidate) => candidate.id !== node.id && candidate.type !== "Annotation")
-          .map((candidate) => candidate.type),
-        feature: "annotations",
-      });
-      break;
-    default:
-      break;
-  }
-  state.diagram.nodes.forEach(syncNodeMetaToGraph);
+function createConfiguredCompanions(node) {
+  applyConfiguredScaffold(node);
 }
 
-function createRequiredPimCompanions(node) {
-  if (!node) {
+function applyConfiguredScaffold(node) {
+  if (!node || !isModelingLevel(state.activeType)) {
     return;
   }
-  const x = node.x;
-  const y = node.y;
-  switch (node.type) {
-    case "Function": {
-      node.meta.functionKind ||= "COMMAND_HANDLER";
-      const contract = addScaffoldNode("FunctionContract", x - 260, y, `${node.label} Contract`);
-      contract.meta.__ownerId = node.id;
-      contract.meta.__containmentFeature = "contract";
-      contract.meta.contractVersion = "1.0.0";
-      node.meta.contract = contract.id;
-      createWizardEdge(node.id, contract.id, "CONTAINS");
-      break;
-    }
-    case "Api": {
-      node.meta.apiStyle ||= "RESOURCE_ORIENTED_HTTP";
-      const route = addScaffoldNode("ApiRoute", x + 260, y, `${node.label} Route`);
-      route.meta.__ownerId = node.id;
-      route.meta.__containmentFeature = "routes";
-      route.meta.method = "GET";
-      route.meta.pathTemplate = "/";
-      route.meta.authRequired = Boolean(node.meta.authRequired);
-      node.meta.routes = [route.id];
-      createWizardEdge(node.id, route.id, "CONTAINS");
-      break;
-    }
-    case "Schema": {
-      node.meta.schemaKind ||= "ENTITY";
-      const field = addScaffoldNode("SchemaField", x + 260, y, `${node.label} Field`);
-      field.meta.__ownerId = node.id;
-      field.meta.__containmentFeature = "fields";
-      field.meta.fieldType = "STRING";
-      field.meta.required = true;
-      node.meta.fields = [field.id];
-      createWizardEdge(node.id, field.id, "CONTAINS");
-      break;
-    }
-    case "EventType": {
-      node.meta.semanticName ||= node.label;
-      const schema = addScaffoldNode("Schema", x - 260, y, `${node.label} Schema`);
-      schema.meta.schemaKind = "EVENT";
-      node.meta.schema = schema.id;
-      createWizardEdge(node.id, schema.id, "USES");
-      break;
-    }
-    case "DataStore": {
-      node.meta.storeKind ||= "DOCUMENT";
-      node.meta.consistencyNeed ||= "EVENTUAL";
-      const schema = addScaffoldNode("Schema", x - 300, y + 150, `${node.label} Schema`);
-      schema.meta.schemaKind = "ENTITY";
-      const model = addScaffoldNode("DataModel", x, y + 150, `${node.label} Model`);
-      model.meta.__ownerId = node.id;
-      model.meta.__containmentFeature = "ownedDataModels";
-      model.meta.dataModelKind = "ENTITY";
-      model.meta.schema = schema.id;
-      const access = addScaffoldNode("AccessPattern", x + 300, y + 150, `${node.label} Access`);
-      access.meta.__ownerId = node.id;
-      access.meta.__containmentFeature = "accessPatterns";
-      access.meta.patternName = "Primary lookup";
-      access.meta.operation = "Get";
-      node.meta.ownedDataModels = [model.id];
-      node.meta.accessPatterns = [access.id];
-      createWizardEdge(node.id, model.id, "CONTAINS");
-      createWizardEdge(node.id, access.id, "CONTAINS");
-      createWizardEdge(model.id, schema.id, "USES");
-      break;
-    }
-    case "Workflow": {
-      node.meta.workflowKind ||= "ORCHESTRATION";
-      const start = addScaffoldNode("WorkflowState", x - 240, y + 150, "Start");
-      const end = addScaffoldNode("WorkflowState", x + 240, y + 150, "End");
-      start.meta.__ownerId = node.id;
-      start.meta.__containmentFeature = "states";
-      start.meta.stateKind = "TASK";
-      end.meta.__ownerId = node.id;
-      end.meta.__containmentFeature = "states";
-      end.meta.stateKind = "SUCCESS";
-      end.meta.terminal = true;
-      node.meta.states = [start.id, end.id];
-      node.meta.startState = start.id;
-      node.meta.endStates = [end.id];
-      createWizardEdge(node.id, start.id, "CONTAINS");
-      createWizardEdge(node.id, end.id, "CONTAINS");
-      createWizardEdge(start.id, end.id, "TRANSITION");
-      break;
-    }
-    case "Queue":
-      node.meta.channelKind = "QUEUE";
-      node.meta.orderingRequirement ||= "NONE";
-      node.meta.deliverySemantics ||= "AT_LEAST_ONCE";
-      break;
-    case "Topic":
-      node.meta.channelKind = "TOPIC";
-      node.meta.orderingRequirement ||= "NONE";
-      node.meta.deliverySemantics ||= "AT_LEAST_ONCE";
-      break;
-    case "EventBus":
-      node.meta.channelKind = "EVENT_BUS";
-      node.meta.orderingRequirement ||= "NONE";
-      node.meta.deliverySemantics ||= "AT_LEAST_ONCE";
-      break;
-    case "Schedule":
-      node.meta.scheduleExpression ||= "rate(1 day)";
-      node.meta.enabled = node.meta.enabled !== false;
-      break;
-    case "DeploymentUnit": {
-      node.meta.unitType ||= "SERVICE";
-      const env =
-        state.diagram.nodes.find((candidate) => candidate.type === "Environment") ||
-        addScaffoldNode("Environment", x + 280, y, "Dev");
-      env.meta.environmentClass ||= "DEV";
-      const deployable = state.diagram.nodes.find((candidate) =>
-        [
-          "Function",
-          "Api",
-          "Workflow",
-          "Queue",
-          "Topic",
-          "EventBus",
-          "Schedule",
-          "DataStore",
-          "ObjectStore",
-          "ExternalAdapter",
-          "IdentityProvider",
-          "ConfigurationSet",
-        ].includes(candidate.type),
-      );
-      if (deployable) {
-        node.meta.contains = [deployable.id];
-        createWizardEdge(node.id, deployable.id, "DEPLOYS");
-      }
-      node.meta.targetEnvironments = [env.id];
-      createWizardEdge(node.id, env.id, "DEPLOYS_TO");
-      break;
-    }
-    case "ServerlessService":
-      node.meta.boundaryType ||= "CAPABILITY_BASED";
-      break;
-    case "Environment":
-      node.meta.environmentClass ||= "DEV";
-      break;
-    case "ImplementationProfile":
-      node.meta.primaryLanguage ||= "TYPESCRIPT";
-      node.meta.packageManager ||= "NPM";
-      break;
-    case "IdentityProvider":
-      node.meta.identityKind ||= "USER_DIRECTORY";
-      break;
-    case "Principal":
-      node.meta.principalKind ||= "ROLE";
-      break;
-    case "Secret":
-      node.meta.secretKind ||= "TOKEN";
-      break;
-    case "ConfigurationSet":
-      node.meta.scope ||= "APPLICATION";
-      break;
-    case "WorkflowState":
-      node.meta.stateKind ||= "TASK";
-      attachNestedNode(node, { ownerTypes: ["Workflow"], feature: "states" });
-      break;
-    case "ApiRoute":
-      node.meta.method ||= "GET";
-      node.meta.pathTemplate ||= "/";
-      attachNestedNode(node, { ownerTypes: ["Api"], feature: "routes" });
-      break;
-    case "SchemaField":
-      node.meta.fieldType ||= "STRING";
-      attachNestedNode(node, { ownerTypes: ["Schema"], feature: "fields" });
-      break;
-    case "DataModel":
-      node.meta.dataModelKind ||= "ENTITY";
-      attachNestedNode(node, { ownerTypes: ["DataStore"], feature: "ownedDataModels" });
-      break;
-    case "AccessPattern":
-      node.meta.patternName ||= node.label;
-      attachNestedNode(node, { ownerTypes: ["DataStore"], feature: "accessPatterns" });
-      break;
-    case "ConfigParameter":
-      node.meta.scope ||= "APPLICATION";
-      attachNestedNode(node, { ownerTypes: ["ConfigurationSet"], feature: "parameters" });
-      break;
-    case "EnvironmentVariable":
-      node.meta.variableName ||= node.label.replaceAll(/[^A-Za-z0-9_]+/g, "_").toUpperCase();
-      attachNestedNode(node, { ownerTypes: ["ConfigurationSet"], feature: "environmentVariables" });
-      break;
-    default:
-      break;
+  const containments = containingFeaturesForChild(node.type);
+  if (containments.length) {
+    attachNestedNode(node, containments[0]);
   }
+  const recipes = modelingLevelConfig(state.activeType).scaffoldRecipes || [];
+  recipes
+    .filter((recipe) => recipe?.type === node.type)
+    .forEach((recipe) => {
+      Object.entries(recipe.defaults || {}).forEach(([field, value]) => {
+        node.meta[field] = structuredClone(value);
+      });
+      (recipe.children || []).forEach((child, index) => {
+        const childNode = addScaffoldNode(
+          child.type,
+          node.x + Number(child.x || 180 + index * 48),
+          node.y + Number(child.y || 96),
+          child.label || child.type,
+        );
+        if (child.containmentFeature) {
+          childNode.meta.__ownerId = node.id;
+          childNode.meta.__containmentFeature = child.containmentFeature;
+          addReferenceValue(node.meta, child.containmentFeature, childNode.id, true);
+        }
+        if (child.relationshipKind) {
+          createWizardEdge(node.id, childNode.id, child.relationshipKind);
+        }
+      });
+    });
   state.diagram.nodes.forEach(syncNodeMetaToGraph);
 }
 
 function createModelingWizard(kind) {
+  const recipe = (modelingLevelConfig(state.activeType).scaffoldRecipes || []).find(
+    (candidate) => candidate?.id === kind,
+  );
+  if (!recipe?.nodes?.length) {
+    return;
+  }
   const rect = el.canvasViewport?.getBoundingClientRect();
   const origin = rect
     ? toCanvasCoordinates(rect.left + rect.width / 2, rect.top + rect.height / 2)
     : { x: 120, y: 120 };
-  const specs = {
-    cimCommandFlow: {
-      nodes: [
-        ["BusinessGoal", -260, -150],
-        ["BusinessCapability", 0, -150],
-        ["Actor", -220, -20],
-        ["Command", 0, -20],
-        ["BusinessEvent", 220, -20],
-      ],
-      edges: [
-        [1, 0, "SUPPORTS"],
-        [2, 3, "ISSUES"],
-        [3, 4, "EXPECTS"],
-      ],
-      label: "Command flow",
-    },
-    pimCommandHandler: {
-      nodes: [
-        ["Function", 0, 0],
-        ["FunctionContract", -260, 0],
-        ["EventType", 260, -80],
-        ["Queue", 260, 80],
-        ["DataStore", 0, 160],
-      ],
-      edges: [
-        [0, 1, "USES"],
-        [0, 2, "PUBLISHES"],
-        [3, 2, "CONTAINS"],
-        [0, 4, "READS"],
-      ],
-      label: "Serverless command handler",
-    },
-    psmLambdaEndpoint: {
-      nodes: [
-        ["HttpApiRoute", -260, 0],
-        ["ApiGatewayIntegration", -40, 0],
-        ["AwsLambdaFunction", 190, 0],
-        ["IamRole", 190, 150],
-        ["CloudWatchLogGroup", 430, 0],
-      ],
-      edges: [
-        [0, 1, "ROUTES_TO"],
-        [1, 2, "INVOKES"],
-        [2, 3, "USES_ROLE"],
-        [2, 4, "WRITES_LOGS_TO"],
-      ],
-      label: "AWS Lambda endpoint",
-    },
-  };
-  const spec = specs[kind];
-  if (!spec) {
-    return;
-  }
   pushDiagramUndoSnapshot();
-  const nodes = spec.nodes.map(([type, dx, dy]) => {
+  const nodes = recipe.nodes.map((item, index) => {
     const node = getDefaultNode(
       state.activeType,
-      type,
-      Math.round(origin.x + dx),
-      Math.round(origin.y + dy),
+      item.type,
+      Math.round(origin.x + Number(item.x || index * 180)),
+      Math.round(origin.y + Number(item.y || 0)),
     );
+    node.label = item.label || node.label;
+    node.meta = { ...(node.meta || {}), ...structuredClone(item.defaults || {}) };
     state.diagram.nodes.push(node);
     addNodeToGraphAndActiveView(node);
     return node;
   });
-  if (kind === "cimCommandFlow") {
-    const [goal, capability, actor, command, event] = nodes;
-    goal.label = "Fulfill Business Outcome";
-    capability.label = "Handle Command";
-    actor.label = "Business Actor";
-    command.label = "Execute Command";
-    event.label = "Command Completed";
-    capability.meta = {
-      ...(capability.meta || {}),
-      supports: [goal.id],
-    };
-    actor.meta = {
-      ...(actor.meta || {}),
-      actorType: "HUMAN",
-      issuesCommands: [command.id],
-    };
-    command.meta = {
-      ...(command.meta || {}),
-      intent: "Execute a user initiated business command.",
-      commandType: "USER_INTENT",
-      userInitiated: true,
-      priority: "MEDIUM",
-      issuedBy: [actor.id],
-      targetCapability: capability.id,
-      expectedEvents: [event.id],
-    };
-  }
-  spec.edges.forEach(([sourceIndex, targetIndex, edgeKind]) => {
-    createWizardEdge(nodes[sourceIndex].id, nodes[targetIndex].id, edgeKind);
+  (recipe.edges || []).forEach((edge) => {
+    createWizardEdge(nodes[edge.sourceIndex]?.id, nodes[edge.targetIndex]?.id, edge.kind);
   });
   ensureG6Canvas();
   syncCanvasIndexesFromState();
   syncG6FromState({ full: false });
   workbenchSurfaces();
   markModelDirty();
-  setStatus(`Created ${spec.label}`);
+  setStatus(`Created ${recipe.label || "model scaffold"}`);
 }
 
 function createPaletteActionButton(
@@ -3425,40 +2183,14 @@ function filterScopedPaletteTypes(typeKey, scopedTypes, allTypes) {
   return result;
 }
 
-function availableCimPaletteTypes(allTypes) {
+function availableConfiguredPaletteTypes(allTypes) {
   const view = activeView();
-  if (
-    !view ||
-    String(view.id || "") === "view-cim-main" ||
-    String(view.kind || "").toUpperCase() === "MAIN"
-  ) {
+  if (!view || String(view.kind || "").toUpperCase() === "MAIN") {
     return allTypes;
   }
   let viewDefinition = null;
   try {
-    viewDefinition = modelingViewDefinition("cim", view);
-  } catch {
-    viewDefinition = null;
-  }
-  const scoped = [
-    ...(Array.isArray(viewDefinition?.palette) ? viewDefinition.palette : []),
-    ...(Array.isArray(viewDefinition?.elementTypes) ? viewDefinition.elementTypes : []),
-  ];
-  return filterScopedPaletteTypes("cim", scoped, allTypes);
-}
-
-function availablePimPaletteTypes(allTypes) {
-  const view = activeView();
-  if (
-    !view ||
-    String(view.id || "") === "view-pim-main" ||
-    String(view.kind || "").toUpperCase() === "MAIN"
-  ) {
-    return allTypes;
-  }
-  let viewDefinition = null;
-  try {
-    viewDefinition = modelingViewDefinition("pim", view);
+    viewDefinition = modelingViewDefinition(state.activeType, view);
   } catch {
     viewDefinition = null;
   }
@@ -3468,55 +2200,13 @@ function availablePimPaletteTypes(allTypes) {
         ...(Array.isArray(viewDefinition.elementTypes) ? viewDefinition.elementTypes : []),
       ]
     : [...activeViewElementTypeFilter()];
-  const filtered = filterScopedPaletteTypes("pim", scoped, allTypes);
-  return viewDefinition || scoped.length ? filtered : allTypes;
-}
-
-function availablePsmPaletteTypes(allTypes) {
-  const view = activeView();
-  if (
-    !view ||
-    String(view.id || "") === "view-psm-main" ||
-    String(view.kind || "").toUpperCase() === "MAIN"
-  ) {
-    return allTypes;
-  }
-  let viewDefinition = null;
-  try {
-    viewDefinition = modelingViewDefinition("psm", view);
-  } catch {
-    viewDefinition = null;
-  }
-  const scoped = viewDefinition
-    ? [
-        ...(Array.isArray(viewDefinition.palette) ? viewDefinition.palette : []),
-        ...(Array.isArray(viewDefinition.elementTypes) ? viewDefinition.elementTypes : []),
-      ]
-    : [...activeViewElementTypeFilter()];
-  const filtered = filterScopedPaletteTypes("psm", scoped, allTypes);
+  const filtered = filterScopedPaletteTypes(state.activeType, scoped, allTypes);
   return viewDefinition || scoped.length ? filtered : allTypes;
 }
 
 function renderWizardActions() {
-  const actions = (
-    {
-      cim: [["cimCommandFlow", "Command Flow"]],
-      pim: [["pimCommandHandler", "Command Handler"]],
-      psm: [["psmLambdaEndpoint", "Lambda Endpoint"]],
-    }[state.activeType] || []
-  ).filter(([kind]) => {
-    const requiredTypes =
-      {
-        cimCommandFlow: ["Actor", "Command", "BusinessEvent"],
-        pimCommandHandler: ["Function", "FunctionContract", "EventType", "Queue", "DataStore"],
-        psmLambdaEndpoint: [
-          "HttpApiRoute",
-          "ApiGatewayIntegration",
-          "AwsLambdaFunction",
-          "IamRole",
-          "CloudWatchLogGroup",
-        ],
-      }[kind] || [];
+  const actions = (modelingLevelConfig(state.activeType).scaffoldRecipes || []).filter((recipe) => {
+    const requiredTypes = (recipe.nodes || []).map((node) => node.type).filter(Boolean);
     const allowedTypes = activeViewElementTypeFilter();
     return !allowedTypes.size || requiredTypes.every((type) => allowedTypes.has(type));
   });
@@ -3524,11 +2214,12 @@ function renderWizardActions() {
     return false;
   }
   return appendPaletteActionGroup("Quick Actions", () => {
-    return actions.map(([kind, label]) => {
+    return actions.map((recipe) => {
+      const label = recipe.label || recipe.id || "Scaffold";
       const button = createPaletteActionButton(label, {
         title: `Create ${label}`,
       });
-      button.addEventListener("click", () => createModelingWizard(kind));
+      button.addEventListener("click", () => createModelingWizard(recipe.id));
       return button;
     });
   });
@@ -3543,7 +2234,7 @@ function isPaletteGroupCollapsed(groupName) {
 }
 
 function setPaletteGroupCollapsed(groupName, collapsed) {
-  state.paletteGroupCollapsed ??= { cim: {}, pim: {}, psm: {} };
+  state.paletteGroupCollapsed ??= {};
   state.paletteGroupCollapsed[state.activeType] ??= {};
   state.paletteGroupCollapsed[state.activeType][groupName] = Boolean(collapsed);
 }
@@ -3557,14 +2248,14 @@ function setAllPaletteGroupsCollapsed(groupNames, collapsed) {
 }
 
 function createBoundedContextActionControls() {
-  if (state.activeType !== "cim") {
+  if (!modelingLevelConfig(state.activeType).boundedContext?.enabled) {
     return [];
   }
   const controls = [];
   if (state.boundedContextViewMode !== "normal") {
     const back = createPaletteActionButton("Back", {
       done: true,
-      title: "Return to full CIM model view",
+      title: `Return to full ${modelingLevelConfig(state.activeType).displayName || "model"} view`,
     });
     back.addEventListener("click", closeBoundedContextSpecialView);
     controls.push(back);
@@ -3617,7 +2308,7 @@ export function renderPalette() {
   if (!config || !el.palette) {
     return;
   }
-  const isModelingType = ["cim", "pim", "psm"].includes(state.activeType);
+  const isModelingType = isModelingLevel(state.activeType);
   if (el.paletteSearchInput) {
     el.paletteSearchInput.disabled = !isModelingType;
     el.paletteSearchInput.value = isModelingType ? state.paletteSearch[state.activeType] || "" : "";
@@ -3637,16 +2328,11 @@ export function renderPalette() {
   }
   const query = ((state.paletteSearch[state.activeType] || "") + "").trim().toLowerCase();
   const activeViewElementTypes = activeViewElementTypeFilter();
-  const viewScopedTypes =
-    state.activeType === "cim"
-      ? availableCimPaletteTypes(allTypes)
-      : state.activeType === "pim"
-        ? availablePimPaletteTypes(allTypes)
-        : state.activeType === "psm"
-          ? availablePsmPaletteTypes(allTypes)
-          : activeViewElementTypes.size
-            ? allTypes.filter((type) => activeViewElementTypes.has(type))
-            : allTypes;
+  const viewScopedTypes = isModelingType
+    ? availableConfiguredPaletteTypes(allTypes)
+    : activeViewElementTypes.size
+      ? allTypes.filter((type) => activeViewElementTypes.has(type))
+      : allTypes;
   const actionableTypes = viewScopedTypes;
   const filteredTypes = query
     ? actionableTypes.filter((type) => type.toLowerCase().includes(query))
@@ -3798,386 +2484,11 @@ export function syncPaletteCollapsedUi() {
 }
 
 function paletteGroupForType(type) {
-  if (state.activeType === "cim") {
-    try {
-      return modelingElementDefinition("cim", type)?.category || "CIM";
-    } catch {
-      return "CIM";
-    }
+  try {
+    return modelingElementDefinition(state.activeType, type)?.category || "Model Elements";
+  } catch {
+    return "Model Elements";
   }
-  if (state.activeType === "pim" || state.activeType === "psm") {
-    try {
-      return (
-        modelingElementDefinition(state.activeType, type)?.category ||
-        state.activeType.toUpperCase()
-      );
-    } catch {
-      return state.activeType.toUpperCase();
-    }
-  }
-  const groups = {
-    cim: [
-      [
-        "Requirements & Goals",
-        [
-          "Requirement",
-          "AcceptanceCriterion",
-          "BusinessGoal",
-          "Objective",
-          "KPI",
-          "Stakeholder",
-          "StakeholderConcern",
-        ],
-      ],
-      ["Actors & Systems", ["Actor", "Role", "Persona", "ExternalSystem"]],
-      [
-        "Capabilities & Contexts",
-        [
-          "BusinessCapability",
-          "CapabilityDependency",
-          "BoundedContextCandidate",
-          "UbiquitousLanguageTerm",
-        ],
-      ],
-      ["Commands & Events", ["Command", "Query", "BusinessEvent", "BusinessError"]],
-      [
-        "Processes & Decisions",
-        [
-          "BusinessProcess",
-          "ProcessStep",
-          "CommandStep",
-          "QueryStep",
-          "EventStep",
-          "PolicyStep",
-          "HumanTaskStep",
-          "ExternalInteractionStep",
-          "DecisionStep",
-          "WaitStep",
-          "ProcessTransition",
-          "Condition",
-          "Policy",
-          "DecisionTable",
-          "DecisionRule",
-        ],
-      ],
-      [
-        "Domain Model",
-        [
-          "DomainEntity",
-          "ValueObject",
-          "DomainRelationship",
-          "AggregateCandidate",
-          "LifecycleStateDefinition",
-          "BusinessInvariant",
-          "InformationItem",
-          "DataClassification",
-          "ConsentRequirement",
-        ],
-      ],
-      [
-        "Quality & Constraints",
-        [
-          "Precondition",
-          "Postcondition",
-          "ExceptionScenario",
-          "TemporalConstraint",
-          "NonFunctionalRequirement",
-          "QualityScenario",
-          "SecurityConstraint",
-          "PrivacyConstraint",
-          "ComplianceConstraint",
-          "RegulatoryConstraint",
-        ],
-      ],
-      [
-        "Readiness & Traceability",
-        [
-          "Hotspot",
-          "OpenQuestion",
-          "Risk",
-          "RequirementLink",
-          "GoalSatisfactionLink",
-          "Assumption",
-          "TransformationProfile",
-        ],
-      ],
-    ],
-    pim: [
-      [
-        "Services & Compute",
-        ["ServerlessService", "Function", "ExternalAdapter", "CredentialRequirement"],
-      ],
-      ["Deployment", ["DeploymentUnit", "Environment", "ImplementationProfile"]],
-      [
-        "Contracts & Schemas",
-        [
-          "Schema",
-          "SchemaField",
-          "SchemaConstraint",
-          "FunctionContract",
-          "ApiContract",
-          "EventEnvelope",
-        ],
-      ],
-      ["API", ["Api", "ApiRoute", "ErrorMapping", "RequestResponseFlow", "CorsPolicy"]],
-      [
-        "Events",
-        [
-          "EventSource",
-          "Trigger",
-          "EventChannel",
-          "EventRoutingRule",
-          "Queue",
-          "Topic",
-          "EventBus",
-          "EventType",
-          "Subscription",
-          "EventFlow",
-          "MessageFlow",
-          "PubSubFlow",
-          "ExternalIntegrationFlow",
-        ],
-      ],
-      [
-        "Workflow",
-        [
-          "Workflow",
-          "WorkflowState",
-          "WorkflowTransition",
-          "ErrorHandler",
-          "CompensationPolicy",
-          "OrchestrationFlow",
-          "Flow",
-        ],
-      ],
-      [
-        "Data",
-        [
-          "DataStore",
-          "ObjectStore",
-          "DataStructure",
-          "DataField",
-          "AccessPattern",
-          "IndexCandidate",
-        ],
-      ],
-      [
-        "Security",
-        [
-          "IdentityProvider",
-          "Principal",
-          "Permission",
-          "Secret",
-          "SecurityPolicy",
-          "AuthPolicy",
-          "AuthorizationPolicy",
-          "DataProtectionPolicy",
-          "CompliancePolicy",
-        ],
-      ],
-      ["Configuration", ["ConfigurationSet", "ConfigParameter", "EnvironmentVariable"]],
-      [
-        "Operations",
-        [
-          "ConfigParameter",
-          "EnvironmentVariable",
-          "ResiliencePolicy",
-          "RetryPolicy",
-          "DeadLetterPolicy",
-          "TimeoutPolicy",
-          "ObservabilityConfig",
-          "LoggingPolicy",
-          "MetricPolicy",
-          "TracingPolicy",
-          "AlertPolicy",
-          "Slo",
-          "IdempotencyPolicy",
-          "ConcurrencyPolicy",
-          "RateLimitPolicy",
-          "BatchPolicy",
-          "OrderingPolicy",
-          "CachePolicy",
-          "BackupPolicy",
-          "RetentionPolicy",
-          "CostPolicy",
-        ],
-      ],
-    ],
-    psm: [
-      [
-        "Stack & Governance",
-        [
-          "AwsStage",
-          "SamStack",
-          "CfnParameter",
-          "CfnMapping",
-          "CfnCondition",
-          "CfnOutput",
-          "SamGlobals",
-          "AwsNamingPolicy",
-          "AwsTaggingPolicy",
-          "AwsSecurityBaseline",
-          "AwsTag",
-          "NativeProperty",
-          "AwsNativeResource",
-        ],
-      ],
-      [
-        "Lambda Compute",
-        [
-          "AwsLambdaFunction",
-          "LambdaLayerVersion",
-          "LambdaVersion",
-          "LambdaAlias",
-          "LambdaProvisionedConcurrencyConfig",
-          "LambdaPermission",
-          "LambdaFunctionUrl",
-          "LambdaFileSystemConfig",
-          "CodeSigningConfig",
-          "LambdaEventInvokeConfig",
-          "LambdaTracingConfig",
-          "LambdaLoggingConfig",
-        ],
-      ],
-      [
-        "Lambda Triggers",
-        [
-          "ApiGatewayTrigger",
-          "ApiGatewayLambdaTrigger",
-          "EventBridgeLambdaTarget",
-          "SnsLambdaSubscription",
-          "LambdaEventSourceMapping",
-          "SqsLambdaEventSourceMapping",
-          "DynamoDbStreamLambdaEventSourceMapping",
-          "LambdaDeadLetterConfig",
-          "LambdaDestinationConfig",
-        ],
-      ],
-      [
-        "API Gateway & Edge",
-        [
-          "ApiGatewayApi",
-          "ApiGatewayRoute",
-          "ApiGatewayIntegration",
-          "ApiGatewayStage",
-          "ApiGatewayAuthorizer",
-          "JwtAuthorizer",
-          "CognitoAuthorizer",
-          "LambdaAuthorizer",
-          "ApiGatewayDomainName",
-          "ApiGatewayBasePathMapping",
-          "WafWebAclAssociation",
-        ],
-      ],
-      [
-        "EventBridge",
-        [
-          "EventBridgeBus",
-          "EventBridgeRule",
-          "EventBridgeTarget",
-          "EventBridgeInputTransformer",
-          "EventBridgeArchive",
-          "EventBridgeSchedule",
-          "EventBridgePipe",
-          "EventBridgeConnection",
-          "EventBridgeApiDestination",
-          "AwsRetryPolicy",
-        ],
-      ],
-      [
-        "Queues & Topics",
-        [
-          "SqsQueue",
-          "SqsRedrivePolicy",
-          "SqsRedriveAllowPolicy",
-          "SqsQueuePolicy",
-          "SnsTopic",
-          "SnsSubscription",
-          "SnsTopicPolicy",
-          "EventSchema",
-        ],
-      ],
-      [
-        "Step Functions",
-        [
-          "StepFunctionStateMachine",
-          "AslDocument",
-          "AslState",
-          "StepFunctionLoggingConfig",
-          "StepFunctionTracingConfig",
-          "StepFunctionEvent",
-        ],
-      ],
-      [
-        "Data & Storage",
-        [
-          "DynamoDbTable",
-          "DynamoDbAttributeDefinition",
-          "DynamoDbKeySchemaElement",
-          "DynamoDbProjection",
-          "DynamoDbProvisionedThroughput",
-          "DynamoDbOnDemandThroughput",
-          "DynamoDbLocalSecondaryIndex",
-          "DynamoDbGlobalSecondaryIndex",
-          "DynamoDbReplicaSpecification",
-          "DynamoDbStreamSpecification",
-          "DynamoDbTimeToLiveSpecification",
-          "DynamoDbSseSpecification",
-          "S3Bucket",
-          "S3BucketEncryption",
-          "S3LifecycleConfiguration",
-          "S3LifecycleRule",
-          "S3PublicAccessBlockConfiguration",
-          "S3NotificationConfiguration",
-          "S3NotificationRule",
-          "S3ReplicationConfiguration",
-          "S3BucketPolicy",
-        ],
-      ],
-      [
-        "Security",
-        [
-          "IamPolicy",
-          "IamManagedPolicy",
-          "IamStatement",
-          "IamRole",
-          "CognitoUserPool",
-          "CognitoUserPoolClient",
-          "CognitoUserPoolGroup",
-          "CognitoUserPoolDomain",
-          "CognitoIdentityPool",
-          "SecretsManagerSecret",
-          "SsmParameter",
-          "KmsKey",
-          "KmsAlias",
-          "SecretRotationSchedule",
-          "SecretsManagerResourcePolicy",
-          "VpcConfig",
-          "VpcEndpointReference",
-          "SecurityGroup",
-        ],
-      ],
-      ["Deployment", ["SamStack", "AwsStage", "EnvironmentConfig", "LambdaEnvironmentVariable"]],
-      [
-        "Observability",
-        [
-          "CloudWatchAlarm",
-          "CloudWatchCompositeAlarm",
-          "CloudWatchLogGroup",
-          "CloudWatchMetricFilter",
-          "CloudWatchLogSubscriptionFilter",
-          "CloudWatchDashboard",
-          "XRayTracingConfig",
-        ],
-      ],
-    ],
-  };
-  for (const [name, members] of groups[state.activeType] || []) {
-    if (members.includes(type)) {
-      return name;
-    }
-  }
-  return "Other";
 }
 
 function groupPaletteTypes(types) {
@@ -4256,7 +2567,7 @@ function buildDirectedKindOptions(source, target) {
       value: `${fromNode.id}|${toNode.id}|${kind}`,
       label: `${fromNode.label || fromNode.type} -> ${
         toNode.label || toNode.type
-      }: ${cimEdgeLabel({ kind })}`,
+      }: ${configuredEdgeLabel({ kind })}`,
       sourceId: fromNode.id,
       targetId: toNode.id,
       kind,
@@ -4282,7 +2593,7 @@ function buildDirectedKindOptions(source, target) {
 
 function legalKindsForConnection(sourceType, targetType) {
   const kinds = new Set(legalKinds(state.activeType, sourceType, targetType));
-  if (state.activeType === "cim" && state.preferredConnectionKind === "TRACE") {
+  if (supportsBoundedContext() && state.preferredConnectionKind === "TRACE") {
     kinds.add("TRACE");
   }
   return [...kinds];
@@ -4460,15 +2771,17 @@ export function renderDiagram() {
     state.viewport.scale >= 0.35 && state.viewport.scale < 0.75,
   );
   el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-  el.workspace?.classList.toggle("cim-view-active", state.activeType === "cim");
-  el.workspace?.classList.toggle("pim-view-active", state.activeType === "pim");
-  el.workspace?.classList.toggle("psm-view-active", state.activeType === "psm");
-  el.workspace?.setAttribute("data-cim-view-profile", activeCimViewProfile() || "");
-  el.workspace?.setAttribute("data-pim-view-profile", activePimViewProfile() || "");
-  el.workspace?.setAttribute(
-    "data-psm-view-profile",
-    state.activeType === "psm" ? activeView()?.viewpoint || "" : "",
-  );
+  Object.keys(MODEL_TYPES).forEach((typeKey) => {
+    el.workspace?.classList.toggle(`${typeKey}-view-active`, state.activeType === typeKey);
+    if (state.activeType === typeKey) {
+      el.workspace?.setAttribute(
+        `data-${typeKey}-view-profile`,
+        activeConfiguredViewProfile(typeKey) || "",
+      );
+    } else {
+      el.workspace?.removeAttribute(`data-${typeKey}-view-profile`);
+    }
+  });
 }
 
 // Compatibility helper for non-canvas modules that changed semantic state.
@@ -4488,9 +2801,9 @@ export function syncDiagramRenderer({ full = false, workbench = false } = {}) {
     state.viewport.scale >= 0.35 && state.viewport.scale < 0.75,
   );
   el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
-  el.workspace?.classList.toggle("cim-view-active", state.activeType === "cim");
-  el.workspace?.classList.toggle("pim-view-active", state.activeType === "pim");
-  el.workspace?.classList.toggle("psm-view-active", state.activeType === "psm");
+  Object.keys(MODEL_TYPES).forEach((typeKey) => {
+    el.workspace?.classList.toggle(`${typeKey}-view-active`, state.activeType === typeKey);
+  });
 }
 
 export function syncRendererSelection() {
@@ -4510,7 +2823,7 @@ function eventModifierState(event) {
 }
 
 function handleG6NodeClick(nodeId, event = {}) {
-  if (state.activeType === "cim" && state.boundedContextCreateMode) {
+  if (supportsBoundedContext() && state.boundedContextCreateMode) {
     const node = state.nodesById.get(nodeId);
     if (isBoundedContextNode(node)) {
       return;
@@ -4533,7 +2846,7 @@ function handleG6NodeClick(nodeId, event = {}) {
     return;
   }
   const node = state.nodesById.get(nodeId);
-  if (state.activeType === "cim" && isBoundedContextNode(node)) {
+  if (supportsBoundedContext() && isBoundedContextNode(node)) {
     if (state.boundedContextViewMode === "overview") {
       setNodeMultiSelection([nodeId]);
       selectBoundedContext(boundedContextNameFromContextNode(node));
@@ -4555,7 +2868,7 @@ function handleG6NodeDoubleClick(nodeId, event = {}) {
     return;
   }
   event?.preventDefault?.();
-  if (state.activeType === "cim" && isBoundedContextNode(node)) {
+  if (supportsBoundedContext() && isBoundedContextNode(node)) {
     openBoundedContextFocus(boundedContextNameFromContextNode(node));
     return;
   }
@@ -4656,7 +2969,7 @@ function startG6ConnectionDrag(sourceId) {
 
 function openG6ContainerTool(nodeId) {
   const node = state.nodesById.get(nodeId);
-  if (state.activeType === "cim" && isBoundedContextNode(node)) {
+  if (supportsBoundedContext() && isBoundedContextNode(node)) {
     openBoundedContextFocus(boundedContextNameFromContextNode(node));
     return;
   }
@@ -4768,7 +3081,13 @@ export function openBoundedContextOverview() {
     clearContextDraftSelection();
     renderDiagram();
     notifyModelToolsChanged();
-    setStatus("No bounded contexts yet. Use New Context or add a BoundedContextCandidate.");
+    setStatus(
+      `No bounded contexts yet. Use New Context or add a ${
+        modelingElementDefinition(state.activeType, boundedContextType())?.displayName ||
+        boundedContextType() ||
+        "context"
+      }.`,
+    );
     return;
   }
   state.boundedContextViewMode = "overview";
@@ -4953,12 +3272,12 @@ export function addConnection(
 }
 
 function createShortcutConnection(source, target) {
-  if (state.activeType !== "psm") {
+  if (!isModelingLevel(state.activeType)) {
     return false;
   }
   let rule = null;
   try {
-    rule = modelingShortcutConnectorRules("psm").find(
+    rule = modelingShortcutConnectorRules(state.activeType).find(
       (candidate) =>
         modelingTypeMatchesSafe(candidate.sourceType, source.type) &&
         modelingTypeMatchesSafe(candidate.targetType, target.type),
@@ -4979,7 +3298,7 @@ function createShortcutConnection(source, target) {
   intermediateTypes.forEach((type, index) => {
     const offsetX = 180 + index * 140;
     const offsetY = index % 2 === 0 ? 72 : -72;
-    const node = getDefaultNode("psm", type, source.x + offsetX, source.y + offsetY);
+    const node = getDefaultNode(state.activeType, type, source.x + offsetX, source.y + offsetY);
     node.label = `${type}-${node.id.slice(-4)}`;
     node.meta.name = node.label;
     node.meta.label = node.label;
@@ -5022,7 +3341,7 @@ function createShortcutConnection(source, target) {
   syncG6FromState({ full: false });
   workbenchSurfaces();
   markModelDirty();
-  setStatus(`Created ${rule.label || "PSM shortcut connector"}`);
+  setStatus(`Created ${rule.label || "shortcut connector"}`);
   return true;
 }
 
@@ -5032,7 +3351,7 @@ function createShortcutViewNode(rule, source, target, intermediates) {
     return null;
   }
   const node = getDefaultNode(
-    "psm",
+    state.activeType,
     viewType,
     Math.round((source.x + target.x) / 2),
     Math.round((source.y + target.y) / 2 - 130),

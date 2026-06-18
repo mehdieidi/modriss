@@ -1,6 +1,6 @@
 import { el } from "./dom.js";
 import { escapeHtml } from "./utils.js";
-import { modelingLevelConfig } from "./modeling-config-data.js";
+import { modelingLevelConfig, modelingLevelKeys } from "./modeling-config-data.js";
 import {
   activeView,
   saveCurrentTabGraphState,
@@ -59,7 +59,7 @@ export function ensureWorkbenchSurface(existingSurface, surfaceId) {
     surface = document.createElement("div");
     surface.id = "modelWorkbenchSurface";
     surface.dataset.sharedWorkbenchSurface = "true";
-    surface.className = "cim-workbench-surface hidden";
+    surface.className = "model-workbench-surface hidden";
     panel.appendChild(surface);
   }
   if (existingSurface && existingSurface !== surface) {
@@ -229,9 +229,9 @@ export function renderWorkbenchSliceOption({ typeKey, optionKind, value, label, 
 export function renderWorkbenchSliceSelect({ typeKey, optionKind, open, label, menuHtml }) {
   const isKind = optionKind === "kind";
   const dataAttr = isKind ? `data-${typeKey}-slice-kind` : `data-${typeKey}-slice-value`;
-  const legacyClass = typeKey === "cim" ? " cim-slice-select-wrap" : "";
-  const legacySelectClass = typeKey === "cim" ? " cim-slice-select" : "";
-  const legacyMenuClass = typeKey === "cim" ? " cim-slice-menu" : "";
+  const legacyClass = " model-slice-select-wrap";
+  const legacySelectClass = " model-slice-select";
+  const legacyMenuClass = " model-slice-menu";
   return `<div class="workbench-view-select-wrap workbench-slice-select-wrap${legacyClass}${
     open ? " is-open" : ""
   }">
@@ -264,12 +264,12 @@ export function renderWorkbenchControls({
   searchPlaceholder = "Search model...",
 }) {
   const dataPrefix = typeKey;
-  return `<div class="cim-surface-header">
-    <div class="cim-surface-title">
+  return `<div class="model-surface-header">
+    <div class="model-surface-title">
       <strong>${escapeHtml(title || `${typeKey.toUpperCase()} View`)}</strong>
       <span>${escapeHtml(profile)}</span>
     </div>
-    <div class="cim-mode-tabs">${modes
+    <div class="model-mode-tabs">${modes
       .map(
         ([mode, label]) => `
       <button class="${representation === mode ? "is-active" : ""}"
@@ -277,9 +277,9 @@ export function renderWorkbenchControls({
               type="button">${escapeHtml(label)}</button>`,
       )
       .join("")}</div>
-    <div class="pim-edge-toolbar" aria-label="${escapeHtml(typeKey.toUpperCase())} edge visibility">
+    <div class="model-edge-toolbar" aria-label="${escapeHtml(typeKey.toUpperCase())} edge visibility">
       <span>Edges</span>
-      <div class="pim-edge-buttons">${Object.entries(edgeModes)
+      <div class="model-edge-buttons">${Object.entries(edgeModes)
         .map(
           ([key, mode]) => `
         <button class="${(workbenchState.edgeMode || "both") === key ? "is-active" : ""}"
@@ -288,11 +288,11 @@ export function renderWorkbenchControls({
         )
         .join("")}</div>
     </div>
-    <div class="cim-filter-row">
+    <div class="model-filter-row">
       <input data-${dataPrefix}-search placeholder="${escapeHtml(searchPlaceholder)}" type="search"
              value="${escapeHtml(workbenchState.search || "")}">
       ${sliceControlsHtml}
-      <label class="cim-check-label">
+      <label class="model-check-label">
         <input data-${dataPrefix}-missing-only type="checkbox" ${
           workbenchState.missingOnly ? "checked" : ""
         }> Missing required
@@ -302,7 +302,7 @@ export function renderWorkbenchControls({
 }
 
 export function renderWorkbenchToolbar(actions = []) {
-  return `<div class="cim-toolbar">${actions.filter(Boolean).join("")}</div>`;
+  return `<div class="model-toolbar">${actions.filter(Boolean).join("")}</div>`;
 }
 
 export function renderWorkbenchRegister({
@@ -317,8 +317,8 @@ export function renderWorkbenchRegister({
 }) {
   const colSpan = columns.length + 2;
   return `${toolbarHtml}
-    <div class="cim-table-wrap">
-      <table class="cim-table">
+    <div class="model-table-wrap">
+      <table class="model-table">
         <thead><tr>
           <th>Element</th>
           ${columns
@@ -338,20 +338,20 @@ export function renderWorkbenchRegister({
                   .map(
                     (row) => `<tr>
             <td>
-              <button class="cim-link" data-${typeKey}-open="${escapeHtml(
+              <button class="model-link" data-${typeKey}-open="${escapeHtml(
                 row.id,
               )}" type="button">${escapeHtml(getLabel(row))}</button>
-              <div class="cim-row-meta">${getBadgeHtml(row)}</div>
+              <div class="model-row-meta">${getBadgeHtml(row)}</div>
             </td>
             ${columns.map((column) => `<td>${renderCell(row, column)}</td>`).join("")}
-            <td><button class="cim-icon-action" data-${typeKey}-open="${escapeHtml(
+            <td><button class="model-icon-action" data-${typeKey}-open="${escapeHtml(
               row.id,
             )}" title="Open detail" type="button">Open</button></td>
           </tr>`,
                   )
                   .join("")
               : `<tr><td colspan="${colSpan}"
-              class="cim-empty">${escapeHtml(emptyText)}</td></tr>`
+              class="model-empty">${escapeHtml(emptyText)}</td></tr>`
           }
         </tbody>
       </table>
@@ -366,24 +366,24 @@ export function renderWorkbenchDashboard({
 }) {
   const foundation =
     primaryHtml ||
-    `<section class="cim-root-form">
-    <div class="cim-section-title">Model Foundation</div>
-    <div class="cim-ok">Foundation requirements are satisfied.</div>
+    `<section class="model-root-form">
+    <div class="model-section-title">Model Foundation</div>
+    <div class="model-ok">Foundation requirements are satisfied.</div>
   </section>`;
   const activity =
     secondaryHtml ||
-    `<section class="cim-view-entry-list">
-    <div class="cim-section-title">Actions</div>
-    ${actionsHtml || `<div class="cim-empty">No actions available.</div>`}
+    `<section class="model-view-entry-list">
+    <div class="model-section-title">Actions</div>
+    ${actionsHtml || `<div class="model-empty">No actions available.</div>`}
   </section>`;
-  return `<div class="cim-dashboard-grid">
+  return `<div class="model-dashboard-grid">
     ${foundation}
-    <section class="cim-health">
-      <div class="cim-section-title">Health Summary</div>
-      <div class="cim-metric-grid">${metrics
+    <section class="model-health">
+      <div class="model-section-title">Health Summary</div>
+      <div class="model-metric-grid">${metrics
         .map(
           ([label, value]) => `
-        <div class="cim-metric"><strong>${escapeHtml(value)}</strong><span>${escapeHtml(
+        <div class="model-metric"><strong>${escapeHtml(value)}</strong><span>${escapeHtml(
           label,
         )}</span></div>`,
         )
@@ -405,15 +405,15 @@ export function renderWorkbenchMatrixSection({
   emptyText = "No rows or columns available.",
 }) {
   if (!rows.length || !columns.length) {
-    return `<section class="cim-matrix-section">
-      <div class="cim-section-title">${escapeHtml(title)}</div>
-      <div class="cim-empty">${escapeHtml(emptyText)}</div>
+    return `<section class="model-matrix-section">
+      <div class="model-section-title">${escapeHtml(title)}</div>
+      <div class="model-empty">${escapeHtml(emptyText)}</div>
     </section>`;
   }
-  return `<section class="cim-matrix-section">
-    <div class="cim-section-title">${escapeHtml(title)}</div>
-    <div class="cim-matrix-wrap">
-      <table class="cim-matrix">
+  return `<section class="model-matrix-section">
+    <div class="model-section-title">${escapeHtml(title)}</div>
+    <div class="model-matrix-wrap">
+      <table class="model-matrix">
         <thead><tr><th></th>${columns
           .map(
             (column) =>
@@ -425,7 +425,7 @@ export function renderWorkbenchMatrixSection({
         <tbody>${rows
           .map(
             (row) => `<tr>
-          <th><button class="cim-link" data-${typeKey}-open="${escapeHtml(
+          <th><button class="model-link" data-${typeKey}-open="${escapeHtml(
             row.id,
           )}" type="button">${escapeHtml(getRowLabel(row))}</button>
             <span>${escapeHtml(row.eClass || row.kind || "")}</span></th>
@@ -444,17 +444,17 @@ export function renderWorkbenchDataTable({
   rows = [],
   emptyText = "No rows available.",
 }) {
-  return `<section class="cim-matrix-section">
-    <div class="cim-section-title">${escapeHtml(title)}</div>
-    <div class="cim-table-wrap">
-      <table class="cim-table">
+  return `<section class="model-matrix-section">
+    <div class="model-section-title">${escapeHtml(title)}</div>
+    <div class="model-table-wrap">
+      <table class="model-table">
         <thead><tr>${columns
           .map((column) => `<th>${escapeHtml(column)}</th>`)
           .join("")}</tr></thead>
         <tbody>${
           rows.join("") ||
           `<tr><td colspan="${columns.length}"
-            class="cim-empty">${escapeHtml(emptyText)}</td></tr>`
+            class="model-empty">${escapeHtml(emptyText)}</td></tr>`
         }</tbody>
       </table>
     </div>
@@ -462,17 +462,17 @@ export function renderWorkbenchDataTable({
 }
 
 export function renderWorkbenchBoard({ lanes = [] }) {
-  return `<div class="cim-board">${lanes
+  return `<div class="model-board">${lanes
     .map(
       (lane) => `
-    <section class="cim-board-lane">
-      <div class="cim-section-title">${escapeHtml(lane.title)}${
+    <section class="model-board-lane">
+      <div class="model-section-title">${escapeHtml(lane.title)}${
         lane.count !== undefined ? ` ${escapeHtml(lane.count)}` : ""
       }</div>
       ${
         lane.cards?.length
           ? lane.cards.join("")
-          : `<div class="cim-empty">${escapeHtml(lane.emptyText || "No items")}</div>`
+          : `<div class="model-empty">${escapeHtml(lane.emptyText || "No items")}</div>`
       }
     </section>`,
     )
@@ -480,7 +480,7 @@ export function renderWorkbenchBoard({ lanes = [] }) {
 }
 
 export function renderWorkbenchBoardCard({ typeKey, id, title, meta = "", body = "" }) {
-  return `<button class="cim-board-card" data-${typeKey}-open="${escapeHtml(id)}" type="button">
+  return `<button class="model-board-card" data-${typeKey}-open="${escapeHtml(id)}" type="button">
     <strong>${escapeHtml(title)}</strong>
     <span>${escapeHtml(meta)}</span>
     ${body ? `<em>${escapeHtml(body)}</em>` : ""}
@@ -498,16 +498,16 @@ export function renderWorkbenchDetail({
   emptyText = "Select an element on the diagram or open one from a register.",
 }) {
   if (!row) {
-    return `<section class="cim-detail-projection">
-      <div class="cim-empty">${escapeHtml(emptyText)}</div>
+    return `<section class="model-detail-projection">
+      <div class="model-empty">${escapeHtml(emptyText)}</div>
     </section>`;
   }
-  return `<section class="cim-detail-projection">
-    <div class="cim-detail-title">
+  return `<section class="model-detail-projection">
+    <div class="model-detail-title">
       <strong>${escapeHtml(title)}</strong>
       <span>${escapeHtml(typeLabel)}</span>
     </div>
-    <div class="cim-detail-grid">
+    <div class="model-detail-grid">
       ${fields
         .map(
           (field) => `<div>
@@ -523,8 +523,8 @@ export function renderWorkbenchDetail({
         )
         .join("")}
     </div>
-    <div class="cim-dashboard-actions">
-      <button class="cim-action" data-${typeKey}-open="${escapeHtml(row.id)}"
+    <div class="model-dashboard-actions">
+      <button class="model-action" data-${typeKey}-open="${escapeHtml(row.id)}"
           type="button">Open Full Inspector</button>
     </div>
   </section>`;
@@ -534,9 +534,10 @@ function selectorForWorkbenchControl(control) {
   if (!control?.dataset) {
     return "";
   }
+  const levelPrefixes = new Set(modelingLevelKeys());
   const dataName = Object.keys(control.dataset).find(
     (key) =>
-      /^(cim|pim|psm)/.test(key) &&
+      [...levelPrefixes].some((prefix) => key.startsWith(prefix)) &&
       (key.endsWith("Search") || key.endsWith("SliceToggle") || key.endsWith("Register")),
   );
   if (!dataName) {
@@ -609,7 +610,7 @@ export function renderWorkbenchSurfaceLayout({
       restoreWorkbenchPalette(workbenchState);
       return;
     }
-    host.className = "cim-workbench-surface hidden";
+    host.className = "model-workbench-surface hidden";
     if (host?.dataset) {
       delete host.dataset.workbenchType;
     }
@@ -623,7 +624,7 @@ export function renderWorkbenchSurfaceLayout({
     host.dataset.workbenchType = expectedType;
   }
   if (focusSnapshot?.isSearch && representation === "diagram") {
-    host.className = "cim-workbench-surface cim-workbench-dock";
+    host.className = "model-workbench-surface model-workbench-dock";
     restoreWorkbenchFocus(host, focusSnapshot);
     el.canvasGrid?.classList.remove(surfaceActiveClass);
     el.canvasGrid?.classList.add(surfaceDockClass);
@@ -634,9 +635,9 @@ export function renderWorkbenchSurfaceLayout({
     return;
   }
   if (focusSnapshot?.isSearch && representation !== "diagram") {
-    const body = host.querySelector(".cim-surface-body");
+    const body = host.querySelector(".model-surface-body");
     if (body) {
-      host.className = "cim-workbench-surface";
+      host.className = "model-workbench-surface";
       body.innerHTML = bodyHtml;
       restoreWorkbenchFocus(host, focusSnapshot);
       el.canvasGrid?.classList.add(surfaceActiveClass);
@@ -649,7 +650,7 @@ export function renderWorkbenchSurfaceLayout({
     }
   }
   if (representation === "diagram") {
-    host.className = "cim-workbench-surface cim-workbench-dock";
+    host.className = "model-workbench-surface model-workbench-dock";
     host.innerHTML = controlsHtml;
     restoreWorkbenchFocus(host, focusSnapshot);
     el.canvasGrid?.classList.remove(surfaceActiveClass);
@@ -660,8 +661,8 @@ export function renderWorkbenchSurfaceLayout({
     restoreWorkbenchPalette(workbenchState);
     return;
   }
-  host.className = "cim-workbench-surface";
-  host.innerHTML = `${controlsHtml}<div class="cim-surface-body">${bodyHtml}</div>`;
+  host.className = "model-workbench-surface";
+  host.innerHTML = `${controlsHtml}<div class="model-surface-body">${bodyHtml}</div>`;
   restoreWorkbenchFocus(host, focusSnapshot);
   el.canvasGrid?.classList.add(surfaceActiveClass);
   el.canvasGrid?.classList.remove(surfaceDockClass);
@@ -705,7 +706,7 @@ function compactList(values, fallback = "Any") {
 }
 
 function renderGuideCard(title, body, meta = "") {
-  return `<section class="cim-guide-card">
+  return `<section class="model-guide-card">
     <div>
       <strong>${escapeHtml(title)}</strong>
       ${meta ? `<span>${escapeHtml(meta)}</span>` : ""}
@@ -765,8 +766,8 @@ function renderRelationshipLegend(level) {
       ]
         .filter(Boolean)
         .join(";");
-      return `<div class="cim-guide-legend-row">
-      <span class="cim-guide-edge-swatch ${
+      return `<div class="model-guide-legend-row">
+      <span class="model-guide-edge-swatch ${
         Array.isArray(rule.lineDash) ? "is-dashed" : ""
       }" style="${swatchStyle}"></span>
       <div>
@@ -792,34 +793,34 @@ function renderViewCards(level) {
 
 export function renderLevelGuidePanel(typeKey) {
   const level = modelingLevelConfig(typeKey);
-  return `<div class="cim-guide-panel">
-    <section class="cim-guide-section">
-      <div class="cim-guide-heading">
+  return `<div class="model-guide-panel">
+    <section class="model-guide-section">
+      <div class="model-guide-heading">
         <strong>Concrete Syntax</strong>
         <span>${escapeHtml(level.displayName || typeKey.toUpperCase())}</span>
       </div>
-      <div class="cim-guide-grid">${renderNotationCards(level)}</div>
+      <div class="model-guide-grid">${renderNotationCards(level)}</div>
     </section>
-    <section class="cim-guide-section">
-      <div class="cim-guide-heading">
+    <section class="model-guide-section">
+      <div class="model-guide-heading">
         <strong>Relationship Legend</strong>
         <span>${escapeHtml(String((level.relationshipKinds || []).length))} kinds</span>
       </div>
-      <div class="cim-guide-legend">${renderRelationshipLegend(level)}</div>
+      <div class="model-guide-legend">${renderRelationshipLegend(level)}</div>
     </section>
-    <section class="cim-guide-section">
-      <div class="cim-guide-heading">
+    <section class="model-guide-section">
+      <div class="model-guide-heading">
         <strong>Complexity Management</strong>
         <span>${escapeHtml(String((level.complexityManagement || []).length))} techniques</span>
       </div>
-      <div class="cim-guide-grid">${renderComplexityCards(level)}</div>
+      <div class="model-guide-grid">${renderComplexityCards(level)}</div>
     </section>
-    <section class="cim-guide-section">
-      <div class="cim-guide-heading">
+    <section class="model-guide-section">
+      <div class="model-guide-heading">
         <strong>Views</strong>
         <span>${escapeHtml(String((level.viewDefinitions || []).length))} definitions</span>
       </div>
-      <div class="cim-guide-grid">${renderViewCards(level)}</div>
+      <div class="model-guide-grid">${renderViewCards(level)}</div>
     </section>
   </div>`;
 }

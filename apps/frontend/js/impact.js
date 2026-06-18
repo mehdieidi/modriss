@@ -3,12 +3,16 @@ import { el } from "./dom.js";
 import { api, isPlannedFeatureError } from "./api.js";
 import { setStatus } from "./status.js";
 import { escapeHtml } from "./utils.js";
-import { MODEL_TYPES } from "./config.js";
 import { highlightImpactedNodes, scrollToNodeAndHighlight } from "./canvas.js";
 import { loadModelById, switchTab } from "./model-ops.js";
 import { closeAttributePanel } from "./attr-panel.js";
 import { loadArtifactById, openArtifactFile } from "./artifact.js";
 import { isMobileViewport } from "./responsive.js";
+import {
+  modelingImpactConfig,
+  modelingLevelConfig,
+  modelingLevelKeys,
+} from "./modeling-config-data.js";
 
 function setImpactButtonState(active) {
   if (!el.impactToggleBtn) {
@@ -81,10 +85,17 @@ export async function fetchImpact(elementId) {
   }
   setStatus("Analysing impact…");
   try {
-    const typeKey = MODEL_TYPES[state.activeType].apiType;
-    const data = await api(
-      `/impact/${typeKey}/${state.modelId}/element/${encodeURIComponent(elementId)}`,
+    const typeKey = modelingLevelConfig(state.activeType).apiType || state.activeType;
+    const endpoint = expandImpactEndpoint(
+      modelingImpactConfig().elementImpactEndpoint,
+      {
+        level: typeKey,
+        modelId: state.modelId,
+        elementId,
+      },
+      "/impact/{level}/{modelId}/element/{elementId}",
     );
+    const data = await api(endpoint);
     const enriched = await enrichImpactWithArtifactFiles(data);
     state.impactData = enriched;
     renderImpactPanel(enriched);
@@ -146,6 +157,52 @@ function extractTracedFiles(traceability, elementId) {
   return direct.map((path) => String(path || "").trim()).filter(Boolean);
 }
 
+function expandImpactEndpoint(template, values, fallback) {
+  const source = String(template || fallback || "");
+  return source.replace(/\{([A-Za-z0-9_]+)\}/g, (_match, key) =>
+    encodeURIComponent(String(values?.[key] ?? "")),
+  );
+}
+
+function levelConfigSafe(levelKey) {
+  try {
+    return modelingLevelConfig(levelKey);
+  } catch {
+    return null;
+  }
+}
+
+function ancestorForLevel(ancestors, levelKey) {
+  const level = levelConfigSafe(levelKey);
+  const selectors = [levelKey, level?.apiType, level?.chatType, level?.displayName]
+    .map((value) => String(value || "").toLowerCase())
+    .filter(Boolean);
+  return (ancestors || []).find((ancestor) =>
+    selectors.includes(String(ancestor?.type || "").toLowerCase()),
+  );
+}
+
+function configuredLevelForAncestor(ancestor) {
+  const type = String(ancestor?.type || "").toLowerCase();
+  if (!type) {
+    return "";
+  }
+  return (
+    modelingLevelKeys().find((levelKey) => {
+      const level = levelConfigSafe(levelKey);
+      return [levelKey, level?.apiType, level?.chatType, level?.displayName]
+        .map((value) => String(value || "").toLowerCase())
+        .includes(type);
+    }) || ""
+  );
+}
+
+function tierBadgeClass(modelType) {
+  return String(modelType || "").toLowerCase() === "artifact"
+    ? "tier-badge-artifact"
+    : "tier-badge-model";
+}
+
 // ── Render impact panel ───────────────────────────────────────────────────────
 
 function renderImpactPanel(data) {
@@ -166,9 +223,9 @@ function renderImpactPanel(data) {
     <div class="impact-focal-label">Selected Element</div>
     <div class="impact-focal-name">${escapeHtml(focal.elementName || focal.elementId || "")}</div>
     <div class="impact-focal-meta">
-      <span class="tier-badge tier-badge-${String(
+      <span class="tier-badge ${tierBadgeClass(focal.modelType)}">${escapeHtml(
         focal.modelType || "",
-      ).toLowerCase()}">${escapeHtml(focal.modelType || "")}</span>
+      )}</span>
       &nbsp;${escapeHtml(focal.elementType || "")}
       <br><span style="opacity:0.7">${escapeHtml(focal.modelName || "")}</span>
     </div>
@@ -386,7 +443,7 @@ function buildTreeNodeRow(item, { direction, isFocal = false } = {}) {
     isFocal ? "impact-tree-node-focal" : ""
   } impact-tree-node-${escapeHtml(direction || "node")}">
     <div class="impact-tree-node-main">
-      <span class="tier-badge tier-badge-${escapeHtml(modelType)}">${escapeHtml(
+      <span class="tier-badge ${tierBadgeClass(modelType)}">${escapeHtml(
         item?.modelType || "",
       )}</span>
       <div class="impact-tree-node-text">
@@ -492,7 +549,13 @@ function wireActionButtons() {
 async function buildArtifactImpact(artifactId, filePath = null) {
   let chain;
   try {
-    chain = await api(`/impact/artifact/${artifactId}`);
+    chain = await api(
+      expandImpactEndpoint(
+        modelingImpactConfig().artifactImpactEndpoint,
+        { artifactId },
+        "/impact/artifact/{artifactId}",
+      ),
+    );
   } catch (error) {
     if (isPlannedFeatureError(error)) {
       throw new Error("Impact analysis is not available in this backend build.");
@@ -501,9 +564,19 @@ async function buildArtifactImpact(artifactId, filePath = null) {
   }
 
   const ancestors = Array.isArray(chain?.ancestors) ? chain.ancestors : [];
-  const psm = ancestors.find((a) => String(a.type || "").toUpperCase() === "PSM");
+  const lineageLevel = modelingImpactConfig().artifactLineage?.upstreamLevel || "";
+  const lineageAncestor =
+    ancestorForLevel(ancestors, lineageLevel) ||
+    [...ancestors].reverse().find((ancestor) => configuredLevelForAncestor(ancestor));
   const lineage =
-    filePath && psm ? await resolveArtifactFileLineage(artifactId, filePath, psm.id) : null;
+    filePath && lineageAncestor
+      ? await resolveArtifactFileLineage(
+          artifactId,
+          filePath,
+          lineageAncestor.id,
+          configuredLevelForAncestor(lineageAncestor),
+        )
+      : null;
 
   const focal = {
     modelId: chain.modelId,
@@ -530,16 +603,21 @@ async function buildArtifactImpact(artifactId, filePath = null) {
           relationship: "UPSTREAM_MODEL",
         }));
 
-  const cim = ancestors.find((a) => String(a.type || "").toUpperCase() === "CIM");
   let connectedElements = Array.isArray(lineage?.connectedElements)
     ? lineage.connectedElements
     : [];
-  if (cim) {
+  for (const rule of modelingImpactConfig().connectedElementRules || []) {
+    const levelKey = String(rule?.level || "");
+    const ancestor = ancestorForLevel(ancestors, levelKey);
+    if (!ancestor) {
+      continue;
+    }
     try {
-      const requirements = await fetchCimRequirements(cim.id, cim.name);
-      connectedElements = [...connectedElements, ...requirements];
+      const related = await fetchConfiguredConnectedElements(rule, ancestor, levelKey);
+      connectedElements = [...connectedElements, ...related];
     } catch (error) {
-      throw new Error(`Failed to fetch CIM model requirements: ${error.message}`);
+      const levelLabel = levelConfigSafe(levelKey)?.displayName || levelKey || "upstream";
+      throw new Error(`Failed to fetch ${levelLabel} connected elements: ${error.message}`);
     }
   }
 
@@ -552,7 +630,7 @@ async function buildArtifactImpact(artifactId, filePath = null) {
   };
 }
 
-async function resolveArtifactFileLineage(artifactId, filePath, psmId) {
+async function resolveArtifactFileLineage(artifactId, filePath, upstreamModelId, upstreamLevelKey) {
   const artifactRecord = await api(`/artifact/${artifactId}`);
   const traceability = artifactRecord?.modelJson?.traceability || {};
   const normalizedPath = String(filePath || "").trim();
@@ -571,8 +649,17 @@ async function resolveArtifactFileLineage(artifactId, filePath, psmId) {
 
   let exactImpact;
   try {
+    const levelApiType = levelConfigSafe(upstreamLevelKey)?.apiType || upstreamLevelKey;
     exactImpact = await api(
-      `/impact/psm/${psmId}/element/${encodeURIComponent(impactingElementId)}`,
+      expandImpactEndpoint(
+        modelingImpactConfig().elementImpactEndpoint,
+        {
+          level: levelApiType,
+          modelId: upstreamModelId,
+          elementId: impactingElementId,
+        },
+        "/impact/{level}/{modelId}/element/{elementId}",
+      ),
     );
   } catch (error) {
     if (isPlannedFeatureError(error)) {
@@ -595,22 +682,43 @@ async function resolveArtifactFileLineage(artifactId, filePath, psmId) {
   };
 }
 
-async function fetchCimRequirements(cimId, cimName) {
-  const record = await api(`/cim/${cimId}`);
+async function fetchConfiguredConnectedElements(rule, ancestor, levelKey) {
+  const level = levelConfigSafe(levelKey);
+  const levelApiType = level?.apiType || levelKey;
+  const record = await api(
+    expandImpactEndpoint(
+      rule?.modelEndpoint,
+      { level: levelApiType, modelId: ancestor.id },
+      "/{level}/{modelId}",
+    ),
+  );
   const elements = Array.isArray(record?.modelJson?.diagram?.elements)
     ? record.modelJson.diagram.elements
     : [];
+  const includes = Array.isArray(rule?.typeIncludes)
+    ? rule.typeIncludes.map((value) => String(value || "").toLowerCase()).filter(Boolean)
+    : [];
+  const modelType = String(rule?.modelType || level?.chatType || level?.displayName || levelKey);
+  const fallbackElementType = String(rule?.fallbackElementType || "Element");
+  const fallbackElementName = String(rule?.fallbackElementName || fallbackElementType);
+  const relationship = String(rule?.relationship || "UPSTREAM_ELEMENT");
 
   return elements
-    .filter((element) => /(requirement|constraint|goal|kpi)/i.test(String(element?.eClass || "")))
+    .filter((element) => {
+      if (!includes.length) {
+        return true;
+      }
+      const type = String(element?.eClass || element?.type || "").toLowerCase();
+      return includes.some((token) => type.includes(token));
+    })
     .map((element) => ({
       modelId: record.id,
-      modelType: "CIM",
-      modelName: cimName || record.name || "CIM",
+      modelType,
+      modelName: ancestor.name || record.name || modelType,
       sourceModelId: null,
       elementId: String(element?.id || ""),
-      elementType: String(element?.eClass || "Requirement"),
-      elementName: String(element?.label || element?.name || element?.id || "Requirement"),
-      relationship: "UPSTREAM_REQUIREMENT",
+      elementType: String(element?.eClass || element?.type || fallbackElementType),
+      elementName: String(element?.label || element?.name || element?.id || fallbackElementName),
+      relationship,
     }));
 }

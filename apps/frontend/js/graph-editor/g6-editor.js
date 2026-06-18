@@ -178,19 +178,19 @@ function badgeFill(text, diagramType) {
     value.includes("error") ||
     value.includes("high")
   ) {
-    return diagramType === "cim" ? "rgba(220, 38, 38, 0.16)" : "rgba(248, 113, 113, 0.17)";
+    return "rgba(248, 113, 113, 0.17)";
   }
   if (value.includes("generated") || value.includes("trace")) {
-    return diagramType === "cim" ? "rgba(79, 70, 229, 0.14)" : "rgba(129, 140, 248, 0.16)";
+    return "rgba(129, 140, 248, 0.16)";
   }
   if (value.includes("encrypt") || value.includes("auth") || value.includes("security")) {
-    return diagramType === "cim" ? "rgba(22, 163, 74, 0.14)" : "rgba(74, 222, 128, 0.15)";
+    return "rgba(74, 222, 128, 0.15)";
   }
-  return diagramType === "cim" ? "rgba(15, 23, 42, 0.09)" : "rgba(148, 163, 184, 0.14)";
+  return "rgba(148, 163, 184, 0.14)";
 }
 
 function badgeTextFill(diagramType) {
-  return diagramType === "cim" ? "rgba(31, 41, 55, 0.82)" : "rgba(226, 232, 240, 0.82)";
+  return "rgba(226, 232, 240, 0.82)";
 }
 
 function renderPlaceholderIcon(shape, container, { left, top, low = false } = {}) {
@@ -239,21 +239,12 @@ function renderOpenControl(
   const controlHeight = low ? 14 : 16;
   const x = left + width - controlWidth - 9;
   const y = top + (low ? 8 : 7);
-  const isCim = diagramType === "cim";
-  const fill = openControlHover
-    ? isCim
-      ? "rgba(24, 20, 14, 0.92)"
-      : "rgba(94, 203, 255, 0.26)"
-    : isCim
-      ? "rgba(24, 20, 14, 0.76)"
-      : "rgba(226, 232, 240, 0.14)";
+  const fill = openControlHover ? "rgba(94, 203, 255, 0.26)" : "rgba(226, 232, 240, 0.14)";
   const stroke = openControlHover
     ? cssVar("--accent-select", "#5ecbff")
     : selected
       ? cssVar("--accent-select", "#5ecbff")
-      : isCim
-        ? "rgba(24, 20, 14, 0.22)"
-        : "rgba(226, 232, 240, 0.22)";
+      : "rgba(226, 232, 240, 0.22)";
   shape.upsert(
     "openControl",
     "rect",
@@ -282,7 +273,7 @@ function renderOpenControl(
       fontFamily: cssVar("--font-display", "sans-serif"),
       fontSize: low ? 6.5 : 7.5,
       fontWeight: 800,
-      fill: isCim ? "rgba(255, 255, 255, 0.94)" : cssVar("--text-strong", "#e3e8f2"),
+      fill: cssVar("--text-strong", "#e3e8f2"),
       textAlign: "center",
       textBaseline: "middle",
       cursor: "pointer",
@@ -321,7 +312,7 @@ function renderNodeTags(
             height: rowHeight,
             radius: 3,
             fill: badgeFill(value, diagramType),
-            stroke: diagramType === "cim" ? "rgba(15, 23, 42, 0.1)" : "rgba(148, 163, 184, 0.14)",
+            stroke: "rgba(148, 163, 184, 0.14)",
             pointerEvents: "none",
           }
         : false,
@@ -454,7 +445,7 @@ function registerModlessG6Extensions() {
       const height = Number(size[1]) || Number(attributes.height) || 112;
       const left = -width / 2;
       const top = -height / 2;
-      const diagramType = attributes.diagramType || "cim";
+      const diagramType = attributes.diagramType || "";
       const accent = attributes.accent || cssVar("--accent", "#00a6e0");
       const stateSet = states(attributes);
       const selected = attributes.selected || stateSet.has("selected");
@@ -485,7 +476,7 @@ function registerModlessG6Extensions() {
         ? null
         : notationGlyphPath(attributes.notationShape, left + 10, top + 7, 20, 18);
 
-      if (diagramType === "cim") {
+      if (attributes.sticky) {
         const fill = attributes.sticky || "#fde68a";
         super.render(
           {

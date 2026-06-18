@@ -21,24 +21,25 @@ export function websocketUrl(path) {
   return `${protocol}//${backend.host}${normalizedPath}`;
 }
 
-export const DEFAULT_AWS_ACCOUNT_ID = "000000000000";
-export const DEFAULT_AWS_REGION = "us-east-1";
 export const CHAT_ATTACHMENT_MAX_BYTES = 300000;
 export const LOG_HINT = "See backend logs (default path: logs/backend.log)";
 export const MOBILE_BREAKPOINT = 768;
 export const TOUCH_MOVE_THRESHOLD = 6;
 
-export const MODEL_TYPES = {
-  cim: {
-    apiType: "cim",
-    chatType: "CIM",
-  },
-  pim: {
-    apiType: "pim",
-    chatType: "PIM",
-  },
-  psm: {
-    apiType: "psm",
-    chatType: "PSM",
-  },
-};
+export const MODEL_TYPES = {};
+
+export function applyModelingRuntimeConfig(config) {
+  Object.keys(MODEL_TYPES).forEach((key) => delete MODEL_TYPES[key]);
+  const levels = config?.levels && typeof config.levels === "object" ? config.levels : {};
+  const order = Array.isArray(config?.levelOrder) ? config.levelOrder : Object.keys(levels);
+  order.forEach((key) => {
+    const level = levels[key];
+    if (!level || typeof level !== "object") {
+      return;
+    }
+    MODEL_TYPES[key] = {
+      apiType: String(level.apiType || key),
+      chatType: String(level.chatType || key.toUpperCase()),
+    };
+  });
+}

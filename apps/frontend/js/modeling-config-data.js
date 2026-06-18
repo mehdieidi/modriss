@@ -1,33 +1,18 @@
 import { api } from "./api.js";
+import { applyModelingRuntimeConfig } from "./config.js";
 import { state } from "./state.js";
 import { setError } from "./status.js";
+import { emptyDiagram } from "./utils.js";
 
 const EMPTY_CONFIG = Object.freeze({
   version: 0,
   dynamicPersistenceEnabled: true,
-  levels: Object.freeze({
-    cim: Object.freeze(emptyLevel("CIM")),
-    pim: Object.freeze(emptyLevel("PIM")),
-    psm: Object.freeze(emptyLevel("PSM")),
-  }),
-  transformations: Object.freeze({
-    cim_to_pim: Object.freeze(emptyTransformation()),
-    pim_to_psm: Object.freeze(emptyTransformation()),
-    psm_to_artifact: Object.freeze({
-      ...emptyTransformation(),
-      artifactType: "aws-sam",
-      generationMode: "serverless_mda",
-      projectRootExpression: "expr:#sourceModel['name']",
-      generationRules: Object.freeze({}),
-      projectStructure: Object.freeze({
-        directories: Object.freeze([]),
-        pathMappings: Object.freeze([]),
-        passthroughUnmatched: true,
-        emitGitkeep: true,
-      }),
-      templates: Object.freeze([]),
-    }),
-  }),
+  defaultLevel: "",
+  levelOrder: Object.freeze([]),
+  levels: Object.freeze({}),
+  transformations: Object.freeze({}),
+  artifactAction: Object.freeze({}),
+  impactAnalysis: Object.freeze({}),
 });
 
 function emptyLevel(displayName) {
@@ -39,6 +24,14 @@ function emptyLevel(displayName) {
     relationshipKinds: [],
     elements: [],
     relationshipRules: [],
+    relationshipKindLabels: {},
+    relationshipVisualRules: [],
+    semanticReferenceRules: [],
+    semanticEdgeObjectRules: [],
+    shortcutConnectorRules: [],
+    workbench: {},
+    scaffoldRecipes: [],
+    boundedContext: {},
     viewDefinitions: [],
     universalSyntax: [],
     kernelSyntax: [],
@@ -85,8 +78,25 @@ function ensureConfigShape(raw) {
   const normalized = clone(EMPTY_CONFIG);
   normalized.version = Number(raw.version || 0);
   normalized.dynamicPersistenceEnabled = raw.dynamicPersistenceEnabled !== false;
+  normalized.defaultLevel = String(raw.defaultLevel || "");
+  normalized.artifactAction =
+    raw.artifactAction && typeof raw.artifactAction === "object" ? raw.artifactAction : {};
+  normalized.impactAnalysis =
+    raw.impactAnalysis && typeof raw.impactAnalysis === "object" ? raw.impactAnalysis : {};
 
-  for (const level of ["cim", "pim", "psm"]) {
+  const incomingLevels = raw.levels && typeof raw.levels === "object" ? raw.levels : {};
+  const levelOrder = Array.isArray(raw.levelOrder) ? raw.levelOrder.map(String) : [];
+  Object.keys(incomingLevels).forEach((level) => {
+    if (!levelOrder.includes(level)) {
+      levelOrder.push(level);
+    }
+  });
+  if (!levelOrder.length) {
+    throw configLoadError("Backend modeling config does not define any modeling levels.");
+  }
+  normalized.levelOrder = levelOrder;
+  normalized.levels = {};
+  for (const level of levelOrder) {
     const incoming = raw.levels?.[level];
     if (!incoming || typeof incoming !== "object") {
       throw configLoadError(
@@ -115,9 +125,19 @@ function ensureConfigShape(raw) {
       semanticReferenceRules: Array.isArray(incoming.semanticReferenceRules)
         ? incoming.semanticReferenceRules
         : [],
+      semanticEdgeObjectRules: Array.isArray(incoming.semanticEdgeObjectRules)
+        ? incoming.semanticEdgeObjectRules
+        : [],
       shortcutConnectorRules: Array.isArray(incoming.shortcutConnectorRules)
         ? incoming.shortcutConnectorRules
         : [],
+      workbench:
+        incoming.workbench && typeof incoming.workbench === "object" ? incoming.workbench : {},
+      scaffoldRecipes: Array.isArray(incoming.scaffoldRecipes) ? incoming.scaffoldRecipes : [],
+      boundedContext:
+        incoming.boundedContext && typeof incoming.boundedContext === "object"
+          ? incoming.boundedContext
+          : {},
       viewDefinitions: Array.isArray(incoming.viewDefinitions) ? incoming.viewDefinitions : [],
       universalSyntax: Array.isArray(incoming.universalSyntax) ? incoming.universalSyntax : [],
       kernelSyntax: Array.isArray(incoming.kernelSyntax) ? incoming.kernelSyntax : [],
@@ -144,18 +164,27 @@ function ensureConfigShape(raw) {
       rootTemplate:
         incoming.rootTemplate && typeof incoming.rootTemplate === "object"
           ? incoming.rootTemplate
-          : clone(EMPTY_CONFIG.levels[level].rootTemplate),
+          : clone(emptyLevel(level.toUpperCase()).rootTemplate),
+      starterTemplate:
+        incoming.starterTemplate && typeof incoming.starterTemplate === "object"
+          ? incoming.starterTemplate
+          : null,
+      apiType: String(incoming.apiType || level),
+      chatType: String(incoming.chatType || level.toUpperCase()),
+      modelNameTemplate: String(incoming.modelNameTemplate || `${level}-model`),
+      fallbackActiveModel: Boolean(incoming.fallbackActiveModel),
     };
   }
 
   const incomingTransformations = raw.transformations || {};
-  for (const key of ["cim_to_pim", "pim_to_psm", "psm_to_artifact"]) {
+  normalized.transformations = {};
+  for (const key of Object.keys(incomingTransformations)) {
     const incoming = incomingTransformations[key];
     if (!incoming || typeof incoming !== "object") {
       continue;
     }
     normalized.transformations[key] = {
-      ...normalized.transformations[key],
+      ...emptyTransformation(),
       ...incoming,
       enabled: Boolean(incoming.enabled),
       elementMappings: Array.isArray(incoming.elementMappings) ? incoming.elementMappings : [],
@@ -172,6 +201,8 @@ export async function loadModelingConfig({ silent = false } = {}) {
     const config = await api("/modeling/config");
     state.modelingConfig.config = ensureConfigShape(config);
     state.modelingConfig.error = null;
+    applyModelingRuntimeConfig(state.modelingConfig.config);
+    initializeModelingRuntimeState(state.modelingConfig.config);
     return state.modelingConfig.config;
   } catch (error) {
     state.modelingConfig.config = null;
@@ -186,6 +217,57 @@ export async function loadModelingConfig({ silent = false } = {}) {
   }
 }
 
+function emptyWorkbenchState() {
+  return {
+    representationByViewId: {},
+    registerByViewId: {},
+    search: "",
+    missingOnly: false,
+    sliceKind: "",
+    sliceValue: "",
+    edgeMode: "both",
+    sortKey: "name",
+    hidPalette: false,
+  };
+}
+
+function emptyTabState(typeKey, level) {
+  return {
+    modelId: null,
+    modelRevision: 0,
+    baseModel: null,
+    diagram: emptyDiagram(typeKey),
+    modelName: level.modelNameTemplate || `${typeKey}-model`,
+    graph: null,
+    views: null,
+    fragments: null,
+    activeViewId: null,
+    dirty: false,
+  };
+}
+
+function initializeModelingRuntimeState(config) {
+  const levels = config?.levels || {};
+  const order = Array.isArray(config?.levelOrder) ? config.levelOrder : Object.keys(levels);
+  order.forEach((typeKey) => {
+    const level = levels[typeKey] || {};
+    state.tabs[typeKey] ??= emptyTabState(typeKey, level);
+    state.modelsCache[typeKey] ??= [];
+    state.paletteSearch[typeKey] ??= "";
+    state.paletteGroupCollapsed[typeKey] ??= {};
+    state.workbenchByType[typeKey] ??= emptyWorkbenchState();
+    state.undo.diagramHistory[typeKey] ??= [];
+  });
+  if (!state.activeType || !order.includes(state.activeType)) {
+    state.activeType =
+      config.defaultLevel && order.includes(config.defaultLevel)
+        ? config.defaultLevel
+        : order[0] || "";
+    state.diagram = emptyDiagram(state.activeType);
+    state.visibleGraph = emptyDiagram(state.activeType);
+  }
+}
+
 export function modelingLevelConfig(typeKey = state.activeType) {
   const config = state.modelingConfig.config;
   if (!config?.levels?.[typeKey]) {
@@ -194,6 +276,40 @@ export function modelingLevelConfig(typeKey = state.activeType) {
     );
   }
   return config.levels[typeKey];
+}
+
+export function modelingLevelKeys() {
+  const config = state.modelingConfig.config;
+  return Array.isArray(config?.levelOrder) && config.levelOrder.length
+    ? [...config.levelOrder]
+    : Object.keys(config?.levels || {});
+}
+
+export function modelingImpactConfig() {
+  const impact = state.modelingConfig.config?.impactAnalysis;
+  return impact && typeof impact === "object" ? impact : {};
+}
+
+export function isModelingLevel(typeKey) {
+  return modelingLevelKeys().includes(typeKey);
+}
+
+export function defaultModelingLevel() {
+  const config = state.modelingConfig.config;
+  return config?.defaultLevel && isModelingLevel(config.defaultLevel)
+    ? config.defaultLevel
+    : modelingLevelKeys()[0] || "";
+}
+
+export function modelingLevelListLabel() {
+  const names = modelingLevelKeys().map((key) => modelingLevelConfig(key).displayName || key);
+  if (!names.length) {
+    return "a modeling level";
+  }
+  if (names.length === 1) {
+    return names[0];
+  }
+  return `${names.slice(0, -1).join(", ")}, or ${names[names.length - 1]}`;
 }
 
 export function modelingPalette(typeKey = state.activeType) {
@@ -361,16 +477,7 @@ export function modelingShortcutConnectorRules(typeKey = state.activeType) {
 
 export function modelingRootType(typeKey = state.activeType) {
   const root = modelingLevelConfig(typeKey).rootTemplate || {};
-  return String(
-    root.eClass ||
-      root.type ||
-      {
-        cim: "CIMModel",
-        pim: "PIMModel",
-        psm: "AwsPsmModel",
-      }[typeKey] ||
-      "",
-  );
+  return String(root.eClass || root.type || "");
 }
 
 export function modelingConcreteTypesFor(typeKey, expectedType) {
@@ -535,11 +642,15 @@ export function modelingLabelField(typeKey) {
 }
 
 export function transformationKeyForLevel(levelKey) {
-  if (levelKey === "cim") {
-    return "cim_to_pim";
-  }
-  if (levelKey === "pim") {
-    return "pim_to_psm";
-  }
-  return "psm_to_artifact";
+  const transformations = state.modelingConfig.config?.transformations || {};
+  return (
+    Object.entries(transformations).find(([, transformation]) => {
+      return transformation?.sourceLevel === levelKey || transformation?.level === levelKey;
+    })?.[0] || ""
+  );
+}
+
+export function transformationForLevel(levelKey = state.activeType) {
+  const key = transformationKeyForLevel(levelKey);
+  return key ? state.modelingConfig.config?.transformations?.[key] || null : null;
 }

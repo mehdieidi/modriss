@@ -6,7 +6,6 @@ export const G6_BASE_NODE_TYPE = MODLESS_NODE_TYPE;
 export const G6_BASE_EDGE_TYPE = MODLESS_EDGE_TYPE;
 export const NODE_SIZE = {
   default: { width: 228, height: 112 },
-  cim: { width: 176, height: 96 },
 };
 
 let cssVarCacheKey = "";
@@ -18,7 +17,7 @@ function currentCssVarCacheKey() {
 }
 
 export function nodeSizeForDiagram(typeKey = state.activeType) {
-  return typeKey === "cim" ? NODE_SIZE.cim : NODE_SIZE.default;
+  return NODE_SIZE.default;
 }
 
 export function cssVar(name, fallback = "") {

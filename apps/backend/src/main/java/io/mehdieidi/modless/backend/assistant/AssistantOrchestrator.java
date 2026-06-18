@@ -9,6 +9,7 @@ import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.model.ProjectRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
 import io.mehdieidi.modless.platform.core.service.ModelService;
+import io.mehdieidi.modless.platform.core.service.ModelingConfigService;
 import io.mehdieidi.modless.platform.core.service.ProjectService;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ public class AssistantOrchestrator {
   private final AssistantHardeningService hardening;
   private final ModelService models;
   private final ProjectService projects;
+  private final ModelingConfigService modelingConfig = new ModelingConfigService();
 
   /**
    * Creates the orchestrator.
@@ -662,194 +664,7 @@ public class AssistantOrchestrator {
   }
 
   private ObjectNode starterModel(ModelLevel level, String name) {
-    ObjectNode root = JsonNodeFactory.instance.objectNode();
-    String modelName = name == null || name.isBlank() ? level.apiName() + "-starter-model" : name;
-    root.put("id", safeIdentifier(modelName + "-root"));
-    root.put("name", modelName);
-    root.put(
-        "eClass",
-        switch (level) {
-          case CIM -> "CIMModel";
-          case PIM -> "PIMModel";
-          case PSM -> "AwsPsmModel";
-        });
-    root.put("modelLevel", level == ModelLevel.PSM ? "AWS_PSM" : level.name());
-    if (level == ModelLevel.CIM) {
-      root.put("domainName", modelName);
-      root.put("businessScope", "Initial business scope for assisted modeling.");
-      root.put("organizationName", "Modeling Team");
-      root.put("summary", "Mandatory-valid starter model for assisted CIM modeling.");
-      root.put("rationale", "Created as the initial bounded context for assistant changes.");
-      root.putArray("goals")
-          .add(
-              attrs(
-                  "id",
-                  safeIdentifier(modelName + "-initial-goal"),
-                  "name",
-                  "Deliver Business Value",
-                  "eClass",
-                  "BusinessGoal",
-                  "summary",
-                  "Initial goal for assisted modeling.",
-                  "rationale",
-                  "Provides a mandatory-valid starting point.",
-                  "successCriterion",
-                  "The modeled business capability delivers measurable value.",
-                  "businessValue",
-                  "Creates a clear outcome for later refinement.",
-                  "failureConsequence",
-                  "The model lacks a measurable business outcome."));
-      root.putArray("actors")
-          .add(
-              attrs(
-                  "id",
-                  safeIdentifier(modelName + "-initial-actor"),
-                  "name",
-                  "Primary Business Actor",
-                  "eClass",
-                  "Actor",
-                  "summary",
-                  "Initial actor for assisted modeling.",
-                  "rationale",
-                  "Provides a mandatory-valid starting point.",
-                  "actorType",
-                  "ORGANIZATION",
-                  "trustLevel",
-                  "TRUSTED_INTERNAL"));
-      ObjectNode capability =
-          attrs(
-              "id",
-              safeIdentifier(modelName + "-initial-capability"),
-              "name",
-              "Core Business Capability",
-              "eClass",
-              "BusinessCapability",
-              "summary",
-              "Initial capability for assisted modeling.",
-              "rationale",
-              "Provides a mandatory-valid starting point.",
-              "responsibility",
-              "Own the initial business outcome.");
-      capability.putArray("supports").add(safeIdentifier(modelName + "-initial-goal"));
-      root.putArray("capabilities").add(capability);
-    } else if (level == ModelLevel.PIM) {
-      root.put("architectureStyle", "HYBRID_SERVERLESS");
-      root.put("domainName", modelName);
-      root.put("defaultCorrelationIdName", "correlationId");
-      initializePimCollections(root);
-      ObjectNode implementationProfile = root.putObject("implementationProfile");
-      implementationProfile.put("id", safeIdentifier(modelName + "-profile"));
-      implementationProfile.put("name", modelName + " implementation profile");
-      implementationProfile.put("eClass", "ImplementationProfile");
-      implementationProfile.put("primaryLanguage", "JAVA");
-      implementationProfile.put("packageManager", "MAVEN");
-      implementationProfile.put("sourceLayout", "src/main/java");
-      implementationProfile.put("buildCommand", "./mvnw -q test");
-      implementationProfile.put("generateTypedContracts", true);
-      implementationProfile.put("generateRuntimeValidation", false);
-    } else if (level == ModelLevel.PSM) {
-      root.put("partition", "AWS");
-      root.put("platform", "AWS");
-      root.put("defaultRegion", "us-east-1");
-      root.put("productionMode", false);
-      root.put("summary", "Mandatory-valid starter model for assisted AWS PSM modeling.");
-      root.put("rationale", "Created as the initial bounded context for assistant changes.");
-      String stackId = safeIdentifier(modelName + "-main-stack");
-      ObjectNode stage =
-          attrs(
-              "id",
-              safeIdentifier(modelName + "-dev-stage"),
-              "name",
-              "Development",
-              "eClass",
-              "AwsStage",
-              "stageName",
-              "dev",
-              "environmentClass",
-              "DEV",
-              "accountId",
-              "REVIEW_REQUIRED_ACCOUNT_ID",
-              "region",
-              "us-east-1",
-              "requiresManualApproval",
-              false,
-              "confirmChangeset",
-              false,
-              "failOnEmptyChangeset",
-              false);
-      stage.putArray("deploysStacks").add(stackId);
-      root.putArray("stages").add(stage);
-      ObjectNode resource =
-          attrs(
-              "id",
-              safeIdentifier(modelName + "-artifact-bucket"),
-              "name",
-              "Artifact Bucket",
-              "eClass",
-              "S3Bucket",
-              "logicalId",
-              "ArtifactBucket",
-              "awsResourceType",
-              "AWS::S3::Bucket",
-              "importedResource",
-              false,
-              "productionCritical",
-              false,
-              "retainInProduction",
-              false,
-              "bucketName",
-              safeIdentifier(modelName + "-artifacts"),
-              "versioningStatus",
-              "ENABLED",
-              "objectLockEnabled",
-              false,
-              "transferAccelerationEnabled",
-              false,
-              "eventBridgeNotificationEnabled",
-              false,
-              "publicAccessMode",
-              "STRICT_BLOCK_ALL",
-              "bucketKeyEnabled",
-              true);
-      ObjectNode stack =
-          attrs(
-              "id",
-              stackId,
-              "name",
-              "Main Stack",
-              "eClass",
-              "SamStack",
-              "stackName",
-              safeIdentifier(modelName + "-main"),
-              "templatePath",
-              "template.yaml",
-              "templateDescription",
-              "Starter stack for assisted modeling.",
-              "useSamTransform",
-              true,
-              "packageIndividually",
-              true,
-              "validateWithSam",
-              true,
-              "validateWithCfnLint",
-              true);
-      stack.putArray("resources").add(resource);
-      root.putArray("stacks").add(stack);
-      root.putArray("relationshipViews");
-    }
-    ObjectNode diagram = root.putObject("diagram");
-    diagram.putArray("elements");
-    diagram.putArray("relationships");
-    ObjectNode graph = root.putObject("graph");
-    graph.putArray("elements");
-    graph.putArray("relationships");
-    graph.putArray("traceLinks");
-    graph.putArray("assumptions");
-    graph.putArray("validationIssues");
-    graph.putArray("manualBacklog");
-    root.putArray("views");
-    root.putArray("fragments");
-    return root;
+    return modelingConfig.starterModel(level, name);
   }
 
   private String safeIdentifier(String value) {
@@ -1133,32 +948,6 @@ public class AssistantOrchestrator {
       }
     }
     return java.util.Optional.empty();
-  }
-
-  private void initializePimCollections(ObjectNode root) {
-    List.of(
-            "services",
-            "serviceMemberships",
-            "deploymentUnits",
-            "environments",
-            "schemas",
-            "functions",
-            "apis",
-            "eventTypes",
-            "channels",
-            "schedules",
-            "triggers",
-            "dataStores",
-            "objectStores",
-            "dataAccesses",
-            "workflows",
-            "humanTasks",
-            "externalEndpoints",
-            "externalAdapters",
-            "identityProviders",
-            "principals",
-            "policies")
-        .forEach(root::putArray);
   }
 
   private java.util.Optional<SemanticModelPatch> simpleCimAttributePatch(
