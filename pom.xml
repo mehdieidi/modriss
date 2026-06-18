@@ -34,9 +34,70 @@
           </configuration>
           <version>${maven.surefire.version}</version>
         </plugin>
+        <plugin>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <configuration>
+            <configLocation>${session.executionRootDirectory}/config/checkstyle/checkstyle.xml</configLocation>
+            <consoleOutput>true</consoleOutput>
+            <failOnViolation>true</failOnViolation>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+            <linkXRef>false</linkXRef>
+            <propertyExpansion>config_loc=${session.executionRootDirectory}/config/checkstyle</propertyExpansion>
+            <violationSeverity>warning</violationSeverity>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <artifactId>checkstyle</artifactId>
+              <groupId>com.puppycrawl.tools</groupId>
+              <version>${checkstyle.version}</version>
+            </dependency>
+          </dependencies>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven.checkstyle.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <configuration>
+            <failOnViolation>true</failOnViolation>
+            <includeTests>true</includeTests>
+            <linkXRef>false</linkXRef>
+            <minimumPriority>2</minimumPriority>
+            <printFailingErrors>true</printFailingErrors>
+            <rulesets>
+              <ruleset>${session.executionRootDirectory}/config/pmd/ruleset.xml</ruleset>
+            </rulesets>
+            <targetJdk>${java.version}</targetJdk>
+          </configuration>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven.pmd.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>spotbugs-maven-plugin</artifactId>
+          <configuration>
+            <effort>Max</effort>
+            <excludeFilterFile>${session.executionRootDirectory}/config/spotbugs/exclude-filter.xml</excludeFilterFile>
+            <failOnError>true</failOnError>
+            <includeTests>true</includeTests>
+            <threshold>High</threshold>
+          </configuration>
+          <groupId>com.github.spotbugs</groupId>
+          <version>${spotbugs.maven.plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+      </plugin>
+      <plugin>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <groupId>com.github.spotbugs</groupId>
+      </plugin>
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
@@ -142,12 +203,16 @@
   <packaging>pom</packaging>
 
   <properties>
+    <checkstyle.version>10.23.1</checkstyle.version>
     <google-java-format.version>1.25.2</google-java-format.version>
     <java.version>17</java.version>
+    <maven.checkstyle.plugin.version>3.6.0</maven.checkstyle.plugin.version>
     <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
     <maven.compiler.release>${java.version}</maven.compiler.release>
+    <maven.pmd.plugin.version>3.26.0</maven.pmd.plugin.version>
     <maven.surefire.version>3.5.4</maven.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spotbugs.maven.plugin.version>4.8.6.6</spotbugs.maven.plugin.version>
     <spotless.version>2.44.3</spotless.version>
     <spring.ai.version>1.1.7</spring.ai.version>
     <spring.boot.version>3.5.15</spring.boot.version>

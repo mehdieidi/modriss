@@ -106,4 +106,12 @@ validation, respect optimistic concurrency, and remain auditable and reversible.
 - Use project-plus-level conversation scope and hybrid mutation guardrails.
 
 Reference
-documentation: [Spring AI OpenAI](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html), [Spring AI Google GenAI](https://docs.spring.io/spring-ai/reference/api/chat/google-genai-chat.html), [Chat Memory](https://docs.spring.io/spring-ai/reference/api/chat-memory.html), [Tool Calling](https://docs.spring.io/spring-ai/reference/api/tools.html), [RAG](https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.html), [PGvector](https://docs.spring.io/spring-ai/reference/api/vectordbs/pgvector.html), [ONNX Embeddings](https://docs.spring.io/spring-ai/reference/api/embeddings/onnx.html), [Spring Boot HTTP Clients](https://docs.spring.io/spring-boot/how-to/http-clients.html).
+documentation:
+[Spring AI OpenAI](https://docs.spring.io/spring-ai/reference/api/chat/openai-chat.html),
+[Spring AI Google GenAI](https://docs.spring.io/spring-ai/reference/api/chat/google-genai-chat.html),
+[Chat Memory](https://docs.spring.io/spring-ai/reference/api/chat-memory.html),
+[Tool Calling](https://docs.spring.io/spring-ai/reference/api/tools.html),
+[RAG](https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.html),
+[PGvector](https://docs.spring.io/spring-ai/reference/api/vectordbs/pgvector.html),
+[ONNX Embeddings](https://docs.spring.io/spring-ai/reference/api/embeddings/onnx.html),
+[Spring Boot HTTP Clients](https://docs.spring.io/spring-boot/how-to/http-clients.html).

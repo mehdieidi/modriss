@@ -21,7 +21,8 @@ public final class StubMetamodelExtractor {
           "(?m)^\\s*(abstract\\s+class|class|interface|enum|datatype)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b");
   private static final Pattern FEATURE_PATTERN =
       Pattern.compile(
-          "(?m)^\\s*(?:readonly\\s+volatile\\s+transient\\s+derived\\s+)?(attr|ref|val)\\s+[^;]*?\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*;");
+          "(?m)^\\s*(?:readonly\\s+volatile\\s+transient\\s+derived\\s+)?(attr|ref|val)\\s+[^;]*?"
+              + "\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*;");
 
   /**
    * Extracts a minimal metamodel definition from an Emfatic file.

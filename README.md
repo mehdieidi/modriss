@@ -1,192 +1,173 @@
-# Project Description
+# Modless
 
-This project is being developed as part of an academic thesis. It is an AI-assisted, model-driven,
-low-code platform for serverless software development (software systems that follow the serverless
-computing paradigm and serverless architectural style).
+AI-assisted, model-driven low-code platform for designing, transforming, and generating AWS
+serverless applications.
 
-The platform enables users to model, transform, generate, and refine serverless applications
-through formal modeling languages, automated model transformations, code generation, and AI-assisted
-modeling support. The final goal is to produce deployable AWS serverless artifacts while maintaining
-academic rigor, technical quality, and production-readiness.
+Modless combines formal CIM/PIM/PSM modeling, Eclipse Epsilon validation and transformations, and an
+in-browser modeling editor with optional Spring AI assistance. From a platform-specific model, the
+toolchain produces reviewable, deployable serverless project artifacts.
 
-## Model-Driven Engineering Approach
+For the full thesis-oriented project narrative, architecture rationale, and planned features, see
+[docs/project-description.md](docs/project-description.md).
 
-The project follows a model-driven engineering approach based on three modeling levels:
+## Features
 
-1. Computation-Independent Model (CIM)
-2. Platform-Independent Model (PIM)
-3. Platform-Specific Model (PSM)
+- **Three-level modeling** — CIM, PIM, and PSM workspaces with metamodel-driven palettes and validation
+- **Semi-automated pipeline** — CIM → PIM → PSM transformations and PSM → AWS artifact generation
+- **Constraint validation** — EVL rules enforced across modeling levels
+- **Artifact explorer** — Browse, edit, and export generated projects as ZIP archives
+- **AI modeling assistant** — Natural-language model edits with metamodel-aware guardrails (optional)
+- **Production-oriented backend** — Spring Boot API, PostgreSQL persistence, Flyway migrations
 
-Each modeling level is defined using a formal Domain-Specific Modeling Language (DSML). These DSMLs
-are specified through Ecore metamodels, written in the Emfatic language.
+## Tech Stack
 
-### CIM Level
+| Layer    | Technologies                                |
+| -------- | ------------------------------------------- |
+| Backend  | Java 17, Maven, Spring Boot, Spring AI      |
+| Frontend | HTML, CSS, vanilla JavaScript (ES modules)  |
+| MDE      | Emfatic/Ecore, Epsilon (EVL, ETL, EGL, EGX) |
+| Data     | PostgreSQL 16, pgvector, Flyway             |
+| Tooling  | Python 3, Node.js, Docker Compose           |
 
-The CIM level represents computation-independent structural and behavioral models. It captures
-concepts such as system requirements, domain concepts, business logic, and high-level behavioral
-aspects without committing to a software-based solution.
+## Quick Start
 
-### PIM Level
+**Prerequisites:** Docker with Compose support and a modern browser.
 
-The PIM level represents platform-independent structural and behavioral models of a serverless
-architecture. It abstracts serverless concepts independently of a specific cloud provider while
-preserving the architectural and behavioral characteristics required for serverless software
-systems.
-
-### PSM Level
-
-The PSM level represents platform-specific structural and behavioral models for AWS serverless
-architecture. It refines the platform-independent serverless model into AWS-specific serverless
-components and structures.
-
-## Model Transformations and Code Generation
-
-The platform defines formal model-to-model transformations and model-to-text transformations.
-
-### Model-to-Model Transformations
-
-Formal model-to-model transformations are defined for:
-
-- CIM to PIM
-- PIM to PSM
-
-These transformations are semi-automated. The transformation process automatically generates the
-target model while still allowing the developer to review, refine, and complete missing or
-ambiguous parts. This ensures both automation and developer control.
-
-The model transformations are implemented using the Eclipse Epsilon Transformation Language (ETL).
-
-### Model-to-Text Transformations
-
-Formal model-to-text transformations are defined to generate final deployable artifacts from the PSM
-level. These generated artifacts target the AWS serverless ecosystem and may include configuration
-files, infrastructure definitions (IaC), source code, and other required project files.
-
-The generated artifacts are intended to be reviewed, refined, and deployed by the developer.
-
-The code generation process is implemented using the Eclipse Epsilon Generation Language (EGL) and
-EGL Coordination Language (EGX).
-
-### Constraint Validation
-
-Model validation constraints are formally defined to ensure that models conform to the
-corresponding metamodels and predefined static constraint rules.
-
-Constraint validation is implemented using the Eclipse Epsilon Validation Language (EVL).
-
-## Backend Architecture
-
-The backend is implemented using Java, Maven, and Spring Boot. It exposes APIs that allow the
-frontend to interact with the platform.
-
-The backend is responsible for typical server-side operations such as project management,
-persistence, authentication-related workflows, and coordination of user actions. In addition, it
-handles model-driven engineering operations by executing and orchestrating Eclipse Epsilon scripts
-for model validation, model transformation, and code generation.
-
-The backend follows a monolithic but modular architecture. It is designed to remain maintainable,
-extensible, and modifiable.
-
-## Runtime
-
-The backend now uses PostgreSQL for persisted application state, with schema migrations managed by
-Flyway and container orchestration documented in `compose.yaml`. Storage operations and migration
-workflow are documented in `docs/postgres-storage.md`.
-
-## AI-Assisted Modeling
-
-The platform includes an AI modeling assistant integrated into the frontend editor and implemented
-in the backend.
-
-The assistant is presented as a chatbot icon on the modeling canvas. When the user clicks the icon,
-a chatbot window appears inside the editor. Through this interface, the user can interact with the
-assistant using natural language.
-
-The AI assistant is designed to understand the current state of the model being edited. It is also
-aware of the formal metamodel definitions and validation constraints. Based on user prompts, the
-assistant can create, modify, and refine model elements while ensuring that its outputs conform to
-the defined metamodels and EVL constraints.
-
-Instead of manually creating every element, the user can describe the intended model changes in
-natural language, and the assistant can generate or update the model accordingly.
-
-The assistant’s changes are reflected visually on the frontend canvas in real time using
-WebSocket-based communication. The chat interaction itself is also designed to operate in real time.
-
-The AI assistant is implemented using Spring AI.
-
-## Frontend Architecture
-
-The frontend is web-based. The current implementation plan is to use plain HTML, CSS, and
-JavaScript.
-
-Users can log in to the platform, create projects, and enter the modeling editor. The editor
-provides an infinite modeling canvas where users can create and manipulate models visually.
-
-The editor includes a modeling palette containing the elements available for the current modeling
-level. Users can drag and drop elements onto the canvas and create relationships between them by
-drawing legal connections.
-
-The editor is organized into three modeling tabs:
-
-- CIM
-- PIM
-- PSM
-
-Each tab has its own modeling palette according to the formal metamodel defined for that level.
-
-A generation action is available in the editor. When the user clicks the 'generate' button, the
-platform performs the appropriate transformation depending on the active tab:
-
-- From CIM, it generates the corresponding PIM model.
-- From PIM, it generates the corresponding PSM model.
-- From PSM, it generates the final deployable AWS serverless artifacts.
-
-The platform also includes an artifacts view. This view is designed to resemble an IDE, similar to
-Visual Studio Code. It allows the user to browse generated project files and folders, open and edit
-files, save changes, and export the complete generated project as a ZIP file for deployment.
-
-## Planned Future Features
-
-Additional features may be added in later stages of the project, including:
-
-- Impact analysis
-- Reverse engineering
-- Real-time collaboration
-- Deployment automation
-- Versioning and change tracking
-- Other cloud providers
-
-## Academic and Production Goals
-
-This project is part of an academic thesis and is intended to support future academic publications.
-Therefore, the platform is designed with academic rigor, formal modeling foundations, and clear
-engineering methodology.
-
-At the same time, the project is intended to be released as a production-ready system. As a result,
-the implementation must follow high-quality software engineering practices, ensuring
-maintainability and extensibility.
-
-The overall goal is to provide a novel, rigorous, and practical platform that combines model-driven
-engineering, low-code development, serverless architecture, and AI-assisted modeling into a unified
-environment for developing applications that follow the serverless paradigm.
-
-## Formatting
-
-The repository uses pinned formatters and shared configuration so formatting is identical across
-machines. Java is formatted by Spotless with Google Java Format, web/docs/config files by Prettier,
-and Epsilon/EMF sources receive conservative whitespace normalization.
-
-Install Java 17+, Maven, Python 3, and Node.js/npm, then run:
+From the repository root:
 
 ```bash
-python scripts/format.py
+docker compose up --build
 ```
 
-The script installs the exact locked Prettier version automatically when `node_modules` is absent.
+When PostgreSQL and the backend are healthy, open:
 
-To verify formatting without changing files:
+| Service              | URL                                   |
+| -------------------- | ------------------------------------- |
+| Modeling frontend    | http://127.0.0.1:8082                 |
+| Backend health       | http://127.0.0.1:8080/api/health      |
+| OpenAPI / Swagger UI | http://127.0.0.1:8080/swagger-ui.html |
+| Landing page         | http://127.0.0.1:8083                 |
+
+A minimal first run: register a user, create a project, open the CIM workspace, import
+`mde/samples/cim.xmi` or model from scratch, then run **Generate PIM**, **Generate PSM**, and
+**Generate Artifacts**.
+
+Step-by-step instructions: [docs/public-docs/docs/getting-started/quickstart.md](docs/public-docs/docs/getting-started/quickstart.md)
+
+## Local Development
+
+For day-to-day backend and frontend work without the full Compose stack:
+
+| Tool          | Version                                                 |
+| ------------- | ------------------------------------------------------- |
+| Java          | 17+                                                     |
+| Maven         | 3.9+                                                    |
+| Python        | 3                                                       |
+| Node.js / npm | Current LTS recommended                                 |
+| PostgreSQL    | 16 with pgvector (or use Compose for the database only) |
 
 ```bash
-python scripts/format.py --check
+# Database (optional if you already have PostgreSQL)
+docker compose up -d postgres
+
+# Backend
+mvn -pl apps/backend -am spring-boot:run
+
+# Frontend static server (separate terminal)
+python -m http.server 8082 --directory apps/frontend
 ```
+
+The frontend reads the backend URL from `apps/frontend/backend-config.js` (default
+`http://127.0.0.1:8080`).
+
+Build and test:
+
+```bash
+mvn test
+mvn -pl apps/backend -am package
+```
+
+Detailed setup, health checks, and AI configuration:
+[docs/public-docs/docs/getting-started/local-development.md](docs/public-docs/docs/getting-started/local-development.md)
+
+## Repository Layout
+
+```text
+apps/
+  backend/                 Spring Boot API and assistant
+  frontend/                Browser modeling application
+  landing/                 Public landing page
+docs/                      Engineering documentation and diagrams
+mde/                       Metamodels, validation, transformations, generation, samples
+packages/java/             Domain, application, storage, modeling, and MDE runner modules
+tools/                     Standalone MDE CLI utilities
+scripts/                   Repository automation (format, lint)
+```
+
+Module boundaries and dependency direction:
+[docs/public-docs/docs/reference/repository-layout.md](docs/public-docs/docs/reference/repository-layout.md)
+
+## Documentation
+
+| Topic                                | Location                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Public docs site (MkDocs)            | [docs/public-docs/](docs/public-docs/)                                                                 |
+| Architecture diagrams                | [docs/diagrams/](docs/diagrams/)                                                                       |
+| REST API                             | [docs/api/rest-api.md](docs/api/rest-api.md) · [OpenAPI](docs/api/openapi/openapi.yaml)                |
+| PostgreSQL storage                   | [docs/postgres-storage.md](docs/postgres-storage.md)                                                   |
+| AI assistant                         | [docs/ai-assistant.md](docs/ai-assistant.md)                                                           |
+| Generated artifacts                  | [docs/generated-artifact-deployment-and-testing.md](docs/generated-artifact-deployment-and-testing.md) |
+| Project description (thesis context) | [docs/project-description.md](docs/project-description.md)                                             |
+
+## Code Quality
+
+### Formatting
+
+Pinned formatters keep style consistent across machines:
+
+- **Java** — Spotless with Google Java Format
+- **Web, docs, config** — Prettier
+- **MDE sources** — Conservative whitespace normalization (`.eol`, `.etl`, `.evl`, `.ecore`, …)
+
+```bash
+python scripts/format.py          # apply formatting
+python scripts/format.py --check  # verify only
+```
+
+Prettier is installed automatically from `package-lock.json` when `node_modules` is missing.
+
+### Linting
+
+Scoped static analysis runs per technology stack:
+
+```bash
+python scripts/lint.py                    # all scopes
+python scripts/lint.py --scope java       # single scope
+python scripts/lint.py --scope web
+python scripts/lint.py --list-scopes      # show available scopes
+```
+
+| Scope      | Tools                             |
+| ---------- | --------------------------------- |
+| `java`     | Checkstyle, PMD, SpotBugs (Maven) |
+| `web`      | ESLint, Stylelint                 |
+| `python`   | Ruff                              |
+| `yaml`     | yamllint                          |
+| `markdown` | markdownlint-cli2                 |
+| `docker`   | Hadolint (requires Docker)        |
+| `all`      | Every scope above                 |
+
+Python lint dependencies install automatically from `requirements-lint.txt` when needed. Node lint
+dependencies install automatically from `package-lock.json` when needed.
+
+Equivalent npm entry point: `npm run lint`
+
+## CLI Tools
+
+Standalone CLIs wrap the reusable MDE runners for validation, transformation, generation, and
+metamodel compilation. Reference:
+[docs/public-docs/docs/reference/cli-tools.md](docs/public-docs/docs/reference/cli-tools.md)
+
+## License
+
+[MIT](LICENSE) — Copyright (c) 2026 Mehdi Eidi

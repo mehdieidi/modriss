@@ -34,7 +34,7 @@ to determine what is required.
 | AI modeling behavior               | `apps/backend/.../assistant/`                                                                        | Catalog indexing, starter models, deterministic patches, semantic patch compilation, model context                     |
 | Public API contract                | controllers plus `docs/api/openapi/openapi.yaml`                                                     | Frontend, external clients, API docs                                                                                   |
 | Regression fixtures                | `mde/samples/*.xmi`, Java tests, case-study samples                                                  | All MDE pipeline regression tests                                                                                      |
-| Architecture documentation         | `README.md`, `docs/`, especially `docs/diagrams/`                                                    | Developers, thesis material, operations                                                                                |
+| Architecture documentation         | `README.md`, `docs/project-description.md`, `docs/`, especially `docs/diagrams/`                     | Developers, thesis material, operations                                                                                |
 
 ## How Runtime Metadata Is Built
 

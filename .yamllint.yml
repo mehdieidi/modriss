@@ -1,0 +1,16 @@
+---
+extends: default
+
+ignore: |
+  **/node_modules/**
+  **/target/**
+  **/storage/**
+  **/vendor/**
+
+rules:
+  document-start: disable
+  line-length:
+    max: 140
+    allow-non-breakable-inline-mappings: true
+  truthy:
+    check-keys: false

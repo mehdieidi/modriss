@@ -1,0 +1,51 @@
+{
+  "excludedDirectories": [
+    ".git",
+    ".idea",
+    ".vscode",
+    "node_modules",
+    "storage",
+    "target",
+    "vendor"
+  ],
+  "scopes": {
+    "all": {
+      "description": "Run every configured linter scope.",
+      "includes": ["java", "web", "python", "yaml", "markdown", "docker"]
+    },
+    "java": {
+      "description": "Java static analysis with Checkstyle, PMD, and SpotBugs.",
+      "mavenGoals": ["checkstyle:check", "pmd:check", "spotbugs:check"]
+    },
+    "web": {
+      "description": "Frontend JavaScript and CSS with ESLint and Stylelint.",
+      "npmScripts": ["lint:eslint", "lint:stylelint"]
+    },
+    "python": {
+      "description": "Python scripts with Ruff.",
+      "command": ["python", "-m", "ruff", "check", "scripts"]
+    },
+    "yaml": {
+      "description": "YAML files with yamllint.",
+      "command": [
+        "python",
+        "-m",
+        "yamllint",
+        "-c",
+        ".yamllint.yml",
+        "compose.yaml",
+        "docs",
+        "apps/backend/src/main/resources"
+      ]
+    },
+    "markdown": {
+      "description": "Markdown documentation with markdownlint.",
+      "npmScripts": ["lint:markdown"]
+    },
+    "docker": {
+      "description": "Dockerfiles with Hadolint.",
+      "command": ["docker", "run", "--rm", "-i", "hadolint/hadolint:latest", "hadolint", "-"],
+      "dockerfiles": ["Dockerfile"]
+    }
+  }
+}

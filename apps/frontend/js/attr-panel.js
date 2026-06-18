@@ -41,6 +41,11 @@ import {
   refIds,
 } from "./model-utils.js";
 import { captureDiagramUndoSnapshot, pushDiagramUndoSnapshot } from "./undo.js";
+
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 // Fields managed by canvas – shown read-only
 const READONLY_ATTR_KEYS = new Set(["id", "eClass", "x", "y"]);
 // Fields skipped entirely (rendered via canvas label editing)

@@ -390,6 +390,7 @@ public final class LayoutService {
           return parsed;
         }
       } catch (NumberFormatException ignored) {
+        // Ignore non-numeric profile overrides and fall back to defaults.
       }
     }
     String profile = normalize(request.profile()).toUpperCase(Locale.ROOT);
@@ -430,6 +431,7 @@ public final class LayoutService {
           return parsed;
         }
       } catch (NumberFormatException ignored) {
+        // Ignore non-numeric profile overrides and fall back to defaults.
       }
     }
     String profile = normalize(request.profile()).toUpperCase(Locale.ROOT);
