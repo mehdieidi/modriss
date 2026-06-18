@@ -59,6 +59,7 @@ nav:
       - Deployment: operations/deployment.md
       - Security: operations/security.md
       - Testing: operations/testing.md
+      - Alerting Runbooks: operations/alerting-runbooks.md
       - Troubleshooting: operations/troubleshooting.md
   - Contributing:
       - Change Guide: contributing/change-guide.md

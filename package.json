@@ -5,6 +5,8 @@
   "scripts": {
     "format": "python scripts/format.py",
     "format:check": "python scripts/format.py --check",
+    "verify": "python scripts/verify.py",
+    "verify:fast": "python scripts/verify.py --skip-tests",
     "format:prettier": "prettier --write --ignore-unknown",
     "format:prettier:check": "prettier --check --ignore-unknown",
     "lint": "python scripts/lint.py",

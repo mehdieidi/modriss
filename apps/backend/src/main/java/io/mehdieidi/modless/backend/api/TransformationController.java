@@ -27,16 +27,22 @@ public class TransformationController {
 
   private final MdeJobService jobs;
   private final AuthSupport auth;
+  private final io.mehdieidi.modless.backend.observability.ModlessMetrics metrics;
 
   /**
    * Creates the transformation controller.
    *
    * @param jobs MDE job service
    * @param auth controller authentication support
+   * @param metrics application metrics recorder
    */
-  public TransformationController(MdeJobService jobs, AuthSupport auth) {
+  public TransformationController(
+      MdeJobService jobs,
+      AuthSupport auth,
+      io.mehdieidi.modless.backend.observability.ModlessMetrics metrics) {
     this.jobs = jobs;
     this.auth = auth;
+    this.metrics = metrics;
   }
 
   /**
@@ -138,6 +144,10 @@ public class TransformationController {
   public record JobResponse(String id, MdeJobStatus status) {}
 
   private ResponseEntity<JobResponse> accepted(MdeJobRecord job, String route, long startedNanos) {
+    metrics.recordMdeJobSubmitted();
+    if (job.status() == MdeJobStatus.FAILED) {
+      metrics.recordMdeJobFailed();
+    }
     long controllerMs = millisSince(startedNanos);
     jobs.appendTimings(job.id(), Map.of("controller.acceptMs", controllerMs));
     LOGGER.info(

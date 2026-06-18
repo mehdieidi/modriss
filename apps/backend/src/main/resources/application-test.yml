@@ -1,4 +1,18 @@
 modless:
   session-ttl: 1d
+  ai:
+    enabled: false
   allowed-origins:
     - http://localhost:8080
+
+management:
+  tracing:
+    enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

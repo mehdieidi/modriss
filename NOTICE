@@ -1,0 +1,42 @@
+Modless
+Copyright 2026 Mehdi Eidi
+
+This product includes software developed by third parties under the licenses listed below.
+
+## Runtime and platform dependencies
+
+| Component | Version | License | Notes |
+| --------- | ------- | ------- | ----- |
+| Spring Boot | 3.5.15 | Apache-2.0 | Backend framework |
+| Spring AI | 1.1.7 | Apache-2.0 | AI assistant integration |
+| Eclipse Epsilon | (via MDE modules) | EPL-2.0 / EDL-1.0 | Model validation and transformation |
+| PostgreSQL + pgvector | 16 | PostgreSQL License / MIT-like | Primary datastore |
+| Flyway | (via Spring Boot BOM) | Apache-2.0 | Database migrations |
+
+See Maven `pom.xml` files and `package-lock.json` for the complete dependency graph.
+
+## Frontend vendored assets
+
+| Component | Version | License | Location |
+| --------- | ------- | ------- | -------- |
+| @antv/g6 | 5.1.1 | MIT | `apps/frontend/vendor/antv/g6.min.js` |
+| Space Grotesk | OFL 1.1 | SIL Open Font License | `apps/frontend/assets/fonts/Space_Grotesk/` |
+| Lugrasimo | OFL 1.1 | SIL Open Font License | `apps/frontend/assets/fonts/Lugrasimo/` |
+
+## Development tooling
+
+| Component | License | Location |
+| --------- | ------- | -------- |
+| Prettier, ESLint, Stylelint, markdownlint-cli2 | MIT / Apache-2.0 | `package.json` |
+| Ruff, yamllint | MIT / GPL-3.0 | `requirements-lint.txt` |
+| Google Java Format (via Spotless) | Apache-2.0 | Root `pom.xml` |
+
+## Generated artifacts
+
+Projects generated from PSM models may include additional third-party dependencies defined by the
+selected AWS serverless templates. Review each generated project's own `NOTICE`, `LICENSE`, and
+dependency manifests before deployment.
+
+## License
+
+Modless source code is released under the [MIT License](LICENSE).

@@ -1,0 +1,147 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"modless-backend\"}[5m]))",
+          "legendFormat": "requests/s"
+        }
+      ],
+      "title": "HTTP request rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"modless-backend\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ],
+      "title": "HTTP latency p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{application=\"modless-backend\"}",
+          "legendFormat": "active"
+        },
+        {
+          "expr": "hikaricp_connections_idle{application=\"modless-backend\"}",
+          "legendFormat": "idle"
+        }
+      ],
+      "title": "Database connection pool",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "increase(modless_mde_jobs_submitted_total[1h])",
+          "legendFormat": "submitted"
+        },
+        {
+          "expr": "increase(modless_mde_jobs_failed_total[1h])",
+          "legendFormat": "failed"
+        }
+      ],
+      "title": "MDE jobs (1h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "increase(modless_assistant_requests_total[1h])",
+          "legendFormat": "requests"
+        },
+        {
+          "expr": "increase(modless_assistant_circuit_open_total[1h])",
+          "legendFormat": "circuit open"
+        }
+      ],
+      "title": "Assistant (1h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{application=\"modless-backend\"})",
+          "legendFormat": "used"
+        }
+      ],
+      "title": "JVM memory used",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"modless-backend\",status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{application=\"modless-backend\"}[5m]))",
+          "legendFormat": "5xx ratio"
+        }
+      ],
+      "title": "HTTP 5xx error ratio",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["modless", "backend"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "label": "Datasource",
+        "name": "datasource",
+        "query": "prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Modless Overview",
+  "uid": "modless-overview",
+  "version": 1
+}

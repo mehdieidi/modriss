@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
@@ -22,7 +21,6 @@ import io.mehdieidi.modless.platform.core.model.ProjectRecord;
 import io.mehdieidi.modless.platform.core.model.StagedImportRecord;
 import io.mehdieidi.modless.platform.core.model.UserRecord;
 import java.nio.file.Path;
-import java.sql.DriverManager;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,19 +42,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 @ResourceLock("postgres")
 class PostgresPlatformStoreIntegrationTest {
 
-  private final String baseUrl =
-      System.getenv()
-          .getOrDefault("MODLESS_POSTGRES_TEST_URL", "jdbc:postgresql://localhost:5432/modless");
-  private final String user = System.getenv().getOrDefault("MODLESS_POSTGRES_TEST_USER", "modless");
-  private final String password =
-      System.getenv().getOrDefault("MODLESS_POSTGRES_TEST_PASSWORD", "modless");
+  private final String baseUrl = PostgresTestSupport.jdbcUrl();
+  private final String user = PostgresTestSupport.username();
+  private final String password = PostgresTestSupport.password();
   private String schema;
   private JdbcTemplate jdbc;
   private PostgresPlatformStore store;
 
   @BeforeAll
   void setUpSchema() {
-    assumeTrue(databaseAvailable(), "PostgreSQL test database is not available.");
     schema = "test_" + UUID.randomUUID().toString().replace("-", "");
     DriverManagerDataSource admin = dataSource(baseUrl);
     JdbcTemplate adminJdbc = new JdbcTemplate(admin);
@@ -81,13 +75,12 @@ class PostgresPlatformStoreIntegrationTest {
 
   @BeforeEach
   void cleanTables() {
-    assumeTrue(databaseAvailable(), "PostgreSQL test database is not available.");
     truncateAllTables();
   }
 
   @AfterAll
   void tearDownSchema() {
-    if (schema != null && databaseAvailable()) {
+    if (schema != null) {
       new JdbcTemplate(dataSource(baseUrl)).execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
     }
   }
@@ -277,14 +270,6 @@ class PostgresPlatformStoreIntegrationTest {
 
   private int count(String table) {
     return jdbc.queryForObject("SELECT count(*) FROM " + table, Integer.class);
-  }
-
-  private boolean databaseAvailable() {
-    try (var connection = DriverManager.getConnection(baseUrl, user, password)) {
-      return connection.isValid(2);
-    } catch (Exception ex) {
-      return false;
-    }
   }
 
   private DriverManagerDataSource dataSource(String url) {

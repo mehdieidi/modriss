@@ -101,11 +101,30 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+    prometheus:
+      enabled: ${MODLESS_METRICS_ENABLED:true}
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  prometheus:
+    metrics:
+      export:
+        enabled: ${MODLESS_METRICS_ENABLED:true}
+  tracing:
+    enabled: ${MODLESS_TRACING_ENABLED:false}
+    sampling:
+      probability: ${MODLESS_TRACING_SAMPLE_RATE:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
 
 logging:
   pattern:

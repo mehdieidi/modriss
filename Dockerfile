@@ -6,6 +6,7 @@ RUN --mount=type=cache,id=modless-maven,target=/root/.m2,sharing=locked \
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*

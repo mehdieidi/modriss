@@ -1,5 +1,13 @@
 # Testing
 
+## One-command verification
+
+```powershell
+python scripts/verify.py
+```
+
+This runs format check, all linters, and `mvn test`. Pre-commit runs format check only on `git commit`.
+
 ## Repository Test Ladder
 
 Run focused checks first, then broader regression tests.
@@ -29,6 +37,18 @@ mvn test
 ```
 
 Use the `onnx-embeddings` Maven profile only when testing the native ONNX embedding path.
+
+## PostgreSQL integration tests
+
+Storage and backend integration tests use **Testcontainers** with the `pgvector/pgvector:pg16`
+image. Docker must be running locally and in CI — no manual PostgreSQL setup is required.
+
+Additional coverage:
+
+- `PostgresPlatformStoreIntegrationTest` — storage CRUD and blob operations
+- `FlywayMigrationVerificationTest` — migrations from empty schema
+- `OpenApiContractTest` — Spring MVC handlers vs `docs/api/openapi/openapi.yaml`
+- `ApiSmokeContractTest` — auth, project, and model lifecycle smoke tests
 
 ## Formatting Verification
 

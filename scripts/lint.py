@@ -89,7 +89,8 @@ def ensure_python_lint_dependencies(scope_names: list[str]) -> None:
 
 
 def run_maven_goals(goals: list[str]) -> None:
-    run([maven(), *goals])
+    # Install modules first so SNAPSHOT siblings resolve reliably across the reactor.
+    run([maven(), "install", *goals, "-DskipTests"])
 
 
 def run_npm_scripts(scripts: list[str]) -> None:

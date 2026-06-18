@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest an enhancement for Modless
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest an enhancement for Modless. Describe the problem and the outcome you want.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or operator problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior you want.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - label: Metamodel / MDE toolchain
+        - label: Backend API
+        - label: Frontend modeling UI
+        - label: AI assistant
+        - label: Operations / deployment
+        - label: Documentation
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Diagrams, sample models, or links welcome.

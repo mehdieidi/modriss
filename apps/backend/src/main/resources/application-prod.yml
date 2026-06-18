@@ -5,5 +5,7 @@ logging:
     json:
       add:
         service: ${spring.application.name}
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
     io.mehdieidi.modless: INFO

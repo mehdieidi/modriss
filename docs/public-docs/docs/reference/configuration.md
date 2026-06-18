@@ -1,7 +1,8 @@
 # Configuration
 
 Backend configuration is defined in `apps/backend/src/main/resources/application.yml` and overridden
-through environment variables.
+through environment variables. Copy [`.env.example`](../../../../.env.example) to `.env` for local
+development defaults (never commit `.env`).
 
 ## Database
 

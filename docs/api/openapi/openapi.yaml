@@ -26,6 +26,8 @@ tags:
     description: Generated artifact records, files, and downloads.
   - name: Modeling
     description: Modeling UI configuration and layout services.
+  - name: Assistant
+    description: AI modeling assistant sessions, messages, proposals, and streaming.
   - name: Future
     description: Planned feature placeholders that currently return 501.
 paths:
@@ -959,6 +961,169 @@ paths:
       responses:
         "501":
           $ref: "#/components/responses/NotImplemented"
+  /api/chatbot/sessions:
+    post:
+      tags: [Assistant]
+      summary: Create assistant session
+      responses:
+        "200":
+          description: Created assistant session
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      tags: [Assistant]
+      summary: Clear assistant session memory
+      responses:
+        "200":
+          description: Session cleared
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/messages:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Assistant]
+      summary: Send assistant message
+      responses:
+        "200":
+          description: Assistant response accepted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/events:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Assistant]
+      summary: Open assistant SSE event stream
+      responses:
+        "200":
+          description: Server-sent event stream
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Assistant]
+      summary: Get assistant proposal
+      responses:
+        "200":
+          description: Assistant proposal
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Assistant]
+      summary: Approve assistant proposal
+      responses:
+        "200":
+          description: Proposal approved
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Assistant]
+      summary: Reject assistant proposal
+      responses:
+        "200":
+          description: Proposal rejected
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Assistant]
+      summary: Undo applied assistant proposal
+      responses:
+        "200":
+          description: Proposal undone
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/choices:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Assistant]
+      summary: Submit assistant choice
+      responses:
+        "200":
+          description: Choice recorded
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /ws/chatbot/sessions/{sessionId}:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Assistant]
+      summary: Open assistant WebSocket stream
+      security: []
+      responses:
+        "101":
+          description: WebSocket upgrade
 components:
   securitySchemes:
     AuthToken:

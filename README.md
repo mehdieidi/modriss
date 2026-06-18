@@ -41,12 +41,12 @@ docker compose up --build
 
 When PostgreSQL and the backend are healthy, open:
 
-| Service              | URL                                   |
-| -------------------- | ------------------------------------- |
-| Modeling frontend    | http://127.0.0.1:8082                 |
-| Backend health       | http://127.0.0.1:8080/api/health      |
-| OpenAPI / Swagger UI | http://127.0.0.1:8080/swagger-ui.html |
-| Landing page         | http://127.0.0.1:8083                 |
+| Service              | URL                                     |
+| -------------------- | --------------------------------------- |
+| Modeling frontend    | <http://127.0.0.1:8082>                 |
+| Backend health       | <http://127.0.0.1:8080/api/health>      |
+| OpenAPI / Swagger UI | <http://127.0.0.1:8080/swagger-ui.html> |
+| Landing page         | <http://127.0.0.1:8083>                 |
 
 A minimal first run: register a user, create a project, open the CIM workspace, import
 `mde/samples/cim.xmi` or model from scratch, then run **Generate PIM**, **Generate PSM**, and
@@ -101,7 +101,9 @@ docs/                      Engineering documentation and diagrams
 mde/                       Metamodels, validation, transformations, generation, samples
 packages/java/             Domain, application, storage, modeling, and MDE runner modules
 tools/                     Standalone MDE CLI utilities
-scripts/                   Repository automation (format, lint)
+scripts/                   Repository automation (format, lint, verify, ops)
+ops/                       Grafana dashboards and Prometheus alert rules
+docs/adr/                  Architecture Decision Records
 ```
 
 Module boundaries and dependency direction:
@@ -161,6 +163,17 @@ Python lint dependencies install automatically from `requirements-lint.txt` when
 dependencies install automatically from `package-lock.json` when needed.
 
 Equivalent npm entry point: `npm run lint`
+
+### Verification and hooks
+
+```bash
+python scripts/verify.py          # format check + lint + mvn test
+pip install pre-commit && pre-commit install
+```
+
+Copy [`.env.example`](.env.example) to `.env` for local environment overrides. See
+[CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) for process and vulnerability
+reporting.
 
 ## CLI Tools
 

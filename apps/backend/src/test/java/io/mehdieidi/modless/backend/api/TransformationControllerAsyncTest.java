@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.mehdieidi.modless.backend.observability.ModlessMetrics;
 import io.mehdieidi.modless.platform.core.model.MdeJobOperation;
 import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobStatus;
@@ -24,12 +25,13 @@ class TransformationControllerAsyncTest {
   void transformationSubmissionReturnsAcceptedLocationAndJobBody() {
     MdeJobService jobs = mock(MdeJobService.class);
     AuthSupport auth = mock(AuthSupport.class);
+    ModlessMetrics metrics = mock(ModlessMetrics.class);
     UserRecord user = user();
     MdeJobRecord job = job(MdeJobOperation.CIM_TO_PIM);
     when(auth.user("token")).thenReturn(user);
     when(jobs.submitCimToPim(eq(user), eq("model-1"), eq(7L), eq("retry-1"))).thenReturn(job);
 
-    TransformationController controller = new TransformationController(jobs, auth);
+    TransformationController controller = new TransformationController(jobs, auth, metrics);
     ResponseEntity<TransformationController.JobResponse> response =
         controller.cimToPim(
             "token", "retry-1", new TransformationController.TransformRequest("model-1", 7L));

@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a defect in Modless
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a defect in the Modless platform. Include steps to reproduce when possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps help us reproduce the issue quickly.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser, Modless version or commit, deployment mode.
+      placeholder: |
+        - OS:
+        - Browser (if frontend):
+        - Modless version / commit:
+        - Deployment mode: local dev / Docker Compose / other
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Include requestId from backend logs when available.
+
+  - type: textarea
+    id: possible-fix
+    attributes:
+      label: Possible fix
+      description: Optional — if you already have an idea.
