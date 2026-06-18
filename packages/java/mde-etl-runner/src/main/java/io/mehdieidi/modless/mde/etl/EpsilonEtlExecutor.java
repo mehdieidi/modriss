@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.mde.etl;
 
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -8,12 +9,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.epsilon.common.module.ModuleElement;
 import org.eclipse.epsilon.common.parse.problem.ParseProblem;
 import org.eclipse.epsilon.common.util.StringProperties;
@@ -26,8 +29,8 @@ import org.eclipse.epsilon.eol.models.Model;
 import org.eclipse.epsilon.etl.EtlModule;
 
 /**
- * Executes Epsilon ETL modules against file-backed EMF models and returns a structured report for
- * both successes and failures.
+ * Executes Epsilon ETL modules against isolated per-job EMF models and returns a structured report
+ * for both successes and failures.
  */
 public final class EpsilonEtlExecutor {
 
@@ -36,13 +39,6 @@ public final class EpsilonEtlExecutor {
 
   /** Default maximum captured bytes per Epsilon output stream. */
   private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
-
-  /**
-   * Serializes Epsilon ETL execution within a JVM. The Epsilon engine keeps mutable global state
-   * that is not safe under concurrent module execution.
-   */
-  private static final Object EPSILON_RUNTIME_MONITOR =
-      "io.mehdieidi.modless.mde.EPSILON_RUNTIME".intern();
 
   /** Optional execution timeout; {@code null} disables the watchdog. */
   private final Duration executionTimeout;
@@ -79,13 +75,6 @@ public final class EpsilonEtlExecutor {
    * @throws EtlExecutionException when validation, parsing, loading, execution, or storage fails
    */
   public EtlExecutionReport execute(EtlExecutionRequest request) throws EtlExecutionException {
-    synchronized (EPSILON_RUNTIME_MONITOR) {
-      return executeInternal(request);
-    }
-  }
-
-  private EtlExecutionReport executeInternal(EtlExecutionRequest request)
-      throws EtlExecutionException {
     Instant startedAt = Instant.now();
     long startedNanos = System.nanoTime();
     EtlPhaseTiming phaseTiming = new EtlPhaseTiming();
@@ -128,10 +117,10 @@ public final class EpsilonEtlExecutor {
       configureStreams(module, request.captureOutput(), stdout, warnings, stderr);
       for (EtlModelConfiguration modelConfiguration : request.models()) {
         phaseStarted = System.nanoTime();
-        IModel model = loadModel(modelConfiguration);
+        LoadedEtlModel loadedModel = loadModel(modelConfiguration);
         phaseTiming.addModelLoad(modelConfiguration.readOnly(), System.nanoTime() - phaseStarted);
-        loadedModels.add(new LoadedEtlModel(modelConfiguration, model));
-        module.getContext().getModelRepository().addModel(model);
+        loadedModels.add(loadedModel);
+        module.getContext().getModelRepository().addModel(loadedModel.model());
       }
 
       configureTransformationState(module);
@@ -403,10 +392,10 @@ public final class EpsilonEtlExecutor {
    * Creates and loads an Epsilon EMF model from a model configuration.
    *
    * @param modelConfiguration model configuration to load
-   * @return loaded Epsilon model
+   * @return loaded model state
    * @throws EolModelLoadingException when Epsilon cannot load the model
    */
-  private IModel loadModel(EtlModelConfiguration modelConfiguration)
+  private LoadedEtlModel loadModel(EtlModelConfiguration modelConfiguration)
       throws EolModelLoadingException {
     EmfModel model = new EmfModel();
     StringProperties properties = new StringProperties();
@@ -415,18 +404,17 @@ public final class EpsilonEtlExecutor {
       properties.put(Model.PROPERTY_ALIASES, String.join(",", modelConfiguration.aliases()));
     }
     properties.put(Model.PROPERTY_READONLOAD, Boolean.toString(modelConfiguration.readOnLoad()));
-    properties.put(
-        Model.PROPERTY_STOREONDISPOSAL, Boolean.toString(modelConfiguration.storeOnDisposal()));
+    properties.put(Model.PROPERTY_STOREONDISPOSAL, "false");
     properties.put(Model.PROPERTY_READONLY, Boolean.toString(modelConfiguration.readOnly()));
     properties.put(EmfModel.PROPERTY_MODEL_URI, fileUri(modelConfiguration.modelFile()));
     properties.put(
         EmfModel.PROPERTY_FILE_BASED_METAMODEL_URI,
         joinFileUris(modelConfiguration.metamodelFiles()));
     properties.put(
-        EmfModel.PROPERTY_REUSE_UNMODIFIED_FILE_BASED_METAMODELS, Boolean.TRUE.toString());
+        EmfModel.PROPERTY_REUSE_UNMODIFIED_FILE_BASED_METAMODELS, Boolean.FALSE.toString());
     properties.put(EmfModel.PROPERTY_VALIDATE, Boolean.toString(modelConfiguration.validate()));
     model.load(properties);
-    return model;
+    return new LoadedEtlModel(modelConfiguration, model, model.getResource());
   }
 
   /**
@@ -771,21 +759,15 @@ public final class EpsilonEtlExecutor {
       }
       IModel model = loadedModel.model();
       try {
-        if (!model.store()) {
-          diagnostics.add(
-              EtlDiagnostic.error(
-                  ExecutionPhase.MODEL_STORING,
-                  request.moduleFile(),
-                  -1,
-                  -1,
-                  "Model '" + model.getName() + "' reported an unsuccessful store operation.",
-                  "The ETL transformation executed, but the target model was not persisted"
-                      + " successfully.",
-                  "Check the target path, file permissions, and whether the target model resource"
-                      + " is writable.",
-                  null));
+        Path target = loadedModel.configuration().modelFile().toAbsolutePath().normalize();
+        Path parent = target.getParent();
+        if (parent != null) {
+          Files.createDirectories(parent);
         }
-      } catch (RuntimeException ex) {
+        try (OutputStream output = Files.newOutputStream(target)) {
+          loadedModel.resource().save(output, Map.of());
+        }
+      } catch (Exception ex) {
         diagnostics.add(
             EtlDiagnostic.error(
                 ExecutionPhase.MODEL_STORING,
@@ -819,26 +801,6 @@ public final class EpsilonEtlExecutor {
   }
 
   /**
-   * Joins metamodel paths as comma-separated file URIs for Epsilon.
-   *
-   * @param paths metamodel paths
-   * @return comma-separated file URI list
-   */
-  private String joinFileUris(List<Path> paths) {
-    return paths.stream().map(this::fileUri).reduce((left, right) -> left + "," + right).orElse("");
-  }
-
-  /**
-   * Converts a filesystem path to an EMF file URI.
-   *
-   * @param path filesystem path
-   * @return normalized file URI string
-   */
-  private String fileUri(Path path) {
-    return URI.createFileURI(path.toAbsolutePath().normalize().toString()).toString();
-  }
-
-  /**
    * Redirects Epsilon output streams to bounded capture buffers when requested.
    *
    * @param module module whose streams should be configured
@@ -859,6 +821,14 @@ public final class EpsilonEtlExecutor {
     module.getContext().setOutputStream(new PrintStream(stdout, true, StandardCharsets.UTF_8));
     module.getContext().setWarningStream(new PrintStream(warnings, true, StandardCharsets.UTF_8));
     module.getContext().setErrorStream(new PrintStream(stderr, true, StandardCharsets.UTF_8));
+  }
+
+  private String joinFileUris(List<Path> paths) {
+    return paths.stream().map(this::fileUri).reduce((left, right) -> left + "," + right).orElse("");
+  }
+
+  private String fileUri(Path path) {
+    return URI.createFileURI(path.toAbsolutePath().normalize().toString()).toString();
   }
 
   /**
@@ -1018,7 +988,8 @@ public final class EpsilonEtlExecutor {
    * @param configuration original model configuration
    * @param model loaded Epsilon model
    */
-  private record LoadedEtlModel(EtlModelConfiguration configuration, IModel model) {}
+  private record LoadedEtlModel(
+      EtlModelConfiguration configuration, IModel model, Resource resource) {}
 
   /**
    * Runtime exception used internally to distinguish watchdog timeouts from Epsilon runtime

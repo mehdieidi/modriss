@@ -9,6 +9,7 @@ import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ArtifactIndexRecord;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.AuthSession;
+import io.mehdieidi.modless.platform.core.model.MdeJobIdempotencyRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobIndexRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
 import io.mehdieidi.modless.platform.core.model.ModelIndexRecord;
@@ -133,6 +134,9 @@ public final class TestPlatformStore implements PlatformStore {
     }
     if (key.startsWith("indexes/mde-jobs/")) {
       return MdeJobIndexRecord.class;
+    }
+    if (key.startsWith("indexes/mde-job-idempotency/")) {
+      return MdeJobIdempotencyRecord.class;
     }
     if (key.matches("projects/[^/]+/project\\.json")) {
       return ProjectRecord.class;

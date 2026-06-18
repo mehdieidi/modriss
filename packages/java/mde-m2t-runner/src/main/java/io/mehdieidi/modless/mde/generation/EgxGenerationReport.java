@@ -15,6 +15,7 @@ import java.util.Objects;
  * @param startedAt wall-clock start time
  * @param finishedAt wall-clock finish time
  * @param duration total wall-clock duration
+ * @param phaseTiming phase-level timing values
  * @param diagnostics diagnostics emitted during generation
  * @param generatedFiles generated files relative to the output directory
  * @param standardOutput captured standard output
@@ -28,6 +29,7 @@ public record EgxGenerationReport(
     Instant startedAt,
     Instant finishedAt,
     Duration duration,
+    EgxPhaseTiming phaseTiming,
     List<GenerationDiagnostic> diagnostics,
     List<Path> generatedFiles,
     String standardOutput,
@@ -42,6 +44,7 @@ public record EgxGenerationReport(
     Objects.requireNonNull(startedAt, "startedAt");
     Objects.requireNonNull(finishedAt, "finishedAt");
     Objects.requireNonNull(duration, "duration");
+    phaseTiming = phaseTiming == null ? new EgxPhaseTiming() : phaseTiming;
     diagnostics = diagnostics == null ? List.of() : List.copyOf(diagnostics);
     generatedFiles = generatedFiles == null ? List.of() : List.copyOf(generatedFiles);
     standardOutput = standardOutput == null ? "" : standardOutput;

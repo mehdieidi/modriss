@@ -3,6 +3,7 @@ package io.mehdieidi.modless.platform.core.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
+import io.mehdieidi.modless.platform.core.model.MdeJobIdempotencyRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobIndexRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobOperation;
 import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
@@ -16,17 +17,24 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Submits and tracks asynchronous MDE transformation and generation jobs. */
 public final class MdeJobService implements AutoCloseable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(MdeJobService.class);
 
   /** File repository used for job records and indexes. */
   private final PlatformStore store;
@@ -45,6 +53,12 @@ public final class MdeJobService implements AutoCloseable {
 
   /** Futures keyed by job id for cancellation and cleanup. */
   private final Map<String, Future<?>> runningJobs = new ConcurrentHashMap<>();
+
+  /** Per-project gates serialize overlapping MDE jobs until project versioning exists. */
+  private final Map<String, Semaphore> projectGates = new ConcurrentHashMap<>();
+
+  /** JVM-local locks that make duplicate idempotent submissions atomic in this service instance. */
+  private final Map<String, Object> idempotencyLocks = new ConcurrentHashMap<>();
 
   /**
    * Creates an MDE job service with a bounded worker pool.
@@ -101,8 +115,18 @@ public final class MdeJobService implements AutoCloseable {
    * @return queued job record
    */
   public MdeJobRecord submitCimToPim(UserRecord user, String sourceModelId, Long expectedRevision) {
+    return submitCimToPim(user, sourceModelId, expectedRevision, null);
+  }
+
+  public MdeJobRecord submitCimToPim(
+      UserRecord user, String sourceModelId, Long expectedRevision, String idempotencyKey) {
     return submit(
-        user, ModelLevel.CIM, sourceModelId, MdeJobOperation.CIM_TO_PIM, expectedRevision);
+        user,
+        ModelLevel.CIM,
+        sourceModelId,
+        MdeJobOperation.CIM_TO_PIM,
+        expectedRevision,
+        idempotencyKey);
   }
 
   /**
@@ -125,8 +149,18 @@ public final class MdeJobService implements AutoCloseable {
    * @return queued job record
    */
   public MdeJobRecord submitPimToPsm(UserRecord user, String sourceModelId, Long expectedRevision) {
+    return submitPimToPsm(user, sourceModelId, expectedRevision, null);
+  }
+
+  public MdeJobRecord submitPimToPsm(
+      UserRecord user, String sourceModelId, Long expectedRevision, String idempotencyKey) {
     return submit(
-        user, ModelLevel.PIM, sourceModelId, MdeJobOperation.PIM_TO_PSM, expectedRevision);
+        user,
+        ModelLevel.PIM,
+        sourceModelId,
+        MdeJobOperation.PIM_TO_PSM,
+        expectedRevision,
+        idempotencyKey);
   }
 
   /**
@@ -150,8 +184,38 @@ public final class MdeJobService implements AutoCloseable {
    */
   public MdeJobRecord submitPsmToArtifact(
       UserRecord user, String sourceModelId, Long expectedRevision) {
+    return submitPsmToArtifact(user, sourceModelId, expectedRevision, null);
+  }
+
+  public MdeJobRecord submitPsmToArtifact(
+      UserRecord user, String sourceModelId, Long expectedRevision, String idempotencyKey) {
     return submit(
-        user, ModelLevel.PSM, sourceModelId, MdeJobOperation.PSM_TO_ARTIFACT, expectedRevision);
+        user,
+        ModelLevel.PSM,
+        sourceModelId,
+        MdeJobOperation.PSM_TO_ARTIFACT,
+        expectedRevision,
+        idempotencyKey);
+  }
+
+  /**
+   * Submits asynchronous validation of a stored model.
+   *
+   * @param user requesting user
+   * @param level stored model level
+   * @param sourceModelId source model id
+   * @param expectedRevision expected source revision, or {@code null}
+   * @param idempotencyKey optional idempotency key
+   * @return queued validation job
+   */
+  public MdeJobRecord submitValidation(
+      UserRecord user,
+      ModelLevel level,
+      String sourceModelId,
+      Long expectedRevision,
+      String idempotencyKey) {
+    return submit(
+        user, level, sourceModelId, MdeJobOperation.VALIDATE, expectedRevision, idempotencyKey);
   }
 
   /**
@@ -175,6 +239,7 @@ public final class MdeJobService implements AutoCloseable {
    * @return terminal or unchanged job record
    */
   public MdeJobRecord cancel(UserRecord user, String id) {
+    long cancelStarted = System.nanoTime();
     MdeJobRecord job = get(user, id);
     ProjectRecord project = projectService.get(user, job.projectId());
     projectService.requireEditor(project, user.id());
@@ -187,6 +252,12 @@ public final class MdeJobService implements AutoCloseable {
     if (future != null) {
       future.cancel(true);
     }
+    LOGGER.info(
+        "mde_job_cancelled jobId={} projectId={} operation={} status={}",
+        job.id(),
+        job.projectId(),
+        job.operation(),
+        job.status());
     return write(
         status(
             job,
@@ -195,8 +266,45 @@ public final class MdeJobService implements AutoCloseable {
             job.resultModelId(),
             job.resultArtifactId(),
             List.of("Job was cancelled."),
+            job.validationResult(),
+            mergeTimings(job.timings(), Map.of("cancel.requestMs", millisSince(cancelStarted))),
             job.startedAt(),
             Instant.now()));
+  }
+
+  /**
+   * Appends controller-level timing data after a submission response has been prepared.
+   *
+   * @param jobId job identifier
+   * @param timings timing data in milliseconds
+   */
+  public void appendTimings(String jobId, Map<String, Long> timings) {
+    if (timings == null || timings.isEmpty()) {
+      return;
+    }
+    MdeJobRecord job = find(jobId);
+    write(
+        new MdeJobRecord(
+            job.id(),
+            job.projectId(),
+            job.userId(),
+            job.sourceModelId(),
+            job.sourceLevel(),
+            job.sourceRevision(),
+            job.sourceModelHash(),
+            job.operation(),
+            job.status(),
+            job.progressPercent(),
+            job.resultModelId(),
+            job.resultArtifactId(),
+            job.diagnostics(),
+            job.validationResult(),
+            mergeTimings(job.timings(), timings),
+            job.idempotencyKey(),
+            job.fingerprint(),
+            job.createdAt(),
+            job.startedAt(),
+            job.finishedAt()));
   }
 
   /**
@@ -214,14 +322,78 @@ public final class MdeJobService implements AutoCloseable {
       ModelLevel sourceLevel,
       String sourceModelId,
       MdeJobOperation operation,
-      Long expectedRevision) {
+      Long expectedRevision,
+      String idempotencyKey) {
+    long submitStarted = System.nanoTime();
+    Map<String, Long> timings = new LinkedHashMap<>();
+    long phaseStarted = System.nanoTime();
     ModelRecord source = modelService.get(user, sourceLevel, sourceModelId);
+    timings.put("submit.modelLookupMs", millisSince(phaseStarted));
+    phaseStarted = System.nanoTime();
     if (expectedRevision != null && expectedRevision.longValue() != source.revision()) {
       throw new PlatformException(409, "Source model was modified by another operation.");
     }
+    timings.put("submit.revisionCheckMs", millisSince(phaseStarted));
+    phaseStarted = System.nanoTime();
     ProjectRecord project = projectService.get(user, source.projectId());
     projectService.requireEditor(project, user.id());
+    timings.put("submit.projectAccessMs", millisSince(phaseStarted));
+    phaseStarted = System.nanoTime();
+    String sourceHash = hash(source.modelJson());
+    timings.put("submit.sourceHashMs", millisSince(phaseStarted));
+    phaseStarted = System.nanoTime();
+    String fingerprint = fingerprint(user, operation, source, sourceHash, expectedRevision);
+    timings.put("submit.fingerprintMs", millisSince(phaseStarted));
+    phaseStarted = System.nanoTime();
+    String normalizedIdempotencyKey = normalizeIdempotencyKey(idempotencyKey);
+    timings.put("submit.idempotencyKeyNormalizeMs", millisSince(phaseStarted));
+    if (normalizedIdempotencyKey != null) {
+      String scopeHash = idempotencyScope(user.id(), normalizedIdempotencyKey);
+      Object lock = idempotencyLocks.computeIfAbsent(scopeHash, ignored -> new Object());
+      synchronized (lock) {
+        phaseStarted = System.nanoTime();
+        MdeJobRecord replay = replayOrConflict(scopeHash, source.projectId(), fingerprint);
+        timings.put("submit.idempotencyLookupMs", millisSince(phaseStarted));
+        if (replay != null) {
+          LOGGER.info(
+              "mde_job_idempotency_replay jobId={} projectId={} operation={} timings={}",
+              replay.id(),
+              replay.projectId(),
+              replay.operation(),
+              timings);
+          return replay;
+        }
+        timings.put("submit.totalMs", millisSince(submitStarted));
+        return createAndEnqueue(
+            user,
+            source,
+            operation,
+            expectedRevision,
+            sourceHash,
+            normalizedIdempotencyKey,
+            scopeHash,
+            fingerprint,
+            timings);
+      }
+    }
+    timings.put("submit.totalMs", millisSince(submitStarted));
+    return createAndEnqueue(
+        user, source, operation, expectedRevision, sourceHash, null, null, fingerprint, timings);
+  }
+
+  private MdeJobRecord createAndEnqueue(
+      UserRecord user,
+      ModelRecord source,
+      MdeJobOperation operation,
+      Long expectedRevision,
+      String sourceHash,
+      String idempotencyKey,
+      String idempotencyScopeHash,
+      String fingerprint,
+      Map<String, Long> submitTimings) {
     Instant now = Instant.now();
+    Map<String, Long> timings =
+        new LinkedHashMap<>(submitTimings == null ? Map.of() : submitTimings);
     MdeJobRecord job =
         new MdeJobRecord(
             UUID.randomUUID().toString(),
@@ -230,21 +402,72 @@ public final class MdeJobService implements AutoCloseable {
             source.id(),
             source.level(),
             source.revision(),
-            hash(source.modelJson()),
+            sourceHash,
             operation,
             MdeJobStatus.QUEUED,
             0,
             null,
             null,
             List.of(),
+            null,
+            timings,
+            idempotencyKey,
+            fingerprint,
             now,
             null,
             null);
+    long phaseStarted = System.nanoTime();
     write(job);
+    long persistMs = millisSince(phaseStarted);
+    timings = mergeTimings(job.timings(), Map.of("submit.jobPersistMs", persistMs));
+    job =
+        new MdeJobRecord(
+            job.id(),
+            job.projectId(),
+            job.userId(),
+            job.sourceModelId(),
+            job.sourceLevel(),
+            job.sourceRevision(),
+            job.sourceModelHash(),
+            job.operation(),
+            job.status(),
+            job.progressPercent(),
+            job.resultModelId(),
+            job.resultArtifactId(),
+            job.diagnostics(),
+            job.validationResult(),
+            timings,
+            job.idempotencyKey(),
+            job.fingerprint(),
+            job.createdAt(),
+            job.startedAt(),
+            job.finishedAt());
+    write(job);
+    LOGGER.info(
+        "mde_job_submitted jobId={} projectId={} userId={} operation={} sourceModelId={} "
+            + "sourceRevision={} idempotent={} queueDepth={} timings={}",
+        job.id(),
+        job.projectId(),
+        job.userId(),
+        job.operation(),
+        job.sourceModelId(),
+        job.sourceRevision(),
+        job.idempotencyKey() != null,
+        executor.getQueue().size(),
+        timings);
+    if (idempotencyScopeHash != null) {
+      phaseStarted = System.nanoTime();
+      writeIdempotency(idempotencyScopeHash, job, fingerprint);
+      appendTimings(job.id(), Map.of("submit.idempotencyPersistMs", millisSince(phaseStarted)));
+      job = find(job.id());
+    }
     try {
-      Future<?> future = executor.submit(() -> run(job.id(), user));
-      runningJobs.put(job.id(), future);
-    } catch (RuntimeException ex) {
+      phaseStarted = System.nanoTime();
+      String queuedJobId = job.id();
+      Future<?> future = executor.submit(() -> run(queuedJobId, user));
+      runningJobs.put(queuedJobId, future);
+      appendTimings(queuedJobId, Map.of("submit.enqueueMs", millisSince(phaseStarted)));
+    } catch (RejectedExecutionException ex) {
       write(
           status(
               job,
@@ -254,7 +477,15 @@ public final class MdeJobService implements AutoCloseable {
               null,
               List.of("Job queue is full."),
               null,
+              mergeTimings(job.timings(), Map.of("submit.queueRejectedMs", 0L)),
+              null,
               Instant.now()));
+      LOGGER.warn(
+          "mde_job_rejected jobId={} projectId={} operation={} reason=queue_full queueDepth={}",
+          job.id(),
+          job.projectId(),
+          job.operation(),
+          executor.getQueue().size());
       throw new PlatformException(503, "MDE job queue is full. Retry later.");
     }
     return job;
@@ -271,13 +502,45 @@ public final class MdeJobService implements AutoCloseable {
     if (job.status() == MdeJobStatus.CANCELLED) {
       return;
     }
-    write(status(job, MdeJobStatus.RUNNING, 10, null, null, List.of(), Instant.now(), null));
+    Semaphore gate = projectGates.computeIfAbsent(job.projectId(), ignored -> new Semaphore(1));
+    Instant runStartedAt = Instant.now();
+    boolean acquired = false;
     try {
+      gate.acquire();
+      acquired = true;
+      MdeJobRecord queued = find(jobId);
+      if (queued.status() == MdeJobStatus.CANCELLED) {
+        return;
+      }
+      Map<String, Long> startTimings =
+          mergeTimings(
+              queued.timings(),
+              Map.of("worker.queueWaitMs", elapsedMs(queued.createdAt(), runStartedAt)));
+      write(
+          status(
+              queued,
+              MdeJobStatus.RUNNING,
+              10,
+              null,
+              null,
+              List.of(),
+              null,
+              startTimings,
+              runStartedAt,
+              null));
+      LOGGER.info(
+          "mde_job_started jobId={} projectId={} operation={} queueWaitMs={}",
+          queued.id(),
+          queued.projectId(),
+          queued.operation(),
+          startTimings.getOrDefault("worker.queueWaitMs", 0L));
       MdeJobRecord latest = find(jobId);
+      long workerStarted = System.nanoTime();
       switch (latest.operation()) {
         case CIM_TO_PIM -> {
           ModelRecord model =
               transformationService.cimToPim(user, latest.sourceModelId(), latest.sourceRevision());
+          Map<String, Long> timings = finishTimings(latest, workerStarted);
           write(
               status(
                   latest,
@@ -286,12 +549,16 @@ public final class MdeJobService implements AutoCloseable {
                   model.id(),
                   null,
                   List.of(),
+                  null,
+                  timings,
                   latest.startedAt(),
                   Instant.now()));
+          logFinished(latest, MdeJobStatus.SUCCEEDED, timings);
         }
         case PIM_TO_PSM -> {
           ModelRecord model =
               transformationService.pimToPsm(user, latest.sourceModelId(), latest.sourceRevision());
+          Map<String, Long> timings = finishTimings(latest, workerStarted);
           write(
               status(
                   latest,
@@ -300,13 +567,17 @@ public final class MdeJobService implements AutoCloseable {
                   model.id(),
                   null,
                   List.of(),
+                  null,
+                  timings,
                   latest.startedAt(),
                   Instant.now()));
+          logFinished(latest, MdeJobStatus.SUCCEEDED, timings);
         }
         case PSM_TO_ARTIFACT -> {
           ArtifactRecord artifact =
               transformationService.psmToArtifact(
                   user, latest.sourceModelId(), latest.sourceRevision());
+          Map<String, Long> timings = finishTimings(latest, workerStarted);
           write(
               status(
                   latest,
@@ -315,12 +586,57 @@ public final class MdeJobService implements AutoCloseable {
                   null,
                   artifact.id(),
                   List.of(),
+                  null,
+                  timings,
                   latest.startedAt(),
                   Instant.now()));
+          logFinished(latest, MdeJobStatus.SUCCEEDED, timings);
         }
-        case VALIDATE ->
-            throw new PlatformException(400, "Validation jobs are not supported by this endpoint.");
+        case VALIDATE -> {
+          ModelService.ValidationResult validation =
+              modelService.validate(user, latest.sourceLevel(), latest.sourceModelId());
+          Map<String, Long> timings =
+              finishTimings(latest, workerStarted, ModelService.consumeLastValidationTimings());
+          write(
+              status(
+                  latest,
+                  validation.valid() ? MdeJobStatus.SUCCEEDED : MdeJobStatus.FAILED,
+                  100,
+                  null,
+                  null,
+                  validation.issues().stream()
+                      .filter(issue -> "ERROR".equals(issue.severity()))
+                      .map(ModelService.ValidationIssue::message)
+                      .limit(10)
+                      .toList(),
+                  validation,
+                  timings,
+                  latest.startedAt(),
+                  Instant.now()));
+          logFinished(
+              latest, validation.valid() ? MdeJobStatus.SUCCEEDED : MdeJobStatus.FAILED, timings);
+        }
       }
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      MdeJobRecord cancelled = find(jobId);
+      write(
+          status(
+              cancelled,
+              MdeJobStatus.CANCELLED,
+              100,
+              cancelled.resultModelId(),
+              cancelled.resultArtifactId(),
+              List.of("Job was cancelled."),
+              cancelled.validationResult(),
+              cancelled.timings(),
+              cancelled.startedAt(),
+              Instant.now()));
+      LOGGER.info(
+          "mde_job_cancelled jobId={} projectId={} operation={} running=true",
+          cancelled.id(),
+          cancelled.projectId(),
+          cancelled.operation());
     } catch (Exception ex) {
       MdeJobRecord failed = find(jobId);
       if (failed.status() == MdeJobStatus.CANCELLED) {
@@ -334,9 +650,22 @@ public final class MdeJobService implements AutoCloseable {
               failed.resultModelId(),
               failed.resultArtifactId(),
               List.of(message(ex)),
+              failed.validationResult(),
+              mergeTimings(
+                  failed.timings(),
+                  Map.of("worker.totalMs", elapsedMs(failed.startedAt(), Instant.now()))),
               failed.startedAt(),
               Instant.now()));
+      LOGGER.warn(
+          "mde_job_failed jobId={} projectId={} operation={} message={}",
+          failed.id(),
+          failed.projectId(),
+          failed.operation(),
+          message(ex));
     } finally {
+      if (acquired) {
+        gate.release();
+      }
       runningJobs.remove(jobId);
     }
   }
@@ -385,6 +714,8 @@ public final class MdeJobService implements AutoCloseable {
       String resultModelId,
       String resultArtifactId,
       List<String> diagnostics,
+      Object validationResult,
+      Map<String, Long> timings,
       Instant startedAt,
       Instant finishedAt) {
     return new MdeJobRecord(
@@ -401,9 +732,129 @@ public final class MdeJobService implements AutoCloseable {
         resultModelId,
         resultArtifactId,
         diagnostics,
+        validationResult,
+        timings,
+        job.idempotencyKey(),
+        job.fingerprint(),
         job.createdAt(),
         startedAt == null ? job.startedAt() : startedAt,
         finishedAt);
+  }
+
+  private MdeJobRecord replayOrConflict(String scopeHash, String projectId, String fingerprint) {
+    return store
+        .read(idempotencyPath(scopeHash), MdeJobIdempotencyRecord.class)
+        .map(
+            record -> {
+              if (!fingerprint.equals(record.fingerprint())) {
+                throw new PlatformException(
+                    409, "Idempotency-Key was already used for a different MDE request.");
+              }
+              return store.require(
+                  jobPath(record.projectId(), record.jobId()),
+                  MdeJobRecord.class,
+                  "MDE job not found.");
+            })
+        .orElse(null);
+  }
+
+  private void writeIdempotency(String scopeHash, MdeJobRecord job, String fingerprint) {
+    store.write(
+        idempotencyPath(scopeHash),
+        new MdeJobIdempotencyRecord(scopeHash, job.id(), job.projectId(), fingerprint));
+  }
+
+  private String normalizeIdempotencyKey(String idempotencyKey) {
+    if (idempotencyKey == null || idempotencyKey.isBlank()) {
+      return null;
+    }
+    String trimmed = idempotencyKey.trim();
+    if (trimmed.length() > 256) {
+      throw new PlatformException(400, "Idempotency-Key is too long.");
+    }
+    return trimmed;
+  }
+
+  private String fingerprint(
+      UserRecord user,
+      MdeJobOperation operation,
+      ModelRecord source,
+      String sourceHash,
+      Long expectedRevision) {
+    return hashText(
+        user.id()
+            + "\n"
+            + operation
+            + "\n"
+            + source.projectId()
+            + "\n"
+            + source.id()
+            + "\n"
+            + source.level()
+            + "\n"
+            + source.revision()
+            + "\n"
+            + sourceHash
+            + "\n"
+            + String.valueOf(expectedRevision));
+  }
+
+  private String idempotencyScope(String userId, String idempotencyKey) {
+    return hashText(userId + "\n" + idempotencyKey);
+  }
+
+  private Map<String, Long> finishTimings(MdeJobRecord latest, long workerStarted) {
+    return finishTimings(latest, workerStarted, TransformationService.consumeLastTimings());
+  }
+
+  private Map<String, Long> finishTimings(
+      MdeJobRecord latest, long workerStarted, Map<String, Long> operationTimings) {
+    return mergeTimings(
+        mergeTimings(latest.timings(), operationTimings),
+        Map.of("worker.totalMs", millisSince(workerStarted)));
+  }
+
+  private Map<String, Long> mergeTimings(Map<String, Long> left, Map<String, Long> right) {
+    java.util.LinkedHashMap<String, Long> merged = new java.util.LinkedHashMap<>();
+    if (left != null) {
+      merged.putAll(left);
+    }
+    if (right != null) {
+      merged.putAll(right);
+    }
+    return Map.copyOf(merged);
+  }
+
+  private long elapsedMs(Instant start, Instant end) {
+    if (start == null || end == null) {
+      return 0L;
+    }
+    return Math.max(0L, java.time.Duration.between(start, end).toMillis());
+  }
+
+  private long millisSince(long startedNanos) {
+    return Math.max(0L, (System.nanoTime() - startedNanos) / 1_000_000L);
+  }
+
+  private void logFinished(MdeJobRecord job, MdeJobStatus status, Map<String, Long> timings) {
+    LOGGER.info(
+        "mde_job_finished jobId={} projectId={} operation={} status={} controllerMs={} "
+            + "submitMs={} queueWaitMs={} workerMs={} epsilonMs={} egxMs={} validationMs={} "
+            + "dbMs={} timings={}",
+        job.id(),
+        job.projectId(),
+        job.operation(),
+        status,
+        timings.getOrDefault("controller.acceptMs", 0L),
+        timings.getOrDefault("submit.totalMs", 0L),
+        timings.getOrDefault("worker.queueWaitMs", 0L),
+        timings.getOrDefault("worker.totalMs", 0L),
+        timings.getOrDefault("epsilon.totalMs", 0L),
+        timings.getOrDefault("egx.totalMs", 0L),
+        timings.getOrDefault("validation.totalMs", 0L),
+        timings.getOrDefault("java.generatedModelPersistenceMs", 0L)
+            + timings.getOrDefault("java.artifactPersistenceMs", 0L),
+        timings);
   }
 
   /**
@@ -419,6 +870,18 @@ public final class MdeJobService implements AutoCloseable {
           .formatHex(digest.digest(store.objectMapper().writeValueAsBytes(modelJson)));
     } catch (Exception ex) {
       throw new PlatformException(500, "Could not hash source model.");
+    }
+  }
+
+  private String hashText(String value) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      return HexFormat.of()
+          .formatHex(
+              digest.digest(
+                  String.valueOf(value).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (Exception ex) {
+      throw new PlatformException(500, "Could not hash MDE request.");
     }
   }
 
@@ -454,6 +917,10 @@ public final class MdeJobService implements AutoCloseable {
    */
   private Path jobIndexPath(String id) {
     return Path.of("indexes", "mde-jobs", id + ".json");
+  }
+
+  private Path idempotencyPath(String scopeHash) {
+    return Path.of("indexes", "mde-job-idempotency", scopeHash + ".json");
   }
 
   /** Stops worker threads when the service is closed. */

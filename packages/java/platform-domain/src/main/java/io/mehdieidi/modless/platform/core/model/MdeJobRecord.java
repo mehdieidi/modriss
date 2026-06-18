@@ -2,6 +2,7 @@ package io.mehdieidi.modless.platform.core.model;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Persisted state for an asynchronous MDE transformation or generation job.
@@ -19,6 +20,10 @@ import java.util.List;
  * @param resultModelId generated model identifier, when applicable
  * @param resultArtifactId generated artifact identifier, when applicable
  * @param diagnostics user-facing job diagnostics
+ * @param validationResult stored validation result payload, when applicable
+ * @param timings phase and lifecycle timings in milliseconds
+ * @param idempotencyKey optional caller-supplied idempotency key
+ * @param fingerprint request fingerprint bound to the idempotency key
  * @param createdAt submission timestamp
  * @param startedAt execution start timestamp, when started
  * @param finishedAt completion timestamp, when terminal
@@ -37,6 +42,10 @@ public record MdeJobRecord(
     String resultModelId,
     String resultArtifactId,
     List<String> diagnostics,
+    Object validationResult,
+    Map<String, Long> timings,
+    String idempotencyKey,
+    String fingerprint,
     Instant createdAt,
     Instant startedAt,
     Instant finishedAt) {
@@ -44,5 +53,50 @@ public record MdeJobRecord(
   /** Defensively copies diagnostics and treats a missing list as empty. */
   public MdeJobRecord {
     diagnostics = diagnostics == null ? List.of() : List.copyOf(diagnostics);
+    timings = timings == null ? Map.of() : Map.copyOf(timings);
+  }
+
+  /**
+   * Backward-compatible constructor for stored records created before timing and idempotency were
+   * introduced.
+   */
+  public MdeJobRecord(
+      String id,
+      String projectId,
+      String userId,
+      String sourceModelId,
+      ModelLevel sourceLevel,
+      long sourceRevision,
+      String sourceModelHash,
+      MdeJobOperation operation,
+      MdeJobStatus status,
+      int progressPercent,
+      String resultModelId,
+      String resultArtifactId,
+      List<String> diagnostics,
+      Instant createdAt,
+      Instant startedAt,
+      Instant finishedAt) {
+    this(
+        id,
+        projectId,
+        userId,
+        sourceModelId,
+        sourceLevel,
+        sourceRevision,
+        sourceModelHash,
+        operation,
+        status,
+        progressPercent,
+        resultModelId,
+        resultArtifactId,
+        diagnostics,
+        null,
+        Map.of(),
+        null,
+        null,
+        createdAt,
+        startedAt,
+        finishedAt);
   }
 }

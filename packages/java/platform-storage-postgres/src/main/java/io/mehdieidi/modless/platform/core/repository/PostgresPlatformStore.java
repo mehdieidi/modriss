@@ -10,6 +10,7 @@ import io.mehdieidi.modless.platform.core.PlatformException;
 import io.mehdieidi.modless.platform.core.model.ArtifactIndexRecord;
 import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.AuthSession;
+import io.mehdieidi.modless.platform.core.model.MdeJobIdempotencyRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobIndexRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobOperation;
 import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
@@ -132,6 +133,13 @@ public final class PostgresPlatformStore implements PlatformStore {
               id(key, key.length - 1))
           .orElse(null);
     }
+    if (type == MdeJobIdempotencyRecord.class) {
+      return maybeOne(
+              "SELECT * FROM mde_job_idempotency WHERE scope_hash = ?",
+              this::jobIdempotency,
+              id(key, key.length - 1))
+          .orElse(null);
+    }
     throw unsupported(path(key), type);
   }
 
@@ -150,6 +158,8 @@ public final class PostgresPlatformStore implements PlatformStore {
         writeArtifact(record);
       } else if (value instanceof MdeJobRecord record) {
         writeJob(record);
+      } else if (value instanceof MdeJobIdempotencyRecord record) {
+        writeJobIdempotency(record);
       } else if (value instanceof StagedImportRecord record) {
         writeStagedImport(record);
       } else if (value instanceof ModelIndexRecord
@@ -443,11 +453,14 @@ public final class PostgresPlatformStore implements PlatformStore {
         status -> {
           jdbc.update(
               """
-              INSERT INTO mde_jobs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              INSERT INTO mde_jobs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb,
+                ?::jsonb, ?, ?)
               ON CONFLICT (id) DO UPDATE SET status=EXCLUDED.status,
                 progress_percent=EXCLUDED.progress_percent,
                 result_model_id=EXCLUDED.result_model_id,
                 result_artifact_id=EXCLUDED.result_artifact_id,
+                validation_result=EXCLUDED.validation_result,
+                timings=EXCLUDED.timings,
                 started_at=EXCLUDED.started_at, finished_at=EXCLUDED.finished_at
               """,
               r.id(),
@@ -464,7 +477,11 @@ public final class PostgresPlatformStore implements PlatformStore {
               r.resultArtifactId(),
               timestamp(r.createdAt()),
               timestamp(r.startedAt()),
-              timestamp(r.finishedAt()));
+              timestamp(r.finishedAt()),
+              json(r.validationResult()),
+              json(r.timings()),
+              r.idempotencyKey(),
+              r.fingerprint());
           jdbc.update("DELETE FROM mde_job_diagnostics WHERE job_id = ?", r.id());
           for (int i = 0; i < r.diagnostics().size(); i++) {
             jdbc.update(
@@ -474,6 +491,27 @@ public final class PostgresPlatformStore implements PlatformStore {
                 r.diagnostics().get(i));
           }
         });
+  }
+
+  private void writeJobIdempotency(MdeJobIdempotencyRecord r) {
+    jdbc.update(
+        """
+        INSERT INTO mde_job_idempotency VALUES (?, ?, ?, ?)
+        ON CONFLICT (scope_hash) DO UPDATE SET job_id=EXCLUDED.job_id,
+          project_id=EXCLUDED.project_id, fingerprint=EXCLUDED.fingerprint
+        """,
+        r.scopeHash(),
+        r.jobId(),
+        r.projectId(),
+        r.fingerprint());
+  }
+
+  private MdeJobIdempotencyRecord jobIdempotency(ResultSet rs, int row) throws SQLException {
+    return new MdeJobIdempotencyRecord(
+        rs.getString("scope_hash"),
+        rs.getString("job_id"),
+        rs.getString("project_id"),
+        rs.getString("fingerprint"));
   }
 
   private UserRecord user(ResultSet rs, int row) throws SQLException {
@@ -581,6 +619,10 @@ public final class PostgresPlatformStore implements PlatformStore {
         rs.getString("result_model_id"),
         rs.getString("result_artifact_id"),
         diagnostics,
+        nullableTree(rs.getString("validation_result")),
+        longMap(rs.getString("timings")),
+        rs.getString("idempotency_key"),
+        rs.getString("fingerprint"),
         instant(rs, "created_at"),
         instant(rs, "started_at"),
         instant(rs, "finished_at"));
@@ -656,6 +698,9 @@ public final class PostgresPlatformStore implements PlatformStore {
     if (key[0].equals("model-imports")) {
       return StagedImportRecord.class;
     }
+    if (key.length > 1 && key[0].equals("indexes") && key[1].equals("mde-job-idempotency")) {
+      return MdeJobIdempotencyRecord.class;
+    }
     throw unsupported(path(key), Object.class);
   }
 
@@ -681,6 +726,23 @@ public final class PostgresPlatformStore implements PlatformStore {
     } catch (Exception ex) {
       throw new PlatformException(500, "Could not decode stored data.");
     }
+  }
+
+  private JsonNode nullableTree(String value) {
+    if (value == null || value.isBlank() || "null".equals(value)) {
+      return null;
+    }
+    return tree(value);
+  }
+
+  private Map<String, Long> longMap(String value) {
+    if (value == null || value.isBlank() || "null".equals(value)) {
+      return Map.of();
+    }
+    JsonNode node = tree(value);
+    Map<String, Long> values = new LinkedHashMap<>();
+    node.fields().forEachRemaining(entry -> values.put(entry.getKey(), entry.getValue().asLong()));
+    return values;
   }
 
   private Instant instant(ResultSet rs, String column) throws SQLException {

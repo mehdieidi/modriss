@@ -45,13 +45,6 @@ public final class EpsilonEvlValidator {
   /** Default maximum captured bytes per Epsilon output stream. */
   private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
 
-  /**
-   * Serializes Epsilon EVL execution within a JVM. The Epsilon engine keeps mutable global state
-   * that is not safe under concurrent module execution.
-   */
-  private static final Object EPSILON_RUNTIME_MONITOR =
-      "io.mehdieidi.modless.mde.EPSILON_RUNTIME".intern();
-
   /** Attribute names that can be copied into diagnostics without exposing secrets. */
   private static final Set<String> SAFE_DIAGNOSTIC_ATTRIBUTES =
       Set.of(
@@ -93,13 +86,6 @@ public final class EpsilonEvlValidator {
    *     structural validation fails
    */
   public EvlValidationReport validate(EvlValidationRequest request) throws EvlValidationException {
-    synchronized (EPSILON_RUNTIME_MONITOR) {
-      return validateInternal(request);
-    }
-  }
-
-  private EvlValidationReport validateInternal(EvlValidationRequest request)
-      throws EvlValidationException {
     Instant startedAt = Instant.now();
     List<EvlDiagnostic> diagnostics = new ArrayList<>();
     List<EvlModuleReport> moduleReports = new ArrayList<>();

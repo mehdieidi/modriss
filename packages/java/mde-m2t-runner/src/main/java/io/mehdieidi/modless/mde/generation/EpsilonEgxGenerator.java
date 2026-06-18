@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.mde.generation;
 
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -9,26 +10,35 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EcorePackage;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.epsilon.common.module.ModuleElement;
 import org.eclipse.epsilon.common.parse.problem.ParseProblem;
-import org.eclipse.epsilon.common.util.StringProperties;
 import org.eclipse.epsilon.egl.EgxModule;
-import org.eclipse.epsilon.emc.emf.EmfModel;
+import org.eclipse.epsilon.emc.emf.InMemoryEmfModel;
 import org.eclipse.epsilon.eol.exceptions.EolRuntimeException;
 import org.eclipse.epsilon.eol.exceptions.models.EolModelLoadingException;
 import org.eclipse.epsilon.eol.models.IModel;
-import org.eclipse.epsilon.eol.models.Model;
 
 /**
- * Executes Epsilon EGX modules against file-backed EMF models and returns a structured generation
- * report.
+ * Executes Epsilon EGX modules against isolated in-memory EMF resources and returns a structured
+ * generation report.
  */
 public final class EpsilonEgxGenerator {
 
@@ -37,13 +47,6 @@ public final class EpsilonEgxGenerator {
 
   /** Default maximum captured bytes per Epsilon output stream. */
   private static final int DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024;
-
-  /**
-   * Serializes Epsilon EGX execution within a JVM. The Epsilon engine keeps mutable global state
-   * that is not safe under concurrent module execution.
-   */
-  private static final Object EPSILON_RUNTIME_MONITOR =
-      "io.mehdieidi.modless.mde.EPSILON_RUNTIME".intern();
 
   /** Optional execution timeout; {@code null} disables the watchdog. */
   private final Duration executionTimeout;
@@ -81,14 +84,9 @@ public final class EpsilonEgxGenerator {
    *     finalization fails
    */
   public EgxGenerationReport generate(EgxGenerationRequest request) throws EgxGenerationException {
-    synchronized (EPSILON_RUNTIME_MONITOR) {
-      return generateInternal(request);
-    }
-  }
-
-  private EgxGenerationReport generateInternal(EgxGenerationRequest request)
-      throws EgxGenerationException {
     Instant startedAt = Instant.now();
+    long startedNanos = System.nanoTime();
+    EgxPhaseTiming phaseTiming = new EgxPhaseTiming();
     List<GenerationDiagnostic> diagnostics = new ArrayList<>();
     BoundedByteArrayOutputStream stdout = new BoundedByteArrayOutputStream(maxCapturedOutputBytes);
     BoundedByteArrayOutputStream warnings =
@@ -98,8 +96,13 @@ public final class EpsilonEgxGenerator {
     EgxModule module = null;
 
     try {
+      long phaseStarted = System.nanoTime();
       validateRequest(request, diagnostics);
-      failIfDiagnostics(request, startedAt, diagnostics, stdout, warnings, stderr, null);
+      phaseTiming.addValidation(System.nanoTime() - phaseStarted);
+      failIfDiagnostics(
+          request, startedAt, phaseTiming, diagnostics, stdout, warnings, stderr, null);
+
+      phaseStarted = System.nanoTime();
       Files.createDirectories(request.outputDirectory());
 
       PreludeInjectingTemplateFactory factory =
@@ -108,13 +111,17 @@ public final class EpsilonEgxGenerator {
               request.moduleFile().toAbsolutePath().getParent().resolve("lib"));
       factory.setTemplateRoot(request.templateRoot().toAbsolutePath().toUri().toString());
       module = new EgxModule(factory);
+      phaseTiming.addTemplateSetup(System.nanoTime() - phaseStarted);
 
+      phaseStarted = System.nanoTime();
       boolean parsed = parseModule(request, module, diagnostics);
+      phaseTiming.addParse(System.nanoTime() - phaseStarted);
       if (!parsed || diagnostics.stream().anyMatch(d -> d.severity() == GenerationSeverity.ERROR)) {
         throw failure(
             "EGX module could not be parsed.",
             request,
             startedAt,
+            phaseTiming,
             diagnostics,
             stdout,
             warnings,
@@ -125,16 +132,31 @@ public final class EpsilonEgxGenerator {
 
       configureStreams(module, request.captureOutput(), stdout, warnings, stderr);
       for (GenerationModelConfiguration modelConfiguration : request.models()) {
+        phaseStarted = System.nanoTime();
         IModel model = loadModel(modelConfiguration);
+        phaseTiming.addSourceModelLoad(System.nanoTime() - phaseStarted);
         loadedModels.add(model);
         module.getContext().getModelRepository().addModel(model);
       }
 
+      phaseStarted = System.nanoTime();
       executeModule(module);
+      phaseTiming.addExecute(System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
       normalizeGeneratedTextFiles(request.outputDirectory());
+      phaseTiming.addFileNormalization(System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
       finalizeGeneratedTraceFiles(request);
+      phaseTiming.addTraceFinalization(System.nanoTime() - phaseStarted);
       return report(
-          GenerationStatus.SUCCEEDED, request, startedAt, diagnostics, stdout, warnings, stderr);
+          GenerationStatus.SUCCEEDED,
+          request,
+          startedAt,
+          phaseTiming,
+          diagnostics,
+          stdout,
+          warnings,
+          stderr);
     } catch (EgxGenerationException ex) {
       throw ex;
     } catch (EolModelLoadingException ex) {
@@ -152,6 +174,7 @@ public final class EpsilonEgxGenerator {
           "EGX model loading failed.",
           request,
           startedAt,
+          phaseTiming,
           diagnostics,
           stdout,
           warnings,
@@ -160,7 +183,15 @@ public final class EpsilonEgxGenerator {
     } catch (EolRuntimeException ex) {
       diagnostics.add(runtimeDiagnostic(ex, request.moduleFile()));
       throw failure(
-          "EGX generation failed.", request, startedAt, diagnostics, stdout, warnings, stderr, ex);
+          "EGX generation failed.",
+          request,
+          startedAt,
+          phaseTiming,
+          diagnostics,
+          stdout,
+          warnings,
+          stderr,
+          ex);
     } catch (EpsilonExecutionTimeoutException ex) {
       diagnostics.add(
           GenerationDiagnostic.error(
@@ -177,6 +208,7 @@ public final class EpsilonEgxGenerator {
           "EGX generation timed out.",
           request,
           startedAt,
+          phaseTiming,
           diagnostics,
           stdout,
           warnings,
@@ -198,12 +230,14 @@ public final class EpsilonEgxGenerator {
           "EGX generation failed unexpectedly.",
           request,
           startedAt,
+          phaseTiming,
           diagnostics,
           stdout,
           warnings,
           stderr,
           ex);
     } finally {
+      long disposeStarted = System.nanoTime();
       for (IModel model : loadedModels) {
         try {
           model.dispose();
@@ -214,6 +248,8 @@ public final class EpsilonEgxGenerator {
       if (module != null) {
         module.getContext().dispose();
       }
+      phaseTiming.addDispose(System.nanoTime() - disposeStarted);
+      phaseTiming.setTotal(System.nanoTime() - startedNanos);
     }
   }
 
@@ -419,36 +455,75 @@ public final class EpsilonEgxGenerator {
    */
   private IModel loadModel(GenerationModelConfiguration modelConfiguration)
       throws EolModelLoadingException {
-    EmfModel model = new EmfModel();
-    StringProperties properties = new StringProperties();
-    properties.put(Model.PROPERTY_NAME, modelConfiguration.name());
-    if (!modelConfiguration.aliases().isEmpty()) {
-      properties.put(Model.PROPERTY_ALIASES, String.join(",", modelConfiguration.aliases()));
+    try {
+      ResourceSet resourceSet = newResourceSet();
+      List<EPackage> packages = loadMetamodelPackages(resourceSet, modelConfiguration);
+      Resource resource =
+          resourceSet.createResource(URI.createFileURI(modelConfiguration.modelFile().toString()));
+      try (InputStream input = Files.newInputStream(modelConfiguration.modelFile())) {
+        resource.load(input, Map.of());
+      }
+      EcoreUtil.resolveAll(resourceSet);
+      InMemoryEmfModel model =
+          new InMemoryEmfModel(modelConfiguration.name(), resource, packages, true, true);
+      model.setReadOnLoad(true);
+      model.setStoredOnDisposal(false);
+      model.getAliases().addAll(modelConfiguration.aliases());
+      return model;
+    } catch (EolModelLoadingException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new EolModelLoadingException(ex, null);
     }
-    properties.put(Model.PROPERTY_READONLOAD, "true");
-    properties.put(Model.PROPERTY_STOREONDISPOSAL, "false");
-    properties.put(Model.PROPERTY_READONLY, "true");
-    properties.put(EmfModel.PROPERTY_IS_METAMODEL_FILE_BASED, "true");
-    properties.put(
-        EmfModel.PROPERTY_MODEL_FILE, modelConfiguration.modelFile().toAbsolutePath().toString());
-    properties.put(
-        EmfModel.PROPERTY_METAMODEL_FILE, joinPaths(modelConfiguration.metamodelFiles()));
-    properties.put(EmfModel.PROPERTY_VALIDATE, Boolean.toString(modelConfiguration.validate()));
-    model.load(properties);
-    return model;
   }
 
-  /**
-   * Joins metamodel paths for Epsilon's file-based model configuration.
-   *
-   * @param paths metamodel paths
-   * @return comma-separated absolute path list
-   */
-  private String joinPaths(List<Path> paths) {
-    return paths.stream()
-        .map(path -> path.toAbsolutePath().toString())
-        .reduce((left, right) -> left + "," + right)
-        .orElse("");
+  /** Creates a fresh resource set for one model in one EGX job. */
+  private ResourceSet newResourceSet() {
+    ResourceSet resourceSet = new ResourceSetImpl();
+    resourceSet
+        .getResourceFactoryRegistry()
+        .getExtensionToFactoryMap()
+        .put("ecore", new EcoreResourceFactoryImpl());
+    resourceSet
+        .getResourceFactoryRegistry()
+        .getExtensionToFactoryMap()
+        .put("xmi", new XMIResourceFactoryImpl());
+    resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
+    return resourceSet;
+  }
+
+  /** Loads metamodel packages into a local resource set and registry. */
+  private List<EPackage> loadMetamodelPackages(
+      ResourceSet resourceSet, GenerationModelConfiguration modelConfiguration) throws Exception {
+    ResourceSet metamodelResourceSet = newResourceSet();
+    List<EPackage> packages = new ArrayList<>();
+    for (Path metamodelFile : modelConfiguration.metamodelFiles()) {
+      Resource metamodel =
+          metamodelResourceSet.createResource(
+              URI.createFileURI(metamodelFile.toAbsolutePath().toString()));
+      try (InputStream input = Files.newInputStream(metamodelFile)) {
+        metamodel.load(input, Map.of());
+      }
+      EcoreUtil.resolveAll(metamodelResourceSet);
+      for (Object content : metamodel.getContents()) {
+        if (content instanceof EPackage ePackage) {
+          collectPackages(ePackage, packages);
+        }
+      }
+    }
+    LinkedHashSet<EPackage> uniquePackages = new LinkedHashSet<>(packages);
+    for (EPackage ePackage : uniquePackages) {
+      if (ePackage.getNsURI() != null && !ePackage.getNsURI().isBlank()) {
+        resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
+      }
+    }
+    return List.copyOf(uniquePackages);
+  }
+
+  /** Recursively appends package and subpackage descriptors. */
+  private void collectPackages(EPackage ePackage, List<EPackage> packages) {
+    packages.add(ePackage);
+    ePackage.getESubpackages().forEach(child -> collectPackages(child, packages));
   }
 
   /**
@@ -659,6 +734,7 @@ public final class EpsilonEgxGenerator {
   private void failIfDiagnostics(
       EgxGenerationRequest request,
       Instant startedAt,
+      EgxPhaseTiming phaseTiming,
       List<GenerationDiagnostic> diagnostics,
       BoundedByteArrayOutputStream stdout,
       BoundedByteArrayOutputStream warnings,
@@ -670,6 +746,7 @@ public final class EpsilonEgxGenerator {
           "EGX generation request is invalid.",
           request,
           startedAt,
+          phaseTiming,
           diagnostics,
           stdout,
           warnings,
@@ -695,6 +772,7 @@ public final class EpsilonEgxGenerator {
       String message,
       EgxGenerationRequest request,
       Instant startedAt,
+      EgxPhaseTiming phaseTiming,
       List<GenerationDiagnostic> diagnostics,
       BoundedByteArrayOutputStream stdout,
       BoundedByteArrayOutputStream warnings,
@@ -702,7 +780,15 @@ public final class EpsilonEgxGenerator {
       Throwable cause) {
     return new EgxGenerationException(
         message,
-        report(GenerationStatus.FAILED, request, startedAt, diagnostics, stdout, warnings, stderr),
+        report(
+            GenerationStatus.FAILED,
+            request,
+            startedAt,
+            phaseTiming,
+            diagnostics,
+            stdout,
+            warnings,
+            stderr),
         cause);
   }
 
@@ -722,11 +808,15 @@ public final class EpsilonEgxGenerator {
       GenerationStatus status,
       EgxGenerationRequest request,
       Instant startedAt,
+      EgxPhaseTiming phaseTiming,
       List<GenerationDiagnostic> diagnostics,
       BoundedByteArrayOutputStream stdout,
       BoundedByteArrayOutputStream warnings,
       BoundedByteArrayOutputStream stderr) {
     Instant finishedAt = Instant.now();
+    long artifactDiscoveryStarted = System.nanoTime();
+    List<Path> generatedFiles = listGeneratedFiles(request.outputDirectory());
+    phaseTiming.addArtifactDiscovery(System.nanoTime() - artifactDiscoveryStarted);
     return new EgxGenerationReport(
         status,
         request.moduleFile(),
@@ -734,8 +824,9 @@ public final class EpsilonEgxGenerator {
         startedAt,
         finishedAt,
         Duration.between(startedAt, finishedAt),
+        phaseTiming,
         diagnostics,
-        listGeneratedFiles(request.outputDirectory()),
+        generatedFiles,
         stdout.asUtf8String(),
         warnings.asUtf8String(),
         stderr.asUtf8String());

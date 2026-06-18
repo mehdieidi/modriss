@@ -53,15 +53,16 @@ and member revocation. Member roles are `OWNER`, `EDITOR`, and `VIEWER`.
 
 Replace `{level}` with `cim`, `pim`, or `psm`.
 
-| Method                          | Path                         | Purpose                         |
-| ------------------------------- | ---------------------------- | ------------------------------- |
-| `GET`, `POST`                   | `/api/{level}`               | List or create models           |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/{level}/{id}`          | Read, replace, patch, or delete |
-| `POST`                          | `/api/{level}/validate`      | Validate an unsaved model       |
-| `POST`                          | `/api/{level}/{id}/validate` | Validate a saved model          |
-| `POST`                          | `/api/{level}/export`        | Export an unsaved model         |
-| `POST`                          | `/api/{level}/{id}/export`   | Export a saved model            |
-| `POST`                          | `/api/{level}/import`        | Import multipart JSON or XMI    |
+| Method                          | Path                              | Purpose                         |
+| ------------------------------- | --------------------------------- | ------------------------------- |
+| `GET`, `POST`                   | `/api/{level}`                    | List or create models           |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/{level}/{id}`               | Read, replace, patch, or delete |
+| `POST`                          | `/api/{level}/validate`           | Validate an unsaved model       |
+| `POST`                          | `/api/{level}/{id}/validate`      | Validate a saved model          |
+| `POST`                          | `/api/{level}/{id}/validate/jobs` | Submit saved-model validation   |
+| `POST`                          | `/api/{level}/export`             | Export an unsaved model         |
+| `POST`                          | `/api/{level}/{id}/export`        | Export a saved model            |
+| `POST`                          | `/api/{level}/import`             | Import multipart JSON or XMI    |
 
 Updates and transformations should include `expectedRevision`. Patch operations use JSON Pointer
 paths and support `add`, `replace`, and `remove`; root replacement is not supported by patch.
@@ -76,8 +77,10 @@ paths and support `add`, `replace`, and `remove`; root replacement is not suppor
 | `GET`  | `/api/transformations/jobs/{id}`        |
 | `POST` | `/api/transformations/jobs/{id}/cancel` |
 
-Current transformation routes return synchronously when work completes. Job records support
-tracking and cancellation behavior.
+Transformation routes and saved-model validation job routes return `202 Accepted` with a
+`Location` header pointing to `/api/transformations/jobs/{id}`. Send `Idempotency-Key` on submission
+to safely retry the same request. Job records expose status, diagnostics, result ids, validation
+results, and phase timings.
 
 ### Artifacts
 

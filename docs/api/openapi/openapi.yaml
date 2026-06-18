@@ -473,6 +473,38 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/{level}/{id}/validate/jobs:
+    parameters:
+      - $ref: "#/components/parameters/ModelLevelPath"
+      - $ref: "#/components/parameters/ModelId"
+    post:
+      tags: [Models]
+      summary: Submit asynchronous validation for a stored model
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedRevision:
+                  type: integer
+                  format: int64
+      responses:
+        "202":
+          $ref: "#/components/responses/MdeJobAccepted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
   /api/{level}/export:
     parameters:
       - $ref: "#/components/parameters/ModelLevelPath"
@@ -580,11 +612,13 @@ paths:
     post:
       tags: [Transformations]
       summary: Generate a PIM model from a CIM model
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         $ref: "#/components/requestBodies/TransformRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/TransformationResponse"
+        "202":
+          $ref: "#/components/responses/MdeJobAccepted"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -597,11 +631,13 @@ paths:
     post:
       tags: [Transformations]
       summary: Generate a PSM model from a PIM model
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         $ref: "#/components/requestBodies/TransformRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/TransformationResponse"
+        "202":
+          $ref: "#/components/responses/MdeJobAccepted"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -614,11 +650,13 @@ paths:
     post:
       tags: [Transformations]
       summary: Generate deployable artifacts from a PSM model
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         $ref: "#/components/requestBodies/TransformRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/TransformationResponse"
+        "202":
+          $ref: "#/components/responses/MdeJobAccepted"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -960,6 +998,14 @@ components:
       schema:
         type: string
       description: Wildcard path handled by a planned endpoint placeholder.
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 256
+      description: Replays the original async MDE job when the request fingerprint matches.
   requestBodies:
     TransformRequest:
       required: true
@@ -1016,6 +1062,17 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/TransformationResponse"
+    MdeJobAccepted:
+      description: MDE job accepted
+      headers:
+        Location:
+          description: Polling URL for the accepted job
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/JobResponse"
   schemas:
     ApiErrorResponse:
       type: object
@@ -1349,6 +1406,15 @@ components:
           type: string
         content:
           type: string
+    JobResponse:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED]
     MdeJobRecord:
       type: object
       required:
@@ -1399,6 +1465,17 @@ components:
           type: array
           items:
             type: string
+        validationResult:
+          $ref: "#/components/schemas/ValidationResult"
+        timings:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        idempotencyKey:
+          type: string
+        fingerprint:
+          type: string
         createdAt:
           type: string
           format: date-time

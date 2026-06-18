@@ -72,19 +72,20 @@ members. Editors can update project-owned models and artifacts.
 
 Model-level routes use `{level}` with one of `cim`, `pim`, or `psm`.
 
-| Method   | Path                         | Query/Body                               | Response           |
-| -------- | ---------------------------- | ---------------------------------------- | ------------------ |
-| `GET`    | `/api/{level}`               | optional `projectId` query               | `ModelSummary[]`   |
-| `POST`   | `/api/{level}`               | `name`, `projectId`, `model`             | `ModelSummary`     |
-| `GET`    | `/api/{level}/{id}`          | none                                     | `ModelRecord`      |
-| `PUT`    | `/api/{level}/{id}`          | `name`, `model`, `expectedRevision`      | `ModelSummary`     |
-| `PATCH`  | `/api/{level}/{id}`          | `name`, `operations`, `expectedRevision` | `ModelSummary`     |
-| `DELETE` | `/api/{level}/{id}`          | none                                     | empty response     |
-| `POST`   | `/api/{level}/validate`      | `model`                                  | `ValidationResult` |
-| `POST`   | `/api/{level}/{id}/validate` | none                                     | `ValidationResult` |
-| `POST`   | `/api/{level}/export`        | `name`, `model`, `format`                | file download      |
-| `POST`   | `/api/{level}/{id}/export`   | `name`, `format`                         | file download      |
-| `POST`   | `/api/{level}/import`        | multipart `projectId`, `format`, `file`  | `ImportResult`     |
+| Method   | Path                              | Query/Body                               | Response           |
+| -------- | --------------------------------- | ---------------------------------------- | ------------------ |
+| `GET`    | `/api/{level}`                    | optional `projectId` query               | `ModelSummary[]`   |
+| `POST`   | `/api/{level}`                    | `name`, `projectId`, `model`             | `ModelSummary`     |
+| `GET`    | `/api/{level}/{id}`               | none                                     | `ModelRecord`      |
+| `PUT`    | `/api/{level}/{id}`               | `name`, `model`, `expectedRevision`      | `ModelSummary`     |
+| `PATCH`  | `/api/{level}/{id}`               | `name`, `operations`, `expectedRevision` | `ModelSummary`     |
+| `DELETE` | `/api/{level}/{id}`               | none                                     | empty response     |
+| `POST`   | `/api/{level}/validate`           | `model`                                  | `ValidationResult` |
+| `POST`   | `/api/{level}/{id}/validate`      | none                                     | `ValidationResult` |
+| `POST`   | `/api/{level}/{id}/validate/jobs` | optional `expectedRevision`              | `202 JobResponse`  |
+| `POST`   | `/api/{level}/export`             | `name`, `model`, `format`                | file download      |
+| `POST`   | `/api/{level}/{id}/export`        | `name`, `format`                         | file download      |
+| `POST`   | `/api/{level}/import`             | multipart `projectId`, `format`, `file`  | `ImportResult`     |
 
 Updates and patches require `expectedRevision`; the server returns `409` if the stored revision has
 changed. Patch operations support JSON Pointer paths and the `add`, `replace`, and `remove` ops.
@@ -93,16 +94,19 @@ default is `json`. The default upload limit is 20 MiB unless configured otherwis
 
 ## Transformations
 
-| Method | Path                                    | Body                                | Response                                 |
-| ------ | --------------------------------------- | ----------------------------------- | ---------------------------------------- |
-| `POST` | `/api/transformations/cim-to-pim`       | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model`    |
-| `POST` | `/api/transformations/pim-to-psm`       | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `model`    |
-| `POST` | `/api/transformations/psm-to-artifact`  | `sourceModelId`, `expectedRevision` | `TransformationResponse` with `artifact` |
-| `GET`  | `/api/transformations/jobs/{id}`        | none                                | `MdeJobRecord`                           |
-| `POST` | `/api/transformations/jobs/{id}/cancel` | none                                | `MdeJobRecord`                           |
+| Method | Path                                    | Body                                | Response          |
+| ------ | --------------------------------------- | ----------------------------------- | ----------------- |
+| `POST` | `/api/transformations/cim-to-pim`       | `sourceModelId`, `expectedRevision` | `202 JobResponse` |
+| `POST` | `/api/transformations/pim-to-psm`       | `sourceModelId`, `expectedRevision` | `202 JobResponse` |
+| `POST` | `/api/transformations/psm-to-artifact`  | `sourceModelId`, `expectedRevision` | `202 JobResponse` |
+| `GET`  | `/api/transformations/jobs/{id}`        | none                                | `MdeJobRecord`    |
+| `POST` | `/api/transformations/jobs/{id}/cancel` | none                                | `MdeJobRecord`    |
 
-Transformation responses currently return synchronously with `success: true` and `status:
-"SUCCEEDED"` when generation completes. Job records are used for tracking and cancellation support.
+Transformation and stored-validation submissions are asynchronous. Successful submissions return
+`202 Accepted`, a `Location: /api/transformations/jobs/{id}` header, and a compact job body. Clients
+may send `Idempotency-Key`; replaying the same request returns the original job, while reusing the
+key for a different request returns `409`. Job records expose status, diagnostics, result model or
+artifact ids, validation results, and phase timings.
 
 ## Artifacts
 

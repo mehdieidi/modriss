@@ -64,6 +64,8 @@ public record FileEvlModelConfiguration(
     properties.put(Model.PROPERTY_READONLY, "true");
     properties.put(EmfModel.PROPERTY_MODEL_URI, fileUri(modelFile));
     properties.put(EmfModel.PROPERTY_FILE_BASED_METAMODEL_URI, joinFileUris(metamodelFiles));
+    properties.put(
+        EmfModel.PROPERTY_REUSE_UNMODIFIED_FILE_BASED_METAMODELS, Boolean.FALSE.toString());
     properties.put(EmfModel.PROPERTY_VALIDATE, "false");
     model.load(properties);
     return model;

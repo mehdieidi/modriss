@@ -1,14 +1,14 @@
 package io.mehdieidi.modless.backend.api;
 
-import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
 import io.mehdieidi.modless.platform.core.model.MdeJobStatus;
-import io.mehdieidi.modless.platform.core.model.ModelRecord;
 import io.mehdieidi.modless.platform.core.service.MdeJobService;
-import io.mehdieidi.modless.platform.core.service.TransformationService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
+import java.net.URI;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,21 +23,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/transformations")
 public class TransformationController {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(TransformationController.class);
+
   private final MdeJobService jobs;
-  private final TransformationService transformations;
   private final AuthSupport auth;
 
   /**
    * Creates the transformation controller.
    *
    * @param jobs MDE job service
-   * @param transformations transformation service
    * @param auth controller authentication support
    */
-  public TransformationController(
-      MdeJobService jobs, TransformationService transformations, AuthSupport auth) {
+  public TransformationController(MdeJobService jobs, AuthSupport auth) {
     this.jobs = jobs;
-    this.transformations = transformations;
     this.auth = auth;
   }
 
@@ -49,12 +47,15 @@ public class TransformationController {
    * @return transformation result
    */
   @PostMapping("/cim-to-pim")
-  ResponseEntity<TransformationResponse> cimToPim(
-      @RequestHeader("X-Auth-Token") String token, @Valid @RequestBody TransformRequest request) {
-    ModelRecord model =
-        transformations.cimToPim(
-            auth.user(token), request.sourceModelId(), request.expectedRevision());
-    return ResponseEntity.ok(TransformationResponse.model(model));
+  ResponseEntity<JobResponse> cimToPim(
+      @RequestHeader("X-Auth-Token") String token,
+      @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+      @Valid @RequestBody TransformRequest request) {
+    long started = System.nanoTime();
+    MdeJobRecord job =
+        jobs.submitCimToPim(
+            auth.user(token), request.sourceModelId(), request.expectedRevision(), idempotencyKey);
+    return accepted(job, "cim-to-pim", started);
   }
 
   /**
@@ -65,12 +66,15 @@ public class TransformationController {
    * @return transformation result
    */
   @PostMapping("/pim-to-psm")
-  ResponseEntity<TransformationResponse> pimToPsm(
-      @RequestHeader("X-Auth-Token") String token, @Valid @RequestBody TransformRequest request) {
-    ModelRecord model =
-        transformations.pimToPsm(
-            auth.user(token), request.sourceModelId(), request.expectedRevision());
-    return ResponseEntity.ok(TransformationResponse.model(model));
+  ResponseEntity<JobResponse> pimToPsm(
+      @RequestHeader("X-Auth-Token") String token,
+      @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+      @Valid @RequestBody TransformRequest request) {
+    long started = System.nanoTime();
+    MdeJobRecord job =
+        jobs.submitPimToPsm(
+            auth.user(token), request.sourceModelId(), request.expectedRevision(), idempotencyKey);
+    return accepted(job, "pim-to-psm", started);
   }
 
   /**
@@ -81,12 +85,15 @@ public class TransformationController {
    * @return generation result
    */
   @PostMapping("/psm-to-artifact")
-  ResponseEntity<TransformationResponse> psmToArtifact(
-      @RequestHeader("X-Auth-Token") String token, @Valid @RequestBody TransformRequest request) {
-    ArtifactRecord artifact =
-        transformations.psmToArtifact(
-            auth.user(token), request.sourceModelId(), request.expectedRevision());
-    return ResponseEntity.ok(TransformationResponse.artifact(artifact));
+  ResponseEntity<JobResponse> psmToArtifact(
+      @RequestHeader("X-Auth-Token") String token,
+      @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+      @Valid @RequestBody TransformRequest request) {
+    long started = System.nanoTime();
+    MdeJobRecord job =
+        jobs.submitPsmToArtifact(
+            auth.user(token), request.sourceModelId(), request.expectedRevision(), idempotencyKey);
+    return accepted(job, "psm-to-artifact", started);
   }
 
   /**
@@ -130,46 +137,24 @@ public class TransformationController {
    */
   public record JobResponse(String id, MdeJobStatus status) {}
 
-  /**
-   * Synchronous transformation response containing either a model or an artifact.
-   *
-   * @param success whether the operation succeeded
-   * @param status operation status name
-   * @param resultModelId generated model identifier, when applicable
-   * @param resultArtifactId generated artifact identifier, when applicable
-   * @param model generated model, when applicable
-   * @param artifact generated artifact, when applicable
-   * @param diagnostics transformation diagnostics
-   */
-  public record TransformationResponse(
-      boolean success,
-      String status,
-      String resultModelId,
-      String resultArtifactId,
-      ModelRecord model,
-      ArtifactRecord artifact,
-      List<String> diagnostics) {
+  private ResponseEntity<JobResponse> accepted(MdeJobRecord job, String route, long startedNanos) {
+    long controllerMs = millisSince(startedNanos);
+    jobs.appendTimings(job.id(), Map.of("controller.acceptMs", controllerMs));
+    LOGGER.info(
+        "mde_request_accepted route={} jobId={} projectId={} operation={} controllerMs={} "
+            + "status={}",
+        route,
+        job.id(),
+        job.projectId(),
+        job.operation(),
+        controllerMs,
+        job.status());
+    return ResponseEntity.accepted()
+        .location(URI.create("/api/transformations/jobs/" + job.id()))
+        .body(new JobResponse(job.id(), job.status()));
+  }
 
-    /**
-     * Creates a successful model transformation response.
-     *
-     * @param model generated model
-     * @return successful response
-     */
-    static TransformationResponse model(ModelRecord model) {
-      return new TransformationResponse(
-          true, "SUCCEEDED", model.id(), null, model, null, List.of());
-    }
-
-    /**
-     * Creates a successful artifact generation response.
-     *
-     * @param artifact generated artifact
-     * @return successful response
-     */
-    static TransformationResponse artifact(ArtifactRecord artifact) {
-      return new TransformationResponse(
-          true, "SUCCEEDED", null, artifact.id(), null, artifact, List.of());
-    }
+  private long millisSince(long startedNanos) {
+    return Math.max(0L, (System.nanoTime() - startedNanos) / 1_000_000L);
   }
 }

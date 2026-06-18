@@ -69,6 +69,10 @@ public final class TransformationService {
   /** EGX generator used for PSM-to-artifact generation. */
   private final EpsilonEgxGenerator artifactGenerator;
 
+  /** Per-worker timing data captured by the last transformation operation on the current thread. */
+  private static final ThreadLocal<Map<String, Long>> LAST_TIMINGS =
+      ThreadLocal.withInitial(LinkedHashMap::new);
+
   /**
    * Creates a transformation service using default runtime options.
    *
@@ -168,6 +172,7 @@ public final class TransformationService {
    * @return generated PIM model
    */
   public ModelRecord cimToPim(UserRecord user, String sourceModelId, Long expectedRevision) {
+    resetTimings();
     return modelLocks.withModelLock(
         sourceModelId,
         Duration.ofSeconds(30),
@@ -180,6 +185,7 @@ public final class TransformationService {
           generated.model().put("sourceModelRevision", source.revision());
           generated.model().put("sourceModelHash", sourceModelHash(source));
           mirrorReadinessToManualBacklog(generated.model());
+          long persistStarted = System.nanoTime();
           ModelRecord target =
               modelService.createGenerated(
                   user,
@@ -188,6 +194,7 @@ public final class TransformationService {
                   source.name() + "-pim",
                   generated.model(),
                   generated.sourceXmi());
+          addTiming("java.generatedModelPersistenceMs", System.nanoTime() - persistStarted);
           return target;
         });
   }
@@ -212,6 +219,7 @@ public final class TransformationService {
    * @return generated PSM model
    */
   public ModelRecord pimToPsm(UserRecord user, String sourceModelId, Long expectedRevision) {
+    resetTimings();
     return modelLocks.withModelLock(
         sourceModelId,
         Duration.ofSeconds(30),
@@ -223,6 +231,7 @@ public final class TransformationService {
           generated.model().put("sourceModelId", source.id());
           generated.model().put("sourceModelRevision", source.revision());
           generated.model().put("sourceModelHash", sourceModelHash(source));
+          long persistStarted = System.nanoTime();
           ModelRecord target =
               modelService.createGenerated(
                   user,
@@ -231,6 +240,7 @@ public final class TransformationService {
                   source.name() + "-psm",
                   generated.model(),
                   generated.sourceXmi());
+          addTiming("java.generatedModelPersistenceMs", System.nanoTime() - persistStarted);
           return target;
         });
   }
@@ -256,6 +266,7 @@ public final class TransformationService {
    */
   public ArtifactRecord psmToArtifact(
       UserRecord user, String sourceModelId, Long expectedRevision) {
+    resetTimings();
     return modelLocks.withModelLock(
         sourceModelId,
         Duration.ofSeconds(30),
@@ -271,8 +282,24 @@ public final class TransformationService {
           metadata.put("sourceModelId", source.id());
           metadata.put("sourceModelRevision", source.revision());
           metadata.put("sourceModelHash", sourceModelHash(source));
-          return artifactService.create(user, source.projectId(), artifactName, metadata, files);
+          long persistStarted = System.nanoTime();
+          ArtifactRecord artifact =
+              artifactService.create(user, source.projectId(), artifactName, metadata, files);
+          addTiming("java.artifactPersistenceMs", System.nanoTime() - persistStarted);
+          return artifact;
         });
+  }
+
+  /**
+   * Returns and clears timing data captured by the last transformation on the current worker
+   * thread.
+   *
+   * @return immutable timing map
+   */
+  public static Map<String, Long> consumeLastTimings() {
+    Map<String, Long> timings = Map.copyOf(LAST_TIMINGS.get());
+    LAST_TIMINGS.remove();
+    return timings;
   }
 
   /**
@@ -304,18 +331,27 @@ public final class TransformationService {
       workDir = Files.createTempDirectory("modless-cim-to-pim-");
       Path cimXmi = workDir.resolve("source-cim.xmi");
       Path pimXmi = workDir.resolve("target-pim.xmi");
+      long phaseStarted = System.nanoTime();
       byte[] sourceBytes = sourceCimXmi(source);
       requireExecutionInputBudget(sourceBytes, "CIM-to-PIM source model");
+      addTiming("java.sourceLoadMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
       Files.write(cimXmi, sourceBytes);
+      addTiming("java.tempWriteMs", System.nanoTime() - phaseStarted);
 
+      phaseStarted = System.nanoTime();
       EtlExecutionReport report =
           etlExecutor.execute(
               CimToPimDefaults.request(repositoryRoot, cimXmi, pimXmi, true, false));
+      addTiming("epsilon.totalMs", System.nanoTime() - phaseStarted);
+      addPrefixedTimings("epsilon.", report.phaseTiming().asMap());
       if (report.status() != EtlExecutionStatus.SUCCEEDED) {
         throw new PlatformException(500, "CIM-to-PIM ETL failed: " + summarizeDiagnostics(report));
       }
+      phaseStarted = System.nanoTime();
       byte[] targetBytes = Files.readAllBytes(pimXmi);
       JsonNode imported = xmiModelIo.importGeneratedModel(ModelLevel.PIM, targetBytes);
+      addTiming("java.importMs", System.nanoTime() - phaseStarted);
       if (!imported.isObject()) {
         throw new PlatformException(500, "CIM-to-PIM ETL did not produce a PIM model.");
       }
@@ -354,18 +390,27 @@ public final class TransformationService {
       workDir = Files.createTempDirectory("modless-pim-to-psm-");
       Path pimXmi = workDir.resolve("source-pim.xmi");
       Path psmXmi = workDir.resolve("target-awspsm.xmi");
+      long phaseStarted = System.nanoTime();
       byte[] sourceBytes = sourcePimXmi(source);
       requireExecutionInputBudget(sourceBytes, "PIM-to-PSM source model");
+      addTiming("java.sourceLoadMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
       Files.write(pimXmi, sourceBytes);
+      addTiming("java.tempWriteMs", System.nanoTime() - phaseStarted);
 
+      phaseStarted = System.nanoTime();
       EtlExecutionReport report =
           etlExecutor.execute(
               PimToAwsPsmDefaults.request(repositoryRoot, pimXmi, psmXmi, true, false));
+      addTiming("epsilon.totalMs", System.nanoTime() - phaseStarted);
+      addPrefixedTimings("epsilon.", report.phaseTiming().asMap());
       if (report.status() != EtlExecutionStatus.SUCCEEDED) {
         throw new PlatformException(500, "PIM-to-PSM ETL failed: " + summarizeDiagnostics(report));
       }
+      phaseStarted = System.nanoTime();
       byte[] targetBytes = Files.readAllBytes(psmXmi);
       JsonNode imported = xmiModelIo.importGeneratedModel(ModelLevel.PSM, targetBytes);
+      addTiming("java.importMs", System.nanoTime() - phaseStarted);
       if (!imported.isObject()) {
         throw new PlatformException(500, "PIM-to-PSM ETL did not produce a PSM model.");
       }
@@ -406,21 +451,32 @@ public final class TransformationService {
       workDir = Files.createTempDirectory("modless-psm-to-artifact-");
       Path psmXmi = workDir.resolve("source-awspsm.xmi");
       Path outputDirectory = workDir.resolve("generated-artifacts");
+      long phaseStarted = System.nanoTime();
       byte[] sourceBytes = sourcePsmXmi(source);
       requireExecutionInputBudget(sourceBytes, "PSM-to-artifact source model");
+      addTiming("java.sourceLoadMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
       Files.write(psmXmi, sourceBytes);
+      addTiming("java.tempWriteMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
       stageProtectedRegionFiles(outputDirectory, previousFiles);
+      addTiming("egx.protectedRegionSetupMs", System.nanoTime() - phaseStarted);
 
+      phaseStarted = System.nanoTime();
       EgxGenerationReport report =
           artifactGenerator.generate(
               AwsPsmToArtifactsDefaults.request(
                   repositoryRoot, psmXmi, outputDirectory, false, true));
+      addTiming("egx.totalMs", System.nanoTime() - phaseStarted);
+      addPrefixedTimings("egx.", report.phaseTiming().asMap());
       if (report.status() != GenerationStatus.SUCCEEDED) {
         throw new PlatformException(
             500, "PSM-to-artifact generation failed: " + summarizeDiagnostics(report));
       }
+      phaseStarted = System.nanoTime();
       Map<String, String> files = generatedFiles(outputDirectory);
       files.keySet().retainAll(currentArtifactPaths(outputDirectory));
+      addTiming("java.artifactDiscoveryMs", System.nanoTime() - phaseStarted);
       if (files.isEmpty()) {
         throw new PlatformException(500, "PSM-to-artifact generation did not produce files.");
       }
@@ -835,6 +891,7 @@ public final class TransformationService {
    * @param path directory to delete
    */
   private void deleteQuietly(Path path) {
+    long cleanupStarted = System.nanoTime();
     try (var paths = Files.walk(path)) {
       paths
           .sorted(java.util.Comparator.reverseOrder())
@@ -848,7 +905,24 @@ public final class TransformationService {
               });
     } catch (Exception ignored) {
       // Best-effort cleanup.
+    } finally {
+      addTiming("java.cleanupMs", System.nanoTime() - cleanupStarted);
     }
+  }
+
+  private void resetTimings() {
+    LAST_TIMINGS.set(new LinkedHashMap<>());
+  }
+
+  private void addTiming(String name, long elapsedNanos) {
+    LAST_TIMINGS.get().merge(name, Math.max(0L, elapsedNanos / 1_000_000L), Long::sum);
+  }
+
+  private void addPrefixedTimings(String prefix, Map<String, Long> timings) {
+    if (timings == null) {
+      return;
+    }
+    timings.forEach((name, value) -> LAST_TIMINGS.get().put(prefix + name, value));
   }
 
   /**

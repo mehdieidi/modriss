@@ -1,13 +1,20 @@
 package io.mehdieidi.modless.backend.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
+import io.mehdieidi.modless.platform.core.model.MdeJobStatus;
 import io.mehdieidi.modless.platform.core.model.ModelLevel;
 import io.mehdieidi.modless.platform.core.model.ModelRecord;
+import io.mehdieidi.modless.platform.core.service.MdeJobService;
 import io.mehdieidi.modless.platform.core.service.ModelService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,17 +35,22 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 public class ModelController {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(ModelController.class);
+
   private final ModelService models;
+  private final MdeJobService jobs;
   private final AuthSupport auth;
 
   /**
    * Creates the model controller.
    *
    * @param models model service
+   * @param jobs async MDE job service
    * @param auth controller authentication support
    */
-  public ModelController(ModelService models, AuthSupport auth) {
+  public ModelController(ModelService models, MdeJobService jobs, AuthSupport auth) {
     this.models = models;
+    this.jobs = jobs;
     this.auth = auth;
   }
 
@@ -200,6 +212,46 @@ public class ModelController {
   }
 
   /**
+   * Submits asynchronous validation for a stored model.
+   *
+   * @param token session token
+   * @param idempotencyKey optional idempotency key
+   * @param level model level API name
+   * @param id model identifier
+   * @param request optional expected revision
+   * @return queued validation job
+   */
+  @PostMapping("/api/{level:cim|pim|psm}/{id}/validate/jobs")
+  ResponseEntity<ValidationJobResponse> validateStoredJob(
+      @RequestHeader("X-Auth-Token") String token,
+      @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+      @PathVariable("level") String level,
+      @PathVariable("id") String id,
+      @RequestBody(required = false) ValidateStoredRequest request) {
+    long started = System.nanoTime();
+    MdeJobRecord job =
+        jobs.submitValidation(
+            auth.user(token),
+            ModelLevel.fromApiName(level),
+            id,
+            request == null ? null : request.expectedRevision(),
+            idempotencyKey);
+    long controllerMs = millisSince(started);
+    jobs.appendTimings(job.id(), Map.of("controller.acceptMs", controllerMs));
+    LOGGER.info(
+        "mde_request_accepted route=stored-validation jobId={} projectId={} operation={} "
+            + "controllerMs={} status={}",
+        job.id(),
+        job.projectId(),
+        job.operation(),
+        controllerMs,
+        job.status());
+    return ResponseEntity.accepted()
+        .location(URI.create("/api/transformations/jobs/" + job.id()))
+        .body(new ValidationJobResponse(job.id(), job.status()));
+  }
+
+  /**
    * Exports an ad hoc model as JSON or XMI.
    *
    * @param token session token
@@ -336,6 +388,10 @@ public class ModelController {
     return "xmi".equalsIgnoreCase(format) ? ".xmi" : ".json";
   }
 
+  private long millisSince(long startedNanos) {
+    return Math.max(0L, (System.nanoTime() - startedNanos) / 1_000_000L);
+  }
+
   /**
    * Model create, update, or ad hoc validation payload.
    *
@@ -365,4 +421,10 @@ public class ModelController {
    * @param format requested export format
    */
   public record ExportRequest(String name, JsonNode model, String format) {}
+
+  /** Stored validation job request payload. */
+  public record ValidateStoredRequest(Long expectedRevision) {}
+
+  /** Minimal async validation job response. */
+  public record ValidationJobResponse(String id, MdeJobStatus status) {}
 }

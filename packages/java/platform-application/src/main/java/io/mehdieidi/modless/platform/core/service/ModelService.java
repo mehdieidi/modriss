@@ -76,6 +76,10 @@ public final class ModelService {
   /** EVL validator used for semantic validation. */
   private final EpsilonEvlValidator evlValidator;
 
+  /** Per-worker timing data captured by the last stored validation on the current thread. */
+  private static final ThreadLocal<Map<String, Long>> LAST_VALIDATION_TIMINGS =
+      ThreadLocal.withInitial(LinkedHashMap::new);
+
   /** Small LRU validation cache keyed by model revision and XMI hash. */
   private final Map<String, ValidationResult> validationCache =
       Collections.synchronizedMap(
@@ -608,13 +612,23 @@ public final class ModelService {
    * @return validation result
    */
   public ValidationResult validate(UserRecord user, ModelLevel level, String id) {
+    resetValidationTimings();
+    long validationStarted = System.nanoTime();
+    long phaseStarted = System.nanoTime();
     ModelRecord model = get(user, level, id);
+    addValidationTiming("validation.modelLookupMs", System.nanoTime() - phaseStarted);
+    phaseStarted = System.nanoTime();
     String cacheKey = validationCacheKey(model);
     ValidationResult cached = validationCache.get(cacheKey);
+    addValidationTiming("validation.cacheLookupMs", System.nanoTime() - phaseStarted);
     if (cached != null) {
+      addValidationTiming("validation.cacheHitMs", 0L);
+      addValidationTiming("validation.totalMs", System.nanoTime() - validationStarted);
       return cached;
     }
+    phaseStarted = System.nanoTime();
     Optional<byte[]> xmiBytes = sourceXmi(model);
+    addValidationTiming("validation.sourceXmiReadMs", System.nanoTime() - phaseStarted);
     ValidationResult result;
     if (xmiBytes.isPresent()) {
       result = validateGeneratedXmi(level, xmiBytes.get());
@@ -628,8 +642,22 @@ public final class ModelService {
       // Legacy JSON-only records are converted in memory so existing projects remain usable.
       result = validate(level, model.modelJson());
     }
+    phaseStarted = System.nanoTime();
     validationCache.put(cacheKey, result);
+    addValidationTiming("validation.cacheWriteMs", System.nanoTime() - phaseStarted);
+    addValidationTiming("validation.totalMs", System.nanoTime() - validationStarted);
     return result;
+  }
+
+  /**
+   * Returns and clears timing data captured by the last stored validation on the current thread.
+   *
+   * @return immutable timing map
+   */
+  public static Map<String, Long> consumeLastValidationTimings() {
+    Map<String, Long> timings = Map.copyOf(LAST_VALIDATION_TIMINGS.get());
+    LAST_VALIDATION_TIMINGS.remove();
+    return timings;
   }
 
   /**
@@ -640,10 +668,14 @@ public final class ModelService {
    */
   private ValidationResult validateRegeneratedSourceXmi(ModelRecord model) {
     try {
+      long phaseStarted = System.nanoTime();
       SourceXmiUpdate sourceXmi = canonicalSourceXmi(model.level(), model.modelJson(), null);
+      addValidationTiming("validation.sourceXmiRegenerateMs", System.nanoTime() - phaseStarted);
       ValidationResult result = validateGeneratedXmi(model.level(), sourceXmi.bytes());
       if (!hasRecoverableStaleSourceError(result)) {
+        phaseStarted = System.nanoTime();
         attachSourceXmi(model, sourceXmi.bytes());
+        addValidationTiming("validation.sourceXmiAttachMs", System.nanoTime() - phaseStarted);
       }
       return result;
     } catch (RuntimeException ex) {
@@ -715,21 +747,28 @@ public final class ModelService {
    */
   private List<ValidationIssue> validateWithEvl(ModelLevel level, JsonNode modelJson) {
     try {
+      long phaseStarted = System.nanoTime();
       MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
+      addValidationTiming("validation.metamodelResolveMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      Resource resource =
+          xmiImportService.exportResource(level, hydrateSemanticReferences(modelJson));
+      addValidationTiming("validation.xmiExportResourceMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
       EvlValidationReport report =
           evlValidator.validate(
               new EvlValidationRequest(
                   mdePaths.validationRoot(level),
                   List.of(mdePaths.validationEntryFile(level)),
-                  validationModelConfigurations(
-                      level,
-                      xmiImportService.exportResource(level, hydrateSemanticReferences(modelJson)),
-                      metamodel.packages()),
+                  validationModelConfigurations(level, resource, metamodel.packages()),
                   true));
+      addValidationTiming("validation.evlTotalMs", System.nanoTime() - phaseStarted);
+      addValidationReportTimings(report);
       return validationIssues(report);
     } catch (PlatformException ex) {
       return List.of(issue("ERROR", "XmiExport", ex.getMessage()));
     } catch (EvlValidationException ex) {
+      addValidationReportTimings(ex.getReport());
       return validationIssues(ex.getReport());
     } catch (Exception ex) {
       return List.of(
@@ -750,21 +789,27 @@ public final class ModelService {
    */
   private List<ValidationIssue> validateWithEvl(ModelLevel level, byte[] xmiBytes) {
     try {
+      long phaseStarted = System.nanoTime();
       MetamodelDescriptor metamodel = metamodelResolver.resolve(level);
+      addValidationTiming("validation.metamodelResolveMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      Resource resource = xmiImportService.loadResource(level, xmiBytes, "validation");
+      addValidationTiming("validation.xmiLoadResourceMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
       EvlValidationReport report =
           evlValidator.validate(
               new EvlValidationRequest(
                   mdePaths.validationRoot(level),
                   List.of(mdePaths.validationEntryFile(level)),
-                  validationModelConfigurations(
-                      level,
-                      xmiImportService.loadResource(level, xmiBytes, "validation"),
-                      metamodel.packages()),
+                  validationModelConfigurations(level, resource, metamodel.packages()),
                   true));
+      addValidationTiming("validation.evlTotalMs", System.nanoTime() - phaseStarted);
+      addValidationReportTimings(report);
       return validationIssues(report);
     } catch (PlatformException ex) {
       return List.of(issue("ERROR", "XmiLoad", ex.getMessage()));
     } catch (EvlValidationException ex) {
+      addValidationReportTimings(ex.getReport());
       return validationIssues(ex.getReport());
     } catch (Exception ex) {
       return List.of(
@@ -791,6 +836,43 @@ public final class ModelService {
     report.violations().forEach(violation -> issues.add(validationIssue(violation)));
     report.diagnostics().forEach(diagnostic -> issues.add(validationIssue(diagnostic)));
     return issues;
+  }
+
+  private void resetValidationTimings() {
+    LAST_VALIDATION_TIMINGS.set(new LinkedHashMap<>());
+  }
+
+  private void addValidationTiming(String name, long elapsedNanos) {
+    LAST_VALIDATION_TIMINGS.get().merge(name, Math.max(0L, elapsedNanos / 1_000_000L), Long::sum);
+  }
+
+  private void addValidationReportTimings(EvlValidationReport report) {
+    if (report == null) {
+      return;
+    }
+    addValidationDuration("validation.moduleDiscoveryMs", report.moduleDiscoveryDuration());
+    addValidationDuration("validation.reportDurationMs", report.duration());
+    report
+        .moduleReports()
+        .forEach(
+            moduleReport -> {
+              addValidationDuration("validation.moduleDurationMs", moduleReport.duration());
+              addValidationDuration("validation.parseMs", moduleReport.parseDuration());
+              addValidationDuration("validation.modelLoadMs", moduleReport.modelLoadDuration());
+              addValidationDuration(
+                  "validation.structuralValidationMs", moduleReport.structuralValidationDuration());
+              addValidationDuration("validation.evlExecuteMs", moduleReport.evlExecuteDuration());
+              addValidationDuration(
+                  "validation.violationMappingMs", moduleReport.violationMappingDuration());
+              addValidationDuration("validation.disposeMs", moduleReport.disposeDuration());
+            });
+  }
+
+  private void addValidationDuration(String name, Duration duration) {
+    if (duration == null) {
+      return;
+    }
+    LAST_VALIDATION_TIMINGS.get().merge(name, Math.max(0L, duration.toMillis()), Long::sum);
   }
 
   /**
