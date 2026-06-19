@@ -167,6 +167,11 @@ body {
   overflow: visible;
 }
 
+.workspace.artifact-mode #fileRailMenu .rail-submenu-group:has(#exportModelBtn),
+.workspace.artifact-mode #fileRailMenu .rail-submenu-group:has(#importModelBtn) {
+  display: none;
+}
+
 .rail-menu-panel .ide-menu-select {
   background: color-mix(in srgb, var(--surface-3) 92%, var(--surface-high) 8%);
 }
