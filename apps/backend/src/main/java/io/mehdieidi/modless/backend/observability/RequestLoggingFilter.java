@@ -55,7 +55,6 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
       long durationMs = (System.nanoTime() - started) / 1_000_000;
       int status = failure == null ? response.getStatus() : 500;
       String userAgent = sanitize(request.getHeader("User-Agent"));
-      String message = "method={} path={} status={} durationMs={} remoteAddr={} userAgent={}";
       try {
         requestLog(status)
             .addKeyValue("method", request.getMethod())
@@ -64,15 +63,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             .addKeyValue("durationMs", durationMs)
             .addKeyValue("remoteAddr", request.getRemoteAddr())
             .addKeyValue("userAgent", userAgent)
-            .setCause(failure)
-            .log(
-                message,
-                request.getMethod(),
-                request.getRequestURI(),
-                status,
-                durationMs,
-                request.getRemoteAddr(),
-                userAgent);
+            .log("request completed");
       } finally {
         MDC.clear();
       }

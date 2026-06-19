@@ -1,8 +1,8 @@
 package io.mehdieidi.modless.backend.api;
 
-import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
-import io.mehdieidi.modless.platform.core.model.MdeJobStatus;
-import io.mehdieidi.modless.platform.core.service.MdeJobService;
+import io.mehdieidi.modless.platform.transformation.application.MdeJobService;
+import io.mehdieidi.modless.platform.transformation.domain.MdeJobRecord;
+import io.mehdieidi.modless.platform.transformation.domain.MdeJobStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.net.URI;

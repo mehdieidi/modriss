@@ -1,7 +1,7 @@
 package io.mehdieidi.modless.backend.api;
 
-import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.service.AuthService;
+import io.mehdieidi.modless.platform.identity.application.AuthService;
+import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

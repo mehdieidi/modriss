@@ -1,7 +1,7 @@
 package io.mehdieidi.modless.backend.assistant;
 
-import io.mehdieidi.modless.platform.core.PlatformException;
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -23,30 +23,51 @@ mde/
   generation/              EGX/EGL artifact generation
   samples/                 XMI samples and case study
 packages/java/
-  platform-domain/         Shared domain records and enums
-  platform-application/    Application services and persistence port
-  platform-storage-postgres/ PostgreSQL adapter and Flyway migrations
+  platform-kernel/         Shared kernel types (PlatformException, ModelLevel)
+  platform-storage-api/    PlatformStore persistence port
+  platform-identity/         Auth and user lifecycle
+  platform-project/        Projects and membership
   platform-modeling/       Metamodel resolution, JSON/XMI bridge, config, layout
+  platform-model/          Model workspace CRUD, validation, import/export
+  platform-artifact/       Generated artifact storage
+  platform-transformation/ MDE pipeline and async job orchestration
+  platform-storage-postgres/ PostgreSQL adapter and Flyway migrations
   mde-evl-validator/       Reusable EVL runner
   mde-etl-runner/          Reusable ETL runner
   mde-m2t-runner/          Reusable EGX/EGL runner
-scripts/                   Repository automation (format, lint, verify, Flyway check)
-tests/                     Cross-cutting test placeholders
 tools/
   mde-cli/                 Emfatic-to-Ecore compiler CLI
   mde-evl-cli/             Validation CLI
   mde-etl-cli/             Transformation CLI
   mde-m2t-cli/             Generation CLI
+scripts/                   Repository automation (format, lint, verify, Flyway check)
+tests/                     Cross-cutting test placeholders
 ```
 
 ## Maven Dependency Direction
 
-The backend composes domain, application, storage, and modeling modules. The application module
-uses the modeling and reusable MDE runner modules. Storage implements the application persistence
-port. CLI modules wrap the corresponding reusable runners.
+Feature libraries depend inward on the shared kernel and storage port. The backend composes
+feature modules plus the Postgres storage adapter. MDE runner modules stay Spring-free and are
+reused from CLIs and transformation services.
 
-This separation keeps formal execution reusable outside the web backend and isolates PostgreSQL
-behind `PlatformStore`.
+```text
+platform-kernel
+platform-storage-api → platform-kernel
+
+platform-identity → platform-storage-api
+platform-project → platform-identity
+platform-modeling → platform-kernel
+platform-model → platform-project, platform-modeling, mde-evl-validator
+platform-artifact → platform-project
+platform-transformation → platform-model, platform-artifact, mde-etl-runner, mde-m2t-runner
+
+platform-storage-postgres → platform-storage-api + all feature domain types
+
+apps/backend → platform-storage-postgres + feature modules
+```
+
+This separation keeps formal MDE execution reusable outside the web backend and isolates
+PostgreSQL behind `PlatformStore`.
 
 ## Canonical Documentation
 

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import jakarta.servlet.FilterChain;
@@ -101,21 +102,38 @@ class RequestLoggingFilterTest {
 
   @Test
   void cleansUpMdcWhenRequestFails() {
-    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/projects");
-    request.addHeader("X-Request-Id", "req-failure");
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    var logger =
+        (ch.qos.logback.classic.Logger)
+            org.slf4j.LoggerFactory.getLogger(RequestLoggingFilter.class);
+    boolean wasAdditive = logger.isAdditive();
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    appender.start();
+    logger.setAdditive(false);
+    logger.addAppender(appender);
 
-    assertThrows(
-        ServletException.class,
-        () ->
-            filter.doFilter(
-                request,
-                response,
-                (req, res) -> {
-                  throw new ServletException("failed");
-                }));
+    try {
+      MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/projects");
+      request.addHeader("X-Request-Id", "req-failure");
+      MockHttpServletResponse response = new MockHttpServletResponse();
 
-    assertEquals("req-failure", response.getHeader("X-Request-Id"));
-    assertNull(MDC.get("requestId"));
+      assertThrows(
+          ServletException.class,
+          () ->
+              filter.doFilter(
+                  request,
+                  response,
+                  (req, res) -> {
+                    throw new ServletException("failed");
+                  }));
+
+      assertEquals("req-failure", response.getHeader("X-Request-Id"));
+      assertNull(MDC.get("requestId"));
+      assertEquals(1, appender.list.size());
+      assertEquals(Level.ERROR, appender.list.get(0).getLevel());
+      assertNull(appender.list.get(0).getThrowableProxy());
+    } finally {
+      logger.detachAppender(appender);
+      logger.setAdditive(wasAdditive);
+    }
   }
 }

@@ -24,7 +24,8 @@ mvn -q -pl tools/mde-evl-cli -am test
 # Transformations
 mvn -q -pl packages/java/mde-etl-runner -am test
 mvn -q -pl tools/mde-etl-cli -am test
-mvn -q -pl packages/java/platform-application -am test
+mvn -q -pl packages/java/platform-transformation -am test
+mvn -q -pl packages/java/platform-model -am test
 
 # Generation
 mvn -q -pl packages/java/mde-m2t-runner -am test

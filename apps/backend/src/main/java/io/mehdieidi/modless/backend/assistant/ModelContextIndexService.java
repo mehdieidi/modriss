@@ -1,7 +1,7 @@
 package io.mehdieidi.modless.backend.assistant;
 
-import io.mehdieidi.modless.platform.core.model.ModelRecord;
-import io.mehdieidi.modless.platform.core.service.ModelService;
+import io.mehdieidi.modless.platform.model.application.ModelService;
+import io.mehdieidi.modless.platform.model.domain.ModelRecord;
 import org.springframework.stereotype.Service;
 
 /** Plan-facing facade for compact model-context indexing. */

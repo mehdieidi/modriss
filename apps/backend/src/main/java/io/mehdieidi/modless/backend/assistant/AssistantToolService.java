@@ -2,9 +2,9 @@ package io.mehdieidi.modless.backend.assistant;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mehdieidi.modless.platform.core.PlatformException;
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.service.ModelService;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
+import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.util.List;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;

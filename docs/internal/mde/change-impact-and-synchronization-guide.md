@@ -494,19 +494,19 @@ references, or validation changes the language, not merely its notation.
 
 Review these when a change cannot remain purely declarative:
 
-| File/area                        | Why it may need changes                                                                     |
-| -------------------------------- | ------------------------------------------------------------------------------------------- |
-| `MdeRuntimePaths.java`           | Fixed entry module and combined-Ecore paths                                                 |
-| `FileMetamodelResolver.java`     | Combined-Ecore loading, namespace version, hash caching                                     |
-| `ModelingConfigService.java`     | Ecore-to-editor metadata derivation and metadata schema                                     |
-| `XmiModelImportService.java`     | Root names, JSON/XMI mapping, graph relationships, support objects                          |
-| `ModelService.java`              | Validation aliases, required-feature validation, migration state, persistence normalization |
-| `TransformationService.java`     | End-to-end operation orchestration and generated model import                               |
-| `CimToPimDefaults.java`          | CIM/PIM paths and Epsilon aliases                                                           |
-| `PimToAwsPsmDefaults.java`       | PIM/PSM paths and Epsilon aliases                                                           |
-| `AwsPsmToArtifactsDefaults.java` | PSM paths and Epsilon aliases                                                               |
-| `StoredViewLayoutService.java`   | Persisted view and level-specific layout assumptions                                        |
-| Backend controllers              | Routes and public API contract                                                              |
+| File/area                                                              | Why it may need changes                                                                              |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `packages/java/platform-modeling/.../MdeRuntimePaths.java`             | Fixed entry module and combined-Ecore paths                                                          |
+| `packages/java/platform-modeling/.../FileMetamodelResolver.java`       | Combined-Ecore loading, namespace version, hash caching                                              |
+| `packages/java/platform-modeling/.../ModelingConfigService.java`       | Ecore-to-editor metadata derivation and metadata schema                                              |
+| `packages/java/platform-modeling/.../XmiModelImportService.java`       | Root names, JSON/XMI mapping, graph relationships, support objects                                   |
+| `packages/java/platform-model/.../ModelService.java`                   | Validation aliases, required-feature validation, migration state, persistence normalization          |
+| `packages/java/platform-transformation/.../TransformationService.java` | End-to-end operation orchestration and generated model import                                        |
+| `CimToPimDefaults.java`                                                | CIM/PIM paths and Epsilon aliases                                                                    |
+| `PimToAwsPsmDefaults.java`                                             | PIM/PSM paths and Epsilon aliases                                                                    |
+| `AwsPsmToArtifactsDefaults.java`                                       | PSM paths and Epsilon aliases                                                                        |
+| `packages/java/platform-model/.../StoredViewLayoutService.java`        | Persisted view and level-specific layout assumptions (lives in model to avoid modeling↔model cycle) |
+| Backend controllers                                                    | Routes and public API contract                                                                       |
 
 Avoid changing runner internals merely because a rule or metamodel changed. Runner internals should
 change only when execution behavior, diagnostics, model loading, timeouts, or the reusable Java API
@@ -772,7 +772,8 @@ mvn -q -pl tools/mde-evl-cli -am test
 ```powershell
 mvn -q -pl packages/java/mde-etl-runner -am test
 mvn -q -pl tools/mde-etl-cli -am test
-mvn -q -pl packages/java/platform-application -am test
+mvn -q -pl packages/java/platform-transformation -am test
+mvn -q -pl packages/java/platform-model -am test
 ```
 
 ### Generation

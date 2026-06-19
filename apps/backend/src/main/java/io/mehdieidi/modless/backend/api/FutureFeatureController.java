@@ -1,6 +1,6 @@
 package io.mehdieidi.modless.backend.api;
 
-import io.mehdieidi.modless.platform.core.PlatformException;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 

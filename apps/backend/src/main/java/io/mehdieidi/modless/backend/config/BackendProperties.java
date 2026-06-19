@@ -1,6 +1,6 @@
 package io.mehdieidi.modless.backend.config;
 
-import io.mehdieidi.modless.platform.core.service.MdeRuntimeOptions;
+import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimeOptions;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;

@@ -9,9 +9,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.model.ModelRecord;
-import io.mehdieidi.modless.platform.core.service.ModelService;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.model.application.ModelService;
+import io.mehdieidi.modless.platform.model.domain.ModelRecord;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;

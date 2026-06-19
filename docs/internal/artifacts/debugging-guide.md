@@ -292,7 +292,7 @@ mvn -pl packages/java/mde-m2t-runner -am `
   "-Dtest=EpsilonEgxGeneratorTest,AwsPsmArtifactGenerationSyntaxTest" `
   "-Dsurefire.failIfNoSpecifiedTests=false" test
 
-mvn -pl packages/java/platform-application -am `
+mvn -pl packages/java/platform-transformation -am `
   "-Dtest=TransformationServiceTest" `
   "-Dsurefire.failIfNoSpecifiedTests=false" test
 ```

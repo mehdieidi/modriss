@@ -82,7 +82,7 @@ class AssistantPatchCompilerTest {
                     "../secret")));
 
     assertThrows(
-        io.mehdieidi.modless.platform.core.PlatformException.class,
+        io.mehdieidi.modless.platform.kernel.PlatformException.class,
         () -> compiler.compile(model, patch));
   }
 

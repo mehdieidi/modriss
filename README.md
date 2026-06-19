@@ -105,7 +105,7 @@ docs/                      Engineering documentation and diagrams
   public-docs/             Published MkDocs site
 infra/                     Grafana dashboards and Prometheus alert rules
 mde/                       Metamodels, validation, transformations, generation, samples
-packages/java/             Domain, application, storage, modeling, and MDE runner modules
+packages/java/             Feature-scoped platform libraries, Postgres adapter, and MDE runners
 scripts/                   Repository automation (format, lint, verify, Flyway check)
 tests/                     Cross-cutting test placeholders
 tools/                     Standalone MDE CLI utilities

@@ -1,7 +1,7 @@
 package io.mehdieidi.modless.backend.config;
 
-import io.mehdieidi.modless.platform.core.repository.PlatformStore;
-import io.mehdieidi.modless.platform.core.repository.PostgresPlatformStore;
+import io.mehdieidi.modless.platform.storage.api.PlatformStore;
+import io.mehdieidi.modless.platform.storage.postgres.PostgresPlatformStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;

@@ -1,6 +1,6 @@
 package io.mehdieidi.modless.backend.assistant;
 
-import io.mehdieidi.modless.platform.core.PlatformException;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;

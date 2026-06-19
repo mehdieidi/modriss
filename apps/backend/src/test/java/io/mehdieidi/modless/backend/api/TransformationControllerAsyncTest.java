@@ -6,12 +6,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.mehdieidi.modless.backend.observability.ModlessMetrics;
-import io.mehdieidi.modless.platform.core.model.MdeJobOperation;
-import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
-import io.mehdieidi.modless.platform.core.model.MdeJobStatus;
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.service.MdeJobService;
+import io.mehdieidi.modless.platform.identity.domain.UserRecord;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.transformation.application.MdeJobService;
+import io.mehdieidi.modless.platform.transformation.domain.MdeJobOperation;
+import io.mehdieidi.modless.platform.transformation.domain.MdeJobRecord;
+import io.mehdieidi.modless.platform.transformation.domain.MdeJobStatus;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;

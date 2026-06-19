@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.repository.PlatformStore;
-import io.mehdieidi.modless.platform.core.service.AuthService;
-import io.mehdieidi.modless.platform.core.service.ModelService;
-import io.mehdieidi.modless.platform.core.service.ProjectService;
+import io.mehdieidi.modless.platform.identity.application.AuthService;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.model.application.ModelService;
+import io.mehdieidi.modless.platform.project.application.ProjectService;
+import io.mehdieidi.modless.platform.storage.api.PlatformStore;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.List;

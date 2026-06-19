@@ -3,7 +3,7 @@ package io.mehdieidi.modless.backend.assistant;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.mehdieidi.modless.platform.core.PlatformException;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;

@@ -1,6 +1,6 @@
 package io.mehdieidi.modless.backend.assistant;
 
-import io.mehdieidi.modless.platform.core.PlatformException;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.net.SocketTimeoutException;

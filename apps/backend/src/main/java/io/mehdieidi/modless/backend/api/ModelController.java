@@ -1,12 +1,12 @@
 package io.mehdieidi.modless.backend.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.mehdieidi.modless.platform.core.model.MdeJobRecord;
-import io.mehdieidi.modless.platform.core.model.MdeJobStatus;
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.model.ModelRecord;
-import io.mehdieidi.modless.platform.core.service.MdeJobService;
-import io.mehdieidi.modless.platform.core.service.ModelService;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.model.application.ModelService;
+import io.mehdieidi.modless.platform.model.domain.ModelRecord;
+import io.mehdieidi.modless.platform.transformation.application.MdeJobService;
+import io.mehdieidi.modless.platform.transformation.domain.MdeJobRecord;
+import io.mehdieidi.modless.platform.transformation.domain.MdeJobStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.net.URI;
@@ -341,7 +341,7 @@ public class ModelController {
       @RequestParam("file") MultipartFile file)
       throws Exception {
     if (file.getSize() > models.maxModelUploadBytes()) {
-      throw new io.mehdieidi.modless.platform.core.PlatformException(
+      throw new io.mehdieidi.modless.platform.kernel.PlatformException(
           413, "Model file is too large.");
     }
     try (var input = file.getInputStream()) {
@@ -363,7 +363,7 @@ public class ModelController {
    */
   private void requireExpectedRevision(Long expectedRevision) {
     if (expectedRevision == null) {
-      throw new io.mehdieidi.modless.platform.core.PlatformException(
+      throw new io.mehdieidi.modless.platform.kernel.PlatformException(
           400, "expectedRevision is required.");
     }
   }

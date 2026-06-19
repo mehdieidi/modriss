@@ -143,12 +143,37 @@
         <version>${spring.ai.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-domain</artifactId>
+        <artifactId>platform-kernel</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <artifactId>platform-application</artifactId>
+        <artifactId>platform-storage-api</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <artifactId>platform-identity</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <artifactId>platform-project</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <artifactId>platform-model</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <artifactId>platform-artifact</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <artifactId>platform-transformation</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
       </dependency>
@@ -192,10 +217,15 @@
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>apps/backend</module>
-    <module>packages/java/platform-domain</module>
-    <module>packages/java/platform-application</module>
-    <module>packages/java/platform-storage-postgres</module>
+    <module>packages/java/platform-kernel</module>
+    <module>packages/java/platform-storage-api</module>
+    <module>packages/java/platform-identity</module>
+    <module>packages/java/platform-project</module>
     <module>packages/java/platform-modeling</module>
+    <module>packages/java/platform-model</module>
+    <module>packages/java/platform-artifact</module>
+    <module>packages/java/platform-transformation</module>
+    <module>packages/java/platform-storage-postgres</module>
     <module>packages/java/mde-etl-runner</module>
     <module>packages/java/mde-evl-validator</module>
     <module>packages/java/mde-m2t-runner</module>

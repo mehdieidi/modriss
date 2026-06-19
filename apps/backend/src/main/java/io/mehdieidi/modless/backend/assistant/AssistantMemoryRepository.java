@@ -2,8 +2,8 @@ package io.mehdieidi.modless.backend.assistant;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.model.UserRecord;
+import io.mehdieidi.modless.platform.identity.domain.UserRecord;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -18,7 +18,7 @@ public class AssistantMemoryRepository {
 
   private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {};
   private static final TypeReference<
-          List<io.mehdieidi.modless.platform.core.service.ModelService.ModelPatchOperation>>
+          List<io.mehdieidi.modless.platform.model.application.ModelService.ModelPatchOperation>>
       PATCH_LIST = new TypeReference<>() {};
 
   private final JdbcTemplate jdbc;
@@ -403,7 +403,7 @@ public class AssistantMemoryRepository {
     try {
       SemanticModelPatch patch =
           mapper.readValue(rs.getString("semantic_patch"), SemanticModelPatch.class);
-      List<io.mehdieidi.modless.platform.core.service.ModelService.ModelPatchOperation>
+      List<io.mehdieidi.modless.platform.model.application.ModelService.ModelPatchOperation>
           inversePatch = mapper.readValue(rs.getString("inverse_patch"), PATCH_LIST);
       AssistantValidationSummary validation =
           mapper.readValue(rs.getString("validation_summary"), AssistantValidationSummary.class);

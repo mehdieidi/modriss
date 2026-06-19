@@ -13,15 +13,15 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.model.ModelRecord;
-import io.mehdieidi.modless.platform.core.model.ProjectMember;
-import io.mehdieidi.modless.platform.core.model.ProjectRecord;
-import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.repository.PlatformStore;
-import io.mehdieidi.modless.platform.core.service.AuthService;
-import io.mehdieidi.modless.platform.core.service.ModelService;
-import io.mehdieidi.modless.platform.core.service.ProjectService;
+import io.mehdieidi.modless.platform.identity.application.AuthService;
+import io.mehdieidi.modless.platform.identity.domain.UserRecord;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.model.application.ModelService;
+import io.mehdieidi.modless.platform.model.domain.ModelRecord;
+import io.mehdieidi.modless.platform.project.application.ProjectService;
+import io.mehdieidi.modless.platform.project.domain.ProjectMember;
+import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
+import io.mehdieidi.modless.platform.storage.api.PlatformStore;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -108,7 +108,7 @@ class AssistantOrchestratorTest {
                     user.id(),
                     user.email(),
                     user.displayName(),
-                    io.mehdieidi.modless.platform.core.model.MemberRole.EDITOR,
+                    io.mehdieidi.modless.platform.project.domain.MemberRole.EDITOR,
                     Instant.now())),
             Instant.now(),
             Instant.now());
@@ -240,7 +240,7 @@ class AssistantOrchestratorTest {
                     user.id(),
                     user.email(),
                     user.displayName(),
-                    io.mehdieidi.modless.platform.core.model.MemberRole.EDITOR,
+                    io.mehdieidi.modless.platform.project.domain.MemberRole.EDITOR,
                     Instant.now())),
             Instant.now(),
             Instant.now());
@@ -416,7 +416,7 @@ class AssistantOrchestratorTest {
                     user.id(),
                     user.email(),
                     user.displayName(),
-                    io.mehdieidi.modless.platform.core.model.MemberRole.EDITOR,
+                    io.mehdieidi.modless.platform.project.domain.MemberRole.EDITOR,
                     Instant.now())),
             Instant.now(),
             Instant.now());

@@ -1,6 +1,6 @@
 package io.mehdieidi.modless.backend.api;
 
-import io.mehdieidi.modless.platform.core.PlatformException;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   /**
-   * Maps a platform-domain failure to its declared HTTP status.
+   * Maps a platform kernel failure to its declared HTTP status.
    *
    * @param ex platform failure
    * @return API error response

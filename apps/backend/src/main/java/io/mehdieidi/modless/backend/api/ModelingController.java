@@ -1,9 +1,9 @@
 package io.mehdieidi.modless.backend.api;
 
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.service.LayoutService;
-import io.mehdieidi.modless.platform.core.service.ModelingConfigService;
-import io.mehdieidi.modless.platform.core.service.StoredViewLayoutService;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.model.application.StoredViewLayoutService;
+import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
+import io.mehdieidi.modless.platform.modeling.layout.LayoutService;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

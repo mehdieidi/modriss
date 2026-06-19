@@ -1,10 +1,10 @@
 package io.mehdieidi.modless.backend.api;
 
-import io.mehdieidi.modless.platform.core.model.MemberRole;
-import io.mehdieidi.modless.platform.core.model.ProjectMember;
-import io.mehdieidi.modless.platform.core.model.ProjectRecord;
-import io.mehdieidi.modless.platform.core.model.UserRecord;
-import io.mehdieidi.modless.platform.core.service.ProjectService;
+import io.mehdieidi.modless.platform.identity.domain.UserRecord;
+import io.mehdieidi.modless.platform.project.application.ProjectService;
+import io.mehdieidi.modless.platform.project.domain.MemberRole;
+import io.mehdieidi.modless.platform.project.domain.ProjectMember;
+import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.nio.charset.StandardCharsets;
@@ -30,16 +30,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProjectController {
 
   private final ProjectService projects;
+  private final ProjectArchiveService archives;
   private final AuthSupport auth;
 
-  /**
-   * Creates the project controller.
-   *
-   * @param projects project service
-   * @param auth controller authentication support
-   */
-  public ProjectController(ProjectService projects, AuthSupport auth) {
+  public ProjectController(
+      ProjectService projects, ProjectArchiveService archives, AuthSupport auth) {
     this.projects = projects;
+    this.archives = archives;
     this.auth = auth;
   }
 
@@ -91,7 +88,7 @@ public class ProjectController {
       @RequestHeader("X-Auth-Token") String token, @PathVariable("id") String id) {
     UserRecord user = auth.user(token);
     ProjectRecord project = projects.get(user, id);
-    byte[] bytes = projects.zip(user, id);
+    byte[] bytes = archives.zip(user, id);
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType("application/zip"))
         .header(

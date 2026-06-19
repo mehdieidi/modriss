@@ -1,7 +1,7 @@
 package io.mehdieidi.modless.backend.api;
 
-import io.mehdieidi.modless.platform.core.model.ArtifactRecord;
-import io.mehdieidi.modless.platform.core.service.ArtifactService;
+import io.mehdieidi.modless.platform.artifact.application.ArtifactService;
+import io.mehdieidi.modless.platform.artifact.domain.ArtifactRecord;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.nio.charset.StandardCharsets;

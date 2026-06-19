@@ -1,6 +1,6 @@
 package io.mehdieidi.modless.backend.config;
 
-import io.mehdieidi.modless.platform.core.service.ModelService;
+import io.mehdieidi.modless.platform.model.application.ModelService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 

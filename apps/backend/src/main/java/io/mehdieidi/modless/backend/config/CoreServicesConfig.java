@@ -1,26 +1,27 @@
 package io.mehdieidi.modless.backend.config;
 
-import io.mehdieidi.modless.platform.core.model.ModelLevel;
-import io.mehdieidi.modless.platform.core.repository.PlatformStore;
-import io.mehdieidi.modless.platform.core.service.ArtifactService;
-import io.mehdieidi.modless.platform.core.service.AuthService;
-import io.mehdieidi.modless.platform.core.service.FileMetamodelResolver;
-import io.mehdieidi.modless.platform.core.service.LayoutService;
-import io.mehdieidi.modless.platform.core.service.MdeJobService;
-import io.mehdieidi.modless.platform.core.service.MdeRuntimeOptions;
-import io.mehdieidi.modless.platform.core.service.MdeRuntimePaths;
-import io.mehdieidi.modless.platform.core.service.MetamodelResolver;
-import io.mehdieidi.modless.platform.core.service.ModelLockService;
-import io.mehdieidi.modless.platform.core.service.ModelService;
-import io.mehdieidi.modless.platform.core.service.ModelingConfigService;
-import io.mehdieidi.modless.platform.core.service.ProjectService;
-import io.mehdieidi.modless.platform.core.service.StoredViewLayoutService;
-import io.mehdieidi.modless.platform.core.service.TransformationService;
+import io.mehdieidi.modless.backend.api.ProjectArchiveService;
+import io.mehdieidi.modless.platform.artifact.application.ArtifactService;
+import io.mehdieidi.modless.platform.identity.application.AuthService;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.model.application.ModelLockService;
+import io.mehdieidi.modless.platform.model.application.ModelService;
+import io.mehdieidi.modless.platform.model.application.StoredViewLayoutService;
+import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
+import io.mehdieidi.modless.platform.modeling.layout.LayoutService;
+import io.mehdieidi.modless.platform.modeling.metamodel.FileMetamodelResolver;
+import io.mehdieidi.modless.platform.modeling.metamodel.MetamodelResolver;
+import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimeOptions;
+import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimePaths;
+import io.mehdieidi.modless.platform.project.application.ProjectService;
+import io.mehdieidi.modless.platform.storage.api.PlatformStore;
+import io.mehdieidi.modless.platform.transformation.application.MdeJobService;
+import io.mehdieidi.modless.platform.transformation.application.TransformationService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Composes platform-core services and their storage-backed dependencies for the backend. */
+/** Composes platform feature services and their storage-backed dependencies for the backend. */
 @Configuration
 @EnableConfigurationProperties(BackendProperties.class)
 public class CoreServicesConfig {
@@ -94,6 +95,11 @@ public class CoreServicesConfig {
   @Bean
   ProjectService projectService(PlatformStore store, AuthService authService) {
     return new ProjectService(store, authService);
+  }
+
+  @Bean
+  ProjectArchiveService projectArchiveService(PlatformStore store, ProjectService projectService) {
+    return new ProjectArchiveService(store, projectService);
   }
 
   /**

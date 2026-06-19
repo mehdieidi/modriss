@@ -1,6 +1,6 @@
 package io.mehdieidi.modless.backend.assistant;
 
-import io.mehdieidi.modless.platform.core.service.ModelService;
+import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.time.Instant;
 import java.util.List;
 

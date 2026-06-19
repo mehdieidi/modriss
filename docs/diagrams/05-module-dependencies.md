@@ -5,35 +5,54 @@
 ```mermaid
 flowchart TB
     backend["apps/backend"]
-    domain["platform-domain"]
-    app["platform-application"]
-    storage["platform-storage-postgres"]
+    kernel["platform-kernel"]
+    storageApi["platform-storage-api"]
+    identity["platform-identity"]
+    project["platform-project"]
     modeling["platform-modeling"]
+    model["platform-model"]
+    artifact["platform-artifact"]
+    transform["platform-transformation"]
+    storage["platform-storage-postgres"]
     etl["mde-etl-runner"]
     evl["mde-evl-validator"]
     m2t["mde-m2t-runner"]
-    cli["tools/mde-cli"]
     etlcli["tools/mde-etl-cli"]
     evlcli["tools/mde-evl-cli"]
     m2tcli["tools/mde-m2t-cli"]
 
-    backend --> domain
-    backend --> app
+    storageApi --> kernel
+    identity --> storageApi
+    project --> identity
+    modeling --> kernel
+    model --> project
+    model --> modeling
+    model --> evl
+    artifact --> project
+    transform --> model
+    transform --> artifact
+    transform --> etl
+    transform --> m2t
+
+    storage --> storageApi
+    storage --> identity
+    storage --> project
+    storage --> model
+    storage --> artifact
+    storage --> transform
+
     backend --> storage
+    backend --> identity
+    backend --> project
+    backend --> model
     backend --> modeling
-    storage --> domain
-    storage --> app
-    app --> domain
-    app --> modeling
-    app --> etl
-    app --> evl
-    app --> m2t
+    backend --> artifact
+    backend --> transform
+
     etl --> evl
-    modeling --> domain
     etlcli --> etl
     evlcli --> evl
     m2tcli --> m2t
-    cli -.->|"Standalone Emfatic/EMF compiler"| domain
 ```
 
 ## External Library Dependencies
