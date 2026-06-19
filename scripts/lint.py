@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = ROOT / "linting.json"
-REQUIREMENTS_LINT = ROOT / "requirements-lint.txt"
+CONFIG_PATH = ROOT / "config" / "linting.json"
+REQUIREMENTS_LINT = ROOT / "config" / "requirements-lint.txt"
 
 
 def run(command: list[str], *, stdin: bytes | None = None) -> None:

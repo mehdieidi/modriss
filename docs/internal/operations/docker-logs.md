@@ -1,7 +1,8 @@
 # Docker backend logs and local observability
 
 When you start the stack with `docker compose up`, the backend logs are written to the container
-output stream as structured JSON. In the default `compose.yaml`, the backend runs with the Spring
+output stream as structured JSON. In the default stack (`deploy/compose.yaml`, or root
+`compose.yaml`), the backend runs with the Spring
 `prod` profile, so there is no file-based backend log inside the container.
 
 The stack also includes [Dozzle](https://dozzle.dev/), a lightweight browser UI for viewing and

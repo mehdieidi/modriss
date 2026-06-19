@@ -1,6 +1,11 @@
 {
   "extends": ["stylelint-config-standard"],
-  "ignoreFiles": ["**/node_modules/**", "**/target/**", "**/storage/**", "**/vendor/**"],
+  "ignoreFiles": [
+    "../**/node_modules/**",
+    "../**/target/**",
+    "../**/storage/**",
+    "../**/vendor/**"
+  ],
   "rules": {
     "alpha-value-notation": null,
     "color-function-alias-notation": null,

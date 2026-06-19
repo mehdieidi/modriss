@@ -28,7 +28,7 @@ See Maven `pom.xml` files and `package-lock.json` for the complete dependency gr
 | Component | License | Location |
 | --------- | ------- | -------- |
 | Prettier, ESLint, Stylelint, markdownlint-cli2 | MIT / Apache-2.0 | `package.json` |
-| Ruff, yamllint | MIT / GPL-3.0 | `requirements-lint.txt` |
+| Ruff, yamllint | MIT / GPL-3.0 | `config/requirements-lint.txt` |
 | Google Java Format (via Spotless) | Apache-2.0 | Root `pom.xml` |
 
 ## Generated artifacts

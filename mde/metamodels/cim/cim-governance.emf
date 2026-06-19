@@ -1,4 +1,3 @@
-/** Defines the cim governance metamodel package. */
 @namespace(uri="https://modless.org/cim/governance/1.0", prefix="cimgov")
 package cimgov;
 
@@ -8,32 +7,28 @@ import "cim-organization.ecore";
 import "cim-domain-data.ecore";
 import "cim-behavior.ecore";
 
-/*
- * NonFunctionalRequirement is contained through CIMModel.requirements.
- * Editors should expose filtered NFR views instead of duplicating containment.
- */
 class NonFunctionalRequirement extends cimorg.Requirement {
-  attr cimtypes.QualityType qualityType;
   attr String metric;
   attr String target;
   attr String measurementMethod;
   attr String environmentAssumption;
-  ref kernel.ModelElement[+] constrainedElements;
+  attr cimtypes.QualityType qualityType;
+
   val QualityScenario[*] scenarios;
+
+  ref kernel.ModelElement[+] constrainedElements;
 }
 
-/** Represents the Quality Scenario concept in this model. */
 class QualityScenario extends kernel.TraceableElement {
-  attr cimtypes.QualityType qualityType;
   attr String source;
   attr String stimulus;
   attr String environment;
   attr String artifact;
   attr String response;
   attr String responseMeasure;
+  attr cimtypes.QualityType qualityType;
 }
 
-/** Represents the Security Constraint concept in this model. */
 class SecurityConstraint extends NonFunctionalRequirement {
   attr String authenticationNeed;
   attr String authorizationRule;
@@ -41,19 +36,18 @@ class SecurityConstraint extends NonFunctionalRequirement {
   attr Boolean nonRepudiationRequired;
   attr Boolean auditAccessRequired;
   attr String threatRationale;
+
   ref cimorg.Actor[*] constrainedActors;
   ref cimbehavior.Command[*] constrainedCommands;
   ref cimbehavior.Query[*] constrainedQueries;
   ref cimdomain.InformationItem[*] constrainedInformation;
 }
 
-/** Represents the Privacy Constraint concept in this model. */
 class PrivacyConstraint extends NonFunctionalRequirement {
   attr String law;
   attr String jurisdiction;
   attr String dataSubjectType;
   attr String purpose;
-  attr cimtypes.LegalBasis legalBasis;
   attr String retentionPeriod;
   attr Boolean consentRequired;
   attr Boolean deletionRequired;
@@ -63,11 +57,12 @@ class PrivacyConstraint extends NonFunctionalRequirement {
   attr String allowedResidencyArea;
   attr Boolean crossBorderTransferAllowed;
   attr String minimizationRule;
+  attr cimtypes.LegalBasis legalBasis;
+
   ref cimdomain.InformationItem[+]#privacyConstraints dataItems;
   ref cimorg.Actor[*] dataSubjects;
 }
 
-/** Represents the Compliance Constraint concept in this model. */
 class ComplianceConstraint extends NonFunctionalRequirement {
   attr String regulation;
   attr String controlId;
@@ -75,5 +70,6 @@ class ComplianceConstraint extends NonFunctionalRequirement {
   attr String evidenceRequired;
   attr String auditFrequency;
   attr Boolean externalAuditRequired;
+
   ref kernel.ModelElement[*] scopedElements;
 }

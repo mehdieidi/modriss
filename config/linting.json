@@ -32,8 +32,9 @@
         "-m",
         "yamllint",
         "-c",
-        ".yamllint.yml",
+        "config/yamllint.yml",
         "compose.yaml",
+        "deploy/compose.yaml",
         "docs",
         "apps/backend/src/main/resources"
       ]
@@ -45,7 +46,7 @@
     "docker": {
       "description": "Dockerfiles with Hadolint.",
       "command": ["docker", "run", "--rm", "-i", "hadolint/hadolint:latest", "hadolint", "-"],
-      "dockerfiles": ["Dockerfile"]
+      "dockerfiles": ["deploy/Dockerfile"]
     }
   }
 }

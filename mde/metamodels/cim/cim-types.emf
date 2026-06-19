@@ -1,8 +1,6 @@
-/** Defines the cim types metamodel package. */
 @namespace(uri="https://modless.org/cim/types/1.0", prefix="cimtypes")
 package cimtypes;
 
-/** Defines the supported Requirement Type values. */
 enum RequirementType {
   FUNCTIONAL;
   BUSINESS_RULE;
@@ -15,7 +13,6 @@ enum RequirementType {
   DATA_GOVERNANCE;
 }
 
-/** Defines the supported Requirement Source Type values. */
 enum RequirementSourceType {
   STAKEHOLDER;
   REGULATION;
@@ -26,7 +23,6 @@ enum RequirementSourceType {
   AI_ASSISTANT;
 }
 
-/** Defines the supported Requirement Relationship Kind values. */
 enum RequirementRelationshipKind {
   DEPENDS_ON;
   CONFLICTS_WITH;
@@ -35,7 +31,6 @@ enum RequirementRelationshipKind {
   DERIVES_FROM;
 }
 
-/** Defines the supported Actor Type values. */
 enum ActorType {
   HUMAN;
   ORGANIZATION;
@@ -46,7 +41,6 @@ enum ActorType {
   REGULATOR;
 }
 
-/** Defines the supported Trust Level values. */
 enum TrustLevel {
   TRUSTED_INTERNAL;
   PARTIALLY_TRUSTED;
@@ -54,7 +48,6 @@ enum TrustLevel {
   REGULATED_EXTERNAL;
 }
 
-/** Defines the supported Capability Criticality values. */
 enum CapabilityCriticality {
   SUPPORTING;
   IMPORTANT;
@@ -62,7 +55,6 @@ enum CapabilityCriticality {
   MISSION_CRITICAL;
 }
 
-/** Defines the supported Domain Relationship Type values. */
 enum DomainRelationshipType {
   ASSOCIATION;
   COMPOSITION;
@@ -72,7 +64,6 @@ enum DomainRelationshipType {
   OWNERSHIP;
 }
 
-/** Defines the supported Primitive Business Type values. */
 enum PrimitiveBusinessType {
   TEXT;
   NUMBER;
@@ -94,7 +85,6 @@ enum PrimitiveBusinessType {
   BINARY;
 }
 
-/** Defines the supported Identity Strategy values. */
 enum IdentityStrategy {
   NATURAL_KEY;
   COMPOSITE_NATURAL_KEY;
@@ -103,7 +93,6 @@ enum IdentityStrategy {
   UNKNOWN;
 }
 
-/** Defines the supported Data Kind values. */
 enum DataKind {
   PUBLIC;
   INTERNAL;
@@ -116,7 +105,6 @@ enum DataKind {
   REGULATED;
 }
 
-/** Defines the supported Identifiability values. */
 enum Identifiability {
   NON_PERSONAL;
   PSEUDONYMOUS;
@@ -125,7 +113,6 @@ enum Identifiability {
   ANONYMOUS;
 }
 
-/** Defines the supported Command Type values. */
 enum CommandType {
   USER_INTENT;
   BUSINESS_SYSTEM_INTENT;
@@ -135,7 +122,6 @@ enum CommandType {
   CANCELLATION;
 }
 
-/** Defines the supported Query Type values. */
 enum QueryType {
   LOOKUP;
   LIST;
@@ -145,7 +131,6 @@ enum QueryType {
   ANALYTICS;
 }
 
-/** Defines the supported Freshness Need values. */
 enum FreshnessNeed {
   REAL_TIME;
   NEAR_REAL_TIME;
@@ -154,14 +139,12 @@ enum FreshnessNeed {
   HISTORICAL;
 }
 
-/** Defines the supported Event Time Semantics values. */
 enum EventTimeSemantics {
   BUSINESS_TIME;
   OBSERVATION_TIME;
   RECORDING_TIME;
 }
 
-/** Defines the supported Policy Type values. */
 enum PolicyType {
   REACTION;
   GUARD;
@@ -173,7 +156,6 @@ enum PolicyType {
   COMPENSATION;
 }
 
-/** Defines the supported Process Kind values. */
 enum ProcessKind {
   STRAIGHT_THROUGH;
   HUMAN_INVOLVED;
@@ -183,7 +165,6 @@ enum ProcessKind {
   REPORTING_PROCESS;
 }
 
-/** Defines the supported Step Kind values. */
 enum StepKind {
   COMMAND;
   QUERY;
@@ -197,7 +178,6 @@ enum StepKind {
   END;
 }
 
-/** Defines the supported Quality Type values. */
 enum QualityType {
   PERFORMANCE;
   LATENCY;
@@ -215,7 +195,6 @@ enum QualityType {
   USABILITY;
 }
 
-/** Defines the supported Legal Basis values. */
 enum LegalBasis {
   CONSENT;
   CONTRACT;
@@ -227,7 +206,6 @@ enum LegalBasis {
   UNKNOWN;
 }
 
-/** Defines the supported Interaction Expectation values. */
 enum InteractionExpectation {
   IMMEDIATE_RESPONSE_EXPECTED;
   RESPONSE_CAN_BE_DELAYED;
@@ -236,7 +214,6 @@ enum InteractionExpectation {
   HUMAN_REVIEW_REQUIRED;
 }
 
-/** Defines the supported Consistency Expectation values. */
 enum ConsistencyExpectation {
   SINGLE_ENTITY;
   MULTI_ENTITY_STRONG_CONSISTENCY;

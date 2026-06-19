@@ -2,17 +2,23 @@
   "name": "modless-formatting",
   "private": true,
   "type": "module",
+  "prettier": "./config/prettier.config.json",
   "scripts": {
     "format": "python scripts/format.py",
     "format:check": "python scripts/format.py --check",
     "verify": "python scripts/verify.py",
     "verify:fast": "python scripts/verify.py --skip-tests",
+    "verify:flyway": "python scripts/verify-flyway-migrations.py",
     "format:prettier": "prettier --write --ignore-unknown",
     "format:prettier:check": "prettier --check --ignore-unknown",
     "lint": "python scripts/lint.py",
-    "lint:eslint": "eslint \"apps/**/*.js\"",
+    "lint:eslint": "eslint --config config/eslint.config.js \"apps/**/*.js\"",
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!**/target/**\" \"!**/vendor/**\"",
-    "lint:stylelint": "stylelint \"apps/**/*.css\""
+    "lint:stylelint": "stylelint --config config/stylelintrc.json \"apps/**/*.css\"",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:up:deploy": "docker compose -f deploy/compose.yaml up --build",
+    "docker:down:deploy": "docker compose -f deploy/compose.yaml down"
   },
   "devDependencies": {
     "@eslint/js": "9.27.0",

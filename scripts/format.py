@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = ROOT / "formatting.json"
+CONFIG_PATH = ROOT / "config" / "formatting.json"
 
 
 def run(command: list[str]) -> None:

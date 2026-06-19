@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Backup the Modless PostgreSQL database to a timestamped custom-format dump.
-# Usage: ./scripts/ops/backup-postgres.sh [output-directory]
+# Usage: ./deploy/scripts/backup-postgres.sh [output-directory]
 
 set -euo pipefail
 

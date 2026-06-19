@@ -1,4 +1,3 @@
-/** Defines the cim behavior metamodel package. */
 @namespace(uri="https://modless.org/cim/behavior/1.0", prefix="cimbehavior")
 package cimbehavior;
 
@@ -8,18 +7,19 @@ import "cim-organization.ecore";
 import "cim-domain-data.ecore";
 import "cim-process-policy.ecore";
 
-/** Represents the Command concept in this model. */
 class Command extends kernel.TraceableElement {
   attr String intent;
-  attr cimtypes.CommandType commandType;
   attr Boolean userInitiated;
-  attr kernel.Priority priority;
-  attr cimtypes.InteractionExpectation interactionExpectation;
   attr String idempotencyBusinessKey;
   attr Boolean duplicateSubmissionPossible;
   attr Boolean auditRequired;
   attr Boolean authorizationRequired;
   attr String authorizationRule;
+  attr cimtypes.CommandType commandType;
+  attr cimtypes.InteractionExpectation interactionExpectation;
+  attr kernel.Priority priority;
+
+  val CommandOutcome[*]#command outcomes;
 
   ref cimorg.Actor[*]#issuesCommands issuedBy;
   ref cimorg.BusinessCapability[?]#containsCommands targetCapability;
@@ -29,24 +29,21 @@ class Command extends kernel.TraceableElement {
   ref BusinessEvent[*]#expectedByCommands expectedEvents;
   ref BusinessEvent[*]#rejectedByCommands rejectionEvents;
   ref BusinessError[*] possibleErrors;
-  val CommandOutcome[*]#command outcomes;
 }
 
-/** Represents the Command Outcome concept in this model. */
 class CommandOutcome extends kernel.TraceableElement {
   attr Boolean success;
   attr String resultDescription;
+
   readonly transient ref Command[1]#outcomes command;
+
   ref BusinessEvent[*] emittedEvents;
   ref BusinessError[*] errors;
   ref cimdomain.InformationItem[*] output;
 }
 
-/** Represents the Query concept in this model. */
 class Query extends kernel.TraceableElement {
   attr String intent;
-  attr cimtypes.QueryType queryType;
-  attr cimtypes.FreshnessNeed freshnessNeed;
   attr String confidentiality;
   attr Boolean authorizationRequired;
   attr String authorizationRule;
@@ -55,18 +52,19 @@ class Query extends kernel.TraceableElement {
   attr String paginationExpectation;
   attr String filteringExpectation;
   attr String sortingExpectation;
-  ref cimorg.Actor[*]#issuesQueries issuedBy;
+  attr cimtypes.QueryType queryType;
+  attr cimtypes.FreshnessNeed freshnessNeed;
+
   ref cimdomain.InformationItem[*] input;
   ref cimdomain.InformationItem[+] output;
   ref cimdomain.DomainEntity[*] reads;
+  ref cimorg.Actor[*]#issuesQueries issuedBy;
   ref cimorg.BusinessCapability[?]#containsQueries targetCapability;
 }
 
-/** Represents the Business Event concept in this model. */
 class BusinessEvent extends kernel.TraceableElement {
   attr String semanticName;
   attr String occurredInPastTenseName;
-  attr cimtypes.EventTimeSemantics eventTimeSemantics;
   attr String businessMeaning;
   attr String businessTimestampItemName;
   attr String correlationBusinessKey;
@@ -77,18 +75,19 @@ class BusinessEvent extends kernel.TraceableElement {
   attr Boolean retentionRelevant;
   attr String semanticVersion;
   attr String versioningRationale;
-  ref cimdomain.InformationItem[*] payload;
+  attr cimtypes.EventTimeSemantics eventTimeSemantics;
+
   ref Command[*]#expectedEvents expectedByCommands;
   ref Command[*]#rejectionEvents rejectedByCommands;
-  ref cimprocess.Policy[*]#emitsEvents causedByPolicies;
   ref cimorg.ExternalSystem[*]#producedEvents causedByExternalSystems;
+  ref cimorg.ExternalSystem[*]#consumedEvents consumedByExternalSystems;
+  ref cimprocess.Policy[*]#emitsEvents causedByPolicies;
   ref cimprocess.Policy[*]#triggeredBy consumedByPolicies;
   ref cimprocess.BusinessProcess[*] consumedByProcesses;
-  ref cimorg.ExternalSystem[*]#consumedEvents consumedByExternalSystems;
+  ref cimdomain.InformationItem[*] payload;
   ref cimdomain.DomainEntity[*] affects;
 }
 
-/** Represents the Business Error concept in this model. */
 class BusinessError extends kernel.TraceableElement {
   attr String errorCode;
   attr String businessMeaning;
@@ -96,16 +95,18 @@ class BusinessError extends kernel.TraceableElement {
   attr Boolean recoverable;
   attr Boolean retryMeaningful;
   attr Boolean auditRequired;
+
   ref BusinessEvent[*] emittedEvents;
 }
 
-/** Represents the Condition concept in this model. */
 class Condition extends kernel.TraceableElement {
   attr String naturalLanguage;
-  attr kernel.ExpressionLanguage expressionLanguage;
   attr String expression;
-  val kernel.Expression[?] expressionModel;
   attr Boolean mustBeAutomatable;
+  attr kernel.ExpressionLanguage expressionLanguage;
+
+  val kernel.Expression[?] expressionModel;
+
   ref cimdomain.InformationItem[*] referencedInformation;
   ref cimdomain.DomainConcept[*] referencedConcepts;
 }

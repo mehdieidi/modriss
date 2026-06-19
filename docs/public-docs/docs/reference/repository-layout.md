@@ -5,7 +5,17 @@ apps/
   backend/                 Spring Boot API and assistant
   frontend/                Browser modeling application
   landing/                 Public landing page
-docs/                      Engineering documentation and diagrams
+config/                    Tooling and static-analysis configuration
+deploy/                    Docker Compose stack, Dockerfile, deployment scripts
+docs/
+  adr/                     Architecture Decision Records
+  api/                     REST and WebSocket API references
+  diagrams/                Mermaid architecture diagrams
+  internal/                Contributor guides and deep-dive references
+  public-docs/             Published MkDocs site
+infra/
+  grafana/                 Dashboard definitions
+  prometheus/              Alert rule definitions
 mde/
   metamodels/              Emfatic and combined Ecore
   validation/              EVL validation profiles
@@ -20,12 +30,13 @@ packages/java/
   mde-evl-validator/       Reusable EVL runner
   mde-etl-runner/          Reusable ETL runner
   mde-m2t-runner/          Reusable EGX/EGL runner
+scripts/                   Repository automation (format, lint, verify, Flyway check)
+tests/                     Cross-cutting test placeholders
 tools/
   mde-cli/                 Emfatic-to-Ecore compiler CLI
   mde-evl-cli/             Validation CLI
   mde-etl-cli/             Transformation CLI
   mde-m2t-cli/             Generation CLI
-scripts/                    Repository automation
 ```
 
 ## Maven Dependency Direction
@@ -40,5 +51,5 @@ behind `PlatformStore`.
 ## Canonical Documentation
 
 The repository also contains a detailed Mermaid diagram package in `docs/diagrams/`, a checked-in
-OpenAPI contract in `docs/api/openapi/openapi.yaml`, storage and assistant guides, generated-artifact
-operations guides, and module-specific READMEs.
+OpenAPI contract in `docs/api/openapi/openapi.yaml`, storage and assistant guides under
+`docs/internal/`, generated-artifact operations guides, and module-specific READMEs.

@@ -34,7 +34,7 @@ to determine what is required.
 | AI modeling behavior               | `apps/backend/.../assistant/`                                                                        | Catalog indexing, starter models, deterministic patches, semantic patch compilation, model context                     |
 | Public API contract                | controllers plus `docs/api/openapi/openapi.yaml`                                                     | Frontend, external clients, API docs                                                                                   |
 | Regression fixtures                | `mde/samples/*.xmi`, Java tests, case-study samples                                                  | All MDE pipeline regression tests                                                                                      |
-| Architecture documentation         | `README.md`, `docs/project-description.md`, `docs/`, especially `docs/diagrams/`                     | Developers, thesis material, operations                                                                                |
+| Architecture documentation         | `README.md`, `docs/internal/project-description.md`, `docs/`, especially `docs/diagrams/`            | Developers, thesis material, operations                                                                                |
 
 ## How Runtime Metadata Is Built
 
@@ -538,7 +538,7 @@ Add a new forward-only migration under
 
 Do not edit an already-applied shared migration. Add the next numbered migration and update
 `PostgresPlatformStore`, record types, repository interfaces, integration tests, and
-`docs/postgres-storage.md`.
+`docs/internal/operations/postgres-storage.md`.
 
 ### Existing model compatibility
 
@@ -605,7 +605,7 @@ Relevant docs:
 - `docs/api/openapi/openapi.yaml`
 - `docs/api/rest-api.md`
 - `docs/api/websocket-api.md`
-- `docs/ai-assistant.md`
+- `docs/internal/ai/assistant.md`
 
 ### Generated JSON Schema
 

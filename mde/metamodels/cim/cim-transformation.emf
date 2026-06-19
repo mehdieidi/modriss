@@ -1,26 +1,24 @@
-/** Defines the cim transformation metamodel package. */
 @namespace(uri="https://modless.org/cim/transformation/1.0", prefix="cimtransform")
 package cimtransform;
 
 import "../shared/kernel.ecore";
 
-/** Represents the Risk concept in this model. */
 class Risk extends kernel.TraceableElement {
   attr String riskStatement;
   attr String probability;
   attr String impact;
   attr String mitigation;
   attr Boolean productionBlocking;
+
   ref kernel.ModelElement[*] affectedElements;
 }
 
-/** Represents the Assumption concept in this model. */
 class Assumption extends kernel.TransformationAssumption {
   attr String businessArea;
+
   ref kernel.ModelElement[*] affectedElements;
 }
 
-/** Represents the Hotspot concept in this model. */
 class Hotspot extends kernel.TraceableElement {
   attr String question;
   attr String impact;
@@ -28,10 +26,10 @@ class Hotspot extends kernel.TraceableElement {
   attr Date dueDate;
   attr Boolean blocksTransformation;
   attr Boolean blocksProduction;
+
   ref kernel.ModelElement[*] attachedTo;
 }
 
-/** Represents the Transformation Profile concept in this model. */
 class TransformationProfile extends kernel.TraceableElement {
   attr Boolean preferCapabilityAsServiceBoundary;
   attr Boolean preferProcessAsWorkflowCandidate;
@@ -40,5 +38,6 @@ class TransformationProfile extends kernel.TraceableElement {
   attr Boolean requirePrivacyClassificationForAllInformation;
   attr Boolean generateReadModelsFromQueries;
   attr String defaultServiceGranularityRationale;
+
   ref kernel.ManualDecision[*] requiredDecisions;
 }

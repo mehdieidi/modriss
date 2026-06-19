@@ -8,7 +8,7 @@ in-browser modeling editor with optional Spring AI assistance. From a platform-s
 toolchain produces reviewable, deployable serverless project artifacts.
 
 For the full thesis-oriented project narrative, architecture rationale, and planned features, see
-[docs/project-description.md](docs/project-description.md).
+[docs/internal/project-description.md](docs/internal/project-description.md).
 
 ## Features
 
@@ -97,13 +97,18 @@ apps/
   backend/                 Spring Boot API and assistant
   frontend/                Browser modeling application
   landing/                 Public landing page
+config/                    Tooling and static-analysis configuration
+deploy/                    Docker Compose stack, Dockerfile, deployment scripts
 docs/                      Engineering documentation and diagrams
+  adr/                     Architecture Decision Records
+  internal/                Contributor guides and deep-dive references
+  public-docs/             Published MkDocs site
+infra/                     Grafana dashboards and Prometheus alert rules
 mde/                       Metamodels, validation, transformations, generation, samples
 packages/java/             Domain, application, storage, modeling, and MDE runner modules
+scripts/                   Repository automation (format, lint, verify, Flyway check)
+tests/                     Cross-cutting test placeholders
 tools/                     Standalone MDE CLI utilities
-scripts/                   Repository automation (format, lint, verify, ops)
-ops/                       Grafana dashboards and Prometheus alert rules
-docs/adr/                  Architecture Decision Records
 ```
 
 Module boundaries and dependency direction:
@@ -114,14 +119,20 @@ Module boundaries and dependency direction:
 | Topic                                | Location                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | Public docs site (MkDocs)            | [docs/public-docs/](docs/public-docs/)                                                                 |
+| Engineering deep-dives               | [docs/internal/](docs/internal/)                                                                       |
 | Architecture diagrams                | [docs/diagrams/](docs/diagrams/)                                                                       |
+| ADRs                                 | [docs/adr/](docs/adr/)                                                                                 |
 | REST API                             | [docs/api/rest-api.md](docs/api/rest-api.md) · [OpenAPI](docs/api/openapi/openapi.yaml)                |
-| PostgreSQL storage                   | [docs/postgres-storage.md](docs/postgres-storage.md)                                                   |
-| AI assistant                         | [docs/ai-assistant.md](docs/ai-assistant.md)                                                           |
-| Generated artifacts                  | [docs/generated-artifact-deployment-and-testing.md](docs/generated-artifact-deployment-and-testing.md) |
-| Project description (thesis context) | [docs/project-description.md](docs/project-description.md)                                             |
+| PostgreSQL storage                   | [docs/internal/operations/postgres-storage.md](docs/internal/operations/postgres-storage.md)           |
+| AI assistant                         | [docs/internal/ai/assistant.md](docs/internal/ai/assistant.md)                                         |
+| Generated artifacts                  | [docs/internal/artifacts/deployment-and-testing.md](docs/internal/artifacts/deployment-and-testing.md) |
+| Project description (thesis context) | [docs/internal/project-description.md](docs/internal/project-description.md)                           |
 
 ## Code Quality
+
+Repository-wide formatter and linter settings live in [`config/`](config/). A root
+[`.markdownlint-cli2.jsonc`](.markdownlint-cli2.jsonc) stub is required because markdownlint-cli2
+only auto-discovers that filename at the repository root.
 
 ### Formatting
 
@@ -159,7 +170,7 @@ python scripts/lint.py --list-scopes      # show available scopes
 | `docker`   | Hadolint (requires Docker)        |
 | `all`      | Every scope above                 |
 
-Python lint dependencies install automatically from `requirements-lint.txt` when needed. Node lint
+Python lint dependencies install automatically from `config/requirements-lint.txt` when needed. Node lint
 dependencies install automatically from `package-lock.json` when needed.
 
 Equivalent npm entry point: `npm run lint`

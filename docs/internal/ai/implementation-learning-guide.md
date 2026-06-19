@@ -100,7 +100,7 @@ Important dependency and configuration files:
 - `apps/backend/pom.xml`: backend AI dependencies and optional ONNX profile.
 - `apps/backend/src/main/resources/application.yml`: AI modes, providers, models, embeddings,
   proxy, limits, and database configuration.
-- `compose.yaml`: PostgreSQL with pgvector and the complete local stack.
+- `deploy/compose.yaml`: PostgreSQL with pgvector and the complete local stack.
 
 ## 3. Concepts You Need to Know
 
@@ -794,9 +794,9 @@ Read the implementation in this order:
 
 Related operational and visual references:
 
-- `docs/ai-assistant.md`
+- `docs/internal/ai/assistant.md`
 - `docs/diagrams/14-ai-assistant-architecture.md`
 - `docs/diagrams/15-ai-assistant-turn-and-proposal.md`
 - `docs/diagrams/16-ai-assistant-rag-and-memory.md`
 - `docs/diagrams/08-assistant-storage-er.md`
-- `docs/postgres-storage.md`
+- `docs/internal/operations/postgres-storage.md`

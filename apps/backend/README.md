@@ -29,7 +29,7 @@ The schema is versioned in:
 
 Detailed operations and migration guidance lives in:
 
-- `docs/postgres-storage.md`
+- `docs/internal/operations/postgres-storage.md`
 
 Tables:
 

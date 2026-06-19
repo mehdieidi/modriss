@@ -1,5 +1,5 @@
 # Restore a Modless PostgreSQL backup created by backup-postgres.sh
-# Usage: .\scripts\ops\restore-postgres.ps1 -BackupFile backups\modless-YYYYMMDDTHHMMSSZ.dump
+# Usage: .\deploy\scripts\restore-postgres.ps1 -BackupFile backups\modless-YYYYMMDDTHHMMSSZ.dump
 
 param(
     [Parameter(Mandatory = $true)]

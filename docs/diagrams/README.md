@@ -8,7 +8,7 @@ The diagrams were derived from:
 
 - Spring controllers, configuration, services, and assistant classes under `apps/backend`.
 - Browser client modules under `apps/frontend/js`.
-- Maven module POMs, `compose.yaml`, and backend configuration.
+- Maven module POMs, `deploy/compose.yaml`, and backend configuration.
 - `PlatformStore`, `PostgresPlatformStore`, and Flyway migrations V1 and V2.
 - Emfatic/Ecore metamodels, EVL entry modules, ETL entry modules, and EGX/EGL generation assets.
 

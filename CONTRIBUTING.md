@@ -29,7 +29,8 @@ mvn test                          # Java + integration tests
 docker compose up --build         # full stack smoke test
 ```
 
-Pre-commit runs format check only. Run `python scripts/lint.py` and `python scripts/verify.py` manually before opening a PR.
+Pre-commit runs format check only. Run `python scripts/lint.py` and `python scripts/verify.py` manually
+before opening a PR.
 
 ## Pull Requests
 
@@ -48,8 +49,12 @@ Propose a new ADR when changing core technology, layering, or security posture.
 ## Documentation
 
 - Public docs: `docs/public-docs/` (MkDocs)
-- Engineering diagrams: `docs/diagrams/`
+- Engineering deep-dives: `docs/internal/` (storage, AI, artifacts, MDE impact guides)
+- Architecture diagrams: `docs/diagrams/`
+- ADRs: `docs/adr/`
 - API reference: `docs/api/openapi/openapi.yaml`
+- Deployment and observability: `deploy/`, `infra/`
+- Tooling configuration: `config/`
 
 ## Security
 

@@ -1,4 +1,3 @@
-/** Defines the cim domain data metamodel package. */
 @namespace(uri="https://modless.org/cim/domain-data/1.0", prefix="cimdomain")
 package cimdomain;
 
@@ -8,7 +7,6 @@ import "cim-organization.ecore";
 import "cim-behavior.ecore";
 import "cim-governance.ecore";
 
-/** Represents the Domain Concept concept in this model. */
 abstract class DomainConcept extends kernel.TraceableElement {
   attr String glossaryDefinition;
   attr String examples;
@@ -18,58 +16,60 @@ abstract class DomainConcept extends kernel.TraceableElement {
   ref DomainRelationship[*]#target incomingRelationships;
 }
 
-/** Represents the Domain Entity concept in this model. */
 class DomainEntity extends DomainConcept {
-  attr cimtypes.IdentityStrategy[1] identityStrategy;
   attr String identityDescription;
   attr String lifecycleDescription;
   attr Boolean auditRelevant;
+  attr cimtypes.IdentityStrategy[1] identityStrategy;
+
+  val LifecycleStateDefinition[*] lifecycleStates;
+  val BusinessInvariant[*] invariants;
+
   ref InformationItem[+] identityAttributes;
   ref InformationItem[1] primaryIdentityAttribute;
   ref InformationItem[*] attributes;
-  val LifecycleStateDefinition[*] lifecycleStates;
-  val BusinessInvariant[*] invariants;
   ref cimorg.BusinessCapability[?]#managesEntities owningCapability;
 }
 
-/** Represents the Value Object concept in this model. */
 class ValueObject extends DomainConcept {
   attr cimtypes.PrimitiveBusinessType valueType;
   attr Boolean immutable;
+
   ref InformationItem[*] attributes;
   ref InformationItem[*] equalityAttributes;
 }
 
-/** Represents the Domain Relationship concept in this model. */
 class DomainRelationship extends kernel.SemanticRelationship {
-  attr cimtypes.DomainRelationshipType relationshipType;
   attr String sourceRole;
   attr String targetRole;
-  val kernel.Multiplicity[1] sourceMultiplicity;
-  val kernel.Multiplicity[1] targetMultiplicity;
   attr Boolean ownership;
   attr Boolean navigableFromSource;
   attr Boolean navigableFromTarget;
+  attr cimtypes.DomainRelationshipType relationshipType;
+
+  val kernel.Multiplicity[1] sourceMultiplicity;
+  val kernel.Multiplicity[1] targetMultiplicity;
+
   ref DomainConcept[1]#outgoingRelationships source;
   ref DomainConcept[1]#incomingRelationships target;
 }
 
-/** Represents the Aggregate Candidate concept in this model. */
 class AggregateCandidate extends DomainConcept {
   attr String consistencyBoundaryRationale;
-  attr cimtypes.ConsistencyExpectation consistencyExpectation;
   attr String conflictResolutionPolicy;
   attr String idempotencyBusinessKey;
   attr Boolean strongConsistencyRequired;
+  attr cimtypes.ConsistencyExpectation consistencyExpectation;
+
+  val BusinessInvariant[*] invariants;
+
   ref DomainEntity[1] root;
   ref DomainEntity[+] members;
   ref cimorg.BoundedContextCandidate[?] context;
-  val BusinessInvariant[*] invariants;
   ref cimbehavior.Command[*] handledCommands;
   ref cimbehavior.BusinessEvent[*] emittedEvents;
 }
 
-/** Represents the Lifecycle State Definition concept in this model. */
 class LifecycleStateDefinition extends kernel.TraceableElement {
   attr String[1] stateName;
   attr Boolean initial;
@@ -78,23 +78,22 @@ class LifecycleStateDefinition extends kernel.TraceableElement {
   attr String exitCondition;
 }
 
-/** Represents the Business Invariant concept in this model. */
 class BusinessInvariant extends kernel.TraceableElement {
   attr String naturalLanguageStatement;
-  attr kernel.ExpressionLanguage expressionLanguage;
   attr String expression;
-  val kernel.Expression[?] expressionModel;
   attr kernel.Severity violationSeverity;
+  attr kernel.ExpressionLanguage expressionLanguage;
+
+  val kernel.Expression[?] expressionModel;
+
   ref DomainConcept[*] constrainedConcepts;
 }
 
-/** Represents the Information Item concept in this model. */
 class InformationItem extends kernel.TraceableElement {
   attr String businessName;
   attr cimtypes.PrimitiveBusinessType[1] type;
   attr Boolean required;
   attr Boolean collection;
-  val kernel.Multiplicity[?] cardinality;
   attr String example;
   attr String[*] allowedValues;
   attr String formatHint;
@@ -113,17 +112,18 @@ class InformationItem extends kernel.TraceableElement {
   attr Boolean searchRelevant;
   attr Boolean reportingRelevant;
   attr Boolean retentionRelevant;
+
+  val kernel.Multiplicity[?] cardinality;
+  val InformationItem[*]#parent subItems;
+
+  readonly transient ref InformationItem[?]#subItems parent;
+
   ref DataClassification[?] classification;
   ref cimgov.PrivacyConstraint[*]#dataItems privacyConstraints;
   ref cimgov.ComplianceConstraint[*] complianceConstraints;
-  val InformationItem[*]#parent subItems;
-  readonly transient ref InformationItem[?]#subItems parent;
 }
 
-/** Represents the Data Classification concept in this model. */
 class DataClassification extends kernel.TraceableElement {
-  attr cimtypes.DataKind[1] kind;
-  attr cimtypes.Identifiability identifiability;
   attr String confidentialityLevel;
   attr String regulatoryCategory;
   attr Boolean encryptionExpected;
@@ -133,4 +133,6 @@ class DataClassification extends kernel.TraceableElement {
   attr Boolean auditAccessRequired;
   attr Boolean deletionRightApplies;
   attr String classificationRationale;
+  attr cimtypes.DataKind[1] kind;
+  attr cimtypes.Identifiability identifiability;
 }
