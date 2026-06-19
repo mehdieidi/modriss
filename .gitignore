@@ -74,3 +74,6 @@ node_modules/
 
 # MkDocs output directory
 site/
+
+# Generated sample project files
+generated-project/
