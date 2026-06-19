@@ -46,6 +46,10 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function configuredTraceKind() {
+  return String(modelingLevelConfig(state.activeType).relationshipSemantics?.traceKind || "");
+}
+
 // Fields managed by canvas – shown read-only
 const READONLY_ATTR_KEYS = new Set(["id", "eClass", "x", "y"]);
 // Fields skipped entirely (rendered via canvas label editing)
@@ -912,7 +916,7 @@ function appendTraceabilitySection(node, host = el.attrPanelBody, { includeTitle
   }
   const traceLinks = [];
   state.graph?.relationshipsById?.forEach((relationship) => {
-    if (relationship.kind !== "TRACE" && relationship.eClass !== "TraceLink") {
+    if (relationship.kind !== configuredTraceKind() && relationship.eClass !== "TraceLink") {
       return;
     }
     if (
@@ -937,7 +941,7 @@ function appendTraceabilitySection(node, host = el.attrPanelBody, { includeTitle
               : link.sourceElementId || link.source;
           const other = state.graph?.elementsById?.get(otherId);
           return `<div class="attr-trace-row"><span>${direction}</span><strong>${escapeAttr(
-            link.linkType || link.kind || "TRACE",
+            link.linkType || link.kind || configuredTraceKind(),
           )}</strong><em>${escapeAttr(
             other?.name || other?.label || otherId || "external",
           )}</em></div>`;

@@ -15,6 +15,7 @@
     "lint:eslint": "eslint --config config/eslint.config.js \"apps/**/*.js\"",
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!**/target/**\" \"!**/vendor/**\"",
     "lint:stylelint": "stylelint --config config/stylelintrc.json \"apps/**/*.css\"",
+    "test:frontend": "node --test tests/frontend/*.test.mjs",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "docker:up:deploy": "docker compose -f deploy/compose.yaml up --build",

@@ -1,4 +1,5 @@
 import { state } from "../state.js";
+import { modelingElementDefinition, modelingLevelConfig } from "../modeling-config-data.js";
 
 export const MODLESS_NODE_TYPE = "modless-node";
 export const MODLESS_EDGE_TYPE = "modless-edge";
@@ -16,8 +17,23 @@ function currentCssVarCacheKey() {
   return `${root?.className || ""}|${root?.getAttribute?.("style") || ""}`;
 }
 
-export function nodeSizeForDiagram(typeKey = state.activeType) {
-  return NODE_SIZE.default;
+export function nodeSizeForDiagram(typeKey = state.activeType, nodeOrType = null) {
+  const type = typeof nodeOrType === "string" ? nodeOrType : nodeOrType?.type;
+  try {
+    const definition = type ? modelingElementDefinition(typeKey, type) : null;
+    const configured = definition?.notation?.size;
+    const policy = modelingLevelConfig(typeKey).canvasPolicy || {};
+    const fallback = policy.roleSizes?.node || NODE_SIZE.default;
+    return {
+      width: Math.max(48, Number(configured?.width || fallback.width || NODE_SIZE.default.width)),
+      height: Math.max(
+        40,
+        Number(configured?.height || fallback.height || NODE_SIZE.default.height),
+      ),
+    };
+  } catch {
+    return NODE_SIZE.default;
+  }
 }
 
 export function cssVar(name, fallback = "") {

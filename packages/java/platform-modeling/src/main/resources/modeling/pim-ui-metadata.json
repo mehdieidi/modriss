@@ -10,6 +10,21 @@
       "lineFields": ["summary", "description", "lifecycleStatus"]
     }
   },
+  "notationPrimitives": {
+    "workflow-state-node": { "geometry": "rounded-rectangle", "cornerRadius": 18 },
+    "human-task-card": { "geometry": "rounded-rectangle", "cornerRadius": 18 },
+    "approval-task-card": { "geometry": "rounded-rectangle", "cornerRadius": 18 }
+  },
+  "badgeRules": [
+    { "field": "lifecycleStatus", "useValue": true },
+    { "field": "productionRequired", "label": "production", "when": true },
+    { "field": "authenticationRequired", "label": "authenticated", "when": true },
+    { "field": "authorizationRequired", "label": "authorized", "when": true },
+    { "field": "encryptionRequired", "label": "encrypted", "when": true },
+    { "field": "manualReviewRequired", "label": "review", "when": true },
+    { "field": "generatedByTransformation", "label": "generated", "when": true },
+    { "field": "severity", "useValue": true }
+  ],
   "elementVisualRules": [
     {
       "match": {
@@ -380,6 +395,11 @@
     }
   ],
   "canvasPolicy": {
+    "roleSizes": {
+      "node": { "width": 236, "height": 116 },
+      "container": { "width": 328, "height": 172 },
+      "detail": { "width": 236, "height": 86 }
+    },
     "lowDetailBelow": 0.36,
     "highDetailAtOrAbove": 1.45,
     "edgeLabelsAtOrAbove": 0.8,
@@ -398,6 +418,8 @@
     "TRIGGERS",
     "READS",
     "WRITES",
+    "APPEND",
+    "DELETE",
     "CALLS",
     "USES",
     "USES_SECRET",
@@ -417,8 +439,21 @@
     "CONSTRAINS",
     "PUBLISHES",
     "SUBSCRIBES_TO",
+    "CALLS_ADAPTERS",
+    "USES_SECRETS",
+    "ENVIRONMENT_VARIABLES",
+    "INPUT_SCHEMAS",
+    "OUTPUT_SCHEMAS",
+    "USED_BY_FUNCTIONS",
+    "EXPOSED_BY_ROUTES",
     "TRACE"
   ],
+  "relationshipLabelFields": ["name", "flowPurpose", "operation", "transitionName", "effect"],
+  "relationshipSemantics": {
+    "containmentKind": "CONTAINS",
+    "containmentKinds": ["CONTAINS", "OWNS", "DEPLOYS"],
+    "traceKind": "TRACE"
+  },
   "relationshipKindLabels": {
     "CONTAINS": "contains",
     "OWNS": "owns",
@@ -429,6 +464,8 @@
     "TRIGGERS": "triggers",
     "READS": "reads",
     "WRITES": "writes",
+    "APPEND": "appends",
+    "DELETE": "deletes",
     "CALLS": "calls",
     "USES": "uses",
     "USES_SECRET": "uses secret",
@@ -448,6 +485,13 @@
     "CONSTRAINS": "constrains",
     "PUBLISHES": "publishes",
     "SUBSCRIBES_TO": "subscribes to",
+    "CALLS_ADAPTERS": "calls adapters",
+    "USES_SECRETS": "uses secrets",
+    "ENVIRONMENT_VARIABLES": "has environment variables",
+    "INPUT_SCHEMAS": "uses input schemas",
+    "OUTPUT_SCHEMAS": "uses output schemas",
+    "USED_BY_FUNCTIONS": "used by functions",
+    "EXPOSED_BY_ROUTES": "exposed by routes",
     "TRACE": "trace"
   },
   "relationshipVisualRules": [
@@ -478,7 +522,7 @@
       "stroke": "#0891b2"
     },
     {
-      "matchKinds": ["READS", "WRITES", "READ_WRITE", "DATA_ACCESS", "APPEND", "DELETE"],
+      "matchKinds": ["READS", "WRITES", "DATA_ACCESS", "APPEND", "DELETE"],
       "className": "edge-pim-data",
       "stroke": "#15803d",
       "lineDash": [4, 3]
@@ -855,8 +899,6 @@
         "CONSTRAINS",
         "INPUT_SCHEMAS",
         "OUTPUT_SCHEMAS",
-        "RESULTING_COMMANDS",
-        "RESULTING_EVENTS",
         "USED_BY_FUNCTIONS",
         "EXPOSED_BY_ROUTES",
         "TRACE"
@@ -877,12 +919,13 @@
         "CallbackTaskConfig",
         "ErrorHandler",
         "CompensationPolicy",
+        "EscalationPolicy",
         "HumanTask",
         "ApprovalTask",
         "Function",
         "ExternalAdapter"
       ],
-      "palette": ["Workflow", "WorkflowState", "HumanTask", "ApprovalTask"],
+      "palette": ["Workflow", "WorkflowState", "HumanTask", "ApprovalTask", "EscalationPolicy"],
       "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
       "layoutHint": "PROCESS"
     },
@@ -983,10 +1026,40 @@
       "layoutHint": "MATRIX"
     }
   ],
+  "semanticReferenceKindMappings": {
+    "functionIntegration": "ROUTES_TO",
+    "reads": "READS",
+    "writes": "WRITES",
+    "publishes": "PUBLISHES",
+    "subscribesTo": "SUBSCRIBES_TO",
+    "invokesFunction": "INVOKES",
+    "invokedResource": "INVOKES",
+    "function": "INVOKES",
+    "startState": "STARTS_AT",
+    "nextState": "TRANSITION",
+    "endStates": "ENDS_AT",
+    "targetResource": "PERMISSION_TARGET",
+    "permissions": "PERMISSION",
+    "deploysStacks": "DEPLOYS",
+    "resources": "CONTAINS",
+    "allResources": "CONTAINS",
+    "route": "USES_ROUTE",
+    "role": "USES_ROLE",
+    "logGroup": "WRITES_LOGS_TO"
+  },
+  "semanticReferenceExclusions": ["startState", "endStates"],
   "semanticEdgeObjectRules": [
     {
       "eClass": "DataAccess",
-      "matchKinds": ["READS", "WRITES", "READ_WRITE", "APPEND", "DELETE", "DATA_ACCESS"],
+      "kindField": "mode",
+      "kindMap": {
+        "READ": "READS",
+        "WRITE": "WRITES",
+        "READ_WRITE": "DATA_ACCESS",
+        "APPEND": "APPEND",
+        "DELETE": "DELETE"
+      },
+      "matchKinds": ["READS", "WRITES", "APPEND", "DELETE", "DATA_ACCESS"],
       "sourceType": "FunctionTarget",
       "targetType": "DataAccessTarget",
       "rootFeature": "dataAccesses",
@@ -1000,6 +1073,11 @@
     },
     {
       "eClass": "Trigger",
+      "kindField": "invocationMode",
+      "kindMap": {
+        "SYNCHRONOUS": "INVOKES",
+        "ASYNCHRONOUS": "TRIGGERS"
+      },
       "matchKinds": ["INVOKES", "TRIGGERS"],
       "sourceType": "InvocationSource",
       "targetType": "InvocationTarget",
@@ -1044,7 +1122,8 @@
     },
     {
       "eClass": "RequestResponseFlow",
-      "matchKinds": ["REQUEST_RESPONSE", "FLOW"],
+      "defaultKind": "REQUEST_RESPONSE",
+      "matchKinds": ["REQUEST_RESPONSE"],
       "sourceType": "FlowEndpoint",
       "targetType": "FlowEndpoint",
       "rootFeature": "flows",
@@ -1108,6 +1187,7 @@
       "sourceType": "*",
       "targetType": "*",
       "rootFeature": "links",
+      "ownerType": "TraceModel",
       "sourceFeature": "source",
       "targetFeature": "target",
       "defaults": { "linkType": "OTHER", "confidence": "" }
@@ -1117,6 +1197,7 @@
     "eClass": "PIMModel",
     "modelLevel": "PIM",
     "name": "",
+    "escalationPolicies": [],
     "architectureStyle": "EVENT_DRIVEN_SERVERLESS",
     "diagram": {
       "elements": [],
@@ -1141,6 +1222,7 @@
     "architectureStyle": "HYBRID_SERVERLESS",
     "domainName": "${modelName}",
     "defaultCorrelationIdName": "correlationId",
+    "escalationPolicies": [],
     "services": [],
     "serviceMemberships": [],
     "deploymentUnits": [],
@@ -2466,11 +2548,11 @@
       "color": "#CA8A04",
       "notation": {
         "tag": "ESC",
-        "shape": "escalation-row",
+        "shape": "policy-badge-card",
         "lineFields": ["escalationRule", "afterSeconds"]
       },
-      "containedOnly": true,
-      "creatable": false
+      "containedOnly": false,
+      "creatable": true
     },
     {
       "type": "HumanTask",

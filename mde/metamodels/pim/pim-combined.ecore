@@ -54,6 +54,8 @@
           eType="#/13/Workflow" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="humanTasks" upperBound="-1"
           eType="#/13/HumanTask" containment="true"/>
+      <eStructuralFeatures xsi:type="ecore:EReference" name="escalationPolicies" upperBound="-1"
+          eType="#/13/EscalationPolicy" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="externalEndpoints" upperBound="-1"
           eType="#/8/ExternalEndpoint" containment="true"/>
       <eStructuralFeatures xsi:type="ecore:EReference" name="externalAdapters" upperBound="-1"

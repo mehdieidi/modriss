@@ -21,6 +21,7 @@ import {
   isModelingLevel,
   modelingLevelConfig,
   modelingPalette,
+  modelingRootContainments,
   modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
   modelingShortcutConnectorRules,
@@ -73,6 +74,21 @@ import {
   updateG6Viewport,
   zoomG6CanvasBy,
 } from "./graph-editor/g6-editor.js";
+
+function requiredConfiguredKind(value, context) {
+  const kind = String(value || "").trim();
+  if (!kind || !modelingLevelConfig(state.activeType).relationshipKinds.includes(kind)) {
+    throw new Error(`Missing or unknown ${context} relationship kind: ${kind || "(empty)"}`);
+  }
+  return kind;
+}
+
+function configuredRelationshipSemantic(name) {
+  return requiredConfiguredKind(
+    modelingLevelConfig(state.activeType).relationshipSemantics?.[name],
+    `relationshipSemantics.${name}`,
+  );
+}
 
 const DEFAULT_NODE_W = 228;
 const DEFAULT_NODE_H = 112;
@@ -1895,6 +1911,24 @@ function applyDefinitionAccent(element, definition) {
   }
 }
 
+function createPaletteNotationIcon(definition) {
+  const configuredIcon = String(definitionUi(definition).icon || "").trim();
+  if (
+    configuredIcon.startsWith("/") ||
+    configuredIcon.startsWith(".") ||
+    configuredIcon.endsWith(".svg")
+  ) {
+    return createMaskIcon("palette-item-icon", configuredIcon);
+  }
+  const token = document.createElement("span");
+  token.className = "palette-item-icon palette-notation-icon";
+  token.textContent = String(definition?.notation?.tag || definition?.displayName || "")
+    .trim()
+    .slice(0, 5);
+  token.title = String(definition?.notation?.shape || "");
+  return token;
+}
+
 // ── Palette ───────────────────────────────────────────────────────────────────
 
 function createWizardEdge(sourceId, targetId, kind) {
@@ -1945,10 +1979,13 @@ function addContainmentReference(parent, feature, childId) {
 
 function maybeCreateContainmentEdge(parent, child) {
   const exists = state.diagram.connections.some(
-    (edge) => edge.sourceId === parent.id && edge.targetId === child.id && edge.kind === "CONTAINS",
+    (edge) =>
+      edge.sourceId === parent.id &&
+      edge.targetId === child.id &&
+      edge.kind === configuredRelationshipSemantic("containmentKind"),
   );
   if (!exists) {
-    createWizardEdge(parent.id, child.id, "CONTAINS");
+    createWizardEdge(parent.id, child.id, configuredRelationshipSemantic("containmentKind"));
   }
 }
 
@@ -2335,7 +2372,19 @@ export function renderPalette() {
       : allTypes;
   const actionableTypes = viewScopedTypes;
   const filteredTypes = query
-    ? actionableTypes.filter((type) => type.toLowerCase().includes(query))
+    ? actionableTypes.filter((type) => {
+        const definition = modelingElementDefinition(state.activeType, type);
+        return [
+          type,
+          definition?.displayName,
+          definition?.category,
+          definition?.notation?.tag,
+        ].some((value) =>
+          String(value || "")
+            .toLowerCase()
+            .includes(query),
+        );
+      })
     : actionableTypes;
   const groupedTypes = groupPaletteTypes(filteredTypes);
   syncPaletteCollapsedUi();
@@ -2421,10 +2470,7 @@ export function renderPalette() {
       item.draggable = true;
       item.dataset.nodeType = type;
       applyDefinitionAccent(item, definition);
-      const iconImg = createMaskIcon(
-        "palette-item-icon",
-        definitionUi(definition).icon || PLACEHOLDER_ICON,
-      );
+      const iconImg = createPaletteNotationIcon(definition);
       const labelSpan = document.createElement("span");
       labelSpan.className = "palette-item-label";
       labelSpan.textContent = label;
@@ -2593,8 +2639,9 @@ function buildDirectedKindOptions(source, target) {
 
 function legalKindsForConnection(sourceType, targetType) {
   const kinds = new Set(legalKinds(state.activeType, sourceType, targetType));
-  if (supportsBoundedContext() && state.preferredConnectionKind === "TRACE") {
-    kinds.add("TRACE");
+  const traceKind = configuredRelationshipSemantic("traceKind");
+  if (supportsBoundedContext() && state.preferredConnectionKind === traceKind) {
+    kinds.add(traceKind);
   }
   return [...kinds];
 }
@@ -3149,6 +3196,7 @@ export function setupDnD() {
     const beforeNodeIds = new Set(state.diagram.nodes.map((item) => item.id));
     const beforeEdgeIds = new Set(state.diagram.connections.map((item) => item.id));
     const node = getDefaultNode(state.activeType, type, Math.round(pos.x), Math.round(pos.y));
+    assignNodeToSemanticContainer(node);
     state.diagram.nodes.push(node);
     addNodeToGraphAndActiveView(node);
     materializeActiveView();
@@ -3173,6 +3221,53 @@ export function setupDnD() {
     setStatus(`Added ${created?.eClass || type}`);
     markModelDirty();
   });
+}
+
+function containmentAcceptsType(entry, type) {
+  return (entry?.types || []).some((candidate) => modelingTypeMatchesSafe(candidate, type));
+}
+
+function assignNodeToSemanticContainer(node) {
+  if (
+    modelingRootContainments(state.activeType).some((entry) =>
+      containmentAcceptsType(entry, node.type),
+    )
+  ) {
+    return false;
+  }
+  const candidates = [];
+  state.graph.elementsById.forEach((owner) => {
+    const containment = modelingContainmentsForType(
+      state.activeType,
+      owner.eClass || owner.type,
+    ).find((entry) => !entry.relationshipOnly && containmentAcceptsType(entry, node.type));
+    if (!containment || (containment.many === false && owner[containment.feature])) {
+      return;
+    }
+    const visibleOwner = state.nodesById.get(owner.id);
+    const distance = visibleOwner
+      ? Math.hypot(Number(visibleOwner.x) - node.x, Number(visibleOwner.y) - node.y)
+      : Number.POSITIVE_INFINITY;
+    candidates.push({ owner, containment, distance });
+  });
+  candidates.sort((left, right) => {
+    const leftSelected = left.owner.id === state.selectedNodeId ? 1 : 0;
+    const rightSelected = right.owner.id === state.selectedNodeId ? 1 : 0;
+    return rightSelected - leftSelected || left.distance - right.distance;
+  });
+  const selected = candidates[0];
+  if (!selected) {
+    return false;
+  }
+  node.meta.__ownerId = selected.owner.id;
+  node.meta.__containmentFeature = selected.containment.feature;
+  addReferenceValue(
+    selected.owner,
+    selected.containment.feature,
+    node.id,
+    selected.containment.many !== false,
+  );
+  return true;
 }
 
 // ── Connection management ─────────────────────────────────────────────────────
@@ -3302,39 +3397,23 @@ function createShortcutConnection(source, target) {
     node.label = `${type}-${node.id.slice(-4)}`;
     node.meta.name = node.label;
     node.meta.label = node.label;
+    applyShortcutContainment(node, rule, source, target);
     state.diagram.nodes.push(node);
     addNodeToGraphAndActiveView(node);
     chain.push(node);
   });
-  const viewNode = createShortcutViewNode(rule, source, target, chain.slice(1));
   chain.push(target);
   for (let index = 0; index < chain.length - 1; index++) {
     const edge = {
       id: genId("e"),
       sourceId: chain[index].id,
       targetId: chain[index + 1].id,
-      kind: edgeKinds[index] || "DEPENDS_ON",
+      kind: requiredConfiguredKind(edgeKinds[index], `shortcut edgeKinds[${index}]`),
     };
     state.diagram.connections.push(edge);
     addConnectionToGraphAndActiveView(edge);
   }
-  if (viewNode) {
-    const summaryEdge = {
-      id: genId("e"),
-      sourceId: source.id,
-      targetId: viewNode.id,
-      kind: "CONTAINS",
-    };
-    const targetEdge = {
-      id: genId("e"),
-      sourceId: viewNode.id,
-      targetId: target.id,
-      kind: "INVOKES",
-    };
-    state.diagram.connections.push(summaryEdge, targetEdge);
-    addConnectionToGraphAndActiveView(summaryEdge);
-    addConnectionToGraphAndActiveView(targetEdge);
-  }
+  createShortcutViewRelationship(rule, source, target, chain.slice(1, -1));
   syncActiveViewFromVisibleGraph();
   ensureG6Canvas();
   syncCanvasIndexesFromState();
@@ -3345,30 +3424,123 @@ function createShortcutConnection(source, target) {
   return true;
 }
 
-function createShortcutViewNode(rule, source, target, intermediates) {
+function shortcutSemanticElement(node) {
+  return state.graph.elementsById.get(node?.id) || node?.meta || null;
+}
+
+function shortcutStackOwner(source, target) {
+  for (const endpoint of [source, target]) {
+    const element = shortcutSemanticElement(endpoint);
+    const owner = element?.__ownerId ? state.graph.elementsById.get(element.__ownerId) : null;
+    if (owner && modelingTypeMatchesSafe("SamStack", owner.eClass || owner.type)) {
+      return owner;
+    }
+  }
+  return [...state.graph.elementsById.values()].find((element) =>
+    modelingTypeMatchesSafe("SamStack", element.eClass || element.type),
+  );
+}
+
+function shortcutBindingOwner(binding, source, target) {
+  if (binding.owner === "source") {
+    return shortcutSemanticElement(source);
+  }
+  if (binding.owner === "target") {
+    return shortcutSemanticElement(target);
+  }
+  if (binding.owner === "stack") {
+    return shortcutStackOwner(source, target);
+  }
+  return null;
+}
+
+function attachShortcutChild(child, owner, feature) {
+  if (!child?.meta || !owner?.id || !feature) {
+    return false;
+  }
+  const containment = modelingContainmentsForType(
+    state.activeType,
+    owner.eClass || owner.type,
+  ).find((entry) => entry.feature === feature);
+  if (!containment) {
+    return false;
+  }
+  child.meta.__ownerId = owner.id;
+  child.meta.__containmentFeature = feature;
+  addReferenceValue(owner, feature, child.id, containment.many !== false);
+  return true;
+}
+
+function ensureShortcutScaffold(binding, source, target) {
+  const scaffoldOwnerBinding = { owner: binding.scaffoldOwner };
+  const owner = shortcutBindingOwner(scaffoldOwnerBinding, source, target);
+  if (!owner || !binding.scaffoldType || !binding.scaffoldFeature) {
+    return null;
+  }
+  const existingId = Array.isArray(owner[binding.scaffoldFeature])
+    ? owner[binding.scaffoldFeature][0]
+    : owner[binding.scaffoldFeature];
+  const existing = state.graph.elementsById.get(String(existingId || ""));
+  if (existing) {
+    return existing;
+  }
+  const scaffold = getDefaultNode(state.activeType, binding.scaffoldType, 0, 0);
+  if (!attachShortcutChild(scaffold, owner, binding.scaffoldFeature)) {
+    return null;
+  }
+  const element = {
+    ...scaffold.meta,
+    id: scaffold.id,
+    eClass: scaffold.type,
+    name: scaffold.label,
+    label: scaffold.label,
+  };
+  state.graph.elementsById.set(element.id, element);
+  return element;
+}
+
+function applyShortcutContainment(node, rule, source, target) {
+  const binding = (rule.containmentBindings || []).find((candidate) =>
+    modelingTypeMatchesSafe(candidate.type, node.type),
+  );
+  if (!binding) {
+    return;
+  }
+  const owner =
+    binding.owner === "scaffold"
+      ? ensureShortcutScaffold(binding, source, target)
+      : shortcutBindingOwner(binding, source, target);
+  attachShortcutChild(node, owner, binding.feature);
+}
+
+function createShortcutViewRelationship(rule, source, target, intermediates) {
   const viewType = String(rule.viewType || "").trim();
   if (!viewType) {
     return null;
   }
-  const node = getDefaultNode(
-    state.activeType,
-    viewType,
-    Math.round((source.x + target.x) / 2),
-    Math.round((source.y + target.y) / 2 - 130),
-  );
-  node.label = `${rule.label || viewType}`;
-  node.meta.name = node.label;
-  node.meta.label = node.label;
-  node.meta.generated = true;
-  node.meta.source = source.id;
-  node.meta.target = target.id;
-  applyShortcutViewReferences(node, rule, source, target, intermediates);
-  state.diagram.nodes.push(node);
-  addNodeToGraphAndActiveView(node);
-  return node;
+  const edge = {
+    id: genId("e"),
+    sourceId: source.id,
+    targetId: target.id,
+    kind: requiredConfiguredKind(rule.summaryKind, "shortcut summaryKind"),
+    label: String(rule.label || viewType),
+  };
+  state.diagram.connections.push(edge);
+  addConnectionToGraphAndActiveView(edge);
+  const relationship = state.graph.relationshipsById.get(edge.id);
+  if (!relationship) {
+    return null;
+  }
+  relationship.eClass = viewType;
+  relationship.name = edge.label;
+  relationship.generated = true;
+  relationship.rootFeature = "relationshipViews";
+  relationship.__containmentFeature = "relationshipViews";
+  applyShortcutViewReferences(relationship, rule, source, target, intermediates);
+  return relationship;
 }
 
-function applyShortcutViewReferences(node, rule, source, target, intermediates) {
+function applyShortcutViewReferences(relationship, rule, source, target, intermediates) {
   const bindings = Array.isArray(rule.viewReferences) ? rule.viewReferences : [];
   bindings.forEach((binding) => {
     const feature = String(binding?.feature || "").trim();
@@ -3376,19 +3548,19 @@ function applyShortcutViewReferences(node, rule, source, target, intermediates) 
       return;
     }
     if (binding.role === "source") {
-      node.meta[feature] = source.id;
+      relationship[feature] = source.id;
       return;
     }
     if (binding.role === "target") {
-      node.meta[feature] = target.id;
+      relationship[feature] = target.id;
       return;
     }
     const expectedType = String(binding?.type || "").trim();
     const match = intermediates.find((item) => modelingTypeMatchesSafe(expectedType, item.type));
     if (match) {
-      node.meta[feature] = match.id;
+      relationship[feature] = match.id;
     } else if (binding.required === false) {
-      node.meta[feature] = null;
+      relationship[feature] = null;
     }
   });
 }

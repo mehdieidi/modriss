@@ -10,6 +10,20 @@
       "lineFields": ["logicalId", "awsResourceType", "physicalName", "lifecycleStatus"]
     }
   },
+  "notationPrimitives": {
+    "workflow-node": { "geometry": "rounded-rectangle", "cornerRadius": 18 },
+    "structured-property-row": { "geometry": "rectangle", "cornerRadius": 4 }
+  },
+  "badgeRules": [
+    { "field": "lifecycleStatus", "useValue": true },
+    { "field": "deletionPolicy", "useValue": true },
+    { "field": "productionMode", "label": "production", "when": true },
+    { "field": "encryptionEnabled", "label": "encrypted", "when": true },
+    { "field": "tracingEnabled", "label": "tracing", "when": true },
+    { "field": "deletionProtectionEnabled", "label": "protected", "when": true },
+    { "field": "generated", "label": "generated", "when": true },
+    { "field": "severity", "useValue": true }
+  ],
   "elementVisualRules": [
     {
       "match": {
@@ -401,6 +415,11 @@
     }
   ],
   "canvasPolicy": {
+    "roleSizes": {
+      "node": { "width": 244, "height": 120 },
+      "container": { "width": 336, "height": 176 },
+      "detail": { "width": 244, "height": 88 }
+    },
     "lowDetailBelow": 0.32,
     "highDetailAtOrAbove": 1.55,
     "edgeLabelsAtOrAbove": 0.85,
@@ -434,6 +453,12 @@
     "AUTHORIZED_BY",
     "TRACE"
   ],
+  "relationshipLabelFields": ["name", "logicalId", "sourcePort", "targetPort"],
+  "relationshipSemantics": {
+    "containmentKind": "CONTAINS",
+    "containmentKinds": ["CONTAINS", "DEPLOYS"],
+    "traceKind": "TRACE"
+  },
   "relationshipKindLabels": {
     "CONTAINS": "contains",
     "DEPENDS_ON": "depends on",
@@ -532,7 +557,11 @@
       "targetType": "AwsLambdaFunction",
       "label": "API route invokes Lambda",
       "viewType": "ApiGatewayLambdaIntegrationView",
+      "summaryKind": "INVOKES",
       "intermediateTypes": ["ApiGatewayIntegration"],
+      "containmentBindings": [
+        { "type": "ApiGatewayIntegration", "owner": "stack", "feature": "resources" }
+      ],
       "edgeKinds": ["ROUTES_TO", "INVOKES"],
       "viewReferences": [
         {
@@ -554,7 +583,12 @@
       "targetType": "AwsLambdaFunction",
       "label": "SNS invokes Lambda",
       "viewType": "SnsLambdaSubscriptionView",
+      "summaryKind": "EVENT_FLOW",
       "intermediateTypes": ["SnsSubscription", "LambdaPermission"],
+      "containmentBindings": [
+        { "type": "SnsSubscription", "owner": "stack", "feature": "resources" },
+        { "type": "LambdaPermission", "owner": "stack", "feature": "resources" }
+      ],
       "edgeKinds": ["EVENT_FLOW", "PERMISSION", "INVOKES"],
       "viewReferences": [
         {
@@ -580,7 +614,15 @@
       "targetType": "AwsLambdaFunction",
       "label": "SQS event source invokes Lambda",
       "viewType": "SqsLambdaEventSourceView",
+      "summaryKind": "EVENT_FLOW",
       "intermediateTypes": ["SqsLambdaEventSourceMapping"],
+      "containmentBindings": [
+        {
+          "type": "SqsLambdaEventSourceMapping",
+          "owner": "stack",
+          "feature": "resources"
+        }
+      ],
       "edgeKinds": ["EVENT_FLOW", "INVOKES"],
       "viewReferences": [
         {
@@ -602,7 +644,12 @@
       "targetType": "AwsLambdaFunction",
       "label": "EventBridge targets Lambda",
       "viewType": "EventBridgeLambdaTargetView",
+      "summaryKind": "TARGETS",
       "intermediateTypes": ["EventBridgeTarget", "LambdaPermission"],
+      "containmentBindings": [
+        { "type": "EventBridgeTarget", "owner": "source", "feature": "targets" },
+        { "type": "LambdaPermission", "owner": "stack", "feature": "resources" }
+      ],
       "edgeKinds": ["TARGETS", "PERMISSION", "INVOKES"],
       "viewReferences": [
         {
@@ -628,7 +675,11 @@
       "targetType": "StepFunctionStateMachine",
       "label": "EventBridge starts state machine",
       "viewType": "StepFunctionEventBridgeTargetView",
+      "summaryKind": "INVOKES",
       "intermediateTypes": ["EventBridgeTarget"],
+      "containmentBindings": [
+        { "type": "EventBridgeTarget", "owner": "source", "feature": "targets" }
+      ],
       "edgeKinds": ["TARGETS", "INVOKES"],
       "viewReferences": [
         {
@@ -650,7 +701,19 @@
       "targetType": "AwsLambdaFunction",
       "label": "S3 notification invokes Lambda",
       "viewType": "S3LambdaNotificationView",
+      "summaryKind": "EVENT_FLOW",
       "intermediateTypes": ["S3NotificationRule", "LambdaPermission"],
+      "containmentBindings": [
+        {
+          "type": "S3NotificationRule",
+          "owner": "scaffold",
+          "scaffoldType": "S3NotificationConfiguration",
+          "scaffoldOwner": "source",
+          "scaffoldFeature": "notificationConfiguration",
+          "feature": "rules"
+        },
+        { "type": "LambdaPermission", "owner": "stack", "feature": "resources" }
+      ],
       "edgeKinds": ["EVENT_FLOW", "PERMISSION", "INVOKES"],
       "viewReferences": [
         {
@@ -676,7 +739,19 @@
       "targetType": "SqsQueue",
       "label": "S3 notification sends to SQS",
       "viewType": "S3QueueNotificationView",
+      "summaryKind": "MESSAGE_FLOW",
       "intermediateTypes": ["S3NotificationRule", "SqsQueuePolicy"],
+      "containmentBindings": [
+        {
+          "type": "S3NotificationRule",
+          "owner": "scaffold",
+          "scaffoldType": "S3NotificationConfiguration",
+          "scaffoldOwner": "source",
+          "scaffoldFeature": "notificationConfiguration",
+          "feature": "rules"
+        },
+        { "type": "SqsQueuePolicy", "owner": "stack", "feature": "resources" }
+      ],
       "edgeKinds": ["EVENT_FLOW", "PERMISSION", "MESSAGE_FLOW"],
       "viewReferences": [
         {
@@ -702,7 +777,19 @@
       "targetType": "SnsTopic",
       "label": "S3 notification publishes to SNS",
       "viewType": "S3TopicNotificationView",
+      "summaryKind": "EVENT_FLOW",
       "intermediateTypes": ["S3NotificationRule", "SnsTopicPolicy"],
+      "containmentBindings": [
+        {
+          "type": "S3NotificationRule",
+          "owner": "scaffold",
+          "scaffoldType": "S3NotificationConfiguration",
+          "scaffoldOwner": "source",
+          "scaffoldFeature": "notificationConfiguration",
+          "feature": "rules"
+        },
+        { "type": "SnsTopicPolicy", "owner": "stack", "feature": "resources" }
+      ],
       "edgeKinds": ["EVENT_FLOW", "PERMISSION", "TARGETS"],
       "viewReferences": [
         {
@@ -722,6 +809,112 @@
           "type": "SnsTopicPolicy"
         }
       ]
+    }
+  ],
+  "semanticReferenceKindMappings": {
+    "functionIntegration": "ROUTES_TO",
+    "reads": "READS",
+    "writes": "WRITES",
+    "publishes": "PUBLISHES",
+    "subscribesTo": "SUBSCRIBES_TO",
+    "invokesFunction": "INVOKES",
+    "invokedResource": "INVOKES",
+    "function": "INVOKES",
+    "startState": "STARTS_AT",
+    "nextState": "TRANSITION",
+    "endStates": "ENDS_AT",
+    "targetResource": "TARGETS",
+    "permissions": "PERMISSION",
+    "deploysStacks": "DEPLOYS",
+    "resources": "CONTAINS",
+    "allResources": "CONTAINS",
+    "route": "USES_ROUTE",
+    "role": "USES_ROLE",
+    "logGroup": "WRITES_LOGS_TO"
+  },
+  "semanticEdgeObjectRules": [
+    {
+      "eClass": "ApiGatewayLambdaIntegrationView",
+      "matchKinds": ["INVOKES"],
+      "sourceType": "ApiGatewayRoute",
+      "targetType": "AwsLambdaFunction",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "EventBridgeLambdaTargetView",
+      "matchKinds": ["TARGETS"],
+      "sourceType": "EventBridgeRule",
+      "targetType": "AwsLambdaFunction",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "SnsLambdaSubscriptionView",
+      "matchKinds": ["EVENT_FLOW"],
+      "sourceType": "SnsTopic",
+      "targetType": "AwsLambdaFunction",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "SqsLambdaEventSourceView",
+      "matchKinds": ["EVENT_FLOW"],
+      "sourceType": "SqsQueue",
+      "targetType": "AwsLambdaFunction",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "StepFunctionEventBridgeTargetView",
+      "matchKinds": ["INVOKES"],
+      "sourceType": "EventBridgeRule",
+      "targetType": "StepFunctionStateMachine",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "S3LambdaNotificationView",
+      "matchKinds": ["EVENT_FLOW"],
+      "sourceType": "S3Bucket",
+      "targetType": "AwsLambdaFunction",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "S3QueueNotificationView",
+      "matchKinds": ["MESSAGE_FLOW"],
+      "sourceType": "S3Bucket",
+      "targetType": "SqsQueue",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "S3TopicNotificationView",
+      "matchKinds": ["EVENT_FLOW"],
+      "sourceType": "S3Bucket",
+      "targetType": "SnsTopic",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "TraceLink",
+      "matchKinds": ["TRACE"],
+      "sourceType": "*",
+      "targetType": "*",
+      "rootFeature": "links",
+      "ownerType": "TraceModel",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": { "linkType": "OTHER" }
     }
   ],
   "viewDefinitions": [
@@ -1591,8 +1784,8 @@
       "displayName": "Sam Stack",
       "notation": {
         "tag": "CFN",
-        "shape": "structured-property-row",
-        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
+        "shape": "stack-container",
+        "lineFields": ["stackName", "templatePath", "description", "name"]
       }
     },
     {
@@ -1603,9 +1796,9 @@
       "category": "CloudFormation / SAM",
       "displayName": "Aws Stage",
       "notation": {
-        "tag": "CFN",
-        "shape": "structured-property-row",
-        "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
+        "tag": "STAGE",
+        "shape": "stage-container",
+        "lineFields": ["stageName", "region", "accountId", "name"]
       }
     },
     {

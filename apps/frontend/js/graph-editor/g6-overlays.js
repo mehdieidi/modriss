@@ -71,7 +71,7 @@ export function showInlineLabelEditor(
   }
   clearInlineLabelEditor();
   const root = ensureOverlayRoot();
-  const size = nodeSizeForDiagram(state.activeType);
+  const size = nodeSizeForDiagram(state.activeType, node);
   const topLeft = graphClientPoint(graph, node.x, node.y);
   const viewport = viewportPointFromClient(topLeft.x, topLeft.y);
   labelInput = document.createElement("input");
@@ -132,7 +132,7 @@ export function updateConnectionPreview(graph, sourceNode, clientX, clientY) {
     clearConnectionPreview();
     return;
   }
-  const size = nodeSizeForDiagram(state.activeType);
+  const size = nodeSizeForDiagram(state.activeType, sourceNode);
   const startClient = graphClientPoint(
     graph,
     sourceNode.x + size.width,

@@ -32,19 +32,7 @@ function viewEdgeByRelationship(view) {
 }
 
 function shouldPruneIsolatedGeneratedNodes(view) {
-  const kind = String(view?.kind || "")
-    .trim()
-    .toUpperCase();
-  if (
-    kind === "MAIN" ||
-    kind === "FOCUS" ||
-    view?.scope?.rootElementId ||
-    view?.savedAt ||
-    view?.sourceViewId
-  ) {
-    return false;
-  }
-  return Boolean(view?.definitionId || view?.viewpoint);
+  return view?.pruneIsolated === true;
 }
 
 function pruneIsolatedGeneratedNodes(graph, view, elementIds, relationshipIds) {
@@ -117,6 +105,7 @@ function runtimeEdge(relationship, viewEdge = null) {
     return null;
   }
   return {
+    ...clone(relationship),
     id: relationship.id,
     sourceId: relationship.sourceElementId,
     targetId: relationship.targetElementId,

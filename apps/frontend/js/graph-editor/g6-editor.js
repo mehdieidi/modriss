@@ -349,8 +349,8 @@ function states(attributes) {
   return new Set(Array.isArray(attributes?.states) ? attributes.states : []);
 }
 
-function notationGlyphPath(shape, left, top, width, height) {
-  const name = String(shape || "").toLowerCase();
+function notationGlyphPath(geometry, left, top, width, height) {
+  const name = String(geometry || "rectangle").toLowerCase();
   const right = left + width;
   const bottom = top + height;
   const midX = left + width / 2;
@@ -360,7 +360,7 @@ function notationGlyphPath(shape, left, top, width, height) {
     ...points.slice(1).map(([x, y]) => ["L", x, y]),
     ["Z"],
   ];
-  if (name.includes("diamond")) {
+  if (name === "diamond") {
     return close([
       [midX, top],
       [right, midY],
@@ -368,7 +368,7 @@ function notationGlyphPath(shape, left, top, width, height) {
       [left, midY],
     ]);
   }
-  if (name.includes("hexagon") || name.includes("event")) {
+  if (name === "hexagon") {
     const inset = width * 0.24;
     return close([
       [left + inset, top],
@@ -379,7 +379,7 @@ function notationGlyphPath(shape, left, top, width, height) {
       [left, midY],
     ]);
   }
-  if (name.includes("octagon") || name.includes("error")) {
+  if (name === "octagon") {
     const insetX = width * 0.2;
     const insetY = height * 0.2;
     return close([
@@ -393,18 +393,7 @@ function notationGlyphPath(shape, left, top, width, height) {
       [left, top + insetY],
     ]);
   }
-  if (name.includes("lozenge") || name.includes("command")) {
-    const inset = width * 0.18;
-    return close([
-      [left + inset, top],
-      [right - inset, top],
-      [right, midY],
-      [right - inset, bottom],
-      [left + inset, bottom],
-      [left, midY],
-    ]);
-  }
-  if (name.includes("trapezoid") || name.includes("query")) {
+  if (name === "trapezoid") {
     const inset = width * 0.18;
     return close([
       [left + inset, top],
@@ -413,7 +402,7 @@ function notationGlyphPath(shape, left, top, width, height) {
       [left, bottom],
     ]);
   }
-  if (name.includes("circle") || name.includes("state-node") || name.includes("timer")) {
+  if (name === "ellipse") {
     return [
       ["M", midX, top],
       ["A", width / 2, height / 2, 0, 1, 1, midX, bottom],
@@ -474,7 +463,7 @@ function registerModlessG6Extensions() {
       const tagStripHeight = low ? 0 : 24;
       const notationGlyph = low
         ? null
-        : notationGlyphPath(attributes.notationShape, left + 10, top + 7, 20, 18);
+        : notationGlyphPath(attributes.notationGeometry, left + 10, top + 7, 20, 18);
 
       if (attributes.sticky) {
         const fill = attributes.sticky || "#fde68a";
@@ -1767,7 +1756,7 @@ export function updateG6NodePosition(nodeId, x, y) {
   }
   node.x = Math.round(x);
   node.y = Math.round(y);
-  const size = nodeSizeForDiagram(state.activeType);
+  const size = nodeSizeForDiagram(state.activeType, node);
   editor.graph.updateNodeData?.([
     {
       id: nodeId,

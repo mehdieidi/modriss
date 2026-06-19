@@ -2,6 +2,7 @@ import { state } from "../state.js";
 import { defaultRootModel, getDefaultNode, toDiagram } from "../diagram.js";
 import {
   defaultModelingLevel,
+  modelingLevelConfig,
   modelingLegalKinds,
   modelingPalette,
 } from "../modeling-config-data.js";
@@ -29,7 +30,11 @@ function legalKind(typeKey, sourceType, targetType) {
   } catch {
     // Use a generic fallback below for synthetic stress graphs.
   }
-  return "DEPENDS_ON";
+  const configured = modelingLevelConfig(typeKey).relationshipKinds || [];
+  if (!configured.length) {
+    throw new Error(`No configured relationship kinds for ${typeKey}`);
+  }
+  return configured[0];
 }
 
 function buildRoot(typeKey, nodes, edges, name) {

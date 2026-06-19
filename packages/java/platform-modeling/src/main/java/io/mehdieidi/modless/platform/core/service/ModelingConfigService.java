@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -123,13 +124,21 @@ public final class ModelingConfigService {
         Map.entry("relationshipsPath", "/diagram/relationships"),
         Map.entry("labelField", "name"),
         Map.entry("relationshipKinds", relationshipKinds),
+        Map.entry("relationshipSemantics", requireMap(metadata, "relationshipSemantics", key)),
+        Map.entry(
+            "relationshipLabelFields",
+            metadata.getOrDefault("relationshipLabelFields", List.of("name"))),
         Map.entry("elements", requireList(metadata, "elements", key)),
         Map.entry("relationshipRules", requireList(metadata, "relationshipRules", key)),
         Map.entry("relationshipKindLabels", requireMap(metadata, "relationshipKindLabels", key)),
         Map.entry(
             "relationshipVisualRules", metadata.getOrDefault("relationshipVisualRules", List.of())),
+        Map.entry("badgeRules", metadata.getOrDefault("badgeRules", List.of())),
         Map.entry(
             "semanticReferenceRules", metadata.getOrDefault("semanticReferenceRules", List.of())),
+        Map.entry(
+            "semanticReferenceExclusions",
+            metadata.getOrDefault("semanticReferenceExclusions", List.of())),
         Map.entry(
             "semanticEdgeObjectRules", metadata.getOrDefault("semanticEdgeObjectRules", List.of())),
         Map.entry(
@@ -169,14 +178,29 @@ public final class ModelingConfigService {
     merged.put(
         "elements",
         mergeElements(key, metamodel.elements(), requireList(metadata, "elements", key), metadata));
-    merged.put(
-        "relationshipRules",
+    List<Map<String, Object>> relationshipRules =
         mergeRelationshipRules(
-            optionalList(metadata, "relationshipRules"), metamodel.relationshipRules()));
+            optionalList(metadata, "relationshipRules"),
+            optionalMap(metadata, "semanticReferenceKindMappings"),
+            objectStringList(metadata.get("semanticReferenceExclusions")),
+            optionalList(metadata, "semanticEdgeObjectRules"),
+            objectStringList(metadata.get("relationshipKinds")),
+            String.valueOf(
+                requireMap(metadata, "relationshipSemantics", key).get("containmentKind")),
+            metamodel.relationshipRules());
+    relationshipRules =
+        mergeEdgeObjectRelationshipRules(
+            relationshipRules, optionalList(metadata, "semanticEdgeObjectRules"));
+    merged.put("relationshipRules", relationshipRules);
     merged.put(
         "semanticReferenceRules",
         mergeSemanticReferenceRules(
-            optionalList(metadata, "semanticReferenceRules"), metamodel.semanticReferenceRules()));
+            optionalList(metadata, "semanticReferenceRules"),
+            optionalMap(metadata, "semanticReferenceKindMappings"),
+            objectStringList(metadata.get("semanticReferenceExclusions")),
+            optionalList(metadata, "semanticEdgeObjectRules"),
+            objectStringList(metadata.get("relationshipKinds")),
+            metamodel.semanticReferenceRules()));
     merged.put(
         "viewDefinitions",
         normalizeViewDefinitions(
@@ -192,6 +216,34 @@ public final class ModelingConfigService {
     requireList(merged, "viewDefinitions", key);
     requireMap(merged, "rootTemplate", key);
     return merged;
+  }
+
+  /** Makes every class-based relationship available from the connector legal-kind matrix. */
+  private List<Map<String, Object>> mergeEdgeObjectRelationshipRules(
+      List<Map<String, Object>> relationshipRules, List<?> edgeObjectRules) {
+    List<Map<String, Object>> result = new ArrayList<>(relationshipRules);
+    for (Object item : edgeObjectRules) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        continue;
+      }
+      Map<String, Object> edgeRule = stringKeyMap(raw);
+      String sourceType = String.valueOf(edgeRule.getOrDefault("sourceType", ""));
+      String targetType = String.valueOf(edgeRule.getOrDefault("targetType", ""));
+      List<String> kinds = objectStringList(edgeRule.get("matchKinds"));
+      if (sourceType.isBlank() || targetType.isBlank() || kinds.isEmpty()) {
+        continue;
+      }
+      Map<String, Object> connectorRule =
+          Map.of(
+              "sourceType", sourceType,
+              "targetType", targetType,
+              "allowedKinds", kinds,
+              "edgeObjectType", String.valueOf(edgeRule.getOrDefault("eClass", "")));
+      if (!result.contains(connectorRule)) {
+        result.add(connectorRule);
+      }
+    }
+    return result;
   }
 
   /**
@@ -320,7 +372,7 @@ public final class ModelingConfigService {
       if (ui != null) {
         mergeInto(merged, ui);
       }
-      completeElementVisualMetadata(type, merged);
+      completeElementVisualMetadata(type, merged, metadata);
       requireElementVisualMetadata(key, type, merged);
       elements.add(merged);
     }
@@ -430,7 +482,8 @@ public final class ModelingConfigService {
    * @param type element type name
    * @param element element metadata to mutate
    */
-  private void completeElementVisualMetadata(String type, Map<String, Object> element) {
+  private void completeElementVisualMetadata(
+      String type, Map<String, Object> element, Map<String, Object> metadata) {
     element.putIfAbsent("label", humanize(type));
     element.putIfAbsent("displayName", element.get("label"));
     element.putIfAbsent("icon", "category");
@@ -454,6 +507,43 @@ public final class ModelingConfigService {
     element.putIfAbsent("containedOnly", Boolean.FALSE);
     element.putIfAbsent("supportOnly", Boolean.FALSE);
     element.putIfAbsent("visualRole", visualRole(element));
+    completeNotationMetadata(element, metadata);
+  }
+
+  /**
+   * Completes the executable notation contract consumed by the generic canvas renderer.
+   *
+   * @param element merged element metadata
+   * @param metadata level metadata containing canvas and primitive policies
+   */
+  private void completeNotationMetadata(Map<String, Object> element, Map<String, Object> metadata) {
+    Map<String, Object> notation = new LinkedHashMap<>(optionalMap(element, "notation"));
+    Map<String, Object> primitive =
+        optionalMap(
+            optionalMap(metadata, "notationPrimitives"), String.valueOf(notation.get("shape")));
+    mergeMissing(notation, primitive);
+
+    Map<String, Object> canvasPolicy = optionalMap(metadata, "canvasPolicy");
+    Map<String, Object> roleSizes = optionalMap(canvasPolicy, "roleSizes");
+    Map<String, Object> roleSize =
+        optionalMap(roleSizes, String.valueOf(element.getOrDefault("visualRole", "node")));
+    if (roleSize.isEmpty()) {
+      roleSize = optionalMap(roleSizes, "node");
+    }
+    if (!notation.containsKey("size") && !roleSize.isEmpty()) {
+      notation.put("size", new LinkedHashMap<>(roleSize));
+    }
+    notation.putIfAbsent("geometry", "rectangle");
+    notation.putIfAbsent("cornerRadius", 8);
+    notation.putIfAbsent("detailFields", notation.getOrDefault("lineFields", List.of()));
+    element.put("notation", notation);
+  }
+
+  /** Adds values that are not already defined by type-specific notation metadata. */
+  private void mergeMissing(Map<String, Object> target, Map<String, Object> defaults) {
+    for (Map.Entry<String, Object> entry : defaults.entrySet()) {
+      target.putIfAbsent(entry.getKey(), entry.getValue());
+    }
   }
 
   /**
@@ -473,9 +563,7 @@ public final class ModelingConfigService {
     if (Boolean.TRUE.equals(element.get("containedOnly"))) {
       return "detail";
     }
-    Map<String, Object> notation = optionalMap(element, "notation");
-    String shape = String.valueOf(notation.getOrDefault("shape", ""));
-    if (shape.contains("container") || hasContainment(element)) {
+    if (hasContainment(element)) {
       return "container";
     }
     return "node";
@@ -506,7 +594,21 @@ public final class ModelingConfigService {
    */
   private Map<String, Object> syntaxCoverage(Map<String, Object> metadata) {
     List<?> elements = optionalList(metadata, "elements");
+    List<Map<String, Object>> elementMaps =
+        elements.stream()
+            .filter(Map.class::isInstance)
+            .map(item -> stringKeyMap((Map<?, ?>) item))
+            .toList();
+    Set<String> referenceExclusions =
+        new LinkedHashSet<>(objectStringList(metadata.get("semanticReferenceExclusions")));
+    LinkedHashSet<String> edgeObjectTypes = new LinkedHashSet<>();
+    for (Object item : optionalList(metadata, "semanticEdgeObjectRules")) {
+      if (item instanceof Map<?, ?> raw) {
+        edgeObjectTypes.add(String.valueOf(raw.get("eClass")));
+      }
+    }
     int attributes = 0;
+    int enumAttributes = 0;
     int references = 0;
     int containments = 0;
     int relationshipElements = 0;
@@ -519,11 +621,40 @@ public final class ModelingConfigService {
       }
     }
     List<String> uncoveredViewTypes = new ArrayList<>();
+    List<String> uncoveredEnumFields = new ArrayList<>();
+    List<String> uncoveredReferenceFields = new ArrayList<>();
+    List<String> uncoveredContainmentFields = new ArrayList<>();
+    List<String> uncoveredRelationshipObjectTypes = new ArrayList<>();
+    LinkedHashSet<String> knownKinds = new LinkedHashSet<>(relationshipKinds(metadata));
+    List<String> unknownViewRelationshipKinds = new ArrayList<>();
+    for (Object item : optionalList(metadata, "viewDefinitions")) {
+      if (item instanceof Map<?, ?> raw) {
+        for (String kind : objectStringList(raw.get("relationshipKinds"))) {
+          if (!knownKinds.contains(kind)) {
+            unknownViewRelationshipKinds.add(raw.get("id") + ":" + kind);
+          }
+        }
+      }
+    }
     for (Object item : elements) {
       if (!(item instanceof Map<?, ?> raw)) {
         continue;
       }
-      attributes += optionalList(stringKeyMap(raw), "attributes").size();
+      Map<String, Object> element = stringKeyMap(raw);
+      String type = String.valueOf(raw.containsKey("type") ? raw.get("type") : "");
+      List<?> elementAttributes = optionalList(element, "attributes");
+      attributes += elementAttributes.size();
+      for (Object attributeItem : elementAttributes) {
+        if (!(attributeItem instanceof Map<?, ?> attribute)) {
+          continue;
+        }
+        if ("select".equals(attribute.get("fieldType"))) {
+          enumAttributes++;
+          if (objectStringList(attribute.get("options")).isEmpty()) {
+            uncoveredEnumFields.add(type + "." + attribute.get("name"));
+          }
+        }
+      }
       List<?> elementReferences = optionalList(stringKeyMap(raw), "references");
       references += elementReferences.size();
       containments +=
@@ -534,13 +665,43 @@ public final class ModelingConfigService {
                           reference instanceof Map<?, ?> referenceMap
                               && Boolean.TRUE.equals(referenceMap.get("containment")))
                   .count();
+      for (Object referenceItem : elementReferences) {
+        if (!(referenceItem instanceof Map<?, ?> reference)
+            || Boolean.TRUE.equals(reference.get("readonly"))) {
+          continue;
+        }
+        String feature = String.valueOf(reference.get("name"));
+        String targetType = String.valueOf(reference.get("targetType"));
+        boolean hasConcreteTarget =
+            elementMaps.stream()
+                .anyMatch(
+                    target ->
+                        !Boolean.TRUE.equals(target.get("abstract"))
+                            && (targetType.equals(target.get("type"))
+                                || objectStringList(target.get("supertypes"))
+                                    .contains(targetType)));
+        if (Boolean.TRUE.equals(reference.get("containment"))) {
+          if (!hasConcreteTarget) {
+            uncoveredContainmentFields.add(type + "." + feature);
+          }
+        } else if (!edgeObjectTypes.contains(type) && !referenceExclusions.contains(feature)) {
+          if (!hasConcreteTarget) {
+            uncoveredReferenceFields.add(type + "." + feature);
+          }
+        }
+      }
       if (Boolean.TRUE.equals(raw.get("relationshipElement"))) {
         relationshipElements++;
       }
       if ("container".equals(raw.get("visualRole"))) {
         containers++;
       }
-      String type = String.valueOf(raw.containsKey("type") ? raw.get("type") : "");
+      if (Boolean.TRUE.equals(raw.get("relationshipElement"))
+          && !Boolean.TRUE.equals(raw.get("abstract"))
+          && !Boolean.TRUE.equals(raw.get("supportOnly"))
+          && !edgeObjectTypes.contains(type)) {
+        uncoveredRelationshipObjectTypes.add(type);
+      }
       if (Boolean.TRUE.equals(raw.get("creatable"))
           && !Boolean.TRUE.equals(raw.get("containedOnly"))
           && !Boolean.TRUE.equals(raw.get("supportOnly"))
@@ -552,12 +713,18 @@ public final class ModelingConfigService {
     return Map.ofEntries(
         Map.entry("elementCount", elements.size()),
         Map.entry("attributeCount", attributes),
+        Map.entry("enumAttributeCount", enumAttributes),
         Map.entry("referenceCount", references),
         Map.entry("containmentCount", containments),
         Map.entry("relationshipElementCount", relationshipElements),
         Map.entry("containerCount", containers),
         Map.entry("viewCount", optionalList(metadata, "viewDefinitions").size()),
-        Map.entry("uncoveredViewTypes", uncoveredViewTypes));
+        Map.entry("uncoveredViewTypes", uncoveredViewTypes),
+        Map.entry("uncoveredEnumFields", uncoveredEnumFields),
+        Map.entry("uncoveredReferenceFields", uncoveredReferenceFields),
+        Map.entry("uncoveredContainmentFields", uncoveredContainmentFields),
+        Map.entry("uncoveredRelationshipObjectTypes", uncoveredRelationshipObjectTypes),
+        Map.entry("unknownViewRelationshipKinds", unknownViewRelationshipKinds));
   }
 
   /**
@@ -678,8 +845,20 @@ public final class ModelingConfigService {
    * @return merged rules
    */
   private List<Map<String, Object>> mergeRelationshipRules(
-      List<?> configuredRules, List<Map<String, Object>> ecoreRules) {
+      List<?> configuredRules,
+      Map<String, Object> configuredKindMappings,
+      List<String> configuredExclusions,
+      List<?> edgeObjectRules,
+      List<String> canonicalKinds,
+      String containmentKind,
+      List<Map<String, Object>> ecoreRules) {
     Map<String, Map<String, Object>> byKey = new LinkedHashMap<>();
+    Set<String> edgeObjectTypes = new LinkedHashSet<>();
+    for (Object item : edgeObjectRules) {
+      if (item instanceof Map<?, ?> raw) {
+        edgeObjectTypes.add(String.valueOf(raw.get("eClass")));
+      }
+    }
     for (Object item : configuredRules) {
       if (!(item instanceof Map<?, ?> raw)) {
         throw new PlatformException(500, "Modeling relationshipRules entries must be objects.");
@@ -687,7 +866,23 @@ public final class ModelingConfigService {
       Map<String, Object> rule = stringKeyMap(raw);
       byKey.put(relationshipRuleKey(rule), rule);
     }
-    for (Map<String, Object> rule : ecoreRules) {
+    for (Map<String, Object> rawRule : ecoreRules) {
+      String sourceType = String.valueOf(rawRule.getOrDefault("sourceType", ""));
+      String feature = String.valueOf(rawRule.getOrDefault("feature", ""));
+      if (edgeObjectTypes.contains(sourceType) || configuredExclusions.contains(feature)) {
+        continue;
+      }
+      Map<String, Object> rule = new LinkedHashMap<>(rawRule);
+      String mappedKind =
+          Boolean.TRUE.equals(rule.get("containment"))
+              ? containmentKind
+              : String.valueOf(
+                  configuredKindMappings.getOrDefault(
+                      feature, objectStringList(rule.get("allowedKinds")).get(0)));
+      if (!canonicalKinds.contains(mappedKind)) {
+        continue;
+      }
+      rule.put("allowedKinds", List.of(mappedKind));
       byKey.putIfAbsent(relationshipRuleKey(rule), rule);
     }
     return new ArrayList<>(byKey.values());
@@ -704,8 +899,7 @@ public final class ModelingConfigService {
         "|",
         String.valueOf(rule.getOrDefault("sourceType", "")),
         String.valueOf(rule.getOrDefault("targetType", "")),
-        String.valueOf(rule.getOrDefault("feature", "")),
-        String.join(",", objectStringList(rule.get("allowedKinds"))));
+        String.valueOf(rule.getOrDefault("feature", "")));
   }
 
   /**
@@ -716,8 +910,19 @@ public final class ModelingConfigService {
    * @return merged rules
    */
   private List<Map<String, Object>> mergeSemanticReferenceRules(
-      List<?> configuredRules, List<Map<String, Object>> ecoreRules) {
+      List<?> configuredRules,
+      Map<String, Object> configuredKindMappings,
+      List<String> configuredExclusions,
+      List<?> edgeObjectRules,
+      List<String> canonicalKinds,
+      List<Map<String, Object>> ecoreRules) {
     Map<String, Map<String, Object>> byKey = new LinkedHashMap<>();
+    Set<String> edgeObjectTypes = new LinkedHashSet<>();
+    for (Object item : edgeObjectRules) {
+      if (item instanceof Map<?, ?> raw) {
+        edgeObjectTypes.add(String.valueOf(raw.get("eClass")));
+      }
+    }
     for (Object item : configuredRules) {
       if (!(item instanceof Map<?, ?> raw)) {
         throw new PlatformException(
@@ -726,7 +931,21 @@ public final class ModelingConfigService {
       Map<String, Object> rule = stringKeyMap(raw);
       byKey.put(semanticReferenceRuleKey(rule), rule);
     }
-    for (Map<String, Object> rule : ecoreRules) {
+    for (Map<String, Object> rawRule : ecoreRules) {
+      if (edgeObjectTypes.contains(String.valueOf(rawRule.get("sourceType")))) {
+        continue;
+      }
+      if (configuredExclusions.contains(String.valueOf(rawRule.get("feature")))) {
+        continue;
+      }
+      Map<String, Object> rule = new LinkedHashMap<>(rawRule);
+      String feature = String.valueOf(rule.getOrDefault("feature", ""));
+      if (configuredKindMappings.containsKey(feature)) {
+        rule.put("kind", String.valueOf(configuredKindMappings.get(feature)));
+      }
+      if (!canonicalKinds.contains(String.valueOf(rule.get("kind")))) {
+        continue;
+      }
       byKey.putIfAbsent(semanticReferenceRuleKey(rule), rule);
     }
     return new ArrayList<>(byKey.values());
@@ -743,8 +962,7 @@ public final class ModelingConfigService {
         "|",
         String.valueOf(rule.getOrDefault("sourceType", "")),
         String.valueOf(rule.getOrDefault("targetType", "")),
-        String.valueOf(rule.getOrDefault("feature", "")),
-        String.valueOf(rule.getOrDefault("kind", "")));
+        String.valueOf(rule.getOrDefault("feature", "")));
   }
 
   /**
@@ -758,13 +976,22 @@ public final class ModelingConfigService {
       Map<String, Object> metadata, List<?> relationshipRules) {
     LinkedHashSet<String> result =
         new LinkedHashSet<>(objectStringList(metadata.get("relationshipKinds")));
+    LinkedHashSet<String> unknownKinds = new LinkedHashSet<>();
     for (Object item : relationshipRules) {
       if (item instanceof Map<?, ?> raw) {
-        result.addAll(objectStringList(raw.get("allowedKinds")));
+        for (String kind : objectStringList(raw.get("allowedKinds"))) {
+          if (!result.contains(kind)) {
+            unknownKinds.add(kind);
+          }
+        }
       }
     }
     if (result.isEmpty()) {
       throw new PlatformException(500, "Modeling UI metadata must define relationshipKinds.");
+    }
+    if (!unknownKinds.isEmpty()) {
+      throw new PlatformException(
+          500, "Relationship rules use undeclared relationshipKinds: " + unknownKinds);
     }
     return new ArrayList<>(result);
   }
@@ -778,12 +1005,20 @@ public final class ModelingConfigService {
    */
   private Map<String, Object> relationshipKindLabels(
       Map<String, Object> configured, List<?> relationshipKinds) {
-    Map<String, Object> labels = new LinkedHashMap<>(configured);
-    for (Object kind : relationshipKinds) {
-      String key = String.valueOf(kind);
-      labels.putIfAbsent(key, humanize(key));
+    LinkedHashSet<String> expected =
+        relationshipKinds.stream()
+            .map(String::valueOf)
+            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    LinkedHashSet<String> actual = new LinkedHashSet<>(configured.keySet());
+    if (!expected.equals(actual)) {
+      LinkedHashSet<String> missing = new LinkedHashSet<>(expected);
+      missing.removeAll(actual);
+      LinkedHashSet<String> extra = new LinkedHashSet<>(actual);
+      extra.removeAll(expected);
+      throw new PlatformException(
+          500, "relationshipKindLabels mismatch; missing=" + missing + ", extra=" + extra);
     }
-    return labels;
+    return new LinkedHashMap<>(configured);
   }
 
   /**
@@ -1126,6 +1361,7 @@ public final class ModelingConfigService {
                 type,
                 superTypes,
                 "true".equals(classifier.getAttribute("abstract")),
+                "true".equals(classifier.getAttribute("interface")),
                 attributes,
                 references));
       }
@@ -1194,6 +1430,7 @@ public final class ModelingConfigService {
     inheritedEcoreFeatures(modelClass, classByType, false)
         .forEach(feature -> references.add(cimReference(feature)));
     boolean abstractType = modelClass.abstractType();
+    boolean interfaceType = modelClass.interfaceType();
     List<String> supertypes = allEcoreSuperTypes(modelClass, classByType);
     Map<String, Object> element = new LinkedHashMap<>();
     element.put("type", type);
@@ -1203,10 +1440,11 @@ public final class ModelingConfigService {
     element.put("references", references);
     element.put("supertypes", supertypes);
     element.put("abstract", abstractType);
+    element.put("interface", interfaceType);
     element.put("relationshipElement", supertypes.contains("SemanticRelationship"));
     element.put("containedOnly", false);
     element.put("supportOnly", false);
-    element.put("creatable", !abstractType);
+    element.put("creatable", !abstractType && !interfaceType);
     return element;
   }
 
@@ -1467,7 +1705,7 @@ public final class ModelingConfigService {
       if (targetType.isBlank()) {
         continue;
       }
-      String kind = relationshipKind(featureName, containment);
+      String kind = relationshipKind(featureName);
       Map<String, Object> rule =
           Map.of(
               "sourceType",
@@ -1514,7 +1752,7 @@ public final class ModelingConfigService {
       if (feature.type().isBlank() || feature.readonly()) {
         continue;
       }
-      String kind = relationshipKind(feature.name(), feature.containment());
+      String kind = relationshipKind(feature.name());
       relationshipRules.add(
           Map.of(
               "sourceType",
@@ -1562,7 +1800,7 @@ public final class ModelingConfigService {
       if (feature.type().isBlank() || feature.readonly()) {
         continue;
       }
-      String kind = relationshipKind(feature.name(), feature.containment());
+      String kind = relationshipKind(feature.name());
       relationshipRules.add(
           Map.of(
               "sourceType",
@@ -1648,13 +1886,9 @@ public final class ModelingConfigService {
    * Converts an Ecore reference name and containment flag to a relationship kind.
    *
    * @param featureName reference feature name
-   * @param containment whether the reference is containment
    * @return relationship kind
    */
-  private String relationshipKind(String featureName, boolean containment) {
-    if (containment) {
-      return "CONTAINS";
-    }
+  private String relationshipKind(String featureName) {
     return featureNameToKind(featureName);
   }
 
@@ -1821,6 +2055,7 @@ public final class ModelingConfigService {
    * @param name class name
    * @param superTypes direct supertype names
    * @param abstractType whether the class is abstract
+   * @param interfaceType whether the class is an Ecore interface
    * @param attributes attribute features
    * @param references reference features
    */
@@ -1829,6 +2064,7 @@ public final class ModelingConfigService {
       String name,
       List<String> superTypes,
       boolean abstractType,
+      boolean interfaceType,
       List<EmfaticFeature> attributes,
       List<EmfaticFeature> references) {}
 

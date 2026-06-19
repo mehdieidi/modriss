@@ -25,8 +25,23 @@ import {
   modelTypeMatches,
 } from "./model-utils.js";
 
-const CONTAINMENT_KINDS = new Set(["CONTAINS", "OWNS", "DEPLOYS"]);
 const viewNodeIndexes = new WeakMap();
+
+function relationshipSemantics(typeKey = state.activeType) {
+  return modelingLevelConfig(typeKey).relationshipSemantics || {};
+}
+
+function containmentKinds(typeKey = state.activeType) {
+  return new Set(safeArray(relationshipSemantics(typeKey).containmentKinds).map(String));
+}
+
+function containmentKind(typeKey = state.activeType) {
+  const kind = String(relationshipSemantics(typeKey).containmentKind || "");
+  if (!kind) {
+    throw new Error(`Missing containmentKind metadata for ${typeKey}`);
+  }
+  return kind;
+}
 
 function clone(value) {
   return value == null ? value : structuredClone(value);
@@ -376,7 +391,7 @@ function relationshipTargetId(relationship) {
 }
 
 function relationshipIdentity(typeKey, relationship, index) {
-  const kind = String(relationship?.kind || "DEPENDS_ON");
+  const kind = String(relationship?.kind || "").trim();
   const source = relationshipSourceId(relationship);
   const target = relationshipTargetId(relationship);
   const explicit = String(relationship?.id || "").trim();
@@ -405,7 +420,7 @@ function normalizeElement(element, index) {
 function normalizeRelationship(typeKey, relationship, index) {
   const sourceElementId = relationshipSourceId(relationship);
   const targetElementId = relationshipTargetId(relationship);
-  const kind = String(relationship?.kind || "DEPENDS_ON");
+  const kind = String(relationship?.kind || "").trim();
   const id = relationshipIdentity(typeKey, relationship, index);
   return {
     ...clone(relationship),
@@ -420,7 +435,10 @@ function normalizeRelationship(typeKey, relationship, index) {
 
 function referenceIds(value) {
   if (Array.isArray(value)) {
-    return value.map(refId).filter(Boolean);
+    return value.flatMap(referenceIds);
+  }
+  if (typeof value === "string") {
+    return value.trim().split(/\s+/).filter(Boolean);
   }
   const single = refId(value);
   return single ? [single] : [];
@@ -520,6 +538,65 @@ function synthesizeSemanticRefRelationships(graph, typeKey = state.activeType) {
   });
 }
 
+function synthesizeContainmentRelationships(graph, typeKey = state.activeType) {
+  const configuredContainmentKind = containmentKind(typeKey);
+  const configuredContainmentKinds = containmentKinds(typeKey);
+  const edgeKeys = new Set();
+  graph.relationshipsById.forEach((relationship) => {
+    if (
+      relationship.containment === true ||
+      configuredContainmentKinds.has(String(relationship.kind || "").toUpperCase())
+    ) {
+      edgeKeys.add(
+        `${relationship.sourceElementId}|${relationship.targetElementId}|${configuredContainmentKind}`,
+      );
+    }
+  });
+
+  const addContainment = (parentId, childId, feature) => {
+    if (!graph.elementsById.has(parentId) || !graph.elementsById.has(childId)) {
+      return;
+    }
+    const key = `${parentId}|${childId}|${configuredContainmentKind}`;
+    if (edgeKeys.has(key)) {
+      return;
+    }
+    edgeKeys.add(key);
+    const id = `containment-${sanitizeIdPart(parentId)}-${sanitizeIdPart(feature)}-${sanitizeIdPart(childId)}`;
+    graph.relationshipsById.set(id, {
+      id,
+      kind: configuredContainmentKind,
+      source: parentId,
+      target: childId,
+      sourceElementId: parentId,
+      targetElementId: childId,
+      semanticFeature: feature,
+      containment: true,
+      visualOnly: true,
+    });
+  };
+
+  graph.elementsById.forEach((element) => {
+    const parentId = String(element.__ownerId || "").trim();
+    if (parentId) {
+      addContainment(parentId, element.id, element.__containmentFeature || "contains");
+    }
+    let containments = [];
+    try {
+      containments = modelingContainmentsForType(typeKey, semanticType(element));
+    } catch {
+      containments = [];
+    }
+    containments
+      .filter((entry) => !entry.relationshipOnly)
+      .forEach((entry) => {
+        referenceIds(element?.[entry.feature]).forEach((childId) => {
+          addContainment(element.id, childId, entry.feature);
+        });
+      });
+  });
+}
+
 function createEmptyGraph() {
   return {
     elementsById: new Map(),
@@ -548,6 +625,7 @@ function addToIndex(map, key, value) {
 }
 
 function rebuildGraphIndexes(graph) {
+  const configuredContainmentKinds = containmentKinds();
   graph.relationshipsBySource = new Map();
   graph.relationshipsByTarget = new Map();
   graph.relationshipsByKind = new Map();
@@ -560,7 +638,7 @@ function rebuildGraphIndexes(graph) {
     addToIndex(graph.relationshipsByKind, relationship.kind, relationship.id);
     if (
       relationship.containment === true ||
-      CONTAINMENT_KINDS.has(String(relationship.kind || "").toUpperCase())
+      configuredContainmentKinds.has(String(relationship.kind || "").toUpperCase())
     ) {
       addToIndex(
         graph.containmentByParent,
@@ -634,6 +712,7 @@ function buildGraph(typeKey, modelJson) {
   });
 
   if (isModelingLevel(typeKey)) {
+    synthesizeContainmentRelationships(graph, typeKey);
     synthesizeSemanticRefRelationships(graph, typeKey);
   }
 
@@ -754,29 +833,6 @@ function withRelationshipEndpoints(graph, elementIds, relationshipIds = []) {
     if (relationship.targetElementId) {
       expanded.add(relationship.targetElementId);
     }
-  });
-  return [...expanded];
-}
-
-function withFilteredRelationshipEndpoints(
-  graph,
-  elementIds,
-  relationshipIds = [],
-  filterTypes = new Set(),
-  typeKey = state.activeType,
-) {
-  const expanded = new Set(elementIds);
-  safeArray(relationshipIds).forEach((relationshipId) => {
-    const relationship = graph.relationshipsById.get(relationshipId);
-    if (!relationship) {
-      return;
-    }
-    [relationship.sourceElementId, relationship.targetElementId].forEach((elementId) => {
-      const element = graph.elementsById.get(elementId);
-      if (elementMatchesFilterTypes(element, filterTypes, typeKey)) {
-        expanded.add(elementId);
-      }
-    });
   });
   return [...expanded];
 }
@@ -925,6 +981,25 @@ export function selectElementIdsForView(graph, view, typeKey) {
       parentId = graph.parentByChild.get(parentId);
     }
   });
+  const relationshipKinds = safeArray(view?.filters?.relationshipKinds);
+  if (relationshipKinds.length && selected.length) {
+    relationshipIdsTouchingElements(graph, selected, relationshipKinds).forEach(
+      (relationshipId) => {
+        const relationship = graph.relationshipsById.get(relationshipId);
+        [relationship?.sourceElementId, relationship?.targetElementId].forEach((elementId) => {
+          if (
+            elementId &&
+            graph.elementsById.has(elementId) &&
+            !hidden.has(elementId) &&
+            !selectedSet.has(elementId)
+          ) {
+            selectedSet.add(elementId);
+            selected.push(elementId);
+          }
+        });
+      },
+    );
+  }
   return selected;
 }
 
@@ -1096,12 +1171,10 @@ function buildViewFromDefinition(typeKey, graph, definition, scopeElement = null
   let elementIds = selectElementIdsForView(graph, view, typeKey);
   const relationshipKinds = safeArray(definition.relationshipKinds);
   if (relationshipKinds.length) {
-    elementIds = withFilteredRelationshipEndpoints(
+    elementIds = withRelationshipEndpoints(
       graph,
       elementIds,
       relationshipIdsTouchingElements(graph, elementIds, relationshipKinds),
-      new Set(safeArray(definition.elementTypes).map(String)),
-      typeKey,
     );
   }
   const relationshipIds = selectRelationshipIdsForView(graph, view, elementIds);
@@ -1114,6 +1187,7 @@ function buildViewFromDefinition(typeKey, graph, definition, scopeElement = null
 }
 
 function defaultMainView(typeKey, graph, modelName) {
+  const configuredContainmentKinds = containmentKinds(typeKey);
   let elementIds = [...graph.elementsById.entries()]
     .filter(([, element]) => isMainSurfaceElement(typeKey, element))
     .map(([elementId]) => elementId);
@@ -1126,7 +1200,7 @@ function defaultMainView(typeKey, graph, modelName) {
         return (
           relationship &&
           relationship.containment !== true &&
-          !CONTAINMENT_KINDS.has(String(relationship.kind || "").toUpperCase())
+          !configuredContainmentKinds.has(String(relationship.kind || "").toUpperCase())
         );
       }),
     );
@@ -1276,16 +1350,10 @@ function normalizeView(view, graph, typeKey, modelName) {
         ? selectElementIdsForView(graph, normalized, typeKey)
         : normalized.nodes.map((node) => node.elementId);
     const explicitRelationshipIds = normalized.edges.map((edge) => edge.relationshipId);
-    elementIds = withFilteredRelationshipEndpoints(
-      graph,
-      elementIds,
-      [
-        ...explicitRelationshipIds,
-        ...relationshipIdsTouchingElements(graph, elementIds, normalized.filters.relationshipKinds),
-      ],
-      new Set(safeArray(normalized.filters.elementTypes).map(String)),
-      typeKey,
-    );
+    elementIds = withRelationshipEndpoints(graph, elementIds, [
+      ...explicitRelationshipIds,
+      ...relationshipIdsTouchingElements(graph, elementIds, normalized.filters.relationshipKinds),
+    ]);
     normalized.nodes = layoutNodesForElements(graph, elementIds, normalized.nodes, typeKey);
   }
   if (!normalized.edges.length && graph.relationshipsById.size) {
@@ -1782,8 +1850,13 @@ function stripConfiguredRuntimeFields(element, typeKey) {
     "semanticTargetElementId",
     "semanticDirection",
     "rootFeature",
-    "kind",
   ].forEach((key) => delete copyElement[key]);
+  const semanticKindAttribute = safeArray(
+    modelingElementDefinition(typeKey, type)?.attributes,
+  ).some((attribute) => attribute?.name === "kind");
+  if (!semanticKindAttribute) {
+    delete copyElement.kind;
+  }
   try {
     (modelingElementDefinition(typeKey, type)?.references || [])
       .filter((reference) => reference?.readonly)
@@ -2149,7 +2222,23 @@ function materializeSemanticEdgeObject(edge, relationship) {
     rootFeature: spec.rootFeature,
     visualOnly: false,
   };
-  if (source?.__ownerId && source.__ownerId === target?.__ownerId && spec.rootFeature) {
+  if (spec.ownerType && spec.rootFeature) {
+    let owner = [...state.graph.elementsById.values()].find((element) =>
+      matchesSemanticType(element, spec.ownerType, state.activeType),
+    );
+    if (!owner) {
+      owner = normalizeElement({
+        id: genId(),
+        eClass: spec.ownerType,
+        name:
+          modelingElementDefinition(state.activeType, spec.ownerType)?.displayName ||
+          spec.ownerType,
+      });
+      state.graph.elementsById.set(owner.id, owner);
+    }
+    materialized.__ownerId = owner.id;
+    materialized.__containmentFeature = spec.rootFeature;
+  } else if (source?.__ownerId && source.__ownerId === target?.__ownerId && spec.rootFeature) {
     materialized.__ownerId = source.__ownerId;
     materialized.__containmentFeature = spec.rootFeature;
   } else if (spec.ownerAsSource && spec.rootFeature) {

@@ -108,11 +108,11 @@ function findNodeAtClientPoint(editor, sourceId, clientX, clientY) {
       excludeId: sourceId || "",
     });
   }
-  const size = nodeSizeForDiagram(state.activeType);
   for (const [nodeId, node] of state.nodesById.entries()) {
     if (nodeId === sourceId) {
       continue;
     }
+    const size = nodeSizeForDiagram(state.activeType, node);
     const width = Number(node?.width) || size.width;
     const height = Number(node?.height) || size.height;
     if (
@@ -129,7 +129,11 @@ function findNodeAtClientPoint(editor, sourceId, clientX, clientY) {
 
 function graphNodeTopLeft(graph, nodeId) {
   const data = graph?.getNodeData?.(nodeId);
-  const size = nodeSizeForDiagram(state.activeType);
+  const semanticNode = state.nodesById.get(nodeId);
+  const size = nodeSizeForDiagram(
+    state.activeType,
+    semanticNode || data?.data?.nodeType || data?.style?.nodeType,
+  );
   const x = Number(data?.style?.x);
   const y = Number(data?.style?.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
@@ -176,8 +180,10 @@ function moveGraphNode(editor, nodeId, x, y) {
   if (!data) {
     return;
   }
-  const width = Number(data?.style?.width) || nodeSizeForDiagram(state.activeType).width;
-  const height = Number(data?.style?.height) || nodeSizeForDiagram(state.activeType).height;
+  const semanticNode = state.nodesById.get(nodeId);
+  const size = nodeSizeForDiagram(state.activeType, semanticNode);
+  const width = Number(data?.style?.width) || size.width;
+  const height = Number(data?.style?.height) || size.height;
   const roundedX = Math.round(x);
   const roundedY = Math.round(y);
   graph.updateNodeData?.([

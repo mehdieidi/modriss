@@ -381,6 +381,23 @@ function setEndpointFields(copy, rule, sourceId, targetId) {
   });
 }
 
+function relationshipKindFromRule(raw, rule, fallbackKind, type) {
+  const configuredKinds = ruleKinds(rule);
+  const fieldValue = String(raw?.[rule?.kindField] || "").toUpperCase();
+  const mappedKind = String(rule?.kindMap?.[fieldValue] || fieldValue).toUpperCase();
+  const candidates = [raw?.kind, mappedKind, fallbackKind, rule?.defaultKind]
+    .map((kind) => String(kind || "").toUpperCase())
+    .filter(Boolean);
+  const resolved = candidates.find((kind) => !configuredKinds.size || configuredKinds.has(kind));
+  if (resolved) {
+    return resolved;
+  }
+  if (configuredKinds.size === 1) {
+    return [...configuredKinds][0];
+  }
+  throw new Error(`Cannot resolve relationship kind for ${type} from modeling metadata`);
+}
+
 export function relationshipSemanticCopy(typeKey, relationship, graph = null) {
   const type = modelTypeOf(relationship);
   const sourceId =
@@ -431,16 +448,17 @@ function relationshipFromObject(typeKey, raw, fallbackType, fallbackKind, index,
   if (!sourceId || !uniqueTargets.length) {
     return [];
   }
+  const kind = relationshipKindFromRule(raw, rule, fallbackKind, type);
   return uniqueTargets.map((targetId, targetIndex) => {
     const id = String(
       raw.id ||
-        `rel-${sanitizeIdPart(fallbackKind || rule.defaultKind || type)}-${sanitizeIdPart(sourceId)}-${sanitizeIdPart(targetId)}-${index + targetIndex + 1}`,
+        `rel-${sanitizeIdPart(kind)}-${sanitizeIdPart(sourceId)}-${sanitizeIdPart(targetId)}-${index + targetIndex + 1}`,
     );
     return {
       ...clone(raw),
       id,
       eClass: type,
-      kind: fallbackKind || rule.defaultKind || type,
+      kind,
       sourceElementId: sourceId,
       targetElementId: targetId,
       source: sourceId,
@@ -533,6 +551,9 @@ function readonlyReferenceNames(typeKey, type) {
 export function stripRuntimeFields(typeKey, element) {
   const copy = clone(element) || {};
   const type = modelTypeOf(copy);
+  const semanticKindAttribute = safeArray(definitionForType(typeKey, type)?.attributes).some(
+    (attribute) => attribute?.name === "kind",
+  );
   [
     "x",
     "y",
@@ -550,8 +571,10 @@ export function stripRuntimeFields(typeKey, element) {
     "semanticTargetElementId",
     "semanticDirection",
     "rootFeature",
-    "kind",
   ].forEach((key) => delete copy[key]);
+  if (!semanticKindAttribute) {
+    delete copy.kind;
+  }
   readonlyReferenceNames(typeKey, type).forEach((key) => delete copy[key]);
   delete copy.__ownerId;
   delete copy.__containmentFeature;

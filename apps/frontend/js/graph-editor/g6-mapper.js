@@ -1,6 +1,7 @@
 import { state } from "../state.js";
 import {
   modelingElementDefinition,
+  modelingLevelConfig,
   modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
 } from "../modeling-config-data.js";
@@ -59,9 +60,11 @@ function notationFromDefinition(typeKey, node, definition) {
   if (!definition?.notation) {
     return null;
   }
-  const lineFields = Array.isArray(definition.notation.lineFields)
-    ? definition.notation.lineFields
-    : [];
+  const lineFields = Array.isArray(definition.notation.detailFields)
+    ? definition.notation.detailFields
+    : Array.isArray(definition.notation.lineFields)
+      ? definition.notation.lineFields
+      : [];
   return {
     tag: definition.notation.tag || "element",
     line: (meta) => {
@@ -131,65 +134,35 @@ function addBadge(badges, text) {
   badges.push(value);
 }
 
-function nodeBadges(typeKey, node, definition) {
+function nodeBadges(typeKey, node) {
   const meta = node?.meta || {};
   const badges = [];
-  if (meta.generated || meta.generatedFrom || meta.transformationRuleId) {
-    addBadge(badges, "generated");
-  }
-  if (
-    meta.manual ||
-    meta.manualReviewRequired ||
-    meta.requiresManualReview ||
-    meta.reviewStatus === "NEEDS_REVIEW"
-  ) {
-    addBadge(badges, "review");
-  }
-  if (meta.productionBlocking || meta.blocksTransformation || meta.blocking === true) {
-    addBadge(badges, "blocking");
-  }
-  if (meta.severity) {
-    addBadge(badges, meta.severity);
-  }
-  if (meta.lifecycle || meta.lifecycleStatus || meta.status) {
-    addBadge(badges, meta.lifecycle || meta.lifecycleStatus || meta.status);
-  }
-  if (
-    meta.required ||
-    meta.productionRequired ||
-    meta.authRequired ||
-    meta.authenticationRequired ||
-    meta.authorizationRequired
-  ) {
-    addBadge(badges, "required");
-  }
-  if (meta.encryptionRequired || meta.encryption || meta.sseEnabled) {
-    addBadge(badges, "encrypted");
-  }
-  if (meta.rotationRequired) {
-    addBadge(badges, "rotation");
-  }
-  if (meta.tracingEnabled || meta.xrayTracingEnabled) {
-    addBadge(badges, "tracing");
-  }
-  if (meta.retentionDays || meta.retentionPolicy) {
-    addBadge(badges, "retention");
-  }
-  if (meta.imported || meta.resourceImport || meta.importMode) {
-    addBadge(badges, "import");
-  }
-  if (meta.deletionPolicy) {
-    addBadge(badges, meta.deletionPolicy);
-  }
-  if (definition?.category) {
-    addBadge(badges, definition.category);
-  }
+  const rules = modelingLevelConfig(typeKey).badgeRules || [];
+  rules.forEach((rule) => {
+    const value = meta?.[rule?.field];
+    const matches = Object.prototype.hasOwnProperty.call(rule || {}, "when")
+      ? value === rule.when
+      : rule?.useValue
+        ? value !== undefined && value !== null && String(value).trim() !== ""
+        : Boolean(value);
+    if (matches) {
+      addBadge(badges, rule.useValue ? value : rule.label || rule.field);
+    }
+  });
   return badges;
 }
 
 export function edgeLabel(edge, typeKey = state.activeType) {
   if (edge?.label) {
     return edge.label;
+  }
+  const relationship = state.graph?.relationshipsById?.get(edge?.id) || edge || {};
+  const labelFields = modelingLevelConfig(typeKey).relationshipLabelFields || [];
+  for (const field of labelFields) {
+    const text = refLabel(relationship?.[field]);
+    if (String(text || "").trim()) {
+      return String(text);
+    }
   }
   const key = String(edge?.kind || "").toUpperCase();
   let configured = "";
@@ -212,7 +185,7 @@ function routeEndpoint(node, anchor, typeKey) {
   if (!node || !anchor) {
     return null;
   }
-  const size = nodeSizeForDiagram(typeKey);
+  const size = nodeSizeForDiagram(typeKey, node);
   const side = anchor.side === "left" ? "left" : anchor.side === "right" ? "right" : null;
   const offsetY = Number(anchor.offsetY);
   if (!side || !Number.isFinite(offsetY)) {
@@ -234,7 +207,7 @@ export function mapNodeToG6(
     viewProfile = "",
   } = {},
 ) {
-  const size = nodeSizeForDiagram(typeKey);
+  const size = nodeSizeForDiagram(typeKey, node);
   const definition = cachedElementDefinition(typeKey, node.type);
   const notation = notationFromDefinition(typeKey, node, definition);
   const accent = nodeAccent(node, definition);
@@ -242,7 +215,7 @@ export function mapNodeToG6(
   const kindText = humanizeType(node.type);
   const detailText = nodeDetailLine(node, notation, definition);
   const token = nodeToken(typeKey, node, notation);
-  const badges = nodeBadges(typeKey, node, definition);
+  const badges = nodeBadges(typeKey, node);
   const container = Boolean(isContainer(node));
   const contextName = contextNameFromNode(node);
   return {
@@ -256,6 +229,7 @@ export function mapNodeToG6(
       diagramType: typeKey,
       notation: notation?.tag || "",
       notationShape: definition?.notation?.shape || "concept-card",
+      notationGeometry: definition?.notation?.geometry || "rectangle",
       kindText,
       detailText,
       tokenText: token,
@@ -290,6 +264,7 @@ export function mapNodeToG6(
       notationText: detailText,
       notation: notation?.tag || "",
       notationShape: definition?.notation?.shape || "concept-card",
+      notationGeometry: definition?.notation?.geometry || "rectangle",
       badges,
       showHandles: Boolean(node.showHandles),
       accent,
@@ -297,7 +272,7 @@ export function mapNodeToG6(
       fill: "rgba(19, 25, 35, 0.98)",
       stroke: "rgba(61, 73, 95, 0.92)",
       lineWidth: 1,
-      radius: 2,
+      radius: Number(definition?.notation?.cornerRadius ?? 8),
       shadowColor: "rgba(6, 11, 20, 0.32)",
       shadowBlur: 8,
       detailLevel,

@@ -600,6 +600,21 @@
   object-fit: contain;
 }
 
+.palette-notation-icon {
+  width: auto;
+  min-width: 24px;
+  height: 16px;
+  padding: 0 4px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--node-accent, var(--accent)) 52%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--node-accent, var(--accent)) 14%, transparent);
+  color: var(--text-strong);
+  font: 800 7px/1 var(--font-display);
+  letter-spacing: 0.04em;
+}
+
 .palette-item-label {
   min-width: 0;
   flex: 1;

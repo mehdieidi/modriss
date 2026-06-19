@@ -22,10 +22,13 @@ function emptyLevel(displayName) {
     relationshipsPath: "/diagram/relationships",
     labelField: "name",
     relationshipKinds: [],
+    relationshipSemantics: {},
+    relationshipLabelFields: [],
     elements: [],
     relationshipRules: [],
     relationshipKindLabels: {},
     relationshipVisualRules: [],
+    badgeRules: [],
     semanticReferenceRules: [],
     semanticEdgeObjectRules: [],
     shortcutConnectorRules: [],
@@ -111,6 +114,13 @@ function ensureConfigShape(raw) {
       relationshipKinds: Array.isArray(incoming.relationshipKinds)
         ? incoming.relationshipKinds.map((kind) => String(kind))
         : [],
+      relationshipSemantics:
+        incoming.relationshipSemantics && typeof incoming.relationshipSemantics === "object"
+          ? incoming.relationshipSemantics
+          : {},
+      relationshipLabelFields: Array.isArray(incoming.relationshipLabelFields)
+        ? incoming.relationshipLabelFields.map(String)
+        : [],
       elements: Array.isArray(incoming.elements) ? incoming.elements : [],
       relationshipRules: Array.isArray(incoming.relationshipRules)
         ? incoming.relationshipRules
@@ -122,6 +132,7 @@ function ensureConfigShape(raw) {
       relationshipVisualRules: Array.isArray(incoming.relationshipVisualRules)
         ? incoming.relationshipVisualRules
         : [],
+      badgeRules: Array.isArray(incoming.badgeRules) ? incoming.badgeRules : [],
       semanticReferenceRules: Array.isArray(incoming.semanticReferenceRules)
         ? incoming.semanticReferenceRules
         : [],
@@ -484,7 +495,7 @@ export function modelingConcreteTypesFor(typeKey, expectedType) {
   const level = modelingLevelConfig(typeKey);
   return (level.elements || [])
     .filter((entry) => {
-      if (!entry?.type || entry.abstract || entry.supportOnly) {
+      if (!entry?.type || entry.abstract) {
         return false;
       }
       return modelingTypeMatches(typeKey, expectedType, entry.type);
@@ -565,6 +576,9 @@ function isWildcardRule(rule) {
 }
 
 function isMethodologyWildcardExempt(rule) {
+  if (rule?.edgeObjectType) {
+    return true;
+  }
   const exemptSources = new Set([
     "Hotspot",
     "OpenQuestion",

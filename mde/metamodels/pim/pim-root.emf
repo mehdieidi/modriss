@@ -50,6 +50,7 @@ class PIMModel extends kernel.TraceableElement {
 
   val workflow.Workflow[*] workflows;
   val workflow.HumanTask[*] humanTasks;
+  val workflow.EscalationPolicy[*] escalationPolicies;
 
   val external.ExternalEndpoint[*] externalEndpoints;
   val external.ExternalAdapter[*] externalAdapters;

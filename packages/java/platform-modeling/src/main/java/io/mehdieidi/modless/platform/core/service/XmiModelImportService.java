@@ -1318,6 +1318,15 @@ final class XmiModelImportService {
     /** Model level being imported. */
     private final ModelLevel level;
 
+    /** Configured semantic relationship-object rules keyed by EClass. */
+    private final Map<String, Map<String, Object>> edgeObjectRulesByClass;
+
+    /** Configured semantic reference rules derived from metadata and Ecore. */
+    private final List<Map<String, Object>> semanticReferenceRules;
+
+    /** Canonical containment relationship kind from modeling metadata. */
+    private final String containmentKind;
+
     /** Stable ids assigned to EMF objects by identity. */
     private final Map<EObject, String> ids = new IdentityHashMap<>();
 
@@ -1351,6 +1360,45 @@ final class XmiModelImportService {
      */
     SerializationContext(ModelLevel level) {
       this.level = level;
+      Map<String, Object> config = new ModelingConfigService().config();
+      Map<String, Object> levels = mapValue(config.get("levels"));
+      Map<String, Object> levelConfig = mapValue(levels.get(level.apiName()));
+      this.semanticReferenceRules = mapList(levelConfig.get("semanticReferenceRules"));
+      this.containmentKind =
+          String.valueOf(
+              mapValue(levelConfig.get("relationshipSemantics"))
+                  .getOrDefault("containmentKind", ""));
+      if (this.containmentKind.isBlank()) {
+        throw new PlatformException(
+            500, "Missing configured containmentKind for " + level.apiName());
+      }
+      this.edgeObjectRulesByClass = new java.util.LinkedHashMap<>();
+      for (Map<String, Object> rule : mapList(levelConfig.get("semanticEdgeObjectRules"))) {
+        this.edgeObjectRulesByClass.put(String.valueOf(rule.getOrDefault("eClass", "")), rule);
+      }
+    }
+
+    private Map<String, Object> mapValue(Object value) {
+      if (!(value instanceof Map<?, ?> raw)) {
+        return Map.of();
+      }
+      Map<String, Object> result = new java.util.LinkedHashMap<>();
+      raw.forEach((key, item) -> result.put(String.valueOf(key), item));
+      return result;
+    }
+
+    private List<Map<String, Object>> mapList(Object value) {
+      if (!(value instanceof List<?> rawList)) {
+        return List.of();
+      }
+      return rawList.stream().map(this::mapValue).filter(rule -> !rule.isEmpty()).toList();
+    }
+
+    private List<String> stringList(Object value) {
+      if (!(value instanceof List<?> rawList)) {
+        return List.of();
+      }
+      return rawList.stream().map(String::valueOf).toList();
     }
 
     /**
@@ -1495,16 +1543,15 @@ final class XmiModelImportService {
      * @param semanticNode serialized semantic JSON
      */
     private void captureGraphRelationship(EObject object, ObjectNode semanticNode) {
+      Map<String, Object> rule = edgeObjectRulesByClass.get(object.eClass().getName());
+      EObject source = relationshipEndpoint(object, rule, true);
+      EObject target = relationshipEndpoint(object, rule, false);
       ObjectNode relationship = objectMapper.createObjectNode();
       relationship.put("id", semanticNode.path("id").asText());
       relationship.put("eClass", object.eClass().getName());
       relationship.put("kind", relationshipKindForObject(object));
-      relationship.put(
-          "source",
-          ensureId((EObject) object.eGet(object.eClass().getEStructuralFeature("source"))));
-      relationship.put(
-          "target",
-          ensureId((EObject) object.eGet(object.eClass().getEStructuralFeature("target"))));
+      relationship.put("source", ensureId(source));
+      relationship.put("target", ensureId(target));
       relationship.put("sourceElementId", relationship.path("source").asText());
       relationship.put("targetElementId", relationship.path("target").asText());
       copyScalarIfPresent(semanticNode, relationship, "name");
@@ -1521,11 +1568,36 @@ final class XmiModelImportService {
      * @return relationship kind
      */
     private String relationshipKindForObject(EObject object) {
-      String eClassName = object.eClass().getName();
-      if (level == ModelLevel.PSM && eClassName.endsWith("View")) {
-        return psmRelationshipViewKind(eClassName);
+      Map<String, Object> rule = edgeObjectRulesByClass.get(object.eClass().getName());
+      List<String> allowedKinds = stringList(rule.get("matchKinds"));
+      String kindField = String.valueOf(rule.getOrDefault("kindField", ""));
+      String fieldValue = relationshipKindAttribute(object, kindField);
+      String mappedKind =
+          String.valueOf(mapValue(rule.get("kindMap")).getOrDefault(fieldValue, fieldValue));
+      for (String candidate :
+          List.of(mappedKind, String.valueOf(rule.getOrDefault("defaultKind", "")))) {
+        if (!candidate.isBlank() && allowedKinds.contains(candidate)) {
+          return candidate;
+        }
       }
-      return relationshipClassKind(eClassName);
+      if (allowedKinds.size() == 1) {
+        return allowedKinds.get(0);
+      }
+      throw new PlatformException(
+          500,
+          "Cannot resolve relationship kind for "
+              + object.eClass().getName()
+              + " from modeling metadata.");
+    }
+
+    /** Returns a normalized relationship kind stored in a semantic attribute. */
+    private String relationshipKindAttribute(EObject object, String attributeName) {
+      EStructuralFeature feature = object.eClass().getEStructuralFeature(attributeName);
+      if (feature == null || feature instanceof EReference) {
+        return "";
+      }
+      Object value = object.eGet(feature);
+      return value == null ? "" : relationshipKind(String.valueOf(value));
     }
 
     /**
@@ -1572,10 +1644,13 @@ final class XmiModelImportService {
      */
     private void addReferenceEdge(
         String sourceId, EObject sourceObject, EReference reference, EObject targetObject) {
+      if (isGraphSupportObject(targetObject) || isRelationshipObject(targetObject)) {
+        return;
+      }
       String targetId = ensureId(targetObject);
-      String kind = referenceFeatureKind(reference.getName());
+      String kind = configuredReferenceKind(sourceObject, reference, targetObject);
       if (kind.isBlank()) {
-        kind = relationshipKind(reference.getName());
+        return;
       }
       String key = sourceId + "|" + targetId + "|" + kind;
       if (!graphRelationshipKeys.add(key)) {
@@ -1595,6 +1670,28 @@ final class XmiModelImportService {
       graphRelationships.add(relationship);
     }
 
+    private String configuredReferenceKind(
+        EObject sourceObject, EReference reference, EObject targetObject) {
+      for (Map<String, Object> rule : semanticReferenceRules) {
+        if (!reference.getName().equals(String.valueOf(rule.getOrDefault("feature", "")))) {
+          continue;
+        }
+        String sourceType = String.valueOf(rule.getOrDefault("sourceType", ""));
+        String targetType = String.valueOf(rule.getOrDefault("targetType", ""));
+        if (matchesType(sourceObject.eClass(), sourceType)
+            && matchesType(targetObject.eClass(), targetType)) {
+          return String.valueOf(rule.getOrDefault("kind", ""));
+        }
+      }
+      return "";
+    }
+
+    private boolean matchesType(EClass actual, String expected) {
+      return "*".equals(expected)
+          || actual.getName().equals(expected)
+          || actual.getEAllSuperTypes().stream().anyMatch(type -> type.getName().equals(expected));
+    }
+
     /**
      * Adds a graph edge for a containment reference when the child is visible in graph views.
      *
@@ -1603,12 +1700,12 @@ final class XmiModelImportService {
      * @param child contained EMF object
      */
     private void addContainmentEdge(EObject owner, EReference reference, EObject child) {
-      if (isGraphSupportObject(child)) {
+      if (isGraphSupportObject(child) || isRelationshipObject(child)) {
         return;
       }
       String sourceId = ensureId(owner);
       String targetId = ensureId(child);
-      String kind = containmentRelationshipKind(reference.getName());
+      String kind = containmentRelationshipKind();
       String key = sourceId + "|" + targetId + "|" + kind;
       if (!graphRelationshipKeys.add(key)) {
         return;
@@ -1634,14 +1731,32 @@ final class XmiModelImportService {
      * @return {@code true} when the object is a relationship
      */
     private boolean isRelationshipObject(EObject object) {
-      EStructuralFeature source = object.eClass().getEStructuralFeature("source");
-      EStructuralFeature target = object.eClass().getEStructuralFeature("target");
-      return source instanceof EReference sourceRef
-          && target instanceof EReference targetRef
-          && !sourceRef.isContainment()
-          && !targetRef.isContainment()
-          && object.eGet(sourceRef) instanceof EObject
-          && object.eGet(targetRef) instanceof EObject;
+      Map<String, Object> rule = edgeObjectRulesByClass.get(object.eClass().getName());
+      return rule != null
+          && relationshipEndpoint(object, rule, true) != null
+          && relationshipEndpoint(object, rule, false) != null;
+    }
+
+    private EObject relationshipEndpoint(
+        EObject object, Map<String, Object> rule, boolean sourceEndpoint) {
+      if (sourceEndpoint && Boolean.TRUE.equals(rule.get("ownerAsSource"))) {
+        return object.eContainer();
+      }
+      List<String> featureNames = new ArrayList<>();
+      String singular =
+          String.valueOf(rule.getOrDefault(sourceEndpoint ? "sourceFeature" : "targetFeature", ""));
+      if (!singular.isBlank()) {
+        featureNames.add(singular);
+      }
+      featureNames.addAll(
+          stringList(rule.get(sourceEndpoint ? "sourceFeatures" : "targetFeatures")));
+      for (String featureName : featureNames) {
+        EStructuralFeature feature = object.eClass().getEStructuralFeature(featureName);
+        if (feature != null && object.eGet(feature) instanceof EObject endpoint) {
+          return endpoint;
+        }
+      }
+      return null;
     }
 
     /**
@@ -1730,75 +1845,13 @@ final class XmiModelImportService {
      * @param value reference feature name
      * @return relationship kind or empty string
      */
-    private String referenceFeatureKind(String value) {
-      return switch (String.valueOf(value)) {
-        case "functionIntegration" -> "ROUTES_TO";
-        case "reads" -> "READS";
-        case "writes" -> "WRITES";
-        case "publishes" -> "PUBLISHES";
-        case "subscribesTo" -> "SUBSCRIBES_TO";
-        case "invokesFunction" -> "INVOKES";
-        case "invokedResource" -> "INVOKES";
-        case "startState" -> "STARTS_AT";
-        case "nextState" -> "TRANSITION";
-        case "endStates" -> "ENDS_AT";
-        case "targetResource" -> "PERMISSION_TARGET";
-        case "permissions" -> "PERMISSION";
-        case "deploysStacks" -> "DEPLOYS";
-        case "resources", "allResources" -> "CONTAINS";
-        case "route" -> "USES_ROUTE";
-        case "function" -> "INVOKES";
-        case "role" -> "USES_ROLE";
-        case "logGroup" -> "WRITES_LOGS_TO";
-        default -> "";
-      };
-    }
-
     /**
      * Maps containment feature names to relationship kinds.
      *
-     * @param featureName containment reference name
      * @return containment relationship kind
      */
-    private String containmentRelationshipKind(String featureName) {
-      String kind = referenceFeatureKind(featureName);
-      return kind.isBlank() ? "CONTAINS" : kind;
-    }
-
-    /**
-     * Maps semantic relationship class names to graph relationship kinds.
-     *
-     * @param value EClass name
-     * @return relationship kind
-     */
-    private String relationshipClassKind(String value) {
-      return switch (String.valueOf(value)) {
-        case "WorkflowTransition" -> "TRANSITION";
-        case "TraceLink" -> "TRACE";
-        case "ApiGatewayLambdaIntegrationView" -> "INVOKES";
-        default -> relationshipKind(value);
-      };
-    }
-
-    /**
-     * Maps AWS PSM relationship-view class names to graph relationship kinds.
-     *
-     * @param value EClass name
-     * @return relationship kind
-     */
-    private String psmRelationshipViewKind(String value) {
-      return switch (String.valueOf(value)) {
-        case "ApiGatewayLambdaIntegrationView" -> "INVOKES";
-        case "EventBridgeLambdaTargetView" -> "TARGETS";
-        case "SnsLambdaSubscriptionView",
-            "SqsLambdaEventSourceView",
-            "S3LambdaNotificationView",
-            "S3TopicNotificationView" ->
-            "EVENT_FLOW";
-        case "S3QueueNotificationView" -> "MESSAGE_FLOW";
-        case "StepFunctionEventBridgeTargetView" -> "INVOKES";
-        default -> relationshipClassKind(value);
-      };
+    private String containmentRelationshipKind() {
+      return containmentKind;
     }
 
     /**
