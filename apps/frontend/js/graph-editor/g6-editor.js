@@ -1228,8 +1228,9 @@ function runViewportSync({ syncSelection = false } = {}) {
   syncViewportStateFromGraph();
   setCanvasZoomIndicator();
   updateViewportChrome();
-  // Keep live viewport transforms independent of graph size. Remapping LOD here
-  // makes crossing a zoom threshold rebuild and diff every node and edge.
+  // Remap only after viewport activity settles. Node detail and edge labels are
+  // encoded in graph data, so CSS LOD classes alone cannot reveal them.
+  updateG6Lod({ defer: true });
   updateG6ContextBoxes(null, { useCache: true });
   if (syncSelection) {
     updateG6Selection();
