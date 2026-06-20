@@ -14,15 +14,102 @@ const CHAT_STAGE_PROGRESS = Object.freeze({
   VALIDATING: 62,
   REPAIRING: 78,
   APPLYING: 88,
+  WAITING: 92,
   COMPLETED: 100,
+  FAILED: 100,
+});
+
+const TERMINAL_WORKFLOW_STATES = new Set([
+  "PROPOSED",
+  "EXPLAINED",
+  "FAILED",
+  "WAITING_FOR_CHOICE",
+  "APPLIED",
+  "REJECTED",
+  "UNDONE",
+]);
+
+const WORKFLOW_LABELS = Object.freeze({
+  PLANNING: "Planning",
+  VALIDATING: "Validating",
+  REPAIRING: "Repairing",
+  PROPOSED: "Proposal ready",
+  WAITING_FOR_CHOICE: "Waiting for you",
+  EXPLAINED: "Explained",
+  FAILED: "Failed",
+  APPLIED: "Applied",
+  UNDONE: "Undone",
 });
 
 let chatBusyDepth = 0;
+let chatActivityHistory = [];
+let suppressChoiceRealtime = false;
 
-function setChatActivity(message, { busy = false, stage = null } = {}) {
+function chatScopeKey(typeKey = state.activeType) {
+  const projectId = state.project?.id;
+  return projectId ? `${projectId}:${typeKey}` : String(typeKey || "");
+}
+
+function workflowLabel(state) {
+  return WORKFLOW_LABELS[state] || state || "Working";
+}
+
+function idleStageForWorkflow(workflowState) {
+  return workflowState === "FAILED" ? "FAILED" : "COMPLETED";
+}
+
+export function resetChatActivityUi(message = "Ready to help") {
+  chatBusyDepth = 0;
+  chatActivityHistory = [];
+  setChatActivity(message, { busy: false, stage: null, workflowState: null });
+}
+
+function applyWorkflowSnapshot(workflowState, message = null) {
+  if (!workflowState) {
+    resetChatActivityUi();
+    return;
+  }
+  setChatActivity(message || workflowLabel(workflowState), {
+    busy: false,
+    stage: idleStageForWorkflow(workflowState),
+    workflowState,
+  });
+}
+
+export function resetChatForProjectChange() {
+  for (const channel of state.chat.channels.values()) {
+    try {
+      channel.handle?.close?.();
+    } catch {
+      // ignore cleanup errors
+    }
+  }
+  state.chat.channels.clear();
+  state.chat.sessions.clear();
+  state.chat.attachment = null;
+  suppressChoiceRealtime = false;
+  resetChatActivityUi();
+  if (el.chatMessages) {
+    el.chatMessages.innerHTML = "";
+    el.chatMessages.appendChild(buildChatWelcomeCard());
+  }
+  updateChatAttachmentLabel();
+}
+
+function setChatActivity(message, { busy = false, stage = null, workflowState = null } = {}) {
   const label = message || (busy ? "Working on your model" : "Ready");
   if (el.chatActivityMessage) el.chatActivityMessage.textContent = label;
-  if (el.chatHeaderSubtitle) el.chatHeaderSubtitle.textContent = label;
+  if (el.chatHeaderSubtitle) {
+    el.chatHeaderSubtitle.textContent = workflowState ? workflowLabel(workflowState) : label;
+  }
+  if (el.chatWorkflowBadge) {
+    if (workflowState) {
+      el.chatWorkflowBadge.textContent = workflowLabel(workflowState);
+      el.chatWorkflowBadge.classList.remove("hidden");
+    } else {
+      el.chatWorkflowBadge.classList.add("hidden");
+    }
+  }
   el.chatActivity?.classList.toggle("is-busy", busy);
   el.chatTypingIndicator?.classList.toggle("hidden", !busy);
   if (el.chatProgressBar) {
@@ -30,16 +117,95 @@ function setChatActivity(message, { busy = false, stage = null } = {}) {
     el.chatProgressBar.classList.toggle("is-indeterminate", busy && progress == null);
     el.chatProgressBar.style.width = progress == null ? "" : `${progress}%`;
   }
+  if (stage && message) {
+    pushActivityHistory(stage, message);
+  }
 }
 
-function beginChatActivity(message) {
+function pushActivityHistory(stage, message) {
+  const entry = `${workflowLabel(stage) || stage}: ${message}`;
+  if (chatActivityHistory[chatActivityHistory.length - 1] === entry) {
+    return;
+  }
+  chatActivityHistory = [...chatActivityHistory, entry].slice(-3);
+  if (!el.chatActivityHistory) {
+    return;
+  }
+  if (!chatActivityHistory.length) {
+    el.chatActivityHistory.classList.add("hidden");
+    el.chatActivityHistory.replaceChildren();
+    return;
+  }
+  el.chatActivityHistory.classList.remove("hidden");
+  el.chatActivityHistory.replaceChildren(
+    ...chatActivityHistory.map((item) => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      return li;
+    }),
+  );
+}
+
+function applyHttpActivity(response) {
+  const activity = response?.activity;
+  if (!activity) {
+    return;
+  }
+  const workflowState = activity.workflowState;
+  const busy = workflowState ? !TERMINAL_WORKFLOW_STATES.has(workflowState) : false;
+  setChatActivity(activity.message || workflowLabel(workflowState), {
+    busy,
+    stage: busy ? activity.stage : idleStageForWorkflow(workflowState),
+    workflowState,
+  });
+}
+
+function beginChatActivity(message, workflowState = null) {
   chatBusyDepth += 1;
-  setChatActivity(message, { busy: true });
+  setChatActivity(message, { busy: true, workflowState, stage: "PLANNING" });
+  el.chatActivity?.classList.add("is-busy");
 }
 
-function endChatActivity(message = "Ready to help") {
+function endChatActivity(message = "Ready to help", workflowState = null) {
   chatBusyDepth = Math.max(0, chatBusyDepth - 1);
-  if (chatBusyDepth === 0) setChatActivity(message);
+  if (chatBusyDepth === 0) {
+    el.chatActivity?.classList.remove("is-busy");
+    if (workflowState && TERMINAL_WORKFLOW_STATES.has(workflowState)) {
+      applyWorkflowSnapshot(workflowState, message);
+      return;
+    }
+    setChatActivity(message, { busy: false, workflowState: null, stage: null });
+  }
+}
+
+function updateChatProviderLabel(provider) {
+  if (!el.chatProviderLabel) {
+    return;
+  }
+  const key = provider?.provider ? String(provider.provider).trim() : "";
+  if (!key) {
+    el.chatProviderLabel.classList.add("hidden");
+    el.chatProviderLabel.textContent = "";
+    return;
+  }
+  el.chatProviderLabel.textContent = `Provider: ${key}`;
+  el.chatProviderLabel.classList.remove("hidden");
+}
+
+async function ensureChatRealtime(scopeKey, typeKey, sessionId) {
+  const channel = state.chat.channels.get(scopeKey);
+  if (channel?.kind === "websocket" && channel.handle?.readyState === WebSocket.OPEN) {
+    return;
+  }
+  if (channel?.handle) {
+    try {
+      channel.handle.close?.();
+    } catch {
+      // ignore cleanup errors
+    }
+  }
+  state.chat.channels.delete(scopeKey);
+  await connectChatRealtime(scopeKey, typeKey, sessionId);
 }
 
 // ── Chat session / realtime ───────────────────────────────────────────────────
@@ -54,8 +220,15 @@ export async function ensureChatSession() {
     return null;
   }
   const typeKey = state.activeType;
-  if (state.chat.sessions.has(typeKey)) {
-    return state.chat.sessions.get(typeKey);
+  const scopeKey = chatScopeKey(typeKey);
+  const cached = state.chat.sessions.get(scopeKey);
+  if (cached?.sessionId && cached.projectId === state.project.id) {
+    await ensureChatRealtime(scopeKey, typeKey, cached.sessionId);
+    await hydrateChatThread(typeKey, cached.sessionId);
+    return cached;
+  }
+  if (cached) {
+    state.chat.sessions.delete(scopeKey);
   }
 
   let response;
@@ -81,16 +254,71 @@ export async function ensureChatSession() {
   const session = {
     sessionId: response.sessionId,
     modelId: response.modelId || null,
+    projectId: state.project.id,
   };
-  state.chat.sessions.set(typeKey, session);
-  await connectChatRealtime(typeKey, session.sessionId);
+  state.chat.sessions.set(scopeKey, session);
+  await connectChatRealtime(scopeKey, typeKey, session.sessionId);
+  await hydrateChatThread(typeKey, session.sessionId);
 
   return session;
 }
 
+export async function prepareChatWindow() {
+  if (chatBusyDepth === 0) {
+    resetChatActivityUi();
+  }
+  return ensureChatSession();
+}
+
+async function hydrateChatThread(typeKey, sessionId) {
+  try {
+    const thread = await api(`/chatbot/sessions/${sessionId}/thread`);
+    const hasMessages = Array.isArray(thread.messages) && thread.messages.length > 0;
+    const hasPending = Array.isArray(thread.pendingChoices) && thread.pendingChoices.length > 0;
+    const hasProposal = Boolean(thread.proposal);
+
+    if (!hasMessages && !hasPending && !hasProposal) {
+      resetChatActivityUi();
+      return;
+    }
+
+    if (hasMessages) {
+      el.chatMessages.innerHTML = "";
+      for (const message of thread.messages) {
+        const role = String(message.role || "").toLowerCase() === "user" ? "user" : "assistant";
+        appendChat(role, message.content || "");
+      }
+    }
+    if (thread.proposal) {
+      appendProposalCard(typeKey, sessionId, thread.proposal);
+    } else if (hasPending) {
+      appendChoiceButtons(typeKey, sessionId, thread.pendingChoices);
+    }
+
+    const workflowState =
+      hasPending && thread.workflowState !== "PROPOSED"
+        ? "WAITING_FOR_CHOICE"
+        : thread.workflowState;
+    if (workflowState) {
+      applyWorkflowSnapshot(
+        workflowState,
+        workflowState === "WAITING_FOR_CHOICE"
+          ? "Answer the question below to continue"
+          : workflowLabel(workflowState),
+      );
+    } else {
+      resetChatActivityUi();
+    }
+    updateChatProviderLabel(thread.provider);
+  } catch {
+    resetChatActivityUi();
+  }
+}
+
 export async function clearChatConversation() {
   const typeKey = state.activeType;
-  const session = state.chat.sessions.get(typeKey);
+  const scopeKey = chatScopeKey(typeKey);
+  const session = state.chat.sessions.get(scopeKey);
   if (session?.sessionId) {
     try {
       await api(`/chatbot/sessions/${session.sessionId}`, {
@@ -103,7 +331,7 @@ export async function clearChatConversation() {
     }
   }
 
-  const channel = state.chat.channels.get(typeKey);
+  const channel = state.chat.channels.get(scopeKey);
   if (channel?.handle) {
     try {
       channel.handle.close?.();
@@ -111,8 +339,8 @@ export async function clearChatConversation() {
       // ignore cleanup errors
     }
   }
-  state.chat.channels.delete(typeKey);
-  state.chat.sessions.delete(typeKey);
+  state.chat.channels.delete(scopeKey);
+  state.chat.sessions.delete(scopeKey);
   state.chat.attachment = null;
   if (el.chatFileInput) {
     el.chatFileInput.value = "";
@@ -120,10 +348,11 @@ export async function clearChatConversation() {
   updateChatAttachmentLabel();
   el.chatMessages.innerHTML = "";
   el.chatMessages.appendChild(buildChatWelcomeCard());
+  resetChatActivityUi();
   setStatus("Chat cleared");
 }
 
-async function connectChatRealtime(typeKey, sessionId) {
+async function connectChatRealtime(scopeKey, typeKey, sessionId) {
   const wsUrl = websocketUrl(`/ws/chatbot/sessions/${sessionId}`);
 
   try {
@@ -142,11 +371,11 @@ async function connectChatRealtime(typeKey, sessionId) {
       }
     };
     socket.onclose = () => {
-      if (state.chat.channels.get(typeKey)?.kind === "websocket") {
+      if (state.chat.channels.get(scopeKey)?.kind === "websocket") {
         setStatus("Chat websocket disconnected");
       }
     };
-    state.chat.channels.set(typeKey, { kind: "websocket", handle: socket });
+    state.chat.channels.set(scopeKey, { kind: "websocket", handle: socket });
     return;
   } catch {
     // fallback to SSE
@@ -177,7 +406,7 @@ async function connectChatRealtime(typeKey, sessionId) {
   stream.onerror = () => {
     setStatus("Chat realtime stream disconnected");
   };
-  state.chat.channels.set(typeKey, { kind: "sse", handle: stream });
+  state.chat.channels.set(scopeKey, { kind: "sse", handle: stream });
 }
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
@@ -191,12 +420,18 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
   if (eventType === "chat.assistant") {
     const message = payload?.assistantMessage || payload?.message;
     appendAssistantDeduped(message);
-    const sessionId = state.chat.sessions.get(typeKey)?.sessionId;
+    const sessionId = state.chat.sessions.get(chatScopeKey(typeKey))?.sessionId;
     if (sessionId) {
       appendProposalCard(typeKey, sessionId, payload?.proposal);
       if (!payload?.proposal) {
         appendChoiceButtons(typeKey, sessionId, payload?.choices);
       }
+    }
+    if (payload?.workflowState && chatBusyDepth === 0) {
+      applyWorkflowSnapshot(
+        payload.workflowState,
+        payload?.activity?.message || workflowLabel(payload.workflowState),
+      );
     }
     return;
   }
@@ -207,7 +442,9 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
   }
 
   if (eventType === "assistant.choice") {
-    appendAssistantDeduped("Choice recorded.");
+    if (!suppressChoiceRealtime) {
+      appendAssistantDeduped("Choice recorded.");
+    }
     return;
   }
 
@@ -529,6 +766,7 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
   form.appendChild(actions);
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    let response = null;
     const answers = fields.map(({ choice, fieldset, name, freeText }) => ({
       choiceId: choice.id,
       optionIds: [...fieldset.querySelectorAll(`input[name="${CSS.escape(name)}"]:checked`)].map(
@@ -546,10 +784,29 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
       for (const input of form.querySelectorAll("input, textarea")) {
         input.disabled = true;
       }
-      const response = await api(`/chatbot/sessions/${sessionId}/choices`, {
+      const answerSummary = answers
+        .map((answer) => {
+          const question = fields.find((field) => field.choice.id === answer.choiceId)?.choice;
+          const labels = (question?.options || [])
+            .filter((option) => answer.optionIds.includes(option.id))
+            .map((option) => option.label)
+            .join(", ");
+          return [question?.prompt, labels, answer.freeText].filter(Boolean).join(": ");
+        })
+        .join("\n");
+      if (answerSummary) {
+        const summary = document.createElement("div");
+        summary.className = "chat-question-answers";
+        summary.textContent = answerSummary;
+        bubble.appendChild(summary);
+      }
+      suppressChoiceRealtime = true;
+      response = await api(`/chatbot/sessions/${sessionId}/choices`, {
         method: "POST",
         body: JSON.stringify({ answers }),
       });
+      suppressChoiceRealtime = false;
+      applyHttpActivity(response);
       setProposalDecision(card, "Answered");
       appendAssistantDeduped(response.assistantMessage || "Clarification received");
       appendProposalCard(typeKey, sessionId, response.proposal);
@@ -558,13 +815,17 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
       }
       await applyAssistantModelResponse(typeKey, response);
     } catch (error) {
+      suppressChoiceRealtime = false;
       setProposalActionsDisabled(actions, false);
       for (const input of form.querySelectorAll("input, textarea")) {
         input.disabled = false;
       }
       appendChat("assistant", `Error: ${error.message}`);
     } finally {
-      endChatActivity();
+      endChatActivity(
+        response?.workflowState ? workflowLabel(response.workflowState) : "Ready to help",
+        response?.workflowState || null,
+      );
     }
   });
   bubble.appendChild(form);
@@ -648,6 +909,7 @@ export async function sendChatMessage() {
     return;
   }
 
+  let response = null;
   try {
     const session = await ensureChatSession();
     if (!session) {
@@ -662,7 +924,9 @@ export async function sendChatMessage() {
     beginChatActivity("Understanding your request");
     el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
 
-    const response = await api(`/chatbot/sessions/${session.sessionId}/messages`, {
+    await ensureChatRealtime(chatScopeKey(state.activeType), state.activeType, session.sessionId);
+
+    response = await api(`/chatbot/sessions/${session.sessionId}/messages`, {
       method: "POST",
       body: JSON.stringify({
         message: text,
@@ -683,6 +947,7 @@ export async function sendChatMessage() {
       }),
     });
 
+    applyHttpActivity(response);
     appendAssistantDeduped(response.assistantMessage || "Done");
     appendProposalCard(state.activeType, session.sessionId, response.proposal);
     if (!response.proposal) {
@@ -704,7 +969,10 @@ export async function sendChatMessage() {
     appendChat("assistant", `Error: ${error.message}`);
     setError(`Chat failed: ${error.message}`);
   } finally {
-    endChatActivity();
+    endChatActivity(
+      response?.workflowState ? workflowLabel(response.workflowState) : "Ready to help",
+      response?.workflowState || null,
+    );
     el.chatSendBtn.disabled = false;
   }
 }

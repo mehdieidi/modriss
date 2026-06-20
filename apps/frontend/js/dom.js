@@ -62,6 +62,8 @@ export const el = {
   chatActivity: document.getElementById("chatActivity"),
   chatActivityMessage: document.getElementById("chatActivityMessage"),
   chatProgressBar: document.getElementById("chatProgressBar"),
+  chatProviderLabel: document.getElementById("chatProviderLabel"),
+  chatActivityHistory: document.getElementById("chatActivityHistory"),
   chatInputRow: document.getElementById("chatInputRow"),
   mobileSidebarToggleBtn: document.getElementById("mobileSidebarToggleBtn"),
   mobileInspectorToggleBtn: document.getElementById("mobileInspectorToggleBtn"),

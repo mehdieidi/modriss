@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 public class AssistantPromptGuard {
 
   private static final int MAX_USER_CHARS = 4000;
-  private static final int MAX_SYSTEM_CHARS = 12000;
-  private static final int MAX_SNIPPET_CHARS = 1800;
   private static final Pattern SECRET =
       Pattern.compile(
           "(?i)(api[-_ ]?key|authorization|password|secret|token)\\s*[:=]\\s*" + "([^\\s,;]+)");
@@ -19,6 +17,12 @@ public class AssistantPromptGuard {
       Pattern.compile(
           "(?i)(ignore|override|disregard)\\s+(all\\s+)?(previous|prior|system)"
               + "\\s+(instructions|prompt)");
+
+  private final AiProperties properties;
+
+  public AssistantPromptGuard(AiProperties properties) {
+    this.properties = properties;
+  }
 
   /**
    * Sanitizes one provider prompt while preserving compact trusted context.
@@ -34,16 +38,16 @@ public class AssistantPromptGuard {
     }
     List<AssistantModelProvider.ContextSnippet> snippets =
         prompt.snippets().stream()
-            .limit(8)
+            .limit(properties.maxContextSnippets())
             .map(
                 snippet ->
                     new AssistantModelProvider.ContextSnippet(
                         bound(redact(snippet.source()), 300),
                         bound(redact(snippet.title()), 300),
-                        bound(redact(snippet.content()), MAX_SNIPPET_CHARS)))
+                        bound(redact(snippet.content()), properties.maxSnippetChars())))
             .toList();
     return new AssistantModelProvider.AssistantPrompt(
-        prompt.role(), bound(redact(prompt.system()), MAX_SYSTEM_CHARS), user, snippets);
+        prompt.role(), bound(redact(prompt.system()), properties.maxSystemChars()), user, snippets);
   }
 
   /**

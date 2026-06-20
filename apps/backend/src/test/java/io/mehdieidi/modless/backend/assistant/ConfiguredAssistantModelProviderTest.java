@@ -16,7 +16,8 @@ class ConfiguredAssistantModelProviderTest {
   @Test
   void neverFallsThroughToAnUnselectedProvider() {
     AiProperties properties =
-        new AiProperties(true, null, "openai", null, 0, 0, 0, null, null, null, null, null, null);
+        new AiProperties(
+            true, null, "openai", null, 0, 0, 0, 0, 0, 0, null, null, null, null, null, null, null);
     OpenAiCompatibleAssistantModelProvider openai =
         mock(OpenAiCompatibleAssistantModelProvider.class);
     GeminiAssistantModelProvider gemini = mock(GeminiAssistantModelProvider.class);

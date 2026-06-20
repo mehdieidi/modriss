@@ -23,6 +23,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            null,
             null,
             null,
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
@@ -30,7 +34,7 @@ class AssistantProviderStartupTest {
             null,
             null);
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
-    AssistantPromptGuard promptGuard = new AssistantPromptGuard();
+    AssistantPromptGuard promptGuard = new AssistantPromptGuard(properties);
     AssistantToolService tools =
         new AssistantToolService(
             mock(AssistantCatalogService.class), new AssistantPatchCompiler(), new ObjectMapper());
@@ -64,6 +68,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            null,
             null,
             null,
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
@@ -80,7 +88,7 @@ class AssistantProviderStartupTest {
             new GeminiAssistantModelProvider(
                 properties,
                 proxyAvailability,
-                new AssistantPromptGuard(),
+                new AssistantPromptGuard(properties),
                 tools,
                 new AssistantHardeningService(properties, null),
                 new SemanticModelPatchParser(new ObjectMapper())));
@@ -97,6 +105,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            null,
             null,
             null,
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
@@ -110,7 +122,7 @@ class AssistantProviderStartupTest {
         new GeminiAssistantModelProvider(
             properties,
             new ProxyAvailability(properties),
-            new AssistantPromptGuard(),
+            new AssistantPromptGuard(properties),
             tools,
             new AssistantHardeningService(properties, null),
             new SemanticModelPatchParser(new ObjectMapper()));
@@ -130,6 +142,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            null,
             null,
             null,
             new AiProperties.Proxy(false, AiProperties.ProxyType.DIRECT, null, null, null),
@@ -143,7 +159,7 @@ class AssistantProviderStartupTest {
         new OpenAiCompatibleAssistantModelProvider(
             properties,
             new ProxyAvailability(properties),
-            new AssistantPromptGuard(),
+            new AssistantPromptGuard(properties),
             tools,
             new AssistantHardeningService(properties, null),
             new SemanticModelPatchParser(new ObjectMapper()),

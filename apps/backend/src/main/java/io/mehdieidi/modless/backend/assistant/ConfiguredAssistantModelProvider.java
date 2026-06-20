@@ -1,6 +1,7 @@
 package io.mehdieidi.modless.backend.assistant;
 
 import io.mehdieidi.modless.platform.kernel.PlatformException;
+import java.util.Optional;
 import java.util.function.Function;
 
 /** Delegates assistant calls to the provider selected by configuration. */
@@ -48,6 +49,14 @@ final class ConfiguredAssistantModelProvider implements AssistantModelProvider {
     return properties.providerKind() == AiProperties.Provider.GEMINI ? gemini : openai;
   }
 
+  private AssistantModelProvider fallback() {
+    Optional<AiProperties.Provider> fallback = properties.fallbackProviderKind();
+    if (fallback.isEmpty()) {
+      throw new PlatformException(503, "No fallback AI provider is configured.");
+    }
+    return fallback.get() == AiProperties.Provider.GEMINI ? gemini : openai;
+  }
+
   private <T> T withFallback(Function<AssistantModelProvider, T> call) {
     AssistantModelProvider configured = primary();
     if (!configured.available()) {
@@ -57,6 +66,17 @@ final class ConfiguredAssistantModelProvider implements AssistantModelProvider {
               + configured.metadata().provider()
               + "' is not currently available.");
     }
-    return call.apply(configured);
+    try {
+      return call.apply(configured);
+    } catch (PlatformException failure) {
+      if (failure.status() != 429 || properties.fallbackProviderKind().isEmpty()) {
+        throw failure;
+      }
+      AssistantModelProvider alternate = fallback();
+      if (!alternate.available()) {
+        throw failure;
+      }
+      return call.apply(alternate);
+    }
   }
 }

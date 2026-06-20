@@ -52,8 +52,12 @@ modless:
     provider: ${MODLESS_AI_PROVIDER:openai}
     request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:5m}
     max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:96}
-    validation-repair-attempts: ${MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS:3}
+    validation-repair-attempts: ${MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS:6}
     token-budget: ${MODLESS_AI_TOKEN_BUDGET:6000}
+    max-context-snippets: ${MODLESS_AI_MAX_CONTEXT_SNIPPETS:24}
+    max-snippet-chars: ${MODLESS_AI_MAX_SNIPPET_CHARS:2400}
+    max-system-chars: ${MODLESS_AI_MAX_SYSTEM_CHARS:14000}
+    fallback-provider: ${MODLESS_AI_FALLBACK_PROVIDER:}
     hardening:
       per-user-requests-per-window: ${MODLESS_AI_RATE_LIMIT_REQUESTS:30}
       rate-limit-window: ${MODLESS_AI_RATE_LIMIT_WINDOW:1m}
@@ -61,7 +65,7 @@ modless:
       circuit-open-duration: ${MODLESS_AI_CIRCUIT_OPEN_DURATION:1m}
       provider-retry-attempts: ${MODLESS_AI_PROVIDER_RETRY_ATTEMPTS:2}
       retry-backoff: ${MODLESS_AI_RETRY_BACKOFF:250ms}
-      recent-message-window: ${MODLESS_AI_RECENT_MESSAGE_WINDOW:12}
+      recent-message-window: ${MODLESS_AI_RECENT_MESSAGE_WINDOW:24}
     embeddings:
       provider: ${MODLESS_AI_EMBEDDINGS_PROVIDER:ONNX}
       model-resource: ${MODLESS_AI_EMBEDDINGS_MODEL_RESOURCE:}
@@ -72,7 +76,7 @@ modless:
       gpu-device-id: ${MODLESS_AI_EMBEDDINGS_GPU_DEVICE_ID:-1}
       fallback-to-hash: ${MODLESS_AI_EMBEDDINGS_FALLBACK_TO_HASH:true}
     proxy:
-      enabled: ${MODLESS_AI_PROXY_ENABLED:true}
+      enabled: ${MODLESS_AI_PROXY_ENABLED:false}
       type: ${MODLESS_AI_PROXY_TYPE:HTTP}
       host: ${MODLESS_AI_PROXY_HOST:127.0.0.1}
       port: ${MODLESS_AI_PROXY_PORT:2081}

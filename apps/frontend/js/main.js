@@ -32,7 +32,7 @@ import {
 import { closeImpactPanel, toggleImpactMode } from "./impact.js";
 import {
   clearChatConversation,
-  ensureChatSession,
+  prepareChatWindow,
   sendChatMessage,
   updateChatAttachmentLabel,
 } from "./chat.js";
@@ -896,7 +896,7 @@ function bindEvents() {
     el.chatWindow.classList.toggle("hidden", !willOpen);
     if (willOpen) {
       syncExpandedChatBounds();
-      ensureChatSession().catch((error) => setStatus(`Chat setup failed: ${error.message}`));
+      prepareChatWindow().catch((error) => setStatus(`Chat setup failed: ${error.message}`));
       el.chatInput.focus();
     } else {
       setChatExpanded(false);

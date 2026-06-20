@@ -1015,6 +1015,21 @@ paths:
           description: Server-sent event stream
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/thread:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Assistant]
+      summary: Get durable assistant thread history
+      responses:
+        "200":
+          description: Assistant thread snapshot
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions/{sessionId}/proposals/{proposalId}:
     parameters:
       - name: sessionId

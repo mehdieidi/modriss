@@ -1,0 +1,322 @@
+package io.mehdieidi.modless.backend.assistant;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.mehdieidi.modless.platform.kernel.ModelLevel;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+
+/** Deterministically adds required nested elements and attributes omitted by the LLM. */
+@Service
+public class AssistantPatchCompleter {
+
+  private final AssistantMetamodelSchemaService schemas;
+
+  public AssistantPatchCompleter(AssistantMetamodelSchemaService schemas) {
+    this.schemas = schemas;
+  }
+
+  /**
+   * Expands a semantic patch until required single-valued containments and attributes are present.
+   *
+   * @param level model level
+   * @param patch planner patch
+   * @param existingTypes stable IDs to metamodel types already in the model context
+   * @return completed patch with operations ordered for compilation
+   */
+  public SemanticModelPatch complete(
+      ModelLevel level, SemanticModelPatch patch, Map<String, String> existingTypes) {
+    if (patch.operations().isEmpty()) {
+      return patch;
+    }
+    Map<String, String> types =
+        new LinkedHashMap<>(existingTypes == null ? Map.of() : existingTypes);
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>(patch.operations());
+    boolean changed;
+    do {
+      changed = false;
+      List<SemanticModelPatch.Operation> additions = new ArrayList<>();
+      for (SemanticModelPatch.Operation operation : operations) {
+        if (operation == null || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT) {
+          continue;
+        }
+        String targetId = operation.targetElementId();
+        if (blank(targetId)) {
+          continue;
+        }
+        String canonicalType;
+        try {
+          canonicalType = schemas.canonicalType(level, operation.elementType());
+        } catch (PlatformException ignored) {
+          continue;
+        }
+        types.putIfAbsent(targetId, canonicalType);
+        SemanticModelPatch.Operation withAttributes =
+            fillRequiredAttributes(level, canonicalType, operation);
+        if (withAttributes != operation) {
+          replaceOperation(operations, operation, withAttributes);
+          changed = true;
+        }
+        AssistantMetamodelSchemaService.TypeSchema typeSchema =
+            schemas.typeSchema(level, canonicalType).orElse(null);
+        if (typeSchema == null) {
+          continue;
+        }
+        for (AssistantMetamodelSchemaService.ReferenceSchema reference : typeSchema.references()) {
+          if (!reference.required() || !reference.containment() || reference.many()) {
+            continue;
+          }
+          if (hasContainedChild(operations, targetId, reference.name())) {
+            continue;
+          }
+          String childId = java.util.UUID.randomUUID().toString();
+          String childName = deriveChildName(withAttributes, canonicalType, reference);
+          ObjectNode attributes = JsonNodeFactory.instance.objectNode();
+          attributes.put("name", childName);
+          SemanticModelPatch.Operation child =
+              new SemanticModelPatch.Operation(
+                  SemanticModelPatch.OperationType.ADD_ELEMENT,
+                  childId,
+                  reference.targetType(),
+                  attributes,
+                  targetId,
+                  reference.name());
+          additions.add(child);
+          types.put(childId, schemas.canonicalType(level, reference.targetType()));
+          changed = true;
+        }
+      }
+      if (!additions.isEmpty()) {
+        operations.addAll(additions);
+        operations = orderOperationsForCompilation(operations);
+      }
+    } while (changed);
+    return new SemanticModelPatch(operations);
+  }
+
+  /**
+   * Adds missing required containments identified by validator feedback for existing elements.
+   *
+   * @param level model level
+   * @param patch planner patch
+   * @param existingTypes stable IDs to metamodel types already in the model context
+   * @param missing required features reported by validation
+   * @return expanded patch
+   */
+  public SemanticModelPatch repairFromValidationFeedback(
+      ModelLevel level,
+      SemanticModelPatch patch,
+      Map<String, String> existingTypes,
+      List<AssistantValidationFeedbackResolver.MissingRequiredFeature> missing) {
+    SemanticModelPatch completed = complete(level, patch, existingTypes);
+    if (missing == null || missing.isEmpty()) {
+      return completed;
+    }
+    Map<String, String> types =
+        new LinkedHashMap<>(existingTypes == null ? Map.of() : existingTypes);
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>(completed.operations());
+    for (SemanticModelPatch.Operation operation : operations) {
+      if (operation == null || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT) {
+        continue;
+      }
+      if (blank(operation.targetElementId())) {
+        continue;
+      }
+      try {
+        types.putIfAbsent(
+            operation.targetElementId(), schemas.canonicalType(level, operation.elementType()));
+      } catch (PlatformException ignored) {
+        types.putIfAbsent(operation.targetElementId(), operation.elementType());
+      }
+    }
+    boolean changed = false;
+    for (AssistantValidationFeedbackResolver.MissingRequiredFeature requirement : missing) {
+      if (requirement == null
+          || blank(requirement.ownerElementId())
+          || blank(requirement.featureName())) {
+        continue;
+      }
+      String ownerType = types.get(requirement.ownerElementId());
+      if (ownerType == null) {
+        continue;
+      }
+      AssistantMetamodelSchemaService.ReferenceSchema reference =
+          schemas
+              .reference(level, ownerType, requirement.featureName())
+              .filter(ref -> ref.required() && ref.containment() && !ref.many())
+              .orElse(null);
+      if (reference == null
+          || hasContainedChild(
+              operations, requirement.ownerElementId(), requirement.featureName())) {
+        continue;
+      }
+      String childId = java.util.UUID.randomUUID().toString();
+      ObjectNode attributes = JsonNodeFactory.instance.objectNode();
+      attributes.put("name", humanize(reference.targetType()));
+      operations.add(
+          new SemanticModelPatch.Operation(
+              SemanticModelPatch.OperationType.ADD_ELEMENT,
+              childId,
+              reference.targetType(),
+              attributes,
+              requirement.ownerElementId(),
+              requirement.featureName()));
+      types.put(childId, schemas.canonicalType(level, reference.targetType()));
+      changed = true;
+    }
+    if (!changed) {
+      return completed;
+    }
+    return new SemanticModelPatch(orderOperationsForCompilation(operations));
+  }
+
+  private SemanticModelPatch.Operation fillRequiredAttributes(
+      ModelLevel level, String canonicalType, SemanticModelPatch.Operation operation) {
+    AssistantMetamodelSchemaService.TypeSchema typeSchema =
+        schemas.typeSchema(level, canonicalType).orElse(null);
+    if (typeSchema == null) {
+      return operation;
+    }
+    ObjectNode attributes =
+        operation.attributes() == null || operation.attributes().isNull()
+            ? JsonNodeFactory.instance.objectNode()
+            : ((ObjectNode) operation.attributes().deepCopy());
+    boolean changed = false;
+    String parentName = attributes.path("name").asText(canonicalType);
+    for (AssistantMetamodelSchemaService.AttributeSchema attribute : typeSchema.attributes()) {
+      if (!attribute.required()) {
+        continue;
+      }
+      JsonNode current = attributes.get(attribute.name());
+      if (current != null && !current.isNull() && !current.asText("").isBlank()) {
+        continue;
+      }
+      JsonNode defaultValue = defaultAttributeValue(attribute, parentName, canonicalType);
+      if (defaultValue != null) {
+        attributes.set(attribute.name(), defaultValue);
+        changed = true;
+      }
+    }
+    return changed
+        ? new SemanticModelPatch.Operation(
+            operation.type(),
+            operation.targetElementId(),
+            operation.elementType(),
+            attributes,
+            operation.sourceElementId(),
+            operation.referenceName())
+        : operation;
+  }
+
+  private JsonNode defaultAttributeValue(
+      AssistantMetamodelSchemaService.AttributeSchema attribute,
+      String parentName,
+      String canonicalType) {
+    if ("name".equals(attribute.name())) {
+      return JsonNodeFactory.instance.textNode(parentName);
+    }
+    if (!attribute.options().isEmpty()) {
+      return JsonNodeFactory.instance.textNode(attribute.options().get(0));
+    }
+    String type = attribute.type() == null ? "" : attribute.type().toLowerCase(Locale.ROOT);
+    if (type.contains("boolean")) {
+      return JsonNodeFactory.instance.booleanNode(false);
+    }
+    if (type.contains("int") || type.contains("long") || type.contains("double")) {
+      return JsonNodeFactory.instance.numberNode(0);
+    }
+    return JsonNodeFactory.instance.textNode(humanize(canonicalType));
+  }
+
+  private String deriveChildName(
+      SemanticModelPatch.Operation parent,
+      String parentType,
+      AssistantMetamodelSchemaService.ReferenceSchema reference) {
+    String parentName =
+        parent.attributes() == null ? "" : parent.attributes().path("name").asText("");
+    if (!parentName.isBlank()) {
+      return parentName + " " + humanize(reference.targetType());
+    }
+    return humanize(parentType) + " " + humanize(reference.name());
+  }
+
+  private String humanize(String value) {
+    if (value == null || value.isBlank()) {
+      return "Element";
+    }
+    return value.replaceAll("([a-z])([A-Z])", "$1 $2").replace('_', ' ').trim();
+  }
+
+  private boolean hasContainedChild(
+      List<SemanticModelPatch.Operation> operations, String ownerId, String referenceName) {
+    return operations.stream()
+        .anyMatch(
+            operation ->
+                operation != null
+                    && operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
+                    && ownerId.equals(operation.sourceElementId())
+                    && referenceName.equals(operation.referenceName()));
+  }
+
+  private void replaceOperation(
+      List<SemanticModelPatch.Operation> operations,
+      SemanticModelPatch.Operation previous,
+      SemanticModelPatch.Operation replacement) {
+    for (int index = 0; index < operations.size(); index++) {
+      if (operations.get(index) == previous) {
+        operations.set(index, replacement);
+        return;
+      }
+    }
+  }
+
+  private List<SemanticModelPatch.Operation> orderOperationsForCompilation(
+      List<SemanticModelPatch.Operation> operations) {
+    List<SemanticModelPatch.Operation> pendingAdds =
+        operations.stream()
+            .filter(java.util.Objects::nonNull)
+            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .collect(Collectors.toCollection(ArrayList::new));
+    List<SemanticModelPatch.Operation> ordered = new ArrayList<>();
+    Set<String> pendingIds =
+        pendingAdds.stream()
+            .map(SemanticModelPatch.Operation::targetElementId)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    while (!pendingAdds.isEmpty()) {
+      List<SemanticModelPatch.Operation> ready =
+          pendingAdds.stream()
+              .filter(
+                  operation ->
+                      blank(operation.sourceElementId())
+                          || !pendingIds.contains(operation.sourceElementId()))
+              .toList();
+      if (ready.isEmpty()) {
+        ordered.addAll(pendingAdds);
+        break;
+      }
+      ordered.addAll(ready);
+      pendingAdds.removeAll(ready);
+      ready.stream().map(SemanticModelPatch.Operation::targetElementId).forEach(pendingIds::remove);
+    }
+    operations.stream()
+        .filter(
+            operation ->
+                operation == null
+                    || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT)
+        .forEach(ordered::add);
+    return ordered;
+  }
+
+  private boolean blank(String value) {
+    return value == null || value.isBlank();
+  }
+}

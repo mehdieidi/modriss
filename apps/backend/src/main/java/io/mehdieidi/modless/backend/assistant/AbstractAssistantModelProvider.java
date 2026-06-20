@@ -55,18 +55,22 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
 
       Classify intent independently: MUTATION means the user asked to create, edit, remove, or
       refine model content; INFORMATION means they asked only for explanation, analysis, or advice.
-      A MUTATION must use PATCH, or CLARIFICATION when consequential information is still missing.
+      A MUTATION must use PATCH. CLARIFICATION is almost never appropriate for MUTATION.
       Never use ANSWER or claim completion for a MUTATION without semantic operations.
-      Use ANSWER for explanation, analysis, and advice. Use CLARIFICATION only when missing
-      information would materially change the requested formal model; ask at most three concise
-      questions with two to five genuinely distinct options and permit free text when appropriate.
+      Use ANSWER for explanation, analysis, and advice. Use CLARIFICATION only when the user
+      explicitly asked you to choose between incompatible business approaches in their message.
+      Never ask about architecture style, runtime language, package manager, persistence technology,
+      API style, event channels, IDs, names, layout, or other defaults the starter model or
+      metamodel already provides. For create/edit requests, return PATCH with a complete scaffold
+      that the user can review in guarded apply mode.
       Use PATCH for a modeling change and populate operations using the semantic operation contract
       below. Do not ask about harmless defaults that can be stated in the proposal. Never combine a
       clarification with speculative operations. Before asking, decide whether a competent
       modeler could safely choose a reasonable default and let the user review it in the guarded
-      proposal; if so, choose the default and return PATCH. IDs, names that can be derived from the
-      request, layout, ordering, and other reversible implementation details are never grounds for
-      clarification.
+      proposal; if so, choose the default and return PATCH. IDs must always be fresh UUIDv4 values
+      in operations; never ask the user to generate or format IDs. Names, layout, ordering, enum
+      literals with schema defaults, and other reversible implementation details are never grounds
+      for clarification.
       """;
 
   protected final AiProperties properties;

@@ -168,6 +168,50 @@ public class AssistantMetamodelSchemaService {
         .toList();
   }
 
+  /** Returns the runtime schema for one metamodel type. */
+  public Optional<TypeSchema> typeSchema(ModelLevel level, String typeName) {
+    return schema(level).type(canonicalType(level, typeName));
+  }
+
+  /** Returns compact enum defaults derived from the runtime schema. */
+  public String planningDefaults(ModelLevel level) {
+    return schema(level).types().values().stream()
+        .flatMap(
+            type ->
+                type.attributes().stream()
+                    .filter(attribute -> !attribute.options().isEmpty())
+                    .map(
+                        attribute ->
+                            type.name()
+                                + "."
+                                + attribute.name()
+                                + "="
+                                + attribute.options().get(0)))
+        .limit(24)
+        .collect(java.util.stream.Collectors.joining(", "));
+  }
+
+  /** Returns compact examples of required containment pairs for planner guidance. */
+  public String containmentPlanningExamples(ModelLevel level, int limit) {
+    return schema(level).types().values().stream()
+        .filter(TypeSchema::creatable)
+        .flatMap(
+            type ->
+                type.references().stream()
+                    .filter(reference -> reference.required() && reference.containment())
+                    .map(
+                        reference ->
+                            "When creating "
+                                + type.name()
+                                + ", always add "
+                                + reference.targetType()
+                                + " via "
+                                + reference.name()
+                                + " in the same patch."))
+        .limit(Math.max(0, limit))
+        .collect(Collectors.joining("\n"));
+  }
+
   /** Returns the complete writable feature contract for one metamodel type. */
   public AssistantModelProvider.ContextSnippet typeContract(ModelLevel level, String typeName) {
     TypeSchema type =

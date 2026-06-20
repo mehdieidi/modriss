@@ -2,6 +2,7 @@ package io.mehdieidi.modless.backend.assistant;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.Optional;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -14,6 +15,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxToolCalls maximum tool calls per assistant turn
  * @param validationRepairAttempts maximum validator-guided replanning passes per mutation
  * @param tokenBudget approximate prompt budget per turn
+ * @param maxContextSnippets maximum retrieved snippets passed to the provider per turn
+ * @param maxSnippetChars maximum characters per retrieved snippet
+ * @param maxSystemChars maximum characters in the system prompt
+ * @param fallbackProvider optional provider used only after HTTP 429 from the configured provider
  * @param hardening rate-limit and circuit-breaker settings
  * @param embeddings local embedding settings
  * @param proxy AI-only outbound proxy settings
@@ -30,6 +35,10 @@ public record AiProperties(
     int maxToolCalls,
     int validationRepairAttempts,
     int tokenBudget,
+    int maxContextSnippets,
+    int maxSnippetChars,
+    int maxSystemChars,
+    String fallbackProvider,
     Hardening hardening,
     Embeddings embeddings,
     Proxy proxy,
@@ -43,8 +52,12 @@ public record AiProperties(
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofMinutes(5) : requestTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 96 : maxToolCalls;
-    validationRepairAttempts = validationRepairAttempts <= 0 ? 3 : validationRepairAttempts;
+    validationRepairAttempts = validationRepairAttempts <= 0 ? 6 : validationRepairAttempts;
     tokenBudget = tokenBudget <= 0 ? 6000 : tokenBudget;
+    maxContextSnippets = maxContextSnippets <= 0 ? 24 : maxContextSnippets;
+    maxSnippetChars = maxSnippetChars <= 0 ? 2400 : maxSnippetChars;
+    maxSystemChars = maxSystemChars <= 0 ? 14000 : maxSystemChars;
+    fallbackProvider = fallbackProvider == null ? "" : fallbackProvider.trim();
     hardening =
         hardening == null
             ? new Hardening(
@@ -54,7 +67,7 @@ public record AiProperties(
         embeddings == null
             ? new Embeddings(null, null, null, null, null, false, -1, true)
             : embeddings;
-    proxy = proxy == null ? new Proxy(true, ProxyType.HTTP, null, null, null) : proxy;
+    proxy = proxy == null ? new Proxy(false, ProxyType.HTTP, null, null, null) : proxy;
     openaiCompatible =
         openaiCompatible == null ? new OpenAiCompatible(null, null) : openaiCompatible;
     gemini = gemini == null ? new Gemini(null) : gemini;
@@ -68,6 +81,23 @@ public record AiProperties(
    */
   public Provider providerKind() {
     return Provider.from(provider);
+  }
+
+  /**
+   * Resolves the optional fallback provider configured for rate-limit recovery.
+   *
+   * @return fallback provider when configured, otherwise empty
+   */
+  public Optional<Provider> fallbackProviderKind() {
+    if (fallbackProvider == null || fallbackProvider.isBlank()) {
+      return Optional.empty();
+    }
+    try {
+      Provider resolved = Provider.from(fallbackProvider);
+      return resolved == providerKind() ? Optional.empty() : Optional.of(resolved);
+    } catch (IllegalArgumentException ex) {
+      return Optional.empty();
+    }
   }
 
   /**
@@ -250,7 +280,7 @@ public record AiProperties(
           circuitOpenDuration == null ? Duration.ofMinutes(1) : circuitOpenDuration;
       providerRetryAttempts = providerRetryAttempts <= 0 ? 2 : providerRetryAttempts;
       retryBackoff = retryBackoff == null ? Duration.ofMillis(250) : retryBackoff;
-      recentMessageWindow = recentMessageWindow <= 0 ? 12 : recentMessageWindow;
+      recentMessageWindow = recentMessageWindow <= 0 ? 24 : recentMessageWindow;
     }
   }
 

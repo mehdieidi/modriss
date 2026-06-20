@@ -106,6 +106,35 @@ public class ChatbotController {
                 request.activeView(),
                 request.selectedElementIds(),
                 request.unsavedDraftPatch()));
+    return toMessageResponse(response);
+  }
+
+  /**
+   * Returns durable thread history for client hydration.
+   *
+   * @param token session token
+   * @param sessionId session ID
+   * @return thread snapshot
+   */
+  @GetMapping("/api/chatbot/sessions/{sessionId}/thread")
+  ThreadResponse thread(
+      @RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
+    AssistantOrchestrator.ThreadSnapshot snapshot = assistant.thread(auth.user(token), sessionId);
+    return new ThreadResponse(
+        snapshot.messages().stream()
+            .map(message -> new ThreadMessageResponse(message.role(), message.content()))
+            .toList(),
+        snapshot.pendingChoices(),
+        snapshot.workflowState(),
+        snapshot.proposal(),
+        snapshot.provider());
+  }
+
+  private MessageResponse toMessageResponse(AssistantOrchestrator.AssistantTurnResponse response) {
+    AssistantOrchestrator.AssistantActivity activity = response.activity();
+    if (activity == null) {
+      activity = new AssistantOrchestrator.AssistantActivity(null, null, response.workflowState());
+    }
     return new MessageResponse(
         response.assistantMessage(),
         response.modelId(),
@@ -113,7 +142,8 @@ public class ChatbotController {
         null,
         response.proposal(),
         response.choices(),
-        response.workflowState());
+        response.workflowState(),
+        new ActivityResponse(activity.stage(), activity.message(), activity.workflowState()));
   }
 
   /**
@@ -172,14 +202,7 @@ public class ChatbotController {
       @PathVariable String proposalId) {
     AssistantOrchestrator.AssistantTurnResponse response =
         assistant.approveProposal(auth.user(token), sessionId, proposalId);
-    return new MessageResponse(
-        response.assistantMessage(),
-        response.modelId(),
-        response.revision(),
-        null,
-        response.proposal(),
-        response.choices(),
-        response.workflowState());
+    return toMessageResponse(response);
   }
 
   /**
@@ -210,14 +233,7 @@ public class ChatbotController {
       @PathVariable String proposalId) {
     AssistantOrchestrator.AssistantTurnResponse response =
         assistant.undoProposal(auth.user(token), sessionId, proposalId);
-    return new MessageResponse(
-        response.assistantMessage(),
-        response.modelId(),
-        response.revision(),
-        null,
-        response.proposal(),
-        response.choices(),
-        response.workflowState());
+    return toMessageResponse(response);
   }
 
   /**
@@ -250,14 +266,7 @@ public class ChatbotController {
                 .toList();
     AssistantOrchestrator.AssistantTurnResponse response =
         assistant.submitChoices(user, sessionId, answers);
-    return new MessageResponse(
-        response.assistantMessage(),
-        response.modelId(),
-        response.revision(),
-        null,
-        response.proposal(),
-        response.choices(),
-        response.workflowState());
+    return toMessageResponse(response);
   }
 
   /**
@@ -324,7 +333,40 @@ public class ChatbotController {
       JsonNode model,
       AssistantProposal proposal,
       List<AssistantChoice> choices,
+      io.mehdieidi.modless.backend.assistant.AssistantWorkflowState workflowState,
+      ActivityResponse activity) {}
+
+  /**
+   * HTTP-visible assistant activity snapshot.
+   *
+   * @param stage current stage
+   * @param message human-readable status
+   * @param workflowState workflow state
+   */
+  public record ActivityResponse(
+      String stage,
+      String message,
       io.mehdieidi.modless.backend.assistant.AssistantWorkflowState workflowState) {}
+
+  /**
+   * Durable thread snapshot.
+   *
+   * @param messages recent messages
+   * @param pendingChoices pending clarification questions
+   * @param workflowState current workflow state
+   * @param proposal latest proposed patch
+   * @param provider active provider metadata
+   */
+  public record ThreadResponse(
+      List<ThreadMessageResponse> messages,
+      List<AssistantChoice> pendingChoices,
+      io.mehdieidi.modless.backend.assistant.AssistantWorkflowState workflowState,
+      AssistantProposal proposal,
+      io.mehdieidi.modless.backend.assistant.AssistantModelProvider.AssistantProviderMetadata
+          provider) {}
+
+  /** One durable thread message. */
+  public record ThreadMessageResponse(String role, String content) {}
 
   /**
    * User choice submission.

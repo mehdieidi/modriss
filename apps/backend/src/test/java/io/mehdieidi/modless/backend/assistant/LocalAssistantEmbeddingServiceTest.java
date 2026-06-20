@@ -32,6 +32,10 @@ class LocalAssistantEmbeddingServiceTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            null,
             null,
             new AiProperties.Embeddings(
                 AiProperties.EmbeddingProvider.ONNX, null, null, null, null, false, -1, true),

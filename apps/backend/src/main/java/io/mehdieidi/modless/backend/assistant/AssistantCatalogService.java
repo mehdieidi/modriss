@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimePaths;
 import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +27,7 @@ public class AssistantCatalogService {
 
   private final JdbcTemplate jdbc;
   private final LocalAssistantEmbeddingService embeddings;
+  private final MdeRuntimePaths mdePaths;
 
   /**
    * Creates the catalog service.
@@ -33,7 +35,7 @@ public class AssistantCatalogService {
    * @param jdbc JDBC access
    */
   public AssistantCatalogService(JdbcTemplate jdbc) {
-    this(jdbc, new LocalAssistantEmbeddingService());
+    this(jdbc, new LocalAssistantEmbeddingService(), null);
   }
 
   /**
@@ -43,9 +45,11 @@ public class AssistantCatalogService {
    * @param embeddings local embedding service
    */
   @Autowired
-  public AssistantCatalogService(JdbcTemplate jdbc, LocalAssistantEmbeddingService embeddings) {
+  public AssistantCatalogService(
+      JdbcTemplate jdbc, LocalAssistantEmbeddingService embeddings, MdeRuntimePaths mdePaths) {
     this.jdbc = jdbc;
     this.embeddings = embeddings;
+    this.mdePaths = mdePaths == null ? new MdeRuntimePaths(null) : mdePaths;
   }
 
   /** Rebuilds catalogs during application startup. */
@@ -56,7 +60,7 @@ public class AssistantCatalogService {
 
   /** Reindexes the local metamodel and EVL files when content hashes change. */
   public void refresh() {
-    Path root = Path.of("mde");
+    Path root = mdePaths.repositoryRoot().resolve("mde");
     if (!Files.exists(root)) {
       return;
     }

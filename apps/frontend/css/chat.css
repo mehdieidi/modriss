@@ -165,10 +165,15 @@
 }
 
 .chat-progress {
-  height: 3px;
+  height: 6px;
   overflow: hidden;
   border-radius: 999px;
   background: color-mix(in srgb, var(--border) 64%, transparent);
+  opacity: 0.45;
+}
+
+.chat-activity.is-busy .chat-progress {
+  opacity: 1;
 }
 
 .chat-progress span {
@@ -198,6 +203,40 @@
   to {
     transform: translateX(260%);
   }
+}
+
+.chat-provider-label {
+  margin-left: 8px;
+  color: var(--muted-2);
+  font: 500 10px/1.2 var(--font-ui);
+  white-space: nowrap;
+}
+
+.chat-workflow-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent-dark);
+  font: 600 10px/1.2 var(--font-ui);
+  white-space: nowrap;
+}
+
+.chat-activity-history {
+  margin: 0;
+  padding: 0 0 0 14px;
+  color: var(--muted-2);
+  font: 500 10px/1.35 var(--font-ui);
+}
+
+.chat-activity-history li + li {
+  margin-top: 2px;
+}
+
+.chat-question-answers {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .chat-header-actions {

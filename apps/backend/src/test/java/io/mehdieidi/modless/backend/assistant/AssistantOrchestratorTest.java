@@ -3,6 +3,7 @@ package io.mehdieidi.modless.backend.assistant;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -43,12 +44,18 @@ class AssistantOrchestratorTest {
   private final AssistantSessionStore.AssistantSession session =
       new AssistantSessionStore.AssistantSession(
           "session", "user", "project", ModelLevel.PIM, "Orders", Instant.now(), Instant.now());
+  private final AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
+  private final AssistantPatchCompleter patchCompleter = new AssistantPatchCompleter(schemas);
+  private final AssistantValidationFeedbackResolver feedbackResolver =
+      new AssistantValidationFeedbackResolver(schemas);
+  private final AssistantClarificationGate clarificationGate = new AssistantClarificationGate();
   private AssistantOrchestrator orchestrator;
 
   @BeforeEach
   void setUp() {
     AiProperties properties =
-        new AiProperties(true, null, null, null, 64, 3, 6000, null, null, null, null, null, null);
+        new AiProperties(
+            true, null, null, null, 64, 6, 6000, 0, 0, 0, null, null, null, null, null, null, null);
     when(sessions.require("session", "user")).thenReturn(session);
     when(projects.get(user, "project"))
         .thenReturn(
@@ -92,6 +99,10 @@ class AssistantOrchestratorTest {
             catalogs,
             contexts,
             new AssistantPatchCompiler(),
+            patchCompleter,
+            feedbackResolver,
+            clarificationGate,
+            schemas,
             realtime,
             new AssistantHardeningService(properties, null),
             models,
@@ -128,6 +139,7 @@ class AssistantOrchestratorTest {
     when(provider.planTurn(any()))
         .thenReturn(
             new AssistantTurnPlan(
+                AssistantTurnPlan.Intent.INFORMATION,
                 AssistantTurnPlan.Kind.CLARIFICATION,
                 "I need one decision.",
                 List.of(question),
@@ -204,6 +216,12 @@ class AssistantOrchestratorTest {
                 AssistantTurnPlan.Kind.CLARIFICATION,
                 "The type was not grounded.",
                 List.of(question),
+                new SemanticModelPatch(List.of())))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Kind.CLARIFICATION,
+                "The type was not grounded.",
+                List.of(question),
                 new SemanticModelPatch(List.of())));
 
     var response = orchestrator.handleMessage(user, "session", request("make it"));
@@ -246,6 +264,85 @@ class AssistantOrchestratorTest {
     assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
     assertNotNull(response.proposal());
     verify(provider, times(3)).planTurn(any());
+  }
+
+  @Test
+  void defersArchitectureClarificationAndProducesProposal() throws Exception {
+    AssistantChoice architectureQuestion =
+        new AssistantChoice(
+            "interaction-style",
+            "Primary Interaction Style: REST APIs or event-driven updates?",
+            AssistantChoice.SelectionMode.SINGLE,
+            List.of(
+                new AssistantChoice.Option("api", "APIFIRSTSERVERLESS", "REST APIs."),
+                new AssistantChoice.Option("events", "EVENTDRIVENSERVERLESS", "Events.")),
+            true);
+    var attributes = new ObjectMapper().readTree("{\"name\":\"Dispense item\"}");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "b92ec7c2-8875-4eb6-bb3e-70993dcf20bf",
+                    "Function",
+                    attributes,
+                    null,
+                    null)));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Intent.MUTATION,
+                AssistantTurnPlan.Kind.CLARIFICATION,
+                "I need architectural decisions.",
+                List.of(architectureQuestion),
+                new SemanticModelPatch(List.of())),
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Intent.MUTATION,
+                AssistantTurnPlan.Kind.PATCH,
+                "Prepared vending machine backend.",
+                List.of(),
+                patch));
+
+    var response =
+        orchestrator.handleMessage(
+            user, "session", request("Create a serverless model for vending machine backend"));
+
+    assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
+    assertNotNull(response.proposal());
+    verify(provider, times(2)).planTurn(any());
+  }
+
+  @Test
+  void vendingMachinePromptProducesProposalAfterPatchCompletion() throws Exception {
+    var attributes = new ObjectMapper().readTree("{\"name\":\"Dispense item\"}");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "b92ec7c2-8875-4eb6-bb3e-70993dcf20bf",
+                    "Function",
+                    attributes,
+                    null,
+                    null)));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Intent.MUTATION,
+                AssistantTurnPlan.Kind.PATCH,
+                "Prepared the vending machine backend.",
+                List.of(),
+                patch));
+
+    var response =
+        orchestrator.handleMessage(
+            user, "session", request("Create a serverless model for vending machine backend"));
+
+    assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
+    assertNotNull(response.proposal());
+    assertTrue(
+        response.proposal().patch().operations().stream()
+            .anyMatch(operation -> "FunctionContract".equals(operation.elementType())));
   }
 
   private AssistantOrchestrator.AssistantTurnRequest request(String message) {

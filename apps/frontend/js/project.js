@@ -10,6 +10,7 @@ import { renderViewWorkbench } from "./view-explorer.js";
 import { restoreTabGraphState } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
 import { clearArtifactState } from "./artifact.js";
+import { resetChatForProjectChange } from "./chat.js";
 import { apiUrl, MODEL_TYPES } from "./config.js";
 import { confirmAction } from "./confirm-action.js";
 import { resetModelSaveState, updateModelSaveUi } from "./model-save-ui.js";
@@ -311,6 +312,7 @@ export async function loadProject(project) {
     state.project = normalizedProject;
     saveLastProjectId(projectId);
     clearArtifactState();
+    resetChatForProjectChange();
 
     if (el.projectLabel) {
       el.projectLabel.textContent = projectName;
