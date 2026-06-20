@@ -52,7 +52,7 @@ modless:
     provider: ${MODLESS_AI_PROVIDER:openai}
     request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:5m}
     max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:96}
-    validation-repair-attempts: ${MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS:6}
+    validation-repair-attempts: ${MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS:2}
     token-budget: ${MODLESS_AI_TOKEN_BUDGET:6000}
     max-context-snippets: ${MODLESS_AI_MAX_CONTEXT_SNIPPETS:24}
     max-snippet-chars: ${MODLESS_AI_MAX_SNIPPET_CHARS:2400}

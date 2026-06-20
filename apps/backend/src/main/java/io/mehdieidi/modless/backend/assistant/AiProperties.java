@@ -52,7 +52,7 @@ public record AiProperties(
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofMinutes(5) : requestTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 96 : maxToolCalls;
-    validationRepairAttempts = validationRepairAttempts <= 0 ? 6 : validationRepairAttempts;
+    validationRepairAttempts = validationRepairAttempts <= 0 ? 2 : validationRepairAttempts;
     tokenBudget = tokenBudget <= 0 ? 6000 : tokenBudget;
     maxContextSnippets = maxContextSnippets <= 0 ? 24 : maxContextSnippets;
     maxSnippetChars = maxSnippetChars <= 0 ? 2400 : maxSnippetChars;

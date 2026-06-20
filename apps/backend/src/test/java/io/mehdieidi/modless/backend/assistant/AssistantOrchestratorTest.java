@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +36,7 @@ class AssistantOrchestratorTest {
   private final SpringAiChatMemoryService chatMemory = mock(SpringAiChatMemoryService.class);
   private final AssistantCatalogService catalogs = mock(AssistantCatalogService.class);
   private final AssistantModelContextIndexService contexts =
-      mock(AssistantModelContextIndexService.class);
+      new AssistantModelContextIndexService();
   private final AssistantRealtimeHub realtime = mock(AssistantRealtimeHub.class);
   private final ModelService models = mock(ModelService.class);
   private final ProjectService projects = mock(ProjectService.class);
@@ -45,6 +46,8 @@ class AssistantOrchestratorTest {
       new AssistantSessionStore.AssistantSession(
           "session", "user", "project", ModelLevel.PIM, "Orders", Instant.now(), Instant.now());
   private final AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
+  private final AssistantDomainScaffoldService domainScaffold =
+      new AssistantDomainScaffoldService(schemas);
   private final AssistantPatchCompleter patchCompleter = new AssistantPatchCompleter(schemas);
   private final AssistantValidationFeedbackResolver feedbackResolver =
       new AssistantValidationFeedbackResolver(schemas);
@@ -55,7 +58,7 @@ class AssistantOrchestratorTest {
   void setUp() {
     AiProperties properties =
         new AiProperties(
-            true, null, null, null, 64, 6, 6000, 0, 0, 0, null, null, null, null, null, null, null);
+            true, null, null, null, 96, 2, 6000, 0, 0, 0, null, null, null, null, null, null, null);
     when(sessions.require("session", "user")).thenReturn(session);
     when(projects.get(user, "project"))
         .thenReturn(
@@ -70,20 +73,6 @@ class AssistantOrchestratorTest {
                 Instant.now()));
     when(models.validate(any(ModelLevel.class), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
-    var context =
-        new AssistantModelContextIndexService.AssistantModelContext(
-            null,
-            "project",
-            ModelLevel.PIM,
-            "Orders",
-            0L,
-            List.of(),
-            List.of(),
-            Map.of(),
-            List.of());
-    when(contexts.transientSnapshot(anyString(), any(), anyString(), anyLong(), any(), any()))
-        .thenReturn(context);
-    when(contexts.summarize(context)).thenReturn("No saved elements.");
     when(catalogs.search(anyString(), anyString(), anyInt())).thenReturn(List.of());
     when(catalogs.describeType(anyString(), anyString(), anyInt())).thenReturn(List.of());
     when(memory.summary(anyString())).thenReturn(Optional.empty());
@@ -103,6 +92,7 @@ class AssistantOrchestratorTest {
             feedbackResolver,
             clarificationGate,
             schemas,
+            domainScaffold,
             realtime,
             new AssistantHardeningService(properties, null),
             models,
@@ -340,9 +330,18 @@ class AssistantOrchestratorTest {
 
     assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
     assertNotNull(response.proposal());
-    assertTrue(
+    var elementTypes =
         response.proposal().patch().operations().stream()
-            .anyMatch(operation -> "FunctionContract".equals(operation.elementType())));
+            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .map(SemanticModelPatch.Operation::elementType)
+            .toList();
+    long domainElements =
+        elementTypes.stream()
+            .filter(
+                type -> Set.of("ServerlessService", "Function", "Api", "DataStore").contains(type))
+            .count();
+    assertTrue(domainElements >= 3);
+    verify(provider, times(1)).planTurn(any());
   }
 
   private AssistantOrchestrator.AssistantTurnRequest request(String message) {

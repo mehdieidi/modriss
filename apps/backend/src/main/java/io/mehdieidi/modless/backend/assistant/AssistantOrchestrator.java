@@ -46,6 +46,7 @@ public class AssistantOrchestrator {
   private final ProjectService projects;
   private final ModelingConfigService modelingConfig = new ModelingConfigService();
   private final AssistantMetamodelSchemaService schemas;
+  private final AssistantDomainScaffoldService domainScaffold;
 
   private final ThreadLocal<AssistantActivity> lastActivity = new ThreadLocal<>();
 
@@ -62,6 +63,7 @@ public class AssistantOrchestrator {
       AssistantValidationFeedbackResolver feedbackResolver,
       AssistantClarificationGate clarificationGate,
       AssistantMetamodelSchemaService schemas,
+      AssistantDomainScaffoldService domainScaffold,
       AssistantRealtimeHub realtime,
       AssistantHardeningService hardening,
       ModelService models,
@@ -78,6 +80,7 @@ public class AssistantOrchestrator {
     this.feedbackResolver = feedbackResolver;
     this.clarificationGate = clarificationGate;
     this.schemas = schemas;
+    this.domainScaffold = domainScaffold;
     this.realtime = realtime;
     this.hardening = hardening;
     this.models = models;
@@ -227,27 +230,30 @@ public class AssistantOrchestrator {
       AssistantTurnPlan initialPlan) {
     publishProgress(session.id(), "VALIDATING", "Compiling and validating the proposed change");
     AssistantTurnPlan acceptedPlan = preparePlan(session.level(), context, initialPlan);
-    if (isCreationRequest(request.rootMessage()) && isThinScaffold(acceptedPlan.patch())) {
+    acceptedPlan = maybeApplyDomainScaffold(session, request, context, baseModel, acceptedPlan);
+    if (isCreationRequest(request.rootMessage())
+        && !isSubstantiveDomainScaffold(acceptedPlan.patch())) {
       publishProgress(
-          session.id(), "PLANNING", "Expanding the initial scaffold into a complete proposal");
+          session.id(), "PLANNING", "Applying metamodel-grounded domain scaffold for this request");
       acceptedPlan =
-          preparePlan(
-              session.level(),
-              context,
-              replanWithSafeDefaults(session, request, context, snippets, acceptedPlan));
+          maybeApplyDomainScaffold(session, request, context, baseModel, acceptedPlan, true);
     }
     PlanAttempt attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
     int repairNumber = 0;
+    int stagnationCount = 0;
+    String lastPatchSignature = patchSignature(acceptedPlan.patch());
     while (!attempt.valid() && repairNumber < properties.validationRepairAttempts()) {
       repairNumber++;
       publishProgress(
           session.id(),
           "REPAIRING",
-          "Repairing the plan from validator feedback ("
-              + repairNumber
-              + "/"
-              + properties.validationRepairAttempts()
-              + ")");
+          repairNumber == 1
+              ? "Refining the proposal using validator feedback"
+              : "Still refining the proposal (pass "
+                  + repairNumber
+                  + " of "
+                  + properties.validationRepairAttempts()
+                  + ")");
       if (feedbackResolver.isRepairableStructuralFailure(attempt.feedback())) {
         AssistantTurnPlan deterministic =
             preparePlan(
@@ -257,10 +263,21 @@ public class AssistantOrchestrator {
         if (!samePatch(deterministic, acceptedPlan)) {
           acceptedPlan = deterministic;
           attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
-          if (attempt.valid()) {
+          if (attempt.valid()
+              && !mustEnforceDomainScaffold(session, request, context, acceptedPlan.patch())) {
             break;
           }
         }
+      }
+      String signature = patchSignature(acceptedPlan.patch());
+      if (signature.equals(lastPatchSignature)) {
+        stagnationCount++;
+        if (stagnationCount >= 2) {
+          break;
+        }
+      } else {
+        stagnationCount = 0;
+        lastPatchSignature = signature;
       }
       AssistantTurnPlan repaired;
       try {
@@ -294,24 +311,49 @@ public class AssistantOrchestrator {
       }
       acceptedPlan = preparePlan(session.level(), context, repaired);
       attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
+      if (attempt.valid()
+          && !mustEnforceDomainScaffold(session, request, context, acceptedPlan.patch())) {
+        break;
+      }
     }
     if (!attempt.valid()) {
-      for (int replan = 0; replan < 2 && !attempt.valid(); replan++) {
+      for (int replan = 0; replan < 1 && !attempt.valid(); replan++) {
         publishProgress(
             session.id(),
             "PLANNING",
-            "Rebuilding the proposal from validator feedback with safe defaults");
+            "Rebuilding the proposal with metamodel defaults and validator feedback");
         acceptedPlan =
             preparePlan(
                 session.level(),
                 context,
-                replanWithSafeDefaults(session, request, context, snippets, acceptedPlan));
+                replanWithSafeDefaults(
+                    session, request, context, snippets, acceptedPlan, attempt.feedback()));
         attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
       }
     }
     if (!attempt.valid()) {
+      acceptedPlan =
+          maybeApplyDomainScaffold(session, request, context, baseModel, acceptedPlan, true);
+      attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
+    }
+    if (attempt.valid()
+        && mustEnforceDomainScaffold(session, request, context, acceptedPlan.patch())) {
+      acceptedPlan =
+          maybeApplyDomainScaffold(session, request, context, baseModel, acceptedPlan, true);
+      attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
+    }
+    if (!attempt.valid()) {
       return partialProposalOrFailure(
-          user, session, threadId, request, model, baseModel, context, snippets, acceptedPlan);
+          user,
+          session,
+          threadId,
+          request,
+          model,
+          baseModel,
+          context,
+          snippets,
+          acceptedPlan,
+          attempt);
     }
 
     AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
@@ -392,21 +434,25 @@ public class AssistantOrchestrator {
       JsonNode baseModel,
       AssistantModelContextIndexService.AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
-      AssistantTurnPlan failedPlan) {
+      AssistantTurnPlan failedPlan,
+      PlanAttempt attempt) {
+    if (isCreationRequest(request.rootMessage()) && modelContexts.isEmptyCanvas(context)) {
+      return failureWithFeedback(session, threadId, request, model, attempt);
+    }
     Optional<PlanAttempt> partial =
         findMaximalValidSubset(session.level(), baseModel, context, failedPlan);
     if (partial.isPresent()) {
-      PlanAttempt attempt = partial.get();
-      AssistantTurnPlan acceptedPlan = attempt.plan();
-      AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
+      PlanAttempt partialAttempt = partial.get();
+      AssistantTurnPlan acceptedPlan = partialAttempt.plan();
+      AssistantPatchCompiler.CompiledPatch compiled = partialAttempt.compiled();
       AssistantProposal proposal =
           new AssistantProposal(
               java.util.UUID.randomUUID().toString(),
               compiled.affectedElements(),
               acceptedPlan.patch(),
               compiled.inversePatch(),
-              attempt.validation(),
-              riskLevel(compiled, attempt.validation()),
+              partialAttempt.validation(),
+              riskLevel(compiled, partialAttempt.validation()),
               true,
               retrievalCitations(snippets, context),
               Instant.now());
@@ -461,6 +507,72 @@ public class AssistantOrchestrator {
             List.of(),
             AssistantWorkflowState.FAILED,
             activityFor(AssistantWorkflowState.FAILED)));
+  }
+
+  private AssistantTurnResponse failureWithFeedback(
+      AssistantSessionStore.AssistantSession session,
+      String threadId,
+      AssistantTurnRequest request,
+      ModelRecord model,
+      PlanAttempt attempt) {
+    List<String> feedback =
+        attempt == null || attempt.feedback() == null ? List.of() : attempt.feedback();
+    String issues =
+        feedback.isEmpty()
+            ? "The planner could not ground the request in the formal metamodel."
+            : feedback.stream().limit(6).collect(Collectors.joining("\n- ", "- ", ""));
+    String message =
+        "I could not prepare a valid model proposal for this request yet.\n\n"
+            + issues
+            + "\n\n"
+            + "Your canvas is unchanged. Add more domain detail, narrow the scope, or answer a "
+            + "follow-up question if I ask for one.";
+    if (!feedback.isEmpty() && feedbackResolver.isFormalFailure(feedback)) {
+      memory.clearPendingInteraction(threadId);
+      return finishTurn(
+          session,
+          threadId,
+          new AssistantTurnResponse(
+              message,
+              model == null ? null : model.id(),
+              model == null ? null : model.revision(),
+              null,
+              List.of(),
+              AssistantWorkflowState.FAILED,
+              activityFor(AssistantWorkflowState.FAILED)));
+    }
+    List<AssistantChoice> questions =
+        List.of(
+            new AssistantChoice(
+                "modeling-scope",
+                "What should be modeled first for this request?",
+                AssistantChoice.SelectionMode.SINGLE,
+                List.of(
+                    new AssistantChoice.Option(
+                        "core-api",
+                        "Core API and functions",
+                        "Start with the main service, APIs, and command/query handlers."),
+                    new AssistantChoice.Option(
+                        "events-data",
+                        "Events and durable state",
+                        "Start with channels, stores, and the functions that use them."),
+                    new AssistantChoice.Option(
+                        "full-scaffold",
+                        "Full bounded context",
+                        "Model service, APIs, functions, stores, and integration together.")),
+                true));
+    memory.savePendingInteraction(threadId, request, questions);
+    return finishTurn(
+        session,
+        threadId,
+        new AssistantTurnResponse(
+            message,
+            model == null ? null : model.id(),
+            model == null ? null : model.revision(),
+            null,
+            questions,
+            AssistantWorkflowState.WAITING_FOR_CHOICE,
+            activityFor(AssistantWorkflowState.WAITING_FOR_CHOICE)));
   }
 
   private Optional<PlanAttempt> findMaximalValidSubset(
@@ -588,16 +700,115 @@ public class AssistantOrchestrator {
     return left.patch().operations().equals(right.patch().operations());
   }
 
-  private boolean isThinScaffold(SemanticModelPatch patch) {
+  private boolean isSubstantiveDomainScaffold(SemanticModelPatch patch) {
     if (patch == null || patch.operations().isEmpty()) {
-      return true;
+      return false;
     }
-    long additions =
+    Set<String> domainTypes =
+        Set.of(
+            "ServerlessService",
+            "Function",
+            "Api",
+            "DataStore",
+            "ObjectStore",
+            "EventChannel",
+            "Workflow");
+    long domainElements =
         patch.operations().stream()
             .filter(java.util.Objects::nonNull)
             .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .map(SemanticModelPatch.Operation::elementType)
+            .filter(domainTypes::contains)
             .count();
-    return additions <= 1;
+    return domainElements >= 3;
+  }
+
+  private AssistantTurnPlan maybeApplyDomainScaffold(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantModelContextIndexService.AssistantModelContext context,
+      JsonNode baseModel,
+      AssistantTurnPlan plan) {
+    return maybeApplyDomainScaffold(session, request, context, baseModel, plan, false);
+  }
+
+  private AssistantTurnPlan maybeApplyDomainScaffold(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantModelContextIndexService.AssistantModelContext context,
+      JsonNode baseModel,
+      AssistantTurnPlan plan,
+      boolean force) {
+    if (!domainScaffold.shouldScaffold(
+        session.level(), request.rootMessage(), modelContexts.isEmptyCanvas(context))) {
+      return plan;
+    }
+    if (!force && isSubstantiveDomainScaffold(plan.patch())) {
+      PlanAttempt attempt = evaluatePlan(session.level(), baseModel, context, plan);
+      if (attempt.valid()) {
+        return plan;
+      }
+    }
+    Optional<SemanticModelPatch> scaffold =
+        domainScaffold.build(session.level(), request.rootMessage());
+    if (scaffold.isEmpty()) {
+      return plan;
+    }
+    SemanticModelPatch withRootMetadata = withRootMetadata(scaffold.get(), baseModel, request);
+    return preparePlan(
+        session.level(),
+        context,
+        new AssistantTurnPlan(
+            AssistantTurnPlan.Intent.MUTATION,
+            AssistantTurnPlan.Kind.PATCH,
+            "Prepared a "
+                + domainScaffold.deriveDomainName(request.rootMessage())
+                + " serverless backend from the formal metamodel. Review and apply when ready.",
+            List.of(),
+            withRootMetadata));
+  }
+
+  private SemanticModelPatch withRootMetadata(
+      SemanticModelPatch patch, JsonNode baseModel, AssistantTurnRequest request) {
+    String rootId = baseModel.path("id").asText("");
+    if (rootId.isBlank()) {
+      return patch;
+    }
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>(patch.operations());
+    operations.add(
+        new SemanticModelPatch.Operation(
+            SemanticModelPatch.OperationType.SET_ATTRIBUTE,
+            rootId,
+            null,
+            com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.textNode(
+                domainScaffold.deriveDomainName(request.rootMessage())),
+            null,
+            "domainName"));
+    operations.add(
+        new SemanticModelPatch.Operation(
+            SemanticModelPatch.OperationType.SET_ATTRIBUTE,
+            rootId,
+            null,
+            com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.textNode(
+                "API_FIRST_SERVERLESS"),
+            null,
+            "architectureStyle"));
+    return new SemanticModelPatch(operations);
+  }
+
+  private boolean isThinScaffold(SemanticModelPatch patch) {
+    return !isSubstantiveDomainScaffold(patch);
+  }
+
+  private boolean mustEnforceDomainScaffold(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantModelContextIndexService.AssistantModelContext context,
+      SemanticModelPatch patch) {
+    return isCreationRequest(request.rootMessage())
+        && modelContexts.isEmptyCanvas(context)
+        && domainScaffold.shouldScaffold(session.level(), request.rootMessage(), true)
+        && !isSubstantiveDomainScaffold(patch);
   }
 
   private AssistantTurnPlan replanWithSafeDefaults(
@@ -606,12 +817,27 @@ public class AssistantOrchestrator {
       AssistantModelContextIndexService.AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan rejected) {
+    return replanWithSafeDefaults(session, request, context, snippets, rejected, List.of());
+  }
+
+  private AssistantTurnPlan replanWithSafeDefaults(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantModelContextIndexService.AssistantModelContext context,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      AssistantTurnPlan rejected,
+      List<String> feedback) {
     publishProgress(
         session.id(), "PLANNING", "Building a complete model proposal with safe defaults");
     String rejectedSummary =
         rejected == null || rejected.patch().operations().isEmpty()
             ? "none"
             : operationSummary(rejected.patch());
+    String feedbackSummary =
+        feedback == null || feedback.isEmpty()
+            ? ""
+            : "\nValidator feedback to correct:\n"
+                + feedback.stream().limit(12).collect(Collectors.joining("\n"));
     return provider.planTurn(
         new AssistantModelProvider.AssistantPrompt(
             AssistantModelRole.PLANNER,
@@ -626,11 +852,32 @@ public class AssistantOrchestrator {
                 + " Functions with required contained contracts, persistence for durable state,"
                 + " and any event or schedule elements the domain needs."
                 + "\nRejected prior plan summary: "
-                + rejectedSummary,
+                + rejectedSummary
+                + feedbackSummary,
             "Original request:\n"
                 + request.rootMessage()
                 + "\n\nReturn one complete PATCH that satisfies the request using safe defaults.",
             deduplicate(snippets, properties.maxContextSnippets())));
+  }
+
+  private String patchSignature(SemanticModelPatch patch) {
+    if (patch == null || patch.operations().isEmpty()) {
+      return "";
+    }
+    return patch.operations().stream()
+        .filter(java.util.Objects::nonNull)
+        .map(
+            operation ->
+                operation.type()
+                    + ":"
+                    + operation.targetElementId()
+                    + ":"
+                    + operation.elementType()
+                    + ":"
+                    + operation.sourceElementId()
+                    + ":"
+                    + operation.referenceName())
+        .collect(Collectors.joining("|"));
   }
 
   private PlanAttempt evaluatePlan(
@@ -642,7 +889,7 @@ public class AssistantOrchestrator {
       return PlanAttempt.failure("The planner returned no semantic operations.");
     }
     try {
-      validateSemanticPatch(level, plan.patch(), context);
+      validateSemanticPatch(level, plan.patch(), context, baseModel);
       AssistantPatchCompiler.CompiledPatch compiled =
           patchCompiler.compile(baseModel, plan.patch());
       if (compiled.patch().isEmpty()) {
@@ -1273,8 +1520,9 @@ public class AssistantOrchestrator {
       String query,
       AssistantModelContextIndexService.AssistantModelContext context,
       ModelLevel level) {
+    boolean emptyModel = modelContexts.isEmptyCanvas(context);
     List<AssistantModelProvider.ContextSnippet> tier1 = new ArrayList<>();
-    tier1.addAll(schemas.planningContracts(level, query, 12));
+    tier1.addAll(schemas.planningContracts(level, query, 14, emptyModel));
     List<String> validationLines =
         context.validationIssues().stream()
             .map(issue -> issue.constraint() + ": " + issue.message())
@@ -1302,11 +1550,17 @@ public class AssistantOrchestrator {
     List<AssistantModelProvider.ContextSnippet> tier4 = new ArrayList<>();
     List<AssistantModelProvider.ContextSnippet> matches = catalogs.search(query, level.name(), 14);
     tier4.addAll(matches);
+    if (emptyModel && isCreationRequest(query)) {
+      tier4.addAll(catalogs.search("serverless function api service validation", level.name(), 8));
+    }
     matches.stream()
         .map(AssistantModelProvider.ContextSnippet::title)
         .distinct()
         .limit(8)
         .forEach(title -> tier4.addAll(catalogs.describeType(title, level.name(), 8)));
+    schemas.relevantTypes(level, query, emptyModel, 8).stream()
+        .distinct()
+        .forEach(type -> tier4.addAll(catalogs.describeType(type, level.name(), 6)));
 
     List<AssistantModelProvider.ContextSnippet> result = new ArrayList<>();
     result.addAll(tier1);
@@ -1375,6 +1629,10 @@ public class AssistantOrchestrator {
         + request.selectedElementIds()
         + "\nMaximum operations: "
         + properties.maxToolCalls()
+        + (modelContexts.isEmptyCanvas(context)
+            ? "\n\nEmpty canvas guidance:\n"
+                + schemas.domainCreationBlueprint(session.level(), request.rootMessage())
+            : "")
         + "\n\nConversation memory:\n"
         + conversationMemory(session)
         + "\n\nCurrent model context:\n"
@@ -1384,7 +1642,8 @@ public class AssistantOrchestrator {
   private void validateSemanticPatch(
       ModelLevel level,
       SemanticModelPatch patch,
-      AssistantModelContextIndexService.AssistantModelContext context) {
+      AssistantModelContextIndexService.AssistantModelContext context,
+      JsonNode baseModel) {
     if (patch.operations().size() > properties.maxToolCalls()) {
       throw new PlatformException(422, "The proposal exceeds the configured operation limit.");
     }
@@ -1396,6 +1655,7 @@ public class AssistantOrchestrator {
                     AssistantModelContextIndexService.ContextElement::type,
                     (left, right) -> left,
                     LinkedHashMap::new));
+    seedRootType(level, baseModel, types);
     for (SemanticModelPatch.Operation operation : patch.operations()) {
       if (operation == null || operation.type() == null) {
         throw new PlatformException(422, "A semantic operation has no type.");
@@ -1447,6 +1707,17 @@ public class AssistantOrchestrator {
           types.remove(operation.targetElementId());
         }
       }
+    }
+  }
+
+  private void seedRootType(ModelLevel level, JsonNode baseModel, Map<String, String> types) {
+    if (baseModel == null || !baseModel.isObject()) {
+      return;
+    }
+    String id = baseModel.path("id").asText("");
+    String eClass = baseModel.path("eClass").asText("");
+    if (!id.isBlank() && !eClass.isBlank()) {
+      types.putIfAbsent(id, schemas.canonicalType(level, eClass));
     }
   }
 

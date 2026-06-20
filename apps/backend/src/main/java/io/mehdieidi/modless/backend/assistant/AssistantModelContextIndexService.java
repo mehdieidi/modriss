@@ -14,6 +14,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,6 +24,9 @@ import org.springframework.stereotype.Service;
 /** Produces a compact, stable model context for assistant prompts and proposal previews. */
 @Service
 public class AssistantModelContextIndexService {
+
+  private static final Set<String> STRUCTURAL_ONLY_TYPES =
+      Set.of("PIMModel", "CIMModel", "PSMModel", "ImplementationProfile");
 
   private final JdbcTemplate jdbc;
   private final ObjectMapper mapper;
@@ -131,6 +135,24 @@ public class AssistantModelContextIndexService {
             .limit(8)
             .map(entry -> entry.getKey() + "->" + entry.getValue())
             .collect(Collectors.joining(" | "));
+  }
+
+  /**
+   * Returns whether the canvas has no domain elements yet.
+   *
+   * <p>Starter models include structural elements such as {@code ImplementationProfile} that are
+   * not shown as domain nodes on the canvas.
+   *
+   * @param context compact model context
+   * @return true when no non-structural elements exist
+   */
+  public boolean isEmptyCanvas(AssistantModelContext context) {
+    if (context == null || context.elements().isEmpty()) {
+      return true;
+    }
+    return context.elements().stream()
+        .map(ContextElement::type)
+        .allMatch(STRUCTURAL_ONLY_TYPES::contains);
   }
 
   private AssistantModelContext buildContext(

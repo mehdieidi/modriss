@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class AssistantMetamodelSchemaServiceTest {
@@ -30,11 +31,35 @@ class AssistantMetamodelSchemaServiceTest {
 
   @Test
   void exposesRequiredFeaturesForTypesNamedInTheRequest() {
-    var snippets = schemas.planningContracts(ModelLevel.PIM, "Create a Function", 4);
+    var snippets = schemas.planningContracts(ModelLevel.PIM, "Add a Function handler", 4);
 
-    assertEquals(1, snippets.size());
-    assertEquals("Function", snippets.get(0).title());
-    assertTrue(snippets.get(0).content().contains("functionKind"));
-    assertTrue(snippets.get(0).content().contains("contract -> FunctionContract required single"));
+    assertTrue(snippets.stream().anyMatch(snippet -> "Function".equals(snippet.title())));
+    AssistantModelProvider.ContextSnippet function =
+        snippets.stream()
+            .filter(snippet -> "Function".equals(snippet.title()))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(function.content().contains("functionKind"));
+    assertTrue(function.content().contains("contract -> FunctionContract required single"));
+  }
+
+  @Test
+  void ranksServerlessScaffoldTypesForDomainCreationPrompts() {
+    List<String> types =
+        schemas.relevantTypes(
+            ModelLevel.PIM, "Create a serverless model for vending machine backend", true, 8);
+
+    assertTrue(types.contains("ServerlessService"));
+    assertTrue(types.contains("Function"));
+    assertTrue(types.contains("Api"));
+    assertTrue(types.contains("DataStore"));
+    var snippets =
+        schemas.planningContracts(
+            ModelLevel.PIM, "Create a serverless model for vending machine backend", 6, true);
+    assertTrue(snippets.size() >= 4);
+    assertTrue(
+        snippets.stream()
+            .map(AssistantModelProvider.ContextSnippet::title)
+            .anyMatch("Function"::equals));
   }
 }

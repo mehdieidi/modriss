@@ -30,7 +30,7 @@ class AssistantPatchCompleterTest {
 
     SemanticModelPatch completed = completer.complete(ModelLevel.PIM, patch, Map.of());
 
-    assertEquals(2, completed.operations().size());
+    assertTrue(completed.operations().size() >= 2);
     SemanticModelPatch.Operation contract =
         completed.operations().stream()
             .filter(operation -> "FunctionContract".equals(operation.elementType()))
@@ -39,6 +39,44 @@ class AssistantPatchCompleterTest {
     assertEquals("function-1", contract.sourceElementId());
     assertEquals("contract", contract.referenceName());
     assertTrue(contract.attributes().has("name"));
+    assertTrue(
+        completed.operations().stream()
+            .anyMatch(operation -> "Schema".equals(operation.elementType())));
+  }
+
+  @Test
+  void dropsOrphanFunctionContractsAddedAtRootByPlanner() throws Exception {
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "function-1",
+                    "Function",
+                    mapper.readTree("{\"name\":\"Dispense item\"}"),
+                    null,
+                    null),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "contract-1",
+                    "FunctionContract",
+                    mapper.readTree("{\"name\":\"Dispense contract\"}"),
+                    null,
+                    null)));
+
+    SemanticModelPatch completed = completer.complete(ModelLevel.PIM, patch, Map.of());
+
+    assertTrue(completed.operations().size() >= 2);
+    assertTrue(
+        completed.operations().stream()
+            .noneMatch(
+                operation ->
+                    "FunctionContract".equals(operation.elementType())
+                        && blank(operation.sourceElementId())));
+  }
+
+  private boolean blank(String value) {
+    return value == null || value.isBlank();
   }
 
   @Test

@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,11 @@ public class AssistantPatchCompleter {
     }
     Map<String, String> types =
         new LinkedHashMap<>(existingTypes == null ? Map.of() : existingTypes);
-    List<SemanticModelPatch.Operation> operations = new ArrayList<>(patch.operations());
+    List<SemanticModelPatch.Operation> operations =
+        orderOperationsForCompilation(stripOrphanContainedAdds(level, patch.operations(), types));
+    if (operations.isEmpty()) {
+      return patch;
+    }
     boolean changed;
     do {
       changed = false;
@@ -72,7 +77,7 @@ public class AssistantPatchCompleter {
           continue;
         }
         for (AssistantMetamodelSchemaService.ReferenceSchema reference : typeSchema.references()) {
-          if (!reference.required() || !reference.containment() || reference.many()) {
+          if (!reference.required() || !reference.containment()) {
             continue;
           }
           if (hasContainedChild(operations, targetId, reference.name())) {
@@ -100,7 +105,11 @@ public class AssistantPatchCompleter {
         operations = orderOperationsForCompilation(operations);
       }
     } while (changed);
-    return new SemanticModelPatch(operations);
+    operations = ensureContractSchemas(level, operations, types);
+    operations = ensureFunctionIdempotency(level, operations, types);
+    operations = ensureDataStoreStructure(level, operations, types);
+    operations = ensureDataModelSchemas(level, operations, types);
+    return new SemanticModelPatch(orderOperationsForCompilation(operations));
   }
 
   /**
@@ -315,6 +324,310 @@ public class AssistantPatchCompleter {
         .forEach(ordered::add);
     return ordered;
   }
+
+  private List<SemanticModelPatch.Operation> ensureContractSchemas(
+      ModelLevel level, List<SemanticModelPatch.Operation> operations, Map<String, String> types) {
+    List<SemanticModelPatch.Operation> result = new ArrayList<>(operations);
+    for (String typeId : new ArrayList<>(types.keySet())) {
+      String typeName = types.get(typeId);
+      if (!"FunctionContract".equals(typeName)) {
+        continue;
+      }
+      if (hasRelationship(result, typeId, "inputSchema")
+          || hasRelationship(result, typeId, "outputSchema")) {
+        continue;
+      }
+      String schemaId = java.util.UUID.randomUUID().toString();
+      String fieldId = java.util.UUID.randomUUID().toString();
+      ObjectNode schemaAttributes = JsonNodeFactory.instance.objectNode();
+      String contractName = contractName(result, typeId);
+      schemaAttributes.put("name", contractName + " input");
+      schemaAttributes.put("schemaKind", "REQUEST");
+      schemaAttributes.put("semanticVersion", "1.0.0");
+      result.add(
+          new SemanticModelPatch.Operation(
+              SemanticModelPatch.OperationType.ADD_ELEMENT,
+              schemaId,
+              "Schema",
+              schemaAttributes,
+              null,
+              null));
+      ObjectNode fieldAttributes = JsonNodeFactory.instance.objectNode();
+      fieldAttributes.put("name", "payload");
+      fieldAttributes.put("fieldType", "STRING");
+      fieldAttributes.put("required", true);
+      result.add(
+          new SemanticModelPatch.Operation(
+              SemanticModelPatch.OperationType.ADD_ELEMENT,
+              fieldId,
+              "SchemaField",
+              fieldAttributes,
+              schemaId,
+              "fields"));
+      result.add(connectOperation(typeId, schemaId, "inputSchema"));
+      types.put(schemaId, "Schema");
+      types.put(fieldId, "SchemaField");
+    }
+    return result;
+  }
+
+  private List<SemanticModelPatch.Operation> ensureDataModelSchemas(
+      ModelLevel level, List<SemanticModelPatch.Operation> operations, Map<String, String> types) {
+    List<SemanticModelPatch.Operation> result = new ArrayList<>(operations);
+    for (String typeId : new ArrayList<>(types.keySet())) {
+      String typeName = types.get(typeId);
+      if (!"DataModel".equals(typeName)) {
+        continue;
+      }
+      if (hasRelationship(result, typeId, "schema")) {
+        continue;
+      }
+      String schemaId = java.util.UUID.randomUUID().toString();
+      String fieldId = java.util.UUID.randomUUID().toString();
+      ObjectNode schemaAttributes = JsonNodeFactory.instance.objectNode();
+      schemaAttributes.put("name", humanize(typeId) + " schema");
+      schemaAttributes.put("schemaKind", "REQUEST");
+      schemaAttributes.put("semanticVersion", "1.0.0");
+      result.add(
+          new SemanticModelPatch.Operation(
+              SemanticModelPatch.OperationType.ADD_ELEMENT,
+              schemaId,
+              "Schema",
+              schemaAttributes,
+              null,
+              null));
+      ObjectNode fieldAttributes = JsonNodeFactory.instance.objectNode();
+      fieldAttributes.put("name", "id");
+      fieldAttributes.put("fieldType", "STRING");
+      fieldAttributes.put("required", true);
+      result.add(
+          new SemanticModelPatch.Operation(
+              SemanticModelPatch.OperationType.ADD_ELEMENT,
+              fieldId,
+              "SchemaField",
+              fieldAttributes,
+              schemaId,
+              "fields"));
+      result.add(connectOperation(typeId, schemaId, "schema"));
+      types.put(schemaId, "Schema");
+      types.put(fieldId, "SchemaField");
+    }
+    return result;
+  }
+
+  private List<SemanticModelPatch.Operation> ensureDataStoreStructure(
+      ModelLevel level, List<SemanticModelPatch.Operation> operations, Map<String, String> types) {
+    List<SemanticModelPatch.Operation> result = new ArrayList<>(operations);
+    for (SemanticModelPatch.Operation operation : operations) {
+      if (operation == null
+          || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT
+          || !"DataStore".equals(operation.elementType())) {
+        continue;
+      }
+      String storeId = operation.targetElementId();
+      String storeName =
+          operation.attributes() == null
+              ? "Inventory store"
+              : operation.attributes().path("name").asText("Inventory store");
+      if (!hasContainedChild(result, storeId, "ownedDataModels")) {
+        String dataModelId = java.util.UUID.randomUUID().toString();
+        ObjectNode dataModelAttributes = JsonNodeFactory.instance.objectNode();
+        dataModelAttributes.put("name", storeName + " model");
+        dataModelAttributes.put("sourceOfTruth", true);
+        result.add(
+            new SemanticModelPatch.Operation(
+                SemanticModelPatch.OperationType.ADD_ELEMENT,
+                dataModelId,
+                "DataModel",
+                dataModelAttributes,
+                storeId,
+                "ownedDataModels"));
+        types.put(dataModelId, "DataModel");
+      }
+      if (!hasContainedChild(result, storeId, "accessPatterns")) {
+        String accessPatternId = java.util.UUID.randomUUID().toString();
+        ObjectNode accessAttributes = JsonNodeFactory.instance.objectNode();
+        accessAttributes.put("name", storeName + " access");
+        accessAttributes.put("operation", "READ_WRITE");
+        accessAttributes.put("queryBy", "id");
+        result.add(
+            new SemanticModelPatch.Operation(
+                SemanticModelPatch.OperationType.ADD_ELEMENT,
+                accessPatternId,
+                "AccessPattern",
+                accessAttributes,
+                storeId,
+                "accessPatterns"));
+        types.put(accessPatternId, "AccessPattern");
+      }
+    }
+    return result;
+  }
+
+  private String contractName(List<SemanticModelPatch.Operation> operations, String contractId) {
+    return operations.stream()
+        .filter(
+            operation ->
+                operation != null
+                    && operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
+                    && "FunctionContract".equals(operation.elementType())
+                    && contractId.equals(operation.targetElementId()))
+        .map(operation -> operation.attributes().path("name").asText("Contract"))
+        .findFirst()
+        .orElse("Contract");
+  }
+
+  private String functionName(SemanticModelPatch.Operation operation) {
+    if (operation.attributes() == null) {
+      return "Function";
+    }
+    String name = operation.attributes().path("name").asText("");
+    return name.isBlank() ? "Function" : name;
+  }
+
+  private List<SemanticModelPatch.Operation> ensureFunctionIdempotency(
+      ModelLevel level, List<SemanticModelPatch.Operation> operations, Map<String, String> types) {
+    List<SemanticModelPatch.Operation> result = new ArrayList<>(operations);
+    for (SemanticModelPatch.Operation operation : operations) {
+      if (operation == null
+          || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT
+          || !"Function".equals(operation.elementType())) {
+        continue;
+      }
+      JsonNode attributes = operation.attributes();
+      boolean writesState = attributes != null && attributes.path("writesState").asBoolean(false);
+      if (!writesState || hasRelationship(result, operation.targetElementId(), "idempotency")) {
+        continue;
+      }
+      String policyId = java.util.UUID.randomUUID().toString();
+      ObjectNode policyAttributes = JsonNodeFactory.instance.objectNode();
+      String functionName = functionName(operation);
+      policyAttributes.put("name", functionName + " idempotency");
+      policyAttributes.put("keySource", "request.idempotencyKey");
+      policyAttributes.put("scope", "FUNCTION");
+      policyAttributes.put("storeRequired", true);
+      policyAttributes.put("expirationSeconds", 3600);
+      result.add(
+          new SemanticModelPatch.Operation(
+              SemanticModelPatch.OperationType.ADD_ELEMENT,
+              policyId,
+              "IdempotencyPolicy",
+              policyAttributes,
+              null,
+              null));
+      result.add(connectOperation(operation.targetElementId(), policyId, "idempotency"));
+      types.put(policyId, "IdempotencyPolicy");
+    }
+    return result;
+  }
+
+  private boolean hasRelationship(
+      List<SemanticModelPatch.Operation> operations, String sourceId, String referenceName) {
+    return operations.stream()
+        .anyMatch(
+            operation ->
+                operation != null
+                    && operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS
+                    && sourceId.equals(operation.sourceElementId())
+                    && referenceName.equals(operation.referenceName()));
+  }
+
+  private SemanticModelPatch.Operation connectOperation(
+      String sourceId, String targetId, String referenceName) {
+    return new SemanticModelPatch.Operation(
+        SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+        targetId,
+        null,
+        null,
+        sourceId,
+        referenceName);
+  }
+
+  private List<SemanticModelPatch.Operation> stripOrphanContainedAdds(
+      ModelLevel level,
+      List<SemanticModelPatch.Operation> operations,
+      Map<String, String> existingTypes) {
+    Set<String> plannedParents =
+        operations.stream()
+            .filter(java.util.Objects::nonNull)
+            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .map(SemanticModelPatch.Operation::targetElementId)
+            .filter(id -> id != null && !id.isBlank())
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    List<SemanticModelPatch.Operation> sanitized = new ArrayList<>();
+    for (SemanticModelPatch.Operation operation : operations) {
+      if (operation == null) {
+        continue;
+      }
+      if (operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT) {
+        sanitized.add(operation);
+        continue;
+      }
+      if (!blank(operation.sourceElementId())) {
+        sanitized.add(operation);
+        continue;
+      }
+      try {
+        String canonicalType = schemas.canonicalType(level, operation.elementType());
+        if (schemas.rootCollection(level, canonicalType).isPresent()) {
+          sanitized.add(operation);
+          continue;
+        }
+        Optional<AssistantMetamodelSchemaService.TypeSchema> typeSchema =
+            schemas.typeSchema(level, canonicalType);
+        if (typeSchema.isPresent() && !typeSchema.get().creatable()) {
+          continue;
+        }
+        List<ContainmentCandidate> candidates = new ArrayList<>();
+        existingTypes.entrySet().stream()
+            .flatMap(
+                entry ->
+                    schemas.containments(level, entry.getValue(), canonicalType).stream()
+                        .filter(reference -> reference.required() && !reference.many())
+                        .map(
+                            reference ->
+                                new ContainmentCandidate(entry.getKey(), reference.name())))
+            .forEach(candidates::add);
+        operations.stream()
+            .filter(op -> op != null && op.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .filter(op -> plannedParents.contains(op.targetElementId()))
+            .flatMap(
+                op -> {
+                  try {
+                    return schemas
+                        .containments(
+                            level, schemas.canonicalType(level, op.elementType()), canonicalType)
+                        .stream()
+                        .filter(reference -> reference.required() && !reference.many())
+                        .map(
+                            reference ->
+                                new ContainmentCandidate(op.targetElementId(), reference.name()));
+                  } catch (PlatformException ignored) {
+                    return java.util.stream.Stream.empty();
+                  }
+                })
+            .forEach(candidates::add);
+        if (candidates.size() == 1) {
+          ContainmentCandidate candidate = candidates.get(0);
+          sanitized.add(
+              new SemanticModelPatch.Operation(
+                  operation.type(),
+                  operation.targetElementId(),
+                  operation.elementType(),
+                  operation.attributes(),
+                  candidate.ownerId(),
+                  candidate.referenceName()));
+        } else {
+          sanitized.add(operation);
+        }
+      } catch (PlatformException ignored) {
+        sanitized.add(operation);
+      }
+    }
+    return sanitized;
+  }
+
+  private record ContainmentCandidate(String ownerId, String referenceName) {}
 
   private boolean blank(String value) {
     return value == null || value.isBlank();
