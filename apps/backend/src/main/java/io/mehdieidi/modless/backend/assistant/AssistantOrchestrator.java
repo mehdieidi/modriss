@@ -11,6 +11,7 @@ import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
 import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -90,12 +91,84 @@ public class AssistantOrchestrator {
   /** Starts or resumes a level-scoped assistant session. */
   public AssistantSessionStore.AssistantSession startSession(
       UserRecord user, String projectId, ModelLevel level, String title) {
+    return startSession(user, projectId, level, title, null, false);
+  }
+
+  /**
+   * Starts, resumes, or continues a level-scoped assistant session.
+   *
+   * @param user owner user
+   * @param projectId project scope
+   * @param level modeling level
+   * @param title default title for new conversations
+   * @param resumeSessionId optional durable session to resume
+   * @param forceNew when true, always starts a fresh conversation
+   * @return runtime session
+   */
+  public AssistantSessionStore.AssistantSession startSession(
+      UserRecord user,
+      String projectId,
+      ModelLevel level,
+      String title,
+      String resumeSessionId,
+      boolean forceNew) {
     ProjectRecord project = projects.get(user, projectId);
     String modelId = activeModelId(project, level);
     Long revision =
         modelId == null || modelId.isBlank() ? null : models.get(user, level, modelId).revision();
-    memory.ensureThread(user, projectId, level, title, modelId, revision);
-    return sessions.create(user.id(), projectId, level, title);
+    String displayTitle =
+        title == null || title.isBlank() ? level.apiName() + "-assistant" : title.trim();
+
+    if (!blank(resumeSessionId)) {
+      AssistantMemoryRepository.ThreadRecord thread =
+          memory
+              .findThread(resumeSessionId.trim(), user.id())
+              .orElseThrow(() -> new PlatformException(404, "Assistant conversation not found."));
+      if (!thread.projectId().equals(projectId) || thread.level() != level) {
+        throw new PlatformException(
+            400, "Conversation does not match the current project or modeling level.");
+      }
+      memory.updateThreadModel(thread.id(), modelId, revision);
+      return sessions.create(user.id(), projectId, level, thread.title(), thread.id());
+    }
+
+    if (forceNew) {
+      String threadId = memory.newThreadId(user.id(), projectId, level);
+      memory.createThread(threadId, user, projectId, level, displayTitle, modelId, revision);
+      return sessions.create(user.id(), projectId, level, displayTitle, threadId);
+    }
+
+    Optional<AssistantMemoryRepository.ThreadRecord> recent =
+        memory.findMostRecentThread(
+            user.id(), projectId, level, Instant.now().minus(3, ChronoUnit.DAYS));
+    if (recent.isPresent()) {
+      AssistantMemoryRepository.ThreadRecord thread = recent.get();
+      memory.updateThreadModel(thread.id(), modelId, revision);
+      return sessions.create(user.id(), projectId, level, thread.title(), thread.id());
+    }
+
+    String threadId = memory.newThreadId(user.id(), projectId, level);
+    memory.createThread(threadId, user, projectId, level, displayTitle, modelId, revision);
+    return sessions.create(user.id(), projectId, level, displayTitle, threadId);
+  }
+
+  /** Lists recent conversations for history browsing. */
+  public List<ConversationSummary> listConversations(
+      UserRecord user, String projectId, ModelLevel level, int days, int limit) {
+    projects.get(user, projectId);
+    int safeDays = Math.max(1, Math.min(days, 30));
+    int safeLimit = Math.max(1, Math.min(limit, 50));
+    Instant since = Instant.now().minus(safeDays, ChronoUnit.DAYS);
+    return memory.listRecentConversations(user.id(), projectId, level, since, safeLimit).stream()
+        .map(
+            conversation ->
+                new ConversationSummary(
+                    conversation.sessionId(),
+                    conversationTitle(conversation),
+                    conversationPreview(conversation),
+                    conversation.updatedAt(),
+                    conversation.messageCount()))
+        .toList();
   }
 
   /** Handles one natural-language turn using a structured LLM decision. */
@@ -103,7 +176,7 @@ public class AssistantOrchestrator {
       UserRecord user, String sessionId, AssistantTurnRequest request) {
     hardening.checkRateLimit(user.id());
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
-    String threadId = threadId(user.id(), session.projectId(), session.level());
+    String threadId = session.id();
     appendUserMessage(threadId, sessionId, request);
 
     ProjectRecord project = projects.get(user, session.projectId());
@@ -1290,7 +1363,7 @@ public class AssistantOrchestrator {
   public AssistantTurnResponse submitChoices(
       UserRecord user, String sessionId, List<ChoiceAnswer> answers) {
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
-    String threadId = threadId(user.id(), session.projectId(), session.level());
+    String threadId = session.id();
     AssistantMemoryRepository.PendingInteractionRecord pending =
         memory
             .pendingInteraction(threadId)
@@ -1481,7 +1554,7 @@ public class AssistantOrchestrator {
   /** Returns durable thread history for client hydration. */
   public ThreadSnapshot thread(UserRecord user, String sessionId) {
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
-    String threadId = threadId(user.id(), session.projectId(), session.level());
+    String threadId = session.id();
     List<ThreadMessage> messages =
         memory.recentMessages(threadId, properties.hardening().recentMessageWindow()).stream()
             .sorted(
@@ -1510,7 +1583,7 @@ public class AssistantOrchestrator {
   /** Clears runtime and durable conversation state. */
   public void clear(UserRecord user, String sessionId) {
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
-    String threadId = threadId(user.id(), session.projectId(), session.level());
+    String threadId = session.id();
     memory.clearThread(threadId);
     chatMemory.clear(threadId);
     sessions.clear(sessionId, user.id());
@@ -1878,12 +1951,46 @@ public class AssistantOrchestrator {
     if (request.revision() != null) {
       metadata.put("revision", request.revision());
     }
+    boolean firstUserMessage = memory.userMessageCount(threadId) == 0;
     memory.appendMessage(threadId, "USER", request.message(), metadata);
+    if (firstUserMessage && !blank(request.message())) {
+      memory.updateThreadTitle(threadId, summarizeForTitle(request.message()));
+    }
     chatMemory.appendUser(threadId, request.message());
   }
 
+  private String summarizeForTitle(String message) {
+    String trimmed = message.trim().replaceAll("\\s+", " ");
+    if (trimmed.length() <= 72) {
+      return trimmed;
+    }
+    return trimmed.substring(0, 69).trim() + "...";
+  }
+
+  private String conversationTitle(AssistantMemoryRepository.ConversationSummary conversation) {
+    if (!blank(conversation.title()) && !isDefaultAssistantTitle(conversation.title())) {
+      return conversation.title().trim();
+    }
+    return summarizeForTitle(conversation.preview() == null ? "" : conversation.preview());
+  }
+
+  private String conversationPreview(AssistantMemoryRepository.ConversationSummary conversation) {
+    if (!blank(conversation.preview())) {
+      return summarizeForTitle(conversation.preview());
+    }
+    if (!blank(conversation.title()) && !isDefaultAssistantTitle(conversation.title())) {
+      return conversation.title().trim();
+    }
+    return "New conversation";
+  }
+
+  private boolean isDefaultAssistantTitle(String title) {
+    String normalized = title == null ? "" : title.trim().toLowerCase();
+    return normalized.endsWith("-assistant") || normalized.equals("assistant");
+  }
+
   private String conversationMemory(AssistantSessionStore.AssistantSession session) {
-    String threadId = threadId(session.userId(), session.projectId(), session.level());
+    String threadId = session.id();
     String summary = memory.summary(threadId).orElse("");
     String recent =
         chatMemory.recent(threadId, properties.hardening().recentMessageWindow()).stream()
@@ -1912,7 +2019,7 @@ public class AssistantOrchestrator {
 
   private AssistantMemoryRepository.ProposalRecord requireProposal(
       UserRecord user, AssistantSessionStore.AssistantSession session, String proposalId) {
-    String threadId = threadId(user.id(), session.projectId(), session.level());
+    String threadId = session.id();
     return memory
         .findProposal(proposalId)
         .filter(record -> record.threadId().equals(threadId))
@@ -1933,8 +2040,7 @@ public class AssistantOrchestrator {
         new LinkedHashMap<>(project.activeModelIds() == null ? Map.of() : project.activeModelIds());
     active.put(session.level().apiName(), created.id());
     projects.update(user, project.id(), project.name(), project.description(), active);
-    memory.ensureThread(
-        user, project.id(), session.level(), session.title(), created.id(), created.revision());
+    memory.updateThreadModel(session.id(), created.id(), created.revision());
     return created;
   }
 
@@ -1989,10 +2095,6 @@ public class AssistantOrchestrator {
       candidate = base + "-" + suffix++;
     }
     return candidate;
-  }
-
-  private String threadId(String userId, String projectId, ModelLevel level) {
-    return userId + ":" + projectId + ":" + level.name();
   }
 
   private boolean blank(String value) {
@@ -2057,6 +2159,10 @@ public class AssistantOrchestrator {
   /** HTTP-visible assistant activity snapshot. */
   public record AssistantActivity(
       String stage, String message, AssistantWorkflowState workflowState) {}
+
+  /** Conversation list entry for history browsing. */
+  public record ConversationSummary(
+      String sessionId, String title, String preview, Instant updatedAt, int messageCount) {}
 
   /** Durable thread snapshot for client hydration. */
   public record ThreadSnapshot(

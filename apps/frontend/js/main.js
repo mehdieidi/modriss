@@ -31,9 +31,11 @@ import {
 } from "./attr-panel.js";
 import { closeImpactPanel, toggleImpactMode } from "./impact.js";
 import {
-  clearChatConversation,
+  closeChatHistoryPanel,
   prepareChatWindow,
   sendChatMessage,
+  startNewChatConversation,
+  toggleChatHistoryPanel,
   updateChatAttachmentLabel,
 } from "./chat.js";
 import {
@@ -930,13 +932,17 @@ function bindEvents() {
     });
   }
 
-  if (el.chatClearBtn) {
-    el.chatClearBtn.addEventListener("click", () => {
-      clearChatConversation().catch((error) => {
-        setError(`Chat clear failed: ${error.message}`);
-      });
+  el.chatHistoryBtn?.addEventListener("click", () => {
+    toggleChatHistoryPanel().catch((error) => {
+      setError(`Chat history failed: ${error.message}`);
     });
-  }
+  });
+  el.chatHistoryCloseBtn?.addEventListener("click", closeChatHistoryPanel);
+  el.chatNewBtn?.addEventListener("click", () => {
+    startNewChatConversation().catch((error) => {
+      setError(`New conversation failed: ${error.message}`);
+    });
+  });
 
   el.chatInput?.addEventListener("focus", expandChatInput);
   el.chatInput?.addEventListener("input", expandChatInput);

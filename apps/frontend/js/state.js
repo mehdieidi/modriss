@@ -65,6 +65,7 @@ export const state = {
     sessions: new Map(),
     channels: new Map(),
     attachment: null,
+    historyOpen: false,
   },
   artifact: {
     id: null,

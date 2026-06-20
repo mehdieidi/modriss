@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -78,6 +79,201 @@ public class AssistantMemoryRepository {
   }
 
   /**
+   * Builds a unique thread ID for a new conversation.
+   *
+   * @param userId owner user ID
+   * @param projectId project scope
+   * @param level model level
+   * @return unique thread ID
+   */
+  public String newThreadId(String userId, String projectId, ModelLevel level) {
+    return userId + ":" + projectId + ":" + level.name() + ":" + UUID.randomUUID();
+  }
+
+  /**
+   * Creates a new durable conversation thread.
+   *
+   * @param threadId thread ID
+   * @param user owner user
+   * @param projectId project scope
+   * @param level model level
+   * @param title display title
+   * @param modelId active model ID
+   * @param revision active model revision
+   * @return created thread record
+   */
+  public ThreadRecord createThread(
+      String threadId,
+      UserRecord user,
+      String projectId,
+      ModelLevel level,
+      String title,
+      String modelId,
+      Long revision) {
+    Instant now = Instant.now();
+    jdbc.update(
+        """
+        INSERT INTO assistant_threads(id, user_id, project_id, level, active_model_id,
+          active_revision, title, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        threadId,
+        user.id(),
+        projectId,
+        level.name(),
+        modelId,
+        revision,
+        title,
+        sqlTimestamp(now),
+        sqlTimestamp(now));
+    return requireThread(threadId);
+  }
+
+  /**
+   * Returns the most recently updated thread for a scope.
+   *
+   * @param userId owner user ID
+   * @param projectId project scope
+   * @param level model level
+   * @param since earliest updated timestamp
+   * @return latest thread, if any
+   */
+  public Optional<ThreadRecord> findMostRecentThread(
+      String userId, String projectId, ModelLevel level, Instant since) {
+    return jdbc.query(
+        """
+        SELECT id, user_id, project_id, level, active_model_id, active_revision, title,
+          created_at, updated_at
+        FROM assistant_threads
+        WHERE user_id = ? AND project_id = ? AND level = ? AND updated_at >= ?
+        ORDER BY updated_at DESC LIMIT 1
+        """,
+        rs ->
+            rs.next()
+                ? Optional.of(
+                    new ThreadRecord(
+                        rs.getString("id"),
+                        rs.getString("user_id"),
+                        rs.getString("project_id"),
+                        ModelLevel.valueOf(rs.getString("level")),
+                        rs.getString("title"),
+                        rs.getString("active_model_id"),
+                        rs.getObject("active_revision", Long.class),
+                        rs.getTimestamp("created_at").toInstant(),
+                        rs.getTimestamp("updated_at").toInstant()))
+                : Optional.empty(),
+        userId,
+        projectId,
+        level.name(),
+        sqlTimestamp(since));
+  }
+
+  /**
+   * Lists recent conversations for history browsing.
+   *
+   * @param userId owner user ID
+   * @param projectId project scope
+   * @param level model level
+   * @param since earliest updated timestamp
+   * @param limit maximum rows
+   * @return recent conversation summaries
+   */
+  public List<ConversationSummary> listRecentConversations(
+      String userId, String projectId, ModelLevel level, Instant since, int limit) {
+    return jdbc.query(
+        """
+        SELECT t.id, t.title, t.updated_at,
+          (
+            SELECT m.content
+            FROM assistant_messages m
+            WHERE m.thread_id = t.id AND m.role = 'USER'
+            ORDER BY m.created_at ASC LIMIT 1
+          ) AS preview,
+          (
+            SELECT COUNT(*)::int
+            FROM assistant_messages m
+            WHERE m.thread_id = t.id
+          ) AS message_count
+        FROM assistant_threads t
+        WHERE t.user_id = ? AND t.project_id = ? AND t.level = ? AND t.updated_at >= ?
+          AND EXISTS (
+            SELECT 1 FROM assistant_messages m WHERE m.thread_id = t.id
+          )
+        ORDER BY t.updated_at DESC
+        LIMIT ?
+        """,
+        (rs, row) ->
+            new ConversationSummary(
+                rs.getString("id"),
+                rs.getString("title"),
+                rs.getString("preview"),
+                rs.getTimestamp("updated_at").toInstant(),
+                rs.getInt("message_count")),
+        userId,
+        projectId,
+        level.name(),
+        sqlTimestamp(since),
+        limit);
+  }
+
+  /**
+   * Updates the active model binding for a thread.
+   *
+   * @param threadId thread ID
+   * @param modelId active model ID
+   * @param revision active model revision
+   */
+  public void updateThreadModel(String threadId, String modelId, Long revision) {
+    jdbc.update(
+        """
+        UPDATE assistant_threads
+        SET active_model_id = ?, active_revision = ?, updated_at = ?
+        WHERE id = ?
+        """,
+        modelId,
+        revision,
+        sqlTimestamp(Instant.now()),
+        threadId);
+  }
+
+  /**
+   * Updates a thread title when the first user message arrives.
+   *
+   * @param threadId thread ID
+   * @param title new title
+   */
+  public void updateThreadTitle(String threadId, String title) {
+    jdbc.update(
+        "UPDATE assistant_threads SET title = ?, updated_at = ? WHERE id = ?",
+        title,
+        sqlTimestamp(Instant.now()),
+        threadId);
+  }
+
+  /** Marks a thread as recently active. */
+  public void touchThread(String threadId) {
+    jdbc.update(
+        "UPDATE assistant_threads SET updated_at = ? WHERE id = ?",
+        sqlTimestamp(Instant.now()),
+        threadId);
+  }
+
+  /**
+   * Counts user messages in a thread.
+   *
+   * @param threadId thread ID
+   * @return user message count
+   */
+  public int userMessageCount(String threadId) {
+    Integer count =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM assistant_messages WHERE thread_id = ? AND role = 'USER'",
+            Integer.class,
+            threadId);
+    return count == null ? 0 : count;
+  }
+
+  /**
    * Loads a thread by ID.
    *
    * @param threadId thread ID
@@ -142,6 +338,7 @@ public class AssistantMemoryRepository {
         content,
         json(metadata == null ? Map.of() : metadata),
         sqlTimestamp(Instant.now()));
+    touchThread(threadId);
   }
 
   /** Stores the clarification required to resume a turn across processes and restarts. */
@@ -567,4 +764,16 @@ public class AssistantMemoryRepository {
       AssistantProposal proposal,
       String status,
       Instant decidedAt) {}
+
+  /**
+   * Conversation list entry for history browsing.
+   *
+   * @param sessionId durable session/thread ID
+   * @param title display title
+   * @param preview first user message or summary snippet
+   * @param updatedAt last activity timestamp
+   * @param messageCount total stored messages
+   */
+  public record ConversationSummary(
+      String sessionId, String title, String preview, Instant updatedAt, int messageCount) {}
 }

@@ -4,6 +4,7 @@ import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
@@ -22,11 +23,16 @@ public class AssistantSessionStore {
    * @param projectId project scope
    * @param level modeling level
    * @param title session title
+   * @param threadId durable thread/session ID
    * @return created session
    */
-  public AssistantSession create(String userId, String projectId, ModelLevel level, String title) {
+  public AssistantSession create(
+      String userId, String projectId, ModelLevel level, String title, String threadId) {
     Instant now = Instant.now();
-    String id = userId + ":" + projectId + ":" + level.name();
+    String id =
+        threadId == null || threadId.isBlank()
+            ? legacyThreadId(userId, projectId, level)
+            : threadId.trim();
     AssistantSession session =
         new AssistantSession(
             id,
@@ -38,6 +44,30 @@ public class AssistantSessionStore {
             now);
     sessions.put(session.id(), session);
     return session;
+  }
+
+  /**
+   * Builds a legacy single-thread ID for backward compatibility.
+   *
+   * @param userId owner user ID
+   * @param projectId project scope
+   * @param level modeling level
+   * @return legacy thread ID
+   */
+  public static String legacyThreadId(String userId, String projectId, ModelLevel level) {
+    return userId + ":" + projectId + ":" + level.name();
+  }
+
+  /**
+   * Builds a unique thread ID for a new conversation.
+   *
+   * @param userId owner user ID
+   * @param projectId project scope
+   * @param level modeling level
+   * @return unique thread ID
+   */
+  public static String newThreadId(String userId, String projectId, ModelLevel level) {
+    return legacyThreadId(userId, projectId, level) + ":" + UUID.randomUUID();
   }
 
   /**

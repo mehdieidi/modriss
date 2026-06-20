@@ -704,12 +704,38 @@
                   <div>
                     <div class="chat-header-title">Modeling Assistant</div>
                     <div class="chat-header-subtitle" id="chatHeaderSubtitle">
-                      Your modeling copilot
+                      <span id="chatLevelLabel">CIM</span> modeling copilot
                       <span class="chat-provider-label hidden" id="chatProviderLabel"></span>
                     </div>
                   </div>
                 </div>
                 <div class="chat-header-actions">
+                  <button
+                    aria-label="Conversation history"
+                    class="btn-icon-xs chat-header-icon-btn"
+                    id="chatHistoryBtn"
+                    title="Conversation history"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chat-header-icon icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/history.svg&quot;)"
+                    ></span>
+                  </button>
+                  <button
+                    aria-label="Start new conversation"
+                    class="btn-icon-xs chat-header-icon-btn"
+                    id="chatNewBtn"
+                    title="New conversation"
+                    type="button"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="chat-header-icon icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/new-chat.svg&quot;)"
+                    ></span>
+                  </button>
                   <button
                     aria-label="Expand chat window"
                     aria-pressed="false"
@@ -725,18 +751,32 @@
                       style="--icon-src: url(&quot;/assets/icons/expand.svg&quot;)"
                     ></span>
                   </button>
-                  <button
-                    class="btn-icon-xs"
-                    id="chatClearBtn"
-                    title="Clear conversation"
-                    type="button"
-                  >
-                    Clear
-                  </button>
                   <button class="btn-icon-xs" id="chatCloseBtn" title="Close" type="button">
                     Close
                   </button>
                 </div>
+              </div>
+              <div
+                class="chat-history-panel hidden"
+                id="chatHistoryPanel"
+                aria-label="Conversation history"
+              >
+                <div class="chat-history-header">
+                  <div>
+                    <div class="chat-history-title">Recent conversations</div>
+                    <div class="chat-history-subtitle" id="chatHistorySubtitle">Past 3 days</div>
+                  </div>
+                  <button
+                    aria-label="Close history"
+                    class="btn-icon-xs chat-history-close"
+                    id="chatHistoryCloseBtn"
+                    title="Close history"
+                    type="button"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div class="chat-history-list" id="chatHistoryList"></div>
               </div>
               <div class="hidden" id="chatActivity" aria-hidden="true">
                 <span id="chatActivityMessage"></span>

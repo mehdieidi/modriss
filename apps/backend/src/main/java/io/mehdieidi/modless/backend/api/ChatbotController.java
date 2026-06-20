@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -77,8 +78,50 @@ public class ChatbotController {
     projects.get(user, request.projectId());
     ModelLevel level = ModelLevel.fromApiName(request.modelType());
     AssistantSessionStore.AssistantSession session =
-        assistant.startSession(user, request.projectId(), level, request.modelName());
+        assistant.startSession(
+            user,
+            request.projectId(),
+            level,
+            request.modelName(),
+            request.resumeSessionId(),
+            Boolean.TRUE.equals(request.forceNew()));
     return new CreateSessionResponse(session.id(), null);
+  }
+
+  /**
+   * Lists recent conversations for history browsing.
+   *
+   * @param token session token
+   * @param projectId project scope
+   * @param level modeling level
+   * @param days lookback window in days
+   * @return recent conversations
+   */
+  @GetMapping("/api/chatbot/conversations")
+  List<ConversationResponse> conversations(
+      @RequestHeader("X-Auth-Token") String token,
+      @RequestParam String projectId,
+      @RequestParam String level,
+      @RequestParam(defaultValue = "3") int days) {
+    if (projectId == null || projectId.isBlank()) {
+      throw new PlatformException(400, "Project id is required.");
+    }
+    if (level == null || level.isBlank()) {
+      throw new PlatformException(400, "Model type is required.");
+    }
+    UserRecord user = auth.user(token);
+    projects.get(user, projectId);
+    ModelLevel modelLevel = ModelLevel.fromApiName(level);
+    return assistant.listConversations(user, projectId, modelLevel, days, 30).stream()
+        .map(
+            conversation ->
+                new ConversationResponse(
+                    conversation.sessionId(),
+                    conversation.title(),
+                    conversation.preview(),
+                    conversation.updatedAt().toString(),
+                    conversation.messageCount()))
+        .toList();
   }
 
   /**
@@ -282,7 +325,9 @@ public class ChatbotController {
       @NotBlank String modelType,
       String modelName,
       String initialDocument,
-      @NotBlank String projectId) {}
+      @NotBlank String projectId,
+      String resumeSessionId,
+      Boolean forceNew) {}
 
   /**
    * Session creation response.
@@ -379,4 +424,16 @@ public class ChatbotController {
 
   /** One answer to a structured clarification question. */
   public record ClarificationAnswer(String choiceId, List<String> optionIds, String freeText) {}
+
+  /**
+   * Conversation list entry for history browsing.
+   *
+   * @param sessionId durable session ID
+   * @param title display title
+   * @param preview short gist of the conversation
+   * @param updatedAt last activity timestamp
+   * @param messageCount total stored messages
+   */
+  public record ConversationResponse(
+      String sessionId, String title, String preview, String updatedAt, int messageCount) {}
 }

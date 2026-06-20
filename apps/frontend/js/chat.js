@@ -54,6 +54,88 @@ let activeThinkingEl = null;
 let thinkingSteps = [];
 let thinkingStartTime = 0;
 
+const CHAT_HISTORY_DAYS = 3;
+
+function disconnectChatChannel(scopeKey) {
+  const channel = state.chat.channels.get(scopeKey);
+  if (channel?.handle) {
+    try {
+      channel.handle.close?.();
+    } catch {
+      // ignore cleanup errors
+    }
+  }
+  state.chat.channels.delete(scopeKey);
+}
+
+function resetChatMessagesUi() {
+  if (!el.chatMessages) {
+    return;
+  }
+  el.chatMessages.innerHTML = "";
+  el.chatMessages.appendChild(buildChatWelcomeCard());
+}
+
+function levelLabel(typeKey = state.activeType) {
+  return MODEL_TYPES[typeKey]?.chatType || String(typeKey || "").toUpperCase();
+}
+
+function formatHistoryTimestamp(value) {
+  if (!value) {
+    return "";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const now = new Date();
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  if (sameDay) {
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+export function closeChatHistoryPanel() {
+  el.chatHistoryPanel?.classList.add("hidden");
+  state.chat.historyOpen = false;
+}
+
+export function closeChatWindow() {
+  closeChatHistoryPanel();
+  el.chatWindow?.classList.remove("chat-window-expanded");
+  el.chatExpandBtn?.setAttribute("aria-pressed", "false");
+  el.chatInputRow?.classList.remove("chat-input-expanded");
+  el.chatWindow?.classList.add("hidden");
+}
+
+async function createChatSession(typeKey, { forceNew = false, resumeSessionId = null } = {}) {
+  const response = await api("/chatbot/sessions", {
+    method: "POST",
+    body: JSON.stringify({
+      modelType: MODEL_TYPES[typeKey].chatType,
+      modelName: (state.tabs[typeKey]?.modelName || `${typeKey}-assistant`).trim(),
+      initialDocument: "Initialized from web modeling editor",
+      projectId: state.project.id,
+      forceNew,
+      resumeSessionId,
+    }),
+  });
+  return {
+    sessionId: response.sessionId,
+    modelId: response.modelId || null,
+    projectId: state.project.id,
+  };
+}
+
 function chatScopeKey(typeKey = state.activeType) {
   const projectId = state.project?.id;
   return projectId ? `${projectId}:${typeKey}` : String(typeKey || "");
@@ -73,8 +155,7 @@ export function resetChatActivityUi() {
   clearThinkingStream();
 }
 
-function applyWorkflowSnapshot(_workflowState, _message = null) {
-}
+function applyWorkflowSnapshot(_workflowState, _message = null) {}
 
 export function resetChatForProjectChange() {
   for (const channel of state.chat.channels.values()) {
@@ -87,12 +168,11 @@ export function resetChatForProjectChange() {
   state.chat.channels.clear();
   state.chat.sessions.clear();
   state.chat.attachment = null;
+  state.chat.historyOpen = false;
   suppressChoiceRealtime = false;
   resetChatActivityUi();
-  if (el.chatMessages) {
-    el.chatMessages.innerHTML = "";
-    el.chatMessages.appendChild(buildChatWelcomeCard());
-  }
+  closeChatHistoryPanel();
+  resetChatMessagesUi();
   updateChatAttachmentLabel();
 }
 
@@ -313,7 +393,7 @@ async function ensureChatRealtime(scopeKey, typeKey, sessionId) {
 
 // ── Chat session / realtime ───────────────────────────────────────────────────
 
-export async function ensureChatSession() {
+export async function ensureChatSession(options = {}) {
   if (state.chat.available === false) {
     setStatus("Chat is not available in this backend build.");
     return null;
@@ -325,26 +405,24 @@ export async function ensureChatSession() {
   const typeKey = state.activeType;
   const scopeKey = chatScopeKey(typeKey);
   const cached = state.chat.sessions.get(scopeKey);
-  if (cached?.sessionId && cached.projectId === state.project.id) {
+  if (
+    !options.forceNew &&
+    !options.resumeSessionId &&
+    cached?.sessionId &&
+    cached.projectId === state.project.id
+  ) {
     await ensureChatRealtime(scopeKey, typeKey, cached.sessionId);
     await hydrateChatThread(typeKey, cached.sessionId);
     return cached;
   }
   if (cached) {
+    disconnectChatChannel(scopeKey);
     state.chat.sessions.delete(scopeKey);
   }
 
   let response;
   try {
-    response = await api("/chatbot/sessions", {
-      method: "POST",
-      body: JSON.stringify({
-        modelType: MODEL_TYPES[typeKey].chatType,
-        modelName: (state.tabs[typeKey]?.modelName || `${typeKey}-assistant`).trim(),
-        initialDocument: "Initialized from web modeling editor",
-        projectId: state.project.id,
-      }),
-    });
+    response = await createChatSession(typeKey, options);
   } catch (error) {
     if (isPlannedFeatureError(error)) {
       state.chat.available = false;
@@ -370,7 +448,158 @@ export async function prepareChatWindow() {
   if (chatBusyDepth === 0) {
     resetChatActivityUi();
   }
+  closeChatHistoryPanel();
+  updateChatHeaderSubtitle();
   return ensureChatSession();
+}
+
+function updateChatHeaderSubtitle() {
+  if (el.chatLevelLabel) {
+    el.chatLevelLabel.textContent = levelLabel(state.activeType);
+  }
+}
+
+export async function loadChatHistory() {
+  if (!state.project?.id || state.chat.available === false) {
+    return [];
+  }
+  const typeKey = state.activeType;
+  const level = MODEL_TYPES[typeKey]?.chatType;
+  if (!level) {
+    return [];
+  }
+  const conversations = await api(
+    `/chatbot/conversations?projectId=${encodeURIComponent(state.project.id)}&level=${encodeURIComponent(level)}&days=${CHAT_HISTORY_DAYS}`,
+  );
+  return Array.isArray(conversations) ? conversations : [];
+}
+
+function renderChatHistoryList(conversations) {
+  if (!el.chatHistoryList) {
+    return;
+  }
+  el.chatHistoryList.replaceChildren();
+  const activeSessionId = state.chat.sessions.get(chatScopeKey())?.sessionId;
+
+  if (!conversations.length) {
+    const empty = document.createElement("div");
+    empty.className = "chat-history-empty";
+    empty.textContent = `No ${levelLabel()} conversations in the last ${CHAT_HISTORY_DAYS} days yet.`;
+    el.chatHistoryList.appendChild(empty);
+    return;
+  }
+
+  for (const conversation of conversations) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "chat-history-item";
+    if (conversation.sessionId === activeSessionId) {
+      item.classList.add("is-active");
+    }
+
+    const title = document.createElement("div");
+    title.className = "chat-history-item-title";
+    title.textContent = conversation.title || conversation.preview || "Conversation";
+
+    const preview = document.createElement("div");
+    preview.className = "chat-history-item-preview";
+    preview.textContent = conversation.preview || "No messages yet";
+
+    const meta = document.createElement("div");
+    meta.className = "chat-history-item-meta";
+    const time = document.createElement("span");
+    time.textContent = formatHistoryTimestamp(conversation.updatedAt);
+    const count = document.createElement("span");
+    count.className = "chat-history-item-count";
+    const messageCount = Number(conversation.messageCount) || 0;
+    count.textContent = `${messageCount} message${messageCount === 1 ? "" : "s"}`;
+    meta.append(time, count);
+
+    item.append(title, preview, meta);
+    item.addEventListener("click", () => {
+      resumeChatConversation(conversation.sessionId).catch((error) => {
+        setError(`Could not open conversation: ${error.message}`);
+      });
+    });
+    el.chatHistoryList.appendChild(item);
+  }
+}
+
+export async function toggleChatHistoryPanel() {
+  if (!el.chatHistoryPanel) {
+    return;
+  }
+  const willOpen = el.chatHistoryPanel.classList.contains("hidden");
+  if (!willOpen) {
+    closeChatHistoryPanel();
+    return;
+  }
+  if (!state.project?.id) {
+    setStatus("Open a project before browsing chat history.");
+    return;
+  }
+  el.chatHistorySubtitle.textContent = `${levelLabel()} · past ${CHAT_HISTORY_DAYS} days`;
+  el.chatHistoryPanel.classList.remove("hidden");
+  state.chat.historyOpen = true;
+  el.chatHistoryList.replaceChildren();
+  const loading = document.createElement("div");
+  loading.className = "chat-history-empty";
+  loading.textContent = "Loading conversations...";
+  el.chatHistoryList.appendChild(loading);
+  try {
+    const conversations = await loadChatHistory();
+    renderChatHistoryList(conversations);
+  } catch (error) {
+    el.chatHistoryList.replaceChildren();
+    const failure = document.createElement("div");
+    failure.className = "chat-history-empty";
+    failure.textContent = `Could not load history: ${error.message}`;
+    el.chatHistoryList.appendChild(failure);
+  }
+}
+
+export async function resumeChatConversation(sessionId) {
+  if (!sessionId) {
+    return;
+  }
+  const typeKey = state.activeType;
+  const scopeKey = chatScopeKey(typeKey);
+  disconnectChatChannel(scopeKey);
+  state.chat.sessions.delete(scopeKey);
+  state.chat.attachment = null;
+  if (el.chatFileInput) {
+    el.chatFileInput.value = "";
+  }
+  updateChatAttachmentLabel();
+  resetChatActivityUi();
+  closeChatHistoryPanel();
+
+  const session = await ensureChatSession({ resumeSessionId: sessionId });
+  if (!session) {
+    return;
+  }
+  setStatus("Conversation restored");
+}
+
+export async function startNewChatConversation() {
+  const typeKey = state.activeType;
+  const scopeKey = chatScopeKey(typeKey);
+  disconnectChatChannel(scopeKey);
+  state.chat.sessions.delete(scopeKey);
+  state.chat.attachment = null;
+  if (el.chatFileInput) {
+    el.chatFileInput.value = "";
+  }
+  updateChatAttachmentLabel();
+  resetChatMessagesUi();
+  resetChatActivityUi();
+  closeChatHistoryPanel();
+
+  const session = await ensureChatSession({ forceNew: true });
+  if (!session) {
+    return;
+  }
+  setStatus("Started a new conversation");
 }
 
 async function hydrateChatThread(typeKey, sessionId) {
@@ -419,40 +648,7 @@ async function hydrateChatThread(typeKey, sessionId) {
 }
 
 export async function clearChatConversation() {
-  const typeKey = state.activeType;
-  const scopeKey = chatScopeKey(typeKey);
-  const session = state.chat.sessions.get(scopeKey);
-  if (session?.sessionId) {
-    try {
-      await api(`/chatbot/sessions/${session.sessionId}`, {
-        method: "DELETE",
-      });
-    } catch (error) {
-      if (!error?.featureUnavailable) {
-        throw error;
-      }
-    }
-  }
-
-  const channel = state.chat.channels.get(scopeKey);
-  if (channel?.handle) {
-    try {
-      channel.handle.close?.();
-    } catch {
-      // ignore cleanup errors
-    }
-  }
-  state.chat.channels.delete(scopeKey);
-  state.chat.sessions.delete(scopeKey);
-  state.chat.attachment = null;
-  if (el.chatFileInput) {
-    el.chatFileInput.value = "";
-  }
-  updateChatAttachmentLabel();
-  el.chatMessages.innerHTML = "";
-  el.chatMessages.appendChild(buildChatWelcomeCard());
-  resetChatActivityUi();
-  setStatus("Chat cleared");
+  return startNewChatConversation();
 }
 
 async function connectChatRealtime(scopeKey, typeKey, sessionId) {
@@ -650,7 +846,11 @@ function formatAttributeValue(attributes) {
   if (attributes == null) {
     return "";
   }
-  if (typeof attributes === "string" || typeof attributes === "number" || typeof attributes === "boolean") {
+  if (
+    typeof attributes === "string" ||
+    typeof attributes === "number" ||
+    typeof attributes === "boolean"
+  ) {
     return String(attributes);
   }
   if (typeof attributes === "object") {
@@ -669,9 +869,7 @@ function describeOperation(operation) {
   const type = String(operation?.type || "").toUpperCase();
   const target = elementDisplayName(operation, operation?.targetElementId);
   const source = shortenId(operation?.sourceElementId);
-  const reference = operation?.referenceName
-    ? humanizeType(operation.referenceName)
-    : "";
+  const reference = operation?.referenceName ? humanizeType(operation.referenceName) : "";
 
   switch (type) {
     case "ADD_ELEMENT": {
@@ -727,7 +925,9 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   header.className = "chat-proposal-header";
   const title = document.createElement("div");
   title.className = "chat-proposal-title";
-  title.textContent = proposal.approvalRequired ? "Suggested model changes" : "Applied model changes";
+  title.textContent = proposal.approvalRequired
+    ? "Suggested model changes"
+    : "Applied model changes";
   const riskBadge = document.createElement("span");
   riskBadge.className = `chat-proposal-risk chat-proposal-risk-${risk.toLowerCase()}`;
   riskBadge.textContent = RISK_LABELS[risk] || risk;
@@ -814,10 +1014,9 @@ function appendProposalCard(typeKey, sessionId, proposal) {
         try {
           beginChatActivity("Applying approved changes");
           setProposalActionsDisabled(actions, true);
-          response = await api(
-            `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`,
-            { method: "POST" },
-          );
+          response = await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`, {
+            method: "POST",
+          });
           endChatActivity(null, response?.workflowState || "APPLIED");
           appendAssistantDeduped(response.assistantMessage || "Changes approved and applied.");
           await applyAssistantModelResponse(typeKey, response);

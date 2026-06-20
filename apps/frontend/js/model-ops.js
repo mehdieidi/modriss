@@ -1335,6 +1335,10 @@ export async function generateForCurrentContext() {
 // ── Tab switching ─────────────────────────────────────────────────────────────
 
 export async function switchTab(type) {
+  if (type !== state.activeType) {
+    const { closeChatWindow } = await import("./chat.js");
+    closeChatWindow();
+  }
   closeAttributePanel();
   el.modelTreePanel?.classList.add("hidden");
   el.workspace?.classList.remove("views-open");

@@ -34,7 +34,8 @@ class ChatbotControllerTest {
             () ->
                 controller.createSession(
                     "token",
-                    new ChatbotController.CreateSessionRequest("pim", "Assistant", null, null)));
+                    new ChatbotController.CreateSessionRequest(
+                        "pim", "Assistant", null, null, null, null)));
 
     assertEquals(400, ex.status());
     assertEquals("Project id is required.", ex.getMessage());
