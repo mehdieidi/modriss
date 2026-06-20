@@ -23,19 +23,43 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       """;
   private static final String PLANNER_GUARDRAIL =
       """
-      Return only one JSON object with this exact shape:
-      {"operations":[{"type":"ADD_ELEMENT|CONNECT_ELEMENTS|SET_ATTRIBUTE|DELETE_ELEMENT",
+      Each semantic operation has this shape:
+      {"type":"ADD_ELEMENT|CONNECT_ELEMENTS|SET_ATTRIBUTE|DELETE_ELEMENT",
       "targetElementId":"stable-id","elementType":"metamodel-type-or-null",
       "attributes":null-or-any-json-value,"sourceElementId":"stable-id-or-null",
-      "referenceName":"metamodel-feature-or-null"}]}
-      Do not wrap the JSON in Markdown. Use an empty operations list only when the request is
-      explanatory, ambiguous, unsupported, or cannot be grounded in the supplied stable IDs
-      and catalog context. Never invent an existing target ID. DELETE_ELEMENT is allowed only
-      when the user explicitly requests deletion. For an ADD_ELEMENT owned by another element,
-      sourceElementId is the owner ID and referenceName is the containment feature.
+      "referenceName":"metamodel-feature-or-null"}. Never invent an existing target ID.
+      DELETE_ELEMENT is allowed only when the user explicitly requests deletion. For an ADD_ELEMENT
+      owned by another element, sourceElementId is the owner ID and referenceName is the containment
+      feature.
       For SET_ATTRIBUTE, targetElementId, referenceName, and attributes are all mandatory;
       attributes is the new value itself, not an object keyed by the attribute name. For a
       creation request, use ADD_ELEMENT rather than SET_ATTRIBUTE on the model root.
+      """;
+  private static final String PATCH_OUTPUT_GUARDRAIL =
+      """
+      Return only one JSON object shaped as {"operations":[...]}. Do not wrap it in Markdown.
+      Use an empty operations list when the request cannot be grounded in the supplied context.
+      """;
+  private static final String TURN_PLAN_GUARDRAIL =
+      """
+      Return only one JSON object with this exact top-level shape:
+      {"intent":"INFORMATION|MUTATION","kind":"ANSWER|CLARIFICATION|PATCH",
+      "message":"user-facing text",
+      "questions":[{"id":"stable-question-id","prompt":"one precise question",
+      "selectionMode":"SINGLE|MULTIPLE","allowFreeText":true,
+      "options":[{"id":"stable-option-id","label":"short label",
+      "description":"impact of choosing it"}]}],"operations":[]}
+
+      Classify intent independently: MUTATION means the user asked to create, edit, remove, or
+      refine model content; INFORMATION means they asked only for explanation, analysis, or advice.
+      A MUTATION must use PATCH, or CLARIFICATION when consequential information is still missing.
+      Never use ANSWER or claim completion for a MUTATION without semantic operations.
+      Use ANSWER for explanation, analysis, and advice. Use CLARIFICATION only when missing
+      information would materially change the requested formal model; ask at most three concise
+      questions with two to five genuinely distinct options and permit free text when appropriate.
+      Use PATCH for a modeling change and populate operations using the semantic operation contract
+      below. Do not ask about harmless defaults that can be stated in the proposal. Never combine a
+      clarification with speculative operations.
       """;
 
   protected final AiProperties properties;
@@ -44,6 +68,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
   private final AssistantPromptGuard promptGuard;
   private final AssistantHardeningService hardening;
   private final SemanticModelPatchParser patchParser;
+  private final AssistantTurnPlanParser turnPlanParser;
   protected final AssistantToolService tools;
   protected final ChatClient chatClient;
 
@@ -63,7 +88,39 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     this.tools = tools;
     this.hardening = hardening;
     this.patchParser = patchParser;
+    this.turnPlanParser =
+        new AssistantTurnPlanParser(new com.fasterxml.jackson.databind.ObjectMapper());
     this.chatClient = chatClient;
+  }
+
+  @Override
+  public AssistantTurnPlan planTurn(AssistantPrompt rawPrompt) {
+    requireAvailable();
+    AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
+    String model = modelFor(AssistantModelRole.PLANNER);
+    logRequest(prompt, model);
+    String content =
+        hardening.providerCall(
+            AssistantModelRole.PLANNER,
+            providerKey,
+            model,
+            () ->
+                chatClient
+                    .prompt()
+                    .options(options(model, AssistantModelRole.PLANNER))
+                    .system(
+                        SYSTEM_GUARDRAIL
+                            + "\n"
+                            + TURN_PLAN_GUARDRAIL
+                            + "\n"
+                            + PLANNER_GUARDRAIL
+                            + "\n"
+                            + prompt.system())
+                    .user(userWithContext(prompt))
+                    .call()
+                    .content());
+    logResponse(AssistantModelRole.PLANNER, model, content);
+    return turnPlanParser.parse(content);
   }
 
   @Override
@@ -119,7 +176,14 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                 request = request.tools(tools);
               }
               return request
-                  .system(SYSTEM_GUARDRAIL + "\n" + PLANNER_GUARDRAIL + "\n" + prompt.system())
+                  .system(
+                      SYSTEM_GUARDRAIL
+                          + "\n"
+                          + PATCH_OUTPUT_GUARDRAIL
+                          + "\n"
+                          + PLANNER_GUARDRAIL
+                          + "\n"
+                          + prompt.system())
                   .user(userWithContext(prompt))
                   .call()
                   .content();

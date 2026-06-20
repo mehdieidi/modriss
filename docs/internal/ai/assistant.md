@@ -54,20 +54,15 @@ GEMINI_API_KEY=your_gemini_api_key
 MODLESS_AI_RESPONDER_MODEL=gemini-2.0-flash
 ```
 
-If you do not want live model changes, set:
+If you do not want provider calls or model proposals, set:
 
 ```bash
-MODLESS_AI_MODE=EXPLAIN_ONLY
+MODLESS_AI_ENABLED=false
 ```
 
-The modes are:
-
-- `EXPLAIN_ONLY`: safest mode. The assistant explains and retrieves context but does not draft
-  changes.
-- `PROPOSAL_ONLY`: the assistant can draft backend-validated proposals, but changes require user
-  approval.
-- `GUARDED_APPLY`: low-risk validated proposals can be applied automatically; risky changes still
-  require approval.
+The only mode is `GUARDED_APPLY`: the LLM answers, asks structured clarification questions, or
+drafts semantic operations. The backend shows a proposal only after structural and mandatory EVL
+validation, and every proposal requires explicit user approval.
 
 Do not put API keys directly in `application.yml`. Use environment variables or a local `.env` file
 that is not committed.
@@ -85,17 +80,7 @@ To enable AI for a Compose run, set environment variables before starting Compos
 
 ```bash
 MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=EXPLAIN_ONLY
-MODLESS_AI_PROVIDER=openai
-OPENAI_COMPATIBLE_API_KEY=your_api_key
-docker compose up --build
-```
-
-For proposal testing:
-
-```bash
-MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=PROPOSAL_ONLY
+MODLESS_AI_MODE=GUARDED_APPLY
 MODLESS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 docker compose up --build
@@ -392,9 +377,8 @@ revision, the assistant builds a new compact context for that revision.
 5. Create a model in CIM, PIM, or PSM.
 6. Open the chat panel and ask for an explanation or a bounded change.
 
-If the assistant is in `EXPLAIN_ONLY`, it will explain and cite context but not propose changes.
-If it is in `PROPOSAL_ONLY` or `GUARDED_APPLY`, it can draft proposals, and the backend will still
-block anything that fails validation.
+The assistant may explain, ask one or more structured questions, or draft a proposal. The backend
+never returns an invalid proposal and revalidates a valid proposal again when the user approves it.
 
 ## Does the frontend offer choices?
 

@@ -38,7 +38,7 @@ generator issue.
 - Confirm `MODLESS_AI_ENABLED=true`.
 - Check provider base URL, credentials, model names, and request timeout.
 - Check dedicated AI proxy configuration.
-- Use `EXPLAIN_ONLY` while diagnosing provider or proposal issues.
+- Set `MODLESS_AI_ENABLED=false` while diagnosing provider or proposal issues.
 - If ONNX cannot load, enable hash fallback or select `HASH`.
 - Restart the backend after metamodel or EVL changes so retrieval documents are reindexed.
 

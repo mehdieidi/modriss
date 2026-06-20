@@ -4,15 +4,13 @@ The Modless assistant is a bounded modeling assistant. It can explain formal con
 metamodel and constraint context, ask bounded questions, and draft validated semantic model-change
 proposals.
 
-## Operating Modes
+## Guarded Apply
 
-| Mode            | Behavior                                                                             |
-| --------------- | ------------------------------------------------------------------------------------ |
-| `EXPLAIN_ONLY`  | Explains and retrieves context; does not draft model changes                         |
-| `PROPOSAL_ONLY` | Drafts backend-validated proposals that require user approval                        |
-| `GUARDED_APPLY` | May automatically apply low-risk validated proposals; risky changes require approval |
-
-`EXPLAIN_ONLY` is the safest default for public or exploratory deployments.
+The assistant has one operating mode: `GUARDED_APPLY`. The LLM classifies each turn as an answer,
+a structured clarification, or a semantic model patch. Every patch is compiled against stable
+element IDs and the current Ecore metamodel, then checked by structural validation and mandatory
+EVL constraints. A proposal is shown only after those gates pass, and every proposal requires an
+explicit approval before the canvas changes.
 
 ## Context Boundary
 
@@ -33,16 +31,22 @@ startup. Changed sources are detected by hash and reindexed.
 ```mermaid
 flowchart LR
     U["User request"] --> R["Retrieve context"]
-    R --> D["Draft semantic patch"]
+    R --> I{"Answer, clarify, or patch?"}
+    I -->|Clarify| Q["Structured questions"]
+    Q --> R
+    I -->|Patch| D["Draft semantic patch"]
     D --> V["Compile and validate"]
-    V --> P["Proposal"]
+    V -->|Invalid| X["One grounded repair pass"]
+    X --> V
+    V -->|Valid| P["Proposal"]
     P --> A["Approve / reject"]
     A --> AP["Apply"]
     AP --> UN["Optional undo"]
 ```
 
-Proposals include risk, approval requirements, validation summary, citations, status, and an inverse
-patch when undo is available. Proposal and action records are persisted for auditability.
+Invalid changes never become proposals. Proposals include risk, validation summary, citations,
+status, and an inverse patch when undo is available. Proposal, clarification, and action records are
+persisted for auditability and restart-safe continuation.
 
 ## Providers and Embeddings
 
@@ -50,6 +54,9 @@ Chat providers:
 
 - OpenAI-compatible endpoints through Spring AI
 - Gemini through Spring AI
+
+The configured provider is tried first. Transient failures and rate limits fall back to the other
+configured provider, with an independent circuit breaker for each provider.
 
 Retrieval embeddings default to local ONNX with a hash-vector fallback. The hash fallback keeps
 development environments functional without native ONNX dependencies, but provides lower-quality
@@ -59,7 +66,7 @@ semantic retrieval.
 
 ```bash
 MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=EXPLAIN_ONLY
+MODLESS_AI_MODE=GUARDED_APPLY
 MODLESS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 ```

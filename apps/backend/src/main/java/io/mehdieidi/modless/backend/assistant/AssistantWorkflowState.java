@@ -6,12 +6,14 @@ public enum AssistantWorkflowState {
   EXPLAINED,
   /** A proposal was drafted and is waiting for user approval. */
   PROPOSED,
-  /** A low-risk proposal was applied after validation. */
+  /** A user-approved proposal was applied after approval-time validation. */
   APPLIED,
   /** A stored proposal was rejected. */
   REJECTED,
   /** A previously applied proposal was undone. */
   UNDONE,
   /** The assistant needs a bounded user choice before continuing. */
-  WAITING_FOR_CHOICE
+  WAITING_FOR_CHOICE,
+  /** Provider execution failed without changing the model. */
+  FAILED
 }

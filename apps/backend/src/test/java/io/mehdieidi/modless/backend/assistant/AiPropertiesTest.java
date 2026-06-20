@@ -15,7 +15,7 @@ class AiPropertiesTest {
         new AiProperties(false, null, null, null, 0, 0, null, null, null, null, null, null);
 
     assertFalse(properties.enabled());
-    assertEquals(AiProperties.RolloutMode.EXPLAIN_ONLY, properties.mode());
+    assertEquals(AiProperties.RolloutMode.GUARDED_APPLY, properties.mode());
     assertEquals("openai", properties.provider());
     assertEquals("127.0.0.1", properties.proxy().host());
     assertEquals(2081, properties.proxy().port());

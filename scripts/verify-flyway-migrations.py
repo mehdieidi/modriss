@@ -21,6 +21,7 @@ def main() -> int:
             "-am",
             "test",
             "-Dtest=FlywayMigrationVerificationTest",
+            "-Dsurefire.failIfNoSpecifiedTests=false",
         ],
         cwd=ROOT,
         check=True,

@@ -17,6 +17,7 @@ Store assistant chat memory and semantic embeddings in **PostgreSQL 16 with pgve
 - Spring AI JDBC chat memory repository for session history
 - pgvector column for embedding-backed retrieval when ONNX or hash embeddings are enabled
 - Flyway migrations version the schema alongside platform tables
+- Pending clarification questions and their original requests are stored for restart-safe resumption
 - Integration tests use Testcontainers with the `pgvector/pgvector:pg16` image
 
 ## Consequences

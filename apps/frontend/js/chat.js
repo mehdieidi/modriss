@@ -136,6 +136,10 @@ async function connectChatRealtime(typeKey, sessionId) {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "assistant.choice", payload);
   });
+  stream.addEventListener("assistant.progress", (event) => {
+    const payload = JSON.parse(event.data)?.payload;
+    handleChatRealtimeEvent(typeKey, "assistant.progress", payload);
+  });
   stream.onerror = () => {
     setStatus("Chat realtime stream disconnected");
   };
@@ -143,6 +147,12 @@ async function connectChatRealtime(typeKey, sessionId) {
 }
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
+  if (eventType === "assistant.progress") {
+    if (el.chatHeaderSubtitle) {
+      el.chatHeaderSubtitle.textContent = payload?.message || "Working with the model";
+    }
+    return;
+  }
   if (eventType === "chat.assistant") {
     const message = payload?.assistantMessage || payload?.message;
     appendAssistantDeduped(message);
@@ -400,46 +410,117 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
   if (!Array.isArray(choices) || !choices.length) {
     return;
   }
-  const choice = choices[0];
+  const interactionId = choices
+    .map((choice) => choice.id)
+    .filter(Boolean)
+    .join("--");
   if (
-    choice.id &&
-    el.chatMessages.querySelector(`[data-chat-choice-id="${CSS.escape(choice.id)}"]`)
+    interactionId &&
+    el.chatMessages.querySelector(`[data-chat-choice-id="${CSS.escape(interactionId)}"]`)
   ) {
     return;
   }
   const card = document.createElement("div");
   card.className = "chat-msg assistant";
   card.dataset.chatKind = "choice";
-  if (choice.id) {
-    card.dataset.chatChoiceId = choice.id;
+  if (interactionId) {
+    card.dataset.chatChoiceId = interactionId;
   }
   const bubble = document.createElement("div");
   bubble.className = "chat-msg-bubble";
-  bubble.textContent = choice.prompt || "Choose an option.";
+  const heading = document.createElement("div");
+  heading.className = "chat-question-heading";
+  heading.textContent =
+    choices.length === 1 ? "One decision needed" : `${choices.length} decisions needed`;
+  bubble.appendChild(heading);
+
+  const form = document.createElement("form");
+  form.className = "chat-question-form";
+  const fields = [];
+  for (const [questionIndex, choice] of choices.entries()) {
+    const fieldset = document.createElement("fieldset");
+    fieldset.className = "chat-question";
+    const legend = document.createElement("legend");
+    legend.textContent = choice.prompt || "Choose an option.";
+    fieldset.appendChild(legend);
+    const inputType = choice.selectionMode === "MULTIPLE" ? "checkbox" : "radio";
+    const name = `assistant-question-${interactionId}-${questionIndex}`;
+    for (const option of choice.options || []) {
+      const label = document.createElement("label");
+      label.className = "chat-question-option";
+      const input = document.createElement("input");
+      input.type = inputType;
+      input.name = name;
+      input.value = option.id;
+      const copy = document.createElement("span");
+      const title = document.createElement("strong");
+      title.textContent = option.label || option.id;
+      copy.appendChild(title);
+      if (option.description) {
+        const description = document.createElement("small");
+        description.textContent = option.description;
+        copy.appendChild(description);
+      }
+      label.append(input, copy);
+      fieldset.appendChild(label);
+    }
+    let freeText = null;
+    if (choice.allowFreeText) {
+      freeText = document.createElement("textarea");
+      freeText.className = "chat-question-free-text";
+      freeText.rows = 2;
+      freeText.placeholder = "Add another answer or useful detail";
+      fieldset.appendChild(freeText);
+    }
+    fields.push({ choice, fieldset, name, freeText });
+    form.appendChild(fieldset);
+  }
+
   const actions = document.createElement("div");
   actions.className = "chat-proposal-actions";
-  for (const option of choice.options || []) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = option.label || option.id;
-    button.addEventListener("click", async () => {
-      try {
-        await api(`/chatbot/sessions/${sessionId}/choices`, {
-          method: "POST",
-          body: JSON.stringify({
-            choiceId: choice.id,
-            optionId: option.id,
-          }),
-        });
-        setProposalActionsDisabled(actions, true);
-        appendChat("assistant", `Selected ${option.label || option.id}.`);
-      } catch (error) {
-        appendChat("assistant", `Error: ${error.message}`);
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.textContent = "Continue";
+  actions.appendChild(submit);
+  form.appendChild(actions);
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const answers = fields.map(({ choice, fieldset, name, freeText }) => ({
+      choiceId: choice.id,
+      optionIds: [...fieldset.querySelectorAll(`input[name="${CSS.escape(name)}"]:checked`)].map(
+        (input) => input.value,
+      ),
+      freeText: freeText?.value.trim() || "",
+    }));
+    if (answers.some((answer) => !answer.optionIds.length && !answer.freeText)) {
+      appendChat("assistant", "Please answer each question before continuing.");
+      return;
+    }
+    try {
+      setProposalActionsDisabled(actions, true);
+      for (const input of form.querySelectorAll("input, textarea")) {
+        input.disabled = true;
       }
-    });
-    actions.appendChild(button);
-  }
-  bubble.appendChild(actions);
+      const response = await api(`/chatbot/sessions/${sessionId}/choices`, {
+        method: "POST",
+        body: JSON.stringify({ answers }),
+      });
+      setProposalDecision(card, "Answered");
+      appendAssistantDeduped(response.assistantMessage || "Clarification received");
+      appendProposalCard(typeKey, sessionId, response.proposal);
+      if (!response.proposal) {
+        appendChoiceButtons(typeKey, sessionId, response.choices);
+      }
+      await applyAssistantModelResponse(typeKey, response);
+    } catch (error) {
+      setProposalActionsDisabled(actions, false);
+      for (const input of form.querySelectorAll("input, textarea")) {
+        input.disabled = false;
+      }
+      appendChat("assistant", `Error: ${error.message}`);
+    }
+  });
+  bubble.appendChild(form);
   card.appendChild(bubble);
   el.chatMessages.appendChild(card);
   el.chatMessages.scrollTop = el.chatMessages.scrollHeight;

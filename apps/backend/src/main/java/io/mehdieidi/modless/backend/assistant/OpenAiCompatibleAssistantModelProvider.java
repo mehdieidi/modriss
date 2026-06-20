@@ -4,6 +4,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
@@ -78,11 +79,15 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
 
   @Override
   protected OpenAiChatOptions options(String model, AssistantModelRole role) {
-    return OpenAiChatOptions.builder()
-        .model(model)
-        .temperature(0.2)
-        .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)))
-        .build();
+    OpenAiChatOptions.Builder builder =
+        OpenAiChatOptions.builder()
+            .model(model)
+            .temperature(0.2)
+            .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)));
+    if (role == AssistantModelRole.PLANNER) {
+      builder.responseFormat(new ResponseFormat(ResponseFormat.Type.JSON_OBJECT, null));
+    }
+    return builder.build();
   }
 
   private int completionLimit(AssistantModelRole role) {

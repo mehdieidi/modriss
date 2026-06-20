@@ -8,13 +8,24 @@ import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /** Compiles semantic assistant operations into backend model patch operations. */
 @Service
 public class AssistantPatchCompiler {
+
+  private final AssistantMetamodelSchemaService schemas;
+
+  public AssistantPatchCompiler() {
+    this(new AssistantMetamodelSchemaService());
+  }
+
+  @Autowired
+  public AssistantPatchCompiler(AssistantMetamodelSchemaService schemas) {
+    this.schemas = schemas;
+  }
 
   /**
    * Compiles semantic operations against a model snapshot.
@@ -29,6 +40,15 @@ public class AssistantPatchCompiler {
             ? JsonNodeFactory.instance.objectNode()
             : (ObjectNode) modelJson.deepCopy();
     String visualContainer = visualContainer(root);
+    io.mehdieidi.modless.platform.kernel.ModelLevel level =
+        schemas.resolveLevel(
+            root,
+            semantic.operations().stream()
+                .filter(java.util.Objects::nonNull)
+                .map(SemanticModelPatch.Operation::elementType)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(root.path("eClass").asText("")));
     ArrayNode elements = root.with(visualContainer).withArray("elements");
     ArrayNode relationships = root.with(visualContainer).withArray("relationships");
     List<ModelService.ModelPatchOperation> patch = new ArrayList<>();
@@ -40,7 +60,7 @@ public class AssistantPatchCompiler {
       }
       switch (operation.type()) {
         case ADD_ELEMENT -> {
-          JsonNode element = elementPayload(operation);
+          JsonNode element = elementPayload(level, operation);
           LocatedElement requestedOwner =
               operation.sourceElementId() == null || operation.sourceElementId().isBlank()
                   ? null
@@ -50,6 +70,11 @@ public class AssistantPatchCompiler {
                 || !operation.referenceName().matches("[A-Za-z][A-Za-z0-9_-]*")) {
               throw new PlatformException(400, "Assistant containment reference is not allowed.");
             }
+            schemas.requireContainment(
+                level,
+                requestedOwner.node().path("eClass").asText(),
+                operation.referenceName(),
+                operation.elementType());
             JsonNode owned = requestedOwner.node().get(operation.referenceName());
             String collectionPath =
                 requestedOwner.path() + "/" + escapePointer(operation.referenceName());
@@ -72,7 +97,7 @@ public class AssistantPatchCompiler {
                   400, "Assistant containment reference must target a collection.");
             }
           } else {
-            Optional<String> collection = semanticRootCollection(operation.elementType());
+            Optional<String> collection = schemas.rootCollection(level, operation.elementType());
             if (collection.isPresent()) {
               ArrayNode semanticElements = root.withArray(collection.get());
               patch.add(
@@ -83,6 +108,11 @@ public class AssistantPatchCompiler {
                   new ModelService.ModelPatchOperation(
                       "remove", "/" + collection.get() + "/" + semanticElements.size(), null));
               semanticElements.add(element.deepCopy());
+            } else {
+              throw new PlatformException(
+                  422,
+                  "Element type requires a metamodel containment owner: "
+                      + operation.elementType());
             }
           }
           patch.add(
@@ -96,6 +126,56 @@ public class AssistantPatchCompiler {
           elements.add(diagramElementPayload(element));
         }
         case CONNECT_ELEMENTS -> {
+          LocatedElement source = locateElement(root, operation.sourceElementId());
+          AssistantMetamodelSchemaService.ReferenceSchema reference =
+              schemas
+                  .reference(
+                      level, source.node().path("eClass").asText(), operation.referenceName())
+                  .filter(value -> !value.containment() && !value.readonly())
+                  .orElseThrow(
+                      () ->
+                          new PlatformException(
+                              422, "Relationship reference is not writable in the metamodel."));
+          JsonNode previous = source.node().get(operation.referenceName());
+          String referencePath = source.path() + "/" + escapePointer(operation.referenceName());
+          JsonNode targetId = JsonNodeFactory.instance.textNode(operation.targetElementId());
+          if (reference.many()) {
+            if (previous != null
+                && previous.isArray()
+                && java.util.stream.StreamSupport.stream(previous.spliterator(), false)
+                    .anyMatch(value -> operation.targetElementId().equals(value.asText()))) {
+              continue;
+            }
+            if (previous == null || previous.isNull()) {
+              ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(targetId);
+              patch.add(new ModelService.ModelPatchOperation("add", referencePath, initial));
+              inverse.add(0, new ModelService.ModelPatchOperation("remove", referencePath, null));
+              source.node().set(operation.referenceName(), initial.deepCopy());
+            } else if (previous.isArray()) {
+              int referenceIndex = previous.size();
+              patch.add(
+                  new ModelService.ModelPatchOperation("add", referencePath + "/-", targetId));
+              inverse.add(
+                  0,
+                  new ModelService.ModelPatchOperation(
+                      "remove", referencePath + "/" + referenceIndex, null));
+              ((ArrayNode) previous).add(targetId);
+            } else {
+              throw new PlatformException(422, "Multi-valued relationship is not an array.");
+            }
+          } else {
+            if (operation.targetElementId().equals(text(previous))) {
+              continue;
+            }
+            patch.add(
+                new ModelService.ModelPatchOperation(
+                    previous == null ? "add" : "replace", referencePath, targetId));
+            inverse.add(
+                0,
+                new ModelService.ModelPatchOperation(
+                    previous == null ? "remove" : "replace", referencePath, previous));
+            source.node().set(operation.referenceName(), targetId);
+          }
           JsonNode relationship = relationshipPayload(operation);
           patch.add(
               new ModelService.ModelPatchOperation(
@@ -169,10 +249,54 @@ public class AssistantPatchCompiler {
     String visualContainer = visualContainer(root);
     root.with(visualContainer).withArray("elements");
     root.with(visualContainer).withArray("relationships");
+    compiled.patch().stream()
+        .map(ModelService.ModelPatchOperation::path)
+        .filter(java.util.Objects::nonNull)
+        .filter(path -> path.startsWith("/diagram/") || path.startsWith("/graph/"))
+        .map(path -> path.substring(1, path.indexOf('/', 1)))
+        .distinct()
+        .forEach(
+            container -> {
+              root.with(container).withArray("elements");
+              root.with(container).withArray("relationships");
+            });
     for (ModelService.ModelPatchOperation operation : compiled.patch()) {
       apply(root, operation);
     }
     return root;
+  }
+
+  /** Drops no-op visual removals when persistence normalized away an optional canvas container. */
+  public CompiledPatch adaptToSnapshot(JsonNode modelJson, CompiledPatch compiled) {
+    List<ModelService.ModelPatchOperation> applicable =
+        compiled.patch().stream()
+            .filter(operation -> !missingOptionalVisualRemoval(modelJson, operation))
+            .toList();
+    return new CompiledPatch(applicable, compiled.inversePatch(), compiled.affectedElements());
+  }
+
+  private boolean missingOptionalVisualRemoval(
+      JsonNode modelJson, ModelService.ModelPatchOperation operation) {
+    if (operation == null
+        || !"remove".equals(operation.op())
+        || operation.path() == null
+        || !(operation.path().startsWith("/diagram/") || operation.path().startsWith("/graph/"))) {
+      return false;
+    }
+    int separator = operation.path().lastIndexOf('/');
+    JsonNode parent = modelJson.at(operation.path().substring(0, separator));
+    if (parent.isMissingNode()) {
+      return true;
+    }
+    String leaf = unescapePointer(operation.path().substring(separator + 1));
+    if (parent.isArray()) {
+      try {
+        return Integer.parseInt(leaf) >= parent.size();
+      } catch (NumberFormatException ignored) {
+        return true;
+      }
+    }
+    return parent.isObject() && !parent.has(leaf);
   }
 
   private void apply(ObjectNode root, ModelService.ModelPatchOperation operation) {
@@ -264,10 +388,12 @@ public class AssistantPatchCompiler {
     return current;
   }
 
-  private JsonNode elementPayload(SemanticModelPatch.Operation operation) {
+  private JsonNode elementPayload(
+      io.mehdieidi.modless.platform.kernel.ModelLevel level,
+      SemanticModelPatch.Operation operation) {
     ObjectNode node = JsonNodeFactory.instance.objectNode();
     node.put("id", safe(operation.targetElementId()));
-    String elementType = canonicalElementType(operation.elementType());
+    String elementType = schemas.canonicalType(level, operation.elementType());
     node.put("eClass", elementType);
     node.put("name", elementType);
     node.put("label", elementType);
@@ -427,20 +553,6 @@ public class AssistantPatchCompiler {
     return null;
   }
 
-  private Optional<String> semanticRootCollection(String elementType) {
-    return SEMANTIC_ROOT_COLLECTIONS.entrySet().stream()
-        .filter(entry -> entry.getKey().equalsIgnoreCase(safe(elementType)))
-        .map(Map.Entry::getValue)
-        .findFirst();
-  }
-
-  private String canonicalElementType(String elementType) {
-    return SEMANTIC_ROOT_COLLECTIONS.keySet().stream()
-        .filter(type -> type.equalsIgnoreCase(safe(elementType)))
-        .findFirst()
-        .orElse(safe(elementType));
-  }
-
   private JsonNode copyValue(JsonNode value) {
     return value == null ? JsonNodeFactory.instance.nullNode() : value.deepCopy();
   }
@@ -460,51 +572,6 @@ public class AssistantPatchCompiler {
   private String safe(String value) {
     return value == null ? "" : value;
   }
-
-  private static final Map<String, String> SEMANTIC_ROOT_COLLECTIONS =
-      Map.ofEntries(
-          Map.entry("ServerlessService", "services"),
-          Map.entry("ServiceElementMembership", "serviceMemberships"),
-          Map.entry("DeploymentUnit", "deploymentUnits"),
-          Map.entry("Environment", "environments"),
-          Map.entry("Schema", "schemas"),
-          Map.entry("Function", "functions"),
-          Map.entry("Api", "apis"),
-          Map.entry("EventType", "eventTypes"),
-          Map.entry("EventChannel", "channels"),
-          Map.entry("Queue", "channels"),
-          Map.entry("Topic", "channels"),
-          Map.entry("EventBus", "channels"),
-          Map.entry("Schedule", "schedules"),
-          Map.entry("Trigger", "triggers"),
-          Map.entry("DataStore", "dataStores"),
-          Map.entry("ObjectStore", "objectStores"),
-          Map.entry("DataAccess", "dataAccesses"),
-          Map.entry("Workflow", "workflows"),
-          Map.entry("HumanTask", "humanTasks"),
-          Map.entry("ExternalEndpoint", "externalEndpoints"),
-          Map.entry("ExternalAdapter", "externalAdapters"),
-          Map.entry("IdentityProvider", "identityProviders"),
-          Map.entry("Principal", "principals"),
-          Map.entry("ArchitecturePolicy", "policies"),
-          Map.entry("AuthPolicy", "policies"),
-          Map.entry("AuthorizationPolicy", "policies"),
-          Map.entry("BackupPolicy", "policies"),
-          Map.entry("ConcurrencyPolicy", "policies"),
-          Map.entry("CorsPolicy", "policies"),
-          Map.entry("DataProtectionPolicy", "policies"),
-          Map.entry("IdempotencyPolicy", "policies"),
-          Map.entry("ObservabilityConfig", "policies"),
-          Map.entry("RateLimitPolicy", "policies"),
-          Map.entry("ResiliencePolicy", "policies"),
-          Map.entry("RetentionPolicy", "policies"),
-          Map.entry("SecurityPolicy", "policies"),
-          Map.entry("TimeoutPolicy", "policies"),
-          Map.entry("Flow", "flows"),
-          Map.entry("ConfigurationSet", "configurations"),
-          Map.entry("Secret", "secrets"),
-          Map.entry("PlatformCapability", "platformCapabilities"),
-          Map.entry("PlatformMappingAssessment", "platformMappingAssessments"));
 
   private record LocatedElement(String path, ObjectNode node) {}
 

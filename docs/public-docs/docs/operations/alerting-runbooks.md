@@ -113,7 +113,7 @@ Operational alert rules and response procedures for Modless production deploymen
 2. Check proxy settings (`MODLESS_AI_PROXY_*`) and outbound network policy.
 3. Review `assistant.circuit.rejected` metrics and recent provider errors in logs.
 4. Wait for `MODLESS_AI_CIRCUIT_OPEN_DURATION` to elapse or restart after fixing provider issues.
-5. Switch to `EXPLAIN_ONLY` mode if AI must remain disabled during provider outage.
+5. Set `MODLESS_AI_ENABLED=false` if the assistant must remain disabled during provider outage.
 
 ### Database disk space
 

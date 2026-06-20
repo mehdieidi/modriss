@@ -170,6 +170,15 @@ public class SemanticModelPatchParser {
     copyAlias(operation, "attributeName", "referenceName");
     copyAlias(operation, "attribute", "referenceName");
     normalizeOperationType(operation);
+    if ("ADD_ELEMENT".equals(operation.path("type").asText())
+        && operation.get("attributes") instanceof ObjectNode attributes) {
+      if (missingText(operation, "targetElementId") && attributes.hasNonNull("id")) {
+        operation.set("targetElementId", attributes.get("id").deepCopy());
+      }
+      if (missingText(operation, "elementType") && attributes.hasNonNull("eClass")) {
+        operation.set("elementType", attributes.get("eClass").deepCopy());
+      }
+    }
     if ("SET_ATTRIBUTE".equals(operation.path("type").asText())
         && !missingText(operation, "referenceName")
         && operation.has("value")

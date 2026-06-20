@@ -27,6 +27,16 @@ public interface AssistantModelProvider {
    */
   AssistantReply complete(AssistantPrompt prompt);
 
+  /** Produces one structured answer, clarification, or semantic patch decision. */
+  default AssistantTurnPlan planTurn(AssistantPrompt prompt) {
+    AssistantReply reply = complete(prompt);
+    return new AssistantTurnPlan(
+        AssistantTurnPlan.Kind.ANSWER,
+        reply.content(),
+        List.of(),
+        new SemanticModelPatch(List.of()));
+  }
+
   /**
    * Produces a schema-converted semantic patch. Providers that do not support structured output
    * remain explain-only.

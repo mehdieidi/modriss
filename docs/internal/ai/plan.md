@@ -56,8 +56,8 @@ validation, respect optimistic concurrency, and remain auditable and reversible.
 
 9. **Validation and approval gate.** Apply proposals to an in-memory snapshot, run structural
    validation, then EVL validation. Never commit mandatory violations. Surface optional critiques
-   with explanations. Auto-apply only low-risk changes; require approval for destructive, ambiguous,
-   bulk, or constraint-sensitive changes. Persist inverse patches for undo.
+   with explanations. Require explicit approval for every validated proposal and revalidate at
+   approval time. Persist inverse patches for undo.
 
 10. **Frontend and realtime protocol.** Extend the existing chat panel with proposal cards, patch
     previews, validation summaries, citations, choice buttons, apply/reject actions, and progress

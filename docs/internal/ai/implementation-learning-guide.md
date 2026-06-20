@@ -490,40 +490,25 @@ The runtime flow is:
 13. The compiled patch is applied to an in-memory preview.
 14. `ModelService` runs structural and EVL validation against the preview.
 15. A proposal that fails mandatory rules is discarded.
-16. The backend classifies risk and decides whether approval is required.
-17. The proposal is stored, applied, or returned for user approval.
+16. The backend classifies risk for review context.
+17. The valid proposal is stored and returned for explicit user approval.
 18. Messages, proposal state, citations, and audit events are persisted.
 19. REST plus WebSocket or SSE updates the frontend.
 
-## 9. Explanation Mode and Proposal Modes
+## 9. Guarded Apply
 
-The assistant has three rollout modes:
-
-### `EXPLAIN_ONLY`
-
-- The LLM can answer using compact context and RAG.
-- The backend does not ask for a semantic patch.
-- No assistant-driven model mutation occurs.
-
-### `PROPOSAL_ONLY`
-
-- The planner may draft a semantic patch.
-- Every valid proposal requires user approval.
-- The backend revalidates again when approval is submitted.
-
-### `GUARDED_APPLY`
-
-- Low-risk proposals that pass validation may be applied automatically.
-- Medium-risk and high-risk proposals still require approval.
+The assistant has one rollout mode, `GUARDED_APPLY`. A structured LLM turn decides whether to
+answer, ask up to three consequential clarification questions, or draft semantic operations. Every
+valid proposal requires user approval, and the backend revalidates it when approval is submitted.
 
 Current risk rules:
 
-- **HIGH**: contains a remove operation or fails mandatory validation.
+- **HIGH**: contains a remove operation.
 - **MEDIUM**: contains more than one compiled patch operation or has optional EVL issues.
 - **LOW**: one non-destructive operation with no optional issues.
 
-A proposal that fails mandatory validation is currently discarded before normal risk handling, so
-it is not applied even though the risk classifier would label it high.
+A plan that fails mandatory validation gets one grounded repair pass. If it still fails, it becomes
+an interactive recovery clarification and is never persisted or rendered as a proposal.
 
 ## 10. From LLM Proposal to Stored Model
 

@@ -43,8 +43,8 @@ class AssistantToolServiceTest {
 
     AssistantToolService.PreviewResult result =
         tools.previewSemanticPatch(
-            "{\"diagram\":{\"elements\":[{\"id\":\"service-1\",\"name\":\"Old\"}],\"relationships\":[]}}",
-            "{\"operations\":[{\"type\":\"SET_ATTRIBUTE\",\"targetElementId\":\"service-1\",\"attributes\":\"New\",\"referenceName\":\"name\"}]}");
+            "{\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\",\"diagram\":{\"elements\":[{\"id\":\"service-1\",\"eClass\":\"Function\",\"name\":\"Old\"}],\"relationships\":[]}}",
+            "{\"operations\":[{\"type\":\"SET_ATTRIBUTE\",\"targetElementId\":\"service-1\",\"elementType\":\"Function\",\"attributes\":\"New\",\"referenceName\":\"name\"}]}");
 
     assertEquals("service-1", result.affectedElements().get(0));
     assertEquals("New", result.preview().at("/diagram/elements/0/name").asText());

@@ -1,733 +1,205 @@
 package io.mehdieidi.modless.backend.assistant;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.mehdieidi.modless.platform.identity.application.AuthService;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
-import io.mehdieidi.modless.platform.model.domain.ModelRecord;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
-import io.mehdieidi.modless.platform.project.domain.ProjectMember;
 import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
-import io.mehdieidi.modless.platform.storage.api.PlatformStore;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class AssistantOrchestratorTest {
 
-  @Test
-  void recognizesMultiTurnMutationAndApprovalPhrases() {
+  private final AssistantModelProvider provider = mock(AssistantModelProvider.class);
+  private final AssistantSessionStore sessions = mock(AssistantSessionStore.class);
+  private final AssistantMemoryRepository memory = mock(AssistantMemoryRepository.class);
+  private final SpringAiChatMemoryService chatMemory = mock(SpringAiChatMemoryService.class);
+  private final AssistantCatalogService catalogs = mock(AssistantCatalogService.class);
+  private final AssistantModelContextIndexService contexts =
+      mock(AssistantModelContextIndexService.class);
+  private final AssistantRealtimeHub realtime = mock(AssistantRealtimeHub.class);
+  private final ModelService models = mock(ModelService.class);
+  private final ProjectService projects = mock(ProjectService.class);
+  private final UserRecord user =
+      new UserRecord("user", "user@example.com", "User", "", "", Instant.now(), Instant.now());
+  private final AssistantSessionStore.AssistantSession session =
+      new AssistantSessionStore.AssistantSession(
+          "session", "user", "project", ModelLevel.PIM, "Orders", Instant.now(), Instant.now());
+  private AssistantOrchestrator orchestrator;
+
+  @BeforeEach
+  void setUp() {
     AiProperties properties =
-        new AiProperties(
-            true,
-            AiProperties.RolloutMode.PROPOSAL_ONLY,
-            null,
-            null,
-            0,
-            0,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
-    SpringAiChatMemoryService chatMemory = mock(SpringAiChatMemoryService.class);
-    AssistantSessionStore.AssistantSession session =
-        new AssistantSessionStore.AssistantSession(
-            "session-1",
-            "user-1",
-            "project-1",
-            ModelLevel.PIM,
-            "PIM Assistant",
-            Instant.now(),
-            Instant.now());
-    when(chatMemory.recent(eq("user-1:project-1:PIM"), eq(12)))
+        new AiProperties(true, null, null, null, 64, 6000, null, null, null, null, null, null);
+    when(sessions.require("session", "user")).thenReturn(session);
+    when(projects.get(user, "project"))
         .thenReturn(
-            List.of(
-                new SpringAiChatMemoryService.MemoryMessage(
-                    "USER", "do it and propose new model changes"),
-                new SpringAiChatMemoryService.MemoryMessage("USER", "yes")));
-    AssistantOrchestrator orchestrator =
-        new AssistantOrchestrator(
-            properties,
-            mock(AssistantModelProvider.class),
-            mock(AssistantSessionStore.class),
-            mock(AssistantMemoryRepository.class),
-            chatMemory,
-            mock(AssistantCatalogService.class),
-            mock(AssistantModelContextIndexService.class),
-            mock(AssistantPatchCompiler.class),
-            mock(AssistantRealtimeHub.class),
-            mock(AssistantHardeningService.class),
-            mock(ModelService.class),
-            mock(ProjectService.class));
-
-    assertTrue(orchestrator.shouldDraftProposal(session, request("apply them")));
-    assertTrue(
-        orchestrator.shouldDraftProposal(session, request("do it and propose new model changes")));
-    assertTrue(
-        orchestrator.shouldDraftProposal(session, request("this is too incomplete; complete it")));
-    assertTrue(orchestrator.shouldDraftProposal(session, request("yes")));
-    assertTrue(orchestrator.isTextualApproval("yes"));
-    assertTrue(orchestrator.isTextualApproval("Apply it."));
-    assertEquals(false, orchestrator.shouldDraftProposal(session, request("explain it")));
-  }
-
-  @Test
-  void disabledAssistantReturnsCompatibilityResponseWithoutProviderCall() {
-    ObjectMapper mapper = new ObjectMapper();
-    InMemoryStore store = new InMemoryStore(mapper);
-    UserRecord user =
-        new UserRecord(
-            "user-1", "user@example.com", "User", "hash", "salt", Instant.now(), Instant.now());
-    ProjectRecord project =
-        new ProjectRecord(
-            "project-1",
-            "Project",
-            "",
-            user.id(),
-            Map.of(),
-            List.of(
-                new ProjectMember(
-                    user.id(),
-                    user.email(),
-                    user.displayName(),
-                    io.mehdieidi.modless.platform.project.domain.MemberRole.EDITOR,
-                    Instant.now())),
-            Instant.now(),
-            Instant.now());
-    store.put(Path.of("users", user.id() + ".json"), user);
-    store.put(Path.of("projects", project.id(), "project.json"), project);
-
-    ProjectService projects =
-        new ProjectService(store, new AuthService(store, java.time.Duration.ofDays(1)));
-    AssistantMemoryRepository memory =
-        new AssistantMemoryRepository(null, mapper) {
-          @Override
-          public ThreadRecord ensureThread(
-              UserRecord u,
-              String projectId,
-              ModelLevel level,
-              String title,
-              String modelId,
-              Long revision) {
-            return new ThreadRecord(
-                "thread-1",
-                u.id(),
-                projectId,
-                level,
-                title,
-                modelId,
-                revision,
+            new ProjectRecord(
+                "project",
+                "Project",
+                "",
+                "user",
+                Map.of(),
+                List.of(),
                 Instant.now(),
-                Instant.now());
-          }
-
-          @Override
-          public void appendMessage(
-              String threadId, String role, String content, Map<String, Object> metadata) {}
-
-          @Override
-          public Optional<String> summary(String threadId) {
-            return Optional.empty();
-          }
-
-          @Override
-          public void saveProposal(
-              String threadId,
-              String projectId,
-              String modelId,
-              long modelRevision,
-              AssistantProposal proposal,
-              String status) {}
-
-          @Override
-          public void appendAudit(
-              String proposalId,
-              String projectId,
-              String actorId,
-              String action,
-              Map<String, Object> details) {}
-
-          @Override
-          public Optional<ProposalRecord> findProposal(String proposalId) {
-            return Optional.empty();
-          }
-
-          @Override
-          public void updateProposalStatus(String proposalId, String status) {}
-
-          @Override
-          public void clearThread(String threadId) {}
-        };
-    AssistantCatalogService catalogs =
-        new AssistantCatalogService(null) {
-          @Override
-          public List<AssistantModelProvider.ContextSnippet> search(
-              String query, String level, int limit) {
-            return List.of();
-          }
-        };
-    AssistantModelContextIndexService contexts = new AssistantModelContextIndexService();
-    AssistantPatchCompiler patches = new AssistantPatchCompiler();
-    AssistantRealtimeHub realtime = new AssistantRealtimeHub(mapper);
-    ModelService models = null;
-    AiProperties properties =
-        new AiProperties(false, null, null, null, 0, 0, null, null, null, null, null, null);
-    AssistantOrchestrator orchestrator =
-        new AssistantOrchestrator(
-            properties,
-            new FailingProvider(),
-            new AssistantSessionStore(),
-            memory,
-            new SpringAiChatMemoryService(),
-            catalogs,
-            contexts,
-            patches,
-            realtime,
-            new AssistantHardeningService(properties, null),
-            models,
-            projects);
-
-    String sessionId =
-        orchestrator.startSession(user, project.id(), ModelLevel.CIM, "CIM Assistant").id();
-    AssistantOrchestrator.AssistantTurnResponse response =
-        orchestrator.handleMessage(
-            user,
-            sessionId,
-            new AssistantOrchestrator.AssistantTurnRequest(
-                "Explain this", "model-1", 7L, "canvas", null, null));
-
-    assertTrue(response.assistantMessage().contains("outbound provider calls are disabled"));
-    assertNull(response.proposal());
-    assertEquals("model-1", response.modelId());
-    assertEquals(7L, response.revision());
-    assertEquals(AssistantWorkflowState.EXPLAINED, response.workflowState());
-  }
-
-  @Test
-  void proposalOnlyCreatesApprovalProposalWithoutCallingResponder() {
-    ObjectMapper mapper = new ObjectMapper();
-    InMemoryStore store = new InMemoryStore(mapper);
-    UserRecord user =
-        new UserRecord(
-            "user-1", "user@example.com", "User", "hash", "salt", Instant.now(), Instant.now());
-    ProjectRecord project =
-        new ProjectRecord(
-            "project-1",
-            "Project",
-            "",
-            user.id(),
-            Map.of("pim", "model-1"),
-            List.of(
-                new ProjectMember(
-                    user.id(),
-                    user.email(),
-                    user.displayName(),
-                    io.mehdieidi.modless.platform.project.domain.MemberRole.EDITOR,
-                    Instant.now())),
-            Instant.now(),
-            Instant.now());
-    store.put(Path.of("users", user.id() + ".json"), user);
-    store.put(Path.of("projects", project.id(), "project.json"), project);
-
-    ProjectService projects =
-        new ProjectService(store, new AuthService(store, java.time.Duration.ofDays(1)));
-    AssistantMemoryRepository memory =
-        new AssistantMemoryRepository(null, mapper) {
-          @Override
-          public ThreadRecord ensureThread(
-              UserRecord u,
-              String projectId,
-              ModelLevel level,
-              String title,
-              String modelId,
-              Long revision) {
-            return new ThreadRecord(
-                "thread-1",
-                u.id(),
-                projectId,
-                level,
-                title,
-                modelId,
-                revision,
-                Instant.now(),
-                Instant.now());
-          }
-
-          @Override
-          public void appendMessage(
-              String threadId, String role, String content, Map<String, Object> metadata) {}
-
-          @Override
-          public void saveProposal(
-              String threadId,
-              String projectId,
-              String modelId,
-              long modelRevision,
-              AssistantProposal proposal,
-              String status) {}
-
-          @Override
-          public void appendAudit(
-              String proposalId,
-              String projectId,
-              String actorId,
-              String action,
-              Map<String, Object> details) {}
-
-          @Override
-          public Optional<String> summary(String threadId) {
-            return Optional.empty();
-          }
-
-          @Override
-          public List<MessageRecord> recentMessages(String threadId, int limit) {
-            return List.of();
-          }
-
-          @Override
-          public Optional<ProposalRecord> findProposal(String proposalId) {
-            return Optional.empty();
-          }
-
-          @Override
-          public void updateProposalStatus(String proposalId, String status) {}
-
-          @Override
-          public void clearThread(String threadId) {}
-        };
-    AssistantCatalogService catalogs =
-        new AssistantCatalogService(null) {
-          @Override
-          public List<AssistantModelProvider.ContextSnippet> search(
-              String query, String level, int limit) {
-            return List.of();
-          }
-        };
-    AssistantModelContextIndexService contexts = new AssistantModelContextIndexService();
-    AssistantPatchCompiler patches = new AssistantPatchCompiler();
-    AssistantRealtimeHub realtime = new AssistantRealtimeHub(mapper);
-    ObjectNode starter = JsonNodeFactory.instance.objectNode();
-    starter.put("name", "PIM Assistant");
-    starter.put("modelLevel", "PIM");
-    starter.putObject("diagram").putArray("elements");
-    starter.with("diagram").putArray("relationships");
-    ModelRecord created =
-        new ModelRecord(
-            "model-1",
-            project.id(),
+                Instant.now()));
+    when(models.validate(any(ModelLevel.class), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    var context =
+        new AssistantModelContextIndexService.AssistantModelContext(
+            null,
+            "project",
             ModelLevel.PIM,
-            "PIM Assistant",
-            starter,
-            "test",
-            "hash",
-            1L,
-            "xmi",
-            "CURRENT",
-            Instant.now(),
-            Instant.now());
-    ModelService models = mock(ModelService.class);
-    when(models.get(eq(user), eq(ModelLevel.PIM), eq(created.id()))).thenReturn(created);
-    when(models.validate(eq(user), eq(ModelLevel.PIM), eq(created.id())))
-        .thenReturn(new ModelService.ValidationResult(true, List.of()));
-    when(models.validate(eq(ModelLevel.PIM), any(com.fasterxml.jackson.databind.JsonNode.class)))
-        .thenReturn(new ModelService.ValidationResult(true, List.of()));
-    AiProperties properties =
-        new AiProperties(
-            true,
-            AiProperties.RolloutMode.PROPOSAL_ONLY,
-            null,
-            null,
-            0,
-            0,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
-    AssistantOrchestrator orchestrator =
-        new AssistantOrchestrator(
-            properties,
-            new ProposalProvider(),
-            new AssistantSessionStore(),
-            memory,
-            new SpringAiChatMemoryService(),
-            catalogs,
-            contexts,
-            patches,
-            realtime,
-            new AssistantHardeningService(properties, null),
-            models,
-            projects);
-
-    String sessionId =
-        orchestrator.startSession(user, project.id(), ModelLevel.PIM, "PIM Assistant").id();
-    AssistantOrchestrator.AssistantTurnResponse response =
-        assertDoesNotThrow(
-            () ->
-                orchestrator.handleMessage(
-                    user,
-                    sessionId,
-                    new AssistantOrchestrator.AssistantTurnRequest(
-                        "Add an orders component", null, null, "canvas", null, null)));
-
-    assertTrue(response.assistantMessage().contains("Review the preview below"));
-    assertNotNull(response.proposal());
-    assertTrue(response.proposal().approvalRequired());
-    assertEquals("model-1", response.modelId());
-    assertEquals(1L, response.revision());
-    assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
-  }
-
-  @Test
-  void proposalOnlyBootstrapsRequestedChangeWhenNoActiveModelExists() {
-    ObjectMapper mapper = new ObjectMapper();
-    InMemoryStore store = new InMemoryStore(mapper);
-    UserRecord user =
-        new UserRecord(
-            "user-1", "user@example.com", "User", "hash", "salt", Instant.now(), Instant.now());
-    ProjectRecord project =
-        new ProjectRecord(
-            "project-1",
-            "Project",
-            "",
-            user.id(),
+            "Orders",
+            0L,
+            List.of(),
+            List.of(),
             Map.of(),
-            List.of(
-                new ProjectMember(
-                    user.id(),
-                    user.email(),
-                    user.displayName(),
-                    io.mehdieidi.modless.platform.project.domain.MemberRole.EDITOR,
-                    Instant.now())),
-            Instant.now(),
-            Instant.now());
-    store.put(Path.of("users", user.id() + ".json"), user);
-    store.put(Path.of("projects", project.id(), "project.json"), project);
-
-    ProjectService projects =
-        new ProjectService(store, new AuthService(store, java.time.Duration.ofDays(1)));
-    AssistantMemoryRepository memory =
-        new AssistantMemoryRepository(null, mapper) {
-          @Override
-          public ThreadRecord ensureThread(
-              UserRecord u,
-              String projectId,
-              ModelLevel level,
-              String title,
-              String modelId,
-              Long revision) {
-            return new ThreadRecord(
-                "thread-1",
-                u.id(),
-                projectId,
-                level,
-                title,
-                modelId,
-                revision,
-                Instant.now(),
-                Instant.now());
-          }
-
-          @Override
-          public void appendMessage(
-              String threadId, String role, String content, Map<String, Object> metadata) {}
-
-          @Override
-          public void saveProposal(
-              String threadId,
-              String projectId,
-              String modelId,
-              long modelRevision,
-              AssistantProposal proposal,
-              String status) {}
-
-          @Override
-          public void appendAudit(
-              String proposalId,
-              String projectId,
-              String actorId,
-              String action,
-              Map<String, Object> details) {}
-
-          @Override
-          public Optional<String> summary(String threadId) {
-            return Optional.empty();
-          }
-
-          @Override
-          public List<MessageRecord> recentMessages(String threadId, int limit) {
-            return List.of();
-          }
-
-          @Override
-          public Optional<ProposalRecord> findProposal(String proposalId) {
-            return Optional.empty();
-          }
-
-          @Override
-          public void updateProposalStatus(String proposalId, String status) {}
-
-          @Override
-          public void clearThread(String threadId) {}
-        };
-    AssistantCatalogService catalogs =
-        new AssistantCatalogService(null) {
-          @Override
-          public List<AssistantModelProvider.ContextSnippet> search(
-              String query, String level, int limit) {
-            return List.of();
-          }
-        };
-    AssistantModelContextIndexService contexts = new AssistantModelContextIndexService();
-    AssistantPatchCompiler patches = new AssistantPatchCompiler();
-    AssistantRealtimeHub realtime = new AssistantRealtimeHub(mapper);
-    ModelService models = mock(ModelService.class);
-    when(models.validate(eq(ModelLevel.PIM), any(com.fasterxml.jackson.databind.JsonNode.class)))
-        .thenReturn(new ModelService.ValidationResult(true, List.of()));
-    AiProperties properties =
-        new AiProperties(
-            true,
-            AiProperties.RolloutMode.PROPOSAL_ONLY,
-            null,
-            null,
-            0,
-            0,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
-    BootstrapProvider provider = new BootstrapProvider();
-    AssistantOrchestrator orchestrator =
+            List.of());
+    when(contexts.transientSnapshot(anyString(), any(), anyString(), anyLong(), any(), any()))
+        .thenReturn(context);
+    when(contexts.summarize(context)).thenReturn("No saved elements.");
+    when(catalogs.search(anyString(), anyString(), anyInt())).thenReturn(List.of());
+    when(catalogs.describeType(anyString(), anyString(), anyInt())).thenReturn(List.of());
+    when(memory.summary(anyString())).thenReturn(Optional.empty());
+    when(memory.recentMessages(anyString(), anyInt())).thenReturn(List.of());
+    when(chatMemory.recent(anyString(), anyInt())).thenReturn(List.of());
+    orchestrator =
         new AssistantOrchestrator(
             properties,
             provider,
-            new AssistantSessionStore(),
+            sessions,
             memory,
-            new SpringAiChatMemoryService(),
+            chatMemory,
             catalogs,
             contexts,
-            patches,
+            new AssistantPatchCompiler(),
             realtime,
             new AssistantHardeningService(properties, null),
             models,
             projects);
+  }
 
-    String sessionId =
-        orchestrator.startSession(user, project.id(), ModelLevel.PIM, "PIM Assistant").id();
-    AssistantOrchestrator.AssistantTurnResponse response =
-        assertDoesNotThrow(
-            () ->
-                orchestrator.handleMessage(
-                    user,
-                    sessionId,
-                    new AssistantOrchestrator.AssistantTurnRequest(
-                        "Create a serverless architecture model for vending machine backend",
-                        null,
-                        null,
-                        "canvas",
-                        null,
-                        null)));
+  @Test
+  void llmDecisionControlsIntentWithoutKeywordRouting() {
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Kind.ANSWER,
+                "This is an explanation only.",
+                List.of(),
+                new SemanticModelPatch(List.of())));
 
-    assertTrue(response.assistantMessage().contains("first model and requested changes"));
-    assertNotNull(response.proposal());
-    assertTrue(response.proposal().approvalRequired());
-    assertTrue(response.proposal().validation().mandatoryPassed());
-    assertEquals(18, response.proposal().patch().operations().size());
-    assertEquals(
-        SemanticModelPatch.OperationType.ADD_ELEMENT,
-        response.proposal().patch().operations().get(0).type());
-    assertEquals(2, provider.proposalCalls());
-    assertNull(response.modelId());
-    assertEquals(0L, response.revision());
+    var response = orchestrator.handleMessage(user, "session", request("delete everything"));
+
+    assertEquals(AssistantWorkflowState.EXPLAINED, response.workflowState());
+    assertNull(response.proposal());
+  }
+
+  @Test
+  void persistsStructuredClarificationInsteadOfGuessing() {
+    AssistantChoice question =
+        new AssistantChoice(
+            "delivery",
+            "Which delivery guarantee is required?",
+            AssistantChoice.SelectionMode.SINGLE,
+            List.of(
+                new AssistantChoice.Option("once", "At least once", "Allow deduplication."),
+                new AssistantChoice.Option("exact", "Effectively once", "Require idempotency.")),
+            true);
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Kind.CLARIFICATION,
+                "I need one decision.",
+                List.of(question),
+                new SemanticModelPatch(List.of())));
+
+    var response = orchestrator.handleMessage(user, "session", request("design the workflow"));
+
+    assertEquals(AssistantWorkflowState.WAITING_FOR_CHOICE, response.workflowState());
+    assertEquals(1, response.choices().size());
+    verify(memory).savePendingInteraction(anyString(), any(), any());
+  }
+
+  @Test
+  void onlyValidatedPatchBecomesReviewableProposal() throws Exception {
+    var attributes = new ObjectMapper().readTree("{\"name\":\"Submit order\"}");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "submit-order",
+                    "Function",
+                    attributes,
+                    null,
+                    null)));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Kind.PATCH, "Prepared the function.", List.of(), patch));
+
+    var response = orchestrator.handleMessage(user, "session", request("model submission"));
+
     assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
+    assertNotNull(response.proposal());
+    assertEquals(true, response.proposal().validation().mandatoryPassed());
+    assertEquals(true, response.proposal().approvalRequired());
+    verify(memory).saveProposal(anyString(), anyString(), any(), anyLong(), any(), anyString());
   }
 
-  private static final class FailingProvider implements AssistantModelProvider {
+  @Test
+  void invalidPatchIsRepairedToClarificationAndNeverSavedAsProposal() {
+    SemanticModelPatch invalid =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "invented",
+                    "NotInTheMetamodel",
+                    JsonNodeFactory.instance.objectNode(),
+                    null,
+                    null)));
+    AssistantChoice question =
+        new AssistantChoice(
+            "scope",
+            "Which formal concern should be modeled first?",
+            List.of(new AssistantChoice.Option("core", "Core flow", "Start with the core flow.")));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(AssistantTurnPlan.Kind.PATCH, "", List.of(), invalid),
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Kind.CLARIFICATION,
+                "The type was not grounded.",
+                List.of(question),
+                new SemanticModelPatch(List.of())));
 
-    @Override
-    public AssistantProviderMetadata metadata() {
-      return new AssistantProviderMetadata("test", "test", "direct");
-    }
+    var response = orchestrator.handleMessage(user, "session", request("make it"));
 
-    @Override
-    public boolean available() {
-      return false;
-    }
-
-    @Override
-    public AssistantReply complete(AssistantPrompt prompt) {
-      throw new AssertionError("Provider should not be called.");
-    }
+    assertEquals(AssistantWorkflowState.WAITING_FOR_CHOICE, response.workflowState());
+    assertNull(response.proposal());
   }
 
-  private static AssistantOrchestrator.AssistantTurnRequest request(String message) {
+  private AssistantOrchestrator.AssistantTurnRequest request(String message) {
     return new AssistantOrchestrator.AssistantTurnRequest(
-        message, "model-1", 1L, "canvas", List.of(), null);
-  }
-
-  private static final class ProposalProvider implements AssistantModelProvider {
-
-    @Override
-    public AssistantProviderMetadata metadata() {
-      return new AssistantProviderMetadata("test", "test", "direct");
-    }
-
-    @Override
-    public boolean available() {
-      return true;
-    }
-
-    @Override
-    public AssistantReply complete(AssistantPrompt prompt) {
-      throw new AssertionError("Mutation requests should not call the responder.");
-    }
-
-    @Override
-    public SemanticModelPatch proposePatch(AssistantPrompt prompt) {
-      ObjectNode attributes = JsonNodeFactory.instance.objectNode();
-      attributes.put("name", "Orders API");
-      return new SemanticModelPatch(
-          List.of(
-              new SemanticModelPatch.Operation(
-                  SemanticModelPatch.OperationType.ADD_ELEMENT,
-                  "service-1",
-                  "Service",
-                  attributes,
-                  null,
-                  null)));
-    }
-  }
-
-  private static final class BootstrapProvider implements AssistantModelProvider {
-
-    private final java.util.concurrent.atomic.AtomicInteger proposalCalls =
-        new java.util.concurrent.atomic.AtomicInteger();
-
-    @Override
-    public AssistantProviderMetadata metadata() {
-      return new AssistantProviderMetadata("test", "test", "direct");
-    }
-
-    @Override
-    public boolean available() {
-      return true;
-    }
-
-    @Override
-    public AssistantReply complete(AssistantPrompt prompt) {
-      throw new AssertionError("Bootstrap requests should not call the responder.");
-    }
-
-    @Override
-    public SemanticModelPatch proposePatch(AssistantPrompt prompt) {
-      int call = proposalCalls.incrementAndGet();
-      java.util.ArrayList<SemanticModelPatch.Operation> operations = new java.util.ArrayList<>();
-      for (int index = 0; index < 12; index++) {
-        ObjectNode attributes = JsonNodeFactory.instance.objectNode();
-        attributes.put("name", "Architecture element " + index);
-        operations.add(
-            new SemanticModelPatch.Operation(
-                SemanticModelPatch.OperationType.ADD_ELEMENT,
-                "element-" + index,
-                "Api",
-                attributes,
-                null,
-                null));
-      }
-      for (int index = 1; index <= 6; index++) {
-        operations.add(
-            new SemanticModelPatch.Operation(
-                SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
-                call == 1 && index == 1 ? "missing-element" : "element-" + index,
-                null,
-                null,
-                "element-0",
-                "relatedElements"));
-      }
-      return new SemanticModelPatch(operations);
-    }
-
-    private int proposalCalls() {
-      return proposalCalls.get();
-    }
-  }
-
-  private static final class InMemoryStore implements PlatformStore {
-
-    private final ObjectMapper mapper;
-    private final java.util.Map<String, Object> records = new java.util.LinkedHashMap<>();
-
-    private InMemoryStore(ObjectMapper mapper) {
-      this.mapper = mapper;
-    }
-
-    private void put(Path path, Object value) {
-      records.put(path.normalize().toString().replace('\\', '/'), value);
-    }
-
-    @Override
-    public ObjectMapper objectMapper() {
-      return mapper;
-    }
-
-    @Override
-    public <T> Optional<T> read(Path path, Class<T> type) {
-      Object value = records.get(path.normalize().toString().replace('\\', '/'));
-      return Optional.ofNullable(type.cast(value));
-    }
-
-    @Override
-    public void write(Path path, Object value) {
-      put(path, value);
-    }
-
-    @Override
-    public void writeBytesAtomically(Path path, byte[] bytes) {}
-
-    @Override
-    public Optional<byte[]> readBytes(Path path) {
-      return Optional.empty();
-    }
-
-    @Override
-    public void deleteIfExists(Path path) {
-      records.remove(path.normalize().toString().replace('\\', '/'));
-    }
-
-    @Override
-    public <T> List<T> list(Path directory, Class<T> type) {
-      String prefix = directory.normalize().toString().replace('\\', '/');
-      return records.entrySet().stream()
-          .filter(entry -> entry.getKey().startsWith(prefix))
-          .map(entry -> type.cast(entry.getValue()))
-          .toList();
-    }
-
-    @Override
-    public void deleteTree(Path directory) {
-      String prefix = directory.normalize().toString().replace('\\', '/');
-      records.keySet().removeIf(key -> key.startsWith(prefix));
-    }
+        message, null, null, "pim", List.of(), null);
   }
 }

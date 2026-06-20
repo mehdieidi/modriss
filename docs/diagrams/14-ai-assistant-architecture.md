@@ -51,21 +51,20 @@ flowchart TB
     configured --> gemini --> guard --> hard --> ai
 ```
 
-## Assistant Modes
+## Assistant Workflow
 
 ```mermaid
 stateDiagram-v2
-    [*] --> EXPLAIN_ONLY
-    EXPLAIN_ONLY: Provider may answer with retrieved context
-    EXPLAIN_ONLY: No semantic patch is requested
-    PROPOSAL_ONLY: Planner may draft backend-validated proposals
-    PROPOSAL_ONLY: User approval required before model mutation
-    GUARDED_APPLY: Low-risk validated proposal may auto-apply
-    GUARDED_APPLY: Medium/high risk still requires approval
-
-    EXPLAIN_ONLY --> PROPOSAL_ONLY: MODLESS_AI_MODE=PROPOSAL_ONLY
-    PROPOSAL_ONLY --> GUARDED_APPLY: MODLESS_AI_MODE=GUARDED_APPLY
-    GUARDED_APPLY --> EXPLAIN_ONLY: Configure safer rollout
+    [*] --> PLAN
+    PLAN --> ANSWER: explanation or analysis
+    PLAN --> CLARIFY: consequential ambiguity
+    CLARIFY --> PLAN: durable user answers
+    PLAN --> VALIDATE: semantic patch
+    VALIDATE --> REPAIR: invalid
+    REPAIR --> VALIDATE: one replacement plan
+    VALIDATE --> PROPOSAL: structurally and EVL valid
+    PROPOSAL --> APPLIED: explicit approval and revalidation
+    PROPOSAL --> REJECTED: user rejects
 ```
 
 ## Safety Boundary

@@ -33,7 +33,7 @@ development defaults (never commit `.env`).
 | Variable                         | Default                          |
 | -------------------------------- | -------------------------------- |
 | `MODLESS_AI_ENABLED`             | `false` in backend configuration |
-| `MODLESS_AI_MODE`                | `EXPLAIN_ONLY`                   |
+| `MODLESS_AI_MODE`                | `GUARDED_APPLY`                  |
 | `MODLESS_AI_PROVIDER`            | `openai`                         |
 | `MODLESS_AI_REQUEST_TIMEOUT`     | `5m`                             |
 | `MODLESS_AI_MAX_TOOL_CALLS`      | `96`                             |

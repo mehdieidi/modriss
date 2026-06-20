@@ -227,15 +227,37 @@ public class ChatbotController {
    * @param request choice request
    */
   @PostMapping("/api/chatbot/sessions/{sessionId}/choices")
-  void choose(
+  MessageResponse choose(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @RequestBody ChoiceRequest request) {
     UserRecord user = auth.user(token);
-    if (request == null || request.choiceId() == null || request.optionId() == null) {
-      throw new PlatformException(400, "Choice id and option id are required.");
+    if (request == null) {
+      throw new PlatformException(400, "Clarification answers are required.");
     }
-    assistant.submitChoice(user, sessionId, request.choiceId(), request.optionId());
+    List<AssistantOrchestrator.ChoiceAnswer> answers =
+        request.answers() == null || request.answers().isEmpty()
+            ? List.of(
+                new AssistantOrchestrator.ChoiceAnswer(
+                    request.choiceId(),
+                    request.optionId() == null ? List.of() : List.of(request.optionId()),
+                    ""))
+            : request.answers().stream()
+                .map(
+                    answer ->
+                        new AssistantOrchestrator.ChoiceAnswer(
+                            answer.choiceId(), answer.optionIds(), answer.freeText()))
+                .toList();
+    AssistantOrchestrator.AssistantTurnResponse response =
+        assistant.submitChoices(user, sessionId, answers);
+    return new MessageResponse(
+        response.assistantMessage(),
+        response.modelId(),
+        response.revision(),
+        null,
+        response.proposal(),
+        response.choices(),
+        response.workflowState());
   }
 
   /**
@@ -310,5 +332,9 @@ public class ChatbotController {
    * @param choiceId selected choice ID
    * @param optionId selected option ID
    */
-  public record ChoiceRequest(String choiceId, String optionId) {}
+  public record ChoiceRequest(
+      String choiceId, String optionId, List<ClarificationAnswer> answers) {}
+
+  /** One answer to a structured clarification question. */
+  public record ClarificationAnswer(String choiceId, List<String> optionIds, String freeText) {}
 }

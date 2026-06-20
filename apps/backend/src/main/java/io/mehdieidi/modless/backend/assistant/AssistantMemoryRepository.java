@@ -17,6 +17,7 @@ import org.springframework.stereotype.Repository;
 public class AssistantMemoryRepository {
 
   private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {};
+  private static final TypeReference<List<AssistantChoice>> CHOICE_LIST = new TypeReference<>() {};
   private static final TypeReference<
           List<io.mehdieidi.modless.platform.model.application.ModelService.ModelPatchOperation>>
       PATCH_LIST = new TypeReference<>() {};
@@ -141,6 +142,59 @@ public class AssistantMemoryRepository {
         content,
         json(metadata == null ? Map.of() : metadata),
         sqlTimestamp(Instant.now()));
+  }
+
+  /** Stores the clarification required to resume a turn across processes and restarts. */
+  public void savePendingInteraction(
+      String threadId,
+      AssistantOrchestrator.AssistantTurnRequest request,
+      List<AssistantChoice> questions) {
+    Instant now = Instant.now();
+    jdbc.update(
+        """
+        INSERT INTO assistant_pending_interactions(
+          thread_id, request_payload, questions, created_at, updated_at)
+        VALUES (?, ?::jsonb, ?::jsonb, ?, ?)
+        ON CONFLICT (thread_id) DO UPDATE SET request_payload = EXCLUDED.request_payload,
+          questions = EXCLUDED.questions, updated_at = EXCLUDED.updated_at
+        """,
+        threadId,
+        json(request),
+        json(questions),
+        sqlTimestamp(now),
+        sqlTimestamp(now));
+  }
+
+  /** Loads a pending clarification for a thread. */
+  public Optional<PendingInteractionRecord> pendingInteraction(String threadId) {
+    return jdbc.query(
+        """
+        SELECT thread_id, request_payload, questions, created_at
+        FROM assistant_pending_interactions WHERE thread_id = ?
+        """,
+        rs -> {
+          if (!rs.next()) {
+            return Optional.empty();
+          }
+          try {
+            return Optional.of(
+                new PendingInteractionRecord(
+                    rs.getString("thread_id"),
+                    mapper.readValue(
+                        rs.getString("request_payload"),
+                        AssistantOrchestrator.AssistantTurnRequest.class),
+                    mapper.readValue(rs.getString("questions"), CHOICE_LIST),
+                    rs.getTimestamp("created_at").toInstant()));
+          } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            throw new IllegalStateException("Could not read pending assistant interaction.", ex);
+          }
+        },
+        threadId);
+  }
+
+  /** Removes a completed or superseded clarification. */
+  public void clearPendingInteraction(String threadId) {
+    jdbc.update("DELETE FROM assistant_pending_interactions WHERE thread_id = ?", threadId);
   }
 
   /**
@@ -330,6 +384,20 @@ public class AssistantMemoryRepository {
         proposalId);
   }
 
+  /** Marks a proposal applied and binds bootstrap proposals to the model they created. */
+  public void markProposalApplied(String proposalId, String modelId, long modelRevision) {
+    jdbc.update(
+        """
+        UPDATE assistant_proposals
+        SET status = 'APPLIED', model_id = ?, model_revision = ?, decided_at = ?
+        WHERE id = ?
+        """,
+        modelId,
+        modelRevision,
+        sqlTimestamp(Instant.now()),
+        proposalId);
+  }
+
   /**
    * Appends an audit row.
    *
@@ -469,6 +537,13 @@ public class AssistantMemoryRepository {
       String role,
       String content,
       Map<String, Object> metadata,
+      Instant createdAt) {}
+
+  /** Durable clarification awaiting user answers. */
+  public record PendingInteractionRecord(
+      String threadId,
+      AssistantOrchestrator.AssistantTurnRequest request,
+      List<AssistantChoice> questions,
       Instant createdAt) {}
 
   /**

@@ -37,7 +37,7 @@ public record AiProperties(
 
   /** Applies conservative defaults for local development. */
   public AiProperties {
-    mode = mode == null ? RolloutMode.EXPLAIN_ONLY : mode;
+    mode = RolloutMode.GUARDED_APPLY;
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofMinutes(5) : requestTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 96 : maxToolCalls;
@@ -140,11 +140,7 @@ public record AiProperties(
 
   /** Assistant rollout modes. */
   public enum RolloutMode {
-    /** Explanations only, no proposals or mutations. */
-    EXPLAIN_ONLY,
-    /** Draft proposals without applying them. */
-    PROPOSAL_ONLY,
-    /** Allow guarded low-risk apply after validation gates. */
+    /** Validate a proposal and require explicit user approval before every mutation. */
     GUARDED_APPLY
   }
 

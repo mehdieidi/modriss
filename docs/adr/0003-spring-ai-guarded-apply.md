@@ -12,19 +12,19 @@ proposal flows without compromising model integrity.
 
 ## Decision
 
-Integrate **Spring AI** with explicit operating modes and a guarded apply pipeline:
-
-| Mode            | Behavior                                                  |
-| --------------- | --------------------------------------------------------- |
-| `EXPLAIN_ONLY`  | Answers questions; no model mutations                     |
-| `PROPOSE`       | Creates reviewable proposals without applying             |
-| `GUARDED_APPLY` | Applies only compiled, validated, risk-classified patches |
+Integrate **Spring AI** with one `GUARDED_APPLY` workflow. The LLM emits a structured answer,
+clarification, or semantic patch. The backend is the authority for compiling semantic operations,
+checking the current Ecore language, running structural and EVL validation, and persisting the
+proposal. No proposal is visible and no mutation is possible unless validation passes. Every valid
+proposal still requires explicit user approval.
 
 Additional controls:
 
 - AI disabled by default (`MODLESS_AI_ENABLED=false`)
 - Rate limits, circuit breaker, retries, and optional outbound proxy
-- Proposals require approval for risky changes; undo via inverse patches
+- All proposals require approval; undo uses a validated inverse patch
+- Clarification questions and pending turns are durable and resumable
+- OpenAI-compatible and Gemini providers use runtime fallback with independent circuit breakers
 - Provider credentials supplied only through environment variables or secret managers
 
 ## Consequences

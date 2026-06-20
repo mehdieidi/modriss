@@ -48,7 +48,7 @@ credentials and operating policy are intentional.
 
 ```bash
 MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=EXPLAIN_ONLY
+MODLESS_AI_MODE=GUARDED_APPLY
 MODLESS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 docker compose up --build

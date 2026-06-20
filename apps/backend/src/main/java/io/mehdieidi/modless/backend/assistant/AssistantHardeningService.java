@@ -25,7 +25,7 @@ public class AssistantHardeningService {
   private final MeterRegistry meterRegistry;
   private final Clock clock;
   private final Map<String, Window> windows = new ConcurrentHashMap<>();
-  private volatile Circuit circuit = new Circuit(0, Instant.EPOCH);
+  private final Map<String, Circuit> circuits = new ConcurrentHashMap<>();
 
   /** Creates the hardening service. */
   @Autowired
@@ -77,7 +77,7 @@ public class AssistantHardeningService {
   public <T> T providerCall(
       AssistantModelRole role, String provider, String model, Supplier<T> call) {
     Instant now = clock.instant();
-    Circuit snapshot = circuit;
+    Circuit snapshot = circuits.getOrDefault(provider, new Circuit(0, Instant.EPOCH));
     if (now.isBefore(snapshot.openUntil())) {
       counter("assistant.circuit.rejected", "provider", provider);
       throw new PlatformException(503, "AI provider circuit is open. Try again shortly.");
@@ -96,7 +96,7 @@ public class AssistantHardeningService {
               model,
               attempt,
               elapsedMillis(attemptStarted));
-          circuit = new Circuit(0, Instant.EPOCH);
+          circuits.remove(provider);
           counter(
               "assistant.provider.success",
               "provider",
@@ -160,13 +160,13 @@ public class AssistantHardeningService {
 
   private void recordFailure(String provider) {
     AiProperties.Hardening hardening = properties.hardening();
-    Circuit previous = circuit;
+    Circuit previous = circuits.getOrDefault(provider, new Circuit(0, Instant.EPOCH));
     int failures = previous.failures() + 1;
     Instant openUntil =
         failures >= hardening.circuitFailureThreshold()
             ? clock.instant().plus(hardening.circuitOpenDuration())
             : Instant.EPOCH;
-    circuit = new Circuit(failures, openUntil);
+    circuits.put(provider, new Circuit(failures, openUntil));
     counter("assistant.provider.failure", "provider", provider);
   }
 

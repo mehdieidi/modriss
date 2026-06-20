@@ -18,15 +18,15 @@ class AssistantPatchCompilerTest {
     var model =
         mapper.readTree(
             """
-            {"diagram":{"elements":[{"id":"service-1","name":"Old"}],"relationships":[]}}
-            """);
+{"eClass":"PIMModel","modelLevel":"PIM","diagram":{"elements":[{"id":"service-1","eClass":"Function","name":"Old"}],"relationships":[]}}
+""");
     SemanticModelPatch patch =
         new SemanticModelPatch(
             List.of(
                 new SemanticModelPatch.Operation(
                     SemanticModelPatch.OperationType.SET_ATTRIBUTE,
                     "service-1",
-                    "Service",
+                    "Function",
                     new TextNode("New"),
                     null,
                     "name")));
@@ -44,8 +44,8 @@ class AssistantPatchCompilerTest {
     var model =
         mapper.readTree(
             """
-            {"architectureStyle":"HYBRID_SERVERLESS","diagram":{"elements":[],"relationships":[]}}
-            """);
+{"eClass":"PIMModel","modelLevel":"PIM","architectureStyle":"HYBRID_SERVERLESS","diagram":{"elements":[],"relationships":[]}}
+""");
     SemanticModelPatch patch =
         new SemanticModelPatch(
             List.of(
@@ -68,15 +68,15 @@ class AssistantPatchCompilerTest {
     var model =
         mapper.readTree(
             """
-            {"diagram":{"elements":[{"id":"service-1","name":"Old"}],"relationships":[]}}
-            """);
+{"eClass":"PIMModel","modelLevel":"PIM","diagram":{"elements":[{"id":"service-1","eClass":"Function","name":"Old"}],"relationships":[]}}
+""");
     SemanticModelPatch patch =
         new SemanticModelPatch(
             List.of(
                 new SemanticModelPatch.Operation(
                     SemanticModelPatch.OperationType.SET_ATTRIBUTE,
                     "service-1",
-                    "Service",
+                    "Function",
                     new TextNode("bad"),
                     null,
                     "../secret")));
@@ -91,8 +91,8 @@ class AssistantPatchCompilerTest {
     var model =
         mapper.readTree(
             """
-            {"services":[],"graph":{"elements":[],"relationships":[]}}
-            """);
+{"eClass":"PIMModel","modelLevel":"PIM","services":[],"graph":{"elements":[],"relationships":[]}}
+""");
     SemanticModelPatch patch =
         new SemanticModelPatch(
             List.of(
@@ -113,11 +113,47 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
+  void inverseToleratesPersistenceDroppingTheSelectedVisualContainer() throws Exception {
+    var starter =
+        mapper.readTree(
+            """
+            {"eClass":"PIMModel","modelLevel":"PIM","policies":[],
+             "diagram":{"elements":[],"relationships":[]},
+             "graph":{"elements":[],"relationships":[]}}
+            """);
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "order-idempotency",
+                    "IdempotencyPolicy",
+                    mapper.readTree(
+                        "{\"displayName\":\"Order Idempotency\",\"keySource\":\"request header\"}"),
+                    null,
+                    null)));
+
+    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(starter, patch);
+    var persisted = compiler.apply(starter, compiled);
+    persisted.remove("diagram");
+    var adapted =
+        compiler.adaptToSnapshot(
+            persisted,
+            new AssistantPatchCompiler.CompiledPatch(
+                compiled.inversePatch(), List.of(), compiled.affectedElements()));
+    var undone = compiler.apply(persisted, adapted);
+
+    assertEquals(1, adapted.patch().size());
+    assertEquals(0, undone.at("/policies").size());
+  }
+
+  @Test
   void deletingSemanticElementAlsoRemovesVisualDuplicateAndRelationships() throws Exception {
     var model =
         mapper.readTree(
             """
             {
+              "eClass":"PIMModel","modelLevel":"PIM",
               "functions":[{"id":"function-1","eClass":"Function","name":"Submit"}],
               "graph":{
                 "elements":[
@@ -157,6 +193,7 @@ class AssistantPatchCompilerTest {
         mapper.readTree(
             """
             {
+              "eClass":"PIMModel","modelLevel":"PIM",
               "dataStores":[{"id":"store-1","eClass":"DataStore","name":"Orders"}],
               "graph":{"elements":[],"relationships":[]}
             }
@@ -186,7 +223,7 @@ class AssistantPatchCompilerTest {
         mapper.readTree(
             """
             {
-              "apis":[],
+              "eClass":"PIMModel","modelLevel":"PIM","apis":[],
               "graph":{"elements":[],"relationships":[]}
             }
             """);
@@ -203,18 +240,19 @@ class AssistantPatchCompilerTest {
                 new SemanticModelPatch.Operation(
                     SemanticModelPatch.OperationType.ADD_ELEMENT,
                     "resource-1",
-                    "Resource",
-                    mapper.readTree("{\"name\":\"Book\"}"),
+                    "ApiRoute",
+                    mapper.readTree(
+                        "{\"name\":\"Book\",\"pathTemplate\":\"/books\",\"method\":\"GET\"}"),
                     "api-1",
-                    "resources")));
+                    "routes")));
 
     AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
     var preview = compiler.apply(model, compiled);
 
     assertEquals("/apis/-", compiled.patch().get(0).path());
     assertEquals("Api", compiled.patch().get(0).value().get("eClass").asText());
-    assertEquals("/apis/0/resources", compiled.patch().get(2).path());
-    assertEquals("resource-1", preview.at("/apis/0/resources/0/id").asText());
+    assertEquals("/apis/0/routes", compiled.patch().get(2).path());
+    assertEquals("resource-1", preview.at("/apis/0/routes/0/id").asText());
   }
 
   @Test
@@ -223,7 +261,7 @@ class AssistantPatchCompilerTest {
         mapper.readTree(
             """
             {
-              "id":"architecture-root",
+              "id":"architecture-root","eClass":"PIMModel","modelLevel":"PIM",
               "dataStores":[],
               "graph":{"elements":[],"relationships":[]}
             }
