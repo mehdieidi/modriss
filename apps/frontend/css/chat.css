@@ -133,6 +133,13 @@
   color: var(--muted);
 }
 
+.chat-header-subtitle .chat-provider-label {
+  margin-left: 0;
+  color: var(--muted-2);
+  font: inherit;
+  white-space: nowrap;
+}
+
 .chat-activity {
   display: grid;
   gap: 7px;
@@ -368,6 +375,264 @@
   clear: both;
 }
 
+.chat-msg.assistant[data-chat-kind="thinking"],
+.chat-msg.assistant[data-chat-kind="thinking-summary"] {
+  display: block;
+}
+
+.chat-thinking-bubble {
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  background: color-mix(in srgb, var(--surface-3) 72%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent) !important;
+}
+
+.chat-thinking-live .chat-thinking-bubble {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border)) !important;
+}
+
+.chat-thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--text-strong);
+  font: 600 12px/1.3 var(--font-ui);
+}
+
+.chat-thinking-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-top-color: var(--accent);
+  animation: chat-thinking-spin 0.8s linear infinite;
+}
+
+@keyframes chat-thinking-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.chat-thinking-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.chat-thinking-step {
+  display: grid;
+  gap: 2px;
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--border) 82%, transparent);
+  color: var(--muted);
+  font: 500 11px/1.45 var(--font-ui);
+}
+
+.chat-thinking-step.is-current {
+  border-left-color: var(--accent);
+  color: var(--text);
+}
+
+.chat-thinking-step-stage {
+  color: var(--text-strong);
+  font-weight: 650;
+}
+
+.chat-thinking-step-detail {
+  color: var(--muted);
+}
+
+.chat-thinking-summary {
+  color: var(--muted);
+  font: 500 11px/1.45 var(--font-ui);
+}
+
+.chat-thinking-summary > summary {
+  cursor: pointer;
+  color: var(--muted-2);
+  list-style: none;
+  user-select: none;
+}
+
+.chat-thinking-summary > summary::-webkit-details-marker {
+  display: none;
+}
+
+.chat-thinking-summary > summary::before {
+  content: "▸ ";
+}
+
+.chat-thinking-summary[open] > summary::before {
+  content: "▾ ";
+}
+
+.chat-thinking-summary-body {
+  margin-top: 6px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.chat-proposal-card {
+  display: grid;
+  gap: 10px;
+}
+
+.chat-proposal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chat-proposal-risk {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font: 600 10px/1.3 var(--font-ui);
+  white-space: nowrap;
+}
+
+.chat-proposal-risk-low {
+  background: color-mix(in srgb, #3ecf8e 18%, transparent);
+  color: #1f8f62;
+}
+
+.chat-proposal-risk-medium {
+  background: color-mix(in srgb, #f5a524 20%, transparent);
+  color: #9a6400;
+}
+
+.chat-proposal-risk-high {
+  background: color-mix(in srgb, #ff6b6b 18%, transparent);
+  color: #b42318;
+}
+
+.chat-proposal-intro {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.chat-proposal-changes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  color: var(--text);
+}
+
+.chat-proposal-changes li {
+  position: relative;
+  padding: 8px 10px 8px 24px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-contrast) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.chat-proposal-changes li::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 13px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.chat-proposal-meta {
+  color: var(--muted-2);
+  font-size: 11px;
+}
+
+.chat-proposal-validation {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font: 600 11px/1.4 var(--font-ui);
+}
+
+.chat-proposal-validation.is-pass {
+  background: color-mix(in srgb, #3ecf8e 14%, transparent);
+  color: #1f8f62;
+}
+
+.chat-proposal-validation.is-fail {
+  background: color-mix(in srgb, #ff6b6b 14%, transparent);
+  color: #b42318;
+}
+
+.chat-proposal-issues {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 11px;
+  display: grid;
+  gap: 4px;
+}
+
+.chat-proposal-issues-more {
+  color: var(--muted-2);
+  font-style: italic;
+}
+
+.chat-proposal-citations {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.chat-proposal-citations ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.chat-proposal-btn {
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 7px;
+  background: var(--surface-3);
+  color: var(--text-strong);
+  padding: 6px 10px;
+  font: 600 11px/1.2 var(--font-ui);
+  cursor: pointer;
+}
+
+.chat-proposal-btn-primary {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent-glow) 72%, var(--surface-3));
+}
+
+.chat-proposal-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 2px;
+}
+
+.chat-proposal-actions button:disabled,
+.chat-proposal-btn:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.chat-proposal-title {
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.chat-proposal-decision {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .chat-msg.assistant[data-chat-kind="proposal"] .chat-msg-bubble,
 .chat-msg.assistant[data-chat-kind="choice"] .chat-msg-bubble {
   max-width: 100%;
@@ -375,54 +640,6 @@
   border-radius: 10px;
   background: var(--chat-assistant-bg);
   border: 1px solid var(--chat-assistant-border);
-}
-
-.chat-proposal-title {
-  color: var(--text-strong);
-  font-weight: 700;
-}
-
-.chat-proposal-summary,
-.chat-proposal-validation,
-.chat-proposal-citations {
-  margin-top: 6px;
-  color: var(--muted);
-}
-
-.chat-proposal-preview {
-  margin-top: 8px;
-}
-
-.chat-proposal-preview ul {
-  margin: 6px 0 0;
-  padding-left: 20px;
-}
-
-.chat-proposal-actions {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 10px;
-}
-
-.chat-proposal-actions button {
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--accent-glow) 72%, var(--surface-3));
-  color: var(--text-strong);
-  padding: 5px 9px;
-  font: 600 11px/1.2 var(--font-ui);
-  cursor: pointer;
-}
-
-.chat-proposal-actions button:disabled {
-  cursor: wait;
-  opacity: 0.55;
-}
-
-.chat-proposal-decision {
-  color: var(--muted);
-  font-weight: 600;
 }
 
 .chat-question-heading {

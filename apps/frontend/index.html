@@ -703,7 +703,10 @@
                   ></span>
                   <div>
                     <div class="chat-header-title">Modeling Assistant</div>
-                    <div class="chat-header-subtitle" id="chatHeaderSubtitle">Ready to help</div>
+                    <div class="chat-header-subtitle" id="chatHeaderSubtitle">
+                      Your modeling copilot
+                      <span class="chat-provider-label hidden" id="chatProviderLabel"></span>
+                    </div>
                   </div>
                 </div>
                 <div class="chat-header-actions">
@@ -735,17 +738,11 @@
                   </button>
                 </div>
               </div>
-              <div class="chat-activity" id="chatActivity" role="status" aria-live="polite">
-                <div class="chat-activity-row">
-                  <span class="chat-activity-dot" aria-hidden="true"></span>
-                  <span id="chatActivityMessage">Ready</span>
-                  <span class="chat-workflow-badge hidden" id="chatWorkflowBadge"></span>
-                  <span class="chat-provider-label hidden" id="chatProviderLabel"></span>
-                </div>
-                <div class="chat-progress" aria-hidden="true">
-                  <span id="chatProgressBar"></span>
-                </div>
-                <ul class="chat-activity-history hidden" id="chatActivityHistory"></ul>
+              <div class="hidden" id="chatActivity" aria-hidden="true">
+                <span id="chatActivityMessage"></span>
+                <span class="hidden" id="chatWorkflowBadge"></span>
+                <span id="chatProgressBar"></span>
+                <ul class="hidden" id="chatActivityHistory"></ul>
               </div>
               <div class="chat-messages" id="chatMessages">
                 <div class="chat-welcome">

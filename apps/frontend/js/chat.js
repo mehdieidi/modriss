@@ -8,17 +8,6 @@ import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
 import { loadModelById } from "./model-ops.js";
 
-const CHAT_STAGE_PROGRESS = Object.freeze({
-  READING_MODEL: 12,
-  PLANNING: 35,
-  VALIDATING: 62,
-  REPAIRING: 78,
-  APPLYING: 88,
-  WAITING: 92,
-  COMPLETED: 100,
-  FAILED: 100,
-});
-
 const TERMINAL_WORKFLOW_STATES = new Set([
   "PROPOSED",
   "EXPLAINED",
@@ -41,9 +30,29 @@ const WORKFLOW_LABELS = Object.freeze({
   UNDONE: "Undone",
 });
 
+const THINKING_STAGE_LABELS = Object.freeze({
+  READING_MODEL: "Reading your model",
+  PLANNING: "Planning changes",
+  VALIDATING: "Validating the proposal",
+  REPAIRING: "Refining the patch",
+  APPLYING: "Applying changes",
+  WAITING: "Waiting for input",
+  COMPLETED: "Finished",
+  FAILED: "Encountered an issue",
+});
+
+const RISK_LABELS = Object.freeze({
+  LOW: "Low risk",
+  MEDIUM: "Needs review",
+  HIGH: "Review carefully",
+});
+
 let chatBusyDepth = 0;
 let chatActivityHistory = [];
 let suppressChoiceRealtime = false;
+let activeThinkingEl = null;
+let thinkingSteps = [];
+let thinkingStartTime = 0;
 
 function chatScopeKey(typeKey = state.activeType) {
   const projectId = state.project?.id;
@@ -58,22 +67,13 @@ function idleStageForWorkflow(workflowState) {
   return workflowState === "FAILED" ? "FAILED" : "COMPLETED";
 }
 
-export function resetChatActivityUi(message = "Ready to help") {
+export function resetChatActivityUi() {
   chatBusyDepth = 0;
   chatActivityHistory = [];
-  setChatActivity(message, { busy: false, stage: null, workflowState: null });
+  clearThinkingStream();
 }
 
-function applyWorkflowSnapshot(workflowState, message = null) {
-  if (!workflowState) {
-    resetChatActivityUi();
-    return;
-  }
-  setChatActivity(message || workflowLabel(workflowState), {
-    busy: false,
-    stage: idleStageForWorkflow(workflowState),
-    workflowState,
-  });
+function applyWorkflowSnapshot(_workflowState, _message = null) {
 }
 
 export function resetChatForProjectChange() {
@@ -96,85 +96,188 @@ export function resetChatForProjectChange() {
   updateChatAttachmentLabel();
 }
 
-function setChatActivity(message, { busy = false, stage = null, workflowState = null } = {}) {
-  const label = message || (busy ? "Working on your model" : "Ready");
-  if (el.chatActivityMessage) el.chatActivityMessage.textContent = label;
-  if (el.chatHeaderSubtitle) {
-    el.chatHeaderSubtitle.textContent = workflowState ? workflowLabel(workflowState) : label;
-  }
-  if (el.chatWorkflowBadge) {
-    if (workflowState) {
-      el.chatWorkflowBadge.textContent = workflowLabel(workflowState);
-      el.chatWorkflowBadge.classList.remove("hidden");
-    } else {
-      el.chatWorkflowBadge.classList.add("hidden");
-    }
-  }
-  el.chatActivity?.classList.toggle("is-busy", busy);
-  el.chatTypingIndicator?.classList.toggle("hidden", !busy);
-  if (el.chatProgressBar) {
-    const progress = stage ? CHAT_STAGE_PROGRESS[stage] : null;
-    el.chatProgressBar.classList.toggle("is-indeterminate", busy && progress == null);
-    el.chatProgressBar.style.width = progress == null ? "" : `${progress}%`;
-  }
-  if (stage && message) {
-    pushActivityHistory(stage, message);
-  }
+function removeChatWelcome() {
+  el.chatMessages.querySelector(".chat-welcome")?.remove();
 }
 
-function pushActivityHistory(stage, message) {
-  const entry = `${workflowLabel(stage) || stage}: ${message}`;
-  if (chatActivityHistory[chatActivityHistory.length - 1] === entry) {
+function scrollChatToBottom() {
+  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+}
+
+function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
+  if (!activeThinkingEl) {
+    removeChatWelcome();
+    const msg = document.createElement("div");
+    msg.className = "chat-msg assistant chat-thinking-live";
+    msg.dataset.chatKind = "thinking";
+
+    const bubble = document.createElement("div");
+    bubble.className = "chat-msg-bubble chat-thinking-bubble";
+
+    const header = document.createElement("div");
+    header.className = "chat-thinking-header";
+    header.innerHTML =
+      '<span class="chat-thinking-spinner" aria-hidden="true"></span><span class="chat-thinking-title">Working on your request</span>';
+    bubble.appendChild(header);
+
+    const steps = document.createElement("ol");
+    steps.className = "chat-thinking-steps";
+    steps.setAttribute("aria-live", "polite");
+    bubble.appendChild(steps);
+
+    msg.appendChild(bubble);
+    el.chatMessages.appendChild(msg);
+    activeThinkingEl = msg;
+    thinkingSteps = [];
+    thinkingStartTime = Date.now();
+  }
+  if (initialMessage) {
+    pushThinkingStep(initialMessage, stage);
+  }
+  scrollChatToBottom();
+  return activeThinkingEl;
+}
+
+function renderThinkingSteps() {
+  const list = activeThinkingEl?.querySelector(".chat-thinking-steps");
+  if (!list) {
     return;
   }
-  chatActivityHistory = [...chatActivityHistory, entry].slice(-3);
-  if (!el.chatActivityHistory) {
-    return;
-  }
-  if (!chatActivityHistory.length) {
-    el.chatActivityHistory.classList.add("hidden");
-    el.chatActivityHistory.replaceChildren();
-    return;
-  }
-  el.chatActivityHistory.classList.remove("hidden");
-  el.chatActivityHistory.replaceChildren(
-    ...chatActivityHistory.map((item) => {
-      const li = document.createElement("li");
-      li.textContent = item;
-      return li;
+  list.replaceChildren(
+    ...thinkingSteps.map((step, index) => {
+      const item = document.createElement("li");
+      item.className = "chat-thinking-step";
+      if (index === thinkingSteps.length - 1) {
+        item.classList.add("is-current");
+      }
+      const stage = document.createElement("span");
+      stage.className = "chat-thinking-step-stage";
+      stage.textContent = THINKING_STAGE_LABELS[step.stage] || step.stage || "Working";
+      const detail = document.createElement("span");
+      detail.className = "chat-thinking-step-detail";
+      detail.textContent = step.message;
+      item.append(stage, detail);
+      return item;
     }),
   );
+  scrollChatToBottom();
+}
+
+function pushThinkingStep(message, stage = null) {
+  if (!message) {
+    return;
+  }
+  ensureThinkingStream();
+  const entry = { stage: stage || "PLANNING", message };
+  const last = chatActivityHistory[chatActivityHistory.length - 1];
+  if (!(last?.stage === entry.stage && last?.message === entry.message)) {
+    chatActivityHistory = [...chatActivityHistory, entry];
+  }
+  thinkingSteps = chatActivityHistory.map((item) => ({ ...item }));
+  renderThinkingSteps();
+  el.chatTypingIndicator?.classList.add("hidden");
+}
+
+function buildThinkingSummary(workflowState = null, message = null) {
+  const stageSummaries = [];
+  const seen = new Set();
+  for (const step of thinkingSteps) {
+    const label = THINKING_STAGE_LABELS[step.stage] || step.stage;
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      stageSummaries.push(label.toLowerCase());
+    }
+  }
+  if (workflowState === "PROPOSED") {
+    return message || "Prepared a model change proposal for your review.";
+  }
+  if (workflowState === "WAITING_FOR_CHOICE") {
+    return message || "Need a quick clarification before continuing.";
+  }
+  if (workflowState === "FAILED") {
+    return message || "Could not complete the request.";
+  }
+  if (workflowState === "APPLIED") {
+    return message || "Applied the approved changes to your model.";
+  }
+  if (workflowState === "EXPLAINED") {
+    return message || "Explained the model based on your question.";
+  }
+  if (message) {
+    return message;
+  }
+  if (stageSummaries.length) {
+    const joined = stageSummaries.join(", ");
+    return `Finished after ${joined}.`;
+  }
+  return "Finished working on your request.";
+}
+
+function finalizeThinkingStream(summary) {
+  if (!activeThinkingEl) {
+    return;
+  }
+  const durationSec = Math.max(1, Math.round((Date.now() - thinkingStartTime) / 1000));
+  const msg = activeThinkingEl;
+  msg.classList.remove("chat-thinking-live");
+  msg.classList.add("chat-thinking-done");
+  msg.dataset.chatKind = "thinking-summary";
+
+  const bubble = msg.querySelector(".chat-msg-bubble");
+  if (!bubble) {
+    activeThinkingEl = null;
+    thinkingSteps = [];
+    chatActivityHistory = [];
+    return;
+  }
+
+  bubble.replaceChildren();
+  const details = document.createElement("details");
+  details.className = "chat-thinking-summary";
+  const summaryEl = document.createElement("summary");
+  summaryEl.textContent = `Worked for ${durationSec}s`;
+  details.appendChild(summaryEl);
+
+  const body = document.createElement("div");
+  body.className = "chat-thinking-summary-body";
+  body.appendChild(renderMarkdown(summary || buildThinkingSummary()));
+  details.appendChild(body);
+  bubble.appendChild(details);
+
+  activeThinkingEl = null;
+  thinkingSteps = [];
+  chatActivityHistory = [];
+  scrollChatToBottom();
+}
+
+function clearThinkingStream() {
+  activeThinkingEl?.remove();
+  activeThinkingEl = null;
+  thinkingSteps = [];
+  chatActivityHistory = [];
 }
 
 function applyHttpActivity(response) {
   const activity = response?.activity;
-  if (!activity) {
+  if (!activity?.message) {
     return;
   }
-  const workflowState = activity.workflowState;
-  const busy = workflowState ? !TERMINAL_WORKFLOW_STATES.has(workflowState) : false;
-  setChatActivity(activity.message || workflowLabel(workflowState), {
-    busy,
-    stage: busy ? activity.stage : idleStageForWorkflow(workflowState),
-    workflowState,
-  });
+  pushThinkingStep(activity.message, activity.stage);
 }
 
 function beginChatActivity(message, workflowState = null) {
   chatBusyDepth += 1;
-  setChatActivity(message, { busy: true, workflowState, stage: "PLANNING" });
-  el.chatActivity?.classList.add("is-busy");
+  ensureThinkingStream(message, workflowState ? idleStageForWorkflow(workflowState) : "PLANNING");
 }
 
-function endChatActivity(message = "Ready to help", workflowState = null) {
+function endChatActivity(message = null, workflowState = null) {
   chatBusyDepth = Math.max(0, chatBusyDepth - 1);
   if (chatBusyDepth === 0) {
-    el.chatActivity?.classList.remove("is-busy");
+    const summary = buildThinkingSummary(workflowState, message);
+    finalizeThinkingStream(summary);
     if (workflowState && TERMINAL_WORKFLOW_STATES.has(workflowState)) {
       applyWorkflowSnapshot(workflowState, message);
-      return;
     }
-    setChatActivity(message, { busy: false, workflowState: null, stage: null });
   }
 }
 
@@ -188,7 +291,7 @@ function updateChatProviderLabel(provider) {
     el.chatProviderLabel.textContent = "";
     return;
   }
-  el.chatProviderLabel.textContent = `Provider: ${key}`;
+  el.chatProviderLabel.textContent = ` · ${key}`;
   el.chatProviderLabel.classList.remove("hidden");
 }
 
@@ -411,17 +514,16 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
   if (eventType === "assistant.progress") {
-    setChatActivity(payload?.message || "Working with the model", {
-      busy: true,
-      stage: payload?.stage,
-    });
+    pushThinkingStep(payload?.message || "Working with the model", payload?.stage);
     return;
   }
   if (eventType === "chat.assistant") {
     const message = payload?.assistantMessage || payload?.message;
-    appendAssistantDeduped(message);
+    if (chatBusyDepth === 0) {
+      appendAssistantDeduped(message);
+    }
     const sessionId = state.chat.sessions.get(chatScopeKey(typeKey))?.sessionId;
-    if (sessionId) {
+    if (sessionId && chatBusyDepth === 0) {
       appendProposalCard(typeKey, sessionId, payload?.proposal);
       if (!payload?.proposal) {
         appendChoiceButtons(typeKey, sessionId, payload?.choices);
@@ -464,10 +566,7 @@ export function buildChatWelcomeCard() {
 }
 
 function appendChat(role, text) {
-  const welcome = el.chatMessages.querySelector(".chat-welcome");
-  if (welcome) {
-    welcome.remove();
-  }
+  removeChatWelcome();
 
   const msg = document.createElement("div");
   msg.className = `chat-msg ${role}`;
@@ -484,7 +583,7 @@ function appendChat(role, text) {
 
   msg.appendChild(bubble);
   el.chatMessages.appendChild(msg);
-  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+  scrollChatToBottom();
 }
 
 function appendAssistantDeduped(text) {
@@ -513,6 +612,91 @@ function unwrapAssistantModel(model) {
   return model;
 }
 
+function humanizeType(type) {
+  if (!type) {
+    return "element";
+  }
+  return String(type)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .toLowerCase();
+}
+
+function elementDisplayName(operation, fallbackId) {
+  const attrs = operation?.attributes;
+  const name =
+    (attrs && typeof attrs === "object" && (attrs.name || attrs.label || attrs.title)) || null;
+  if (name) {
+    return String(name);
+  }
+  if (fallbackId) {
+    return shortenId(fallbackId);
+  }
+  return "element";
+}
+
+function shortenId(id) {
+  const value = String(id || "").trim();
+  if (!value) {
+    return "element";
+  }
+  if (value.length <= 18) {
+    return value;
+  }
+  return `${value.slice(0, 8)}…`;
+}
+
+function formatAttributeValue(attributes) {
+  if (attributes == null) {
+    return "";
+  }
+  if (typeof attributes === "string" || typeof attributes === "number" || typeof attributes === "boolean") {
+    return String(attributes);
+  }
+  if (typeof attributes === "object") {
+    if (attributes.name) {
+      return `"${attributes.name}"`;
+    }
+    const keys = Object.keys(attributes);
+    if (keys.length === 1) {
+      return `"${attributes[keys[0]]}"`;
+    }
+  }
+  return "";
+}
+
+function describeOperation(operation) {
+  const type = String(operation?.type || "").toUpperCase();
+  const target = elementDisplayName(operation, operation?.targetElementId);
+  const source = shortenId(operation?.sourceElementId);
+  const reference = operation?.referenceName
+    ? humanizeType(operation.referenceName)
+    : "";
+
+  switch (type) {
+    case "ADD_ELEMENT": {
+      const kind = humanizeType(operation?.elementType);
+      const hasName = target !== shortenId(operation?.targetElementId);
+      return `Add ${kind}${hasName ? ` “${target}”` : ""}`;
+    }
+    case "CONNECT_ELEMENTS":
+      return `Connect “${source}” to “${target}”${reference ? ` (${reference})` : ""}`;
+    case "SET_ATTRIBUTE": {
+      const value = formatAttributeValue(operation?.attributes);
+      return `Update ${reference || "attribute"} on “${target}”${value ? ` to ${value}` : ""}`;
+    }
+    case "DELETE_ELEMENT":
+      return `Remove “${target}”`;
+    default:
+      return `${type || "Change"} on “${target}”`;
+  }
+}
+
+function buildProposalChanges(proposal) {
+  const operations = Array.isArray(proposal?.patch?.operations) ? proposal.patch.operations : [];
+  return operations.map(describeOperation);
+}
+
 function appendProposalCard(typeKey, sessionId, proposal) {
   if (!proposal) {
     return;
@@ -523,105 +707,140 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   ) {
     return;
   }
+
+  const changes = buildProposalChanges(proposal);
+  const risk = String(proposal.riskLevel || "HIGH").toUpperCase();
+  const issues = Array.isArray(proposal.validation?.issues) ? proposal.validation.issues : [];
+  const validationPassed = proposal.validation?.mandatoryPassed !== false;
+
   const card = document.createElement("div");
   card.className = "chat-msg assistant";
   card.dataset.chatKind = "proposal";
   if (proposal.id) {
     card.dataset.chatProposalId = proposal.id;
   }
-  const bubble = document.createElement("div");
-  bubble.className = "chat-msg-bubble";
 
+  const bubble = document.createElement("div");
+  bubble.className = "chat-msg-bubble chat-proposal-card";
+
+  const header = document.createElement("div");
+  header.className = "chat-proposal-header";
   const title = document.createElement("div");
   title.className = "chat-proposal-title";
-  title.textContent = `Proposal ${
-    proposal.riskLevel || "HIGH"
-  }${proposal.approvalRequired ? " requires approval" : ""}`;
-  bubble.appendChild(title);
+  title.textContent = proposal.approvalRequired ? "Suggested model changes" : "Applied model changes";
+  const riskBadge = document.createElement("span");
+  riskBadge.className = `chat-proposal-risk chat-proposal-risk-${risk.toLowerCase()}`;
+  riskBadge.textContent = RISK_LABELS[risk] || risk;
+  header.append(title, riskBadge);
+  bubble.appendChild(header);
 
-  const summary = document.createElement("div");
-  summary.className = "chat-proposal-summary";
-  summary.textContent = `Affected: ${(proposal.affectedElements || []).join(", ") || "n/a"}`;
-  bubble.appendChild(summary);
+  const intro = document.createElement("p");
+  intro.className = "chat-proposal-intro";
+  intro.textContent =
+    changes.length === 1
+      ? "The assistant prepared one change for your model."
+      : `The assistant prepared ${changes.length} changes for your model.`;
+  bubble.appendChild(intro);
+
+  if (changes.length) {
+    const changeList = document.createElement("ul");
+    changeList.className = "chat-proposal-changes";
+    for (const change of changes) {
+      const item = document.createElement("li");
+      item.textContent = change;
+      changeList.appendChild(item);
+    }
+    bubble.appendChild(changeList);
+  }
+
+  const affected = Array.isArray(proposal.affectedElements) ? proposal.affectedElements : [];
+  if (affected.length) {
+    const affectedBlock = document.createElement("div");
+    affectedBlock.className = "chat-proposal-meta";
+    affectedBlock.textContent = `${affected.length} element${affected.length === 1 ? "" : "s"} affected`;
+    bubble.appendChild(affectedBlock);
+  }
 
   const validation = document.createElement("div");
-  validation.className = "chat-proposal-validation";
-  const issues = Array.isArray(proposal.validation?.issues) ? proposal.validation.issues : [];
-  validation.textContent = `Validation: ${
-    proposal.validation?.mandatoryPassed
-      ? "mandatory constraints pass"
-      : "mandatory constraints fail"
-  }; ${issues.length} issue(s)`;
+  validation.className = `chat-proposal-validation ${validationPassed ? "is-pass" : "is-fail"}`;
+  validation.textContent = validationPassed
+    ? "Validation passed — ready for your decision"
+    : "Validation failed — apply is blocked until issues are resolved";
   bubble.appendChild(validation);
 
-  const operations = Array.isArray(proposal.patch?.operations) ? proposal.patch.operations : [];
-  if (operations.length) {
-    const details = document.createElement("details");
-    details.className = "chat-proposal-preview";
-    const detailsTitle = document.createElement("summary");
-    detailsTitle.textContent = `${operations.length} semantic operation(s)`;
-    details.appendChild(detailsTitle);
-    const list = document.createElement("ul");
-    for (const operation of operations) {
+  if (issues.length) {
+    const issueList = document.createElement("ul");
+    issueList.className = "chat-proposal-issues";
+    for (const issue of issues.slice(0, 5)) {
       const item = document.createElement("li");
-      item.textContent = [
-        operation.type,
-        operation.targetElementId,
-        operation.sourceElementId && `from ${operation.sourceElementId}`,
-        operation.referenceName && `via ${operation.referenceName}`,
-      ]
-        .filter(Boolean)
-        .join(" ");
-      list.appendChild(item);
+      item.textContent = issue.message || issue.constraint || "Validation issue";
+      issueList.appendChild(item);
     }
-    details.appendChild(list);
-    bubble.appendChild(details);
+    if (issues.length > 5) {
+      const more = document.createElement("li");
+      more.className = "chat-proposal-issues-more";
+      more.textContent = `+${issues.length - 5} more issue(s)`;
+      issueList.appendChild(more);
+    }
+    bubble.appendChild(issueList);
   }
 
   if (Array.isArray(proposal.citations) && proposal.citations.length) {
-    const citations = document.createElement("div");
+    const citations = document.createElement("details");
     citations.className = "chat-proposal-citations";
-    citations.textContent = `Citations: ${proposal.citations.join(", ")}`;
+    const summary = document.createElement("summary");
+    summary.textContent = `${proposal.citations.length} reference${proposal.citations.length === 1 ? "" : "s"}`;
+    citations.appendChild(summary);
+    const list = document.createElement("ul");
+    for (const citation of proposal.citations) {
+      const item = document.createElement("li");
+      item.textContent = citation;
+      list.appendChild(item);
+    }
+    citations.appendChild(list);
     bubble.appendChild(citations);
   }
 
   const actions = document.createElement("div");
   actions.className = "chat-proposal-actions";
   if (proposal.approvalRequired) {
-    if (proposal.validation?.mandatoryPassed !== false) {
+    if (validationPassed) {
       const approve = document.createElement("button");
       approve.type = "button";
-      approve.textContent = "Approve";
+      approve.className = "chat-proposal-btn chat-proposal-btn-primary";
+      approve.textContent = "Approve changes";
       approve.addEventListener("click", async () => {
+        let response = null;
         try {
-          beginChatActivity("Revalidating and applying the proposal");
+          beginChatActivity("Applying approved changes");
           setProposalActionsDisabled(actions, true);
-          const response = await api(
+          response = await api(
             `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`,
-            {
-              method: "POST",
-            },
+            { method: "POST" },
           );
-          appendAssistantDeduped(response.assistantMessage || "Proposal approved");
+          endChatActivity(null, response?.workflowState || "APPLIED");
+          appendAssistantDeduped(response.assistantMessage || "Changes approved and applied.");
           await applyAssistantModelResponse(typeKey, response);
           setProposalDecision(card, "Applied");
         } catch (error) {
+          if (chatBusyDepth > 0) {
+            endChatActivity("Could not apply the changes.", "FAILED");
+          }
           setProposalActionsDisabled(actions, false);
           appendChat("assistant", `Error: ${error.message}`);
-        } finally {
-          endChatActivity();
         }
       });
       actions.appendChild(approve);
     } else {
       const blocked = document.createElement("span");
       blocked.className = "chat-proposal-decision";
-      blocked.textContent = "Apply blocked by mandatory validation";
+      blocked.textContent = "Fix validation issues before applying";
       actions.appendChild(blocked);
     }
 
     const reject = document.createElement("button");
     reject.type = "button";
+    reject.className = "chat-proposal-btn";
     reject.textContent = "Reject";
     reject.addEventListener("click", async () => {
       try {
@@ -630,35 +849,41 @@ function appendProposalCard(typeKey, sessionId, proposal) {
         await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/reject`, {
           method: "POST",
         });
+        endChatActivity(null, "REJECTED");
         setProposalDecision(card, "Rejected");
         appendChat("assistant", "Proposal rejected.");
       } catch (error) {
+        if (chatBusyDepth > 0) {
+          endChatActivity("Could not record your decision.", "FAILED");
+        }
         setProposalActionsDisabled(actions, false);
         appendChat("assistant", `Error: ${error.message}`);
-      } finally {
-        endChatActivity();
       }
     });
     actions.appendChild(reject);
   } else if (proposal.id) {
     const undo = document.createElement("button");
     undo.type = "button";
-    undo.textContent = "Undo";
+    undo.className = "chat-proposal-btn";
+    undo.textContent = "Undo changes";
     undo.addEventListener("click", async () => {
+      let response = null;
       try {
-        beginChatActivity("Revalidating and undoing the change");
+        beginChatActivity("Undoing the applied changes");
         setProposalActionsDisabled(actions, true);
-        const response = await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
+        response = await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
           method: "POST",
         });
-        appendAssistantDeduped(response.assistantMessage || "Proposal undone");
+        endChatActivity(null, response?.workflowState || "UNDONE");
+        appendAssistantDeduped(response.assistantMessage || "Changes undone.");
         await applyAssistantModelResponse(typeKey, response);
         setProposalDecision(card, "Undone");
       } catch (error) {
+        if (chatBusyDepth > 0) {
+          endChatActivity("Could not undo the changes.", "FAILED");
+        }
         setProposalActionsDisabled(actions, false);
         appendChat("assistant", `Error: ${error.message}`);
-      } finally {
-        endChatActivity();
       }
     });
     actions.appendChild(undo);
@@ -666,7 +891,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   bubble.appendChild(actions);
   card.appendChild(bubble);
   el.chatMessages.appendChild(card);
-  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+  scrollChatToBottom();
 }
 
 function setProposalActionsDisabled(actions, disabled) {
@@ -807,6 +1032,7 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
       });
       suppressChoiceRealtime = false;
       applyHttpActivity(response);
+      endChatActivity(null, response?.workflowState || null);
       setProposalDecision(card, "Answered");
       appendAssistantDeduped(response.assistantMessage || "Clarification received");
       appendProposalCard(typeKey, sessionId, response.proposal);
@@ -816,16 +1042,14 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
       await applyAssistantModelResponse(typeKey, response);
     } catch (error) {
       suppressChoiceRealtime = false;
+      if (chatBusyDepth > 0) {
+        endChatActivity("Could not continue with your answers.", "FAILED");
+      }
       setProposalActionsDisabled(actions, false);
       for (const input of form.querySelectorAll("input, textarea")) {
         input.disabled = false;
       }
       appendChat("assistant", `Error: ${error.message}`);
-    } finally {
-      endChatActivity(
-        response?.workflowState ? workflowLabel(response.workflowState) : "Ready to help",
-        response?.workflowState || null,
-      );
     }
   });
   bubble.appendChild(form);
@@ -948,6 +1172,7 @@ export async function sendChatMessage() {
     });
 
     applyHttpActivity(response);
+    endChatActivity(null, response?.workflowState || null);
     appendAssistantDeduped(response.assistantMessage || "Done");
     appendProposalCard(state.activeType, session.sessionId, response.proposal);
     if (!response.proposal) {
@@ -966,13 +1191,12 @@ export async function sendChatMessage() {
     updateChatAttachmentLabel();
     setStatus("Assistant response received");
   } catch (error) {
+    if (chatBusyDepth > 0) {
+      endChatActivity("Could not complete the request.", "FAILED");
+    }
     appendChat("assistant", `Error: ${error.message}`);
     setError(`Chat failed: ${error.message}`);
   } finally {
-    endChatActivity(
-      response?.workflowState ? workflowLabel(response.workflowState) : "Ready to help",
-      response?.workflowState || null,
-    );
     el.chatSendBtn.disabled = false;
   }
 }
