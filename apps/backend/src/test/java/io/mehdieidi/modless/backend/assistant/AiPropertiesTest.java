@@ -12,7 +12,7 @@ class AiPropertiesTest {
   @Test
   void appliesConservativeDefaults() {
     AiProperties properties =
-        new AiProperties(false, null, null, null, 0, 0, null, null, null, null, null, null);
+        new AiProperties(false, null, null, null, 0, 0, 0, null, null, null, null, null, null);
 
     assertFalse(properties.enabled());
     assertEquals(AiProperties.RolloutMode.GUARDED_APPLY, properties.mode());
@@ -52,6 +52,7 @@ class AiPropertiesTest {
             null,
             "gemini",
             null,
+            0,
             0,
             0,
             null,

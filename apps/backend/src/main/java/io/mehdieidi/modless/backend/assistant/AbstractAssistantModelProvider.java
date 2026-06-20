@@ -34,6 +34,9 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       For SET_ATTRIBUTE, targetElementId, referenceName, and attributes are all mandatory;
       attributes is the new value itself, not an object keyed by the attribute name. For a
       creation request, use ADD_ELEMENT rather than SET_ATTRIBUTE on the model root.
+      IDs are never a user decision. Generate a fresh UUIDv4 targetElementId for every added
+      element and reuse that exact ID in operations that refer to it. Never ask the user how to
+      generate or format an ID.
       """;
   private static final String PATCH_OUTPUT_GUARDRAIL =
       """
@@ -59,7 +62,11 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       questions with two to five genuinely distinct options and permit free text when appropriate.
       Use PATCH for a modeling change and populate operations using the semantic operation contract
       below. Do not ask about harmless defaults that can be stated in the proposal. Never combine a
-      clarification with speculative operations.
+      clarification with speculative operations. Before asking, decide whether a competent
+      modeler could safely choose a reasonable default and let the user review it in the guarded
+      proposal; if so, choose the default and return PATCH. IDs, names that can be derived from the
+      request, layout, ordering, and other reversible implementation details are never grounds for
+      clarification.
       """;
 
   protected final AiProperties properties;

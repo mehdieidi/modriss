@@ -2,6 +2,7 @@ package io.mehdieidi.modless.backend.assistant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -25,5 +26,15 @@ class AssistantMetamodelSchemaServiceTest {
     assertEquals(
         "alerts",
         schemas.containments(ModelLevel.PIM, "ObservabilityConfig", "AlertPolicy").get(0).name());
+  }
+
+  @Test
+  void exposesRequiredFeaturesForTypesNamedInTheRequest() {
+    var snippets = schemas.planningContracts(ModelLevel.PIM, "Create a Function", 4);
+
+    assertEquals(1, snippets.size());
+    assertEquals("Function", snippets.get(0).title());
+    assertTrue(snippets.get(0).content().contains("functionKind"));
+    assertTrue(snippets.get(0).content().contains("contract -> FunctionContract required single"));
   }
 }

@@ -8,6 +8,40 @@ import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
 import { loadModelById } from "./model-ops.js";
 
+const CHAT_STAGE_PROGRESS = Object.freeze({
+  READING_MODEL: 12,
+  PLANNING: 35,
+  VALIDATING: 62,
+  REPAIRING: 78,
+  APPLYING: 88,
+  COMPLETED: 100,
+});
+
+let chatBusyDepth = 0;
+
+function setChatActivity(message, { busy = false, stage = null } = {}) {
+  const label = message || (busy ? "Working on your model" : "Ready");
+  if (el.chatActivityMessage) el.chatActivityMessage.textContent = label;
+  if (el.chatHeaderSubtitle) el.chatHeaderSubtitle.textContent = label;
+  el.chatActivity?.classList.toggle("is-busy", busy);
+  el.chatTypingIndicator?.classList.toggle("hidden", !busy);
+  if (el.chatProgressBar) {
+    const progress = stage ? CHAT_STAGE_PROGRESS[stage] : null;
+    el.chatProgressBar.classList.toggle("is-indeterminate", busy && progress == null);
+    el.chatProgressBar.style.width = progress == null ? "" : `${progress}%`;
+  }
+}
+
+function beginChatActivity(message) {
+  chatBusyDepth += 1;
+  setChatActivity(message, { busy: true });
+}
+
+function endChatActivity(message = "Ready to help") {
+  chatBusyDepth = Math.max(0, chatBusyDepth - 1);
+  if (chatBusyDepth === 0) setChatActivity(message);
+}
+
 // ── Chat session / realtime ───────────────────────────────────────────────────
 
 export async function ensureChatSession() {
@@ -148,9 +182,10 @@ async function connectChatRealtime(typeKey, sessionId) {
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
   if (eventType === "assistant.progress") {
-    if (el.chatHeaderSubtitle) {
-      el.chatHeaderSubtitle.textContent = payload?.message || "Working with the model";
-    }
+    setChatActivity(payload?.message || "Working with the model", {
+      busy: true,
+      stage: payload?.stage,
+    });
     return;
   }
   if (eventType === "chat.assistant") {
@@ -322,6 +357,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
       approve.textContent = "Approve";
       approve.addEventListener("click", async () => {
         try {
+          beginChatActivity("Revalidating and applying the proposal");
           setProposalActionsDisabled(actions, true);
           const response = await api(
             `/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`,
@@ -335,6 +371,8 @@ function appendProposalCard(typeKey, sessionId, proposal) {
         } catch (error) {
           setProposalActionsDisabled(actions, false);
           appendChat("assistant", `Error: ${error.message}`);
+        } finally {
+          endChatActivity();
         }
       });
       actions.appendChild(approve);
@@ -350,6 +388,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
     reject.textContent = "Reject";
     reject.addEventListener("click", async () => {
       try {
+        beginChatActivity("Recording your decision");
         setProposalActionsDisabled(actions, true);
         await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/reject`, {
           method: "POST",
@@ -359,6 +398,8 @@ function appendProposalCard(typeKey, sessionId, proposal) {
       } catch (error) {
         setProposalActionsDisabled(actions, false);
         appendChat("assistant", `Error: ${error.message}`);
+      } finally {
+        endChatActivity();
       }
     });
     actions.appendChild(reject);
@@ -368,6 +409,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
     undo.textContent = "Undo";
     undo.addEventListener("click", async () => {
       try {
+        beginChatActivity("Revalidating and undoing the change");
         setProposalActionsDisabled(actions, true);
         const response = await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/undo`, {
           method: "POST",
@@ -378,6 +420,8 @@ function appendProposalCard(typeKey, sessionId, proposal) {
       } catch (error) {
         setProposalActionsDisabled(actions, false);
         appendChat("assistant", `Error: ${error.message}`);
+      } finally {
+        endChatActivity();
       }
     });
     actions.appendChild(undo);
@@ -497,6 +541,7 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
       return;
     }
     try {
+      beginChatActivity("Using your answers to continue the model change");
       setProposalActionsDisabled(actions, true);
       for (const input of form.querySelectorAll("input, textarea")) {
         input.disabled = true;
@@ -518,6 +563,8 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
         input.disabled = false;
       }
       appendChat("assistant", `Error: ${error.message}`);
+    } finally {
+      endChatActivity();
     }
   });
   bubble.appendChild(form);
@@ -612,11 +659,8 @@ export async function sendChatMessage() {
     el.chatInput.value = "";
     el.chatSendBtn.disabled = true;
 
-    el.chatTypingIndicator.classList.remove("hidden");
+    beginChatActivity("Understanding your request");
     el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
-    if (el.chatHeaderSubtitle) {
-      el.chatHeaderSubtitle.textContent = "Thinking…";
-    }
 
     const response = await api(`/chatbot/sessions/${session.sessionId}/messages`, {
       method: "POST",
@@ -639,10 +683,6 @@ export async function sendChatMessage() {
       }),
     });
 
-    el.chatTypingIndicator.classList.add("hidden");
-    if (el.chatHeaderSubtitle) {
-      el.chatHeaderSubtitle.textContent = "Ready to help";
-    }
     appendAssistantDeduped(response.assistantMessage || "Done");
     appendProposalCard(state.activeType, session.sessionId, response.proposal);
     if (!response.proposal) {
@@ -661,13 +701,10 @@ export async function sendChatMessage() {
     updateChatAttachmentLabel();
     setStatus("Assistant response received");
   } catch (error) {
-    el.chatTypingIndicator.classList.add("hidden");
-    if (el.chatHeaderSubtitle) {
-      el.chatHeaderSubtitle.textContent = "Ready to help";
-    }
     appendChat("assistant", `Error: ${error.message}`);
     setError(`Chat failed: ${error.message}`);
   } finally {
+    endChatActivity();
     el.chatSendBtn.disabled = false;
   }
 }

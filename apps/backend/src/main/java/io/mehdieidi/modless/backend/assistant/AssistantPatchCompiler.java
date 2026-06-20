@@ -70,15 +70,29 @@ public class AssistantPatchCompiler {
                 || !operation.referenceName().matches("[A-Za-z][A-Za-z0-9_-]*")) {
               throw new PlatformException(400, "Assistant containment reference is not allowed.");
             }
+            String ownerType = requestedOwner.node().path("eClass").asText();
             schemas.requireContainment(
-                level,
-                requestedOwner.node().path("eClass").asText(),
-                operation.referenceName(),
-                operation.elementType());
+                level, ownerType, operation.referenceName(), operation.elementType());
+            AssistantMetamodelSchemaService.ReferenceSchema containment =
+                schemas
+                    .reference(level, ownerType, operation.referenceName())
+                    .filter(AssistantMetamodelSchemaService.ReferenceSchema::containment)
+                    .orElseThrow(
+                        () ->
+                            new PlatformException(
+                                422, "The requested containment is not in the metamodel."));
             JsonNode owned = requestedOwner.node().get(operation.referenceName());
             String collectionPath =
                 requestedOwner.path() + "/" + escapePointer(operation.referenceName());
-            if (owned == null || owned.isNull()) {
+            if (!containment.many()) {
+              if (owned != null && !owned.isNull()) {
+                throw new PlatformException(
+                    422, "Single-valued containment already has an element.");
+              }
+              patch.add(new ModelService.ModelPatchOperation("add", collectionPath, element));
+              inverse.add(0, new ModelService.ModelPatchOperation("remove", collectionPath, null));
+              requestedOwner.node().set(operation.referenceName(), element.deepCopy());
+            } else if (owned == null || owned.isNull()) {
               ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(element.deepCopy());
               patch.add(new ModelService.ModelPatchOperation("add", collectionPath, initial));
               inverse.add(0, new ModelService.ModelPatchOperation("remove", collectionPath, null));
@@ -392,13 +406,17 @@ public class AssistantPatchCompiler {
       io.mehdieidi.modless.platform.kernel.ModelLevel level,
       SemanticModelPatch.Operation operation) {
     ObjectNode node = JsonNodeFactory.instance.objectNode();
-    node.put("id", safe(operation.targetElementId()));
     String elementType = schemas.canonicalType(level, operation.elementType());
-    node.put("eClass", elementType);
-    node.put("name", elementType);
-    node.put("label", elementType);
     if (operation.attributes() != null && operation.attributes().isObject()) {
       node.setAll((ObjectNode) operation.attributes());
+    }
+    node.put("id", safe(operation.targetElementId()));
+    node.put("eClass", elementType);
+    if (!node.hasNonNull("name")) {
+      node.put("name", elementType);
+    }
+    if (!node.hasNonNull("label")) {
+      node.set("label", node.get("name").deepCopy());
     }
     return node;
   }

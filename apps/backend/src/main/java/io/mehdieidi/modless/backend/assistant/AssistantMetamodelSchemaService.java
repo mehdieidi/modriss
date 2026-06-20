@@ -115,6 +115,19 @@ public class AssistantMetamodelSchemaService {
     return schema(level).reference(type, feature);
   }
 
+  /** Returns whether a writable relationship accepts the supplied target type. */
+  public boolean acceptsReferenceTarget(
+      ModelLevel level, String ownerType, String feature, String targetType) {
+    LevelSchema schema = schema(level);
+    return schema
+        .reference(ownerType, feature)
+        .filter(reference -> !reference.containment() && !reference.readonly())
+        .filter(
+            reference ->
+                schema.assignable(canonicalType(level, targetType), reference.targetType()))
+        .isPresent();
+  }
+
   /** Returns every containment on an owner that accepts the supplied child type. */
   public List<ReferenceSchema> containments(ModelLevel level, String ownerType, String childType) {
     LevelSchema schema = schema(level);
@@ -141,6 +154,57 @@ public class AssistantMetamodelSchemaService {
             .map(TypeSchema::name)
             .collect(Collectors.joining(", "));
     return "Root " + schema.rootType() + " containments: " + root + "\nCreatable types: " + types;
+  }
+
+  /** Returns Ecore-derived feature contracts for creatable types named in a user request. */
+  public List<AssistantModelProvider.ContextSnippet> planningContracts(
+      ModelLevel level, String request, int limit) {
+    String normalized = request == null ? "" : request.toLowerCase(Locale.ROOT);
+    return schema(level).types().values().stream()
+        .filter(TypeSchema::creatable)
+        .filter(type -> normalized.contains(type.name().toLowerCase(Locale.ROOT)))
+        .limit(Math.max(0, limit))
+        .map(type -> typeContract(level, type.name()))
+        .toList();
+  }
+
+  /** Returns the complete writable feature contract for one metamodel type. */
+  public AssistantModelProvider.ContextSnippet typeContract(ModelLevel level, String typeName) {
+    TypeSchema type =
+        schema(level)
+            .type(canonicalType(level, typeName))
+            .orElseThrow(() -> new PlatformException(422, "Unknown metamodel type: " + typeName));
+    String attributes =
+        type.attributes().stream()
+            .map(
+                attribute ->
+                    attribute.name()
+                        + ":"
+                        + attribute.type()
+                        + (attribute.required() ? " required" : " optional")
+                        + (attribute.options().isEmpty() ? "" : " options=" + attribute.options()))
+            .collect(Collectors.joining(", "));
+    String references =
+        type.references().stream()
+            .filter(reference -> !reference.readonly())
+            .map(
+                reference ->
+                    reference.name()
+                        + " -> "
+                        + reference.targetType()
+                        + (reference.required() ? " required" : " optional")
+                        + (reference.many() ? " many" : " single")
+                        + (reference.containment() ? " containment" : " relationship"))
+            .collect(Collectors.joining(", "));
+    return new AssistantModelProvider.ContextSnippet(
+        "runtime-metamodel-type",
+        type.name(),
+        "Type "
+            + type.name()
+            + "\nAttributes: "
+            + (attributes.isBlank() ? "none" : attributes)
+            + "\nReferences: "
+            + (references.isBlank() ? "none" : references));
   }
 
   private LevelSchema schema(ModelLevel level) {

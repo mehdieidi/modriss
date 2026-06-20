@@ -12,6 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param provider configured provider key, currently {@code openai} or {@code gemini}
  * @param requestTimeout outbound AI request timeout
  * @param maxToolCalls maximum tool calls per assistant turn
+ * @param validationRepairAttempts maximum validator-guided replanning passes per mutation
  * @param tokenBudget approximate prompt budget per turn
  * @param hardening rate-limit and circuit-breaker settings
  * @param embeddings local embedding settings
@@ -27,6 +28,7 @@ public record AiProperties(
     String provider,
     Duration requestTimeout,
     int maxToolCalls,
+    int validationRepairAttempts,
     int tokenBudget,
     Hardening hardening,
     Embeddings embeddings,
@@ -41,6 +43,7 @@ public record AiProperties(
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofMinutes(5) : requestTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 96 : maxToolCalls;
+    validationRepairAttempts = validationRepairAttempts <= 0 ? 3 : validationRepairAttempts;
     tokenBudget = tokenBudget <= 0 ? 6000 : tokenBudget;
     hardening =
         hardening == null

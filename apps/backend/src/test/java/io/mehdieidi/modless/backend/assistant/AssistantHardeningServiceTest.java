@@ -21,6 +21,7 @@ class AssistantHardeningServiceTest {
             null,
             0,
             0,
+            0,
             new AiProperties.Hardening(
                 1, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 1, Duration.ZERO, 12),
             null,
@@ -43,6 +44,7 @@ class AssistantHardeningServiceTest {
             null,
             null,
             null,
+            0,
             0,
             0,
             new AiProperties.Hardening(
@@ -79,6 +81,7 @@ class AssistantHardeningServiceTest {
             null,
             null,
             null,
+            0,
             0,
             0,
             new AiProperties.Hardening(
@@ -122,6 +125,7 @@ class AssistantHardeningServiceTest {
             null,
             0,
             0,
+            0,
             new AiProperties.Hardening(
                 30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 2, Duration.ZERO, 12),
             null,
@@ -159,6 +163,7 @@ class AssistantHardeningServiceTest {
             null,
             null,
             null,
+            0,
             0,
             0,
             new AiProperties.Hardening(

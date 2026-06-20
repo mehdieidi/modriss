@@ -18,11 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /** LLM-driven, metamodel-grounded, guarded-apply modeling workflow. */
 @Service
 public class AssistantOrchestrator {
+
+  private static final Logger log = LoggerFactory.getLogger(AssistantOrchestrator.class);
 
   private final AiProperties properties;
   private final AssistantModelProvider provider;
@@ -176,48 +180,52 @@ public class AssistantOrchestrator {
       AssistantTurnPlan initialPlan) {
     publishProgress(session.id(), "VALIDATING", "Compiling and validating the proposed change");
     AssistantTurnPlan acceptedPlan = safeNormalizePlan(session.level(), context, initialPlan);
-    PlanAttempt first = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
-    if (!first.valid()) {
-      publishProgress(session.id(), "REPAIRING", "Repairing the plan from validator feedback");
-      AssistantTurnPlan repaired =
-          repairPlan(session, request, context, snippets, initialPlan, first);
+    PlanAttempt attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
+    for (int repairNumber = 1;
+        !attempt.valid() && repairNumber <= properties.validationRepairAttempts();
+        repairNumber++) {
+      publishProgress(
+          session.id(),
+          "REPAIRING",
+          "Repairing the plan from validator feedback ("
+              + repairNumber
+              + "/"
+              + properties.validationRepairAttempts()
+              + ")");
+      AssistantTurnPlan repaired;
+      try {
+        repaired =
+            repairPlan(session, request, context, snippets, acceptedPlan, attempt, repairNumber);
+      } catch (PlatformException failure) {
+        if (failure.status() < 500 && failure.status() != 429) {
+          throw failure;
+        }
+        return recoveryClarification(session, threadId, request, model, attempt);
+      }
       if (repaired.kind() == AssistantTurnPlan.Kind.CLARIFICATION) {
         return clarificationResponse(
             session, threadId, request, model, repaired.message(), repaired.questions());
       }
-      if (repaired.kind() == AssistantTurnPlan.Kind.ANSWER
-          && repaired.intent() == AssistantTurnPlan.Intent.INFORMATION) {
-        return finishTurn(
-            session,
-            threadId,
-            new AssistantTurnResponse(
-                nonBlank(repaired.message(), "No safe model change was proposed."),
-                model == null ? null : model.id(),
-                model == null ? null : model.revision(),
-                null,
-                List.of(),
-                AssistantWorkflowState.EXPLAINED));
-      }
       if (repaired.kind() == AssistantTurnPlan.Kind.ANSWER) {
-        return recoveryClarification(session, threadId, request, model, first);
+        continue;
       }
       repaired = safeNormalizePlan(session.level(), context, repaired);
-      first = evaluatePlan(session.level(), baseModel, context, repaired);
+      attempt = evaluatePlan(session.level(), baseModel, context, repaired);
       acceptedPlan = repaired;
     }
-    if (!first.valid()) {
-      return recoveryClarification(session, threadId, request, model, first);
+    if (!attempt.valid()) {
+      return recoveryClarification(session, threadId, request, model, attempt);
     }
 
-    AssistantPatchCompiler.CompiledPatch compiled = first.compiled();
+    AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
     AssistantProposal proposal =
         new AssistantProposal(
             java.util.UUID.randomUUID().toString(),
             compiled.affectedElements(),
             acceptedPlan.patch(),
             compiled.inversePatch(),
-            first.validation(),
-            riskLevel(compiled, first.validation()),
+            attempt.validation(),
+            riskLevel(compiled, attempt.validation()),
             true,
             retrievalCitations(snippets, context),
             Instant.now());
@@ -272,8 +280,31 @@ public class AssistantOrchestrator {
           ? PlanAttempt.success(compiled, validation)
           : PlanAttempt.failure(compiled, validation);
     } catch (PlatformException failure) {
-      return PlanAttempt.failure(failure.getMessage());
+      String operationSummary = operationSummary(plan.patch());
+      log.warn(
+          "Assistant semantic plan rejected reason={} operations={}",
+          failure.getMessage(),
+          operationSummary);
+      return PlanAttempt.failure(failure.getMessage() + " Operation summary: " + operationSummary);
     }
+  }
+
+  private String operationSummary(SemanticModelPatch patch) {
+    return patch.operations().stream()
+        .filter(java.util.Objects::nonNull)
+        .map(
+            operation ->
+                operation.type()
+                    + "(target="
+                    + operation.targetElementId()
+                    + ",type="
+                    + operation.elementType()
+                    + ",source="
+                    + operation.sourceElementId()
+                    + ",feature="
+                    + operation.referenceName()
+                    + ")")
+        .collect(Collectors.joining(","));
   }
 
   private AssistantTurnPlan normalizePlan(
@@ -283,6 +314,7 @@ public class AssistantOrchestrator {
     if (plan.patch().operations().isEmpty()) {
       return plan;
     }
+    SemanticModelPatch normalizedPatch = normalizeNewElementIds(plan.patch());
     Map<String, String> types =
         context.elements().stream()
             .collect(
@@ -291,7 +323,7 @@ public class AssistantOrchestrator {
                     AssistantModelContextIndexService.ContextElement::type,
                     (left, right) -> left,
                     LinkedHashMap::new));
-    plan.patch().operations().stream()
+    normalizedPatch.operations().stream()
         .filter(
             operation ->
                 operation != null
@@ -303,15 +335,123 @@ public class AssistantOrchestrator {
                     operation.targetElementId(),
                     schemas.canonicalType(level, operation.elementType())));
     List<SemanticModelPatch.Operation> operations =
-        plan.patch().operations().stream()
-            .map(operation -> inferUniqueContainment(level, types, operation))
-            .toList();
+        orderOperationsForCompilation(
+            normalizedPatch.operations().stream()
+                .map(operation -> inferUniqueContainment(level, types, operation))
+                .map(operation -> normalizeRelationshipDirection(level, types, operation))
+                .toList());
     return new AssistantTurnPlan(
         plan.intent(),
         plan.kind(),
         plan.message(),
         plan.questions(),
         new SemanticModelPatch(operations));
+  }
+
+  private SemanticModelPatch normalizeNewElementIds(SemanticModelPatch patch) {
+    Map<String, String> replacements = new LinkedHashMap<>();
+    patch.operations().stream()
+        .filter(java.util.Objects::nonNull)
+        .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+        .map(SemanticModelPatch.Operation::targetElementId)
+        .filter(id -> id != null && !id.isBlank())
+        .filter(id -> !isUuid(id))
+        .distinct()
+        .forEach(id -> replacements.put(id, java.util.UUID.randomUUID().toString()));
+    if (replacements.isEmpty()) {
+      return patch;
+    }
+    List<SemanticModelPatch.Operation> operations =
+        patch.operations().stream()
+            .map(
+                operation -> {
+                  if (operation == null) {
+                    return null;
+                  }
+                  return new SemanticModelPatch.Operation(
+                      operation.type(),
+                      replacements.getOrDefault(
+                          operation.targetElementId(), operation.targetElementId()),
+                      operation.elementType(),
+                      remapIds(operation.attributes(), replacements),
+                      replacements.getOrDefault(
+                          operation.sourceElementId(), operation.sourceElementId()),
+                      operation.referenceName());
+                })
+            .toList();
+    return new SemanticModelPatch(operations);
+  }
+
+  private JsonNode remapIds(JsonNode value, Map<String, String> replacements) {
+    if (value == null || value.isNull()) {
+      return value;
+    }
+    if (value.isTextual()) {
+      String replacement = replacements.get(value.asText());
+      return replacement == null
+          ? value.deepCopy()
+          : com.fasterxml.jackson.databind.node.TextNode.valueOf(replacement);
+    }
+    if (value.isObject()) {
+      ObjectNode result = ((ObjectNode) value).deepCopy();
+      value
+          .fields()
+          .forEachRemaining(
+              entry -> result.set(entry.getKey(), remapIds(entry.getValue(), replacements)));
+      return result;
+    }
+    if (value.isArray()) {
+      com.fasterxml.jackson.databind.node.ArrayNode result =
+          com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.arrayNode();
+      value.forEach(item -> result.add(remapIds(item, replacements)));
+      return result;
+    }
+    return value.deepCopy();
+  }
+
+  private List<SemanticModelPatch.Operation> orderOperationsForCompilation(
+      List<SemanticModelPatch.Operation> operations) {
+    List<SemanticModelPatch.Operation> pendingAdds =
+        operations.stream()
+            .filter(java.util.Objects::nonNull)
+            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .collect(Collectors.toCollection(ArrayList::new));
+    List<SemanticModelPatch.Operation> ordered = new ArrayList<>();
+    Set<String> pendingIds =
+        pendingAdds.stream()
+            .map(SemanticModelPatch.Operation::targetElementId)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    while (!pendingAdds.isEmpty()) {
+      List<SemanticModelPatch.Operation> ready =
+          pendingAdds.stream()
+              .filter(
+                  operation ->
+                      blank(operation.sourceElementId())
+                          || !pendingIds.contains(operation.sourceElementId()))
+              .toList();
+      if (ready.isEmpty()) {
+        ordered.addAll(pendingAdds);
+        break;
+      }
+      ordered.addAll(ready);
+      pendingAdds.removeAll(ready);
+      ready.stream().map(SemanticModelPatch.Operation::targetElementId).forEach(pendingIds::remove);
+    }
+    operations.stream()
+        .filter(
+            operation ->
+                operation == null
+                    || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT)
+        .forEach(ordered::add);
+    return ordered;
+  }
+
+  private boolean isUuid(String value) {
+    try {
+      return java.util.UUID.fromString(value).toString().equalsIgnoreCase(value);
+    } catch (IllegalArgumentException ignored) {
+      return false;
+    }
   }
 
   private AssistantTurnPlan safeNormalizePlan(
@@ -327,10 +467,17 @@ public class AssistantOrchestrator {
 
   private SemanticModelPatch.Operation inferUniqueContainment(
       ModelLevel level, Map<String, String> types, SemanticModelPatch.Operation operation) {
-    if (operation == null
-        || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT
-        || schemas.rootCollection(level, operation.elementType()).isPresent()) {
+    if (operation == null || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT) {
       return operation;
+    }
+    if (schemas.rootCollection(level, operation.elementType()).isPresent()) {
+      return new SemanticModelPatch.Operation(
+          operation.type(),
+          operation.targetElementId(),
+          operation.elementType(),
+          operation.attributes(),
+          null,
+          null);
     }
     List<ContainmentCandidate> allCandidates =
         types.entrySet().stream()
@@ -370,18 +517,61 @@ public class AssistantOrchestrator {
         candidate.referenceName());
   }
 
+  private SemanticModelPatch.Operation normalizeRelationshipDirection(
+      ModelLevel level, Map<String, String> types, SemanticModelPatch.Operation operation) {
+    if (operation == null
+        || operation.type() != SemanticModelPatch.OperationType.CONNECT_ELEMENTS
+        || blank(operation.referenceName())) {
+      return operation;
+    }
+    String sourceType = types.get(operation.sourceElementId());
+    String targetType = types.get(operation.targetElementId());
+    if (sourceType == null || targetType == null) {
+      return operation;
+    }
+    if (schemas.acceptsReferenceTarget(level, sourceType, operation.referenceName(), targetType)) {
+      return operation;
+    }
+    if (!schemas.acceptsReferenceTarget(level, targetType, operation.referenceName(), sourceType)) {
+      return operation;
+    }
+    return new SemanticModelPatch.Operation(
+        operation.type(),
+        operation.sourceElementId(),
+        operation.elementType(),
+        operation.attributes(),
+        operation.targetElementId(),
+        operation.referenceName());
+  }
+
   private AssistantTurnPlan repairPlan(
       AssistantSessionStore.AssistantSession session,
       AssistantTurnRequest request,
       AssistantModelContextIndexService.AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan failed,
-      PlanAttempt attempt) {
+      PlanAttempt attempt,
+      int repairNumber) {
     String feedback = attempt.feedback().stream().limit(20).collect(Collectors.joining("\n"));
-    List<AssistantModelProvider.ContextSnippet> repairContext = new ArrayList<>(snippets);
+    List<AssistantModelProvider.ContextSnippet> repairContext = new ArrayList<>();
+    repairContext.addAll(schemas.planningContracts(session.level(), feedback, 12));
+    failed.patch().operations().stream()
+        .filter(java.util.Objects::nonNull)
+        .map(SemanticModelPatch.Operation::elementType)
+        .filter(type -> type != null && !type.isBlank())
+        .distinct()
+        .forEach(
+            type -> {
+              try {
+                repairContext.add(schemas.typeContract(session.level(), type));
+              } catch (PlatformException ignored) {
+                // Validator feedback already identifies unknown types.
+              }
+            });
     attempt.feedback().stream()
         .limit(8)
         .forEach(issue -> repairContext.addAll(catalogs.search(issue, session.level().name(), 2)));
+    repairContext.addAll(snippets);
     String requestWithFeedback =
         "Original user request:\n"
             + request.message()
@@ -391,13 +581,19 @@ public class AssistantOrchestrator {
             + feedback
             + "\n\n"
             + "Return one complete replacement turn plan. Use PATCH only if you can correct every"
-            + " failure; otherwise use CLARIFICATION and ask for the information needed to"
-            + " continue.";
+            + " failure. Add the support elements and references explicitly required by validator"
+            + " feedback, choosing safe reversible defaults. Do not repeat the rejected plan or"
+            + " ask the user to decide how to satisfy a formal constraint; use CLARIFICATION only"
+            + " when the missing decision is genuinely a domain choice.";
     return provider.planTurn(
         new AssistantModelProvider.AssistantPrompt(
             AssistantModelRole.PLANNER,
             turnPrompt(session, request, context)
-                + "\nThis is the only backend validation-repair pass for this turn.",
+                + "\nThis is validator-guided repair pass "
+                + repairNumber
+                + " of "
+                + properties.validationRepairAttempts()
+                + ". Do not repeat rejected operations.",
             requestWithFeedback,
             deduplicate(repairContext, 24)));
   }
@@ -700,6 +896,7 @@ public class AssistantOrchestrator {
     result.add(
         new AssistantModelProvider.ContextSnippet(
             "runtime-metamodel", level.name() + " language index", schemas.languageIndex(level)));
+    result.addAll(schemas.planningContracts(level, query, 8));
     List<AssistantModelProvider.ContextSnippet> matches = catalogs.search(query, level.name(), 14);
     result.addAll(matches);
     matches.stream()

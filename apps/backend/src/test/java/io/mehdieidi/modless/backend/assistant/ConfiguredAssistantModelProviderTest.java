@@ -1,0 +1,37 @@
+package io.mehdieidi.modless.backend.assistant;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import io.mehdieidi.modless.platform.kernel.PlatformException;
+import org.junit.jupiter.api.Test;
+
+class ConfiguredAssistantModelProviderTest {
+
+  @Test
+  void neverFallsThroughToAnUnselectedProvider() {
+    AiProperties properties =
+        new AiProperties(true, null, "openai", null, 0, 0, 0, null, null, null, null, null, null);
+    OpenAiCompatibleAssistantModelProvider openai =
+        mock(OpenAiCompatibleAssistantModelProvider.class);
+    GeminiAssistantModelProvider gemini = mock(GeminiAssistantModelProvider.class);
+    when(openai.available()).thenReturn(true);
+    when(openai.planTurn(any())).thenThrow(new PlatformException(503, "OpenAI unavailable"));
+    ConfiguredAssistantModelProvider provider =
+        new ConfiguredAssistantModelProvider(properties, openai, gemini);
+
+    PlatformException failure =
+        assertThrows(
+            PlatformException.class,
+            () ->
+                provider.planTurn(new AssistantModelProvider.AssistantPrompt(null, "", "", null)));
+
+    assertEquals("OpenAI unavailable", failure.getMessage());
+    verify(gemini, never()).planTurn(any());
+  }
+}

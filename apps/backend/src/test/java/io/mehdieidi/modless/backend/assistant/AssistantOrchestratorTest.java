@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +48,7 @@ class AssistantOrchestratorTest {
   @BeforeEach
   void setUp() {
     AiProperties properties =
-        new AiProperties(true, null, null, null, 64, 6000, null, null, null, null, null, null);
+        new AiProperties(true, null, null, null, 64, 3, 6000, null, null, null, null, null, null);
     when(sessions.require("session", "user")).thenReturn(session);
     when(projects.get(user, "project"))
         .thenReturn(
@@ -141,7 +142,9 @@ class AssistantOrchestratorTest {
 
   @Test
   void onlyValidatedPatchBecomesReviewableProposal() throws Exception {
-    var attributes = new ObjectMapper().readTree("{\"name\":\"Submit order\"}");
+    var attributes =
+        new ObjectMapper()
+            .readTree("{\"name\":\"Submit order\",\"businessOperationRef\":\"submit-order\"}");
     SemanticModelPatch patch =
         new SemanticModelPatch(
             List.of(
@@ -163,6 +166,17 @@ class AssistantOrchestratorTest {
     assertNotNull(response.proposal());
     assertEquals(true, response.proposal().validation().mandatoryPassed());
     assertEquals(true, response.proposal().approvalRequired());
+    java.util.UUID.fromString(response.proposal().patch().operations().get(0).targetElementId());
+    assertEquals(
+        response.proposal().patch().operations().get(0).targetElementId(),
+        response
+            .proposal()
+            .patch()
+            .operations()
+            .get(0)
+            .attributes()
+            .path("businessOperationRef")
+            .asText());
     verify(memory).saveProposal(anyString(), anyString(), any(), anyLong(), any(), anyString());
   }
 
@@ -196,6 +210,42 @@ class AssistantOrchestratorTest {
 
     assertEquals(AssistantWorkflowState.WAITING_FOR_CHOICE, response.workflowState());
     assertNull(response.proposal());
+  }
+
+  @Test
+  void retriesValidationWithFreshFeedbackUntilAProposalIsValid() throws Exception {
+    SemanticModelPatch invalid =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "bad-id",
+                    "NotInTheMetamodel",
+                    JsonNodeFactory.instance.objectNode(),
+                    null,
+                    null)));
+    var attributes = new ObjectMapper().readTree("{\"name\":\"Submit order\"}");
+    SemanticModelPatch valid =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "b92ec7c2-8875-4eb6-bb3e-70993dcf20bf",
+                    "Function",
+                    attributes,
+                    null,
+                    null)));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(AssistantTurnPlan.Kind.PATCH, "", List.of(), invalid),
+            new AssistantTurnPlan(AssistantTurnPlan.Kind.PATCH, "", List.of(), invalid),
+            new AssistantTurnPlan(AssistantTurnPlan.Kind.PATCH, "Prepared.", List.of(), valid));
+
+    var response = orchestrator.handleMessage(user, "session", request("model submission"));
+
+    assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
+    assertNotNull(response.proposal());
+    verify(provider, times(3)).planTurn(any());
   }
 
   private AssistantOrchestrator.AssistantTurnRequest request(String message) {

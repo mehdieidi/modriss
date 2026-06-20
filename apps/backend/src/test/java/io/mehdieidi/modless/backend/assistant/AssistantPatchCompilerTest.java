@@ -113,6 +113,31 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
+  void protectsBackendOwnedIdentityFromPlannerAttributes() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+            {"eClass":"PIMModel","modelLevel":"PIM","functions":[],
+             "graph":{"elements":[],"relationships":[]}}
+            """);
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "function-1",
+                    "Function",
+                    mapper.readTree("{\"id\":null,\"eClass\":\"Schema\",\"name\":\"Submit\"}"),
+                    null,
+                    null)));
+
+    var preview = compiler.apply(model, compiler.compile(model, patch));
+
+    assertEquals("function-1", preview.at("/functions/0/id").asText());
+    assertEquals("Function", preview.at("/functions/0/eClass").asText());
+  }
+
+  @Test
   void inverseToleratesPersistenceDroppingTheSelectedVisualContainer() throws Exception {
     var starter =
         mapper.readTree(
@@ -215,6 +240,35 @@ class AssistantPatchCompilerTest {
     assertEquals("/dataStores/0/ownedDataModels", compiled.patch().get(0).path());
     assertEquals("model-1", preview.at("/dataStores/0/ownedDataModels/0/id").asText());
     assertEquals("Order", preview.at("/graph/elements/0/name").asText());
+  }
+
+  @Test
+  void addsOwnedChildThroughSingleValuedContainmentReference() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+            {
+              "eClass":"PIMModel","modelLevel":"PIM",
+              "functions":[{"id":"function-1","eClass":"Function","name":"Submit"}],
+              "graph":{"elements":[],"relationships":[]}
+            }
+            """);
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "contract-1",
+                    "FunctionContract",
+                    mapper.readTree("{\"name\":\"Submit contract\"}"),
+                    "function-1",
+                    "contract")));
+
+    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
+    var preview = compiler.apply(model, compiled);
+
+    assertEquals("/functions/0/contract", compiled.patch().get(0).path());
+    assertEquals("contract-1", preview.at("/functions/0/contract/id").asText());
   }
 
   @Test
