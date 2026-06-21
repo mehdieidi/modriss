@@ -13,7 +13,8 @@ class AiPropertiesTest {
   void appliesConservativeDefaults() {
     AiProperties properties =
         new AiProperties(
-            false, null, null, null, 0, 0, 0, 0, 0, 0, null, null, null, null, null, null, null);
+            false, null, null, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null, null, null,
+            null, null);
 
     assertFalse(properties.enabled());
     assertEquals(AiProperties.RolloutMode.GUARDED_APPLY, properties.mode());
@@ -21,11 +22,17 @@ class AiPropertiesTest {
     assertEquals("127.0.0.1", properties.proxy().host());
     assertEquals(2081, properties.proxy().port());
     assertEquals("https://api.openai.com", properties.openaiCompatible().baseUrl());
-    assertEquals(Duration.ofMinutes(5), properties.requestTimeout());
+    assertEquals(Duration.ofMinutes(10), properties.requestTimeout());
     assertEquals("", properties.gemini().apiKey());
     assertEquals(30, properties.hardening().perUserRequestsPerWindow());
     assertEquals(AiProperties.EmbeddingProvider.ONNX, properties.embeddings().provider());
     assertTrue(properties.embeddings().fallbackToHash());
+    assertEquals(6, properties.validationRepairAttempts());
+    assertEquals(16000, properties.tokenBudget());
+    assertEquals(16, properties.maxAgentSteps());
+    assertEquals(8, properties.maxToolCallsPerStep());
+    assertEquals(1, properties.maxAutoApplyOperations());
+    assertEquals(10, properties.reservedSchemaSnippets());
     assertEquals("gpt-4o-mini", properties.modelFor(AssistantModelRole.RESPONDER));
   }
 
@@ -53,6 +60,10 @@ class AiPropertiesTest {
             null,
             "gemini",
             null,
+            0,
+            0,
+            0,
+            0,
             0,
             0,
             0,

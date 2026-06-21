@@ -7,6 +7,7 @@ import { toDiagram } from "./diagram.js";
 import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
 import { loadModelById } from "./model-ops.js";
+import { hasUnsavedModelChanges } from "./model-save-ui.js";
 
 const TERMINAL_WORKFLOW_STATES = new Set([
   "PROPOSED",
@@ -278,7 +279,7 @@ function buildThinkingSummary(workflowState = null, message = null) {
     return message || "Could not complete the request.";
   }
   if (workflowState === "APPLIED") {
-    return message || "Applied the approved changes to your model.";
+    return message || "Applied the validated changes to your model automatically.";
   }
   if (workflowState === "EXPLAINED") {
     return message || "Explained the model based on your question.";
@@ -584,7 +585,15 @@ export async function resumeChatConversation(sessionId) {
 export async function startNewChatConversation() {
   const typeKey = state.activeType;
   const scopeKey = chatScopeKey(typeKey);
+  const previousSessionId = state.chat.sessions.get(scopeKey)?.sessionId;
   disconnectChatChannel(scopeKey);
+  if (previousSessionId) {
+    try {
+      await api(`/chatbot/sessions/${previousSessionId}`, { method: "DELETE" });
+    } catch {
+      // Best-effort cleanup; a new session can still be created.
+    }
+  }
   state.chat.sessions.delete(scopeKey);
   state.chat.attachment = null;
   if (el.chatFileInput) {
@@ -927,7 +936,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   title.className = "chat-proposal-title";
   title.textContent = proposal.approvalRequired
     ? "Suggested model changes"
-    : "Applied model changes";
+    : "Applied automatically";
   const riskBadge = document.createElement("span");
   riskBadge.className = `chat-proposal-risk chat-proposal-risk-${risk.toLowerCase()}`;
   riskBadge.textContent = RISK_LABELS[risk] || risk;
@@ -936,10 +945,13 @@ function appendProposalCard(typeKey, sessionId, proposal) {
 
   const intro = document.createElement("p");
   intro.className = "chat-proposal-intro";
-  intro.textContent =
-    changes.length === 1
+  intro.textContent = proposal.approvalRequired
+    ? changes.length === 1
       ? "The assistant prepared one change for your model."
-      : `The assistant prepared ${changes.length} changes for your model.`;
+      : `The assistant prepared ${changes.length} changes for your model.`
+    : changes.length === 1
+      ? "The assistant applied one low-risk change automatically."
+      : `The assistant applied ${changes.length} low-risk changes automatically.`;
   bubble.appendChild(intro);
 
   if (changes.length) {
@@ -963,9 +975,13 @@ function appendProposalCard(typeKey, sessionId, proposal) {
 
   const validation = document.createElement("div");
   validation.className = `chat-proposal-validation ${validationPassed ? "is-pass" : "is-fail"}`;
-  validation.textContent = validationPassed
-    ? "Validation passed — ready for your decision"
-    : "Validation failed — apply is blocked until issues are resolved";
+  validation.textContent = proposal.approvalRequired
+    ? validationPassed
+      ? "Validation passed — ready for your decision"
+      : "Validation failed — apply is blocked until issues are resolved"
+    : validationPassed
+      ? "Validation passed — applied automatically"
+      : "Validation failed — changes were not applied";
   bubble.appendChild(validation);
 
   if (issues.length) {
@@ -1367,6 +1383,8 @@ export async function sendChatMessage() {
         ],
         attachmentName: state.chat.attachment?.name || null,
         attachmentContent: state.chat.attachment?.content || null,
+        unsavedDraftPatch:
+          hasUnsavedModelChanges() && state.baseModel ? JSON.stringify(state.baseModel) : null,
       }),
     });
 

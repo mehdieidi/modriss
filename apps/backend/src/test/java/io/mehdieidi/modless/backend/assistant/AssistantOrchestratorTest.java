@@ -8,16 +8,20 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import io.mehdieidi.modless.backend.observability.ModlessMetrics;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
+import io.mehdieidi.modless.platform.model.domain.ModelRecord;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
 import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
 import java.time.Instant;
@@ -48,6 +52,12 @@ class AssistantOrchestratorTest {
   private final AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
   private final AssistantDomainScaffoldService domainScaffold =
       new AssistantDomainScaffoldService(schemas);
+  private final AssistantPhasedPatchBuilder phasedPatchBuilder =
+      new AssistantPhasedPatchBuilder(new AssistantPatchCompiler(), domainScaffold);
+  private final AssistantToolService tools =
+      new AssistantToolService(
+          catalogs, new AssistantPatchCompiler(), schemas, models, new ObjectMapper());
+  private final ModlessMetrics metrics = mock(ModlessMetrics.class);
   private final AssistantPatchCompleter patchCompleter = new AssistantPatchCompleter(schemas);
   private final AssistantValidationFeedbackResolver feedbackResolver =
       new AssistantValidationFeedbackResolver(schemas);
@@ -58,7 +68,8 @@ class AssistantOrchestratorTest {
   void setUp() {
     AiProperties properties =
         new AiProperties(
-            true, null, null, null, 96, 2, 6000, 0, 0, 0, null, null, null, null, null, null, null);
+            true, null, null, null, 96, 2, 6000, 0, 0, 0, 0, 0, 0, 0, null, null, null, null, null,
+            null, null);
     when(sessions.require("session", "user")).thenReturn(session);
     when(projects.get(user, "project"))
         .thenReturn(
@@ -93,6 +104,10 @@ class AssistantOrchestratorTest {
             clarificationGate,
             schemas,
             domainScaffold,
+            phasedPatchBuilder,
+            tools,
+            metrics,
+            new ObjectMapper(),
             realtime,
             new AssistantHardeningService(properties, null),
             models,
@@ -109,7 +124,8 @@ class AssistantOrchestratorTest {
                 List.of(),
                 new SemanticModelPatch(List.of())));
 
-    var response = orchestrator.handleMessage(user, "session", request("delete everything"));
+    var response =
+        orchestrator.handleMessage(user, "session", request("Explain what this model does"));
 
     assertEquals(AssistantWorkflowState.EXPLAINED, response.workflowState());
     assertNull(response.proposal());
@@ -126,14 +142,17 @@ class AssistantOrchestratorTest {
                 new AssistantChoice.Option("once", "At least once", "Allow deduplication."),
                 new AssistantChoice.Option("exact", "Effectively once", "Require idempotency.")),
             true);
-    when(provider.planTurn(any()))
+    when(provider.planMutationTurn(any(), any()))
         .thenReturn(
-            new AssistantTurnPlan(
-                AssistantTurnPlan.Intent.INFORMATION,
-                AssistantTurnPlan.Kind.CLARIFICATION,
-                "I need one decision.",
-                List.of(question),
-                new SemanticModelPatch(List.of())));
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.INFORMATION,
+                    AssistantTurnPlan.Kind.CLARIFICATION,
+                    "I need one decision.",
+                    List.of(question),
+                    new SemanticModelPatch(List.of())),
+                3,
+                4));
 
     var response = orchestrator.handleMessage(user, "session", request("design the workflow"));
 
@@ -157,10 +176,13 @@ class AssistantOrchestratorTest {
                     attributes,
                     null,
                     null)));
-    when(provider.planTurn(any()))
+    when(provider.planMutationTurn(any(), any()))
         .thenReturn(
-            new AssistantTurnPlan(
-                AssistantTurnPlan.Kind.PATCH, "Prepared the function.", List.of(), patch));
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Kind.PATCH, "Prepared the function.", List.of(), patch),
+                3,
+                4));
 
     var response = orchestrator.handleMessage(user, "session", request("model submission"));
 
@@ -199,6 +221,10 @@ class AssistantOrchestratorTest {
             "scope",
             "Which formal concern should be modeled first?",
             List.of(new AssistantChoice.Option("core", "Core flow", "Start with the core flow.")));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(AssistantTurnPlan.Kind.PATCH, "", List.of(), invalid), 3, 4));
     when(provider.planTurn(any()))
         .thenReturn(
             new AssistantTurnPlan(AssistantTurnPlan.Kind.PATCH, "", List.of(), invalid),
@@ -243,6 +269,10 @@ class AssistantOrchestratorTest {
                     attributes,
                     null,
                     null)));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(AssistantTurnPlan.Kind.PATCH, "", List.of(), invalid), 3, 4));
     when(provider.planTurn(any()))
         .thenReturn(
             new AssistantTurnPlan(AssistantTurnPlan.Kind.PATCH, "", List.of(), invalid),
@@ -278,14 +308,19 @@ class AssistantOrchestratorTest {
                     attributes,
                     null,
                     null)));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.CLARIFICATION,
+                    "I need architectural decisions.",
+                    List.of(architectureQuestion),
+                    new SemanticModelPatch(List.of())),
+                3,
+                4));
     when(provider.planTurn(any()))
         .thenReturn(
-            new AssistantTurnPlan(
-                AssistantTurnPlan.Intent.MUTATION,
-                AssistantTurnPlan.Kind.CLARIFICATION,
-                "I need architectural decisions.",
-                List.of(architectureQuestion),
-                new SemanticModelPatch(List.of())),
             new AssistantTurnPlan(
                 AssistantTurnPlan.Intent.MUTATION,
                 AssistantTurnPlan.Kind.PATCH,
@@ -299,7 +334,8 @@ class AssistantOrchestratorTest {
 
     assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
     assertNotNull(response.proposal());
-    verify(provider, times(2)).planTurn(any());
+    verify(provider, times(1)).planMutationTurn(any(), any());
+    verify(provider, times(1)).planTurn(any());
   }
 
   @Test
@@ -315,14 +351,17 @@ class AssistantOrchestratorTest {
                     attributes,
                     null,
                     null)));
-    when(provider.planTurn(any()))
+    when(provider.planMutationTurn(any(), any()))
         .thenReturn(
-            new AssistantTurnPlan(
-                AssistantTurnPlan.Intent.MUTATION,
-                AssistantTurnPlan.Kind.PATCH,
-                "Prepared the vending machine backend.",
-                List.of(),
-                patch));
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.PATCH,
+                    "Prepared the vending machine backend.",
+                    List.of(),
+                    patch),
+                3,
+                4));
 
     var response =
         orchestrator.handleMessage(
@@ -341,7 +380,99 @@ class AssistantOrchestratorTest {
                 type -> Set.of("ServerlessService", "Function", "Api", "DataStore").contains(type))
             .count();
     assertTrue(domainElements >= 3);
-    verify(provider, times(1)).planTurn(any());
+    verify(provider, times(1)).planMutationTurn(any(), any());
+  }
+
+  @Test
+  void autoAppliesLowRiskSingleAttributeEdit() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode modelJson =
+        mapper.readTree(
+            """
+            {
+              "id": "root",
+              "eClass": "PIMModel",
+              "modelLevel": "PIM",
+              "name": "Orders",
+              "diagram": {
+                "elements": [{"id": "fn-1", "eClass": "Function", "name": "Old"}],
+                "relationships": []
+              }
+            }
+            """);
+    ModelRecord model =
+        new ModelRecord(
+            "model-1",
+            "project",
+            ModelLevel.PIM,
+            "Orders",
+            modelJson,
+            "v1",
+            "hash",
+            1L,
+            null,
+            "CURRENT",
+            Instant.now(),
+            Instant.now());
+    when(projects.get(user, "project"))
+        .thenReturn(
+            new ProjectRecord(
+                "project",
+                "Project",
+                "",
+                "user",
+                Map.of("pim", "model-1"),
+                List.of(),
+                Instant.now(),
+                Instant.now()));
+    when(models.get(user, ModelLevel.PIM, "model-1")).thenReturn(model);
+    when(models.patch(any(), any(), anyString(), anyString(), any(), anyLong()))
+        .thenAnswer(
+            invocation ->
+                new ModelRecord(
+                    model.id(),
+                    model.projectId(),
+                    model.level(),
+                    model.name(),
+                    model.modelJson(),
+                    model.metamodelVersion(),
+                    model.metamodelHash(),
+                    2L,
+                    model.sourceXmiHash(),
+                    model.migrationState(),
+                    model.createdAt(),
+                    Instant.now()));
+
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.SET_ATTRIBUTE,
+                    "fn-1",
+                    "Function",
+                    mapper.readTree("\"New\""),
+                    null,
+                    "name")));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Kind.PATCH, "Renamed the function.", List.of(), patch),
+                2,
+                3));
+
+    var response =
+        orchestrator.handleMessage(
+            user,
+            "session",
+            new AssistantOrchestrator.AssistantTurnRequest(
+                "Rename the function to New", "model-1", 1L, "pim", List.of("fn-1"), null));
+
+    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
+    assertNotNull(response.proposal());
+    assertEquals(false, response.proposal().approvalRequired());
+    verify(models).patch(eq(user), eq(ModelLevel.PIM), eq("model-1"), anyString(), any(), eq(1L));
+    verify(memory).markProposalApplied(anyString(), eq("model-1"), eq(2L));
   }
 
   private AssistantOrchestrator.AssistantTurnRequest request(String message) {

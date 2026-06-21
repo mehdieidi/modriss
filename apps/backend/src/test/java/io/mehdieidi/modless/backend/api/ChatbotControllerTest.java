@@ -18,6 +18,8 @@ class ChatbotControllerTest {
 
   @Mock private AssistantOrchestrator assistant;
 
+  @Mock private io.mehdieidi.modless.backend.assistant.AssistantCatalogService catalogs;
+
   @Mock private AssistantRealtimeHub realtime;
 
   @Mock private AuthSupport auth;
@@ -26,7 +28,8 @@ class ChatbotControllerTest {
 
   @Test
   void createSessionRejectsMissingProjectIdBeforeProjectLookup() {
-    ChatbotController controller = new ChatbotController(assistant, realtime, auth, projects);
+    ChatbotController controller =
+        new ChatbotController(assistant, catalogs, realtime, auth, projects);
 
     PlatformException ex =
         assertThrows(

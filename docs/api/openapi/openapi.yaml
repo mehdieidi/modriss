@@ -961,6 +961,24 @@ paths:
       responses:
         "501":
           $ref: "#/components/responses/NotImplemented"
+  /api/chatbot/conversations:
+    get:
+      tags: [Assistant]
+      summary: List recent assistant conversations
+      responses:
+        "200":
+          description: Recent conversations
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/catalogs/reindex:
+    post:
+      tags: [Assistant]
+      summary: Reindex metamodel and EVL catalogs
+      responses:
+        "200":
+          description: Catalog reindex triggered
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions:
     post:
       tags: [Assistant]

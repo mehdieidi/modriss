@@ -40,6 +40,18 @@ public class LocalAssistantEmbeddingService {
   }
 
   /**
+   * Returns the embedding provider actively serving requests.
+   *
+   * @return ONNX when the runtime model is active, otherwise HASH
+   */
+  public AiProperties.EmbeddingProvider activeProvider() {
+    if (properties.provider() == AiProperties.EmbeddingProvider.ONNX && !onnxUnavailable) {
+      return AiProperties.EmbeddingProvider.ONNX;
+    }
+    return AiProperties.EmbeddingProvider.HASH;
+  }
+
+  /**
    * Embeds text as a PGvector literal.
    *
    * @param text text to embed

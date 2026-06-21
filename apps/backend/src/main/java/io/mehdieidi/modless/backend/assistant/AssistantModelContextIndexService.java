@@ -126,15 +126,106 @@ public class AssistantModelContextIndexService {
             .limit(8)
             .map(issue -> issue.severity() + ":" + issue.constraint() + ":" + issue.message())
             .collect(Collectors.joining(" | "));
-    return "Elements: "
-        + elementSummary
-        + "\nValidation: "
-        + issueSummary
-        + "\nNeighborhoods: "
-        + context.neighborhoods().entrySet().stream()
-            .limit(8)
-            .map(entry -> entry.getKey() + "->" + entry.getValue())
-            .collect(Collectors.joining(" | "));
+    StringBuilder summary = new StringBuilder();
+    summary.append("Elements: ").append(elementSummary);
+    if (context.elements().size() > 60) {
+      summary
+          .append("\nLarge model note: ")
+          .append(context.elements().size())
+          .append(" elements total; only the first 60 are listed. Use listModelElements tool for")
+          .append(" targeted lookup. Type histogram: ")
+          .append(typeHistogram(context));
+    }
+    summary
+        .append("\nValidation: ")
+        .append(issueSummary)
+        .append("\nNeighborhoods: ")
+        .append(
+            context.neighborhoods().entrySet().stream()
+                .limit(8)
+                .map(entry -> entry.getKey() + "->" + entry.getValue())
+                .collect(Collectors.joining(" | ")));
+    return summary.toString();
+  }
+
+  /**
+   * Builds selection-focused context with full detail for selected elements, one-hop neighbors, and
+   * writable reference hints per selected type.
+   *
+   * @param context compact model context
+   * @param selectedIds selected stable element IDs
+   * @param schemas metamodel schema service for type contracts
+   * @return prompt-ready focus summary
+   */
+  public String focusContext(
+      AssistantModelContext context,
+      List<String> selectedIds,
+      AssistantMetamodelSchemaService schemas) {
+    if (selectedIds == null || selectedIds.isEmpty()) {
+      return "";
+    }
+    Map<String, ContextElement> elements =
+        context.elements().stream()
+            .collect(
+                Collectors.toMap(ContextElement::id, element -> element, (left, right) -> left));
+    StringBuilder builder = new StringBuilder("Selection focus:\n");
+    for (String selectedId : selectedIds.stream().distinct().limit(12).toList()) {
+      ContextElement selected = elements.get(selectedId);
+      if (selected == null) {
+        builder.append("- ").append(selectedId).append(": not found in compact context\n");
+        continue;
+      }
+      builder
+          .append("- ")
+          .append(selected.id())
+          .append(" ")
+          .append(selected.type())
+          .append(" ")
+          .append(selected.name())
+          .append(" at ")
+          .append(selected.path())
+          .append('\n');
+      List<String> neighbors = context.neighborhoods().getOrDefault(selected.id(), List.of());
+      if (!neighbors.isEmpty()) {
+        builder
+            .append("  neighbors: ")
+            .append(
+                neighbors.stream()
+                    .map(elements::get)
+                    .filter(java.util.Objects::nonNull)
+                    .map(element -> element.id() + ":" + element.type() + ":" + element.name())
+                    .collect(Collectors.joining(", ")))
+            .append('\n');
+      }
+      if (schemas != null) {
+        try {
+          AssistantModelProvider.ContextSnippet contract =
+              schemas.typeContract(context.level(), selected.type());
+          builder.append("  writable contract: ").append(contract.content()).append('\n');
+        } catch (Exception ignored) {
+          builder.append("  writable contract: unavailable\n");
+        }
+      }
+    }
+    return builder.toString().trim();
+  }
+
+  /**
+   * Returns a compact type histogram for large models.
+   *
+   * @param context compact model context
+   * @return histogram summary
+   */
+  public String typeHistogram(AssistantModelContext context) {
+    Map<String, Long> counts = new LinkedHashMap<>();
+    for (ContextElement element : context.elements()) {
+      counts.merge(element.type(), 1L, Long::sum);
+    }
+    return counts.entrySet().stream()
+        .sorted((left, right) -> Long.compare(right.getValue(), left.getValue()))
+        .limit(12)
+        .map(entry -> entry.getKey() + "=" + entry.getValue())
+        .collect(Collectors.joining(", "));
   }
 
   /**

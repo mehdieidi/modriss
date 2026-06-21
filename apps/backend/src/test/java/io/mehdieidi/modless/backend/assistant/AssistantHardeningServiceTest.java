@@ -25,6 +25,10 @@ class AssistantHardeningServiceTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            0,
             null,
             new AiProperties.Hardening(
                 1, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 1, Duration.ZERO, 12),
@@ -48,6 +52,10 @@ class AssistantHardeningServiceTest {
             null,
             null,
             null,
+            0,
+            0,
+            0,
+            0,
             0,
             0,
             0,
@@ -89,6 +97,10 @@ class AssistantHardeningServiceTest {
             null,
             null,
             null,
+            0,
+            0,
+            0,
+            0,
             0,
             0,
             0,
@@ -141,6 +153,10 @@ class AssistantHardeningServiceTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            0,
             null,
             new AiProperties.Hardening(
                 30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 2, Duration.ZERO, 12),
@@ -185,6 +201,10 @@ class AssistantHardeningServiceTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            0,
             null,
             new AiProperties.Hardening(
                 30, Duration.ofMinutes(1), 3, Duration.ofMinutes(1), 2, Duration.ZERO, 12),
@@ -211,7 +231,7 @@ class AssistantHardeningServiceTest {
 
     assertEquals(504, ex.status());
     assertEquals(
-        "AI provider returned no response within 300 seconds. The provider or model is currently "
+        "AI provider returned no response within 600 seconds. The provider or model is currently "
             + "too slow; try again shortly.",
         ex.getMessage());
     assertEquals(1, attempts.get());

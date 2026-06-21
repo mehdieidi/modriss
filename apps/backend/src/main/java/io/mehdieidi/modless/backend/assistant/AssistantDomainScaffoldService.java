@@ -17,6 +17,10 @@ public class AssistantDomainScaffoldService {
 
   private static final Set<String> SERVERLESS_INTENT =
       Set.of("serverless", "backend", "api", "function", "microservice", "vending", "service");
+  private static final Set<String> BUSINESS_INTENT =
+      Set.of("business", "domain", "capability", "process", "organization", "actor", "cim");
+  private static final Set<String> AWS_INTENT =
+      Set.of("aws", "lambda", "gateway", "dynamodb", "eventbridge", "cloud", "psm", "sam");
 
   private final AssistantMetamodelSchemaService schemas;
 
@@ -49,7 +53,27 @@ public class AssistantDomainScaffoldService {
     }
     return switch (level) {
       case PIM -> Optional.of(serverlessBackend(request));
+      case CIM -> Optional.of(businessModel(request));
+      case PSM -> Optional.of(awsPlatform(request));
       default -> Optional.empty();
+    };
+  }
+
+  /** Adds observability-oriented elements that can be composed onto an existing scaffold. */
+  public SemanticModelPatch observabilityPack(ModelLevel level, String request) {
+    return switch (level) {
+      case PIM -> observabilityPimPack(request);
+      case PSM -> observabilityPsmPack(request);
+      default -> new SemanticModelPatch(List.of());
+    };
+  }
+
+  /** Adds security-oriented elements that can be composed onto an existing scaffold. */
+  public SemanticModelPatch securityPack(ModelLevel level, String request) {
+    return switch (level) {
+      case PIM -> securityPimPack(request);
+      case PSM -> securityPsmPack(request);
+      default -> new SemanticModelPatch(List.of());
     };
   }
 
@@ -72,14 +96,204 @@ public class AssistantDomainScaffoldService {
   }
 
   private boolean supports(ModelLevel level, String request) {
-    if (level != ModelLevel.PIM || request == null || request.isBlank()) {
-      return false;
-    }
-    if (!looksLikeCreation(request)) {
+    if (request == null || request.isBlank() || !looksLikeCreation(request)) {
       return false;
     }
     String normalized = request.toLowerCase(Locale.ROOT);
-    return SERVERLESS_INTENT.stream().anyMatch(normalized::contains);
+    return switch (level) {
+      case PIM -> SERVERLESS_INTENT.stream().anyMatch(normalized::contains);
+      case CIM -> BUSINESS_INTENT.stream().anyMatch(normalized::contains);
+      case PSM -> AWS_INTENT.stream().anyMatch(normalized::contains);
+      default -> false;
+    };
+  }
+
+  private SemanticModelPatch businessModel(String request) {
+    String domain = deriveDomainName(request);
+    String actorId = uuid();
+    String capabilityId = uuid();
+    String processId = uuid();
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>();
+    operations.add(
+        add(
+            actorId,
+            "Actor",
+            attrs(
+                "name",
+                domain + " Operator",
+                "actorType",
+                "HUMAN",
+                "description",
+                "Primary actor interacting with the " + domain + " capability.")));
+    operations.add(
+        add(
+            capabilityId,
+            "BusinessCapability",
+            attrs(
+                "name",
+                domain + " Management",
+                "purpose",
+                "Manage the core " + domain + " business capability.",
+                "maturity",
+                "INITIAL")));
+    operations.add(
+        add(
+            processId,
+            "BusinessProcess",
+            attrs(
+                "name",
+                domain + " Core Process",
+                "purpose",
+                "Coordinate the main " + domain + " workflow.",
+                "automationLevel",
+                "PARTIALLY_AUTOMATED")));
+    return new SemanticModelPatch(operations);
+  }
+
+  private SemanticModelPatch awsPlatform(String request) {
+    String domain = deriveDomainName(request);
+    String stackId = uuid();
+    String apiId = uuid();
+    String routeId = uuid();
+    String functionId = uuid();
+    String tableId = uuid();
+    String busId = uuid();
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>();
+    operations.add(
+        add(
+            stackId,
+            "SamStack",
+            attrs(
+                "stackName",
+                domain.replace(" ", "") + "Stack",
+                "templateDescription",
+                "AWS serverless stack for " + domain + ".")));
+    operations.add(
+        add(
+            apiId,
+            "HttpApi",
+            attrs("apiName", domain + " API", "descriptionText", "Public HTTP API for " + domain),
+            stackId,
+            "resources"));
+    operations.add(
+        add(
+            routeId,
+            "HttpApiRoute",
+            attrs(
+                "routeKey",
+                "POST /events",
+                "operationName",
+                "publishEvent",
+                "authorizationType",
+                "NONE"),
+            stackId,
+            "resources"));
+    operations.add(
+        add(
+            functionId,
+            "AwsLambdaFunction",
+            attrs(
+                "functionName",
+                domain.replace(" ", "") + "Handler",
+                "runtime",
+                "java21",
+                "handler",
+                "com.example.Handler::handleRequest",
+                "memorySize",
+                512,
+                "timeout",
+                30),
+            stackId,
+            "resources"));
+    operations.add(
+        add(
+            tableId,
+            "DynamoDbTable",
+            attrs(
+                "tableName",
+                domain.replace(" ", "") + "Table",
+                "billingMode",
+                "PAY_PER_REQUEST",
+                "pointInTimeRecoveryEnabled",
+                true),
+            stackId,
+            "resources"));
+    operations.add(
+        add(
+            busId,
+            "EventBridgeBus",
+            attrs(
+                "busName", domain.replace(" ", "") + "Bus", "descriptionText", domain + " events"),
+            stackId,
+            "resources"));
+    connect(operations, routeId, functionId, "integration");
+    return new SemanticModelPatch(operations);
+  }
+
+  private SemanticModelPatch observabilityPimPack(String request) {
+    String domain = deriveDomainName(request);
+    String eventId = uuid();
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>();
+    operations.add(
+        add(
+            eventId,
+            "EventType",
+            attrs(
+                "name",
+                domain + "Observed",
+                "description",
+                "Domain observability event for " + domain + ".")));
+    return new SemanticModelPatch(operations);
+  }
+
+  private SemanticModelPatch securityPimPack(String request) {
+    String domain = deriveDomainName(request);
+    String policyId = uuid();
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>();
+    operations.add(
+        add(
+            policyId,
+            "Policy",
+            attrs(
+                "name",
+                domain + " Security Policy",
+                "policyKind",
+                "AUTHORIZATION",
+                "description",
+                "Baseline authorization policy for " + domain + ".")));
+    return new SemanticModelPatch(operations);
+  }
+
+  private SemanticModelPatch observabilityPsmPack(String request) {
+    String domain = deriveDomainName(request);
+    String ruleId = uuid();
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>();
+    operations.add(
+        add(
+            ruleId,
+            "EventBridgeRule",
+            attrs(
+                "ruleName",
+                domain.replace(" ", "") + "ObservabilityRule",
+                "descriptionText",
+                "Route operational events for " + domain + ".")));
+    return new SemanticModelPatch(operations);
+  }
+
+  private SemanticModelPatch securityPsmPack(String request) {
+    String domain = deriveDomainName(request);
+    String authorizerId = uuid();
+    List<SemanticModelPatch.Operation> operations = new ArrayList<>();
+    operations.add(
+        add(
+            authorizerId,
+            "ApiGatewayAuthorizer",
+            attrs(
+                "authorizerName",
+                domain.replace(" ", "") + "Authorizer",
+                "authorizerType",
+                "JWT")));
+    return new SemanticModelPatch(operations);
   }
 
   private SemanticModelPatch serverlessBackend(String request) {

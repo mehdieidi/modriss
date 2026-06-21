@@ -18,6 +18,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxContextSnippets maximum retrieved snippets passed to the provider per turn
  * @param maxSnippetChars maximum characters per retrieved snippet
  * @param maxSystemChars maximum characters in the system prompt
+ * @param maxAgentSteps maximum agentic planner loop iterations per mutation turn
+ * @param maxToolCallsPerStep maximum tool invocations allowed per agent loop step
+ * @param maxAutoApplyOperations maximum semantic operations allowed for automatic apply
+ * @param reservedSchemaSnippets minimum retrieval slots reserved for tier-1 schema contracts
  * @param fallbackProvider optional provider used only after HTTP 429 from the configured provider
  * @param hardening rate-limit and circuit-breaker settings
  * @param embeddings local embedding settings
@@ -38,6 +42,10 @@ public record AiProperties(
     int maxContextSnippets,
     int maxSnippetChars,
     int maxSystemChars,
+    int maxAgentSteps,
+    int maxToolCallsPerStep,
+    int maxAutoApplyOperations,
+    int reservedSchemaSnippets,
     String fallbackProvider,
     Hardening hardening,
     Embeddings embeddings,
@@ -50,13 +58,17 @@ public record AiProperties(
   public AiProperties {
     mode = RolloutMode.GUARDED_APPLY;
     provider = Provider.from(provider).key();
-    requestTimeout = requestTimeout == null ? Duration.ofMinutes(5) : requestTimeout;
+    requestTimeout = requestTimeout == null ? Duration.ofMinutes(10) : requestTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 96 : maxToolCalls;
-    validationRepairAttempts = validationRepairAttempts <= 0 ? 2 : validationRepairAttempts;
-    tokenBudget = tokenBudget <= 0 ? 6000 : tokenBudget;
+    validationRepairAttempts = validationRepairAttempts <= 0 ? 6 : validationRepairAttempts;
+    tokenBudget = tokenBudget <= 0 ? 16000 : tokenBudget;
     maxContextSnippets = maxContextSnippets <= 0 ? 24 : maxContextSnippets;
     maxSnippetChars = maxSnippetChars <= 0 ? 2400 : maxSnippetChars;
     maxSystemChars = maxSystemChars <= 0 ? 14000 : maxSystemChars;
+    maxAgentSteps = maxAgentSteps <= 0 ? 16 : maxAgentSteps;
+    maxToolCallsPerStep = maxToolCallsPerStep <= 0 ? 8 : maxToolCallsPerStep;
+    maxAutoApplyOperations = maxAutoApplyOperations <= 0 ? 1 : maxAutoApplyOperations;
+    reservedSchemaSnippets = reservedSchemaSnippets <= 0 ? 10 : reservedSchemaSnippets;
     fallbackProvider = fallbackProvider == null ? "" : fallbackProvider.trim();
     hardening =
         hardening == null

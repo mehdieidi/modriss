@@ -10,16 +10,22 @@ public class AiHealthIndicator implements HealthIndicator {
 
   private final AiProperties properties;
   private final ProxyAvailability proxyAvailability;
+  private final LocalAssistantEmbeddingService embeddings;
 
   /**
    * Creates the AI health indicator.
    *
    * @param properties AI settings
    * @param proxyAvailability proxy checker
+   * @param embeddings local embedding service
    */
-  public AiHealthIndicator(AiProperties properties, ProxyAvailability proxyAvailability) {
+  public AiHealthIndicator(
+      AiProperties properties,
+      ProxyAvailability proxyAvailability,
+      LocalAssistantEmbeddingService embeddings) {
     this.properties = properties;
     this.proxyAvailability = proxyAvailability;
+    this.embeddings = embeddings;
   }
 
   @Override
@@ -32,6 +38,14 @@ public class AiHealthIndicator implements HealthIndicator {
         .withDetail("mode", properties.mode())
         .withDetail("provider", properties.provider())
         .withDetail("proxy", proxy.message())
+        .withDetail("embeddingConfigured", properties.embeddings().provider())
+        .withDetail("embeddingActive", embeddings.activeProvider())
+        .withDetail("embeddingFallbackToHash", properties.embeddings().fallbackToHash())
+        .withDetail(
+            "embeddingProductionReady",
+            properties.embeddings().provider() == AiProperties.EmbeddingProvider.ONNX
+                && embeddings.activeProvider() == AiProperties.EmbeddingProvider.ONNX
+                && !properties.embeddings().fallbackToHash())
         .build();
   }
 }

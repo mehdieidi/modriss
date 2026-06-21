@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
@@ -26,6 +27,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            0,
             null,
             null,
             null,
@@ -37,7 +42,11 @@ class AssistantProviderStartupTest {
     AssistantPromptGuard promptGuard = new AssistantPromptGuard(properties);
     AssistantToolService tools =
         new AssistantToolService(
-            mock(AssistantCatalogService.class), new AssistantPatchCompiler(), new ObjectMapper());
+            mock(AssistantCatalogService.class),
+            new AssistantPatchCompiler(),
+            new AssistantMetamodelSchemaService(),
+            mock(ModelService.class),
+            new ObjectMapper());
     AssistantHardeningService hardening = new AssistantHardeningService(properties, null);
     SemanticModelPatchParser patchParser = new SemanticModelPatchParser(new ObjectMapper());
 
@@ -71,6 +80,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            0,
             null,
             null,
             null,
@@ -81,7 +94,11 @@ class AssistantProviderStartupTest {
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
     AssistantToolService tools =
         new AssistantToolService(
-            mock(AssistantCatalogService.class), new AssistantPatchCompiler(), new ObjectMapper());
+            mock(AssistantCatalogService.class),
+            new AssistantPatchCompiler(),
+            new AssistantMetamodelSchemaService(),
+            mock(ModelService.class),
+            new ObjectMapper());
 
     assertDoesNotThrow(
         () ->
@@ -108,6 +125,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            0,
             null,
             null,
             null,
@@ -117,7 +138,11 @@ class AssistantProviderStartupTest {
             null);
     AssistantToolService tools =
         new AssistantToolService(
-            mock(AssistantCatalogService.class), new AssistantPatchCompiler(), new ObjectMapper());
+            mock(AssistantCatalogService.class),
+            new AssistantPatchCompiler(),
+            new AssistantMetamodelSchemaService(),
+            mock(ModelService.class),
+            new ObjectMapper());
     GeminiAssistantModelProvider gemini =
         new GeminiAssistantModelProvider(
             properties,
@@ -145,6 +170,10 @@ class AssistantProviderStartupTest {
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            0,
             null,
             null,
             null,
@@ -154,7 +183,11 @@ class AssistantProviderStartupTest {
             null);
     AssistantToolService tools =
         new AssistantToolService(
-            mock(AssistantCatalogService.class), new AssistantPatchCompiler(), new ObjectMapper());
+            mock(AssistantCatalogService.class),
+            new AssistantPatchCompiler(),
+            new AssistantMetamodelSchemaService(),
+            mock(ModelService.class),
+            new ObjectMapper());
     OpenAiCompatibleAssistantModelProvider openai =
         new OpenAiCompatibleAssistantModelProvider(
             properties,

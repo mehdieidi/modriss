@@ -1,7 +1,9 @@
 package io.mehdieidi.modless.backend.assistant;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.mehdieidi.modless.backend.observability.ModlessMetrics;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -48,8 +50,13 @@ public class AssistantOrchestrator {
   private final ModelingConfigService modelingConfig = new ModelingConfigService();
   private final AssistantMetamodelSchemaService schemas;
   private final AssistantDomainScaffoldService domainScaffold;
+  private final AssistantPhasedPatchBuilder phasedPatchBuilder;
+  private final AssistantToolService tools;
+  private final ModlessMetrics metrics;
+  private final ObjectMapper mapper;
 
   private final ThreadLocal<AssistantActivity> lastActivity = new ThreadLocal<>();
+  private final ThreadLocal<AssistantTurnDiagnostics> lastDiagnostics = new ThreadLocal<>();
 
   public AssistantOrchestrator(
       AiProperties properties,
@@ -65,6 +72,10 @@ public class AssistantOrchestrator {
       AssistantClarificationGate clarificationGate,
       AssistantMetamodelSchemaService schemas,
       AssistantDomainScaffoldService domainScaffold,
+      AssistantPhasedPatchBuilder phasedPatchBuilder,
+      AssistantToolService tools,
+      ModlessMetrics metrics,
+      ObjectMapper mapper,
       AssistantRealtimeHub realtime,
       AssistantHardeningService hardening,
       ModelService models,
@@ -82,6 +93,10 @@ public class AssistantOrchestrator {
     this.clarificationGate = clarificationGate;
     this.schemas = schemas;
     this.domainScaffold = domainScaffold;
+    this.phasedPatchBuilder = phasedPatchBuilder;
+    this.tools = tools;
+    this.metrics = metrics;
+    this.mapper = mapper;
     this.realtime = realtime;
     this.hardening = hardening;
     this.models = models;
@@ -174,7 +189,9 @@ public class AssistantOrchestrator {
   /** Handles one natural-language turn using a structured LLM decision. */
   public AssistantTurnResponse handleMessage(
       UserRecord user, String sessionId, AssistantTurnRequest request) {
+    long startedAt = System.currentTimeMillis();
     hardening.checkRateLimit(user.id());
+    metrics.recordAssistantRequest();
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
     String threadId = session.id();
     appendUserMessage(threadId, sessionId, request);
@@ -185,10 +202,12 @@ public class AssistantOrchestrator {
     ModelRecord model = modelId == null ? null : models.get(user, session.level(), modelId);
     requireCurrentRevision(request.revision(), model);
 
-    JsonNode baseModel =
+    JsonNode persistedModel =
         model == null
             ? modelingConfig.starterModel(session.level(), session.title())
             : model.modelJson();
+    JsonNode baseModel =
+        resolvePlanningBase(session.level(), persistedModel, request.unsavedDraftPatch());
     ModelService.ValidationResult currentValidation = models.validate(session.level(), baseModel);
     AssistantModelContextIndexService.AssistantModelContext context =
         model == null
@@ -201,23 +220,50 @@ public class AssistantOrchestrator {
                 currentValidation)
             : modelContexts.snapshot(model, currentValidation);
     List<AssistantModelProvider.ContextSnippet> snippets =
-        retrievalSnippets(request.message(), context, session.level());
+        retrievalSnippets(
+            request.message(), context, session.level(), request.selectedElementIds());
 
+    tools.bindSession(new AssistantToolService.ToolSession(session.level(), baseModel, context));
+    int toolCalls = 0;
+    int repairAttempts = 0;
     AssistantTurnPlan plan;
     try {
       publishProgress(
           sessionId, "PLANNING", "Understanding intent using the formal language context");
-      plan =
-          provider.planTurn(
-              new AssistantModelProvider.AssistantPrompt(
-                  AssistantModelRole.PLANNER,
-                  turnPrompt(session, request, context),
-                  request.message(),
-                  snippets));
+      if (prefersInformationPath(request.rootMessage())) {
+        plan =
+            provider.planTurn(
+                new AssistantModelProvider.AssistantPrompt(
+                    AssistantModelRole.PLANNER,
+                    turnPrompt(session, request, context),
+                    request.message(),
+                    snippets));
+      } else {
+        AssistantModelProvider.AgentLoopResult loopResult =
+            provider.planMutationTurn(
+                new AssistantModelProvider.AssistantPrompt(
+                    AssistantModelRole.PLANNER,
+                    turnPrompt(session, request, context),
+                    request.message(),
+                    snippets),
+                (stage, message) -> publishProgress(sessionId, stage, message));
+        plan = loopResult.plan();
+        toolCalls = loopResult.toolCalls();
+        metrics.recordAssistantToolCalls(toolCalls);
+        log.info(
+            "Assistant agent loop completed sessionId={} steps={} toolCalls={} snippets={}",
+            sessionId,
+            loopResult.steps(),
+            toolCalls,
+            snippets.size());
+      }
     } catch (PlatformException failure) {
       if (failure.status() < 500 && failure.status() != 429) {
         throw failure;
       }
+      recordTurnDiagnostics(
+          "FAILED", snippets.size(), toolCalls, repairAttempts, "PROVIDER_UNAVAILABLE", startedAt);
+      metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
       return finishTurn(
           session,
           threadId,
@@ -231,51 +277,25 @@ public class AssistantOrchestrator {
               List.of(),
               AssistantWorkflowState.FAILED,
               activityFor(AssistantWorkflowState.FAILED)));
+    } finally {
+      tools.clearSession();
     }
 
-    return switch (plan.kind()) {
-      case ANSWER -> {
-        if (plan.intent() == AssistantTurnPlan.Intent.MUTATION) {
-          if (plan.patch().operations().isEmpty()) {
-            plan = replanWithSafeDefaults(session, request, context, snippets, plan);
-          }
-          yield proposalResponse(
-              user, session, threadId, request, model, baseModel, context, snippets, plan);
-        }
-        yield finishTurn(
-            session,
-            threadId,
-            new AssistantTurnResponse(
-                nonBlank(plan.message(), "I completed the model analysis."),
-                modelId,
-                model == null ? null : model.revision(),
-                null,
-                List.of(),
-                AssistantWorkflowState.EXPLAINED,
-                activityFor(AssistantWorkflowState.EXPLAINED)));
-      }
-      case CLARIFICATION -> {
-        AssistantTurnPlan gated = clarificationGate.apply(plan, request.rootMessage());
-        gated = resolveMutationClarification(session, request, context, snippets, plan, gated);
-        yield switch (gated.kind()) {
-          case CLARIFICATION ->
-              clarificationResponse(
-                  session, threadId, request, model, gated.message(), gated.questions());
-          case PATCH ->
-              proposalResponse(
-                  user, session, threadId, request, model, baseModel, context, snippets, gated);
+    AssistantTurnResponse response =
+        switch (plan.kind()) {
           case ANSWER -> {
-            if (gated.intent() == AssistantTurnPlan.Intent.MUTATION) {
-              AssistantTurnPlan replanned =
-                  replanWithSafeDefaults(session, request, context, snippets, gated);
+            if (plan.intent() == AssistantTurnPlan.Intent.MUTATION) {
+              if (plan.patch().operations().isEmpty()) {
+                plan = replanWithSafeDefaults(session, request, context, snippets, plan);
+              }
               yield proposalResponse(
-                  user, session, threadId, request, model, baseModel, context, snippets, replanned);
+                  user, session, threadId, request, model, baseModel, context, snippets, plan);
             }
             yield finishTurn(
                 session,
                 threadId,
                 new AssistantTurnResponse(
-                    nonBlank(gated.message(), "I completed the model analysis."),
+                    nonBlank(plan.message(), "I completed the model analysis."),
                     modelId,
                     model == null ? null : model.revision(),
                     null,
@@ -283,12 +303,52 @@ public class AssistantOrchestrator {
                     AssistantWorkflowState.EXPLAINED,
                     activityFor(AssistantWorkflowState.EXPLAINED)));
           }
+          case CLARIFICATION -> {
+            AssistantTurnPlan gated = clarificationGate.apply(plan, request.rootMessage());
+            gated = resolveMutationClarification(session, request, context, snippets, plan, gated);
+            yield switch (gated.kind()) {
+              case CLARIFICATION ->
+                  clarificationResponse(
+                      session, threadId, request, model, gated.message(), gated.questions());
+              case PATCH ->
+                  proposalResponse(
+                      user, session, threadId, request, model, baseModel, context, snippets, gated);
+              case ANSWER -> {
+                if (gated.intent() == AssistantTurnPlan.Intent.MUTATION) {
+                  AssistantTurnPlan replanned =
+                      replanWithSafeDefaults(session, request, context, snippets, gated);
+                  yield proposalResponse(
+                      user, session, threadId, request, model, baseModel, context, snippets,
+                      replanned);
+                }
+                yield finishTurn(
+                    session,
+                    threadId,
+                    new AssistantTurnResponse(
+                        nonBlank(gated.message(), "I completed the model analysis."),
+                        modelId,
+                        model == null ? null : model.revision(),
+                        null,
+                        List.of(),
+                        AssistantWorkflowState.EXPLAINED,
+                        activityFor(AssistantWorkflowState.EXPLAINED)));
+              }
+            };
+          }
+          case PATCH ->
+              proposalResponse(
+                  user, session, threadId, request, model, baseModel, context, snippets, plan);
         };
-      }
-      case PATCH ->
-          proposalResponse(
-              user, session, threadId, request, model, baseModel, context, snippets, plan);
-    };
+    recordTurnDiagnostics(
+        response.workflowState().name(),
+        snippets.size(),
+        toolCalls,
+        0,
+        response.workflowState().name(),
+        startedAt);
+    metrics.recordAssistantTurnOutcome(
+        evalCategory(request, context), response.workflowState().name());
+    return response;
   }
 
   private AssistantTurnResponse proposalResponse(
@@ -315,6 +375,7 @@ public class AssistantOrchestrator {
     int repairNumber = 0;
     int stagnationCount = 0;
     String lastPatchSignature = patchSignature(acceptedPlan.patch());
+    int lastFeedbackCount = attempt.feedback().size();
     while (!attempt.valid() && repairNumber < properties.validationRepairAttempts()) {
       repairNumber++;
       publishProgress(
@@ -345,13 +406,15 @@ public class AssistantOrchestrator {
       String signature = patchSignature(acceptedPlan.patch());
       if (signature.equals(lastPatchSignature)) {
         stagnationCount++;
-        if (stagnationCount >= 2) {
+        boolean feedbackImproved = attempt.feedback().size() < lastFeedbackCount;
+        if (stagnationCount >= 2 && !feedbackImproved) {
           break;
         }
       } else {
         stagnationCount = 0;
         lastPatchSignature = signature;
       }
+      lastFeedbackCount = attempt.feedback().size();
       AssistantTurnPlan repaired;
       try {
         repaired =
@@ -428,8 +491,16 @@ public class AssistantOrchestrator {
           acceptedPlan,
           attempt);
     }
+    metrics.recordAssistantRepairAttempts(repairNumber);
 
     AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
+    AssistantProposal.RiskLevel risk = riskLevel(compiled, attempt.validation());
+    if (shouldAutoApply(request, acceptedPlan, risk)) {
+      publishProgress(session.id(), "APPLYING", "Applying the validated low-risk change");
+      return autoApplyValidatedProposal(
+          user, session, threadId, request, model, acceptedPlan, attempt, snippets, context, risk);
+    }
+
     AssistantProposal proposal =
         new AssistantProposal(
             java.util.UUID.randomUUID().toString(),
@@ -437,7 +508,7 @@ public class AssistantOrchestrator {
             acceptedPlan.patch(),
             compiled.inversePatch(),
             attempt.validation(),
-            riskLevel(compiled, attempt.validation()),
+            risk,
             true,
             retrievalCitations(snippets, context),
             Instant.now());
@@ -823,7 +894,12 @@ public class AssistantOrchestrator {
       }
     }
     Optional<SemanticModelPatch> scaffold =
-        domainScaffold.build(session.level(), request.rootMessage());
+        isCreationRequest(request.rootMessage())
+            ? phasedPatchBuilder.buildPhased(session.level(), request.rootMessage(), baseModel)
+            : domainScaffold.build(session.level(), request.rootMessage());
+    if (scaffold.isEmpty()) {
+      scaffold = domainScaffold.build(session.level(), request.rootMessage());
+    }
     if (scaffold.isEmpty()) {
       return plan;
     }
@@ -1428,6 +1504,8 @@ public class AssistantOrchestrator {
             original.activeView(),
             original.selectedElementIds(),
             original.unsavedDraftPatch(),
+            original.attachmentName(),
+            original.attachmentContent(),
             original.rootMessage());
     return handleMessage(user, sessionId, resumed);
   }
@@ -1592,7 +1670,8 @@ public class AssistantOrchestrator {
   private List<AssistantModelProvider.ContextSnippet> retrievalSnippets(
       String query,
       AssistantModelContextIndexService.AssistantModelContext context,
-      ModelLevel level) {
+      ModelLevel level,
+      List<String> selectedElementIds) {
     boolean emptyModel = modelContexts.isEmptyCanvas(context);
     List<AssistantModelProvider.ContextSnippet> tier1 = new ArrayList<>();
     tier1.addAll(schemas.planningContracts(level, query, 14, emptyModel));
@@ -1635,19 +1714,39 @@ public class AssistantOrchestrator {
         .distinct()
         .forEach(type -> tier4.addAll(catalogs.describeType(type, level.name(), 6)));
 
-    List<AssistantModelProvider.ContextSnippet> result = new ArrayList<>();
-    result.addAll(tier1);
-    result.addAll(tier2);
-    result.addAll(tier3);
-    result.addAll(tier4);
-    return deduplicate(result, properties.maxContextSnippets());
+    Set<String> selectedTypes = selectedElementTypes(context, selectedElementIds);
+    for (String type : selectedTypes) {
+      tier4.addAll(0, catalogs.describeType(type, level.name(), 6));
+    }
+    context.validationIssues().stream()
+        .map(AssistantValidationSummary.Issue::constraint)
+        .filter(constraint -> constraint != null && !constraint.isBlank())
+        .distinct()
+        .limit(6)
+        .forEach(constraint -> tier4.addAll(0, catalogs.search(constraint, level.name(), 4)));
+
+    return AssistantSnippetBudget.assemble(properties, tier1, tier2, tier3, tier4);
   }
 
-  private List<AssistantModelProvider.ContextSnippet> deduplicate(
+  private Set<String> selectedElementTypes(
+      AssistantModelContextIndexService.AssistantModelContext context,
+      List<String> selectedElementIds) {
+    if (selectedElementIds == null || selectedElementIds.isEmpty()) {
+      return Set.of();
+    }
+    Set<String> selectedIds = new LinkedHashSet<>(selectedElementIds);
+    return context.elements().stream()
+        .filter(element -> selectedIds.contains(element.id()))
+        .map(AssistantModelContextIndexService.ContextElement::type)
+        .filter(type -> type != null && !type.isBlank())
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+  }
+
+  private List<AssistantModelProvider.ContextSnippet> deduplicateCompact(
       List<AssistantModelProvider.ContextSnippet> snippets, int limit) {
     Map<String, AssistantModelProvider.ContextSnippet> result = new LinkedHashMap<>();
     for (AssistantModelProvider.ContextSnippet snippet : snippets) {
-      if (snippet == null) {
+      if (snippet == null || result.size() >= limit) {
         continue;
       }
       String content = snippet.content() == null ? "" : snippet.content().trim();
@@ -1659,7 +1758,12 @@ public class AssistantOrchestrator {
           new AssistantModelProvider.ContextSnippet(snippet.source(), snippet.title(), content);
       result.putIfAbsent(snippet.source() + "#" + snippet.title(), compact);
     }
-    return result.values().stream().limit(limit).toList();
+    return List.copyOf(result.values());
+  }
+
+  private List<AssistantModelProvider.ContextSnippet> deduplicate(
+      List<AssistantModelProvider.ContextSnippet> snippets, int limit) {
+    return deduplicateCompact(snippets, limit);
   }
 
   private String turnPrompt(
@@ -1700,6 +1804,13 @@ public class AssistantOrchestrator {
         + nonBlank(request.activeView(), "unknown")
         + "\nSelected stable IDs: "
         + request.selectedElementIds()
+        + (request.selectedElementIds() == null || request.selectedElementIds().isEmpty()
+            ? ""
+            : "\n" + modelContexts.focusContext(context, request.selectedElementIds(), schemas))
+        + attachmentSection(request)
+        + (blank(request.unsavedDraftPatch())
+            ? ""
+            : "\nUnsaved local draft is included in the planning base model for this turn.")
         + "\nMaximum operations: "
         + properties.maxToolCalls()
         + (modelContexts.isEmptyCanvas(context)
@@ -1815,6 +1926,103 @@ public class AssistantOrchestrator {
         result != null && result.valid(), mandatory, optional, issues);
   }
 
+  private boolean shouldAutoApply(
+      AssistantTurnRequest request, AssistantTurnPlan plan, AssistantProposal.RiskLevel risk) {
+    if (risk != AssistantProposal.RiskLevel.LOW) {
+      return false;
+    }
+    if (wantsExplicitReview(request.rootMessage())) {
+      return false;
+    }
+    if (plan.patch().operations().size() > properties.maxAutoApplyOperations()) {
+      return false;
+    }
+    return plan.patch().operations().stream()
+        .noneMatch(
+            operation -> operation.type() == SemanticModelPatch.OperationType.DELETE_ELEMENT);
+  }
+
+  private boolean wantsExplicitReview(String message) {
+    String normalized = message == null ? "" : message.toLowerCase(java.util.Locale.ROOT);
+    return normalized.contains("propose")
+        || normalized.contains("review")
+        || normalized.contains("don't apply")
+        || normalized.contains("do not apply");
+  }
+
+  private AssistantTurnResponse autoApplyValidatedProposal(
+      UserRecord user,
+      AssistantSessionStore.AssistantSession session,
+      String threadId,
+      AssistantTurnRequest request,
+      ModelRecord model,
+      AssistantTurnPlan acceptedPlan,
+      PlanAttempt attempt,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      AssistantModelContextIndexService.AssistantModelContext context,
+      AssistantProposal.RiskLevel risk) {
+    AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
+    ProjectRecord project = projects.get(user, session.projectId());
+    ModelRecord targetModel = model == null ? createStarterModel(user, project, session) : model;
+    ModelRecord updated =
+        models.patch(
+            user,
+            session.level(),
+            targetModel.id(),
+            targetModel.name(),
+            compiled.patch(),
+            targetModel.revision());
+    AssistantProposal proposal =
+        new AssistantProposal(
+            java.util.UUID.randomUUID().toString(),
+            compiled.affectedElements(),
+            acceptedPlan.patch(),
+            compiled.inversePatch(),
+            attempt.validation(),
+            risk,
+            false,
+            retrievalCitations(snippets, context),
+            Instant.now());
+    memory.clearPendingInteraction(threadId);
+    memory.saveProposal(
+        threadId, session.projectId(), updated.id(), updated.revision(), proposal, "APPLIED");
+    memory.markProposalApplied(proposal.id(), updated.id(), updated.revision());
+    memory.appendAudit(
+        proposal.id(),
+        session.projectId(),
+        user.id(),
+        "APPLIED",
+        Map.of(
+            "operationCount",
+            proposal.patch().operations().size(),
+            "validationPassed",
+            true,
+            "autoApplied",
+            true));
+    realtime.publish(
+        session.id(),
+        "model.updated",
+        Map.of(
+            "modelId", updated.id(),
+            "revision", updated.revision(),
+            "proposalId", proposal.id()));
+    String message =
+        nonBlank(acceptedPlan.message(), "I applied the requested change.")
+            + "\n\nThe change was low risk and passed mandatory validation, so it was applied "
+            + "automatically. You can undo it from the card below.";
+    return finishTurn(
+        session,
+        threadId,
+        new AssistantTurnResponse(
+            message,
+            updated.id(),
+            updated.revision(),
+            proposal,
+            List.of(),
+            AssistantWorkflowState.APPLIED,
+            activityFor(AssistantWorkflowState.APPLIED)));
+  }
+
   private AssistantProposal.RiskLevel riskLevel(
       AssistantPatchCompiler.CompiledPatch compiled, AssistantValidationSummary validation) {
     boolean destructive =
@@ -1893,6 +2101,7 @@ public class AssistantOrchestrator {
   private String terminalMessage(AssistantWorkflowState workflowState) {
     return switch (workflowState) {
       case PROPOSED -> "Proposal ready for review";
+      case APPLIED -> "Applied automatically";
       case WAITING_FOR_CHOICE -> "Waiting for your decision";
       case FAILED -> "Could not complete the request";
       case EXPLAINED -> "Analysis complete";
@@ -1907,6 +2116,109 @@ public class AssistantOrchestrator {
 
   private String summarizePatch(String unsavedDraftPatch) {
     return blank(unsavedDraftPatch) ? "none" : unsavedDraftPatch.trim();
+  }
+
+  private JsonNode resolvePlanningBase(
+      ModelLevel level, JsonNode persistedModel, String unsavedDraftPatch) {
+    if (blank(unsavedDraftPatch)) {
+      return persistedModel;
+    }
+    String draft = unsavedDraftPatch.trim();
+    try {
+      JsonNode parsed = mapper.readTree(draft);
+      if (parsed.isObject() && parsed.has("eClass")) {
+        return parsed;
+      }
+      SemanticModelPatch patch = mapper.readValue(draft, SemanticModelPatch.class);
+      if (patch.operations().isEmpty()) {
+        return persistedModel;
+      }
+      AssistantPatchCompiler.CompiledPatch compiled = patchCompiler.compile(persistedModel, patch);
+      return patchCompiler.apply(persistedModel, compiled);
+    } catch (Exception ex) {
+      log.warn("Could not merge unsaved draft patch; using persisted model instead.");
+      return persistedModel;
+    }
+  }
+
+  private boolean prefersInformationPath(String message) {
+    if (blank(message)) {
+      return true;
+    }
+    String normalized = message.toLowerCase(java.util.Locale.ROOT);
+    boolean explain =
+        normalized.matches(
+            "(?s).*(\\bexplain\\b|\\banaly[sz]e\\b|\\bwhat is\\b|\\bhow does\\b|\\bwhy"
+                + " does\\b|\\bdescribe\\b|\\bcompare\\b|\\breview\\b(?![^\\n"
+                + "]*\\b(create|add|build|connect|delete|remove|change|set|rename|update)\\b)).*");
+    boolean mutate =
+        normalized.matches(
+            "(?s).*(\\bcreate\\b|\\badd\\b|\\bbuild\\b|\\bconnect\\b|\\bdelete\\b|\\bremove\\b|\\bchange\\b|\\bset\\b|\\brename\\b|\\bupdate\\b|\\bexpand\\b|\\brefine\\b|\\bmerge\\b|\\bsplit\\b).*");
+    return explain && !mutate;
+  }
+
+  private String attachmentSection(AssistantTurnRequest request) {
+    if (blank(request.attachmentName()) && blank(request.attachmentContent())) {
+      return "";
+    }
+    String content = request.attachmentContent() == null ? "" : request.attachmentContent().trim();
+    if (content.length() > 4000) {
+      content = content.substring(0, 4000) + "\n...[attachment truncated]";
+    }
+    return "\nAttached context file: "
+        + nonBlank(request.attachmentName(), "attachment")
+        + "\n"
+        + content;
+  }
+
+  private String evalCategory(
+      AssistantTurnRequest request,
+      AssistantModelContextIndexService.AssistantModelContext context) {
+    if (request.selectedElementIds() != null && !request.selectedElementIds().isEmpty()) {
+      return "selected-element";
+    }
+    if (!modelContexts.isEmptyCanvas(context)) {
+      return "refine";
+    }
+    String message = request.rootMessage().toLowerCase(java.util.Locale.ROOT);
+    if (message.contains("validate") || message.contains("repair") || message.contains("fix")) {
+      return "validate-repair";
+    }
+    if (prefersInformationPath(message)) {
+      return "explain-only";
+    }
+    return switch (context.level()) {
+      case CIM -> "cim";
+      case PSM -> "psm";
+      default -> "create-empty";
+    };
+  }
+
+  private void recordTurnDiagnostics(
+      String stage,
+      int snippetCount,
+      int toolCalls,
+      int repairAttempts,
+      String outcome,
+      long startedAt) {
+    AssistantTurnDiagnostics diagnostics =
+        new AssistantTurnDiagnostics(
+            stage,
+            snippetCount,
+            toolCalls,
+            repairAttempts,
+            outcome,
+            Math.max(0L, System.currentTimeMillis() - startedAt));
+    lastDiagnostics.set(diagnostics);
+    log.info(
+        "Assistant turn diagnostics stage={} snippets={} toolCalls={} repairAttempts={} outcome={}"
+            + " latencyMs={}",
+        diagnostics.stage(),
+        diagnostics.snippetCount(),
+        diagnostics.toolCalls(),
+        diagnostics.repairAttempts(),
+        diagnostics.outcome(),
+        diagnostics.latencyMs());
   }
 
   private AssistantWorkflowState resolveWorkflowState(
@@ -2005,16 +2317,55 @@ public class AssistantOrchestrator {
     if (recent.isEmpty()) {
       return;
     }
-    String summary =
+    String conversation =
         recent.stream()
             .sorted(
                 java.util.Comparator.comparing(AssistantMemoryRepository.MessageRecord::createdAt))
             .map(message -> message.role() + ": " + message.content())
             .collect(Collectors.joining("\n"));
-    if (summary.length() > 3000) {
-      summary = summary.substring(summary.length() - 3000);
-    }
+    String previousSummary = memory.summary(threadId).orElse("");
+    String summary = summarizeConversation(previousSummary, conversation);
     memory.updateSummary(threadId, summary, recent.get(0).id());
+  }
+
+  private String summarizeConversation(String previousSummary, String conversation) {
+    if (!properties.enabled() || !provider.available()) {
+      return tailTruncate(conversation, 3000);
+    }
+    try {
+      String prompt =
+          """
+          Compress this modeling assistant thread into a concise rolling summary. Preserve the
+          domain name, modeling scope, key decisions, and any pending work. Do not invent facts.
+
+          Previous summary:
+          """
+              + (previousSummary.isBlank() ? "(none)" : previousSummary)
+              + "\n\nRecent messages:\n"
+              + tailTruncate(conversation, 6000);
+      AssistantModelProvider.AssistantReply reply =
+          provider.complete(
+              new AssistantModelProvider.AssistantPrompt(
+                  AssistantModelRole.SUMMARIZER,
+                  "You summarize modeling conversations for later turns.",
+                  prompt,
+                  List.of()));
+      String content = reply.content() == null ? "" : reply.content().trim();
+      if (content.isBlank()) {
+        return tailTruncate(conversation, 3000);
+      }
+      return content.length() > 3000 ? content.substring(0, 3000) : content;
+    } catch (RuntimeException ex) {
+      log.warn("Assistant summarizer failed; falling back to tail truncation.", ex);
+      return tailTruncate(conversation, 3000);
+    }
+  }
+
+  private String tailTruncate(String value, int maxChars) {
+    if (value == null || value.length() <= maxChars) {
+      return value == null ? "" : value;
+    }
+    return value.substring(value.length() - maxChars);
   }
 
   private AssistantMemoryRepository.ProposalRecord requireProposal(
@@ -2113,6 +2464,8 @@ public class AssistantOrchestrator {
       String activeView,
       List<String> selectedElementIds,
       String unsavedDraftPatch,
+      String attachmentName,
+      String attachmentContent,
       String rootMessage) {
     public AssistantTurnRequest(
         String message,
@@ -2121,13 +2474,65 @@ public class AssistantOrchestrator {
         String activeView,
         List<String> selectedElementIds,
         String unsavedDraftPatch) {
-      this(message, modelId, revision, activeView, selectedElementIds, unsavedDraftPatch, message);
+      this(
+          message,
+          modelId,
+          revision,
+          activeView,
+          selectedElementIds,
+          unsavedDraftPatch,
+          null,
+          null,
+          message);
+    }
+
+    public AssistantTurnRequest(
+        String message,
+        String modelId,
+        Long revision,
+        String activeView,
+        List<String> selectedElementIds,
+        String unsavedDraftPatch,
+        String attachmentName,
+        String attachmentContent) {
+      this(
+          message,
+          modelId,
+          revision,
+          activeView,
+          selectedElementIds,
+          unsavedDraftPatch,
+          attachmentName,
+          attachmentContent,
+          message);
+    }
+
+    public AssistantTurnRequest(
+        String message,
+        String modelId,
+        Long revision,
+        String activeView,
+        List<String> selectedElementIds,
+        String unsavedDraftPatch,
+        String rootMessage) {
+      this(
+          message,
+          modelId,
+          revision,
+          activeView,
+          selectedElementIds,
+          unsavedDraftPatch,
+          null,
+          null,
+          rootMessage);
     }
 
     public AssistantTurnRequest {
       message = message == null ? "" : message.trim();
       selectedElementIds = selectedElementIds == null ? List.of() : List.copyOf(selectedElementIds);
       rootMessage = rootMessage == null || rootMessage.isBlank() ? message : rootMessage.trim();
+      attachmentName = attachmentName == null ? "" : attachmentName.trim();
+      attachmentContent = attachmentContent == null ? "" : attachmentContent;
     }
   }
 

@@ -2,6 +2,7 @@ package io.mehdieidi.modless.backend.assistant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -62,5 +63,45 @@ trailing text
 
     assertEquals("policy-1", plan.patch().operations().get(0).targetElementId());
     assertEquals("IdempotencyPolicy", plan.patch().operations().get(0).elementType());
+  }
+
+  @Test
+  void acceptsAnswerPlansWithoutAnOperationsField() {
+    AssistantTurnPlan plan =
+        parser.parse(
+            """
+            {"intent":"INFORMATION","kind":"ANSWER","message":"APIs route to functions.",
+            "questions":[]}
+            """);
+
+    assertEquals(AssistantTurnPlan.Intent.INFORMATION, plan.intent());
+    assertEquals(AssistantTurnPlan.Kind.ANSWER, plan.kind());
+    assertTrue(plan.patch().operations().isEmpty());
+  }
+
+  @Test
+  void normalizesExplainSynonymsForInformationAnswers() {
+    AssistantTurnPlan plan =
+        parser.parse(
+            """
+            {"intent":"explanation","kind":"explain","message":"Stores back APIs.",
+            "questions":[]}
+            """);
+
+    assertEquals(AssistantTurnPlan.Intent.INFORMATION, plan.intent());
+    assertEquals(AssistantTurnPlan.Kind.ANSWER, plan.kind());
+  }
+
+  @Test
+  void fallsBackToPatchOnlyPayloadWhenTurnEnvelopeIsMissing() {
+    AssistantTurnPlan plan =
+        parser.parse(
+            """
+            {"operations":[{"type":"ADD_ELEMENT","targetElementId":"svc-1",
+            "elementType":"ServerlessService","attributes":"Orders"}]}
+            """);
+
+    assertEquals(AssistantTurnPlan.Kind.PATCH, plan.kind());
+    assertEquals(1, plan.patch().operations().size());
   }
 }

@@ -12,6 +12,9 @@ public class ModlessMetrics {
   private final Counter mdeJobsFailed;
   private final Counter assistantRequests;
   private final Counter assistantCircuitOpen;
+  private final MeterRegistry registry;
+  private final Counter assistantRepairAttempts;
+  private final Counter assistantToolCalls;
 
   /**
    * Registers Modless domain counters on the shared Micrometer registry.
@@ -19,6 +22,7 @@ public class ModlessMetrics {
    * @param registry Micrometer meter registry
    */
   public ModlessMetrics(MeterRegistry registry) {
+    this.registry = registry;
     mdeJobsSubmitted =
         Counter.builder("modless.mde.jobs.submitted")
             .description("MDE jobs accepted by the platform")
@@ -34,6 +38,14 @@ public class ModlessMetrics {
     assistantCircuitOpen =
         Counter.builder("modless.assistant.circuit.open")
             .description("Assistant provider calls rejected while the circuit is open")
+            .register(registry);
+    assistantRepairAttempts =
+        Counter.builder("modless.assistant.repair.attempts")
+            .description("Validator-guided repair passes executed per turn")
+            .register(registry);
+    assistantToolCalls =
+        Counter.builder("modless.assistant.tool.calls")
+            .description("Whitelisted assistant tool invocations during agent loops")
             .register(registry);
   }
 
@@ -55,5 +67,48 @@ public class ModlessMetrics {
   /** Records a provider call rejected because the assistant circuit breaker is open. */
   public void recordAssistantCircuitOpen() {
     assistantCircuitOpen.increment();
+  }
+
+  /**
+   * Records one assistant turn outcome.
+   *
+   * @param category eval or routing category
+   * @param outcome result such as PROPOSED, EXPLAINED, or FAILED
+   */
+  public void recordAssistantTurnOutcome(String category, String outcome) {
+    registry
+        .counter(
+            "modless.assistant.turn.outcome",
+            "category",
+            safeTag(category),
+            "outcome",
+            safeTag(outcome))
+        .increment();
+  }
+
+  /**
+   * Records validator-guided repair attempts for one turn.
+   *
+   * @param attempts number of repair passes executed
+   */
+  public void recordAssistantRepairAttempts(int attempts) {
+    if (attempts > 0) {
+      assistantRepairAttempts.increment(attempts);
+    }
+  }
+
+  /**
+   * Records tool invocations executed during an agent loop.
+   *
+   * @param toolCalls number of tool calls
+   */
+  public void recordAssistantToolCalls(int toolCalls) {
+    if (toolCalls > 0) {
+      assistantToolCalls.increment(toolCalls);
+    }
+  }
+
+  private static String safeTag(String value) {
+    return value == null || value.isBlank() ? "unknown" : value.trim();
   }
 }

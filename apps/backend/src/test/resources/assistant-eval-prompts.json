@@ -1,0 +1,288 @@
+[
+  {
+    "id": "pim-create-01",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Create a complete serverless architecture for a library management platform.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "pim-create-02",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Build a detailed serverless backend model for a vending machine network.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "pim-create-03",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Create a complete architecture for an online food delivery platform.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "pim-create-04",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Generate a complete event-driven architecture for an e-commerce marketplace.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "pim-create-05",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Design a multi-tenant SaaS project management platform.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "refine-01",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Make this model substantially more complete and connect all related elements.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "refine-02",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Expand this architecture with the missing APIs, functions, data stores, events, and workflows.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "refine-03",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Add a user registration and profile management capability to this model.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "refine-04",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Add refund processing to the payment workflow.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "selected-01",
+    "category": "selected-element",
+    "level": "PIM",
+    "prompt": "Connect the selected API to the selected function.",
+    "emptyCanvas": false,
+    "selectedElementIds": ["api-1", "fn-1"]
+  },
+  {
+    "id": "selected-02",
+    "category": "selected-element",
+    "level": "PIM",
+    "prompt": "Add service ownership memberships for the selected elements.",
+    "emptyCanvas": false,
+    "selectedElementIds": ["svc-1", "fn-2"]
+  },
+  {
+    "id": "selected-03",
+    "category": "selected-element",
+    "level": "PIM",
+    "prompt": "Rename the selected function to Process Loan Request.",
+    "emptyCanvas": false,
+    "selectedElementIds": ["fn-3"]
+  },
+  {
+    "id": "attr-01",
+    "category": "low-risk",
+    "level": "PIM",
+    "prompt": "Change the domain name to Library Management.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "attr-02",
+    "category": "low-risk",
+    "level": "PIM",
+    "prompt": "Mark the selected API as externally exposed.",
+    "emptyCanvas": false,
+    "selectedElementIds": ["api-2"]
+  },
+  {
+    "id": "validate-01",
+    "category": "validate-repair",
+    "level": "PIM",
+    "prompt": "Fix all mandatory validation errors in the current model.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "validate-02",
+    "category": "validate-repair",
+    "level": "PIM",
+    "prompt": "Repair the broken relationships and make the model pass validation.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "explain-01",
+    "category": "explain-only",
+    "level": "PIM",
+    "prompt": "Explain how the APIs, functions, and stores in this model interact.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "explain-02",
+    "category": "explain-only",
+    "level": "PIM",
+    "prompt": "Analyze the architectural risks in the current model.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "cim-create-01",
+    "category": "cim",
+    "level": "CIM",
+    "prompt": "Create a business capability model for a hospital appointment system.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "cim-create-02",
+    "category": "cim",
+    "level": "CIM",
+    "prompt": "Design a domain model with actors, capabilities, and core business processes for insurance claims.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "cim-create-03",
+    "category": "cim",
+    "level": "CIM",
+    "prompt": "Build a business model for a library management organization.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "psm-create-01",
+    "category": "psm",
+    "level": "PSM",
+    "prompt": "Create an AWS serverless platform with API Gateway, Lambda, DynamoDB, and EventBridge.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "psm-create-02",
+    "category": "psm",
+    "level": "PSM",
+    "prompt": "Design an AWS backend for a vending machine network using Lambda and DynamoDB.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "psm-create-03",
+    "category": "psm",
+    "level": "PSM",
+    "prompt": "Build an AWS event-driven architecture skeleton for order fulfillment.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "connect-01",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Add a Books API with create, update, delete, get, and search routes.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "connect-02",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Connect every API route to exactly one backend function.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "security-01",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Add security, observability, and resilience concerns to this architecture.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "delete-01",
+    "category": "delete",
+    "level": "PIM",
+    "prompt": "Delete the selected function and update related relationships.",
+    "emptyCanvas": false,
+    "selectedElementIds": ["fn-9"]
+  },
+  {
+    "id": "pim-create-06",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Create a secure serverless banking transaction platform.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "pim-create-07",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Build a complete backend architecture for a social media application.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "pim-create-08",
+    "category": "create-empty",
+    "level": "PIM",
+    "prompt": "Create a serverless architecture for a hotel reservation system.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "refine-05",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Add health monitoring and alerting to the important services.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "refine-06",
+    "category": "refine",
+    "level": "PIM",
+    "prompt": "Add a dead-letter queue and retry policies for failed event processing.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "selected-04",
+    "category": "selected-element",
+    "level": "PIM",
+    "prompt": "Add a function for each route in the selected API and connect them.",
+    "emptyCanvas": false,
+    "selectedElementIds": ["api-4"]
+  },
+  {
+    "id": "validate-03",
+    "category": "validate-repair",
+    "level": "PIM",
+    "prompt": "Review validation issues and repair the model so mandatory checks pass.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "explain-03",
+    "category": "explain-only",
+    "level": "PIM",
+    "prompt": "What validation constraints are failing and why?",
+    "emptyCanvas": false
+  },
+  {
+    "id": "cim-create-04",
+    "category": "cim",
+    "level": "CIM",
+    "prompt": "Model the core actors and capabilities for an online learning platform.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "psm-create-04",
+    "category": "psm",
+    "level": "PSM",
+    "prompt": "Scaffold an AWS API Gateway and Lambda backend for a ticketing platform.",
+    "emptyCanvas": true
+  },
+  {
+    "id": "transform-01",
+    "category": "transform",
+    "level": "PIM",
+    "prompt": "Expand each service into its APIs, functions, data stores, events, policies, and dependencies.",
+    "emptyCanvas": false
+  },
+  {
+    "id": "multi-01",
+    "category": "multi-turn",
+    "level": "PIM",
+    "prompt": "Create a serverless model for vending machine backend",
+    "emptyCanvas": true
+  }
+]

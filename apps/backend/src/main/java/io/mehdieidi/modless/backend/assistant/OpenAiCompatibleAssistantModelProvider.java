@@ -78,6 +78,15 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   }
 
   @Override
+  protected OpenAiChatOptions toolLoopOptions(String model, AssistantModelRole role) {
+    return OpenAiChatOptions.builder()
+        .model(model)
+        .temperature(0.2)
+        .maxCompletionTokens(Math.min(properties.tokenBudget(), completionLimit(role)))
+        .build();
+  }
+
+  @Override
   protected OpenAiChatOptions options(String model, AssistantModelRole role) {
     OpenAiChatOptions.Builder builder =
         OpenAiChatOptions.builder()
@@ -92,7 +101,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
 
   private int completionLimit(AssistantModelRole role) {
     return switch (role) {
-      case PLANNER -> 6000;
+      case PLANNER -> Math.max(6000, properties.tokenBudget());
       case SUMMARIZER -> 800;
       case RESPONDER -> 3000;
     };

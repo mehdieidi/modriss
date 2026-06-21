@@ -2,6 +2,7 @@ package io.mehdieidi.modless.backend.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.mehdieidi.modless.backend.assistant.AssistantCatalogService;
 import io.mehdieidi.modless.backend.assistant.AssistantChoice;
 import io.mehdieidi.modless.backend.assistant.AssistantOrchestrator;
 import io.mehdieidi.modless.backend.assistant.AssistantProposal;
@@ -32,6 +33,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class ChatbotController {
 
   private final AssistantOrchestrator assistant;
+  private final AssistantCatalogService catalogs;
   private final AssistantRealtimeHub realtime;
   private final AuthSupport auth;
   private final ProjectService projects;
@@ -45,10 +47,12 @@ public class ChatbotController {
    */
   public ChatbotController(
       AssistantOrchestrator assistant,
+      AssistantCatalogService catalogs,
       AssistantRealtimeHub realtime,
       AuthSupport auth,
       ProjectService projects) {
     this.assistant = assistant;
+    this.catalogs = catalogs;
     this.realtime = realtime;
     this.auth = auth;
     this.projects = projects;
@@ -148,7 +152,9 @@ public class ChatbotController {
                 request.revision(),
                 request.activeView(),
                 request.selectedElementIds(),
-                request.unsavedDraftPatch()));
+                request.unsavedDraftPatch(),
+                request.attachmentName(),
+                request.attachmentContent()));
     return toMessageResponse(response);
   }
 
@@ -215,6 +221,17 @@ public class ChatbotController {
   @DeleteMapping("/api/chatbot/sessions/{sessionId}")
   void clear(@RequestHeader("X-Auth-Token") String token, @PathVariable String sessionId) {
     assistant.clear(auth.user(token), sessionId);
+  }
+
+  /**
+   * Reindexes metamodel and EVL catalogs when {@code mde/} files change.
+   *
+   * @param token auth token
+   */
+  @PostMapping("/api/chatbot/catalogs/reindex")
+  void reindexCatalogs(@RequestHeader("X-Auth-Token") String token) {
+    auth.user(token);
+    catalogs.refresh();
   }
 
   /**

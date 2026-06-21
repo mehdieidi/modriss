@@ -5,7 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.model.application.ModelService;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Service;
@@ -16,13 +21,39 @@ public class AssistantToolService {
 
   private final AssistantCatalogService catalogs;
   private final AssistantPatchCompiler patchCompiler;
+  private final AssistantMetamodelSchemaService schemas;
+  private final ModelService models;
   private final ObjectMapper mapper;
+  private final ThreadLocal<ToolSession> session = new ThreadLocal<>();
+  private final AtomicInteger toolCallCount = new AtomicInteger();
 
   public AssistantToolService(
-      AssistantCatalogService catalogs, AssistantPatchCompiler patchCompiler, ObjectMapper mapper) {
+      AssistantCatalogService catalogs,
+      AssistantPatchCompiler patchCompiler,
+      AssistantMetamodelSchemaService schemas,
+      ModelService models,
+      ObjectMapper mapper) {
     this.catalogs = catalogs;
     this.patchCompiler = patchCompiler;
+    this.schemas = schemas;
+    this.models = models;
     this.mapper = mapper;
+  }
+
+  /** Binds model context used by element and validation tools for one agent loop turn. */
+  public void bindSession(ToolSession toolSession) {
+    session.set(toolSession);
+    toolCallCount.set(0);
+  }
+
+  /** Clears the active tool session. */
+  public void clearSession() {
+    session.remove();
+  }
+
+  /** Returns and resets the number of tool invocations in the active session. */
+  public int consumeToolCallCount() {
+    return toolCallCount.getAndSet(0);
   }
 
   /** Searches the backend-owned metamodel and EVL catalogs. */
@@ -33,6 +64,7 @@ public class AssistantToolService {
       @ToolParam(description = "Search query") String query,
       @ToolParam(description = "Configured modeling level key or display name") String level,
       @ToolParam(description = "Maximum snippets to return") int limit) {
+    trackToolCall();
     return catalogs.search(query, level, Math.min(Math.max(limit, 1), 8));
   }
 
@@ -43,6 +75,7 @@ public class AssistantToolService {
   public PreviewResult previewSemanticPatch(
       @ToolParam(description = "Current model JSON snapshot") String modelJson,
       @ToolParam(description = "SemanticModelPatch JSON") String semanticPatchJson) {
+    trackToolCall();
     try {
       JsonNode model = mapper.readTree(modelJson == null ? "{}" : modelJson);
       SemanticModelPatch semantic =
@@ -67,6 +100,7 @@ public class AssistantToolService {
   public AssistantValidationSummary summarizeValidation(
       @ToolParam(description = "Configured modeling level key or display name") String level,
       @ToolParam(description = "Validation issues JSON array") String issuesJson) {
+    trackToolCall();
     List<AssistantValidationSummary.Issue> issues = parseIssues(issuesJson);
     boolean mandatoryPassed =
         issues.stream().noneMatch(issue -> "ERROR".equalsIgnoreCase(issue.severity()));
@@ -84,6 +118,7 @@ public class AssistantToolService {
       @ToolParam(description = "Choice id") String id,
       @ToolParam(description = "Prompt shown to user") String prompt,
       @ToolParam(description = "Comma-separated option ids") String optionIds) {
+    trackToolCall();
     List<AssistantChoice.Option> options =
         java.util.Arrays.stream((optionIds == null ? "" : optionIds).split(","))
             .map(String::trim)
@@ -100,6 +135,164 @@ public class AssistantToolService {
         options);
   }
 
+  /** Returns full detail for selected elements and their one-hop neighborhood. */
+  @Tool(
+      name = "getElementContext",
+      description =
+          "Return type, attributes, relationships, and writable references for element IDs.")
+  public List<ElementContext> getElementContext(
+      @ToolParam(description = "Comma-separated stable element IDs") String elementIds) {
+    trackToolCall();
+    ToolSession active = requireSession();
+    List<String> ids = splitIds(elementIds);
+    if (ids.isEmpty()) {
+      throw new PlatformException(400, "At least one element id is required.");
+    }
+    Map<String, AssistantModelContextIndexService.ContextElement> elements = active.elementsById();
+    List<AssistantModelContextIndexService.ContextRelationship> relationships =
+        active.context().relationships();
+    List<ElementContext> result = new ArrayList<>();
+    for (String id : ids) {
+      AssistantModelContextIndexService.ContextElement element = elements.get(id);
+      if (element == null) {
+        continue;
+      }
+      List<String> neighbors =
+          active.context().neighborhoods().getOrDefault(id, List.of()).stream()
+              .map(neighborId -> formatElement(elements.get(neighborId)))
+              .filter(value -> !value.isBlank())
+              .toList();
+      List<String> writableReferences =
+          schemas
+              .typeContract(active.level(), element.type())
+              .content()
+              .lines()
+              .filter(line -> line.contains("->") && !line.contains("containment"))
+              .limit(12)
+              .toList();
+      result.add(
+          new ElementContext(
+              element.id(),
+              element.type(),
+              element.name(),
+              element.path(),
+              neighbors,
+              writableReferences));
+    }
+    if (result.isEmpty()) {
+      throw new PlatformException(404, "No matching elements were found in the active model.");
+    }
+    return result;
+  }
+
+  /** Returns the full Ecore contract for one metamodel type. */
+  @Tool(
+      name = "getTypeContract",
+      description = "Return the writable attribute and reference contract for a metamodel type.")
+  public AssistantModelProvider.ContextSnippet getTypeContract(
+      @ToolParam(description = "Metamodel type name") String typeName,
+      @ToolParam(description = "Configured modeling level key or display name") String level) {
+    trackToolCall();
+    ModelLevel modelLevel = ModelLevel.fromApiName(level);
+    return schemas.typeContract(modelLevel, typeName);
+  }
+
+  /** Validates a model snapshot without committing changes. */
+  @Tool(
+      name = "validateSnapshot",
+      description = "Run EVL validation against a model JSON snapshot without committing changes.")
+  public AssistantValidationSummary validateSnapshot(
+      @ToolParam(description = "Configured modeling level key or display name") String level,
+      @ToolParam(description = "Model JSON snapshot") String modelJson) {
+    trackToolCall();
+    ModelLevel modelLevel = ModelLevel.fromApiName(level);
+    try {
+      JsonNode model = mapper.readTree(modelJson == null ? "{}" : modelJson);
+      ModelService.ValidationResult validation = models.validate(modelLevel, model);
+      List<AssistantValidationSummary.Issue> issues =
+          validation.issues().stream()
+              .map(
+                  issue ->
+                      new AssistantValidationSummary.Issue(
+                          issue.severity(), issue.constraint(), issue.elementId(), issue.message()))
+              .toList();
+      boolean mandatoryPassed =
+          issues.stream().noneMatch(issue -> "ERROR".equalsIgnoreCase(issue.severity()));
+      long optional =
+          issues.stream().filter(issue -> "WARNING".equalsIgnoreCase(issue.severity())).count();
+      return new AssistantValidationSummary(
+          mandatoryPassed, mandatoryPassed, (int) optional, issues);
+    } catch (PlatformException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new PlatformException(400, "Invalid model snapshot.");
+    }
+  }
+
+  /** Lists model elements with optional type and name filters. */
+  @Tool(
+      name = "listModelElements",
+      description = "Search model elements by type or name with pagination for large models.")
+  public ElementPage listModelElements(
+      @ToolParam(description = "Optional type filter") String typeFilter,
+      @ToolParam(description = "Optional name filter") String nameFilter,
+      @ToolParam(description = "Zero-based page index") int page,
+      @ToolParam(description = "Page size, maximum 40") int pageSize) {
+    trackToolCall();
+    ToolSession active = requireSession();
+    String normalizedType = typeFilter == null ? "" : typeFilter.trim().toLowerCase(Locale.ROOT);
+    String normalizedName = nameFilter == null ? "" : nameFilter.trim().toLowerCase(Locale.ROOT);
+    int safePage = Math.max(0, page);
+    int safeSize = Math.min(Math.max(pageSize <= 0 ? 20 : pageSize, 1), 40);
+    List<AssistantModelContextIndexService.ContextElement> filtered =
+        active.context().elements().stream()
+            .filter(
+                element ->
+                    (normalizedType.isBlank()
+                            || element.type().toLowerCase(Locale.ROOT).contains(normalizedType))
+                        && (normalizedName.isBlank()
+                            || element.name().toLowerCase(Locale.ROOT).contains(normalizedName)))
+            .toList();
+    int from = Math.min(safePage * safeSize, filtered.size());
+    int to = Math.min(from + safeSize, filtered.size());
+    List<ElementSummary> pageItems =
+        filtered.subList(from, to).stream()
+            .map(element -> new ElementSummary(element.id(), element.type(), element.name()))
+            .toList();
+    return new ElementPage(filtered.size(), safePage, safeSize, pageItems);
+  }
+
+  private ToolSession requireSession() {
+    ToolSession active = session.get();
+    if (active == null) {
+      throw new PlatformException(409, "Assistant tool session is not bound.");
+    }
+    return active;
+  }
+
+  private void trackToolCall() {
+    toolCallCount.incrementAndGet();
+  }
+
+  private List<String> splitIds(String raw) {
+    if (raw == null || raw.isBlank()) {
+      return List.of();
+    }
+    return java.util.Arrays.stream(raw.split(","))
+        .map(String::trim)
+        .filter(value -> !value.isBlank())
+        .distinct()
+        .limit(12)
+        .toList();
+  }
+
+  private String formatElement(AssistantModelContextIndexService.ContextElement element) {
+    if (element == null) {
+      return "";
+    }
+    return element.id() + ":" + element.type() + ":" + element.name();
+  }
+
   private List<AssistantValidationSummary.Issue> parseIssues(String issuesJson) {
     if (issuesJson == null || issuesJson.isBlank()) {
       return List.of();
@@ -108,6 +301,25 @@ public class AssistantToolService {
       return mapper.readValue(issuesJson, new com.fasterxml.jackson.core.type.TypeReference<>() {});
     } catch (Exception ex) {
       throw new PlatformException(400, "Invalid validation issue payload.");
+    }
+  }
+
+  /**
+   * Runtime tool session bound for one assistant turn.
+   *
+   * @param level active modeling level
+   * @param modelJson active model snapshot
+   * @param context compact model context
+   */
+  public record ToolSession(
+      ModelLevel level,
+      JsonNode modelJson,
+      AssistantModelContextIndexService.AssistantModelContext context) {
+
+    public Map<String, AssistantModelContextIndexService.ContextElement> elementsById() {
+      Map<String, AssistantModelContextIndexService.ContextElement> result = new LinkedHashMap<>();
+      context.elements().forEach(element -> result.putIfAbsent(element.id(), element));
+      return result;
     }
   }
 
@@ -124,4 +336,42 @@ public class AssistantToolService {
       List<ModelService.ModelPatchOperation> patch,
       List<ModelService.ModelPatchOperation> inversePatch,
       JsonNode preview) {}
+
+  /**
+   * Detailed element context for planner exploration.
+   *
+   * @param id stable element ID
+   * @param type element type
+   * @param name element name
+   * @param path JSON path
+   * @param neighbors one-hop neighborhood summaries
+   * @param writableReferences writable non-containment references for the type
+   */
+  public record ElementContext(
+      String id,
+      String type,
+      String name,
+      String path,
+      List<String> neighbors,
+      List<String> writableReferences) {}
+
+  /**
+   * Paginated model element listing.
+   *
+   * @param totalElements total matches
+   * @param page page index
+   * @param pageSize page size
+   * @param elements page items
+   */
+  public record ElementPage(
+      int totalElements, int page, int pageSize, List<ElementSummary> elements) {}
+
+  /**
+   * Compact element listing entry.
+   *
+   * @param id stable element ID
+   * @param type element type
+   * @param name element name
+   */
+  public record ElementSummary(String id, String type, String name) {}
 }

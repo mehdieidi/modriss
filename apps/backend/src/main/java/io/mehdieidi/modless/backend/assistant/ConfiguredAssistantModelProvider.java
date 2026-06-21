@@ -45,6 +45,11 @@ final class ConfiguredAssistantModelProvider implements AssistantModelProvider {
     return withFallback(provider -> provider.proposePatch(prompt));
   }
 
+  @Override
+  public AgentLoopResult planMutationTurn(AssistantPrompt prompt, AgentProgress progress) {
+    return withFallback(provider -> provider.planMutationTurn(prompt, progress));
+  }
+
   private AssistantModelProvider primary() {
     return properties.providerKind() == AiProperties.Provider.GEMINI ? gemini : openai;
   }

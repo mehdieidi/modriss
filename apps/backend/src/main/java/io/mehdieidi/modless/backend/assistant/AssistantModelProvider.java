@@ -49,6 +49,32 @@ public interface AssistantModelProvider {
   }
 
   /**
+   * Runs the bounded agentic planner loop for mutation turns.
+   *
+   * @param prompt planner prompt
+   * @param progress progress callback
+   * @return structured turn plan and loop metrics
+   */
+  default AgentLoopResult planMutationTurn(AssistantPrompt prompt, AgentProgress progress) {
+    return new AgentLoopResult(planTurn(prompt), 0, 1);
+  }
+
+  /** Progress callback for agent loop stages. */
+  @FunctionalInterface
+  interface AgentProgress {
+    void onProgress(String stage, String message);
+  }
+
+  /**
+   * Agent loop result with planner output and loop metrics.
+   *
+   * @param plan structured turn plan
+   * @param toolCalls number of tool invocations
+   * @param steps number of agent loop steps
+   */
+  record AgentLoopResult(AssistantTurnPlan plan, int toolCalls, int steps) {}
+
+  /**
    * Structured assistant prompt.
    *
    * @param role model role to use
