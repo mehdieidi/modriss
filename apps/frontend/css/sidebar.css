@@ -248,23 +248,6 @@
   min-width: 0;
 }
 
-.palette-guidance {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 3px;
-  padding: 8px 9px;
-  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border) 74%);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--accent-glow) 12%, var(--surface-3) 88%);
-  color: var(--muted);
-  font: 500 10px/1.4 var(--font-ui);
-}
-
-.palette-guidance strong {
-  color: var(--text-strong);
-  font: 700 10px/1.2 var(--font-ui);
-}
-
 .palette-group-toolbar {
   grid-column: 1 / -1;
   display: flex;
@@ -650,7 +633,6 @@
 
 .palette.palette-collapsed .palette-item-label,
 .palette.palette-collapsed .palette-item-role,
-.palette.palette-collapsed .palette-guidance,
 .palette.palette-collapsed .palette-context-actions,
 .palette.palette-collapsed .palette-group-title,
 .palette.palette-collapsed .palette-group-items {

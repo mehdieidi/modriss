@@ -228,20 +228,6 @@ export async function loadModelingConfig({ silent = false } = {}) {
   }
 }
 
-function emptyWorkbenchState() {
-  return {
-    representationByViewId: {},
-    registerByViewId: {},
-    search: "",
-    missingOnly: false,
-    sliceKind: "",
-    sliceValue: "",
-    edgeMode: "both",
-    sortKey: "name",
-    hidPalette: false,
-  };
-}
-
 function emptyTabState(typeKey, level) {
   return {
     modelId: null,
@@ -266,7 +252,6 @@ function initializeModelingRuntimeState(config) {
     state.modelsCache[typeKey] ??= [];
     state.paletteSearch[typeKey] ??= "";
     state.paletteGroupCollapsed[typeKey] ??= {};
-    state.workbenchByType[typeKey] ??= emptyWorkbenchState();
     state.undo.diagramHistory[typeKey] ??= [];
   });
   if (!state.activeType || !order.includes(state.activeType)) {

@@ -60,7 +60,6 @@ import {
 } from "./modeling-config-data.js";
 import { hasUnsavedModelChanges, updateModelSaveUi } from "./model-save-ui.js";
 import { initViewWorkbench, renderViewWorkbench } from "./view-explorer.js";
-import { initModelWorkbenchSurface } from "./model-workbench.js";
 import { installG6LargeGraphDevHelper } from "./graph-editor/g6-devtools.js";
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
@@ -1056,12 +1055,6 @@ async function init() {
   installG6LargeGraphDevHelper({ renderDiagram, renderWorkbench: renderViewWorkbench });
   bindUnsavedModelGuard();
   initViewWorkbench({ renderDiagram, renderPalette });
-  initModelWorkbenchSurface({
-    renderDiagram,
-    renderPalette,
-    openAttributePanel,
-    openConnectionPanel,
-  });
   syncPaletteRailToggleState();
   syncResponsiveUi();
   initializeModelingRenderer();

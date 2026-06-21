@@ -1379,7 +1379,7 @@ function addContainedChildFromDrawer(parentId, feature, childType) {
   addReferenceValue(parentElement, feature, child.id, true);
   parentNode.meta[feature] = parentElement[feature];
   markModelDirty();
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   openAttributePanel(parentId);
   setStatus(`Added ${childType}`);
 }
@@ -1414,7 +1414,7 @@ function updateContainedChildField(childId, fieldName, rawValue, inputType) {
     }
   }
   markModelDirty();
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   setStatus(`Updated ${fieldName}`);
 }
 
@@ -1443,7 +1443,7 @@ function deleteContainedChild(childId) {
     );
   }
   markModelDirty();
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   if (parentId && state.nodesById.has(parentId)) {
     openAttributePanel(parentId);
   }
@@ -1799,7 +1799,7 @@ export function applyAttributePanel() {
     pushDiagramUndoSnapshot(undoSnapshot);
   }
 
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
 
   el.attrPanelTitle.textContent = node.label;
   markModelDirty();
@@ -1850,7 +1850,7 @@ function applyConnectionPanel() {
     setStatus("One connection property contains invalid JSON. Fix it before applying changes.");
     return;
   }
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   markModelDirty();
   setStatus(`Connection updated: ${edge.kind}`);
 }
@@ -1986,7 +1986,7 @@ export async function deleteSelection() {
   removeElementFromGraph(nodeId);
 
   closeAttributePanel();
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   markModelDirty();
   setStatus(`Deleted ${node.type}: ${nodeId}`);
 }
@@ -2040,7 +2040,7 @@ export async function deleteSelectedConnection() {
   pushDiagramUndoSnapshot(undoSnapshot);
 
   closeAttributePanel();
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   markModelDirty();
   setStatus(`Deleted connection: ${connection.kind}`);
 }

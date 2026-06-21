@@ -116,7 +116,6 @@ export const state = {
   paletteCollapsed: false,
   paletteDragType: "",
   paletteSearch: {},
-  workbenchByType: {},
   paletteGroupCollapsed: {},
   validation: {
     issues: [],

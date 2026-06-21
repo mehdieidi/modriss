@@ -513,6 +513,14 @@ function elementRowsMarkup(view) {
     </div>`;
 }
 
+function elementCountForView(view) {
+  return activeViewElementRows(view).length;
+}
+
+function relationshipCountForView(view) {
+  return relationshipsForActiveView(view).length;
+}
+
 function renderModelTree() {
   if (!el.modelTreeBody) {
     return;
@@ -520,15 +528,19 @@ function renderModelTree() {
   treeBodyScrollTop = el.modelTreeBody.scrollTop;
   const view = activeView();
   const isRelationshipMode = modelTreeMode === "relationships";
+  const count = isRelationshipMode
+    ? relationshipCountForView(view)
+    : elementCountForView(view);
   const title = isRelationshipMode ? "Relationships" : "Elements";
+  const titleWithCount = `${title} (${count})`;
   const placeholder = isRelationshipMode ? "Filter relationships..." : "Filter elements...";
   if (el.modelTreeTitle) {
-    el.modelTreeTitle.textContent = title;
+    el.modelTreeTitle.textContent = titleWithCount;
   }
   if (el.modelTreePanel) {
     const type = el.modelTreePanel.querySelector(".attr-panel-type");
     if (type) {
-      type.textContent = `${state.activeType.toUpperCase()} ${title}`;
+      type.textContent = `${state.activeType.toUpperCase()} ${titleWithCount}`;
     }
   }
   el.modelTreeBody.innerHTML = `
@@ -540,7 +552,7 @@ function renderModelTree() {
              value="${escapeHtml(modelTreeFilter)}">
     </div>
     <div class="model-tree-section">
-      <div class="model-tree-section-title">${title}</div>
+      <div class="model-tree-section-title">${escapeHtml(titleWithCount)}</div>
       ${isRelationshipMode ? relationshipRowsMarkup(view) : elementRowsMarkup(view)}
     </div>`;
   el.modelTreeBody.scrollTop = treeBodyScrollTop;
@@ -591,8 +603,6 @@ export function renderViewWorkbench() {
     return;
   }
   ensureActiveGraphAndViews();
-  const surface = panel.querySelector("#modelWorkbenchSurface");
-  surface?.remove();
   const contextTools = boundedContextToolMarkup();
   panel.innerHTML = `
     <div class="model-workbench-commandbar">
@@ -705,9 +715,6 @@ export function renderViewWorkbench() {
         </button>
       </div>
     </div>`;
-  if (surface) {
-    panel.appendChild(surface);
-  }
   updateModelSaveUi();
   renderModelTree();
 }

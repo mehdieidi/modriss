@@ -45,7 +45,6 @@ import {
   captureNodePositionUndoSnapshot,
   pushDiagramUndoSnapshot,
 } from "./undo.js";
-import { renderModelWorkbenchSurface } from "./model-workbench.js";
 import {
   addG6Edge,
   addG6Node,
@@ -115,28 +114,6 @@ const connectionsById = state.connectionsById;
 let hoveredEdgeId = null;
 let inlineLabelEditStartLabel = "";
 let inlineLabelEditUndoSnapshot = null;
-
-function workbenchSurfaces() {
-  const canvasStage = el.canvasGrid?.closest(".canvas-stage");
-  const surfaceClasses = Object.keys(MODEL_TYPES).flatMap((typeKey) => [
-    `${typeKey}-surface-active`,
-    `${typeKey}-surface-dock`,
-  ]);
-  el.canvasGrid?.classList.remove(...surfaceClasses);
-  canvasStage?.classList.remove(...surfaceClasses);
-  el.workspace?.classList.remove("palette-hidden");
-  el.paletteRailToggleBtn?.classList.add("active");
-  Object.keys(MODEL_TYPES).forEach((typeKey) => {
-    const workbench = state.workbenchByType?.[typeKey] || state[`${typeKey}Workbench`];
-    if (workbench) {
-      workbench.hidPalette = false;
-    }
-  });
-
-  if (isModelingLevel(state.activeType)) {
-    renderModelWorkbenchSurface();
-  }
-}
 
 function syncCanvasIndexesFromState() {
   state.nodesById.clear();
@@ -1683,7 +1660,7 @@ export function renameBoundedContext(oldName, nextName) {
   ensureBaseBoundedContext(normalizedNext);
   syncBoundedContextMembershipRefs(normalizedNext);
   state.selectedBoundedContextName = normalizedNext;
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   return true;
 }
 
@@ -1713,7 +1690,7 @@ export function removeElementFromBoundedContext(elementId, contextName) {
   } else {
     syncBoundedContextMembershipRefs(normalized);
   }
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   markModelDirty();
   setStatus(`Removed ${node.label || node.id} from "${normalized}"`);
   return true;
@@ -1754,7 +1731,7 @@ export function deleteBoundedContext(contextName) {
   }
   removeBaseBoundedContext(normalized);
   state.selectedBoundedContextName = null;
-  syncDiagramRenderer({ workbench: true });
+  syncDiagramRenderer({ });
   return true;
 }
 
@@ -2114,7 +2091,6 @@ function createModelingWizard(kind) {
   ensureG6Canvas();
   syncCanvasIndexesFromState();
   syncG6FromState({ full: false });
-  workbenchSurfaces();
   markModelDirty();
   setStatus(`Created ${recipe.label || "model scaffold"}`);
 }
@@ -2330,16 +2306,6 @@ function createBoundedContextActionControls() {
   return [row];
 }
 
-function appendPaletteGuidance() {
-  const guide = document.createElement("div");
-  guide.className = "palette-guidance";
-  guide.innerHTML = `
-    <strong>Build this view</strong>
-    <span>Drag standalone concepts. Open containers to work inside them. Add contained details in
-    the inspector, and create relationships from node connection handles.</span>`;
-  el.palette.appendChild(guide);
-}
-
 export function renderPalette() {
   const config = MODEL_TYPES[state.activeType];
   if (!config || !el.palette) {
@@ -2390,9 +2356,6 @@ export function renderPalette() {
   syncPaletteCollapsedUi();
   el.palette.innerHTML = "";
   el.palette.dataset.activeType = state.activeType;
-  if (isModelingType) {
-    appendPaletteGuidance();
-  }
   const hasQuickActionsGroup = renderWizardActions();
   const namedGroups = groupedTypes.map(([groupName]) => groupName).filter(Boolean);
   if (hasQuickActionsGroup) {
@@ -2810,7 +2773,6 @@ export function renderDiagram() {
   ensureG6Canvas();
   syncCanvasIndexesFromState();
   renderG6Diagram();
-  workbenchSurfaces();
   el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
   el.canvasGrid?.classList.toggle(
@@ -2834,13 +2796,10 @@ export function renderDiagram() {
 // Compatibility helper for non-canvas modules that changed semantic state.
 // The public name is kept for existing callers, but the modeling surface is
 // G6-only: this applies a diff to the graph renderer.
-export function syncDiagramRenderer({ full = false, workbench = false } = {}) {
+export function syncDiagramRenderer({ full = false } = {}) {
   ensureG6Canvas();
   syncCanvasIndexesFromState();
   syncG6FromState({ full });
-  if (workbench) {
-    workbenchSurfaces();
-  }
   el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
   el.canvasGrid?.classList.toggle(
@@ -3216,7 +3175,6 @@ export function setupDnD() {
     }
     updateG6Selection();
     updateG6ContextBoxes();
-    workbenchSurfaces();
     const created = state.graph.elementsById.get(node.id);
     setStatus(`Added ${created?.eClass || type}`);
     markModelDirty();
@@ -3418,7 +3376,6 @@ function createShortcutConnection(source, target) {
   ensureG6Canvas();
   syncCanvasIndexesFromState();
   syncG6FromState({ full: false });
-  workbenchSurfaces();
   markModelDirty();
   setStatus(`Created ${rule.label || "shortcut connector"}`);
   return true;
