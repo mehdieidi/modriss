@@ -1,8 +1,8 @@
 .chat-toggle {
-  position: absolute;
+  position: fixed;
   right: 22px;
   bottom: 14px;
-  z-index: 190;
+  z-index: 80;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -44,10 +44,10 @@
 }
 
 .chat-window {
-  position: absolute;
+  position: fixed;
   right: 22px;
   bottom: 70px;
-  z-index: 190;
+  z-index: 80;
   width: 420px;
   max-width: calc(100vw - 44px);
   height: 590px;
@@ -83,8 +83,8 @@
   border-radius: 14px;
 }
 
-.workspace.artifact-mode .chat-toggle,
-.workspace.artifact-mode .chat-window {
+.app-shell:has(.workspace.artifact-mode) .chat-toggle,
+.app-shell:has(.workspace.artifact-mode) .chat-window {
   display: none;
 }
 
@@ -1254,7 +1254,7 @@
     right: 12px;
   }
 
-  .workspace.model-view-active .chat-toggle {
+  .workspace.model-view-active ~ .chat-toggle {
     bottom: 54px;
   }
 

@@ -110,12 +110,18 @@ export function closeChatHistoryPanel() {
   state.chat.historyOpen = false;
 }
 
+export function syncChatOpenState() {
+  const isOpen = el.chatWindow && !el.chatWindow.classList.contains("hidden");
+  el.workspace?.classList.toggle("chat-open", isOpen);
+}
+
 export function closeChatWindow() {
   closeChatHistoryPanel();
   el.chatWindow?.classList.remove("chat-window-expanded");
   el.chatExpandBtn?.setAttribute("aria-pressed", "false");
   el.chatInputRow?.classList.remove("chat-input-expanded");
   el.chatWindow?.classList.add("hidden");
+  syncChatOpenState();
 }
 
 async function createChatSession(typeKey, { forceNew = false, resumeSessionId = null } = {}) {

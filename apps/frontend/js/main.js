@@ -35,6 +35,7 @@ import {
   prepareChatWindow,
   sendChatMessage,
   startNewChatConversation,
+  syncChatOpenState,
   toggleChatHistoryPanel,
   updateChatAttachmentLabel,
 } from "./chat.js";
@@ -856,9 +857,8 @@ function bindEvents() {
     const anchor = el.canvasViewport?.classList.contains("hidden")
       ? el.artifactEditor
       : el.canvasViewport;
-    const parentRect = el.chatWindow.offsetParent?.getBoundingClientRect();
     const canvasRect = anchor?.getBoundingClientRect();
-    if (!parentRect || !canvasRect || canvasRect.width <= 0 || canvasRect.height <= 0) {
+    if (!canvasRect || canvasRect.width <= 0 || canvasRect.height <= 0) {
       return;
     }
 
@@ -869,24 +869,22 @@ function bindEvents() {
       Number.parseFloat(rootStyles.getPropertyValue("--workbench-gap")) ||
       8;
     const topbarRect = document.querySelector(".topbar")?.getBoundingClientRect();
+    const modelingBarRect = document
+      .querySelector(".modeling-context-bar:not(.hidden)")
+      ?.getBoundingClientRect();
     const railRect = document.querySelector(".workspace-rail")?.getBoundingClientRect();
     const rightPaneRect = document
       .querySelector(".right-pane:not(.hidden), .impact-panel:not(.hidden)")
       ?.getBoundingClientRect();
 
     const left = Math.max(canvasRect.left, railRect?.right || 0) + gap;
-    const top = Math.max(canvasRect.top, topbarRect?.bottom || 0) + gap;
+    const top =
+      Math.max(canvasRect.top, topbarRect?.bottom || 0, modelingBarRect?.bottom || 0) + gap;
     const right = (rightPaneRect?.left || canvasRect.right) - gap;
     const bottom = canvasRect.bottom - gap;
 
-    el.chatWindow.style.setProperty(
-      "--chat-expanded-left",
-      `${Math.max(gap, left - parentRect.left)}px`,
-    );
-    el.chatWindow.style.setProperty(
-      "--chat-expanded-top",
-      `${Math.max(gap, top - parentRect.top)}px`,
-    );
+    el.chatWindow.style.setProperty("--chat-expanded-left", `${Math.max(gap, left)}px`);
+    el.chatWindow.style.setProperty("--chat-expanded-top", `${Math.max(gap, top)}px`);
     el.chatWindow.style.setProperty("--chat-expanded-width", `${Math.max(320, right - left)}px`);
     el.chatWindow.style.setProperty("--chat-expanded-height", `${Math.max(280, bottom - top)}px`);
   };
@@ -895,6 +893,7 @@ function bindEvents() {
   el.chatToggle?.addEventListener("click", () => {
     const willOpen = el.chatWindow.classList.contains("hidden");
     el.chatWindow.classList.toggle("hidden", !willOpen);
+    syncChatOpenState();
     if (willOpen) {
       syncExpandedChatBounds();
       prepareChatWindow().catch((error) => setStatus(`Chat setup failed: ${error.message}`));
@@ -907,6 +906,7 @@ function bindEvents() {
     collapseChatInput();
     setChatExpanded(false);
     el.chatWindow.classList.add("hidden");
+    syncChatOpenState();
   });
   el.chatExpandBtn?.addEventListener("click", () => {
     setChatExpanded(!el.chatWindow.classList.contains("chat-window-expanded"));
@@ -918,8 +918,9 @@ function bindEvents() {
     if (el.canvasViewport) {
       chatBoundsObserver.observe(el.canvasViewport);
     }
-    if (el.chatWindow?.offsetParent) {
-      chatBoundsObserver.observe(el.chatWindow.offsetParent);
+    const modelingBar = document.getElementById("topbarModelingRow");
+    if (modelingBar) {
+      chatBoundsObserver.observe(modelingBar);
     }
   }
   if (window.MutationObserver && el.workspace) {

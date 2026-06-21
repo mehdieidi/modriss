@@ -662,12 +662,32 @@ html.light .tab.active {
   flex: 0 0 auto;
   min-height: 40px;
   padding: 0 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
-  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  border-bottom: var(--glass-pane-border);
+  background: transparent;
+  box-shadow: var(--glass-pane-highlight);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   min-width: 0;
   overflow: visible;
   position: relative;
   z-index: 70;
+  isolation: isolate;
+}
+
+.modeling-context-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--topbar-custom-bg, var(--surface)) 78%, transparent);
+  backdrop-filter: var(--glass-pane-blur);
+  -webkit-backdrop-filter: var(--glass-pane-blur);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.modeling-context-bar > * {
+  position: relative;
+  z-index: 1;
 }
 
 .modeling-context-bar.hidden {
