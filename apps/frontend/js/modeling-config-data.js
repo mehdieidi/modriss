@@ -662,6 +662,9 @@ export function modelingLegalKinds(typeKey, sourceType, targetType) {
   const strictness = state.modelingStrictness || "methodology";
   const matched = [];
   for (const rule of rules) {
+    if (rule.containment === true) {
+      continue;
+    }
     if (
       strictness !== "exploration" &&
       isWildcardRule(rule) &&
@@ -686,6 +689,45 @@ export function modelingLegalKinds(typeKey, sourceType, targetType) {
   const bestSpecificity = Math.max(...matched.map(ruleSpecificity));
   const winners = matched.filter((rule) => ruleSpecificity(rule) === bestSpecificity);
   return normalizeKinds(winners.flatMap((rule) => rule.allowedKinds));
+}
+
+export function modelingLegalKindsBetween(typeKey, typeA, typeB) {
+  return normalizeKinds([
+    ...modelingLegalKinds(typeKey, typeA, typeB),
+    ...modelingLegalKinds(typeKey, typeB, typeA),
+  ]);
+}
+
+export function modelingResolveEdgeEndpoints(
+  typeKey,
+  nodeA,
+  nodeB,
+  kind,
+  preferredSourceId,
+  preferredTargetId,
+) {
+  const normalizedKind = String(kind || "").trim();
+  if (!nodeA || !nodeB || !normalizedKind) {
+    return null;
+  }
+  const forwardLegal = modelingLegalKinds(typeKey, nodeA.type, nodeB.type).includes(normalizedKind);
+  const reverseLegal = modelingLegalKinds(typeKey, nodeB.type, nodeA.type).includes(normalizedKind);
+  if (!forwardLegal && !reverseLegal) {
+    return null;
+  }
+  if (forwardLegal && reverseLegal) {
+    if (nodeA.id === preferredSourceId && nodeB.id === preferredTargetId) {
+      return { sourceId: nodeA.id, targetId: nodeB.id, kind: normalizedKind };
+    }
+    if (nodeA.id === preferredTargetId && nodeB.id === preferredSourceId) {
+      return { sourceId: nodeB.id, targetId: nodeA.id, kind: normalizedKind };
+    }
+    return { sourceId: nodeA.id, targetId: nodeB.id, kind: normalizedKind };
+  }
+  if (forwardLegal) {
+    return { sourceId: nodeA.id, targetId: nodeB.id, kind: normalizedKind };
+  }
+  return { sourceId: nodeB.id, targetId: nodeA.id, kind: normalizedKind };
 }
 
 export function modelingRootTemplate(typeKey, modelName) {

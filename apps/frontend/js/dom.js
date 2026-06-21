@@ -33,7 +33,7 @@ export const el = {
   canvasZoomFitBtn: document.getElementById("canvasZoomFitBtn"),
   canvasZoomValue: document.getElementById("canvasZoomValue"),
   edgeKindPicker: document.getElementById("edgeKindPicker"),
-  edgeKindSelect: document.getElementById("edgeKindSelect"),
+  edgeKindMenu: document.getElementById("edgeKindMenu"),
   validationFab: document.getElementById("validationFab"),
   validationFabDot: document.getElementById("validationFabDot"),
   validationFabText: document.getElementById("validationFabText"),

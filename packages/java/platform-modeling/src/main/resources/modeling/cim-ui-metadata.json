@@ -917,6 +917,12 @@
       "layoutHint": "MATRIX"
     }
   ],
+  "semanticReferenceExclusions": [
+    "dependsOn",
+    "conflictsWith",
+    "outgoingRelationships",
+    "incomingRelationships"
+  ],
   "semanticReferenceKindMappings": {
     "functionIntegration": "ROUTES_TO",
     "reads": "READS",
@@ -932,8 +938,6 @@
     "targetResource": "PERMISSION_TARGET",
     "permissions": "PERMISSION",
     "deploysStacks": "DEPLOYS",
-    "resources": "CONTAINS",
-    "allResources": "CONTAINS",
     "route": "USES_ROUTE",
     "role": "USES_ROLE",
     "logGroup": "WRITES_LOGS_TO"

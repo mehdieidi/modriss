@@ -197,19 +197,24 @@ public final class ModelingConfigService {
     merged.put(
         "elements",
         mergeElements(key, metamodel.elements(), requireList(metadata, "elements", key), metadata));
+    List<Map<String, Object>> semanticEdgeObjectRules =
+        mergeSemanticEdgeObjectRules(
+            optionalList(metadata, "semanticEdgeObjectRules"),
+            requireList(merged, "elements", key),
+            metamodel.rootContainmentFeatures());
+    merged.put("semanticEdgeObjectRules", semanticEdgeObjectRules);
     List<Map<String, Object>> relationshipRules =
         mergeRelationshipRules(
             optionalList(metadata, "relationshipRules"),
             optionalMap(metadata, "semanticReferenceKindMappings"),
             objectStringList(metadata.get("semanticReferenceExclusions")),
-            optionalList(metadata, "semanticEdgeObjectRules"),
+            semanticEdgeObjectRules,
             objectStringList(metadata.get("relationshipKinds")),
             String.valueOf(
                 requireMap(metadata, "relationshipSemantics", key).get("containmentKind")),
             metamodel.relationshipRules());
     relationshipRules =
-        mergeEdgeObjectRelationshipRules(
-            relationshipRules, optionalList(metadata, "semanticEdgeObjectRules"));
+        mergeEdgeObjectRelationshipRules(relationshipRules, semanticEdgeObjectRules);
     merged.put("relationshipRules", relationshipRules);
     merged.put(
         "semanticReferenceRules",
@@ -217,7 +222,7 @@ public final class ModelingConfigService {
             optionalList(metadata, "semanticReferenceRules"),
             optionalMap(metadata, "semanticReferenceKindMappings"),
             objectStringList(metadata.get("semanticReferenceExclusions")),
-            optionalList(metadata, "semanticEdgeObjectRules"),
+            semanticEdgeObjectRules,
             objectStringList(metadata.get("relationshipKinds")),
             metamodel.semanticReferenceRules()));
     merged.put(
@@ -298,7 +303,8 @@ public final class ModelingConfigService {
       LinkedHashSet<String> palette = new LinkedHashSet<>();
       for (String relatedType : relatedTypes) {
         for (Map<String, Object> element : elementsByType.values()) {
-          if (typeMatches(relatedType, element) && standalonePaletteElement(element, standalonePaletteRoles)) {
+          if (typeMatches(relatedType, element)
+              && standalonePaletteElement(element, standalonePaletteRoles)) {
             palette.add(String.valueOf(element.get("type")));
           }
         }
@@ -400,9 +406,13 @@ public final class ModelingConfigService {
         if (feature.isBlank() || targetType.isBlank()) {
           continue;
         }
-        List<String> types = concreteTypesFor(elementsByType, targetType).stream()
-            .filter(type -> containmentPaletteElement(elementsByType.get(type), relationshipElementTypes))
-            .toList();
+        List<String> types =
+            concreteTypesFor(elementsByType, targetType).stream()
+                .filter(
+                    type ->
+                        containmentPaletteElement(
+                            elementsByType.get(type), relationshipElementTypes))
+                .toList();
         if (types.isEmpty() || isRelationshipOnlyContainment(types, relationshipElementTypes)) {
           continue;
         }
@@ -412,7 +422,9 @@ public final class ModelingConfigService {
                 Map.entry("feature", feature),
                 Map.entry("targetType", targetType),
                 Map.entry("types", new ArrayList<>(types)),
-                Map.entry("many", reference.get("many") == null || Boolean.TRUE.equals(reference.get("many")))));
+                Map.entry(
+                    "many",
+                    reference.get("many") == null || Boolean.TRUE.equals(reference.get("many")))));
       }
       if (!paletteTypes.isEmpty()) {
         palettes.put(
@@ -454,8 +466,7 @@ public final class ModelingConfigService {
 
   private boolean isRelationshipOnlyContainment(
       List<String> types, Set<String> relationshipElementTypes) {
-    return !types.isEmpty()
-        && types.stream().allMatch(relationshipElementTypes::contains);
+    return !types.isEmpty() && types.stream().allMatch(relationshipElementTypes::contains);
   }
 
   /**
@@ -999,13 +1010,6 @@ public final class ModelingConfigService {
         edgeObjectTypes.add(String.valueOf(raw.get("eClass")));
       }
     }
-    for (Object item : configuredRules) {
-      if (!(item instanceof Map<?, ?> raw)) {
-        throw new PlatformException(500, "Modeling relationshipRules entries must be objects.");
-      }
-      Map<String, Object> rule = stringKeyMap(raw);
-      byKey.put(relationshipRuleKey(rule), rule);
-    }
     for (Map<String, Object> rawRule : ecoreRules) {
       String sourceType = String.valueOf(rawRule.getOrDefault("sourceType", ""));
       String feature = String.valueOf(rawRule.getOrDefault("feature", ""));
@@ -1014,18 +1018,167 @@ public final class ModelingConfigService {
       }
       Map<String, Object> rule = new LinkedHashMap<>(rawRule);
       String mappedKind =
-          Boolean.TRUE.equals(rule.get("containment"))
-              ? containmentKind
-              : String.valueOf(
-                  configuredKindMappings.getOrDefault(
-                      feature, objectStringList(rule.get("allowedKinds")).get(0)));
+          String.valueOf(
+              configuredKindMappings.getOrDefault(
+                  feature, objectStringList(rule.get("allowedKinds")).get(0)));
       if (!canonicalKinds.contains(mappedKind)) {
         continue;
       }
       rule.put("allowedKinds", List.of(mappedKind));
+      byKey.put(relationshipRuleKey(rule), rule);
+    }
+    for (Object item : configuredRules) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        throw new PlatformException(500, "Modeling relationshipRules entries must be objects.");
+      }
+      Map<String, Object> rule = stringKeyMap(raw);
+      if (isCatchAllRelationshipRule(rule)) {
+        continue;
+      }
       byKey.putIfAbsent(relationshipRuleKey(rule), rule);
     }
-    return new ArrayList<>(byKey.values());
+    return byKey.values().stream()
+        .filter(rule -> !Boolean.TRUE.equals(rule.get("containment")))
+        .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+  }
+
+  /**
+   * Checks whether a relationship rule is a catch-all wildcard connector rule.
+   *
+   * @param rule relationship rule
+   * @return {@code true} when both source and target are wildcards
+   */
+  private boolean isCatchAllRelationshipRule(Map<String, Object> rule) {
+    return "*".equals(String.valueOf(rule.getOrDefault("sourceType", "")))
+        && "*".equals(String.valueOf(rule.getOrDefault("targetType", "")));
+  }
+
+  /**
+   * Merges JSON-owned edge-object rules with metamodel-derived defaults for classes that expose
+   * {@code source}/{@code target} reference endpoints.
+   *
+   * @param configuredRules JSON-owned rules
+   * @param elements merged element metadata
+   * @param rootContainmentFeatures root containment feature names keyed by contained type
+   * @return merged edge-object rules
+   */
+  private List<Map<String, Object>> mergeSemanticEdgeObjectRules(
+      List<?> configuredRules, List<?> elements, Map<String, String> rootContainmentFeatures) {
+    Map<String, Map<String, Object>> byClass = new LinkedHashMap<>();
+    for (Object item : configuredRules) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        throw new PlatformException(
+            500, "Modeling semanticEdgeObjectRules entries must be objects.");
+      }
+      Map<String, Object> rule = stringKeyMap(raw);
+      byClass.put(String.valueOf(rule.getOrDefault("eClass", "")), rule);
+    }
+    for (Object item : elements) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        continue;
+      }
+      Map<String, Object> element = stringKeyMap(raw);
+      String type = String.valueOf(element.getOrDefault("type", ""));
+      if (type.isBlank()
+          || byClass.containsKey(type)
+          || Boolean.TRUE.equals(element.get("abstract"))
+          || Boolean.TRUE.equals(element.get("interface"))
+          || objectStringList(element.get("supertypes")).contains("SemanticRelationship")) {
+        continue;
+      }
+      Map<String, Object> derived =
+          deriveEdgeObjectRule(element, rootContainmentFeatures.get(type));
+      if (derived != null) {
+        byClass.putIfAbsent(type, derived);
+      }
+    }
+    return new ArrayList<>(byClass.values());
+  }
+
+  /**
+   * Derives a default edge-object rule for classes with paired {@code source}/{@code target}
+   * references.
+   *
+   * @param element element metadata
+   * @param rootFeature root containment feature when known
+   * @return derived rule or {@code null}
+   */
+  private Map<String, Object> deriveEdgeObjectRule(
+      Map<String, Object> element, String rootFeature) {
+    List<Map<String, Object>> references = listOfMaps(element.get("references"));
+    Map<String, Object> sourceRef = referenceByName(references, "source");
+    Map<String, Object> targetRef = referenceByName(references, "target");
+    if (sourceRef == null || targetRef == null) {
+      return null;
+    }
+    if (Boolean.TRUE.equals(sourceRef.get("containment"))
+        || Boolean.TRUE.equals(targetRef.get("containment"))
+        || Boolean.TRUE.equals(sourceRef.get("readonly"))
+        || Boolean.TRUE.equals(targetRef.get("readonly"))) {
+      return null;
+    }
+    String sourceType = genericTarget(String.valueOf(sourceRef.getOrDefault("targetType", "")));
+    String targetType = genericTarget(String.valueOf(targetRef.getOrDefault("targetType", "")));
+    if (sourceType.isBlank() || targetType.isBlank()) {
+      return null;
+    }
+    String type = String.valueOf(element.get("type"));
+    Map<String, Object> rule = new LinkedHashMap<>();
+    rule.put("eClass", type);
+    rule.put("matchKinds", List.of(relationshipKind(type)));
+    rule.put("sourceType", sourceType);
+    rule.put("targetType", targetType);
+    rule.put("sourceFeature", "source");
+    rule.put("targetFeature", "target");
+    if (rootFeature != null && !rootFeature.isBlank()) {
+      rule.put("rootFeature", rootFeature);
+    }
+    return rule;
+  }
+
+  private Map<String, Object> referenceByName(
+      List<Map<String, Object>> references, String featureName) {
+    return references.stream()
+        .filter(reference -> featureName.equals(reference.get("name")))
+        .findFirst()
+        .orElse(null);
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<Map<String, Object>> listOfMaps(Object value) {
+    if (!(value instanceof List<?> rawList)) {
+      return List.of();
+    }
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object item : rawList) {
+      if (item instanceof Map<?, ?> raw) {
+        result.add(stringKeyMap(raw));
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Maps contained relationship-object types to the root-model feature that owns them.
+   *
+   * @param classByType class lookup by type name
+   * @param rootType root model class name
+   * @return contained type to root feature map
+   */
+  private Map<String, String> rootContainmentFeatures(
+      Map<String, EcoreClass> classByType, String rootType) {
+    Map<String, String> result = new LinkedHashMap<>();
+    EcoreClass root = classByType.get(rootType);
+    if (root == null) {
+      return result;
+    }
+    for (EmfaticFeature feature : root.references()) {
+      if (!feature.containment() || feature.type().isBlank()) {
+        continue;
+      }
+      result.put(genericTarget(feature.type()), feature.name());
+    }
+    return result;
   }
 
   /**
@@ -1399,7 +1552,18 @@ public final class ModelingConfigService {
                   String.valueOf(rule.get("sourceType"))
                       + String.valueOf(rule.get("targetType"))
                       + String.valueOf(rule.get("feature"))));
-      return new CimMetamodel(elements, relationshipRules, semanticReferenceRules);
+      String rootType =
+          switch (key) {
+            case "cim" -> "CIMModel";
+            case "pim" -> "PIMModel";
+            case "psm" -> "AwsPsmModel";
+            default -> "";
+          };
+      return new CimMetamodel(
+          elements,
+          relationshipRules,
+          semanticReferenceRules,
+          rootContainmentFeatures(classByType, rootType));
     } catch (PlatformException ex) {
       throw ex;
     } catch (Exception ex) {
@@ -1754,7 +1918,7 @@ public final class ModelingConfigService {
   private Map<String, Object> cimReference(EmfaticFeature feature) {
     Map<String, Object> reference = new LinkedHashMap<>();
     reference.put("name", feature.name());
-    reference.put("kind", "reference");
+    reference.put("kind", feature.containment() ? "containment" : "reference");
     reference.put("targetType", feature.type());
     reference.put("required", required(feature.multiplicity()));
     reference.put("many", many(feature.multiplicity()));
@@ -1801,8 +1965,9 @@ public final class ModelingConfigService {
    */
   private Map<String, Object> cimReference(Element feature, Map<String, String> typeByPath) {
     Map<String, Object> reference = new LinkedHashMap<>();
+    boolean containment = "true".equals(feature.getAttribute("containment"));
     reference.put("name", feature.getAttribute("name"));
-    reference.put("kind", "reference");
+    reference.put("kind", containment ? "containment" : "reference");
     reference.put("targetType", typeName(feature.getAttribute("eType"), typeByPath));
     reference.put("required", lowerBound(feature) > 0);
     reference.put("many", upperBound(feature) == -1 || upperBound(feature) > 1);
@@ -1846,20 +2011,17 @@ public final class ModelingConfigService {
         continue;
       }
       String kind = relationshipKind(featureName);
-      Map<String, Object> rule =
-          Map.of(
-              "sourceType",
-              sourceType,
-              "targetType",
-              genericTarget(targetType),
-              "allowedKinds",
-              List.of(kind),
-              "feature",
-              featureName,
-              "containment",
-              containment);
-      relationshipRules.add(rule);
       if (!containment) {
+        relationshipRules.add(
+            Map.of(
+                "sourceType",
+                sourceType,
+                "targetType",
+                genericTarget(targetType),
+                "allowedKinds",
+                List.of(kind),
+                "feature",
+                featureName));
         semanticReferenceRules.add(
             Map.of(
                 "sourceType",
@@ -1893,19 +2055,17 @@ public final class ModelingConfigService {
         continue;
       }
       String kind = relationshipKind(feature.name());
-      relationshipRules.add(
-          Map.of(
-              "sourceType",
-              sourceType,
-              "targetType",
-              genericTarget(feature.type()),
-              "allowedKinds",
-              List.of(kind),
-              "feature",
-              feature.name(),
-              "containment",
-              feature.containment()));
       if (!feature.containment()) {
+        relationshipRules.add(
+            Map.of(
+                "sourceType",
+                sourceType,
+                "targetType",
+                genericTarget(feature.type()),
+                "allowedKinds",
+                List.of(kind),
+                "feature",
+                feature.name()));
         semanticReferenceRules.add(
             Map.of(
                 "sourceType",
@@ -1941,19 +2101,17 @@ public final class ModelingConfigService {
         continue;
       }
       String kind = relationshipKind(feature.name());
-      relationshipRules.add(
-          Map.of(
-              "sourceType",
-              sourceType,
-              "targetType",
-              genericTarget(feature.type()),
-              "allowedKinds",
-              List.of(kind),
-              "feature",
-              feature.name(),
-              "containment",
-              feature.containment()));
       if (!feature.containment()) {
+        relationshipRules.add(
+            Map.of(
+                "sourceType",
+                sourceType,
+                "targetType",
+                genericTarget(feature.type()),
+                "allowedKinds",
+                List.of(kind),
+                "feature",
+                feature.name()));
         semanticReferenceRules.add(
             Map.of(
                 "sourceType",
@@ -2186,7 +2344,8 @@ public final class ModelingConfigService {
   private record CimMetamodel(
       List<Map<String, Object>> elements,
       List<Map<String, Object>> relationshipRules,
-      List<Map<String, Object>> semanticReferenceRules) {}
+      List<Map<String, Object>> semanticReferenceRules,
+      Map<String, String> rootContainmentFeatures) {}
 
   /**
    * Internal Ecore class description.

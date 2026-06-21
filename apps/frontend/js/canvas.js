@@ -4,7 +4,7 @@ import { el } from "./dom.js";
 import { api } from "./api.js";
 import { escapeHtml, genId } from "./utils.js";
 import { ensureReadableLayout } from "./layout-engine.js";
-import { getDefaultNode, legalKinds, saveStoredEdgeLayout } from "./diagram.js";
+import { getDefaultNode, legalKinds, legalKindsBetween, saveStoredEdgeLayout } from "./diagram.js";
 import {
   activeView,
   addConnectionToGraphAndActiveView,
@@ -27,6 +27,7 @@ import {
   modelingRootContainments,
   modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
+  modelingResolveEdgeEndpoints,
   modelingShortcutConnectorRules,
   modelingTypeMatches,
   modelingViewDefinition,
@@ -2596,6 +2597,8 @@ function clearHoveredEdge() {
 function closeEdgeKindPicker() {
   state.edgeKindPicker.open = false;
   state.edgeKindPicker.edgeId = null;
+  state.edgeKindPicker.drawnFromId = null;
+  state.edgeKindPicker.drawnToId = null;
   state.edgeKindPicker.options = [];
   if (el.edgeKindPicker) {
     el.edgeKindPicker.classList.add("hidden");
@@ -2603,81 +2606,118 @@ function closeEdgeKindPicker() {
     el.edgeKindPicker.style.removeProperty("left");
     el.edgeKindPicker.style.removeProperty("top");
   }
+  if (el.edgeKindMenu) {
+    el.edgeKindMenu.innerHTML = "";
+  }
 }
 
-function buildDirectedKindOptions(source, target) {
-  const options = [];
-  const pushOption = (fromNode, toNode, kind) => {
-    options.push({
-      value: `${fromNode.id}|${toNode.id}|${kind}`,
-      label: `${fromNode.label || fromNode.type} -> ${
-        toNode.label || toNode.type
-      }: ${configuredEdgeLabel({ kind })}`,
-      sourceId: fromNode.id,
-      targetId: toNode.id,
-      kind,
-    });
-  };
-  legalKindsForConnection(source.type, target.type).forEach((kind) => {
-    pushOption(source, target, kind);
-  });
-  legalKindsForConnection(target.type, source.type).forEach((kind) => {
-    pushOption(target, source, kind);
-  });
-  const unique = [];
-  const seen = new Set();
-  options.forEach((option) => {
-    if (seen.has(option.value)) {
-      return;
-    }
-    seen.add(option.value);
-    unique.push(option);
-  });
-  return unique;
-}
-
-function legalKindsForConnection(sourceType, targetType) {
-  const kinds = new Set(legalKinds(state.activeType, sourceType, targetType));
+function buildKindOptions(source, target) {
+  const kinds = legalKindsBetween(state.activeType, source.type, target.type);
   const traceKind = configuredRelationshipSemantic("traceKind");
   if (supportsBoundedContext() && state.preferredConnectionKind === traceKind) {
-    kinds.add(traceKind);
+    kinds.push(traceKind);
   }
-  return [...kinds];
+  const uniqueKinds = [...new Set(kinds)];
+  return uniqueKinds
+    .map((kind) => ({
+      kind,
+      label: configuredEdgeLabel({ kind }),
+      value: kind,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label) || a.kind.localeCompare(b.kind));
 }
 
-function updateEdgeKind(edgeId, nextKind) {
+function resolveEdgeEndpointsForKind(nodeA, nodeB, kind, preferredSourceId, preferredTargetId) {
+  return modelingResolveEdgeEndpoints(
+    state.activeType,
+    nodeA,
+    nodeB,
+    kind,
+    preferredSourceId,
+    preferredTargetId,
+  );
+}
+
+function updateEdgeKind(edgeId, kind, preferredSourceId, preferredTargetId) {
   const edge = state.diagram.connections.find((item) => item.id === edgeId);
-  if (!edge || !nextKind) {
+  if (!edge || !kind) {
     return;
   }
-  const [sourceId, targetId, kind] = String(nextKind).split("|");
-  if (!sourceId || !targetId || !kind) {
+  const drawnFromId = preferredSourceId || state.edgeKindPicker.drawnFromId || edge.sourceId;
+  const drawnToId = preferredTargetId || state.edgeKindPicker.drawnToId || edge.targetId;
+  const nodeA = state.nodesById.get(drawnFromId);
+  const nodeB = state.nodesById.get(drawnToId);
+  if (!nodeA || !nodeB) {
     return;
   }
-  if (edge.sourceId === sourceId && edge.targetId === targetId && edge.kind === kind) {
+  const resolved = resolveEdgeEndpointsForKind(nodeA, nodeB, kind, drawnFromId, drawnToId);
+  if (!resolved) {
+    return;
+  }
+  if (
+    edge.sourceId === resolved.sourceId &&
+    edge.targetId === resolved.targetId &&
+    edge.kind === resolved.kind
+  ) {
     return;
   }
   const undoSnapshot = captureDiagramUndoSnapshot();
-  edge.sourceId = sourceId;
-  edge.targetId = targetId;
-  edge.kind = kind;
+  edge.sourceId = resolved.sourceId;
+  edge.targetId = resolved.targetId;
+  edge.kind = resolved.kind;
   addConnectionToGraphAndActiveView(edge);
   commitUndoSnapshot(undoSnapshot);
   ensureG6Canvas();
   updateG6Edge(edgeId);
   updateG6Selection();
   markModelDirty();
-  setStatus(`Connection updated: ${kind}`);
+  setStatus(`Connection updated: ${configuredEdgeLabel(edge)}`);
+}
+
+function renderEdgeKindMenu(options, activeKind) {
+  if (!el.edgeKindMenu) {
+    return;
+  }
+  if (!options.length) {
+    el.edgeKindMenu.innerHTML =
+      '<div class="edge-kind-picker-empty">No legal relationships between these elements.</div>';
+    return;
+  }
+  el.edgeKindMenu.innerHTML = options
+    .map(
+      (option) => `<button class="edge-kind-picker-option${
+        option.kind === activeKind ? " is-active" : ""
+      }"
+              type="button"
+              data-edge-kind="${escapeHtml(option.kind)}"
+              role="option"
+              aria-selected="${option.kind === activeKind ? "true" : "false"}">
+        <span class="edge-kind-picker-option-label">${escapeHtml(option.label)}</span>
+        <span class="edge-kind-picker-option-kind">${escapeHtml(option.kind)}</span>
+      </button>`,
+    )
+    .join("");
 }
 
 function ensureEdgeKindPickerBindings() {
-  if (edgeKindPickerBound || !el.edgeKindPicker || !el.edgeKindSelect) {
+  if (edgeKindPickerBound || !el.edgeKindPicker || !el.edgeKindMenu) {
     return;
   }
   edgeKindPickerBound = true;
-  el.edgeKindSelect.addEventListener("change", (event) => {
+  el.edgeKindMenu.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const option = target?.closest("[data-edge-kind]");
+    if (!option || !state.edgeKindPicker.open) {
+      return;
+    }
     const edgeId = state.edgeKindPicker.edgeId;
-    updateEdgeKind(edgeId, event.target.value);
+    const kind = option.getAttribute("data-edge-kind");
+    if (!edgeId || !kind) {
+      return;
+    }
+    updateEdgeKind(edgeId, kind);
+    renderEdgeKindMenu(state.edgeKindPicker.options, kind);
+    event.stopPropagation();
   });
   document.addEventListener("mousedown", (event) => {
     if (!state.edgeKindPicker.open) {
@@ -2718,8 +2758,8 @@ function ensureEdgeKindPickerBindings() {
   });
 }
 
-function openEdgeKindPicker(edgeId, options, canvasX, canvasY) {
-  if (!el.edgeKindPicker || !el.edgeKindSelect) {
+function openEdgeKindPicker(edgeId, options, canvasX, canvasY, { drawnFromId, drawnToId } = {}) {
+  if (!el.edgeKindPicker || !el.edgeKindMenu) {
     return;
   }
   ensureEdgeKindPickerBindings();
@@ -2730,16 +2770,13 @@ function openEdgeKindPicker(edgeId, options, canvasX, canvasY) {
   }
   state.edgeKindPicker.open = true;
   state.edgeKindPicker.edgeId = edgeId;
+  state.edgeKindPicker.drawnFromId = drawnFromId || edge.sourceId;
+  state.edgeKindPicker.drawnToId = drawnToId || edge.targetId;
   state.edgeKindPicker.options = [...options];
   state.edgeKindPicker.x = canvasX;
   state.edgeKindPicker.y = canvasY;
 
-  el.edgeKindSelect.innerHTML = options
-    .map((option) => `<option value="${option.value}">${escapeHtml(option.label)}</option>`)
-    .join("");
-  const selectedValue = `${edge.sourceId}|${edge.targetId}|${edge.kind}`;
-  const selectedExists = options.some((option) => option.value === selectedValue);
-  el.edgeKindSelect.value = selectedExists ? selectedValue : options[0].value;
+  renderEdgeKindMenu(options, edge.kind);
   const pos = canvasToViewportPoint(canvasX, canvasY);
   el.edgeKindPicker.classList.remove("hidden");
   const viewportRect = el.canvasViewport?.getBoundingClientRect?.();
@@ -2757,7 +2794,17 @@ function openEdgeKindPicker(edgeId, options, canvasX, canvasY) {
   el.edgeKindPicker.classList.toggle("edge-kind-picker-below", !enoughSpaceAbove);
   el.edgeKindPicker.style.left = `${Math.round(x)}px`;
   el.edgeKindPicker.style.top = `${Math.round(y)}px`;
-  el.edgeKindSelect.focus();
+  const activeOption = el.edgeKindMenu.querySelector(".edge-kind-picker-option.is-active");
+  activeOption?.focus?.();
+}
+
+function legalKindsForConnection(sourceType, targetType) {
+  const kinds = new Set(legalKinds(state.activeType, sourceType, targetType));
+  const traceKind = configuredRelationshipSemantic("traceKind");
+  if (supportsBoundedContext() && state.preferredConnectionKind === traceKind) {
+    kinds.add(traceKind);
+  }
+  return [...kinds];
 }
 
 function openG6EdgeKindPicker(edgeId) {
@@ -2770,7 +2817,7 @@ function openG6EdgeKindPicker(edgeId) {
   if (!source || !target) {
     return;
   }
-  const options = buildDirectedKindOptions(source, target);
+  const options = buildKindOptions(source, target);
   if (!options.length) {
     return;
   }
@@ -2781,6 +2828,7 @@ function openG6EdgeKindPicker(edgeId) {
     options,
     (source.x + nodeW / 2 + target.x + nodeW / 2) / 2,
     (source.y + nodeH / 2 + target.y + nodeH / 2) / 2,
+    { drawnFromId: edge.sourceId, drawnToId: edge.targetId },
   );
 }
 
@@ -3332,24 +3380,28 @@ export function addConnection(
     setStatus("Source and target cannot be the same");
     return false;
   }
-  const forwardKinds = legalKindsForConnection(source.type, target.type);
-  const reverseKinds = legalKindsForConnection(target.type, source.type);
-  if (!forwardKinds.length && !reverseKinds.length) {
+  const pairKinds = legalKindsBetween(state.activeType, source.type, target.type);
+  if (!pairKinds.length) {
     if (createShortcutConnection(source, target)) {
       return true;
     }
     setStatus("Illegal connection type for selected nodes");
     return false;
   }
-  let resolvedSource = source;
-  let resolvedTarget = target;
-  let resolvedKinds = forwardKinds;
-  if (!forwardKinds.length && reverseKinds.length) {
-    resolvedSource = target;
-    resolvedTarget = source;
-    resolvedKinds = reverseKinds;
+  const forwardKinds = legalKindsForConnection(source.type, target.type);
+  const reverseKinds = legalKindsForConnection(target.type, source.type);
+  let kind = pairKinds.includes(preferredKind) ? preferredKind : pairKinds[0];
+  const resolved = resolveEdgeEndpointsForKind(source, target, kind, sourceId, targetId);
+  if (!resolved) {
+    setStatus("Illegal connection type for selected nodes");
+    return false;
   }
-  let kind = resolvedKinds.includes(preferredKind) ? preferredKind : resolvedKinds[0];
+  const resolvedSource = state.nodesById.get(resolved.sourceId);
+  const resolvedTarget = state.nodesById.get(resolved.targetId);
+  if (!resolvedSource || !resolvedTarget) {
+    return false;
+  }
+  kind = resolved.kind;
 
   const exists = state.diagram.connections.some(
     (edge) => edge.sourceId === resolvedSource.id && edge.targetId === resolvedTarget.id,
@@ -3387,27 +3439,24 @@ export function addConnection(
     const sy = resolvedSource.y + nodeH / 2;
     const tx = resolvedTarget.x + nodeW / 2;
     const ty = resolvedTarget.y + nodeH / 2;
-    const options = buildDirectedKindOptions(source, target);
+    const options = buildKindOptions(source, target);
     if (options.length) {
-      openEdgeKindPicker(edge.id, options, (sx + tx) / 2, (sy + ty) / 2);
+      openEdgeKindPicker(edge.id, options, (sx + tx) / 2, (sy + ty) / 2, {
+        drawnFromId: sourceId,
+        drawnToId: targetId,
+      });
     }
   }
-  if (!forwardKinds.length && reverseKinds.length) {
+  if (interactivePicker && pairKinds.length > 1) {
+    setStatus("Connection added. Choose relationship type.");
+  } else if (!forwardKinds.length && reverseKinds.length) {
     setStatus(
       `Connection added with legal direction: ${
         resolvedSource.label || resolvedSource.type
       } -> ${resolvedTarget.label || resolvedTarget.type}`,
     );
-  } else if (forwardKinds.length && reverseKinds.length) {
-    setStatus(
-      "Connection added. Both directions are legal; choose direction/type from the inline selector.",
-    );
   } else {
-    setStatus(
-      interactivePicker
-        ? "Connection added. Choose relationship type."
-        : `Connection added: ${kind}`,
-    );
+    setStatus(`Connection added: ${configuredEdgeLabel(edge)}`);
   }
   return true;
 }

@@ -457,6 +457,109 @@ class ModelingConfigServiceTest {
   }
 
   /**
+   * Verifies connector rules are derived from the metamodel instead of catch-all JSON wildcards.
+   */
+  @Test
+  void relationshipRulesComeFromMetamodelReferences() {
+    Map<String, Object> cim = level("cim");
+    List<Map<String, Object>> rules = listOfMaps(cim.get("relationshipRules"));
+    assertFalse(rules.isEmpty());
+    assertTrue(
+        rules.stream()
+            .filter(rule -> !rule.containsKey("edgeObjectType"))
+            .noneMatch(this::isCatchAllRelationshipRule),
+        "Catch-all wildcard connector rules must not be exposed to the UI");
+
+    List<String> requirementKinds =
+        rules.stream()
+            .filter(
+                rule ->
+                    "Requirement".equals(rule.get("sourceType"))
+                        && "Requirement".equals(rule.get("targetType")))
+            .flatMap(rule -> stringList(rule.get("allowedKinds")).stream())
+            .distinct()
+            .toList();
+    assertTrue(requirementKinds.contains("DEPENDS_ON"));
+    assertTrue(requirementKinds.contains("CONFLICTS_WITH"));
+    assertTrue(requirementKinds.contains("REFINES"));
+  }
+
+  /**
+   * Verifies connector rules never expose containment features and reference metadata is accurate.
+   */
+  @Test
+  void relationshipRulesExcludeContainmentAndReferenceKindsAreAccurate() {
+    for (String key : List.of("cim", "pim", "psm")) {
+      Map<String, Object> level = level(key);
+      List<Map<String, Object>> rules = listOfMaps(level.get("relationshipRules"));
+      assertTrue(
+          rules.stream().noneMatch(rule -> Boolean.TRUE.equals(rule.get("containment"))),
+          key.toUpperCase() + " connector rules must not include containment refs");
+
+      for (Map<String, Object> element : listOfMaps(level.get("elements"))) {
+        for (Map<String, Object> reference : listOfMaps(element.get("references"))) {
+          boolean containment = Boolean.TRUE.equals(reference.get("containment"));
+          String kind = String.valueOf(reference.get("kind"));
+          if (containment) {
+            assertEquals("containment", kind, element.get("type") + "." + reference.get("name"));
+          } else if (!Boolean.TRUE.equals(reference.get("readonly"))) {
+            assertEquals("reference", kind, element.get("type") + "." + reference.get("name"));
+          }
+        }
+      }
+
+      java.util.Set<String> semanticFeatures = new java.util.LinkedHashSet<>();
+      for (Map<String, Object> rule : listOfMaps(level.get("semanticReferenceRules"))) {
+        String featureKey =
+            rule.get("sourceType") + "." + rule.get("feature") + "->" + rule.get("targetType");
+        assertTrue(
+            semanticFeatures.add(featureKey),
+            key.toUpperCase() + " duplicate semantic reference rule: " + featureKey);
+      }
+    }
+  }
+
+  /** Verifies class-based relationship objects from metamodels are connectable in PIM and PSM. */
+  @Test
+  void classBasedRelationshipObjectsAreConnectable() {
+    Map<String, Object> pim = level("pim");
+    List<Map<String, Object>> pimRules = listOfMaps(pim.get("relationshipRules"));
+    assertTrue(
+        pimRules.stream()
+            .anyMatch(
+                rule ->
+                    "ServerlessService".equals(rule.get("sourceType"))
+                        && "DeployableElement".equals(rule.get("targetType"))
+                        && stringList(rule.get("allowedKinds"))
+                            .containsAll(List.of("OWNS", "EXPOSES"))),
+        "ServiceElementMembership must be connectable");
+    assertTrue(
+        pimRules.stream()
+            .anyMatch(
+                rule ->
+                    "InvocationSource".equals(rule.get("sourceType"))
+                        && "RoutingTarget".equals(rule.get("targetType"))
+                        && stringList(rule.get("allowedKinds")).contains("TARGETS")),
+        "EventRoutingRule must be connectable");
+
+    Map<String, Object> psm = level("psm");
+    List<Map<String, Object>> psmRules = listOfMaps(psm.get("relationshipRules"));
+    assertTrue(
+        psmRules.stream()
+            .anyMatch(
+                rule ->
+                    "AwsResource".equals(rule.get("sourceType"))
+                        && "AwsResource".equals(rule.get("targetType"))
+                        && stringList(rule.get("allowedKinds")).contains("DEPENDS_ON")),
+        "AwsResource dependsOn must be connectable");
+  }
+
+  private boolean isCatchAllRelationshipRule(Map<String, Object> rule) {
+    return "*".equals(String.valueOf(rule.getOrDefault("sourceType", "")))
+        && "*".equals(String.valueOf(rule.getOrDefault("targetType", "")));
+  }
+
+  /**
    * Returns one level configuration from the service output.
    *
    * @param key level key

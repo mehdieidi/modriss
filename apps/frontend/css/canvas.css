@@ -729,17 +729,15 @@
   position: absolute;
   z-index: 140;
   transform: translate(-50%, -100%);
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background: color-mix(in srgb, var(--surface-high) 94%, #000 6%);
-  border-radius: 8px;
-  box-shadow:
-    0 16px 36px rgba(0, 0, 0, 0.26),
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--input-bg) 90%, var(--surface-contrast) 10%);
+  box-shadow: var(--shadow-sm);
+  padding: 10px;
   display: grid;
-  gap: 6px;
-  min-width: 240px;
-  max-width: min(360px, calc(100vw - 32px));
+  gap: 8px;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 32px));
   pointer-events: auto;
 }
 
@@ -758,29 +756,65 @@
   color: color-mix(in srgb, var(--text-strong) 82%, var(--muted));
 }
 
-.edge-kind-picker select {
-  appearance: none;
-  width: 100%;
-  min-height: 34px;
-  border-radius: 6px;
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background:
-    linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 17px) 14px / 5px 5px
-      no-repeat,
-    linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 12px) 14px / 5px 5px
-      no-repeat,
-    color-mix(in srgb, var(--surface-3) 88%, #000 12%);
-  color: var(--text-strong);
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1.2;
-  padding: 0 32px 0 10px;
-  outline: none;
+.edge-kind-picker-menu {
+  display: grid;
+  gap: 4px;
+  max-height: min(280px, calc(100vh - 120px));
+  overflow: auto;
 }
 
-.edge-kind-picker select:focus {
-  border-color: var(--accent-select);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-select) 24%, transparent);
+.edge-kind-picker-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.edge-kind-picker-option:hover,
+.edge-kind-picker-option:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--surface-3) 70%, transparent);
+  border-color: color-mix(in srgb, var(--border) 82%, transparent);
+  color: var(--text-strong);
+}
+
+.edge-kind-picker-option.is-active {
+  border-color: color-mix(in srgb, var(--accent) 44%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-3) 88%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-glow) 34%, transparent);
+}
+
+.edge-kind-picker-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 12px/1.35 var(--font-ui);
+}
+
+.edge-kind-picker-option-kind {
+  color: var(--muted);
+  font: 700 9px/1 var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.edge-kind-picker-empty {
+  padding: 10px 12px;
+  color: var(--muted);
+  font: 500 12px/1.4 var(--font-ui);
 }
 
 .canvas-viewport {

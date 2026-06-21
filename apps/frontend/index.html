@@ -567,9 +567,14 @@
                     Fit
                   </button>
                 </div>
-                <div class="edge-kind-picker hidden" id="edgeKindPicker">
-                  <label class="edge-kind-picker-label" for="edgeKindSelect">Relationship</label>
-                  <select id="edgeKindSelect"></select>
+                <div
+                  class="edge-kind-picker hidden"
+                  id="edgeKindPicker"
+                  role="dialog"
+                  aria-label="Choose relationship"
+                >
+                  <span class="edge-kind-picker-label">Relationship</span>
+                  <div class="edge-kind-picker-menu" id="edgeKindMenu" role="listbox"></div>
                 </div>
               </div>
 
@@ -756,12 +761,7 @@
         <div aria-hidden="true" class="mobile-backdrop hidden" id="mobileBackdrop"></div>
       </main>
 
-      <button
-        class="chat-toggle"
-        id="chatToggle"
-        title="Open modeling assistant"
-        type="button"
-      >
+      <button class="chat-toggle" id="chatToggle" title="Open modeling assistant" type="button">
         <span
           aria-hidden="true"
           class="chat-toggle-icon icon-svg icon-mask"

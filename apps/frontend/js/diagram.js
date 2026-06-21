@@ -5,6 +5,7 @@ import {
   modelingElementDefinition,
   modelingLabelField,
   modelingLegalKinds,
+  modelingLegalKindsBetween,
   modelingLevelConfig,
   modelingRootTemplate,
   isModelingLevel,
@@ -124,6 +125,10 @@ export function getDefaultNode(typeKey, nodeType, x, y) {
 
 export function legalKinds(typeKey, sourceType, targetType) {
   return modelingLegalKinds(typeKey, sourceType, targetType);
+}
+
+export function legalKindsBetween(typeKey, typeA, typeB) {
+  return modelingLegalKindsBetween(typeKey, typeA, typeB);
 }
 
 function sanitizeRootForType(typeKey, root) {

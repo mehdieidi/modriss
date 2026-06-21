@@ -127,6 +127,8 @@ export const state = {
   edgeKindPicker: {
     open: false,
     edgeId: null,
+    drawnFromId: null,
+    drawnToId: null,
     x: 0,
     y: 0,
     options: [],

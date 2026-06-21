@@ -239,6 +239,37 @@
     },
     {
       "match": {
+        "types": [
+          "DataAccess",
+          "Trigger",
+          "WorkflowTransition",
+          "Permission",
+          "Subscription",
+          "RequestResponseFlow",
+          "EventFlow",
+          "MessageFlow",
+          "PubSubFlow",
+          "OrchestrationFlow",
+          "ExternalIntegrationFlow",
+          "ServiceElementMembership",
+          "EventRoutingRule",
+          "Schedule",
+          "ObjectNotificationRule",
+          "PlatformMappingAssessment"
+        ]
+      },
+      "metadata": {
+        "relationshipElement": true,
+        "icon": "link",
+        "notation": {
+          "tag": "REL",
+          "shape": "relationship-edge",
+          "lineFields": ["kind", "flowPurpose", "ownershipKind", "effect", "eventPattern"]
+        }
+      }
+    },
+    {
+      "match": {
         "types": ["TraceLink"]
       },
       "metadata": {
@@ -413,6 +444,7 @@
     "OWNS",
     "DEPLOYS",
     "DEPLOYS_TO",
+    "DEPENDS_ON",
     "ROUTES_TO",
     "INVOKES",
     "TRIGGERS",
@@ -440,12 +472,15 @@
     "PUBLISHES",
     "SUBSCRIBES_TO",
     "CALLS_ADAPTERS",
-    "USES_SECRETS",
     "ENVIRONMENT_VARIABLES",
     "INPUT_SCHEMAS",
     "OUTPUT_SCHEMAS",
     "USED_BY_FUNCTIONS",
     "EXPOSED_BY_ROUTES",
+    "TARGETS",
+    "USES_SHARED",
+    "EXPOSES",
+    "MAPS_TO",
     "TRACE"
   ],
   "relationshipLabelFields": ["name", "flowPurpose", "operation", "transitionName", "effect"],
@@ -459,6 +494,7 @@
     "OWNS": "owns",
     "DEPLOYS": "deploys",
     "DEPLOYS_TO": "deploys to",
+    "DEPENDS_ON": "depends on",
     "ROUTES_TO": "routes to",
     "INVOKES": "invokes",
     "TRIGGERS": "triggers",
@@ -486,12 +522,15 @@
     "PUBLISHES": "publishes",
     "SUBSCRIBES_TO": "subscribes to",
     "CALLS_ADAPTERS": "calls adapters",
-    "USES_SECRETS": "uses secrets",
     "ENVIRONMENT_VARIABLES": "has environment variables",
     "INPUT_SCHEMAS": "uses input schemas",
     "OUTPUT_SCHEMAS": "uses output schemas",
     "USED_BY_FUNCTIONS": "used by functions",
     "EXPOSED_BY_ROUTES": "exposed by routes",
+    "TARGETS": "targets",
+    "USES_SHARED": "uses shared",
+    "EXPOSES": "exposes",
+    "MAPS_TO": "maps to",
     "TRACE": "trace"
   },
   "relationshipVisualRules": [
@@ -743,7 +782,7 @@
         "PUBLISHES",
         "SUBSCRIBES_TO",
         "CALLS_ADAPTERS",
-        "USES_SECRETS",
+        "USES_SECRET",
         "ENVIRONMENT_VARIABLES",
         "ATTACHED_TO",
         "CONTAINS"
@@ -1041,13 +1080,24 @@
     "targetResource": "PERMISSION_TARGET",
     "permissions": "PERMISSION",
     "deploysStacks": "DEPLOYS",
-    "resources": "CONTAINS",
-    "allResources": "CONTAINS",
     "route": "USES_ROUTE",
     "role": "USES_ROLE",
-    "logGroup": "WRITES_LOGS_TO"
+    "logGroup": "WRITES_LOGS_TO",
+    "targets": "TARGETS",
+    "usesSecrets": "USES_SECRET"
   },
-  "semanticReferenceExclusions": ["startState", "endStates"],
+  "semanticReferenceExclusions": [
+    "startState",
+    "endStates",
+    "reads",
+    "writes",
+    "ownsFunctions",
+    "ownsApis",
+    "ownsChannels",
+    "ownsStores",
+    "ownsWorkflows",
+    "ownsAdapters"
+  ],
   "semanticEdgeObjectRules": [
     {
       "eClass": "DataAccess",
@@ -1180,6 +1230,66 @@
       "sourceFeature": "source",
       "targetFeature": "target",
       "defaults": { "flowPurpose": "", "criticalPath": false, "containsPersonalData": false }
+    },
+    {
+      "eClass": "ServiceElementMembership",
+      "kindField": "ownershipKind",
+      "kindMap": {
+        "OWNS": "OWNS",
+        "USES_SHARED": "USES_SHARED",
+        "DEPENDS_ON": "DEPENDS_ON",
+        "EXPOSES": "EXPOSES"
+      },
+      "matchKinds": ["OWNS", "USES_SHARED", "DEPENDS_ON", "EXPOSES"],
+      "sourceType": "ServerlessService",
+      "targetType": "DeployableElement",
+      "rootFeature": "serviceMemberships",
+      "sourceFeature": "service",
+      "targetFeature": "element",
+      "defaults": { "ownershipKind": "OWNS" }
+    },
+    {
+      "eClass": "EventRoutingRule",
+      "defaultKind": "TARGETS",
+      "matchKinds": ["TARGETS"],
+      "sourceType": "InvocationSource",
+      "targetType": "RoutingTarget",
+      "rootFeature": "routingRules",
+      "ownerType": "EventBus",
+      "ownerAsSource": true,
+      "targetFeature": "targets",
+      "defaults": { "enabled": true }
+    },
+    {
+      "eClass": "Schedule",
+      "defaultKind": "TRIGGERS",
+      "matchKinds": ["TRIGGERS", "TARGETS"],
+      "sourceType": "InvocationSource",
+      "targetType": "RoutingTarget",
+      "rootFeature": "schedules",
+      "targetFeature": "targets",
+      "defaults": { "enabled": true }
+    },
+    {
+      "eClass": "ObjectNotificationRule",
+      "defaultKind": "EVENT_FLOW",
+      "matchKinds": ["EVENT_FLOW"],
+      "sourceType": "ObjectStore",
+      "targetType": "RoutingTarget",
+      "rootFeature": "notificationRules",
+      "ownerType": "ObjectStore",
+      "ownerAsSource": true,
+      "targetFeature": "targets"
+    },
+    {
+      "eClass": "PlatformMappingAssessment",
+      "defaultKind": "MAPS_TO",
+      "matchKinds": ["MAPS_TO"],
+      "sourceType": "PlatformMappingAssessment",
+      "targetType": "ModelElement",
+      "rootFeature": "platformMappingAssessments",
+      "targetFeature": "source",
+      "defaults": { "supportLevel": "PARTIAL" }
     },
     {
       "eClass": "TraceLink",

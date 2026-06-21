@@ -826,11 +826,10 @@
     "targetResource": "TARGETS",
     "permissions": "PERMISSION",
     "deploysStacks": "DEPLOYS",
-    "resources": "CONTAINS",
-    "allResources": "CONTAINS",
     "route": "USES_ROUTE",
     "role": "USES_ROLE",
-    "logGroup": "WRITES_LOGS_TO"
+    "logGroup": "WRITES_LOGS_TO",
+    "dependsOn": "DEPENDS_ON"
   },
   "semanticEdgeObjectRules": [
     {
@@ -901,6 +900,16 @@
       "matchKinds": ["EVENT_FLOW"],
       "sourceType": "S3Bucket",
       "targetType": "SnsTopic",
+      "rootFeature": "relationshipViews",
+      "sourceFeature": "source",
+      "targetFeature": "target"
+    },
+    {
+      "eClass": "AwsRelationshipView",
+      "defaultKind": "DEPENDS_ON",
+      "matchKinds": ["DEPENDS_ON", "INVOKES", "EVENT_FLOW", "MESSAGE_FLOW", "TARGETS", "ROUTES_TO"],
+      "sourceType": "AwsResource",
+      "targetType": "AwsResource",
       "rootFeature": "relationshipViews",
       "sourceFeature": "source",
       "targetFeature": "target"
