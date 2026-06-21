@@ -764,7 +764,7 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
 export function buildChatWelcomeCard() {
   const welcome = document.createElement("div");
   welcome.className = "chat-welcome";
-  welcome.innerHTML = `<span aria-hidden="true" class="chat-welcome-icon icon-svg icon-mask" style="--icon-src: url('/assets/icons/placeholder.svg');"></span>
+  welcome.innerHTML = `<span aria-hidden="true" class="chat-welcome-icon icon-svg icon-mask" style="--icon-src: url('/assets/icons/chatbot.svg');"></span>
     <div class="chat-welcome-title">Modeling Assistant</div>
     <div class="chat-welcome-text">I can help you create, modify, and understand your models. Ask me anything or describe what you'd like to build.</div>`;
   return welcome;
@@ -1334,9 +1334,11 @@ export function updateChatAttachmentLabel() {
     if (el.chatFileNameText) {
       el.chatFileNameText.textContent = attachment.name;
     }
-    el.chatFileName.classList.remove("hidden");
+    el.chatFileName?.classList.remove("hidden");
+    el.chatAttachBar?.classList.remove("hidden");
   } else {
-    el.chatFileName.classList.add("hidden");
+    el.chatFileName?.classList.add("hidden");
+    el.chatAttachBar?.classList.add("hidden");
   }
 }
 

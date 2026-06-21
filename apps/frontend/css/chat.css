@@ -119,6 +119,13 @@
   background: color-mix(in srgb, var(--accent-glow) 68%, transparent);
   padding: 6px;
   object-fit: contain;
+  color: var(--accent-dark);
+  font-size: 22px;
+}
+
+.chat-avatar-icon.icon-svg.icon-mask {
+  width: 22px;
+  height: 22px;
 }
 
 .chat-header-title {
@@ -252,17 +259,36 @@
   gap: 5px;
 }
 
-.chat-header-icon-btn {
+.btn-icon-xs.chat-header-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
+  padding: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: none;
+  border: none;
+  background: transparent;
+}
+
+.btn-icon-xs.chat-header-icon-btn:hover {
+  background: color-mix(in srgb, var(--surface-high) 70%, transparent);
+  border: none;
 }
 
 .chat-header-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
+  color: inherit;
+}
+
+.chat-header-icon.icon-svg.icon-mask {
+  width: 18px;
+  height: 18px;
 }
 
 .chat-history-panel {
@@ -404,17 +430,28 @@
   font-weight: 600;
 }
 
-.chat-expand-btn {
+.btn-icon-xs.chat-expand-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
+  padding: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: none;
+  border: none;
+  background: transparent;
 }
 
-.chat-expand-icon {
-  width: 16px;
-  height: 16px;
+.btn-icon-xs.chat-expand-btn:hover {
+  background: color-mix(in srgb, var(--surface-high) 70%, transparent);
+  border: none;
+}
+
+.chat-expand-icon.icon-svg.icon-mask {
+  width: 18px;
+  height: 18px;
 }
 
 .chat-messages {
@@ -445,7 +482,13 @@
   background: color-mix(in srgb, var(--accent-glow) 70%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 52%, transparent);
   padding: 7px;
-  object-fit: contain;
+  color: var(--accent-dark);
+  font-size: 26px;
+}
+
+.chat-welcome-icon.icon-svg.icon-mask {
+  width: 26px;
+  height: 26px;
 }
 
 .chat-welcome-title {
@@ -1025,43 +1068,65 @@
   }
 }
 
-.chat-attach-bar {
+.chat-composer {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 11px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--surface-2) 38%, transparent);
+  flex-direction: column;
+  margin: 10px 12px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background: color-mix(in srgb, var(--input-bg) 92%, var(--surface-contrast) 8%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface-high) 18%, transparent);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.chat-composer:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border) 58%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface-high) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent-glow) 36%, transparent);
+}
+
+.chat-composer.chat-input-expanded {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border) 52%);
+}
+
+.chat-composer-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+
+.chat-composer-attachments.hidden {
+  display: none;
 }
 
 .chat-attach-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 86%, var(--surface) 14%);
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
   color: var(--muted);
-  font: 600 11px/1.2 var(--font-ui);
   cursor: pointer;
   transition:
-    border-color var(--transition),
     color var(--transition),
     background var(--transition);
 }
 
-.chat-attach-icon {
-  width: 15px;
-  height: 15px;
-  object-fit: contain;
+.chat-attach-icon.icon-svg.icon-mask {
+  width: 16px;
+  height: 16px;
 }
 
 .chat-attach-btn:hover {
   color: var(--text);
-  border-color: color-mix(in srgb, var(--outline) 56%, transparent);
-  background: color-mix(in srgb, var(--surface-high) 82%, var(--surface-3) 18%);
+  background: color-mix(in srgb, var(--surface-high) 70%, transparent);
 }
 
 .chat-attach-btn input {
@@ -1071,15 +1136,16 @@
 .chat-file-tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
-  max-width: 220px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent) 66%, transparent);
-  background: color-mix(in srgb, var(--accent-glow) 72%, transparent);
+  max-width: min(100%, 260px);
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border) 60%);
+  background: color-mix(in srgb, var(--accent-glow) 42%, var(--surface-3) 58%);
   color: var(--accent-light);
   font-size: 11px;
-  padding: 3px 8px 3px 10px;
+  font-weight: 600;
+  padding: 4px 6px 4px 9px;
 }
 
 #chatFileNameText {
@@ -1093,115 +1159,94 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 18px;
+  height: 18px;
   border: none;
+  border-radius: 5px;
   background: transparent;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 14px;
+  line-height: 1;
   cursor: pointer;
   padding: 0;
 }
 
-.chat-file-clear-icon {
-  width: 15px;
-  height: 15px;
-  object-fit: contain;
-}
-
 .chat-file-clear:hover {
   color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
-.chat-input-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 11px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  background: color-mix(in srgb, var(--surface-2) 38%, transparent);
-  transition:
-    padding var(--transition),
-    box-shadow var(--transition);
-}
-
-.chat-input-row.chat-input-expanded {
-  padding: 12px;
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent-glow) 68%, transparent);
-}
-
-.chat-input-row textarea {
-  flex: 1;
+.chat-composer textarea {
+  width: 100%;
   resize: none;
-  min-height: 38px;
-  max-height: 132px;
-  border-radius: 9px;
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background: color-mix(in srgb, var(--input-bg) 88%, var(--surface-contrast) 12%);
+  min-height: 22px;
+  max-height: 160px;
+  border: none;
+  background: transparent;
   color: var(--text);
-  font: 500 12px/1.45 var(--font-ui);
-  padding: 8px 12px;
+  font: 500 13px/1.5 var(--font-ui);
+  padding: 12px 14px 8px;
   overflow-y: auto;
   transition:
-    border-color var(--transition),
-    box-shadow var(--transition),
     min-height var(--transition),
     padding var(--transition);
 }
 
-.chat-input-row.chat-input-expanded textarea {
-  min-height: 74px;
-  padding-top: 10px;
-  padding-bottom: 10px;
+.chat-composer.chat-input-expanded textarea {
+  min-height: 72px;
+  padding-top: 14px;
 }
 
-.chat-input-row textarea:focus {
+.chat-composer textarea:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--accent) 76%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-glow) 68%, transparent);
 }
 
-.chat-input-row textarea::placeholder {
+.chat-composer textarea::placeholder {
   color: var(--muted-2);
+}
+
+.chat-composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 8px 8px;
 }
 
 .chat-send-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--accent-dark) 76%, transparent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent-light) 70%, var(--accent) 30%),
-    var(--accent-dark)
-  );
-  color: #f4fbff;
-  font: 700 11px/1 var(--font-display);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent-light) 36%, transparent);
+  background: color-mix(in srgb, var(--accent-light) 72%, #fff 28%);
+  color: color-mix(in srgb, var(--accent-dark) 88%, #000 12%);
   cursor: pointer;
   transition:
     box-shadow var(--transition),
     transform var(--transition),
-    filter var(--transition);
+    filter var(--transition),
+    opacity var(--transition);
 }
 
-.chat-send-icon {
-  width: 17px;
-  height: 17px;
-  object-fit: contain;
+.chat-send-icon.icon-svg.icon-mask {
+  width: 15px;
+  height: 15px;
 }
 
 .chat-send-btn:hover:not(:disabled) {
-  box-shadow: 0 10px 22px color-mix(in srgb, var(--accent-glow) 82%, transparent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent-glow) 72%, transparent);
   transform: translateY(-1px);
 }
 
 .chat-send-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 @media (max-width: 920px) {

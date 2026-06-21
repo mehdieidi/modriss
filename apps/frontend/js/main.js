@@ -844,7 +844,7 @@ function bindEvents() {
     if (el.chatExpandIcon) {
       el.chatExpandIcon.style.setProperty(
         "--icon-src",
-        `url('/assets/icons/${expanded ? "collapse" : "expand"}.svg')`,
+        `url('/assets/icons/${expanded ? "panel-collapse" : "panel-expand"}.svg')`,
       );
     }
   };
@@ -947,8 +947,8 @@ function bindEvents() {
   el.chatInput?.addEventListener("focus", expandChatInput);
   el.chatInput?.addEventListener("input", expandChatInput);
   el.chatInput?.addEventListener("blur", (event) => {
-    // Don't collapse when focus moves to the send button so the click still registers
-    if (event.relatedTarget === el.chatSendBtn) {
+    const related = event.relatedTarget;
+    if (related === el.chatSendBtn || el.chatInputRow?.contains(related)) {
       return;
     }
     collapseChatInput();

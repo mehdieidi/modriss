@@ -699,7 +699,7 @@
                   <span
                     aria-hidden="true"
                     class="chat-avatar-icon icon-svg icon-mask"
-                    style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                    style="--icon-src: url(&quot;/assets/icons/chatbot.svg&quot;)"
                   ></span>
                   <div>
                     <div class="chat-header-title">Modeling Assistant</div>
@@ -711,30 +711,42 @@
                 </div>
                 <div class="chat-header-actions">
                   <button
-                    aria-label="Conversation history"
-                    class="btn-icon-xs chat-header-icon-btn"
-                    id="chatHistoryBtn"
-                    title="Conversation history"
-                    type="button"
-                  >
-                    <span
-                      aria-hidden="true"
-                      class="chat-header-icon icon-svg icon-mask"
-                      style="--icon-src: url(&quot;/assets/icons/history.svg&quot;)"
-                    ></span>
-                  </button>
-                  <button
                     aria-label="Start new conversation"
                     class="btn-icon-xs chat-header-icon-btn"
                     id="chatNewBtn"
                     title="New conversation"
                     type="button"
                   >
-                    <span
+                    <svg
                       aria-hidden="true"
-                      class="chat-header-icon icon-svg icon-mask"
-                      style="--icon-src: url(&quot;/assets/icons/new-chat.svg&quot;)"
-                    ></span>
+                      class="chat-header-icon"
+                      fill="currentColor"
+                      height="18"
+                      viewBox="0 -960 960 960"
+                      width="18"
+                    >
+                      <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
+                    </svg>
+                  </button>
+                  <button
+                    aria-label="Conversation history"
+                    class="btn-icon-xs chat-header-icon-btn"
+                    id="chatHistoryBtn"
+                    title="Conversation history"
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="chat-header-icon"
+                      fill="currentColor"
+                      height="18"
+                      viewBox="0 -960 960 960"
+                      width="18"
+                    >
+                      <path
+                        d="m612-292 56-56-148-148v-184h-80v216l172 172ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-400Zm0 320q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Z"
+                      />
+                    </svg>
                   </button>
                   <button
                     aria-label="Expand chat window"
@@ -748,11 +760,28 @@
                       aria-hidden="true"
                       class="chat-expand-icon icon-svg icon-mask"
                       id="chatExpandIcon"
-                      style="--icon-src: url(&quot;/assets/icons/expand.svg&quot;)"
+                      style="--icon-src: url(&quot;/assets/icons/panel-expand.svg&quot;)"
                     ></span>
                   </button>
-                  <button class="btn-icon-xs" id="chatCloseBtn" title="Close" type="button">
-                    Close
+                  <button
+                    aria-label="Close chat window"
+                    class="btn-icon-xs chat-header-icon-btn"
+                    id="chatCloseBtn"
+                    title="Close"
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="chat-header-icon"
+                      fill="currentColor"
+                      height="18"
+                      viewBox="0 -960 960 960"
+                      width="18"
+                    >
+                      <path
+                        d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                      />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -789,7 +818,7 @@
                   <span
                     aria-hidden="true"
                     class="chat-welcome-icon icon-svg icon-mask"
-                    style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
+                    style="--icon-src: url(&quot;/assets/icons/chatbot.svg&quot;)"
                   ></span>
                   <div class="chat-welcome-title">Modeling Assistant</div>
                   <div class="chat-welcome-text">
@@ -801,33 +830,20 @@
               <div class="chat-typing hidden" id="chatTypingIndicator">
                 <span></span><span></span><span></span>
               </div>
-              <div class="chat-attach-bar" id="chatAttachBar">
-                <label class="chat-attach-btn" title="Attach a file to your message">
-                  <span
-                    aria-hidden="true"
-                    class="chat-attach-icon icon-svg icon-mask"
-                    style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
-                  ></span>
-                  <span>Attach</span>
-                  <input accept=".txt,.md,.json,.yaml,.yml,.xml" id="chatFileInput" type="file" />
-                </label>
-                <div class="chat-file-tag hidden" id="chatFileName">
-                  <span id="chatFileNameText">file.txt</span>
-                  <button
-                    class="chat-file-clear"
-                    id="chatFileClearBtn"
-                    title="Remove attachment"
-                    type="button"
-                  >
-                    <span
-                      aria-hidden="true"
-                      class="chat-file-clear-icon icon-svg icon-mask"
-                      style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
-                    ></span>
-                  </button>
+              <div class="chat-composer" id="chatInputRow">
+                <div class="chat-composer-attachments hidden" id="chatAttachBar">
+                  <div class="chat-file-tag hidden" id="chatFileName">
+                    <span id="chatFileNameText">file.txt</span>
+                    <button
+                      class="chat-file-clear"
+                      id="chatFileClearBtn"
+                      title="Remove attachment"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div class="chat-input-row" id="chatInputRow">
                 <textarea
                   aria-label="Chat message input"
                   autocomplete="off"
@@ -835,13 +851,23 @@
                   placeholder="Ask the assistant..."
                   rows="1"
                 ></textarea>
-                <button class="chat-send-btn" id="chatSendBtn" title="Send message" type="button">
-                  <span
-                    aria-hidden="true"
-                    class="chat-send-icon icon-svg icon-mask"
-                    style="--icon-src: url(&quot;/assets/icons/placeholder.svg&quot;)"
-                  ></span>
-                </button>
+                <div class="chat-composer-footer">
+                  <label class="chat-attach-btn" title="Attach a file to your message">
+                    <span
+                      aria-hidden="true"
+                      class="chat-attach-icon icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/attach.svg&quot;)"
+                    ></span>
+                    <input accept=".txt,.md,.json,.yaml,.yml,.xml" id="chatFileInput" type="file" />
+                  </label>
+                  <button class="chat-send-btn" id="chatSendBtn" title="Send message" type="button">
+                    <span
+                      aria-hidden="true"
+                      class="chat-send-icon icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/send.svg&quot;)"
+                    ></span>
+                  </button>
+                </div>
               </div>
             </div>
           </section>

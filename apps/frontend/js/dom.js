@@ -59,6 +59,7 @@ export const el = {
   chatInput: document.getElementById("chatInput"),
   chatSendBtn: document.getElementById("chatSendBtn"),
   chatFileInput: document.getElementById("chatFileInput"),
+  chatAttachBar: document.getElementById("chatAttachBar"),
   chatFileName: document.getElementById("chatFileName"),
   chatFileNameText: document.getElementById("chatFileNameText"),
   chatFileClearBtn: document.getElementById("chatFileClearBtn"),
