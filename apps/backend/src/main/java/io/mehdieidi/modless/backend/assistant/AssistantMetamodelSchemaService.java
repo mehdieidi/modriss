@@ -211,11 +211,6 @@ public class AssistantMetamodelSchemaService {
         scores.put(type.name(), score);
       }
     }
-    if (emptyModel && looksLikeCreation(normalized)) {
-      for (String scaffold : scaffoldTypes(level)) {
-        scores.merge(scaffold, 48, Math::max);
-      }
-    }
     applyIntentBoosts(level, tokens, scores);
     return scores.entrySet().stream()
         .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
@@ -247,11 +242,10 @@ public class AssistantMetamodelSchemaService {
                             .collect(Collectors.joining("; ")))
             .collect(Collectors.joining("\n"));
     return """
-    The canvas is empty. Produce a domain-specific scaffold, not a single placeholder element.
-    Prefer a bounded ServerlessService (or equivalent root container) that owns the APIs,
-    functions, stores, and channels the domain needs. Include required nested contracts and
-    attributes for every element you add.
-    Suggested starting types for this request:
+    The canvas is empty. Model only what the user asked for, using types and relationships allowed
+    by the formal metamodel. Include required nested contracts and attributes for every element
+    you add.
+    Types most relevant to this request:
     """
         + contracts;
   }
@@ -473,10 +467,7 @@ public class AssistantMetamodelSchemaService {
               Map.entry("data", List.of("DataStore", "ObjectStore", "DataAccess")),
               Map.entry("storage", List.of("DataStore", "ObjectStore")),
               Map.entry("database", List.of("DataStore")),
-              Map.entry("workflow", List.of("Workflow", "HumanTask")),
-              Map.entry("payment", List.of("Function", "Api", "DataStore")),
-              Map.entry("inventory", List.of("DataStore", "Function", "Api")),
-              Map.entry("vending", List.of("ServerlessService", "Function", "Api", "DataStore")));
+              Map.entry("workflow", List.of("Workflow", "HumanTask")));
       case PSM ->
           Map.ofEntries(
               Map.entry("lambda", List.of("AwsLambdaFunction", "AwsLambdaAlias")),
@@ -486,32 +477,6 @@ public class AssistantMetamodelSchemaService {
               Map.entry("storage", List.of("AwsS3Bucket", "AwsDynamoDbTable")),
               Map.entry("serverless", List.of("AwsLambdaFunction", "AwsHttpApi", "AwsStack")));
     };
-  }
-
-  private List<String> scaffoldTypes(ModelLevel level) {
-    return switch (level) {
-      case CIM -> List.of("BusinessCapability", "Actor", "Process", "BusinessGoal", "DomainEntity");
-      case PIM ->
-          List.of(
-              "ServerlessService",
-              "Function",
-              "Api",
-              "DataStore",
-              "EventChannel",
-              "Schema",
-              "Trigger",
-              "DeploymentUnit");
-      case PSM ->
-          List.of("AwsStack", "AwsLambdaFunction", "AwsHttpApi", "AwsDynamoDbTable", "AwsSqsQueue");
-    };
-  }
-
-  private boolean looksLikeCreation(String normalized) {
-    if (normalized.isBlank()) {
-      return false;
-    }
-    return normalized.matches(
-        "(?s).*(\\bcreate\\b|\\bbuild\\b|\\bdesign\\b|\\bscaffold\\b|\\bmodel\\b|\\badd\\b).*");
   }
 
   private Set<String> tokenize(String value) {

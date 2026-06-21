@@ -49,8 +49,6 @@ public class AssistantOrchestrator {
   private final ProjectService projects;
   private final ModelingConfigService modelingConfig = new ModelingConfigService();
   private final AssistantMetamodelSchemaService schemas;
-  private final AssistantDomainScaffoldService domainScaffold;
-  private final AssistantPhasedPatchBuilder phasedPatchBuilder;
   private final AssistantToolService tools;
   private final ModlessMetrics metrics;
   private final ObjectMapper mapper;
@@ -71,8 +69,6 @@ public class AssistantOrchestrator {
       AssistantValidationFeedbackResolver feedbackResolver,
       AssistantClarificationGate clarificationGate,
       AssistantMetamodelSchemaService schemas,
-      AssistantDomainScaffoldService domainScaffold,
-      AssistantPhasedPatchBuilder phasedPatchBuilder,
       AssistantToolService tools,
       ModlessMetrics metrics,
       ObjectMapper mapper,
@@ -92,8 +88,6 @@ public class AssistantOrchestrator {
     this.feedbackResolver = feedbackResolver;
     this.clarificationGate = clarificationGate;
     this.schemas = schemas;
-    this.domainScaffold = domainScaffold;
-    this.phasedPatchBuilder = phasedPatchBuilder;
     this.tools = tools;
     this.metrics = metrics;
     this.mapper = mapper;
@@ -363,14 +357,6 @@ public class AssistantOrchestrator {
       AssistantTurnPlan initialPlan) {
     publishProgress(session.id(), "VALIDATING", "Compiling and validating the proposed change");
     AssistantTurnPlan acceptedPlan = preparePlan(session.level(), context, initialPlan);
-    acceptedPlan = maybeApplyDomainScaffold(session, request, context, baseModel, acceptedPlan);
-    if (isCreationRequest(request.rootMessage())
-        && !isSubstantiveDomainScaffold(acceptedPlan.patch())) {
-      publishProgress(
-          session.id(), "PLANNING", "Applying metamodel-grounded domain scaffold for this request");
-      acceptedPlan =
-          maybeApplyDomainScaffold(session, request, context, baseModel, acceptedPlan, true);
-    }
     PlanAttempt attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
     int repairNumber = 0;
     int stagnationCount = 0;
@@ -397,8 +383,7 @@ public class AssistantOrchestrator {
         if (!samePatch(deterministic, acceptedPlan)) {
           acceptedPlan = deterministic;
           attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
-          if (attempt.valid()
-              && !mustEnforceDomainScaffold(session, request, context, acceptedPlan.patch())) {
+          if (attempt.valid()) {
             break;
           }
         }
@@ -447,8 +432,7 @@ public class AssistantOrchestrator {
       }
       acceptedPlan = preparePlan(session.level(), context, repaired);
       attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
-      if (attempt.valid()
-          && !mustEnforceDomainScaffold(session, request, context, acceptedPlan.patch())) {
+      if (attempt.valid()) {
         break;
       }
     }
@@ -466,17 +450,6 @@ public class AssistantOrchestrator {
                     session, request, context, snippets, acceptedPlan, attempt.feedback()));
         attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
       }
-    }
-    if (!attempt.valid()) {
-      acceptedPlan =
-          maybeApplyDomainScaffold(session, request, context, baseModel, acceptedPlan, true);
-      attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
-    }
-    if (attempt.valid()
-        && mustEnforceDomainScaffold(session, request, context, acceptedPlan.patch())) {
-      acceptedPlan =
-          maybeApplyDomainScaffold(session, request, context, baseModel, acceptedPlan, true);
-      attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
     }
     if (!attempt.valid()) {
       return partialProposalOrFailure(
@@ -701,7 +674,7 @@ public class AssistantOrchestrator {
                         "Events and durable state",
                         "Start with channels, stores, and the functions that use them."),
                     new AssistantChoice.Option(
-                        "full-scaffold",
+                        "full-context",
                         "Full bounded context",
                         "Model service, APIs, functions, stores, and integration together.")),
                 true));
@@ -844,122 +817,6 @@ public class AssistantOrchestrator {
     return left.patch().operations().equals(right.patch().operations());
   }
 
-  private boolean isSubstantiveDomainScaffold(SemanticModelPatch patch) {
-    if (patch == null || patch.operations().isEmpty()) {
-      return false;
-    }
-    Set<String> domainTypes =
-        Set.of(
-            "ServerlessService",
-            "Function",
-            "Api",
-            "DataStore",
-            "ObjectStore",
-            "EventChannel",
-            "Workflow");
-    long domainElements =
-        patch.operations().stream()
-            .filter(java.util.Objects::nonNull)
-            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
-            .map(SemanticModelPatch.Operation::elementType)
-            .filter(domainTypes::contains)
-            .count();
-    return domainElements >= 3;
-  }
-
-  private AssistantTurnPlan maybeApplyDomainScaffold(
-      AssistantSessionStore.AssistantSession session,
-      AssistantTurnRequest request,
-      AssistantModelContextIndexService.AssistantModelContext context,
-      JsonNode baseModel,
-      AssistantTurnPlan plan) {
-    return maybeApplyDomainScaffold(session, request, context, baseModel, plan, false);
-  }
-
-  private AssistantTurnPlan maybeApplyDomainScaffold(
-      AssistantSessionStore.AssistantSession session,
-      AssistantTurnRequest request,
-      AssistantModelContextIndexService.AssistantModelContext context,
-      JsonNode baseModel,
-      AssistantTurnPlan plan,
-      boolean force) {
-    if (!domainScaffold.shouldScaffold(
-        session.level(), request.rootMessage(), modelContexts.isEmptyCanvas(context))) {
-      return plan;
-    }
-    if (!force && isSubstantiveDomainScaffold(plan.patch())) {
-      PlanAttempt attempt = evaluatePlan(session.level(), baseModel, context, plan);
-      if (attempt.valid()) {
-        return plan;
-      }
-    }
-    Optional<SemanticModelPatch> scaffold =
-        isCreationRequest(request.rootMessage())
-            ? phasedPatchBuilder.buildPhased(session.level(), request.rootMessage(), baseModel)
-            : domainScaffold.build(session.level(), request.rootMessage());
-    if (scaffold.isEmpty()) {
-      scaffold = domainScaffold.build(session.level(), request.rootMessage());
-    }
-    if (scaffold.isEmpty()) {
-      return plan;
-    }
-    SemanticModelPatch withRootMetadata = withRootMetadata(scaffold.get(), baseModel, request);
-    return preparePlan(
-        session.level(),
-        context,
-        new AssistantTurnPlan(
-            AssistantTurnPlan.Intent.MUTATION,
-            AssistantTurnPlan.Kind.PATCH,
-            "Prepared a "
-                + domainScaffold.deriveDomainName(request.rootMessage())
-                + " serverless backend from the formal metamodel. Review and apply when ready.",
-            List.of(),
-            withRootMetadata));
-  }
-
-  private SemanticModelPatch withRootMetadata(
-      SemanticModelPatch patch, JsonNode baseModel, AssistantTurnRequest request) {
-    String rootId = baseModel.path("id").asText("");
-    if (rootId.isBlank()) {
-      return patch;
-    }
-    List<SemanticModelPatch.Operation> operations = new ArrayList<>(patch.operations());
-    operations.add(
-        new SemanticModelPatch.Operation(
-            SemanticModelPatch.OperationType.SET_ATTRIBUTE,
-            rootId,
-            null,
-            com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.textNode(
-                domainScaffold.deriveDomainName(request.rootMessage())),
-            null,
-            "domainName"));
-    operations.add(
-        new SemanticModelPatch.Operation(
-            SemanticModelPatch.OperationType.SET_ATTRIBUTE,
-            rootId,
-            null,
-            com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.textNode(
-                "API_FIRST_SERVERLESS"),
-            null,
-            "architectureStyle"));
-    return new SemanticModelPatch(operations);
-  }
-
-  private boolean isThinScaffold(SemanticModelPatch patch) {
-    return !isSubstantiveDomainScaffold(patch);
-  }
-
-  private boolean mustEnforceDomainScaffold(
-      AssistantSessionStore.AssistantSession session,
-      AssistantTurnRequest request,
-      AssistantModelContextIndexService.AssistantModelContext context,
-      SemanticModelPatch patch) {
-    return isCreationRequest(request.rootMessage())
-        && modelContexts.isEmptyCanvas(context)
-        && domainScaffold.shouldScaffold(session.level(), request.rootMessage(), true)
-        && !isSubstantiveDomainScaffold(patch);
-  }
-
   private AssistantTurnPlan replanWithSafeDefaults(
       AssistantSessionStore.AssistantSession session,
       AssistantTurnRequest request,
@@ -977,7 +834,7 @@ public class AssistantOrchestrator {
       AssistantTurnPlan rejected,
       List<String> feedback) {
     publishProgress(
-        session.id(), "PLANNING", "Building a complete model proposal with safe defaults");
+        session.id(), "PLANNING", "Replanning with validator feedback and metamodel context");
     String rejectedSummary =
         rejected == null || rejected.patch().operations().isEmpty()
             ? "none"
@@ -997,9 +854,8 @@ public class AssistantOrchestrator {
                 + " package manager, persistence technology, API style, or layout."
                 + "\nInfer safe enum defaults from the retrieved metamodel contracts and starter"
                 + " model. The user will review the guarded proposal on the canvas."
-                + "\nFor a domain creation request, produce a substantive scaffold: domain APIs,"
-                + " Functions with required contained contracts, persistence for durable state,"
-                + " and any event or schedule elements the domain needs."
+                + "\nModel only what the user asked for. Use as many operations as the request"
+                + " genuinely requires, including required nested contracts and attributes."
                 + "\nRejected prior plan summary: "
                 + rejectedSummary
                 + feedbackSummary,
@@ -1703,7 +1559,7 @@ public class AssistantOrchestrator {
     List<AssistantModelProvider.ContextSnippet> matches = catalogs.search(query, level.name(), 14);
     tier4.addAll(matches);
     if (emptyModel && isCreationRequest(query)) {
-      tier4.addAll(catalogs.search("serverless function api service validation", level.name(), 8));
+      tier4.addAll(catalogs.search(query, level.name(), 6));
     }
     matches.stream()
         .map(AssistantModelProvider.ContextSnippet::title)
@@ -1778,8 +1634,8 @@ public class AssistantOrchestrator {
     containment. Use exact stable IDs from the model context.
 
     For a requested model change, create a semantically complete model for the user's actual
-    domain and stated scope, not a canned example or arbitrary minimum-size scaffold. Use as
-    many operations as the task genuinely requires, up to the configured operation limit.
+    domain and stated scope. Use as many operations as the task genuinely requires, up to the
+    configured operation limit.
     ADD_ELEMENT may mint unique stable IDs. A top-level element omits sourceElementId; an owned
     element names its exact containment owner and feature. CONNECT_ELEMENTS names an exact,
     writable, non-containment EReference. SET_ATTRIBUTE uses the attribute name and puts the new

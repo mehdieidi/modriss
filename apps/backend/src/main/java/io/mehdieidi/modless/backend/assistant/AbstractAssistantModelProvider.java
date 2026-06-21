@@ -61,8 +61,8 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       explicitly asked you to choose between incompatible business approaches in their message.
       Never ask about architecture style, runtime language, package manager, persistence technology,
       API style, event channels, IDs, names, layout, or other defaults the starter model or
-      metamodel already provides. For create/edit requests, return PATCH with a complete scaffold
-      that the user can review in guarded apply mode.
+      metamodel already provides. For create/edit requests, return PATCH with operations sized to
+      the user's actual scope so the proposal can be reviewed in guarded apply mode.
       Use PATCH for a modeling change and populate operations using the semantic operation contract
       below. Do not ask about harmless defaults that can be stated in the proposal. Never combine a
       clarification with speculative operations. Before asking, decide whether a competent

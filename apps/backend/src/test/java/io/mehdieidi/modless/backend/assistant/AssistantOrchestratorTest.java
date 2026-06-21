@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -50,10 +49,6 @@ class AssistantOrchestratorTest {
       new AssistantSessionStore.AssistantSession(
           "session", "user", "project", ModelLevel.PIM, "Orders", Instant.now(), Instant.now());
   private final AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
-  private final AssistantDomainScaffoldService domainScaffold =
-      new AssistantDomainScaffoldService(schemas);
-  private final AssistantPhasedPatchBuilder phasedPatchBuilder =
-      new AssistantPhasedPatchBuilder(new AssistantPatchCompiler(), domainScaffold);
   private final AssistantToolService tools =
       new AssistantToolService(
           catalogs, new AssistantPatchCompiler(), schemas, models, new ObjectMapper());
@@ -103,8 +98,6 @@ class AssistantOrchestratorTest {
             feedbackResolver,
             clarificationGate,
             schemas,
-            domainScaffold,
-            phasedPatchBuilder,
             tools,
             metrics,
             new ObjectMapper(),
@@ -339,7 +332,7 @@ class AssistantOrchestratorTest {
   }
 
   @Test
-  void vendingMachinePromptProducesProposalAfterPatchCompletion() throws Exception {
+  void creationPromptPreservesLlmPatch() throws Exception {
     var attributes = new ObjectMapper().readTree("{\"name\":\"Dispense item\"}");
     SemanticModelPatch patch =
         new SemanticModelPatch(
@@ -369,17 +362,12 @@ class AssistantOrchestratorTest {
 
     assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
     assertNotNull(response.proposal());
-    var elementTypes =
-        response.proposal().patch().operations().stream()
-            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
-            .map(SemanticModelPatch.Operation::elementType)
-            .toList();
-    long domainElements =
-        elementTypes.stream()
-            .filter(
-                type -> Set.of("ServerlessService", "Function", "Api", "DataStore").contains(type))
-            .count();
-    assertTrue(domainElements >= 3);
+    assertTrue(
+        response.proposal().patch().operations().size() < 40,
+        () ->
+            "Expected the LLM patch to be preserved, but got "
+                + response.proposal().patch().operations().size()
+                + " operations");
     verify(provider, times(1)).planMutationTurn(any(), any());
   }
 

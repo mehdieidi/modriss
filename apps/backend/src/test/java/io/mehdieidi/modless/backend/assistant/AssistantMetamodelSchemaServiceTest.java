@@ -44,7 +44,7 @@ class AssistantMetamodelSchemaServiceTest {
   }
 
   @Test
-  void ranksServerlessScaffoldTypesForDomainCreationPrompts() {
+  void ranksRelevantTypesForServerlessCreationPrompts() {
     List<String> types =
         schemas.relevantTypes(
             ModelLevel.PIM, "Create a serverless model for vending machine backend", true, 8);
@@ -52,7 +52,6 @@ class AssistantMetamodelSchemaServiceTest {
     assertTrue(types.contains("ServerlessService"));
     assertTrue(types.contains("Function"));
     assertTrue(types.contains("Api"));
-    assertTrue(types.contains("DataStore"));
     var snippets =
         schemas.planningContracts(
             ModelLevel.PIM, "Create a serverless model for vending machine backend", 6, true);
