@@ -19,6 +19,13 @@ function ensureOverlayRoot() {
   return overlayRoot;
 }
 
+export function mountNodeExploreToolbar(toolbar) {
+  if (!toolbar) {
+    return;
+  }
+  ensureOverlayRoot().appendChild(toolbar);
+}
+
 function viewportPointFromClient(clientX, clientY) {
   const rect = el.canvasViewport?.getBoundingClientRect();
   return {

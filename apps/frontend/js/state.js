@@ -126,6 +126,7 @@ export const state = {
   },
   edgeKindPicker: {
     open: false,
+    menuOpen: false,
     edgeId: null,
     drawnFromId: null,
     drawnToId: null,

@@ -52,7 +52,7 @@ export function updateModelSaveUi() {
     saveButton.title = current.error || `${label} (Ctrl+S)`;
   }
   if (saveLabel) {
-    saveLabel.textContent = label;
+    saveLabel.textContent = "Save";
   }
 }
 

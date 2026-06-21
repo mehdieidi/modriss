@@ -574,7 +574,41 @@
                   aria-label="Choose relationship"
                 >
                   <span class="edge-kind-picker-label">Relationship</span>
-                  <div class="edge-kind-picker-menu" id="edgeKindMenu" role="listbox"></div>
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    class="edge-kind-picker-trigger"
+                    id="edgeKindTrigger"
+                    type="button"
+                  >
+                    <span class="edge-kind-picker-trigger-label" id="edgeKindTriggerLabel"
+                      >Select relationship</span
+                    >
+                    <span aria-hidden="true" class="edge-kind-picker-caret"></span>
+                  </button>
+                  <div class="edge-kind-picker-menu hidden" id="edgeKindMenu" role="listbox"></div>
+                </div>
+                <div
+                  aria-label="Explore neighborhood"
+                  class="node-explore-toolbar hidden"
+                  id="nodeExploreToolbar"
+                >
+                  <button
+                    class="node-explore-btn"
+                    id="nodeExploreNearbyBtn"
+                    title="Open nearby neighbors (depth 1)"
+                    type="button"
+                  >
+                    Nearby
+                  </button>
+                  <button
+                    class="node-explore-btn"
+                    id="nodeExploreExtendedBtn"
+                    title="Open extended neighbors (depth 2)"
+                    type="button"
+                  >
+                    Extended
+                  </button>
                 </div>
               </div>
 
@@ -677,8 +711,25 @@
                 <div class="validation-drawer-title" id="validationDrawerTitle">
                   Model Validation
                 </div>
-                <button class="btn-icon-xs" id="validationDrawerCloseBtn" type="button">
-                  Close
+                <button
+                  aria-label="Close validation panel"
+                  class="btn-icon-xs chat-header-icon-btn attr-panel-close-btn"
+                  id="validationDrawerCloseBtn"
+                  title="Close"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="chat-header-icon"
+                    fill="currentColor"
+                    height="18"
+                    viewBox="0 -960 960 960"
+                    width="18"
+                  >
+                    <path
+                      d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                    />
+                  </svg>
                 </button>
               </div>
               <div class="validation-drawer-meta" id="validationDrawerMeta"></div>
@@ -698,8 +749,25 @@
                   <div class="attr-panel-type">Model Tree</div>
                   <div class="attr-panel-title" id="modelTreeTitle">Current view</div>
                 </div>
-                <button class="attr-panel-close" id="modelTreeCloseBtn" title="Close" type="button">
-                  Close
+                <button
+                  aria-label="Close model tree panel"
+                  class="btn-icon-xs chat-header-icon-btn attr-panel-close-btn"
+                  id="modelTreeCloseBtn"
+                  title="Close"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="chat-header-icon"
+                    fill="currentColor"
+                    height="18"
+                    viewBox="0 -960 960 960"
+                    width="18"
+                  >
+                    <path
+                      d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                    />
+                  </svg>
                 </button>
               </div>
               <div class="model-tree-panel-body" id="modelTreeBody"></div>
@@ -713,8 +781,25 @@
                   <div class="attr-panel-type" id="attrPanelType"></div>
                   <div class="attr-panel-title" id="attrPanelTitle"></div>
                 </div>
-                <button class="attr-panel-close" id="attrPanelCloseBtn" title="Close" type="button">
-                  Close
+                <button
+                  aria-label="Close attributes panel"
+                  class="btn-icon-xs chat-header-icon-btn attr-panel-close-btn"
+                  id="attrPanelCloseBtn"
+                  title="Close"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="chat-header-icon"
+                    fill="currentColor"
+                    height="18"
+                    viewBox="0 -960 960 960"
+                    width="18"
+                  >
+                    <path
+                      d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                    />
+                  </svg>
                 </button>
               </div>
               <div class="attr-panel-body" id="attrPanelBody"></div>
@@ -874,12 +959,23 @@
             </div>
             <button
               aria-label="Close history"
-              class="btn-icon-xs chat-history-close"
+              class="btn-icon-xs chat-header-icon-btn"
               id="chatHistoryCloseBtn"
               title="Close history"
               type="button"
             >
-              Close
+              <svg
+                aria-hidden="true"
+                class="chat-header-icon"
+                fill="currentColor"
+                height="18"
+                viewBox="0 -960 960 960"
+                width="18"
+              >
+                <path
+                  d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+                />
+              </svg>
             </button>
           </div>
           <div class="chat-history-list" id="chatHistoryList"></div>

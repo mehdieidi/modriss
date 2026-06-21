@@ -302,6 +302,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     } catch {
       scheduleGraphDraw(graph);
     }
+    callbacks.onViewportTranslate?.();
   };
 
   const queueCanvasPan = (dx, dy) => {

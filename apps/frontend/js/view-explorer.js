@@ -19,7 +19,6 @@ import {
   closeBoundedContextSpecialView,
   closeCanvasFocus,
   finalizeBoundedContextDraft,
-  openNeighborhoodFocus,
   restoreCanvasCamera,
   setContextCreateMode,
 } from "./canvas.js";
@@ -623,15 +622,6 @@ export function renderViewWorkbench() {
       ${contextTools ? `<div class="workbench-divider"></div><div class="workbench-context-slot">${contextTools}</div>` : ""}
       <div class="workbench-divider"></div>
       <div class="workbench-action-group">
-        <div class="workbench-tool-cluster" aria-label="Explore selected element">
-          <span class="workbench-control-label">Explore</span>
-          <div class="workbench-btn-group">
-            <button class="sidebar-inline-action" id="focusDepthOneBtn" type="button"
-                    title="Open selected element neighborhood depth 1">Nearby</button>
-            <button class="sidebar-inline-action" id="focusDepthTwoBtn" type="button"
-                    title="Open selected element neighborhood depth 2">Extended</button>
-          </div>
-        </div>
         <div class="workbench-tool-cluster" aria-label="Inspect model structure">
           <span class="workbench-control-label">Inspect</span>
           <div class="workbench-btn-group">
@@ -645,13 +635,6 @@ export function renderViewWorkbench() {
                 ? " is-active"
                 : ""
             }" id="relationshipTreeToggleBtn" type="button">Relations</button>
-          </div>
-        </div>
-        <div class="workbench-tool-cluster workbench-viewpoint-cluster" aria-label="Viewpoint actions">
-          <span class="workbench-control-label">Viewpoint</span>
-          <div class="workbench-btn-group">
-            <button class="sidebar-inline-action" id="saveViewpointBtn" type="button"
-                    title="Save filters, layout, and camera as a viewpoint">Save as new</button>
           </div>
         </div>
         <div class="workbench-tool-cluster workbench-arrange-cluster" aria-label="Arrange active view">
@@ -686,66 +669,20 @@ export function renderViewWorkbench() {
       </div>
       <div class="workbench-spacer"></div>
       <div class="workbench-persist-group">
-        <button class="model-save-btn"
+        <button class="sidebar-inline-action model-save-btn"
                 id="saveModelBtn"
                 type="button"
                 aria-label="Save model"
                 title="Save current model (Ctrl+S)">
-          <span class="model-save-btn-stack">
-            <span aria-hidden="true"
-                  class="model-save-btn-icon icon-svg icon-mask"
-                  style="--icon-src: url('/assets/icons/save.svg');"></span>
-            <span class="model-save-btn-progress" aria-hidden="true">
-              <span class="model-save-btn-progress-bar"></span>
-            </span>
+          <span class="model-save-btn-label" id="saveModelBtnLabel">Save</span>
+          <span aria-hidden="true" class="model-save-btn-progress">
+            <span class="model-save-btn-progress-bar"></span>
           </span>
-          <span class="model-save-btn-sr-label" id="saveModelBtnLabel">Save</span>
         </button>
       </div>
     </div>`;
   updateModelSaveUi();
   renderModelTree();
-}
-
-function savedViewpointId(name) {
-  const normalized = normalizeLabel(name).replaceAll(" ", "-") || "viewpoint";
-  return `view-${state.activeType}-saved-${normalized}-${Date.now().toString(36)}`;
-}
-
-function saveCurrentViewpoint() {
-  const view = activeView();
-  if (!view) {
-    setStatus("No active view to save.");
-    return;
-  }
-  syncActiveViewFromVisibleGraph();
-  const defaultName = `${view.name || state.activeType.toUpperCase()} Viewpoint`;
-  const name = window.prompt("Viewpoint name", defaultName);
-  if (!String(name || "").trim()) {
-    return;
-  }
-  const source = activeView();
-  const viewpoint = structuredClone(source);
-  viewpoint.id = savedViewpointId(name);
-  viewpoint.name = String(name).trim();
-  viewpoint.kind = "SAVED_VIEWPOINT";
-  viewpoint.sourceViewId = source.id;
-  viewpoint.savedAt = new Date().toISOString();
-  viewpoint.camera = {
-    x: Number(state.viewport?.x) || 0,
-    y: Number(state.viewport?.y) || 0,
-    scale: Number(state.viewport?.scale) || 1,
-  };
-  state.views.byId.set(viewpoint.id, viewpoint);
-  state.views.activeViewId = viewpoint.id;
-  materializeActiveView();
-  renderPaletteCallback?.();
-  renderDiagramCallback?.();
-  renderViewWorkbench();
-  saveCurrentTabGraphState();
-  markModelDirty();
-  updateModelSaveUi();
-  setStatus(`Saved viewpoint: ${viewpoint.name}`);
 }
 
 async function openWorkbenchView(viewId) {
@@ -887,28 +824,6 @@ function bindWorkbenchEvents() {
     if (target?.closest("#canvasFocusBackBtn")) {
       closeCanvasFocus();
       renderViewWorkbench();
-      return;
-    }
-    if (target?.closest("#focusDepthOneBtn")) {
-      if (state.selectedNodeId) {
-        openNeighborhoodFocus(state.selectedNodeId, 1);
-      } else {
-        setStatus("Select an element before opening Focus 1.");
-      }
-      renderViewWorkbench();
-      return;
-    }
-    if (target?.closest("#focusDepthTwoBtn")) {
-      if (state.selectedNodeId) {
-        openNeighborhoodFocus(state.selectedNodeId, 2);
-      } else {
-        setStatus("Select an element before opening Focus 2.");
-      }
-      renderViewWorkbench();
-      return;
-    }
-    if (target?.closest("#saveViewpointBtn")) {
-      saveCurrentViewpoint();
       return;
     }
     if (target?.closest("#boundedContextDoneBtn")) {
