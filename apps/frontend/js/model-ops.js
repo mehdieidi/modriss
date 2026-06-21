@@ -1390,6 +1390,7 @@ export async function switchTab(type) {
     el.validationFab?.classList.add("hidden");
     el.validationDrawer?.classList.add("hidden");
     el.modelWorkbenchPanel?.classList.add("hidden");
+    renderViewWorkbench();
     updateModelSaveUi();
     setStatus("Artifact Explorer");
     await Promise.all([

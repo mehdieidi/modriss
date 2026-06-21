@@ -523,39 +523,6 @@
 
           <section class="canvas-pane">
             <div class="canvas-stage">
-              <div class="model-workbench-strip" id="modelWorkbenchPanel"></div>
-              <button
-                class="validation-fab validation-state-ok"
-                id="validationFab"
-                title="Validation issues"
-              >
-                <span class="validation-fab-content">
-                  <span class="validation-fab-dot" id="validationFabDot"></span>
-                  <span class="validation-fab-text" id="validationFabText">No Issues</span>
-                </span>
-                <span
-                  aria-hidden="true"
-                  class="validation-fab-progress hidden"
-                  id="validationFabProgress"
-                ></span>
-              </button>
-              <aside class="validation-drawer hidden" id="validationDrawer">
-                <div class="validation-drawer-header">
-                  <div class="validation-drawer-title" id="validationDrawerTitle">
-                    Model Validation
-                  </div>
-                  <button class="btn-icon-xs" id="validationDrawerCloseBtn" type="button">
-                    Close
-                  </button>
-                </div>
-                <div class="validation-drawer-meta" id="validationDrawerMeta"></div>
-                <div
-                  aria-hidden="true"
-                  class="validation-drawer-progress hidden"
-                  id="validationDrawerProgress"
-                ></div>
-                <div class="validation-drawer-body" id="validationDrawerIssues"></div>
-              </aside>
               <div class="canvas-viewport" id="canvasViewport">
                 <div class="canvas-grid" id="canvasGrid">
                   <div class="g6-editor-host" id="g6EditorHost"></div>
@@ -871,6 +838,45 @@
               </div>
             </div>
           </section>
+
+          <div class="workspace-editor-column">
+            <div class="modeling-context-bar hidden" id="topbarModelingRow">
+              <div class="model-workbench-strip" id="modelWorkbenchPanel"></div>
+              <button
+                class="validation-status-chip validation-state-ok"
+                id="validationFab"
+                title="Validation issues"
+                type="button"
+              >
+                <span class="validation-status-content">
+                  <span class="validation-status-dot" id="validationFabDot"></span>
+                  <span class="validation-status-text" id="validationFabText">No Issues</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  class="validation-status-progress hidden"
+                  id="validationFabProgress"
+                ></span>
+              </button>
+            </div>
+            <aside class="validation-drawer hidden" id="validationDrawer">
+              <div class="validation-drawer-header">
+                <div class="validation-drawer-title" id="validationDrawerTitle">
+                  Model Validation
+                </div>
+                <button class="btn-icon-xs" id="validationDrawerCloseBtn" type="button">
+                  Close
+                </button>
+              </div>
+              <div class="validation-drawer-meta" id="validationDrawerMeta"></div>
+              <div
+                aria-hidden="true"
+                class="validation-drawer-progress hidden"
+                id="validationDrawerProgress"
+              ></div>
+              <div class="validation-drawer-body" id="validationDrawerIssues"></div>
+            </aside>
+          </div>
 
           <aside class="right-pane model-tree-pane hidden" id="modelTreePanel">
             <div class="right-pane-shell">

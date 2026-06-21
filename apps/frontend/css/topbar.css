@@ -1,6 +1,7 @@
 .topbar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   min-height: var(--topbar-h);
   background: transparent;
   border-bottom: var(--glass-pane-border);
@@ -33,13 +34,14 @@
 
 .topbar-menu-strip {
   width: 100%;
-  min-height: var(--topbar-h);
+  min-height: var(--topbar-main-h);
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 12px;
   min-width: 0;
   position: relative;
+  flex-shrink: 0;
 }
 
 .topbar-left {
@@ -261,12 +263,22 @@ html.light .app-logo-img {
 
 .topbar-ide-btn {
   min-width: 0;
-  min-height: 24px;
-  padding: 4px 8px;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 88%, var(--surface) 12%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   font-size: 9px;
+}
+
+.topbar-ide-btn:hover,
+.topbar-ide-btn.is-active,
+.topbar-ide-btn.active {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border) 58%);
+  background: color-mix(in srgb, var(--surface-high) 82%, var(--surface-3) 18%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    var(--shadow-sm);
 }
 
 .topbar-btn-icon {
@@ -638,5 +650,138 @@ html.light .tab.active {
 
   .topbar-collapse .model-lifecycle-tools {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── Modeling context toolbar (canvas column) ── */
+
+.modeling-context-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  min-width: 0;
+  overflow: visible;
+  position: relative;
+  z-index: 70;
+}
+
+.modeling-context-bar.hidden {
+  display: none;
+}
+
+.modeling-context-bar .model-workbench-strip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.validation-status-chip {
+  flex: 0 0 auto;
+  align-self: center;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 88%, var(--surface) 12%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
+  border-radius: var(--radius-sm);
+  min-height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text);
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    color var(--transition);
+}
+
+.validation-status-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border) 58%);
+  background: color-mix(in srgb, var(--surface-high) 82%, var(--surface-3) 18%);
+  color: var(--text-strong);
+}
+
+.validation-status-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.validation-status-chip.validation-is-running {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding-block: 5px;
+}
+
+.validation-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #22c55e;
+}
+
+.validation-status-text {
+  font: 700 9px/1.1 var(--font-display);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.validation-state-error .validation-status-dot {
+  background: #ef4444;
+}
+
+.validation-state-warning .validation-status-dot {
+  background: #f59e0b;
+}
+
+.validation-state-ok .validation-status-dot {
+  background: #22c55e;
+}
+
+.validation-status-progress {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--surface-high) 72%, transparent);
+  width: 100%;
+  height: 2px;
+}
+
+.validation-status-progress::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent-light) 88%, #fff 12%) 45%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: validation-progress-sweep 1.15s linear infinite;
+}
+
+@media (max-width: 760px) {
+  .workspace.has-modeling-bar {
+    --modeling-bar-h: 72px;
+  }
+
+  .modeling-context-bar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding-block: 4px;
+    gap: 4px 8px;
+    min-height: 72px;
+  }
+
+  .validation-status-chip {
+    margin-left: auto;
   }
 }

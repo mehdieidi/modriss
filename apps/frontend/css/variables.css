@@ -88,7 +88,9 @@
   --glass-pane-blur: blur(10px) saturate(108%);
 
   --transition: 0.18s ease;
-  --topbar-h: 56px;
+  --topbar-main-h: 52px;
+  --modeling-bar-h: 0px;
+  --topbar-h: var(--topbar-main-h);
   --rail-w: 52px;
 }
 

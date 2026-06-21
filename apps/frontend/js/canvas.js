@@ -1660,7 +1660,7 @@ export function renameBoundedContext(oldName, nextName) {
   ensureBaseBoundedContext(normalizedNext);
   syncBoundedContextMembershipRefs(normalizedNext);
   state.selectedBoundedContextName = normalizedNext;
-  syncDiagramRenderer({ });
+  syncDiagramRenderer({});
   return true;
 }
 
@@ -1690,7 +1690,7 @@ export function removeElementFromBoundedContext(elementId, contextName) {
   } else {
     syncBoundedContextMembershipRefs(normalized);
   }
-  syncDiagramRenderer({ });
+  syncDiagramRenderer({});
   markModelDirty();
   setStatus(`Removed ${node.label || node.id} from "${normalized}"`);
   return true;
@@ -1731,7 +1731,7 @@ export function deleteBoundedContext(contextName) {
   }
   removeBaseBoundedContext(normalized);
   state.selectedBoundedContextName = null;
-  syncDiagramRenderer({ });
+  syncDiagramRenderer({});
   return true;
 }
 
@@ -1897,13 +1897,7 @@ function createPaletteNotationIcon(definition) {
   ) {
     return createMaskIcon("palette-item-icon", configuredIcon);
   }
-  const token = document.createElement("span");
-  token.className = "palette-item-icon palette-notation-icon";
-  token.textContent = String(definition?.notation?.tag || definition?.displayName || "")
-    .trim()
-    .slice(0, 5);
-  token.title = String(definition?.notation?.shape || "");
-  return token;
+  return null;
 }
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -2241,7 +2235,7 @@ function renderWizardActions() {
 function isPaletteGroupCollapsed(groupName) {
   const levelState = state.paletteGroupCollapsed?.[state.activeType] || {};
   if (!Object.prototype.hasOwnProperty.call(levelState, groupName)) {
-    return false;
+    return true;
   }
   return Boolean(levelState[groupName]);
 }
@@ -2437,19 +2431,11 @@ export function renderPalette() {
       const labelSpan = document.createElement("span");
       labelSpan.className = "palette-item-label";
       labelSpan.textContent = label;
-      item.appendChild(iconImg);
-      item.appendChild(labelSpan);
-      const visualRole = String(definition?.visualRole || "node");
-      if (visualRole === "container") {
-        const roleBadge = document.createElement("span");
-        roleBadge.className = "palette-item-role";
-        roleBadge.textContent = "Open";
-        item.appendChild(roleBadge);
+      if (iconImg) {
+        item.appendChild(iconImg);
       }
-      item.title =
-        visualRole === "container"
-          ? `${description}\nDrag to create; open it to model contained concepts.`
-          : `${description}\nDrag to create.`;
+      item.appendChild(labelSpan);
+      item.title = `${description}\nDrag to create.`;
       item.addEventListener("dragstart", (event) => {
         el.workspace?.classList.remove("mobile-left-open");
         el.mobileBackdrop?.classList.add("hidden");

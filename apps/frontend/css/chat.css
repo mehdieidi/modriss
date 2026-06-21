@@ -72,8 +72,8 @@
 }
 
 .chat-window.chat-window-expanded {
-  left: var(--chat-expanded-left, calc(var(--rail-w) + var(--workbench-gap)));
-  top: var(--chat-expanded-top, calc(var(--topbar-h) + var(--workbench-gap)));
+  left: var(--chat-expanded-left, calc(var(--rail-w) + 8px));
+  top: var(--chat-expanded-top, calc(var(--topbar-h) + 8px));
   right: auto;
   bottom: auto;
   width: var(--chat-expanded-width, auto);

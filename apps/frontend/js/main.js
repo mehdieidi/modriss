@@ -867,7 +867,7 @@ function bindEvents() {
     const gap =
       Number.parseFloat(stageStyles.getPropertyValue("--workbench-gap")) ||
       Number.parseFloat(rootStyles.getPropertyValue("--workbench-gap")) ||
-      6;
+      8;
     const topbarRect = document.querySelector(".topbar")?.getBoundingClientRect();
     const railRect = document.querySelector(".workspace-rail")?.getBoundingClientRect();
     const rightPaneRect = document

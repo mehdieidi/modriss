@@ -88,6 +88,12 @@ function ensureHost() {
   return host;
 }
 
+function syncTopbarModelingState(isModeling) {
+  const modelingRow = document.getElementById("topbarModelingRow");
+  el.workspace?.classList.toggle("has-modeling-bar", isModeling);
+  modelingRow?.classList.toggle("hidden", !isModeling);
+}
+
 async function runManualAutoLayout() {
   try {
     const { autoLayoutCurrentDiagram } = await import("./model-ops.js");
@@ -528,9 +534,7 @@ function renderModelTree() {
   treeBodyScrollTop = el.modelTreeBody.scrollTop;
   const view = activeView();
   const isRelationshipMode = modelTreeMode === "relationships";
-  const count = isRelationshipMode
-    ? relationshipCountForView(view)
-    : elementCountForView(view);
+  const count = isRelationshipMode ? relationshipCountForView(view) : elementCountForView(view);
   const title = isRelationshipMode ? "Relationships" : "Elements";
   const titleWithCount = `${title} (${count})`;
   const placeholder = isRelationshipMode ? "Filter relationships..." : "Filter elements...";
@@ -586,57 +590,42 @@ export function renderViewWorkbench() {
     return;
   }
   const isModeling = isModelingLevel(state.activeType);
+  syncTopbarModelingState(isModeling);
   panel.classList.toggle("hidden", !isModeling);
   if (!isModeling) {
     return;
   }
   normalizeBoundedContextToolState();
-  panel.classList.toggle("model-workbench-minimized", Boolean(state.modelingToolsMinimized));
-  if (state.modelingToolsMinimized) {
-    panel.innerHTML = `
-      <button class="model-tools-restore" id="modelToolsRestoreBtn"
-              type="button"
-              title="Show modeling tools">
-        <span>Modeling Tools</span>
-        <strong>${escapeHtml(state.activeType.toUpperCase())}</strong>
-      </button>`;
-    return;
-  }
   ensureActiveGraphAndViews();
   const contextTools = boundedContextToolMarkup();
   panel.innerHTML = `
     <div class="model-workbench-commandbar">
-      <div class="workbench-primary-group">
-        <div class="workbench-strip-title">
-          <span>${escapeHtml(state.activeType.toUpperCase())} workspace</span>
-          <strong>Modeling tools</strong>
-        </div>
-        <div class="workbench-view-control">
-          <span class="workbench-control-label">Active view</span>
-          <div class="workbench-view-select-wrap${viewMenuOpen ? " is-open" : ""}">
-            <button class="sidebar-select workbench-view-select"
-                    id="activeViewSelect"
-                    type="button"
-                    title="${escapeHtml(state.activeType.toUpperCase())} view"
-                    aria-haspopup="listbox"
-                    aria-expanded="${viewMenuOpen ? "true" : "false"}">
-              <span class="workbench-view-select-label">${escapeHtml(activeViewLabel())}</span>
-            </button>
-            <span class="workbench-view-select-caret" aria-hidden="true"></span>
-            <div class="workbench-view-menu${viewMenuOpen ? "" : " hidden"}"
-                 id="activeViewMenu"
-                 role="listbox"
-                 aria-label="${escapeHtml(state.activeType.toUpperCase())} views">
-              ${viewMenuMarkup()}
-            </div>
+      <div class="workbench-section workbench-view-section">
+        <span class="workbench-section-label">View</span>
+        <div class="workbench-view-select-wrap${viewMenuOpen ? " is-open" : ""}">
+          <button class="sidebar-select workbench-view-select"
+                  id="activeViewSelect"
+                  type="button"
+                  title="${escapeHtml(state.activeType.toUpperCase())} view"
+                  aria-haspopup="listbox"
+                  aria-expanded="${viewMenuOpen ? "true" : "false"}">
+            <span class="workbench-view-select-label">${escapeHtml(activeViewLabel())}</span>
+          </button>
+          <span class="workbench-view-select-caret" aria-hidden="true"></span>
+          <div class="workbench-view-menu${viewMenuOpen ? "" : " hidden"}"
+               id="activeViewMenu"
+               role="listbox"
+               aria-label="${escapeHtml(state.activeType.toUpperCase())} views">
+            ${viewMenuMarkup()}
           </div>
         </div>
       </div>
-      ${contextTools ? `<div class="workbench-context-slot">${contextTools}</div>` : ""}
+      ${contextTools ? `<div class="workbench-divider"></div><div class="workbench-context-slot">${contextTools}</div>` : ""}
+      <div class="workbench-divider"></div>
       <div class="workbench-action-group">
         <div class="workbench-tool-cluster" aria-label="Explore selected element">
           <span class="workbench-control-label">Explore</span>
-          <div class="workbench-tool-actions">
+          <div class="workbench-btn-group">
             <button class="sidebar-inline-action" id="focusDepthOneBtn" type="button"
                     title="Open selected element neighborhood depth 1">Nearby</button>
             <button class="sidebar-inline-action" id="focusDepthTwoBtn" type="button"
@@ -645,7 +634,7 @@ export function renderViewWorkbench() {
         </div>
         <div class="workbench-tool-cluster" aria-label="Inspect model structure">
           <span class="workbench-control-label">Inspect</span>
-          <div class="workbench-tool-actions">
+          <div class="workbench-btn-group">
             <button class="sidebar-inline-action${
               modelTreeMode === "elements" && !el.modelTreePanel?.classList.contains("hidden")
                 ? " is-active"
@@ -660,14 +649,14 @@ export function renderViewWorkbench() {
         </div>
         <div class="workbench-tool-cluster workbench-viewpoint-cluster" aria-label="Viewpoint actions">
           <span class="workbench-control-label">Viewpoint</span>
-          <div class="workbench-tool-actions">
+          <div class="workbench-btn-group">
             <button class="sidebar-inline-action" id="saveViewpointBtn" type="button"
                     title="Save filters, layout, and camera as a viewpoint">Save as new</button>
           </div>
         </div>
         <div class="workbench-tool-cluster workbench-arrange-cluster" aria-label="Arrange active view">
           <span class="workbench-control-label">Arrange</span>
-          <div class="workbench-tool-actions">
+          <div class="workbench-btn-group">
             <div class="workbench-layout-select-wrap${layoutMenuOpen ? " is-open" : ""}">
               <button class="sidebar-select workbench-view-select workbench-layout-select"
                       id="layoutStrategySelect"
@@ -695,23 +684,22 @@ export function renderViewWorkbench() {
           </div>
         </div>
       </div>
+      <div class="workbench-spacer"></div>
       <div class="workbench-persist-group">
-        <button class="sidebar-inline-action model-save-btn"
+        <button class="model-save-btn"
                 id="saveModelBtn"
                 type="button"
+                aria-label="Save model"
                 title="Save current model (Ctrl+S)">
-          <span class="model-save-btn-label" id="saveModelBtnLabel">Save</span>
-          <span class="model-save-btn-progress" aria-hidden="true">
-            <span class="model-save-btn-progress-bar"></span>
+          <span class="model-save-btn-stack">
+            <span aria-hidden="true"
+                  class="model-save-btn-icon icon-svg icon-mask"
+                  style="--icon-src: url('/assets/icons/save.svg');"></span>
+            <span class="model-save-btn-progress" aria-hidden="true">
+              <span class="model-save-btn-progress-bar"></span>
+            </span>
           </span>
-        </button>
-        <button class="sidebar-inline-action model-tools-minimize"
-                id="modelToolsMinimizeBtn"
-                type="button"
-                aria-label="Minimize modeling tools"
-                title="Minimize modeling tools">
-          <span aria-hidden="true" class="model-tools-minimize-icon icon-svg icon-mask"
-                style="--icon-src: url('/assets/icons/collapse.svg');"></span>
+          <span class="model-save-btn-sr-label" id="saveModelBtnLabel">Save</span>
         </button>
       </div>
     </div>`;
@@ -877,32 +865,18 @@ function bindWorkbenchEvents() {
   bound = true;
   panel.addEventListener("click", (event) => {
     const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest("#modelToolsRestoreBtn")) {
-      state.modelingToolsMinimized = false;
-      renderDiagramCallback?.();
-      renderViewWorkbench();
-      setStatus("Modeling tools restored");
-      return;
-    }
-    if (target?.closest("#modelToolsMinimizeBtn")) {
-      state.modelingToolsMinimized = true;
-      viewMenuOpen = false;
-      setTreeOpen(false);
-      renderDiagramCallback?.();
-      renderViewWorkbench();
-      setStatus("Modeling tools minimized");
-      return;
-    }
     if (target?.closest("#activeViewSelect")) {
       viewMenuOpen = !viewMenuOpen;
       layoutMenuOpen = false;
       renderViewWorkbench();
+      event.stopPropagation();
       return;
     }
     if (target?.closest("#layoutStrategySelect")) {
       layoutMenuOpen = !layoutMenuOpen;
       viewMenuOpen = false;
       renderViewWorkbench();
+      event.stopPropagation();
       return;
     }
     if (target?.closest("#boundedContextBackBtn")) {

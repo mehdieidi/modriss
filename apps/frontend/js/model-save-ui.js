@@ -34,7 +34,11 @@ export function updateModelSaveUi() {
     current.dirty = Boolean(tab.dirty);
   }
   const isModeling = isModelingType();
-  const label = current.saving ? "Saving..." : current.dirty ? "Save *" : "Save";
+  const label = current.saving
+    ? "Saving model"
+    : current.dirty
+      ? "Save model, unsaved changes"
+      : "Save model";
   const saveButton = document.getElementById("saveModelBtn");
   const saveLabel = document.getElementById("saveModelBtnLabel");
 
@@ -44,7 +48,8 @@ export function updateModelSaveUi() {
     saveButton.classList.toggle("is-dirty", current.dirty && !current.saving);
     saveButton.classList.toggle("is-error", Boolean(current.error));
     saveButton.classList.toggle("hidden", !isModeling);
-    saveButton.title = current.error || "Save current model (Ctrl+S)";
+    saveButton.setAttribute("aria-label", label);
+    saveButton.title = current.error || `${label} (Ctrl+S)`;
   }
   if (saveLabel) {
     saveLabel.textContent = label;

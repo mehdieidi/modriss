@@ -44,7 +44,6 @@ export const state = {
   },
   visibleGraph: emptyDiagram(""),
   modelingStrictness: "methodology",
-  modelingToolsMinimized: false,
   // Per-tab persisted state (save/restore on tab switch)
   tabs: {},
   modelsCache: {},

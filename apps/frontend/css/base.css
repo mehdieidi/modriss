@@ -90,6 +90,15 @@ body {
   overflow: hidden;
 }
 
+.workspace.has-modeling-bar {
+  --modeling-bar-h: 40px;
+}
+
+.workspace:has(.workbench-view-select-wrap.is-open),
+.workspace:has(.workbench-layout-select-wrap.is-open) {
+  overflow: visible;
+}
+
 .workspace-rail {
   display: flex;
   flex-direction: column;
@@ -294,7 +303,9 @@ body {
 
 .toast-host {
   position: absolute;
-  left: calc(var(--workbench-left) + 186px);
+  left: calc(
+    var(--canvas-controls-left, calc(var(--rail-w) + var(--sidebar-w, 248px) + 16px)) + 186px
+  );
   right: 164px;
   bottom: 14px;
   z-index: 191;
@@ -302,7 +313,7 @@ body {
   align-content: end;
   justify-items: center;
   gap: 8px;
-  max-height: calc(100% - var(--topbar-h) - var(--workbench-strip-h) - 42px);
+  max-height: calc(100% - var(--topbar-h) - 42px);
   overflow: hidden;
   pointer-events: none;
 }
@@ -574,15 +585,17 @@ body.modal-open {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: 248px 1fr;
+  grid-template-columns: var(--sidebar-w, 248px) 1fr;
   grid-template-rows: minmax(0, 1fr);
   position: relative;
   overflow: visible;
   transition: none;
+  --sidebar-w: 248px;
 }
 
 .workspace-main > .left-pane,
 .workspace-main > .canvas-pane,
+.workspace-main > .workspace-editor-column,
 .workspace-main > .right-pane,
 .workspace-main > .impact-panel {
   min-height: 0;
@@ -596,6 +609,24 @@ body.modal-open {
   margin-left: calc(-1 * var(--rail-w));
   width: calc(100% + var(--rail-w));
   height: calc(100% + var(--topbar-h));
+}
+
+.workspace-main > .workspace-editor-column {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  position: relative;
+  z-index: 5;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.workspace-editor-column > * {
+  pointer-events: auto;
 }
 
 .workspace.chat-expanded .workspace-main > .canvas-pane {
@@ -622,13 +653,14 @@ body.modal-open {
 
 .workspace.artifact-mode .workspace-main {
   grid-template-columns: 280px 1fr;
+  --sidebar-w: 280px;
 }
 
 .workspace.artifact-mode .workspace-main > .canvas-pane {
-  grid-column: 2;
+  grid-column: 2 / -1;
   margin-left: 0;
-  width: 100%;
   margin-top: 0;
+  width: 100%;
   height: 100%;
 }
 
@@ -658,6 +690,7 @@ body.modal-open {
 
 .workspace.palette-collapsed .workspace-main {
   grid-template-columns: 64px 1fr;
+  --sidebar-w: 64px;
 }
 
 .workspace.palette-collapsed {
@@ -665,14 +698,17 @@ body.modal-open {
 
 .workspace.palette-collapsed.attr-open .workspace-main {
   grid-template-columns: 64px 1fr;
+  --sidebar-w: 64px;
 }
 
 .workspace.palette-collapsed.views-open .workspace-main {
   grid-template-columns: 64px 1fr;
+  --sidebar-w: 64px;
 }
 
 .workspace.palette-collapsed.impact-open .workspace-main {
   grid-template-columns: 64px 1fr;
+  --sidebar-w: 64px;
 }
 
 .workspace.artifact-mode.palette-collapsed .workspace-main,
@@ -683,18 +719,22 @@ body.modal-open {
 
 .workspace.palette-hidden .workspace-main {
   grid-template-columns: 0 1fr;
+  --sidebar-w: 0px;
 }
 
 .workspace.palette-hidden.attr-open .workspace-main {
   grid-template-columns: 0 1fr;
+  --sidebar-w: 0px;
 }
 
 .workspace.palette-hidden.views-open .workspace-main {
   grid-template-columns: 0 1fr;
+  --sidebar-w: 0px;
 }
 
 .workspace.palette-hidden.impact-open .workspace-main {
   grid-template-columns: 0 1fr;
+  --sidebar-w: 0px;
 }
 
 .workspace.palette-hidden .workspace-main > .left-pane {
@@ -704,6 +744,7 @@ body.modal-open {
 .workspace.artifact-mode.palette-hidden .workspace-main,
 .workspace.artifact-mode.palette-hidden.attr-open .workspace-main {
   grid-template-columns: 0 1fr;
+  --sidebar-w: 0px;
 }
 
 .workspace.artifact-mode.palette-hidden.impact-open .workspace-main {
@@ -882,7 +923,7 @@ body.modal-open {
 
 @media (max-width: 560px) {
   :root {
-    --topbar-h: 52px;
+    --topbar-main-h: 48px;
   }
 
   .left-pane {
