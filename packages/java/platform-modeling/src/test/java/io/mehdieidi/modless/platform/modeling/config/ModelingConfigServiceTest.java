@@ -528,6 +528,33 @@ class ModelingConfigServiceTest {
     return value instanceof Map<?, ?> ? (Map<String, Object>) value : Map.of();
   }
 
+  /** Verifies container owners expose backend-derived containment palettes for nested editing. */
+  @Test
+  void exposesContainmentPalettesForContainerOwners() {
+    Map<String, Object> pim = level("pim");
+    Map<String, Object> palettes = map(pim.get("containmentPalettes"));
+    assertFalse(palettes.isEmpty());
+
+    Map<String, Object> apiPalette = map(palettes.get("Api"));
+    List<String> apiTypes = stringList(apiPalette.get("types"));
+    assertTrue(apiTypes.contains("ApiRoute"));
+
+    boolean functionIsContainable =
+        palettes.values().stream()
+            .filter(Map.class::isInstance)
+            .map(value -> map(value))
+            .map(entry -> stringList(entry.get("types")))
+            .anyMatch(types -> types.contains("Function"));
+    assertTrue(functionIsContainable);
+
+    Map<String, Object> canvasPolicy = map(pim.get("canvasPolicy"));
+    Map<String, Object> containerFocus = map(canvasPolicy.get("containerFocus"));
+    assertEquals("FOCUS", containerFocus.get("viewKind"));
+    assertEquals("CONTAINER", containerFocus.get("scopeKind"));
+    assertEquals("CONTAINER_FOCUS", containerFocus.get("layoutProfile"));
+    assertTrue(stringList(canvasPolicy.get("standalonePaletteRoles")).contains("node"));
+  }
+
   /**
    * Casts a value to a list of maps after asserting it is present.
    *

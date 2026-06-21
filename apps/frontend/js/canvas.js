@@ -17,6 +17,9 @@ import {
 import { isContainerElement, materializeActiveView } from "./view-materializer.js";
 import {
   modelingElementDefinition,
+  modelingContainmentPalette,
+  modelingContainmentEntryForChildType,
+  modelingContainerFocusPolicy,
   modelingContainmentsForType,
   isModelingLevel,
   modelingLevelConfig,
@@ -858,8 +861,40 @@ function focusViewIdFor(elementId) {
   )}-${Date.now().toString(36)}`;
 }
 
+function containerFocusOwnerType(focus) {
+  if (!focus?.elementId) {
+    return String(focus?.elementType || "");
+  }
+  const element = state.graph?.elementsById?.get(focus.elementId);
+  return String(element?.eClass || element?.type || focus.elementType || "");
+}
+
+function activeContainerFocus() {
+  const focus = activeCanvasFocus();
+  if (!focus?.elementId) {
+    return null;
+  }
+  const view = activeView();
+  const policy = modelingContainerFocusPolicy(state.activeType);
+  const viewKind = String(policy.viewKind || "FOCUS").toUpperCase();
+  const scopeKind = String(policy.scopeKind || "CONTAINER").toUpperCase();
+  if (
+    !view ||
+    String(view.kind || "").toUpperCase() !== viewKind ||
+    String(view.scope?.scopeKind || "").toUpperCase() !== scopeKind ||
+    String(view.scope?.rootElementId || "") !== String(focus.elementId)
+  ) {
+    return null;
+  }
+  return {
+    ...focus,
+    elementType: containerFocusOwnerType(focus),
+  };
+}
+
 function createContainerFocusView(node) {
   const previousView = activeView();
+  const focusPolicy = modelingContainerFocusPolicy(state.activeType);
   const descendantIds = [...collectContainedDescendantIds(node.id)];
   const descendantSet = new Set(descendantIds);
   const viewNodePositions = viewNodesByElement(previousView);
@@ -900,14 +935,14 @@ function createContainerFocusView(node) {
     id: focusViewIdFor(node.id),
     name: `${node.label || node.id} Contents`,
     level: String(state.activeType || "").toUpperCase(),
-    kind: "FOCUS",
+    kind: String(focusPolicy.viewKind || "FOCUS"),
     scope: {
       rootElementId: node.id,
-      scopeKind: "CONTAINER",
+      scopeKind: String(focusPolicy.scopeKind || "CONTAINER"),
       depth: 999,
     },
     filters: { elementTypes: [], relationshipKinds: [] },
-    layoutProfile: "CONTAINER_FOCUS",
+    layoutProfile: String(focusPolicy.layoutProfile || "CONTAINER_FOCUS"),
     autoLayoutApplied: false,
     nodes: focusNodes.map((entry) => {
       const position = positionById.get(entry.elementId) || entry;
@@ -1006,11 +1041,6 @@ export function openContainerFocus(elementId) {
   if (!node || !isContainerElement(node)) {
     return false;
   }
-  const descendants = collectContainedDescendantIds(node.id);
-  if (!descendants.size) {
-    setStatus("This container has no contained elements yet.");
-    return false;
-  }
   const previousViewId = state.views.activeViewId;
   const focusView = createContainerFocusView(node);
   prepareViewNodeIndex(focusView);
@@ -1029,8 +1059,14 @@ export function openContainerFocus(elementId) {
   state.selectedConnectionId = null;
   materializeActiveView();
   renderDiagram();
+  renderPalette();
   notifyModelToolsChanged();
-  setStatus(`Opened ${node.label || node.id}. Use Back to return.`);
+  const descendantCount = collectContainedDescendantIds(node.id).size;
+  setStatus(
+    descendantCount
+      ? `Opened ${node.label || node.id}. Use Back to return.`
+      : `Opened empty ${node.label || node.id}. Drag elements from the palette to add contained details.`,
+  );
   return true;
 }
 
@@ -1085,6 +1121,7 @@ export function closeCanvasFocus() {
       : state.views.byId.keys().next().value || null;
   materializeActiveView();
   renderDiagram();
+  renderPalette();
   notifyModelToolsChanged();
   setStatus("Returned to previous canvas");
   return true;
@@ -2212,6 +2249,9 @@ function availableConfiguredPaletteTypes(allTypes) {
 }
 
 function renderWizardActions() {
+  if (activeContainerFocus()) {
+    return false;
+  }
   const actions = (modelingLevelConfig(state.activeType).scaffoldRecipes || []).filter((recipe) => {
     const requiredTypes = (recipe.nodes || []).map((node) => node.type).filter(Boolean);
     const allowedTypes = activeViewElementTypeFilter();
@@ -2312,9 +2352,12 @@ export function renderPalette() {
     el.paletteSearchInput.placeholder = isModelingType ? "Search elements..." : "Search disabled";
   }
   let allTypes = [];
+  const containerFocus = activeContainerFocus();
   if (isModelingType) {
     try {
-      allTypes = modelingPalette(state.activeType);
+      allTypes = containerFocus
+        ? modelingContainmentPalette(state.activeType, containerFocus.elementType)
+        : modelingPalette(state.activeType);
     } catch (error) {
       console.error("Palette rendering failed", error);
       setStatus(error.message || "Backend modeling config is unavailable");
@@ -2325,11 +2368,13 @@ export function renderPalette() {
   }
   const query = ((state.paletteSearch[state.activeType] || "") + "").trim().toLowerCase();
   const activeViewElementTypes = activeViewElementTypeFilter();
-  const viewScopedTypes = isModelingType
-    ? availableConfiguredPaletteTypes(allTypes)
-    : activeViewElementTypes.size
-      ? allTypes.filter((type) => activeViewElementTypes.has(type))
-      : allTypes;
+  const viewScopedTypes = containerFocus
+    ? allTypes
+    : isModelingType
+      ? availableConfiguredPaletteTypes(allTypes)
+      : activeViewElementTypes.size
+        ? allTypes.filter((type) => activeViewElementTypes.has(type))
+        : allTypes;
   const actionableTypes = viewScopedTypes;
   const filteredTypes = query
     ? actionableTypes.filter((type) => {
@@ -2460,7 +2505,12 @@ export function renderPalette() {
   if (!filteredTypes.length) {
     const empty = document.createElement("div");
     empty.className = "palette-empty";
-    empty.textContent = isModelingType ? "No backend palette available" : "No matching elements";
+    const containerFocus = activeContainerFocus();
+    empty.textContent = containerFocus
+      ? `No containable elements configured for ${containerFocus.label || containerFocus.elementType}`
+      : isModelingType
+        ? "No backend palette available"
+        : "No matching elements";
     el.palette.appendChild(empty);
   }
 }
@@ -3127,13 +3177,24 @@ export function setupDnD() {
         "",
     ).trim();
     state.paletteDragType = "";
-    const allowedTypes = new Set(modelingPalette(state.activeType));
+    const containerFocus = activeContainerFocus();
+    const allowedTypes = new Set(
+      containerFocus
+        ? modelingContainmentPalette(state.activeType, containerFocus.elementType)
+        : modelingPalette(state.activeType),
+    );
     if (
       !type ||
       (paletteItem?.level && paletteItem.level !== state.activeType) ||
       !allowedTypes.has(type)
     ) {
-      setStatus(type ? `${type} is not a standalone palette element` : "Invalid palette drop");
+      setStatus(
+        type
+          ? containerFocus
+            ? `${type} is not containable in ${containerFocus.label || containerFocus.elementType}`
+            : `${type} is not a standalone palette element`
+          : "Invalid palette drop",
+      );
       return;
     }
     pushDiagramUndoSnapshot();
@@ -3171,7 +3232,48 @@ function containmentAcceptsType(entry, type) {
   return (entry?.types || []).some((candidate) => modelingTypeMatchesSafe(candidate, type));
 }
 
+function assignNodeToFocusedContainer(node) {
+  const focus = activeContainerFocus();
+  if (!focus) {
+    return false;
+  }
+  const owner = state.graph.elementsById.get(focus.elementId);
+  const ownerNode = state.nodesById.get(focus.elementId);
+  if (!owner) {
+    return false;
+  }
+  const containmentEntry = modelingContainmentEntryForChildType(
+    state.activeType,
+    focus.elementType,
+    node.type,
+  );
+  if (!containmentEntry?.feature) {
+    return false;
+  }
+  const containment = modelingContainmentsForType(state.activeType, focus.elementType).find(
+    (entry) => entry.feature === containmentEntry.feature,
+  );
+  if (
+    !containment ||
+    containment.relationshipOnly ||
+    !containmentAcceptsType(containment, node.type) ||
+    (containment.many === false && owner[containment.feature])
+  ) {
+    return false;
+  }
+  node.meta.__ownerId = owner.id;
+  node.meta.__containmentFeature = containment.feature;
+  addReferenceValue(owner, containment.feature, node.id, containment.many !== false);
+  if (ownerNode?.meta) {
+    ownerNode.meta[containment.feature] = owner[containment.feature];
+  }
+  return true;
+}
+
 function assignNodeToSemanticContainer(node) {
+  if (assignNodeToFocusedContainer(node)) {
+    return true;
+  }
   if (
     modelingRootContainments(state.activeType).some((entry) =>
       containmentAcceptsType(entry, node.type),

@@ -120,6 +120,19 @@ public final class ModelingConfigService {
     metadata = mergeEcoreStructure(key, metadata);
     List<String> relationshipKinds = relationshipKinds(metadata);
     Map<String, Object> syntaxCoverage = syntaxCoverage(metadata);
+    List<Map<String, Object>> elementMaps =
+        requireList(metadata, "elements", key).stream()
+            .filter(Map.class::isInstance)
+            .map(item -> stringKeyMap((Map<?, ?>) item))
+            .toList();
+    LinkedHashSet<String> relationshipElementTypes = new LinkedHashSet<>();
+    for (Map<String, Object> element : elementMaps) {
+      if (Boolean.TRUE.equals(element.get("relationshipElement"))) {
+        relationshipElementTypes.add(String.valueOf(element.get("type")));
+      }
+    }
+    Map<String, Object> containmentPalettes =
+        buildContainmentPalettes(elementMaps, relationshipElementTypes);
     return Map.ofEntries(
         Map.entry("displayName", metadata.getOrDefault("displayName", key.toUpperCase())),
         Map.entry("elementsPath", "/diagram/elements"),
@@ -159,7 +172,8 @@ public final class ModelingConfigService {
             metadata.getOrDefault(
                 "kernelNotation", metadata.getOrDefault("kernelSyntax", List.of()))),
         Map.entry("complexityManagement", metadata.getOrDefault("complexityManagement", List.of())),
-        Map.entry("canvasPolicy", metadata.getOrDefault("canvasPolicy", Map.of())),
+        Map.entry("canvasPolicy", completeCanvasPolicy(metadata)),
+        Map.entry("containmentPalettes", containmentPalettes),
         Map.entry("syntaxCoverage", syntaxCoverage),
         Map.entry(
             "strictnessModes",
@@ -209,7 +223,9 @@ public final class ModelingConfigService {
     merged.put(
         "viewDefinitions",
         normalizeViewDefinitions(
-            requireList(metadata, "viewDefinitions", key), requireList(merged, "elements", key)));
+            requireList(metadata, "viewDefinitions", key),
+            requireList(merged, "elements", key),
+            standalonePaletteRoles(optionalMap(metadata, "canvasPolicy"))));
     merged.put(
         "relationshipKinds",
         mergeRelationshipKinds(metadata, requireList(merged, "relationshipRules", key)));
@@ -262,7 +278,7 @@ public final class ModelingConfigService {
    * @return normalized view definitions
    */
   private List<Map<String, Object>> normalizeViewDefinitions(
-      List<?> configuredViews, List<?> elements) {
+      List<?> configuredViews, List<?> elements, List<String> standalonePaletteRoles) {
     Map<String, Map<String, Object>> elementsByType = new LinkedHashMap<>();
     for (Object item : elements) {
       if (item instanceof Map<?, ?> raw) {
@@ -282,7 +298,7 @@ public final class ModelingConfigService {
       LinkedHashSet<String> palette = new LinkedHashSet<>();
       for (String relatedType : relatedTypes) {
         for (Map<String, Object> element : elementsByType.values()) {
-          if (typeMatches(relatedType, element) && standalonePaletteElement(element)) {
+          if (typeMatches(relatedType, element) && standalonePaletteElement(element, standalonePaletteRoles)) {
             palette.add(String.valueOf(element.get("type")));
           }
         }
@@ -313,14 +329,133 @@ public final class ModelingConfigService {
    * @param element merged element definition
    * @return whether the element belongs in a view palette
    */
-  private boolean standalonePaletteElement(Map<String, Object> element) {
+  private boolean standalonePaletteElement(
+      Map<String, Object> element, List<String> standalonePaletteRoles) {
     return Boolean.TRUE.equals(element.get("creatable"))
         && !Boolean.TRUE.equals(element.get("abstract"))
         && !Boolean.TRUE.equals(element.get("relationshipElement"))
         && !Boolean.TRUE.equals(element.get("containedOnly"))
         && !Boolean.TRUE.equals(element.get("supportOnly"))
-        && ("node".equals(element.get("visualRole"))
-            || "container".equals(element.get("visualRole")));
+        && standalonePaletteRoles.contains(
+            String.valueOf(element.getOrDefault("visualRole", "node")));
+  }
+
+  private List<String> standalonePaletteRoles(Map<String, Object> canvasPolicy) {
+    List<String> roles = objectStringList(canvasPolicy.get("standalonePaletteRoles"));
+    if (roles.isEmpty()) {
+      return List.of("node", "container");
+    }
+    return roles;
+  }
+
+  /**
+   * Completes canvas interaction policy with defaults for palette roles and container focus.
+   *
+   * @param metadata merged level metadata
+   * @return normalized canvas policy
+   */
+  private Map<String, Object> completeCanvasPolicy(Map<String, Object> metadata) {
+    Map<String, Object> policy = new LinkedHashMap<>(optionalMap(metadata, "canvasPolicy"));
+    policy.putIfAbsent("standalonePaletteRoles", List.of("node", "container"));
+    Map<String, Object> containerFocus = new LinkedHashMap<>(optionalMap(policy, "containerFocus"));
+    containerFocus.putIfAbsent("viewKind", "FOCUS");
+    containerFocus.putIfAbsent("scopeKind", "CONTAINER");
+    containerFocus.putIfAbsent("layoutProfile", "CONTAINER_FOCUS");
+    policy.put("containerFocus", containerFocus);
+    return policy;
+  }
+
+  /**
+   * Builds per-owner containment palettes from merged element references.
+   *
+   * @param elements merged element definitions
+   * @param relationshipElementTypes relationship object types excluded from drag/drop palettes
+   * @return owner type to palette types and containment features
+   */
+  private Map<String, Object> buildContainmentPalettes(
+      List<Map<String, Object>> elements, Set<String> relationshipElementTypes) {
+    Map<String, Map<String, Object>> elementsByType = new LinkedHashMap<>();
+    for (Map<String, Object> element : elements) {
+      elementsByType.put(String.valueOf(element.get("type")), element);
+    }
+    Map<String, Object> palettes = new LinkedHashMap<>();
+    for (Map<String, Object> owner : elements) {
+      if (!hasContainment(owner)) {
+        continue;
+      }
+      String ownerType = String.valueOf(owner.get("type"));
+      LinkedHashSet<String> paletteTypes = new LinkedHashSet<>();
+      List<Map<String, Object>> features = new ArrayList<>();
+      for (Object item : optionalList(owner, "references")) {
+        if (!(item instanceof Map<?, ?> raw)) {
+          continue;
+        }
+        Map<String, Object> reference = stringKeyMap(raw);
+        if (!Boolean.TRUE.equals(reference.get("containment"))
+            || Boolean.TRUE.equals(reference.get("readonly"))) {
+          continue;
+        }
+        String feature = String.valueOf(reference.getOrDefault("name", ""));
+        String targetType = String.valueOf(reference.getOrDefault("targetType", ""));
+        if (feature.isBlank() || targetType.isBlank()) {
+          continue;
+        }
+        List<String> types = concreteTypesFor(elementsByType, targetType).stream()
+            .filter(type -> containmentPaletteElement(elementsByType.get(type), relationshipElementTypes))
+            .toList();
+        if (types.isEmpty() || isRelationshipOnlyContainment(types, relationshipElementTypes)) {
+          continue;
+        }
+        paletteTypes.addAll(types);
+        features.add(
+            Map.ofEntries(
+                Map.entry("feature", feature),
+                Map.entry("targetType", targetType),
+                Map.entry("types", new ArrayList<>(types)),
+                Map.entry("many", reference.get("many") == null || Boolean.TRUE.equals(reference.get("many")))));
+      }
+      if (!paletteTypes.isEmpty()) {
+        palettes.put(
+            ownerType,
+            Map.ofEntries(
+                Map.entry("types", new ArrayList<>(paletteTypes)),
+                Map.entry("features", features)));
+      }
+    }
+    return palettes;
+  }
+
+  private List<String> concreteTypesFor(
+      Map<String, Map<String, Object>> elementsByType, String expectedType) {
+    List<String> result = new ArrayList<>();
+    for (Map<String, Object> element : elementsByType.values()) {
+      if (Boolean.TRUE.equals(element.get("abstract"))) {
+        continue;
+      }
+      if (typeMatches(expectedType, element)) {
+        result.add(String.valueOf(element.get("type")));
+      }
+    }
+    return result.isEmpty() ? List.of(expectedType) : result;
+  }
+
+  private boolean containmentPaletteElement(
+      Map<String, Object> element, Set<String> relationshipElementTypes) {
+    if (element == null || Boolean.TRUE.equals(element.get("abstract"))) {
+      return false;
+    }
+    if (Boolean.TRUE.equals(element.get("supportOnly"))
+        || Boolean.TRUE.equals(element.get("relationshipElement"))) {
+      return false;
+    }
+    String type = String.valueOf(element.get("type"));
+    return !relationshipElementTypes.contains(type);
+  }
+
+  private boolean isRelationshipOnlyContainment(
+      List<String> types, Set<String> relationshipElementTypes) {
+    return !types.isEmpty()
+        && types.stream().allMatch(relationshipElementTypes::contains);
   }
 
   /**

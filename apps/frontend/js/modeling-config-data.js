@@ -41,6 +41,7 @@ function emptyLevel(displayName) {
     kernelNotation: [],
     complexityManagement: [],
     canvasPolicy: {},
+    containmentPalettes: {},
     syntaxCoverage: {},
     strictnessModes: ["exploration", "methodology", "production"],
     constraints: [],
@@ -163,6 +164,10 @@ function ensureConfigShape(raw) {
       canvasPolicy:
         incoming.canvasPolicy && typeof incoming.canvasPolicy === "object"
           ? incoming.canvasPolicy
+          : {},
+      containmentPalettes:
+        incoming.containmentPalettes && typeof incoming.containmentPalettes === "object"
+          ? incoming.containmentPalettes
           : {},
       syntaxCoverage:
         incoming.syntaxCoverage && typeof incoming.syntaxCoverage === "object"
@@ -309,6 +314,7 @@ export function modelingLevelListLabel() {
 }
 
 export function modelingPalette(typeKey = state.activeType) {
+  const roles = new Set(modelingStandalonePaletteRoles(typeKey));
   return (modelingLevelConfig(typeKey).elements || [])
     .map((entry) =>
       entry?.creatable === true &&
@@ -316,11 +322,76 @@ export function modelingPalette(typeKey = state.activeType) {
       !entry?.relationshipElement &&
       !entry?.containedOnly &&
       !entry?.supportOnly &&
-      ["node", "container"].includes(String(entry?.visualRole || "node"))
+      roles.has(String(entry?.visualRole || "node"))
         ? String(entry.type || "").trim()
         : "",
     )
     .filter(Boolean);
+}
+
+export function modelingCanvasPolicy(typeKey = state.activeType) {
+  const policy = modelingLevelConfig(typeKey).canvasPolicy;
+  return policy && typeof policy === "object" ? policy : {};
+}
+
+export function modelingContainerFocusPolicy(typeKey = state.activeType) {
+  const focus = modelingCanvasPolicy(typeKey).containerFocus;
+  return focus && typeof focus === "object" ? focus : {};
+}
+
+export function modelingStandalonePaletteRoles(typeKey = state.activeType) {
+  const roles = modelingCanvasPolicy(typeKey).standalonePaletteRoles;
+  return Array.isArray(roles) && roles.length ? roles.map(String) : [];
+}
+
+export function modelingContainmentPalette(typeKey, ownerType) {
+  const ownerKey = String(ownerType || "");
+  const palettes = modelingLevelConfig(typeKey).containmentPalettes;
+  if (palettes && typeof palettes === "object") {
+    const entry = palettes[ownerKey];
+    if (entry && typeof entry === "object" && Array.isArray(entry.types) && entry.types.length) {
+      return entry.types.map(String).filter(Boolean);
+    }
+  }
+  const types = new Set();
+  modelingContainmentsForType(typeKey, ownerKey)
+    .filter((entry) => !entry.relationshipOnly)
+    .forEach((entry) => {
+      (entry.types || []).forEach((type) => {
+        if (type) {
+          types.add(String(type));
+        }
+      });
+    });
+  return [...types];
+}
+
+export function modelingContainmentEntryForChildType(typeKey, ownerType, childType) {
+  const ownerKey = String(ownerType || "");
+  const palettes = modelingLevelConfig(typeKey).containmentPalettes;
+  const entry = palettes?.[ownerKey];
+  const features = Array.isArray(entry?.features) ? entry.features : [];
+  const configured =
+    features.find((feature) =>
+      (feature?.types || []).some((type) => modelingTypeMatches(typeKey, type, childType)),
+    ) || null;
+  if (configured) {
+    return configured;
+  }
+  const containment = modelingContainmentsForType(typeKey, ownerKey).find(
+    (candidate) =>
+      !candidate.relationshipOnly &&
+      (candidate.types || []).some((type) => modelingTypeMatches(typeKey, type, childType)),
+  );
+  if (!containment) {
+    return null;
+  }
+  return {
+    feature: containment.feature,
+    targetType: containment.targetType,
+    types: containment.types,
+    many: containment.many !== false,
+  };
 }
 
 export function modelingElementDefinition(typeKey, elementType) {

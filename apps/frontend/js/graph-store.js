@@ -902,6 +902,27 @@ function neighborhoodElementIds(graph, rootElementId, depth) {
   return result;
 }
 
+function containedDescendantElementIds(graph, rootElementId) {
+  const rootId = String(rootElementId || "").trim();
+  const result = new Set();
+  if (!rootId) {
+    return result;
+  }
+  const queue = [...(graph.containmentByParent?.get(rootId) || [])];
+  while (queue.length) {
+    const childId = String(queue.shift() || "").trim();
+    if (!childId || result.has(childId) || !graph.elementsById.has(childId)) {
+      continue;
+    }
+    result.add(childId);
+    const nested = graph.containmentByParent?.get(childId);
+    if (nested?.size) {
+      nested.forEach((nestedId) => queue.push(nestedId));
+    }
+  }
+  return result;
+}
+
 export function selectElementIdsForView(graph, view, typeKey) {
   const hidden = new Set(safeArray(view?.hidden?.elementIds));
   const pinned = new Set(safeArray(view?.pinnedElementIds).map(String));
@@ -926,6 +947,11 @@ export function selectElementIdsForView(graph, view, typeKey) {
     !(hasOnlyRootExplicitNodes && hasSemanticFilters);
   if (hasExplicitNodes) {
     candidates = new Set(explicitNodeIds);
+  } else if (
+    String(view?.scope?.scopeKind || "").toUpperCase() === "CONTAINER" &&
+    view?.scope?.rootElementId
+  ) {
+    candidates = containedDescendantElementIds(graph, view.scope.rootElementId);
   } else if (view?.scope?.rootElementId) {
     candidates = neighborhoodElementIds(
       graph,
