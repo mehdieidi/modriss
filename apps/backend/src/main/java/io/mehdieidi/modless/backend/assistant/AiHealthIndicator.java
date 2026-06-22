@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.persistence.embedding.EmbeddingSettings;
+import io.mehdieidi.modless.platform.assistant.persistence.embedding.LocalEmbeddingService;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
@@ -10,7 +12,7 @@ public class AiHealthIndicator implements HealthIndicator {
 
   private final AiProperties properties;
   private final ProxyAvailability proxyAvailability;
-  private final LocalAssistantEmbeddingService embeddings;
+  private final LocalEmbeddingService embeddings;
 
   /**
    * Creates the AI health indicator.
@@ -22,7 +24,7 @@ public class AiHealthIndicator implements HealthIndicator {
   public AiHealthIndicator(
       AiProperties properties,
       ProxyAvailability proxyAvailability,
-      LocalAssistantEmbeddingService embeddings) {
+      LocalEmbeddingService embeddings) {
     this.properties = properties;
     this.proxyAvailability = proxyAvailability;
     this.embeddings = embeddings;
@@ -39,13 +41,19 @@ public class AiHealthIndicator implements HealthIndicator {
         .withDetail("provider", properties.provider())
         .withDetail("proxy", proxy.message())
         .withDetail("embeddingConfigured", properties.embeddings().provider())
-        .withDetail("embeddingActive", embeddings.activeProvider())
+        .withDetail("embeddingActive", toAiProvider(embeddings.activeProvider()))
         .withDetail("embeddingFallbackToHash", properties.embeddings().fallbackToHash())
         .withDetail(
             "embeddingProductionReady",
             properties.embeddings().provider() == AiProperties.EmbeddingProvider.ONNX
-                && embeddings.activeProvider() == AiProperties.EmbeddingProvider.ONNX
+                && toAiProvider(embeddings.activeProvider()) == AiProperties.EmbeddingProvider.ONNX
                 && !properties.embeddings().fallbackToHash())
         .build();
+  }
+
+  private static AiProperties.EmbeddingProvider toAiProvider(EmbeddingSettings.Provider provider) {
+    return provider == EmbeddingSettings.Provider.HASH
+        ? AiProperties.EmbeddingProvider.HASH
+        : AiProperties.EmbeddingProvider.ONNX;
   }
 }

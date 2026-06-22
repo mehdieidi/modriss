@@ -28,6 +28,25 @@
       <groupId>org.slf4j</groupId>
     </dependency>
     <dependency>
+      <artifactId>spring-jdbc</artifactId>
+      <groupId>org.springframework</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-ai-model-chat-memory-repository-jdbc</artifactId>
+      <groupId>org.springframework.ai</groupId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <artifactId>spring-ai-client-chat</artifactId>
+      <groupId>org.springframework.ai</groupId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <groupId>org.mockito</groupId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <artifactId>junit-jupiter</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>

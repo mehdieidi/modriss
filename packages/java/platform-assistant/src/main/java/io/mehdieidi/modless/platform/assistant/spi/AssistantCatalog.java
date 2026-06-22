@@ -7,6 +7,9 @@ import java.util.Optional;
 /** Metamodel and EVL catalog retrieval for assistant prompts and tools. */
 public interface AssistantCatalog {
 
+  /** Rebuilds catalog indexes from packaged metamodel definitions. */
+  void refresh();
+
   /**
    * Searches catalogs using exact symbol lookup first and fuzzy matching second.
    *

@@ -1,13 +1,37 @@
 # platform-assistant
 
-AI modeling assistant for the Modless platform. Owns the guarded-apply workflow,
-semantic patch pipeline, turn planning, and session orchestration in
-`platform.assistant.*` packages. Spring Boot adapters (providers, JDBC, WebSocket)
-live in `apps/backend`.
+Feature package for the AI modeling assistant: guarded-apply workflow, semantic patch
+pipeline, turn planning, session orchestration, and **its own persistence**.
+
+## Package layout
+
+```
+platform.assistant
+├── application/     orchestration and catalog facades
+├── domain/          records, enums, memory types
+├── patch/           patch compiler, schema service, parsers
+├── planning/        clarification gate, turn-plan parsing
+├── persistence/     feature-owned storage (not platform-storage-postgres)
+│   ├── jdbc/        JdbcAssistantMemoryStore, JdbcAssistantCatalog, JdbcAssistantModelContextIndex
+│   ├── embedding/   LocalEmbeddingService, EmbeddingSettings
+│   └── memory/      SpringAiJdbcChatMemory
+├── provider/        AssistantModelProvider port
+├── session/         in-memory workflow session state
+└── spi/             ports consumed by application code
+```
+
+Flyway migrations for assistant tables live in
+`src/main/resources/db/migration/` (V2–V8).
+
+## Delivery layer (`apps/backend`)
+
+The backend wires JDBC beans via `AssistantPersistenceConfig` and keeps
+delivery-only adapters: LLM providers, `AssistantToolService` (`@Tool`), WebSocket
+hub, and `AiProperties`.
 
 ## Public entry points
 
 - `platform.assistant.application.AssistantOrchestrator` — main assistant workflow
 - `platform.assistant.patch.AssistantPatchCompiler` — semantic patch compilation
 - `platform.assistant.provider.AssistantModelProvider` — provider-neutral LLM boundary
-- `platform.assistant.spi.*` — ports implemented by the backend delivery layer
+- `platform.assistant.spi.*` — ports; JDBC implementations live in `persistence.jdbc`

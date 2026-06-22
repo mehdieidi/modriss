@@ -4,13 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
-import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantModelContextIndex;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.lang.reflect.Method;
@@ -42,15 +45,11 @@ class AssistantToolServiceTest {
 
   @Test
   void previewsSemanticPatchWithoutCommitting() throws Exception {
+    AssistantCatalog catalogs = mock(AssistantCatalog.class);
+    when(catalogs.search(anyString(), anyString(), anyInt())).thenReturn(java.util.List.of());
     AssistantToolService tools =
         new AssistantToolService(
-            new AssistantCatalogService(null) {
-              @Override
-              public java.util.List<AssistantModelProvider.ContextSnippet> search(
-                  String query, String level, int limit) {
-                return java.util.List.of();
-              }
-            },
+            catalogs,
             new AssistantPatchCompiler(),
             new AssistantMetamodelSchemaService(),
             models,
@@ -72,7 +71,7 @@ class AssistantToolServiceTest {
         .thenReturn(new ModelService.ValidationResult(true, java.util.List.of()));
     AssistantToolService tools =
         new AssistantToolService(
-            new AssistantCatalogService(null),
+            mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
             new AssistantMetamodelSchemaService(),
             models,
@@ -81,7 +80,7 @@ class AssistantToolServiceTest {
         mapper.readTree(
             "{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\",\"diagram\":{\"elements\":[{\"id\":\"fn-1\",\"eClass\":\"Function\",\"name\":\"A\"}],\"relationships\":[]}}");
     var context =
-        new AssistantModelContextIndexService()
+        new JdbcAssistantModelContextIndex()
             .transientSnapshot("project", ModelLevel.PIM, "Orders", 1L, model, null);
     tools.bindSession(new AssistantToolService.ToolSession(ModelLevel.PIM, model, context));
 

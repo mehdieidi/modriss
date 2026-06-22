@@ -2,13 +2,13 @@ package io.mehdieidi.modless.backend.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
-import io.mehdieidi.modless.backend.assistant.AssistantCatalogService;
 import io.mehdieidi.modless.backend.assistant.AssistantRealtimeHub;
 import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantProposal;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantReadyPayload;
 import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -33,7 +33,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class ChatbotController {
 
   private final AssistantOrchestrator assistant;
-  private final AssistantCatalogService catalogs;
+  private final AssistantCatalog catalogs;
   private final AssistantRealtimeHub realtime;
   private final AuthSupport auth;
   private final ProjectService projects;
@@ -47,7 +47,7 @@ public class ChatbotController {
    */
   public ChatbotController(
       AssistantOrchestrator assistant,
-      AssistantCatalogService catalogs,
+      AssistantCatalog catalogs,
       AssistantRealtimeHub realtime,
       AuthSupport auth,
       ProjectService projects) {

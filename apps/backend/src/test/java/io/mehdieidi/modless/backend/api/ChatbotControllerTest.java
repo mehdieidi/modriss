@@ -18,7 +18,7 @@ class ChatbotControllerTest {
 
   @Mock private AssistantOrchestrator assistant;
 
-  @Mock private io.mehdieidi.modless.backend.assistant.AssistantCatalogService catalogs;
+  @Mock private io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog catalogs;
 
   @Mock private AssistantRealtimeHub realtime;
 

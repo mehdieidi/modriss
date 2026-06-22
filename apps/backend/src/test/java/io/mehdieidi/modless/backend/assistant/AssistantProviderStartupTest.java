@@ -12,6 +12,7 @@ import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class AssistantProviderStartupTest {
     AssistantPromptGuard promptGuard = new AssistantPromptGuard(properties);
     AssistantToolService tools =
         new AssistantToolService(
-            mock(AssistantCatalogService.class),
+            mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
             new AssistantMetamodelSchemaService(),
             mock(ModelService.class),
@@ -100,7 +101,7 @@ class AssistantProviderStartupTest {
     ProxyAvailability proxyAvailability = new ProxyAvailability(properties);
     AssistantToolService tools =
         new AssistantToolService(
-            mock(AssistantCatalogService.class),
+            mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
             new AssistantMetamodelSchemaService(),
             mock(ModelService.class),
@@ -144,7 +145,7 @@ class AssistantProviderStartupTest {
             null);
     AssistantToolService tools =
         new AssistantToolService(
-            mock(AssistantCatalogService.class),
+            mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
             new AssistantMetamodelSchemaService(),
             mock(ModelService.class),
@@ -189,7 +190,7 @@ class AssistantProviderStartupTest {
             null);
     AssistantToolService tools =
         new AssistantToolService(
-            mock(AssistantCatalogService.class),
+            mock(AssistantCatalog.class),
             new AssistantPatchCompiler(),
             new AssistantMetamodelSchemaService(),
             mock(ModelService.class),

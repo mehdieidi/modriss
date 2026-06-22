@@ -9,6 +9,7 @@ import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelCont
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -27,7 +28,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AssistantToolService implements AssistantToolBridge {
 
-  private final AssistantCatalogService catalogs;
+  private final AssistantCatalog catalogs;
   private final AssistantPatchCompiler patchCompiler;
   private final AssistantMetamodelSchemaService schemas;
   private final ModelService models;
@@ -36,7 +37,7 @@ public class AssistantToolService implements AssistantToolBridge {
   private final AtomicInteger toolCallCount = new AtomicInteger();
 
   public AssistantToolService(
-      AssistantCatalogService catalogs,
+      AssistantCatalog catalogs,
       AssistantPatchCompiler patchCompiler,
       AssistantMetamodelSchemaService schemas,
       ModelService models,
