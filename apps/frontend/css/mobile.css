@@ -1,0 +1,199 @@
+/* Mobile app shell — bottom dock, safe areas, touch-first controls */
+
+@media (max-width: 920px) {
+  :root {
+    --mobile-dock-h: calc(56px + var(--safe-area-bottom));
+    --rail-w: 0px;
+    --topbar-h: calc(var(--topbar-main-h) + var(--safe-area-top));
+  }
+
+  .app-shell {
+    padding-bottom: var(--mobile-dock-h);
+  }
+
+  .workspace {
+    padding-bottom: 0;
+  }
+
+  .topbar-strip-actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .topbar-strip-actions .mobile-dock-profile-trigger {
+    display: none;
+  }
+
+  .mobile-dock-profile-slot {
+    display: flex;
+    min-width: 0;
+  }
+
+  .mobile-dock-profile-slot .user-menu {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-dock-profile-slot .topbar-user-trigger {
+    display: none !important;
+  }
+
+  .mobile-dock-profile-slot .mobile-dock-profile-trigger {
+    display: flex;
+    width: 100%;
+  }
+
+  .mobile-dock-profile-slot .ide-menu-items {
+    z-index: 110;
+  }
+
+  .modeling-context-bar #validationFab {
+    display: none !important;
+  }
+
+  .mobile-dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0;
+    min-height: var(--mobile-dock-h);
+    padding: 6px max(4px, var(--safe-area-left)) calc(6px + var(--safe-area-bottom))
+      max(4px, var(--safe-area-right));
+    border-top: var(--glass-pane-border);
+    background: color-mix(in srgb, var(--glass-pane-bg) 94%, var(--surface-2) 6%);
+    box-shadow:
+      var(--glass-pane-highlight),
+      0 -8px 24px rgba(2, 6, 8, 0.22);
+    backdrop-filter: var(--glass-pane-blur);
+    -webkit-backdrop-filter: var(--glass-pane-blur);
+  }
+
+  .mobile-dock-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 44px;
+    padding: 4px 2px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      color var(--transition),
+      background var(--transition),
+      border-color var(--transition),
+      transform var(--transition);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-dock-item:hover,
+  .mobile-dock-item:focus-visible {
+    outline: none;
+    color: var(--text);
+    background: color-mix(in srgb, var(--surface-3) 72%, transparent);
+  }
+
+  .mobile-dock-item:active {
+    transform: scale(0.96);
+  }
+
+  .mobile-dock-item.is-active {
+    color: var(--accent-light);
+    border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+    background: color-mix(in srgb, var(--accent-glow) 32%, var(--surface-3) 68%);
+  }
+
+  .mobile-dock-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-dock-label {
+    font: 700 8px/1 var(--font-display);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-dock-validation {
+    gap: 2px;
+  }
+
+  .mobile-dock-validation-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: #22c55e;
+  }
+
+  .mobile-dock-validation.validation-state-error .mobile-dock-validation-dot {
+    background: #ef4444;
+  }
+
+  .mobile-dock-validation.validation-state-warning .mobile-dock-validation-dot {
+    background: #f59e0b;
+  }
+
+  .mobile-dock-validation.validation-state-ok .mobile-dock-validation-dot {
+    background: #22c55e;
+  }
+
+  .mobile-dock-validation.validation-is-running .mobile-dock-validation-dot {
+    background: var(--accent-light);
+    animation: mobile-dock-validation-pulse 0.9s ease-in-out infinite;
+  }
+
+  .app-shell:has(.workspace.artifact-mode) .mobile-dock-item[data-dock-action="chat"] {
+    display: none;
+  }
+
+  .app-shell:has(.workspace.artifact-mode) .mobile-dock {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .mobile-backdrop {
+    display: none !important;
+  }
+}
+
+@keyframes mobile-dock-validation-pulse {
+  50% {
+    transform: scale(0.72);
+    opacity: 0.65;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --topbar-main-h: 48px;
+  }
+
+  .mobile-dock-label {
+    font-size: 7px;
+  }
+
+  .mobile-dock-item {
+    min-height: 42px;
+    gap: 2px;
+  }
+}
+
+@media (min-width: 921px) {
+  .mobile-dock {
+    display: none;
+  }
+}

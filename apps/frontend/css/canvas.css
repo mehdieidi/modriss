@@ -593,27 +593,81 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 920px) {
   .model-workbench-commandbar {
-    overflow-x: auto;
-    justify-content: flex-start;
-    scrollbar-width: thin;
     flex-wrap: wrap;
-    min-height: 64px;
     align-content: center;
+    min-height: 40px;
+    row-gap: 4px;
+    overflow-x: visible;
   }
 
   .workbench-divider {
     display: none;
   }
 
+  .workbench-section-label,
+  .workbench-control-label {
+    display: none;
+  }
+
   .workbench-view-section {
-    flex-basis: 180px;
+    flex: 1 1 160px;
     min-width: 130px;
   }
 
-  .model-workbench-strip .sidebar-inline-action {
-    flex: 0 0 auto;
+  .workbench-view-select {
+    max-width: none;
+  }
+
+  .workbench-layout-menu {
+    width: min(300px, calc(100vw - 24px));
+    min-width: 0;
+    left: auto;
+    right: 0;
+  }
+
+  .workbench-view-menu {
+    width: min(100%, calc(100vw - 24px));
+  }
+
+  .workbench-focus-actions {
+    max-width: none;
+  }
+
+  .workbench-focus-label {
+    max-width: 100px;
+  }
+
+  .validation-drawer {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: min(
+      calc(
+        100dvh - var(--topbar-h) - var(--modeling-bar-h, 0px) - var(--mobile-dock-h, 0px) - 20px
+      ),
+      560px
+    );
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace.has-modeling-bar {
+    --modeling-bar-h: 64px;
+  }
+
+  .model-workbench-commandbar {
+    min-height: 64px;
+  }
+
+  .workbench-view-section {
+    flex-basis: 100%;
+    order: -1;
+  }
+
+  .workbench-persist-group {
+    margin-left: auto;
   }
 }
 
@@ -997,11 +1051,24 @@
   letter-spacing: 0.06em;
 }
 
+@media (max-width: 920px) {
+  .canvas-zoom-control {
+    left: 10px;
+    right: auto;
+    bottom: calc(var(--mobile-dock-h, 0px) + 4px);
+    grid-template-columns: 28px 50px 28px;
+  }
+
+  .canvas-zoom-fit {
+    display: none;
+  }
+}
+
 @media (max-width: 720px) {
   .canvas-zoom-control {
     left: 10px;
     right: auto;
-    bottom: 10px;
+    bottom: calc(var(--mobile-dock-h, 0px) + 4px);
     grid-template-columns: 28px 50px 28px;
   }
 

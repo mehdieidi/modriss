@@ -14,6 +14,7 @@ import {
 } from "./canvas.js";
 import { markModelDirty } from "./model-save-ui.js";
 import { isMobileViewport } from "./responsive.js";
+import { syncMobileDockState } from "./mobile-ui.js";
 import { getDefaultNode, relationshipIdsFromModel, toDiagram } from "./diagram.js";
 import { confirmAction } from "./confirm-action.js";
 import { escapeHtml } from "./utils.js";
@@ -117,9 +118,7 @@ export function openAttributePanel(nodeId) {
   if (isMobileViewport()) {
     el.workspace.classList.remove("mobile-left-open");
     el.workspace.classList.add("mobile-right-open");
-    if (el.mobileBackdrop) {
-      el.mobileBackdrop.classList.remove("hidden");
-    }
+    syncMobileDockState();
   }
   syncRendererSelection();
 }
@@ -132,9 +131,7 @@ export function closeAttributePanel() {
   el.attributePanel.classList.add("hidden");
   el.workspace.classList.remove("attr-open");
   el.workspace.classList.remove("mobile-right-open");
-  if (el.mobileBackdrop) {
-    el.mobileBackdrop.classList.add("hidden");
-  }
+  syncMobileDockState();
   syncRendererSelection();
 }
 
@@ -172,9 +169,7 @@ export function openConnectionPanel(connectionId) {
   if (isMobileViewport()) {
     el.workspace.classList.remove("mobile-left-open");
     el.workspace.classList.add("mobile-right-open");
-    if (el.mobileBackdrop) {
-      el.mobileBackdrop.classList.remove("hidden");
-    }
+    syncMobileDockState();
   }
   syncRendererSelection();
 }
@@ -328,9 +323,7 @@ export function openBoundedContextPanel(contextName) {
   if (isMobileViewport()) {
     el.workspace.classList.remove("mobile-left-open");
     el.workspace.classList.add("mobile-right-open");
-    if (el.mobileBackdrop) {
-      el.mobileBackdrop.classList.remove("hidden");
-    }
+    syncMobileDockState();
   }
 }
 
@@ -1168,14 +1161,14 @@ function containmentTableMarkup(children) {
         ${children
           .map(
             (child) => `<tr>
-          <td>
+          <td data-label="Element">
             <button class="attr-contained-link"
                     data-open-contained-child="${escapeAttr(child.id)}"
                     type="button">${escapeAttr(elementLabel(child))}</button>
             <span>${escapeAttr(child.eClass || child.type || "Element")}</span>
           </td>
-          ${columns.map((column) => `<td>${containedCellMarkup(child, column)}</td>`).join("")}
-          <td>
+          ${columns.map((column) => `<td data-label="${escapeAttr(column)}">${containedCellMarkup(child, column)}</td>`).join("")}
+          <td data-label="Actions">
             <button class="btn btn-secondary btn-sm"
                     data-delete-contained-child="${escapeAttr(child.id)}"
                     type="button">Delete</button>

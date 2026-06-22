@@ -8,6 +8,7 @@ import { toDiagram } from "./diagram.js";
 import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
 import { loadModelById } from "./model-ops.js";
+import { syncMobileDockState } from "./mobile-ui.js";
 import { hasUnsavedModelChanges } from "./model-save-ui.js";
 
 const TERMINAL_WORKFLOW_STATES = new Set([
@@ -114,6 +115,8 @@ export function closeChatHistoryPanel() {
 export function syncChatOpenState() {
   const isOpen = el.chatWindow && !el.chatWindow.classList.contains("hidden");
   el.workspace?.classList.toggle("chat-open", isOpen);
+  el.chatToggle?.classList.toggle("is-active", Boolean(isOpen));
+  syncMobileDockState();
 }
 
 export function closeChatWindow() {

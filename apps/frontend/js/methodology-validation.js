@@ -1,5 +1,6 @@
 import { el } from "./dom.js";
 import { state } from "./state.js";
+import { syncMobileDockState } from "./mobile-ui.js";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -237,10 +238,12 @@ function renderValidationCenter() {
   }
   const validationVisible = state.activeType !== "artifact";
   el.validationFab.classList.toggle("hidden", !validationVisible);
+  el.mobileDockValidationBtn?.classList.toggle("hidden", !validationVisible);
   if (!validationVisible) {
     el.validationDrawer?.classList.add("hidden");
     el.validationFabProgress?.classList.add("hidden");
     el.validationDrawerProgress?.classList.add("hidden");
+    syncMobileDockState();
     return;
   }
   const issues = state.validation.issues || [];
@@ -251,10 +254,31 @@ function renderValidationCenter() {
     "validation-state-error",
   );
   el.validationFab.classList.add(status.stateClass);
+  el.mobileDockValidationBtn?.classList.remove(
+    "validation-state-ok",
+    "validation-state-warning",
+    "validation-state-error",
+  );
+  el.mobileDockValidationBtn?.classList.add(status.stateClass);
   if (el.validationFabText) {
     el.validationFabText.textContent = status.label;
   }
+  if (el.mobileDockValidationLabel) {
+    let dockLabel = status.label;
+    if (dockLabel.startsWith("Errors")) {
+      dockLabel = dockLabel.replace("Errors", "Err");
+    } else if (dockLabel.startsWith("Warnings")) {
+      dockLabel = dockLabel.replace("Warnings", "Warn");
+    } else if (dockLabel.startsWith("Manual Tasks")) {
+      dockLabel = dockLabel.replace("Manual Tasks", "Tasks");
+    }
+    el.mobileDockValidationLabel.textContent = dockLabel;
+  }
   el.validationFab.classList.toggle("validation-is-running", !!state.validation.inProgress);
+  el.mobileDockValidationBtn?.classList.toggle(
+    "validation-is-running",
+    !!state.validation.inProgress,
+  );
   el.validationFabProgress?.classList.toggle("hidden", !state.validation.inProgress);
   if (el.validationDrawerMeta) {
     const ts = state.validation.lastValidatedAt
@@ -266,6 +290,7 @@ function renderValidationCenter() {
   el.validationDrawerProgress?.classList.toggle("hidden", !state.validation.inProgress);
   renderIssues(issues);
   el.validationDrawer?.classList.toggle("hidden", !state.validation.panelOpen);
+  syncMobileDockState();
 }
 
 export function isMethodologyValidationError(error) {

@@ -374,3 +374,40 @@ html.light .artifact-editor-statusbar {
 html.light .artifact-editor-status-sep {
   color: color-mix(in srgb, #12325f 55%, transparent);
 }
+
+@media (max-width: 920px) {
+  .artifact-editor-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .artifact-editor-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .artifact-editor-tab {
+    max-width: min(180px, 42vw);
+  }
+
+  .artifact-editor-header {
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: auto;
+    padding-block: 4px;
+  }
+
+  .artifact-editor-statusbar {
+    flex-wrap: wrap;
+    min-height: 28px;
+    height: auto;
+    padding-block: 4px;
+  }
+}
+
+@media (max-width: 560px) {
+  .artifact-editor-tab {
+    max-width: min(120px, 36vw);
+    font-size: 10px;
+    padding-inline: 8px;
+  }
+}

@@ -8,6 +8,7 @@ import { loadModelById, switchTab } from "./model-ops.js";
 import { closeAttributePanel } from "./attr-panel.js";
 import { loadArtifactById, openArtifactFile } from "./artifact.js";
 import { isMobileViewport } from "./responsive.js";
+import { syncMobileDockState } from "./mobile-ui.js";
 import {
   modelingImpactConfig,
   modelingLevelConfig,
@@ -56,9 +57,7 @@ export function openImpactPanel() {
   if (isMobileViewport()) {
     el.workspace.classList.remove("mobile-left-open");
     el.workspace.classList.add("mobile-right-open");
-    if (el.mobileBackdrop) {
-      el.mobileBackdrop.classList.remove("hidden");
-    }
+    syncMobileDockState();
   }
 }
 
@@ -69,9 +68,7 @@ export function closeImpactPanel() {
   el.impactPanel.classList.add("hidden");
   el.workspace.classList.remove("impact-open");
   el.workspace.classList.remove("mobile-right-open");
-  if (el.mobileBackdrop) {
-    el.mobileBackdrop.classList.add("hidden");
-  }
+  syncMobileDockState();
   highlightImpactedNodes();
   renderImpactPanel(null);
 }

@@ -88,10 +88,26 @@
   --glass-pane-blur: blur(10px) saturate(108%);
 
   --transition: 0.18s ease;
+
+  /* Layout breakpoints (keep in sync with js/config.js) */
+  --bp-phone: 560px;
+  --bp-compact: 760px;
+  --bp-mobile: 920px;
+  --bp-tablet: 1100px;
+  --bp-wide: 1200px;
+
   --topbar-main-h: 52px;
   --modeling-bar-h: 0px;
   --topbar-h: var(--topbar-main-h);
   --rail-w: 52px;
+  --sidebar-w-default: 248px;
+  --inspector-w: clamp(300px, 32vw, 380px);
+  --impact-w: clamp(320px, 34vw, 420px);
+  --mobile-dock-h: 0px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
 }
 
 html.light {

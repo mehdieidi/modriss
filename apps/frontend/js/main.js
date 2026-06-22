@@ -50,6 +50,7 @@ import { setError, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
 import { CHAT_ATTACHMENT_MAX_BYTES } from "./config.js";
 import { isMobileViewport } from "./responsive.js";
+import { closeMobilePanels, setMobileBackdropVisible, syncMobileDockState } from "./mobile-ui.js";
 import { ensureAuthenticated, logout, updateDisplayName } from "./auth.js";
 import { initSvgIconMasks } from "./icons.js";
 import { deployToGithubFromArtifacts, refreshGithubConnection } from "./github.js";
@@ -277,11 +278,24 @@ function setupIdeMenus() {
   };
 
   const positionMenuItems = (menu, menuItems) => {
+    menuItems.style.position = "";
     menuItems.style.left = "0";
     menuItems.style.right = "auto";
     menuItems.style.top = "calc(100% + 6px)";
     menuItems.style.bottom = "auto";
     menuItems.style.transform = "translateX(0)";
+
+    if (isMobileViewport() && menu.classList.contains("user-menu") && el.mobileDockProfileBtn) {
+      const anchor = el.mobileDockProfileBtn.getBoundingClientRect();
+      menuItems.style.position = "fixed";
+      menuItems.style.left = "auto";
+      menuItems.style.right = `${Math.max(8, window.innerWidth - anchor.right)}px`;
+      menuItems.style.bottom = `${Math.max(8, window.innerHeight - anchor.top + 8)}px`;
+      menuItems.style.top = "auto";
+      menuItems.style.transform = "none";
+      menuItems.style.zIndex = "110";
+      return;
+    }
 
     const triggerRect = menu.getBoundingClientRect();
     if (triggerRect.left > window.innerWidth / 2) {
@@ -324,17 +338,18 @@ function setupIdeMenus() {
   };
 
   menus.forEach((menu) => {
-    const trigger = menu.querySelector(".ide-menu-trigger");
+    const triggers = menu.querySelectorAll(".ide-menu-trigger, .mobile-dock-profile-trigger");
     const menuItems = menu.querySelector(".ide-menu-items");
-    if (!trigger || !menuItems) {
+    if (!triggers.length || !menuItems) {
       return;
     }
 
-    // menu items styling handled by CSS
-
-    trigger.addEventListener("click", (event) => {
+    const openMenu = (event) => {
       event.stopPropagation();
       const willOpen = !menu.classList.contains("is-open");
+      if (willOpen && menu.classList.contains("user-menu")) {
+        closeMobilePanels();
+      }
       closeMenus();
       menu.classList.toggle("is-open", willOpen);
       if (willOpen) {
@@ -342,6 +357,11 @@ function setupIdeMenus() {
           positionMenuItems(menu, menuItems);
         });
       }
+      syncMobileDockState();
+    };
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener("click", openMenu);
     });
 
     menuItems.addEventListener("click", (event) => {
@@ -361,6 +381,7 @@ function setupIdeMenus() {
       return;
     }
     closeMenus();
+    syncMobileDockState();
     if (!target?.closest(".topbar")) {
       closeTopbarMenu();
     }
@@ -381,7 +402,7 @@ function closeTopbarMenu() {
   if (el.topbarMenuToggleBtn) {
     el.topbarMenuToggleBtn.setAttribute("aria-expanded", "false");
   }
-  // also remove any global menu glass overlay
+  syncMobileDockState();
 }
 
 function toggleTopbarMenu() {
@@ -397,18 +418,10 @@ function toggleTopbarMenu() {
   if (el.topbarMenuToggleBtn) {
     el.topbarMenuToggleBtn.setAttribute("aria-expanded", String(willOpen));
   }
-}
-
-function setMobileBackdropVisible(visible) {
-  if (!el.mobileBackdrop) {
-    return;
+  if (willOpen) {
+    closeMobilePanels();
   }
-  el.mobileBackdrop.classList.toggle("hidden", !visible);
-}
-
-function closeMobilePanels() {
-  el.workspace.classList.remove("mobile-left-open", "mobile-right-open");
-  setMobileBackdropVisible(false);
+  syncMobileDockState();
 }
 
 function toggleMobileSidebar() {
@@ -419,6 +432,10 @@ function toggleMobileSidebar() {
   el.workspace.classList.remove("mobile-right-open");
   el.workspace.classList.toggle("mobile-left-open", willOpen);
   setMobileBackdropVisible(willOpen);
+  if (willOpen) {
+    closeTopbarMenu();
+  }
+  syncMobileDockState();
 }
 
 function toggleMobileInspector() {
@@ -437,6 +454,16 @@ function toggleMobileInspector() {
   el.workspace.classList.remove("mobile-left-open");
   el.workspace.classList.toggle("mobile-right-open", willOpen);
   setMobileBackdropVisible(willOpen);
+  if (willOpen) {
+    closeTopbarMenu();
+  }
+  syncMobileDockState();
+}
+
+function toggleMobileChatFromDock() {
+  closeMobilePanels();
+  closeTopbarMenu();
+  el.chatToggle?.click();
 }
 
 function syncResponsiveUi() {
@@ -449,6 +476,7 @@ function syncResponsiveUi() {
   if (window.innerWidth > TOPBAR_MENU_BREAKPOINT) {
     closeTopbarMenu();
   }
+  syncMobileDockState();
 }
 
 function syncPaletteRailToggleState() {
@@ -716,13 +744,24 @@ function bindEvents() {
     });
   }
 
-  if (el.mobileSidebarToggleBtn) {
-    el.mobileSidebarToggleBtn.addEventListener("click", toggleMobileSidebar);
+  if (el.mobileDockPaletteBtn) {
+    el.mobileDockPaletteBtn.addEventListener("click", toggleMobileSidebar);
   }
-
-  if (el.mobileInspectorToggleBtn) {
-    el.mobileInspectorToggleBtn.addEventListener("click", toggleMobileInspector);
+  if (el.mobileDockInspectorBtn) {
+    el.mobileDockInspectorBtn.addEventListener("click", toggleMobileInspector);
   }
+  el.mobileDockChatBtn?.addEventListener("click", toggleMobileChatFromDock);
+  el.mobileDockValidationBtn?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeMobilePanels();
+    el.validationFab?.click();
+    syncMobileDockState();
+  });
+  el.mobileDockMenuBtn?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeMobilePanels();
+    toggleTopbarMenu();
+  });
 
   if (el.mobileBackdrop) {
     el.mobileBackdrop.addEventListener("click", closeMobilePanels);

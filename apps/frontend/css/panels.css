@@ -16,9 +16,9 @@
 }
 
 #attributePanel {
-  width: 380px;
-  min-width: 380px;
-  max-width: 380px;
+  width: var(--inspector-w);
+  min-width: min(var(--inspector-w), 100%);
+  max-width: var(--inspector-w);
 }
 
 #attributePanel,
@@ -64,9 +64,9 @@
 }
 
 .model-tree-pane {
-  width: 380px;
-  min-width: 380px;
-  max-width: 380px;
+  width: var(--inspector-w);
+  min-width: min(var(--inspector-w), 100%);
+  max-width: var(--inspector-w);
 }
 
 .model-tree-panel-body {
@@ -315,17 +315,9 @@
 }
 
 @media (max-width: 1200px) {
-  #attributePanel,
-  #modelTreePanel {
-    width: 350px;
-    min-width: 350px;
-    max-width: 350px;
-  }
-
-  #impactPanel {
-    width: 370px;
-    min-width: 370px;
-    max-width: 370px;
+  :root {
+    --inspector-w: clamp(280px, 30vw, 350px);
+    --impact-w: clamp(300px, 32vw, 370px);
   }
 }
 
@@ -757,9 +749,9 @@
 }
 
 .impact-panel {
-  width: 420px;
-  min-width: 420px;
-  max-width: 420px;
+  width: var(--impact-w);
+  min-width: min(var(--impact-w), 100%);
+  max-width: var(--impact-w);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1097,6 +1089,9 @@ html.light .tier-badge-artifact {
     top: 0;
     right: 0;
     bottom: auto;
+    width: min(92vw, 400px);
+    min-width: 0;
+    max-width: none;
     z-index: 50;
   }
 
@@ -1106,5 +1101,73 @@ html.light .tier-badge-artifact {
 
   .right-pane-shell {
     border-radius: var(--radius-md);
+  }
+
+  .attr-tabbar {
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .attr-tabbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .attr-overview-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .attr-trace-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    align-items: start;
+  }
+}
+
+@media (max-width: 560px) {
+  #attributePanel,
+  #modelTreePanel,
+  #impactPanel {
+    width: 100%;
+  }
+
+  .attr-contained-table {
+    min-width: 0;
+  }
+
+  .attr-contained-table thead {
+    display: none;
+  }
+
+  .attr-contained-table tr {
+    display: grid;
+    gap: 6px;
+    padding: 10px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  }
+
+  .attr-contained-table td {
+    display: grid;
+    gap: 4px;
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .attr-contained-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font: 700 9px/1.2 var(--font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .attr-panel-header {
+    padding: 12px;
+  }
+
+  .attr-panel-body,
+  .attr-panel-footer {
+    padding-inline: 12px;
   }
 }

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
     <title>Modless</title>
     <link href="/assets/icons/favicon.svg" rel="icon" type="image/x-icon" />
     <link href="/css/variables.css" rel="stylesheet" />
@@ -15,6 +15,7 @@
     <link href="/css/artifact.css" rel="stylesheet" />
     <link href="/css/panels.css" rel="stylesheet" />
     <link href="/css/project.css" rel="stylesheet" />
+    <link href="/css/mobile.css" rel="stylesheet" />
     <script>
       window.modlessFrontendBoot = {
         renderer: "antv-g6",
@@ -45,14 +46,6 @@
                 <!--            <span class="app-brand-subtitle">Model Engineering Studio</span>-->
               </span>
             </a>
-            <button
-              class="btn btn-secondary btn-sm mobile-only"
-              id="mobileSidebarToggleBtn"
-              title="Toggle model palette"
-              type="button"
-            >
-              Palette
-            </button>
           </div>
 
           <button
@@ -130,50 +123,51 @@
                 <span class="project-name-label" id="projectLabel">No project</span>
               </div>
             </div>
+          </div>
 
-            <div class="topbar-right">
+          <div class="topbar-strip-actions">
+            <div class="ide-menu user-menu">
               <button
-                class="btn btn-secondary btn-sm mobile-only"
-                id="mobileInspectorToggleBtn"
-                title="Toggle details panel"
+                class="ide-menu-trigger user-menu-trigger topbar-user-trigger"
+                id="userMenuTrigger"
+                title="User menu"
                 type="button"
               >
-                Inspector
+                <span
+                  aria-hidden="true"
+                  class="user-menu-icon icon-svg icon-mask"
+                  style="--icon-src: url(&quot;/assets/icons/user_profile.svg&quot;)"
+                ></span>
+                <span class="user-display-name" id="currentUserLabel">Guest</span>
               </button>
-
-              <div class="ide-menu user-menu">
+              <button
+                aria-label="User account"
+                class="mobile-dock-item mobile-dock-profile-trigger"
+                data-dock-action="profile"
+                id="mobileDockProfileBtn"
+                title="User menu"
+                type="button"
+              >
+                <span
+                  aria-hidden="true"
+                  class="mobile-dock-icon icon-svg icon-mask"
+                  style="--icon-src: url(&quot;/assets/icons/user_profile.svg&quot;)"
+                ></span>
+                <span class="mobile-dock-label">Account</span>
+              </button>
+              <div class="ide-menu-items">
                 <button
-                  class="ide-menu-trigger user-menu-trigger"
-                  id="userMenuTrigger"
-                  title="User menu"
+                  class="ide-menu-item"
+                  id="userMenuEditProfileBtn"
+                  title="Edit profile"
                   type="button"
                 >
-                  <span
-                    aria-hidden="true"
-                    class="user-menu-icon icon-svg icon-mask"
-                    style="--icon-src: url(&quot;/assets/icons/user_profile.svg&quot;)"
-                  ></span>
-                  <span class="user-display-name" id="currentUserLabel">Guest</span>
+                  Edit Profile
                 </button>
-                <div class="ide-menu-items">
-                  <button
-                    class="ide-menu-item"
-                    id="userMenuEditProfileBtn"
-                    title="Edit profile"
-                    type="button"
-                  >
-                    Edit Profile
-                  </button>
-                  <div class="ide-menu-separator"></div>
-                  <button
-                    class="ide-menu-item"
-                    id="userMenuLogoutBtn"
-                    title="Sign out"
-                    type="button"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+                <div class="ide-menu-separator"></div>
+                <button class="ide-menu-item" id="userMenuLogoutBtn" title="Sign out" type="button">
+                  Sign Out
+                </button>
               </div>
             </div>
           </div>
@@ -845,6 +839,76 @@
 
         <div aria-hidden="true" class="mobile-backdrop hidden" id="mobileBackdrop"></div>
       </main>
+
+      <nav aria-label="Quick navigation" class="mobile-dock" id="mobileDock">
+        <button
+          aria-label="Open palette"
+          class="mobile-dock-item"
+          data-dock-action="palette"
+          id="mobileDockPaletteBtn"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="mobile-dock-icon icon-svg icon-mask"
+            style="--icon-src: url(&quot;/assets/icons/palette.svg&quot;)"
+          ></span>
+          <span class="mobile-dock-label">Palette</span>
+        </button>
+        <button
+          aria-label="Open inspector"
+          class="mobile-dock-item"
+          data-dock-action="inspector"
+          id="mobileDockInspectorBtn"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="mobile-dock-icon icon-svg icon-mask"
+            style="--icon-src: url(&quot;/assets/icons/description.svg&quot;)"
+          ></span>
+          <span class="mobile-dock-label">Inspector</span>
+        </button>
+        <button
+          aria-label="Open assistant"
+          class="mobile-dock-item"
+          data-dock-action="chat"
+          id="mobileDockChatBtn"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="mobile-dock-icon icon-svg icon-mask"
+            style="--icon-src: url(&quot;/assets/icons/chatbot.svg&quot;)"
+          ></span>
+          <span class="mobile-dock-label">Assistant</span>
+        </button>
+        <button
+          aria-label="Model validation status"
+          class="mobile-dock-item mobile-dock-validation validation-state-ok"
+          data-dock-action="validation"
+          id="mobileDockValidationBtn"
+          type="button"
+        >
+          <span aria-hidden="true" class="mobile-dock-validation-dot validation-status-dot"></span>
+          <span class="mobile-dock-label" id="mobileDockValidationLabel">OK</span>
+        </button>
+        <div class="mobile-dock-profile-slot"></div>
+        <button
+          aria-label="Open tools and lifecycle actions"
+          class="mobile-dock-item"
+          data-dock-action="menu"
+          id="mobileDockMenuBtn"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="mobile-dock-icon icon-svg icon-mask"
+            style="--icon-src: url(&quot;/assets/icons/settings.svg&quot;)"
+          ></span>
+          <span class="mobile-dock-label">Tools</span>
+        </button>
+      </nav>
 
       <button class="chat-toggle" id="chatToggle" title="Open modeling assistant" type="button">
         <span

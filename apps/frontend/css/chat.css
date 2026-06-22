@@ -1251,40 +1251,42 @@
 
 @media (max-width: 920px) {
   .chat-toggle {
-    right: 12px;
-  }
-
-  .workspace.model-view-active ~ .chat-toggle {
-    bottom: 54px;
+    display: none;
   }
 
   .chat-window {
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    max-width: 100vw;
-    height: min(100vh, 640px);
-    max-height: 100vh;
-    border-radius: 0;
-    border-right: none;
-    border-bottom: none;
-    border-left: none;
+    right: 12px;
+    left: 12px;
+    bottom: calc(var(--mobile-dock-h, 0px) + 8px);
+    z-index: 92;
+    width: auto;
+    max-width: none;
+    height: min(460px, calc(100dvh - var(--topbar-h) - var(--mobile-dock-h, 0px) - 24px));
+    max-height: min(68dvh, calc(100dvh - var(--topbar-h) - var(--mobile-dock-h, 0px) - 24px));
+    border-radius: var(--radius-lg);
+    border: var(--glass-pane-border);
+    box-shadow: var(--shadow-lg);
   }
 
   .chat-window.chat-window-expanded {
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100%;
-    border-radius: 0;
+    left: 8px;
+    right: 8px;
+    top: calc(var(--topbar-h) + 8px);
+    bottom: calc(var(--mobile-dock-h, 0px) + 8px);
+    width: auto;
+    height: auto;
+    max-height: none;
+    border-radius: var(--radius-md);
+  }
+
+  .workspace.chat-open ~ .mobile-dock .mobile-dock-item[data-dock-action="chat"] {
+    color: var(--accent-light);
   }
 }
 
 @media (max-width: 720px) {
-  .chat-toggle {
-    bottom: 10px;
+  .chat-composer {
+    margin-inline: 10px;
   }
 }
 
@@ -1293,7 +1295,11 @@
     display: none;
   }
 
-  .chat-toggle {
+  .chat-header {
     padding-inline: 10px;
+  }
+
+  .chat-msg.user {
+    padding-left: 16px;
   }
 }

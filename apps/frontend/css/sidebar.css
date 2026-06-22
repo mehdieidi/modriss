@@ -722,6 +722,12 @@
   text-overflow: ellipsis;
 }
 
+@media (max-width: 1100px) {
+  .palette-group-items {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 920px) {
   .left-pane {
     padding: 8px;
@@ -733,6 +739,16 @@
 
   .palette {
     grid-template-columns: 1fr;
+  }
+
+  .palette-group-items {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-item,
+  .palette-quick-action,
+  .sidebar-inline-action {
+    min-height: 40px;
   }
 
   .sidebar-section-actions {

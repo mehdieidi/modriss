@@ -498,6 +498,23 @@ html.light .tab.active {
   min-width: 0;
 }
 
+.topbar-strip-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.topbar-strip-actions .user-menu-trigger {
+  min-height: 34px;
+  padding-inline: 8px;
+}
+
+.topbar-strip-actions .mobile-dock-profile-trigger {
+  display: none;
+}
+
 .user-menu-trigger {
   display: inline-flex;
   align-items: center;
@@ -619,10 +636,107 @@ html.light .tab.active {
   }
 }
 
+@media (max-width: 920px) {
+  .topbar {
+    min-height: var(--topbar-h);
+    padding-top: var(--safe-area-top);
+  }
+
+  .topbar-menu-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: var(--topbar-main-h);
+    padding-inline: max(12px, var(--safe-area-left)) max(12px, var(--safe-area-right));
+  }
+
+  .topbar-left {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .topbar .topbar-menu-toggle {
+    display: none !important;
+  }
+
+  .topbar-collapse {
+    display: none;
+  }
+
+  .topbar.mobile-menu-open .topbar-collapse {
+    display: flex;
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    top: calc(var(--topbar-h) + 8px);
+    bottom: calc(var(--mobile-dock-h, 0px) + 10px);
+    max-height: none;
+    z-index: 95;
+  }
+
+  .topbar-strip-actions {
+    margin-left: auto;
+  }
+
+  .topbar-strip-actions .user-display-name {
+    display: none;
+  }
+
+  .topbar-strip-actions .user-menu-trigger {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+  }
+
+  .topbar-strip-actions .user-menu .ide-menu-items {
+    right: 0;
+    left: auto;
+  }
+
+  .app-brand {
+    padding-right: 0;
+    margin-right: 0;
+    border-right: none;
+  }
+
+  .app-logo-img {
+    width: 28px;
+  }
+
+  .app-brand-name {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .tabs {
+    display: none;
+  }
+}
+
 @media (max-width: 760px) {
   .topbar-menu-strip {
     padding: 0 8px;
     gap: 8px;
+  }
+
+  .workspace.has-modeling-bar {
+    --modeling-bar-h: 64px;
+  }
+
+  .modeling-context-bar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding-block: 4px;
+    gap: 4px 8px;
+    min-height: 64px;
+  }
+
+  .validation-status-chip {
+    margin-left: auto;
   }
 
   .app-brand-subtitle,
@@ -790,7 +904,7 @@ html.light .tab.active {
 
 @media (max-width: 760px) {
   .workspace.has-modeling-bar {
-    --modeling-bar-h: 72px;
+    --modeling-bar-h: 64px;
   }
 
   .modeling-context-bar {
@@ -798,7 +912,7 @@ html.light .tab.active {
     align-items: flex-start;
     padding-block: 4px;
     gap: 4px 8px;
-    min-height: 72px;
+    min-height: 64px;
   }
 
   .validation-status-chip {

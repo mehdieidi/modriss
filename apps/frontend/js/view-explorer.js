@@ -12,6 +12,7 @@ import {
 } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
 import { isModelingLevel, modelingLevelConfig } from "./modeling-config-data.js";
+import { syncMobileDockState } from "./mobile-ui.js";
 import {
   activeCanvasFocus,
   canvasFocusLabel,
@@ -574,11 +575,11 @@ function setTreeOpen(open, mode = modelTreeMode) {
     el.workspace?.classList.remove("attr-open", "impact-open", "mobile-right-open");
     if (window.innerWidth <= 920) {
       el.workspace?.classList.add("mobile-right-open");
-      el.mobileBackdrop?.classList.remove("hidden");
     }
+    syncMobileDockState();
   } else {
     el.workspace?.classList.remove("mobile-right-open");
-    el.mobileBackdrop?.classList.add("hidden");
+    syncMobileDockState();
   }
   renderModelTree();
 }

@@ -23,7 +23,10 @@ export function websocketUrl(path) {
 
 export const CHAT_ATTACHMENT_MAX_BYTES = 300000;
 export const LOG_HINT = "See backend logs (default path: logs/backend.log)";
-export const MOBILE_BREAKPOINT = 768;
+export const MOBILE_BREAKPOINT = 920;
+export const TABLET_BREAKPOINT = 1100;
+export const COMPACT_BREAKPOINT = 760;
+export const PHONE_BREAKPOINT = 560;
 export const TOUCH_MOVE_THRESHOLD = 6;
 
 export const MODEL_TYPES = {};
