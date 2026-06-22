@@ -47,6 +47,7 @@ import {
   showProjectDialog,
 } from "./project.js";
 import { setError, setStatus } from "./status.js";
+import { formatUserError } from "./errors.js";
 import { CHAT_ATTACHMENT_MAX_BYTES } from "./config.js";
 import { isMobileViewport } from "./responsive.js";
 import { ensureAuthenticated, logout, updateDisplayName } from "./auth.js";
@@ -206,7 +207,7 @@ function showProfileDialog() {
       setStatus("Profile updated");
     } catch (error) {
       if (el.profileError) {
-        el.profileError.textContent = error.message || "Failed to update profile";
+        el.profileError.textContent = formatUserError(error);
         el.profileError.classList.remove("hidden");
       }
       setBusy(false);
@@ -630,7 +631,7 @@ function bindEvents() {
       try {
         await undoLastEdit();
       } catch (error) {
-        setError(`Undo failed: ${error.message}`);
+        setError(error, { prefix: "Undo failed." });
       }
     });
   }
@@ -651,7 +652,7 @@ function bindEvents() {
       try {
         await exportActiveModel("json");
       } catch (error) {
-        setError(`Export failed: ${error.message}`);
+        setError(error, { prefix: "Export failed." });
       }
     });
   }
@@ -660,7 +661,7 @@ function bindEvents() {
       try {
         await exportActiveModel("xmi");
       } catch (error) {
-        setError(`Export failed: ${error.message}`);
+        setError(error, { prefix: "Export failed." });
       }
     });
   }
@@ -700,7 +701,7 @@ function bindEvents() {
       try {
         await importActiveModel(file, format, type);
       } catch (error) {
-        setError(`Import failed: ${error.message}`);
+        setError(error, { prefix: "Import failed." });
       } finally {
         event.target.value = "";
         delete event.target.dataset.importFormat;
@@ -781,7 +782,7 @@ function bindEvents() {
       }
     } catch (error) {
       if (key === "z") {
-        setError(`Undo failed: ${error.message}`);
+        setError(error, { prefix: "Undo failed." });
       }
     }
   });
@@ -896,7 +897,9 @@ function bindEvents() {
     syncChatOpenState();
     if (willOpen) {
       syncExpandedChatBounds();
-      prepareChatWindow().catch((error) => setStatus(`Chat setup failed: ${error.message}`));
+      prepareChatWindow().catch((error) =>
+        setStatus(error, { prefix: "Chat setup failed.", error: true }),
+      );
       el.chatInput.focus();
     } else {
       setChatExpanded(false);
@@ -934,13 +937,13 @@ function bindEvents() {
 
   el.chatHistoryBtn?.addEventListener("click", () => {
     toggleChatHistoryPanel().catch((error) => {
-      setError(`Chat history failed: ${error.message}`);
+      setError(error, { prefix: "Chat history failed." });
     });
   });
   el.chatHistoryCloseBtn?.addEventListener("click", closeChatHistoryPanel);
   el.chatNewBtn?.addEventListener("click", () => {
     startNewChatConversation().catch((error) => {
-      setError(`New conversation failed: ${error.message}`);
+      setError(error, { prefix: "New conversation failed." });
     });
   });
 
@@ -981,7 +984,7 @@ function bindEvents() {
       state.chat.attachment = null;
       event.target.value = "";
       updateChatAttachmentLabel();
-      setError(`Failed to read file: ${error.message}`);
+      setError(error, { prefix: "Failed to read file." });
     }
   });
 
@@ -1080,7 +1083,5 @@ async function init() {
 
 init().catch((error) => {
   console.error("Application initialization failed", error);
-  setError(
-    `Application initialization failed: ${error.message}. Check backend logs and /api/modeling/config.`,
-  );
+  setError(error, { prefix: "Application initialization failed." });
 });

@@ -4,6 +4,7 @@ import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
 import { flushCurrentModelPatch } from "./model-patch.js";
 import { setBusy, setError, setStatus } from "./status.js";
+import { formatUserError } from "./errors.js";
 import { emptyDiagram, genId } from "./utils.js";
 import { serializeModel } from "./diagram.js";
 import {
@@ -542,7 +543,7 @@ export async function reloadModels() {
     const records = await api(`/${MODEL_TYPES[state.activeType].apiType}${projectParam}`);
     state.modelsCache[state.activeType] = records;
   } catch (error) {
-    setError(`Load failed: ${error.message}`);
+    setError(error, { prefix: "Load failed." });
   }
 }
 
@@ -656,8 +657,8 @@ export async function saveCurrentModel({ rethrow = false, quiet = false } = {}) 
       applyValidationIssues(error.issues, { openOnFirst: !quiet });
     }
     if (!quiet) {
-      failModelSave(`Save failed: ${error.message}`);
-      setError(`Save failed: ${error.message}`);
+      failModelSave(formatUserError(error, { prefix: "Save failed." }));
+      setError(error, { prefix: "Save failed." });
     } else {
       markModelDirty();
     }
@@ -1288,7 +1289,7 @@ async function executeConfiguredTransformation(transformation) {
             severity: "ERROR",
             constraint: "GenerationError",
             issueClass: "SYSTEM_ERROR",
-            message: error.message || transformation.errorMessage || "Generation failed.",
+            message: formatUserError(error) || transformation.errorMessage || "Generation failed.",
             guidance:
               "Automatic generation was interrupted. Review highlighted items and continue with manual refinement.",
           },
@@ -1297,7 +1298,7 @@ async function executeConfiguredTransformation(transformation) {
       );
       toggleValidationDrawer(true);
     }
-    setError(`Generation failed: ${error.message}`);
+    setError(error, { prefix: "Generation failed." });
   } finally {
     hideGenerationProgress();
   }
@@ -1476,7 +1477,7 @@ export async function validateCurrentModel() {
       setStatus("Validation completed with issues.");
       return;
     }
-    setError(`Validation failed: ${error.message}`);
+    setError(error, { prefix: "Validation failed." });
   } finally {
     setValidationInProgress(false);
   }
@@ -1616,7 +1617,7 @@ async function runAutoLayoutCurrentDiagram({
       throw error;
     }
     if (status) {
-      setError(`Auto layout failed: ${error.message}`);
+      setError(error, { prefix: "Auto layout failed." });
     }
   } finally {
     if (progress) {
@@ -1990,7 +1991,7 @@ if (!locateIssueTargetBound) {
       await setManualTaskResolved(manualTaskId, resolved);
       setStatus(resolved ? "Manual task marked resolved." : "Manual task moved back to open.");
     } catch (error) {
-      setError(`Failed to update manual task: ${error.message}`);
+      setError(error, { prefix: "Failed to update manual task." });
     }
   });
 }

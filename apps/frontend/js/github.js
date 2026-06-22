@@ -3,6 +3,7 @@ import { el } from "./dom.js";
 import { api, isPlannedFeatureError } from "./api.js";
 import { backendOrigin } from "./config.js";
 import { setError, setStatus } from "./status.js";
+import { formatUserError } from "./errors.js";
 
 const OAUTH_MESSAGE_SOURCE = "modless-github-oauth";
 const OAUTH_POPUP_TIMEOUT_MS = 180000;
@@ -115,7 +116,7 @@ export async function refreshGithubConnection() {
     state.github.selectedRepository = "";
     state.github.selectedBranch = "";
     state.github.lastDeploymentStatus = "ERROR";
-    state.github.lastDeploymentMessage = error.message;
+    state.github.lastDeploymentMessage = formatUserError(error);
     renderGithubPanel();
     return false;
   }
@@ -253,9 +254,9 @@ export async function deployToGithubFromArtifacts() {
       return;
     }
     state.github.lastDeploymentStatus = "ERROR";
-    state.github.lastDeploymentMessage = error.message || "GitHub deployment failed";
+    state.github.lastDeploymentMessage = formatUserError(error);
     renderGithubPanel();
-    setError(`GitHub deployment failed: ${error.message}`);
+    setError(error, { prefix: "GitHub deployment failed." });
   } finally {
     setDeployButtonBusy(false);
     await refreshGithubConnection();

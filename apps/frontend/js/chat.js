@@ -1,6 +1,7 @@
 import { state } from "./state.js";
 import { el } from "./dom.js";
 import { api, isPlannedFeatureError } from "./api.js";
+import { formatUserError } from "./errors.js";
 import { setError, setStatus } from "./status.js";
 import { apiUrl, MODEL_TYPES, websocketUrl } from "./config.js";
 import { toDiagram } from "./diagram.js";
@@ -525,7 +526,7 @@ function renderChatHistoryList(conversations) {
     item.append(title, preview, meta);
     item.addEventListener("click", () => {
       resumeChatConversation(conversation.sessionId).catch((error) => {
-        setError(`Could not open conversation: ${error.message}`);
+        setError(error, { prefix: "Could not open conversation." });
       });
     });
     el.chatHistoryList.appendChild(item);
@@ -560,7 +561,7 @@ export async function toggleChatHistoryPanel() {
     el.chatHistoryList.replaceChildren();
     const failure = document.createElement("div");
     failure.className = "chat-history-empty";
-    failure.textContent = `Could not load history: ${error.message}`;
+    failure.textContent = formatUserError(error, { prefix: "Could not load history." });
     el.chatHistoryList.appendChild(failure);
   }
 }
@@ -1048,7 +1049,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
             endChatActivity("Could not apply the changes.", "FAILED");
           }
           setProposalActionsDisabled(actions, false);
-          appendChat("assistant", `Error: ${error.message}`);
+          appendChat("assistant", formatUserError(error));
         }
       });
       actions.appendChild(approve);
@@ -1078,7 +1079,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
           endChatActivity("Could not record your decision.", "FAILED");
         }
         setProposalActionsDisabled(actions, false);
-        appendChat("assistant", `Error: ${error.message}`);
+        appendChat("assistant", formatUserError(error));
       }
     });
     actions.appendChild(reject);
@@ -1104,7 +1105,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
           endChatActivity("Could not undo the changes.", "FAILED");
         }
         setProposalActionsDisabled(actions, false);
-        appendChat("assistant", `Error: ${error.message}`);
+        appendChat("assistant", formatUserError(error));
       }
     });
     actions.appendChild(undo);
@@ -1270,7 +1271,7 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
       for (const input of form.querySelectorAll("input, textarea")) {
         input.disabled = false;
       }
-      appendChat("assistant", `Error: ${error.message}`);
+      appendChat("assistant", formatUserError(error));
     }
   });
   bubble.appendChild(form);
@@ -1419,8 +1420,8 @@ export async function sendChatMessage() {
     if (chatBusyDepth > 0) {
       endChatActivity("Could not complete the request.", "FAILED");
     }
-    appendChat("assistant", `Error: ${error.message}`);
-    setError(`Chat failed: ${error.message}`);
+    appendChat("assistant", formatUserError(error));
+    setError(error, { prefix: "Chat failed." });
   } finally {
     el.chatSendBtn.disabled = false;
   }

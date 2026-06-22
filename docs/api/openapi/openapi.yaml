@@ -1274,7 +1274,7 @@ components:
   schemas:
     ApiErrorResponse:
       type: object
-      required: [message, status, timestamp, issues]
+      required: [message, status, timestamp, issues, errorId]
       properties:
         message:
           type: string
@@ -1286,6 +1286,9 @@ components:
         issues:
           type: array
           items: {}
+        errorId:
+          type: string
+          description: Correlation id for support and log lookup
     HealthResponse:
       type: object
       required: [status, service, timestamp]

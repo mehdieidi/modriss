@@ -225,9 +225,7 @@ export async function loadModelingConfig({ silent = false } = {}) {
     state.modelingConfig.error = error;
     if (!silent) {
       console.error("Modeling config load failed", error);
-      setError(
-        `Backend modeling config unavailable: ${error.message}. Check backend logs and /api/modeling/config.`,
-      );
+      setError(error, { prefix: "Backend modeling config unavailable." });
     }
     throw error;
   }

@@ -3,9 +3,12 @@ package io.mehdieidi.modless.backend.api;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,6 +19,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 public class GlobalExceptionHandler {
 
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+  private static final String REQUEST_ID_MDC_KEY = "requestId";
 
   /**
    * Maps a platform kernel failure to its declared HTTP status.
@@ -26,12 +30,11 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(PlatformException.class)
   ResponseEntity<ApiErrorResponse> platform(PlatformException ex) {
     if (ex.status() >= 500) {
-      log.error("Platform error: {}", ex.getMessage(), ex);
+      log.error("Platform error [{}]: {}", errorId(), ex.getMessage(), ex);
     } else {
-      log.warn("Request rejected: {}", ex.getMessage());
+      log.warn("Request rejected [{}]: {}", errorId(), ex.getMessage());
     }
-    return ResponseEntity.status(ex.status())
-        .body(new ApiErrorResponse(ex.getMessage(), ex.status(), Instant.now(), List.of()));
+    return ResponseEntity.status(ex.status()).body(error(ex.status(), ex.getMessage(), List.of()));
   }
 
   /**
@@ -46,8 +49,7 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getFieldErrors().stream()
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
             .toList();
-    return ResponseEntity.badRequest()
-        .body(new ApiErrorResponse("Request validation failed.", 400, Instant.now(), issues));
+    return ResponseEntity.badRequest().body(error(400, "Request validation failed.", issues));
   }
 
   /**
@@ -58,9 +60,8 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(NoResourceFoundException.class)
   ResponseEntity<ApiErrorResponse> missingResource(NoResourceFoundException ex) {
-    log.warn("Route not found: {}", ex.getResourcePath());
-    return ResponseEntity.status(404)
-        .body(new ApiErrorResponse("Resource not found.", 404, Instant.now(), List.of()));
+    log.warn("Route not found [{}]: {}", errorId(), ex.getResourcePath());
+    return ResponseEntity.status(404).body(error(404, "Resource not found.", List.of()));
   }
 
   /**
@@ -71,8 +72,37 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(Exception.class)
   ResponseEntity<ApiErrorResponse> unexpected(Exception ex) {
-    log.error("Unhandled backend exception", ex);
+    log.error("Unhandled backend exception [{}]", errorId(), ex);
     return ResponseEntity.internalServerError()
-        .body(new ApiErrorResponse("Unexpected backend error.", 500, Instant.now(), List.of()));
+        .body(error(500, "An unexpected server error occurred.", List.of()));
+  }
+
+  private ApiErrorResponse error(int status, String detailMessage, List<?> issues) {
+    return new ApiErrorResponse(
+        clientMessage(status, detailMessage), status, Instant.now(), issues, errorId());
+  }
+
+  private String clientMessage(int status, String detailMessage) {
+    if (exposeDetailMessage(status)) {
+      return detailMessage;
+    }
+    return genericServerMessage(status);
+  }
+
+  private boolean exposeDetailMessage(int status) {
+    return status < 500 || status == 501;
+  }
+
+  private String genericServerMessage(int status) {
+    return switch (status) {
+      case 502 -> "A backend integration failed.";
+      case 503 -> "The service is temporarily unavailable.";
+      default -> "An unexpected server error occurred.";
+    };
+  }
+
+  private String errorId() {
+    String requestId = MDC.get(REQUEST_ID_MDC_KEY);
+    return StringUtils.hasText(requestId) ? requestId : UUID.randomUUID().toString();
   }
 }

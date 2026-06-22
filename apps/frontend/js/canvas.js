@@ -2371,7 +2371,7 @@ export function renderPalette() {
         : modelingPalette(state.activeType);
     } catch (error) {
       console.error("Palette rendering failed", error);
-      setStatus(error.message || "Backend modeling config is unavailable");
+      setStatus(error, { prefix: "Backend modeling config is unavailable.", error: true });
       allTypes = [];
     }
   } else {

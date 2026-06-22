@@ -2,6 +2,7 @@ import { state } from "./state.js";
 import { el } from "./dom.js";
 import { api, apiAuthHeaders } from "./api.js";
 import { setBusy, setError, setStatus } from "./status.js";
+import { formatUserError } from "./errors.js";
 import { emptyDiagram, escapeHtml } from "./utils.js";
 import { toDiagram } from "./diagram.js";
 import { renderDiagram, renderPalette, resetCanvasView } from "./canvas.js";
@@ -93,7 +94,7 @@ export function bindProjectDialogActions() {
         const fullProject = await api(`/projects/${projectId}`);
         await loadProject(fullProject);
       } catch (error) {
-        setError(`Failed to load project: ${error.message}`);
+        setError(error, { prefix: "Failed to load project." });
       }
     });
   }
@@ -226,7 +227,7 @@ async function saveProjectName() {
     setStatus(`Project renamed to "${updated?.name || name}"`);
   } catch (error) {
     if (el.projectNameError) {
-      el.projectNameError.textContent = error.message;
+      el.projectNameError.textContent = formatUserError(error);
       el.projectNameError.classList.remove("hidden");
     }
   } finally {
@@ -410,7 +411,7 @@ export async function loadProject(project) {
     setStatus(`Project "${projectName}" loaded`);
     updateModelSaveUi();
   } catch (error) {
-    setError(`Failed to load project: ${error.message}`);
+    setError(error, { prefix: "Failed to load project." });
   }
 }
 
@@ -483,7 +484,7 @@ export async function deleteCurrentProject() {
     await showProjectDialog();
     setStatus(`Deleted project "${projectName}"`);
   } catch (error) {
-    setError(`Failed to delete project: ${error.message}`);
+    setError(error, { prefix: "Failed to delete project." });
   }
 }
 
@@ -537,7 +538,7 @@ export async function downloadCurrentProject() {
     URL.revokeObjectURL(objectUrl);
     setStatus(`Downloaded project: ${filename}`);
   } catch (error) {
-    setError(`Project download failed: ${error.message}`);
+    setError(error, { prefix: "Project download failed." });
   }
 }
 

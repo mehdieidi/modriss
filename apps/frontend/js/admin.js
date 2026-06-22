@@ -140,7 +140,7 @@ export async function openAdminFile(path) {
     el.adminSaveFileBtn.textContent = "Save File";
     setStatus(`Opened: ${response.path}`);
   } catch (error) {
-    setError(`Open failed: ${error.message}`);
+    setError(error, { prefix: "Open failed." });
   }
 }
 
@@ -166,7 +166,7 @@ export async function saveAdminFile() {
     el.adminSaveFileBtn.textContent = "Save File";
     setStatus(`Saved: ${state.admin.activeFile}`);
   } catch (error) {
-    setError(`Save failed: ${error.message}`);
+    setError(error, { prefix: "Save failed." });
   }
 }
 
@@ -178,7 +178,7 @@ export async function reloadAdminEntries() {
     await loadEntries();
     setStatus("Admin workspace refreshed");
   } catch (error) {
-    setError(`Reload failed: ${error.message}`);
+    setError(error, { prefix: "Reload failed." });
   }
 }
 
@@ -211,7 +211,7 @@ export async function initAdminWorkspace() {
       setStatus("Admin workspace is not available in this backend build.");
       return;
     }
-    setError(`Admin init failed: ${error.message}`);
+    setError(error, { prefix: "Admin init failed." });
   }
 }
 
@@ -256,7 +256,7 @@ export async function createAdminFile() {
     await reloadAdminEntries();
     await openAdminFile(path);
   } catch (error) {
-    setError(`Create file failed: ${error.message}`);
+    setError(error, { prefix: "Create file failed." });
   }
 }
 
@@ -280,7 +280,7 @@ export async function createAdminDirectory() {
     });
     await reloadAdminEntries();
   } catch (error) {
-    setError(`Create folder failed: ${error.message}`);
+    setError(error, { prefix: "Create folder failed." });
   }
 }
 
@@ -314,7 +314,7 @@ export async function renameAdminEntry() {
     }
     await reloadAdminEntries();
   } catch (error) {
-    setError(`Rename failed: ${error.message}`);
+    setError(error, { prefix: "Rename failed." });
   }
 }
 
@@ -345,6 +345,6 @@ export async function deleteAdminEntry() {
     }
     await reloadAdminEntries();
   } catch (error) {
-    setError(`Delete failed: ${error.message}`);
+    setError(error, { prefix: "Delete failed." });
   }
 }

@@ -1,16 +1,7 @@
-import { apiUrl, LOG_HINT } from "./config.js";
+import { apiUrl } from "./config.js";
+import { ApiError, buildUserMessage, isServerErrorStatus } from "./errors.js";
 
-export class ApiError extends Error {
-  constructor(message, { status = 0, path = "", method = "GET", issues = [] } = {}) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.path = path;
-    this.method = method;
-    this.issues = Array.isArray(issues) ? issues : [];
-    this.featureUnavailable = status === 501;
-  }
-}
+export { ApiError, isPlannedFeatureError } from "./errors.js";
 
 export function apiAuthHeaders(extraHeaders = {}) {
   const token = window.localStorage.getItem("modless.authToken");
@@ -64,15 +55,18 @@ export async function api(path, options = {}) {
     headers: buildHeaders(options.headers || {}, body),
   });
   if (!response.ok) {
-    let message = `HTTP ${response.status}`;
+    const method = (options.method || "GET").toUpperCase();
+    let message = `Request failed (${response.status}).`;
     let issues = [];
+    let errorId = response.headers.get("X-Request-Id") || "";
     try {
       const contentType = response.headers.get("content-type") || "";
       if (contentType.includes("application/json")) {
-        const body = await response.json();
-        message = body.message || message;
-        issues = Array.isArray(body.issues) ? body.issues : [];
-      } else {
+        const payload = await response.json();
+        message = payload.message || message;
+        issues = Array.isArray(payload.issues) ? payload.issues : [];
+        errorId = payload.errorId || errorId;
+      } else if (!isServerErrorStatus(response.status)) {
         const text = (await response.text()).trim();
         if (text) {
           message = text;
@@ -81,17 +75,16 @@ export async function api(path, options = {}) {
     } catch {
       // keep generic error message
     }
-    const method = (options.method || "GET").toUpperCase();
-    throw new ApiError(`${method} ${path} failed: ${message} (${LOG_HINT})`, {
+    const userMessage = buildUserMessage(response.status, message, issues, errorId);
+    throw new ApiError(userMessage, {
       status: response.status,
       path,
       method,
       issues,
+      errorId,
     });
   }
   return readResponseBody(response);
 }
 
-export function isPlannedFeatureError(error) {
-  return error instanceof ApiError && error.featureUnavailable;
-}
+export { apiUrl };

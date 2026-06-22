@@ -1,4 +1,5 @@
 import { el } from "./dom.js";
+import { formatUserError } from "./errors.js";
 
 const TOAST_TTL_MS = 4600;
 let toastHost = null;
@@ -137,9 +138,12 @@ export function hideProgressNotification({ delayMs = 0 } = {}) {
 }
 
 // ── Status bar helpers ─────────────────────────────────────────────────────────
-export function setStatus(message, { busy = false, error = false } = {}) {
+export function setStatus(messageOrError, { busy = false, error = false, prefix = "" } = {}) {
   void el;
-  const text = String(message || "").trim();
+  const text =
+    messageOrError instanceof Error
+      ? formatUserError(messageOrError, { prefix })
+      : String(messageOrError || "").trim();
   if (!text) {
     return;
   }
@@ -187,6 +191,10 @@ export function setBusy(message) {
   setStatus(message, { busy: true });
 }
 
-export function setError(message) {
-  setStatus(message, { error: true });
+export function setError(messageOrError, options = {}) {
+  const text =
+    messageOrError instanceof Error
+      ? formatUserError(messageOrError, options)
+      : String(messageOrError || "").trim();
+  setStatus(text, { error: true });
 }

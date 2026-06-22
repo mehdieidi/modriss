@@ -107,7 +107,7 @@ export async function fetchImpact(elementId) {
       renderImpactPanel(null);
       return;
     }
-    setStatus(`Impact analysis failed: ${error.message}`);
+    setStatus(error, { prefix: "Impact analysis failed.", error: true });
     renderImpactPanel(null);
   }
 }
@@ -495,7 +495,7 @@ function wireActionButtons() {
           }
           setStatus(`Navigated to ${modelType.toUpperCase()} model`);
         } catch (error) {
-          setStatus(`Navigation failed: ${error.message}`);
+          setStatus(error, { prefix: "Navigation failed.", error: true });
         }
         return;
       }
@@ -516,7 +516,7 @@ function wireActionButtons() {
           renderImpactPanel(artifactImpact);
           setStatus("Artifact opened with upstream impact lineage");
         } catch (error) {
-          setStatus(`Artifact navigation failed: ${error.message}`);
+          setStatus(error, { prefix: "Artifact navigation failed.", error: true });
         }
         return;
       }
@@ -539,7 +539,7 @@ function wireActionButtons() {
           renderImpactPanel(fileImpact);
           setStatus(`Opened ${filePath} with impact lineage`);
         } catch (error) {
-          setStatus(`File impact navigation failed: ${error.message}`);
+          setStatus(error, { prefix: "File impact navigation failed.", error: true });
         }
       }
     });

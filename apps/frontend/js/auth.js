@@ -1,6 +1,7 @@
 import { state } from "./state.js";
 import { el } from "./dom.js";
 import { api } from "./api.js";
+import { formatUserError } from "./errors.js";
 
 const AUTH_TOKEN_KEY = "modless.authToken";
 
@@ -195,7 +196,7 @@ async function showAuthDialog() {
       try {
         payload = validateAuthForm(mode);
       } catch (error) {
-        showAuthError(error.message);
+        showAuthError(formatUserError(error));
         return;
       }
       try {
@@ -222,7 +223,7 @@ async function showAuthDialog() {
         });
         resolveSession(result);
       } catch (error) {
-        showAuthError(error.message || "Authentication failed");
+        showAuthError(formatUserError(error));
         setBusy(false);
       }
     };

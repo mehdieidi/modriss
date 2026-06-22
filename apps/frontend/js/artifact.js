@@ -482,7 +482,7 @@ export async function initArtifactEditor() {
     attachMonacoListeners();
     resetArtifactEditor();
   } catch (error) {
-    setStatus(`Editor setup failed: ${error.message}`);
+    setStatus(error, { prefix: "Editor setup failed.", error: true });
   }
 }
 
@@ -559,7 +559,7 @@ export async function loadArtifactById(id, { collapseTree = true } = {}) {
       }
     }
   } catch (error) {
-    setStatus(`Failed to load artifact: ${error.message}`);
+    setStatus(error, { prefix: "Failed to load artifact.", error: true });
   }
 }
 
@@ -587,7 +587,7 @@ export async function loadCurrentProjectArtifact(options = {}) {
     return record;
   } catch (error) {
     clearArtifactState();
-    setStatus(`Failed to load artifact: ${error.message}`);
+    setStatus(error, { prefix: "Failed to load artifact.", error: true });
     return null;
   }
 }
@@ -643,7 +643,7 @@ export async function openArtifactFile(filePath) {
     syncArtifactEditorStatusBar();
     setStatus(`Opened: ${filePath}`);
   } catch (error) {
-    setStatus(`Failed to open file: ${error.message}`);
+    setStatus(error, { prefix: "Failed to open file.", error: true });
   }
 }
 
@@ -660,7 +660,7 @@ export async function saveCurrentFile() {
     setArtifactDirty(false);
     setStatus(`Saved: ${state.artifact.activeFile}`);
   } catch (error) {
-    setStatus(`Save failed: ${error.message}`);
+    setStatus(error, { prefix: "Save failed.", error: true });
   }
 }
 
@@ -686,6 +686,6 @@ export async function downloadCurrentArtifact() {
     link.click();
     URL.revokeObjectURL(objectUrl);
   } catch (error) {
-    setStatus(`Download failed: ${error.message}`);
+    setStatus(error, { prefix: "Download failed.", error: true });
   }
 }
