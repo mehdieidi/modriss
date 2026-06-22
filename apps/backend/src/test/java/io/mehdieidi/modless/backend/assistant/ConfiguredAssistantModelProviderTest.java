@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import org.junit.jupiter.api.Test;
 

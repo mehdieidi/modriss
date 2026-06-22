@@ -6,6 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
+import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
+import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;

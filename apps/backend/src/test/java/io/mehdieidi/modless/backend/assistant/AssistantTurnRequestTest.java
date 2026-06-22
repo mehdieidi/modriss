@@ -2,6 +2,7 @@ package io.mehdieidi.modless.backend.assistant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

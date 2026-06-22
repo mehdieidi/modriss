@@ -1,6 +1,8 @@
 package io.mehdieidi.modless.backend.assistant;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantRealtimeEvent;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantRealtimePublisher;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,7 +13,7 @@ import org.springframework.web.socket.WebSocketSession;
 
 /** Fan-out hub for assistant realtime events across websocket and SSE transports. */
 @Service
-public class AssistantRealtimeHub {
+public class AssistantRealtimeHub implements AssistantRealtimePublisher {
 
   private final ObjectMapper mapper;
   private final ConcurrentHashMap<String, Set<SseEmitter>> emitters = new ConcurrentHashMap<>();

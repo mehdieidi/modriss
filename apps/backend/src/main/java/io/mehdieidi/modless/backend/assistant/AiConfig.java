@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
 import java.net.Proxy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +14,12 @@ import org.springframework.web.client.RestClient;
 @Configuration
 @EnableConfigurationProperties(AiProperties.class)
 public class AiConfig {
+
+  @Bean
+  @Primary
+  AssistantSettings assistantSettings(AiProperties properties) {
+    return properties;
+  }
 
   /**
    * Selects the configured provider while keeping orchestrator code provider-neutral.

@@ -3,6 +3,10 @@ package io.mehdieidi.modless.backend.assistant;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
+import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
+import io.mehdieidi.modless.platform.assistant.planning.AssistantClarificationGate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

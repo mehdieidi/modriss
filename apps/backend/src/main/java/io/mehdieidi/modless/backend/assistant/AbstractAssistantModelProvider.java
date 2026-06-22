@@ -1,5 +1,13 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
+import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
+import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
+import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
+import io.mehdieidi.modless.platform.assistant.planning.AssistantTurnPlanParser;
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.List;
 import java.util.stream.Collectors;

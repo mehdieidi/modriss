@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.domain.AssistantReadyPayload;
 import java.net.URI;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;

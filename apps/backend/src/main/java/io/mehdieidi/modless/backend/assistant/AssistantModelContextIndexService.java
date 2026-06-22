@@ -2,6 +2,13 @@ package io.mehdieidi.modless.backend.assistant;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantValidationSummary;
+import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.AssistantModelContext;
+import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.ContextElement;
+import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.ContextRelationship;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantModelContextIndex;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import io.mehdieidi.modless.platform.model.domain.ModelRecord;
@@ -23,7 +30,7 @@ import org.springframework.stereotype.Service;
 
 /** Produces a compact, stable model context for assistant prompts and proposal previews. */
 @Service
-public class AssistantModelContextIndexService {
+public class AssistantModelContextIndexService implements AssistantModelContextIndex {
 
   private static final Set<String> STRUCTURAL_ONLY_TYPES =
       Set.of("PIMModel", "CIMModel", "PSMModel", "ImplementationProfile");
@@ -159,7 +166,7 @@ public class AssistantModelContextIndexService {
    */
   public String focusContext(
       AssistantModelContext context,
-      List<String> selectedIds,
+      java.util.Collection<String> selectedIds,
       AssistantMetamodelSchemaService schemas) {
     if (selectedIds == null || selectedIds.isEmpty()) {
       return "";
@@ -425,58 +432,4 @@ public class AssistantModelContextIndexService {
       throw new IllegalStateException("Could not hash model context.", ex);
     }
   }
-
-  /**
-   * Compact assistant model context.
-   *
-   * @param modelId model ID
-   * @param projectId project ID
-   * @param level model level
-   * @param modelName model name
-   * @param revision revision
-   * @param elements stable elements
-   * @param relationships stable relationships
-   * @param neighborhoods adjacency map
-   * @param validationIssues latest validation issues
-   */
-  public record AssistantModelContext(
-      String modelId,
-      String projectId,
-      ModelLevel level,
-      String modelName,
-      long revision,
-      List<ContextElement> elements,
-      List<ContextRelationship> relationships,
-      Map<String, List<String>> neighborhoods,
-      List<AssistantValidationSummary.Issue> validationIssues) {
-
-    public AssistantModelContext {
-      elements = elements == null ? List.of() : List.copyOf(elements);
-      relationships = relationships == null ? List.of() : List.copyOf(relationships);
-      neighborhoods = neighborhoods == null ? Map.of() : Map.copyOf(neighborhoods);
-      validationIssues = validationIssues == null ? List.of() : List.copyOf(validationIssues);
-    }
-  }
-
-  /**
-   * Compact model element index entry.
-   *
-   * @param id stable element ID
-   * @param type element type
-   * @param name element name
-   * @param path JSON path
-   */
-  public record ContextElement(String id, String type, String name, String path) {}
-
-  /**
-   * Compact relationship index entry.
-   *
-   * @param id stable relationship ID
-   * @param sourceId source ID
-   * @param targetId target ID
-   * @param kind relationship kind
-   * @param path JSON path
-   */
-  public record ContextRelationship(
-      String id, String sourceId, String targetId, String kind, String path) {}
 }

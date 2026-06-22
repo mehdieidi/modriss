@@ -17,7 +17,20 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import io.mehdieidi.modless.backend.observability.ModlessMetrics;
+import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
+import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
+import io.mehdieidi.modless.platform.assistant.application.AssistantValidationFeedbackResolver;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState;
+import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
+import io.mehdieidi.modless.platform.assistant.planning.AssistantClarificationGate;
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantMetrics;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
@@ -52,7 +65,7 @@ class AssistantOrchestratorTest {
   private final AssistantToolService tools =
       new AssistantToolService(
           catalogs, new AssistantPatchCompiler(), schemas, models, new ObjectMapper());
-  private final ModlessMetrics metrics = mock(ModlessMetrics.class);
+  private final AssistantMetrics metrics = mock(AssistantMetrics.class);
   private final AssistantPatchCompleter patchCompleter = new AssistantPatchCompleter(schemas);
   private final AssistantValidationFeedbackResolver feedbackResolver =
       new AssistantValidationFeedbackResolver(schemas);

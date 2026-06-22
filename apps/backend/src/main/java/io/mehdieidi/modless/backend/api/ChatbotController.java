@@ -3,12 +3,12 @@ package io.mehdieidi.modless.backend.api;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.modless.backend.assistant.AssistantCatalogService;
-import io.mehdieidi.modless.backend.assistant.AssistantChoice;
-import io.mehdieidi.modless.backend.assistant.AssistantOrchestrator;
-import io.mehdieidi.modless.backend.assistant.AssistantProposal;
-import io.mehdieidi.modless.backend.assistant.AssistantReadyPayload;
 import io.mehdieidi.modless.backend.assistant.AssistantRealtimeHub;
-import io.mehdieidi.modless.backend.assistant.AssistantSessionStore;
+import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantProposal;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantReadyPayload;
+import io.mehdieidi.modless.platform.assistant.session.AssistantSessionStore;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -395,7 +395,7 @@ public class ChatbotController {
       JsonNode model,
       AssistantProposal proposal,
       List<AssistantChoice> choices,
-      io.mehdieidi.modless.backend.assistant.AssistantWorkflowState workflowState,
+      io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState workflowState,
       ActivityResponse activity) {}
 
   /**
@@ -408,7 +408,7 @@ public class ChatbotController {
   public record ActivityResponse(
       String stage,
       String message,
-      io.mehdieidi.modless.backend.assistant.AssistantWorkflowState workflowState) {}
+      io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState workflowState) {}
 
   /**
    * Durable thread snapshot.
@@ -422,9 +422,10 @@ public class ChatbotController {
   public record ThreadResponse(
       List<ThreadMessageResponse> messages,
       List<AssistantChoice> pendingChoices,
-      io.mehdieidi.modless.backend.assistant.AssistantWorkflowState workflowState,
+      io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState workflowState,
       AssistantProposal proposal,
-      io.mehdieidi.modless.backend.assistant.AssistantModelProvider.AssistantProviderMetadata
+      io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider
+              .AssistantProviderMetadata
           provider) {}
 
   /** One durable thread message. */

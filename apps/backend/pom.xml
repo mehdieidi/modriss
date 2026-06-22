@@ -25,6 +25,14 @@
 
   <dependencies>
     <dependency>
+      <artifactId>platform-assistant</artifactId>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>platform-export</artifactId>
+      <groupId>${project.groupId}</groupId>
+    </dependency>
+    <dependency>
       <artifactId>platform-kernel</artifactId>
       <groupId>${project.groupId}</groupId>
     </dependency>

@@ -2,6 +2,12 @@ package io.mehdieidi.modless.backend.assistant;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
+import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import java.io.InputStream;
 import java.util.ArrayList;

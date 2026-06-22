@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
 import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimePaths;
 import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
@@ -21,7 +23,7 @@ import org.springframework.stereotype.Service;
 
 /** Builds and queries compact metamodel and EVL catalogs for assistant retrieval. */
 @Service
-public class AssistantCatalogService {
+public class AssistantCatalogService implements AssistantCatalog {
 
   private static final String INDEX_FORMAT_VERSION = "2";
 

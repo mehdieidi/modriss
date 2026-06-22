@@ -188,6 +188,16 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
+        <artifactId>platform-assistant</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <artifactId>platform-export</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
         <artifactId>mde-etl-runner</artifactId>
         <groupId>${project.groupId}</groupId>
         <version>${project.version}</version>
@@ -223,6 +233,8 @@
     <module>packages/java/platform-project</module>
     <module>packages/java/platform-modeling</module>
     <module>packages/java/platform-model</module>
+    <module>packages/java/platform-assistant</module>
+    <module>packages/java/platform-export</module>
     <module>packages/java/platform-artifact</module>
     <module>packages/java/platform-transformation</module>
     <module>packages/java/platform-storage-postgres</module>

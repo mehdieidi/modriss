@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import io.mehdieidi.modless.backend.assistant.AssistantOrchestrator;
 import io.mehdieidi.modless.backend.assistant.AssistantRealtimeHub;
+import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
 import org.junit.jupiter.api.Test;

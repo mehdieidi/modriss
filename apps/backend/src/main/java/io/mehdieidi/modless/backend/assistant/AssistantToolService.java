@@ -2,6 +2,14 @@ package io.mehdieidi.modless.backend.assistant;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantValidationSummary;
+import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
+import io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes.ContextRelationship;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.model.application.ModelService;
@@ -17,14 +25,14 @@ import org.springframework.stereotype.Service;
 
 /** Whitelisted Spring AI tools for bounded read, preview, validation, and choice workflows. */
 @Service
-public class AssistantToolService {
+public class AssistantToolService implements AssistantToolBridge {
 
   private final AssistantCatalogService catalogs;
   private final AssistantPatchCompiler patchCompiler;
   private final AssistantMetamodelSchemaService schemas;
   private final ModelService models;
   private final ObjectMapper mapper;
-  private final ThreadLocal<ToolSession> session = new ThreadLocal<>();
+  private final ThreadLocal<AssistantToolBridge.ToolSession> session = new ThreadLocal<>();
   private final AtomicInteger toolCallCount = new AtomicInteger();
 
   public AssistantToolService(
@@ -41,17 +49,20 @@ public class AssistantToolService {
   }
 
   /** Binds model context used by element and validation tools for one agent loop turn. */
-  public void bindSession(ToolSession toolSession) {
+  @Override
+  public void bindSession(AssistantToolBridge.ToolSession toolSession) {
     session.set(toolSession);
     toolCallCount.set(0);
   }
 
   /** Clears the active tool session. */
+  @Override
   public void clearSession() {
     session.remove();
   }
 
   /** Returns and resets the number of tool invocations in the active session. */
+  @Override
   public int consumeToolCallCount() {
     return toolCallCount.getAndSet(0);
   }
@@ -143,17 +154,22 @@ public class AssistantToolService {
   public List<ElementContext> getElementContext(
       @ToolParam(description = "Comma-separated stable element IDs") String elementIds) {
     trackToolCall();
-    ToolSession active = requireSession();
+    AssistantToolBridge.ToolSession active = requireSession();
     List<String> ids = splitIds(elementIds);
     if (ids.isEmpty()) {
       throw new PlatformException(400, "At least one element id is required.");
     }
-    Map<String, AssistantModelContextIndexService.ContextElement> elements = active.elementsById();
-    List<AssistantModelContextIndexService.ContextRelationship> relationships =
-        active.context().relationships();
+    Map<
+            String,
+            io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+                .ContextElement>
+        elements = elementsById(active);
+    List<ContextRelationship> relationships = active.context().relationships();
     List<ElementContext> result = new ArrayList<>();
     for (String id : ids) {
-      AssistantModelContextIndexService.ContextElement element = elements.get(id);
+      io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+              .ContextElement
+          element = elements.get(id);
       if (element == null) {
         continue;
       }
@@ -239,20 +255,26 @@ public class AssistantToolService {
       @ToolParam(description = "Zero-based page index") int page,
       @ToolParam(description = "Page size, maximum 40") int pageSize) {
     trackToolCall();
-    ToolSession active = requireSession();
+    AssistantToolBridge.ToolSession active = requireSession();
     String normalizedType = typeFilter == null ? "" : typeFilter.trim().toLowerCase(Locale.ROOT);
     String normalizedName = nameFilter == null ? "" : nameFilter.trim().toLowerCase(Locale.ROOT);
     int safePage = Math.max(0, page);
     int safeSize = Math.min(Math.max(pageSize <= 0 ? 20 : pageSize, 1), 40);
-    List<AssistantModelContextIndexService.ContextElement> filtered =
-        active.context().elements().stream()
-            .filter(
-                element ->
-                    (normalizedType.isBlank()
-                            || element.type().toLowerCase(Locale.ROOT).contains(normalizedType))
-                        && (normalizedName.isBlank()
-                            || element.name().toLowerCase(Locale.ROOT).contains(normalizedName)))
-            .toList();
+    List<
+            io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+                .ContextElement>
+        filtered =
+            active.context().elements().stream()
+                .filter(
+                    element ->
+                        (normalizedType.isBlank()
+                                || element.type().toLowerCase(Locale.ROOT).contains(normalizedType))
+                            && (normalizedName.isBlank()
+                                || element
+                                    .name()
+                                    .toLowerCase(Locale.ROOT)
+                                    .contains(normalizedName)))
+                .toList();
     int from = Math.min(safePage * safeSize, filtered.size());
     int to = Math.min(from + safeSize, filtered.size());
     List<ElementSummary> pageItems =
@@ -262,8 +284,8 @@ public class AssistantToolService {
     return new ElementPage(filtered.size(), safePage, safeSize, pageItems);
   }
 
-  private ToolSession requireSession() {
-    ToolSession active = session.get();
+  private AssistantToolBridge.ToolSession requireSession() {
+    AssistantToolBridge.ToolSession active = session.get();
     if (active == null) {
       throw new PlatformException(409, "Assistant tool session is not bound.");
     }
@@ -286,7 +308,10 @@ public class AssistantToolService {
         .toList();
   }
 
-  private String formatElement(AssistantModelContextIndexService.ContextElement element) {
+  private String formatElement(
+      io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+              .ContextElement
+          element) {
     if (element == null) {
       return "";
     }
@@ -304,23 +329,18 @@ public class AssistantToolService {
     }
   }
 
-  /**
-   * Runtime tool session bound for one assistant turn.
-   *
-   * @param level active modeling level
-   * @param modelJson active model snapshot
-   * @param context compact model context
-   */
-  public record ToolSession(
-      ModelLevel level,
-      JsonNode modelJson,
-      AssistantModelContextIndexService.AssistantModelContext context) {
-
-    public Map<String, AssistantModelContextIndexService.ContextElement> elementsById() {
-      Map<String, AssistantModelContextIndexService.ContextElement> result = new LinkedHashMap<>();
-      context.elements().forEach(element -> result.putIfAbsent(element.id(), element));
-      return result;
-    }
+  private static Map<
+          String,
+          io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+              .ContextElement>
+      elementsById(AssistantToolBridge.ToolSession active) {
+    Map<
+            String,
+            io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+                .ContextElement>
+        result = new LinkedHashMap<>();
+    active.context().elements().forEach(element -> result.putIfAbsent(element.id(), element));
+    return result;
   }
 
   /**

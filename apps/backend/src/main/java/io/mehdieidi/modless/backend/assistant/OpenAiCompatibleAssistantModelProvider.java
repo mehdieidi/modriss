@@ -1,5 +1,9 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
+import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
+import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;

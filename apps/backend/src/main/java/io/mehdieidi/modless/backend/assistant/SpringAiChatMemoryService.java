@@ -1,5 +1,6 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.spi.AssistantChatMemory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,7 @@ import org.springframework.stereotype.Service;
 
 /** Spring AI chat memory facade for the assistant's recent conversation window. */
 @Service
-public class SpringAiChatMemoryService {
+public class SpringAiChatMemoryService implements AssistantChatMemory {
 
   private final ChatMemoryRepository repository;
   private final Map<String, List<Message>> inMemory;
@@ -39,33 +40,17 @@ public class SpringAiChatMemoryService {
     this.inMemory = repository == null ? new ConcurrentHashMap<>() : null;
   }
 
-  /**
-   * Appends a user message.
-   *
-   * @param conversationId Spring AI conversation ID
-   * @param content message text
-   */
+  @Override
   public void appendUser(String conversationId, String content) {
     append(conversationId, new UserMessage(content == null ? "" : content));
   }
 
-  /**
-   * Appends an assistant message.
-   *
-   * @param conversationId Spring AI conversation ID
-   * @param content message text
-   */
+  @Override
   public void appendAssistant(String conversationId, String content) {
     append(conversationId, new AssistantMessage(content == null ? "" : content));
   }
 
-  /**
-   * Returns recent messages in oldest-first order.
-   *
-   * @param conversationId Spring AI conversation ID
-   * @param limit maximum messages
-   * @return recent messages
-   */
+  @Override
   public List<MemoryMessage> recent(String conversationId, int limit) {
     List<Message> messages = messages(conversationId);
     int fromIndex = Math.max(0, messages.size() - Math.max(0, limit));
@@ -74,11 +59,7 @@ public class SpringAiChatMemoryService {
         .toList();
   }
 
-  /**
-   * Clears one conversation.
-   *
-   * @param conversationId Spring AI conversation ID
-   */
+  @Override
   public void clear(String conversationId) {
     if (repository != null) {
       repository.deleteByConversationId(conversationId);
@@ -103,12 +84,4 @@ public class SpringAiChatMemoryService {
     }
     return List.copyOf(inMemory.getOrDefault(conversationId, List.of()));
   }
-
-  /**
-   * Lightweight conversation message projection.
-   *
-   * @param role message role
-   * @param content message content
-   */
-  public record MemoryMessage(String role, String content) {}
 }

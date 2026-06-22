@@ -3,6 +3,8 @@ package io.mehdieidi.modless.backend.assistant;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;

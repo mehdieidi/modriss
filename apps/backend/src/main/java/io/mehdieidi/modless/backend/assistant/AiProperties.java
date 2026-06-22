@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Optional;
@@ -52,7 +54,8 @@ public record AiProperties(
     Proxy proxy,
     OpenAiCompatible openaiCompatible,
     Gemini gemini,
-    Models models) {
+    Models models)
+    implements AssistantSettings {
 
   /** Applies conservative defaults for local development. */
   public AiProperties {
@@ -281,7 +284,8 @@ public record AiProperties(
       Duration circuitOpenDuration,
       int providerRetryAttempts,
       Duration retryBackoff,
-      int recentMessageWindow) {
+      int recentMessageWindow)
+      implements AssistantSettings.Hardening {
 
     /** Applies conservative defaults. */
     public Hardening {

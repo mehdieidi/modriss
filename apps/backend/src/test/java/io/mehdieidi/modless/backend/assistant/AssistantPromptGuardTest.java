@@ -3,6 +3,9 @@ package io.mehdieidi.modless.backend.assistant;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
+import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

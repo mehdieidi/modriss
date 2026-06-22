@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -53,7 +54,8 @@ class AssistantModelContextIndexServiceFocusTest {
 """);
     var context = contexts.transientSnapshot("project", ModelLevel.PIM, "Large", 1L, model, null);
     var largeContext =
-        new AssistantModelContextIndexService.AssistantModelContext(
+        new io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
+            .AssistantModelContext(
             "m1",
             "project",
             ModelLevel.PIM,
@@ -62,7 +64,8 @@ class AssistantModelContextIndexServiceFocusTest {
             java.util.stream.IntStream.range(0, 75)
                 .mapToObj(
                     index ->
-                        new AssistantModelContextIndexService.ContextElement(
+                        new io.mehdieidi.modless.platform.assistant.domain.context
+                            .AssistantModelContextTypes.ContextElement(
                             "id-" + index, "Function", "Fn " + index, "/diagram/elements/" + index))
                 .toList(),
             List.of(),
