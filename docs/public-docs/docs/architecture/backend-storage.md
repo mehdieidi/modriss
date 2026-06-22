@@ -45,11 +45,17 @@ The assistant adds:
 
 ## Migrations
 
-Migrations live under:
+Platform migrations:
 
 ```text
 packages/java/platform-storage-postgres/src/main/resources/db/migration
 ```
 
-Use forward-only migrations. Do not edit a migration that has already been shared or applied to a
-long-lived database.
+Assistant migrations:
+
+```text
+packages/java/platform-assistant/src/main/resources/db/migration
+```
+
+Flyway applies both locations at backend startup. Use forward-only migrations. Do not edit a
+migration that has already been shared or applied to a long-lived database.

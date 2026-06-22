@@ -30,9 +30,13 @@ Errors are returned as JSON:
   "message": "Request validation failed.",
   "status": 400,
   "timestamp": "2026-06-05T12:00:00Z",
-  "issues": ["field: detail"]
+  "issues": ["field: detail"],
+  "errorId": "request-correlation-id"
 }
 ```
+
+`errorId` matches the request correlation ID when available; otherwise the server generates a UUID
+for log lookup.
 
 Common status codes are `400` for invalid input, `401` for missing or expired auth, `403` for
 project permission failures, `404` for missing records, `409` for conflicts such as stale revisions,
@@ -133,11 +137,33 @@ paths.
 `LayoutRequest` contains `nodes`, `edges`, optional `fixedNodeIds`, optional profile/options, and
 returns node positions, routed edge sections, bend points, and warnings.
 
+## Assistant
+
+Assistant commands use REST. Realtime progress uses SSE or the receive-only assistant WebSocket.
+See [websocket-api.md](websocket-api.md) and
+[public realtime reference](../public-docs/docs/reference/realtime-api.md).
+
+| Method   | Path                                                               | Purpose                          |
+| -------- | ------------------------------------------------------------------ | -------------------------------- |
+| `POST`   | `/api/chatbot/sessions`                                            | Create or resume a session       |
+| `GET`    | `/api/chatbot/conversations`                                       | List recent conversations        |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                       | Submit a user message            |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                         | Load thread history              |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                         | Open SSE event stream            |
+| `DELETE` | `/api/chatbot/sessions/{sessionId}`                                | Clear session memory             |
+| `POST`   | `/api/chatbot/catalogs/reindex`                                    | Reindex metamodel/EVL catalogs   |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`         | Get proposal details             |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve` | Approve and apply a proposal     |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject`  | Reject a proposal                |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo`    | Undo an applied proposal         |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/choices`                        | Answer structured clarifications |
+
+WebSocket stream: `ws://<host>/ws/chatbot/sessions/{sessionId}` (receive-only).
+
 ## Planned Endpoints
 
 Requests under `/api/github/**`, `/api/impact/**`, and `/api/admin/**` currently return `501` with
-the message `This feature is planned for a future backend iteration.` There is no implemented
-WebSocket endpoint in this backend at the moment.
+the message `This feature is planned for a future backend iteration.`
 
 ## Shared Shapes
 

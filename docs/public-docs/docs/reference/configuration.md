@@ -58,5 +58,8 @@ fallback. Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior.
 | `LANDING_PORT`            | `8083`  |
 | `LOCALSTACK_GATEWAY_PORT` | `4566`  |
 
+Dozzle is exposed on host port `9999` in the default Compose stack (not configurable through
+`.env.example`).
+
 Do not publish default database credentials or provider keys in production. Use secret management,
 TLS termination, restricted network access, and environment-specific allowed origins.

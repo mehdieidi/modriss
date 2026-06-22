@@ -26,9 +26,13 @@ documentation, and Swagger UI.
   "message": "Request validation failed.",
   "status": 400,
   "timestamp": "2026-06-05T12:00:00Z",
-  "issues": ["field: detail"]
+  "issues": ["field: detail"],
+  "errorId": "request-correlation-id"
 }
 ```
+
+`errorId` matches the request correlation ID when available; otherwise the server generates a UUID
+for log lookup.
 
 Common statuses are `400`, `401`, `403`, `404`, `409`, `413`, `500`, and `501`.
 
@@ -96,8 +100,9 @@ ZIP download. File paths must be relative and cannot escape the artifact root.
 
 ### Assistant
 
-Assistant REST routes create and clear sessions, submit messages and choices, open SSE streams, and
-get, approve, reject, or undo proposals. See [Realtime Assistant API](realtime-api.md).
+Assistant REST routes create and clear sessions, list conversations, load thread history, submit
+messages and choices, open SSE streams, reindex catalogs, and get, approve, reject, or undo
+proposals. See [Realtime Assistant API](realtime-api.md).
 
 ### Planned Routes
 

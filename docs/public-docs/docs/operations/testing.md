@@ -33,6 +33,7 @@ mvn -q -pl tools/mde-m2t-cli -am test
 
 # Backend, storage, and complete regression
 mvn -q -pl apps/backend -am test
+mvn -q -pl packages/java/platform-assistant -am test
 mvn -q -pl packages/java/platform-storage-postgres -am test
 mvn test
 ```

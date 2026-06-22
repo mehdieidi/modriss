@@ -31,7 +31,9 @@ packages/java/
   platform-model/          Model workspace CRUD, validation, import/export
   platform-artifact/       Generated artifact storage
   platform-transformation/ MDE pipeline and async job orchestration
-  platform-storage-postgres/ PostgreSQL adapter and Flyway migrations
+  platform-assistant/      AI assistant orchestration, patch pipeline, and persistence
+  platform-export/         Project archive ZIP packaging
+  platform-storage-postgres/ PostgreSQL adapter and platform Flyway migrations
   mde-evl-validator/       Reusable EVL runner
   mde-etl-runner/          Reusable ETL runner
   mde-m2t-runner/          Reusable EGX/EGL runner
@@ -60,10 +62,12 @@ platform-modeling → platform-kernel
 platform-model → platform-project, platform-modeling, mde-evl-validator
 platform-artifact → platform-project
 platform-transformation → platform-model, platform-artifact, mde-etl-runner, mde-m2t-runner
+platform-assistant → platform-model, platform-modeling, platform-project
+platform-export → platform-project, platform-model, platform-artifact, platform-transformation
 
 platform-storage-postgres → platform-storage-api + all feature domain types
 
-apps/backend → platform-storage-postgres + feature modules
+apps/backend → platform-storage-postgres + platform-assistant + platform-export + feature modules
 ```
 
 This separation keeps formal MDE execution reusable outside the web backend and isolates

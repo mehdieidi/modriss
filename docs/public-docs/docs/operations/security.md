@@ -17,7 +17,8 @@ artifacts. Security controls therefore span the platform runtime and the project
 ## Assistant Controls
 
 - AI is disabled unless explicitly enabled.
-- Operating modes separate explanation, proposal drafting, and guarded apply.
+- The only rollout mode is `GUARDED_APPLY`: each turn is classified as an explanation,
+  clarification, or semantic patch draft; applied patches always require explicit approval.
 - The assistant receives compact context rather than unrestricted full model and rule dumps.
 - Proposed changes are compiled, validated, risk-classified, and audited.
 - Risky proposals require approval; applied proposals may include an inverse patch for undo.

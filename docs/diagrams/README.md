@@ -9,7 +9,9 @@ The diagrams were derived from:
 - Spring controllers, configuration, services, and assistant classes under `apps/backend`.
 - Browser client modules under `apps/frontend/js`.
 - Maven module POMs, `deploy/compose.yaml`, and backend configuration.
-- `PlatformStore`, `PostgresPlatformStore`, and Flyway migrations V1 and V2.
+- `PlatformStore`, `PostgresPlatformStore`, and Flyway migrations under
+  `platform-storage-postgres` (V1 platform schema, V5 MDE job metadata) and `platform-assistant`
+  (V2–V4 and V6–V8 assistant schema).
 - Emfatic/Ecore metamodels, EVL entry modules, ETL entry modules, and EGX/EGL generation assets.
 
 ## Diagram Index
@@ -63,6 +65,6 @@ Every implemented controller route template has a sequence diagram:
 - PostgreSQL table names are uppercase in ER diagrams only to improve readability.
 - “PlatformStore” means the logical application persistence port; production maps it to
   `PostgresPlatformStore`.
-- The current transformation REST controller executes transformations synchronously. The separate
-  `MdeJobService` and job endpoints support queued jobs, but submission is not currently exposed by
-  the transformation controller.
+- Transformation REST routes submit work through `MdeJobService` and return `202 Accepted` with a
+  `Location` header. Clients poll `/api/transformations/jobs/{id}` until the job completes or
+  fails. Job cancellation is available through `POST /api/transformations/jobs/{id}/cancel`.

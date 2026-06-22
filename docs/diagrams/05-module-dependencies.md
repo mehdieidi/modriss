@@ -13,6 +13,8 @@ flowchart TB
     model["platform-model"]
     artifact["platform-artifact"]
     transform["platform-transformation"]
+    assistant["platform-assistant"]
+    export["platform-export"]
     storage["platform-storage-postgres"]
     etl["mde-etl-runner"]
     evl["mde-evl-validator"]
@@ -33,6 +35,13 @@ flowchart TB
     transform --> artifact
     transform --> etl
     transform --> m2t
+    assistant --> project
+    assistant --> model
+    assistant --> modeling
+    export --> project
+    export --> model
+    export --> artifact
+    export --> transform
 
     storage --> storageApi
     storage --> identity
@@ -48,6 +57,8 @@ flowchart TB
     backend --> modeling
     backend --> artifact
     backend --> transform
+    backend --> assistant
+    backend --> export
 
     etl --> evl
     etlcli --> etl

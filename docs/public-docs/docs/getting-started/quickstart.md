@@ -43,8 +43,8 @@ starting point for exploring the full pipeline.
 
 ## Enable the AI Assistant
 
-The assistant is configurable and should be disabled or kept in explain-only mode unless provider
-credentials and operating policy are intentional.
+The assistant is configurable and should remain disabled unless provider credentials, approval
+policy, and operating cost are intentional.
 
 ```bash
 MODLESS_AI_ENABLED=true

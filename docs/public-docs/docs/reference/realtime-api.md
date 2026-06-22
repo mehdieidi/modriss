@@ -35,6 +35,9 @@ Allowed WebSocket origins come from `modless.allowed-origins`.
 
 | Method | Path                                                               |
 | ------ | ------------------------------------------------------------------ |
+| `GET`  | `/api/chatbot/conversations`                                       |
+| `GET`  | `/api/chatbot/sessions/{sessionId}/thread`                         |
+| `POST` | `/api/chatbot/catalogs/reindex`                                    |
 | `GET`  | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`         |
 | `POST` | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve` |
 | `POST` | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject`  |

@@ -12,6 +12,8 @@ data access and Flyway for schema migration.
 - Temporary imported XMI: `staged_imports`, `staged_import_payloads`
 - Generated artifact bundles: `artifacts`, `artifact_files`
 - MDE job state and diagnostics: `mde_jobs`, `mde_job_diagnostics`
+- Assistant conversation, retrieval, proposals, and rate limits (see
+  `docs/public-docs/docs/reference/data-storage.md`)
 
 Static product/configuration assets, such as metamodels, EVL/ETL/EGX scripts, and UI metadata JSON
 resources, are still versioned with the application source code.
@@ -67,17 +69,28 @@ proxy in your HTTP client.
 
 ## Migrations
 
-Migration files live in:
+Platform schema migrations live in:
 
 ```text
 packages/java/platform-storage-postgres/src/main/resources/db/migration
 ```
 
-Flyway runs automatically during Spring Boot startup. The first schema is:
+Assistant schema migrations live in:
+
+```text
+packages/java/platform-assistant/src/main/resources/db/migration
+```
+
+Flyway runs automatically during Spring Boot startup from `classpath:db/migration` on the backend
+classpath. The first platform schema is:
 
 ```text
 V1__create_platform_schema.sql
 ```
+
+MDE job metadata extensions are in `V5__mde_job_async_metadata.sql` under
+`platform-storage-postgres`. Assistant tables are introduced in `platform-assistant` migrations
+V2–V4 and V6–V8.
 
 For future schema edits, do not modify an already-applied migration in a shared or production
 database. Add a new migration instead:

@@ -1,196 +1,99 @@
 # Modless
 
-AI-assisted, model-driven low-code platform for designing, transforming, and generating AWS
-serverless applications.
+**Model business intent → refine architecture → generate deployable AWS serverless projects.**
 
-Modless combines formal CIM/PIM/PSM modeling, Eclipse Epsilon validation and transformations, and an
-in-browser modeling editor with optional Spring AI assistance. From a platform-specific model, the
-toolchain produces reviewable, deployable serverless project artifacts.
+Modless is an AI-assisted, model-driven platform. You work in three formal modeling levels
+(CIM, PIM, AWS PSM) in the browser, validate with Eclipse Epsilon, transform between levels, and
+generate a reviewable project (infrastructure, Go handlers, contracts, tests, docs). An optional
+assistant can explain the metamodel, draft semantic patches, and apply changes only after validation
+and your approval.
 
-For the full thesis-oriented project narrative, architecture rationale, and planned features, see
-[docs/internal/project-description.md](docs/internal/project-description.md).
+```text
+CIM  ──validate/transform──▶  PIM  ──validate/transform──▶  AWS PSM  ──generate──▶  deployable project
+         EVL / ETL                  EVL / ETL                    EVL / EGX·EGL
+```
 
-## Features
+Thesis context and long-form rationale:
+[docs/internal/project-description.md](docs/internal/project-description.md)
 
-- **Three-level modeling** — CIM, PIM, and PSM workspaces with metamodel-driven palettes and validation
-- **Semi-automated pipeline** — CIM → PIM → PSM transformations and PSM → AWS artifact generation
-- **Constraint validation** — EVL rules enforced across modeling levels
-- **Artifact explorer** — Browse, edit, and export generated projects as ZIP archives
-- **AI modeling assistant** — Natural-language model edits with metamodel-aware guardrails (optional)
-- **Production-oriented backend** — Spring Boot API, PostgreSQL persistence, Flyway migrations
+## Run it
 
-## Tech Stack
-
-| Layer    | Technologies                                |
-| -------- | ------------------------------------------- |
-| Backend  | Java 17, Maven, Spring Boot, Spring AI      |
-| Frontend | HTML, CSS, vanilla JavaScript (ES modules)  |
-| MDE      | Emfatic/Ecore, Epsilon (EVL, ETL, EGL, EGX) |
-| Data     | PostgreSQL 16, pgvector, Flyway             |
-| Tooling  | Python 3, Node.js, Docker Compose           |
-
-## Quick Start
-
-**Prerequisites:** Docker with Compose support and a modern browser.
-
-From the repository root:
+**Needs:** Docker with Compose, a modern browser.
 
 ```bash
 docker compose up --build
 ```
 
-When PostgreSQL and the backend are healthy, open:
+| What                                 | URL                                     |
+| ------------------------------------ | --------------------------------------- |
+| Modeling app                         | <http://127.0.0.1:8082>                 |
+| API health                           | <http://127.0.0.1:8080/api/health>      |
+| API explorer                         | <http://127.0.0.1:8080/swagger-ui.html> |
+| Landing page                         | <http://127.0.0.1:8083>                 |
+| Container logs (Dozzle)              | <http://127.0.0.1:9999>                 |
+| LocalStack (generated-project tests) | <http://127.0.0.1:4566>                 |
 
-| Service              | URL                                     |
-| -------------------- | --------------------------------------- |
-| Modeling frontend    | <http://127.0.0.1:8082>                 |
-| Backend health       | <http://127.0.0.1:8080/api/health>      |
-| OpenAPI / Swagger UI | <http://127.0.0.1:8080/swagger-ui.html> |
-| Landing page         | <http://127.0.0.1:8083>                 |
+**First project:** register → create a project → open CIM → import
+[`mde/samples/cim.xmi`](mde/samples/cim.xmi) or model from scratch → **Generate PIM** → **Generate
+PSM** → **Generate Artifacts** → download the ZIP from the artifact explorer.
 
-A minimal first run: register a user, create a project, open the CIM workspace, import
-`mde/samples/cim.xmi` or model from scratch, then run **Generate PIM**, **Generate PSM**, and
-**Generate Artifacts**.
+[Quickstart guide](docs/public-docs/docs/getting-started/quickstart.md) ·
+[Enable the AI assistant](docs/internal/ai/assistant.md)
 
-Step-by-step instructions: [docs/public-docs/docs/getting-started/quickstart.md](docs/public-docs/docs/getting-started/quickstart.md)
+## Develop it
 
-## Local Development
-
-For day-to-day backend and frontend work without the full Compose stack:
-
-| Tool          | Version                                                 |
-| ------------- | ------------------------------------------------------- |
-| Java          | 17+                                                     |
-| Maven         | 3.9+                                                    |
-| Python        | 3                                                       |
-| Node.js / npm | Current LTS recommended                                 |
-| PostgreSQL    | 16 with pgvector (or use Compose for the database only) |
+| Tool       | Version                                            |
+| ---------- | -------------------------------------------------- |
+| Java       | 17+                                                |
+| Maven      | 3.9+                                               |
+| PostgreSQL | 16 + pgvector (or `docker compose up -d postgres`) |
+| Python 3   | static frontend server                             |
+| Node.js    | format/lint tooling                                |
 
 ```bash
-# Database (optional if you already have PostgreSQL)
 docker compose up -d postgres
-
-# Backend
-mvn -pl apps/backend -am spring-boot:run
-
-# Frontend static server (separate terminal)
-python -m http.server 8082 --directory apps/frontend
+mvn -pl apps/backend -am spring-boot:run          # API on :8080
+python -m http.server 8082 --directory apps/frontend # UI on :8082
 ```
 
-The frontend reads the backend URL from `apps/frontend/backend-config.js` (default
-`http://127.0.0.1:8080`).
-
-Build and test:
+Backend URL for the frontend: [`apps/frontend/backend-config.js`](apps/frontend/backend-config.js).
 
 ```bash
+python scripts/verify.py    # format + lint + tests
 mvn test
-mvn -pl apps/backend -am package
 ```
 
-Detailed setup, health checks, and AI configuration:
-[docs/public-docs/docs/getting-started/local-development.md](docs/public-docs/docs/getting-started/local-development.md)
+[Local development](docs/public-docs/docs/getting-started/local-development.md) ·
+[Configuration](docs/public-docs/docs/reference/configuration.md)
 
-## Repository Layout
+## What's in the repo
 
 ```text
-apps/
-  backend/                 Spring Boot API and assistant
-  frontend/                Browser modeling application
-  landing/                 Public landing page
-config/                    Tooling and static-analysis configuration
-deploy/                    Docker Compose stack, Dockerfile, deployment scripts
-docs/                      Engineering documentation and diagrams
-  adr/                     Architecture Decision Records
-  internal/                Contributor guides and deep-dive references
-  public-docs/             Published MkDocs site
-infra/                     Grafana dashboards and Prometheus alert rules
-mde/                       Metamodels, validation, transformations, generation, samples
-packages/java/             Feature-scoped platform libraries, Postgres adapter, and MDE runners
-scripts/                   Repository automation (format, lint, verify, Flyway check)
-tests/                     Cross-cutting test placeholders
-tools/                     Standalone MDE CLI utilities
+apps/           backend (Spring Boot), modeling frontend, landing page
+mde/            metamodels, EVL, ETL, generation templates, samples
+packages/java/  platform libraries, MDE runners, assistant, Postgres adapter
+tools/          standalone MDE CLIs (validate, transform, generate, compile Emfatic)
+docs/           public MkDocs site, ADRs, diagrams, API reference, internal guides
+deploy/         Docker Compose stack and Dockerfile
 ```
 
-Module boundaries and dependency direction:
-[docs/public-docs/docs/reference/repository-layout.md](docs/public-docs/docs/reference/repository-layout.md)
+[Full layout and Maven dependency rules](docs/public-docs/docs/reference/repository-layout.md)
 
 ## Documentation
 
-| Topic                                | Location                                                                                               |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Public docs site (MkDocs)            | [docs/public-docs/](docs/public-docs/)                                                                 |
-| Engineering deep-dives               | [docs/internal/](docs/internal/)                                                                       |
-| Architecture diagrams                | [docs/diagrams/](docs/diagrams/)                                                                       |
-| ADRs                                 | [docs/adr/](docs/adr/)                                                                                 |
-| REST API                             | [docs/api/rest-api.md](docs/api/rest-api.md) · [OpenAPI](docs/api/openapi/openapi.yaml)                |
-| PostgreSQL storage                   | [docs/internal/operations/postgres-storage.md](docs/internal/operations/postgres-storage.md)           |
-| AI assistant                         | [docs/internal/ai/assistant.md](docs/internal/ai/assistant.md)                                         |
-| Generated artifacts                  | [docs/internal/artifacts/deployment-and-testing.md](docs/internal/artifacts/deployment-and-testing.md) |
-| Project description (thesis context) | [docs/internal/project-description.md](docs/internal/project-description.md)                           |
+| Start here             |                                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| User guides & concepts | [docs/public-docs/](docs/public-docs/) (MkDocs)                                                                                           |
+| REST & WebSocket API   | [rest-api](docs/api/rest-api.md) · [realtime](docs/public-docs/docs/reference/realtime-api.md) · [OpenAPI](docs/api/openapi/openapi.yaml) |
+| Architecture diagrams  | [docs/diagrams/](docs/diagrams/)                                                                                                          |
+| Assistant setup        | [docs/internal/ai/assistant.md](docs/internal/ai/assistant.md)                                                                            |
+| Generated AWS projects | [docs/internal/artifacts/deployment-and-testing.md](docs/internal/artifacts/deployment-and-testing.md)                                    |
+| Status & roadmap       | [status-roadmap](docs/public-docs/docs/contributing/status-roadmap.md)                                                                    |
 
-## Code Quality
+## Contributing
 
-Repository-wide formatter and linter settings live in [`config/`](config/). A root
-[`.markdownlint-cli2.jsonc`](.markdownlint-cli2.jsonc) stub is required because markdownlint-cli2
-only auto-discovers that filename at the repository root.
-
-### Formatting
-
-Pinned formatters keep style consistent across machines:
-
-- **Java** — Spotless with Google Java Format
-- **Web, docs, config** — Prettier
-- **MDE sources** — Conservative whitespace normalization (`.eol`, `.etl`, `.evl`, `.ecore`, …)
-
-```bash
-python scripts/format.py          # apply formatting
-python scripts/format.py --check  # verify only
-```
-
-Prettier is installed automatically from `package-lock.json` when `node_modules` is missing.
-
-### Linting
-
-Scoped static analysis runs per technology stack:
-
-```bash
-python scripts/lint.py                    # all scopes
-python scripts/lint.py --scope java       # single scope
-python scripts/lint.py --scope web
-python scripts/lint.py --list-scopes      # show available scopes
-```
-
-| Scope      | Tools                             |
-| ---------- | --------------------------------- |
-| `java`     | Checkstyle, PMD, SpotBugs (Maven) |
-| `web`      | ESLint, Stylelint                 |
-| `python`   | Ruff                              |
-| `yaml`     | yamllint                          |
-| `markdown` | markdownlint-cli2                 |
-| `docker`   | Hadolint (requires Docker)        |
-| `all`      | Every scope above                 |
-
-Python lint dependencies install automatically from `config/requirements-lint.txt` when needed. Node lint
-dependencies install automatically from `package-lock.json` when needed.
-
-Equivalent npm entry point: `npm run lint`
-
-### Verification and hooks
-
-```bash
-python scripts/verify.py          # format check + lint + mvn test
-pip install pre-commit && pre-commit install
-```
-
-Copy [`.env.example`](.env.example) to `.env` for local environment overrides. See
-[CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) for process and vulnerability
-reporting.
-
-## CLI Tools
-
-Standalone CLIs wrap the reusable MDE runners for validation, transformation, generation, and
-metamodel compilation. Reference:
-[docs/public-docs/docs/reference/cli-tools.md](docs/public-docs/docs/reference/cli-tools.md)
+Copy [`.env.example`](.env.example) to `.env`, run `python scripts/verify.py` before opening a PR.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## License
 

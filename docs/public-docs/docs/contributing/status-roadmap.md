@@ -21,8 +21,6 @@
 
 - Browser JSON validation and transformation rely on the JSON/XMI bridge and continue to be
   hardened against the full formal language.
-- Transformation REST operations currently complete synchronously even though job tracking and
-  cancellation services exist.
 - Generated projects require manual actions and protected-region implementation before production
   use.
 - Production deployment security, scaling, monitoring, backup, and secret-management choices are

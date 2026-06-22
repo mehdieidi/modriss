@@ -69,8 +69,8 @@ that is not committed.
 
 ## Docker Compose
 
-`docker compose up` starts PostgreSQL, backend, frontend, and landing. It also starts the backend
-with the AI code available, but AI calls are disabled by default:
+`docker compose up` starts PostgreSQL, backend, frontend, landing, LocalStack, and Dozzle. The
+backend ships with assistant code available, but AI calls are disabled by default:
 
 ```bash
 MODLESS_AI_ENABLED=false

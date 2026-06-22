@@ -1,5 +1,9 @@
 # Production AI Modeling Assistant Plan
 
+> **Status:** Implemented. This document records the original design plan. For current setup and
+> behavior, see [assistant.md](assistant.md) and
+> [implementation-learning-guide.md](implementation-learning-guide.md).
+
 ## Summary
 
 Build a bounded, backend-controlled modeling agent around the existing frontend chat panel,

@@ -21,7 +21,8 @@ platform.assistant
 ```
 
 Flyway migrations for assistant tables live in
-`src/main/resources/db/migration/` (V2–V8).
+`src/main/resources/db/migration/` (V2–V4 and V6–V8). MDE job metadata extension `V5` lives in
+`platform-storage-postgres`.
 
 ## Delivery layer (`apps/backend`)
 
