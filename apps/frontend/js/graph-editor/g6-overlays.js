@@ -166,7 +166,11 @@ function ensureContextLayer() {
   return contextLayer;
 }
 
-export function renderNodeIcons(graph, nodes = [], { visibleNode = () => true } = {}) {
+export function renderNodeIcons(
+  graph,
+  _nodes = [],
+  { visibleNode: _visibleNode = () => true } = {},
+) {
   nodeIconLayer?.remove();
   nodeIconLayer = null;
 }
@@ -204,7 +208,7 @@ export function renderContextBoxes(
       label.append(name);
       item.appendChild(label);
       record = { item, name, contextName: key, onSelect };
-      item.addEventListener("click", (event) => {
+      item.addEventListener("click", (_event) => {
         record.onSelect(record.contextName);
       });
       contextBoxItems.set(key, record);

@@ -1,7 +1,6 @@
 import { MODEL_TYPES } from "./config.js";
 import { state } from "./state.js";
 import { el } from "./dom.js";
-import { api } from "./api.js";
 import { escapeHtml, genId } from "./utils.js";
 import { ensureReadableLayout } from "./layout-engine.js";
 import { getDefaultNode, legalKinds, legalKindsBetween, saveStoredEdgeLayout } from "./diagram.js";
@@ -120,8 +119,8 @@ function boundedContextType() {
 }
 const connectionsById = state.connectionsById;
 let hoveredEdgeId = null;
-let inlineLabelEditStartLabel = "";
-let inlineLabelEditUndoSnapshot = null;
+let _inlineLabelEditStartLabel = "";
+let _inlineLabelEditUndoSnapshot = null;
 
 function syncCanvasIndexesFromState() {
   state.nodesById.clear();
@@ -174,14 +173,14 @@ function configuredEdgeLabel(edge) {
   }
 }
 
-function configuredEdgePresentation(edge) {
+function _configuredEdgePresentation(edge) {
   if (!isModelingLevel(state.activeType)) {
     return { className: "", markerStart: "", markerEnd: "arrow" };
   }
   return modelingRelationshipPresentation(state.activeType, edge);
 }
 
-function configuredNodeNotation(node) {
+function _configuredNodeNotation(node) {
   if (!isModelingLevel(state.activeType)) {
     return null;
   }
@@ -212,7 +211,7 @@ function configuredNodeNotation(node) {
   return null;
 }
 
-function normalizeViewText(value) {
+function _normalizeViewText(value) {
   return String(value || "")
     .trim()
     .toLowerCase()
@@ -272,7 +271,7 @@ function detailCompartment(title, rows) {
   )}</div>${content}</div>`;
 }
 
-function configuredNodeDetailsHtml(node) {
+function _configuredNodeDetailsHtml(node) {
   return metadataNodeDetailsHtml(state.activeType, node);
 }
 
@@ -686,7 +685,7 @@ function nodeVisibleInBoundedContextMode(node) {
   return !isBoundedContextNode(node);
 }
 
-function visibleBoundedContextNodeIds() {
+function _visibleBoundedContextNodeIds() {
   return new Set(
     state.diagram.nodes.filter(nodeVisibleInBoundedContextMode).map((node) => node.id),
   );
@@ -819,7 +818,7 @@ function viewEdgesByRelationship(view) {
   return new Map(safeArray(view?.edges).map((edge) => [edge.relationshipId, edge]));
 }
 
-function nodeForFocusElement(elementId, viewNode) {
+function _nodeForFocusElement(elementId, viewNode) {
   const element = state.graph?.elementsById?.get(elementId);
   if (!element) {
     return null;
@@ -844,7 +843,7 @@ function nodeForFocusElement(elementId, viewNode) {
   };
 }
 
-function edgeForFocusRelationship(relationship, viewEdge = null) {
+function _edgeForFocusRelationship(relationship, viewEdge = null) {
   if (!relationship) {
     return null;
   }
@@ -1904,7 +1903,7 @@ function createMaskIcon(className, src, { ariaHidden = true } = {}) {
   return icon;
 }
 
-function setMaskIconSource(icon, src) {
+function _setMaskIconSource(icon, src) {
   if (!icon) {
     return;
   }
@@ -2063,7 +2062,7 @@ function attachNestedNode(node, containment) {
   return owner;
 }
 
-function createConfiguredCompanions(node) {
+function _createConfiguredCompanions(node) {
   applyConfiguredScaffold(node);
 }
 
@@ -2305,7 +2304,7 @@ function setAllPaletteGroupsCollapsed(groupNames, collapsed) {
   });
 }
 
-function createBoundedContextActionControls() {
+function _createBoundedContextActionControls() {
   if (!modelingLevelConfig(state.activeType).boundedContext?.enabled) {
     return [];
   }
@@ -2993,7 +2992,7 @@ export function renderEdges() {
   updateG6Selection();
 }
 
-function hasModelArtifact(keys) {
+function _hasModelArtifact(keys) {
   const root = state.baseModel && typeof state.baseModel === "object" ? state.baseModel : {};
   return keys.some((key) => {
     const value = root[key];

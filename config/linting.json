@@ -11,7 +11,11 @@
   "scopes": {
     "all": {
       "description": "Run every configured linter scope.",
-      "includes": ["java", "web", "python", "yaml", "markdown", "docker"]
+      "includes": ["web", "python", "yaml", "markdown", "docker", "java"]
+    },
+    "fast": {
+      "description": "Quick local feedback; skips Java static analysis and Docker.",
+      "includes": ["web", "python", "yaml", "markdown"]
     },
     "java": {
       "description": "Java static analysis with Checkstyle, PMD, and SpotBugs.",

@@ -195,7 +195,7 @@ async function downloadBlobFromResponse(response, fallbackFilename) {
   const blob = await response.blob();
   const contentDisposition = response.headers.get("content-disposition") || "";
   const utf8Filename = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
-  const basicFilename = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+  const basicFilename = contentDisposition.match(/filename="?([^";]+)"?/i);
   const filename = utf8Filename
     ? decodeURIComponent(utf8Filename[1])
     : basicFilename?.[1] || fallbackFilename;
@@ -246,7 +246,7 @@ function manualGuidanceIssuesFromModel(modelJson) {
   });
 }
 
-function manualBacklogIdentity(task, index) {
+function manualBacklogIdentity(task, _index) {
   const explicitId = String(task?.id || "").trim();
   if (explicitId) {
     return `id:${explicitId}`;
@@ -348,7 +348,7 @@ function ensureManualBacklogIdentity(model) {
   model.manualBacklog = backlog;
   model.graph ??= {};
   model.graph.manualBacklog = backlog.map((task) => structuredClone(task));
-  model.manualBacklog.forEach((task, index) => {
+  model.manualBacklog.forEach((task, _index) => {
     if (!task || typeof task !== "object") {
       return;
     }
@@ -531,7 +531,7 @@ async function syncProjectActiveModel(type, modelId) {
       }),
     });
     state.project = updated;
-  } catch (error) {
+  } catch (_error) {
     console.warn("Failed to sync active model.");
   }
 }
@@ -909,7 +909,7 @@ function moveLayoutNodes(nodes, dx, dy, movedNodeIds) {
   });
 }
 
-function separateBoundedContextOverlaps(nodeSize) {
+function _separateBoundedContextOverlaps(nodeSize) {
   const movedNodeIds = new Set();
   if (!supportsBoundedContext() || state.diagram.nodes.length < 2) {
     return movedNodeIds;
@@ -1027,7 +1027,7 @@ function spreadEdgeAnchorsForNode(node, edges, nodeSize) {
   });
 }
 
-function spreadEdgeAnchors(nodes, edges, nodeSize) {
+function _spreadEdgeAnchors(nodes, edges, nodeSize) {
   const visibleEdges = edges.filter((edge) => !edge.bundle);
   const edgesByNodeId = new Map(nodes.map((node) => [node.id, []]));
   visibleEdges.forEach((edge) => {
@@ -1112,7 +1112,7 @@ function orthogonalizeEdgePinPoints(edge, sourceNode, targetNode, nodeSize) {
   edge.pinPoints = orthogonal.slice(1, -1);
 }
 
-function orthogonalizeEdgeRoutes(nodes, edges, nodeSize) {
+function _orthogonalizeEdgeRoutes(nodes, edges, nodeSize) {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   edges
     .filter((edge) => !edge.bundle)
@@ -1126,7 +1126,7 @@ function orthogonalizeEdgeRoutes(nodes, edges, nodeSize) {
     );
 }
 
-function fallbackEdgePresentation(sourceNode, targetNode, nodeSize, laneOffset = 0) {
+function _fallbackEdgePresentation(sourceNode, targetNode, nodeSize, laneOffset = 0) {
   if (!sourceNode || !targetNode) {
     return { pinPoints: [], sourceAnchor: null, targetAnchor: null };
   }
@@ -1153,7 +1153,7 @@ function fallbackEdgePresentation(sourceNode, targetNode, nodeSize, laneOffset =
   };
 }
 
-function fallbackLaneOffset(edge, laneIndex = 0) {
+function _fallbackLaneOffset(edge, laneIndex = 0) {
   if (laneIndex <= 0) {
     return 0;
   }

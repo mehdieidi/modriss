@@ -300,7 +300,7 @@ function createIndent(depth) {
   return indent;
 }
 
-function fileIconForPath(filePath) {
+function fileIconForPath(_filePath) {
   return "description";
 }
 
@@ -677,7 +677,7 @@ export async function downloadCurrentArtifact() {
     }
     const blob = await response.blob();
     const contentDisposition = response.headers.get("content-disposition") || "";
-    const filenameMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+    const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
     const filename = filenameMatch?.[1] || `${state.artifact.name || "artifact"}.zip`;
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");

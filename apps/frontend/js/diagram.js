@@ -18,7 +18,7 @@ import {
 import { materializeActiveView } from "./view-materializer.js";
 import { semanticElementsFromRoot, semanticRelationshipsFromRoot } from "./model-utils.js";
 
-function connectionIdFor(modelType, index, sourceId, targetId, kind) {
+function connectionIdFor(_modelType, _index, _sourceId, _targetId, _kind) {
   return genId();
 }
 

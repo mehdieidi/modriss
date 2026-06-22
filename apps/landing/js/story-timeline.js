@@ -62,7 +62,7 @@ function createModelTravelers(sourceNodes, targetNodes) {
   });
 }
 
-function placeModelTravelers(sourceNodes, targetNodes) {
+function placeModelTravelers(sourceNodes, _targetNodes) {
   const engine = engineCenter();
   selector(".traveler-source").forEach((traveler, index) => {
     const source = sourceNodes[index];
@@ -216,7 +216,7 @@ function addEngineRun(timeline, start, end) {
     );
 }
 
-function addRuleTokens(timeline, batch, start, hideAt) {
+function _addRuleTokens(timeline, batch, start, hideAt) {
   const targets = `.mapping-token[data-batch="${batch}"]`;
   timeline
     .add(
@@ -243,7 +243,7 @@ function addRuleTokens(timeline, batch, start, hideAt) {
     );
 }
 
-function addFlowTokens(timeline, batch, start, stepGap = 250) {
+function _addFlowTokens(timeline, batch, start, stepGap = 250) {
   const inputs = selector(`.flow-token-input[data-batch="${batch}"]`);
   const outputs = selector(`.flow-token-output[data-batch="${batch}"]`);
   const stepCount = Math.max(inputs.length, outputs.length);
@@ -314,7 +314,7 @@ function addModelTransformation({
   timeline,
   source,
   target,
-  batch,
+  batch: _batch,
   start,
   finish,
   engineLabel = "ETL",

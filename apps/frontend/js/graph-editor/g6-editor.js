@@ -170,7 +170,7 @@ function pathMidpoint(points) {
   return segments[segments.length - 1].end;
 }
 
-function badgeFill(text, diagramType) {
+function badgeFill(text, _diagramType) {
   const value = String(text || "").toLowerCase();
   if (
     value.includes("block") ||
@@ -189,7 +189,7 @@ function badgeFill(text, diagramType) {
   return "rgba(148, 163, 184, 0.14)";
 }
 
-function badgeTextFill(diagramType) {
+function badgeTextFill(_diagramType) {
   return "rgba(226, 232, 240, 0.82)";
 }
 
@@ -228,8 +228,8 @@ function renderOpenControl(
     left,
     top,
     width,
-    height,
-    diagramType,
+    height: _height,
+    diagramType: _diagramType,
     selected = false,
     openControlHover = false,
     low = false,

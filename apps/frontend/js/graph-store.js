@@ -21,7 +21,6 @@ import {
   semanticEdgeObjectSpec,
   semanticElementsFromRoot,
   semanticRelationshipsFromRoot,
-  stripRuntimeFields,
   modelTypeMatches,
 } from "./model-utils.js";
 
@@ -323,7 +322,7 @@ function collectConfiguredNestedElements(typeKey, parent, result, seen) {
   });
 }
 
-function semanticElementsFromConfiguredRoot(typeKey, modelJson) {
+function _semanticElementsFromConfiguredRoot(typeKey, modelJson) {
   const result = [];
   const seen = new Set();
   if (!modelJson || typeof modelJson !== "object") {
@@ -403,7 +402,7 @@ function relationshipIdentity(typeKey, relationship, index) {
   )}-${sanitizeIdPart(target)}`;
 }
 
-function normalizeElement(element, index) {
+function normalizeElement(element, _index) {
   const id = String(element?.id || genId("node")).trim();
   return {
     eClass: semanticType(element),
@@ -1069,7 +1068,7 @@ export function selectRelationshipIdsForView(graph, view, elementIds) {
 
 function layoutNodesForElements(graph, elementIds, existingNodes = [], typeKey = state.activeType) {
   const existingByElement = new Map(safeArray(existingNodes).map((node) => [node.elementId, node]));
-  const nodes = elementIds.map((elementId, index) => {
+  const nodes = elementIds.map((elementId, _index) => {
     const element = graph.elementsById.get(elementId);
     const existing = existingByElement.get(elementId);
     const x = Number.isFinite(Number(existing?.x))
@@ -1680,7 +1679,7 @@ export function serializeRuntimeGraph() {
   };
 }
 
-function manualBacklogKey(task, index) {
+function manualBacklogKey(task, _index) {
   const explicit = String(task?.id || "").trim();
   if (explicit) {
     return `id:${explicit}`;
@@ -1957,7 +1956,7 @@ function attachConfiguredContainments(
   });
 }
 
-function populateConfiguredRootContainments(typeKey, root, graph) {
+function _populateConfiguredRootContainments(typeKey, root, graph) {
   const elements = [...graph.elementsById.values()];
   const rootType = modelingRootType(typeKey);
   root.eClass ||= rootType;

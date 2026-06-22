@@ -434,7 +434,7 @@
     box-shadow var(--transition);
 }
 
-.model-workbench-strip .model-save-btn:hover:not(:disabled):not(.is-saving) {
+.model-workbench-strip .model-save-btn:hover:not(:disabled, .is-saving) {
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
   background: color-mix(in srgb, var(--accent) 20%, var(--surface-high) 80%);
 }

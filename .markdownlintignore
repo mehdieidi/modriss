@@ -1,3 +1,4 @@
 **/vendor/**
 node_modules/**
 target/**
+mde/samples/**/generated-project/**

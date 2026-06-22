@@ -25,7 +25,6 @@ import {
   modelingLegalKinds,
   modelingLevelConfig,
   modelingRelationshipKindLabel,
-  modelingTypeMatches,
 } from "./modeling-config-data.js";
 import {
   addNodeToGraphAndActiveView,
@@ -416,7 +415,7 @@ function identityFieldForNode(node, definition) {
   return "name";
 }
 
-function renderRelationshipAttributeFields(node, meta, definition) {
+function _renderRelationshipAttributeFields(node, meta, definition) {
   const sections = relationshipInspectorSections();
   const rendered = new Set(["label", "name"]);
 
@@ -479,7 +478,7 @@ function renderRelationshipAttributeFields(node, meta, definition) {
   bindContainmentSectionActions();
 }
 
-function renderPlatformAttributeFields(node, meta, definition) {
+function _renderPlatformAttributeFields(node, meta, definition) {
   const sections = platformInspectorSections();
   const rendered = new Set(["label", "name"]);
 
@@ -818,11 +817,11 @@ function overviewBadges(node, definition) {
   return badges;
 }
 
-function semanticOverviewIssueBadges(node) {
+function _semanticOverviewIssueBadges(_node) {
   return [];
 }
 
-function isPastTenseBusinessEventName(value) {
+function _isPastTenseBusinessEventName(value) {
   const text = String(value || "")
     .trim()
     .toLowerCase();
@@ -1306,11 +1305,11 @@ function appendConfiguredValidationSummary(section, element, type) {
   section.appendChild(summary);
 }
 
-function appendRelationshipValidationSummary(section, element, type) {
+function _appendRelationshipValidationSummary(section, element, type) {
   appendConfiguredValidationSummary(section, element, type);
 }
 
-function appendSemanticValidationSummary(section, element, type) {
+function _appendSemanticValidationSummary(section, element, type) {
   appendConfiguredValidationSummary(section, element, type);
 }
 
@@ -1318,7 +1317,7 @@ function appendPlatformValidationSummary(section, element, type) {
   appendConfiguredValidationSummary(section, element, type);
 }
 
-function metadataMissingRequiredFeatures(typeKey, element) {
+function _metadataMissingRequiredFeatures(typeKey, element) {
   let definition = null;
   try {
     definition = modelingElementDefinition(typeKey, element.eClass || element.type);

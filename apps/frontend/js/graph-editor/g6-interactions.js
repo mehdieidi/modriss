@@ -626,7 +626,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
     callbacks.onNodeHover?.(hoveredNodeId);
   });
 
-  graph.on("node:pointerleave", (event) => {
+  graph.on("node:pointerleave", (_event) => {
     hoveredNodeId = null;
     editor?.setOpenControlHover?.(null);
     callbacks.onNodeHover?.(null);

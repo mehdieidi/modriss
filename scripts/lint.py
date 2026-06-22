@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -41,8 +42,8 @@ def resolve_scope_names(config: dict[str, Any], requested: list[str]) -> list[st
 
     resolved: list[str] = []
     for scope in requested:
-        if scope == "all":
-            resolved.extend(scopes["all"]["includes"])
+        if scope in {"all", "fast"}:
+            resolved.extend(scopes[scope]["includes"])
         else:
             resolved.append(scope)
     return list(dict.fromkeys(resolved))
@@ -89,8 +90,19 @@ def ensure_python_lint_dependencies(scope_names: list[str]) -> None:
 
 
 def run_maven_goals(goals: list[str]) -> None:
-    # Install modules first so SNAPSHOT siblings resolve reliably across the reactor.
-    run([maven(), "install", *goals, "-DskipTests"])
+    # test-compile feeds SpotBugs/PMD without the package/install overhead of a full build.
+    # Reactor order still resolves SNAPSHOT siblings within the same Maven invocation.
+    run(
+        [
+            maven(),
+            "-T",
+            "1C",
+            "--batch-mode",
+            "test-compile",
+            *goals,
+            "-DskipTests",
+        ]
+    )
 
 
 def run_npm_scripts(scripts: list[str]) -> None:
@@ -122,31 +134,28 @@ def run_docker_scope(scope: dict[str, Any]) -> None:
 def run_scope(config: dict[str, Any], scope_name: str) -> None:
     scope = config["scopes"][scope_name]
     print(f"==> Lint scope: {scope_name} ({scope['description']})", flush=True)
+    started = time.perf_counter()
 
     if "mavenGoals" in scope:
         run_maven_goals(scope["mavenGoals"])
-        return
-
-    if "npmScripts" in scope:
+    elif "npmScripts" in scope:
         run_npm_scripts(scope["npmScripts"])
-        return
-
-    if scope_name == "docker":
+    elif scope_name == "docker":
         run_docker_scope(scope)
-        return
-
-    if "command" in scope:
+    elif "command" in scope:
         run_command(scope["command"])
-        return
+    else:
+        raise ValueError(f"Scope '{scope_name}' has no runnable configuration.")
 
-    raise ValueError(f"Scope '{scope_name}' has no runnable configuration.")
+    elapsed = time.perf_counter() - started
+    print(f"<== Lint scope: {scope_name} ({elapsed:.1f}s)", flush=True)
 
 
 def list_scopes(config: dict[str, Any]) -> None:
     print("Available lint scopes:")
     for name in sorted(config["scopes"]):
         scope = config["scopes"][name]
-        if name == "all":
+        if name in {"all", "fast"}:
             includes = ", ".join(scope["includes"])
             print(f"  {name:10} {scope['description']} (includes: {includes})")
         else:
@@ -162,9 +171,20 @@ def main() -> int:
         help="Lint scope to run (repeatable). Defaults to all scopes.",
     )
     parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Run the fast lint profile (web, python, yaml, markdown).",
+    )
+    parser.add_argument(
         "--list-scopes",
         action="store_true",
         help="List configured lint scopes and exit.",
+    )
+    parser.add_argument(
+        "--continue",
+        dest="continue_on_error",
+        action="store_true",
+        help="Run every requested scope even when one fails.",
     )
     args = parser.parse_args()
     config = load_config()
@@ -173,16 +193,45 @@ def main() -> int:
         list_scopes(config)
         return 0
 
+    if args.fast and args.scopes:
+        print("Linting failed: --fast cannot be combined with --scope.", file=sys.stderr)
+        return 1
+
+    scope_names: list[str] = []
     try:
-        scope_names = resolve_scope_names(config, args.scopes or ["all"])
+        requested = ["fast"] if args.fast else (args.scopes or ["all"])
+        scope_names = resolve_scope_names(config, requested)
         ensure_python_lint_dependencies(scope_names)
-        for scope_name in scope_names:
-            run_scope(config, scope_name)
-    except (FileNotFoundError, RuntimeError, ValueError, subprocess.CalledProcessError) as error:
+    except (FileNotFoundError, RuntimeError, ValueError) as error:
         print(f"Linting failed: {error}", file=sys.stderr)
         return 1
 
-    print("Linting passed.")
+    failed_scopes: list[str] = []
+    total_started = time.perf_counter()
+    for scope_name in scope_names:
+        try:
+            run_scope(config, scope_name)
+        except (
+            FileNotFoundError,
+            RuntimeError,
+            ValueError,
+            subprocess.CalledProcessError,
+        ) as error:
+            failed_scopes.append(scope_name)
+            print(f"Lint scope failed ({scope_name}): {error}", file=sys.stderr, flush=True)
+            if not args.continue_on_error:
+                return 1
+
+    total_elapsed = time.perf_counter() - total_started
+    if failed_scopes:
+        print(
+            f"Linting failed after {total_elapsed:.1f}s. "
+            f"Failed scope(s): {', '.join(failed_scopes)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"Linting passed ({total_elapsed:.1f}s).")
     return 0
 
 

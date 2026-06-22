@@ -22,13 +22,7 @@ import {
   validateCurrentModel,
 } from "./model-ops.js";
 import { initArtifactEditor, saveCurrentFile, toggleArtifactTreeCollapsed } from "./artifact.js";
-import {
-  applyAttributePanel,
-  closeAttributePanel,
-  deleteSelection,
-  openAttributePanel,
-  openConnectionPanel,
-} from "./attr-panel.js";
+import { applyAttributePanel, closeAttributePanel, deleteSelection } from "./attr-panel.js";
 import { closeImpactPanel, toggleImpactMode } from "./impact.js";
 import {
   closeChatHistoryPanel,

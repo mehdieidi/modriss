@@ -5,7 +5,7 @@ pipeline, turn planning, session orchestration, and **its own persistence**.
 
 ## Package layout
 
-```
+```text
 platform.assistant
 ├── application/     orchestration and catalog facades
 ├── domain/          records, enums, memory types

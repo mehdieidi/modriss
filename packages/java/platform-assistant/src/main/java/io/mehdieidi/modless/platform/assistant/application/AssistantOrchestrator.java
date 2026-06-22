@@ -2019,7 +2019,8 @@ public class AssistantOrchestrator {
                 + "]*\\b(create|add|build|connect|delete|remove|change|set|rename|update)\\b)).*");
     boolean mutate =
         normalized.matches(
-            "(?s).*(\\bcreate\\b|\\badd\\b|\\bbuild\\b|\\bconnect\\b|\\bdelete\\b|\\bremove\\b|\\bchange\\b|\\bset\\b|\\brename\\b|\\bupdate\\b|\\bexpand\\b|\\brefine\\b|\\bmerge\\b|\\bsplit\\b).*");
+            "(?s).*(\\bcreate\\b|\\badd\\b|\\bbuild\\b|\\bconnect\\b|\\bdelete\\b|\\bremove\\b|\\bchange\\b|\\bset\\b"
+                + "|\\brename\\b|\\bupdate\\b|\\bexpand\\b|\\brefine\\b|\\bmerge\\b|\\bsplit\\b).*");
     return explain && !mutate;
   }
 
@@ -2095,10 +2096,9 @@ public class AssistantOrchestrator {
     }
     for (int index = messages.size() - 1; index >= 0; index--) {
       AssistantWorkflowState workflowState = messages.get(index).workflowState();
-      if (workflowState == null || workflowState == AssistantWorkflowState.WAITING_FOR_CHOICE) {
-        continue;
+      if (workflowState != null && workflowState != AssistantWorkflowState.WAITING_FOR_CHOICE) {
+        return workflowState;
       }
-      return workflowState;
     }
     return AssistantWorkflowState.EXPLAINED;
   }

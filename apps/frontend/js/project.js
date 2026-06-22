@@ -493,7 +493,7 @@ function filenameFromContentDisposition(contentDisposition, fallbackFilename) {
   if (utf8Filename) {
     return decodeURIComponent(utf8Filename[1]);
   }
-  const basicFilename = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+  const basicFilename = contentDisposition.match(/filename="?([^";]+)"?/i);
   return basicFilename?.[1] || fallbackFilename;
 }
 
