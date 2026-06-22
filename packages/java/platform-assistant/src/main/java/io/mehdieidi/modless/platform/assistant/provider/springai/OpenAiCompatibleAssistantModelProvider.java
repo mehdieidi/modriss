@@ -1,21 +1,21 @@
-package io.mehdieidi.modless.backend.assistant;
+package io.mehdieidi.modless.platform.assistant.provider.springai;
 
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
+import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
+import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.openai.api.ResponseFormat;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.retry.support.RetryTemplate;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** OpenAI-compatible provider implemented through Spring AI's OpenAI chat model. */
-@Component
 public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantModelProvider {
 
   /** Creates the provider using the dedicated AI-only HTTP client. */
@@ -26,7 +26,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
       AssistantToolService tools,
       AssistantHardeningService hardening,
       SemanticModelPatchParser patchParser,
-      @Qualifier("aiRestClientBuilder") RestClient.Builder restClientBuilder) {
+      RestClient.Builder restClientBuilder) {
     super(
         AiProperties.Provider.OPENAI.key(),
         properties,

@@ -4,6 +4,8 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Locale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Local embedding service for PGvector retrieval.
@@ -14,6 +16,8 @@ import java.util.Locale;
 public class LocalEmbeddingService {
 
   static final int DIMENSIONS = 384;
+
+  private static final Logger log = LoggerFactory.getLogger(LocalEmbeddingService.class);
 
   private final EmbeddingSettings settings;
   private volatile Object onnxModel;
@@ -31,6 +35,24 @@ public class LocalEmbeddingService {
             ? new EmbeddingSettings(
                 EmbeddingSettings.Provider.ONNX, null, null, null, null, false, -1, true)
             : settings;
+    if (this.settings.provider() == EmbeddingSettings.Provider.ONNX && !onnxRuntimeAvailable()) {
+      onnxUnavailable = true;
+    }
+  }
+
+  /**
+   * Returns whether the ONNX runtime and Spring AI transformers classes are loadable.
+   *
+   * @return true when ONNX embeddings can be attempted
+   */
+  public static boolean onnxRuntimeAvailable() {
+    try {
+      Class.forName("ai.onnxruntime.OrtException");
+      Class.forName("org.springframework.ai.transformers.TransformersEmbeddingModel");
+      return true;
+    } catch (ClassNotFoundException | LinkageError ex) {
+      return false;
+    }
   }
 
   /**
@@ -78,6 +100,9 @@ public class LocalEmbeddingService {
         if (!settings.fallbackToHash()) {
           throw ex;
         }
+        log.warn(
+            "ONNX embeddings failed; falling back to deterministic hash vectors for retrieval.",
+            ex);
       }
     }
     return hashEmbed(text);

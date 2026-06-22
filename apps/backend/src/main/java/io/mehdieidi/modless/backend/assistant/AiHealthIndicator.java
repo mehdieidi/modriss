@@ -1,7 +1,9 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.persistence.embedding.EmbeddingSettings;
 import io.mehdieidi.modless.platform.assistant.persistence.embedding.LocalEmbeddingService;
+import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;

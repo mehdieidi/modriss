@@ -1,7 +1,7 @@
 package io.mehdieidi.modless.backend.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mehdieidi.modless.backend.assistant.AiProperties;
+import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.persistence.embedding.EmbeddingSettings;
 import io.mehdieidi.modless.platform.assistant.persistence.embedding.LocalEmbeddingService;
 import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantCatalog;
@@ -13,6 +13,8 @@ import io.mehdieidi.modless.platform.assistant.spi.AssistantChatMemory;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantMemoryStore;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantModelContextIndex;
 import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimePaths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,6 +22,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /** Wires assistant persistence implementations from the platform-assistant feature package. */
 @Configuration
 public class AssistantPersistenceConfig {
+
+  private static final Logger log = LoggerFactory.getLogger(AssistantPersistenceConfig.class);
 
   @Bean
   AssistantMemoryStore assistantMemoryStore(JdbcTemplate jdbc, ObjectMapper mapper) {
@@ -51,19 +55,46 @@ public class AssistantPersistenceConfig {
 
   private static EmbeddingSettings toEmbeddingSettings(AiProperties.Embeddings embeddings) {
     if (embeddings == null) {
-      return new EmbeddingSettings(
-          EmbeddingSettings.Provider.ONNX, null, null, null, null, false, -1, true);
+      return resolveProvider(
+          EmbeddingSettings.Provider.ONNX,
+          new EmbeddingSettings(
+              EmbeddingSettings.Provider.ONNX, null, null, null, null, false, -1, true));
     }
-    return new EmbeddingSettings(
+    EmbeddingSettings.Provider provider =
         embeddings.provider() == AiProperties.EmbeddingProvider.HASH
             ? EmbeddingSettings.Provider.HASH
-            : EmbeddingSettings.Provider.ONNX,
-        embeddings.modelResource(),
-        embeddings.tokenizerResource(),
-        embeddings.modelOutputName(),
-        embeddings.cacheDirectory(),
-        embeddings.disableCaching(),
-        embeddings.gpuDeviceId(),
-        embeddings.fallbackToHash());
+            : EmbeddingSettings.Provider.ONNX;
+    return resolveProvider(
+        provider,
+        new EmbeddingSettings(
+            provider,
+            embeddings.modelResource(),
+            embeddings.tokenizerResource(),
+            embeddings.modelOutputName(),
+            embeddings.cacheDirectory(),
+            embeddings.disableCaching(),
+            embeddings.gpuDeviceId(),
+            embeddings.fallbackToHash()));
+  }
+
+  private static EmbeddingSettings resolveProvider(
+      EmbeddingSettings.Provider configured, EmbeddingSettings settings) {
+    if (configured == EmbeddingSettings.Provider.ONNX
+        && !LocalEmbeddingService.onnxRuntimeAvailable()) {
+      log.warn(
+          "ONNX embeddings are configured but the native runtime is not on the classpath. Using"
+              + " deterministic hash embeddings for catalog retrieval. Build with the backend"
+              + " onnx-embeddings Maven profile or set modless.ai.embeddings.provider=HASH.");
+      return new EmbeddingSettings(
+          EmbeddingSettings.Provider.HASH,
+          settings.modelResource(),
+          settings.tokenizerResource(),
+          settings.modelOutputName(),
+          settings.cacheDirectory(),
+          settings.disableCaching(),
+          settings.gpuDeviceId(),
+          true);
+    }
+    return settings;
   }
 }

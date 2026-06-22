@@ -1,20 +1,22 @@
-package io.mehdieidi.modless.backend.assistant;
+package io.mehdieidi.modless.platform.assistant.provider;
 
+import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
-import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.provider.springai.GeminiAssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.provider.springai.OpenAiCompatibleAssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.Optional;
 import java.util.function.Function;
 
 /** Delegates assistant calls to the provider selected by configuration. */
-final class ConfiguredAssistantModelProvider implements AssistantModelProvider {
+public final class ConfiguredAssistantModelProvider implements AssistantModelProvider {
 
   private final AiProperties properties;
   private final OpenAiCompatibleAssistantModelProvider openai;
   private final GeminiAssistantModelProvider gemini;
 
-  ConfiguredAssistantModelProvider(
+  public ConfiguredAssistantModelProvider(
       AiProperties properties,
       OpenAiCompatibleAssistantModelProvider openai,
       GeminiAssistantModelProvider gemini) {

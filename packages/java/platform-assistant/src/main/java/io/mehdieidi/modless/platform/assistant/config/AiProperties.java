@@ -1,4 +1,4 @@
-package io.mehdieidi.modless.backend.assistant;
+package io.mehdieidi.modless.platform.assistant.config;
 
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;

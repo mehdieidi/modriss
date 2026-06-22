@@ -1,11 +1,10 @@
-package io.mehdieidi.modless.backend.assistant;
+package io.mehdieidi.modless.platform.assistant.provider;
 
+import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import org.springframework.stereotype.Component;
 
 /** Checks the dedicated AI proxy without affecting non-AI outbound traffic. */
-@Component
 public class ProxyAvailability {
 
   private final AiProperties properties;

@@ -1,4 +1,4 @@
-package io.mehdieidi.modless.backend.assistant;
+package io.mehdieidi.modless.platform.assistant.provider.springai;
 
 import com.google.genai.Client;
 import com.google.genai.types.ClientOptions;
@@ -6,15 +6,16 @@ import com.google.genai.types.ProxyOptions;
 import com.google.genai.types.ProxyType;
 import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.modless.platform.assistant.config.AiProperties;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
+import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
+import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.google.genai.GoogleGenAiChatModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
-import org.springframework.stereotype.Component;
 
 /** Google Gemini provider implemented through Spring AI's Google GenAI model. */
-@Component
 public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider {
 
   private static final String GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";

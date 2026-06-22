@@ -1,8 +1,22 @@
 package io.mehdieidi.modless.backend.assistant;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningService;
+import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
+import io.mehdieidi.modless.platform.assistant.config.AiProperties;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
+import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
+import io.mehdieidi.modless.platform.assistant.patch.SemanticModelPatchParser;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.provider.ConfiguredAssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
+import io.mehdieidi.modless.platform.assistant.provider.springai.GeminiAssistantModelProvider;
+import io.mehdieidi.modless.platform.assistant.provider.springai.OpenAiCompatibleAssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
+import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
+import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.net.Proxy;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +24,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
-/** AI-specific backend configuration. */
+/** Wires platform assistant providers and delivery-only HTTP clients for the backend. */
 @Configuration
 @EnableConfigurationProperties(AiProperties.class)
 public class AiConfig {
@@ -21,14 +35,53 @@ public class AiConfig {
     return properties;
   }
 
-  /**
-   * Selects the configured provider while keeping orchestrator code provider-neutral.
-   *
-   * @param properties AI settings
-   * @param openai OpenAI-compatible adapter
-   * @param gemini Gemini adapter
-   * @return configured provider delegate
-   */
+  @Bean
+  ProxyAvailability proxyAvailability(AiProperties properties) {
+    return new ProxyAvailability(properties);
+  }
+
+  @Bean
+  @Primary
+  AssistantToolService assistantToolService(
+      io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog catalogs,
+      AssistantPatchCompiler patchCompiler,
+      AssistantMetamodelSchemaService schemas,
+      ModelService models,
+      ObjectMapper mapper) {
+    return new AssistantToolService(catalogs, patchCompiler, schemas, models, mapper);
+  }
+
+  @Bean
+  OpenAiCompatibleAssistantModelProvider openAiCompatibleAssistantModelProvider(
+      AiProperties properties,
+      ProxyAvailability proxyAvailability,
+      AssistantPromptGuard promptGuard,
+      AssistantToolService tools,
+      AssistantHardeningService hardening,
+      SemanticModelPatchParser patchParser,
+      @Qualifier("aiRestClientBuilder") RestClient.Builder restClientBuilder) {
+    return new OpenAiCompatibleAssistantModelProvider(
+        properties,
+        proxyAvailability,
+        promptGuard,
+        tools,
+        hardening,
+        patchParser,
+        restClientBuilder);
+  }
+
+  @Bean
+  GeminiAssistantModelProvider geminiAssistantModelProvider(
+      AiProperties properties,
+      ProxyAvailability proxyAvailability,
+      AssistantPromptGuard promptGuard,
+      AssistantToolService tools,
+      AssistantHardeningService hardening,
+      SemanticModelPatchParser patchParser) {
+    return new GeminiAssistantModelProvider(
+        properties, proxyAvailability, promptGuard, tools, hardening, patchParser);
+  }
+
   @Bean
   @Primary
   AssistantModelProvider assistantModelProvider(
@@ -38,12 +91,6 @@ public class AiConfig {
     return new ConfiguredAssistantModelProvider(properties, openai, gemini);
   }
 
-  /**
-   * Creates a RestClient builder whose proxy applies only to AI provider calls.
-   *
-   * @param properties AI settings
-   * @return proxy-aware RestClient builder
-   */
   @Bean("aiRestClientBuilder")
   RestClient.Builder aiRestClientBuilder(AiProperties properties) {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();

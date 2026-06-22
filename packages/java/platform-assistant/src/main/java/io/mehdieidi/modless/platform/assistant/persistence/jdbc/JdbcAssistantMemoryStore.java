@@ -125,6 +125,9 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
         INSERT INTO assistant_threads(id, user_id, project_id, level, active_model_id,
           active_revision, title, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET active_model_id = EXCLUDED.active_model_id,
+          active_revision = EXCLUDED.active_revision, title = EXCLUDED.title,
+          updated_at = EXCLUDED.updated_at
         """,
         threadId,
         user.id(),

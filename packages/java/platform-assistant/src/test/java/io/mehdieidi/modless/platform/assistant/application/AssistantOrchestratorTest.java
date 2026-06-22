@@ -21,6 +21,7 @@ import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantWorkflowState;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
+import io.mehdieidi.modless.platform.assistant.domain.memory.AssistantMemoryRecords.ThreadRecord;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompleter;
@@ -95,6 +96,19 @@ class AssistantOrchestratorTest {
     when(catalogs.describeType(anyString(), anyString(), anyInt())).thenReturn(List.of());
     when(memory.summary(anyString())).thenReturn(Optional.empty());
     when(memory.recentMessages(anyString(), anyInt())).thenReturn(List.of());
+    when(memory.userMessageCount(anyString())).thenReturn(0);
+    when(memory.requireThread(anyString()))
+        .thenReturn(
+            new ThreadRecord(
+                "session",
+                "user",
+                "project",
+                ModelLevel.PIM,
+                "Orders",
+                null,
+                null,
+                Instant.now(),
+                Instant.now()));
     when(chatMemory.recent(anyString(), anyInt())).thenReturn(List.of());
     orchestrator =
         new AssistantOrchestrator(
@@ -117,6 +131,25 @@ class AssistantOrchestratorTest {
             new AssistantHardeningService(properties, null),
             models,
             projects);
+  }
+
+  @Test
+  void recreatesMissingDurableThreadBeforePersistingMessages() {
+    when(memory.requireThread("session")).thenReturn(null);
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Kind.ANSWER,
+                "Recovered thread.",
+                List.of(),
+                new SemanticModelPatch(List.of())));
+
+    orchestrator.handleMessage(user, "session", request("Explain what this model does"));
+
+    verify(memory)
+        .createThread(
+            eq("session"), eq(user), eq("project"), eq(ModelLevel.PIM), eq("Orders"), any(), any());
+    verify(memory).appendMessage(eq("session"), eq("USER"), anyString(), any());
   }
 
   @Test

@@ -1,4 +1,4 @@
-package io.mehdieidi.modless.backend.assistant;
+package io.mehdieidi.modless.platform.assistant.application;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

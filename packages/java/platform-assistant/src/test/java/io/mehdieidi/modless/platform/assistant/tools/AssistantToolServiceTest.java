@@ -1,4 +1,4 @@
-package io.mehdieidi.modless.backend.assistant;
+package io.mehdieidi.modless.platform.assistant.tools;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,6 +14,7 @@ import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaSer
 import io.mehdieidi.modless.platform.assistant.patch.AssistantPatchCompiler;
 import io.mehdieidi.modless.platform.assistant.persistence.jdbc.JdbcAssistantModelContextIndex;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
+import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import java.lang.reflect.Method;
@@ -82,7 +83,7 @@ class AssistantToolServiceTest {
     var context =
         new JdbcAssistantModelContextIndex()
             .transientSnapshot("project", ModelLevel.PIM, "Orders", 1L, model, null);
-    tools.bindSession(new AssistantToolService.ToolSession(ModelLevel.PIM, model, context));
+    tools.bindSession(new AssistantToolBridge.ToolSession(ModelLevel.PIM, model, context));
 
     AssistantToolService.ElementPage page = tools.listModelElements("Function", "", 0, 10);
 

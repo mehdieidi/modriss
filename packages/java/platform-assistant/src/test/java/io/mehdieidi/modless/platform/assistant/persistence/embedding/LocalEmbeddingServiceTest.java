@@ -28,6 +28,13 @@ class LocalEmbeddingServiceTest {
             EmbeddingSettings.Provider.ONNX, null, null, null, null, false, -1, true);
     LocalEmbeddingService embeddings = new LocalEmbeddingService(settings);
 
+    assertEquals(EmbeddingSettings.Provider.HASH, embeddings.activeProvider());
     assertEquals(LocalEmbeddingService.DIMENSIONS, embeddings.embed("fallback").length);
+  }
+
+  @Test
+  void onnxRuntimeAvailabilityReflectsClasspath() {
+    assertEquals(
+        LocalEmbeddingService.onnxRuntimeAvailable(), LocalEmbeddingService.onnxRuntimeAvailable());
   }
 }

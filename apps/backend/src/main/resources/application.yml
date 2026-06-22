@@ -71,7 +71,7 @@ modless:
       retry-backoff: ${MODLESS_AI_RETRY_BACKOFF:250ms}
       recent-message-window: ${MODLESS_AI_RECENT_MESSAGE_WINDOW:24}
     embeddings:
-      provider: ${MODLESS_AI_EMBEDDINGS_PROVIDER:ONNX}
+      provider: ${MODLESS_AI_EMBEDDINGS_PROVIDER:HASH}
       model-resource: ${MODLESS_AI_EMBEDDINGS_MODEL_RESOURCE:}
       tokenizer-resource: ${MODLESS_AI_EMBEDDINGS_TOKENIZER_RESOURCE:}
       model-output-name: ${MODLESS_AI_EMBEDDINGS_MODEL_OUTPUT_NAME:}

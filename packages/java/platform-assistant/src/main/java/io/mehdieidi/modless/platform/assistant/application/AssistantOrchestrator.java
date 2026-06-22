@@ -213,6 +213,7 @@ public class AssistantOrchestrator {
     metrics.recordAssistantRequest();
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
     String threadId = session.id();
+    ensureDurableThread(user, session);
     appendUserMessage(threadId, sessionId, request);
 
     ProjectRecord project = projects.get(user, session.projectId());
@@ -2275,6 +2276,33 @@ public class AssistantOrchestrator {
           .map(sessions::fromThread)
           .orElseThrow(() -> failure);
     }
+  }
+
+  private void ensureDurableThread(
+      UserRecord user, AssistantSessionStore.AssistantSession session) {
+    if (memory.requireThread(session.id()) != null) {
+      return;
+    }
+    ProjectRecord project = projects.get(user, session.projectId());
+    String modelId = activeModelId(project, session.level());
+    Long revision = null;
+    if (!blank(modelId)) {
+      try {
+        revision = models.get(user, session.level(), modelId).revision();
+      } catch (PlatformException failure) {
+        if (failure.status() != 404) {
+          throw failure;
+        }
+      }
+    }
+    memory.createThread(
+        session.id(),
+        user,
+        session.projectId(),
+        session.level(),
+        session.title(),
+        modelId,
+        revision);
   }
 
   private void requireCurrentRevision(Long requestedRevision, ModelRecord model) {

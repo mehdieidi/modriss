@@ -37,6 +37,25 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+      <artifactId>spring-boot</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <artifactId>spring-web</artifactId>
+      <groupId>org.springframework</groupId>
+    </dependency>
+    <dependency>
+      <artifactId>spring-ai-openai</artifactId>
+      <groupId>org.springframework.ai</groupId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <artifactId>spring-ai-google-genai</artifactId>
+      <groupId>org.springframework.ai</groupId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <artifactId>spring-ai-client-chat</artifactId>
       <groupId>org.springframework.ai</groupId>
       <optional>true</optional>
