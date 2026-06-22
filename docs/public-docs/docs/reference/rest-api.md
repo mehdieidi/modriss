@@ -106,4 +106,4 @@ proposals. See [Realtime Assistant API](realtime-api.md).
 
 ### Planned Routes
 
-Requests under `/api/github/**`, `/api/impact/**`, and `/api/admin/**` currently return HTTP `501`.
+Requests under `/api/impact/**` and `/api/admin/**` currently return HTTP `501`.

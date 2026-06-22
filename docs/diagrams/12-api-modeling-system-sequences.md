@@ -92,7 +92,7 @@ sequenceDiagram
     C-->>Browser: HTML page loading /v3/api-docs
 ```
 
-## `/api/github/**`, `/api/impact/**`, `/api/admin/**`
+## `/api/impact/**`, `/api/admin/**`
 
 ```mermaid
 sequenceDiagram

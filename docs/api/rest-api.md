@@ -162,7 +162,7 @@ WebSocket stream: `ws://<host>/ws/chatbot/sessions/{sessionId}` (receive-only).
 
 ## Planned Endpoints
 
-Requests under `/api/github/**`, `/api/impact/**`, and `/api/admin/**` currently return `501` with
+Requests under `/api/impact/**` and `/api/admin/**` currently return `501` with
 the message `This feature is planned for a future backend iteration.`
 
 ## Shared Shapes

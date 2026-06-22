@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class FutureFeatureController {
 
   /** Rejects requests to endpoints reserved for future features. */
-  @RequestMapping({"/api/github/**", "/api/impact/**", "/api/admin/**"})
+  @RequestMapping({"/api/impact/**", "/api/admin/**"})
   void future() {
     throw new PlatformException(501, "This feature is planned for a future backend iteration.");
   }

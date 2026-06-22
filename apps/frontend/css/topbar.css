@@ -332,14 +332,6 @@ html.light .app-logo-img {
   z-index: 90;
 }
 
-.topbar-artifact-btn {
-  display: none;
-}
-
-.topbar.artifact-mode .topbar-artifact-btn {
-  display: inline-flex;
-}
-
 .ide-menu.is-open .ide-menu-items {
   display: flex;
 }

@@ -678,38 +678,6 @@
   gap: 7px;
 }
 
-.github-commit-input {
-  margin-top: 6px;
-}
-
-.github-deploy-status {
-  font-size: 11px;
-  color: var(--text);
-  line-height: 1.4;
-}
-
-.github-deploy-meta {
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.github-deploy-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.github-link {
-  font-size: 11px;
-  color: var(--accent-light);
-  text-decoration: none;
-}
-
-.github-link:hover {
-  text-decoration: underline;
-}
-
 .admin-path-label {
   padding: 7px 8px;
   border-radius: 8px;

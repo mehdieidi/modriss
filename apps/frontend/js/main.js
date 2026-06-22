@@ -53,7 +53,6 @@ import { isMobileViewport } from "./responsive.js";
 import { closeMobilePanels, setMobileBackdropVisible, syncMobileDockState } from "./mobile-ui.js";
 import { ensureAuthenticated, logout, updateDisplayName } from "./auth.js";
 import { initSvgIconMasks } from "./icons.js";
-import { deployToGithubFromArtifacts, refreshGithubConnection } from "./github.js";
 import {
   isModelingLevel,
   loadModelingConfig,
@@ -1049,8 +1048,6 @@ function bindEvents() {
   // Artifact explorer
   el.artifactTreeToggleBtn?.addEventListener("click", toggleArtifactTreeCollapsed);
 
-  el.deployGithubBtn?.addEventListener("click", deployToGithubFromArtifacts);
-
   el.saveFileBtn?.addEventListener("click", saveCurrentFile);
 
   // Attribute panel
@@ -1109,7 +1106,6 @@ async function init() {
   applyViewport();
   await initArtifactEditor();
   updateChatAttachmentLabel();
-  await refreshGithubConnection();
   if (authState?.promptedLogin) {
     await showProjectDialog();
     return;

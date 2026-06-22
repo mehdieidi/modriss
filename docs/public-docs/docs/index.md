@@ -41,7 +41,7 @@ flowchart LR
 
 Modless currently targets AWS serverless architecture. The formal pipeline, backend services,
 frontend workbenches, storage, assistant, CLI tools, and generated AWS project templates are
-implemented. GitHub integration, impact-analysis APIs, and admin APIs remain planned endpoints.
+implemented. Impact-analysis APIs and admin APIs remain planned endpoints.
 
 The project is both a research platform and an engineering system. Its documentation therefore
 describes not only how to use it, but also the formal sources of truth, traceability boundaries,

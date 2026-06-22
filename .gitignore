@@ -77,3 +77,6 @@ site/
 
 # Generated sample project files
 generated-project/
+
+# Automatically created by ruff
+.ruff_cache/

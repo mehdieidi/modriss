@@ -27,7 +27,6 @@ import {
 } from "./canvas.js";
 import { closeAttributePanel } from "./attr-panel.js";
 import { closeImpactPanel } from "./impact.js";
-import { refreshGithubConnection } from "./github.js";
 import { loadArtifactById, loadArtifactRecord, loadCurrentProjectArtifact } from "./artifact.js";
 import { confirmAction } from "./confirm-action.js";
 import {
@@ -1191,10 +1190,6 @@ export function updateGenerateButtonState() {
   el.generateContextBtn.classList.toggle("hidden", !isVisible);
   el.generateContextBtn.disabled = !isVisible;
   el.generateContextBtn.classList.toggle("topbar-download-btn", state.activeType === "artifact");
-  if (el.deployGithubBtn) {
-    el.deployGithubBtn.classList.toggle("hidden", state.activeType !== "artifact");
-    el.deployGithubBtn.disabled = state.activeType !== "artifact";
-  }
   if (!buttonConfig) {
     return;
   }
@@ -1394,10 +1389,7 @@ export async function switchTab(type) {
     renderViewWorkbench();
     updateModelSaveUi();
     setStatus("Artifact Explorer");
-    await Promise.all([
-      loadCurrentProjectArtifact({ collapseTree: true }),
-      refreshGithubConnection(),
-    ]);
+    await loadCurrentProjectArtifact({ collapseTree: true });
     return;
   }
 

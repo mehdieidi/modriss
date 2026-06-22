@@ -77,15 +77,6 @@
   color: var(--accent-light);
 }
 
-.artifact-explorer-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px 10px;
-  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
-  background: color-mix(in srgb, var(--surface-2) 94%, var(--surface-high) 6%);
-}
-
 .file-tree {
   flex: 1 1 auto;
   min-height: 0;
@@ -331,34 +322,6 @@
 .artifact-editor-host .monaco-editor,
 .artifact-editor-host .overflow-guard {
   border-radius: 0;
-}
-
-.github-deploy-status {
-  font-size: 11px;
-  color: var(--text);
-  line-height: 1.4;
-}
-
-.github-deploy-meta {
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.github-deploy-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.github-link {
-  font-size: 11px;
-  color: var(--accent-light);
-  text-decoration: none;
-}
-
-.github-link:hover {
-  text-decoration: underline;
 }
 
 html.light .artifact-editor,

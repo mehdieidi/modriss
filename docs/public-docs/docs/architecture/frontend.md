@@ -12,7 +12,7 @@ rendering and communicates with the backend through REST, SSE, and WebSocket.
 - Validation and generation progress
 - Assistant chat and proposal controls
 - Artifact explorer and file editor
-- Planned GitHub, impact-analysis, and admin surfaces
+- Planned impact-analysis and admin surfaces
 
 ## Metadata-Driven Modeling
 

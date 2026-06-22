@@ -913,22 +913,6 @@ paths:
           description: Persisted view layout result
         "400":
           $ref: "#/components/responses/BadRequest"
-  /api/github/{path}:
-    parameters:
-      - $ref: "#/components/parameters/WildcardPath"
-    get:
-      tags: [Future]
-      summary: Planned GitHub integration endpoint
-      description: Represents the Spring `/api/github/**` placeholder. Other HTTP methods return the same 501 response.
-      responses:
-        "501":
-          $ref: "#/components/responses/NotImplemented"
-    post:
-      tags: [Future]
-      summary: Planned GitHub integration endpoint
-      responses:
-        "501":
-          $ref: "#/components/responses/NotImplemented"
   /api/impact/{path}:
     parameters:
       - $ref: "#/components/parameters/WildcardPath"

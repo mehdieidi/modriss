@@ -59,10 +59,6 @@
 
           <div class="topbar-collapse" id="topbarCollapse">
             <div class="model-lifecycle" aria-label="Model lifecycle actions">
-              <div class="model-lifecycle-heading" aria-hidden="true">
-                <span>Model flow</span>
-                <strong>Assess to deliver</strong>
-              </div>
               <div class="ide-menubar model-lifecycle-tools">
                 <div class="model-lifecycle-group model-lifecycle-group-assess">
                   <span class="model-lifecycle-group-label">Assess</span>
@@ -100,14 +96,6 @@
                         style="--icon-src: url(&quot;/assets/icons/generate.svg&quot;)"
                       ></span>
                       <span class="topbar-btn-label">Generate</span>
-                    </button>
-                    <button
-                      class="ide-menu-trigger topbar-ide-btn topbar-artifact-btn"
-                      id="deployGithubBtn"
-                      title="Deploy artifact to GitHub"
-                      type="button"
-                    >
-                      <span class="topbar-btn-label">Deploy to GitHub</span>
                     </button>
                   </div>
                 </div>
@@ -420,26 +408,6 @@
                   <span>No artifact loaded</span>
                 </div>
                 <div class="file-tree" id="fileTree"></div>
-                <div class="artifact-explorer-footer">
-                  <div class="github-deploy-status" id="githubDeployStatus"></div>
-                  <div class="github-deploy-meta" id="githubDeployMeta"></div>
-                  <div class="github-deploy-links">
-                    <a
-                      class="github-link hidden"
-                      id="githubRepoLink"
-                      rel="noopener noreferrer"
-                      target="_blank"
-                      >Open Repository</a
-                    >
-                    <a
-                      class="github-link hidden"
-                      id="githubCommitLink"
-                      rel="noopener noreferrer"
-                      target="_blank"
-                      >Last Commit</a
-                    >
-                  </div>
-                </div>
               </div>
 
               <div class="hidden" id="adminPanel">

@@ -28,7 +28,6 @@
 
 ## Planned Areas
 
-- GitHub integration
 - Impact analysis
 - Admin workspace APIs
 - Broader collaboration and versioning workflows
@@ -36,5 +35,5 @@
 - Reverse engineering
 - Additional cloud providers
 
-Planned HTTP surfaces under `/api/github/**`, `/api/impact/**`, and `/api/admin/**` return `501`
+Planned HTTP surfaces under `/api/impact/**` and `/api/admin/**` return `501`
 until implemented.

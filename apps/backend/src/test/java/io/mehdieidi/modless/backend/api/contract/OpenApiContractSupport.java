@@ -130,9 +130,7 @@ final class OpenApiContractSupport {
 
   private static Set<String> defaultMethodsForPattern(String pattern) {
     String normalized = normalizePath(pattern);
-    if (normalized.startsWith("/api/github/")
-        || normalized.startsWith("/api/impact/")
-        || normalized.startsWith("/api/admin/")) {
+    if (normalized.startsWith("/api/impact/") || normalized.startsWith("/api/admin/")) {
       return Set.of("GET", "POST");
     }
     return Set.of("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS");
