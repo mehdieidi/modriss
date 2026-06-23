@@ -1,0 +1,3164 @@
+{
+  "cvsVersion": 2,
+  "displayName": "PIM",
+  "metamodelRef": {
+    "level": "pim",
+    "ecore": "mde/metamodels/pim/pim-combined.ecore",
+    "nsUri": "https://modless.org/pim/1.0"
+  },
+  "primitives": {
+    "workflow-state-node": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18,
+      "sprottyShape": "rectangle"
+    },
+    "human-task-card": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18,
+      "sprottyShape": "rectangle"
+    },
+    "approval-task-card": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18,
+      "sprottyShape": "rectangle"
+    }
+  },
+  "notationPrimitives": {
+    "workflow-state-node": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18
+    },
+    "human-task-card": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18
+    },
+    "approval-task-card": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18
+    }
+  },
+  "elementVisualDefaults": {
+    "icon": "category",
+    "color": "#475569",
+    "category": "PIM",
+    "notation": {
+      "tag": "PIM",
+      "shape": "concept-card",
+      "lineFields": ["summary", "description", "lifecycleStatus"]
+    }
+  },
+  "elementVisualRules": [
+    {
+      "match": {
+        "packages": ["pim"]
+      },
+      "metadata": {
+        "icon": "dashboard",
+        "color": "#334155",
+        "category": "Root",
+        "notation": {
+          "tag": "ROOT",
+          "shape": "workspace-container",
+          "lineFields": ["architectureStyle", "domainName"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["deployment"]
+      },
+      "metadata": {
+        "icon": "inventory_2",
+        "color": "#0F766E",
+        "category": "Deployment",
+        "notation": {
+          "tag": "DPL",
+          "shape": "container-card",
+          "lineFields": ["unitType", "environmentClass", "ownerTeam", "supportLevel"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["api"]
+      },
+      "metadata": {
+        "icon": "api",
+        "color": "#7C3AED",
+        "category": "API",
+        "notation": {
+          "tag": "API",
+          "shape": "api-card",
+          "lineFields": ["apiStyle", "method", "pathTemplate", "operationId"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["compute"]
+      },
+      "metadata": {
+        "icon": "functions",
+        "color": "#2563EB",
+        "category": "Compute",
+        "notation": {
+          "tag": "FN",
+          "shape": "function-card",
+          "lineFields": ["functionKind", "handlerResponsibility", "computeProfile"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["contracts"]
+      },
+      "metadata": {
+        "icon": "description",
+        "color": "#4F46E5",
+        "category": "Contracts",
+        "notation": {
+          "tag": "SCHEMA",
+          "shape": "table-tree",
+          "lineFields": ["schemaKind", "semanticVersion", "fieldType", "contractVersion"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["data"]
+      },
+      "metadata": {
+        "icon": "database",
+        "color": "#0891B2",
+        "category": "Data",
+        "notation": {
+          "tag": "DATA",
+          "shape": "data-card",
+          "lineFields": ["storeKind", "dataModelKind", "operation", "fieldType"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["integration"]
+      },
+      "metadata": {
+        "icon": "hub",
+        "color": "#DB2777",
+        "category": "Messaging",
+        "notation": {
+          "tag": "FLOW",
+          "shape": "event-flow",
+          "lineFields": ["channelKind", "deliverySemantics", "flowPurpose", "scheduleExpression"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["workflow"]
+      },
+      "metadata": {
+        "icon": "schema",
+        "color": "#EA580C",
+        "category": "Workflow",
+        "notation": {
+          "tag": "WF",
+          "shape": "workflow-node",
+          "lineFields": ["workflowKind", "stateKind", "taskDescription", "conditionExpression"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["external"]
+      },
+      "metadata": {
+        "icon": "language",
+        "color": "#0D9488",
+        "category": "External Integration",
+        "notation": {
+          "tag": "EXT",
+          "shape": "external-boundary",
+          "lineFields": ["externalSystemName", "protocolFamily", "endpointDescription"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["security"]
+      },
+      "metadata": {
+        "icon": "security",
+        "color": "#CA8A04",
+        "category": "Security",
+        "notation": {
+          "tag": "SEC",
+          "shape": "security-card",
+          "lineFields": ["identityKind", "principalKind", "effect", "authScheme"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["policy"]
+      },
+      "metadata": {
+        "icon": "policy",
+        "color": "#64748B",
+        "category": "Operations / Policy",
+        "notation": {
+          "tag": "POL",
+          "shape": "policy-badge-card",
+          "lineFields": ["policyScope", "productionRequired", "timeoutSeconds", "retentionPeriod"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["config"]
+      },
+      "metadata": {
+        "icon": "tune",
+        "color": "#64748B",
+        "category": "Configuration",
+        "notation": {
+          "tag": "CFG",
+          "shape": "table-row-card",
+          "lineFields": ["scope", "variableName", "secretKind", "valueKind"]
+        }
+      }
+    },
+    {
+      "match": {
+        "packages": ["kernel"]
+      },
+      "metadata": {
+        "icon": "tag",
+        "color": "#475569",
+        "category": "Kernel / Trace",
+        "supportOnly": true,
+        "creatable": false,
+        "notation": {
+          "tag": "META",
+          "shape": "metadata-chip",
+          "lineFields": ["linkType", "reviewStatus", "sourceReference"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceModel"]
+      },
+      "metadata": {
+        "supportOnly": false,
+        "creatable": true,
+        "notation": {
+          "tag": "TRACE",
+          "shape": "trace-container",
+          "lineFields": ["name", "description"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "DataAccess",
+          "Trigger",
+          "WorkflowTransition",
+          "Permission",
+          "Subscription",
+          "RequestResponseFlow",
+          "EventFlow",
+          "MessageFlow",
+          "PubSubFlow",
+          "OrchestrationFlow",
+          "ExternalIntegrationFlow",
+          "ServiceElementMembership",
+          "EventRoutingRule",
+          "Schedule",
+          "ObjectNotificationRule",
+          "PlatformMappingAssessment"
+        ]
+      },
+      "metadata": {
+        "relationshipElement": true,
+        "icon": "link",
+        "notation": {
+          "tag": "REL",
+          "shape": "relationship-edge",
+          "lineFields": ["kind", "flowPurpose", "ownershipKind", "effect", "eventPattern"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": ["TraceLink"]
+      },
+      "metadata": {
+        "supportOnly": false,
+        "creatable": false,
+        "relationshipElement": true,
+        "notation": {
+          "tag": "TRACE",
+          "shape": "relationship-edge",
+          "lineFields": ["linkType", "confidence", "rationale"]
+        }
+      }
+    },
+    {
+      "match": {
+        "supertypes": ["SemanticRelationship"]
+      },
+      "metadata": {
+        "relationshipElement": true,
+        "icon": "link",
+        "notation": {
+          "tag": "REL",
+          "shape": "relationship-edge",
+          "lineFields": ["kind", "flowPurpose", "ownershipKind", "effect"]
+        }
+      }
+    },
+    {
+      "match": {
+        "types": [
+          "ModelElement",
+          "TraceableElement",
+          "SemanticRelationship",
+          "TransformationAssumption",
+          "ComputeElement",
+          "StorageElement",
+          "IntegrationElement",
+          "EventChannel",
+          "Flow",
+          "ArchitecturePolicy",
+          "DeployableElement",
+          "InvocationSource",
+          "InvocationTarget",
+          "FunctionTarget",
+          "WorkflowTarget",
+          "SubscriptionTarget",
+          "RoutingTarget",
+          "FlowEndpoint",
+          "ProtectedResource",
+          "PolicyTarget",
+          "DataAccessTarget",
+          "ExternalCallTarget",
+          "EnvironmentTarget",
+          "RouteEndpoint",
+          "EventCarrier"
+        ]
+      },
+      "metadata": {
+        "supportOnly": true,
+        "creatable": false
+      }
+    }
+  ],
+  "elementOverrides": [
+    {
+      "type": "Function",
+      "label": "Function",
+      "displayName": "Function",
+      "icon": "functions",
+      "color": "#2563EB",
+      "category": "Compute",
+      "primitive": "function-card",
+      "card": {
+        "tag": "FN",
+        "lineFields": ["functionKind", "handlerResponsibility", "sourceNameSuggestion"],
+        "detailFields": ["functionKind", "handlerResponsibility", "sourceNameSuggestion"]
+      }
+    },
+    {
+      "type": "FunctionContract",
+      "label": "Function Contract",
+      "displayName": "Function Contract",
+      "icon": "description",
+      "color": "#4F46E5",
+      "category": "API and Contract View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "contract-row",
+      "card": {
+        "tag": "CON",
+        "lineFields": ["contractVersion", "inputSchema", "outputSchema"],
+        "detailFields": ["contractVersion", "inputSchema", "outputSchema"]
+      }
+    },
+    {
+      "type": "Api",
+      "label": "Api",
+      "displayName": "Api",
+      "icon": "api",
+      "color": "#7C3AED",
+      "category": "API and Contract View",
+      "primitive": "api-container",
+      "card": {
+        "tag": "API",
+        "lineFields": ["apiStyle", "publicName", "version", "basePath"],
+        "detailFields": ["apiStyle", "publicName", "version", "basePath"]
+      }
+    },
+    {
+      "type": "ApiRoute",
+      "label": "Api Route",
+      "displayName": "Api Route",
+      "icon": "route",
+      "color": "#7C3AED",
+      "category": "API and Contract View",
+      "primitive": "route-row",
+      "card": {
+        "tag": "ROUTE",
+        "lineFields": ["method", "pathTemplate", "operationId"],
+        "detailFields": ["method", "pathTemplate", "operationId"]
+      }
+    },
+    {
+      "type": "EventSource",
+      "label": "Event Source",
+      "icon": "input",
+      "color": "#DB2777",
+      "category": "Messaging",
+      "creatable": false,
+      "supportOnly": true,
+      "card": {
+        "lineFields": [],
+        "detailFields": []
+      }
+    },
+    {
+      "type": "Trigger",
+      "label": "Trigger",
+      "displayName": "Trigger",
+      "icon": "bolt",
+      "color": "#DB2777",
+      "category": "Function and Trigger View",
+      "primitive": "trigger-connector",
+      "card": {
+        "tag": "TRG",
+        "lineFields": ["triggerKind", "invocationMode", "enabled"],
+        "detailFields": ["triggerKind", "invocationMode", "enabled"]
+      }
+    },
+    {
+      "type": "EventChannel",
+      "label": "Event Channel",
+      "displayName": "Event Channel",
+      "icon": "hub",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "creatable": false,
+      "supportOnly": true,
+      "primitive": "event-channel-card",
+      "card": {
+        "tag": "CH",
+        "lineFields": ["channelKind", "deliverySemantics"],
+        "detailFields": ["channelKind", "deliverySemantics"]
+      }
+    },
+    {
+      "type": "EventRoutingRule",
+      "label": "Event Routing Rule",
+      "displayName": "Event Routing Rule",
+      "icon": "rule",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "routing-rule-row",
+      "card": {
+        "tag": "RULE",
+        "lineFields": ["eventPattern", "enabled"],
+        "detailFields": ["eventPattern", "enabled"]
+      }
+    },
+    {
+      "type": "Queue",
+      "label": "Queue",
+      "displayName": "Queue",
+      "icon": "inbox",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "primitive": "queue-card",
+      "card": {
+        "tag": "QUEUE",
+        "lineFields": ["fifoRequired", "deadLetterRequired", "maxReceiveAttempts"],
+        "detailFields": ["fifoRequired", "deadLetterRequired", "maxReceiveAttempts"]
+      }
+    },
+    {
+      "type": "Topic",
+      "label": "Topic",
+      "displayName": "Topic",
+      "icon": "rss_feed",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "primitive": "topic-card",
+      "card": {
+        "tag": "TOPIC",
+        "lineFields": ["subscriptionMode", "filteringRequired"],
+        "detailFields": ["subscriptionMode", "filteringRequired"]
+      }
+    },
+    {
+      "type": "EventBus",
+      "label": "Event Bus",
+      "displayName": "Event Bus",
+      "icon": "hub",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "primitive": "event-bus-card",
+      "card": {
+        "tag": "BUS",
+        "lineFields": ["routingExpressionLanguage"],
+        "detailFields": ["routingExpressionLanguage"]
+      }
+    },
+    {
+      "type": "EventType",
+      "label": "Event Type",
+      "displayName": "Event Type",
+      "icon": "event",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "primitive": "event-type-card",
+      "card": {
+        "tag": "EVT",
+        "lineFields": ["semanticName", "version"],
+        "detailFields": ["semanticName", "version"]
+      }
+    },
+    {
+      "type": "ServerlessService",
+      "label": "Serverless Service",
+      "displayName": "Serverless Service",
+      "icon": "account_tree",
+      "color": "#0F766E",
+      "category": "Service Landscape",
+      "primitive": "service-container",
+      "card": {
+        "tag": "SVC",
+        "lineFields": ["boundaryType", "responsibility", "ownerTeam"],
+        "detailFields": ["boundaryType", "responsibility", "ownerTeam"]
+      }
+    },
+    {
+      "type": "DeploymentUnit",
+      "label": "Deployment Unit",
+      "displayName": "Deployment Unit",
+      "icon": "inventory_2",
+      "color": "#0F766E",
+      "category": "Service Landscape",
+      "primitive": "deployment-container",
+      "card": {
+        "tag": "DPL",
+        "lineFields": ["unitType", "lifecycle", "releaseStrategy"],
+        "detailFields": ["unitType", "lifecycle", "releaseStrategy"]
+      }
+    },
+    {
+      "type": "Workflow",
+      "label": "Workflow",
+      "displayName": "Workflow",
+      "icon": "schema",
+      "color": "#EA580C",
+      "category": "Workflow View",
+      "primitive": "workflow-container",
+      "card": {
+        "tag": "WF",
+        "lineFields": ["workflowKind", "executionSemantics", "longRunning"],
+        "detailFields": ["workflowKind", "executionSemantics", "longRunning"]
+      }
+    },
+    {
+      "type": "WorkflowState",
+      "label": "Workflow State",
+      "displayName": "Workflow State",
+      "icon": "radio_button_checked",
+      "color": "#EA580C",
+      "category": "Workflow View",
+      "primitive": "workflow-state-node",
+      "card": {
+        "tag": "STATE",
+        "lineFields": ["stateKind", "orderIndex", "terminal"],
+        "detailFields": ["stateKind", "orderIndex", "terminal"]
+      }
+    },
+    {
+      "type": "Flow",
+      "label": "Flow",
+      "displayName": "Flow",
+      "icon": "arrow_forward",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "creatable": false,
+      "supportOnly": true,
+      "primitive": "flow-edge",
+      "card": {
+        "tag": "FLOW",
+        "lineFields": ["flowPurpose", "criticalPath"],
+        "detailFields": ["flowPurpose", "criticalPath"]
+      }
+    },
+    {
+      "type": "RequestResponseFlow",
+      "label": "Request Response Flow",
+      "displayName": "Request Response Flow",
+      "icon": "sync_alt",
+      "color": "#7C3AED",
+      "category": "Event and Flow View",
+      "primitive": "request-response-edge",
+      "card": {
+        "tag": "REQ/RES",
+        "lineFields": ["synchronous", "flowPurpose"],
+        "detailFields": ["synchronous", "flowPurpose"]
+      }
+    },
+    {
+      "type": "EventFlow",
+      "label": "Event Flow",
+      "displayName": "Event Flow",
+      "icon": "event",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "primitive": "event-flow-edge",
+      "card": {
+        "tag": "EVT FLOW",
+        "lineFields": ["eventType", "channel"],
+        "detailFields": ["eventType", "channel"]
+      }
+    },
+    {
+      "type": "MessageFlow",
+      "label": "Message Flow",
+      "displayName": "Message Flow",
+      "icon": "mail",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "primitive": "message-flow-edge",
+      "card": {
+        "tag": "MSG",
+        "lineFields": ["messageSchema", "queue"],
+        "detailFields": ["messageSchema", "queue"]
+      }
+    },
+    {
+      "type": "OrchestrationFlow",
+      "label": "Orchestration Flow",
+      "displayName": "Orchestration Flow",
+      "icon": "schema",
+      "color": "#EA580C",
+      "category": "Event and Flow View",
+      "primitive": "orchestration-flow-edge",
+      "card": {
+        "tag": "ORCH",
+        "lineFields": ["workflow"],
+        "detailFields": ["workflow"]
+      }
+    },
+    {
+      "type": "DataStore",
+      "label": "Data Store",
+      "displayName": "Data Store",
+      "icon": "database",
+      "color": "#0891B2",
+      "category": "Data and Storage View",
+      "primitive": "data-store-card",
+      "card": {
+        "tag": "STORE",
+        "lineFields": ["storeKind", "consistencyModel"],
+        "detailFields": ["storeKind", "consistencyModel"]
+      }
+    },
+    {
+      "type": "ObjectStore",
+      "label": "Object Store",
+      "displayName": "Object Store",
+      "icon": "folder",
+      "color": "#0891B2",
+      "category": "Data and Storage View",
+      "primitive": "object-store-card",
+      "card": {
+        "tag": "OBJ",
+        "lineFields": ["objectStoreKind", "versioningRequired"],
+        "detailFields": ["objectStoreKind", "versioningRequired"]
+      }
+    },
+    {
+      "type": "IdentityProvider",
+      "label": "Identity Provider",
+      "displayName": "Identity Provider",
+      "icon": "security",
+      "color": "#CA8A04",
+      "category": "Security View",
+      "primitive": "identity-card",
+      "card": {
+        "tag": "IDP",
+        "lineFields": ["providerType", "issuer"],
+        "detailFields": ["providerType", "issuer"]
+      }
+    },
+    {
+      "type": "Principal",
+      "label": "Principal",
+      "displayName": "Principal",
+      "icon": "person",
+      "color": "#CA8A04",
+      "category": "Security View",
+      "primitive": "principal-card",
+      "card": {
+        "tag": "PRN",
+        "lineFields": ["principalKind", "external"],
+        "detailFields": ["principalKind", "external"]
+      }
+    },
+    {
+      "type": "Permission",
+      "label": "Permission",
+      "displayName": "Permission",
+      "icon": "lock",
+      "color": "#CA8A04",
+      "category": "Security View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "permission-row",
+      "card": {
+        "tag": "PERM",
+        "lineFields": ["effect", "action", "targetResource"],
+        "detailFields": ["effect", "action", "targetResource"]
+      }
+    },
+    {
+      "type": "Secret",
+      "label": "Secret",
+      "displayName": "Secret",
+      "icon": "key",
+      "color": "#CA8A04",
+      "category": "Configuration and Secrets View",
+      "primitive": "secret-card",
+      "card": {
+        "tag": "SECRET",
+        "lineFields": ["secretKind", "rotationRequired"],
+        "detailFields": ["secretKind", "rotationRequired"]
+      }
+    },
+    {
+      "type": "ConfigParameter",
+      "label": "Config Parameter",
+      "displayName": "Config Parameter",
+      "icon": "tune",
+      "color": "#64748B",
+      "category": "Configuration and Secrets View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "config-row",
+      "card": {
+        "tag": "PARAM",
+        "lineFields": ["parameterName", "valueKind"],
+        "detailFields": ["parameterName", "valueKind"]
+      }
+    },
+    {
+      "type": "EnvironmentVariable",
+      "label": "Environment Variable",
+      "displayName": "Environment Variable",
+      "icon": "terminal",
+      "color": "#64748B",
+      "category": "Configuration and Secrets View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "config-row",
+      "card": {
+        "tag": "ENV",
+        "lineFields": ["variableName", "valueKind"],
+        "detailFields": ["variableName", "valueKind"]
+      }
+    },
+    {
+      "type": "ResiliencePolicy",
+      "label": "Resilience Policy",
+      "displayName": "Resilience Policy",
+      "icon": "health_and_safety",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "RES",
+        "lineFields": ["failureMode", "productionRequired"],
+        "detailFields": ["failureMode", "productionRequired"]
+      }
+    },
+    {
+      "type": "ObservabilityConfig",
+      "label": "Observability Config",
+      "displayName": "Observability Config",
+      "icon": "monitoring",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "ops-card",
+      "card": {
+        "tag": "OBS",
+        "lineFields": ["loggingEnabled", "metricsEnabled", "tracingEnabled"],
+        "detailFields": ["loggingEnabled", "metricsEnabled", "tracingEnabled"]
+      }
+    },
+    {
+      "type": "IdempotencyPolicy",
+      "label": "Idempotency Policy",
+      "displayName": "Idempotency Policy",
+      "icon": "fingerprint",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "IDEM",
+        "lineFields": ["idempotencyKeyExpression"],
+        "detailFields": ["idempotencyKeyExpression"]
+      }
+    },
+    {
+      "type": "ConcurrencyPolicy",
+      "label": "Concurrency Policy",
+      "displayName": "Concurrency Policy",
+      "icon": "speed",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "CONC",
+        "lineFields": ["reservedConcurrency", "maxConcurrency"],
+        "detailFields": ["reservedConcurrency", "maxConcurrency"]
+      }
+    },
+    {
+      "type": "CostPolicy",
+      "label": "Cost Policy",
+      "displayName": "Cost Policy",
+      "icon": "paid",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "COST",
+        "lineFields": ["costCenter", "budgetLimit"],
+        "detailFields": ["costCenter", "budgetLimit"]
+      }
+    },
+    {
+      "type": "PIMModel",
+      "label": "PIMModel",
+      "displayName": "PIMModel",
+      "icon": "dashboard",
+      "color": "#334155",
+      "category": "Overview",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "workspace-container",
+      "card": {
+        "tag": "PIM",
+        "lineFields": ["architectureStyle", "domainName"],
+        "detailFields": ["architectureStyle", "domainName"]
+      }
+    },
+    {
+      "type": "ServiceElementMembership",
+      "label": "Service Element Membership",
+      "displayName": "Service Element Membership",
+      "icon": "link",
+      "color": "#0F766E",
+      "category": "Service Landscape",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "membership-row",
+      "card": {
+        "tag": "MEM",
+        "lineFields": ["ownershipKind"],
+        "detailFields": ["ownershipKind"]
+      }
+    },
+    {
+      "type": "Environment",
+      "label": "Environment",
+      "displayName": "Environment",
+      "icon": "public",
+      "color": "#0F766E",
+      "category": "Service Landscape",
+      "primitive": "environment-card",
+      "card": {
+        "tag": "ENV",
+        "lineFields": ["environmentClass", "regionStrategy", "supportLevel"],
+        "detailFields": ["environmentClass", "regionStrategy", "supportLevel"]
+      }
+    },
+    {
+      "type": "ImplementationProfile",
+      "label": "Implementation Profile",
+      "displayName": "Implementation Profile",
+      "icon": "settings",
+      "color": "#64748B",
+      "category": "Service Landscape",
+      "primitive": "settings-panel",
+      "card": {
+        "tag": "IMPL",
+        "lineFields": ["runtimeProfile", "packagingProfile"],
+        "detailFields": ["runtimeProfile", "packagingProfile"]
+      }
+    },
+    {
+      "type": "PlatformCapability",
+      "label": "Platform Capability",
+      "displayName": "Platform Capability",
+      "icon": "extension",
+      "color": "#64748B",
+      "category": "Service Landscape",
+      "primitive": "capability-badge",
+      "card": {
+        "tag": "CAP",
+        "lineFields": ["capabilityKind", "required"],
+        "detailFields": ["capabilityKind", "required"]
+      }
+    },
+    {
+      "type": "PlatformMappingAssessment",
+      "label": "Platform Mapping Assessment",
+      "displayName": "Platform Mapping Assessment",
+      "icon": "fact_check",
+      "color": "#64748B",
+      "category": "Service Landscape",
+      "primitive": "assessment-row",
+      "card": {
+        "tag": "MAP",
+        "lineFields": ["mappingStatus", "manualDecisionRequired"],
+        "detailFields": ["mappingStatus", "manualDecisionRequired"]
+      }
+    },
+    {
+      "type": "Schema",
+      "label": "Schema",
+      "displayName": "Schema",
+      "icon": "description",
+      "color": "#4F46E5",
+      "category": "API and Contract View",
+      "primitive": "schema-tree",
+      "card": {
+        "tag": "SCHEMA",
+        "lineFields": ["schemaKind", "semanticVersion"],
+        "detailFields": ["schemaKind", "semanticVersion"]
+      }
+    },
+    {
+      "type": "SchemaField",
+      "label": "Schema Field",
+      "displayName": "Schema Field",
+      "icon": "short_text",
+      "color": "#4F46E5",
+      "category": "API and Contract View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "field-row",
+      "card": {
+        "tag": "FIELD",
+        "lineFields": ["fieldType", "required", "nullable"],
+        "detailFields": ["fieldType", "required", "nullable"]
+      }
+    },
+    {
+      "type": "SchemaEnumLiteral",
+      "label": "Schema Enum Literal",
+      "displayName": "Schema Enum Literal",
+      "icon": "list",
+      "color": "#4F46E5",
+      "category": "API and Contract View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "enum-row",
+      "card": {
+        "tag": "ENUM",
+        "lineFields": ["value", "description"],
+        "detailFields": ["value", "description"]
+      }
+    },
+    {
+      "type": "SchemaValidationConstraint",
+      "label": "Schema Validation Constraint",
+      "displayName": "Schema Validation Constraint",
+      "icon": "rule",
+      "color": "#4F46E5",
+      "category": "API and Contract View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "constraint-row",
+      "card": {
+        "tag": "VAL",
+        "lineFields": ["constraintKind", "value"],
+        "detailFields": ["constraintKind", "value"]
+      }
+    },
+    {
+      "type": "SchemaConstraint",
+      "label": "Schema Constraint",
+      "displayName": "Schema Constraint",
+      "icon": "rule",
+      "color": "#4F46E5",
+      "category": "API and Contract View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "constraint-row",
+      "card": {
+        "tag": "VAL",
+        "lineFields": ["constraintKind", "value"],
+        "detailFields": ["constraintKind", "value"]
+      }
+    },
+    {
+      "type": "ApiContract",
+      "label": "Api Contract",
+      "displayName": "Api Contract",
+      "icon": "description",
+      "color": "#7C3AED",
+      "category": "API and Contract View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "contract-row",
+      "card": {
+        "tag": "API CON",
+        "lineFields": ["contractVersion", "basePath"],
+        "detailFields": ["contractVersion", "basePath"]
+      }
+    },
+    {
+      "type": "EventEnvelope",
+      "label": "Event Envelope",
+      "displayName": "Event Envelope",
+      "icon": "event",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "containedOnly": true,
+      "primitive": "event-envelope",
+      "card": {
+        "tag": "ENV",
+        "lineFields": ["eventTypeField", "correlationIdField"],
+        "detailFields": ["eventTypeField", "correlationIdField"]
+      }
+    },
+    {
+      "type": "ArchitecturePolicy",
+      "label": "Architecture Policy",
+      "displayName": "Architecture Policy",
+      "icon": "policy",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "POL",
+        "lineFields": ["policyScope", "productionRequired"],
+        "detailFields": ["policyScope", "productionRequired"]
+      }
+    },
+    {
+      "type": "PolicySetting",
+      "label": "Policy Setting",
+      "displayName": "Policy Setting",
+      "icon": "tune",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "policy-row",
+      "card": {
+        "tag": "SET",
+        "lineFields": ["key", "value"],
+        "detailFields": ["key", "value"]
+      }
+    },
+    {
+      "type": "DataProtectionPolicy",
+      "label": "Data Protection Policy",
+      "displayName": "Data Protection Policy",
+      "icon": "privacy_tip",
+      "color": "#CA8A04",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "DATA POL",
+        "lineFields": ["encryptionRequired", "retentionPeriod"],
+        "detailFields": ["encryptionRequired", "retentionPeriod"]
+      }
+    },
+    {
+      "type": "DataQualityPolicy",
+      "label": "Data Quality Policy",
+      "displayName": "Data Quality Policy",
+      "icon": "verified",
+      "color": "#CA8A04",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "QUAL",
+        "lineFields": ["qualityRule", "severity"],
+        "detailFields": ["qualityRule", "severity"]
+      }
+    },
+    {
+      "type": "CompliancePolicy",
+      "label": "Compliance Policy",
+      "displayName": "Compliance Policy",
+      "icon": "gavel",
+      "color": "#CA8A04",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "COMP",
+        "lineFields": ["regulation", "controlId"],
+        "detailFields": ["regulation", "controlId"]
+      }
+    },
+    {
+      "type": "BusinessRule",
+      "label": "Business Rule",
+      "displayName": "Business Rule",
+      "icon": "rule",
+      "color": "#EA580C",
+      "category": "Policy and Observability View",
+      "primitive": "rule-card",
+      "card": {
+        "tag": "RULE",
+        "lineFields": ["naturalLanguage", "expressionLanguage"],
+        "detailFields": ["naturalLanguage", "expressionLanguage"]
+      }
+    },
+    {
+      "type": "DecisionModel",
+      "label": "Decision Model",
+      "displayName": "Decision Model",
+      "icon": "table",
+      "color": "#EA580C",
+      "category": "Policy and Observability View",
+      "primitive": "decision-table",
+      "card": {
+        "tag": "DEC",
+        "lineFields": ["hitPolicy", "defaultOutcome"],
+        "detailFields": ["hitPolicy", "defaultOutcome"]
+      }
+    },
+    {
+      "type": "DecisionRule",
+      "label": "Decision Rule",
+      "displayName": "Decision Rule",
+      "icon": "rule",
+      "color": "#EA580C",
+      "category": "Policy and Observability View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "decision-rule-row",
+      "card": {
+        "tag": "RULE",
+        "lineFields": ["priorityOrder", "condition", "outcome"],
+        "detailFields": ["priorityOrder", "condition", "outcome"]
+      }
+    },
+    {
+      "type": "RetryPolicy",
+      "label": "Retry Policy",
+      "displayName": "Retry Policy",
+      "icon": "replay",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-row",
+      "card": {
+        "tag": "RETRY",
+        "lineFields": ["maxAttempts", "backoffStrategy"],
+        "detailFields": ["maxAttempts", "backoffStrategy"]
+      }
+    },
+    {
+      "type": "DeadLetterPolicy",
+      "label": "Dead Letter Policy",
+      "displayName": "Dead Letter Policy",
+      "icon": "move_to_inbox",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-row",
+      "card": {
+        "tag": "DLQ",
+        "lineFields": ["enabled", "maxReceiveCount"],
+        "detailFields": ["enabled", "maxReceiveCount"]
+      }
+    },
+    {
+      "type": "TimeoutPolicy",
+      "label": "Timeout Policy",
+      "displayName": "Timeout Policy",
+      "icon": "timer",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "clock-badge-card",
+      "card": {
+        "tag": "TIME",
+        "lineFields": ["timeoutSeconds"],
+        "detailFields": ["timeoutSeconds"]
+      }
+    },
+    {
+      "type": "RateLimitPolicy",
+      "label": "Rate Limit Policy",
+      "displayName": "Rate Limit Policy",
+      "icon": "speed",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "RATE",
+        "lineFields": ["rateLimit", "burstLimit"],
+        "detailFields": ["rateLimit", "burstLimit"]
+      }
+    },
+    {
+      "type": "BatchPolicy",
+      "label": "Batch Policy",
+      "displayName": "Batch Policy",
+      "icon": "inventory_2",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-row",
+      "card": {
+        "tag": "BATCH",
+        "lineFields": ["batchSize", "maximumBatchingWindowSeconds"],
+        "detailFields": ["batchSize", "maximumBatchingWindowSeconds"]
+      }
+    },
+    {
+      "type": "OrderingPolicy",
+      "label": "Ordering Policy",
+      "displayName": "Ordering Policy",
+      "icon": "sort",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "ORDER",
+        "lineFields": ["orderingKeyExpression"],
+        "detailFields": ["orderingKeyExpression"]
+      }
+    },
+    {
+      "type": "CachePolicy",
+      "label": "Cache Policy",
+      "displayName": "Cache Policy",
+      "icon": "cached",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "CACHE",
+        "lineFields": ["ttlSeconds"],
+        "detailFields": ["ttlSeconds"]
+      }
+    },
+    {
+      "type": "BackupPolicy",
+      "label": "Backup Policy",
+      "displayName": "Backup Policy",
+      "icon": "backup",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "BAK",
+        "lineFields": ["frequency", "retentionPeriod"],
+        "detailFields": ["frequency", "retentionPeriod"]
+      }
+    },
+    {
+      "type": "RetentionPolicy",
+      "label": "Retention Policy",
+      "displayName": "Retention Policy",
+      "icon": "event_repeat",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "RET",
+        "lineFields": ["retentionPeriod"],
+        "detailFields": ["retentionPeriod"]
+      }
+    },
+    {
+      "type": "LoggingPolicy",
+      "label": "Logging Policy",
+      "displayName": "Logging Policy",
+      "icon": "article",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-row",
+      "card": {
+        "tag": "LOG",
+        "lineFields": ["logLevel", "retentionPeriod"],
+        "detailFields": ["logLevel", "retentionPeriod"]
+      }
+    },
+    {
+      "type": "MetricPolicy",
+      "label": "Metric Policy",
+      "displayName": "Metric Policy",
+      "icon": "monitoring",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "metric-row",
+      "card": {
+        "tag": "MET",
+        "lineFields": ["metricName", "namespace"],
+        "detailFields": ["metricName", "namespace"]
+      }
+    },
+    {
+      "type": "MetricDimension",
+      "label": "Metric Dimension",
+      "displayName": "Metric Dimension",
+      "icon": "sell",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "metric-row",
+      "card": {
+        "tag": "DIM",
+        "lineFields": ["name", "value"],
+        "detailFields": ["name", "value"]
+      }
+    },
+    {
+      "type": "TracingPolicy",
+      "label": "Tracing Policy",
+      "displayName": "Tracing Policy",
+      "icon": "timeline",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "TRACE",
+        "lineFields": ["enabled", "samplingRate"],
+        "detailFields": ["enabled", "samplingRate"]
+      }
+    },
+    {
+      "type": "AlertPolicy",
+      "label": "Alert Policy",
+      "displayName": "Alert Policy",
+      "icon": "notifications",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "ALERT",
+        "lineFields": ["severity", "threshold"],
+        "detailFields": ["severity", "threshold"]
+      }
+    },
+    {
+      "type": "Slo",
+      "label": "Slo",
+      "displayName": "Slo",
+      "icon": "track_changes",
+      "color": "#64748B",
+      "category": "Policy and Observability View",
+      "primitive": "slo-card",
+      "card": {
+        "tag": "SLO",
+        "lineFields": ["objective", "target"],
+        "detailFields": ["objective", "target"]
+      }
+    },
+    {
+      "type": "CorsPolicy",
+      "label": "Cors Policy",
+      "displayName": "Cors Policy",
+      "icon": "policy",
+      "color": "#7C3AED",
+      "category": "API and Contract View",
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "CORS",
+        "lineFields": ["allowedOrigins", "allowedMethods"],
+        "detailFields": ["allowedOrigins", "allowedMethods"]
+      }
+    },
+    {
+      "type": "ConfigurationSet",
+      "label": "Configuration Set",
+      "displayName": "Configuration Set",
+      "icon": "tune",
+      "color": "#64748B",
+      "category": "Configuration and Secrets View",
+      "primitive": "config-set-card",
+      "card": {
+        "tag": "CFG",
+        "lineFields": ["scope", "environment"],
+        "detailFields": ["scope", "environment"]
+      }
+    },
+    {
+      "type": "CredentialRequirement",
+      "label": "Credential Requirement",
+      "displayName": "Credential Requirement",
+      "icon": "vpn_key",
+      "color": "#CA8A04",
+      "category": "Configuration and Secrets View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "credential-row",
+      "card": {
+        "tag": "CRED",
+        "lineFields": ["credentialKind", "usedForCredentials"],
+        "detailFields": ["credentialKind", "usedForCredentials"]
+      }
+    },
+    {
+      "type": "SecurityPolicy",
+      "label": "Security Policy",
+      "displayName": "Security Policy",
+      "icon": "security",
+      "color": "#CA8A04",
+      "category": "Security View",
+      "primitive": "security-card",
+      "card": {
+        "tag": "SEC",
+        "lineFields": ["policyScope", "enforcementStrength"],
+        "detailFields": ["policyScope", "enforcementStrength"]
+      }
+    },
+    {
+      "type": "AuthPolicy",
+      "label": "Auth Policy",
+      "displayName": "Auth Policy",
+      "icon": "verified_user",
+      "color": "#CA8A04",
+      "category": "Security View",
+      "primitive": "auth-badge-card",
+      "card": {
+        "tag": "AUTH",
+        "lineFields": ["authScheme", "required"],
+        "detailFields": ["authScheme", "required"]
+      }
+    },
+    {
+      "type": "AuthorizationPolicy",
+      "label": "Authorization Policy",
+      "displayName": "Authorization Policy",
+      "icon": "lock",
+      "color": "#CA8A04",
+      "category": "Security View",
+      "primitive": "authz-card",
+      "card": {
+        "tag": "AUTHZ",
+        "lineFields": ["authorizationRule", "effect"],
+        "detailFields": ["authorizationRule", "effect"]
+      }
+    },
+    {
+      "type": "StorageElement",
+      "label": "Storage Element",
+      "displayName": "Storage Element",
+      "icon": "database",
+      "color": "#0891B2",
+      "category": "Data and Storage View",
+      "primitive": "storage-card",
+      "card": {
+        "tag": "STORE",
+        "lineFields": ["storeKind"],
+        "detailFields": ["storeKind"]
+      }
+    },
+    {
+      "type": "DataChangeStream",
+      "label": "Data Change Stream",
+      "displayName": "Data Change Stream",
+      "icon": "waterfall_chart",
+      "color": "#DB2777",
+      "category": "Data and Storage View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "stream-badge",
+      "card": {
+        "tag": "STREAM",
+        "lineFields": ["enabled", "eventType"],
+        "detailFields": ["enabled", "eventType"]
+      }
+    },
+    {
+      "type": "ObjectNotificationRule",
+      "label": "Object Notification Rule",
+      "displayName": "Object Notification Rule",
+      "icon": "notifications",
+      "color": "#DB2777",
+      "category": "Data and Storage View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "notification-row",
+      "card": {
+        "tag": "NOTIF",
+        "lineFields": ["eventPattern", "prefix", "suffix"],
+        "detailFields": ["eventPattern", "prefix", "suffix"]
+      }
+    },
+    {
+      "type": "DataModel",
+      "label": "Data Model",
+      "displayName": "Data Model",
+      "icon": "table",
+      "color": "#0891B2",
+      "category": "Data and Storage View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "data-model-table",
+      "card": {
+        "tag": "MODEL",
+        "lineFields": ["dataModelKind", "primaryKey"],
+        "detailFields": ["dataModelKind", "primaryKey"]
+      }
+    },
+    {
+      "type": "DataField",
+      "label": "Data Field",
+      "displayName": "Data Field",
+      "icon": "short_text",
+      "color": "#0891B2",
+      "category": "Data and Storage View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "field-row",
+      "card": {
+        "tag": "FIELD",
+        "lineFields": ["fieldType", "required"],
+        "detailFields": ["fieldType", "required"]
+      }
+    },
+    {
+      "type": "AccessPattern",
+      "label": "Access Pattern",
+      "displayName": "Access Pattern",
+      "icon": "manage_search",
+      "color": "#0891B2",
+      "category": "Data and Storage View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "access-row",
+      "card": {
+        "tag": "ACCESS",
+        "lineFields": ["operation", "purpose"],
+        "detailFields": ["operation", "purpose"]
+      }
+    },
+    {
+      "type": "IndexCandidate",
+      "label": "Index Candidate",
+      "displayName": "Index Candidate",
+      "icon": "view_column",
+      "color": "#0891B2",
+      "category": "Data and Storage View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "index-row",
+      "card": {
+        "tag": "INDEX",
+        "lineFields": ["indexPurpose", "partitionKeyField"],
+        "detailFields": ["indexPurpose", "partitionKeyField"]
+      }
+    },
+    {
+      "type": "DataAccess",
+      "label": "Data Access",
+      "displayName": "Data Access",
+      "icon": "link",
+      "color": "#0891B2",
+      "category": "Data and Storage View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "data-access-edge",
+      "card": {
+        "tag": "ACCESS",
+        "lineFields": ["mode", "transactional", "purpose"],
+        "detailFields": ["mode", "transactional", "purpose"]
+      }
+    },
+    {
+      "type": "ComputeElement",
+      "label": "Compute Element",
+      "displayName": "Compute Element",
+      "icon": "memory",
+      "color": "#2563EB",
+      "category": "Function and Trigger View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "compute-card",
+      "card": {
+        "tag": "CMP",
+        "lineFields": ["computeProfile", "executionModel"],
+        "detailFields": ["computeProfile", "executionModel"]
+      }
+    },
+    {
+      "type": "ErrorMapping",
+      "label": "Error Mapping",
+      "displayName": "Error Mapping",
+      "icon": "warning",
+      "color": "#DC2626",
+      "category": "API and Contract View",
+      "primitive": "error-mapping-row",
+      "card": {
+        "tag": "ERR MAP",
+        "lineFields": ["domainErrorCode", "abstractStatusClass"],
+        "detailFields": ["domainErrorCode", "abstractStatusClass"]
+      }
+    },
+    {
+      "type": "ExternalEndpoint",
+      "label": "External Endpoint",
+      "displayName": "External Endpoint",
+      "icon": "language",
+      "color": "#0D9488",
+      "category": "Function and Trigger View",
+      "primitive": "external-boundary",
+      "card": {
+        "tag": "EXT",
+        "lineFields": ["externalSystemName", "protocolFamily"],
+        "detailFields": ["externalSystemName", "protocolFamily"]
+      }
+    },
+    {
+      "type": "ExternalAdapter",
+      "label": "External Adapter",
+      "displayName": "External Adapter",
+      "icon": "sync_alt",
+      "color": "#0D9488",
+      "category": "Function and Trigger View",
+      "primitive": "adapter-card",
+      "card": {
+        "tag": "ADAPT",
+        "lineFields": ["responsibility"],
+        "detailFields": ["responsibility"]
+      }
+    },
+    {
+      "type": "WorkflowTransition",
+      "label": "Workflow Transition",
+      "displayName": "Workflow Transition",
+      "icon": "arrow_forward",
+      "color": "#EA580C",
+      "category": "Workflow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "state-transition-edge",
+      "card": {
+        "tag": "FLOW",
+        "lineFields": ["conditionExpression", "defaultTransition"],
+        "detailFields": ["conditionExpression", "defaultTransition"]
+      }
+    },
+    {
+      "type": "ErrorHandler",
+      "label": "Error Handler",
+      "displayName": "Error Handler",
+      "icon": "warning",
+      "color": "#DC2626",
+      "category": "Workflow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "catch-row",
+      "card": {
+        "tag": "CATCH",
+        "lineFields": ["errorSelector", "recoveryAction"],
+        "detailFields": ["errorSelector", "recoveryAction"]
+      }
+    },
+    {
+      "type": "ParallelBranch",
+      "label": "Parallel Branch",
+      "displayName": "Parallel Branch",
+      "icon": "call_split",
+      "color": "#EA580C",
+      "category": "Workflow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "branch-container",
+      "card": {
+        "tag": "BRANCH",
+        "lineFields": ["name"],
+        "detailFields": ["name"]
+      }
+    },
+    {
+      "type": "MapStateConfig",
+      "label": "Map State Config",
+      "displayName": "Map State Config",
+      "icon": "map",
+      "color": "#EA580C",
+      "category": "Workflow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "map-config-panel",
+      "card": {
+        "tag": "MAP",
+        "lineFields": ["itemsPath", "maxConcurrency"],
+        "detailFields": ["itemsPath", "maxConcurrency"]
+      }
+    },
+    {
+      "type": "CallbackTaskConfig",
+      "label": "Callback Task Config",
+      "displayName": "Callback Task Config",
+      "icon": "pending_actions",
+      "color": "#EA580C",
+      "category": "Workflow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "callback-config-panel",
+      "card": {
+        "tag": "CALLBACK",
+        "lineFields": ["taskTokenPath"],
+        "detailFields": ["taskTokenPath"]
+      }
+    },
+    {
+      "type": "EscalationPolicy",
+      "label": "Escalation Policy",
+      "displayName": "Escalation Policy",
+      "icon": "priority_high",
+      "color": "#CA8A04",
+      "category": "Workflow View",
+      "creatable": true,
+      "containedOnly": false,
+      "primitive": "policy-badge-card",
+      "card": {
+        "tag": "ESC",
+        "lineFields": ["escalationRule", "afterSeconds"],
+        "detailFields": ["escalationRule", "afterSeconds"]
+      }
+    },
+    {
+      "type": "HumanTask",
+      "label": "Human Task",
+      "displayName": "Human Task",
+      "icon": "person",
+      "color": "#7C3AED",
+      "category": "Workflow View",
+      "primitive": "human-task-card",
+      "card": {
+        "tag": "TASK",
+        "lineFields": ["taskDescription", "completionEvidence"],
+        "detailFields": ["taskDescription", "completionEvidence"]
+      }
+    },
+    {
+      "type": "ApprovalTask",
+      "label": "Approval Task",
+      "displayName": "Approval Task",
+      "icon": "approval",
+      "color": "#7C3AED",
+      "category": "Workflow View",
+      "primitive": "approval-task-card",
+      "card": {
+        "tag": "APPROVE",
+        "lineFields": ["explicitApprovalRequired", "approvalOutcomeField"],
+        "detailFields": ["explicitApprovalRequired", "approvalOutcomeField"]
+      }
+    },
+    {
+      "type": "CompensationPolicy",
+      "label": "Compensation Policy",
+      "displayName": "Compensation Policy",
+      "icon": "undo",
+      "color": "#EA580C",
+      "category": "Workflow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "compensation-badge-card",
+      "card": {
+        "tag": "COMP",
+        "lineFields": ["compensationStrategy", "automatic"],
+        "detailFields": ["compensationStrategy", "automatic"]
+      }
+    },
+    {
+      "type": "IntegrationElement",
+      "label": "Integration Element",
+      "displayName": "Integration Element",
+      "icon": "hub",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "integration-card",
+      "card": {
+        "tag": "INT",
+        "lineFields": ["integrationPurpose"],
+        "detailFields": ["integrationPurpose"]
+      }
+    },
+    {
+      "type": "Schedule",
+      "label": "Schedule",
+      "displayName": "Schedule",
+      "icon": "schedule",
+      "color": "#DB2777",
+      "category": "Function and Trigger View",
+      "primitive": "schedule-card",
+      "card": {
+        "tag": "SCHED",
+        "lineFields": ["scheduleExpression", "enabled", "timeZone"],
+        "detailFields": ["scheduleExpression", "enabled", "timeZone"]
+      }
+    },
+    {
+      "type": "Subscription",
+      "label": "Subscription",
+      "displayName": "Subscription",
+      "icon": "link",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "creatable": false,
+      "containedOnly": true,
+      "primitive": "subscription-row",
+      "card": {
+        "tag": "SUB",
+        "lineFields": ["filterExpression", "rawDelivery"],
+        "detailFields": ["filterExpression", "rawDelivery"]
+      }
+    },
+    {
+      "type": "PubSubFlow",
+      "label": "Pub Sub Flow",
+      "displayName": "Pub Sub Flow",
+      "icon": "rss_feed",
+      "color": "#DB2777",
+      "category": "Event and Flow View",
+      "primitive": "pubsub-flow-edge",
+      "card": {
+        "tag": "PUB/SUB",
+        "lineFields": ["topic"],
+        "detailFields": ["topic"]
+      }
+    },
+    {
+      "type": "ExternalIntegrationFlow",
+      "label": "External Integration Flow",
+      "displayName": "External Integration Flow",
+      "icon": "language",
+      "color": "#0D9488",
+      "category": "Event and Flow View",
+      "primitive": "external-flow-edge",
+      "card": {
+        "tag": "EXT FLOW",
+        "lineFields": ["adapter"],
+        "detailFields": ["adapter"]
+      }
+    }
+  ],
+  "badgeRules": [
+    {
+      "field": "lifecycleStatus",
+      "useValue": true
+    },
+    {
+      "field": "productionRequired",
+      "label": "production",
+      "when": true
+    },
+    {
+      "field": "authenticationRequired",
+      "label": "authenticated",
+      "when": true
+    },
+    {
+      "field": "authorizationRequired",
+      "label": "authorized",
+      "when": true
+    },
+    {
+      "field": "encryptionRequired",
+      "label": "encrypted",
+      "when": true
+    },
+    {
+      "field": "manualReviewRequired",
+      "label": "review",
+      "when": true
+    },
+    {
+      "field": "generatedByTransformation",
+      "label": "generated",
+      "when": true
+    },
+    {
+      "field": "severity",
+      "useValue": true
+    }
+  ],
+  "referenceMappings": [],
+  "relationshipMappings": [
+    {
+      "eClass": "DataAccess",
+      "visualRole": "relationship",
+      "edgeKind": "READS",
+      "sourceType": "FunctionTarget",
+      "targetType": "DataAccessTarget"
+    },
+    {
+      "eClass": "Trigger",
+      "visualRole": "relationship",
+      "edgeKind": "INVOKES",
+      "sourceType": "InvocationSource",
+      "targetType": "InvocationTarget"
+    },
+    {
+      "eClass": "WorkflowTransition",
+      "visualRole": "relationship",
+      "edgeKind": "TRANSITION",
+      "sourceType": "WorkflowState",
+      "targetType": "WorkflowState"
+    },
+    {
+      "eClass": "Permission",
+      "visualRole": "relationship",
+      "edgeKind": "PERMISSION",
+      "sourceType": "Principal",
+      "targetType": "ProtectedResource"
+    },
+    {
+      "eClass": "Subscription",
+      "visualRole": "relationship",
+      "edgeKind": "SUBSCRIBES_TO",
+      "sourceType": "Topic",
+      "targetType": "SubscriptionTarget"
+    },
+    {
+      "eClass": "RequestResponseFlow",
+      "visualRole": "relationship",
+      "edgeKind": "REQUEST_RESPONSE",
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint"
+    },
+    {
+      "eClass": "EventFlow",
+      "visualRole": "relationship",
+      "edgeKind": "EVENT_FLOW",
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint"
+    },
+    {
+      "eClass": "MessageFlow",
+      "visualRole": "relationship",
+      "edgeKind": "MESSAGE_FLOW",
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint"
+    },
+    {
+      "eClass": "PubSubFlow",
+      "visualRole": "relationship",
+      "edgeKind": "PUB_SUB",
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint"
+    },
+    {
+      "eClass": "OrchestrationFlow",
+      "visualRole": "relationship",
+      "edgeKind": "ORCHESTRATES",
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint"
+    },
+    {
+      "eClass": "ExternalIntegrationFlow",
+      "visualRole": "relationship",
+      "edgeKind": "EXTERNAL_CALL",
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint"
+    },
+    {
+      "eClass": "ServiceElementMembership",
+      "visualRole": "relationship",
+      "edgeKind": "OWNS",
+      "sourceType": "ServerlessService",
+      "targetType": "DeployableElement"
+    },
+    {
+      "eClass": "EventRoutingRule",
+      "visualRole": "relationship",
+      "edgeKind": "TARGETS",
+      "sourceType": "InvocationSource",
+      "targetType": "RoutingTarget"
+    },
+    {
+      "eClass": "Schedule",
+      "visualRole": "relationship",
+      "edgeKind": "TRIGGERS",
+      "sourceType": "InvocationSource",
+      "targetType": "RoutingTarget"
+    },
+    {
+      "eClass": "ObjectNotificationRule",
+      "visualRole": "relationship",
+      "edgeKind": "EVENT_FLOW",
+      "sourceType": "ObjectStore",
+      "targetType": "RoutingTarget"
+    },
+    {
+      "eClass": "PlatformMappingAssessment",
+      "visualRole": "relationship",
+      "edgeKind": "MAPS_TO",
+      "sourceType": "PlatformMappingAssessment",
+      "targetType": "ModelElement"
+    },
+    {
+      "eClass": "TraceLink",
+      "visualRole": "relationship",
+      "edgeKind": "TRACE",
+      "sourceType": "*",
+      "targetType": "*"
+    }
+  ],
+  "relationshipRules": [
+    {
+      "sourceType": "*",
+      "targetType": "*",
+      "allowedKinds": [
+        "CONTAINS",
+        "OWNS",
+        "DEPLOYS",
+        "INVOKES",
+        "READS",
+        "WRITES",
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "TRACE"
+      ]
+    }
+  ],
+  "relationshipKinds": [
+    "CONTAINS",
+    "OWNS",
+    "DEPLOYS",
+    "DEPLOYS_TO",
+    "DEPENDS_ON",
+    "ROUTES_TO",
+    "INVOKES",
+    "TRIGGERS",
+    "READS",
+    "WRITES",
+    "APPEND",
+    "DELETE",
+    "CALLS",
+    "USES",
+    "USES_SECRET",
+    "HAS_ENV",
+    "AUTHORIZED_BY",
+    "ATTACHED_TO",
+    "FLOW",
+    "REQUEST_RESPONSE",
+    "EVENT_FLOW",
+    "MESSAGE_FLOW",
+    "PUB_SUB",
+    "ORCHESTRATES",
+    "EXTERNAL_CALL",
+    "DATA_ACCESS",
+    "PERMISSION",
+    "TRANSITION",
+    "CONSTRAINS",
+    "PUBLISHES",
+    "SUBSCRIBES_TO",
+    "CALLS_ADAPTERS",
+    "ENVIRONMENT_VARIABLES",
+    "INPUT_SCHEMAS",
+    "OUTPUT_SCHEMAS",
+    "USED_BY_FUNCTIONS",
+    "EXPOSED_BY_ROUTES",
+    "TARGETS",
+    "USES_SHARED",
+    "EXPOSES",
+    "MAPS_TO",
+    "TRACE"
+  ],
+  "relationshipSemantics": {
+    "containmentKind": "CONTAINS",
+    "containmentKinds": ["CONTAINS", "OWNS", "DEPLOYS"],
+    "traceKind": "TRACE"
+  },
+  "relationshipLabelFields": ["name", "flowPurpose", "operation", "transitionName", "effect"],
+  "relationshipKindLabels": {
+    "CONTAINS": "contains",
+    "OWNS": "owns",
+    "DEPLOYS": "deploys",
+    "DEPLOYS_TO": "deploys to",
+    "DEPENDS_ON": "depends on",
+    "ROUTES_TO": "routes to",
+    "INVOKES": "invokes",
+    "TRIGGERS": "triggers",
+    "READS": "reads",
+    "WRITES": "writes",
+    "APPEND": "appends",
+    "DELETE": "deletes",
+    "CALLS": "calls",
+    "USES": "uses",
+    "USES_SECRET": "uses secret",
+    "HAS_ENV": "has env",
+    "AUTHORIZED_BY": "authorized by",
+    "ATTACHED_TO": "attached to",
+    "FLOW": "flow",
+    "REQUEST_RESPONSE": "request/response",
+    "EVENT_FLOW": "event flow",
+    "MESSAGE_FLOW": "message flow",
+    "PUB_SUB": "pub/sub",
+    "ORCHESTRATES": "orchestrates",
+    "EXTERNAL_CALL": "external call",
+    "DATA_ACCESS": "data access",
+    "PERMISSION": "permission",
+    "TRANSITION": "transition",
+    "CONSTRAINS": "constrains",
+    "PUBLISHES": "publishes",
+    "SUBSCRIBES_TO": "subscribes to",
+    "CALLS_ADAPTERS": "calls adapters",
+    "ENVIRONMENT_VARIABLES": "has environment variables",
+    "INPUT_SCHEMAS": "uses input schemas",
+    "OUTPUT_SCHEMAS": "uses output schemas",
+    "USED_BY_FUNCTIONS": "used by functions",
+    "EXPOSED_BY_ROUTES": "exposed by routes",
+    "TARGETS": "targets",
+    "USES_SHARED": "uses shared",
+    "EXPOSES": "exposes",
+    "MAPS_TO": "maps to",
+    "TRACE": "trace"
+  },
+  "relationshipVisualRules": [
+    {
+      "matchKinds": ["CONTAINS", "OWNS", "DEPLOYS", "DEPLOYS_TO"],
+      "className": "edge-domain-ownership",
+      "stroke": "#475569",
+      "lineWidth": 2.6
+    },
+    {
+      "matchKinds": ["EXTERNAL_CALL", "CALLS", "FLOW", "REQUEST_RESPONSE", "ORCHESTRATES"],
+      "className": "edge-domain-dependency",
+      "stroke": "#0f766e",
+      "lineDash": [7, 4]
+    },
+    {
+      "matchKinds": [
+        "EVENT_FLOW",
+        "MESSAGE_FLOW",
+        "PUB_SUB",
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "ROUTES_TO",
+        "INVOKES",
+        "TRIGGERS"
+      ],
+      "className": "edge-pim-event",
+      "stroke": "#0891b2"
+    },
+    {
+      "matchKinds": ["READS", "WRITES", "DATA_ACCESS", "APPEND", "DELETE"],
+      "className": "edge-pim-data",
+      "stroke": "#15803d",
+      "lineDash": [4, 3]
+    },
+    {
+      "matchKinds": ["PERMISSION", "AUTHORIZED_BY", "USES_SECRET", "CONSTRAINS", "ATTACHED_TO"],
+      "className": "edge-conflict",
+      "stroke": "#dc2626",
+      "lineDash": [8, 3, 2, 3]
+    },
+    {
+      "matchKinds": ["TRANSITION"],
+      "matchEClasses": ["WorkflowTransition"],
+      "className": "edge-process-transition",
+      "stroke": "#0f766e"
+    },
+    {
+      "matchKinds": ["TRACE"],
+      "matchEClasses": ["TraceLink"],
+      "className": "edge-trace-link",
+      "stroke": "#7c3aed",
+      "lineDash": [2, 5]
+    }
+  ],
+  "semanticReferenceRules": [],
+  "semanticEdgeObjectRules": [
+    {
+      "eClass": "DataAccess",
+      "kindField": "mode",
+      "kindMap": {
+        "READ": "READS",
+        "WRITE": "WRITES",
+        "READ_WRITE": "DATA_ACCESS",
+        "APPEND": "APPEND",
+        "DELETE": "DELETE"
+      },
+      "matchKinds": ["READS", "WRITES", "APPEND", "DELETE", "DATA_ACCESS"],
+      "sourceType": "FunctionTarget",
+      "targetType": "DataAccessTarget",
+      "rootFeature": "dataAccesses",
+      "sourceFeature": "function",
+      "targetFeature": "store",
+      "kindDefaults": {
+        "READS": {
+          "mode": "READ"
+        },
+        "WRITES": {
+          "mode": "WRITE"
+        },
+        "DATA_ACCESS": {
+          "mode": "READ_WRITE"
+        }
+      }
+    },
+    {
+      "eClass": "Trigger",
+      "kindField": "invocationMode",
+      "kindMap": {
+        "SYNCHRONOUS": "INVOKES",
+        "ASYNCHRONOUS": "TRIGGERS"
+      },
+      "matchKinds": ["INVOKES", "TRIGGERS"],
+      "sourceType": "InvocationSource",
+      "targetType": "InvocationTarget",
+      "rootFeature": "triggers",
+      "sourceFeature": "source",
+      "targetFeatures": ["invokesFunction", "startsWorkflow"],
+      "kindDefaults": {
+        "INVOKES": {
+          "invocationMode": "SYNCHRONOUS"
+        },
+        "TRIGGERS": {
+          "invocationMode": "ASYNCHRONOUS"
+        }
+      }
+    },
+    {
+      "eClass": "WorkflowTransition",
+      "matchKinds": ["TRANSITION"],
+      "sourceType": "WorkflowState",
+      "targetType": "WorkflowState",
+      "rootFeature": "transitions",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": {
+        "conditionExpression": "",
+        "defaultTransition": false
+      }
+    },
+    {
+      "eClass": "Permission",
+      "matchKinds": ["PERMISSION"],
+      "sourceType": "Principal",
+      "targetType": "ProtectedResource",
+      "rootFeature": "permissions",
+      "ownerAsSource": true,
+      "targetFeature": "targetResource",
+      "defaults": {
+        "effect": "ALLOW",
+        "leastPrivilegeConfirmed": false
+      }
+    },
+    {
+      "eClass": "Subscription",
+      "matchKinds": ["SUBSCRIBES_TO"],
+      "sourceType": "Topic",
+      "targetType": "SubscriptionTarget",
+      "rootFeature": "subscriptions",
+      "ownerAsSource": true,
+      "sourceFeature": "channel",
+      "targetFeature": "target",
+      "defaults": {
+        "rawDelivery": false,
+        "deadLetterRequired": false
+      }
+    },
+    {
+      "eClass": "RequestResponseFlow",
+      "defaultKind": "REQUEST_RESPONSE",
+      "matchKinds": ["REQUEST_RESPONSE"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": {
+        "flowPurpose": "",
+        "criticalPath": false,
+        "containsPersonalData": false
+      }
+    },
+    {
+      "eClass": "EventFlow",
+      "matchKinds": ["EVENT_FLOW"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": {
+        "flowPurpose": "",
+        "criticalPath": false,
+        "containsPersonalData": false
+      }
+    },
+    {
+      "eClass": "MessageFlow",
+      "matchKinds": ["MESSAGE_FLOW"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": {
+        "flowPurpose": "",
+        "criticalPath": false,
+        "containsPersonalData": false
+      }
+    },
+    {
+      "eClass": "PubSubFlow",
+      "matchKinds": ["PUB_SUB"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": {
+        "flowPurpose": "",
+        "criticalPath": false,
+        "containsPersonalData": false
+      }
+    },
+    {
+      "eClass": "OrchestrationFlow",
+      "matchKinds": ["ORCHESTRATES"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": {
+        "flowPurpose": "",
+        "criticalPath": false,
+        "containsPersonalData": false
+      }
+    },
+    {
+      "eClass": "ExternalIntegrationFlow",
+      "matchKinds": ["EXTERNAL_CALL"],
+      "sourceType": "FlowEndpoint",
+      "targetType": "FlowEndpoint",
+      "rootFeature": "flows",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": {
+        "flowPurpose": "",
+        "criticalPath": false,
+        "containsPersonalData": false
+      }
+    },
+    {
+      "eClass": "ServiceElementMembership",
+      "kindField": "ownershipKind",
+      "kindMap": {
+        "OWNS": "OWNS",
+        "USES_SHARED": "USES_SHARED",
+        "DEPENDS_ON": "DEPENDS_ON",
+        "EXPOSES": "EXPOSES"
+      },
+      "matchKinds": ["OWNS", "USES_SHARED", "DEPENDS_ON", "EXPOSES"],
+      "sourceType": "ServerlessService",
+      "targetType": "DeployableElement",
+      "rootFeature": "serviceMemberships",
+      "sourceFeature": "service",
+      "targetFeature": "element",
+      "defaults": {
+        "ownershipKind": "OWNS"
+      }
+    },
+    {
+      "eClass": "EventRoutingRule",
+      "defaultKind": "TARGETS",
+      "matchKinds": ["TARGETS"],
+      "sourceType": "InvocationSource",
+      "targetType": "RoutingTarget",
+      "rootFeature": "routingRules",
+      "ownerType": "EventBus",
+      "ownerAsSource": true,
+      "targetFeature": "targets",
+      "defaults": {
+        "enabled": true
+      }
+    },
+    {
+      "eClass": "Schedule",
+      "defaultKind": "TRIGGERS",
+      "matchKinds": ["TRIGGERS", "TARGETS"],
+      "sourceType": "InvocationSource",
+      "targetType": "RoutingTarget",
+      "rootFeature": "schedules",
+      "targetFeature": "targets",
+      "defaults": {
+        "enabled": true
+      }
+    },
+    {
+      "eClass": "ObjectNotificationRule",
+      "defaultKind": "EVENT_FLOW",
+      "matchKinds": ["EVENT_FLOW"],
+      "sourceType": "ObjectStore",
+      "targetType": "RoutingTarget",
+      "rootFeature": "notificationRules",
+      "ownerType": "ObjectStore",
+      "ownerAsSource": true,
+      "targetFeature": "targets"
+    },
+    {
+      "eClass": "PlatformMappingAssessment",
+      "defaultKind": "MAPS_TO",
+      "matchKinds": ["MAPS_TO"],
+      "sourceType": "PlatformMappingAssessment",
+      "targetType": "ModelElement",
+      "rootFeature": "platformMappingAssessments",
+      "targetFeature": "source",
+      "defaults": {
+        "supportLevel": "PARTIAL"
+      }
+    },
+    {
+      "eClass": "TraceLink",
+      "matchKinds": ["TRACE"],
+      "sourceType": "*",
+      "targetType": "*",
+      "rootFeature": "links",
+      "ownerType": "TraceModel",
+      "sourceFeature": "source",
+      "targetFeature": "target",
+      "defaults": {
+        "linkType": "OTHER",
+        "confidence": ""
+      }
+    }
+  ],
+  "semanticReferenceKindMappings": {
+    "functionIntegration": "ROUTES_TO",
+    "reads": "READS",
+    "writes": "WRITES",
+    "publishes": "PUBLISHES",
+    "subscribesTo": "SUBSCRIBES_TO",
+    "invokesFunction": "INVOKES",
+    "invokedResource": "INVOKES",
+    "function": "INVOKES",
+    "startState": "STARTS_AT",
+    "nextState": "TRANSITION",
+    "endStates": "ENDS_AT",
+    "targetResource": "PERMISSION_TARGET",
+    "permissions": "PERMISSION",
+    "deploysStacks": "DEPLOYS",
+    "route": "USES_ROUTE",
+    "role": "USES_ROLE",
+    "logGroup": "WRITES_LOGS_TO",
+    "targets": "TARGETS",
+    "usesSecrets": "USES_SECRET"
+  },
+  "semanticReferenceExclusions": [
+    "startState",
+    "endStates",
+    "reads",
+    "writes",
+    "ownsFunctions",
+    "ownsApis",
+    "ownsChannels",
+    "ownsStores",
+    "ownsWorkflows",
+    "ownsAdapters"
+  ],
+  "shortcutConnectorRules": [],
+  "viewpoints": [
+    {
+      "id": "pim-architecture-overview",
+      "displayName": "PIM Overview",
+      "viewType": "ARCHITECTURE_OVERVIEW",
+      "viewpoint": "architecture",
+      "elementTypes": [
+        "ServerlessService",
+        "Api",
+        "Function",
+        "Workflow",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "DataStore",
+        "ObjectStore",
+        "ExternalEndpoint",
+        "ExternalAdapter",
+        "IdentityProvider",
+        "Secret",
+        "BusinessRule",
+        "DecisionModel",
+        "HumanTask",
+        "RequestResponseFlow",
+        "EventFlow",
+        "MessageFlow",
+        "PubSubFlow",
+        "OrchestrationFlow",
+        "ExternalIntegrationFlow"
+      ],
+      "palette": [
+        "ServerlessService",
+        "Api",
+        "Function",
+        "Workflow",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "DataStore",
+        "ObjectStore",
+        "ExternalEndpoint",
+        "ExternalAdapter",
+        "IdentityProvider",
+        "Secret",
+        "BusinessRule",
+        "DecisionModel",
+        "HumanTask"
+      ],
+      "relationshipKinds": [
+        "OWNS",
+        "ROUTES_TO",
+        "INVOKES",
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "READS",
+        "WRITES",
+        "CALLS",
+        "FLOW",
+        "REQUEST_RESPONSE",
+        "EVENT_FLOW",
+        "MESSAGE_FLOW",
+        "PUB_SUB",
+        "ORCHESTRATES",
+        "EXTERNAL_CALL"
+      ],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "id": "pim-service-landscape",
+      "displayName": "Service Landscape",
+      "viewType": "SERVICE_LANDSCAPE",
+      "viewpoint": "service",
+      "elementTypes": [
+        "ServerlessService",
+        "ServiceElementMembership",
+        "DeploymentUnit",
+        "Environment",
+        "Function",
+        "Api",
+        "Workflow",
+        "DataStore",
+        "ObjectStore",
+        "Queue",
+        "Topic",
+        "EventBus"
+      ],
+      "palette": [
+        "ServerlessService",
+        "DeploymentUnit",
+        "Environment",
+        "Function",
+        "Api",
+        "Workflow",
+        "DataStore",
+        "ObjectStore",
+        "Queue",
+        "Topic",
+        "EventBus"
+      ],
+      "relationshipKinds": ["OWNS", "DEPLOYS", "DEPLOYS_TO", "CONTAINS"],
+      "layoutHint": "CONTAINER"
+    },
+    {
+      "id": "pim-api-surface",
+      "displayName": "API and Contract View",
+      "viewType": "API_SURFACE",
+      "viewpoint": "api",
+      "elementTypes": [
+        "Api",
+        "ApiRoute",
+        "ApiContract",
+        "Function",
+        "Workflow",
+        "Schema",
+        "ErrorMapping",
+        "CorsPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy"
+      ],
+      "palette": [
+        "Api",
+        "ApiRoute",
+        "ApiContract",
+        "Schema",
+        "ErrorMapping",
+        "AuthPolicy",
+        "CorsPolicy",
+        "RateLimitPolicy"
+      ],
+      "relationshipKinds": ["ROUTES_TO", "INVOKES", "AUTHORIZED_BY", "USES", "CONTAINS"],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "pim-function-trigger",
+      "displayName": "Function and Trigger View",
+      "viewType": "FUNCTION_TRIGGER",
+      "viewpoint": "compute",
+      "elementTypes": [
+        "Function",
+        "ComputeElement",
+        "Trigger",
+        "FunctionContract",
+        "Schedule",
+        "EventChannel",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "ApiRoute",
+        "Workflow",
+        "WorkflowState",
+        "DataStore",
+        "ObjectStore",
+        "DataAccess",
+        "ExternalAdapter",
+        "Secret",
+        "ConfigurationSet",
+        "ArchitecturePolicy",
+        "ObservabilityConfig"
+      ],
+      "palette": [
+        "Function",
+        "Trigger",
+        "Schedule",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "ApiRoute",
+        "WorkflowState"
+      ],
+      "relationshipKinds": [
+        "TRIGGERS",
+        "INVOKES",
+        "READS",
+        "WRITES",
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "CALLS_ADAPTERS",
+        "USES_SECRET",
+        "ENVIRONMENT_VARIABLES",
+        "ATTACHED_TO",
+        "CONTAINS"
+      ],
+      "layoutHint": "DEFAULT_LAYERED"
+    },
+    {
+      "id": "pim-event-integration",
+      "displayName": "Event and Flow View",
+      "viewType": "EVENT_INTEGRATION",
+      "viewpoint": "integration",
+      "elementTypes": [
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "Subscription",
+        "EventRoutingRule",
+        "EventType",
+        "Function",
+        "Workflow",
+        "ExternalAdapter",
+        "RequestResponseFlow",
+        "EventFlow",
+        "MessageFlow",
+        "PubSubFlow",
+        "OrchestrationFlow",
+        "ExternalIntegrationFlow"
+      ],
+      "palette": [
+        "EventType",
+        "Queue",
+        "Topic",
+        "EventBus",
+        "Schedule",
+        "Subscription",
+        "EventRoutingRule",
+        "RequestResponseFlow",
+        "EventFlow",
+        "MessageFlow",
+        "PubSubFlow",
+        "OrchestrationFlow",
+        "ExternalIntegrationFlow"
+      ],
+      "relationshipKinds": [
+        "PUBLISHES",
+        "SUBSCRIBES_TO",
+        "TRIGGERS",
+        "EVENT_FLOW",
+        "MESSAGE_FLOW",
+        "PUB_SUB",
+        "ORCHESTRATES",
+        "EXTERNAL_CALL",
+        "INVOKES"
+      ],
+      "layoutHint": "EVENT_FLOW"
+    },
+    {
+      "id": "pim-data-design",
+      "displayName": "Data and Storage View",
+      "viewType": "DATA_DESIGN",
+      "viewpoint": "data",
+      "elementTypes": [
+        "DataStore",
+        "ObjectStore",
+        "DataModel",
+        "DataField",
+        "AccessPattern",
+        "IndexCandidate",
+        "DataAccess",
+        "Schema",
+        "Function"
+      ],
+      "palette": [
+        "DataStore",
+        "ObjectStore",
+        "DataModel",
+        "DataField",
+        "AccessPattern",
+        "IndexCandidate"
+      ],
+      "relationshipKinds": ["READS", "WRITES", "DATA_ACCESS", "USES", "CONTAINS"],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "pim-policy-observability",
+      "displayName": "Policy and Observability View",
+      "viewType": "POLICY_OBSERVABILITY",
+      "viewpoint": "policy",
+      "elementTypes": [
+        "ArchitecturePolicy",
+        "PolicySetting",
+        "DataProtectionPolicy",
+        "DataQualityPolicy",
+        "CompliancePolicy",
+        "BusinessRule",
+        "DecisionModel",
+        "DecisionRule",
+        "ResiliencePolicy",
+        "RetryPolicy",
+        "DeadLetterPolicy",
+        "TimeoutPolicy",
+        "IdempotencyPolicy",
+        "ConcurrencyPolicy",
+        "RateLimitPolicy",
+        "BatchPolicy",
+        "OrderingPolicy",
+        "CachePolicy",
+        "BackupPolicy",
+        "RetentionPolicy",
+        "CostPolicy",
+        "ObservabilityConfig",
+        "LoggingPolicy",
+        "MetricPolicy",
+        "MetricDimension",
+        "TracingPolicy",
+        "AlertPolicy",
+        "Slo",
+        "CorsPolicy",
+        "PolicyTarget",
+        "ProtectedResource"
+      ],
+      "palette": [
+        "ArchitecturePolicy",
+        "DataProtectionPolicy",
+        "DataQualityPolicy",
+        "CompliancePolicy",
+        "BusinessRule",
+        "DecisionModel",
+        "ResiliencePolicy",
+        "RetryPolicy",
+        "DeadLetterPolicy",
+        "TimeoutPolicy",
+        "IdempotencyPolicy",
+        "ConcurrencyPolicy",
+        "RateLimitPolicy",
+        "BatchPolicy",
+        "OrderingPolicy",
+        "CachePolicy",
+        "BackupPolicy",
+        "RetentionPolicy",
+        "CostPolicy",
+        "ObservabilityConfig",
+        "LoggingPolicy",
+        "MetricPolicy",
+        "TracingPolicy",
+        "AlertPolicy",
+        "Slo",
+        "CorsPolicy"
+      ],
+      "relationshipKinds": [
+        "ATTACHED_TO",
+        "CONSTRAINS",
+        "INPUT_SCHEMAS",
+        "OUTPUT_SCHEMAS",
+        "USED_BY_FUNCTIONS",
+        "EXPOSED_BY_ROUTES",
+        "TRACE"
+      ],
+      "layoutHint": "GOVERNANCE"
+    },
+    {
+      "id": "pim-workflow-designer",
+      "displayName": "Workflow View",
+      "viewType": "WORKFLOW_DESIGNER",
+      "viewpoint": "workflow",
+      "elementTypes": [
+        "Workflow",
+        "WorkflowState",
+        "WorkflowTransition",
+        "ParallelBranch",
+        "MapStateConfig",
+        "CallbackTaskConfig",
+        "ErrorHandler",
+        "CompensationPolicy",
+        "EscalationPolicy",
+        "HumanTask",
+        "ApprovalTask",
+        "Function",
+        "ExternalAdapter"
+      ],
+      "palette": ["Workflow", "WorkflowState", "HumanTask", "ApprovalTask", "EscalationPolicy"],
+      "relationshipKinds": ["TRANSITION", "INVOKES", "ORCHESTRATES", "EXTERNAL_CALL", "CONTAINS"],
+      "layoutHint": "PROCESS"
+    },
+    {
+      "id": "pim-security-policy",
+      "displayName": "Security View",
+      "viewType": "SECURITY_POLICY",
+      "viewpoint": "security",
+      "elementTypes": [
+        "IdentityProvider",
+        "Principal",
+        "Permission",
+        "SecurityPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy",
+        "DataProtectionPolicy",
+        "CompliancePolicy",
+        "Secret",
+        "Function",
+        "Api",
+        "DataStore"
+      ],
+      "palette": [
+        "IdentityProvider",
+        "Principal",
+        "Permission",
+        "SecurityPolicy",
+        "AuthPolicy",
+        "AuthorizationPolicy"
+      ],
+      "relationshipKinds": [
+        "AUTHORIZED_BY",
+        "PERMISSION",
+        "USES_SECRET",
+        "CONSTRAINS",
+        "ATTACHED_TO"
+      ],
+      "layoutHint": "GOVERNANCE"
+    },
+    {
+      "id": "pim-configuration-secrets",
+      "displayName": "Configuration and Secrets View",
+      "viewType": "CONFIGURATION_SECRETS",
+      "viewpoint": "configuration",
+      "elementTypes": [
+        "ConfigurationSet",
+        "ConfigParameter",
+        "EnvironmentVariable",
+        "Secret",
+        "CredentialRequirement",
+        "Environment",
+        "Function",
+        "ExternalAdapter",
+        "AuthPolicy"
+      ],
+      "palette": [
+        "ConfigurationSet",
+        "ConfigParameter",
+        "EnvironmentVariable",
+        "Secret",
+        "CredentialRequirement",
+        "Environment"
+      ],
+      "relationshipKinds": ["HAS_ENV", "USES_SECRET", "ATTACHED_TO", "DEPLOYS_TO"],
+      "layoutHint": "TABLE"
+    },
+    {
+      "id": "pim-readiness-traceability",
+      "displayName": "Trace and Readiness Overlay",
+      "viewType": "READINESS_TRACEABILITY",
+      "viewpoint": "readiness",
+      "elementTypes": [
+        "TraceModel",
+        "TraceLink",
+        "ProductionReadinessAssessment",
+        "ReadinessFinding",
+        "ReadinessCheck",
+        "ManualDecision",
+        "ServerlessService",
+        "Function",
+        "Api",
+        "Workflow",
+        "DataStore",
+        "Queue",
+        "ArchitecturePolicy",
+        "ImplementationProfile",
+        "PlatformCapability",
+        "PlatformMappingAssessment"
+      ],
+      "palette": [
+        "TraceModel",
+        "ProductionReadinessAssessment",
+        "ImplementationProfile",
+        "PlatformCapability",
+        "PlatformMappingAssessment"
+      ],
+      "relationshipKinds": ["TRACE", "ATTACHED_TO", "CONSTRAINS"],
+      "layoutHint": "MATRIX"
+    }
+  ],
+  "canvasPolicy": {
+    "roleSizes": {
+      "node": {
+        "width": 236,
+        "height": 116
+      },
+      "container": {
+        "width": 328,
+        "height": 172
+      },
+      "detail": {
+        "width": 236,
+        "height": 86
+      }
+    },
+    "lowDetailBelow": 0.36,
+    "highDetailAtOrAbove": 1.45,
+    "edgeLabelsAtOrAbove": 0.8,
+    "denseEdgeThreshold": 1000,
+    "denseEdgeLabelsAtOrAbove": 1.35,
+    "veryDenseEdgeThreshold": 2200,
+    "veryDenseEdgeLabelsAtOrAbove": 1.7
+  },
+  "boundedContext": {},
+  "complexityManagement": [
+    {
+      "technique": "View decomposition",
+      "behavior": "Use named synchronized views scoped by service, API, function, event, data, workflow, security, configuration, policy, trace, and readiness concerns."
+    },
+    {
+      "technique": "Containment and collapse",
+      "behavior": "Service, deployment, API, workflow, store, and channel containers support collapsed, summary, and expanded modes."
+    },
+    {
+      "technique": "Semantic zoom",
+      "behavior": "Far zoom shows containers and counts; mid zoom shows cards and ports; near zoom shows compartments and edge labels."
+    },
+    {
+      "technique": "Layered edge visibility",
+      "behavior": "Service membership, flow, invocation, data access, security, policy, trace, deployment, and generated edges are independently filterable."
+    },
+    {
+      "technique": "Edge bundling and ports",
+      "behavior": "Repeated links between containers are bundled and exposed through named ports such as in, out, read, write, publish, subscribe, invoke, auth, config."
+    },
+    {
+      "technique": "Table/tree editors",
+      "behavior": "Route tables, schema fields, decision rules, permissions, access patterns, and configuration variables render primarily as tables or trees."
+    },
+    {
+      "technique": "Validation overlays",
+      "behavior": "EVL/readiness findings appear as markers and sortable issue lists that highlight affected elements."
+    },
+    {
+      "technique": "Trace overlay",
+      "behavior": "Trace links remain a separate layer with confidence filters."
+    },
+    {
+      "technique": "Saved viewpoints",
+      "behavior": "Views persist filters, layout, camera positions, and edge-layer choices."
+    }
+  ],
+  "workbench": {},
+  "scaffoldRecipes": [],
+  "constraints": [],
+  "strictnessModes": ["exploration", "methodology", "production"],
+  "universalSyntax": [
+    {
+      "primitive": "Container",
+      "notation": "Rounded large frame with title bar and optional swimlane/header.",
+      "interaction": "Spatial containment changes containment or membership only when valid."
+    },
+    {
+      "primitive": "Primary concept card",
+      "notation": "Rounded card with title, stereotype token, badges, and collapsible compartments.",
+      "interaction": "Primary attributes are inline; secondary attributes remain editable in the inspector."
+    },
+    {
+      "primitive": "Attached policy/constraint badge",
+      "notation": "Small labeled pin attached to a target node border.",
+      "interaction": "Click opens the policy object; pinning creates a full policy card."
+    },
+    {
+      "primitive": "Relationship edge",
+      "notation": "Labeled line with arrowheads and optional endpoint roles.",
+      "interaction": "Dense edge layers are hidden, bundled, or exposed through focus mode."
+    },
+    {
+      "primitive": "Reference chip",
+      "notation": "Compact linked-element chip inside a table row, card compartment, or inspector row.",
+      "interaction": "Clicking a chip navigates to or highlights the referenced element."
+    }
+  ],
+  "kernelSyntax": [
+    {
+      "element": "ModelElement / TraceableElement",
+      "notation": "Hidden metadata layer with lifecycle, generated, rationale, review, and trace badges.",
+      "surfaces": ["inspector", "search", "trace overlay", "status badges"]
+    },
+    {
+      "element": "Annotation / KeyValue",
+      "notation": "Key-value chips attached to a card or listed in an annotations tab.",
+      "surfaces": ["inspector", "detail projection"]
+    },
+    {
+      "element": "TraceModel / TraceLink",
+      "notation": "Separate traceability overlay with dashed labeled links and confidence filtering.",
+      "surfaces": ["trace view", "relationship matrix"]
+    },
+    {
+      "element": "Expression / StructuredDocument",
+      "notation": "Expandable expression or document editor with compact card badge.",
+      "surfaces": ["inspector", "detail modal"]
+    },
+    {
+      "element": "ProductionReadinessAssessment / findings / checks / decisions",
+      "notation": "Readiness board and severity markers on affected elements.",
+      "surfaces": ["readiness board", "validation overlay"]
+    }
+  ],
+  "kernelNotation": [
+    {
+      "element": "ModelElement / TraceableElement",
+      "notation": "Hidden metadata layer with lifecycle, generated, rationale, review, and trace badges.",
+      "surfaces": ["inspector", "search", "trace overlay", "status badges"]
+    },
+    {
+      "element": "Annotation / KeyValue",
+      "notation": "Key-value chips attached to a card or listed in an annotations tab.",
+      "surfaces": ["inspector", "detail projection"]
+    },
+    {
+      "element": "TraceModel / TraceLink",
+      "notation": "Separate traceability overlay with dashed labeled links and confidence filtering.",
+      "surfaces": ["trace view", "relationship matrix"]
+    },
+    {
+      "element": "Expression / StructuredDocument",
+      "notation": "Expandable expression or document editor with compact card badge.",
+      "surfaces": ["inspector", "detail modal"]
+    },
+    {
+      "element": "ProductionReadinessAssessment / findings / checks / decisions",
+      "notation": "Readiness board and severity markers on affected elements.",
+      "surfaces": ["readiness board", "validation overlay"]
+    }
+  ],
+  "rootTemplate": {
+    "eClass": "PIMModel",
+    "modelLevel": "PIM",
+    "name": "",
+    "escalationPolicies": [],
+    "architectureStyle": "EVENT_DRIVEN_SERVERLESS",
+    "diagram": {
+      "elements": [],
+      "relationships": []
+    },
+    "graph": {
+      "elements": [],
+      "relationships": [],
+      "traceLinks": [],
+      "assumptions": [],
+      "validationIssues": [],
+      "manualBacklog": []
+    },
+    "views": [],
+    "fragments": []
+  },
+  "starterTemplate": {
+    "id": "${safe:modelName-root}",
+    "name": "${modelName}",
+    "eClass": "PIMModel",
+    "modelLevel": "PIM",
+    "architectureStyle": "HYBRID_SERVERLESS",
+    "domainName": "${modelName}",
+    "defaultCorrelationIdName": "correlationId",
+    "escalationPolicies": [],
+    "services": [],
+    "serviceMemberships": [],
+    "deploymentUnits": [],
+    "environments": [],
+    "schemas": [],
+    "functions": [],
+    "apis": [],
+    "eventTypes": [],
+    "channels": [],
+    "schedules": [],
+    "triggers": [],
+    "dataStores": [],
+    "objectStores": [],
+    "dataAccesses": [],
+    "workflows": [],
+    "humanTasks": [],
+    "externalEndpoints": [],
+    "externalAdapters": [],
+    "identityProviders": [],
+    "principals": [],
+    "policies": [],
+    "implementationProfile": {
+      "id": "${safe:modelName-profile}",
+      "name": "${modelName} implementation profile",
+      "eClass": "ImplementationProfile",
+      "primaryLanguage": "JAVA",
+      "packageManager": "MAVEN",
+      "sourceLayout": "src/main/java",
+      "buildCommand": "./mvnw -q test",
+      "generateTypedContracts": true,
+      "generateRuntimeValidation": false
+    },
+    "diagram": {
+      "elements": [],
+      "relationships": []
+    },
+    "graph": {
+      "elements": [],
+      "relationships": [],
+      "traceLinks": [],
+      "assumptions": [],
+      "validationIssues": [],
+      "manualBacklog": []
+    },
+    "views": [],
+    "fragments": []
+  }
+}

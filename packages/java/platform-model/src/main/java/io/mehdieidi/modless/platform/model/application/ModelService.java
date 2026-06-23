@@ -292,6 +292,9 @@ public final class ModelService {
       String name,
       JsonNode modelJson,
       byte[] sourceXmiBytes) {
+    if (projectId == null || projectId.isBlank()) {
+      throw new PlatformException(400, "A project id is required to create a model.");
+    }
     ProjectRecord project = projectService.get(user, projectId);
     projectService.requireEditor(project, user.id());
     Instant now = Instant.now();

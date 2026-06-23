@@ -2,10 +2,14 @@ import { el } from "./dom.js";
 import { formatUserError } from "./errors.js";
 
 const TOAST_TTL_MS = 4600;
+const TOAST_DEDUPE_MS = 4000;
 let toastHost = null;
 let toastSeq = 0;
 let progressToast = null;
 let progressToastParts = null;
+let activeBusyToast = null;
+let lastToastSignature = "";
+let lastToastAt = 0;
 
 function ensureToastHost() {
   if (toastHost?.isConnected) {
@@ -31,12 +35,84 @@ function removeToast(toast) {
     progressToast = null;
     progressToastParts = null;
   }
+  if (toast === activeBusyToast) {
+    activeBusyToast = null;
+  }
   toast.classList.add("toast-leaving");
   window.setTimeout(() => toast.remove(), 180);
 }
 
+function dismissActiveBusyToast() {
+  if (activeBusyToast?.isConnected) {
+    removeToast(activeBusyToast);
+  } else {
+    activeBusyToast = null;
+  }
+}
+
+function toastSignature(kind, text) {
+  return `${kind}:${text}`;
+}
+
+function shouldSkipDuplicateToast(kind, text) {
+  const signature = toastSignature(kind, text);
+  const now = Date.now();
+  if (signature === lastToastSignature && now - lastToastAt < TOAST_DEDUPE_MS) {
+    return true;
+  }
+  lastToastSignature = signature;
+  lastToastAt = now;
+  return false;
+}
+
 function normalizeProgress(value) {
   return Math.max(0, Math.min(100, Number(value) || 0));
+}
+
+function updateBusyToastMessage(text) {
+  if (!activeBusyToast?.isConnected) {
+    activeBusyToast = null;
+    return false;
+  }
+  const messageEl = activeBusyToast.querySelector(".toast-message");
+  if (messageEl) {
+    messageEl.textContent = text;
+  }
+  return true;
+}
+
+function createToast({ kind, text, error = false }) {
+  const host = ensureToastHost();
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${kind}`;
+  toast.setAttribute("role", error ? "alert" : "status");
+  toast.dataset.toastId = String(++toastSeq);
+
+  const icon = document.createElement("span");
+  icon.className = "toast-icon";
+  icon.setAttribute("aria-hidden", "true");
+
+  const body = document.createElement("div");
+  body.className = "toast-body";
+  const title = document.createElement("div");
+  title.className = "toast-title";
+  title.textContent = error ? "Needs attention" : kind === "busy" ? "Working" : "Done";
+  const messageEl = document.createElement("div");
+  messageEl.className = "toast-message";
+  messageEl.textContent = text;
+  body.append(title, messageEl);
+
+  const close = document.createElement("button");
+  close.className = "toast-close";
+  close.type = "button";
+  close.title = "Dismiss notification";
+  close.setAttribute("aria-label", "Dismiss notification");
+  close.textContent = "x";
+  close.addEventListener("click", () => removeToast(toast));
+
+  toast.append(icon, body, close);
+  host.appendChild(toast);
+  return toast;
 }
 
 export function showProgressNotification({
@@ -54,6 +130,8 @@ export function showProgressNotification({
     updateProgressNotification({ label, progress });
     return;
   }
+
+  dismissActiveBusyToast();
 
   const toast = document.createElement("div");
   toast.className = "toast toast-busy toast-progress";
@@ -153,38 +231,26 @@ export function setStatus(messageOrError, { busy = false, error = false, prefix 
     return;
   }
 
-  const host = ensureToastHost();
-  const kind = error ? "error" : busy ? "busy" : "success";
-  const toast = document.createElement("div");
-  toast.className = `toast toast-${kind}`;
-  toast.setAttribute("role", error ? "alert" : "status");
-  toast.dataset.toastId = String(++toastSeq);
+  if (busy) {
+    if (updateBusyToastMessage(text)) {
+      return;
+    }
+    dismissActiveBusyToast();
+    const toast = createToast({ kind: "busy", text });
+    activeBusyToast = toast;
+    window.setTimeout(() => removeToast(toast), 12000);
+    return;
+  }
 
-  const icon = document.createElement("span");
-  icon.className = "toast-icon";
-  icon.setAttribute("aria-hidden", "true");
+  dismissActiveBusyToast();
 
-  const body = document.createElement("div");
-  body.className = "toast-body";
-  const title = document.createElement("div");
-  title.className = "toast-title";
-  title.textContent = error ? "Needs attention" : busy ? "Working" : "Done";
-  const messageEl = document.createElement("div");
-  messageEl.className = "toast-message";
-  messageEl.textContent = text;
-  body.append(title, messageEl);
+  const kind = error ? "error" : "success";
+  if (shouldSkipDuplicateToast(kind, text)) {
+    return;
+  }
 
-  const close = document.createElement("button");
-  close.className = "toast-close";
-  close.type = "button";
-  close.title = "Dismiss notification";
-  close.setAttribute("aria-label", "Dismiss notification");
-  close.textContent = "x";
-  close.addEventListener("click", () => removeToast(toast));
-
-  toast.append(icon, body, close);
-  host.appendChild(toast);
-  window.setTimeout(() => removeToast(toast), busy ? 2800 : TOAST_TTL_MS);
+  const toast = createToast({ kind, text, error });
+  window.setTimeout(() => removeToast(toast), TOAST_TTL_MS);
 }
 
 export function setBusy(message) {

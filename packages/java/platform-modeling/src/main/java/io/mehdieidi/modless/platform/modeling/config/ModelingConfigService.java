@@ -35,6 +35,9 @@ public final class ModelingConfigService {
   /** Mapper used to read modeling metadata resources. */
   private final ObjectMapper objectMapper = new ObjectMapper();
 
+  /** Loader for CVS v2 notation documents. */
+  private final CvsV2Loader cvsLoader = new CvsV2Loader();
+
   /**
    * Returns the complete modeling configuration for all supported levels.
    *
@@ -63,7 +66,8 @@ public final class ModelingConfigService {
         Map.entry("levels", levels),
         Map.entry("transformations", optionalMap(platform, "transformations")),
         Map.entry("artifactAction", optionalMap(platform, "artifactAction")),
-        Map.entry("impactAnalysis", optionalMap(platform, "impactAnalysis")));
+        Map.entry("impactAnalysis", optionalMap(platform, "impactAnalysis")),
+        Map.entry("diagramEditor", diagramEditorConfig(platform)));
   }
 
   /**
@@ -133,6 +137,10 @@ public final class ModelingConfigService {
     }
     Map<String, Object> containmentPalettes =
         buildContainmentPalettes(elementMaps, relationshipElementTypes);
+    cvsLoader.validateElementCoverage(key, elementMaps);
+    List<Map<String, Object>> elementMappings = cvsLoader.buildElementMappings(elementMaps);
+    List<Map<String, Object>> cvsReferenceMappings =
+        buildReferenceMappings(requireList(metadata, "semanticReferenceRules", key));
     return Map.ofEntries(
         Map.entry("displayName", metadata.getOrDefault("displayName", key.toUpperCase())),
         Map.entry("elementsPath", "/diagram/elements"),
@@ -175,6 +183,13 @@ public final class ModelingConfigService {
         Map.entry("canvasPolicy", completeCanvasPolicy(metadata)),
         Map.entry("containmentPalettes", containmentPalettes),
         Map.entry("syntaxCoverage", syntaxCoverage),
+        Map.entry("elementMappings", elementMappings),
+        Map.entry("cvsVersion", metadata.getOrDefault("cvsVersion", 1)),
+        Map.entry("cvsPrimitives", metadata.getOrDefault("cvsPrimitives", Map.of())),
+        Map.entry("cvsReferenceMappings", cvsReferenceMappings),
+        Map.entry(
+            "cvsRelationshipMappings", metadata.getOrDefault("cvsRelationshipMappings", List.of())),
+        Map.entry("cvsMetamodelRef", metadata.getOrDefault("cvsMetamodelRef", Map.of())),
         Map.entry(
             "strictnessModes",
             metadata.getOrDefault(
@@ -1497,12 +1512,111 @@ public final class ModelingConfigService {
   }
 
   /**
+   * Builds CVS reference mappings from merged semantic reference rules.
+   *
+   * @param semanticReferenceRules merged semantic reference rules
+   * @return CVS reference mapping list
+   */
+  private List<Map<String, Object>> buildReferenceMappings(List<?> semanticReferenceRules) {
+    List<Map<String, Object>> mappings = new ArrayList<>();
+    for (Object item : semanticReferenceRules) {
+      if (!(item instanceof Map<?, ?> raw)) {
+        continue;
+      }
+      Map<String, Object> rule = stringKeyMap(raw);
+      mappings.add(
+          Map.of(
+              "sourceType", rule.getOrDefault("sourceType", ""),
+              "targetType", rule.getOrDefault("targetType", ""),
+              "eReference", rule.getOrDefault("feature", ""),
+              "edgeKind", rule.getOrDefault("kind", ""),
+              "directed", !Boolean.TRUE.equals(rule.get("reverse"))));
+    }
+    return mappings;
+  }
+
+  private static final List<String> DEFAULT_ALLOWED_RENDERERS = List.of("antv-g6", "glsp-sprotty");
+  private static final String DEFAULT_DIAGRAM_RENDERER = "antv-g6";
+  private static final String DEFAULT_GLSP_SERVER_URL = "ws://127.0.0.1:8081/modless";
+
+  /**
+   * Returns diagram editor renderer configuration from platform config with defaults.
+   *
+   * <p>Environment variables override {@code platform-config.json}:
+   *
+   * <ul>
+   *   <li>{@code MODLESS_DIAGRAM_RENDERER} — {@code antv-g6} or {@code glsp-sprotty}
+   *   <li>{@code MODLESS_GLSP_SERVER_URL} — browser-reachable WebSocket URL (e.g. {@code
+   *       ws://localhost:8081/modless})
+   * </ul>
+   *
+   * @param platform platform configuration map
+   * @return diagram editor settings
+   */
+  private Map<String, Object> diagramEditorConfig(Map<String, Object> platform) {
+    return diagramEditorConfig(
+        platform,
+        System.getenv("MODLESS_DIAGRAM_RENDERER"),
+        System.getenv("MODLESS_GLSP_SERVER_URL"));
+  }
+
+  /**
+   * Package-visible for unit tests.
+   *
+   * @param platform platform configuration map
+   * @param envRenderer optional renderer override from the environment
+   * @param envGlspServerUrl optional GLSP WebSocket URL override from the environment
+   * @return diagram editor settings
+   */
+  Map<String, Object> diagramEditorConfig(
+      Map<String, Object> platform, String envRenderer, String envGlspServerUrl) {
+    Map<String, Object> configured = optionalMap(platform, "diagramEditor");
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("renderer", resolveDiagramRenderer(configured, envRenderer));
+    result.put("glspServerUrl", resolveGlspServerUrl(configured, envGlspServerUrl));
+    result.put(
+        "allowedRenderers", configured.getOrDefault("allowedRenderers", DEFAULT_ALLOWED_RENDERERS));
+    return result;
+  }
+
+  private String resolveDiagramRenderer(Map<String, Object> configured, String envRenderer) {
+    if (envRenderer != null && !envRenderer.isBlank()) {
+      String normalized = envRenderer.trim();
+      if (DEFAULT_ALLOWED_RENDERERS.contains(normalized)) {
+        return normalized;
+      }
+    }
+    Object fromConfig = configured.get("renderer");
+    if (fromConfig != null) {
+      String normalized = String.valueOf(fromConfig).trim();
+      if (DEFAULT_ALLOWED_RENDERERS.contains(normalized)) {
+        return normalized;
+      }
+    }
+    return DEFAULT_DIAGRAM_RENDERER;
+  }
+
+  private String resolveGlspServerUrl(Map<String, Object> configured, String envGlspServerUrl) {
+    if (envGlspServerUrl != null && !envGlspServerUrl.isBlank()) {
+      return envGlspServerUrl.trim();
+    }
+    Object fromConfig = configured.get("glspServerUrl");
+    if (fromConfig != null && !String.valueOf(fromConfig).isBlank()) {
+      return String.valueOf(fromConfig).trim();
+    }
+    return DEFAULT_GLSP_SERVER_URL;
+  }
+
+  /**
    * Reads level-specific UI metadata from the classpath.
    *
    * @param key lowercase level key
    * @return metadata map
    */
   private Map<String, Object> readMetadata(String key) {
+    if (cvsLoader.hasCvs(key)) {
+      return cvsLoader.loadAsUiMetadata(key);
+    }
     String resource = "modeling/" + key + "-ui-metadata.json";
     try (InputStream input =
         Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)) {

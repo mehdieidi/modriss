@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://modless.org/notation/cvs-v2.schema.json",
+  "title": "Modless Concrete Visual Syntax v2",
+  "description": "Formal concrete visual syntax specification derived from Ecore metamodels.",
+  "type": "object",
+  "required": ["cvsVersion", "metamodelRef", "primitives", "viewpoints", "canvasPolicy"],
+  "additionalProperties": true,
+  "properties": {
+    "cvsVersion": {
+      "type": "integer",
+      "const": 2
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "metamodelRef": {
+      "type": "object",
+      "required": ["level", "ecore"],
+      "properties": {
+        "level": { "type": "string", "enum": ["cim", "pim", "psm"] },
+        "ecore": { "type": "string" },
+        "nsUri": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "primitives": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "sprottyShape": { "type": "string" },
+          "geometry": { "type": "string" },
+          "cornerRadius": { "type": "number" },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "elementVisualDefaults": { "type": "object" },
+    "elementVisualRules": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "elementOverrides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "type": "string" },
+          "visualRole": { "type": "string" },
+          "primitive": { "type": "string" },
+          "card": { "type": "object" }
+        }
+      }
+    },
+    "elementMappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["match", "visualRole"],
+        "properties": {
+          "match": {
+            "type": "object",
+            "properties": {
+              "eClass": { "type": "string" },
+              "package": { "type": "string" }
+            }
+          },
+          "visualRole": {
+            "type": "string",
+            "enum": ["node", "container", "relationship", "detail", "support"]
+          },
+          "primitive": { "type": "string" },
+          "card": { "type": "object" },
+          "icon": { "type": "string" },
+          "color": { "type": "string" },
+          "category": { "type": "string" }
+        }
+      }
+    },
+    "referenceMappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["eReference", "edgeKind"],
+        "properties": {
+          "sourceType": { "type": "string" },
+          "targetType": { "type": "string" },
+          "eReference": { "type": "string" },
+          "edgeKind": { "type": "string" },
+          "directed": { "type": "boolean" }
+        }
+      }
+    },
+    "relationshipMappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "eClass": { "type": "string" },
+          "visualRole": { "type": "string" },
+          "edgeKind": { "type": "string" }
+        }
+      }
+    },
+    "relationshipRules": { "type": "array" },
+    "relationshipKinds": { "type": "array", "items": { "type": "string" } },
+    "relationshipKindLabels": { "type": "object" },
+    "relationshipVisualRules": { "type": "array" },
+    "semanticReferenceRules": { "type": "array" },
+    "semanticEdgeObjectRules": { "type": "array" },
+    "badgeRules": { "type": "array" },
+    "viewpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "displayName"],
+        "properties": {
+          "id": { "type": "string" },
+          "displayName": { "type": "string" },
+          "viewType": { "type": "string" },
+          "viewpoint": { "type": "string" },
+          "elementTypes": { "type": "array", "items": { "type": "string" } },
+          "palette": { "type": "array", "items": { "type": "string" } },
+          "relationshipKinds": { "type": "array", "items": { "type": "string" } },
+          "layoutHint": { "type": "string" }
+        }
+      }
+    },
+    "canvasPolicy": { "type": "object" },
+    "boundedContext": { "type": "object" },
+    "notationPrimitives": { "type": "object" },
+    "complexityManagement": { "type": "array" },
+    "workbench": { "type": "object" },
+    "scaffoldRecipes": { "type": "array" },
+    "constraints": { "type": "array" },
+    "strictnessModes": { "type": "array" },
+    "rootTemplate": { "type": "object" },
+    "starterTemplate": { "type": "object" }
+  }
+}

@@ -161,7 +161,7 @@ async function showAuthDialog() {
       document.body.classList.remove("modal-open");
       el.authLoginTabBtn?.removeEventListener("click", onLoginMode);
       el.authRegisterTabBtn?.removeEventListener("click", onRegisterMode);
-      el.authSubmitBtn?.removeEventListener("click", onSubmit);
+      el.authForm?.removeEventListener("submit", onFormSubmit);
       el.authEmailInput?.removeEventListener("keydown", onKeyDown);
       el.authPasswordInput?.removeEventListener("keydown", onKeyDown);
       el.authDisplayNameInput?.removeEventListener("keydown", onKeyDown);
@@ -228,6 +228,11 @@ async function showAuthDialog() {
       }
     };
 
+    const onFormSubmit = (event) => {
+      event.preventDefault();
+      onSubmit();
+    };
+
     const onKeyDown = (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -237,7 +242,7 @@ async function showAuthDialog() {
 
     el.authLoginTabBtn?.addEventListener("click", onLoginMode);
     el.authRegisterTabBtn?.addEventListener("click", onRegisterMode);
-    el.authSubmitBtn?.addEventListener("click", onSubmit);
+    el.authForm?.addEventListener("submit", onFormSubmit);
     el.authEmailInput?.addEventListener("keydown", onKeyDown);
     el.authPasswordInput?.addEventListener("keydown", onKeyDown);
     el.authDisplayNameInput?.addEventListener("keydown", onKeyDown);

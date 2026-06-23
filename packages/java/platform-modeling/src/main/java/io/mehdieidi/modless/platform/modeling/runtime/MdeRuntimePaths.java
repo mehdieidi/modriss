@@ -128,6 +128,15 @@ public final class MdeRuntimePaths {
   }
 
   /**
+   * Returns the concrete visual syntax (CVS v2) notation root.
+   *
+   * @return notation directory containing {@code *.cvs.json} files
+   */
+  public Path notationRoot() {
+    return resolveConfiguredRoot(null, "mde/notation").normalize();
+  }
+
+  /**
    * Resolves an optional configured root or falls back to a repository-relative default.
    *
    * @param configured configured override path

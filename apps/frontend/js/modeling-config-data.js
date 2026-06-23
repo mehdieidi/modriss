@@ -13,6 +13,11 @@ const EMPTY_CONFIG = Object.freeze({
   transformations: Object.freeze({}),
   artifactAction: Object.freeze({}),
   impactAnalysis: Object.freeze({}),
+  diagramEditor: Object.freeze({
+    renderer: "antv-g6",
+    glspServerUrl: "ws://127.0.0.1:8081/modless",
+    allowedRenderers: Object.freeze(["antv-g6", "glsp-sprotty"]),
+  }),
 });
 
 function emptyLevel(displayName) {
@@ -87,6 +92,16 @@ function ensureConfigShape(raw) {
     raw.artifactAction && typeof raw.artifactAction === "object" ? raw.artifactAction : {};
   normalized.impactAnalysis =
     raw.impactAnalysis && typeof raw.impactAnalysis === "object" ? raw.impactAnalysis : {};
+  normalized.diagramEditor =
+    raw.diagramEditor && typeof raw.diagramEditor === "object"
+      ? {
+          renderer: String(raw.diagramEditor.renderer || "antv-g6"),
+          glspServerUrl: String(raw.diagramEditor.glspServerUrl || "ws://127.0.0.1:8081/modless"),
+          allowedRenderers: Array.isArray(raw.diagramEditor.allowedRenderers)
+            ? raw.diagramEditor.allowedRenderers.map(String)
+            : ["antv-g6", "glsp-sprotty"],
+        }
+      : { ...EMPTY_CONFIG.diagramEditor };
 
   const incomingLevels = raw.levels && typeof raw.levels === "object" ? raw.levels : {};
   const levelOrder = Array.isArray(raw.levelOrder) ? raw.levelOrder.map(String) : [];

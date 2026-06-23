@@ -3,13 +3,15 @@
   src: url("../assets/fonts/Flamenco/Flamenco-Regular.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "Space Grotesk";
   src: url("../assets/fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.ttf") format("truetype");
   font-style: normal;
-  font-weight: 400;
+  font-weight: 100 700;
+  font-display: swap;
 }
 
 :root {

@@ -5,7 +5,7 @@ import { setBusy, setError, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
 import { emptyDiagram, escapeHtml } from "./utils.js";
 import { toDiagram } from "./diagram.js";
-import { renderDiagram, renderPalette, resetCanvasView } from "./canvas.js";
+import { renderDiagramAsync, renderPalette, resetCanvasView } from "./canvas.js";
 import { updateGenerateButtonState } from "./model-ops.js";
 import { renderViewWorkbench } from "./view-explorer.js";
 import { restoreTabGraphState } from "./graph-store.js";
@@ -16,11 +16,13 @@ import { apiUrl, MODEL_TYPES } from "./config.js";
 import { confirmAction } from "./confirm-action.js";
 import { resetModelSaveState, updateModelSaveUi } from "./model-save-ui.js";
 import { defaultModelingLevel, modelingLevelKeys } from "./modeling-config-data.js";
+import { requireActiveProject } from "./project-guards.js";
+
+export { requireActiveProject } from "./project-guards.js";
 
 function resolveProjectId(project) {
   return project?.id || project?.projectId || project?.uuid || null;
 }
-
 const getElementTarget = (event) => (event.target instanceof Element ? event.target : null);
 const LAST_PROJECT_STORAGE_PREFIX = "modless.lastProjectId";
 
@@ -403,7 +405,7 @@ export async function loadProject(project) {
     updateGenerateButtonState();
 
     renderPalette();
-    renderDiagram();
+    await renderDiagramAsync();
     renderViewWorkbench();
     resetModelSaveState();
     resetCanvasView();
@@ -477,7 +479,7 @@ export async function deleteCurrentProject() {
       clearLastProjectId();
     }
     renderPalette();
-    renderDiagram();
+    await renderDiagramAsync();
     renderViewWorkbench();
     resetModelSaveState();
     resetCanvasView();

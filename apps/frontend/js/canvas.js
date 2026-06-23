@@ -49,33 +49,35 @@ import {
   pushDiagramUndoSnapshot,
 } from "./undo.js";
 import {
-  addG6Edge,
-  addG6Node,
-  beginG6InlineLabelEdit,
-  fitG6CanvasToDiagram,
-  focusG6CanvasPoint,
-  focusG6Node,
-  getG6Editor,
-  isG6Available,
-  mountG6Editor,
-  onG6ViewportChanged,
-  refreshG6Edges,
-  renderG6Diagram,
-  resetG6CanvasView,
-  setG6HoverEdge,
-  setG6HoverNode,
-  syncG6FromState,
+  activeRendererKind,
+  addCanvasEdge,
+  addCanvasNode,
+  beginCanvasInlineLabelEdit,
+  ensureCanvas as mountActiveCanvas,
+  fitCanvasToDiagram,
+  focusCanvasPoint,
+  focusCanvasNode,
+  getCanvasEditor,
+  isCanvasRendererAvailable,
+  onCanvasViewportChanged,
+  refreshCanvasEdges,
+  renderCanvasDiagram,
+  resetCanvasView as adapterResetCanvasView,
+  setCanvasHoverEdge,
+  setCanvasHoverNode,
+  setCanvasMountOptions,
+  syncCanvasFromState,
   toGraphCoordinates,
-  updateG6ConnectionState,
-  updateG6ContextBoxes,
-  updateG6Edge,
-  updateG6ImpactState,
-  updateG6Node,
-  updateG6NodeIcons,
-  updateG6Selection,
-  updateG6Viewport,
-  zoomG6CanvasBy,
-} from "./graph-editor/g6-editor.js";
+  updateCanvasConnectionState,
+  updateCanvasContextBoxes,
+  updateCanvasEdge,
+  updateCanvasImpactState,
+  updateCanvasNode,
+  updateCanvasNodeIcons,
+  updateCanvasSelection,
+  updateCanvasViewport,
+  zoomCanvasBy as adapterZoomCanvasBy,
+} from "./graph-editor/renderer-adapter.js";
 import {
   canvasToViewportPoint as graphCanvasToViewportPoint,
   mountNodeExploreToolbar,
@@ -1229,123 +1231,107 @@ function moveG6ConnectionDrag(sourceId, targetId) {
     return;
   }
   state.linkDrag.hoveredTargetId = nextTargetId;
-  updateG6ConnectionState();
+  updateCanvasConnectionState();
 }
 
-function ensureG6Canvas() {
-  window.modlessEnsureG6Canvas = ensureG6Canvas;
+function ensureCanvas() {
+  window.modlessEnsureG6Canvas = ensureCanvas;
+  const renderer =
+    state.modelingConfig.config?.diagramEditor?.renderer ||
+    window.modlessFrontendBoot?.renderer ||
+    "antv-g6";
   window.modlessG6State = {
     ...(window.modlessG6State || {}),
     ensureCalled: true,
-    rendererRequested: "antv-g6",
+    rendererRequested: renderer,
     activeType: state.activeType,
     stateNodes: Array.isArray(state.diagram?.nodes) ? state.diagram.nodes.length : 0,
     stateEdges: Array.isArray(state.diagram?.connections) ? state.diagram.connections.length : 0,
   };
-  if (getG6Editor()) {
-    return true;
-  }
-  el.canvasGrid?.classList.add("g6-renderer-active");
-  if (!isG6Available()) {
-    el.canvasGrid?.setAttribute("data-renderer", "antv-g6-unavailable");
-    window.modlessG6State = {
-      ...(window.modlessG6State || {}),
-      available: false,
-      mounted: false,
-      lastError: "AntV G6 failed to load",
-    };
-    setStatus("AntV G6 failed to load; model canvas renderer unavailable");
-    return true;
-  }
-  try {
-    mountG6Editor(el.g6EditorHost, {
-      mapper: {
-        visibleNode: nodeVisibleInCurrentCanvasMode,
-        isContainer: (node) =>
-          isContainerElement(node) && !(supportsBoundedContext() && isBoundedContextNode(node)),
-        contextNameFromNode,
-        viewProfile: activeConfiguredViewProfile() || activeView()?.viewpoint || "",
+  setCanvasMountOptions({
+    mapper: {
+      visibleNode: nodeVisibleInCurrentCanvasMode,
+      isContainer: (node) =>
+        isContainerElement(node) && !(supportsBoundedContext() && isBoundedContextNode(node)),
+      contextNameFromNode,
+      viewProfile: activeConfiguredViewProfile() || activeView()?.viewpoint || "",
+    },
+    callbacks: {
+      onNodeClick: handleG6NodeClick,
+      onNodeDoubleClick: handleG6NodeDoubleClick,
+      onNodeHover: setHoveredNode,
+      onEdgeClick: (edgeId) => selectConnection(edgeId, { openPicker: true }),
+      onEdgeHover: setHoveredEdge,
+      onCanvasClick: handleG6CanvasClick,
+      onEscape: handleG6CanvasClick,
+      onCanvasPointerDown: closeEdgeKindPicker,
+      onCanvasPointerMove: () => {},
+      onNodeDragStart: startG6NodeDrag,
+      onNodeDrag: moveG6NodeDrag,
+      onNodeDragEnd: endG6NodeDrag,
+      onConnectionDragStart: startG6ConnectionDrag,
+      onConnectionPointerMove: moveG6ConnectionDrag,
+      onConnectionDragEnd: () => {
+        state.linkDrag = null;
+        updateCanvasConnectionState();
       },
-      callbacks: {
-        onNodeClick: handleG6NodeClick,
-        onNodeDoubleClick: handleG6NodeDoubleClick,
-        onNodeHover: setHoveredNode,
-        onEdgeClick: (edgeId) => selectConnection(edgeId, { openPicker: true }),
-        onEdgeHover: setHoveredEdge,
-        onCanvasClick: handleG6CanvasClick,
-        onEscape: handleG6CanvasClick,
-        onCanvasPointerDown: closeEdgeKindPicker,
-        onCanvasPointerMove: () => {},
-        onNodeDragStart: startG6NodeDrag,
-        onNodeDrag: moveG6NodeDrag,
-        onNodeDragEnd: endG6NodeDrag,
-        onConnectionDragStart: startG6ConnectionDrag,
-        onConnectionPointerMove: moveG6ConnectionDrag,
-        onConnectionDragEnd: () => {
-          state.linkDrag = null;
-          updateG6ConnectionState();
-        },
-        onConnectionComplete: (sourceId, targetId) =>
-          addConnection(sourceId, targetId, {
-            interactivePicker: true,
-            preferredKind: state.preferredConnectionKind,
-          }),
-        onConnectionCancel: () => {
-          state.linkDrag = null;
-          updateG6ConnectionState();
-          setStatus("Connection canceled");
-        },
-        connectionTargetState: g6ConnectionTargetState,
-        connectionTargetTypes: g6ConnectionTargetTypes,
-        contextBoxes: g6ContextBoxes,
-        onContextSelect: selectBoundedContext,
-        onContextOpen: openBoundedContextFocus,
-        onOpenContainer: openG6ContainerTool,
-        onViewportChange: () => {
-          updateNodeExploreToolbar();
-          onG6ViewportChanged();
-        },
-        onViewportTranslate: updateNodeExploreToolbar,
-        onViewportSynced: updateNodeExploreToolbar,
+      onConnectionComplete: (sourceId, targetId) =>
+        addConnection(sourceId, targetId, {
+          interactivePicker: true,
+          preferredKind: state.preferredConnectionKind,
+        }),
+      onConnectionCancel: () => {
+        state.linkDrag = null;
+        updateCanvasConnectionState();
+        setStatus("Connection canceled");
       },
-    });
-    el.canvasGrid?.classList.add("g6-renderer-active");
-    el.canvasGrid?.classList.remove("g6-renderer-unavailable");
-    el.canvasGrid?.setAttribute("data-renderer", "antv-g6");
-    return true;
-  } catch (error) {
-    console.error("G6 editor mount failed", error);
-    el.canvasGrid?.classList.add("g6-renderer-unavailable");
-    el.canvasGrid?.setAttribute("data-renderer", "antv-g6-unavailable");
-    window.modlessG6State = {
-      ...(window.modlessG6State || {}),
-      available: isG6Available(),
-      mounted: false,
-      lastError: error.message || String(error),
-    };
-    setStatus("AntV G6 renderer failed; model canvas renderer unavailable");
-    return true;
-  }
+      connectionTargetState: g6ConnectionTargetState,
+      connectionTargetTypes: g6ConnectionTargetTypes,
+      contextBoxes: g6ContextBoxes,
+      onContextSelect: selectBoundedContext,
+      onContextOpen: openBoundedContextFocus,
+      onOpenContainer: openG6ContainerTool,
+      onViewportChange: () => {
+        updateZoomControlLabel();
+        el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
+        el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
+        el.canvasGrid?.classList.toggle(
+          "lod-medium",
+          state.viewport.scale >= 0.35 && state.viewport.scale < 0.75,
+        );
+        el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
+        updateNodeExploreToolbar();
+        onCanvasViewportChanged();
+      },
+      onViewportTranslate: updateNodeExploreToolbar,
+      onViewportSynced: updateNodeExploreToolbar,
+    },
+  });
+  return mountActiveCanvas();
 }
 
-export function initializeModelingRenderer() {
-  const mountedOrUnavailable = ensureG6Canvas();
-  if (mountedOrUnavailable && getG6Editor()) {
-    syncCanvasIndexesFromState();
-    syncG6FromState({ full: true });
+export async function initializeModelingRenderer() {
+  const mountedOrUnavailable = await ensureCanvas();
+  syncCanvasIndexesFromState();
+  if (mountedOrUnavailable) {
+    if (activeRendererKind() === "glsp-sprotty") {
+      await syncCanvasFromState({ full: true });
+    } else {
+      renderCanvasDiagram();
+    }
   }
   return mountedOrUnavailable;
 }
 
 export function getModelingRendererDebug() {
-  const editor = getG6Editor();
+  const editor = getCanvasEditor();
   const host = el.g6EditorHost;
   const hostRect = host?.getBoundingClientRect?.();
   const canvasGrid = el.canvasGrid;
   return {
     renderer: canvasGrid?.dataset?.renderer || "",
     ensureCalled: Boolean(window.modlessG6State?.ensureCalled),
-    g6Available: isG6Available(),
+    g6Available: isCanvasRendererAvailable(),
     mounted: Boolean(editor),
     graphReady: Boolean(editor?.graph),
     activeType: state.activeType,
@@ -1594,19 +1580,18 @@ function setNodeMultiSelection(ids) {
 
 function deselectEdges() {
   state.selectedConnectionId = null;
-  ensureG6Canvas();
-  updateG6Selection();
+  ensureCanvas();
+  updateCanvasSelection();
 }
 
 function applyNodeSelectionStyles() {
-  ensureG6Canvas();
-  updateG6Selection();
-  updateG6ImpactState();
+  ensureCanvas();
+  updateCanvasSelection();
+  updateCanvasImpactState();
 }
 
 function applyHoverFocusStyles() {
-  ensureG6Canvas();
-  setG6HoverNode(state.hoveredNodeId);
+  setCanvasHoverNode(state.hoveredNodeId);
 }
 
 function setHoveredNode(nodeId) {
@@ -1620,7 +1605,7 @@ function setHoveredNode(nodeId) {
   state.hoveredNodeId = nextHoveredNodeId;
   applyHoverFocusStyles();
   if (state.connectSourceId) {
-    updateG6ConnectionState();
+    updateCanvasConnectionState();
   }
 }
 
@@ -1784,7 +1769,7 @@ export function deleteBoundedContext(contextName) {
 // ── Viewport helpers ──────────────────────────────────────────────────────────
 
 export function toCanvasCoordinates(clientX, clientY) {
-  ensureG6Canvas();
+  ensureCanvas();
   return toGraphCoordinates(clientX, clientY);
 }
 
@@ -1797,8 +1782,8 @@ function updateZoomControlLabel() {
 }
 
 export function applyViewport() {
-  ensureG6Canvas();
-  updateG6Viewport();
+  ensureCanvas();
+  updateCanvasViewport();
   updateZoomControlLabel();
   el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
@@ -1818,13 +1803,13 @@ export function applyViewport() {
 }
 
 export function resetCanvasView() {
-  ensureG6Canvas();
-  resetG6CanvasView();
+  ensureCanvas();
+  adapterResetCanvasView();
 }
 
 export function zoomCanvasBy(multiplier = 1) {
-  ensureG6Canvas();
-  zoomG6CanvasBy(multiplier);
+  ensureCanvas();
+  adapterZoomCanvasBy(multiplier);
 }
 
 function diagramBounds({ includeContexts = true } = {}) {
@@ -1875,8 +1860,8 @@ export function centerViewportOnDiagram({ fit = false } = {}) {
   if (!bounds) {
     return;
   }
-  ensureG6Canvas();
-  fitG6CanvasToDiagram(bounds, { fit });
+  ensureCanvas();
+  fitCanvasToDiagram(bounds, { fit });
 }
 
 export function restoreCanvasCamera(camera = null) {
@@ -2129,9 +2114,9 @@ function createModelingWizard(kind) {
   (recipe.edges || []).forEach((edge) => {
     createWizardEdge(nodes[edge.sourceIndex]?.id, nodes[edge.targetIndex]?.id, edge.kind);
   });
-  ensureG6Canvas();
+  ensureCanvas();
   syncCanvasIndexesFromState();
-  syncG6FromState({ full: false });
+  syncCanvasFromState({ full: false });
   markModelDirty();
   setStatus(`Created ${recipe.label || "model scaffold"}`);
 }
@@ -2574,11 +2559,11 @@ function groupPaletteTypes(types) {
 export function renderNodes() {
   // Compatibility wrapper: callers still use the old name, but node rendering
   // is handled exclusively by the G6 adapter.
-  ensureG6Canvas();
+  ensureCanvas();
   syncCanvasIndexesFromState();
-  syncG6FromState({ full: false });
-  updateG6Selection();
-  updateG6ImpactState();
+  syncCanvasFromState({ full: false });
+  updateCanvasSelection();
+  updateCanvasImpactState();
   return;
 }
 
@@ -2601,7 +2586,7 @@ const NODE_EXPLORE_TOOLBAR_CANVAS_H = 18;
 const NODE_EXPLORE_TOOLBAR_GAP = 4;
 
 function positionNodeExploreToolbar(node) {
-  const graph = getG6Editor()?.graph;
+  const graph = getCanvasEditor()?.graph;
   if (!el.nodeExploreToolbar || !node || !graph) {
     return;
   }
@@ -2703,8 +2688,8 @@ function canvasToViewportPoint(x, y) {
 
 function setHoveredEdge(edgeId) {
   hoveredEdgeId = edgeId || null;
-  ensureG6Canvas();
-  setG6HoverEdge(hoveredEdgeId);
+  ensureCanvas();
+  setCanvasHoverEdge(hoveredEdgeId);
 }
 
 function clearHoveredEdge() {
@@ -2789,9 +2774,9 @@ function updateEdgeKind(edgeId, kind, preferredSourceId, preferredTargetId) {
   edge.kind = resolved.kind;
   addConnectionToGraphAndActiveView(edge);
   commitUndoSnapshot(undoSnapshot);
-  ensureG6Canvas();
-  updateG6Edge(edgeId);
-  updateG6Selection();
+  ensureCanvas();
+  updateCanvasEdge(edgeId);
+  updateCanvasSelection();
   markModelDirty();
   setStatus(`Connection updated: ${configuredEdgeLabel(edge)}`);
 }
@@ -2980,7 +2965,7 @@ function openG6EdgeKindPicker(edgeId) {
 }
 
 export function renderEdges() {
-  ensureG6Canvas();
+  ensureCanvas();
   if (
     state.selectedConnectionId &&
     !state.diagram.connections.some((edge) => edge.id === state.selectedConnectionId)
@@ -2988,8 +2973,8 @@ export function renderEdges() {
     state.selectedConnectionId = null;
   }
   syncCanvasIndexesFromState();
-  syncG6FromState({ full: false });
-  updateG6Selection();
+  syncCanvasFromState({ full: false });
+  updateCanvasSelection();
 }
 
 function _hasModelArtifact(keys) {
@@ -3000,10 +2985,28 @@ function _hasModelArtifact(keys) {
   });
 }
 
+let renderDiagramTask = Promise.resolve();
+
 export function renderDiagram() {
-  ensureG6Canvas();
+  renderDiagramTask = renderDiagramTask
+    .then(() => renderDiagramNow())
+    .catch((error) => {
+      console.error("renderDiagram failed", error);
+    });
+}
+
+export function renderDiagramAsync() {
+  return renderDiagramTask.then(() => renderDiagramNow());
+}
+
+async function renderDiagramNow() {
+  await ensureCanvas();
   syncCanvasIndexesFromState();
-  renderG6Diagram();
+  if (activeRendererKind() === "glsp-sprotty") {
+    await syncCanvasFromState({ full: true });
+  } else {
+    renderCanvasDiagram();
+  }
   el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
   el.canvasGrid?.classList.toggle(
@@ -3028,9 +3031,9 @@ export function renderDiagram() {
 // The public name is kept for existing callers, but the modeling surface is
 // G6-only: this applies a diff to the graph renderer.
 export function syncDiagramRenderer({ full = false } = {}) {
-  ensureG6Canvas();
+  ensureCanvas();
   syncCanvasIndexesFromState();
-  syncG6FromState({ full });
+  syncCanvasFromState({ full });
   el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
   el.canvasGrid?.classList.toggle(
@@ -3044,9 +3047,9 @@ export function syncDiagramRenderer({ full = false } = {}) {
 }
 
 export function syncRendererSelection() {
-  ensureG6Canvas();
-  updateG6Selection();
-  updateG6ContextBoxes(null, { useCache: true });
+  ensureCanvas();
+  updateCanvasSelection();
+  updateCanvasContextBoxes(null, { useCache: true });
   updateNodeExploreToolbar();
 }
 
@@ -3073,7 +3076,7 @@ function handleG6NodeClick(nodeId, event = {}) {
       next.add(nodeId);
     }
     state.boundedContextDraftNodeIds = next;
-    updateG6ImpactState();
+    updateCanvasImpactState();
     setStatus(`${next.size} element${next.size !== 1 ? "s" : ""} selected for bounded context`);
     return;
   }
@@ -3092,12 +3095,12 @@ function handleG6NodeClick(nodeId, event = {}) {
     }
     startBoundedContextAssignment(boundedContextNameFromContextNode(node));
     setNodeMultiSelection([nodeId]);
-    updateG6Selection();
+    updateCanvasSelection();
     return;
   }
   setNodeMultiSelection([nodeId]);
   activateNode(nodeId);
-  updateG6Selection();
+  updateCanvasSelection();
 }
 
 function handleG6NodeDoubleClick(nodeId, event = {}) {
@@ -3116,11 +3119,11 @@ function handleG6NodeDoubleClick(nodeId, event = {}) {
   }
   const undoSnapshot = captureDiagramUndoSnapshot();
   const startLabel = node.label;
-  beginG6InlineLabelEdit(node, {
+  beginCanvasInlineLabelEdit(node, {
     onCommit: (rawText) => {
       const resolved = commitNodeLabel(node, rawText);
       syncNodeMetaToGraph(node);
-      updateG6Node(node.id);
+      updateCanvasNode(node.id);
       if (resolved !== startLabel) {
         commitUndoSnapshot(undoSnapshot);
         markModelDirty();
@@ -3137,7 +3140,7 @@ function handleG6CanvasClick() {
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
   state.selectedBoundedContextName = null;
-  updateG6Selection();
+  updateCanvasSelection();
 }
 
 function startG6NodeDrag(nodeId) {
@@ -3171,8 +3174,10 @@ function moveG6NodeDrag(nodeId, position) {
   node.meta.y = node.y;
   state.dragNode = state.dragNode || { id: nodeId };
   state.dragNode.moved = true;
-  updateG6NodeIcons();
-  if (nodeId === state.selectedNodeId) {
+  if (activeRendererKind() !== "glsp-sprotty") {
+    updateCanvasNodeIcons();
+  }
+  if (nodeId === state.selectedNodeId && activeRendererKind() !== "glsp-sprotty") {
     updateNodeExploreToolbar();
   }
 }
@@ -3196,15 +3201,15 @@ function endG6NodeDrag(nodeId, position, { moved = false } = {}) {
     persistNodePositionInActiveView(node);
     markModelDirty();
   }
-  refreshG6Edges([...(edgeIdsByNodeId.get(node.id) || [])]);
-  updateG6ContextBoxes();
-  updateG6Selection();
+  refreshCanvasEdges([...(edgeIdsByNodeId.get(node.id) || [])]);
+  updateCanvasContextBoxes();
+  updateCanvasSelection();
   state.dragNode = null;
 }
 
 function startG6ConnectionDrag(sourceId) {
   state.linkDrag = { sourceId, pointerX: 0, pointerY: 0, hoveredTargetId: null };
-  updateG6ConnectionState();
+  updateCanvasConnectionState();
   setStatus("Drag to another element to create a legal connection");
 }
 
@@ -3223,15 +3228,15 @@ function selectConnection(connectionId, { openPicker = false } = {}) {
   }
   if (state.selectedConnectionId === connectionId) {
     closeAttributePanel();
-    ensureG6Canvas();
+    ensureCanvas();
     state.selectedConnectionId = null;
-    updateG6Selection();
+    updateCanvasSelection();
     return;
   }
   openConnectionPanel(connectionId);
-  ensureG6Canvas();
-  updateG6Selection();
-  updateG6Edge(connectionId);
+  ensureCanvas();
+  updateCanvasSelection();
+  updateCanvasEdge(connectionId);
   if (openPicker) {
     openG6EdgeKindPicker(connectionId);
   }
@@ -3243,8 +3248,8 @@ function activateNode(nodeId) {
     if (!state.connectSourceId) {
       state.connectSourceId = nodeId;
       setStatus(`Connection source: ${nodeId}. Select target.`);
-      ensureG6Canvas();
-      updateG6ConnectionState();
+      ensureCanvas();
+      updateCanvasConnectionState();
       return;
     }
     if (state.connectSourceId === nodeId) {
@@ -3256,8 +3261,8 @@ function activateNode(nodeId) {
       preferredKind: state.preferredConnectionKind,
     });
     state.connectSourceId = null;
-    ensureG6Canvas();
-    updateG6ConnectionState();
+    ensureCanvas();
+    updateCanvasConnectionState();
     return;
   }
 
@@ -3293,9 +3298,9 @@ function selectBoundedContext(contextName) {
   state.selectedConnectionId = null;
   applyNodeSelectionStyles();
   openBoundedContextPanel(normalized);
-  ensureG6Canvas();
-  updateG6ContextBoxes();
-  updateG6Selection();
+  ensureCanvas();
+  updateCanvasContextBoxes();
+  updateCanvasSelection();
 }
 
 function openBoundedContextFocus(contextName) {
@@ -3354,8 +3359,8 @@ export function closeBoundedContextSpecialView() {
 // ── Drag-and-drop from palette ────────────────────────────────────────────────
 
 export function setupDnD() {
-  ensureG6Canvas();
-  renderG6Diagram();
+  ensureCanvas();
+  renderCanvasDiagram();
   el.canvasViewport.addEventListener("dragover", (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
@@ -3409,18 +3414,18 @@ export function setupDnD() {
       state.tabs[state.activeType].diagram = state.diagram;
     }
     syncCanvasIndexesFromState();
-    ensureG6Canvas();
+    ensureCanvas();
     const addedVisibleNodes = state.diagram.nodes.filter((item) => !beforeNodeIds.has(item.id));
     const addedVisibleEdges = state.diagram.connections.filter(
       (item) => !beforeEdgeIds.has(item.id),
     );
     if (addedVisibleNodes.length === 1 && !addedVisibleEdges.length) {
-      addG6Node(addedVisibleNodes[0]);
+      addCanvasNode(addedVisibleNodes[0]);
     } else {
-      syncG6FromState({ full: false });
+      syncCanvasFromState({ full: false });
     }
-    updateG6Selection();
-    updateG6ContextBoxes();
+    updateCanvasSelection();
+    updateCanvasContextBoxes();
     const created = state.graph.elementsById.get(node.id);
     setStatus(`Added ${created?.eClass || type}`);
     markModelDirty();
@@ -3572,7 +3577,7 @@ export function addConnection(
   state.diagram.connections.push(edge);
   addConnectionToGraphAndActiveView(edge);
   state.selectedConnectionId = edge.id;
-  ensureG6Canvas();
+  ensureCanvas();
   connectionsById.set(edge.id, edge);
   [edge.sourceId, edge.targetId].forEach((nodeId) => {
     if (!edgeIdsByNodeId.has(nodeId)) {
@@ -3580,8 +3585,8 @@ export function addConnection(
     }
     edgeIdsByNodeId.get(nodeId).add(edge.id);
   });
-  addG6Edge(edge);
-  updateG6Selection();
+  addCanvasEdge(edge);
+  updateCanvasSelection();
   markModelDirty();
   if (interactivePicker) {
     const nodeW = getNodeWidth();
@@ -3661,9 +3666,9 @@ function createShortcutConnection(source, target) {
   }
   createShortcutViewRelationship(rule, source, target, chain.slice(1, -1));
   syncActiveViewFromVisibleGraph();
-  ensureG6Canvas();
+  ensureCanvas();
   syncCanvasIndexesFromState();
-  syncG6FromState({ full: false });
+  syncCanvasFromState({ full: false });
   markModelDirty();
   setStatus(`Created ${rule.label || "shortcut connector"}`);
   return true;
@@ -3827,8 +3832,8 @@ export function setConnectMode(enabled) {
     state.preferredConnectionKind = null;
     closeEdgeKindPicker();
   }
-  ensureG6Canvas();
-  updateG6ConnectionState();
+  ensureCanvas();
+  updateCanvasConnectionState();
   setStatus(enabled ? "Connect mode enabled - click source then target" : "Connect mode disabled");
 }
 
@@ -3841,8 +3846,8 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
   state.connectMode = true;
   state.connectSourceId = nodeId;
   state.preferredConnectionKind = preferredKind || null;
-  ensureG6Canvas();
-  updateG6ConnectionState();
+  ensureCanvas();
+  updateCanvasConnectionState();
   setStatus(
     preferredKind
       ? `${preferredKind}: select a highlighted legal target`
@@ -3854,28 +3859,28 @@ export function startConnectionFromNode(nodeId, preferredKind = null) {
 // ── Impact highlight (called by renderNodes and impact module) ────────────────
 
 export function highlightImpactedNodes() {
-  ensureG6Canvas();
-  updateG6ImpactState();
+  ensureCanvas();
+  updateCanvasImpactState();
 }
 
 export function scrollToNodeAndHighlight(elementId) {
-  ensureG6Canvas();
+  ensureCanvas();
   const node =
     state.nodesById.get(elementId) ||
     state.diagram.nodes.find((candidate) => candidate.id === elementId);
   if (!node) {
     return;
   }
-  focusG6Node(elementId);
+  focusCanvasNode(elementId);
   const previousImpact = state.impactData;
   state.impactData = {
     ...(state.impactData || {}),
     focalElement: { elementId },
   };
-  updateG6ImpactState();
+  updateCanvasImpactState();
   setTimeout(() => {
     state.impactData = previousImpact;
-    updateG6ImpactState();
+    updateCanvasImpactState();
   }, 2500);
 }
 
@@ -3894,11 +3899,11 @@ export function scrollToConnectionAndHighlight(connectionId) {
   const nodeH = getNodeHeight();
   const midX = (source.x + nodeW / 2 + target.x + nodeW / 2) / 2;
   const midY = (source.y + nodeH / 2 + target.y + nodeH / 2) / 2;
-  ensureG6Canvas();
+  ensureCanvas();
   state.selectedConnectionId = connectionId;
   focusG6CanvasPoint(midX, midY);
-  updateG6Selection();
-  updateG6Edge(connectionId);
-  setTimeout(() => updateG6Edge(connectionId), 1800);
+  updateCanvasSelection();
+  updateCanvasEdge(connectionId);
+  setTimeout(() => updateCanvasEdge(connectionId), 1800);
   return true;
 }

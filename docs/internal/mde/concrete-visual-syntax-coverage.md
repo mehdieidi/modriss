@@ -9,9 +9,14 @@ unreadable canvas.
 The abstract syntax remains defined by the Emfatic sources and combined Ecore metamodels. Visual
 syntax is configured in:
 
-- `packages/java/platform-modeling/src/main/resources/modeling/cim-ui-metadata.json`
+- `mde/notation/cim.cvs.json` (CVS v2, primary for CIM when present)
+- `mde/notation/pim.cvs.json` (phase 2)
+- `mde/notation/psm.cvs.json` (phase 3)
+- `packages/java/platform-modeling/src/main/resources/modeling/cim-ui-metadata.json` (G6 v1 fallback)
 - `packages/java/platform-modeling/src/main/resources/modeling/pim-ui-metadata.json`
 - `packages/java/platform-modeling/src/main/resources/modeling/psm-ui-metadata.json`
+
+See also `docs/internal/mde/concrete-visual-syntax-v2.md` for the CVS v2 formalism.
 
 The backend merges this metadata with Ecore and exposes the complete result through
 `GET /api/modeling/config`. The frontend does not maintain separate type lists for visual roles,

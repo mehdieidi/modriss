@@ -5,12 +5,29 @@
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
     <title>Modless</title>
     <link href="/assets/icons/favicon.svg" rel="icon" type="image/x-icon" />
+    <link
+      rel="preload"
+      href="/assets/fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/assets/fonts/Flamenco/Flamenco-Regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
     <link href="/css/variables.css" rel="stylesheet" />
     <link href="/css/base.css" rel="stylesheet" />
     <link href="/css/topbar.css" rel="stylesheet" />
     <link href="/css/buttons.css" rel="stylesheet" />
     <link href="/css/sidebar.css" rel="stylesheet" />
     <link href="/css/canvas.css" rel="stylesheet" />
+    <link href="/css/glsp-canvas.css" rel="stylesheet" />
+    <link href="/vendor/glsp/glsp-client.css" rel="stylesheet" />
+    <link href="/css/modless-sprotty.css" rel="stylesheet" />
     <link href="/css/chat.css" rel="stylesheet" />
     <link href="/css/artifact.css" rel="stylesheet" />
     <link href="/css/panels.css" rel="stylesheet" />
@@ -18,7 +35,6 @@
     <link href="/css/mobile.css" rel="stylesheet" />
     <script>
       window.modlessFrontendBoot = {
-        renderer: "antv-g6",
         build: "g6-wired-2026-05-31-02",
       };
     </script>
@@ -488,6 +504,7 @@
               <div class="canvas-viewport" id="canvasViewport">
                 <div class="canvas-grid" id="canvasGrid">
                   <div class="g6-editor-host" id="g6EditorHost"></div>
+                  <div class="glsp-editor-host" id="glspEditorHost"></div>
                 </div>
                 <div
                   aria-label="Canvas zoom controls"
@@ -1158,7 +1175,7 @@
           </div>
           <div class="auth-message auth-message-error hidden" id="authError"></div>
           <div class="auth-message auth-message-success hidden" id="authSuccess"></div>
-          <div class="auth-form">
+          <form class="auth-form" id="authForm" novalidate>
             <input
               autocomplete="name"
               class="project-input hidden"
@@ -1172,6 +1189,7 @@
               class="project-input"
               id="authEmailInput"
               placeholder="Email address"
+              required
               type="email"
             />
             <input
@@ -1181,6 +1199,7 @@
               maxlength="128"
               minlength="8"
               placeholder="Password (min 8 chars)"
+              required
               type="password"
             />
             <input
@@ -1192,9 +1211,11 @@
               placeholder="Confirm password"
               type="password"
             />
-          </div>
+          </form>
           <div class="modal-actions">
-            <button class="btn btn-primary" id="authSubmitBtn" type="button">Login</button>
+            <button class="btn btn-primary" form="authForm" id="authSubmitBtn" type="submit">
+              Login
+            </button>
           </div>
         </div>
       </div>

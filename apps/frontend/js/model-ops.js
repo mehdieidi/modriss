@@ -20,6 +20,7 @@ import {
   centerViewportOnDiagram,
   contextNameFromNode,
   renderDiagram,
+  renderDiagramAsync,
   renderPalette,
   resetCanvasView,
   scrollToConnectionAndHighlight,
@@ -29,6 +30,7 @@ import { closeAttributePanel } from "./attr-panel.js";
 import { closeImpactPanel } from "./impact.js";
 import { loadArtifactById, loadArtifactRecord, loadCurrentProjectArtifact } from "./artifact.js";
 import { confirmAction } from "./confirm-action.js";
+import { requireActiveProject } from "./project-guards.js";
 import {
   completeGenerationProgress,
   hideGenerationProgress,
@@ -574,11 +576,12 @@ async function waitForCanvasPaint(frames = 2) {
 }
 
 function buildSavePayload(selectedName) {
+  requireActiveProject("save a model");
   syncActiveViewFromVisibleGraph();
   return {
     name: selectedName,
     model: serializeModel(),
-    projectId: state.project?.id || null,
+    projectId: state.project.id,
     expectedRevision: state.modelRevision || 1,
   };
 }
@@ -697,7 +700,7 @@ export async function loadModelById(
   clearValidationIssues();
   setActiveModelName(record.name || defaultModelName(typeKey));
   renderPalette();
-  renderDiagram();
+  await renderDiagramAsync();
   renderViewWorkbench();
   centerCurrentDiagram();
   resetModelSaveState();
@@ -1412,7 +1415,7 @@ export async function switchTab(type) {
   updateModelSaveUi();
 
   renderPalette();
-  renderDiagram();
+  await renderDiagramAsync();
   renderViewWorkbench();
   resetCanvasView();
   setStatus(`Switched to ${type.toUpperCase()}`);
@@ -1678,6 +1681,12 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
     return;
   }
   if (!file) {
+    return;
+  }
+  try {
+    requireActiveProject("import a model");
+  } catch (error) {
+    setError(error, { prefix: "Import unavailable." });
     return;
   }
   if (state.activeType !== typeKey) {

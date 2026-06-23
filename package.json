@@ -2,6 +2,11 @@
   "name": "modless-formatting",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/js/glsp-client",
+    "packages/js/glsp-server",
+    "tools/notation-migrate"
+  ],
   "prettier": "./config/prettier.config.json",
   "scripts": {
     "format": "python scripts/format.py",
@@ -17,6 +22,8 @@
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!**/target/**\" \"!**/vendor/**\" \"!mde/samples/**/generated-project/**\"",
     "lint:stylelint": "stylelint --config config/stylelintrc.json \"apps/**/*.css\"",
     "test:frontend": "node --test tests/frontend/*.test.mjs",
+    "build:glsp": "npm run build -w @modless/glsp-client && npm run build -w @modless/glsp-server",
+    "dev:glsp": "npm run dev -w @modless/glsp-server",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "docker:up:deploy": "docker compose -f deploy/compose.yaml up --build",

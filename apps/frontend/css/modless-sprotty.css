@@ -1,0 +1,46 @@
+/* GLSP canvas node/edge styling aligned with legacy G6 Modless theme */
+.glsp-editor-host {
+  --glsp-node-fill: var(--node-bg, rgba(19, 25, 35, 0.98));
+  --glsp-node-stroke: var(--node-border, #3d495f);
+  --glsp-edge-stroke: var(--edge-stroke, #64748b);
+  --glsp-label-color: var(--text, #e3e8f2);
+  --glsp-detail-color: var(--text-secondary, #98a8c0);
+}
+
+html.light .glsp-editor-host {
+  --glsp-node-fill: rgba(255, 255, 255, 0.98);
+  --glsp-label-color: var(--text-primary, #0f172a);
+  --glsp-detail-color: var(--text-secondary, #475569);
+  --glsp-node-stroke: rgba(81, 99, 126, 0.28);
+}
+
+.glsp-editor-host .modless-node-body {
+  vector-effect: non-scaling-stroke;
+}
+
+.glsp-editor-host .modless-node-glyph {
+  vector-effect: non-scaling-stroke;
+}
+
+.glsp-editor-host .modless-node text {
+  pointer-events: none;
+  user-select: none;
+}
+
+.glsp-node.is-selected .modless-node-body {
+  filter: drop-shadow(0 4px 14px rgba(94, 203, 255, 0.28));
+}
+
+.canvas-grid[data-renderer="glsp-sprotty"] {
+  cursor: grab;
+}
+
+.canvas-grid[data-renderer="glsp-sprotty"].canvas-cursor-grabbing,
+.glsp-editor-host.canvas-cursor-grabbing {
+  cursor: grabbing;
+}
+
+.canvas-grid[data-renderer="glsp-sprotty"].canvas-cursor-pointer,
+.glsp-editor-host.canvas-cursor-pointer {
+  cursor: pointer;
+}

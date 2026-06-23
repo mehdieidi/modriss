@@ -1,0 +1,11 @@
+{
+  "name": "@modless/notation-migrate",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate:cim": "node migrate-ui-to-cvs.mjs cim",
+    "migrate:pim": "node migrate-ui-to-cvs.mjs pim",
+    "migrate:psm": "node migrate-ui-to-cvs.mjs psm",
+    "migrate:all": "node migrate-ui-to-cvs.mjs cim && node migrate-ui-to-cvs.mjs pim && node migrate-ui-to-cvs.mjs psm"
+  }
+}

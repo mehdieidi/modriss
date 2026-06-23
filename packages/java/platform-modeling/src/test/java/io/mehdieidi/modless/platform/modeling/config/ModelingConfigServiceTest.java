@@ -658,6 +658,81 @@ class ModelingConfigServiceTest {
     assertTrue(stringList(canvasPolicy.get("standalonePaletteRoles")).contains("node"));
   }
 
+  /** Verifies CVS v2 loading for CIM with element mappings and diagram editor config. */
+  @Test
+  void exposesCvsV2ElementMappingsAndDiagramEditorConfig() {
+    Map<String, Object> config = service.config();
+    Map<String, Object> diagramEditor = map(config.get("diagramEditor"));
+    assertEquals("antv-g6", diagramEditor.get("renderer"));
+    assertNotNull(diagramEditor.get("glspServerUrl"));
+    assertEquals("ws://127.0.0.1:8081/modless", diagramEditor.get("glspServerUrl"));
+    assertTrue(stringList(diagramEditor.get("allowedRenderers")).contains("glsp-sprotty"));
+
+    for (String levelKey : List.of("cim", "pim", "psm")) {
+      Map<String, Object> level = level(levelKey);
+      assertEquals(2, level.get("cvsVersion"));
+      assertFalse(listOfMaps(level.get("elementMappings")).isEmpty());
+      assertFalse(listOfMaps(level.get("cvsReferenceMappings")).isEmpty());
+      assertFalse(listOfMaps(level.get("viewDefinitions")).isEmpty());
+    }
+
+    Map<String, Object> cim = level("cim");
+    assertTrue(
+        listOfMaps(cim.get("elementMappings")).stream()
+            .anyMatch(
+                mapping ->
+                    "BusinessGoal".equals(map(mapping.get("match")).get("eClass"))
+                        && mapping.get("visualRole") != null));
+  }
+
+  /** Verifies diagram editor settings can be overridden via environment variables. */
+  @Test
+  void diagramEditorConfigHonorsEnvironmentOverrides() {
+    Map<String, Object> platform =
+        Map.of(
+            "diagramEditor",
+            Map.of(
+                "renderer", "antv-g6",
+                "glspServerUrl", "ws://127.0.0.1:8081/modless"));
+    Map<String, Object> diagramEditor =
+        service.diagramEditorConfig(platform, "glsp-sprotty", "ws://localhost:9090/modless");
+    assertEquals("glsp-sprotty", diagramEditor.get("renderer"));
+    assertEquals("ws://localhost:9090/modless", diagramEditor.get("glspServerUrl"));
+  }
+
+  /** Verifies invalid renderer env values fall back to platform config. */
+  @Test
+  void diagramEditorConfigIgnoresInvalidRendererOverride() {
+    Map<String, Object> platform = Map.of("diagramEditor", Map.of("renderer", "glsp-sprotty"));
+    Map<String, Object> diagramEditor =
+        service.diagramEditorConfig(platform, "unknown-renderer", null);
+    assertEquals("glsp-sprotty", diagramEditor.get("renderer"));
+  }
+
+  /** Verifies PIM CVS exposes workflow/service container notation. */
+  @Test
+  void pimCvsIncludesServiceAndWorkflowViewpoints() {
+    Map<String, Object> pim = level("pim");
+    List<String> viewIds =
+        listOfMaps(pim.get("viewDefinitions")).stream()
+            .map(view -> String.valueOf(view.get("id")))
+            .toList();
+    assertTrue(viewIds.stream().anyMatch(id -> id.contains("service")));
+    assertTrue(viewIds.stream().anyMatch(id -> id.contains("workflow")));
+    assertFalse(listOfMaps(pim.get("relationshipVisualRules")).isEmpty());
+  }
+
+  /** Verifies PSM CVS exposes shortcut connector rules for integration views. */
+  @Test
+  void psmCvsIncludesShortcutConnectorRules() {
+    Map<String, Object> psm = level("psm");
+    assertFalse(listOfMaps(psm.get("shortcutConnectorRules")).isEmpty());
+    assertTrue(
+        listOfMaps(psm.get("elementMappings")).stream()
+            .anyMatch(
+                mapping -> "AwsLambdaFunction".equals(map(mapping.get("match")).get("eClass"))));
+  }
+
   /**
    * Casts a value to a list of maps after asserting it is present.
    *

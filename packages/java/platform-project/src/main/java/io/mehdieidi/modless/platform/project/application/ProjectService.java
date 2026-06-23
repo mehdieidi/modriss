@@ -90,6 +90,7 @@ public final class ProjectService {
    * @return project record
    */
   public ProjectRecord get(UserRecord user, String projectId) {
+    requireProjectId(projectId);
     ProjectRecord project =
         store.require(projectPath(projectId), ProjectRecord.class, "Project not found.");
     if (!canRead(project, user.id())) {
@@ -274,7 +275,15 @@ public final class ProjectService {
    * @return repository-relative path
    */
   private Path projectPath(String projectId) {
+    requireProjectId(projectId);
     return Path.of("projects", projectId, "project.json");
+  }
+
+  private String requireProjectId(String projectId) {
+    if (projectId == null || projectId.isBlank()) {
+      throw new PlatformException(400, "Project id is required.");
+    }
+    return projectId.trim();
   }
 
   /**

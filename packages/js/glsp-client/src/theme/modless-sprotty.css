@@ -1,0 +1,14 @@
+/* Sprotty/GLSP theme tokens mapped to Modless CSS variables */
+.glsp-editor-host {
+  --glsp-node-fill: var(--node-bg, #1e293b);
+  --glsp-node-stroke: var(--accent, #00a6e0);
+  --glsp-edge-stroke: var(--edge-stroke, #64748b);
+  --glsp-label-color: var(--text-primary, #f8fafc);
+  --glsp-detail-color: var(--text-secondary, #94a3b8);
+}
+
+html.light .glsp-editor-host {
+  --glsp-node-fill: var(--node-bg, #ffffff);
+  --glsp-label-color: var(--text-primary, #0f172a);
+  --glsp-detail-color: var(--text-secondary, #475569);
+}

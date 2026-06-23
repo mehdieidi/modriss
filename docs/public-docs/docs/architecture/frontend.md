@@ -1,7 +1,28 @@
 # Frontend Architecture
 
-The frontend is a static ES-module application under `apps/frontend`. It uses AntV G6 for graph
-rendering and communicates with the backend through REST, SSE, and WebSocket.
+The frontend is a static ES-module application under `apps/frontend`. It supports two diagram
+renderers — AntV G6 (v1, default) and Eclipse GLSP/Sprotty (v2) — and communicates with the
+backend through REST, SSE, and WebSocket.
+
+## Dual renderer architecture
+
+```
+IDE shell (palette, inspector, views)
+        │
+        ▼
+renderer-adapter.js  ──config──►  diagramEditor.renderer
+        │                              │
+        ├─ antv-g6 ──► graph-editor/g6-* (unchanged)
+        └─ glsp-sprotty ──► vendor/glsp bundle + glsp-server WebSocket sidecar
+```
+
+At startup the frontend loads `GET /api/modeling/config`, including `diagramEditor` settings
+(`renderer`, `glspServerUrl`, `allowedRenderers`). `canvas.js` calls `ensureCanvas()` which
+mounts either `#g6EditorHost` or `#glspEditorHost`.
+
+The GLSP sidecar (`packages/js/glsp-server`, port 8081) loads model JSON and CVS-backed config
+from Spring, performs diagram operations, and persists JSON patches to the same REST endpoints as
+the G6 editor.
 
 ## Main Areas
 

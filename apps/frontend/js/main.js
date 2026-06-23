@@ -7,6 +7,7 @@ import {
   getModelingRendererDebug,
   initializeModelingRenderer,
   renderDiagram,
+  renderDiagramAsync,
   renderPalette,
   resetCanvasView,
   setupDnD,
@@ -1091,10 +1092,15 @@ async function init() {
   initViewWorkbench({ renderDiagram, renderPalette });
   syncPaletteRailToggleState();
   syncResponsiveUi();
-  initializeModelingRenderer();
+  try {
+    await initializeModelingRenderer();
+  } catch (error) {
+    console.error("GLSP renderer initialization failed", error);
+    setStatus("Diagram renderer unavailable. Check configuration and refresh.");
+  }
   setupDnD();
   renderPalette();
-  renderDiagram();
+  await renderDiagramAsync();
   renderViewWorkbench();
   updateModelSaveUi();
   applyViewport();
