@@ -1,67 +1,54 @@
 import { expandShortcutEdges } from "./shortcut-edges.mjs";
 import { applyComplexityPolicy } from "./complexity.mjs";
 import { buildOverlayPayload } from "./overlays.mjs";
+import { materializeDiagramFromModel } from "./model-materializer.mjs";
+
+function humanizeType(value) {
+  return String(value || "Element")
+    .replaceAll("_", " ")
+    .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export function materializeDiagram(model, viewId) {
-  const graph = model.graph || { nodes: [], edges: [] };
-  const views = Array.isArray(model.views) ? model.views : [];
-  const activeView = viewId ? views.find((view) => view.id === viewId) : views[0];
-  const nodeIds = new Set(
-    activeView?.nodeIds?.map(String) || (graph.nodes || []).map((node) => String(node.id)),
-  );
-  const edgeIds = new Set(
-    activeView?.edgeIds?.map(String) || (graph.edges || []).map((edge) => String(edge.id)),
-  );
-
-  const nodes = (graph.nodes || [])
-    .filter((node) => nodeIds.has(String(node.id)))
-    .map((node) => mapNode(node));
-
-  let connections = (graph.edges || [])
-    .filter((edge) => edgeIds.has(String(edge.id)))
-    .map((edge) => mapConnection(edge));
-
-  if (!nodes.length && Array.isArray(model.diagram?.elements)) {
-    for (const element of model.diagram.elements) {
-      const layout = element.layout || {};
-      nodes.push(
-        mapNode({
-          id: element.id,
-          type: element.type,
-          x: layout.x,
-          y: layout.y,
-          width: layout.width,
-          height: layout.height,
-          data: element,
-        }),
-      );
-    }
-  }
-
-  return { nodes, connections };
+  return materializeDiagramFromModel(model, viewId);
 }
 
-function mapNode(node) {
-  return {
-    id: String(node.id),
-    type: String(node.type || node.elementType || "Unknown"),
-    x: Number(node.x || 0),
-    y: Number(node.y || 0),
-    width: Number(node.width || 228),
-    height: Number(node.height || 112),
-    data: node.data || node,
-  };
-}
-
-function mapConnection(edge) {
-  return {
-    id: String(edge.id),
-    sourceId: String(edge.sourceId || edge.source),
-    targetId: String(edge.targetId || edge.target),
-    kind: String(edge.kind || edge.type || "DEPENDS_ON"),
-    data: edge.data || edge,
-    shortcut: Boolean(edge.shortcut || edge.data?.shortcut),
-  };
+function nodePorts(nodeId, width, height) {
+  const w = Number(width) || 228;
+  const h = Number(height) || 112;
+  const half = 4;
+  return [
+    {
+      type: "port",
+      id: `${nodeId}-port-n`,
+      position: { x: w / 2 - half, y: -half },
+      size: { width: half * 2, height: half * 2 },
+      args: { placement: "north" },
+    },
+    {
+      type: "port",
+      id: `${nodeId}-port-s`,
+      position: { x: w / 2 - half, y: h - half },
+      size: { width: half * 2, height: half * 2 },
+      args: { placement: "south" },
+    },
+    {
+      type: "port",
+      id: `${nodeId}-port-e`,
+      position: { x: w - half, y: h / 2 - half },
+      size: { width: half * 2, height: half * 2 },
+      args: { placement: "east" },
+    },
+    {
+      type: "port",
+      id: `${nodeId}-port-w`,
+      position: { x: -half, y: h / 2 - half },
+      size: { width: half * 2, height: half * 2 },
+      args: { placement: "west" },
+    },
+  ];
 }
 
 export function toSprottyGraph(diagram, levelConfig = {}, options = {}) {
@@ -94,16 +81,27 @@ export function toSprottyGraph(diagram, levelConfig = {}, options = {}) {
       .filter((value) => value !== undefined && value !== null && String(value).trim())
       .map((value) => String(value));
 
+    const nodeWidth = node.width || 228;
+    const nodeHeight = node.height || 112;
+
     children.push({
       type: "node",
       id: node.id,
       position: { x: node.x, y: node.y },
-      size: { width: node.width || 228, height: node.height || 112 },
+      size: { width: nodeWidth, height: nodeHeight },
       args: {
         elementType: node.type,
         color: def.color || mapping.color || "#475569",
         icon: def.icon || mapping.icon || "category",
         tag: notation.tag || card.tag || node.type.slice(0, 4).toUpperCase(),
+        kindText:
+          mapping.category ||
+          def.category ||
+          notation.category ||
+          humanizeType(node.type),
+        typeText: notation.tag || card.tag || "",
+        category: mapping.category || def.category || "",
+        detailText: lines.join(" · "),
         primitive: primitiveKey,
         geometry: primitive.geometry || primitive.sprottyShape || "rectangle",
         sprottyShape: primitive.sprottyShape || primitive.geometry || "rectangle",
@@ -116,17 +114,20 @@ export function toSprottyGraph(diagram, levelConfig = {}, options = {}) {
       children: [
         { type: "label", id: `${node.id}-label`, text: String(node.data?.name || node.id) },
         { type: "label", id: `${node.id}-lines`, text: lines.join(" · ") },
+        ...nodePorts(node.id, nodeWidth, nodeHeight),
       ],
     });
   }
 
   for (const edge of connections) {
     const presentation = edgePresentation(visualRules, edge.kind);
+    const sourcePort = `${edge.sourceId}-port-s`;
+    const targetPort = `${edge.targetId}-port-n`;
     children.push({
       type: "edge",
       id: edge.id,
-      sourceId: edge.sourceId,
-      targetId: edge.targetId,
+      sourceId: sourcePort,
+      targetId: targetPort,
       args: {
         kind: edge.kind || "DEPENDS_ON",
         shortcut: Boolean(edge.shortcut),
@@ -188,8 +189,14 @@ function edgePresentation(visualRules, kind) {
 export function graphToDiagram(graph) {
   const nodes = [];
   const connections = [];
+  const portToNode = new Map();
   for (const child of graph?.children || []) {
     if (child.type === "node") {
+      for (const port of child.children || []) {
+        if (port.type === "port" && port.id) {
+          portToNode.set(port.id, child.id);
+        }
+      }
       nodes.push({
         id: child.id,
         type: child.args?.elementType || "Unknown",
@@ -199,15 +206,17 @@ export function graphToDiagram(graph) {
         h: child.size?.height || 112,
         width: child.size?.width || 228,
         height: child.size?.height || 112,
-        label: child.children?.[0]?.text || child.id,
+        label: child.children?.find((item) => item.type === "label")?.text || child.id,
         data: child.args || {},
       });
     }
     if (child.type === "edge") {
+      const sourceId = portToNode.get(child.sourceId) || child.sourceId;
+      const targetId = portToNode.get(child.targetId) || child.targetId;
       connections.push({
         id: child.id,
-        sourceId: child.sourceId,
-        targetId: child.targetId,
+        sourceId,
+        targetId,
         kind: child.args?.kind,
         shortcut: child.args?.shortcut,
       });

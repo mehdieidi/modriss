@@ -5,6 +5,69 @@
   overflow: hidden;
   background: transparent;
   touch-action: none;
+  width: 100%;
+  height: 100%;
+  min-width: 1px;
+  min-height: 1px;
+  pointer-events: auto;
+}
+
+.glsp-editor-host .sprotty svg.grid-background,
+.glsp-editor-host .sprotty-graph.grid-background {
+  background: none !important;
+}
+
+.glsp-editor-host .sprotty svg,
+.glsp-editor-host .sprotty-graph {
+  overflow: visible !important;
+}
+
+.glsp-editor-host .modless-glsp-diagram-root {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.glsp-editor-host.is-connected .modless-glsp-diagram-root {
+  overflow: visible;
+}
+
+.glsp-editor-host.is-connected .modless-glsp-diagram-root,
+.glsp-editor-host.is-connected .modless-glsp-diagram-root .sprotty,
+.glsp-editor-host.is-connected .modless-glsp-diagram-root .sprotty-graph,
+.glsp-editor-host.is-connected .modless-glsp-diagram-root svg {
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+.glsp-editor-host.is-connected .sprotty-node,
+.glsp-editor-host.is-connected .modless-node,
+.glsp-editor-host.is-connected .modless-node-body {
+  cursor: grab;
+}
+
+.glsp-editor-host.is-connected .sprotty-node:active,
+.glsp-editor-host.is-connected .modless-node-body:active {
+  cursor: grabbing;
+}
+
+.glsp-editor-host.is-connected .sprotty-edge,
+.glsp-editor-host.is-connected .modless-edge {
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.glsp-editor-host.is-connected .sprotty svg {
+  border: none !important;
+  display: block;
+}
+
+.glsp-editor-host.is-connected .sprotty [tabindex],
+.glsp-editor-host.is-connected .modless-glsp-diagram-root:focus {
+  outline: none;
 }
 
 .glsp-editor-host .glsp-diagram-surface {
@@ -15,12 +78,38 @@
   touch-action: none;
 }
 
+.glsp-editor-host.is-connected {
+  touch-action: none;
+}
+
+.glsp-editor-host.is-connected .sprotty,
+.glsp-editor-host.is-connected .sprotty-graph,
+.glsp-editor-host.is-connected svg.sprotty-graph {
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+.glsp-editor-host.is-connected .sprotty-node,
+.glsp-editor-host.is-connected .sprotty-edge {
+  pointer-events: all;
+}
+
 .glsp-editor-host .glsp-diagram-svg {
   width: 100%;
   height: 100%;
   display: block;
   background: transparent;
   pointer-events: none;
+}
+
+/* Local SVG shim: let the surface receive background pan/drag */
+.glsp-editor-host .glsp-diagram-surface {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
 }
 
 .glsp-editor-host .glsp-diagram-svg .glsp-viewport,
@@ -138,8 +227,52 @@ html.light .glsp-editor-host .glsp-inline-label-editor {
   color: #0f172a;
 }
 
-html.light .glsp-editor-host .modless-node-body {
-  fill: var(--node-bg, rgba(255, 255, 255, 0.98));
+.glsp-editor-host .modless-port {
+  opacity: 0;
+  transition: opacity var(--transition, 0.18s ease);
+  pointer-events: none;
+}
+
+.glsp-editor-host .glsp-node:hover .modless-port,
+.glsp-editor-host .glsp-node.is-selected .modless-port {
+  opacity: 0.85;
+}
+
+.glsp-editor-host .sprotty-graph {
+  background: transparent !important;
+}
+
+.glsp-editor-host .sprotty-node {
+  cursor: pointer;
+}
+
+.glsp-editor-host .sprotty-edge {
+  cursor: pointer;
+}
+
+.glsp-editor-host .modless-edge.is-selected .modless-edge-path {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent, #00a6e0) 40%, transparent));
+}
+
+.glsp-editor-host .modless-edge.is-hovered .modless-edge-path {
+  stroke-width: 2.2;
+}
+
+.glsp-diagram-host.sprotty {
+  width: 100%;
+  height: 100%;
+}
+
+.glsp-diagram-host .sprotty-graph {
+  font-family: var(--font-ui);
+}
+
+html.light .glsp-editor-host .modless-node-badge rect {
+  fill: rgba(71, 85, 105, 0.12);
+}
+
+html.light .glsp-editor-host .modless-node-badge text {
+  fill: var(--text-secondary, #475569);
 }
 
 .modless-node,

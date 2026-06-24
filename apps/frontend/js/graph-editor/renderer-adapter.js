@@ -1,7 +1,9 @@
 import { state } from "../state.js";
 import { getAuthToken } from "../auth.js";
 import * as g6 from "./g6-renderer-adapter.js";
-import { toGraphCoordinates as glspToGraphCoordinates } from "./glsp-editor.js";
+import { toGraphCoordinates as glspToGraphCoordinates } from "./glsp-renderer.js";
+import { bindSprottyHostFocus } from "./glsp-sprotty-host.js";
+import { glspSessionKey } from "./glsp-client-adapter.js";
 
 let rendererKind = "antv-g6";
 let glspRenderer = null;
@@ -51,6 +53,7 @@ export function applyActiveRendererChrome(targetEl, kind = rendererKind) {
 
 function glspMountArgs() {
   const diagramEditor = state.modelingConfig.config?.diagramEditor || {};
+  const baseCallbacks = mountOptions?.callbacks || {};
   return {
     ...(mountOptions || {}),
     glspServerUrl: diagramEditor.glspServerUrl || "ws://127.0.0.1:8081/modless",
@@ -62,6 +65,17 @@ function glspMountArgs() {
     levelConfig: state.modelingConfig.config?.levels?.[state.activeType] || {},
     validationIssues: state.validation?.issues || [],
     impactState: buildImpactOverlayState(state),
+    callbacks: {
+      ...baseCallbacks,
+      resolveSelectionKind: (elementId) => {
+        const id = String(elementId || "");
+        const connections = state.diagram?.connections || [];
+        if (connections.some((edge) => edge.id === id)) {
+          return "edge";
+        }
+        return "node";
+      },
+    },
   };
 }
 
@@ -88,9 +102,16 @@ async function mountGlspRenderer(el) {
   el.g6EditorHost?.classList.remove("is-mounted");
 
   try {
-    await glspRenderer.mount(el.glspEditorHost, glspMountArgs());
+    const args = glspMountArgs();
+    await glspRenderer.mount(el.glspEditorHost, args);
     el.glspEditorHost?.classList.add("is-mounted", "is-connected");
     applyActiveRendererChrome(el, "glsp-sprotty");
+    if (window.modlessGlspState?.mode === "websocket") {
+      bindSprottyHostFocus(el.glspEditorHost);
+    } else {
+      await glspRenderer.syncFromState?.({ ...args, full: true });
+      glspRenderer.fitCanvasToDiagram?.(null, { fit: true });
+    }
     return true;
   } catch (error) {
     console.error("GLSP renderer mount failed", error);
@@ -112,14 +133,36 @@ export function getCanvasEditor() {
   return rendererKind === "glsp-sprotty" ? glspRenderer?.getEditor?.() : g6.getCanvasEditor();
 }
 
+function glspShouldUseWebsocket(args = glspMountArgs()) {
+  return (
+    Boolean(String(args.authToken || "").trim()) &&
+    Boolean(String(args.modelId || "").trim()) &&
+    window.modlessFrontendBoot?.glspLocalOnly !== true
+  );
+}
+
 export async function ensureCanvas() {
   await initializeRendererAdapter(configuredRendererKind());
   const { el } = await import("../dom.js");
 
   if (rendererKind === "glsp-sprotty") {
     applyActiveRendererChrome(el, "glsp-sprotty");
+    const args = glspMountArgs();
+    const wantsWebsocket = glspShouldUseWebsocket(args);
+    const onWebsocket = window.modlessGlspState?.mode === "websocket";
+    const wsUnavailable = window.modlessGlspState?.wsUnavailableFor === glspSessionKey(args);
+
+    if (wantsWebsocket && !onWebsocket && !wsUnavailable && glspRenderer?.getEditor?.()) {
+      await glspRenderer.unmount?.();
+    }
+
     if (glspRenderer?.getEditor?.()) {
-      glspRenderer.updateMountOptions?.(glspMountArgs());
+      glspRenderer.updateMountOptions?.(args);
+      try {
+        await glspRenderer.syncFromState?.(args);
+      } catch (error) {
+        console.warn("[GLSP] Diagram sync failed", error);
+      }
       return true;
     }
     return mountGlspRenderer(el);
@@ -161,7 +204,11 @@ export async function syncCanvasFromState(options = {}) {
     if (!glspRenderer?.getEditor?.()) {
       await ensureCanvas();
     }
-    await glspRenderer?.syncFromState?.({ ...glspMountArgs(), ...options });
+    try {
+      await glspRenderer?.syncFromState?.({ ...glspMountArgs(), ...options });
+    } catch (error) {
+      console.warn("[GLSP] syncCanvasFromState failed", error);
+    }
     return;
   }
   g6.syncCanvasFromState(options);
@@ -228,9 +275,7 @@ export const focusCanvasPoint = (...args) =>
     ? glspRenderer?.focusCanvasPoint?.(...args)
     : g6.focusCanvasPoint(...args);
 export const onCanvasViewportChanged = (...args) =>
-  rendererKind === "glsp-sprotty"
-    ? glspRenderer?.onViewportChanged?.(...args)
-    : g6.onCanvasViewportChanged(...args);
+  rendererKind === "glsp-sprotty" ? undefined : g6.onCanvasViewportChanged(...args);
 export const beginCanvasInlineLabelEdit = (...args) =>
   rendererKind === "glsp-sprotty"
     ? glspRenderer?.beginInlineLabelEdit?.(...args)
@@ -247,6 +292,12 @@ export const setCanvasHoverEdge = (...args) =>
   rendererKind === "glsp-sprotty"
     ? glspRenderer?.setHoverEdge?.(...args)
     : g6.setCanvasHoverEdge(...args);
+export const undoCanvasEdit = () =>
+  rendererKind === "glsp-sprotty" ? glspRenderer?.undo?.() : undefined;
+export const redoCanvasEdit = () =>
+  rendererKind === "glsp-sprotty" ? glspRenderer?.redo?.() : undefined;
+export const applyGlspElkLayout = () =>
+  rendererKind === "glsp-sprotty" ? glspRenderer?.applyElkLayout?.() : undefined;
 export function toGraphCoordinates(clientX, clientY) {
   return rendererKind === "glsp-sprotty"
     ? glspToGraphCoordinates(clientX, clientY)

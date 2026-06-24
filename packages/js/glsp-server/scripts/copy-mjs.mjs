@@ -7,6 +7,7 @@ const pkgRoot = join(root, "..");
 const dist = join(pkgRoot, "dist");
 const mjsFiles = [
   "cvs-mapper.mjs",
+  "model-materializer.mjs",
   "operation-validator.mjs",
   "elk-layout.mjs",
   "shortcut-edges.mjs",

@@ -5,7 +5,12 @@ import { setBusy, setError, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
 import { emptyDiagram, escapeHtml } from "./utils.js";
 import { toDiagram } from "./diagram.js";
-import { renderDiagramAsync, renderPalette, resetCanvasView } from "./canvas.js";
+import {
+  renderDiagramAsync,
+  renderPalette,
+  centerViewportOnDiagram,
+  resetCanvasView,
+} from "./canvas.js";
 import { updateGenerateButtonState } from "./model-ops.js";
 import { renderViewWorkbench } from "./view-explorer.js";
 import { restoreTabGraphState } from "./graph-store.js";
@@ -405,12 +410,22 @@ export async function loadProject(project) {
     updateGenerateButtonState();
 
     renderPalette();
-    await renderDiagramAsync();
+    let diagramWarning = false;
+    try {
+      await renderDiagramAsync();
+      centerViewportOnDiagram({ fit: true });
+    } catch (error) {
+      diagramWarning = true;
+      console.warn("Diagram renderer failed after project load.", error);
+    }
     renderViewWorkbench();
     resetModelSaveState();
-    resetCanvasView();
     hideProjectDialog();
-    setStatus(`Project "${projectName}" loaded`);
+    setStatus(
+      diagramWarning
+        ? `Project "${projectName}" loaded (diagram renderer unavailable).`
+        : `Project "${projectName}" loaded`,
+    );
     updateModelSaveUi();
   } catch (error) {
     setError(error, { prefix: "Failed to load project." });

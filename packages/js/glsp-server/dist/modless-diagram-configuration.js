@@ -18,7 +18,7 @@ var __decorate =
     return c > 3 && r && Object.defineProperty(target, key, r), r;
   };
 import { DefaultTypes } from "@eclipse-glsp/protocol";
-import { GEdge, GGraph, GLabel, GNode, ServerLayoutKind } from "@eclipse-glsp/server";
+import { GEdge, GGraph, GLabel, GNode, GPort, ServerLayoutKind } from "@eclipse-glsp/server";
 import { injectable } from "inversify";
 function defaultShapeHint(elementTypeId) {
   return {
@@ -40,13 +40,14 @@ function defaultEdgeHint(elementTypeId) {
   };
 }
 let ModlessDiagramConfiguration = class ModlessDiagramConfiguration {
-  layoutKind = ServerLayoutKind.MANUAL;
-  needsClientLayout = true;
+  layoutKind = ServerLayoutKind.AUTOMATIC;
+  needsClientLayout = false;
   animatedUpdate = true;
   get typeMapping() {
     return new Map([
       [DefaultTypes.GRAPH, GGraph],
       [DefaultTypes.NODE, GNode],
+      [DefaultTypes.PORT, GPort],
       [DefaultTypes.EDGE, GEdge],
       [DefaultTypes.LABEL, GLabel],
     ]);

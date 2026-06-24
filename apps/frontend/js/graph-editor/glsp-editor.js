@@ -373,6 +373,11 @@ export function resetGlspCanvasView() {
   if (!editor?.host) {
     return false;
   }
+  if (state.diagram?.nodes?.length) {
+    return fitGlspCanvasToDiagram(null, { fit: true });
+  }
+  state.viewport.x = 0;
+  state.viewport.y = 0;
   state.viewport.scale = 1;
   applyViewportTransform(editor.host, state.viewport);
   setCanvasZoomIndicator();
@@ -584,6 +589,9 @@ export class ModlessGlspRenderer {
   }
 
   async syncFromState(options = {}) {
+    if (!editor?.host) {
+      return;
+    }
     if (options.callbacks) {
       editor.callbacks = { ...editor.callbacks, ...options.callbacks };
     }
@@ -594,6 +602,9 @@ export class ModlessGlspRenderer {
   }
 
   updateMountOptions(options = {}) {
+    if (!editor) {
+      return;
+    }
     updateGlspMountOptions({
       callbacks: options.callbacks || {},
       mapper: options.mapper || {},
@@ -662,6 +673,23 @@ export class ModlessGlspRenderer {
   }
   setHoverEdge(edgeId) {
     setGlspHoverEdge(edgeId);
+  }
+  applyElkLayout() {}
+  undo() {}
+  redo() {}
+  canUndo() {
+    return false;
+  }
+  canRedo() {
+    return false;
+  }
+  async unmount() {
+    editor?.disposeInteractions?.();
+    if (editor?.host) {
+      editor.host.replaceChildren();
+      editor.host.classList.remove("is-mounted", "is-connected", "glsp-idle");
+    }
+    editor = null;
   }
 }
 

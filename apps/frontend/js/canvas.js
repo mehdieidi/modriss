@@ -1301,7 +1301,11 @@ function ensureCanvas() {
         );
         el.canvasGrid?.classList.toggle("lod-high", state.viewport.scale >= 1.5);
         updateNodeExploreToolbar();
-        onCanvasViewportChanged();
+        // G6 only: pull viewport metrics from the graph. GLSP notifies us via this callback
+        // already — calling back into the renderer would recurse infinitely.
+        if (activeRendererKind() !== "glsp-sprotty") {
+          onCanvasViewportChanged();
+        }
       },
       onViewportTranslate: updateNodeExploreToolbar,
       onViewportSynced: updateNodeExploreToolbar,
@@ -1315,7 +1319,7 @@ export async function initializeModelingRenderer() {
   syncCanvasIndexesFromState();
   if (mountedOrUnavailable) {
     if (activeRendererKind() === "glsp-sprotty") {
-      await syncCanvasFromState({ full: true });
+      await syncCanvasFromState({});
     } else {
       renderCanvasDiagram();
     }
@@ -3000,10 +3004,23 @@ export function renderDiagramAsync() {
 }
 
 async function renderDiagramNow() {
-  await ensureCanvas();
+  try {
+    await ensureCanvas();
+  } catch (error) {
+    console.warn("ensureCanvas failed", error);
+    return;
+  }
   syncCanvasIndexesFromState();
   if (activeRendererKind() === "glsp-sprotty") {
-    await syncCanvasFromState({ full: true });
+    try {
+      if (window.modlessGlspState?.mode === "websocket") {
+        await syncCanvasFromState({});
+      } else {
+        await syncCanvasFromState({ full: true });
+      }
+    } catch (error) {
+      console.warn("GLSP diagram sync failed", error);
+    }
   } else {
     renderCanvasDiagram();
   }

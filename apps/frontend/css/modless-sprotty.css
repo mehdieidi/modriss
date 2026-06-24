@@ -31,6 +31,47 @@ html.light .glsp-editor-host {
   filter: drop-shadow(0 4px 14px rgba(94, 203, 255, 0.28));
 }
 
+.glsp-node.is-hovered .modless-node-body {
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 10px color-mix(in srgb, var(--accent, #00a6e0) 22%, transparent));
+}
+
+.glsp-node.has-validation .modless-node-body {
+  stroke: var(--danger, #dc2626) !important;
+}
+
+.glsp-node.has-impact .modless-node-body {
+  stroke: var(--warning, #f59e0b) !important;
+}
+
+.modless-edge.is-shortcut .modless-edge-path {
+  opacity: 0.78;
+}
+
+.modless-edge-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+html.light .glsp-editor-host .modless-node-body {
+  fill: var(--node-bg, rgba(255, 255, 255, 0.98));
+}
+
+/* Sprotty ships a visible viewport/svg border that looks like a lone rectangle */
+.glsp-editor-host .sprotty svg,
+.glsp-editor-host .sprotty-viewport {
+  border: none !important;
+}
+
+.glsp-editor-host .modless-glsp-diagram-root {
+  cursor: grab;
+}
+
+.glsp-editor-host .modless-glsp-diagram-root.canvas-cursor-grabbing,
+.glsp-editor-host.canvas-cursor-grabbing .modless-glsp-diagram-root {
+  cursor: grabbing;
+}
+
 .canvas-grid[data-renderer="glsp-sprotty"] {
   cursor: grab;
 }

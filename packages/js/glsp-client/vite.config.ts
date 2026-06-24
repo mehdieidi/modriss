@@ -51,6 +51,10 @@ function dropBundledCss(): Plugin {
 
 export default defineConfig({
   plugins: [stubCssImports(), dropBundledCss(), copyGlspVendorCss()],
+  esbuild: {
+    jsxFactory: "svg",
+    jsxFragment: "svg",
+  },
   resolve: {
     dedupe: ["sprotty", "sprotty-protocol", "inversify", "reflect-metadata", "snabbdom"],
   },

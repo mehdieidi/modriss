@@ -1526,6 +1526,34 @@ async function runAutoLayoutCurrentDiagram({
   }
 
   try {
+    const { activeRendererKind, applyGlspElkLayout } = await import(
+      "./graph-editor/renderer-adapter.js"
+    );
+    if (activeRendererKind() === "glsp-sprotty" && window.modlessGlspState?.mode === "websocket") {
+      if (progress) {
+        showGenerationProgress({
+          kicker: "Auto Layout in Progress",
+          title: "Arranging current view",
+          subtitle: "ELK layout via GLSP diagram server.",
+          label: "Computing layout…",
+        });
+        setGenerationProgressPhase("Computing ELK layout…", 72);
+      }
+      if (busy) {
+        setBusy("Auto layout…");
+      }
+      applyGlspElkLayout?.();
+      await waitForCanvasPaint(2);
+      if (progress) {
+        setGenerationProgressPhase("Layout applied.", 100);
+        hideGenerationProgress();
+      }
+      if (status) {
+        setStatus("Auto layout applied via GLSP.");
+      }
+      return;
+    }
+
     if (
       !(await ensureStoredModelForBackendOperation("Auto Layout", {
         requiredViewId: view.id,
@@ -1842,6 +1870,12 @@ export async function undoLastModelReplacement() {
 export async function undoLastEdit() {
   if (!isModelingType()) {
     setStatus(`Switch to ${modelingLevelListLabel()} to undo.`);
+    return;
+  }
+  const { activeRendererKind, undoCanvasEdit } = await import("./graph-editor/renderer-adapter.js");
+  if (activeRendererKind() === "glsp-sprotty" && window.modlessGlspState?.mode === "websocket") {
+    undoCanvasEdit?.();
+    setStatus("Undid last diagram edit.");
     return;
   }
   if (hasDiagramUndoHistory()) {

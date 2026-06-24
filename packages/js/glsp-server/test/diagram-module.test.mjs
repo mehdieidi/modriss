@@ -12,8 +12,10 @@ test("modless diagram configuration provides default GLSP type mapping", () => {
   const config = new ModlessDiagramConfiguration();
   assert.ok(config.typeMapping.has("graph"));
   assert.ok(config.typeMapping.has("node"));
+  assert.ok(config.typeMapping.has("port"));
   assert.ok(config.typeMapping.has("edge"));
-  assert.equal(config.layoutKind, 1);
+  assert.equal(config.layoutKind, 0);
+  assert.equal(config.needsClientLayout, false);
 });
 
 test("modless server module can register diagram module", () => {
