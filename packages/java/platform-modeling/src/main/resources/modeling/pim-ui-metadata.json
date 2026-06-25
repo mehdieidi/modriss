@@ -1,5 +1,8 @@
 {
   "displayName": "PIM",
+  "workbench": {
+    "defaultViewDefinitionId": "pim-workflow-designer"
+  },
   "elementVisualDefaults": {
     "icon": "category",
     "color": "#475569",

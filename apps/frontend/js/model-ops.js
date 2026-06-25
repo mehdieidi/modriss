@@ -5,11 +5,14 @@ import { api, apiAuthHeaders } from "./api.js";
 import { flushCurrentModelPatch } from "./model-patch.js";
 import { setBusy, setError, setStatus } from "./status.js";
 import { formatUserError } from "./errors.js";
-import { emptyDiagram, genId } from "./utils.js";
+import { emptyDiagram, genId, scheduleIdleTask, yieldToMain } from "./utils.js";
 import { serializeModel } from "./diagram.js";
 import {
   activeView,
+  ensureViewContent,
+  ensureViewContentAsync,
   installGraphAndViews,
+  installGraphAndViewsAsync,
   restoreTabGraphState,
   saveCurrentTabGraphState,
   setActiveViewId,
@@ -17,12 +20,11 @@ import {
 } from "./graph-store.js";
 import { materializeActiveView } from "./view-materializer.js";
 import {
-  centerViewportOnDiagram,
   contextNameFromNode,
+  fitViewportToDiagram,
   renderDiagram,
   renderDiagramAsync,
   renderPalette,
-  resetCanvasView,
   scrollToConnectionAndHighlight,
   scrollToNodeAndHighlight,
 } from "./canvas.js";
@@ -100,12 +102,8 @@ function resetBoundedContextState() {
   state.selectedBoundedContextName = null;
 }
 
-function centerCurrentDiagram({ fit = true } = {}) {
-  if (Array.isArray(state.diagram?.nodes) && state.diagram.nodes.length) {
-    centerViewportOnDiagram({ fit });
-    return;
-  }
-  resetCanvasView();
+async function centerCurrentDiagram({ fit = true } = {}) {
+  await fitViewportToDiagram({ fit });
 }
 
 function captureModelReplacementSnapshot(typeKey = state.activeType) {
@@ -176,7 +174,7 @@ async function applyModelReplacementSnapshot(
   clearDiagramUndoHistory(snapshot.typeKey);
   renderDiagram();
   renderViewWorkbench();
-  centerCurrentDiagram();
+  await centerCurrentDiagram();
   if (persist) {
     await saveCurrentModel({ quiet: true, rethrow: true });
   } else {
@@ -373,17 +371,99 @@ function stripServerTransportFields(model) {
 }
 
 function mergePersistedViewIntoBaseModel(view) {
-  const base =
-    state.baseModel && typeof state.baseModel === "object" ? structuredClone(state.baseModel) : {};
-  const views = Array.isArray(base.views) ? base.views : [];
-  const index = views.findIndex((candidate) => candidate?.id === view?.id);
-  if (index >= 0) {
-    views[index] = structuredClone(view);
-  } else {
-    views.push(structuredClone(view));
+  if (!view?.id) {
+    return state.baseModel;
   }
-  base.views = views;
+  const base =
+    state.baseModel && typeof state.baseModel === "object"
+      ? state.baseModel
+      : (state.baseModel = {});
+  if (!Array.isArray(base.views)) {
+    base.views = [];
+  }
+  const copy = structuredClone(view);
+  delete copy._lazyContent;
+  const index = base.views.findIndex((candidate) => candidate?.id === copy.id);
+  if (index >= 0) {
+    base.views[index] = copy;
+  } else {
+    base.views.push(copy);
+  }
   return base;
+}
+
+function persistedRelationshipIdsForView() {
+  const fromBase = Array.isArray(state.baseModel?.graph?.relationships)
+    ? state.baseModel.graph.relationships
+    : [];
+  const ids = fromBase.map((relationship) => String(relationship?.id || "").trim()).filter(Boolean);
+  if (ids.length) {
+    return new Set(ids);
+  }
+  return new Set(
+    [...state.graph.relationshipsById.entries()]
+      .filter(([, relationship]) => !relationship?.visualOnly)
+      .map(([relationshipId]) => relationshipId),
+  );
+}
+
+function isPersistableViewEdge(relationshipId, persistedIds) {
+  const id = String(relationshipId || "").trim();
+  if (!id || id.startsWith("containment-")) {
+    return false;
+  }
+  const relationship = state.graph.relationshipsById.get(id);
+  if (relationship?.visualOnly) {
+    return false;
+  }
+  return persistedIds.has(id);
+}
+
+function serializeViewForPersistence(view) {
+  const copy = structuredClone(view);
+  delete copy._lazyContent;
+  const persistedIds = persistedRelationshipIdsForView();
+  if (Array.isArray(copy.edges)) {
+    copy.edges = copy.edges.filter((edge) =>
+      isPersistableViewEdge(edge.relationshipId || edge.id, persistedIds),
+    );
+  }
+  return copy;
+}
+
+function viewPatchOperations(payload) {
+  const operations = [];
+  if (!Array.isArray(state.baseModel?.views)) {
+    operations.push({ op: "add", path: "/views", value: [] });
+  }
+  operations.push({ op: "add", path: "/views/-", value: payload });
+  return operations;
+}
+
+async function persistViewForBackendLayout(view) {
+  if (!state.modelId || !view?.id) {
+    return false;
+  }
+  if (storedModelHasView(view.id)) {
+    return true;
+  }
+  const payload = serializeViewForPersistence(view);
+  const patchUrl = `/${MODEL_TYPES[state.activeType].apiType}/${state.modelId}`;
+  const patchBody = (operations) =>
+    JSON.stringify({
+      operations,
+      expectedRevision: state.modelRevision || 1,
+    });
+
+  const updated = await api(patchUrl, {
+    method: "PATCH",
+    body: patchBody(viewPatchOperations(payload)),
+  });
+  mergePersistedViewIntoBaseModel(payload);
+  if (updated && typeof updated === "object") {
+    state.modelRevision = Number(updated.revision) || state.modelRevision;
+  }
+  return true;
 }
 
 function manualGuidanceIssuesFromCurrentModel() {
@@ -468,7 +548,7 @@ async function setManualTaskResolved(manualTaskId, resolved) {
   applyValidationIssues(merged, { openOnFirst: false });
 }
 
-function applyManualGuidanceFromLoadedModel() {
+async function applyManualGuidanceFromLoadedModel() {
   const modelJson = state.baseModel;
   const backendIssues = storedValidationIssuesFromCurrentModel();
   const allGuidanceIssues = manualGuidanceIssuesFromModel(modelJson);
@@ -479,6 +559,7 @@ function applyManualGuidanceFromLoadedModel() {
   const openGuidanceIssues = allGuidanceIssues.filter((item) => !item.resolved);
   applyValidationIssues(mergedIssues, { openOnFirst: true });
   toggleValidationDrawer(true);
+  await fitViewportToDiagram({ fit: true, frames: 3 });
   const warningCount = mergedIssues.filter(
     (item) =>
       !isManualGuidanceIssue(item) && String(item?.severity || "").toUpperCase() === "WARNING",
@@ -673,16 +754,36 @@ export async function saveCurrentModel({ rethrow = false, quiet = false } = {}) 
 export async function loadModelById(
   typeKey,
   id,
-  { showManualGuidance = false, autoLayout = true } = {},
+  {
+    showManualGuidance = false,
+    autoLayout = true,
+    deferRender = false,
+    includeViews = true,
+    skipFragments = false,
+    skipClientLayout = false,
+    deferTabSnapshot = false,
+  } = {},
 ) {
   if (state.activeType !== typeKey) {
     await switchTab(typeKey);
   }
-  const record = await api(`/${MODEL_TYPES[typeKey].apiType}/${id}`);
+  const record = await api(
+    `/${MODEL_TYPES[typeKey].apiType}/${id}${includeViews === false ? "?includeViews=false" : ""}`,
+  );
+  await yieldToMain();
   state.modelId = record.id;
   state.modelRevision = Number(record.revision) || 1;
-  state.baseModel = structuredClone(record.modelJson);
-  installGraphAndViews(typeKey, record.modelJson, record.name || defaultModelName(typeKey));
+  state.baseModel = record.modelJson;
+  await installGraphAndViewsAsync(
+    typeKey,
+    record.modelJson,
+    record.name || defaultModelName(typeKey),
+    {
+      skipFragments,
+      skipClientLayout,
+    },
+  );
+  await yieldToMain();
   state.diagram = materializeActiveView();
   if (supportsBoundedContext(typeKey)) {
     resetBoundedContextState();
@@ -694,37 +795,60 @@ export async function loadModelById(
     state.tabs[typeKey].diagram = state.diagram;
     state.tabs[typeKey].modelName = record.name || defaultModelName(typeKey);
     state.tabs[typeKey].dirty = false;
-    saveCurrentTabGraphState(typeKey);
+    if (!deferTabSnapshot) {
+      saveCurrentTabGraphState(typeKey);
+    }
   }
   clearDiagramUndoHistory(typeKey);
   clearValidationIssues();
   setActiveModelName(record.name || defaultModelName(typeKey));
-  renderPalette();
-  await renderDiagramAsync();
-  renderViewWorkbench();
-  const { onGuidedModelingContextChanged } = await import("./guided-modeling.js");
-  onGuidedModelingContextChanged();
-  centerCurrentDiagram();
-  resetModelSaveState();
-  if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
-    await autoLayoutCurrentDiagram({
-      progress: true,
-      status: false,
-      force: false,
-    });
+  if (!deferRender) {
+    renderPalette();
+    await renderDiagramAsync();
+    renderViewWorkbench();
+    const { onGuidedModelingContextChanged } = await import("./guided-modeling.js");
+    onGuidedModelingContextChanged();
+    await centerCurrentDiagram();
+    resetModelSaveState();
+    if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
+      await autoLayoutCurrentDiagram({
+        progress: true,
+        status: false,
+        force: false,
+      });
+    }
+    if (showManualGuidance) {
+      void scheduleIdleTask(() => applyManualGuidanceFromLoadedModel());
+    }
+    return;
   }
+  resetModelSaveState();
   if (showManualGuidance) {
-    applyManualGuidanceFromLoadedModel();
+    void scheduleIdleTask(() => applyManualGuidanceFromLoadedModel());
   }
 }
 
 async function loadModelRecord(
   typeKey,
   record,
-  { showManualGuidance = false, autoLayout = true } = {},
+  {
+    showManualGuidance = false,
+    autoLayout = true,
+    deferRender = false,
+    skipFragments = false,
+    skipClientLayout = false,
+    deferTabSnapshot = false,
+  } = {},
 ) {
   if (!record?.id || !record?.modelJson) {
-    await loadModelById(typeKey, record?.id, { showManualGuidance, autoLayout });
+    await loadModelById(typeKey, record?.id, {
+      showManualGuidance,
+      autoLayout,
+      deferRender,
+      skipFragments,
+      skipClientLayout,
+      deferTabSnapshot,
+    });
     return;
   }
   if (state.activeType !== typeKey) {
@@ -732,8 +856,17 @@ async function loadModelRecord(
   }
   state.modelId = record.id;
   state.modelRevision = Number(record.revision) || 1;
-  state.baseModel = structuredClone(record.modelJson);
-  installGraphAndViews(typeKey, record.modelJson, record.name || defaultModelName(typeKey));
+  state.baseModel = record.modelJson;
+  await installGraphAndViewsAsync(
+    typeKey,
+    record.modelJson,
+    record.name || defaultModelName(typeKey),
+    {
+      skipFragments,
+      skipClientLayout,
+    },
+  );
+  await yieldToMain();
   state.diagram = materializeActiveView();
   if (state.tabs[typeKey]) {
     state.tabs[typeKey].modelId = record.id;
@@ -742,31 +875,67 @@ async function loadModelRecord(
     state.tabs[typeKey].diagram = state.diagram;
     state.tabs[typeKey].modelName = record.name || defaultModelName(typeKey);
     state.tabs[typeKey].dirty = false;
-    saveCurrentTabGraphState(typeKey);
+    if (!deferTabSnapshot) {
+      saveCurrentTabGraphState(typeKey);
+    }
   }
   rememberModelSummary(typeKey, record);
   clearDiagramUndoHistory(typeKey);
   clearValidationIssues();
   setActiveModelName(record.name || defaultModelName(typeKey));
-  renderPalette();
-  renderDiagram();
-  renderViewWorkbench();
-  centerCurrentDiagram();
-  resetModelSaveState();
-  if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
-    await autoLayoutCurrentDiagram({
-      progress: true,
-      status: false,
-      force: false,
-    });
+  if (!deferRender) {
+    renderPalette();
+    await renderDiagramAsync();
+    renderViewWorkbench();
+    await centerCurrentDiagram();
+    resetModelSaveState();
+    if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
+      await autoLayoutCurrentDiagram({
+        progress: true,
+        status: false,
+        force: false,
+      });
+    }
+    if (showManualGuidance) {
+      void scheduleIdleTask(() => applyManualGuidanceFromLoadedModel());
+    }
+    return;
   }
+  resetModelSaveState();
   if (showManualGuidance) {
-    applyManualGuidanceFromLoadedModel();
+    void scheduleIdleTask(() => applyManualGuidanceFromLoadedModel());
   }
 }
 
 async function autoLayoutGeneratedModel(typeLabel) {
-  if (activeView()?.autoLayoutApplied || !state.diagram.nodes.length) {
+  async function finalizePresentation({ center = true, skipRender = false } = {}) {
+    if (!skipRender) {
+      await yieldToMain();
+      await renderDiagramAsync();
+    }
+    renderPalette();
+    renderViewWorkbench();
+    const { onGuidedModelingContextChanged } = await import("./guided-modeling.js");
+    onGuidedModelingContextChanged();
+    if (center) {
+      await centerCurrentDiagram();
+    }
+  }
+  const view = activeView();
+  if (!view?.id) {
+    await finalizePresentation();
+    return;
+  }
+  if (!state.diagram.nodes.length) {
+    await ensureViewContentAsync(view, state.activeType, { skipClientLayout: true });
+    state.diagram = materializeActiveView();
+  }
+  if (!state.diagram.nodes.length) {
+    await finalizePresentation();
+    return;
+  }
+  if (view.autoLayoutApplied) {
+    await finalizePresentation();
     return;
   }
   setGenerationProgressPhase(`Auto-layouting the generated ${typeLabel} model…`, 86);
@@ -777,9 +946,11 @@ async function autoLayoutGeneratedModel(typeLabel) {
     busy: false,
     rethrow: true,
     force: false,
+    skipClientLayout: true,
   });
   setGenerationProgressPhase(`Rendering the arranged ${typeLabel} model…`, 96);
   await waitForCanvasPaint(1);
+  await finalizePresentation({ center: false, skipRender: true });
 }
 
 // ── Transformation / generation ───────────────────────────────────────────────
@@ -812,16 +983,25 @@ function storedModelHasView(viewId) {
 }
 
 async function ensureStoredModelForBackendOperation(operationLabel, { requiredViewId = "" } = {}) {
+  const viewId = String(requiredViewId || "").trim();
+  if (state.modelId && viewId && !storedModelHasView(viewId)) {
+    const view = state.views.byId.get(viewId);
+    if (view) {
+      syncActiveViewFromVisibleGraph();
+      await ensureViewContentAsync(view, state.activeType, { skipClientLayout: true });
+      await persistViewForBackendLayout(view);
+    }
+  }
   const hasUnsavedChanges = hasUnsavedModelChanges();
-  if (state.modelId && !hasUnsavedChanges && storedModelHasView(requiredViewId)) {
+  if (state.modelId && !hasUnsavedChanges && (!viewId || storedModelHasView(viewId))) {
     return true;
   }
-  if (state.modelId && !hasUnsavedChanges && requiredViewId) {
+  if (state.modelId && !hasUnsavedChanges && viewId) {
     await saveCurrentModel({ quiet: true, rethrow: true });
-    if (storedModelHasView(requiredViewId)) {
+    if (storedModelHasView(viewId)) {
       return true;
     }
-    throw new Error(`Unable to persist active view: ${requiredViewId}`);
+    throw new Error(`Unable to persist active view: ${viewId}`);
   }
   const level = String(state.activeType || "model").toUpperCase();
   const confirmed = await confirmAction({
@@ -1257,15 +1437,25 @@ async function executeConfiguredTransformation(transformation) {
     await waitForCanvasPaint(1);
     if (result.model) {
       await loadModelRecord(targetLevel, result.model, {
-        showManualGuidance: true,
+        showManualGuidance: false,
         autoLayout: false,
+        deferRender: true,
+        skipFragments: true,
+        skipClientLayout: true,
+        deferTabSnapshot: true,
       });
     } else {
       await loadModelById(targetLevel, result.resultModelId, {
-        showManualGuidance: true,
+        showManualGuidance: false,
         autoLayout: false,
+        deferRender: true,
+        includeViews: false,
+        skipFragments: true,
+        skipClientLayout: true,
+        deferTabSnapshot: true,
       });
     }
+    await yieldToMain();
     await autoLayoutGeneratedModel(
       (
         state.modelingConfig.config?.levels?.[targetLevel]?.displayName || targetLevel
@@ -1275,6 +1465,10 @@ async function executeConfiguredTransformation(transformation) {
     if (!state.validation.issues.length) {
       setStatus(transformation.successStatus || "Model generated and loaded");
     }
+    void scheduleIdleTask(async () => {
+      saveCurrentTabGraphState(targetLevel);
+      applyManualGuidanceFromLoadedModel();
+    });
   } catch (error) {
     if (isMethodologyValidationError(error)) {
       if (targetLevel && targetLevel !== "artifact" && isTransformationApiError(error, operation)) {
@@ -1282,6 +1476,7 @@ async function executeConfiguredTransformation(transformation) {
       }
       applyValidationIssues(error.issues, { openOnFirst: true });
       toggleValidationDrawer(true);
+      await fitViewportToDiagram({ fit: true });
     } else {
       applyValidationIssues(
         [
@@ -1297,6 +1492,7 @@ async function executeConfiguredTransformation(transformation) {
         { openOnFirst: true },
       );
       toggleValidationDrawer(true);
+      await fitViewportToDiagram({ fit: true });
     }
     setError(error, { prefix: "Generation failed." });
   } finally {
@@ -1421,7 +1617,7 @@ export async function switchTab(type) {
   renderViewWorkbench();
   const { onGuidedModelingContextChanged } = await import("./guided-modeling.js");
   onGuidedModelingContextChanged();
-  resetCanvasView();
+  await centerCurrentDiagram();
   setStatus(`Switched to ${type.toUpperCase()}`);
 }
 
@@ -1507,6 +1703,7 @@ async function runAutoLayoutCurrentDiagram({
   rethrow = false,
   force = true,
   strategy = "",
+  skipClientLayout = true,
 } = {}) {
   if (!isModelingType()) {
     if (status) {
@@ -1529,6 +1726,11 @@ async function runAutoLayoutCurrentDiagram({
     return;
   }
 
+  syncActiveViewFromVisibleGraph();
+  await ensureViewContentAsync(view, state.activeType, { skipClientLayout });
+  await yieldToMain();
+  state.diagram = materializeActiveView();
+
   try {
     const { activeRendererKind, applyGlspElkLayout } = await import(
       "./graph-editor/renderer-adapter.js"
@@ -1548,6 +1750,7 @@ async function runAutoLayoutCurrentDiagram({
       }
       applyGlspElkLayout?.();
       await waitForCanvasPaint(2);
+      await fitViewportToDiagram({ fit: true });
       if (progress) {
         setGenerationProgressPhase("Layout applied.", 100);
         hideGenerationProgress();
@@ -1592,13 +1795,14 @@ async function runAutoLayoutCurrentDiagram({
       )}/layout?force=${force}&strategy=${encodeURIComponent(selectedStrategy)}`,
       { method: "POST" },
     );
+    await yieldToMain();
     if (!response?.view) {
       throw new Error("Backend layout did not return the persisted view.");
     }
     state.modelRevision = Number(response.revision) || state.modelRevision;
     state.views.byId.set(view.id, structuredClone(response.view));
     materializeActiveView();
-    state.baseModel = mergePersistedViewIntoBaseModel(response.view);
+    mergePersistedViewIntoBaseModel(response.view);
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].modelRevision = state.modelRevision;
       state.tabs[state.activeType].baseModel = state.baseModel;
@@ -1618,9 +1822,10 @@ async function runAutoLayoutCurrentDiagram({
     if (progress) {
       setGenerationProgressPhase("Rendering layout…", 88);
     }
-    renderDiagram();
+    await yieldToMain();
+    await renderDiagramAsync();
     await waitForCanvasPaint(1);
-    centerViewportOnDiagram({ fit: true });
+    await fitViewportToDiagram({ fit: true });
     resetModelSaveState();
     if (progress) {
       setGenerationProgressPhase("Layout applied.", 100);
@@ -1774,7 +1979,11 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
     pushModelReplacementSnapshot();
     clearDiagramUndoHistory(state.activeType);
     state.baseModel = structuredClone(body.modelJson);
-    installGraphAndViews(state.activeType, body.modelJson, body.name || defaultModelName());
+    await installGraphAndViewsAsync(
+      state.activeType,
+      body.modelJson,
+      body.name || defaultModelName(),
+    );
     state.diagram = materializeActiveView();
     if (supportsBoundedContext()) {
       resetBoundedContextState();
@@ -1813,14 +2022,14 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
         });
       } catch (layoutError) {
         importLayoutWarning = layoutError.message || "Auto layout failed for the imported model.";
-        renderDiagram();
+        await renderDiagramAsync();
         renderViewWorkbench();
-        centerCurrentDiagram();
+        await centerCurrentDiagram();
       }
     } else {
-      renderDiagram();
+      await renderDiagramAsync();
       renderViewWorkbench();
-      centerCurrentDiagram();
+      await centerCurrentDiagram();
     }
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].diagram = structuredClone(state.diagram);

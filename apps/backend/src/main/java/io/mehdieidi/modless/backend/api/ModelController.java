@@ -105,8 +105,27 @@ public class ModelController {
   ModelRecord get(
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable("level") String level,
-      @PathVariable("id") String id) {
-    return models.get(auth.user(token), ModelLevel.fromApiName(level), id);
+      @PathVariable("id") String id,
+      @RequestParam(defaultValue = "true") boolean includeViews) {
+    return models.getForClient(auth.user(token), ModelLevel.fromApiName(level), id, includeViews);
+  }
+
+  /**
+   * Returns one persisted view from a stored model.
+   *
+   * @param token session token
+   * @param level model level API name
+   * @param id model identifier
+   * @param viewId view identifier
+   * @return stored view JSON
+   */
+  @GetMapping("/api/{level:cim|pim|psm}/{id}/views/{viewId}")
+  JsonNode getView(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("level") String level,
+      @PathVariable("id") String id,
+      @PathVariable("viewId") String viewId) {
+    return models.getStoredView(auth.user(token), ModelLevel.fromApiName(level), id, viewId);
   }
 
   /**

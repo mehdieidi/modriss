@@ -16,11 +16,11 @@ import { syncMobileDockState } from "./mobile-ui.js";
 import {
   activeCanvasFocus,
   canvasFocusLabel,
-  centerViewportOnDiagram,
   closeBoundedContextSpecialView,
   closeCanvasFocus,
   finalizeBoundedContextDraft,
-  restoreCanvasCamera,
+  fitViewportToDiagram,
+  renderDiagramAsync,
   setContextCreateMode,
 } from "./canvas.js";
 
@@ -688,12 +688,19 @@ export function renderViewWorkbench() {
 
 export async function openWorkbenchView(viewId) {
   viewMenuOpen = false;
-  const targetView = state.views.byId.get(viewId);
+  let targetView = state.views.byId.get(viewId);
+  if (targetView?._lazyContent) {
+    const { ensureViewContent } = await import("./graph-store.js");
+    const { yieldToMain } = await import("./utils.js");
+    await yieldToMain();
+    ensureViewContent(targetView);
+    targetView = state.views.byId.get(viewId);
+  }
   const needsInitialLayout = targetView && !targetView.autoLayoutApplied;
   if (setActiveViewId(viewId)) {
     materializeActiveView();
     renderPaletteCallback?.();
-    renderDiagramCallback?.();
+    await renderDiagramAsync();
     renderViewWorkbench();
     saveCurrentTabGraphState();
     if (needsInitialLayout) {
@@ -707,16 +714,12 @@ export async function openWorkbenchView(viewId) {
         setStatus("View selected and arranged.");
       } catch (error) {
         console.warn("Initial view auto layout failed", error);
-        if (!restoreCanvasCamera(targetView?.camera)) {
-          centerViewportOnDiagram({ fit: true });
-        }
+        await fitViewportToDiagram({ fit: true });
         setStatus("View selected. Auto layout failed.");
       }
       return;
     }
-    if (!restoreCanvasCamera(targetView?.camera)) {
-      centerViewportOnDiagram({ fit: true });
-    }
+    await fitViewportToDiagram({ fit: true });
     setStatus("View selected.");
   }
 }

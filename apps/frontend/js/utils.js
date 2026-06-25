@@ -141,3 +141,39 @@ export function autoLayout(nodes, connections = []) {
 
   return nodes;
 }
+
+/** Yields to the browser so long synchronous work does not freeze the UI. */
+export function yieldToMain() {
+  return new Promise((resolve) => {
+    if (typeof globalThis.requestAnimationFrame === "function") {
+      globalThis.requestAnimationFrame(() => globalThis.setTimeout(resolve, 0));
+      return;
+    }
+    globalThis.setTimeout(resolve, 0);
+  });
+}
+
+/** Runs work when the browser is idle so post-load UI updates do not block interaction. */
+export function scheduleIdleTask(task) {
+  return new Promise((resolve) => {
+    const run = async () => {
+      try {
+        await task();
+      } finally {
+        resolve();
+      }
+    };
+    if (typeof globalThis.requestIdleCallback === "function") {
+      globalThis.requestIdleCallback(
+        () => {
+          void run();
+        },
+        { timeout: 2500 },
+      );
+      return;
+    }
+    globalThis.setTimeout(() => {
+      void run();
+    }, 0);
+  });
+}

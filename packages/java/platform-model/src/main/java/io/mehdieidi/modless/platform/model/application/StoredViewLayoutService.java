@@ -141,11 +141,13 @@ public final class StoredViewLayoutService {
         continue;
       }
       JsonNode relationship = relationships.get(id);
+      if (relationship == null || relationship.path("visualOnly").asBoolean(false)) {
+        continue;
+      }
       String sourceId = endpoint(relationship, "sourceElementId", "sourceId", "source");
       String targetId = endpoint(relationship, "targetElementId", "targetId", "target");
-      if (relationship == null || sourceId.isBlank() || targetId.isBlank()) {
-        throw new PlatformException(
-            409, "Stored view relationship is missing from the persisted graph: " + id);
+      if (sourceId.isBlank() || targetId.isBlank()) {
+        continue;
       }
       if (!nodeIds.contains(sourceId) || !nodeIds.contains(targetId)) {
         throw new PlatformException(

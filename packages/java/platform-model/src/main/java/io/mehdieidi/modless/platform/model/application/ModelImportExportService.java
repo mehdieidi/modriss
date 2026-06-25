@@ -234,6 +234,9 @@ final class ModelImportExportService {
     if (!copy.hasNonNull("modelLevel")) {
       copy.put("modelLevel", level.name());
     }
+    if (!copy.has("views") || !copy.get("views").isArray()) {
+      copy.set("views", store.objectMapper().createArrayNode());
+    }
     return copy;
   }
 

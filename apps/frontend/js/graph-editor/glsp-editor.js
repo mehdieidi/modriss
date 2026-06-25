@@ -1,3 +1,4 @@
+import { getCanvasFitArea } from "../canvas-viewport-fit.js";
 import { state } from "../state.js";
 import { el } from "../dom.js";
 import { modelingLevelConfig } from "../modeling-config-data.js";
@@ -386,11 +387,22 @@ export function resetGlspCanvasView() {
   return true;
 }
 
-export function fitGlspCanvasToDiagram(bounds = null, { fit = false } = {}) {
+export function fitGlspCanvasToDiagram(bounds = null, { fit = false, fitArea = null } = {}) {
   if (!editor?.host || !state.diagram.nodes.length) {
     return false;
   }
   const rect = el.canvasViewport?.getBoundingClientRect?.();
+  const area =
+    fitArea ||
+    getCanvasFitArea(rect) ||
+    (rect?.width && rect?.height
+      ? {
+          width: Math.max(1, rect.width - 96),
+          height: Math.max(1, rect.height - 96),
+          centerX: rect.width / 2,
+          centerY: rect.height / 2,
+        }
+      : null);
   const resolved =
     bounds ||
     (() => {
@@ -415,24 +427,21 @@ export function fitGlspCanvasToDiagram(bounds = null, { fit = false } = {}) {
     })();
 
   const scale =
-    fit && rect?.width && rect?.height
+    fit && area?.width && area?.height
       ? Math.max(
           0.01,
-          Math.min(
-            2.5,
-            Math.min((rect.width - 96) / resolved.width, (rect.height - 96) / resolved.height) || 1,
-          ),
+          Math.min(2.5, Math.min(area.width / resolved.width, area.height / resolved.height) || 1),
         )
       : state.viewport.scale || 1;
 
   if (fit) {
     state.viewport.scale = scale;
   }
-  if (rect?.width && rect?.height) {
+  if (area?.width && area?.height) {
     const centerX = resolved.minX + resolved.width / 2;
     const centerY = resolved.minY + resolved.height / 2;
-    state.viewport.x = Math.round(rect.width / 2 - centerX * scale);
-    state.viewport.y = Math.round(rect.height / 2 - centerY * scale);
+    state.viewport.x = Math.round(area.centerX - centerX * scale);
+    state.viewport.y = Math.round(area.centerY - centerY * scale);
   }
   applyViewportTransform(editor.host, state.viewport);
   setCanvasZoomIndicator();

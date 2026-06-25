@@ -49,6 +49,7 @@ import {
   captureNodePositionUndoSnapshot,
   pushDiagramUndoSnapshot,
 } from "./undo.js";
+import { getCanvasFitArea } from "./canvas-viewport-fit.js";
 import {
   activeRendererKind,
   addCanvasEdge,
@@ -1817,16 +1818,34 @@ export function zoomCanvasBy(multiplier = 1) {
   adapterZoomCanvasBy(multiplier);
 }
 
-function diagramBounds({ includeContexts = true } = {}) {
+function nodeExtent(node, defaultW, defaultH) {
+  const x = Number(node?.x) || 0;
+  const y = Number(node?.y) || 0;
+  const w = Number.isFinite(Number(node?.width)) ? Number(node.width) : defaultW;
+  const h = Number.isFinite(Number(node?.height)) ? Number(node.height) : defaultH;
+  return { minX: x, minY: y, maxX: x + w, maxY: y + h };
+}
+
+function diagramBounds({ includeContexts = true, forFit = false } = {}) {
   if (!state.diagram?.nodes?.length) {
     return null;
   }
+  if (forFit) {
+    includeContexts = false;
+  }
   const nodeW = getNodeWidth();
   const nodeH = getNodeHeight();
-  let minX = Math.min(...state.diagram.nodes.map((node) => node.x));
-  let minY = Math.min(...state.diagram.nodes.map((node) => node.y));
-  let maxX = Math.max(...state.diagram.nodes.map((node) => node.x + nodeW));
-  let maxY = Math.max(...state.diagram.nodes.map((node) => node.y + nodeH));
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  state.diagram.nodes.forEach((node) => {
+    const extent = nodeExtent(node, nodeW, nodeH);
+    minX = Math.min(minX, extent.minX);
+    minY = Math.min(minY, extent.minY);
+    maxX = Math.max(maxX, extent.maxX);
+    maxY = Math.max(maxY, extent.maxY);
+  });
   if (includeContexts && supportsBoundedContext()) {
     const byContext = new Map();
     state.diagram.nodes.forEach((node) => {
@@ -1840,14 +1859,21 @@ function diagramBounds({ includeContexts = true } = {}) {
       byContext.get(contextName).push(node);
     });
     byContext.forEach((nodes) => {
-      const contextMinX = Math.min(...nodes.map((node) => node.x)) - 22;
-      const contextMinY = Math.min(...nodes.map((node) => node.y)) - 26;
-      const contextMaxX = Math.max(...nodes.map((node) => node.x + nodeW)) + 22;
-      const contextMaxY = Math.max(...nodes.map((node) => node.y + nodeH)) + 26;
-      minX = Math.min(minX, contextMinX);
-      minY = Math.min(minY, contextMinY);
-      maxX = Math.max(maxX, contextMaxX);
-      maxY = Math.max(maxY, contextMaxY);
+      let contextMinX = Infinity;
+      let contextMinY = Infinity;
+      let contextMaxX = -Infinity;
+      let contextMaxY = -Infinity;
+      nodes.forEach((node) => {
+        const extent = nodeExtent(node, nodeW, nodeH);
+        contextMinX = Math.min(contextMinX, extent.minX);
+        contextMinY = Math.min(contextMinY, extent.minY);
+        contextMaxX = Math.max(contextMaxX, extent.maxX);
+        contextMaxY = Math.max(contextMaxY, extent.maxY);
+      });
+      minX = Math.min(minX, contextMinX - 22);
+      minY = Math.min(minY, contextMinY - 26);
+      maxX = Math.max(maxX, contextMaxX + 22);
+      maxY = Math.max(maxY, contextMaxY + 26);
     });
   }
   return {
@@ -1860,13 +1886,46 @@ function diagramBounds({ includeContexts = true } = {}) {
   };
 }
 
-export function centerViewportOnDiagram({ fit = false } = {}) {
-  const bounds = diagramBounds();
+function applyViewportFit({ fit = false } = {}) {
+  const bounds = diagramBounds({ forFit: fit });
   if (!bounds) {
-    return;
+    return false;
   }
   ensureCanvas();
-  fitCanvasToDiagram(bounds, { fit });
+  const fitArea = getCanvasFitArea();
+  return fitCanvasToDiagram(bounds, { fit, fitArea }) !== false;
+}
+
+async function waitForViewportPaint(frames = 2) {
+  if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+    return;
+  }
+  for (let index = 0; index < frames; index += 1) {
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  }
+}
+
+export function centerViewportOnDiagram({ fit = false } = {}) {
+  applyViewportFit({ fit });
+}
+
+export async function fitViewportToDiagram({ fit = true, frames = 2, retry = true } = {}) {
+  if (!Array.isArray(state.diagram?.nodes) || !state.diagram.nodes.length) {
+    resetCanvasView();
+    return false;
+  }
+  try {
+    await renderDiagramAsync();
+  } catch (error) {
+    console.warn("fitViewportToDiagram: render failed", error);
+  }
+  await waitForViewportPaint(frames);
+  let applied = applyViewportFit({ fit });
+  if (!applied && retry) {
+    await waitForViewportPaint(1);
+    applied = applyViewportFit({ fit });
+  }
+  return applied;
 }
 
 export function restoreCanvasCamera(camera = null) {

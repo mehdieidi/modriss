@@ -134,6 +134,45 @@ class StoredViewLayoutServiceTest {
   }
 
   /**
+   * Verifies that client-side visual-only view edges are ignored during backend layout.
+   *
+   * @throws Exception when temporary repository setup fails
+   */
+  @Test
+  void ignoresVisualOnlyViewEdgesMissingFromPersistedGraph() throws Exception {
+    PlatformTestFixtures.ServiceStack services = PlatformTestFixtures.createServices(tempDir);
+    StoredViewLayoutService service =
+        new StoredViewLayoutService(services.models(), new LayoutService());
+    PlatformTestFixtures.AuthenticatedContext context =
+        PlatformTestFixtures.registerOwner(
+            services, "layout-visual@example.com", "Layout Visual", "Layout Visual Project");
+
+    ObjectNode model =
+        (ObjectNode)
+            services
+                .models()
+                .importModel(ModelLevel.CIM, "cim.xmi", PlatformTestFixtures.climateCimXmi(), "xmi")
+                .modelJson()
+                .deepCopy();
+    addView(model);
+    ObjectNode view = (ObjectNode) model.path("views").path(0);
+    ObjectNode visualEdge = view.putArray("edges").addObject();
+    visualEdge.put("relationshipId", "containment-parent-tags-child");
+    visualEdge.put("visible", true);
+    ModelRecord created =
+        services
+            .models()
+            .create(
+                context.user(), ModelLevel.CIM, context.project().id(), "layout-visual-cim", model);
+
+    StoredViewLayoutService.StoredViewLayoutResponse response =
+        service.layout(
+            context.user(), ModelLevel.CIM, created.id(), "view-test", false, "SPACIOUS_LAYERED");
+    assertTrue(response.layoutApplied());
+    assertTrue(response.view().path("autoLayoutApplied").asBoolean());
+  }
+
+  /**
    * Adds a representative view with one visible relationship edge to a model.
    *
    * @param model model JSON to mutate

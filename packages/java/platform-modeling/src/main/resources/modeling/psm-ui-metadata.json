@@ -1,5 +1,8 @@
 {
   "displayName": "PSM",
+  "workbench": {
+    "defaultViewDefinitionId": "psm-workflow-asl"
+  },
   "elementVisualDefaults": {
     "icon": "category",
     "color": "#475569",

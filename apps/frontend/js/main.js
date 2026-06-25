@@ -3,7 +3,7 @@ import { state } from "./state.js";
 import { initTheme, toggleTheme } from "./theme.js";
 import {
   applyViewport,
-  centerViewportOnDiagram,
+  fitViewportToDiagram,
   getModelingRendererDebug,
   initializeModelingRenderer,
   renderDiagram,
@@ -860,7 +860,9 @@ function bindEvents() {
   el.canvasZoomOutBtn?.addEventListener("click", () => zoomCanvasBy(0.85));
   el.canvasZoomInBtn?.addEventListener("click", () => zoomCanvasBy(1.18));
   el.canvasZoomResetBtn?.addEventListener("click", resetCanvasView);
-  el.canvasZoomFitBtn?.addEventListener("click", () => centerViewportOnDiagram({ fit: true }));
+  el.canvasZoomFitBtn?.addEventListener("click", () => {
+    void fitViewportToDiagram({ fit: true });
+  });
 
   const collapseChatInput = () => {
     el.chatInputRow?.classList.remove("chat-input-expanded");

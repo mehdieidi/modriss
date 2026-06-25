@@ -229,6 +229,67 @@ public final class ModelService {
   }
 
   /**
+   * Loads a model for the client, optionally omitting persisted view payloads so the frontend can
+   * materialize views lazily from the graph.
+   *
+   * @param user requesting user
+   * @param level model level
+   * @param id model identifier
+   * @param includeViews whether persisted views and fragments should be included
+   * @return client-safe model record
+   */
+  public ModelRecord getForClient(
+      UserRecord user, ModelLevel level, String id, boolean includeViews) {
+    ModelRecord record = get(user, level, id);
+    return includeViews ? record : withoutViewPayload(record);
+  }
+
+  /**
+   * Returns one persisted view from a stored model.
+   *
+   * @param user requesting user
+   * @param level model level
+   * @param id model identifier
+   * @param viewId view identifier
+   * @return stored view JSON
+   */
+  public JsonNode getStoredView(UserRecord user, ModelLevel level, String id, String viewId) {
+    ModelRecord record = get(user, level, id);
+    JsonNode views = record.modelJson().path("views");
+    if (!views.isArray()) {
+      throw new PlatformException(404, "Model has no stored views.");
+    }
+    for (JsonNode view : views) {
+      if (viewId.equals(view.path("id").asText(""))) {
+        return view;
+      }
+    }
+    throw new PlatformException(404, "View not found: " + viewId);
+  }
+
+  private ModelRecord withoutViewPayload(ModelRecord record) {
+    if (!(record.modelJson() instanceof ObjectNode objectNode)) {
+      return record;
+    }
+    ObjectNode copy = objectNode.deepCopy();
+    copy.remove("views");
+    copy.remove("fragments");
+    return new ModelRecord(
+        record.id(),
+        record.projectId(),
+        record.level(),
+        record.name(),
+        copy,
+        record.metamodelVersion(),
+        record.metamodelHash(),
+        record.revision(),
+        record.sourceXmiHash(),
+        record.migrationState(),
+        record.createdAt(),
+        record.updatedAt());
+  }
+
+  /**
    * Loads a model for transformation, preserving server-only metadata needed by MDE flows.
    *
    * @param user requesting user
@@ -352,6 +413,9 @@ public final class ModelService {
     }
     if (!normalizedModel.hasNonNull("modelLevel")) {
       normalizedModel.put("modelLevel", level.name());
+    }
+    if (!normalizedModel.has("views") || !normalizedModel.get("views").isArray()) {
+      normalizedModel.set("views", store.objectMapper().createArrayNode());
     }
     ModelImportExportService.SourceXmiUpdate sourceXmi =
         sourceXmiBytes == null || sourceXmiBytes.length == 0

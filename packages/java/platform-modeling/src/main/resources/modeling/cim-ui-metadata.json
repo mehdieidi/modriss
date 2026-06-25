@@ -1,5 +1,8 @@
 {
   "displayName": "CIM",
+  "workbench": {
+    "defaultViewDefinitionId": "business-process"
+  },
   "boundedContext": {
     "enabled": true,
     "candidateType": "BoundedContextCandidate",

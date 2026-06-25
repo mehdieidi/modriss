@@ -1,5 +1,5 @@
 import { state } from "./state.js";
-import { emptyDiagram, genId } from "./utils.js";
+import { emptyDiagram, genId, yieldToMain } from "./utils.js";
 import { ensureReadableLayout, nodeSizeForType } from "./layout-engine.js";
 import {
   modelingContainmentsForType,
@@ -1145,7 +1145,26 @@ function isMainSurfaceElement(typeKey, element) {
   }
 }
 
-function buildViewFromDefinition(typeKey, graph, definition, scopeElement = null) {
+function assignViewNodes(
+  graph,
+  elementIds,
+  typeKey,
+  existingNodes = [],
+  { skipClientLayout = false } = {},
+) {
+  if (skipClientLayout) {
+    return elementIds.map((elementId) => ({ elementId, x: 0, y: 0 }));
+  }
+  return layoutNodesForElements(graph, elementIds, existingNodes, typeKey);
+}
+
+function buildViewFromDefinition(
+  typeKey,
+  graph,
+  definition,
+  scopeElement = null,
+  { skipClientLayout = false } = {},
+) {
   const idParts = [
     "view",
     typeKey,
@@ -1203,7 +1222,7 @@ function buildViewFromDefinition(typeKey, graph, definition, scopeElement = null
     );
   }
   const relationshipIds = selectRelationshipIdsForView(graph, view, elementIds);
-  view.nodes = layoutNodesForElements(graph, elementIds, [], typeKey);
+  view.nodes = assignViewNodes(graph, elementIds, typeKey, [], { skipClientLayout });
   view.edges = relationshipIds.map((relationshipId) => ({
     relationshipId,
     visible: true,
@@ -1211,7 +1230,7 @@ function buildViewFromDefinition(typeKey, graph, definition, scopeElement = null
   return view;
 }
 
-function defaultMainView(typeKey, graph, modelName) {
+function defaultMainView(typeKey, graph, modelName, { skipClientLayout = false } = {}) {
   const configuredContainmentKinds = containmentKinds(typeKey);
   let elementIds = [...graph.elementsById.entries()]
     .filter(([, element]) => isMainSurfaceElement(typeKey, element))
@@ -1242,7 +1261,7 @@ function defaultMainView(typeKey, graph, modelName) {
       relationshipKinds: [],
     },
     layoutProfile: "DEFAULT_LAYERED",
-    nodes: layoutNodesForElements(graph, elementIds, [], typeKey),
+    nodes: assignViewNodes(graph, elementIds, typeKey, [], { skipClientLayout }),
     edges: relationshipIds.map((relationshipId) => ({
       relationshipId,
       visible: true,
@@ -1278,6 +1297,73 @@ function generateViews(typeKey, graph, modelName) {
   });
 }
 
+function buildViewSkeletonFromDefinition(typeKey, definition) {
+  const idParts = [
+    "view",
+    typeKey,
+    definition.id || definition.displayName || "definition",
+    "global",
+  ];
+  const id = idParts.map(sanitizeIdPart).join("-");
+  return {
+    id,
+    name: definition.displayName || definition.id || id,
+    level: modelLevelValue(typeKey),
+    kind: String(definition.id || "VIEW")
+      .toUpperCase()
+      .replaceAll("-", "_"),
+    scope: {
+      scopeKind: "MODEL",
+      depth: definition.defaultDepth ?? 1,
+    },
+    filters: {
+      elementTypes: safeArray(definition.elementTypes),
+      relationshipKinds: safeArray(definition.relationshipKinds),
+    },
+    definitionId: String(definition.id || ""),
+    viewpoint: String(definition.viewpoint || ""),
+    description: String(definition.description || ""),
+    palette: safeArray(definition.palette),
+    pinnedElementIds: [],
+    edgeLayers: safeArray(definition.edgeLayers),
+    layoutProfile: definition.layoutProfile || definition.layoutHint || "DEFAULT_LAYERED",
+    defaultDepth: definition.defaultDepth ?? 1,
+    nodes: [],
+    edges: [],
+    hidden: { elementIds: [], relationshipIds: [] },
+    _lazyContent: true,
+  };
+}
+
+function buildMainViewSkeleton(typeKey, modelName) {
+  return {
+    id: mainViewId(typeKey),
+    name: `${modelName || typeKey.toUpperCase()} Main View`,
+    level: modelLevelValue(typeKey),
+    kind: "MAIN",
+    scope: { scopeKind: "MODEL" },
+    filters: {
+      elementTypes: [],
+      relationshipKinds: [],
+    },
+    layoutProfile: "DEFAULT_LAYERED",
+    nodes: [],
+    edges: [],
+    hidden: { elementIds: [], relationshipIds: [] },
+    pinnedElementIds: [],
+    _lazyContent: true,
+  };
+}
+
+function generateLazyGlobalViews(typeKey, graph, modelName) {
+  return [
+    buildMainViewSkeleton(typeKey, modelName),
+    ...viewDefinitions(typeKey).map((definition) =>
+      buildViewSkeletonFromDefinition(typeKey, definition),
+    ),
+  ];
+}
+
 function generateGlobalViews(typeKey, graph, modelName) {
   return [
     defaultMainView(typeKey, graph, modelName),
@@ -1287,7 +1373,7 @@ function generateGlobalViews(typeKey, graph, modelName) {
   ];
 }
 
-function normalizeView(view, graph, typeKey, modelName) {
+function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } = {}) {
   const normalized = {
     id: String(view?.id || genId("view")),
     name: String(view?.name || modelName || "View"),
@@ -1369,7 +1455,7 @@ function normalizeView(view, graph, typeKey, modelName) {
       normalized.layoutProfile = String(definition.layoutProfile || definition.layoutHint);
     }
   }
-  if (graph.elementsById.size) {
+  if (graph.elementsById.size && !deferLayout) {
     let elementIds =
       definition || !normalized.nodes.length
         ? selectElementIdsForView(graph, normalized, typeKey)
@@ -1380,6 +1466,8 @@ function normalizeView(view, graph, typeKey, modelName) {
       ...relationshipIdsTouchingElements(graph, elementIds, normalized.filters.relationshipKinds),
     ]);
     normalized.nodes = layoutNodesForElements(graph, elementIds, normalized.nodes, typeKey);
+  } else if (deferLayout && !normalized.nodes.length) {
+    normalized._lazyContent = true;
   }
   if (!normalized.edges.length && graph.relationshipsById.size) {
     const elementIds = normalized.nodes.map((node) => node.elementId);
@@ -1396,9 +1484,9 @@ function buildViews(typeKey, graph, modelJson, fallbackName) {
     // Persisted models only need missing global defaults filled in. Generating every
     // scoped view here performs repeated selection and layout work, then discards
     // those scoped views below.
-    const generatedViews = generateGlobalViews(typeKey, graph, modelJson?.name || fallbackName);
+    const generatedViews = generateLazyGlobalViews(typeKey, graph, modelJson?.name || fallbackName);
     const normalizedViews = rawViews
-      .map((view) => normalizeView(view, graph, typeKey, fallbackName))
+      .map((view) => normalizeView(view, graph, typeKey, fallbackName, { deferLayout: true }))
       .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view));
     const existingKeys = new Set();
     normalizedViews.forEach((view) => {
@@ -1418,7 +1506,7 @@ function buildViews(typeKey, graph, modelJson, fallbackName) {
       });
     return normalizedViews.length ? normalizedViews : generatedViews;
   }
-  return generateViews(typeKey, graph, modelJson?.name || fallbackName);
+  return generateLazyGlobalViews(typeKey, graph, modelJson?.name || fallbackName);
 }
 
 function directChildrenOf(graph, parentId) {
@@ -1505,23 +1593,56 @@ function mainViewId(typeKey) {
   return `view-${typeKey}-main`;
 }
 
+function defaultViewDefinitionId(typeKey) {
+  const fallbacks = {
+    cim: "business-process",
+    pim: "pim-workflow-designer",
+    psm: "psm-workflow-asl",
+  };
+  try {
+    const configured = String(
+      modelingLevelConfig(typeKey).workbench?.defaultViewDefinitionId || "",
+    ).trim();
+    return configured || fallbacks[typeKey] || null;
+  } catch {
+    return fallbacks[typeKey] || null;
+  }
+}
+
+function globalViewIdForDefinition(typeKey, definitionId) {
+  return ["view", typeKey, definitionId, "global"].map(sanitizeIdPart).join("-");
+}
+
 function preferredDefaultViewId(byId, typeKey) {
+  const definitionId = defaultViewDefinitionId(typeKey);
+  if (definitionId) {
+    const preferredId = globalViewIdForDefinition(typeKey, definitionId);
+    if (byId.has(preferredId)) {
+      return preferredId;
+    }
+    for (const view of byId.values()) {
+      if (
+        !view.scope?.rootElementId &&
+        String(view.definitionId || "").toLowerCase() === definitionId.toLowerCase()
+      ) {
+        return view.id;
+      }
+    }
+  }
   const mainId = mainViewId(typeKey);
-  const views = [...byId.values()];
-  const contentfulNonMain = views.find(
-    (view) =>
-      view.id !== mainId &&
-      !view.scope?.rootElementId &&
-      (safeArray(view.nodes).length || safeArray(view.edges).length),
-  );
-  if (contentfulNonMain) {
-    return contentfulNonMain.id;
+  if (byId.has(mainId)) {
+    return mainId;
   }
-  const anyNonMain = views.find((view) => view.id !== mainId && !view.scope?.rootElementId);
-  if (anyNonMain) {
-    return anyNonMain.id;
+  return byId.keys().next().value || null;
+}
+
+function resolveActiveViewId(byId, typeKey, activeViewId) {
+  const mainId = mainViewId(typeKey);
+  const requested = String(activeViewId || "").trim();
+  if (requested && requested !== mainId && byId.has(requested)) {
+    return requested;
   }
-  return byId.has(mainId) ? mainId : byId.keys().next().value || null;
+  return preferredDefaultViewId(byId, typeKey);
 }
 
 function installViews(views, activeViewId, typeKey = state.activeType, modelName = "") {
@@ -1529,14 +1650,14 @@ function installViews(views, activeViewId, typeKey = state.activeType, modelName
   safeArray(views)
     .filter((view) => viewBelongsToLevel(view, typeKey) && !isFocusView(view))
     .forEach((view) => byId.set(view.id, view));
-  if (!byId.size) {
-    generateViews(typeKey, state.graph, modelName)
-      .filter((view) => !view.scope?.rootElementId)
-      .forEach((view) => byId.set(view.id, view));
-  }
-  const resolvedActive = byId.has(activeViewId)
-    ? activeViewId
-    : preferredDefaultViewId(byId, typeKey);
+  generateLazyGlobalViews(typeKey, state.graph, modelName)
+    .filter((view) => !view.scope?.rootElementId)
+    .forEach((view) => {
+      if (!byId.has(view.id)) {
+        byId.set(view.id, view);
+      }
+    });
+  const resolvedActive = resolveActiveViewId(byId, typeKey, activeViewId);
   state.views = {
     byId,
     activeViewId: resolvedActive,
@@ -1562,13 +1683,102 @@ function installFragments(fragments) {
   };
 }
 
-export function installGraphAndViews(typeKey, modelJson = {}, fallbackName = "") {
+export function ensureViewContent(
+  view,
+  typeKey = state.activeType,
+  { skipClientLayout = false } = {},
+) {
+  if (!view || !view._lazyContent) {
+    return view;
+  }
+  const definition = matchingViewDefinition(typeKey, view);
+  const scopeElement = view.scope?.rootElementId
+    ? state.graph.elementsById.get(view.scope.rootElementId)
+    : null;
+  const layoutOptions = { skipClientLayout };
+  let materialized;
+  if (view.id === mainViewId(typeKey)) {
+    materialized = defaultMainView(typeKey, state.graph, view.name, layoutOptions);
+  } else if (definition) {
+    materialized = buildViewFromDefinition(
+      typeKey,
+      state.graph,
+      definition,
+      scopeElement,
+      layoutOptions,
+    );
+  } else {
+    const normalized = normalizeView(view, state.graph, typeKey, view.name);
+    delete normalized._lazyContent;
+    Object.assign(view, normalized);
+    prepareViewNodeIndex(view);
+    return view;
+  }
+  delete materialized._lazyContent;
+  Object.assign(view, materialized);
+  delete view._lazyContent;
+  prepareViewNodeIndex(view);
+  return view;
+}
+
+export async function ensureViewContentAsync(view, typeKey = state.activeType, options = {}) {
+  await yieldToMain();
+  ensureViewContent(view, typeKey, options);
+  await yieldToMain();
+  return view;
+}
+
+export function installGraphAndViews(
+  typeKey,
+  modelJson = {},
+  fallbackName = "",
+  { skipFragments = false, skipClientLayout = false } = {},
+) {
   const graph = buildGraph(typeKey, modelJson || {});
   const views = buildViews(typeKey, graph, modelJson || {}, fallbackName);
-  const fragments = buildFragments(typeKey, graph, views, modelJson || {});
+  const fragments = skipFragments ? [] : buildFragments(typeKey, graph, views, modelJson || {});
   installGraph(graph);
   installViews(views, modelJson?.activeViewId || null, typeKey, fallbackName);
-  installFragments(fragments);
+  if (!skipFragments) {
+    installFragments(fragments);
+  } else {
+    state.fragments = { byId: new Map(), rootIds: [] };
+  }
+  const active = state.views?.byId?.get(state.views?.activeViewId);
+  if (active) {
+    ensureViewContent(active, typeKey, { skipClientLayout });
+  }
+  return {
+    graph: state.graph,
+    views: state.views,
+    fragments: state.fragments,
+  };
+}
+
+export async function installGraphAndViewsAsync(
+  typeKey,
+  modelJson = {},
+  fallbackName = "",
+  { skipFragments = false, skipClientLayout = false } = {},
+) {
+  const graph = buildGraph(typeKey, modelJson || {});
+  await yieldToMain();
+  const views = buildViews(typeKey, graph, modelJson || {}, fallbackName);
+  await yieldToMain();
+  const fragments = skipFragments ? [] : buildFragments(typeKey, graph, views, modelJson || {});
+  await yieldToMain();
+  installGraph(graph);
+  installViews(views, modelJson?.activeViewId || null, typeKey, fallbackName);
+  if (!skipFragments) {
+    installFragments(fragments);
+  } else {
+    state.fragments = { byId: new Map(), rootIds: [] };
+  }
+  const active = state.views?.byId?.get(state.views?.activeViewId);
+  if (active) {
+    await ensureViewContentAsync(active, typeKey, { skipClientLayout });
+  }
+  await yieldToMain();
   return {
     graph: state.graph,
     views: state.views,
@@ -1725,7 +1935,9 @@ function mergeManualBacklog(primary, secondary) {
 }
 
 export function serializeRuntimeViews() {
-  return [...state.views.byId.values()].filter((view) => !isFocusView(view)).map(clone);
+  return [...state.views.byId.values()]
+    .filter((view) => !isFocusView(view) && !view._lazyContent)
+    .map(clone);
 }
 
 export function serializeRuntimeFragments() {

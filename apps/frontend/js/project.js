@@ -6,9 +6,9 @@ import { formatUserError } from "./errors.js";
 import { emptyDiagram, escapeHtml } from "./utils.js";
 import { toDiagram } from "./diagram.js";
 import {
+  fitViewportToDiagram,
   renderDiagramAsync,
   renderPalette,
-  centerViewportOnDiagram,
   resetCanvasView,
 } from "./canvas.js";
 import { updateGenerateButtonState } from "./model-ops.js";
@@ -413,7 +413,7 @@ export async function loadProject(project) {
     let diagramWarning = false;
     try {
       await renderDiagramAsync();
-      centerViewportOnDiagram({ fit: true });
+      await fitViewportToDiagram({ fit: true });
     } catch (error) {
       diagramWarning = true;
       console.warn("Diagram renderer failed after project load.", error);

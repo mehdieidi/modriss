@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import { el } from "../dom.js";
+import { getCanvasFitArea, getCanvasFitPadding } from "../canvas-viewport-fit.js";
 import { mapDiagramToG6, mapEdgeToG6, mapNodeToG6 } from "./g6-mapper.js";
 import {
   canvasBackgroundColor,
@@ -2219,38 +2220,80 @@ export function resetG6CanvasView() {
   return true;
 }
 
-export function fitG6CanvasToDiagram(bounds = null, { fit = false } = {}) {
+export function fitG6CanvasToDiagram(bounds = null, { fit = false, fitArea = null } = {}) {
   if (!editor?.graph) {
     return false;
   }
-  const nodes = [...(editor.dataSnapshot?.nodesById?.keys?.() || [])];
-  if (!nodes.length) {
+  const diagramNodes = Array.isArray(state.diagram?.nodes) ? state.diagram.nodes : [];
+  const graphNodes = [...(editor.dataSnapshot?.nodesById?.keys?.() || [])];
+  if (!diagramNodes.length && !graphNodes.length) {
     return false;
   }
+  const nodes = graphNodes.length
+    ? graphNodes
+    : diagramNodes.map((node) => node.id).filter(Boolean);
+  const rect = el.canvasViewport?.getBoundingClientRect?.();
+  const padding = getCanvasFitPadding(
+    rect,
+    fitArea?.padding ? { margin: fitArea.padding } : undefined,
+  );
+
   try {
-    const rect = el.canvasViewport?.getBoundingClientRect?.();
+    if (fit && typeof editor.graph.fitView === "function") {
+      const previousPadding = editor.graph.getOptions?.()?.padding;
+      editor.graph.setOptions?.({ padding });
+      const fitResult = editor.graph.fitView({ when: "always", direction: "both" }, false);
+      const restorePadding = () => {
+        if (previousPadding !== undefined) {
+          editor.graph.setOptions?.({ padding: previousPadding });
+        }
+      };
+      if (fitResult?.then) {
+        fitResult
+          .then(() => {
+            restorePadding();
+            settleNativeViewport();
+          })
+          .catch((error) => {
+            restorePadding();
+            updateDebugState({ lastViewportError: error.message || String(error) });
+          });
+      } else {
+        window.requestAnimationFrame(() => {
+          restorePadding();
+          settleNativeViewport();
+        });
+      }
+      return true;
+    }
+
+    const area =
+      fitArea ||
+      getCanvasFitArea(rect) ||
+      (rect?.width && rect?.height
+        ? {
+            width: Math.max(1, rect.width - 96),
+            height: Math.max(1, rect.height - 96),
+            centerX: rect.width / 2,
+            centerY: rect.height / 2,
+          }
+        : null);
     const scale =
-      fit && bounds
+      fit && bounds && area
         ? Math.max(
             0.01,
-            Math.min(
-              1,
-              Math.min(
-                ((rect?.width || 0) - 96) / bounds.width,
-                ((rect?.height || 0) - 96) / bounds.height,
-              ) || 1,
-            ),
+            Math.min(1, Math.min(area.width / bounds.width, area.height / bounds.height) || 1),
           )
         : state.viewport.scale || readGraphZoom() || 1;
     if (fit && bounds) {
       state.viewport.scale = scale;
       setCanvasZoomIndicator();
     }
-    if (bounds && rect?.width && rect?.height) {
+    if (bounds && area?.width && area?.height) {
       const centerX = bounds.minX + bounds.width / 2;
       const centerY = bounds.minY + bounds.height / 2;
-      state.viewport.x = Math.round(rect.width / 2 - centerX * scale);
-      state.viewport.y = Math.round(rect.height / 2 - centerY * scale);
+      state.viewport.x = Math.round(area.centerX - centerX * scale);
+      state.viewport.y = Math.round(area.centerY - centerY * scale);
       const zoomResult = fit ? editor.graph.zoomTo?.(scale, false) : null;
       const translateResult = editor.graph.translateTo?.(
         [state.viewport.x, state.viewport.y],
