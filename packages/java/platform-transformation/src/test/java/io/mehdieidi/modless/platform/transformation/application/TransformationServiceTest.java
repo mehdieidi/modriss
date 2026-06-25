@@ -191,6 +191,14 @@ class TransformationServiceTest {
 
     ModelRecord psm = services.transformations().pimToPsm(context.user(), pim.id());
 
+    byte[] generatedSourceXmi = services.models().sourceXmi(psm).orElseThrow();
+    ModelService.ValidationResult sourceXmiValidation =
+        services.models().validateGeneratedXmi(ModelLevel.PSM, generatedSourceXmi);
+    assertTrue(
+        sourceXmiValidation.issues().stream()
+            .noneMatch(issue -> "ApiHasRoutes".equals(issue.constraint())),
+        "ETL source XMI must link routes to every API: " + sourceXmiValidation.issues());
+
     assertEquals(ModelLevel.PSM, psm.level());
     assertEquals("PSM", psm.modelJson().path("modelLevel").asText());
     assertEquals("AwsPsmModel", psm.modelJson().path("eClass").asText());
@@ -241,6 +249,19 @@ class TransformationServiceTest {
         "Generated PSM must not retain PIM/CIM root containments.");
     ModelService.ValidationResult validation =
         services.models().validate(ModelLevel.PSM, psm.modelJson());
+    assertTrue(
+        validation.issues().stream().noneMatch(issue -> "ApiHasRoutes".equals(issue.constraint())),
+        "Generated PSM must link routes to every API: " + validation.issues());
+    ModelRecord savedPsm =
+        services
+            .models()
+            .update(context.user(), ModelLevel.PSM, psm.id(), psm.name(), psm.modelJson());
+    ModelService.ValidationResult storedValidation =
+        services.models().validate(context.user(), ModelLevel.PSM, savedPsm.id());
+    assertTrue(
+        storedValidation.issues().stream()
+            .noneMatch(issue -> "ApiHasRoutes".equals(issue.constraint())),
+        "Stored PSM source XMI must retain API routes: " + storedValidation.issues());
     assertTrue(
         validation.issues().stream()
             .noneMatch(

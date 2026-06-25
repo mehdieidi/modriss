@@ -8,6 +8,10 @@ name: modless
 #   MODLESS_DIAGRAM_RENDERER=glsp-sprotty     # Eclipse GLSP + Sprotty (default)
 #   MODLESS_GLSP_SERVER_URL=ws://127.0.0.1:8081/modless   # browser WebSocket URL (host-published port)
 #
+# After changing files under mde/ (transformations, validation, metamodels), rebuild the backend
+# image so /app/mde inside the container picks up the changes:
+#   docker compose up --build --force-recreate backend
+#
 # The backend exposes these via GET /api/modeling/config → diagramEditor. After changing renderer
 # settings, recreate the backend container:
 #   docker compose up --build --force-recreate backend

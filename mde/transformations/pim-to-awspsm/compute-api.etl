@@ -141,13 +141,64 @@ rule Api2NativeUnsupportedApi
   createTrace(api, n, "Api2NativeUnsupportedApi", "LOW", KERNEL!TraceLinkType#MAPS_TO);
 }
 
+/** Resolves the owning PIM API for a route. */
+operation apiForRoute(r) {
+  if (r.api.isDefined()) {
+    return r.api;
+  }
+  var container = r.eContainer();
+  if (container.isDefined() and container.isKindOf(API!Api)) {
+    return container;
+  }
+  return null;
+}
+
 /** Transforms Api Route elements into Http Api Route elements. */
 rule ApiRoute2HttpApiRoute
   transform r : API!ApiRoute
   to gr : AWSPSMAPI!HttpApiRoute {
 
-  guard : awsEquivalent(r.api).isDefined() and awsEquivalent(r.api).eClass().getName() = "HttpApi"
+  guard : apiForRoute(r).isDefined() and awsEquivalent(apiForRoute(r)).isDefined() and not requiresRestApi(apiForRoute(r))
 
+  gr = createHttpApiRouteFrom(r, awsEquivalent(apiForRoute(r)));
+}
+
+/** Transforms Api Route elements into Rest Api Route elements. */
+rule ApiRoute2RestApiRoute
+  transform r : API!ApiRoute
+  to gr : AWSPSMAPI!RestApiRoute {
+
+  guard : apiForRoute(r).isDefined() and awsEquivalent(apiForRoute(r)).isDefined() and requiresRestApi(apiForRoute(r))
+
+  gr = createRestApiRouteFrom(r, awsEquivalent(apiForRoute(r)));
+}
+
+/** Creates any API routes that were skipped because API resources were not available yet. */
+operation materializeApiRoutes() {
+  for (r in API!ApiRoute.all) {
+    if (awsEquivalent(r).isDefined()) {
+      continue;
+    }
+    var pimApi = apiForRoute(r);
+    if (pimApi.isUndefined()) {
+      continue;
+    }
+    var awsApi = awsEquivalent(pimApi);
+    if (awsApi.isUndefined()) {
+      continue;
+    }
+    if (requiresRestApi(pimApi)) {
+      createRestApiRouteFrom(r, awsApi);
+    }
+    else {
+      createHttpApiRouteFrom(r, awsApi);
+    }
+  }
+}
+
+/** Creates create http api route from. */
+operation createHttpApiRouteFrom(r, awsApi) {
+  var gr = new AWSPSMAPI!HttpApiRoute;
   copyAwsResource(r, gr, "Route", "AWS::ApiGatewayV2::Route");
   gr.id = idFor("http_route", r);
   gr.method = mapHttpMethod(r.method);
@@ -160,7 +211,7 @@ rule ApiRoute2HttpApiRoute
   gr.responseModelsJson = schemaRefJson(r.responseSchema);
   gr.timeoutInMillis = inferRouteTimeoutMillis(r);
   gr.routeSettingsJson = "{ \"DetailedMetricsEnabled\": true }";
-  gr.api = awsEquivalent(r.api);
+  gr.api = awsApi;
   gr.integration = createApiIntegration(r, gr);
   gr.authorizer = findAuthorizerFor(r);
   applyAuthorizerFallback(r, gr);
@@ -175,15 +226,12 @@ rule ApiRoute2HttpApiRoute
       "Model an AuthPolicy/IdentityProvider or mark the route public.");
   }
   createTrace(r, gr, "ApiRoute2HttpApiRoute", "HIGH", KERNEL!TraceLinkType#REALIZES);
+  return gr;
 }
 
-/** Transforms Api Route elements into Rest Api Route elements. */
-rule ApiRoute2RestApiRoute
-  transform r : API!ApiRoute
-  to gr : AWSPSMAPI!RestApiRoute {
-
-  guard : awsEquivalent(r.api).isDefined() and awsEquivalent(r.api).eClass().getName() = "RestApi"
-
+/** Creates create rest api route from. */
+operation createRestApiRouteFrom(r, awsApi) {
+  var gr = new AWSPSMAPI!RestApiRoute;
   copyAwsResource(r, gr, "Route", "AWS::ApiGateway::Method");
   gr.id = idFor("rest_route", r);
   gr.method = mapHttpMethod(r.method);
@@ -196,7 +244,7 @@ rule ApiRoute2RestApiRoute
   gr.responseModelsJson = schemaRefJson(r.responseSchema);
   gr.timeoutInMillis = inferRouteTimeoutMillis(r);
   gr.routeSettingsJson = "{ \"DataTraceEnabled\": false, \"MetricsEnabled\": true }";
-  gr.api = awsEquivalent(r.api);
+  gr.api = awsApi;
   gr.integration = createApiIntegration(r, gr);
   attachOpenApiModels(r, gr);
   gr.authorizer = findAuthorizerFor(r);
@@ -208,6 +256,7 @@ rule ApiRoute2RestApiRoute
       "Model an AuthPolicy/IdentityProvider or mark the route public.");
   }
   createTrace(r, gr, "ApiRoute2RestApiRoute", "HIGH", KERNEL!TraceLinkType#REALIZES);
+  return gr;
 }
 
 /** Derives infer memory mb. */
@@ -456,11 +505,18 @@ operation inferRouteTimeoutMillis(r) {
 /** Creates create api integration. */
 operation createApiIntegration(r, gr) {
   var i = new AWSPSMAPI!ApiGatewayIntegration;
-  copyAwsResource(r, i, "Integration", "AWS::ApiGatewayV2::Integration");
+  if (gr.isKindOf(AWSPSMAPI!RestApiRoute)) {
+    copyAwsResource(r, i, "Integration", "AWS::ApiGateway::Integration");
+    i.integrationMethod = "POST";
+    i.payloadFormatVersion = "1.0";
+  }
+  else {
+    copyAwsResource(r, i, "Integration", "AWS::ApiGatewayV2::Integration");
+    i.integrationMethod = "POST";
+    i.payloadFormatVersion = "2.0";
+  }
   i.id = generatedId("api_integration", r, "target");
   i.integrationType = AWSPSMENUMS!ApiGatewayIntegrationType#AWS_PROXY;
-  i.integrationMethod = "POST";
-  i.payloadFormatVersion = "2.0";
   i.timeoutInMillis = gr.timeoutInMillis;
   if (r.functionIntegration.isDefined()) {
     i.lambdaTarget = awsEquivalent(r.functionIntegration);

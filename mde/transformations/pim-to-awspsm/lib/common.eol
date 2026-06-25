@@ -219,15 +219,15 @@ operation awsEquivalent(source) {
     if (cached = "__NONE__") return null;
     return cached;
   }
-  if (not cachedAwsResolvingRelationships) {
-    var target = source.equivalent();
-    if (target.isDefined()) {
+  var target = source.equivalent();
+  if (target.isDefined()) {
+    if (not cachedAwsResolvingRelationships) {
       cachedAwsEquivalentBySourceId.put(key, target);
     }
-    else {
-      cachedAwsEquivalentBySourceId.put(key, "__NONE__");
-    }
     return target;
+  }
+  if (not cachedAwsResolvingRelationships) {
+    cachedAwsEquivalentBySourceId.put(key, "__NONE__");
   }
   return null;
 }
@@ -421,6 +421,18 @@ operation copyAwsResource(source, target, kind : String, awsType : String) {
   target.tags.add(tag("Owner", owningOwnerTeam(source)));
   target.tags.add(tag("Environment", defaultStageName()));
   applyProductionDefaults(target);
+  cacheAwsEquivalentMapping(source, target);
+}
+
+/** Records the PIM source to AWS target mapping for later rule guards. */
+operation cacheAwsEquivalentMapping(source, target) {
+  if (source.isUndefined() or target.isUndefined()) {
+    return;
+  }
+  var key = cacheKeyFor(source);
+  if (hasText(key) and not cachedAwsEquivalentBySourceId.containsKey(key)) {
+    cachedAwsEquivalentBySourceId.put(key, target);
+  }
 }
 
 /** Adds or records register aws generated resource. */
