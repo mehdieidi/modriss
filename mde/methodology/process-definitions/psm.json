@@ -1,0 +1,2369 @@
+{
+  "processId": "modless.psm.modeling",
+  "spemVersion": "2.0",
+  "level": "psm",
+  "displayName": "PSM",
+  "roles": [
+    {
+      "id": "cloud-platform-engineer",
+      "name": "Cloud Platform Engineer",
+      "responsibilities": ["AWS resources, IAM, networking, observability, deployment posture"]
+    },
+    {
+      "id": "process-reviewer",
+      "name": "Process Reviewer",
+      "responsibilities": ["EVL gate approval, readiness sign-off"]
+    },
+    {
+      "id": "method-engineer",
+      "name": "Method Engineer",
+      "responsibilities": ["Maintains methodology when metamodels change"]
+    }
+  ],
+  "phases": [
+    {
+      "id": "psm.p0.account-stage-strategy",
+      "name": "Account & Stage Strategy",
+      "viewpoint": "dashboard",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "30m",
+      "tasks": [
+        {
+          "id": "psm.p0.account-stage-strategy.main",
+          "name": "Account & Stage Strategy",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "AwsPsmModel",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "WafAssociableResource",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AwsResource",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ValueExpression",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "NamedValueExpression",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AwsNativeResource",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AwsStage",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AwsNamingPolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AwsTaggingPolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DeployableElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "InvocationSource",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "InvocationTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "FunctionTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "WorkflowTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SubscriptionTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "RoutingTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "FlowEndpoint",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ProtectedResource",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "PolicyTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DataAccessTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ExternalCallTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EnvironmentTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CredentialRequirementLike",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "RouteEndpoint",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventCarrier",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ConfigurableElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "KeyValue",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "Annotation",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ModelElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "NamedModelElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "TraceableElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SemanticRelationship",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "Multiplicity",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "Cardinality",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "Expression",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "StructuredDocument",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "AwsEnvironmentClass",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "AwsPartition",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "Decision",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "Priority",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "Severity",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ConstraintStrength",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LifecycleStatus",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "TraceConfidence",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "TraceLinkType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "FindingType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "StructuredFormat",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ExpressionLanguage",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ExpressionPhase",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Create AwsPsmModel with partition, region, and stage strategy.",
+            "Define naming and tagging policies."
+          ],
+          "entryCriteria": ["PIM transform complete or greenfield PSM"],
+          "exitCriteria": ["AWS root and stage strategy configured"],
+          "validationRules": [],
+          "viewpoint": "dashboard",
+          "paletteFocus": ["AwsPsmModel", "AwsStage", "AwsNamingPolicy", "AwsTaggingPolicy"],
+          "durationEstimate": "30m"
+        },
+        {
+          "id": "psm.p0.account-stage-strategy.enums",
+          "name": "Configure Account & Stage Strategy enumerations",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eEnum": "AwsEnvironmentClass",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "AwsPartition",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "Decision",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "Priority",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "Severity",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ConstraintStrength",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LifecycleStatus",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "TraceConfidence",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "TraceLinkType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "FindingType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "StructuredFormat",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ExpressionLanguage",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ExpressionPhase",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Review and set values for: AwsEnvironmentClass, AwsPartition, Decision, Priority, Severity, ConstraintStrength, LifecycleStatus, TraceConfidence, TraceLinkType, FindingType, StructuredFormat, ExpressionLanguage, ExpressionPhase"
+          ],
+          "entryCriteria": ["PIM transform complete or greenfield PSM"],
+          "exitCriteria": ["Enumeration literals aligned with domain"],
+          "validationRules": [],
+          "viewpoint": "dashboard",
+          "paletteFocus": [],
+          "durationEstimate": "15m"
+        }
+      ]
+    },
+    {
+      "id": "psm.p1.stack-scaffolding",
+      "name": "Stack Scaffolding",
+      "viewpoint": "stack",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "1h",
+      "tasks": [
+        {
+          "id": "psm.p1.stack-scaffolding.main",
+          "name": "Stack Scaffolding",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "SamStack",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CfnParameter",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CfnMapping",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CfnCondition",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CfnOutput",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SamGlobals",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "CloudFormationDeletionPolicy",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "CloudFormationUpdateReplacePolicy",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Create SAM stack with globals.",
+            "Define CFN parameters, mappings, conditions, outputs."
+          ],
+          "entryCriteria": ["Account strategy set"],
+          "exitCriteria": ["Stack scaffolding ready for resources"],
+          "validationRules": [],
+          "viewpoint": "stack",
+          "paletteFocus": [
+            "SamStack",
+            "CfnParameter",
+            "CfnMapping",
+            "CfnCondition",
+            "CfnOutput",
+            "SamGlobals"
+          ],
+          "durationEstimate": "1h"
+        }
+      ]
+    },
+    {
+      "id": "psm.p2.security-baseline",
+      "name": "Security Baseline",
+      "viewpoint": "security",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "2h",
+      "tasks": [
+        {
+          "id": "psm.p2.security-baseline.main",
+          "name": "Security Baseline",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "AwsSecurityBaseline",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "IamRole",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "IamInlinePolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "IamPolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "IamManagedPolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "IamPolicyDocument",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "IamStatement",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "IamPrincipal",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "IamCondition",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "KmsKey",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "KmsAlias",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "GenerateSecretStringConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SecretsManagerSecret",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SecretRotationRules",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SecretRotationSchedule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SecretsManagerResourcePolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SsmParameter",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SsmParameterValueExpression",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SecretValueExpression",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Establish security baseline and IAM roles/policies.",
+            "Configure KMS, Secrets Manager, and SSM parameters."
+          ],
+          "entryCriteria": ["Stack scaffolding complete"],
+          "exitCriteria": ["Security baseline applied"],
+          "validationRules": [],
+          "viewpoint": "security",
+          "paletteFocus": [
+            "AwsSecurityBaseline",
+            "IamRole",
+            "IamInlinePolicy",
+            "IamPolicy",
+            "IamManagedPolicy",
+            "IamPolicyDocument",
+            "IamStatement",
+            "IamPrincipal",
+            "IamCondition",
+            "KmsKey",
+            "KmsAlias",
+            "GenerateSecretStringConfig",
+            "SecretsManagerSecret",
+            "SecretRotationRules",
+            "SecretRotationSchedule",
+            "SecretsManagerResourcePolicy",
+            "SsmParameter",
+            "SsmParameterValueExpression",
+            "SecretValueExpression"
+          ],
+          "durationEstimate": "2h"
+        }
+      ]
+    },
+    {
+      "id": "psm.p3.networking",
+      "name": "Networking",
+      "viewpoint": "networking",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "psm.p3.networking.main",
+          "name": "Networking",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "VpcAttachmentConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "VpcEndpointReference",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "Vpc",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "Subnet",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "VpcEndpoint",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SecurityGroup",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SecurityGroupRule",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Configure VPC, subnets, and endpoints when required.",
+            "Define security groups and rules."
+          ],
+          "entryCriteria": ["Security baseline applied"],
+          "exitCriteria": ["Network posture defined for workloads"],
+          "validationRules": [],
+          "viewpoint": "networking",
+          "paletteFocus": [
+            "VpcAttachmentConfig",
+            "VpcEndpointReference",
+            "Vpc",
+            "Subnet",
+            "VpcEndpoint",
+            "SecurityGroup",
+            "SecurityGroupRule"
+          ],
+          "durationEstimate": "1-2h"
+        }
+      ]
+    },
+    {
+      "id": "psm.p4.identity",
+      "name": "Identity",
+      "viewpoint": "identity",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "psm.p4.identity.main",
+          "name": "Identity",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoUserPool",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoPasswordPolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoSchemaAttribute",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoEmailConfiguration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoAccountRecoverySetting",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoRecoveryMechanism",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoLambdaConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoUserPoolClient",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoOAuthConfiguration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoUserPoolGroup",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoUserPoolDomain",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoIdentityPool",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Configure Cognito user pools, clients, and groups.",
+            "Set up identity pools for federated access."
+          ],
+          "entryCriteria": ["Networking configured"],
+          "exitCriteria": ["Identity resources match PIM auth model"],
+          "validationRules": [],
+          "viewpoint": "identity",
+          "paletteFocus": [
+            "CognitoUserPool",
+            "CognitoPasswordPolicy",
+            "CognitoSchemaAttribute",
+            "CognitoEmailConfiguration",
+            "CognitoAccountRecoverySetting",
+            "CognitoRecoveryMechanism",
+            "CognitoLambdaConfig",
+            "CognitoUserPoolClient",
+            "CognitoOAuthConfiguration",
+            "CognitoUserPoolGroup",
+            "CognitoUserPoolDomain",
+            "CognitoIdentityPool"
+          ],
+          "durationEstimate": "1-2h"
+        }
+      ]
+    },
+    {
+      "id": "psm.p5.durable-storage",
+      "name": "Durable Storage",
+      "viewpoint": "storage",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "2-3h",
+      "tasks": [
+        {
+          "id": "psm.p5.durable-storage.main",
+          "name": "Durable Storage",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "S3NotificationDestination",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbTable",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbAttributeDefinition",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbKeySchemaElement",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbProjection",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbProvisionedThroughput",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbOnDemandThroughput",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbLocalSecondaryIndex",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbGlobalSecondaryIndex",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbReplicaSpecification",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbStreamSpecification",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbTimeToLiveSpecification",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbSseSpecification",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbBackupPolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3Bucket",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3BucketEncryption",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3OwnershipControls",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3OwnershipRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3LifecycleConfiguration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3LifecycleRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3LifecycleFilter",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3TagFilter",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3Transition",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3PublicAccessBlockConfiguration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3NotificationConfiguration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3NotificationRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3ReplicationConfiguration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3ReplicationRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3ReplicationDestination",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3BucketPolicy",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Provision DynamoDB tables with indexes and streams.",
+            "Configure S3 buckets with lifecycle and notifications."
+          ],
+          "entryCriteria": ["Identity configured"],
+          "exitCriteria": ["Durable stores match PIM data model"],
+          "validationRules": [],
+          "viewpoint": "storage",
+          "paletteFocus": [
+            "S3NotificationDestination",
+            "DynamoDbTable",
+            "DynamoDbAttributeDefinition",
+            "DynamoDbKeySchemaElement",
+            "DynamoDbProjection",
+            "DynamoDbProvisionedThroughput",
+            "DynamoDbOnDemandThroughput",
+            "DynamoDbLocalSecondaryIndex",
+            "DynamoDbGlobalSecondaryIndex",
+            "DynamoDbReplicaSpecification",
+            "DynamoDbStreamSpecification",
+            "DynamoDbTimeToLiveSpecification",
+            "DynamoDbSseSpecification",
+            "DynamoDbBackupPolicy",
+            "S3Bucket",
+            "S3BucketEncryption",
+            "S3OwnershipControls",
+            "S3OwnershipRule",
+            "S3LifecycleConfiguration",
+            "S3LifecycleRule",
+            "S3LifecycleFilter",
+            "S3TagFilter",
+            "S3Transition",
+            "S3PublicAccessBlockConfiguration",
+            "S3NotificationConfiguration",
+            "S3NotificationRule",
+            "S3ReplicationConfiguration",
+            "S3ReplicationRule",
+            "S3ReplicationDestination",
+            "S3BucketPolicy"
+          ],
+          "durationEstimate": "2-3h"
+        }
+      ]
+    },
+    {
+      "id": "psm.p6.messaging",
+      "name": "Messaging",
+      "viewpoint": "messaging",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "psm.p6.messaging.main",
+          "name": "Messaging",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "SqsQueue",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SqsRedrivePolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SqsRedriveAllowPolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SqsQueuePolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SnsTopic",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SnsSubscription",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SnsFilterRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SnsTopicPolicy",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Create SQS queues with redrive policies.",
+            "Configure SNS topics and subscriptions."
+          ],
+          "entryCriteria": ["Durable storage provisioned"],
+          "exitCriteria": ["Messaging matches PIM event channels"],
+          "validationRules": [],
+          "viewpoint": "messaging",
+          "paletteFocus": [
+            "SqsQueue",
+            "SqsRedrivePolicy",
+            "SqsRedriveAllowPolicy",
+            "SqsQueuePolicy",
+            "SnsTopic",
+            "SnsSubscription",
+            "SnsFilterRule",
+            "SnsTopicPolicy"
+          ],
+          "durationEstimate": "1-2h"
+        }
+      ]
+    },
+    {
+      "id": "psm.p7.event-fabric",
+      "name": "Event Fabric",
+      "viewpoint": "events",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "2h",
+      "tasks": [
+        {
+          "id": "psm.p7.event-fabric.main",
+          "name": "Event Fabric",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeBus",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeBusPolicy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventPattern",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeTarget",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeTargetParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeSqsTargetParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeHttpTargetParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "HttpParameter",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeBatchTargetParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeInputTransformer",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeArchive",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeSchedule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeFlexibleTimeWindow",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgePipe",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeAuthParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeApiKeyAuthParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeBasicAuthParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeOAuthParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeHttpParameters",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeConnection",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeApiDestination",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AwsRetryPolicy",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Configure EventBridge buses, rules, and targets.",
+            "Set up schedules, pipes, and API destinations."
+          ],
+          "entryCriteria": ["Messaging configured"],
+          "exitCriteria": ["Event fabric matches PIM integration"],
+          "validationRules": [],
+          "viewpoint": "events",
+          "paletteFocus": [
+            "EventBridgeBus",
+            "EventBridgeBusPolicy",
+            "EventBridgeRule",
+            "EventPattern",
+            "EventBridgeTarget",
+            "EventBridgeTargetParameters",
+            "EventBridgeSqsTargetParameters",
+            "EventBridgeHttpTargetParameters",
+            "HttpParameter",
+            "EventBridgeBatchTargetParameters",
+            "EventBridgeInputTransformer",
+            "EventBridgeArchive",
+            "EventBridgeSchedule",
+            "EventBridgeFlexibleTimeWindow",
+            "EventBridgePipe",
+            "EventBridgeAuthParameters",
+            "EventBridgeApiKeyAuthParameters",
+            "EventBridgeBasicAuthParameters",
+            "EventBridgeOAuthParameters",
+            "EventBridgeHttpParameters",
+            "EventBridgeConnection",
+            "EventBridgeApiDestination",
+            "AwsRetryPolicy"
+          ],
+          "durationEstimate": "2h"
+        }
+      ]
+    },
+    {
+      "id": "psm.p8.compute",
+      "name": "Compute",
+      "viewpoint": "compute",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "2-3h",
+      "tasks": [
+        {
+          "id": "psm.p8.compute.main",
+          "name": "Compute",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "AwsLambdaFunction",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaCodeConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaZipCodeConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaImageCodeConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaImageConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaEnvironmentVariable",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaInvocationBinding",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SamFunctionEvent",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaEventSourceMapping",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SqsLambdaEventSourceMapping",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "DynamoDbStreamLambdaEventSourceMapping",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "GenericLambdaEventSourceMapping",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaDeadLetterConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaEventInvokeConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaDestinationConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaTracingConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaLoggingConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaLayerVersion",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaLayerPermission",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaVersion",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaAlias",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaProvisionedConcurrencyConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaPermission",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaFunctionUrl",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaUrlCorsConfiguration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaFileSystemConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CodeSigningConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "PackageType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaArchitecture",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaTracingMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaRuntimeManagementMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaSnapStartApplyOn",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaInvokeMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaFunctionUrlAuthType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaRecursiveLoopMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaEventSourceKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "StartingPosition",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Deploy Lambda functions with code config and layers.",
+            "Configure event source mappings and permissions."
+          ],
+          "entryCriteria": ["Event fabric configured"],
+          "exitCriteria": ["Compute matches PIM functions"],
+          "validationRules": [],
+          "viewpoint": "compute",
+          "paletteFocus": [
+            "AwsLambdaFunction",
+            "LambdaCodeConfig",
+            "LambdaZipCodeConfig",
+            "LambdaImageCodeConfig",
+            "LambdaImageConfig",
+            "LambdaEnvironmentVariable",
+            "LambdaInvocationBinding",
+            "SamFunctionEvent",
+            "LambdaEventSourceMapping",
+            "SqsLambdaEventSourceMapping",
+            "DynamoDbStreamLambdaEventSourceMapping",
+            "GenericLambdaEventSourceMapping",
+            "LambdaDeadLetterConfig",
+            "LambdaEventInvokeConfig",
+            "LambdaDestinationConfig",
+            "LambdaTracingConfig",
+            "LambdaLoggingConfig",
+            "LambdaLayerVersion",
+            "LambdaLayerPermission",
+            "LambdaVersion",
+            "LambdaAlias",
+            "LambdaProvisionedConcurrencyConfig",
+            "LambdaPermission",
+            "LambdaFunctionUrl",
+            "LambdaUrlCorsConfiguration",
+            "LambdaFileSystemConfig",
+            "CodeSigningConfig"
+          ],
+          "durationEstimate": "2-3h"
+        },
+        {
+          "id": "psm.p8.compute.enums",
+          "name": "Configure Compute enumerations",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eEnum": "PackageType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaArchitecture",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaTracingMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaRuntimeManagementMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaSnapStartApplyOn",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaInvokeMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaFunctionUrlAuthType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaRecursiveLoopMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LambdaEventSourceKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "StartingPosition",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Review and set values for: PackageType, LambdaArchitecture, LambdaTracingMode, LambdaRuntimeManagementMode, LambdaSnapStartApplyOn, LambdaInvokeMode, LambdaFunctionUrlAuthType, LambdaRecursiveLoopMode, LambdaEventSourceKind, StartingPosition"
+          ],
+          "entryCriteria": ["Event fabric configured"],
+          "exitCriteria": ["Enumeration literals aligned with domain"],
+          "validationRules": [],
+          "viewpoint": "compute",
+          "paletteFocus": [],
+          "durationEstimate": "15m"
+        }
+      ]
+    },
+    {
+      "id": "psm.p9.api-gateway",
+      "name": "API Gateway",
+      "viewpoint": "api",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "2-3h",
+      "tasks": [
+        {
+          "id": "psm.p9.api-gateway.main",
+          "name": "API Gateway",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayApi",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "HttpApi",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "RestApi",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "WebSocketApi",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayRoute",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "HttpApiRoute",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "RestApiRoute",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "RestApiResource",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "RestApiMethod",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "WebSocketRoute",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayRequestModel",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayResponseModel",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayRequestValidator",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayRouteSetting",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayAccessLogSetting",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayIntegration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayIntegrationRequestTemplate",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayIntegrationResponseParameter",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayStage",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "HttpApiStage",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "RestApiStage",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "WebSocketStage",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayAuthorizer",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "JwtAuthorizer",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CognitoAuthorizer",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "LambdaAuthorizer",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayDomainName",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayBasePathMapping",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayApiKey",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayUsagePlan",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayUsagePlanKey",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayDeployment",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayTracingConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "WafWebAclAssociation",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayEndpointType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayAuthorizationType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayIntegrationType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayHttpMethod",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Configure HTTP/REST/WebSocket APIs with routes.",
+            "Set up integrations, authorizers, and stages."
+          ],
+          "entryCriteria": ["Compute deployed"],
+          "exitCriteria": ["API Gateway matches PIM APIs"],
+          "validationRules": [],
+          "viewpoint": "api",
+          "paletteFocus": [
+            "ApiGatewayApi",
+            "HttpApi",
+            "RestApi",
+            "WebSocketApi",
+            "ApiGatewayRoute",
+            "HttpApiRoute",
+            "RestApiRoute",
+            "RestApiResource",
+            "RestApiMethod",
+            "WebSocketRoute",
+            "ApiGatewayRequestModel",
+            "ApiGatewayResponseModel",
+            "ApiGatewayRequestValidator",
+            "ApiGatewayRouteSetting",
+            "ApiGatewayAccessLogSetting",
+            "ApiGatewayIntegration",
+            "ApiGatewayIntegrationRequestTemplate",
+            "ApiGatewayIntegrationResponseParameter",
+            "ApiGatewayStage",
+            "HttpApiStage",
+            "RestApiStage",
+            "WebSocketStage",
+            "ApiGatewayAuthorizer",
+            "JwtAuthorizer",
+            "CognitoAuthorizer",
+            "LambdaAuthorizer",
+            "ApiGatewayDomainName",
+            "ApiGatewayBasePathMapping",
+            "ApiGatewayApiKey",
+            "ApiGatewayUsagePlan",
+            "ApiGatewayUsagePlanKey",
+            "ApiGatewayDeployment",
+            "ApiGatewayTracingConfig",
+            "WafWebAclAssociation"
+          ],
+          "durationEstimate": "2-3h"
+        },
+        {
+          "id": "psm.p9.api-gateway.enums",
+          "name": "Configure API Gateway enumerations",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayEndpointType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayAuthorizationType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayIntegrationType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ApiGatewayHttpMethod",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Review and set values for: ApiGatewayKind, ApiGatewayEndpointType, ApiGatewayAuthorizationType, ApiGatewayIntegrationType, ApiGatewayHttpMethod"
+          ],
+          "entryCriteria": ["Compute deployed"],
+          "exitCriteria": ["Enumeration literals aligned with domain"],
+          "validationRules": [],
+          "viewpoint": "api",
+          "paletteFocus": [],
+          "durationEstimate": "15m"
+        }
+      ]
+    },
+    {
+      "id": "psm.p10.workflow-observability",
+      "name": "Workflow & Observability",
+      "viewpoint": "workflow",
+      "primaryRole": "cloud-platform-engineer",
+      "durationEstimate": "2h",
+      "tasks": [
+        {
+          "id": "psm.p10.workflow-observability.main",
+          "name": "Workflow & Observability",
+          "primaryRole": "cloud-platform-engineer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "CorsConfiguration",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "TracingConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CloudWatchLogGroup",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CloudWatchMetricFilter",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CloudWatchMetricTransformation",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CloudWatchLogSubscriptionFilter",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CloudWatchAlarm",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "MetricDimension",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CloudWatchCompositeAlarm",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "CloudWatchDashboard",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "StepFunctionStateMachine",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AslDocument",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AslState",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AslBranch",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AslMapConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AslRetryRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AslCatchRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AslChoiceRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "StepFunctionLoggingConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "StepFunctionTracingConfig",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SamStateMachineEvent",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Deploy Step Functions state machines with ASL.",
+            "Configure CloudWatch logs, alarms, and dashboards."
+          ],
+          "entryCriteria": ["API Gateway configured"],
+          "exitCriteria": ["Workflows and observability complete"],
+          "validationRules": [],
+          "viewpoint": "workflow",
+          "paletteFocus": [
+            "CorsConfiguration",
+            "TracingConfig",
+            "CloudWatchLogGroup",
+            "CloudWatchMetricFilter",
+            "CloudWatchMetricTransformation",
+            "CloudWatchLogSubscriptionFilter",
+            "CloudWatchAlarm",
+            "MetricDimension",
+            "CloudWatchCompositeAlarm",
+            "CloudWatchDashboard",
+            "StepFunctionStateMachine",
+            "AslDocument",
+            "AslState",
+            "AslBranch",
+            "AslMapConfig",
+            "AslRetryRule",
+            "AslCatchRule",
+            "AslChoiceRule",
+            "StepFunctionLoggingConfig",
+            "StepFunctionTracingConfig",
+            "SamStateMachineEvent"
+          ],
+          "durationEstimate": "2h"
+        }
+      ]
+    },
+    {
+      "id": "psm.p11.integration-views-readiness",
+      "name": "Integration Views & Readiness",
+      "viewpoint": "readiness",
+      "primaryRole": "process-reviewer",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "psm.p11.integration-views-readiness.main",
+          "name": "Integration Views & Readiness",
+          "primaryRole": "process-reviewer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eClass": "AwsTag",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ResourceImport",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "NativeProperty",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "AwsRelationshipView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ApiGatewayLambdaIntegrationView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "EventBridgeLambdaTargetView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SnsLambdaSubscriptionView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "SqsLambdaEventSourceView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "StepFunctionEventBridgeTargetView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3LambdaNotificationView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3QueueNotificationView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "S3TopicNotificationView",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "TraceModel",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "TraceLink",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "TransformationAssumption",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ProductionReadinessAssessment",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ReadinessFinding",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ReadinessCheck",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eClass": "ManualDecision",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "EventBridgeHttpMethod",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "EventBridgeTargetKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "EventBridgeConnectionAuthorizationType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SqsQueueType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SnsProtocol",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SnsFilterPolicyScope",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "StepFunctionType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "AslStateType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbBillingMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbAttributeType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbKeyType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbProjectionType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbStreamViewType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbTableClass",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "S3VersioningStatus",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "S3BlockPublicAccessMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "CognitoMfaConfiguration",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "IamEffect",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ParameterType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SsmParameterTier",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ValueSourceKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ValueType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "CloudWatchComparisonOperator",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LogGroupClass",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SamCapability",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Create integration relationship views.",
+            "Complete trace and readiness closure.",
+            "Pass PSM EVL before M2T generation."
+          ],
+          "entryCriteria": ["Workflow and observability complete"],
+          "exitCriteria": ["PSM EVL passes; readiness gate approved"],
+          "validationRules": ["psm-semantic-validation"],
+          "viewpoint": "readiness",
+          "paletteFocus": [
+            "AwsTag",
+            "ResourceImport",
+            "NativeProperty",
+            "AwsRelationshipView",
+            "ApiGatewayLambdaIntegrationView",
+            "EventBridgeLambdaTargetView",
+            "SnsLambdaSubscriptionView",
+            "SqsLambdaEventSourceView",
+            "StepFunctionEventBridgeTargetView",
+            "S3LambdaNotificationView",
+            "S3QueueNotificationView",
+            "S3TopicNotificationView"
+          ],
+          "durationEstimate": "1-2h"
+        },
+        {
+          "id": "psm.p11.integration-views-readiness.enums",
+          "name": "Configure Integration Views & Readiness enumerations",
+          "primaryRole": "process-reviewer",
+          "workProducts": [
+            {
+              "metamodel": "psm",
+              "eEnum": "EventBridgeHttpMethod",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "EventBridgeTargetKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "EventBridgeConnectionAuthorizationType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SqsQueueType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SnsProtocol",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SnsFilterPolicyScope",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "StepFunctionType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "AslStateType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbBillingMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbAttributeType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbKeyType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbProjectionType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbStreamViewType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "DynamoDbTableClass",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "S3VersioningStatus",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "S3BlockPublicAccessMode",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "CognitoMfaConfiguration",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "IamEffect",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ParameterType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SsmParameterTier",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ValueSourceKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "ValueType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "CloudWatchComparisonOperator",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "LogGroupClass",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "psm",
+              "eEnum": "SamCapability",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Review and set values for: EventBridgeHttpMethod, EventBridgeTargetKind, EventBridgeConnectionAuthorizationType, SqsQueueType, SnsProtocol, SnsFilterPolicyScope, StepFunctionType, AslStateType, DynamoDbBillingMode, DynamoDbAttributeType, DynamoDbKeyType, DynamoDbProjectionType, DynamoDbStreamViewType, DynamoDbTableClass, S3VersioningStatus, S3BlockPublicAccessMode, CognitoMfaConfiguration, IamEffect, ParameterType, SsmParameterTier, ValueSourceKind, ValueType, CloudWatchComparisonOperator, LogGroupClass, SamCapability"
+          ],
+          "entryCriteria": ["Workflow and observability complete"],
+          "exitCriteria": ["Enumeration literals aligned with domain"],
+          "validationRules": [],
+          "viewpoint": "readiness",
+          "paletteFocus": [],
+          "durationEstimate": "15m"
+        }
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "psm.m1.evl-gate",
+      "name": "PSM EVL validation gate",
+      "phaseId": "psm.p11.integration-views-readiness"
+    }
+  ]
+}

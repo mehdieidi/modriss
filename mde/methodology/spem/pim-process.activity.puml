@@ -1,0 +1,23 @@
+@startuml pim-process
+title PIM Modeling Process (12 Phases)
+start
+:Phase 0 — Architecture Posture;
+:Phase 1 — Service Boundaries;
+:Phase 2 — Contracts & Schemas;
+:Phase 3 — Data Architecture;
+:Phase 4 — Compute Units;
+:Phase 5 — API Surface;
+:Phase 6 — Integration Topology;
+:Phase 7 — Workflow Orchestration;
+:Phase 8 — Security & Identity;
+:Phase 9 — Architecture Policies;
+:Phase 10 — External & Config;
+:Phase 11 — Platform Mapping & Readiness;
+if (PIM EVL pass?) then (yes)
+  :PIM→PSM ETL gate;
+  stop
+else (no)
+  :Refine model;
+  backward :Phase 11;
+endif
+@enduml

@@ -4,12 +4,30 @@
     "enabled": true,
     "candidateType": "BoundedContextCandidate",
     "membershipFeatures": [
-      { "sourceType": "BusinessCapability", "feature": "capabilities" },
-      { "sourceType": "DomainEntity", "feature": "entities" },
-      { "sourceType": "Command", "feature": "commands" },
-      { "sourceType": "Query", "feature": "queries" },
-      { "sourceType": "BusinessEvent", "feature": "events" },
-      { "sourceType": "Policy", "feature": "policies" }
+      {
+        "sourceType": "BusinessCapability",
+        "feature": "capabilities"
+      },
+      {
+        "sourceType": "DomainEntity",
+        "feature": "entities"
+      },
+      {
+        "sourceType": "Command",
+        "feature": "commands"
+      },
+      {
+        "sourceType": "Query",
+        "feature": "queries"
+      },
+      {
+        "sourceType": "BusinessEvent",
+        "feature": "events"
+      },
+      {
+        "sourceType": "Policy",
+        "feature": "policies"
+      }
     ]
   },
   "elementVisualDefaults": {
@@ -23,24 +41,76 @@
     }
   },
   "notationPrimitives": {
-    "command-lozenge": { "geometry": "hexagon", "cornerRadius": 0 },
-    "query-trapezoid": { "geometry": "trapezoid", "cornerRadius": 0 },
-    "event-hexagon": { "geometry": "hexagon", "cornerRadius": 0 },
-    "error-octagon": { "geometry": "octagon", "cornerRadius": 0 },
-    "condition-diamond": { "geometry": "diamond", "cornerRadius": 0 },
-    "decision-diamond": { "geometry": "diamond", "cornerRadius": 0 },
-    "start-circle": { "geometry": "ellipse", "cornerRadius": 0 },
-    "end-double-circle": { "geometry": "ellipse", "cornerRadius": 0 }
+    "command-lozenge": {
+      "geometry": "hexagon",
+      "cornerRadius": 0
+    },
+    "query-trapezoid": {
+      "geometry": "trapezoid",
+      "cornerRadius": 0
+    },
+    "event-hexagon": {
+      "geometry": "hexagon",
+      "cornerRadius": 0
+    },
+    "error-octagon": {
+      "geometry": "octagon",
+      "cornerRadius": 0
+    },
+    "condition-diamond": {
+      "geometry": "diamond",
+      "cornerRadius": 0
+    },
+    "decision-diamond": {
+      "geometry": "diamond",
+      "cornerRadius": 0
+    },
+    "start-circle": {
+      "geometry": "ellipse",
+      "cornerRadius": 0
+    },
+    "end-double-circle": {
+      "geometry": "ellipse",
+      "cornerRadius": 0
+    }
   },
   "badgeRules": [
-    { "field": "lifecycleStatus", "useValue": true },
-    { "field": "priority", "useValue": true },
-    { "field": "severity", "useValue": true },
-    { "field": "criticality", "useValue": true },
-    { "field": "mandatory", "label": "mandatory", "when": true },
-    { "field": "productionBlocking", "label": "blocking", "when": true },
-    { "field": "blocksTransformation", "label": "blocking", "when": true },
-    { "field": "generatedByTransformation", "label": "generated", "when": true }
+    {
+      "field": "lifecycleStatus",
+      "useValue": true
+    },
+    {
+      "field": "priority",
+      "useValue": true
+    },
+    {
+      "field": "severity",
+      "useValue": true
+    },
+    {
+      "field": "criticality",
+      "useValue": true
+    },
+    {
+      "field": "mandatory",
+      "label": "mandatory",
+      "when": true
+    },
+    {
+      "field": "productionBlocking",
+      "label": "blocking",
+      "when": true
+    },
+    {
+      "field": "blocksTransformation",
+      "label": "blocking",
+      "when": true
+    },
+    {
+      "field": "generatedByTransformation",
+      "label": "generated",
+      "when": true
+    }
   ],
   "elementVisualRules": [
     {
@@ -332,9 +402,18 @@
   ],
   "canvasPolicy": {
     "roleSizes": {
-      "node": { "width": 228, "height": 112 },
-      "container": { "width": 316, "height": 168 },
-      "detail": { "width": 228, "height": 84 }
+      "node": {
+        "width": 228,
+        "height": 112
+      },
+      "container": {
+        "width": 316,
+        "height": 168
+      },
+      "detail": {
+        "width": 228,
+        "height": 84
+      }
     },
     "lowDetailBelow": 0.42,
     "highDetailAtOrAbove": 1.35,
@@ -952,7 +1031,10 @@
       "rootFeature": "requirementRelationships",
       "sourceFeature": "source",
       "targetFeature": "target",
-      "defaults": { "blocking": false, "rationale": "" }
+      "defaults": {
+        "blocking": false,
+        "rationale": ""
+      }
     },
     {
       "eClass": "DomainRelationship",
@@ -962,7 +1044,9 @@
       "rootFeature": "relationships",
       "sourceFeature": "source",
       "targetFeature": "target",
-      "defaults": { "relationshipType": "ASSOCIATION" }
+      "defaults": {
+        "relationshipType": "ASSOCIATION"
+      }
     },
     {
       "eClass": "CapabilityDependency",
@@ -972,7 +1056,10 @@
       "rootFeature": "capabilityDependencies",
       "sourceFeature": "source",
       "targetFeature": "target",
-      "defaults": { "dependencyReason": "", "criticalPath": false }
+      "defaults": {
+        "dependencyReason": "",
+        "criticalPath": false
+      }
     },
     {
       "eClass": "ProcessTransition",
@@ -982,7 +1069,11 @@
       "rootFeature": "transitions",
       "sourceFeature": "source",
       "targetFeature": "target",
-      "defaults": { "label": "", "conditionExpression": "", "orderIndex": 0 }
+      "defaults": {
+        "label": "",
+        "conditionExpression": "",
+        "orderIndex": 0
+      }
     },
     {
       "eClass": "TraceLink",
@@ -993,7 +1084,10 @@
       "ownerType": "TraceModel",
       "sourceFeature": "source",
       "targetFeature": "target",
-      "defaults": { "linkType": "OTHER", "confidence": "" }
+      "defaults": {
+        "linkType": "OTHER",
+        "confidence": ""
+      }
     }
   ],
   "rootTemplate": {
@@ -1086,7 +1180,9 @@
         "tag": "GOAL",
         "shape": "goal-card",
         "lineFields": ["priority", "successCriterion", "businessValue"]
-      }
+      },
+      "processPhaseId": "cim.p1.strategic-intent",
+      "processTaskIds": ["cim.p1.strategic-intent.main"]
     },
     {
       "type": "Objective",
@@ -1108,7 +1204,9 @@
         "tag": "KPI",
         "shape": "metric-card",
         "lineFields": ["metricName", "operator", "targetValue", "unit"]
-      }
+      },
+      "processPhaseId": "cim.p1.strategic-intent",
+      "processTaskIds": ["cim.p1.strategic-intent.main"]
     },
     {
       "type": "StakeholderConcern",
@@ -1130,7 +1228,9 @@
         "tag": "ACT",
         "shape": "participant-card",
         "lineFields": ["actorType", "trustLevel", "authenticationExpectation"]
-      }
+      },
+      "processPhaseId": "cim.p2.actors-boundaries",
+      "processTaskIds": ["cim.p2.actors-boundaries.main"]
     },
     {
       "type": "Role",
@@ -1143,7 +1243,9 @@
         "tag": "ROLE",
         "shape": "role-badge-card",
         "lineFields": ["roleType", "authorizationScope"]
-      }
+      },
+      "processPhaseId": "cim.p2.actors-boundaries",
+      "processTaskIds": ["cim.p2.actors-boundaries.main"]
     },
     {
       "type": "Persona",
@@ -1165,7 +1267,9 @@
         "tag": "EXT",
         "shape": "external-boundary",
         "lineFields": ["systemType", "trustLevel", "integrationExpectation"]
-      }
+      },
+      "processPhaseId": "cim.p2.actors-boundaries",
+      "processTaskIds": ["cim.p2.actors-boundaries.main"]
     },
     {
       "type": "BusinessCapability",
@@ -1178,7 +1282,9 @@
         "tag": "CAP",
         "shape": "capability-container",
         "lineFields": ["criticality", "maturity", "businessValue"]
-      }
+      },
+      "processPhaseId": "cim.p3.capability-landscape",
+      "processTaskIds": ["cim.p3.capability-landscape.main"]
     },
     {
       "type": "CapabilityDependency",
@@ -1193,7 +1299,9 @@
         "lineFields": ["dependencyType", "criticalPath", "rationale"]
       },
       "relationshipElement": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "cim.p3.capability-landscape",
+      "processTaskIds": ["cim.p3.capability-landscape.main"]
     },
     {
       "type": "BoundedContextCandidate",
@@ -1206,7 +1314,9 @@
         "tag": "CTX",
         "shape": "context-container",
         "lineFields": ["boundaryRationale", "ownershipBoundary", "languageBoundary"]
-      }
+      },
+      "processPhaseId": "cim.p10.bounded-context-synthesis",
+      "processTaskIds": ["cim.p10.bounded-context-synthesis.main"]
     },
     {
       "type": "AggregateCandidate",
@@ -1219,7 +1329,9 @@
         "tag": "AGG",
         "shape": "aggregate-container",
         "lineFields": ["consistencyBoundaryRationale", "transactionBoundary", "root"]
-      }
+      },
+      "processPhaseId": "cim.p8.aggregate-boundaries",
+      "processTaskIds": ["cim.p8.aggregate-boundaries.main"]
     },
     {
       "type": "Command",
@@ -1232,7 +1344,9 @@
         "tag": "CMD",
         "shape": "command-lozenge",
         "lineFields": ["intent", "commandType", "priority", "idempotencyBusinessKey"]
-      }
+      },
+      "processPhaseId": "cim.p7.behavior-surface",
+      "processTaskIds": ["cim.p7.behavior-surface.main"]
     },
     {
       "type": "Query",
@@ -1245,7 +1359,9 @@
         "tag": "QRY",
         "shape": "query-trapezoid",
         "lineFields": ["intent", "queryType", "freshnessNeed", "confidentiality"]
-      }
+      },
+      "processPhaseId": "cim.p7.behavior-surface",
+      "processTaskIds": ["cim.p7.behavior-surface.main"]
     },
     {
       "type": "BusinessEvent",
@@ -1258,7 +1374,9 @@
         "tag": "EVT",
         "shape": "event-hexagon",
         "lineFields": ["semanticName", "occurredInPastTenseName", "semanticVersion"]
-      }
+      },
+      "processPhaseId": "cim.p7.behavior-surface",
+      "processTaskIds": ["cim.p7.behavior-surface.main"]
     },
     {
       "type": "BusinessProcess",
@@ -1271,7 +1389,9 @@
         "tag": "PROC",
         "shape": "process-container",
         "lineFields": ["processKind", "criticality", "longRunning"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "ProcessStep",
@@ -1286,7 +1406,9 @@
         "lineFields": ["stepKind", "responsibility", "orderIndex"]
       },
       "supportOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "Decision",
@@ -1326,7 +1448,9 @@
         "tag": "EXC",
         "shape": "exception-row",
         "lineFields": ["scenario", "businessImpact", "recoverable"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "TemporalConstraint",
@@ -1339,7 +1463,9 @@
         "tag": "TIME",
         "shape": "clock-badge-card",
         "lineFields": ["deadlineExpression", "durationExpression", "violationSeverity"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "Policy",
@@ -1352,7 +1478,9 @@
         "tag": "POL",
         "shape": "policy-card",
         "lineFields": ["policyType", "enforcementStrength", "violationSeverity"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "DomainEntity",
@@ -1365,7 +1493,9 @@
         "tag": "ENT",
         "shape": "class-card",
         "lineFields": ["businessName", "identityDescription", "lifecycleDescription"]
-      }
+      },
+      "processPhaseId": "cim.p6.domain-structure",
+      "processTaskIds": ["cim.p6.domain-structure.main"]
     },
     {
       "type": "ValueObject",
@@ -1378,7 +1508,9 @@
         "tag": "VO",
         "shape": "value-object-card",
         "lineFields": ["businessName", "valueType", "validationRule"]
-      }
+      },
+      "processPhaseId": "cim.p6.domain-structure",
+      "processTaskIds": ["cim.p6.domain-structure.main"]
     },
     {
       "type": "DomainRelationship",
@@ -1392,7 +1524,9 @@
         "shape": "relationship-edge",
         "lineFields": ["relationshipType", "sourceRole", "targetRole"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "cim.p6.domain-structure",
+      "processTaskIds": ["cim.p6.domain-structure.main"]
     },
     {
       "type": "InformationItem",
@@ -1405,7 +1539,9 @@
         "tag": "INFO",
         "shape": "field-row",
         "lineFields": ["businessName", "dataType", "required", "personalData"]
-      }
+      },
+      "processPhaseId": "cim.p5.information-taxonomy",
+      "processTaskIds": ["cim.p5.information-taxonomy.main"]
     },
     {
       "type": "DataClassification",
@@ -1418,7 +1554,9 @@
         "tag": "CLASS",
         "shape": "classification-badge",
         "lineFields": ["kind", "identifiability", "confidentialityLevel"]
-      }
+      },
+      "processPhaseId": "cim.p5.information-taxonomy",
+      "processTaskIds": ["cim.p5.information-taxonomy.main"]
     },
     {
       "type": "ConsentRequirement",
@@ -1440,7 +1578,9 @@
         "tag": "NFR",
         "shape": "constraint-card",
         "lineFields": ["qualityType", "metric", "target"]
-      }
+      },
+      "processPhaseId": "cim.p11.requirements-governance",
+      "processTaskIds": ["cim.p11.requirements-governance.main"]
     },
     {
       "type": "QualityScenario",
@@ -1454,7 +1594,9 @@
         "shape": "quality-scenario-row",
         "lineFields": ["qualityType", "source", "stimulus", "responseMeasure"]
       },
-      "containedOnly": true
+      "containedOnly": true,
+      "processPhaseId": "cim.p11.requirements-governance",
+      "processTaskIds": ["cim.p11.requirements-governance.main"]
     },
     {
       "type": "SecurityConstraint",
@@ -1467,7 +1609,9 @@
         "tag": "SEC",
         "shape": "security-badge-card",
         "lineFields": ["authenticationNeed", "authorizationRule", "auditAccessRequired"]
-      }
+      },
+      "processPhaseId": "cim.p11.requirements-governance",
+      "processTaskIds": ["cim.p11.requirements-governance.main"]
     },
     {
       "type": "PrivacyConstraint",
@@ -1480,7 +1624,9 @@
         "tag": "PII",
         "shape": "privacy-badge-card",
         "lineFields": ["law", "jurisdiction", "legalBasis", "retentionPeriod"]
-      }
+      },
+      "processPhaseId": "cim.p11.requirements-governance",
+      "processTaskIds": ["cim.p11.requirements-governance.main"]
     },
     {
       "type": "RegulatoryConstraint",
@@ -1502,7 +1648,9 @@
         "tag": "?",
         "shape": "question-pin",
         "lineFields": ["question", "impact", "blocksTransformation"]
-      }
+      },
+      "processPhaseId": "cim.p12.transformation-contracts",
+      "processTaskIds": ["cim.p12.transformation-contracts.main"]
     },
     {
       "type": "OpenQuestion",
@@ -1524,7 +1672,9 @@
         "tag": "RISK",
         "shape": "risk-triangle-card",
         "lineFields": ["riskStatement", "probability", "impact"]
-      }
+      },
+      "processPhaseId": "cim.p12.transformation-contracts",
+      "processTaskIds": ["cim.p12.transformation-contracts.main"]
     },
     {
       "type": "RequirementLink",
@@ -1555,7 +1705,9 @@
         "tag": "ASM",
         "shape": "assumption-note",
         "lineFields": ["assumptionStatement", "accepted", "businessArea"]
-      }
+      },
+      "processPhaseId": "cim.p12.transformation-contracts",
+      "processTaskIds": ["cim.p12.transformation-contracts.main"]
     },
     {
       "type": "CIMModel",
@@ -1569,7 +1721,9 @@
         "shape": "workspace-container",
         "lineFields": ["domainName", "businessScope", "organizationName"]
       },
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "cim.p0.model-context",
+      "processTaskIds": ["cim.p0.model-context.main"]
     },
     {
       "type": "Requirement",
@@ -1582,7 +1736,9 @@
         "tag": "REQ",
         "shape": "requirement-card",
         "lineFields": ["requirementType", "priority", "fitCriterion"]
-      }
+      },
+      "processPhaseId": "cim.p11.requirements-governance",
+      "processTaskIds": ["cim.p11.requirements-governance.main"]
     },
     {
       "type": "RequirementRelationship",
@@ -1597,7 +1753,9 @@
         "lineFields": ["kind", "blocking", "rationale"]
       },
       "relationshipElement": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "cim.p11.requirements-governance",
+      "processTaskIds": ["cim.p11.requirements-governance.main"]
     },
     {
       "type": "AcceptanceCriterion",
@@ -1611,7 +1769,9 @@
         "shape": "checklist-row",
         "lineFields": ["givenContext", "whenAction", "thenOutcome", "measurableTarget"]
       },
-      "containedOnly": true
+      "containedOnly": true,
+      "processPhaseId": "cim.p11.requirements-governance",
+      "processTaskIds": ["cim.p11.requirements-governance.main"]
     },
     {
       "type": "Stakeholder",
@@ -1624,7 +1784,9 @@
         "tag": "STK",
         "shape": "participant-card",
         "lineFields": ["stakeholderType", "concern", "influence"]
-      }
+      },
+      "processPhaseId": "cim.p1.strategic-intent",
+      "processTaskIds": ["cim.p1.strategic-intent.main"]
     },
     {
       "type": "UbiquitousLanguageTerm",
@@ -1638,7 +1800,9 @@
         "shape": "glossary-row",
         "lineFields": ["term", "definition", "aliases"]
       },
-      "containedOnly": true
+      "containedOnly": true,
+      "processPhaseId": "cim.p4.ubiquitous-language",
+      "processTaskIds": ["cim.p4.ubiquitous-language.main"]
     },
     {
       "type": "DomainConcept",
@@ -1653,7 +1817,9 @@
         "lineFields": ["businessName", "definition"]
       },
       "supportOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "cim.p0.model-context",
+      "processTaskIds": ["cim.p0.model-context.main"]
     },
     {
       "type": "LifecycleStateDefinition",
@@ -1667,7 +1833,9 @@
         "shape": "state-node",
         "lineFields": ["stateName", "terminal", "initial"]
       },
-      "containedOnly": true
+      "containedOnly": true,
+      "processPhaseId": "cim.p6.domain-structure",
+      "processTaskIds": ["cim.p6.domain-structure.main"]
     },
     {
       "type": "BusinessInvariant",
@@ -1680,7 +1848,9 @@
         "tag": "INV",
         "shape": "constraint-note",
         "lineFields": ["naturalLanguage", "severity", "automatable"]
-      }
+      },
+      "processPhaseId": "cim.p6.domain-structure",
+      "processTaskIds": ["cim.p6.domain-structure.main"]
     },
     {
       "type": "CommandOutcome",
@@ -1694,7 +1864,9 @@
         "shape": "outcome-row",
         "lineFields": ["success", "resultDescription"]
       },
-      "containedOnly": true
+      "containedOnly": true,
+      "processPhaseId": "cim.p7.behavior-surface",
+      "processTaskIds": ["cim.p7.behavior-surface.main"]
     },
     {
       "type": "BusinessError",
@@ -1707,7 +1879,9 @@
         "tag": "ERR",
         "shape": "error-octagon",
         "lineFields": ["errorCode", "businessMeaning", "recoverable"]
-      }
+      },
+      "processPhaseId": "cim.p7.behavior-surface",
+      "processTaskIds": ["cim.p7.behavior-surface.main"]
     },
     {
       "type": "Condition",
@@ -1720,7 +1894,9 @@
         "tag": "COND",
         "shape": "condition-diamond",
         "lineFields": ["naturalLanguage", "expressionLanguage", "mustBeAutomatable"]
-      }
+      },
+      "processPhaseId": "cim.p7.behavior-surface",
+      "processTaskIds": ["cim.p7.behavior-surface.main"]
     },
     {
       "type": "StartStep",
@@ -1733,7 +1909,9 @@
         "tag": "START",
         "shape": "start-circle",
         "lineFields": ["orderIndex"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "EndStep",
@@ -1746,7 +1924,9 @@
         "tag": "END",
         "shape": "end-double-circle",
         "lineFields": ["orderIndex"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "CommandStep",
@@ -1759,7 +1939,9 @@
         "tag": "CMD",
         "shape": "process-command-step",
         "lineFields": ["stepKind", "command", "responsibility"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "QueryStep",
@@ -1772,7 +1954,9 @@
         "tag": "QRY",
         "shape": "process-query-step",
         "lineFields": ["stepKind", "query", "responsibility"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "EventStep",
@@ -1785,7 +1969,9 @@
         "tag": "EVT",
         "shape": "process-event-step",
         "lineFields": ["stepKind", "event", "responsibility"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "PolicyStep",
@@ -1798,7 +1984,9 @@
         "tag": "RULE",
         "shape": "process-policy-step",
         "lineFields": ["stepKind", "policy", "responsibility"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "HumanTaskStep",
@@ -1811,7 +1999,9 @@
         "tag": "TASK",
         "shape": "human-task-card",
         "lineFields": ["taskDescription", "completionEvidence", "responsibility"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "ExternalInteractionStep",
@@ -1824,7 +2014,9 @@
         "tag": "EXT",
         "shape": "external-task-card",
         "lineFields": ["interactionPurpose", "externalSystem"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "DecisionStep",
@@ -1837,7 +2029,9 @@
         "tag": "DEC",
         "shape": "decision-diamond",
         "lineFields": ["condition", "decisionTable"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "WaitStep",
@@ -1850,7 +2044,9 @@
         "tag": "WAIT",
         "shape": "timer-node",
         "lineFields": ["waitReason", "durationExpression"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "ProcessTransition",
@@ -1865,7 +2061,9 @@
         "lineFields": ["label", "conditionExpression", "probabilityHint"]
       },
       "relationshipElement": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "DecisionTable",
@@ -1878,7 +2076,9 @@
         "tag": "TABLE",
         "shape": "decision-table",
         "lineFields": ["hitPolicy", "defaultOutcome", "complete"]
-      }
+      },
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "DecisionRule",
@@ -1892,7 +2092,9 @@
         "shape": "decision-rule-row",
         "lineFields": ["priorityOrder", "condition", "outcome"]
       },
-      "containedOnly": true
+      "containedOnly": true,
+      "processPhaseId": "cim.p9.process-decisions",
+      "processTaskIds": ["cim.p9.process-decisions.main"]
     },
     {
       "type": "ComplianceConstraint",
@@ -1905,7 +2107,9 @@
         "tag": "COMP",
         "shape": "compliance-card",
         "lineFields": ["regulation", "controlId", "auditFrequency"]
-      }
+      },
+      "processPhaseId": "cim.p11.requirements-governance",
+      "processTaskIds": ["cim.p11.requirements-governance.main"]
     },
     {
       "type": "TransformationProfile",
@@ -1918,7 +2122,9 @@
         "tag": "XFORM",
         "shape": "settings-panel",
         "lineFields": ["preferCapabilityAsServiceBoundary", "preferEventDrivenCollaboration"]
-      }
+      },
+      "processPhaseId": "cim.p12.transformation-contracts",
+      "processTaskIds": ["cim.p12.transformation-contracts.main"]
     }
   ]
 }

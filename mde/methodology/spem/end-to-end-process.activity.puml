@@ -1,0 +1,31 @@
+@startuml end-to-end-process
+title End-to-End CIM → Artifacts Lifecycle
+|Business Modeler|
+start
+:CIM 14 phases;
+|Process Reviewer|
+if (CIM EVL?) then (pass)
+  |Solution Architect|
+  :CIM→PIM ETL;
+  :PIM 12 phases refine;
+else (fail)
+  stop
+endif
+|Process Reviewer|
+if (PIM EVL?) then (pass)
+  |Cloud Platform Engineer|
+  :PIM→PSM ETL;
+  :PSM 11 phases refine;
+else (fail)
+  stop
+endif
+|Process Reviewer|
+if (PSM EVL?) then (pass)
+  |Cloud Platform Engineer|
+  :M2T generation;
+  :Artifact completion;
+  stop
+else (fail)
+  stop
+endif
+@enduml

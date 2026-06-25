@@ -293,3 +293,30 @@ These prompts are especially useful after selecting one or more canvas elements.
 - Select relevant canvas elements before asking for a narrowly scoped change.
 - Review proposed changes and use the approval action or an approval message such as
   `Apply the proposal`.
+
+## Guided Modeling Task Prompts
+
+Use these when the **Guided Modeling** panel is active. Each prompt maps to a process task ID
+from `mde/methodology/process-definitions/`.
+
+### CIM phases
+
+- **cim.p5.information-taxonomy:** Create `DataClassification` and `InformationItem` elements for every planned entity before adding `DomainEntity` (CIM-ENTITY-001).
+- **cim.p6.domain-structure:** Model `DomainEntity`, `ValueObject`, and `DomainRelationship` elements using the information taxonomy from phase 5.
+- **cim.p7.behavior-surface:** Add `Command`, `Query`, and `BusinessEvent` elements for the primary use cases; link them to actors and capabilities.
+- **cim.p10.bounded-context-synthesis:** Group existing capabilities, entities, commands, queries, events, and policies into `BoundedContextCandidate` elements.
+- **cim.p11.requirements-governance:** Backfill `Requirement` elements with `constrains` links to modeled domain and behavior elements.
+- **cim.p13.traceability-readiness:** Complete `TraceModel` links and resolve all blocking `ReadinessFinding` items before CIM→PIM transform.
+
+### PIM phases
+
+- **pim.p1.service-boundaries:** Define `ServerlessService` boundaries aligned to CIM bounded contexts.
+- **pim.p4.compute-units:** Create `Function` and `FunctionContract` elements for each command/query handler.
+- **pim.p6.integration-topology:** Model `EventChannel`, `Flow`, and routing rules for async integration.
+- **pim.p11.platform-mapping-readiness:** Complete `PlatformMappingAssessment` and pass PIM EVL before PIM→PSM transform.
+
+### PSM phases
+
+- **psm.p2.security-baseline:** Establish `AwsSecurityBaseline`, IAM roles/policies, KMS, and Secrets Manager resources.
+- **psm.p8.compute:** Deploy `AwsLambdaFunction` resources with event source mappings matching PIM functions.
+- **psm.p11.integration-views-readiness:** Create `AwsRelationshipView` subtypes and close readiness before M2T generation.

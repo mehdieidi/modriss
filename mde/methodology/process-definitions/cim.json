@@ -1,0 +1,1248 @@
+{
+  "processId": "modless.cim.modeling",
+  "spemVersion": "2.0",
+  "level": "cim",
+  "displayName": "CIM",
+  "roles": [
+    {
+      "id": "business-modeler",
+      "name": "Business Modeler",
+      "responsibilities": ["Intent, domain, behavior, process, transformation contracts"]
+    },
+    {
+      "id": "requirements-engineer",
+      "name": "Requirements Engineer",
+      "responsibilities": ["Requirements, acceptance criteria, governance constraints"]
+    },
+    {
+      "id": "process-reviewer",
+      "name": "Process Reviewer",
+      "responsibilities": ["EVL gate approval, readiness sign-off"]
+    },
+    {
+      "id": "method-engineer",
+      "name": "Method Engineer",
+      "responsibilities": ["Maintains methodology when metamodels change"]
+    }
+  ],
+  "phases": [
+    {
+      "id": "cim.p0.model-context",
+      "name": "Model Context",
+      "viewpoint": "dashboard",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "30m",
+      "tasks": [
+        {
+          "id": "cim.p0.model-context.main",
+          "name": "Model Context",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "CIMModel",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "DomainConcept",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "DeployableElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "InvocationSource",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "InvocationTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "FunctionTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "WorkflowTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "SubscriptionTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "RoutingTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "FlowEndpoint",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ProtectedResource",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "PolicyTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "DataAccessTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ExternalCallTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "EnvironmentTarget",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "CredentialRequirementLike",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "RouteEndpoint",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "EventCarrier",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ConfigurableElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "KeyValue",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Annotation",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ModelElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "NamedModelElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "TraceableElement",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "SemanticRelationship",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Multiplicity",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Cardinality",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Expression",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "StructuredDocument",
+              "cardinality": "0..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "Severity",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ConstraintStrength",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "LifecycleStatus",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "TraceConfidence",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "TraceLinkType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "FindingType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "StructuredFormat",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ExpressionLanguage",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ExpressionPhase",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Create the CIMModel root with domain name and business scope.",
+            "Set modeling date, language, and organization metadata.",
+            "Review lifecycle status and annotation conventions."
+          ],
+          "entryCriteria": ["Project created"],
+          "exitCriteria": ["CIMModel root exists with domainName"],
+          "validationRules": [],
+          "viewpoint": "dashboard",
+          "paletteFocus": ["CIMModel"],
+          "durationEstimate": "30m"
+        },
+        {
+          "id": "cim.p0.model-context.enums",
+          "name": "Configure Model Context enumerations",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eEnum": "Severity",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ConstraintStrength",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "LifecycleStatus",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "TraceConfidence",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "TraceLinkType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "FindingType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "StructuredFormat",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ExpressionLanguage",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ExpressionPhase",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Review and set values for: Severity, ConstraintStrength, LifecycleStatus, TraceConfidence, TraceLinkType, FindingType, StructuredFormat, ExpressionLanguage, ExpressionPhase"
+          ],
+          "entryCriteria": ["Project created"],
+          "exitCriteria": ["Enumeration literals aligned with domain"],
+          "validationRules": [],
+          "viewpoint": "dashboard",
+          "paletteFocus": [],
+          "durationEstimate": "15m"
+        }
+      ]
+    },
+    {
+      "id": "cim.p1.strategic-intent",
+      "name": "Strategic Intent",
+      "viewpoint": "requirements",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "cim.p1.strategic-intent.main",
+          "name": "Strategic Intent",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "BusinessGoal",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "KPI",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Stakeholder",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "Priority",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Capture business goals with success criteria (GQM).",
+            "Define measurable KPIs linked to goals.",
+            "Identify stakeholders and their concerns."
+          ],
+          "entryCriteria": ["Model context established"],
+          "exitCriteria": ["At least one BusinessGoal with linked KPI"],
+          "validationRules": ["CIM-GOAL-001", "CIM-KPI-001"],
+          "viewpoint": "requirements",
+          "paletteFocus": ["BusinessGoal", "KPI", "Stakeholder"],
+          "durationEstimate": "1-2h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p2.actors-boundaries",
+      "name": "Actors & Boundaries",
+      "viewpoint": "actor",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "1h",
+      "tasks": [
+        {
+          "id": "cim.p2.actors-boundaries.main",
+          "name": "Actors & Boundaries",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "Actor",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Role",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ExternalSystem",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ActorType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "TrustLevel",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Model human and system actors with trust levels.",
+            "Define roles and authorization scope.",
+            "Register external systems at domain boundaries."
+          ],
+          "entryCriteria": ["Strategic intent captured"],
+          "exitCriteria": ["Actors defined for primary user journeys"],
+          "validationRules": [],
+          "viewpoint": "actor",
+          "paletteFocus": ["Actor", "Role", "ExternalSystem"],
+          "durationEstimate": "1h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p3.capability-landscape",
+      "name": "Capability Landscape",
+      "viewpoint": "capability",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "cim.p3.capability-landscape.main",
+          "name": "Capability Landscape",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "BusinessCapability",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "CapabilityDependency",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "CapabilityCriticality",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Map business capabilities to goals.",
+            "Record capability dependencies and criticality.",
+            "Prepare ownership boundaries before domain modeling."
+          ],
+          "entryCriteria": ["Actors and boundaries defined"],
+          "exitCriteria": ["Capability map covers core value streams"],
+          "validationRules": [],
+          "viewpoint": "capability",
+          "paletteFocus": ["BusinessCapability", "CapabilityDependency"],
+          "durationEstimate": "1-2h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p4.ubiquitous-language",
+      "name": "Ubiquitous Language",
+      "viewpoint": "capability",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "1h",
+      "tasks": [
+        {
+          "id": "cim.p4.ubiquitous-language.main",
+          "name": "Ubiquitous Language",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "UbiquitousLanguageTerm",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Define domain terms with definitions and examples.",
+            "Link terms to capabilities where helpful.",
+            "Resolve naming conflicts before structural modeling."
+          ],
+          "entryCriteria": ["Capability landscape drafted"],
+          "exitCriteria": ["Glossary covers core domain nouns"],
+          "validationRules": [],
+          "viewpoint": "capability",
+          "paletteFocus": ["UbiquitousLanguageTerm"],
+          "durationEstimate": "1h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p5.information-taxonomy",
+      "name": "Information Taxonomy",
+      "viewpoint": "domain",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "cim.p5.information-taxonomy.main",
+          "name": "Information Taxonomy",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "InformationItem",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "DataClassification",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "PrimitiveBusinessType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "IdentityStrategy",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "DataKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "Identifiability",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Define data classifications and confidentiality levels.",
+            "Create InformationItem elements before entities (CIM-ENTITY-001).",
+            "Set identifiability and data kind for each item."
+          ],
+          "entryCriteria": ["Ubiquitous language established"],
+          "exitCriteria": ["Information items exist for all planned entities"],
+          "validationRules": ["CIM-ENTITY-001"],
+          "viewpoint": "domain",
+          "paletteFocus": ["InformationItem", "DataClassification"],
+          "durationEstimate": "1-2h"
+        },
+        {
+          "id": "cim.p5.information-taxonomy.enums",
+          "name": "Configure Information Taxonomy enumerations",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eEnum": "PrimitiveBusinessType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "IdentityStrategy",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "DataKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "Identifiability",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Review and set values for: PrimitiveBusinessType, IdentityStrategy, DataKind, Identifiability"
+          ],
+          "entryCriteria": ["Ubiquitous language established"],
+          "exitCriteria": ["Enumeration literals aligned with domain"],
+          "validationRules": [],
+          "viewpoint": "domain",
+          "paletteFocus": [],
+          "durationEstimate": "15m"
+        }
+      ]
+    },
+    {
+      "id": "cim.p6.domain-structure",
+      "name": "Domain Structure",
+      "viewpoint": "domain",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "2-4h",
+      "tasks": [
+        {
+          "id": "cim.p6.domain-structure.main",
+          "name": "Domain Structure",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "DomainEntity",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ValueObject",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "DomainRelationship",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "LifecycleStateDefinition",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "BusinessInvariant",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "DomainRelationshipType",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Model entities with primary identity from InformationItem.",
+            "Add value objects and domain relationships.",
+            "Define lifecycle states and business invariants."
+          ],
+          "entryCriteria": ["Information taxonomy complete"],
+          "exitCriteria": ["Core aggregates' entities modeled"],
+          "validationRules": ["CIM-ENTITY-001", "CIM-RELATIONSHIP-001"],
+          "viewpoint": "domain",
+          "paletteFocus": [
+            "DomainEntity",
+            "ValueObject",
+            "DomainRelationship",
+            "LifecycleStateDefinition",
+            "BusinessInvariant"
+          ],
+          "durationEstimate": "2-4h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p7.behavior-surface",
+      "name": "Behavior Surface",
+      "viewpoint": "eventstorming",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "2-4h",
+      "tasks": [
+        {
+          "id": "cim.p7.behavior-surface.main",
+          "name": "Behavior Surface",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "Command",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "CommandOutcome",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Query",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "BusinessEvent",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "BusinessError",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Condition",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "CommandType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "QueryType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "FreshnessNeed",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "EventTimeSemantics",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Model commands, queries, and domain events.",
+            "Link behavior to actors, capabilities, and information items.",
+            "Define conditions, outcomes, and business errors."
+          ],
+          "entryCriteria": ["Domain structure drafted"],
+          "exitCriteria": ["CQRS surface covers primary use cases"],
+          "validationRules": [],
+          "viewpoint": "eventstorming",
+          "paletteFocus": [
+            "Command",
+            "CommandOutcome",
+            "Query",
+            "BusinessEvent",
+            "BusinessError",
+            "Condition"
+          ],
+          "durationEstimate": "2-4h"
+        },
+        {
+          "id": "cim.p7.behavior-surface.enums",
+          "name": "Configure Behavior Surface enumerations",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eEnum": "CommandType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "QueryType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "FreshnessNeed",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "EventTimeSemantics",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Review and set values for: CommandType, QueryType, FreshnessNeed, EventTimeSemantics"
+          ],
+          "entryCriteria": ["Domain structure drafted"],
+          "exitCriteria": ["Enumeration literals aligned with domain"],
+          "validationRules": [],
+          "viewpoint": "eventstorming",
+          "paletteFocus": [],
+          "durationEstimate": "15m"
+        }
+      ]
+    },
+    {
+      "id": "cim.p8.aggregate-boundaries",
+      "name": "Aggregate Boundaries",
+      "viewpoint": "aggregate",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "cim.p8.aggregate-boundaries.main",
+          "name": "Aggregate Boundaries",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "AggregateCandidate",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "InteractionExpectation",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ConsistencyExpectation",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Group entities into aggregate candidates.",
+            "Assign handled commands and emitted events.",
+            "Document consistency expectations."
+          ],
+          "entryCriteria": ["Behavior surface modeled"],
+          "exitCriteria": ["Aggregates align with command/event ownership"],
+          "validationRules": [],
+          "viewpoint": "aggregate",
+          "paletteFocus": ["AggregateCandidate"],
+          "durationEstimate": "1-2h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p9.process-decisions",
+      "name": "Process & Decisions",
+      "viewpoint": "process",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "2-3h",
+      "tasks": [
+        {
+          "id": "cim.p9.process-decisions.main",
+          "name": "Process & Decisions",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "BusinessProcess",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ProcessStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "StartStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "EndStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "CommandStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "QueryStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "EventStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "PolicyStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "HumanTaskStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ExternalInteractionStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "DecisionStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "WaitStep",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ProcessTransition",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Policy",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "DecisionTable",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "DecisionRule",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ExceptionScenario",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "TemporalConstraint",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "PolicyType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "ProcessKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "StepKind",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Model business processes with step hierarchy.",
+            "Add policies and decision tables.",
+            "Connect transitions to commands, events, and policies."
+          ],
+          "entryCriteria": ["Aggregates defined"],
+          "exitCriteria": ["Key processes orchestrate modeled behavior"],
+          "validationRules": [],
+          "viewpoint": "process",
+          "paletteFocus": [
+            "BusinessProcess",
+            "ProcessStep",
+            "StartStep",
+            "EndStep",
+            "CommandStep",
+            "QueryStep",
+            "EventStep",
+            "PolicyStep",
+            "HumanTaskStep",
+            "ExternalInteractionStep",
+            "DecisionStep",
+            "WaitStep",
+            "ProcessTransition",
+            "Policy",
+            "DecisionTable",
+            "DecisionRule",
+            "ExceptionScenario",
+            "TemporalConstraint"
+          ],
+          "durationEstimate": "2-3h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p10.bounded-context-synthesis",
+      "name": "Bounded Context Synthesis",
+      "viewpoint": "capability",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "cim.p10.bounded-context-synthesis.main",
+          "name": "Bounded Context Synthesis",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "BoundedContextCandidate",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Group capabilities, entities, CQRS, events, and policies into contexts.",
+            "Validate membership against modeled elements.",
+            "Document context boundaries and integration expectations."
+          ],
+          "entryCriteria": ["Process and behavior complete"],
+          "exitCriteria": ["Bounded contexts assigned with non-empty memberships"],
+          "validationRules": [],
+          "viewpoint": "capability",
+          "paletteFocus": ["BoundedContextCandidate"],
+          "durationEstimate": "1-2h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p11.requirements-governance",
+      "name": "Requirements & Governance",
+      "viewpoint": "governance",
+      "primaryRole": "requirements-engineer",
+      "durationEstimate": "2-3h",
+      "tasks": [
+        {
+          "id": "cim.p11.requirements-governance.main",
+          "name": "Requirements & Governance",
+          "primaryRole": "requirements-engineer",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "NonFunctionalRequirement",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "QualityScenario",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "SecurityConstraint",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "PrivacyConstraint",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ComplianceConstraint",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Requirement",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "RequirementRelationship",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "AcceptanceCriterion",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "RequirementType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "RequirementSourceType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "RequirementRelationshipKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "QualityType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "LegalBasis",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Backfill requirements with constrains links to domain and behavior.",
+            "Add acceptance criteria and NFR quality scenarios.",
+            "Record security, privacy, and compliance constraints."
+          ],
+          "entryCriteria": ["Bounded contexts synthesized"],
+          "exitCriteria": ["Requirements trace to goals and modeled elements"],
+          "validationRules": [],
+          "viewpoint": "governance",
+          "paletteFocus": [
+            "NonFunctionalRequirement",
+            "QualityScenario",
+            "SecurityConstraint",
+            "PrivacyConstraint",
+            "ComplianceConstraint",
+            "Requirement",
+            "RequirementRelationship",
+            "AcceptanceCriterion"
+          ],
+          "durationEstimate": "2-3h"
+        },
+        {
+          "id": "cim.p11.requirements-governance.enums",
+          "name": "Configure Requirements & Governance enumerations",
+          "primaryRole": "requirements-engineer",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eEnum": "RequirementType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "RequirementSourceType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "RequirementRelationshipKind",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "QualityType",
+              "cardinality": "enum-values"
+            },
+            {
+              "metamodel": "cim",
+              "eEnum": "LegalBasis",
+              "cardinality": "enum-values"
+            }
+          ],
+          "steps": [
+            "Review and set values for: RequirementType, RequirementSourceType, RequirementRelationshipKind, QualityType, LegalBasis"
+          ],
+          "entryCriteria": ["Bounded contexts synthesized"],
+          "exitCriteria": ["Enumeration literals aligned with domain"],
+          "validationRules": [],
+          "viewpoint": "governance",
+          "paletteFocus": [],
+          "durationEstimate": "15m"
+        }
+      ]
+    },
+    {
+      "id": "cim.p12.transformation-contracts",
+      "name": "Transformation Contracts",
+      "viewpoint": "traceability",
+      "primaryRole": "business-modeler",
+      "durationEstimate": "1h",
+      "tasks": [
+        {
+          "id": "cim.p12.transformation-contracts.main",
+          "name": "Transformation Contracts",
+          "primaryRole": "business-modeler",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "Risk",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Assumption",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "Hotspot",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "TransformationProfile",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Record transformation risks, assumptions, and hotspots.",
+            "Define transformation profile for CIM→PIM.",
+            "Document manual decisions needed before transform."
+          ],
+          "entryCriteria": ["Requirements and governance captured"],
+          "exitCriteria": ["Transformation profile ready for ETL"],
+          "validationRules": [],
+          "viewpoint": "traceability",
+          "paletteFocus": ["Risk", "Assumption", "Hotspot", "TransformationProfile"],
+          "durationEstimate": "1h"
+        }
+      ]
+    },
+    {
+      "id": "cim.p13.traceability-readiness",
+      "name": "Traceability & Readiness",
+      "viewpoint": "traceability",
+      "primaryRole": "process-reviewer",
+      "durationEstimate": "1-2h",
+      "tasks": [
+        {
+          "id": "cim.p13.traceability-readiness.main",
+          "name": "Traceability & Readiness",
+          "primaryRole": "process-reviewer",
+          "workProducts": [
+            {
+              "metamodel": "cim",
+              "eClass": "TraceModel",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "TraceLink",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "TransformationAssumption",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ProductionReadinessAssessment",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ReadinessFinding",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ReadinessCheck",
+              "cardinality": "1..*"
+            },
+            {
+              "metamodel": "cim",
+              "eClass": "ManualDecision",
+              "cardinality": "1..*"
+            }
+          ],
+          "steps": [
+            "Build trace links across goals, requirements, and domain.",
+            "Complete production readiness assessment.",
+            "Resolve readiness findings before CIM→PIM transform."
+          ],
+          "entryCriteria": ["Transformation contracts recorded"],
+          "exitCriteria": ["CIM EVL passes; readiness gate approved"],
+          "validationRules": ["cim-semantic-validation"],
+          "viewpoint": "traceability",
+          "paletteFocus": [
+            "TraceModel",
+            "TraceLink",
+            "TransformationAssumption",
+            "ProductionReadinessAssessment",
+            "ReadinessFinding",
+            "ReadinessCheck",
+            "ManualDecision"
+          ],
+          "durationEstimate": "1-2h"
+        }
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "cim.m1.evl-gate",
+      "name": "CIM EVL validation gate",
+      "phaseId": "cim.p13.traceability-readiness"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+@startuml psm-process
+title AWS PSM Modeling Process (11 Phases)
+start
+:Phase 0 — Account & Stage Strategy;
+:Phase 1 — Stack Scaffolding;
+:Phase 2 — Security Baseline;
+:Phase 3 — Networking;
+:Phase 4 — Identity;
+:Phase 5 — Durable Storage;
+:Phase 6 — Messaging;
+:Phase 7 — Event Fabric;
+:Phase 8 — Compute;
+:Phase 9 — API Gateway;
+:Phase 10 — Workflow & Observability;
+:Phase 11 — Integration Views & Readiness;
+if (PSM EVL pass?) then (yes)
+  :M2T generation gate;
+  stop
+else (no)
+  :Refine resources;
+  backward :Phase 11;
+endif
+@enduml

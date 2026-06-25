@@ -103,6 +103,13 @@ export const state = {
   paletteDragType: "",
   paletteSearch: {},
   paletteGroupCollapsed: {},
+  leftPaneMode: "palette",
+  guidedModeling: {
+    definitions: {},
+    endToEnd: null,
+    progress: { completedTaskIds: [], activePhaseId: null },
+    loading: false,
+  },
   validation: {
     issues: [],
     inProgress: false,

@@ -11,18 +11,53 @@
     }
   },
   "notationPrimitives": {
-    "workflow-node": { "geometry": "rounded-rectangle", "cornerRadius": 18 },
-    "structured-property-row": { "geometry": "rectangle", "cornerRadius": 4 }
+    "workflow-node": {
+      "geometry": "rounded-rectangle",
+      "cornerRadius": 18
+    },
+    "structured-property-row": {
+      "geometry": "rectangle",
+      "cornerRadius": 4
+    }
   },
   "badgeRules": [
-    { "field": "lifecycleStatus", "useValue": true },
-    { "field": "deletionPolicy", "useValue": true },
-    { "field": "productionMode", "label": "production", "when": true },
-    { "field": "encryptionEnabled", "label": "encrypted", "when": true },
-    { "field": "tracingEnabled", "label": "tracing", "when": true },
-    { "field": "deletionProtectionEnabled", "label": "protected", "when": true },
-    { "field": "generated", "label": "generated", "when": true },
-    { "field": "severity", "useValue": true }
+    {
+      "field": "lifecycleStatus",
+      "useValue": true
+    },
+    {
+      "field": "deletionPolicy",
+      "useValue": true
+    },
+    {
+      "field": "productionMode",
+      "label": "production",
+      "when": true
+    },
+    {
+      "field": "encryptionEnabled",
+      "label": "encrypted",
+      "when": true
+    },
+    {
+      "field": "tracingEnabled",
+      "label": "tracing",
+      "when": true
+    },
+    {
+      "field": "deletionProtectionEnabled",
+      "label": "protected",
+      "when": true
+    },
+    {
+      "field": "generated",
+      "label": "generated",
+      "when": true
+    },
+    {
+      "field": "severity",
+      "useValue": true
+    }
   ],
   "elementVisualRules": [
     {
@@ -416,9 +451,18 @@
   ],
   "canvasPolicy": {
     "roleSizes": {
-      "node": { "width": 244, "height": 120 },
-      "container": { "width": 336, "height": 176 },
-      "detail": { "width": 244, "height": 88 }
+      "node": {
+        "width": 244,
+        "height": 120
+      },
+      "container": {
+        "width": 336,
+        "height": 176
+      },
+      "detail": {
+        "width": 244,
+        "height": 88
+      }
     },
     "lowDetailBelow": 0.32,
     "highDetailAtOrAbove": 1.55,
@@ -560,7 +604,11 @@
       "summaryKind": "INVOKES",
       "intermediateTypes": ["ApiGatewayIntegration"],
       "containmentBindings": [
-        { "type": "ApiGatewayIntegration", "owner": "stack", "feature": "resources" }
+        {
+          "type": "ApiGatewayIntegration",
+          "owner": "stack",
+          "feature": "resources"
+        }
       ],
       "edgeKinds": ["ROUTES_TO", "INVOKES"],
       "viewReferences": [
@@ -586,8 +634,16 @@
       "summaryKind": "EVENT_FLOW",
       "intermediateTypes": ["SnsSubscription", "LambdaPermission"],
       "containmentBindings": [
-        { "type": "SnsSubscription", "owner": "stack", "feature": "resources" },
-        { "type": "LambdaPermission", "owner": "stack", "feature": "resources" }
+        {
+          "type": "SnsSubscription",
+          "owner": "stack",
+          "feature": "resources"
+        },
+        {
+          "type": "LambdaPermission",
+          "owner": "stack",
+          "feature": "resources"
+        }
       ],
       "edgeKinds": ["EVENT_FLOW", "PERMISSION", "INVOKES"],
       "viewReferences": [
@@ -647,8 +703,16 @@
       "summaryKind": "TARGETS",
       "intermediateTypes": ["EventBridgeTarget", "LambdaPermission"],
       "containmentBindings": [
-        { "type": "EventBridgeTarget", "owner": "source", "feature": "targets" },
-        { "type": "LambdaPermission", "owner": "stack", "feature": "resources" }
+        {
+          "type": "EventBridgeTarget",
+          "owner": "source",
+          "feature": "targets"
+        },
+        {
+          "type": "LambdaPermission",
+          "owner": "stack",
+          "feature": "resources"
+        }
       ],
       "edgeKinds": ["TARGETS", "PERMISSION", "INVOKES"],
       "viewReferences": [
@@ -678,7 +742,11 @@
       "summaryKind": "INVOKES",
       "intermediateTypes": ["EventBridgeTarget"],
       "containmentBindings": [
-        { "type": "EventBridgeTarget", "owner": "source", "feature": "targets" }
+        {
+          "type": "EventBridgeTarget",
+          "owner": "source",
+          "feature": "targets"
+        }
       ],
       "edgeKinds": ["TARGETS", "INVOKES"],
       "viewReferences": [
@@ -712,7 +780,11 @@
           "scaffoldFeature": "notificationConfiguration",
           "feature": "rules"
         },
-        { "type": "LambdaPermission", "owner": "stack", "feature": "resources" }
+        {
+          "type": "LambdaPermission",
+          "owner": "stack",
+          "feature": "resources"
+        }
       ],
       "edgeKinds": ["EVENT_FLOW", "PERMISSION", "INVOKES"],
       "viewReferences": [
@@ -750,7 +822,11 @@
           "scaffoldFeature": "notificationConfiguration",
           "feature": "rules"
         },
-        { "type": "SqsQueuePolicy", "owner": "stack", "feature": "resources" }
+        {
+          "type": "SqsQueuePolicy",
+          "owner": "stack",
+          "feature": "resources"
+        }
       ],
       "edgeKinds": ["EVENT_FLOW", "PERMISSION", "MESSAGE_FLOW"],
       "viewReferences": [
@@ -788,7 +864,11 @@
           "scaffoldFeature": "notificationConfiguration",
           "feature": "rules"
         },
-        { "type": "SnsTopicPolicy", "owner": "stack", "feature": "resources" }
+        {
+          "type": "SnsTopicPolicy",
+          "owner": "stack",
+          "feature": "resources"
+        }
       ],
       "edgeKinds": ["EVENT_FLOW", "PERMISSION", "TARGETS"],
       "viewReferences": [
@@ -923,7 +1003,9 @@
       "ownerType": "TraceModel",
       "sourceFeature": "source",
       "targetFeature": "target",
-      "defaults": { "linkType": "OTHER" }
+      "defaults": {
+        "linkType": "OTHER"
+      }
     }
   ],
   "viewDefinitions": [
@@ -1589,7 +1671,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "ApiGatewayTrigger",
@@ -1611,7 +1695,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "EventBridgeLambdaTarget",
@@ -1636,7 +1722,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayRoute",
@@ -1652,7 +1740,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "EventBridgeBus",
@@ -1665,7 +1755,9 @@
         "tag": "EVB",
         "shape": "resource-card",
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
-      }
+      },
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeRule",
@@ -1678,7 +1770,9 @@
         "tag": "EVB",
         "shape": "resource-card",
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
-      }
+      },
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "SqsQueue",
@@ -1691,7 +1785,9 @@
         "tag": "MSG",
         "shape": "resource-card",
         "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
-      }
+      },
+      "processPhaseId": "psm.p6.messaging",
+      "processTaskIds": ["psm.p6.messaging.main"]
     },
     {
       "type": "SnsTopic",
@@ -1704,7 +1800,9 @@
         "tag": "MSG",
         "shape": "resource-card",
         "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
-      }
+      },
+      "processPhaseId": "psm.p6.messaging",
+      "processTaskIds": ["psm.p6.messaging.main"]
     },
     {
       "type": "EventSchema",
@@ -1726,7 +1824,9 @@
         "tag": "SFN",
         "shape": "resource-card",
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "DynamoDbTable",
@@ -1739,7 +1839,9 @@
         "tag": "STORE",
         "shape": "resource-card",
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
-      }
+      },
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbAttributeDefinition",
@@ -1754,7 +1856,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbGlobalSecondaryIndex",
@@ -1769,7 +1873,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3Bucket",
@@ -1782,7 +1888,9 @@
         "tag": "STORE",
         "shape": "resource-card",
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
-      }
+      },
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "SamStack",
@@ -1795,7 +1903,9 @@
         "tag": "CFN",
         "shape": "stack-container",
         "lineFields": ["stackName", "templatePath", "description", "name"]
-      }
+      },
+      "processPhaseId": "psm.p1.stack-scaffolding",
+      "processTaskIds": ["psm.p1.stack-scaffolding.main"]
     },
     {
       "type": "AwsStage",
@@ -1808,7 +1918,9 @@
         "tag": "STAGE",
         "shape": "stage-container",
         "lineFields": ["stageName", "region", "accountId", "name"]
-      }
+      },
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "LambdaEventSourceMapping",
@@ -1823,7 +1935,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "CognitoUserPool",
@@ -1836,7 +1950,9 @@
         "tag": "ID",
         "shape": "resource-card",
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
-      }
+      },
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "IamPolicy",
@@ -1849,7 +1965,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "IamStatement",
@@ -1862,7 +1980,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "IamRole",
@@ -1875,7 +1995,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "SecretsManagerSecret",
@@ -1888,7 +2010,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "SsmParameter",
@@ -1901,7 +2025,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "KmsKey",
@@ -1914,7 +2040,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "VpcConfig",
@@ -1947,7 +2075,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "CloudWatchAlarm",
@@ -1960,7 +2090,9 @@
         "tag": "OBS",
         "shape": "resource-card",
         "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "CloudWatchLogGroup",
@@ -1973,7 +2105,9 @@
         "tag": "OBS",
         "shape": "resource-card",
         "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "XRayTracingConfig",
@@ -1995,7 +2129,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "AwsResource",
@@ -2011,7 +2147,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "AwsTag",
@@ -2026,7 +2164,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "ResourceImport",
@@ -2041,7 +2181,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "NativeProperty",
@@ -2056,7 +2198,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "ValueExpression",
@@ -2071,7 +2215,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "NamedValueExpression",
@@ -2086,7 +2232,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "CorsConfiguration",
@@ -2101,7 +2249,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "TracingConfig",
@@ -2117,7 +2267,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "AwsNativeResource",
@@ -2130,7 +2282,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "CfnParameter",
@@ -2143,7 +2297,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p1.stack-scaffolding",
+      "processTaskIds": ["psm.p1.stack-scaffolding.main"]
     },
     {
       "type": "CfnMapping",
@@ -2156,7 +2312,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p1.stack-scaffolding",
+      "processTaskIds": ["psm.p1.stack-scaffolding.main"]
     },
     {
       "type": "CfnCondition",
@@ -2169,7 +2327,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p1.stack-scaffolding",
+      "processTaskIds": ["psm.p1.stack-scaffolding.main"]
     },
     {
       "type": "CfnOutput",
@@ -2182,7 +2342,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p1.stack-scaffolding",
+      "processTaskIds": ["psm.p1.stack-scaffolding.main"]
     },
     {
       "type": "SamGlobals",
@@ -2195,7 +2357,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p1.stack-scaffolding",
+      "processTaskIds": ["psm.p1.stack-scaffolding.main"]
     },
     {
       "type": "AwsNamingPolicy",
@@ -2208,7 +2372,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "AwsTaggingPolicy",
@@ -2221,7 +2387,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "AwsSecurityBaseline",
@@ -2234,7 +2402,9 @@
         "tag": "CFN",
         "shape": "structured-property-row",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "IamInlinePolicy",
@@ -2248,7 +2418,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "IamManagedPolicy",
@@ -2261,7 +2433,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "IamPolicyDocument",
@@ -2275,7 +2449,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "IamPrincipal",
@@ -2289,7 +2465,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "IamCondition",
@@ -2303,7 +2481,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "KmsAlias",
@@ -2316,7 +2496,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "GenerateSecretStringConfig",
@@ -2330,7 +2512,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "SecretRotationRules",
@@ -2344,7 +2528,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "SecretRotationSchedule",
@@ -2357,7 +2543,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "SecretsManagerResourcePolicy",
@@ -2370,7 +2558,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "SsmParameterValueExpression",
@@ -2384,7 +2574,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "roleName", "policyName", "secretName", "effect"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "SecretValueExpression",
@@ -2398,7 +2590,9 @@
         "tag": "SEC",
         "shape": "resource-card",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p2.security-baseline",
+      "processTaskIds": ["psm.p2.security-baseline.main"]
     },
     {
       "type": "CloudWatchMetricFilter",
@@ -2411,7 +2605,9 @@
         "tag": "OBS",
         "shape": "resource-card",
         "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "CloudWatchMetricTransformation",
@@ -2425,7 +2621,9 @@
         "tag": "OBS",
         "shape": "resource-card",
         "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "CloudWatchLogSubscriptionFilter",
@@ -2438,7 +2636,9 @@
         "tag": "OBS",
         "shape": "resource-card",
         "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "MetricDimension",
@@ -2451,7 +2651,9 @@
         "tag": "OBS",
         "shape": "resource-card",
         "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "CloudWatchCompositeAlarm",
@@ -2464,7 +2666,9 @@
         "tag": "OBS",
         "shape": "resource-card",
         "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "CloudWatchDashboard",
@@ -2477,7 +2681,9 @@
         "tag": "OBS",
         "shape": "resource-card",
         "lineFields": ["logicalId", "logGroupName", "alarmName", "metricName"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "VpcAttachmentConfig",
@@ -2490,7 +2696,9 @@
         "tag": "NET",
         "shape": "resource-card",
         "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
-      }
+      },
+      "processPhaseId": "psm.p3.networking",
+      "processTaskIds": ["psm.p3.networking.main"]
     },
     {
       "type": "VpcEndpointReference",
@@ -2503,7 +2711,9 @@
         "tag": "NET",
         "shape": "resource-card",
         "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
-      }
+      },
+      "processPhaseId": "psm.p3.networking",
+      "processTaskIds": ["psm.p3.networking.main"]
     },
     {
       "type": "Vpc",
@@ -2516,7 +2726,9 @@
         "tag": "NET",
         "shape": "resource-card",
         "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
-      }
+      },
+      "processPhaseId": "psm.p3.networking",
+      "processTaskIds": ["psm.p3.networking.main"]
     },
     {
       "type": "Subnet",
@@ -2529,7 +2741,9 @@
         "tag": "NET",
         "shape": "resource-card",
         "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
-      }
+      },
+      "processPhaseId": "psm.p3.networking",
+      "processTaskIds": ["psm.p3.networking.main"]
     },
     {
       "type": "VpcEndpoint",
@@ -2542,7 +2756,9 @@
         "tag": "NET",
         "shape": "resource-card",
         "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
-      }
+      },
+      "processPhaseId": "psm.p3.networking",
+      "processTaskIds": ["psm.p3.networking.main"]
     },
     {
       "type": "SecurityGroup",
@@ -2555,7 +2771,9 @@
         "tag": "NET",
         "shape": "resource-card",
         "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
-      }
+      },
+      "processPhaseId": "psm.p3.networking",
+      "processTaskIds": ["psm.p3.networking.main"]
     },
     {
       "type": "SecurityGroupRule",
@@ -2568,7 +2786,9 @@
         "tag": "NET",
         "shape": "resource-card",
         "lineFields": ["logicalId", "vpcId", "subnetId", "securityGroupId"]
-      }
+      },
+      "processPhaseId": "psm.p3.networking",
+      "processTaskIds": ["psm.p3.networking.main"]
     },
     {
       "type": "SqsRedrivePolicy",
@@ -2583,7 +2803,9 @@
         "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p6.messaging",
+      "processTaskIds": ["psm.p6.messaging.main"]
     },
     {
       "type": "SqsRedriveAllowPolicy",
@@ -2598,7 +2820,9 @@
         "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p6.messaging",
+      "processTaskIds": ["psm.p6.messaging.main"]
     },
     {
       "type": "SqsQueuePolicy",
@@ -2611,7 +2835,9 @@
         "tag": "MSG",
         "shape": "resource-card",
         "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
-      }
+      },
+      "processPhaseId": "psm.p6.messaging",
+      "processTaskIds": ["psm.p6.messaging.main"]
     },
     {
       "type": "SnsSubscription",
@@ -2624,7 +2850,9 @@
         "tag": "MSG",
         "shape": "resource-card",
         "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
-      }
+      },
+      "processPhaseId": "psm.p6.messaging",
+      "processTaskIds": ["psm.p6.messaging.main"]
     },
     {
       "type": "SnsFilterRule",
@@ -2638,7 +2866,9 @@
         "tag": "MSG",
         "shape": "resource-card",
         "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
-      }
+      },
+      "processPhaseId": "psm.p6.messaging",
+      "processTaskIds": ["psm.p6.messaging.main"]
     },
     {
       "type": "SnsTopicPolicy",
@@ -2651,7 +2881,9 @@
         "tag": "MSG",
         "shape": "resource-card",
         "lineFields": ["logicalId", "queueName", "topicName", "protocol"]
-      }
+      },
+      "processPhaseId": "psm.p6.messaging",
+      "processTaskIds": ["psm.p6.messaging.main"]
     },
     {
       "type": "DynamoDbKeySchemaElement",
@@ -2666,7 +2898,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbProjection",
@@ -2681,7 +2915,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbProvisionedThroughput",
@@ -2696,7 +2932,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbOnDemandThroughput",
@@ -2711,7 +2949,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbLocalSecondaryIndex",
@@ -2726,7 +2966,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbReplicaSpecification",
@@ -2741,7 +2983,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbStreamSpecification",
@@ -2756,7 +3000,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbTimeToLiveSpecification",
@@ -2771,7 +3017,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbSseSpecification",
@@ -2786,7 +3034,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "DynamoDbBackupPolicy",
@@ -2801,7 +3051,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3BucketEncryption",
@@ -2816,7 +3068,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3OwnershipControls",
@@ -2831,7 +3085,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3OwnershipRule",
@@ -2846,7 +3102,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3LifecycleConfiguration",
@@ -2861,7 +3119,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3LifecycleRule",
@@ -2876,7 +3136,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3LifecycleFilter",
@@ -2891,7 +3153,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3TagFilter",
@@ -2906,7 +3170,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3Transition",
@@ -2921,7 +3187,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3PublicAccessBlockConfiguration",
@@ -2936,7 +3204,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3NotificationConfiguration",
@@ -2951,7 +3221,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3NotificationRule",
@@ -2966,7 +3238,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3ReplicationConfiguration",
@@ -2981,7 +3255,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3ReplicationRule",
@@ -2996,7 +3272,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3ReplicationDestination",
@@ -3011,7 +3289,9 @@
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "S3BucketPolicy",
@@ -3024,7 +3304,9 @@
         "tag": "STORE",
         "shape": "resource-card",
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
-      }
+      },
+      "processPhaseId": "psm.p5.durable-storage",
+      "processTaskIds": ["psm.p5.durable-storage.main"]
     },
     {
       "type": "CognitoPasswordPolicy",
@@ -3039,7 +3321,9 @@
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoSchemaAttribute",
@@ -3054,7 +3338,9 @@
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoEmailConfiguration",
@@ -3069,7 +3355,9 @@
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoAccountRecoverySetting",
@@ -3084,7 +3372,9 @@
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoRecoveryMechanism",
@@ -3099,7 +3389,9 @@
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoLambdaConfig",
@@ -3114,7 +3406,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoUserPoolClient",
@@ -3127,7 +3421,9 @@
         "tag": "ID",
         "shape": "resource-card",
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
-      }
+      },
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoOAuthConfiguration",
@@ -3142,7 +3438,9 @@
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoUserPoolGroup",
@@ -3155,7 +3453,9 @@
         "tag": "ID",
         "shape": "resource-card",
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
-      }
+      },
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoUserPoolDomain",
@@ -3168,7 +3468,9 @@
         "tag": "ID",
         "shape": "resource-card",
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
-      }
+      },
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "CognitoIdentityPool",
@@ -3181,7 +3483,9 @@
         "tag": "ID",
         "shape": "resource-card",
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
-      }
+      },
+      "processPhaseId": "psm.p4.identity",
+      "processTaskIds": ["psm.p4.identity.main"]
     },
     {
       "type": "AslDocument",
@@ -3196,7 +3500,9 @@
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "AslState",
@@ -3212,7 +3518,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "AslBranch",
@@ -3227,7 +3535,9 @@
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "AslMapConfig",
@@ -3242,7 +3552,9 @@
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "AslRetryRule",
@@ -3257,7 +3569,9 @@
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "AslCatchRule",
@@ -3272,7 +3586,9 @@
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "AslChoiceRule",
@@ -3287,7 +3603,9 @@
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "StepFunctionLoggingConfig",
@@ -3300,7 +3618,9 @@
         "tag": "SFN",
         "shape": "resource-card",
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "StepFunctionTracingConfig",
@@ -3313,7 +3633,9 @@
         "tag": "SFN",
         "shape": "resource-card",
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
-      }
+      },
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "SamStateMachineEvent",
@@ -3328,7 +3650,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p10.workflow-observability",
+      "processTaskIds": ["psm.p10.workflow-observability.main"]
     },
     {
       "type": "LambdaCodeConfig",
@@ -3344,7 +3668,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaZipCodeConfig",
@@ -3359,7 +3685,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaImageCodeConfig",
@@ -3374,7 +3702,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaImageConfig",
@@ -3389,7 +3719,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaInvocationBinding",
@@ -3405,7 +3737,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "SamFunctionEvent",
@@ -3420,7 +3754,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "DynamoDbStreamLambdaEventSourceMapping",
@@ -3433,7 +3769,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "GenericLambdaEventSourceMapping",
@@ -3446,7 +3784,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaDeadLetterConfig",
@@ -3461,7 +3801,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaEventInvokeConfig",
@@ -3476,7 +3818,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaDestinationConfig",
@@ -3491,7 +3835,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaTracingConfig",
@@ -3506,7 +3852,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaLoggingConfig",
@@ -3521,7 +3869,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaLayerVersion",
@@ -3534,7 +3884,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaLayerPermission",
@@ -3549,7 +3901,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaVersion",
@@ -3562,7 +3916,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaAlias",
@@ -3575,7 +3931,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaProvisionedConcurrencyConfig",
@@ -3590,7 +3948,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaPermission",
@@ -3603,7 +3963,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaFunctionUrl",
@@ -3616,7 +3978,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaUrlCorsConfiguration",
@@ -3631,7 +3995,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "LambdaFileSystemConfig",
@@ -3646,7 +4012,9 @@
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "CodeSigningConfig",
@@ -3659,7 +4027,9 @@
         "tag": "LAMBDA",
         "shape": "resource-card",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p8.compute",
+      "processTaskIds": ["psm.p8.compute.main"]
     },
     {
       "type": "HttpApi",
@@ -3672,7 +4042,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "RestApi",
@@ -3685,7 +4057,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "WebSocketApi",
@@ -3698,7 +4072,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "HttpApiRoute",
@@ -3711,7 +4087,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "RestApiRoute",
@@ -3724,7 +4102,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "RestApiResource",
@@ -3739,7 +4119,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "RestApiMethod",
@@ -3754,7 +4136,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "WebSocketRoute",
@@ -3767,7 +4151,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayRequestModel",
@@ -3782,7 +4168,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayResponseModel",
@@ -3797,7 +4185,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayRequestValidator",
@@ -3812,7 +4202,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayRouteSetting",
@@ -3827,7 +4219,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayAccessLogSetting",
@@ -3842,7 +4236,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayIntegration",
@@ -3855,7 +4251,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayIntegrationRequestTemplate",
@@ -3870,7 +4268,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayIntegrationResponseParameter",
@@ -3885,7 +4285,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayStage",
@@ -3901,7 +4303,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "HttpApiStage",
@@ -3914,7 +4318,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "RestApiStage",
@@ -3927,7 +4333,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "WebSocketStage",
@@ -3940,7 +4348,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayAuthorizer",
@@ -3956,7 +4366,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "JwtAuthorizer",
@@ -3969,7 +4381,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "CognitoAuthorizer",
@@ -3982,7 +4396,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "userPoolName", "clientName", "groupName"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "LambdaAuthorizer",
@@ -3995,7 +4411,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayDomainName",
@@ -4008,7 +4426,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayBasePathMapping",
@@ -4023,7 +4443,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayApiKey",
@@ -4036,7 +4458,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayUsagePlan",
@@ -4049,7 +4473,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayUsagePlanKey",
@@ -4064,7 +4490,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayDeployment",
@@ -4079,7 +4507,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "ApiGatewayTracingConfig",
@@ -4094,7 +4524,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "WafWebAclAssociation",
@@ -4107,7 +4539,9 @@
         "tag": "API",
         "shape": "resource-card",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
-      }
+      },
+      "processPhaseId": "psm.p9.api-gateway",
+      "processTaskIds": ["psm.p9.api-gateway.main"]
     },
     {
       "type": "EventBridgeBusPolicy",
@@ -4122,7 +4556,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventPattern",
@@ -4137,7 +4573,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeTarget",
@@ -4152,7 +4590,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeTargetParameters",
@@ -4168,7 +4608,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeSqsTargetParameters",
@@ -4183,7 +4625,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeHttpTargetParameters",
@@ -4198,7 +4642,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "HttpParameter",
@@ -4213,7 +4659,9 @@
         "lineFields": ["logicalId", "apiName", "method", "path", "routeKey"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeBatchTargetParameters",
@@ -4228,7 +4676,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeInputTransformer",
@@ -4243,7 +4693,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeArchive",
@@ -4256,7 +4708,9 @@
         "tag": "EVB",
         "shape": "resource-card",
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
-      }
+      },
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeSchedule",
@@ -4269,7 +4723,9 @@
         "tag": "EVB",
         "shape": "resource-card",
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
-      }
+      },
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeFlexibleTimeWindow",
@@ -4284,7 +4740,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgePipe",
@@ -4297,7 +4755,9 @@
         "tag": "EVB",
         "shape": "resource-card",
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
-      }
+      },
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeAuthParameters",
@@ -4313,7 +4773,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeApiKeyAuthParameters",
@@ -4328,7 +4790,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeBasicAuthParameters",
@@ -4343,7 +4807,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeOAuthParameters",
@@ -4358,7 +4824,9 @@
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeHttpParameters",
@@ -4374,7 +4842,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "supportOnly": true
+      "supportOnly": true,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeConnection",
@@ -4387,7 +4857,9 @@
         "tag": "EVB",
         "shape": "resource-card",
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
-      }
+      },
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "EventBridgeApiDestination",
@@ -4400,7 +4872,9 @@
         "tag": "EVB",
         "shape": "resource-card",
         "lineFields": ["logicalId", "busName", "ruleName", "scheduleExpression"]
-      }
+      },
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "AwsRetryPolicy",
@@ -4415,7 +4889,9 @@
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
       "containedOnly": true,
-      "creatable": false
+      "creatable": false,
+      "processPhaseId": "psm.p7.event-fabric",
+      "processTaskIds": ["psm.p7.event-fabric.main"]
     },
     {
       "type": "AwsRelationshipView",
@@ -4429,7 +4905,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "physicalName", "awsResourceType", "name"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "ApiGatewayLambdaIntegrationView",
@@ -4443,7 +4921,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "EventBridgeLambdaTargetView",
@@ -4457,7 +4937,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "SnsLambdaSubscriptionView",
@@ -4471,7 +4953,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "SqsLambdaEventSourceView",
@@ -4485,7 +4969,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "StepFunctionEventBridgeTargetView",
@@ -4499,7 +4985,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "stateMachineName", "stateName", "stateType"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "S3LambdaNotificationView",
@@ -4513,7 +5001,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "functionName", "runtimeIdentifier", "timeoutSeconds"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "S3QueueNotificationView",
@@ -4527,7 +5017,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "S3TopicNotificationView",
@@ -4541,7 +5033,9 @@
         "shape": "relationship-edge",
         "lineFields": ["logicalId", "tableName", "bucketName", "billingMode"]
       },
-      "relationshipElement": true
+      "relationshipElement": true,
+      "processPhaseId": "psm.p11.integration-views-readiness",
+      "processTaskIds": ["psm.p11.integration-views-readiness.main"]
     },
     {
       "type": "WafAssociableResource",
@@ -4557,7 +5051,9 @@
         "tag": "WAR",
         "shape": "concept-card",
         "lineFields": ["summary", "description"]
-      }
+      },
+      "processPhaseId": "psm.p0.account-stage-strategy",
+      "processTaskIds": ["psm.p0.account-stage-strategy.main"]
     },
     {
       "type": "DynamoTable",

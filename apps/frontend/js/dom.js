@@ -2,6 +2,11 @@
 export const el = {
   modelTabs: document.getElementById("modelTabs"),
   paletteRailToggleBtn: document.getElementById("paletteRailToggleBtn"),
+  methodologyRailBtn: document.getElementById("methodologyRailBtn"),
+  methodologyPanelHost: document.getElementById("methodologyPanelHost"),
+  methodologySearchInput: document.getElementById("methodologySearchInput"),
+  palettePane: document.getElementById("palettePane"),
+  methodologyPane: document.getElementById("methodologyPane"),
   fileBtn: document.getElementById("fileBtn"),
   fileRailMenu: document.getElementById("fileRailMenu"),
   undoModelReplaceBtn: document.getElementById("undoModelReplaceBtn"),

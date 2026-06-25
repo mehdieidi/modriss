@@ -137,6 +137,15 @@ public final class MdeRuntimePaths {
   }
 
   /**
+   * Returns the modeling methodology root (process definitions, SPEM, coverage matrices).
+   *
+   * @return methodology directory
+   */
+  public Path methodologyRoot() {
+    return resolveConfiguredRoot(null, "mde/methodology").normalize();
+  }
+
+  /**
    * Resolves an optional configured root or falls back to a repository-relative default.
    *
    * @param configured configured override path

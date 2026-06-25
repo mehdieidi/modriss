@@ -1,0 +1,109 @@
+{
+  "processId": "modless.end-to-end.modeling",
+  "spemVersion": "2.0",
+  "level": "end-to-end",
+  "displayName": "CIM → PIM → PSM → Artifacts",
+  "roles": [
+    {
+      "id": "business-modeler",
+      "name": "Business Modeler",
+      "responsibilities": ["CIM modeling phases 0-12"]
+    },
+    {
+      "id": "requirements-engineer",
+      "name": "Requirements Engineer",
+      "responsibilities": ["CIM phase 11 governance"]
+    },
+    {
+      "id": "solution-architect",
+      "name": "Solution Architect",
+      "responsibilities": ["PIM modeling and refinement"]
+    },
+    {
+      "id": "cloud-platform-engineer",
+      "name": "Cloud Platform Engineer",
+      "responsibilities": ["AWS PSM modeling and refinement"]
+    },
+    {
+      "id": "process-reviewer",
+      "name": "Process Reviewer",
+      "responsibilities": ["EVL gates at each level"]
+    }
+  ],
+  "phases": [
+    {
+      "id": "e2e.p1.cim-modeling",
+      "name": "CIM Modeling (14 phases)",
+      "primaryRole": "business-modeler",
+      "childProcessId": "modless.cim.modeling",
+      "validationGate": "cim-semantic-validation",
+      "transform": null
+    },
+    {
+      "id": "e2e.p2.cim-to-pim",
+      "name": "CIM → PIM Transformation",
+      "primaryRole": "solution-architect",
+      "transform": "cim-to-pim",
+      "validationGate": null
+    },
+    {
+      "id": "e2e.p3.pim-refinement",
+      "name": "PIM Refinement (12 phases)",
+      "primaryRole": "solution-architect",
+      "childProcessId": "modless.pim.modeling",
+      "validationGate": "pim-semantic-validation",
+      "transform": null
+    },
+    {
+      "id": "e2e.p4.pim-to-psm",
+      "name": "PIM → AWS PSM Transformation",
+      "primaryRole": "cloud-platform-engineer",
+      "transform": "pim-to-awspsm",
+      "validationGate": null
+    },
+    {
+      "id": "e2e.p5.psm-refinement",
+      "name": "PSM Refinement (11 phases)",
+      "primaryRole": "cloud-platform-engineer",
+      "childProcessId": "modless.psm.modeling",
+      "validationGate": "psm-semantic-validation",
+      "transform": null
+    },
+    {
+      "id": "e2e.p6.m2t-generation",
+      "name": "M2T Artifact Generation",
+      "primaryRole": "cloud-platform-engineer",
+      "transform": "awspsm-to-artifacts",
+      "validationGate": null
+    },
+    {
+      "id": "e2e.p7.artifact-completion",
+      "name": "Artifact Review & Completion",
+      "primaryRole": "process-reviewer",
+      "transform": null,
+      "validationGate": null
+    }
+  ],
+  "milestones": [
+    {
+      "id": "e2e.m1.cim-ready",
+      "name": "CIM readiness approved",
+      "phaseId": "e2e.p1.cim-modeling"
+    },
+    {
+      "id": "e2e.m2.pim-ready",
+      "name": "PIM readiness approved",
+      "phaseId": "e2e.p3.pim-refinement"
+    },
+    {
+      "id": "e2e.m3.psm-ready",
+      "name": "PSM readiness approved",
+      "phaseId": "e2e.p5.psm-refinement"
+    },
+    {
+      "id": "e2e.m4.artifacts",
+      "name": "Artifacts delivered",
+      "phaseId": "e2e.p7.artifact-completion"
+    }
+  ]
+}

@@ -31,6 +31,7 @@ import {
   modelingTypeMatches,
   modelingViewDefinition,
 } from "./modeling-config-data.js";
+import { guidedPaletteFocusTypes } from "./guided-modeling.js";
 import { addReferenceValue, modelTypeMatches } from "./model-utils.js";
 import { setStatus } from "./status.js";
 // NOTE: These imports form intentional circular references (ES module live bindings).
@@ -1912,7 +1913,7 @@ function definitionUi(definition) {
   };
 }
 
-function applyDefinitionAccent(element, definition) {
+export function applyDefinitionAccent(element, definition) {
   if (!element) {
     return;
   }
@@ -2468,6 +2469,10 @@ export function renderPalette() {
       const description = definition?.description || label;
       const item = document.createElement("div");
       item.className = "palette-item";
+      const focusTypes = guidedPaletteFocusTypes();
+      if (focusTypes.size && focusTypes.has(type)) {
+        item.classList.add("palette-item-task-focus");
+      }
       item.draggable = true;
       item.dataset.nodeType = type;
       applyDefinitionAccent(item, definition);

@@ -41,6 +41,10 @@ The diagrams were derived from:
 | Frontend      | [21-frontend-architecture-and-flows.md](21-frontend-architecture-and-flows.md)                   | Browser modules and primary user flows             |
 | Functions     | [22-major-function-flows.md](22-major-function-flows.md)                                         | Important service algorithms and state machines    |
 | Cross-cutting | [23-security-observability-failure.md](23-security-observability-failure.md)                     | Security boundaries, logging, failure paths        |
+| Methodology   | [24-cim-methodology.md](24-cim-methodology.md)                                                   | CIM phase flow, RACI, coverage heatmap             |
+| Methodology   | [25-pim-methodology.md](25-pim-methodology.md)                                                   | PIM phase flow and ETL alignment                   |
+| Methodology   | [26-psm-methodology.md](26-psm-methodology.md)                                                   | PSM phase flow and SamStack hub                    |
+| Methodology   | [27-end-to-end-methodology.md](27-end-to-end-methodology.md)                                     | CIM→PIM→PSM pipeline with EVL/ETL gates            |
 
 ## API Coverage
 
@@ -51,7 +55,7 @@ Every implemented controller route template has a sequence diagram:
 - Models, validation, import, and export: 11 parameterized route templates.
 - Transformations and MDE jobs: 5 routes.
 - Artifacts: 5 routes.
-- Modeling configuration and layout: 3 routes.
+- Modeling configuration, layout, and process definitions: 5 routes.
 - Assistant REST/SSE: 9 routes.
 - Assistant WebSocket: 1 route.
 - Health, OpenAPI, Swagger UI, future-feature wildcard routes, and Actuator endpoints.

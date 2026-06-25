@@ -11,6 +11,7 @@ import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
 import io.mehdieidi.modless.platform.modeling.layout.LayoutService;
 import io.mehdieidi.modless.platform.modeling.metamodel.FileMetamodelResolver;
 import io.mehdieidi.modless.platform.modeling.metamodel.MetamodelResolver;
+import io.mehdieidi.modless.platform.modeling.methodology.ModelingProcessService;
 import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimeOptions;
 import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimePaths;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
@@ -226,5 +227,15 @@ public class CoreServicesConfig {
   @Bean
   ModelingConfigService modelingConfigService() {
     return new ModelingConfigService();
+  }
+
+  /**
+   * Creates the modeling methodology process definition service.
+   *
+   * @return modeling process service
+   */
+  @Bean
+  ModelingProcessService modelingProcessService() {
+    return new ModelingProcessService();
   }
 }

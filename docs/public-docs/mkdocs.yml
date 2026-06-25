@@ -42,6 +42,10 @@ nav:
       - Validation, Transformation, and Generation: concepts/pipeline.md
   - User Guides:
       - Modeling Workflow: guides/modeling-workflow.md
+      - CIM Modeling Methodology: guides/cim-modeling-methodology.md
+      - PIM Modeling Methodology: guides/pim-modeling-methodology.md
+      - PSM Modeling Methodology: guides/psm-modeling-methodology.md
+      - End-to-End Modeling: guides/end-to-end-modeling-methodology.md
       - AI Assistant: guides/ai-assistant.md
       - Generated AWS Projects: guides/generated-artifacts.md
   - Reference:

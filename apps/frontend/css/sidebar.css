@@ -63,13 +63,17 @@
   padding-right: 2px;
 }
 
-#modelingPanel:not(.hidden) .sidebar-section {
+#modelingPanel:not(.hidden) .sidebar-section,
+#modelingPanel:not(.hidden) #palettePane .sidebar-section,
+#modelingPanel:not(.hidden) #methodologyPane .sidebar-section {
   flex: 1 1 0%;
   min-height: 0;
   overflow: hidden;
 }
 
-#modelingPanel:not(.hidden) > .sidebar-section:last-child {
+#modelingPanel:not(.hidden) > .sidebar-section:last-child,
+#modelingPanel:not(.hidden) #palettePane > .sidebar-section:last-child,
+#modelingPanel:not(.hidden) #methodologyPane > .sidebar-section:last-child {
   flex: 1 1 0%;
   overflow: hidden;
 }
@@ -676,6 +680,11 @@
 .artifact-actions {
   display: flex;
   gap: 7px;
+}
+
+.palette-item-task-focus {
+  outline: 2px solid color-mix(in srgb, var(--accent, #6366f1) 55%, transparent);
+  outline-offset: -1px;
 }
 
 .admin-path-label {

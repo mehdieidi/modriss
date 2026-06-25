@@ -31,6 +31,7 @@
     <link href="/css/chat.css" rel="stylesheet" />
     <link href="/css/artifact.css" rel="stylesheet" />
     <link href="/css/panels.css" rel="stylesheet" />
+    <link href="/css/methodology.css" rel="stylesheet" />
     <link href="/css/project.css" rel="stylesheet" />
     <link href="/css/mobile.css" rel="stylesheet" />
     <script>
@@ -178,7 +179,7 @@
         </div>
       </header>
 
-      <main class="workspace" id="workspace">
+      <main class="workspace left-pane-palette" id="workspace">
         <nav aria-label="Workspace tools" class="workspace-rail">
           <button
             class="workspace-rail-item active"
@@ -197,6 +198,18 @@
               aria-hidden="true"
               class="workspace-rail-icon icon-svg icon-mask"
               style="--icon-src: url(&quot;/assets/icons/file.svg&quot;)"
+            ></span>
+          </button>
+          <button
+            class="workspace-rail-item"
+            id="methodologyRailBtn"
+            title="Modeling methodology"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="workspace-rail-icon icon-svg icon-mask"
+              style="--icon-src: url(&quot;/assets/icons/methodology.svg?v=2&quot;)"
             ></span>
           </button>
           <button
@@ -381,21 +394,41 @@
           <aside class="left-pane" id="leftPane">
             <div class="pane-shell">
               <div id="modelingPanel">
-                <div class="sidebar-section">
-                  <div class="sidebar-section-header">
-                    <span class="sidebar-section-title">Palette</span>
-                    <span class="sidebar-section-hint">drag to canvas</span>
+                <div id="palettePane">
+                  <div class="sidebar-section">
+                    <div class="sidebar-section-header">
+                      <span class="sidebar-section-title">Palette</span>
+                      <span class="sidebar-section-hint">drag to canvas</span>
+                    </div>
+                    <div class="palette-search-row">
+                      <input
+                        autocomplete="off"
+                        class="sidebar-select palette-search-input"
+                        id="paletteSearchInput"
+                        placeholder="Search elements..."
+                        type="search"
+                      />
+                    </div>
+                    <div class="palette" id="palette"></div>
                   </div>
-                  <div class="palette-search-row">
-                    <input
-                      autocomplete="off"
-                      class="sidebar-select palette-search-input"
-                      id="paletteSearchInput"
-                      placeholder="Search elements..."
-                      type="search"
-                    />
+                </div>
+                <div id="methodologyPane">
+                  <div class="sidebar-section sidebar-section-grow">
+                    <div class="sidebar-section-header">
+                      <span class="sidebar-section-title">Methodology</span>
+                      <span class="sidebar-section-hint">step-by-step guide</span>
+                    </div>
+                    <div class="palette-search-row">
+                      <input
+                        autocomplete="off"
+                        class="sidebar-select palette-search-input methodology-search-input"
+                        id="methodologySearchInput"
+                        placeholder="Find a phase..."
+                        type="search"
+                      />
+                    </div>
+                    <div class="methodology-scroll" id="methodologyPanelHost"></div>
                   </div>
-                  <div class="palette" id="palette"></div>
                 </div>
               </div>
 

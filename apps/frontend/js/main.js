@@ -58,6 +58,13 @@ import {
 import { hasUnsavedModelChanges, updateModelSaveUi } from "./model-save-ui.js";
 import { initViewWorkbench, renderViewWorkbench } from "./view-explorer.js";
 import { installG6LargeGraphDevHelper } from "./graph-editor/g6-devtools.js";
+import {
+  initGuidedModeling,
+  onGuidedModelingContextChanged,
+  showPalettePane,
+  showMethodologyPane,
+  syncMethodologyRailState,
+} from "./guided-modeling.js";
 
 const TOPBAR_MENU_BREAKPOINT = 1100;
 const CHAT_INPUT_MAX_HEIGHT = 132;
@@ -474,8 +481,39 @@ function syncResponsiveUi() {
 }
 
 function syncPaletteRailToggleState() {
-  const hidden = el.workspace?.classList.contains("palette-hidden");
-  el.paletteRailToggleBtn?.classList.toggle("active", !hidden);
+  syncMethodologyRailState();
+}
+
+function togglePaletteRail() {
+  if (!el.workspace) {
+    return;
+  }
+  const hidden = el.workspace.classList.contains("palette-hidden");
+  if (hidden) {
+    el.workspace.classList.remove("palette-hidden");
+    showPalettePane();
+  } else if (state.leftPaneMode === "methodology") {
+    showPalettePane();
+  } else {
+    el.workspace.classList.add("palette-hidden");
+  }
+  closeRailMenus();
+  syncMethodologyRailState();
+}
+
+function toggleMethodologyRail() {
+  if (!el.workspace) {
+    return;
+  }
+  closeRailMenus();
+  const hidden = el.workspace.classList.contains("palette-hidden");
+  const showingMethodology = state.leftPaneMode === "methodology" && !hidden;
+  if (showingMethodology) {
+    el.workspace.classList.add("palette-hidden");
+  } else {
+    showMethodologyPane();
+  }
+  syncMethodologyRailState();
 }
 
 function closeRailMenus() {
@@ -551,16 +589,6 @@ function toggleRailMenu(kind) {
   targetMenu.style.top = `${Math.round(clampedTop)}px`;
 }
 
-function togglePaletteRail() {
-  if (!el.workspace) {
-    return;
-  }
-  const willHide = !el.workspace.classList.contains("palette-hidden");
-  el.workspace.classList.toggle("palette-hidden", willHide);
-  closeRailMenus();
-  syncPaletteRailToggleState();
-}
-
 function renderConfiguredModelTabs() {
   if (!el.modelTabs) {
     return;
@@ -609,6 +637,9 @@ function bindEvents() {
   // Theme
   if (el.paletteRailToggleBtn) {
     el.paletteRailToggleBtn.addEventListener("click", togglePaletteRail);
+  }
+  if (el.methodologyRailBtn) {
+    el.methodologyRailBtn.addEventListener("click", toggleMethodologyRail);
   }
   if (el.fileBtn) {
     el.fileBtn.addEventListener("click", (event) => {
@@ -1082,6 +1113,7 @@ async function init() {
   }
   const authState = await ensureAuthenticated();
   await loadModelingConfig();
+  initGuidedModeling();
   renderConfiguredModelTabs();
   refreshCurrentUserLabel();
   bindProjectDialogActions();

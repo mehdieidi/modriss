@@ -51,6 +51,8 @@ def main() -> int:
             lint_cmd.extend(["--scope", *args.lint_scope.split(",")])
         run(lint_cmd)
 
+    run(["node", "mde/methodology/tools/validate-coverage.mjs"])
+
     if not args.skip_tests:
         test_cmd = [maven(), "test"]
         if args.maven_args.strip():

@@ -4,6 +4,7 @@ import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.StoredViewLayoutService;
 import io.mehdieidi.modless.platform.modeling.config.ModelingConfigService;
 import io.mehdieidi.modless.platform.modeling.layout.LayoutService;
+import io.mehdieidi.modless.platform.modeling.methodology.ModelingProcessService;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ModelingController {
 
   private final ModelingConfigService modelingConfig;
+  private final ModelingProcessService modelingProcess;
   private final LayoutService layoutService;
   private final StoredViewLayoutService storedViewLayouts;
   private final AuthSupport auth;
@@ -28,16 +30,19 @@ public class ModelingController {
    * Creates the modeling controller.
    *
    * @param modelingConfig modeling palette and configuration service
+   * @param modelingProcess modeling methodology process service
    * @param layoutService stateless diagram layout service
    * @param storedViewLayouts stored-view layout service
    * @param auth controller authentication support
    */
   public ModelingController(
       ModelingConfigService modelingConfig,
+      ModelingProcessService modelingProcess,
       LayoutService layoutService,
       StoredViewLayoutService storedViewLayouts,
       AuthSupport auth) {
     this.modelingConfig = modelingConfig;
+    this.modelingProcess = modelingProcess;
     this.layoutService = layoutService;
     this.storedViewLayouts = storedViewLayouts;
     this.auth = auth;
@@ -51,6 +56,28 @@ public class ModelingController {
   @GetMapping("/modeling/config")
   Map<String, Object> config() {
     return modelingConfig.config();
+  }
+
+  /**
+   * Returns the canonical modeling process definition for a level.
+   *
+   * @param level {@code cim}, {@code pim}, {@code psm}, or {@code end-to-end}
+   * @return SPEM-aligned process definition
+   */
+  @GetMapping("/modeling/process/{level:cim|pim|psm|end-to-end}")
+  Map<String, Object> processDefinition(@PathVariable String level) {
+    return modelingProcess.processDefinition(level);
+  }
+
+  /**
+   * Returns concept coverage matrix for a modeling level.
+   *
+   * @param level {@code cim}, {@code pim}, or {@code psm}
+   * @return coverage matrix
+   */
+  @GetMapping("/modeling/process/{level:cim|pim|psm}/coverage")
+  Map<String, Object> processCoverageMatrix(@PathVariable String level) {
+    return modelingProcess.coverageMatrix(level);
   }
 
   /**

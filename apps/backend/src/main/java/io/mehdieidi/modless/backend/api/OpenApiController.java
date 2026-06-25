@@ -46,6 +46,12 @@ public class OpenApiController {
     add(paths, "/api/artifact/{id}/files", "put", "Save artifact file");
     add(paths, "/api/artifact/{id}/download", "get", "Download artifact ZIP");
     add(paths, "/api/modeling/config", "get", "Get modeling palette/configuration");
+    add(paths, "/api/modeling/process/{level}", "get", "Get modeling process definition");
+    add(
+        paths,
+        "/api/modeling/process/{level}/coverage",
+        "get",
+        "Get modeling concept coverage matrix");
     add(paths, "/api/layout", "post", "Auto-layout diagram nodes");
     add(paths, "/api/chatbot/sessions", "post", "Create assistant session");
     add(paths, "/api/chatbot/sessions/{sessionId}", "delete", "Clear assistant session memory");

@@ -702,6 +702,8 @@ export async function loadModelById(
   renderPalette();
   await renderDiagramAsync();
   renderViewWorkbench();
+  const { onGuidedModelingContextChanged } = await import("./guided-modeling.js");
+  onGuidedModelingContextChanged();
   centerCurrentDiagram();
   resetModelSaveState();
   if (autoLayout && !activeView()?.autoLayoutApplied && state.diagram.nodes.length) {
@@ -1417,6 +1419,8 @@ export async function switchTab(type) {
   renderPalette();
   await renderDiagramAsync();
   renderViewWorkbench();
+  const { onGuidedModelingContextChanged } = await import("./guided-modeling.js");
+  onGuidedModelingContextChanged();
   resetCanvasView();
   setStatus(`Switched to ${type.toUpperCase()}`);
 }

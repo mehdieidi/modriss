@@ -686,7 +686,7 @@ export function renderViewWorkbench() {
   renderModelTree();
 }
 
-async function openWorkbenchView(viewId) {
+export async function openWorkbenchView(viewId) {
   viewMenuOpen = false;
   const targetView = state.views.byId.get(viewId);
   const needsInitialLayout = targetView && !targetView.autoLayoutApplied;

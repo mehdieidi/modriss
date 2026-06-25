@@ -1,0 +1,26 @@
+@startuml cim-process
+title CIM Modeling Process (14 Phases)
+start
+:Phase 0 — Model Context;
+:Phase 1 — Strategic Intent;
+:Phase 2 — Actors & Boundaries;
+:Phase 3 — Capability Landscape;
+:Phase 4 — Ubiquitous Language;
+:Phase 5 — Information Taxonomy;
+note right: CIM-ENTITY-001\nInformationItem before DomainEntity
+:Phase 6 — Domain Structure;
+:Phase 7 — Behavior Surface;
+:Phase 8 — Aggregate Boundaries;
+:Phase 9 — Process & Decisions;
+:Phase 10 — Bounded Context Synthesis;
+:Phase 11 — Requirements & Governance;
+:Phase 12 — Transformation Contracts;
+:Phase 13 — Traceability & Readiness;
+if (CIM EVL pass?) then (yes)
+  :CIM→PIM ETL gate;
+  stop
+else (no)
+  :Resolve findings;
+  backward :Phase 13;
+endif
+@enduml
