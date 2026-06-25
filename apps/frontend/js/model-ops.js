@@ -1788,19 +1788,28 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
     }
     setActiveModelName(body.name || defaultModelName());
 
-    setGenerationProgressPhase("Preparing imported model…", 68);
+    const backendIssues = Array.isArray(body?.issues) ? body.issues : [];
+    const hasErrorIssue = backendIssues.some(
+      (issue) => String(issue?.severity || "").toUpperCase() === "ERROR",
+    );
+    if (!hasErrorIssue) {
+      setGenerationProgressPhase("Saving imported model…", 68);
+      await saveCurrentModel({ rethrow: true, quiet: true });
+    } else {
+      resetModelSaveState({ dirty: true });
+    }
+
+    setGenerationProgressPhase("Preparing imported model…", 72);
     let importLayoutWarning = "";
     if (shouldAutoLayoutImportedModel && state.diagram.nodes.length) {
       try {
-        setGenerationProgressPhase("Auto-layouting imported model…", 76);
+        setGenerationProgressPhase("Auto-layouting imported model…", 80);
         await autoLayoutCurrentDiagram({
           progress: false,
-          save: false,
-          publish: false,
           status: false,
           busy: false,
           rethrow: true,
-          preserveExistingPositions: false,
+          force: true,
         });
       } catch (layoutError) {
         importLayoutWarning = layoutError.message || "Auto layout failed for the imported model.";
@@ -1815,19 +1824,13 @@ export async function importActiveModel(file, format = "json", typeKey = state.a
     }
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].diagram = structuredClone(state.diagram);
-      state.tabs[state.activeType].dirty = true;
+      state.tabs[state.activeType].dirty = hasUnsavedModelChanges();
       saveCurrentTabGraphState(state.activeType);
     }
 
-    const backendIssues = Array.isArray(body?.issues) ? body.issues : [];
-    const hasErrorIssue = backendIssues.some(
-      (issue) => String(issue?.severity || "").toUpperCase() === "ERROR",
-    );
-    if (!hasErrorIssue) {
-      setGenerationProgressPhase("Saving imported model…", 88);
+    if (!hasErrorIssue && hasUnsavedModelChanges()) {
+      setGenerationProgressPhase("Saving imported model…", 92);
       await saveCurrentModel({ rethrow: true, quiet: true });
-    } else {
-      resetModelSaveState({ dirty: true });
     }
     await completeGenerationProgress("Imported model ready.");
     if (backendIssues.length) {
