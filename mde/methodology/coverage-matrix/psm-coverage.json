@@ -1,7 +1,7 @@
 {
   "level": "psm",
   "processId": "modless.psm.modeling",
-  "generatedAt": "2026-06-24T09:51:45.397Z",
+  "generatedAt": "2026-06-25T22:34:10.058Z",
   "totalConcepts": 297,
   "coveredConcepts": 297,
   "orphanedConcepts": [],
@@ -9,1858 +9,1783 @@
     {
       "concept": "AwsPsmModel",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ApiGatewayApi",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "HttpApi",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "RestApi",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "WebSocketApi",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "ApiGatewayRoute",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "HttpApiRoute",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "RestApiRoute",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "RestApiResource",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "RestApiMethod",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "WebSocketRoute",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "ApiGatewayRequestModel",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayResponseModel",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayRequestValidator",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayRouteSetting",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayAccessLogSetting",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayIntegration",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayIntegrationRequestTemplate",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayIntegrationResponseParameter",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayStage",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "HttpApiStage",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "RestApiStage",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "WebSocketStage",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayAuthorizer",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "JwtAuthorizer",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "CognitoAuthorizer",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "LambdaAuthorizer",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayDomainName",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayBasePathMapping",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayApiKey",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayUsagePlan",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayUsagePlanKey",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayDeployment",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayTracingConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "WafWebAclAssociation",
       "kind": "EClass",
-      "taskIds": ["psm.p9.api-gateway.main"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "AwsLambdaFunction",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaCodeConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaZipCodeConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaImageCodeConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaImageConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaEnvironmentVariable",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaInvocationBinding",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "SamFunctionEvent",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaEventSourceMapping",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "SqsLambdaEventSourceMapping",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "DynamoDbStreamLambdaEventSourceMapping",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "GenericLambdaEventSourceMapping",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaDeadLetterConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaEventInvokeConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaDestinationConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaTracingConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaLoggingConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaLayerVersion",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaLayerPermission",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaVersion",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaAlias",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaProvisionedConcurrencyConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaPermission",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaFunctionUrl",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaUrlCorsConfiguration",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaFileSystemConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "CodeSigningConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p8.compute.main"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "S3NotificationDestination",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "WafAssociableResource",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "AwsResource",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "AwsTag",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "ResourceImport",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "NativeProperty",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "ValueExpression",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "NamedValueExpression",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "CorsConfiguration",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t2"],
       "covered": true
     },
     {
       "concept": "TracingConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t2"],
       "covered": true
     },
     {
       "concept": "AwsNativeResource",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "AwsStage",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "SamStack",
       "kind": "EClass",
-      "taskIds": ["psm.p1.stack-scaffolding.main"],
+      "taskIds": ["psm.ph1.st2.t1"],
       "covered": true
     },
     {
       "concept": "CfnParameter",
       "kind": "EClass",
-      "taskIds": ["psm.p1.stack-scaffolding.main"],
+      "taskIds": ["psm.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "CfnMapping",
       "kind": "EClass",
-      "taskIds": ["psm.p1.stack-scaffolding.main"],
+      "taskIds": ["psm.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "CfnCondition",
       "kind": "EClass",
-      "taskIds": ["psm.p1.stack-scaffolding.main"],
+      "taskIds": ["psm.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "CfnOutput",
       "kind": "EClass",
-      "taskIds": ["psm.p1.stack-scaffolding.main"],
+      "taskIds": ["psm.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "SamGlobals",
       "kind": "EClass",
-      "taskIds": ["psm.p1.stack-scaffolding.main"],
+      "taskIds": ["psm.ph1.st2.t1"],
       "covered": true
     },
     {
       "concept": "AwsNamingPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "AwsTaggingPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "AwsSecurityBaseline",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeBus",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeBusPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeRule",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventPattern",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeTargetParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeSqsTargetParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeHttpTargetParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "HttpParameter",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeBatchTargetParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeInputTransformer",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeArchive",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeSchedule",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgeFlexibleTimeWindow",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgePipe",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgeAuthParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgeApiKeyAuthParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgeBasicAuthParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgeOAuthParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgeHttpParameters",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgeConnection",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventBridgeApiDestination",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "AwsRetryPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p7.event-fabric.main"],
+      "taskIds": ["psm.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "CognitoUserPool",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "CognitoPasswordPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "CognitoSchemaAttribute",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "CognitoEmailConfiguration",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "CognitoAccountRecoverySetting",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "CognitoRecoveryMechanism",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "CognitoLambdaConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "CognitoUserPoolClient",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "CognitoOAuthConfiguration",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "CognitoUserPoolGroup",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "CognitoUserPoolDomain",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "CognitoIdentityPool",
       "kind": "EClass",
-      "taskIds": ["psm.p4.identity.main"],
+      "taskIds": ["psm.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "AwsRelationshipView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "ApiGatewayLambdaIntegrationView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeLambdaTargetView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "SnsLambdaSubscriptionView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "SqsLambdaEventSourceView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "StepFunctionEventBridgeTargetView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "S3LambdaNotificationView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "S3QueueNotificationView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "S3TopicNotificationView",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "SqsQueue",
       "kind": "EClass",
-      "taskIds": ["psm.p6.messaging.main"],
+      "taskIds": ["psm.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "SqsRedrivePolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p6.messaging.main"],
+      "taskIds": ["psm.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "SqsRedriveAllowPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p6.messaging.main"],
+      "taskIds": ["psm.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "SqsQueuePolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p6.messaging.main"],
+      "taskIds": ["psm.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "SnsTopic",
       "kind": "EClass",
-      "taskIds": ["psm.p6.messaging.main"],
+      "taskIds": ["psm.ph3.st2.t2"],
       "covered": true
     },
     {
       "concept": "SnsSubscription",
       "kind": "EClass",
-      "taskIds": ["psm.p6.messaging.main"],
+      "taskIds": ["psm.ph3.st2.t2"],
       "covered": true
     },
     {
       "concept": "SnsFilterRule",
       "kind": "EClass",
-      "taskIds": ["psm.p6.messaging.main"],
+      "taskIds": ["psm.ph3.st2.t2"],
       "covered": true
     },
     {
       "concept": "SnsTopicPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p6.messaging.main"],
+      "taskIds": ["psm.ph3.st2.t2"],
       "covered": true
     },
     {
       "concept": "VpcAttachmentConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p3.networking.main"],
+      "taskIds": ["psm.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "VpcEndpointReference",
       "kind": "EClass",
-      "taskIds": ["psm.p3.networking.main"],
+      "taskIds": ["psm.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "Vpc",
       "kind": "EClass",
-      "taskIds": ["psm.p3.networking.main"],
+      "taskIds": ["psm.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "Subnet",
       "kind": "EClass",
-      "taskIds": ["psm.p3.networking.main"],
+      "taskIds": ["psm.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "VpcEndpoint",
       "kind": "EClass",
-      "taskIds": ["psm.p3.networking.main"],
+      "taskIds": ["psm.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "SecurityGroup",
       "kind": "EClass",
-      "taskIds": ["psm.p3.networking.main"],
+      "taskIds": ["psm.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "SecurityGroupRule",
       "kind": "EClass",
-      "taskIds": ["psm.p3.networking.main"],
+      "taskIds": ["psm.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "CloudWatchLogGroup",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "CloudWatchMetricFilter",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "CloudWatchMetricTransformation",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "CloudWatchLogSubscriptionFilter",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "CloudWatchAlarm",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t2"],
       "covered": true
     },
     {
       "concept": "MetricDimension",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "CloudWatchCompositeAlarm",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t2"],
       "covered": true
     },
     {
       "concept": "CloudWatchDashboard",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss2.t2"],
       "covered": true
     },
     {
       "concept": "IamRole",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "IamInlinePolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "IamPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "IamManagedPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "IamPolicyDocument",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "IamStatement",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "IamPrincipal",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "IamCondition",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "KmsKey",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "KmsAlias",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "GenerateSecretStringConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "SecretsManagerSecret",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "SecretRotationRules",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "SecretRotationSchedule",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "SecretsManagerResourcePolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "SsmParameter",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "SsmParameterValueExpression",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "SecretValueExpression",
       "kind": "EClass",
-      "taskIds": ["psm.p2.security-baseline.main"],
+      "taskIds": ["psm.ph1.st3.t2"],
       "covered": true
     },
     {
       "concept": "DynamoDbTable",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbAttributeDefinition",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbKeySchemaElement",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbProjection",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbProvisionedThroughput",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbOnDemandThroughput",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbLocalSecondaryIndex",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbGlobalSecondaryIndex",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbReplicaSpecification",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbStreamSpecification",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbTimeToLiveSpecification",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbSseSpecification",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbBackupPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "S3Bucket",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3BucketEncryption",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3OwnershipControls",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3OwnershipRule",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3LifecycleConfiguration",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3LifecycleRule",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3LifecycleFilter",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3TagFilter",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3Transition",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3PublicAccessBlockConfiguration",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3NotificationConfiguration",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3NotificationRule",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3ReplicationConfiguration",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3ReplicationRule",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3ReplicationDestination",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "S3BucketPolicy",
       "kind": "EClass",
-      "taskIds": ["psm.p5.durable-storage.main"],
+      "taskIds": ["psm.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "StepFunctionStateMachine",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "AslDocument",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "AslState",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "AslBranch",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "AslMapConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "AslRetryRule",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "AslCatchRule",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "AslChoiceRule",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "StepFunctionLoggingConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "StepFunctionTracingConfig",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "SamStateMachineEvent",
       "kind": "EClass",
-      "taskIds": ["psm.p10.workflow-observability.main"],
+      "taskIds": ["psm.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "DeployableElement",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "InvocationSource",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "InvocationTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FunctionTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "WorkflowTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "SubscriptionTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "RoutingTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FlowEndpoint",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ProtectedResource",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "PolicyTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "DataAccessTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExternalCallTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "EnvironmentTarget",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "CredentialRequirementLike",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "RouteEndpoint",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventCarrier",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ConfigurableElement",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "KeyValue",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Annotation",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ModelElement",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "NamedModelElement",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceableElement",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "SemanticRelationship",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Multiplicity",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Cardinality",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Expression",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceModel",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "TraceLink",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "TransformationAssumption",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "StructuredDocument",
       "kind": "EClass",
-      "taskIds": ["psm.p0.account-stage-strategy.main"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ProductionReadinessAssessment",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ReadinessFinding",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ReadinessCheck",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ManualDecision",
       "kind": "EClass",
-      "taskIds": ["psm.p11.integration-views-readiness.main"],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "AwsEnvironmentClass",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "AwsPartition",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "CloudFormationDeletionPolicy",
       "kind": "EEnum",
-      "taskIds": ["psm.p1.stack-scaffolding.main"],
+      "taskIds": ["psm.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "CloudFormationUpdateReplacePolicy",
       "kind": "EEnum",
-      "taskIds": ["psm.p1.stack-scaffolding.main"],
+      "taskIds": ["psm.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "Decision",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "PackageType",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaArchitecture",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaTracingMode",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaRuntimeManagementMode",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaSnapStartApplyOn",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "LambdaInvokeMode",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaFunctionUrlAuthType",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaRecursiveLoopMode",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "LambdaEventSourceKind",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "StartingPosition",
       "kind": "EEnum",
-      "taskIds": ["psm.p8.compute.main", "psm.p8.compute.enums"],
+      "taskIds": ["psm.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayKind",
       "kind": "EEnum",
-      "taskIds": ["psm.p9.api-gateway.main", "psm.p9.api-gateway.enums"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "ApiGatewayEndpointType",
       "kind": "EEnum",
-      "taskIds": ["psm.p9.api-gateway.main", "psm.p9.api-gateway.enums"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "ApiGatewayAuthorizationType",
       "kind": "EEnum",
-      "taskIds": ["psm.p9.api-gateway.main", "psm.p9.api-gateway.enums"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayIntegrationType",
       "kind": "EEnum",
-      "taskIds": ["psm.p9.api-gateway.main", "psm.p9.api-gateway.enums"],
+      "taskIds": ["psm.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ApiGatewayHttpMethod",
       "kind": "EEnum",
-      "taskIds": ["psm.p9.api-gateway.main", "psm.p9.api-gateway.enums"],
+      "taskIds": ["psm.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeHttpMethod",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeTargetKind",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "EventBridgeConnectionAuthorizationType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "SqsQueueType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "SnsProtocol",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "SnsFilterPolicyScope",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "StepFunctionType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "AslStateType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbBillingMode",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbAttributeType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbKeyType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbProjectionType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbStreamViewType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "DynamoDbTableClass",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "S3VersioningStatus",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "S3BlockPublicAccessMode",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "CognitoMfaConfiguration",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "IamEffect",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ParameterType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "SsmParameterTier",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ValueSourceKind",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ValueType",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "CloudWatchComparisonOperator",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "LogGroupClass",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "SamCapability",
       "kind": "EEnum",
-      "taskIds": [
-        "psm.p11.integration-views-readiness.main",
-        "psm.p11.integration-views-readiness.enums"
-      ],
+      "taskIds": ["psm.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "Priority",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Severity",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ConstraintStrength",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "LifecycleStatus",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceConfidence",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceLinkType",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FindingType",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "StructuredFormat",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExpressionLanguage",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExpressionPhase",
       "kind": "EEnum",
-      "taskIds": ["psm.p0.account-stage-strategy.main", "psm.p0.account-stage-strategy.enums"],
+      "taskIds": ["psm.ph1.st1.t1"],
       "covered": true
     }
   ]

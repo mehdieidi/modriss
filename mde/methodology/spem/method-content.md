@@ -1,13 +1,109 @@
-# SPEM 2.0 Method Content — Modless MDE Methodologies
+# SPEM 2.0 Method Content — Modless Agile MDE Methodologies
 
 Formal method content for CIM, PIM, AWS PSM, and end-to-end modeling aligned with [SPEM 2.0](https://www.omg.org/spec/SPEM/2.0) and executable via `mde/methodology/process-definitions/*.json`.
+
+## Process Engine (Agile Kernel)
+
+The **process engine** is the iterative part of each methodology — the repeating cycle that runs through stages/phases/tasks and **delivers an increment** per revolution. It is not separate metadata; it _is_ the iteration.
+
+Each level-specific process embeds `processEngine`:
+
+| Level      | Engine ID                   | Delivers per cycle                              |
+| ---------- | --------------------------- | ----------------------------------------------- |
+| CIM        | `modless.cim.engine`        | One capability / bounded-context slice          |
+| PIM        | `modless.pim.engine`        | One serverless service slice                    |
+| PSM        | `modless.psm.engine`        | One deployable AWS slice                        |
+| End-to-end | `modless.end-to-end.engine` | Full CIM → PIM → PSM → artifacts vertical slice |
+
+### Engine structure
+
+```json
+{
+  "processEngine": {
+    "id": "modless.cim.engine",
+    "incrementUnit": "capability-slice",
+    "deliverable": { "name": "...", "description": "..." },
+    "onboarding": { "stageIds": ["..."] },
+    "cycle": [ { "id": "...", "type": "task|stages|gate|deliverable", ... } ],
+    "loop": { "fromStepId": "...", "toStepId": "...", "condition": "...", "guidance": "..." },
+    "reworkLoops": [ ... ]
+  }
+}
+```
+
+- **`onboarding`** — stages run once per program before the first engine revolution (e.g. CIM Initiate, PIM Posture).
+- **`cycle`** — steps executed each revolution until the increment is delivered.
+- **`loop`** — engine revolution: after retrospective, return to plan when backlog remains.
+- **`reworkLoops`** — internal phase-level rework paths _inside_ a cycle step (Twin Peaks, contract gaps, etc.).
+
+Static method content (roles, stages, phases, tasks) lives alongside the engine; only the engine repeats.
+
+## SPEM Process Hierarchy
+
+Each methodology is a **Process** with this structure (SPEM 2.0):
+
+```
+Process
+├── roles[]              (who performs work)
+├── artifactKinds[]      (work product types / deliverables)
+├── guidelines[]         (method guidance bound to phases or process)
+├── processEngine        (iterative revolution through in-engine phases)
+└── phases[]             (sequential lifecycle divisions)
+    └── stages[]         (activities within a phase)
+        └── subStages[]? (optional decomposition)
+            └── tasks[]  (atomic work units → artifacts + metamodel elements)
+```
+
+- **Phases** run in order; each has entry/exit criteria and may be `inEngine: false` (onboarding) or `inEngine: true` (repeated each engine cycle).
+- **Stages** group related tasks; sub-stages allow finer decomposition (e.g. Information Architecture → taxonomy vs. items).
+- **Tasks** are atomic: they name steps, produce **artifacts**, bind **workProducts** to metamodel EClasses, and declare **paletteFocus** for the canvas.
+- **Roles** are assigned at phase, stage, and task level via `primaryRole`.
+- **Guidelines** cite established practice (GQM, DDD, Twin Peaks, etc.) and apply to the whole process or a phase id.
+
+The **process engine** is not a separate methodology — it is the repeating cycle that revolves through `inEngine` phases until an increment is delivered.
+
+## CIM Process (5 phases)
+
+| Phase     | Name                    | In engine | Stages (summary)                                                               |
+| --------- | ----------------------- | --------- | ------------------------------------------------------------------------------ |
+| `cim.ph1` | Establishment           | once      | Program Charter, Strategic Intent                                              |
+| `cim.ph2` | Context Discovery       | ✓         | Participation, Capabilities, Ubiquitous Language                               |
+| `cim.ph3` | Domain Exploration      | ✓         | Information Architecture, Structural Model, Behavior Surface (with sub-stages) |
+| `cim.ph4` | Domain Synthesis        | ✓         | Aggregates, Process Flows, Bounded Contexts                                    |
+| `cim.ph5` | Convergence & Readiness | ✓         | Requirements (Twin Peaks), Governance, EVL gate                                |
+
+## PIM Process (6 phases)
+
+| Phase     | Name                        | In engine | Stages (summary)                             |
+| --------- | --------------------------- | --------- | -------------------------------------------- |
+| `pim.ph1` | Architecture Establishment  | once      | Architecture Posture, Service Boundaries     |
+| `pim.ph2` | Contracts & Data            | ✓         | Contracts & Schemas, Data Architecture       |
+| `pim.ph3` | Compute & Exposure          | ✓         | Compute Units, API Surface                   |
+| `pim.ph4` | Integration & Orchestration | ✓         | Integration Topology, Workflow Orchestration |
+| `pim.ph5` | Assurance & Configuration   | ✓         | Security, Policies, External & Config        |
+| `pim.ph6` | Platform Readiness          | gate      | Platform Mapping, Trace & Readiness          |
+
+## PSM Process (6 phases)
+
+| Phase     | Name                          | In engine | Stages (summary)                          |
+| --------- | ----------------------------- | --------- | ----------------------------------------- |
+| `psm.ph1` | Deployment Foundation         | once      | Account & Stage, Stack, Security Baseline |
+| `psm.ph2` | Network & Identity            | once      | Networking, Cognito                       |
+| `psm.ph3` | Storage & Messaging           | ✓         | DynamoDB/S3, SQS/SNS                      |
+| `psm.ph4` | Event Fabric & Compute        | ✓         | EventBridge, Lambda                       |
+| `psm.ph5` | API & Orchestration           | ✓         | API Gateway, Step Functions, CloudWatch   |
+| `psm.ph6` | Integration Views & Readiness | gate      | Integration views, EVL                    |
+
+## End-to-End Process
+
+Single phase (`e2e.ph1`) whose stages mirror the vertical slice: increment planning → CIM → CIM→PIM → PIM → PIM→PSM → PSM → M2T → artifacts. Milestones (`e2e.m0`–`e2e.m4`) mark gate outcomes across the slice.
 
 ## Team Profiles (Roles)
 
 | Role ID                   | Name                    | Primary levels | Responsibilities                                                |
 | ------------------------- | ----------------------- | -------------- | --------------------------------------------------------------- |
 | `business-modeler`        | Business Modeler        | CIM            | Intent, domain, behavior, process, transformation contracts     |
-| `requirements-engineer`   | Requirements Engineer   | CIM (phase 11) | Requirements, acceptance criteria, governance constraints       |
+| `requirements-engineer`   | Requirements Engineer   | CIM (converge) | Requirements, acceptance criteria, governance constraints       |
 | `solution-architect`      | Solution Architect      | PIM            | Service boundaries, contracts, integration, policies, readiness |
 | `cloud-platform-engineer` | Cloud Platform Engineer | PSM            | AWS resources, IAM, networking, observability, deployment       |
 | `process-reviewer`        | Process Reviewer        | All            | EVL gate approval, readiness assessment sign-off                |
@@ -25,28 +121,38 @@ Formal method content for CIM, PIM, AWS PSM, and end-to-end modeling aligned wit
 
 ## Guidance
 
-- **GQM (Basili):** Phase 1 anchors measurable intent before structural modeling.
-- **DDD (Evans):** Ubiquitous language (phase 4) precedes entities; bounded contexts synthesized after behavior (phase 10).
-- **Event Storming (Brandolini):** Phase 7 orders commands, queries, events on the behavior surface.
-- **Twin Peaks:** Requirements at phase 11 backfill traceability to concrete modeled elements.
-- **MDA layering:** CIM → PIM → PSM with human-in-the-loop EVL gates (ADR 0001, ADR 0002).
+- **GQM (Basili):** Strategic Intent anchors measurable goals before structural modeling.
+- **DDD (Evans):** Ubiquitous language precedes entities; bounded contexts synthesized after behavior.
+- **Event Storming (Brandolini):** Behavior Surface orders commands, queries, events.
+- **Twin Peaks (Nuseibeh):** Engine rework loops alternate requirements and structure until stable.
+- **Agile increments:** Engine cycle delivers thin vertical slices; loop revolves while backlog remains.
+- **MDA layering:** CIM → PIM → PSM with human-in-the-loop EVL gates.
+
+## Change Management
+
+Outside the normal engine cycle, `changeManagement.workflows` cover scope expansion, element add/modify/remove, and post-transform propagation.
 
 ## Metrics
 
 | Metric            | Definition                                              | Target                  |
 | ----------------- | ------------------------------------------------------- | ----------------------- |
 | Concept coverage  | % EClasses/enums assigned to ≥1 task                    | 100% (CI enforced)      |
-| Phase completion  | Tasks marked complete in guided panel                   | All before transform    |
+| Engine cycles     | Completed plan→deliver revolutions per program          | ≥1 per capability slice |
+| Stage completion  | All in-engine stages complete for current cycle         | Before review gate      |
 | EVL pass rate     | Validation with zero blocking findings                  | Required at each gate   |
 | Readiness closure | ProductionReadinessAssessment without blocking findings | Required before ETL/M2T |
 
 ## Task Catalog
 
-Executable task definitions with work products, entry/exit criteria, and EVL rule crosswalks live in:
+- `process-definitions/cim.json` — 5 phases, 23 tasks, 122 concepts
+- `process-definitions/pim.json` — 6 phases, 29 tasks, 179 concepts
+- `process-definitions/psm.json` — 6 phases, 25 tasks, 297 concepts
+- `process-definitions/end-to-end.json` — 1 phase, 8 stages, top-level engine
 
-- `process-definitions/cim.json` — 14 phases, 122 concepts
-- `process-definitions/pim.json` — 12 phases, 179 concepts
-- `process-definitions/psm.json` — 11 phases, 297 concepts
-- `process-definitions/end-to-end.json` — lifecycle with transform milestones
+Regenerate public guide task catalogs and phase narratives:
 
-UML activity diagrams in this directory express phase flow and decision gates per level.
+```bash
+node mde/methodology/tools/build-process-definitions.mjs
+node mde/methodology/tools/generate-methodology-guides.mjs
+node mde/methodology/tools/generate-methodology-narratives.mjs
+```

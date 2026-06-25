@@ -9,8 +9,13 @@ import {
   modelingRelationshipKindLabel,
 } from "./modeling-config-data.js";
 import { applyDefinitionAccent, renderPalette, syncPaletteCollapsedUi } from "./canvas.js";
-import { levelIntro, phaseNarrative } from "./methodology-narratives.mjs";
-import { openWorkbenchView } from "./view-explorer.js";
+import { levelIntro, phaseNarrative, stageNarrative } from "./methodology-narratives.mjs";
+import {
+  createMethodologyMapOpenButton,
+  createMethodologyMapHeaderButton,
+  initMethodologyProcessMap,
+  refreshMethodologyProcessMap,
+} from "./methodology-process-map.js";
 
 const STORAGE_KEY = "modless.guidedModeling.progress";
 const PHASE_MENU_ID = "methodologyPhaseMenu";
@@ -36,26 +41,60 @@ function loadProgress() {
     return {
       completedTaskIds: parsed?.completedTaskIds || [],
       selectedPhaseId: parsed?.selectedPhaseId || null,
+      selectedStageId: parsed?.selectedStageId || null,
       checkedCriteria: parsed?.checkedCriteria || {},
     };
   } catch {
-    return { completedTaskIds: [], selectedPhaseId: null, checkedCriteria: {} };
+    return {
+      completedTaskIds: [],
+      selectedPhaseId: null,
+      selectedStageId: null,
+      checkedCriteria: {},
+    };
   }
 }
 
-function saveProgress(progress) {
-  state.guidedModeling.progress = progress;
-  window.localStorage.setItem(storageKey(), JSON.stringify(progress));
-  renderGuidedModelingPanel();
+function leafStages(stage) {
+  if (stage?.subStages?.length) {
+    return stage.subStages.flatMap(leafStages);
+  }
+  return stage ? [stage] : [];
 }
 
-function processForActiveLevel() {
-  if (!isModelingLevel(state.activeType)) return null;
-  return state.guidedModeling.definitions[state.activeType] || null;
+function flattenAllStages(stages) {
+  const out = [];
+  for (const stage of stages || []) {
+    out.push(stage);
+    if (stage.subStages?.length) {
+      out.push(...flattenAllStages(stage.subStages));
+    }
+  }
+  return out;
+}
+
+function stageTasks(stage) {
+  return leafStages(stage).flatMap((s) => s.tasks || []);
+}
+
+function phaseTasks(phase) {
+  return (phase?.stages || []).flatMap((st) => stageTasks(st));
 }
 
 function phaseTaskIds(phase) {
-  return (phase?.tasks || []).map((t) => t.id).filter(Boolean);
+  return phaseTasks(phase)
+    .map((t) => t.id)
+    .filter(Boolean);
+}
+
+function isStageComplete(stage, progress) {
+  const ids = stageTasks(stage)
+    .map((t) => t.id)
+    .filter(Boolean);
+  return ids.length > 0 && ids.every((id) => progress.completedTaskIds.includes(id));
+}
+
+function outboundLoops(stage) {
+  return (stage?.iterationLoops || []).filter((loop) => loop.direction === "outbound");
 }
 
 function isPhaseComplete(phase, progress) {
@@ -73,14 +112,51 @@ function selectedPhase(process, progress) {
   return firstIncomplete || process.phases[0];
 }
 
+function selectedStage(phase, progress) {
+  if (!phase?.stages?.length) return null;
+  if (progress.selectedStageId) {
+    const found = flattenAllStages(phase.stages).find((s) => s.id === progress.selectedStageId);
+    if (found && found.tasks?.length) return found;
+  }
+  const leaves = phase.stages.flatMap(leafStages);
+  const firstIncomplete = leaves.find((stage) => !isStageComplete(stage, progress));
+  return firstIncomplete || leaves[0] || null;
+}
+
+function selectedTask(stage, progress) {
+  if (!stage?.tasks?.length) return null;
+  return stage.tasks.find((t) => !progress.completedTaskIds.includes(t.id)) || stage.tasks[0];
+}
+
+function selectedContext(process, progress) {
+  const phase = selectedPhase(process, progress);
+  if (!phase) return { phase: null, stage: null, task: null };
+  const stage = selectedStage(phase, progress);
+  const task = stage ? selectedTask(stage, progress) : null;
+  return { phase, stage, task };
+}
+
 function suggestedPhase(process, progress) {
   return process?.phases?.find((phase) => !isPhaseComplete(phase, progress)) || null;
 }
 
+function saveProgress(progress) {
+  state.guidedModeling.progress = progress;
+  window.localStorage.setItem(storageKey(), JSON.stringify(progress));
+  refreshMethodologyProcessMap();
+  renderGuidedModelingPanel();
+}
+
+function processForActiveLevel() {
+  if (!isModelingLevel(state.activeType)) return null;
+  return state.guidedModeling.definitions[state.activeType] || null;
+}
+
 function phaseProgress(process, progress) {
-  const phases = process?.phases || [];
-  const complete = phases.filter((p) => isPhaseComplete(p, progress)).length;
-  return { complete, total: phases.length, ratio: phases.length ? complete / phases.length : 0 };
+  const tasks = (process?.phases || []).flatMap((p) => phaseTasks(p));
+  const ids = tasks.map((t) => t.id).filter(Boolean);
+  const complete = ids.filter((id) => progress.completedTaskIds.includes(id)).length;
+  return { complete, total: ids.length, ratio: ids.length ? complete / ids.length : 0 };
 }
 
 export function guidedPaletteFocusTypes() {
@@ -90,17 +166,16 @@ export function guidedPaletteFocusTypes() {
   const process = processForActiveLevel();
   if (!process) return new Set();
   const progress = state.guidedModeling.progress || loadProgress();
-  const phase = selectedPhase(process, progress);
-  const mainTask = (phase?.tasks || []).find((t) => t.id?.endsWith(".main")) || phase?.tasks?.[0];
-  return new Set(mainTask?.paletteFocus || []);
+  const { task } = selectedContext(process, progress);
+  return new Set(task?.paletteFocus || []);
 }
 
 export function guidedActiveTask() {
   const process = processForActiveLevel();
   if (!process) return null;
   const progress = state.guidedModeling.progress || loadProgress();
-  const phase = selectedPhase(process, progress);
-  return (phase?.tasks || []).find((t) => !progress.completedTaskIds.includes(t.id)) || null;
+  const { task } = selectedContext(process, progress);
+  return task;
 }
 
 function findViewIdByViewpoint(viewpoint) {
@@ -130,6 +205,13 @@ export async function activatePhaseViewpoint(viewpoint) {
 export function selectGuidedPhase(phaseId) {
   const progress = loadProgress();
   progress.selectedPhaseId = phaseId;
+  progress.selectedStageId = null;
+  saveProgress(progress);
+}
+
+export function selectGuidedStage(stageId) {
+  const progress = loadProgress();
+  progress.selectedStageId = stageId;
   saveProgress(progress);
 }
 
@@ -154,7 +236,12 @@ export function toggleGuidedTaskComplete(taskId) {
 }
 
 export function resetGuidedProgress() {
-  saveProgress({ completedTaskIds: [], selectedPhaseId: null, checkedCriteria: {} });
+  saveProgress({
+    completedTaskIds: [],
+    selectedPhaseId: null,
+    selectedStageId: null,
+    checkedCriteria: {},
+  });
   renderPalette();
 }
 
@@ -198,6 +285,7 @@ export async function loadGuidedModelingDefinitions() {
     state.guidedModeling.definitions = Object.fromEntries(results);
     state.guidedModeling.endToEnd = await api("/modeling/process/end-to-end");
     state.guidedModeling.progress = loadProgress();
+    refreshMethodologyProcessMap();
   } catch (error) {
     console.warn("Guided modeling definitions unavailable", error);
   } finally {
@@ -208,12 +296,12 @@ export async function loadGuidedModelingDefinitions() {
   }
 }
 
-function buildTaskPrompt(phase, task, narrative) {
-  const concepts = narrative.concepts.slice(0, 12).join(", ");
-  const steps = (task?.steps || narrative.steps || []).join(" ");
+function buildTaskPrompt(phase, stage, task) {
+  const concepts = (task?.paletteFocus || []).slice(0, 12).join(", ");
+  const steps = (task?.steps || []).join(" ");
   return [
-    `Help me complete modeling phase "${phase.name}" (${phase.id}) for ${state.activeType.toUpperCase()}.`,
-    narrative.summary,
+    `Help me complete task "${task?.name}" in phase "${phase.name}" / stage "${stage?.name}" for ${state.activeType.toUpperCase()}.`,
+    phase.objective || "",
     steps ? `Steps: ${steps}` : "",
     concepts ? `Focus elements: ${concepts}` : "",
     "Suggest concrete model elements and relationships to add on the canvas.",
@@ -226,12 +314,9 @@ export function openAssistantForGuidedPhase() {
   const process = processForActiveLevel();
   if (!process) return;
   const progress = state.guidedModeling.progress || loadProgress();
-  const phase = selectedPhase(process, progress);
-  if (!phase) return;
-  const narrative = phaseNarrative(phase, state.activeType);
-  const task =
-    (phase.tasks || []).find((t) => !progress.completedTaskIds.includes(t.id)) || phase.tasks?.[0];
-  const prompt = buildTaskPrompt(phase, task, narrative);
+  const { phase, stage, task } = selectedContext(process, progress);
+  if (!phase || !task) return;
+  const prompt = buildTaskPrompt(phase, stage, task);
   window.dispatchEvent(
     new CustomEvent("modless:guided-task-prompt", { detail: { taskId: task?.id, prompt } }),
   );
@@ -334,60 +419,162 @@ function positionPhaseMenu(anchor, menu) {
   menu.classList.remove("is-positioning");
 }
 
-function renderPhaseDetail(host, phase, process, progress) {
-  const narrative = phaseNarrative(phase, state.activeType);
+function renderIterationLoops(host, stage, process) {
+  const loops = outboundLoops(stage);
+  if (!loops.length) return;
+
+  appendSection(host, "Engine rework loops", (sec) => {
+    const intro = document.createElement("p");
+    intro.textContent =
+      "Inside each engine cycle, revisit an earlier stage when exit criteria are not met.";
+    intro.style.fontSize = "0.72rem";
+    intro.style.color = "var(--muted)";
+    sec.appendChild(intro);
+
+    loops.forEach((loop) => {
+      const card = document.createElement("div");
+      card.className = "methodology-loop-card";
+      const title = document.createElement("h4");
+      title.innerHTML = `${loop.twinPeaks ? '<span class="methodology-loop-badge">Twin Peaks</span>' : ""}${escapeHtml(loop.name)}`;
+      card.appendChild(title);
+      const trigger = document.createElement("p");
+      trigger.innerHTML = `<strong>Trigger:</strong> ${escapeHtml(loop.trigger)}`;
+      card.appendChild(trigger);
+      const guidance = document.createElement("p");
+      guidance.textContent = loop.guidance;
+      card.appendChild(guidance);
+      const peer = flattenAllStages((process?.phases || []).flatMap((p) => p.stages || [])).find(
+        (s) => s.id === loop.peerStageId,
+      );
+      if (peer) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "methodology-btn";
+        btn.textContent = `Go to ${peer.name}`;
+        btn.addEventListener("click", () => selectGuidedStage(peer.id));
+        card.appendChild(btn);
+      }
+      sec.appendChild(card);
+    });
+  });
+}
+
+function renderStageTrack(host, phase, progress) {
+  const stages = phase?.stages || [];
+  if (!stages.length) return;
+
+  const ctx = { stage: selectedStage(phase, progress) };
+
+  const label = document.createElement("div");
+  label.className = "methodology-stage-label";
+  label.textContent = "Stages in this phase";
+  host.appendChild(label);
+
+  const track = document.createElement("div");
+  track.className = "methodology-stage-track";
+  stages.forEach((stage) => {
+    const complete = isStageComplete(stage, progress);
+    const current = stage.id === ctx.stage?.id;
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = [
+      "methodology-stage-chip",
+      complete ? "is-complete" : "",
+      current ? "is-current" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    chip.title = stage.objective || stage.name;
+    chip.textContent = stage.name;
+    chip.addEventListener("click", () => selectGuidedStage(stage.id));
+    track.appendChild(chip);
+  });
+  host.appendChild(track);
+
+  if (ctx.stage) {
+    const hint = document.createElement("p");
+    hint.style.fontSize = "0.7rem";
+    hint.style.color = "var(--muted)";
+    hint.style.margin = "4px 0 0";
+    hint.textContent = ctx.stage.objective || stageNarrative(ctx.stage).summary;
+    host.appendChild(hint);
+  }
+}
+
+function renderTaskCard(task, progress) {
+  const done = progress.completedTaskIds.includes(task.id);
+  const card = document.createElement("div");
+  card.className = `methodology-task-card${done ? " is-done" : ""}`;
+  const title = document.createElement("h4");
+  title.textContent = task.name;
+  card.appendChild(title);
+  if (task.artifacts?.length) {
+    const arts = document.createElement("p");
+    arts.style.fontSize = "0.68rem";
+    arts.style.color = "var(--muted)";
+    arts.textContent = `Artifacts: ${task.artifacts.map((a) => a.name).join(", ")}`;
+    card.appendChild(arts);
+  }
+  if (task.steps?.length) {
+    const steps = document.createElement("ol");
+    steps.className = "methodology-task-steps";
+    task.steps.forEach((step) => {
+      const li = document.createElement("li");
+      li.textContent = step;
+      steps.appendChild(li);
+    });
+    card.appendChild(steps);
+  }
+  if (task.paletteFocus?.length) {
+    const grid = document.createElement("div");
+    grid.className = "methodology-concept-grid";
+    task.paletteFocus.forEach((type) => grid.appendChild(renderConceptChip(type)));
+    card.appendChild(grid);
+  }
+  const markBtn = document.createElement("button");
+  markBtn.type = "button";
+  markBtn.className = "methodology-btn";
+  markBtn.textContent = done ? "Mark incomplete" : "Mark task complete";
+  markBtn.addEventListener("click", () => toggleGuidedTaskComplete(task.id));
+  card.appendChild(markBtn);
+  return card;
+}
+
+function renderPhaseDetail(host, process, progress) {
+  const { phase, stage, task } = selectedContext(process, progress);
+  if (!phase || !stage) return;
+
   const detail = document.createElement("article");
   detail.className = "methodology-detail";
 
-  appendSection(detail, "What this phase means", (sec) => {
+  appendSection(detail, "Phase objective", (sec) => {
     const p = document.createElement("p");
-    p.textContent = narrative.summary;
+    p.textContent = phase.objective;
     sec.appendChild(p);
   });
 
-  appendSection(detail, "Why it comes now", (sec) => {
+  appendSection(detail, `Stage: ${stage.name}`, (sec) => {
     const p = document.createElement("p");
-    p.textContent = narrative.why;
+    p.textContent = stage.objective;
     sec.appendChild(p);
   });
 
-  if (narrative.concepts.length) {
-    appendSection(detail, "Elements & concepts to model", (sec) => {
-      const grid = document.createElement("div");
-      grid.className = "methodology-concept-grid";
-      narrative.concepts.forEach((type) => grid.appendChild(renderConceptChip(type)));
-      sec.appendChild(grid);
-    });
-  }
-
-  if (narrative.relationships?.length) {
-    appendSection(detail, "Relationships you'll use", (sec) => {
-      const ul = document.createElement("ul");
-      narrative.relationships.forEach((kind) => {
-        const li = document.createElement("li");
-        li.textContent = modelingRelationshipKindLabel(state.activeType, kind);
-        ul.appendChild(li);
-      });
-      sec.appendChild(ul);
-    });
-  }
-
-  if (narrative.entryCriteria.length) {
+  if (task?.entryCriteria?.length) {
     appendSection(detail, "Before you start", (sec) => {
-      sec.appendChild(renderCriteriaList(narrative.entryCriteria, phase.id, "entry", progress));
+      sec.appendChild(renderCriteriaList(task.entryCriteria, task.id, "entry", progress));
     });
   }
 
-  if (narrative.exitCriteria.length) {
+  if (task?.exitCriteria?.length) {
     appendSection(detail, "You're done when", (sec) => {
-      sec.appendChild(renderCriteriaList(narrative.exitCriteria, phase.id, "exit", progress));
+      sec.appendChild(renderCriteriaList(task.exitCriteria, task.id, "exit", progress));
     });
   }
 
-  if (narrative.validationRules.length) {
+  if (task?.validationRules?.length) {
     appendSection(detail, "Validation rules", (sec) => {
       const ul = document.createElement("ul");
-      narrative.validationRules.forEach((rule) => {
+      task.validationRules.forEach((rule) => {
         const li = document.createElement("li");
         li.textContent = rule;
         ul.appendChild(li);
@@ -396,40 +583,57 @@ function renderPhaseDetail(host, phase, process, progress) {
     });
   }
 
-  (visibleTasks(phase) || []).forEach((task) => {
-    const done = progress.completedTaskIds.includes(task.id);
-    const card = document.createElement("div");
-    card.className = `methodology-task-card${done ? " is-done" : ""}`;
-    const title = document.createElement("h4");
-    title.textContent = task.name;
-    card.appendChild(title);
-    if (task.steps?.length) {
-      const steps = document.createElement("ol");
-      steps.className = "methodology-task-steps";
-      task.steps.forEach((step) => {
-        const li = document.createElement("li");
-        li.textContent = step;
-        steps.appendChild(li);
+  renderIterationLoops(detail, stage, process);
+
+  const guidelines = (process?.guidelines || []).filter(
+    (g) =>
+      g.appliesTo === "process" ||
+      g.appliesTo === phase.id ||
+      g.appliesTo === stage.id ||
+      g.appliesTo === task?.id,
+  );
+  if (guidelines.length) {
+    appendSection(detail, "Guidelines", (sec) => {
+      guidelines.forEach((g) => {
+        const card = document.createElement("div");
+        card.className = "methodology-guideline-card";
+        const title = document.createElement("h4");
+        title.textContent = g.name;
+        card.appendChild(title);
+        const text = document.createElement("p");
+        text.textContent = g.text;
+        card.appendChild(text);
+        sec.appendChild(card);
       });
-      card.appendChild(steps);
-    }
-    const markBtn = document.createElement("button");
-    markBtn.type = "button";
-    markBtn.className = "methodology-btn";
-    markBtn.textContent = done ? "Mark incomplete" : "Mark task complete";
-    markBtn.addEventListener("click", () => toggleGuidedTaskComplete(task.id));
-    card.appendChild(markBtn);
-    detail.appendChild(card);
+    });
+  }
+
+  const roleId = task?.primaryRole || stage.primaryRole || phase.primaryRole;
+  const role = (process?.roles || []).find((r) => r.id === roleId);
+  if (role) {
+    appendSection(detail, "Performing role", (sec) => {
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${escapeHtml(role.name)}</strong> — ${escapeHtml((role.responsibilities || []).join("; "))}`;
+      sec.appendChild(p);
+    });
+  }
+
+  appendSection(detail, "Atomic tasks", (sec) => {
+    (stage.tasks || []).forEach((t) => sec.appendChild(renderTaskCard(t, progress)));
   });
+
+  renderChangeManagement(detail, process);
 
   const actions = document.createElement("div");
   actions.className = "methodology-actions";
-  const primary = document.createElement("button");
-  primary.type = "button";
-  primary.className = "methodology-btn methodology-btn-primary";
-  primary.textContent = `Open ${narrative.viewpointLabel}`;
-  primary.addEventListener("click", () => activatePhaseViewpoint(phase.viewpoint));
-  actions.appendChild(primary);
+  if (task?.viewpoint) {
+    const primary = document.createElement("button");
+    primary.type = "button";
+    primary.className = "methodology-btn methodology-btn-primary";
+    primary.textContent = `Open ${task.viewpoint} view`;
+    primary.addEventListener("click", () => activatePhaseViewpoint(task.viewpoint));
+    actions.appendChild(primary);
+  }
 
   const row = document.createElement("div");
   row.className = "methodology-actions-row";
@@ -447,20 +651,158 @@ function renderPhaseDetail(host, phase, process, progress) {
   row.appendChild(aiBtn);
   actions.appendChild(row);
 
-  if (isPhaseComplete(phase, progress)) {
-    const next = process.phases[process.phases.indexOf(phase) + 1];
-    if (next) {
+  const leaves = phase.stages.flatMap(leafStages);
+  const stageIndex = leaves.findIndex((s) => s.id === stage.id);
+  if (stageIndex >= 0 && stageIndex < leaves.length - 1 && isStageComplete(stage, progress)) {
+    const nextStage = leaves[stageIndex + 1];
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "methodology-btn methodology-btn-primary";
+    nextBtn.textContent = `Continue to ${nextStage.name}`;
+    nextBtn.addEventListener("click", () => selectGuidedStage(nextStage.id));
+    actions.appendChild(nextBtn);
+  } else if (isPhaseComplete(phase, progress)) {
+    const phaseIndex = process.phases.indexOf(phase);
+    const nextPhase = process.phases[phaseIndex + 1];
+    if (nextPhase) {
       const nextBtn = document.createElement("button");
       nextBtn.type = "button";
       nextBtn.className = "methodology-btn methodology-btn-primary";
-      nextBtn.textContent = `Continue to ${next.name}`;
-      nextBtn.addEventListener("click", () => selectGuidedPhase(next.id));
+      nextBtn.textContent = `Continue to phase ${nextPhase.name}`;
+      nextBtn.addEventListener("click", () => selectGuidedPhase(nextPhase.id));
       actions.appendChild(nextBtn);
     }
   }
 
   detail.appendChild(actions);
   host.appendChild(detail);
+}
+
+function renderChangeManagement(host, process) {
+  const workflows = process?.changeManagement?.workflows || [];
+  if (!workflows.length) return;
+
+  appendSection(host, "Changing the model", (sec) => {
+    const intro = document.createElement("p");
+    intro.textContent =
+      "After marking phases complete, use these workflows when scope changes or elements need add/modify/remove.";
+    intro.style.fontSize = "0.72rem";
+    intro.style.color = "var(--muted)";
+    sec.appendChild(intro);
+
+    workflows.slice(0, 5).forEach((workflow) => {
+      const card = document.createElement("details");
+      card.className = "methodology-change-card";
+      const summary = document.createElement("summary");
+      summary.textContent = workflow.name;
+      card.appendChild(summary);
+      if (workflow.trigger) {
+        const trig = document.createElement("p");
+        trig.style.fontSize = "0.7rem";
+        trig.style.margin = "6px 0 4px";
+        trig.innerHTML = `<strong>When:</strong> ${escapeHtml(workflow.trigger)}`;
+        card.appendChild(trig);
+      }
+      if (workflow.steps?.length) {
+        const ol = document.createElement("ol");
+        workflow.steps.forEach((step) => {
+          const li = document.createElement("li");
+          li.textContent = step;
+          ol.appendChild(li);
+        });
+        card.appendChild(ol);
+      }
+      sec.appendChild(card);
+    });
+  });
+}
+
+function renderProcessEngine(host, process) {
+  const engine = process?.processEngine;
+  if (!engine?.cycle?.length) return;
+
+  const label = document.createElement("div");
+  label.className = "methodology-stage-label";
+  label.textContent = engine.displayName || "Process engine";
+  host.appendChild(label);
+
+  const desc = document.createElement("p");
+  desc.style.fontSize = "0.7rem";
+  desc.style.color = "var(--muted)";
+  desc.style.margin = "0 0 6px";
+  desc.style.lineHeight = "1.35";
+  desc.textContent = engine.description;
+  host.appendChild(desc);
+
+  if (engine.deliverable?.name) {
+    const del = document.createElement("p");
+    del.style.fontSize = "0.68rem";
+    del.style.color = "var(--muted)";
+    del.style.margin = "0 0 6px";
+    del.textContent = `Delivers per cycle: ${engine.deliverable.name}`;
+    host.appendChild(del);
+  }
+
+  const bar = document.createElement("div");
+  bar.className = "methodology-engine-bar methodology-e2e-bar";
+  bar.setAttribute("aria-label", "Process engine cycle");
+  engine.cycle.forEach((step) => {
+    const chip = document.createElement("span");
+    chip.className = "methodology-e2e-step";
+    chip.title = step.steps?.join(" ") || step.name;
+    chip.textContent = step.name.replace(/ \(.*\)/, "").slice(0, 18);
+    bar.appendChild(chip);
+  });
+  host.appendChild(bar);
+
+  if (engine.loop?.guidance) {
+    const loopHint = document.createElement("p");
+    loopHint.className = "methodology-hero-hint";
+    loopHint.textContent = `↻ ${engine.loop.guidance}`;
+    host.appendChild(loopHint);
+  }
+
+  if (engine.onboarding?.name) {
+    const onboard = document.createElement("p");
+    onboard.style.fontSize = "0.68rem";
+    onboard.style.color = "var(--muted)";
+    onboard.style.marginTop = "4px";
+    onboard.textContent = `Before first cycle (once): ${engine.onboarding.name}`;
+    host.appendChild(onboard);
+  }
+}
+
+function renderEndToEndBar(host) {
+  const e2e = state.guidedModeling.endToEnd;
+  const cycle = e2e?.processEngine?.cycle || e2e?.phases;
+  if (!cycle?.length) return;
+
+  const levelPhaseMap = {
+    cim: "e2e.p1.cim-modeling",
+    pim: "e2e.p3.pim-refinement",
+    psm: "e2e.p5.psm-refinement",
+  };
+  const activeE2eId = levelPhaseMap[state.activeType];
+
+  const label = document.createElement("div");
+  label.className = "methodology-stage-label";
+  label.textContent = "End-to-end engine";
+  host.appendChild(label);
+
+  const wrap = document.createElement("div");
+  wrap.className = "methodology-e2e-bar";
+  wrap.setAttribute("aria-label", "End-to-end engine cycle");
+  cycle.forEach((step) => {
+    const chip = document.createElement("span");
+    chip.className = `methodology-e2e-step${step.id === activeE2eId ? " is-active" : ""}`;
+    chip.title = step.objective || step.name;
+    chip.textContent = step.name
+      .replace(/ \(.*\)/, "")
+      .replace(/Transformation.*/, "ETL")
+      .slice(0, 18);
+    wrap.appendChild(chip);
+  });
+  host.appendChild(wrap);
 }
 
 function appendSection(parent, title, build) {
@@ -501,12 +843,6 @@ function renderCriteriaList(items, phaseId, kind, progress) {
     wrap.appendChild(row);
   });
   return wrap;
-}
-
-function visibleTasks(phase) {
-  return (phase?.tasks || []).filter(
-    (task) => !task.id?.endsWith(".enums") && !/^Configure .+ enumerations$/i.test(task.name || ""),
-  );
 }
 
 function bindPhaseMenuListeners() {
@@ -579,6 +915,8 @@ function renderPhaseNavigator(host, process, progress) {
       selectGuidedPhase(phaseId);
     }),
   );
+
+  renderStageTrack(nav, phase, progress);
 
   const header = document.createElement("div");
   header.className = "methodology-phase-header";
@@ -722,11 +1060,14 @@ export function renderGuidedModelingPanel() {
     hint.textContent = `Suggested next: ${suggested.name}`;
     hero.appendChild(hint);
   }
+  renderProcessEngine(hero, process);
+  renderEndToEndBar(hero);
+  hero.appendChild(createMethodologyMapOpenButton());
   host.appendChild(hero);
 
   if (phase) {
     renderPhaseNavigator(host, process, progress);
-    renderPhaseDetail(host, phase, process, progress);
+    renderPhaseDetail(host, process, progress);
   }
 
   const footer = document.createElement("div");
@@ -799,6 +1140,12 @@ export function initGuidedModeling() {
   });
 
   loadGuidedModelingDefinitions();
+  initMethodologyProcessMap();
+
+  const methodologyHeader = el.methodologyPane?.querySelector(".sidebar-section-header");
+  if (methodologyHeader && !methodologyHeader.querySelector(".methodology-map-header-btn")) {
+    methodologyHeader.appendChild(createMethodologyMapHeaderButton());
+  }
 }
 
 export function onGuidedModelingContextChanged() {
@@ -806,6 +1153,7 @@ export function onGuidedModelingContextChanged() {
   if (state.leftPaneMode === "methodology") {
     renderGuidedModelingPanel();
   }
+  refreshMethodologyProcessMap();
   renderPalette();
 }
 

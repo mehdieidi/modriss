@@ -15,12 +15,24 @@ class ModelingProcessServiceTest {
   private final ModelingProcessService service = new ModelingProcessService();
 
   @Test
-  void loadsCimProcessWithFourteenPhases() {
+  void loadsCimProcessWithSpemHierarchy() {
     Map<String, Object> process = service.processDefinition("cim");
     assertEquals("modless.cim.modeling", process.get("processId"));
+    assertEquals("2.0", process.get("spemVersion"));
     List<?> phases = list(process.get("phases"));
-    assertEquals(14, phases.size());
+    assertEquals(5, phases.size());
     assertFalse(list(process.get("roles")).isEmpty());
+    assertFalse(list(process.get("artifactKinds")).isEmpty());
+    assertFalse(list(process.get("guidelines")).isEmpty());
+    assertNotNull(process.get("processEngine"));
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> firstPhase = (Map<String, Object>) phases.get(0);
+    List<?> stages = list(firstPhase.get("stages"));
+    assertFalse(stages.isEmpty());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> firstStage = (Map<String, Object>) stages.get(0);
+    assertFalse(list(firstStage.get("tasks")).isEmpty());
   }
 
   @Test
@@ -28,8 +40,12 @@ class ModelingProcessServiceTest {
     Map<String, Object> process = service.processDefinition("end-to-end");
     assertEquals("modless.end-to-end.modeling", process.get("processId"));
     List<?> phases = list(process.get("phases"));
-    assertTrue(phases.size() >= 6);
+    assertEquals(1, phases.size());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> phase = (Map<String, Object>) phases.get(0);
+    assertTrue(list(phase.get("stages")).size() >= 8);
     assertNotNull(process.get("milestones"));
+    assertNotNull(process.get("processEngine"));
   }
 
   @Test

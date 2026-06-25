@@ -1,0 +1,75 @@
+#!/usr/bin/env node
+/**
+ * Regenerates phase narrative keys in apps/frontend/js/methodology-narratives.mjs from process JSON.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "../../..");
+const NARRATIVES = path.join(ROOT, "apps/frontend/js/methodology-narratives.mjs");
+
+const LEVELS = ["cim", "pim", "psm"];
+
+function loadProcess(level) {
+  const p = path.join(ROOT, `mde/methodology/process-definitions/${level}.json`);
+  return JSON.parse(fs.readFileSync(p, "utf8"));
+}
+
+function firstTaskTypes(phase) {
+  function walk(stages) {
+    for (const stage of stages || []) {
+      if (stage.subStages?.length) {
+        const inner = walk(stage.subStages);
+        if (inner.length) return inner;
+      }
+      const task = stage.tasks?.[0];
+      if (task?.paletteFocus?.length) return task.paletteFocus;
+    }
+    return [];
+  }
+  return walk(phase.stages);
+}
+
+function buildNarratives() {
+  const entries = {};
+  for (const level of LEVELS) {
+    const process = loadProcess(level);
+    for (const phase of process.phases || []) {
+      entries[phase.id] = {
+        summary: phase.objective || phase.name,
+        why: (phase.entryCriteria || []).join(" ") || `Completes ${phase.name} before the next phase.`,
+        relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
+      };
+    }
+  }
+  return entries;
+}
+
+const narratives = buildNarratives();
+let content = fs.readFileSync(NARRATIVES, "utf8");
+const start = "export const PHASE_NARRATIVES = {";
+const end = "};";
+const startIdx = content.indexOf(start);
+const endIdx = content.indexOf(end, startIdx);
+if (startIdx < 0 || endIdx < 0) {
+  console.error("Could not find PHASE_NARRATIVES block");
+  process.exit(1);
+}
+
+const body = Object.entries(narratives)
+  .map(([id, n]) => {
+    const rel = JSON.stringify(n.relationships);
+    return `  "${id}": {
+    summary: ${JSON.stringify(n.summary)},
+    why: ${JSON.stringify(n.why)},
+    relationships: ${rel},
+  }`;
+  })
+  .join(",\n");
+
+const replacement = `${start}\n${body},\n${end}`;
+content = content.slice(0, startIdx) + replacement + content.slice(endIdx + end.length);
+fs.writeFileSync(NARRATIVES, content);
+console.log(`Updated ${NARRATIVES} (${Object.keys(narratives).length} phase narratives)`);

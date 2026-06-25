@@ -2,525 +2,805 @@
 
 The Computation-Independent Model (CIM) captures business intent, domain structure, behavior, and
 governance without platform or implementation detail. This guide is the canonical walkthrough for
-Modless CIM modeling: **14 phases (0–13)**, ordered by metamodel dependencies and EVL gates—not by
-illustrative samples.
+Modless CIM modeling: **5 sequential phases**, each containing **stages** (with optional sub-stages) and **atomic tasks** that produce SPEM artifacts bound to CIM metamodel elements. Work is ordered by metamodel dependencies and EVL gates—not a linear waterfall.
 
-Use the **Guided Modeling** panel (when enabled) or this document to track phase progress. Each phase
-maps to a modeling viewpoint and palette focus in the editor.
+Use the **Guided Modeling** panel (when enabled) or this document to track phase → stage → task progress. Each task maps to a modeling viewpoint and palette focus in the editor. When exit criteria are not met, use **engine rework loops** (Twin Peaks) to revisit earlier stages within the same engine cycle.
+
+## SPEM Structure
+
+```
+Process → phases[] → stages[] → (subStages[]) → tasks[] (atomic)
+         roles[], artifactKinds[], guidelines[], processEngine
+```
+
+## Process Engine
+
+The **process engine** (`processEngine` in JSON) is the iterative agile kernel: the repeating cycle that plans, models, reviews, delivers, and retrospects **one capability slice per revolution**.
+
+CIM engine cycle: **Plan → Context Discovery → Domain Exploration → Domain Synthesis → Convergence → Review → Deliver → Retrospect → ↻**
+
+Before the first cycle, run **Establishment** once (`cim.ph1`). While modeling inside a cycle, use **engine rework loops** (e.g. language refinement back to glossary, Twin Peaks back to domain structure).
+
+## Sequential Phases
+
+| Phase     | Name                    | In engine | Stages                                                                    |
+| --------- | ----------------------- | --------- | ------------------------------------------------------------------------- |
+| `cim.ph1` | Establishment           | once      | Program Charter, Strategic Framing                                        |
+| `cim.ph2` | Context Discovery       | ✓         | Participation Model, Capability Landscape, Ubiquitous Language            |
+| `cim.ph3` | Domain Exploration      | ✓         | Information Architecture, Structural Model, Behavior Surface (sub-stages) |
+| `cim.ph4` | Domain Synthesis        | ✓         | Aggregate Boundaries, Process & Decisions, Bounded Contexts               |
+| `cim.ph5` | Convergence & Readiness | ✓         | Requirements (Twin Peaks), Governance, EVL gate                           |
 
 ## Roles
 
-| Role                      | Responsibility in CIM                                                           |
-| ------------------------- | ------------------------------------------------------------------------------- |
-| **Business Modeler**      | Phases 0–10 and 12: intent, domain, behavior, process, transformation contracts |
-| **Requirements Engineer** | Phase 11: requirements, acceptance criteria, governance constraints             |
-| **Process Reviewer**      | Phase 13: EVL gate approval and production readiness sign-off                   |
+| Role                      | Responsibility in CIM                                                         |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| **Business Modeler**      | Establishment through synthesis: intent, domain, behavior, process, contracts |
+| **Requirements Engineer** | Convergence phase: requirements, acceptance criteria, governance constraints  |
+| **Process Reviewer**      | EVL gate approval and production readiness sign-off                           |
 
 ## Phase Flow
 
 ```mermaid
 flowchart TD
-  P0["Phase 0<br/>Model Context"]
-  P1["Phase 1<br/>Strategic Intent"]
-  P2["Phase 2<br/>Actors & Boundaries"]
-  P3["Phase 3<br/>Capability Landscape"]
-  P4["Phase 4<br/>Ubiquitous Language"]
-  P5["Phase 5<br/>Information Taxonomy"]
-  P6["Phase 6<br/>Domain Structure"]
-  P7["Phase 7<br/>Behavior Surface"]
-  P8["Phase 8<br/>Aggregate Boundaries"]
-  P9["Phase 9<br/>Process & Decisions"]
-  P10["Phase 10<br/>Bounded Context Synthesis"]
-  P11["Phase 11<br/>Requirements & Governance"]
-  P12["Phase 12<br/>Transformation Contracts"]
-  P13["Phase 13<br/>Traceability & Readiness"]
+  PH1["Phase 1 — Establishment"]
+  PH2["Phase 2 — Context Discovery"]
+  PH3["Phase 3 — Domain Exploration"]
+  PH4["Phase 4 — Domain Synthesis"]
+  PH5["Phase 5 — Convergence & Readiness"]
 
-  P0 --> P1 --> P2 --> P3 --> P4 --> P5
-  P5 --> P6 --> P7 --> P8 --> P9 --> P10
-  P10 --> P11 --> P12 --> P13
-  P13 -->|EVL pass| GATE["CIM → PIM transform"]
+  PH1 --> PH2 --> PH3 --> PH4 --> PH5
+  PH3 -.->|Twin Peaks / rework loops| PH2
+  PH4 -.->|rework loops| PH3
+  PH5 -->|EVL pass| GATE["CIM → PIM transform"]
 ```
 
 ## Phase Overview
 
-| Phase | Name                      | Primary role          | Duration | Inputs               | Outputs                                 |
-| ----- | ------------------------- | --------------------- | -------- | -------------------- | --------------------------------------- |
-| 0     | Model Context             | Business Modeler      | 30–45m   | New project          | `CIMModel` root with domain metadata    |
-| 1     | Strategic Intent          | Business Modeler      | 1–2h     | Model context        | Goals, KPIs, stakeholders (GQM anchor)  |
-| 2     | Actors & Boundaries       | Business Modeler      | 1h       | Strategic intent     | Actors, roles, external systems         |
-| 3     | Capability Landscape      | Business Modeler      | 1–2h     | Actors defined       | Capability map linked to goals          |
-| 4     | Ubiquitous Language       | Business Modeler      | 1h       | Capability draft     | Domain glossary                         |
-| 5     | Information Taxonomy      | Business Modeler      | 1–2h     | Glossary started     | `InformationItem`, `DataClassification` |
-| 6     | Domain Structure          | Business Modeler      | 2–4h     | Information taxonomy | Entities, value objects, relationships  |
-| 7     | Behavior Surface          | Business Modeler      | 2–4h     | Domain structure     | Commands, queries, events, conditions   |
-| 8     | Aggregate Boundaries      | Business Modeler      | 1–2h     | Behavior modeled     | Aggregate candidates with consistency   |
-| 9     | Process & Decisions       | Business Modeler      | 2–3h     | Aggregates defined   | Processes, policies, decision tables    |
-| 10    | Bounded Context Synthesis | Business Modeler      | 1–2h     | Process complete     | Bounded context assignments             |
-| 11    | Requirements & Governance | Requirements Engineer | 2–3h     | Contexts synthesized | Requirements, NFRs, constraints         |
-| 12    | Transformation Contracts  | Business Modeler      | 1h       | Governance captured  | Risks, assumptions, transform profile   |
-| 13    | Traceability & Readiness  | Process Reviewer      | 1–2h     | Transform contracts  | Trace model, readiness gate approval    |
+| Phase | Name                    | Primary role                             | Key artifacts                                                 |
+| ----- | ----------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| 1     | Establishment           | Business Modeler                         | CIM Model Root, Strategic Intent                              |
+| 2     | Context Discovery       | Business Modeler                         | Participation Model, Capability Map, Glossary                 |
+| 3     | Domain Exploration      | Business Modeler                         | Information Taxonomy, Domain Structure, CQRS Behavior Surface |
+| 4     | Domain Synthesis        | Business Modeler                         | Aggregates, Process Flows, Bounded Contexts                   |
+| 5     | Convergence & Readiness | Requirements Engineer / Process Reviewer | Requirements, Governance, Trace & Readiness                   |
 
----
+<!-- TASK-CATALOG:START -->
+<!-- Generated by mde/methodology/tools/generate-methodology-guides.mjs — do not edit manually -->
 
-## Phase 0 — Model Context
+## Task Catalog
 
-**Viewpoint:** dashboard · **Duration:** 30–45 minutes
+Process `modless.cim.modeling` · 5 phases · 23 atomic tasks · CIM metamodel coverage enforced in CI.
 
-Establish the CIM root and modeling conventions before any domain content.
+### Establishment (`cim.ph1`)
 
-### Tasks
+Establish the CIM program container and strategic intent that anchors all later modeling.
 
-#### Model Context
+**Runs:** once per program · **Role:** business-modeler
 
+**Phase entry:**
+
+- Modless project created
+
+**Phase exit:**
+
+- CIMModel root exists
+- At least one BusinessGoal with KPI
+
+#### Program Charter (`cim.ph1.st1`)
+
+Create the CIMModel root and modeling conventions.
+
+**Viewpoint:** dashboard
+
+##### Tasks
+
+#### Create CIM model root (`cim.ph1.st1.t1`)
+
+**Viewpoint:** dashboard
+**Duration:** 20m
+**Artifacts:** CIM Model Root
 **Palette focus:** `CIMModel`
 
-1. Create the `CIMModel` root with domain name and business scope.
-2. Set modeling date, language, and organization metadata.
-3. Review lifecycle status and annotation conventions.
+**Steps:**
 
-#### Configure Model Context enumerations
+1. Create CIMModel with domainName and businessScope.
+2. Set organizationName, modelingDate, and language.
+3. Apply lifecycle status and annotation conventions on the root.
 
-Review enum literals used across the model: `Severity`, `ConstraintStrength`, `LifecycleStatus`,
-`TraceConfidence`, `TraceLinkType`, `FindingType`, `StructuredFormat`, `ExpressionLanguage`,
-`ExpressionPhase`.
+**Entry criteria:**
 
-### Common mistakes
+- Project created
 
-| Mistake                                                      | EVL rule                           |
-| ------------------------------------------------------------ | ---------------------------------- |
-| Skipping root metadata (no `domainName`)                     | — (exit criteria: root must exist) |
-| Inconsistent severity or lifecycle enums across later phases | —                                  |
+**Exit criteria:**
 
-### Phase gate checklist
+- CIMModel root with domainName exists
 
-- [ ] `CIMModel` root exists with `domainName` set
-- [ ] Modeling metadata (date, language, organization) recorded
-- [ ] Shared enumeration conventions agreed
+#### Strategic Framing (`cim.ph1.st2`)
 
----
+Capture measurable business intent using GQM before domain modeling.
 
-## Phase 1 — Strategic Intent
+**Viewpoint:** requirements
 
-**Viewpoint:** requirements · **Duration:** 1–2 hours
+##### Tasks
 
-Anchor the model in measurable business intent using Goal–Question–Metric (GQM).
+#### Define business goals and KPIs (`cim.ph1.st2.t1`)
 
-### Tasks
+**Viewpoint:** requirements
+**Duration:** 45m
+**Artifacts:** Strategic Intent Package
+**Palette focus:** `BusinessGoal`, `KPI`
 
-**Palette focus:** `BusinessGoal`, `KPI`, `Stakeholder`
+**Steps:**
 
-1. Capture business goals with success criteria (GQM).
-2. Define measurable KPIs linked to goals.
-3. Identify stakeholders and their concerns.
+1. Capture BusinessGoal elements with success criteria.
+2. Define measurable KPIs linked to each goal.
 
-### Common mistakes
+**Entry criteria:**
 
-| Mistake                                                | EVL rule       |
-| ------------------------------------------------------ | -------------- |
-| Goal without success criterion                         | `CIM-GOAL-001` |
-| Critical goal missing owner or KPI                     | `CIM-GOAL-002` |
-| KPI not measurable (missing operator, target, or unit) | `CIM-KPI-001`  |
-| KPI missing definition, frequency, or data source      | `CIM-KPI-002`  |
+- CIM model root exists
 
-### Phase gate checklist
+**Exit criteria:**
 
-- [ ] At least one `BusinessGoal` with linked `KPI`
-- [ ] `CIM-GOAL-001` and `CIM-KPI-001` pass for all goals and KPIs
-- [ ] Stakeholders identified for primary concerns
+- At least one goal with linked KPI
 
----
+**Validation:**
 
-## Phase 2 — Actors & Boundaries
+- `CIM-GOAL-001`
+- `CIM-KPI-001`
 
-**Viewpoint:** actor · **Duration:** ~1 hour
+#### Identify stakeholders (`cim.ph1.st2.t2`)
 
-Define who and what interacts at domain boundaries before authoring behavior.
+**Viewpoint:** requirements
+**Duration:** 30m
+**Artifacts:** Strategic Intent Package
+**Palette focus:** `Stakeholder`
 
-### Tasks
+**Steps:**
 
-**Palette focus:** `Actor`, `Role`, `ExternalSystem`
+1. Register stakeholders and their concerns linked to goals.
 
-1. Model human and system actors with trust levels.
-2. Define roles and authorization scope.
-3. Register external systems at domain boundaries.
+**Entry criteria:**
 
-### Common mistakes
+- Goals drafted
 
-| Mistake                                                          | EVL rule        |
-| ---------------------------------------------------------------- | --------------- |
-| Actor missing `actorType` or `trustLevel`                        | `CIM-ACTOR-001` |
-| External/untrusted actor without auth expectations               | `CIM-ACTOR-003` |
-| Privileged role without responsibility summary                   | `CIM-ROLE-001`  |
-| External system not typed as external                            | `CIM-EXT-000`   |
-| External system missing ownership or trust rationale             | `CIM-EXT-001`   |
-| External system exchanging data but no linked information/events | `CIM-EXT-002`   |
+**Exit criteria:**
 
-### Phase gate checklist
-
-- [ ] Actors defined for primary user journeys
-- [ ] Roles scoped to authorization boundaries
-- [ ] External systems documented with trust and data exchange
+- Stakeholders identified for primary outcomes
 
 ---
 
-## Phase 3 — Capability Landscape
+### Context Discovery (`cim.ph2`)
 
-**Viewpoint:** capability · **Duration:** 1–2 hours
+Map who participates in the domain, what the organization can do, and shared vocabulary.
 
-Map what the organization must be able to do, linked to goals, before structural domain modeling.
+**Runs:** in engine cycle · **Role:** business-modeler
 
-### Tasks
+**Phase entry:**
 
-**Palette focus:** `BusinessCapability`, `CapabilityDependency`
+- Phase Establishment complete
 
-1. Map business capabilities to goals.
-2. Record capability dependencies and criticality.
-3. Prepare ownership boundaries before domain modeling.
+**Phase exit:**
 
-### Common mistakes
+- Actors, capabilities, and glossary cover the increment slice
 
-| Mistake                                    | EVL rule      |
-| ------------------------------------------ | ------------- |
-| Capability supports no business goal       | `CIM-CAP-001` |
-| Capability lacks owner or responsibility   | `CIM-CAP-002` |
-| Self-referential or unexplained dependency | `CIM-CAP-005` |
+#### Participation Model (`cim.ph2.st1`)
 
-### Phase gate checklist
+Model human/system actors, roles, and boundary external systems.
 
-- [ ] Capability map covers core value streams
-- [ ] Each capability links to at least one goal
-- [ ] Dependencies and criticality recorded
+**Viewpoint:** actor
 
----
+##### Tasks
 
-## Phase 4 — Ubiquitous Language
+#### Model actors and roles (`cim.ph2.st1.t1`)
 
-**Viewpoint:** capability · **Duration:** ~1 hour
+**Viewpoint:** actor
+**Duration:** 45m
+**Artifacts:** Participation Model
+**Palette focus:** `Actor`, `Role`
 
-Resolve vocabulary before entities and processes (DDD strategic design).
+**Steps:**
 
-### Tasks
+1. Model human and system Actor elements with trust levels.
+2. Define Role elements and link to actors.
 
+**Entry criteria:**
+
+- Strategic intent captured
+
+**Exit criteria:**
+
+- Actors exist for primary user journeys
+
+#### Register external systems (`cim.ph2.st1.t2`)
+
+**Viewpoint:** actor
+**Duration:** 20m
+**Artifacts:** Participation Model
+**Palette focus:** `ExternalSystem`
+
+**Steps:**
+
+1. Register ExternalSystem actors at domain boundaries.
+
+**Entry criteria:**
+
+- Actors modeled
+
+**Exit criteria:**
+
+- External integrations at boundaries identified
+
+#### Capability Topology (`cim.ph2.st2`)
+
+Map business capabilities to goals and record dependencies.
+
+**Viewpoint:** capability
+
+##### Tasks
+
+#### Map business capabilities (`cim.ph2.st2.t1`)
+
+**Viewpoint:** capability
+**Duration:** 1h
+**Artifacts:** Capability Map
+**Palette focus:** `BusinessCapability`
+
+**Steps:**
+
+1. Create BusinessCapability elements linked to goals.
+2. Set criticality for each capability in the increment slice.
+
+**Entry criteria:**
+
+- Participation model drafted
+
+**Exit criteria:**
+
+- Capabilities cover core value streams for slice
+
+#### Record capability dependencies (`cim.ph2.st2.t2`)
+
+**Viewpoint:** capability
+**Duration:** 30m
+**Artifacts:** Capability Map
+**Palette focus:** `CapabilityDependency`
+
+**Steps:**
+
+1. Model CapabilityDependency relationships between capabilities.
+
+**Entry criteria:**
+
+- Capability map drafted
+
+**Exit criteria:**
+
+- Dependencies documented for slice
+
+#### Ubiquitous Language (`cim.ph2.st3`)
+
+Build shared glossary before structural modeling (DDD).
+
+**Viewpoint:** capability
+
+##### Tasks
+
+#### Define domain glossary (`cim.ph2.st3.t1`)
+
+**Viewpoint:** capability
+**Duration:** 45m
+**Artifacts:** Ubiquitous Language Glossary
 **Palette focus:** `UbiquitousLanguageTerm`
 
-1. Define domain terms with definitions and examples.
+**Steps:**
+
+1. Define UbiquitousLanguageTerm entries with definitions and examples.
 2. Link terms to capabilities where helpful.
-3. Resolve naming conflicts before structural modeling.
+3. Resolve naming conflicts before entity modeling.
 
-### Common mistakes
+**Entry criteria:**
 
-| Mistake                                                | EVL rule     |
-| ------------------------------------------------------ | ------------ |
-| Term without definition                                | `CIM-UL-001` |
-| Premature bounded-context creation (defer to Phase 10) | —            |
+- Capability map drafted
 
-### Phase gate checklist
+**Exit criteria:**
 
-- [ ] Glossary covers core domain nouns
-- [ ] Naming conflicts resolved
-- [ ] Terms linked to capabilities where useful
+- Glossary covers core domain nouns for slice
 
 ---
 
-## Phase 5 — Information Taxonomy
+### Domain Exploration (`cim.ph3`)
 
-**Viewpoint:** domain · **Duration:** 1–2 hours
+Explore information, structure, and behavior using Twin Peaks — iterate until CQRS surface is coherent.
 
-**Mandatory before domain entities.** `DomainEntity.primaryIdentityAttribute` must reference an
-`InformationItem`.
+**Runs:** in engine cycle · **Role:** business-modeler
 
-### Tasks
+**Phase entry:**
 
-#### Information Taxonomy
+- Context Discovery complete for slice
 
-**Palette focus:** `InformationItem`, `DataClassification`
+**Phase exit:**
 
-1. Define data classifications and confidentiality levels.
-2. Create `InformationItem` elements **before** entities (`CIM-ENTITY-001`).
-3. Set identifiability and data kind for each item.
+- Commands, queries, and events cover primary use cases
 
-#### Configure Information Taxonomy enumerations
+#### Information Architecture (`cim.ph3.st1`)
 
-Review: `PrimitiveBusinessType`, `IdentityStrategy`, `DataKind`, `Identifiability`.
+Classify data and name information items before entities (CIM-ENTITY-001).
 
-### Common mistakes
+##### Data Classification (`cim.ph3.st1.ss1`)
 
-| Mistake                                             | EVL rule                         |
-| --------------------------------------------------- | -------------------------------- |
-| Creating entities before information items          | `CIM-ENTITY-001`                 |
-| Information item without type                       | `CIM-INFO-001`                   |
-| Sensitive/regulated data without privacy constraint | `CIM-INFO-004`                   |
-| Cyclic or invalid sub-item structure                | `CIM-INFO-000A`, `CIM-INFO-000B` |
+Define confidentiality and handling classifications.
 
-### Phase gate checklist
+**Viewpoint:** domain
 
-- [ ] At least one `DataClassification` exists
-- [ ] Information items exist for all planned entities
-- [ ] `CIM-ENTITY-001` preconditions satisfied
+##### Tasks
+
+#### Define data classifications (`cim.ph3.st1.ss1.t1`)
+
+**Viewpoint:** domain
+**Duration:** 30m
+**Artifacts:** Information Taxonomy
+**Palette focus:** `DataClassification`
+
+**Steps:**
+
+1. Create DataClassification elements with confidentiality levels.
+
+**Entry criteria:**
+
+- Glossary established
+
+**Exit criteria:**
+
+- Classifications cover sensitive categories
+
+##### Information Items (`cim.ph3.st1.ss2`)
+
+Name and type the facts the domain cares about.
+
+**Viewpoint:** domain
+
+##### Tasks
+
+#### Create information items (`cim.ph3.st1.ss2.t1`)
+
+**Viewpoint:** domain
+**Duration:** 1h
+**Artifacts:** Information Taxonomy
+**Palette focus:** `InformationItem`
+
+**Steps:**
+
+1. Create InformationItem elements for each planned entity attribute group.
+2. Set identifiability and data kind on each item.
+
+**Entry criteria:**
+
+- Classifications defined
+
+**Exit criteria:**
+
+- Information items exist for planned entities
+
+**Validation:**
+
+- `CIM-ENTITY-001`
+
+#### Structural Domain Model (`cim.ph3.st2`)
+
+Model entities, value objects, relationships, lifecycle, and invariants.
+
+##### Entities & Lifecycle (`cim.ph3.st2.ss1`)
+
+Model stateful domain entities with identity from information items.
+
+**Viewpoint:** domain
+
+##### Tasks
+
+#### Model domain entities (`cim.ph3.st2.ss1.t1`)
+
+**Viewpoint:** domain
+**Duration:** 1-2h
+**Artifacts:** Domain Structure Model
+**Palette focus:** `DomainEntity`, `LifecycleStateDefinition`, `BusinessInvariant`
+
+**Steps:**
+
+1. Create DomainEntity elements referencing primary InformationItem identity.
+2. Define lifecycle states and business invariants per entity.
+
+**Entry criteria:**
+
+- Information taxonomy complete
+
+**Exit criteria:**
+
+- Core entities for slice modeled
+
+**Validation:**
+
+- `CIM-ENTITY-001`
+
+##### Value Objects & Relationships (`cim.ph3.st2.ss2`)
+
+Model descriptive types and associations between domain concepts.
+
+**Viewpoint:** domain
+
+##### Tasks
+
+#### Model value objects and relationships (`cim.ph3.st2.ss2.t1`)
+
+**Viewpoint:** domain
+**Duration:** 1h
+**Artifacts:** Domain Structure Model
+**Palette focus:** `ValueObject`, `DomainRelationship`
+
+**Steps:**
+
+1. Add ValueObject elements for descriptive data.
+2. Model DomainRelationship elements between concepts.
+
+**Entry criteria:**
+
+- Entities modeled
+
+**Exit criteria:**
+
+- Relationships and VOs complete for slice
+
+**Validation:**
+
+- `CIM-RELATIONSHIP-001`
+
+#### Behavior Surface (`cim.ph3.st3`)
+
+CQRS and event storming — commands, queries, events linked to actors and capabilities.
+
+##### Commands (`cim.ph3.st3.ss1`)
+
+Model state-changing operations with outcomes and preconditions.
+
+**Viewpoint:** eventstorming
+
+##### Tasks
+
+#### Model commands and outcomes (`cim.ph3.st3.ss1.t1`)
+
+**Viewpoint:** eventstorming
+**Duration:** 1h
+**Artifacts:** CQRS Behavior Surface
+**Palette focus:** `Command`, `CommandOutcome`
+
+**Steps:**
+
+1. Create Command elements with actors and target capabilities.
+2. Define CommandOutcome and link expected/rejection events.
+
+**Entry criteria:**
+
+- Domain structure drafted
+
+**Exit criteria:**
+
+- Commands cover primary write use cases
+
+##### Queries (`cim.ph3.st3.ss2`)
+
+Model read operations with freshness needs.
+
+**Viewpoint:** eventstorming
+
+##### Tasks
+
+#### Model queries (`cim.ph3.st3.ss2.t1`)
+
+**Viewpoint:** eventstorming
+**Duration:** 45m
+**Artifacts:** CQRS Behavior Surface
+**Palette focus:** `Query`
+
+**Steps:**
+
+1. Create Query elements linked to actors and information items.
+2. Set freshness requirements per query.
+
+**Entry criteria:**
+
+- Commands modeled
+
+**Exit criteria:**
+
+- Queries cover primary read use cases
+
+##### Events & Guards (`cim.ph3.st3.ss3`)
+
+Model domain events, business errors, and guard conditions.
+
+**Viewpoint:** eventstorming
+
+##### Tasks
+
+#### Model events, errors, and conditions (`cim.ph3.st3.ss3.t1`)
+
+**Viewpoint:** eventstorming
+**Duration:** 1h
+**Artifacts:** CQRS Behavior Surface
+**Palette focus:** `BusinessEvent`, `BusinessError`, `Condition`
+
+**Steps:**
+
+1. Create BusinessEvent elements emitted by commands or external systems.
+2. Define BusinessError and Condition elements guarding behavior.
+
+**Entry criteria:**
+
+- Commands and queries modeled
+
+**Exit criteria:**
+
+- Event vocabulary covers slice workflows
 
 ---
 
-## Phase 6 — Domain Structure
+### Domain Synthesis (`cim.ph4`)
 
-**Viewpoint:** domain · **Duration:** 2–4 hours
+Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.
 
-Model structural domain concepts that reference the information taxonomy.
+**Runs:** in engine cycle · **Role:** business-modeler
 
-### Tasks
+**Phase entry:**
 
-**Palette focus:** `DomainEntity`, `ValueObject`, `DomainRelationship`, `LifecycleStateDefinition`, `BusinessInvariant`
+- Domain Exploration coherent for slice
 
-1. Model entities with primary identity from `InformationItem`.
-2. Add value objects and domain relationships.
-3. Define lifecycle states and business invariants.
+**Phase exit:**
 
-### Common mistakes
+- Bounded contexts assigned with memberships
 
-| Mistake                                                      | EVL rule         |
-| ------------------------------------------------------------ | ---------------- |
-| Entity without `primaryIdentityAttribute`                    | `CIM-ENTITY-001` |
-| Identity attributes inconsistent with primary                | `CIM-ENTITY-002` |
-| Lifecycle without exactly one initial and one terminal state | `CIM-ENTITY-004` |
-| Value object without equality attributes                     | `CIM-VO-002`     |
-| Relationship connects concept to itself                      | `CIM-REL-001`    |
-| Ownership flag mismatched to relationship type               | `CIM-REL-003`    |
-| Invariant without statement or expression                    | `CIM-INV-001`    |
+#### Aggregate Boundaries (`cim.ph4.st1`)
 
-### Phase gate checklist
+Group entities into consistency boundaries with command/event ownership.
 
-- [ ] Core aggregate entities modeled
-- [ ] All entities reference valid information items
-- [ ] Relationships and invariants documented
+**Viewpoint:** aggregate
 
----
+##### Tasks
 
-## Phase 7 — Behavior Surface
+#### Define aggregate candidates (`cim.ph4.st1.t1`)
 
-**Viewpoint:** eventstorming · **Duration:** 2–4 hours
-
-Discover commands, queries, and events (Event Storming ordering).
-
-### Tasks
-
-#### Behavior Surface
-
-**Palette focus:** `Command`, `CommandOutcome`, `Query`, `BusinessEvent`, `BusinessError`, `Condition`
-
-1. Model commands, queries, and domain events.
-2. Link behavior to actors, capabilities, and information items.
-3. Define conditions, outcomes, and business errors.
-
-#### Configure Behavior Surface enumerations
-
-Review: `CommandType`, `QueryType`, `FreshnessNeed`, `EventTimeSemantics`.
-
-### Common mistakes
-
-| Mistake                                                   | EVL rule             |
-| --------------------------------------------------------- | -------------------- |
-| Commands/events not linked to actors or information items | — (traceability gap) |
-| Orphan behavior with no domain anchor                     | —                    |
-
-### Phase gate checklist
-
-- [ ] CQRS surface covers primary use cases
-- [ ] Behavior linked to actors, capabilities, and information items
-- [ ] Conditions and business errors defined
-
----
-
-## Phase 8 — Aggregate Boundaries
-
-**Viewpoint:** aggregate · **Duration:** 1–2 hours
-
-Group entities by consistency and command/event ownership.
-
-### Tasks
-
+**Viewpoint:** aggregate
+**Duration:** 1h
+**Artifacts:** Aggregate Boundary Model
 **Palette focus:** `AggregateCandidate`
 
-1. Group entities into aggregate candidates.
-2. Assign handled commands and emitted events.
-3. Document consistency expectations.
+**Steps:**
 
-### Common mistakes
+1. Create AggregateCandidate groupings with handled commands and emitted events.
+2. Document consistency and interaction expectations.
 
-| Mistake                                                        | EVL rule      |
-| -------------------------------------------------------------- | ------------- |
-| Aggregate root not in members                                  | `CIM-AGG-001` |
-| Strong consistency without boundary rationale                  | `CIM-AGG-002` |
-| `strongConsistencyRequired` inconsistent with expectation enum | `CIM-AGG-003` |
+**Entry criteria:**
 
-### Phase gate checklist
+- Behavior surface modeled
 
-- [ ] Aggregates align with command/event ownership
-- [ ] Consistency expectations documented
-- [ ] Handled commands and emitted events assigned
+**Exit criteria:**
 
----
+- Aggregates align with command/event ownership
 
-## Phase 9 — Process & Decisions
+#### Process Orchestration (`cim.ph4.st2`)
 
-**Viewpoint:** process · **Duration:** 2–3 hours
+Model long-running business flows, policies, and decisions.
 
-Orchestrate modeled behavior into processes, policies, and decision logic.
+##### Business Processes (`cim.ph4.st2.ss1`)
 
-### Tasks
+Orchestrate commands, events, and human steps into end-to-end flows.
 
-**Palette focus:** `BusinessProcess`, `ProcessStep`, `StartStep`, `EndStep`, `CommandStep`, `QueryStep`, `EventStep`, `PolicyStep`, `HumanTaskStep`, `ExternalInteractionStep`, `DecisionStep`, `WaitStep`, `ProcessTransition`, `Policy`, `DecisionTable`, `DecisionRule`, `ExceptionScenario`, `TemporalConstraint`
+**Viewpoint:** process
 
-1. Model business processes with step hierarchy.
-2. Add policies and decision tables.
-3. Connect transitions to commands, events, and policies.
+##### Tasks
 
-### Common mistakes
+#### Model business processes (`cim.ph4.st2.ss1.t1`)
 
-| Mistake                                                        | EVL rule                              |
-| -------------------------------------------------------------- | ------------------------------------- |
-| Process without exactly one START and one END                  | `CIM-PROC-001`                        |
-| Long-running process without temporal constraint               | `CIM-PROC-003`                        |
-| Transition connects step to itself                             | `CIM-TRANS-001`                       |
-| Decision table with no rules                                   | `CIM-DT-001`                          |
-| Policy neither reacts nor guards                               | `CIM-POL-001`                         |
-| Step kind mismatch (e.g. `CommandStep` without `COMMAND` kind) | `CIM-STEP-004` through `CIM-STEP-013` |
+**Viewpoint:** process
+**Duration:** 2h
+**Artifacts:** Business Process Model
+**Palette focus:** `BusinessProcess`, `ProcessStep`, `StartStep`, `EndStep`, `CommandStep`, `QueryStep`, `EventStep`, `PolicyStep`, `HumanTaskStep`, `ExternalInteractionStep`, `DecisionStep`, `WaitStep`
 
-### Phase gate checklist
+**Steps:**
 
-- [ ] Key processes orchestrate modeled behavior
-- [ ] Policies and decision tables complete
-- [ ] Process structure passes `CIM-PROC-*` rules
+1. Create BusinessProcess with step hierarchy and transitions.
+2. Connect steps to modeled commands, queries, events, and policies.
 
----
+**Entry criteria:**
 
-## Phase 10 — Bounded Context Synthesis
+- Aggregates defined
 
-**Viewpoint:** capability · **Duration:** 1–2 hours
+**Exit criteria:**
 
-**Assignment phase**—group already-modeled elements; do not create contexts before behavior exists.
+- Key processes orchestrate modeled behavior
 
-### Tasks
+##### Policies & Decisions (`cim.ph4.st2.ss2`)
 
+Encode business rules and decision tables.
+
+**Viewpoint:** decision
+
+##### Tasks
+
+#### Define policies and decision tables (`cim.ph4.st2.ss2.t1`)
+
+**Viewpoint:** decision
+**Duration:** 1h
+**Artifacts:** Decision & Policy Model
+**Palette focus:** `Policy`, `DecisionTable`, `DecisionRule`
+
+**Steps:**
+
+1. Create Policy elements guarding commands, events, and processes.
+2. Model DecisionTable with DecisionRule rows for branching logic.
+
+**Entry criteria:**
+
+- Processes drafted
+
+**Exit criteria:**
+
+- Policies linked to behavior elements
+
+#### Bounded Context Synthesis (`cim.ph4.st3`)
+
+Assign capabilities, domain, behavior, and policies into cohesive contexts.
+
+**Viewpoint:** capability
+
+##### Tasks
+
+#### Synthesize bounded contexts (`cim.ph4.st3.t1`)
+
+**Viewpoint:** capability
+**Duration:** 1h
+**Artifacts:** Bounded Context Map
 **Palette focus:** `BoundedContextCandidate`
 
+**Steps:**
+
 1. Group capabilities, entities, CQRS, events, and policies into contexts.
-2. Validate membership against modeled elements.
-3. Document context boundaries and integration expectations.
+2. Validate memberships reference concrete modeled elements.
 
-### Common mistakes
+**Entry criteria:**
 
-| Mistake                                                  | EVL rule          |
-| -------------------------------------------------------- | ----------------- |
-| Creating bounded contexts in Phase 4 (empty assignments) | —                 |
-| Context without language or ownership boundary           | `CIM-BC-001`      |
-| Non-empty membership check failed                        | — (exit criteria) |
+- Process and behavior complete
 
-### Phase gate checklist
+**Exit criteria:**
 
-- [ ] Bounded contexts assigned with non-empty memberships
-- [ ] Language and ownership boundaries documented
-- [ ] Integration expectations recorded
+- Contexts have non-empty memberships
 
 ---
 
-## Phase 11 — Requirements & Governance
+### Convergence & Readiness (`cim.ph5`)
 
-**Viewpoint:** governance · **Duration:** 2–3 hours
+Backfill requirements, record transformation contracts, close traceability and EVL gate.
 
-Backfill traceability to concrete modeled elements (Twin Peaks closure).
+**Runs:** in engine cycle · **Role:** requirements-engineer
 
-### Tasks
+**Phase entry:**
 
-#### Requirements & Governance
+- Domain Synthesis complete for slice
 
-**Palette focus:** `NonFunctionalRequirement`, `QualityScenario`, `SecurityConstraint`, `PrivacyConstraint`, `ComplianceConstraint`, `Requirement`, `RequirementRelationship`, `AcceptanceCriterion`
+**Phase exit:**
 
-1. Backfill requirements with `constrains` links to domain and behavior.
-2. Add acceptance criteria and NFR quality scenarios.
-3. Record security, privacy, and compliance constraints.
+- CIM EVL passes
+- Readiness gate approved
 
-#### Configure Requirements & Governance enumerations
+#### Requirements Engineering (`cim.ph5.st1`)
 
-Review: `RequirementType`, `RequirementSourceType`, `RequirementRelationshipKind`, `QualityType`, `LegalBasis`.
+Twin Peaks backfill — formalize requirements traced to modeled elements.
 
-### Common mistakes
+**Viewpoint:** governance
 
-| Mistake                                                  | EVL rule             |
-| -------------------------------------------------------- | -------------------- |
-| Requirement without fit criterion or acceptance criteria | `CIM-REQ-001`        |
-| Production-blocking requirement not mandatory            | `CIM-REQ-002`        |
-| Incomplete acceptance criterion                          | `CIM-REQ-005`        |
-| Requirements not linked to goals or modeled elements     | — (traceability gap) |
+##### Tasks
 
-### Phase gate checklist
+#### Formalize requirements (`cim.ph5.st1.t1`)
 
-- [ ] Requirements trace to goals and modeled elements
-- [ ] NFRs, security, privacy, and compliance constraints recorded
-- [ ] Acceptance criteria complete
+**Viewpoint:** governance
+**Duration:** 1-2h
+**Artifacts:** Requirements Package
+**Palette focus:** `Requirement`, `RequirementRelationship`, `AcceptanceCriterion`, `NonFunctionalRequirement`, `QualityScenario`
 
----
+**Steps:**
 
-## Phase 12 — Transformation Contracts
+1. Create Requirement elements with constrains links to domain and behavior.
+2. Add AcceptanceCriterion per requirement.
 
-**Viewpoint:** traceability · **Duration:** ~1 hour
+**Entry criteria:**
 
-Record assumptions and risks before CIM→PIM transformation.
+- Bounded contexts synthesized
 
-### Tasks
+**Exit criteria:**
 
+- Requirements trace to goals and model elements
+
+#### Apply governance constraints (`cim.ph5.st1.t2`)
+
+**Viewpoint:** governance
+**Duration:** 1h
+**Artifacts:** Governance Constraint Package
+**Palette focus:** `SecurityConstraint`, `PrivacyConstraint`, `ComplianceConstraint`
+
+**Steps:**
+
+1. Record security, privacy, and compliance constraints on actors and information items.
+
+**Entry criteria:**
+
+- Requirements drafted
+
+**Exit criteria:**
+
+- Governance constraints linked to targets
+
+#### Transformation Contracts (`cim.ph5.st2`)
+
+Document risks, assumptions, and CIM→PIM transformation profile.
+
+**Viewpoint:** traceability
+
+##### Tasks
+
+#### Record transformation metadata (`cim.ph5.st2.t1`)
+
+**Viewpoint:** traceability
+**Duration:** 45m
+**Artifacts:** Transformation Contract
 **Palette focus:** `Risk`, `Assumption`, `Hotspot`, `TransformationProfile`
 
-1. Record transformation risks, assumptions, and hotspots.
-2. Define transformation profile for CIM→PIM.
-3. Document manual decisions needed before transform.
+**Steps:**
 
-### Common mistakes
+1. Record Risk, Assumption, and Hotspot elements on model hotspots.
+2. Define TransformationProfile for CIM→PIM with manual decisions.
 
-| Mistake                                    | EVL rule |
-| ------------------------------------------ | -------- |
-| Skipping transformation profile before ETL | —        |
-| Hotspots not linked to affected elements   | —        |
+**Entry criteria:**
 
-### Phase gate checklist
+- Governance captured
 
-- [ ] Risks, assumptions, and hotspots recorded
-- [ ] `TransformationProfile` ready for ETL
-- [ ] Manual decisions flagged
+**Exit criteria:**
 
----
+- Transformation profile ready for ETL
 
-## Phase 13 — Traceability & Readiness
+#### Traceability & Readiness Gate (`cim.ph5.st3`)
 
-**Viewpoint:** traceability · **Duration:** 1–2 hours
+Close trace links and production readiness before CIM→PIM.
 
-Final gate before CIM→PIM transform. Run full CIM semantic validation.
+**Viewpoint:** traceability
 
-### Tasks
+##### Tasks
 
-**Palette focus:** `TraceModel`, `TraceLink`, `TransformationAssumption`, `ProductionReadinessAssessment`, `ReadinessFinding`, `ReadinessCheck`, `ManualDecision`
+#### Complete trace and readiness (`cim.ph5.st3.t1`)
 
-1. Build trace links across goals, requirements, and domain.
-2. Complete production readiness assessment.
-3. Resolve readiness findings before CIM→PIM transform.
+**Viewpoint:** traceability
+**Duration:** 1-2h
+**Artifacts:** Trace & Readiness Record
 
-### Common mistakes
+**Steps:**
 
-| Mistake                                              | EVL rule                  |
-| ---------------------------------------------------- | ------------------------- |
-| Proceeding to transform with open readiness findings | `cim-semantic-validation` |
-| Missing trace links from goals to requirements       | —                         |
-| Unresolved manual decisions                          | —                         |
+1. Build TraceModel links across goals, requirements, and domain.
+2. Complete ProductionReadinessAssessment and resolve findings.
 
-### Phase gate checklist
+**Entry criteria:**
 
-- [ ] Trace model links goals, requirements, and domain elements
-- [ ] `ProductionReadinessAssessment` complete
-- [ ] All readiness findings resolved or waived by reviewer
-- [ ] **CIM EVL passes** (`cim-semantic-validation`)
-- [ ] Process Reviewer sign-off obtained
+- Transformation contracts recorded
+
+**Exit criteria:**
+
+- CIM EVL passes; readiness approved
+
+**Validation:**
+
+- `cim-semantic-validation`
 
 ---
 
-## Next Steps
+## Next step
 
-When Phase 13 gate criteria are met, proceed to [CIM → PIM transformation](../concepts/pipeline.md)
-and the [PIM Modeling Methodology](pim-modeling-methodology.md) for refinement of generated scaffolding.
+When `cim.ph5` exit criteria are met and EVL passes, proceed to the next level in the [modeling pipeline](../concepts/pipeline.md).
+
+<!-- TASK-CATALOG:END -->

@@ -2,451 +2,870 @@
 
 The Platform-Independent Model (PIM) describes serverless architecture—service boundaries, contracts,
 data, compute, integration, and policies—without binding to a specific cloud provider. This guide
-covers **12 phases (0–11)** for greenfield PIM work and post–CIM-to-PIM refinement.
+covers **6 sequential phases** with nested stages and atomic tasks for greenfield PIM work and post–CIM-to-PIM
+refinement.
 
-After CIM→PIM ETL, treat generated elements as **review tasks within each phase**, not a separate
-ad-hoc workflow. Follow the same phase order as greenfield modeling.
+After CIM→PIM ETL, treat generated elements as **review tasks within each stage**, not a separate
+ad-hoc workflow. Iterate within engine phases when contracts or wiring gaps appear.
+
+## Sequential Phases
+
+| Phase     | Name                        | In engine | Stages (summary)                                              |
+| --------- | --------------------------- | --------- | ------------------------------------------------------------- |
+| `pim.ph1` | Architecture Establishment  | once      | Architecture Posture, Service Boundaries                      |
+| `pim.ph2` | Contracts & Data            | ✓         | Contracts & Schemas, Data Architecture                        |
+| `pim.ph3` | Compute & Exposure          | ✓         | Compute Units, API Surface                                    |
+| `pim.ph4` | Integration & Orchestration | ✓         | Integration Topology, Workflow Orchestration                  |
+| `pim.ph5` | Assurance & Configuration   | ✓         | Security & Identity, Architecture Policies, External & Config |
+| `pim.ph6` | Platform Readiness          | gate      | Platform Mapping, Trace & Readiness                           |
 
 ## Roles
 
-| Role                   | Responsibility in PIM                                                   |
-| ---------------------- | ----------------------------------------------------------------------- |
-| **Solution Architect** | Phases 0–10: architecture, boundaries, contracts, integration, policies |
-| **Process Reviewer**   | Phase 11: EVL gate approval and platform mapping readiness              |
+| Role                   | Responsibility in PIM                                                     |
+| ---------------------- | ------------------------------------------------------------------------- |
+| **Solution Architect** | Engine phases: architecture, boundaries, contracts, integration, policies |
+| **Process Reviewer**   | Readiness phase: EVL gate approval and platform mapping readiness         |
 
 ## Phase Flow
 
 ```mermaid
 flowchart TD
-  P0["Phase 0<br/>Architecture Posture"]
-  P1["Phase 1<br/>Service Boundaries"]
-  P2["Phase 2<br/>Contracts & Schemas"]
-  P3["Phase 3<br/>Data Architecture"]
-  P4["Phase 4<br/>Compute Units"]
-  P5["Phase 5<br/>API Surface"]
-  P6["Phase 6<br/>Integration Topology"]
-  P7["Phase 7<br/>Workflow Orchestration"]
-  P8["Phase 8<br/>Security & Identity"]
-  P9["Phase 9<br/>Architecture Policies"]
-  P10["Phase 10<br/>External & Config"]
-  P11["Phase 11<br/>Platform Mapping & Readiness"]
+  PH1["Phase 1 — Architecture Establishment"]
+  PH2["Phase 2 — Contracts & Data"]
+  PH3["Phase 3 — Compute & Exposure"]
+  PH4["Phase 4 — Integration & Orchestration"]
+  PH5["Phase 5 — Assurance & Configuration"]
+  PH6["Phase 6 — Platform Readiness"]
 
-  P0 --> P1 --> P2 --> P3 --> P4 --> P5
-  P5 --> P6 --> P7 --> P8 --> P9 --> P10 --> P11
-  P11 -->|EVL pass| GATE["PIM → PSM transform"]
+  PH1 --> PH2 --> PH3 --> PH4 --> PH5 --> PH6
+  PH6 -->|EVL pass| GATE["PIM → PSM transform"]
 ```
 
-## Phase Overview
+## Detailed tasks
 
-| Phase | Name                         | Primary role       | Duration | Inputs                      | Outputs                                   |
-| ----- | ---------------------------- | ------------------ | -------- | --------------------------- | ----------------------------------------- |
-| 0     | Architecture Posture         | Solution Architect | 30–45m   | CIM transform or greenfield | `PIMModel`, `ImplementationProfile`       |
-| 1     | Service Boundaries           | Solution Architect | 1–2h     | Architecture posture        | `ServerlessService` boundaries            |
-| 2     | Contracts & Schemas          | Solution Architect | 2–3h     | Service boundaries          | Schemas, event types, envelopes           |
-| 3     | Data Architecture            | Solution Architect | 2–3h     | Contracts defined           | Data stores, models, access patterns      |
-| 4     | Compute Units                | Solution Architect | 2–3h     | Data architecture           | Functions, triggers, contracts            |
-| 5     | API Surface                  | Solution Architect | 1–2h     | Compute units               | APIs, routes, error mappings              |
-| 6     | Integration Topology         | Solution Architect | 2–3h     | API surface                 | Channels, flows, routing rules            |
-| 7     | Workflow Orchestration       | Solution Architect | ~2h      | Integration topology        | Workflows, human tasks, compensation      |
-| 8     | Security & Identity          | Solution Architect | 1–2h     | Workflows drafted           | Identity, permissions, auth policies      |
-| 9     | Architecture Policies        | Solution Architect | ~2h      | Security configured         | Resilience, observability, compliance     |
-| 10    | External & Config            | Solution Architect | 1–2h     | Policies applied            | Environments, secrets, external endpoints |
-| 11    | Platform Mapping & Readiness | Process Reviewer   | 1–2h     | Config complete             | Trace, platform mapping, EVL gate         |
+<!-- TASK-CATALOG:START -->
+<!-- Generated by mde/methodology/tools/generate-methodology-guides.mjs — do not edit manually -->
 
----
+## Task Catalog
 
-## Phase 0 — Architecture Posture
+Process `modless.pim.modeling` · 6 phases · 29 atomic tasks · PIM metamodel coverage enforced in CI.
 
-**Viewpoint:** dashboard · **Duration:** 30–45 minutes
+### Architecture Establishment (`pim.ph1`)
 
-Set serverless architecture style and implementation profile before structural PIM work.
+Establish PIM root posture and serverless service boundaries aligned to CIM bounded contexts.
 
-### Tasks
+**Runs:** once per program · **Role:** solution-architect
 
-#### Architecture Posture
+**Phase entry:**
 
-**Palette focus:** `PIMModel`, `ImplementationProfile`
+- CIM transform complete or greenfield PIM
 
-1. Create `PIMModel` with architecture style and implementation profile.
-2. Set serverless posture and platform assumptions.
+**Phase exit:**
 
-#### Configure Architecture Posture enumerations
+- PIM root configured
+- Services cover deployable boundaries
 
-Review: `Priority`, `Severity`, `ConstraintStrength`, `LifecycleStatus`, `TraceConfidence`,
-`TraceLinkType`, `FindingType`, `StructuredFormat`, `ExpressionLanguage`, `ExpressionPhase`,
-`ArchitectureStyle`, `Decision`.
+#### Architecture Posture (`pim.ph1.st1`)
 
-### Common mistakes
+Create the PIMModel root with architecture style and implementation profile.
 
-| Mistake                                                   | EVL rule |
-| --------------------------------------------------------- | -------- |
-| Starting service modeling without `PIMModel` root         | —        |
-| Architecture style inconsistent with CIM bounded contexts | —        |
+**Viewpoint:** dashboard
 
-### Phase gate checklist
+##### Tasks
 
-- [ ] `PIMModel` root configured
-- [ ] `ImplementationProfile` and architecture style set
-- [ ] Entry criteria met (CIM transform complete or greenfield decision documented)
+#### Create PIM model root (`pim.ph1.st1.t1`)
 
----
+**Viewpoint:** dashboard
+**Duration:** 20m
+**Artifacts:** Architecture Posture
+**Palette focus:** `PIMModel`
 
-## Phase 1 — Service Boundaries
+**Steps:**
 
-**Viewpoint:** services · **Duration:** 1–2 hours
+1. Create PIMModel with domain linkage to CIM source.
+2. Set modeling date, lifecycle status, and annotation conventions.
 
-Align deployable boundaries to CIM bounded contexts.
+**Entry criteria:**
 
-### Tasks
+- CIM transform complete or greenfield PIM
 
-**Palette focus:** `ServerlessService`, `ServiceElementMembership`
+**Exit criteria:**
 
-1. Define serverless services aligned to bounded contexts.
-2. Assign element memberships and ownership.
+- PIMModel root exists
 
-### Common mistakes
+#### Set architecture posture (`pim.ph1.st1.t2`)
 
-| Mistake                                         | EVL rule |
-| ----------------------------------------------- | -------- |
-| Services that do not map to any bounded context | —        |
-| Orphan elements without service membership      | —        |
-| Boundary type mismatch with ownership kind      | —        |
+**Viewpoint:** dashboard
+**Duration:** 30m
+**Artifacts:** Architecture Posture
+**Palette focus:** `ImplementationProfile`
 
-### Phase gate checklist
+**Steps:**
 
-- [ ] Services cover deployable boundaries
-- [ ] Element memberships assigned
-- [ ] Ownership documented per service
+1. Configure ImplementationProfile with serverless posture and platform assumptions.
+2. Select ArchitectureStyle and document key architectural decisions.
 
----
+**Entry criteria:**
 
-## Phase 2 — Contracts & Schemas
+- PIM model root exists
 
-**Viewpoint:** contracts · **Duration:** 2–3 hours
+**Exit criteria:**
 
-Define platform-independent contracts aligned with CIM commands and events.
+- Architecture style and profile configured
 
-### Tasks
+#### Service Boundaries (`pim.ph1.st2`)
 
-**Palette focus:** `Schema`, `SchemaField`, `SchemaEnumLiteral`, `SchemaValidationConstraint`, `SchemaConstraint`, `EventEnvelope`, `EventType`
+Define serverless services and element memberships aligned to bounded contexts.
 
-1. Define schemas and validation constraints.
-2. Model event types and envelopes.
-3. Align contracts with CIM commands/events.
+**Viewpoint:** services
 
-### Common mistakes
+##### Tasks
 
-| Mistake                                              | EVL rule |
-| ---------------------------------------------------- | -------- |
-| API or event contract without backing schema         | —        |
-| Schema fields not traceable to CIM information items | —        |
-| Missing validation constraints on required fields    | —        |
+#### Define serverless services (`pim.ph1.st2.t1`)
 
-### Phase gate checklist
+**Viewpoint:** services
+**Duration:** 1h
+**Artifacts:** Service Boundary Map
+**Palette focus:** `ServerlessService`
 
-- [ ] Contracts exist for APIs and events
-- [ ] Schemas aligned with CIM behavior surface
-- [ ] Event envelopes defined for async integration
+**Steps:**
 
----
+1. Create ServerlessService elements aligned to CIM bounded contexts.
+2. Set boundary type and ownership scope per service.
 
-## Phase 3 — Data Architecture
+**Entry criteria:**
 
-**Viewpoint:** data · **Duration:** 2–3 hours
+- Architecture posture set
 
-Model persistent stores, access patterns, and change streams.
+**Exit criteria:**
 
-### Tasks
+- Services defined for increment slice
 
-#### Data Architecture
+#### Assign element memberships (`pim.ph1.st2.t2`)
 
-**Palette focus:** `DataStore`, `DataChangeStream`, `ObjectStore`, `ObjectNotificationRule`, `DataModel`, `DataField`, `AccessPattern`, `IndexCandidate`, `DataAccess`
+**Viewpoint:** services
+**Duration:** 45m
+**Artifacts:** Service Boundary Map
+**Palette focus:** `ServiceElementMembership`
 
-1. Model data stores, object stores, and data models.
-2. Define access patterns and indexes.
-3. Configure change streams and notifications.
+**Steps:**
 
-#### Configure Data Architecture enumerations
+1. Create ServiceElementMembership links from services to planned elements.
+2. Set OwnershipKind for each membership.
 
-Review: `StoreKind`, `ConsistencyNeed`, `DataAccessMode`, `AccessPatternKind`.
+**Entry criteria:**
 
-### Common mistakes
+- Services defined
 
-| Mistake                                                   | EVL rule |
-| --------------------------------------------------------- | -------- |
-| Data model without access pattern for hot paths           | —        |
-| Index candidates not aligned to query patterns            | —        |
-| Consistency need mismatched to CIM aggregate expectations | —        |
+**Exit criteria:**
 
-### Phase gate checklist
-
-- [ ] Persistent stores cover domain data
-- [ ] Access patterns and indexes defined
-- [ ] Change streams configured where needed
+- Memberships cover deployable boundaries
 
 ---
 
-## Phase 4 — Compute Units
+### Contracts & Data (`pim.ph2`)
 
-**Viewpoint:** compute · **Duration:** 2–3 hours
+Define API/event contracts and persistent data architecture for the increment slice.
 
-Map CIM behavior to serverless functions and triggers.
+**Runs:** in engine cycle · **Role:** solution-architect
 
-### Tasks
+**Phase entry:**
 
-#### Compute Units
+- Architecture Establishment complete
 
-**Palette focus:** `Function`, `Trigger`, `FunctionContract`
+**Phase exit:**
 
-1. Define functions with contracts and triggers.
-2. Map handlers to CIM commands/queries/events.
-3. Set compute profiles and execution model.
+- Contracts exist for APIs and events
+- Persistent stores cover domain data
 
-#### Configure Compute Units enumerations
+#### Contracts & Schemas (`pim.ph2.st1`)
 
-Review: `FunctionKind`, `ComputeProfile`, `ExecutionModel`, `RuntimeLanguage`, `PackageManager`.
+Model schemas, validation constraints, and event envelopes aligned to CIM behavior.
 
-### Common mistakes
+**Viewpoint:** contracts
 
-| Mistake                                    | EVL rule |
-| ------------------------------------------ | -------- |
-| Function without contract or trigger       | —        |
-| Handler not traceable to CIM command/event | —        |
-| Compute profile insufficient for workload  | —        |
+##### Tasks
 
-### Phase gate checklist
+#### Define schemas and fields (`pim.ph2.st1.t1`)
 
-- [ ] Functions cover behavioral surface
-- [ ] Triggers and contracts complete
-- [ ] CIM trace links maintained
+**Viewpoint:** contracts
+**Duration:** 1-2h
+**Artifacts:** Contract Catalog
+**Palette focus:** `Schema`, `SchemaField`, `SchemaEnumLiteral`
 
----
+**Steps:**
 
-## Phase 5 — API Surface
+1. Create Schema elements with fields and enum literals.
+2. Set schema kind and field types aligned to CIM information items.
 
-**Viewpoint:** api · **Duration:** 1–2 hours
+**Entry criteria:**
 
-Expose synchronous entry points with error mapping to business errors.
+- Service boundaries defined
 
-### Tasks
+**Exit criteria:**
 
-**Palette focus:** `Api`, `ApiRoute`, `ErrorMapping`, `ApiContract`
+- Schemas cover API and message payloads
 
-1. Define APIs and routes with contracts.
-2. Map error responses to business errors.
-3. Connect routes to functions.
+#### Model event types and envelopes (`pim.ph2.st1.t2`)
 
-### Common mistakes
+**Viewpoint:** contracts
+**Duration:** 1h
+**Artifacts:** Contract Catalog
+**Palette focus:** `EventType`, `EventEnvelope`, `SchemaValidationConstraint`, `SchemaConstraint`
 
-| Mistake                                            | EVL rule |
-| -------------------------------------------------- | -------- |
-| Route without backing function                     | —        |
-| Error mapping missing for declared business errors | —        |
-| API contract not linked to schema                  | —        |
+**Steps:**
 
-### Phase gate checklist
+1. Define EventType and EventEnvelope elements from CIM events.
+2. Apply validation constraints and compatibility rules.
 
-- [ ] Public API surface complete
-- [ ] Routes connected to functions
-- [ ] Error mappings cover CIM business errors
+**Entry criteria:**
 
----
+- Schemas defined
 
-## Phase 6 — Integration Topology
+**Exit criteria:**
 
-**Viewpoint:** integration · **Duration:** 2–3 hours
+- Event contracts aligned with CIM behavior surface
 
-Model async channels, flows, and event routing.
+#### Data Architecture (`pim.ph2.st2`)
 
-### Tasks
+Model data stores, access patterns, and change streams for domain persistence.
 
-**Palette focus:** `EventChannel`, `Queue`, `Topic`, `EventBus`, `Schedule`, `Subscription`, `EventRoutingRule`, `Flow`, `RequestResponseFlow`, `EventFlow`, `MessageFlow`, `PubSubFlow`, `OrchestrationFlow`, `ExternalIntegrationFlow`
+**Viewpoint:** data
 
-1. Model event channels, queues, topics, and buses.
-2. Define flows and routing rules.
-3. Connect integration endpoints to functions.
+##### Tasks
 
-### Common mistakes
+#### Model data stores and models (`pim.ph2.st2.t1`)
 
-| Mistake                                                     | EVL rule |
-| ----------------------------------------------------------- | -------- |
-| Subscription without publisher or consumer                  | —        |
-| Flow endpoints not connected                                | —        |
-| Delivery semantics inconsistent with CIM event expectations | —        |
+**Viewpoint:** data
+**Duration:** 1-2h
+**Artifacts:** Data Architecture
+**Palette focus:** `DataStore`, `ObjectStore`, `DataModel`, `DataField`
 
-### Phase gate checklist
+**Steps:**
 
-- [ ] Async integration topology complete
-- [ ] Flows connect producers and consumers
-- [ ] Routing rules cover event types
+1. Create DataStore and ObjectStore elements per service.
+2. Define DataModel and DataField structures from CIM entities.
 
----
+**Entry criteria:**
 
-## Phase 7 — Workflow Orchestration
+- Contracts defined
 
-**Viewpoint:** workflow · **Duration:** ~2 hours
+**Exit criteria:**
 
-Translate CIM business processes into long-running orchestration.
+- Stores and models cover domain data
 
-### Tasks
+#### Define access patterns and indexes (`pim.ph2.st2.t2`)
 
-**Palette focus:** `Workflow`, `WorkflowState`, `WorkflowTransition`, `ErrorHandler`, `ParallelBranch`, `MapStateConfig`, `CallbackTaskConfig`, `EscalationPolicy`, `HumanTask`, `ApprovalTask`, `CompensationPolicy`
+**Viewpoint:** data
+**Duration:** 1h
+**Artifacts:** Data Architecture
+**Palette focus:** `AccessPattern`, `IndexCandidate`, `DataAccess`
 
-1. Model workflows from CIM business processes.
-2. Add human tasks, approvals, and escalation.
-3. Define compensation and error handlers.
+**Steps:**
 
-### Common mistakes
+1. Model AccessPattern elements from CIM queries and commands.
+2. Define IndexCandidate and DataAccess bindings per store.
 
-| Mistake                                          | EVL rule |
-| ------------------------------------------------ | -------- |
-| Workflow without error handler for failure paths | —        |
-| Human task without escalation policy             | —        |
-| Compensation not defined for saga-like processes | —        |
+**Entry criteria:**
 
-### Phase gate checklist
+- Data models drafted
 
-- [ ] Long-running processes orchestrated
-- [ ] Human tasks and approvals configured
-- [ ] Compensation policies for reversible flows
+**Exit criteria:**
 
----
+- Access patterns cover read/write use cases
 
-## Phase 8 — Security & Identity
+#### Configure change streams and notifications (`pim.ph2.st2.t3`)
 
-**Viewpoint:** security · **Duration:** 1–2 hours
+**Viewpoint:** data
+**Duration:** 45m
+**Artifacts:** Data Architecture
+**Palette focus:** `DataChangeStream`, `ObjectNotificationRule`
 
-Apply authentication and authorization across APIs and functions.
+**Steps:**
 
-### Tasks
+1. Define DataChangeStream elements for event-sourced projections.
+2. Configure ObjectNotificationRule for object store triggers.
 
-#### Security & Identity
+**Entry criteria:**
 
-**Palette focus:** `IdentityProvider`, `Principal`, `Permission`, `SecurityPolicy`, `AuthPolicy`, `AuthorizationPolicy`
+- Access patterns defined
 
-1. Configure identity providers and principals.
-2. Define permissions and authorization policies.
-3. Apply security policies to APIs and functions.
+**Exit criteria:**
 
-#### Configure Security & Identity enumerations
-
-Review: `IdentityKind`, `PrincipalKind`, `PermissionEffect`, `PermissionActionKind`, `LeastPrivilegeStatus`.
-
-### Common mistakes
-
-| Mistake                                       | EVL rule |
-| --------------------------------------------- | -------- |
-| Public API route without auth policy          | —        |
-| Permission grants broader than CIM role scope | —        |
-| Least-privilege status not assessed           | —        |
-
-### Phase gate checklist
-
-- [ ] Auth model covers all public endpoints
-- [ ] Permissions aligned to CIM actors and roles
-- [ ] Security policies applied to functions and APIs
+- Change streams linked to event contracts
 
 ---
 
-## Phase 9 — Architecture Policies
+### Compute & Exposure (`pim.ph3`)
 
-**Viewpoint:** policies · **Duration:** ~2 hours
+Define compute units and expose them through a coherent API surface.
 
-Operational and compliance policies across the architecture.
+**Runs:** in engine cycle · **Role:** solution-architect
 
-### Tasks
+**Phase entry:**
 
-**Palette focus:** `ArchitecturePolicy`, `PolicySetting`, `DataProtectionPolicy`, `DataQualityPolicy`, `CompliancePolicy`, `BusinessRule`, `DecisionModel`, `DecisionRule`, `ResiliencePolicy`, `RetryPolicy`, `DeadLetterPolicy`, `TimeoutPolicy`, `IdempotencyPolicy`, `ConcurrencyPolicy`, `RateLimitPolicy`, `BatchPolicy`, `OrderingPolicy`, `CachePolicy`, `BackupPolicy`, `RetentionPolicy`, `CostPolicy`, `ObservabilityConfig`, `LoggingPolicy`, `MetricPolicy`, `MetricDimension`, `TracingPolicy`, `AlertPolicy`, `Slo`, `CorsPolicy`
+- Contracts & Data complete for slice
 
-1. Apply resilience, observability, and cost policies.
-2. Map business rules and decision models.
-3. Configure data protection and compliance policies.
+**Phase exit:**
 
-### Common mistakes
+- Functions cover behavioral surface
+- Public API surface complete
 
-| Mistake                                            | EVL rule |
-| -------------------------------------------------- | -------- |
-| Async handler without retry or dead-letter policy  | —        |
-| NFR from CIM not reflected in SLO or alert policy  | —        |
-| Data protection policy missing for classified data | —        |
+#### Compute Units (`pim.ph3.st1`)
 
-### Phase gate checklist
+Define functions with contracts and triggers mapped to CIM commands and events.
 
-- [ ] Operational policies applied
-- [ ] Business rules mapped from CIM policies/decisions
-- [ ] Observability config covers critical paths
+**Viewpoint:** compute
+
+##### Tasks
+
+#### Define functions and contracts (`pim.ph3.st1.t1`)
+
+**Viewpoint:** compute
+**Duration:** 1-2h
+**Artifacts:** Compute Catalog
+**Palette focus:** `Function`, `FunctionContract`
+
+**Steps:**
+
+1. Create Function elements with FunctionContract bindings.
+2. Set compute profile and execution model per handler.
+
+**Entry criteria:**
+
+- Data architecture drafted
+
+**Exit criteria:**
+
+- Functions mapped to CIM commands and queries
+
+#### Configure triggers and runtime (`pim.ph3.st1.t2`)
+
+**Viewpoint:** compute
+**Duration:** 1h
+**Artifacts:** Compute Catalog
+**Palette focus:** `Trigger`
+
+**Steps:**
+
+1. Define Trigger elements linking functions to events and schedules.
+2. Set runtime language and package manager per function.
+
+**Entry criteria:**
+
+- Functions defined
+
+**Exit criteria:**
+
+- Triggers cover behavioral entry points
+
+#### API Surface (`pim.ph3.st2`)
+
+Expose functions through APIs with routes, contracts, and error mappings.
+
+**Viewpoint:** api
+
+##### Tasks
+
+#### Define APIs and routes (`pim.ph3.st2.t1`)
+
+**Viewpoint:** api
+**Duration:** 1h
+**Artifacts:** API Catalog
+**Palette focus:** `Api`, `ApiRoute`
+
+**Steps:**
+
+1. Create Api elements with routes and HTTP methods.
+2. Connect routes to function handlers.
+
+**Entry criteria:**
+
+- Compute units defined
+
+**Exit criteria:**
+
+- API routes cover public endpoints
+
+#### Map API contracts and errors (`pim.ph3.st2.t2`)
+
+**Viewpoint:** api
+**Duration:** 45m
+**Artifacts:** API Catalog
+**Palette focus:** `ApiContract`, `ErrorMapping`
+
+**Steps:**
+
+1. Bind ApiContract elements to schema definitions.
+2. Map ErrorMapping responses to CIM business errors.
+
+**Entry criteria:**
+
+- API routes defined
+
+**Exit criteria:**
+
+- Contracts and error mappings complete
 
 ---
 
-## Phase 10 — External & Config
+### Integration & Orchestration (`pim.ph4`)
 
-**Viewpoint:** config · **Duration:** 1–2 hours
+Wire async integration topology and long-running workflow orchestration.
 
-External integrations, environments, and deployment configuration.
+**Runs:** in engine cycle · **Role:** solution-architect
 
-### Tasks
+**Phase entry:**
 
-#### External & Config
+- Compute & Exposure complete for slice
 
-**Palette focus:** `ConfigurationSet`, `ConfigParameter`, `EnvironmentVariable`, `Secret`, `CredentialRequirement`, `DeploymentUnit`, `Environment`, `ExternalEndpoint`, `ExternalAdapter`
+**Phase exit:**
 
-1. Model external endpoints and adapters.
-2. Configure environments, secrets, and deployment units.
-3. Set configuration parameters per environment.
+- Async integration topology complete
+- Long-running processes orchestrated
 
-#### Configure External & Config enumerations
+#### Integration Topology (`pim.ph4.st1`)
 
-Review: `DeploymentUnitType`, `SecretKind`, `ConfigScope`, `EnvironmentClass`, `SupportLevel`.
+Model event channels, flows, and routing rules connecting services.
 
-### Common mistakes
+**Viewpoint:** integration
 
-| Mistake                                            | EVL rule |
-| -------------------------------------------------- | -------- |
-| Secret referenced but not scoped to environment    | —        |
-| External adapter without CIM external system trace | —        |
-| Deployment unit missing environment binding        | —        |
+##### Tasks
 
-### Phase gate checklist
+#### Model event channels and buses (`pim.ph4.st1.t1`)
 
-- [ ] External integrations and config complete
-- [ ] Secrets and credentials scoped per environment
-- [ ] Deployment units defined
+**Viewpoint:** integration
+**Duration:** 1h
+**Artifacts:** Integration Topology
+**Palette focus:** `EventChannel`, `Queue`, `Topic`, `EventBus`
+
+**Steps:**
+
+1. Create EventChannel, Queue, Topic, and EventBus elements.
+2. Set delivery semantics and ordering requirements.
+
+**Entry criteria:**
+
+- API surface defined
+
+**Exit criteria:**
+
+- Channels cover async integration points
+
+#### Define flows and routing rules (`pim.ph4.st1.t2`)
+
+**Viewpoint:** integration
+**Duration:** 1-2h
+**Artifacts:** Integration Topology
+**Palette focus:** `Flow`, `RequestResponseFlow`, `EventFlow`, `MessageFlow`, `PubSubFlow`, `OrchestrationFlow`, `ExternalIntegrationFlow`, `EventRoutingRule`, `Schedule`, `Subscription`
+
+**Steps:**
+
+1. Model Flow variants connecting producers and consumers.
+2. Define EventRoutingRule and Subscription bindings.
+3. Configure Schedule triggers for periodic integration.
+
+**Entry criteria:**
+
+- Channels defined
+
+**Exit criteria:**
+
+- Flows connect integration endpoints to functions
+
+#### Workflow Orchestration (`pim.ph4.st2`)
+
+Model workflows from CIM business processes with human tasks and compensation.
+
+**Viewpoint:** workflow
+
+##### Tasks
+
+#### Model workflows and states (`pim.ph4.st2.t1`)
+
+**Viewpoint:** workflow
+**Duration:** 1-2h
+**Artifacts:** Workflow Model
+**Palette focus:** `Workflow`, `WorkflowState`, `WorkflowTransition`
+
+**Steps:**
+
+1. Create Workflow elements from CIM business processes.
+2. Define states, transitions, and workflow kind.
+
+**Entry criteria:**
+
+- Integration topology defined
+
+**Exit criteria:**
+
+- Workflows cover long-running CIM processes
+
+#### Configure human tasks and error handling (`pim.ph4.st2.t2`)
+
+**Viewpoint:** workflow
+**Duration:** 1h
+**Artifacts:** Workflow Model
+**Palette focus:** `HumanTask`, `ApprovalTask`, `EscalationPolicy`, `CompensationPolicy`, `ErrorHandler`, `ParallelBranch`, `MapStateConfig`, `CallbackTaskConfig`
+
+**Steps:**
+
+1. Add HumanTask and ApprovalTask elements with escalation policies.
+2. Define CompensationPolicy and ErrorHandler for failure paths.
+
+**Entry criteria:**
+
+- Workflows drafted
+
+**Exit criteria:**
+
+- Human steps and error paths orchestrated
 
 ---
 
-## Phase 11 — Platform Mapping & Readiness
+### Assurance & Configuration (`pim.ph5`)
 
-**Viewpoint:** readiness · **Duration:** 1–2 hours
+Apply security, operational policies, and environment configuration across the slice.
 
-Assess AWS platform fit and pass PIM EVL before PIM→PSM transform.
+**Runs:** in engine cycle · **Role:** solution-architect
 
-### Tasks
+**Phase entry:**
 
-**Palette focus:** `PlatformCapability`, `PlatformMappingAssessment`, `TraceModel`, `TraceLink`, `TransformationAssumption`, `ProductionReadinessAssessment`, `ReadinessFinding`, `ReadinessCheck`, `ManualDecision`
+- Integration & Orchestration complete for slice
 
-1. Assess platform capability mapping.
-2. Complete trace model and readiness assessment.
-3. Pass PIM EVL before PIM→PSM transform.
+**Phase exit:**
 
-### Common mistakes
+- Auth model covers all public endpoints
+- Operational policies applied
+- External integrations and config complete
 
-| Mistake                                               | EVL rule                  |
-| ----------------------------------------------------- | ------------------------- |
-| Proceeding to PSM with unmapped platform capabilities | —                         |
-| Open readiness findings at gate                       | `pim-semantic-validation` |
-| Broken trace links to CIM source elements             | —                         |
+#### Security & Identity (`pim.ph5.st1`)
 
-### Phase gate checklist
+Configure identity providers, principals, and authorization for APIs and functions.
 
-- [ ] Platform capability mapping assessed
-- [ ] Trace model links PIM to CIM elements
-- [ ] Readiness findings resolved or waived
-- [ ] **PIM EVL passes** (`pim-semantic-validation`)
-- [ ] Process Reviewer sign-off obtained
+**Viewpoint:** security
+
+##### Tasks
+
+#### Configure identity providers and principals (`pim.ph5.st1.t1`)
+
+**Viewpoint:** security
+**Duration:** 45m
+**Artifacts:** Security Model
+**Palette focus:** `IdentityProvider`, `Principal`
+
+**Steps:**
+
+1. Define IdentityProvider elements aligned to CIM actors.
+2. Register Principal elements for human and service identities.
+
+**Entry criteria:**
+
+- Workflow orchestration drafted
+
+**Exit criteria:**
+
+- Identity model covers all actor types
+
+#### Define permissions and security policies (`pim.ph5.st1.t2`)
+
+**Viewpoint:** security
+**Duration:** 1h
+**Artifacts:** Security Model
+**Palette focus:** `Permission`, `SecurityPolicy`, `AuthPolicy`, `AuthorizationPolicy`
+
+**Steps:**
+
+1. Create Permission elements with effect and action kind.
+2. Apply AuthPolicy and AuthorizationPolicy to APIs and functions.
+
+**Entry criteria:**
+
+- Principals configured
+
+**Exit criteria:**
+
+- Auth model covers all public endpoints
+
+#### Architecture Policies (`pim.ph5.st2`)
+
+Apply resilience, observability, governance, and cost policies to architecture elements.
+
+##### Resilience & Throughput (`pim.ph5.st2.ss1`)
+
+Configure retry, timeout, concurrency, and throughput policies.
+
+**Viewpoint:** policies
+
+##### Tasks
+
+#### Apply resilience policies (`pim.ph5.st2.ss1.t1`)
+
+**Viewpoint:** policies
+**Duration:** 1h
+**Artifacts:** Architecture Policy Catalog
+**Palette focus:** `ResiliencePolicy`, `RetryPolicy`, `DeadLetterPolicy`, `TimeoutPolicy`, `IdempotencyPolicy`
+
+**Steps:**
+
+1. Define ResiliencePolicy on functions and integration flows.
+2. Configure RetryPolicy, DeadLetterPolicy, and TimeoutPolicy per target.
+3. Set IdempotencyPolicy for state-changing handlers.
+
+**Entry criteria:**
+
+- Security and identity configured
+
+**Exit criteria:**
+
+- Resilience policies applied to critical paths
+
+#### Configure throughput and ordering policies (`pim.ph5.st2.ss1.t2`)
+
+**Viewpoint:** policies
+**Duration:** 45m
+**Artifacts:** Architecture Policy Catalog
+**Palette focus:** `ConcurrencyPolicy`, `RateLimitPolicy`, `BatchPolicy`, `OrderingPolicy`, `CachePolicy`, `BackupPolicy`, `RetentionPolicy`, `CostPolicy`
+
+**Steps:**
+
+1. Set ConcurrencyPolicy and RateLimitPolicy on APIs and functions.
+2. Configure BatchPolicy, OrderingPolicy, and CachePolicy where needed.
+3. Apply BackupPolicy, RetentionPolicy, and CostPolicy to stores.
+
+**Entry criteria:**
+
+- Resilience policies applied
+
+**Exit criteria:**
+
+- Throughput and cost policies configured
+
+##### Observability & SLOs (`pim.ph5.st2.ss2`)
+
+Configure logging, metrics, tracing, alerts, and service level objectives.
+
+**Viewpoint:** policies
+
+##### Tasks
+
+#### Configure observability policies (`pim.ph5.st2.ss2.t1`)
+
+**Viewpoint:** policies
+**Duration:** 45m
+**Artifacts:** Architecture Policy Catalog
+**Palette focus:** `ObservabilityConfig`, `LoggingPolicy`, `MetricPolicy`, `MetricDimension`, `TracingPolicy`
+
+**Steps:**
+
+1. Define ObservabilityConfig per service.
+2. Apply LoggingPolicy, MetricPolicy, and TracingPolicy to functions and APIs.
+
+**Entry criteria:**
+
+- Resilience policies applied
+
+**Exit criteria:**
+
+- Observability baseline configured
+
+#### Define alerts, SLOs, and CORS (`pim.ph5.st2.ss2.t2`)
+
+**Viewpoint:** policies
+**Duration:** 30m
+**Artifacts:** Architecture Policy Catalog
+**Palette focus:** `AlertPolicy`, `Slo`, `CorsPolicy`
+
+**Steps:**
+
+1. Create AlertPolicy and Slo elements for critical endpoints.
+2. Apply CorsPolicy to public API routes.
+
+**Entry criteria:**
+
+- Observability baseline configured
+
+**Exit criteria:**
+
+- Alerts and SLOs cover critical paths
+
+##### Governance & Business Rules (`pim.ph5.st2.ss3`)
+
+Apply data protection, compliance, and business rule policies.
+
+**Viewpoint:** policies
+
+##### Tasks
+
+#### Apply governance and compliance policies (`pim.ph5.st2.ss3.t1`)
+
+**Viewpoint:** policies
+**Duration:** 45m
+**Artifacts:** Architecture Policy Catalog
+**Palette focus:** `ArchitecturePolicy`, `PolicySetting`, `DataProtectionPolicy`, `DataQualityPolicy`, `CompliancePolicy`
+
+**Steps:**
+
+1. Define ArchitecturePolicy and PolicySetting elements.
+2. Apply DataProtectionPolicy and CompliancePolicy from CIM governance.
+
+**Entry criteria:**
+
+- Observability policies configured
+
+**Exit criteria:**
+
+- Governance policies linked to data and APIs
+
+#### Map business rules and decision models (`pim.ph5.st2.ss3.t2`)
+
+**Viewpoint:** policies
+**Duration:** 45m
+**Artifacts:** Architecture Policy Catalog
+**Palette focus:** `BusinessRule`, `DecisionModel`, `DecisionRule`
+
+**Steps:**
+
+1. Create BusinessRule elements from CIM policies.
+2. Model DecisionModel with DecisionRule rows for branching logic.
+
+**Entry criteria:**
+
+- Governance policies applied
+
+**Exit criteria:**
+
+- Business rules linked to functions and workflows
+
+#### External & Config (`pim.ph5.st3`)
+
+Model external integrations, environments, secrets, and deployment units.
+
+**Viewpoint:** config
+
+##### Tasks
+
+#### Model external endpoints and adapters (`pim.ph5.st3.t1`)
+
+**Viewpoint:** config
+**Duration:** 45m
+**Artifacts:** Configuration Package
+**Palette focus:** `ExternalEndpoint`, `ExternalAdapter`
+
+**Steps:**
+
+1. Create ExternalEndpoint elements from CIM external systems.
+2. Define ExternalAdapter bindings to integration flows.
+
+**Entry criteria:**
+
+- Architecture policies applied
+
+**Exit criteria:**
+
+- External integrations modeled
+
+#### Configure environments and deployment units (`pim.ph5.st3.t2`)
+
+**Viewpoint:** config
+**Duration:** 1h
+**Artifacts:** Configuration Package
+**Palette focus:** `Environment`, `DeploymentUnit`, `ConfigurationSet`, `ConfigParameter`, `EnvironmentVariable`, `Secret`, `CredentialRequirement`
+
+**Steps:**
+
+1. Define Environment and DeploymentUnit elements per stage.
+2. Configure ConfigurationSet, secrets, and credential requirements.
+3. Set ConfigParameter and EnvironmentVariable values per environment.
+
+**Entry criteria:**
+
+- External integrations modeled
+
+**Exit criteria:**
+
+- Environments and config complete for slice
 
 ---
 
-## Next Steps
+### Platform Readiness (`pim.ph6`)
 
-When Phase 11 gate criteria are met, proceed to [PIM → AWS PSM transformation](../concepts/pipeline.md)
-and the [PSM Modeling Methodology](psm-modeling-methodology.md).
+Assess platform capability mapping, close traceability, and pass PIM EVL gate.
+
+**Runs:** once per program · **Role:** process-reviewer
+
+**Phase entry:**
+
+- Assurance & Configuration complete for slice
+
+**Phase exit:**
+
+- PIM EVL passes
+- Readiness gate approved
+
+#### Platform Mapping Assessment (`pim.ph6.st1`)
+
+Evaluate platform capability coverage and mapping readiness.
+
+**Viewpoint:** readiness
+
+##### Tasks
+
+#### Assess platform capabilities (`pim.ph6.st1.t1`)
+
+**Viewpoint:** readiness
+**Duration:** 1h
+**Artifacts:** Platform Readiness Record
+**Palette focus:** `PlatformCapability`, `PlatformMappingAssessment`
+
+**Steps:**
+
+1. Review PlatformCapability coverage against modeled elements.
+2. Complete PlatformMappingAssessment with gap analysis.
+
+**Entry criteria:**
+
+- External and config complete
+
+**Exit criteria:**
+
+- Platform mapping assessment documented
+
+#### Trace & Readiness Gate (`pim.ph6.st2`)
+
+Close trace links and production readiness before PIM→PSM transform.
+
+**Viewpoint:** readiness
+
+##### Tasks
+
+#### Complete trace and readiness (`pim.ph6.st2.t1`)
+
+**Viewpoint:** readiness
+**Duration:** 1-2h
+**Artifacts:** Platform Readiness Record
+
+**Steps:**
+
+1. Build TraceModel links across CIM and PIM elements.
+2. Complete ProductionReadinessAssessment and resolve findings.
+
+**Entry criteria:**
+
+- Platform mapping assessment complete
+
+**Exit criteria:**
+
+- PIM EVL passes; readiness gate approved
+
+**Validation:**
+
+- `pim-semantic-validation`
+
+---
+
+## Next step
+
+When `pim.ph6` exit criteria are met and EVL passes, proceed to the next level in the [modeling pipeline](../concepts/pipeline.md).
+
+<!-- TASK-CATALOG:END -->

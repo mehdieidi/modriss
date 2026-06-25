@@ -1,442 +1,778 @@
 # AWS PSM Modeling Methodology
 
 The Platform-Specific Model (PSM) binds the PIM to AWS resources—SAM stacks, IAM, Lambda, API Gateway,
-DynamoDB, messaging, EventBridge, Step Functions, and observability. This guide covers **12 phases
-(0–11)** for greenfield AWS PSM work and post–PIM-to-PSM refinement.
+DynamoDB, messaging, EventBridge, Step Functions, and observability. This guide covers **6 sequential phases** with nested stages and atomic tasks for greenfield AWS PSM work and post–PIM-to-PSM refinement.
 
-After PIM→PSM ETL, refine generated AWS resources **within each phase** following the same order as
-greenfield modeling. `SamStack` is the containment hub for most resources.
+After PIM→PSM ETL, refine generated AWS resources **within each task** following the same order as
+greenfield modeling. Iterate within engine phases when wiring gaps appear.
+
+## Sequential Phases
+
+| Phase     | Name                          | In engine | Stages (summary)                                      |
+| --------- | ----------------------------- | --------- | ----------------------------------------------------- |
+| `psm.ph1` | Deployment Foundation         | once      | Account & Stage, Stack Scaffolding, Security Baseline |
+| `psm.ph2` | Network & Identity            | once      | Networking, Identity (Cognito)                        |
+| `psm.ph3` | Storage & Messaging           | ✓         | Durable Storage, Messaging                            |
+| `psm.ph4` | Event Fabric & Compute        | ✓         | Event Fabric, Compute (Lambda)                        |
+| `psm.ph5` | API & Orchestration           | ✓         | API Gateway, Workflow & Observability                 |
+| `psm.ph6` | Integration Views & Readiness | gate      | Integration Views, Trace & Readiness                  |
 
 ## Roles
 
-| Role                        | Responsibility in PSM                                              |
-| --------------------------- | ------------------------------------------------------------------ |
-| **Cloud Platform Engineer** | Phases 0–10: AWS account strategy, stacks, resources, integrations |
-| **Process Reviewer**        | Phase 11: integration views, trace closure, EVL gate               |
+| Role                        | Responsibility in PSM                                       |
+| --------------------------- | ----------------------------------------------------------- |
+| **Cloud Platform Engineer** | Engine phases: AWS stacks, resources, integrations          |
+| **Process Reviewer**        | Readiness phase: integration views, trace closure, EVL gate |
 
 ## Phase Flow
 
 ```mermaid
 flowchart TD
-  P0["Phase 0<br/>Account & Stage Strategy"]
-  P1["Phase 1<br/>Stack Scaffolding"]
-  P2["Phase 2<br/>Security Baseline"]
-  P3["Phase 3<br/>Networking"]
-  P4["Phase 4<br/>Identity"]
-  P5["Phase 5<br/>Durable Storage"]
-  P6["Phase 6<br/>Messaging"]
-  P7["Phase 7<br/>Event Fabric"]
-  P8["Phase 8<br/>Compute"]
-  P9["Phase 9<br/>API Gateway"]
-  P10["Phase 10<br/>Workflow & Observability"]
-  P11["Phase 11<br/>Integration Views & Readiness"]
+  PH1["Phase 1 — Deployment Foundation"]
+  PH2["Phase 2 — Network & Identity"]
+  PH3["Phase 3 — Storage & Messaging"]
+  PH4["Phase 4 — Event Fabric & Compute"]
+  PH5["Phase 5 — API & Orchestration"]
+  PH6["Phase 6 — Integration Views & Readiness"]
 
-  P0 --> P1 --> P2 --> P3 --> P4 --> P5
-  P5 --> P6 --> P7 --> P8 --> P9 --> P10 --> P11
-  P11 -->|EVL pass| GATE["M2T artifact generation"]
+  PH1 --> PH2 --> PH3 --> PH4 --> PH5 --> PH6
+  PH6 -->|EVL pass| GATE["M2T artifact generation"]
 ```
 
-## Phase Overview
+## Detailed tasks
 
-| Phase | Name                          | Primary role            | Duration | Inputs                      | Outputs                                |
-| ----- | ----------------------------- | ----------------------- | -------- | --------------------------- | -------------------------------------- |
-| 0     | Account & Stage Strategy      | Cloud Platform Engineer | 30–45m   | PIM transform or greenfield | `AwsPsmModel`, stages, naming/tagging  |
-| 1     | Stack Scaffolding             | Cloud Platform Engineer | ~1h      | Account strategy            | `SamStack`, CFN params/outputs         |
-| 2     | Security Baseline             | Cloud Platform Engineer | ~2h      | Stack scaffold              | IAM, KMS, Secrets Manager, SSM         |
-| 3     | Networking                    | Cloud Platform Engineer | 1–2h     | Security baseline           | VPC, subnets, endpoints, SGs           |
-| 4     | Identity                      | Cloud Platform Engineer | 1–2h     | Networking                  | Cognito pools, clients, identity pools |
-| 5     | Durable Storage               | Cloud Platform Engineer | 2–3h     | Identity                    | DynamoDB, S3 buckets and policies      |
-| 6     | Messaging                     | Cloud Platform Engineer | 1–2h     | Storage                     | SQS, SNS                               |
-| 7     | Event Fabric                  | Cloud Platform Engineer | ~2h      | Messaging                   | EventBridge buses, rules, pipes        |
-| 8     | Compute                       | Cloud Platform Engineer | 2–3h     | Event fabric                | Lambda functions, mappings, layers     |
-| 9     | API Gateway                   | Cloud Platform Engineer | 2–3h     | Compute                     | HTTP/REST/WebSocket APIs               |
-| 10    | Workflow & Observability      | Cloud Platform Engineer | ~2h      | API Gateway                 | Step Functions, CloudWatch             |
-| 11    | Integration Views & Readiness | Process Reviewer        | 1–2h     | Workflows complete          | Relationship views, EVL gate           |
+<!-- TASK-CATALOG:START -->
+<!-- Generated by mde/methodology/tools/generate-methodology-guides.mjs — do not edit manually -->
+
+## Task Catalog
+
+Process `modless.psm.modeling` · 6 phases · 25 atomic tasks · PSM metamodel coverage enforced in CI.
+
+### Deployment Foundation (`psm.ph1`)
+
+Establish AWS account strategy, SAM stack scaffolding, and security baseline.
+
+**Runs:** once per program · **Role:** cloud-platform-engineer
+
+**Phase entry:**
+
+- PIM transform complete or greenfield PSM
+
+**Phase exit:**
+
+- AWS root and stage strategy configured
+- Security baseline applied
+
+#### Account & Stage Strategy (`psm.ph1.st1`)
+
+Create AwsPsmModel root with partition, region, naming, and tagging policies.
+
+**Viewpoint:** dashboard
+
+##### Tasks
+
+#### Create AWS PSM model root (`psm.ph1.st1.t1`)
+
+**Viewpoint:** dashboard
+**Duration:** 20m
+**Artifacts:** Deployment Strategy
+**Palette focus:** `AwsPsmModel`
+
+**Steps:**
+
+1. Create AwsPsmModel with partition and region defaults.
+2. Link to PIM source model and set lifecycle metadata.
+
+**Entry criteria:**
+
+- PIM transform complete or greenfield PSM
+
+**Exit criteria:**
+
+- AwsPsmModel root exists
+
+#### Define stage and naming policies (`psm.ph1.st1.t2`)
+
+**Viewpoint:** dashboard
+**Duration:** 30m
+**Artifacts:** Deployment Strategy
+**Palette focus:** `AwsStage`, `AwsNamingPolicy`, `AwsTaggingPolicy`
+
+**Steps:**
+
+1. Configure AwsStage elements for dev, staging, and production.
+2. Define AwsNamingPolicy and AwsTaggingPolicy conventions.
+
+**Entry criteria:**
+
+- AWS PSM root exists
+
+**Exit criteria:**
+
+- Stage strategy and naming policies configured
+
+#### Stack Scaffolding (`psm.ph1.st2`)
+
+Create SAM stack with globals and CloudFormation parameters.
+
+**Viewpoint:** stack
+
+##### Tasks
+
+#### Create SAM stack and globals (`psm.ph1.st2.t1`)
+
+**Viewpoint:** stack
+**Duration:** 45m
+**Artifacts:** SAM Stack Scaffold
+**Palette focus:** `SamStack`, `SamGlobals`
+
+**Steps:**
+
+1. Create SamStack elements per deployment unit.
+2. Configure SamGlobals for shared function and API defaults.
+
+**Entry criteria:**
+
+- Stage strategy set
+
+**Exit criteria:**
+
+- Stack scaffolding ready for resources
+
+#### Define CFN parameters and outputs (`psm.ph1.st2.t2`)
+
+**Viewpoint:** stack
+**Duration:** 30m
+**Artifacts:** SAM Stack Scaffold
+**Palette focus:** `CfnParameter`, `CfnMapping`, `CfnCondition`, `CfnOutput`
+
+**Steps:**
+
+1. Define CfnParameter, CfnMapping, and CfnCondition elements.
+2. Configure CfnOutput and resource lifecycle policies.
+
+**Entry criteria:**
+
+- SAM stack created
+
+**Exit criteria:**
+
+- CFN scaffolding complete per stack
+
+#### Security Baseline (`psm.ph1.st3`)
+
+Establish IAM roles, KMS keys, secrets, and SSM parameters.
+
+**Viewpoint:** security
+
+##### Tasks
+
+#### Configure IAM roles and policies (`psm.ph1.st3.t1`)
+
+**Viewpoint:** security
+**Duration:** 1-2h
+**Artifacts:** Security Baseline
+**Palette focus:** `AwsSecurityBaseline`, `IamRole`, `IamInlinePolicy`, `IamPolicy`, `IamManagedPolicy`, `IamPolicyDocument`, `IamStatement`, `IamPrincipal`, `IamCondition`
+
+**Steps:**
+
+1. Establish AwsSecurityBaseline with least-privilege defaults.
+2. Create IamRole elements with inline and managed policies.
+
+**Entry criteria:**
+
+- Stack scaffolding complete
+
+**Exit criteria:**
+
+- IAM roles cover function and service principals
+
+#### Provision KMS, secrets, and SSM (`psm.ph1.st3.t2`)
+
+**Viewpoint:** security
+**Duration:** 1h
+**Artifacts:** Security Baseline
+**Palette focus:** `KmsKey`, `KmsAlias`, `SecretsManagerSecret`, `GenerateSecretStringConfig`, `SecretRotationRules`, `SecretRotationSchedule`, `SecretsManagerResourcePolicy`, `SsmParameter`, `SsmParameterValueExpression`, `SecretValueExpression`
+
+**Steps:**
+
+1. Configure KmsKey and KmsAlias for encryption at rest.
+2. Create SecretsManagerSecret with rotation rules.
+3. Define SsmParameter elements for non-secret configuration.
+
+**Entry criteria:**
+
+- IAM roles configured
+
+**Exit criteria:**
+
+- Security baseline applied
 
 ---
 
-## Phase 0 — Account & Stage Strategy
+### Network & Identity (`psm.ph2`)
 
-**Viewpoint:** dashboard · **Duration:** 30–45 minutes
+Configure VPC networking and Cognito identity resources aligned to PIM auth model.
 
-Define AWS partition, region, stage, and resource naming conventions.
+**Runs:** once per program · **Role:** cloud-platform-engineer
 
-### Tasks
+**Phase entry:**
 
-#### Account & Stage Strategy
+- Deployment Foundation complete
 
-**Palette focus:** `AwsPsmModel`, `AwsStage`, `AwsNamingPolicy`, `AwsTaggingPolicy`
+**Phase exit:**
 
-1. Create `AwsPsmModel` with partition, region, and stage strategy.
-2. Define naming and tagging policies.
+- Network posture defined for workloads
+- Identity resources match PIM auth model
 
-#### Configure Account & Stage Strategy enumerations
+#### Networking (`psm.ph2.st1`)
 
-Review: `AwsEnvironmentClass`, `AwsPartition`, `Decision`, `Priority`, `Severity`, `ConstraintStrength`,
-`LifecycleStatus`, `TraceConfidence`, `TraceLinkType`, `FindingType`, `StructuredFormat`,
-`ExpressionLanguage`, `ExpressionPhase`.
+Configure VPC, subnets, endpoints, and security groups for workloads.
 
-### Common mistakes
+**Viewpoint:** networking
 
-| Mistake                                           | EVL rule |
-| ------------------------------------------------- | -------- |
-| Missing naming policy before resource creation    | —        |
-| Stage strategy inconsistent with PIM environments | —        |
-| Tags not aligned to organization standards        | —        |
+##### Tasks
 
-### Phase gate checklist
+#### Configure VPC and subnets (`psm.ph2.st1.t1`)
 
-- [ ] `AwsPsmModel` root with partition and region
-- [ ] `AwsStage` strategy defined
-- [ ] Naming and tagging policies configured
+**Viewpoint:** networking
+**Duration:** 1h
+**Artifacts:** Network & Identity
+**Palette focus:** `Vpc`, `Subnet`, `VpcAttachmentConfig`
 
----
+**Steps:**
 
-## Phase 1 — Stack Scaffolding
+1. Create Vpc and Subnet elements when VPC-attached resources are required.
+2. Configure VpcAttachmentConfig for cross-stack references.
 
-**Viewpoint:** stack · **Duration:** ~1 hour
+**Entry criteria:**
 
-Create SAM stack structure before adding resources.
+- Security baseline applied
 
-### Tasks
+**Exit criteria:**
 
-**Palette focus:** `SamStack`, `CfnParameter`, `CfnMapping`, `CfnCondition`, `CfnOutput`, `SamGlobals`
+- VPC topology defined for increment slice
 
-1. Create SAM stack with globals.
-2. Define CFN parameters, mappings, conditions, outputs.
+#### Define endpoints and security groups (`psm.ph2.st1.t2`)
 
-### Common mistakes
+**Viewpoint:** networking
+**Duration:** 45m
+**Artifacts:** Network & Identity
+**Palette focus:** `VpcEndpoint`, `VpcEndpointReference`, `SecurityGroup`, `SecurityGroupRule`
 
-| Mistake                                          | EVL rule |
-| ------------------------------------------------ | -------- |
-| Resources created outside `SamStack` containment | —        |
-| Missing outputs for cross-stack references       | —        |
-| Globals not set before function/API defaults     | —        |
+**Steps:**
 
-### Phase gate checklist
+1. Configure VpcEndpoint elements for AWS service access.
+2. Define SecurityGroup and SecurityGroupRule for workload isolation.
 
-- [ ] `SamStack` with `SamGlobals` configured
-- [ ] Parameters, mappings, conditions, and outputs defined
-- [ ] Stack scaffolding ready for resources
+**Entry criteria:**
 
----
+- VPC topology defined
 
-## Phase 2 — Security Baseline
+**Exit criteria:**
 
-**Viewpoint:** security · **Duration:** ~2 hours
+- Network posture defined for workloads
 
-Establish IAM, encryption, and secrets before workload resources.
+#### Identity (`psm.ph2.st2`)
 
-### Tasks
+Configure Cognito user pools, clients, and identity pools.
 
-**Palette focus:** `AwsSecurityBaseline`, `IamRole`, `IamInlinePolicy`, `IamPolicy`, `IamManagedPolicy`, `IamPolicyDocument`, `IamStatement`, `IamPrincipal`, `IamCondition`, `KmsKey`, `KmsAlias`, `GenerateSecretStringConfig`, `SecretsManagerSecret`, `SecretRotationRules`, `SecretRotationSchedule`, `SecretsManagerResourcePolicy`, `SsmParameter`, `SsmParameterValueExpression`, `SecretValueExpression`
+**Viewpoint:** identity
 
-1. Establish security baseline and IAM roles/policies.
-2. Configure KMS, Secrets Manager, and SSM parameters.
+##### Tasks
 
-### Common mistakes
+#### Configure Cognito user pools (`psm.ph2.st2.t1`)
 
-| Mistake                                             | EVL rule |
-| --------------------------------------------------- | -------- |
-| Lambda or API role with overly broad IAM statements | —        |
-| Secrets without rotation or resource policy         | —        |
-| KMS keys not referenced by encrypted resources      | —        |
+**Viewpoint:** identity
+**Duration:** 1h
+**Artifacts:** Network & Identity
+**Palette focus:** `CognitoUserPool`, `CognitoPasswordPolicy`, `CognitoSchemaAttribute`, `CognitoEmailConfiguration`, `CognitoAccountRecoverySetting`, `CognitoRecoveryMechanism`, `CognitoLambdaConfig`
 
-### Phase gate checklist
+**Steps:**
 
-- [ ] Security baseline applied
-- [ ] IAM roles and policies for compute/API paths
-- [ ] KMS, secrets, and SSM parameters configured
+1. Create CognitoUserPool elements from PIM identity providers.
+2. Configure password policy, schema attributes, and recovery settings.
 
----
+**Entry criteria:**
 
-## Phase 3 — Networking
+- Networking configured
 
-**Viewpoint:** networking · **Duration:** 1–2 hours
+**Exit criteria:**
 
-Configure VPC posture when workloads require private networking.
+- User pools match PIM principal model
 
-### Tasks
+#### Configure clients, groups, and identity pools (`psm.ph2.st2.t2`)
 
-**Palette focus:** `VpcAttachmentConfig`, `VpcEndpointReference`, `Vpc`, `Subnet`, `VpcEndpoint`, `SecurityGroup`, `SecurityGroupRule`
+**Viewpoint:** identity
+**Duration:** 45m
+**Artifacts:** Network & Identity
+**Palette focus:** `CognitoUserPoolClient`, `CognitoOAuthConfiguration`, `CognitoUserPoolGroup`, `CognitoUserPoolDomain`, `CognitoIdentityPool`
 
-1. Configure VPC, subnets, and endpoints when required.
-2. Define security groups and rules.
+**Steps:**
 
-### Common mistakes
+1. Define CognitoUserPoolClient with OAuth configuration.
+2. Create CognitoUserPoolGroup and CognitoIdentityPool for federated access.
 
-| Mistake                                                            | EVL rule |
-| ------------------------------------------------------------------ | -------- |
-| VPC-attached Lambda without subnet or SG                           | —        |
-| Security group rules too permissive (0.0.0.0/0 on sensitive ports) | —        |
-| Missing VPC endpoints for private AWS service access               | —        |
+**Entry criteria:**
 
-### Phase gate checklist
+- User pools configured
 
-- [ ] Network posture defined for workloads
-- [ ] Security groups and rules documented
-- [ ] VPC endpoints configured where needed
+**Exit criteria:**
+
+- Identity resources match PIM auth model
 
 ---
 
-## Phase 4 — Identity
+### Storage & Messaging (`psm.ph3`)
 
-**Viewpoint:** identity · **Duration:** 1–2 hours
+Provision durable storage and messaging resources matching PIM data and event channels.
 
-Map PIM identity providers to Cognito resources.
+**Runs:** in engine cycle · **Role:** cloud-platform-engineer
 
-### Tasks
+**Phase entry:**
 
-**Palette focus:** `CognitoUserPool`, `CognitoPasswordPolicy`, `CognitoSchemaAttribute`, `CognitoEmailConfiguration`, `CognitoAccountRecoverySetting`, `CognitoRecoveryMechanism`, `CognitoLambdaConfig`, `CognitoUserPoolClient`, `CognitoOAuthConfiguration`, `CognitoUserPoolGroup`, `CognitoUserPoolDomain`, `CognitoIdentityPool`
+- Network & Identity complete
 
-1. Configure Cognito user pools, clients, and groups.
-2. Set up identity pools for federated access.
+**Phase exit:**
 
-### Common mistakes
+- Durable stores match PIM data model
+- Messaging matches PIM event channels
 
-| Mistake                                              | EVL rule |
-| ---------------------------------------------------- | -------- |
-| User pool client OAuth config incomplete             | —        |
-| PIM `IdentityProvider` not traced to Cognito pool    | —        |
-| Password policy weaker than CIM security constraints | —        |
+#### Durable Storage (`psm.ph3.st1`)
 
-### Phase gate checklist
+Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 
-- [ ] Identity resources match PIM auth model
-- [ ] User pool clients and groups configured
-- [ ] Identity pools for federated access (if required)
+**Viewpoint:** storage
 
----
+##### Tasks
 
-## Phase 5 — Durable Storage
+#### Provision DynamoDB tables (`psm.ph3.st1.t1`)
 
-**Viewpoint:** storage · **Duration:** 2–3 hours
+**Viewpoint:** storage
+**Duration:** 1-2h
+**Artifacts:** Durable Storage Layer
+**Palette focus:** `DynamoDbTable`, `DynamoDbAttributeDefinition`, `DynamoDbKeySchemaElement`, `DynamoDbProjection`, `DynamoDbProvisionedThroughput`, `DynamoDbOnDemandThroughput`, `DynamoDbLocalSecondaryIndex`, `DynamoDbGlobalSecondaryIndex`, `DynamoDbReplicaSpecification`, `DynamoDbStreamSpecification`, `DynamoDbTimeToLiveSpecification`, `DynamoDbSseSpecification`
 
-Provision DynamoDB and S3 aligned to PIM data architecture.
+**Steps:**
 
-### Tasks
+1. Create DynamoDbTable elements from PIM DataStore definitions.
+2. Configure key schema, GSIs/LSIs, streams, and TTL.
 
-**Palette focus:** `DynamoDbTable`, `DynamoDbAttributeDefinition`, `DynamoDbKeySchemaElement`, `DynamoDbProjection`, `DynamoDbProvisionedThroughput`, `DynamoDbOnDemandThroughput`, `DynamoDbLocalSecondaryIndex`, `DynamoDbGlobalSecondaryIndex`, `DynamoDbReplicaSpecification`, `DynamoDbStreamSpecification`, `DynamoDbTimeToLiveSpecification`, `DynamoDbSseSpecification`, `DynamoDbBackupPolicy`, `S3Bucket`, `S3BucketEncryption`, `S3OwnershipControls`, `S3OwnershipRule`, `S3LifecycleConfiguration`, `S3LifecycleRule`, `S3LifecycleFilter`, `S3TagFilter`, `S3Transition`, `S3PublicAccessBlockConfiguration`, `S3NotificationConfiguration`, `S3NotificationRule`, `S3NotificationDestination`, `S3ReplicationConfiguration`, `S3ReplicationRule`, `S3ReplicationDestination`, `S3BucketPolicy`
+**Entry criteria:**
 
-1. Provision DynamoDB tables with indexes and streams.
-2. Configure S3 buckets with lifecycle and notifications.
+- Identity configured
 
-### Common mistakes
+**Exit criteria:**
 
-| Mistake                                             | EVL rule |
-| --------------------------------------------------- | -------- |
-| GSI key schema not aligned to PIM access pattern    | —        |
-| S3 bucket without encryption or public access block | —        |
-| Stream specification missing for event-driven paths | —        |
+- DynamoDB tables match PIM data models
 
-### Phase gate checklist
+#### Configure S3 buckets and policies (`psm.ph3.st1.t2`)
 
-- [ ] DynamoDB tables match PIM data models
-- [ ] Indexes cover access patterns
-- [ ] S3 buckets configured with lifecycle and notifications
+**Viewpoint:** storage
+**Duration:** 1-2h
+**Artifacts:** Durable Storage Layer
+**Palette focus:** `S3Bucket`, `S3BucketEncryption`, `S3OwnershipControls`, `S3OwnershipRule`, `S3LifecycleConfiguration`, `S3LifecycleRule`, `S3LifecycleFilter`, `S3TagFilter`, `S3Transition`, `S3PublicAccessBlockConfiguration`, `S3NotificationConfiguration`, `S3NotificationRule`
 
----
+**Steps:**
 
-## Phase 6 — Messaging
+1. Create S3Bucket elements from PIM ObjectStore definitions.
+2. Configure encryption, lifecycle, notifications, and bucket policies.
 
-**Viewpoint:** messaging · **Duration:** 1–2 hours
+**Entry criteria:**
 
-SQS and SNS resources for PIM channels.
+- DynamoDB tables provisioned
 
-### Tasks
+**Exit criteria:**
 
-**Palette focus:** `SqsQueue`, `SqsRedrivePolicy`, `SqsRedriveAllowPolicy`, `SqsQueuePolicy`, `SnsTopic`, `SnsSubscription`, `SnsFilterRule`, `SnsTopicPolicy`
+- S3 buckets match PIM object stores
 
-1. Create SQS queues with redrive policies.
-2. Configure SNS topics and subscriptions.
+#### Messaging (`psm.ph3.st2`)
 
-### Common mistakes
+Create SQS queues and SNS topics aligned to PIM event channels.
 
-| Mistake                                                      | EVL rule |
-| ------------------------------------------------------------ | -------- |
-| Queue without dead-letter/redrive configuration              | —        |
-| SNS subscription filter not matching PIM event routing       | —        |
-| Queue policy missing for cross-account or service principals | —        |
+**Viewpoint:** messaging
 
-### Phase gate checklist
+##### Tasks
 
-- [ ] Messaging matches PIM event channels
-- [ ] Redrive policies configured
-- [ ] Topic subscriptions and filters complete
+#### Create SQS queues (`psm.ph3.st2.t1`)
 
----
+**Viewpoint:** messaging
+**Duration:** 45m
+**Artifacts:** Messaging Layer
+**Palette focus:** `SqsQueue`, `SqsRedrivePolicy`, `SqsRedriveAllowPolicy`, `SqsQueuePolicy`
 
-## Phase 7 — Event Fabric
+**Steps:**
 
-**Viewpoint:** events · **Duration:** ~2 hours
+1. Create SqsQueue elements from PIM Queue definitions.
+2. Configure redrive policies and queue policies.
 
-EventBridge buses, rules, schedules, pipes, and API destinations.
+**Entry criteria:**
 
-### Tasks
+- Durable storage provisioned
 
-**Palette focus:** `EventBridgeBus`, `EventBridgeBusPolicy`, `EventBridgeRule`, `EventPattern`, `EventBridgeTarget`, `EventBridgeTargetParameters`, `EventBridgeSqsTargetParameters`, `EventBridgeHttpTargetParameters`, `HttpParameter`, `EventBridgeBatchTargetParameters`, `EventBridgeInputTransformer`, `EventBridgeArchive`, `EventBridgeSchedule`, `EventBridgeFlexibleTimeWindow`, `EventBridgePipe`, `EventBridgeAuthParameters`, `EventBridgeApiKeyAuthParameters`, `EventBridgeBasicAuthParameters`, `EventBridgeOAuthParameters`, `EventBridgeHttpParameters`, `EventBridgeConnection`, `EventBridgeApiDestination`, `AwsRetryPolicy`
+**Exit criteria:**
 
-1. Configure EventBridge buses, rules, and targets.
-2. Set up schedules, pipes, and API destinations.
+- SQS queues match PIM integration topology
 
-### Common mistakes
+#### Configure SNS topics and subscriptions (`psm.ph3.st2.t2`)
 
-| Mistake                                                        | EVL rule |
-| -------------------------------------------------------------- | -------- |
-| Rule target not connected to queue, Lambda, or API destination | —        |
-| Schedule without flexible time window when jitter required     | —        |
-| API destination connection auth incomplete                     | —        |
+**Viewpoint:** messaging
+**Duration:** 45m
+**Artifacts:** Messaging Layer
+**Palette focus:** `SnsTopic`, `SnsSubscription`, `SnsFilterRule`, `SnsTopicPolicy`
 
-### Phase gate checklist
+**Steps:**
 
-- [ ] Event fabric matches PIM integration topology
-- [ ] Rules, schedules, and pipes configured
-- [ ] API destinations for external integrations
+1. Create SnsTopic elements from PIM Topic definitions.
+2. Define SnsSubscription with filter rules and topic policies.
+
+**Entry criteria:**
+
+- SQS queues created
+
+**Exit criteria:**
+
+- Messaging matches PIM event channels
 
 ---
 
-## Phase 8 — Compute
+### Event Fabric & Compute (`psm.ph4`)
 
-**Viewpoint:** compute · **Duration:** 2–3 hours
+Configure EventBridge fabric and deploy Lambda compute matching PIM functions.
 
-Lambda functions with event source mappings and permissions.
+**Runs:** in engine cycle · **Role:** cloud-platform-engineer
 
-### Tasks
+**Phase entry:**
 
-#### Compute
+- Storage & Messaging complete for slice
 
-**Palette focus:** `AwsLambdaFunction`, `LambdaCodeConfig`, `LambdaZipCodeConfig`, `LambdaImageCodeConfig`, `LambdaImageConfig`, `LambdaEnvironmentVariable`, `LambdaInvocationBinding`, `SamFunctionEvent`, `LambdaEventSourceMapping`, `SqsLambdaEventSourceMapping`, `DynamoDbStreamLambdaEventSourceMapping`, `GenericLambdaEventSourceMapping`, `LambdaDeadLetterConfig`, `LambdaEventInvokeConfig`, `LambdaDestinationConfig`, `LambdaTracingConfig`, `LambdaLoggingConfig`, `LambdaLayerVersion`, `LambdaLayerPermission`, `LambdaVersion`, `LambdaAlias`, `LambdaProvisionedConcurrencyConfig`, `LambdaPermission`, `LambdaFunctionUrl`, `LambdaUrlCorsConfiguration`, `LambdaFileSystemConfig`, `CodeSigningConfig`
+**Phase exit:**
 
-1. Deploy Lambda functions with code config and layers.
-2. Configure event source mappings and permissions.
+- Event fabric matches PIM integration
+- Compute matches PIM functions
 
-#### Configure Compute enumerations
+#### Event Fabric (`psm.ph4.st1`)
 
-Review: `PackageType`, `LambdaArchitecture`, `LambdaTracingMode`, `LambdaRuntimeManagementMode`,
-`LambdaSnapStartApplyOn`, `LambdaInvokeMode`, `LambdaFunctionUrlAuthType`, `LambdaRecursiveLoopMode`,
-`LambdaEventSourceKind`, `StartingPosition`.
+Configure EventBridge buses, rules, schedules, pipes, and API destinations.
 
-### Common mistakes
+**Viewpoint:** events
 
-| Mistake                                              | EVL rule |
-| ---------------------------------------------------- | -------- |
-| Function IAM role from Phase 2 not attached          | —        |
-| Event source mapping type mismatched to trigger      | —        |
-| Environment variables referencing unresolved secrets | —        |
+##### Tasks
 
-### Phase gate checklist
+#### Configure EventBridge buses and rules (`psm.ph4.st1.t1`)
 
-- [ ] Compute matches PIM functions
-- [ ] Event source mappings and permissions complete
-- [ ] Tracing and logging configured
+**Viewpoint:** events
+**Duration:** 1-2h
+**Artifacts:** Event Fabric
+**Palette focus:** `EventBridgeBus`, `EventBridgeBusPolicy`, `EventBridgeRule`, `EventPattern`, `EventBridgeTarget`, `EventBridgeTargetParameters`, `EventBridgeSqsTargetParameters`, `EventBridgeHttpTargetParameters`, `HttpParameter`, `EventBridgeBatchTargetParameters`, `EventBridgeInputTransformer`, `EventBridgeArchive`
 
----
+**Steps:**
 
-## Phase 9 — API Gateway
+1. Create EventBridgeBus and EventBridgeRule elements from PIM EventBus.
+2. Configure targets, input transformers, and retry policies.
 
-**Viewpoint:** api · **Duration:** 2–3 hours
+**Entry criteria:**
 
-HTTP, REST, and WebSocket APIs with authorizers and stages.
+- Messaging configured
 
-### Tasks
+**Exit criteria:**
 
-#### API Gateway
+- EventBridge rules match PIM routing rules
 
-**Palette focus:** `ApiGatewayApi`, `HttpApi`, `RestApi`, `WebSocketApi`, `ApiGatewayRoute`, `HttpApiRoute`, `RestApiRoute`, `RestApiResource`, `RestApiMethod`, `WebSocketRoute`, `ApiGatewayRequestModel`, `ApiGatewayResponseModel`, `ApiGatewayRequestValidator`, `ApiGatewayRouteSetting`, `ApiGatewayAccessLogSetting`, `ApiGatewayIntegration`, `ApiGatewayIntegrationRequestTemplate`, `ApiGatewayIntegrationResponseParameter`, `ApiGatewayStage`, `HttpApiStage`, `RestApiStage`, `WebSocketStage`, `ApiGatewayAuthorizer`, `JwtAuthorizer`, `CognitoAuthorizer`, `LambdaAuthorizer`, `ApiGatewayDomainName`, `ApiGatewayBasePathMapping`, `ApiGatewayApiKey`, `ApiGatewayUsagePlan`, `ApiGatewayUsagePlanKey`, `ApiGatewayDeployment`, `ApiGatewayTracingConfig`, `WafWebAclAssociation`
+#### Configure schedules, pipes, and connections (`psm.ph4.st1.t2`)
 
-1. Configure HTTP/REST/WebSocket APIs with routes.
-2. Set up integrations, authorizers, and stages.
+**Viewpoint:** events
+**Duration:** 1h
+**Artifacts:** Event Fabric
+**Palette focus:** `EventBridgeSchedule`, `EventBridgeFlexibleTimeWindow`, `EventBridgePipe`, `EventBridgeAuthParameters`, `EventBridgeApiKeyAuthParameters`, `EventBridgeBasicAuthParameters`, `EventBridgeOAuthParameters`, `EventBridgeHttpParameters`, `EventBridgeConnection`, `EventBridgeApiDestination`
 
-#### Configure API Gateway enumerations
+**Steps:**
 
-Review: `ApiGatewayKind`, `ApiGatewayEndpointType`, `ApiGatewayAuthorizationType`, `ApiGatewayIntegrationType`, `ApiGatewayHttpMethod`.
+1. Define EventBridgeSchedule elements from PIM Schedule triggers.
+2. Configure EventBridgePipe and API destinations for external integration.
 
-### Common mistakes
+**Entry criteria:**
 
-| Mistake                                            | EVL rule |
-| -------------------------------------------------- | -------- |
-| Route integration pointing to wrong Lambda alias   | —        |
-| Cognito authorizer not linked to Phase 4 user pool | —        |
-| Missing WAF association on public API              | —        |
+- EventBridge rules configured
 
-### Phase gate checklist
+**Exit criteria:**
 
-- [ ] API Gateway matches PIM APIs
-- [ ] Integrations, authorizers, and stages complete
-- [ ] Usage plans and throttling configured (if required)
+- Event fabric matches PIM integration
 
----
+#### Compute (`psm.ph4.st2`)
 
-## Phase 10 — Workflow & Observability
+Deploy Lambda functions with event source mappings and permissions.
 
-**Viewpoint:** workflow · **Duration:** ~2 hours
+**Viewpoint:** compute
 
-Step Functions and CloudWatch observability.
+##### Tasks
 
-### Tasks
+#### Deploy Lambda functions (`psm.ph4.st2.t1`)
 
-**Palette focus:** `StepFunctionStateMachine`, `AslDocument`, `AslState`, `AslBranch`, `AslMapConfig`, `AslRetryRule`, `AslCatchRule`, `AslChoiceRule`, `StepFunctionLoggingConfig`, `StepFunctionTracingConfig`, `SamStateMachineEvent`, `CloudWatchLogGroup`, `CloudWatchMetricFilter`, `CloudWatchMetricTransformation`, `CloudWatchLogSubscriptionFilter`, `CloudWatchAlarm`, `MetricDimension`, `CloudWatchCompositeAlarm`, `CloudWatchDashboard`, `CorsConfiguration`, `TracingConfig`
+**Viewpoint:** compute
+**Duration:** 2-3h
+**Artifacts:** Lambda Compute Layer
+**Palette focus:** `AwsLambdaFunction`, `LambdaCodeConfig`, `LambdaZipCodeConfig`, `LambdaImageCodeConfig`, `LambdaImageConfig`, `LambdaEnvironmentVariable`, `LambdaInvocationBinding`, `SamFunctionEvent`, `LambdaLayerVersion`, `LambdaLayerPermission`, `LambdaVersion`, `LambdaAlias`
 
-1. Deploy Step Functions state machines with ASL.
-2. Configure CloudWatch logs, alarms, and dashboards.
+**Steps:**
 
-### Common mistakes
+1. Create AwsLambdaFunction elements from PIM Function definitions.
+2. Configure code config, layers, aliases, and environment variables.
 
-| Mistake                                                | EVL rule |
-| ------------------------------------------------------ | -------- |
-| ASL state machine not validated before gate            | —        |
-| Alarms without dimensions matching PIM SLOs            | —        |
-| Step Function IAM role insufficient for target Lambdas | —        |
+**Entry criteria:**
 
-### Phase gate checklist
+- Event fabric configured
 
-- [ ] Workflows and observability complete
-- [ ] ASL documents validated
-- [ ] CloudWatch alarms and dashboards configured
+**Exit criteria:**
 
----
+- Lambda functions match PIM compute catalog
 
-## Phase 11 — Integration Views & Readiness
+#### Configure event sources and permissions (`psm.ph4.st2.t2`)
 
-**Viewpoint:** readiness · **Duration:** 1–2 hours
+**Viewpoint:** compute
+**Duration:** 1-2h
+**Artifacts:** Lambda Compute Layer
+**Palette focus:** `LambdaEventSourceMapping`, `SqsLambdaEventSourceMapping`, `DynamoDbStreamLambdaEventSourceMapping`, `GenericLambdaEventSourceMapping`, `LambdaDeadLetterConfig`, `LambdaEventInvokeConfig`, `LambdaDestinationConfig`, `LambdaTracingConfig`, `LambdaLoggingConfig`, `LambdaPermission`, `LambdaFunctionUrl`, `LambdaUrlCorsConfiguration`
 
-Cross-resource relationship views and PSM EVL gate before M2T generation.
+**Steps:**
 
-### Tasks
+1. Configure LambdaEventSourceMapping for SQS, DynamoDB streams, and EventBridge.
+2. Set LambdaPermission, dead-letter config, and tracing/logging.
 
-#### Integration Views & Readiness
+**Entry criteria:**
 
-**Palette focus:** `AwsTag`, `ResourceImport`, `NativeProperty`, `AwsRelationshipView`, `ApiGatewayLambdaIntegrationView`, `EventBridgeLambdaTargetView`, `SnsLambdaSubscriptionView`, `SqsLambdaEventSourceView`, `StepFunctionEventBridgeTargetView`, `S3LambdaNotificationView`, `S3QueueNotificationView`, `S3TopicNotificationView`, `TraceModel`, `TraceLink`, `TransformationAssumption`, `ProductionReadinessAssessment`, `ReadinessFinding`, `ReadinessCheck`, `ManualDecision`
+- Lambda functions deployed
 
-1. Create integration relationship views.
-2. Complete trace and readiness closure.
-3. Pass PSM EVL before M2T generation.
+**Exit criteria:**
 
-#### Configure Integration Views & Readiness enumerations
-
-Review remaining PSM enumerations including `EventBridgeHttpMethod`, `EventBridgeTargetKind`,
-`DynamoDbBillingMode`, `StepFunctionType`, `AslStateType`, `IamEffect`, `SamCapability`, and related
-storage, messaging, and observability enums.
-
-### Common mistakes
-
-| Mistake                                              | EVL rule                  |
-| ---------------------------------------------------- | ------------------------- |
-| Relationship view missing for Lambda–API integration | —                         |
-| Broken trace link to PIM source                      | —                         |
-| Proceeding to M2T with open readiness findings       | `psm-semantic-validation` |
-
-### Phase gate checklist
-
-- [ ] Integration relationship views complete
-- [ ] Trace model links PSM to PIM elements
-- [ ] Readiness findings resolved or waived
-- [ ] **PSM EVL passes** (`psm-semantic-validation`)
-- [ ] Process Reviewer sign-off obtained
+- Compute matches PIM functions
 
 ---
 
-## Next Steps
+### API & Orchestration (`psm.ph5`)
 
-When Phase 11 gate criteria are met, proceed to [M2T artifact generation](generated-artifacts.md)
-and the [End-to-End Modeling Methodology](end-to-end-modeling-methodology.md).
+Configure API Gateway exposure and Step Functions workflows with observability.
+
+**Runs:** in engine cycle · **Role:** cloud-platform-engineer
+
+**Phase entry:**
+
+- Event Fabric & Compute complete for slice
+
+**Phase exit:**
+
+- API Gateway matches PIM APIs
+- Workflows and observability complete
+
+#### API Gateway (`psm.ph5.st1`)
+
+Configure HTTP/REST/WebSocket APIs with routes, integrations, and authorizers.
+
+**Viewpoint:** api
+
+##### Tasks
+
+#### Configure APIs and routes (`psm.ph5.st1.t1`)
+
+**Viewpoint:** api
+**Duration:** 1-2h
+**Artifacts:** API Gateway Layer
+**Palette focus:** `ApiGatewayApi`, `HttpApi`, `RestApi`, `WebSocketApi`, `ApiGatewayRoute`, `HttpApiRoute`, `RestApiRoute`, `RestApiResource`, `RestApiMethod`, `WebSocketRoute`
+
+**Steps:**
+
+1. Create HttpApi, RestApi, and WebSocketApi from PIM Api definitions.
+2. Define routes, resources, and methods per API style.
+
+**Entry criteria:**
+
+- Compute deployed
+
+**Exit criteria:**
+
+- API routes match PIM API catalog
+
+#### Configure integrations and authorizers (`psm.ph5.st1.t2`)
+
+**Viewpoint:** api
+**Duration:** 1-2h
+**Artifacts:** API Gateway Layer
+**Palette focus:** `ApiGatewayRequestModel`, `ApiGatewayResponseModel`, `ApiGatewayRequestValidator`, `ApiGatewayRouteSetting`, `ApiGatewayAccessLogSetting`, `ApiGatewayIntegration`, `ApiGatewayIntegrationRequestTemplate`, `ApiGatewayIntegrationResponseParameter`, `ApiGatewayStage`, `HttpApiStage`, `RestApiStage`, `WebSocketStage`
+
+**Steps:**
+
+1. Configure ApiGatewayIntegration to Lambda functions.
+2. Set up authorizers, stages, and WAF associations.
+
+**Entry criteria:**
+
+- API routes defined
+
+**Exit criteria:**
+
+- API Gateway matches PIM APIs
+
+#### Workflow & Observability (`psm.ph5.st2`)
+
+Deploy Step Functions state machines and CloudWatch observability stack.
+
+##### Step Functions (`psm.ph5.st2.ss1`)
+
+Deploy state machines with ASL from PIM workflows.
+
+**Viewpoint:** workflow
+
+##### Tasks
+
+#### Deploy state machines (`psm.ph5.st2.ss1.t1`)
+
+**Viewpoint:** workflow
+**Duration:** 1-2h
+**Artifacts:** Workflow & Observability
+**Palette focus:** `StepFunctionStateMachine`, `AslDocument`, `AslState`, `AslBranch`, `AslMapConfig`, `AslRetryRule`, `AslCatchRule`, `AslChoiceRule`, `StepFunctionLoggingConfig`, `StepFunctionTracingConfig`, `SamStateMachineEvent`
+
+**Steps:**
+
+1. Create StepFunctionStateMachine from PIM Workflow definitions.
+2. Configure ASL states, retry/catch rules, and logging.
+
+**Entry criteria:**
+
+- API Gateway configured
+
+**Exit criteria:**
+
+- State machines match PIM workflows
+
+##### CloudWatch Observability (`psm.ph5.st2.ss2`)
+
+Configure logs, metrics, alarms, and dashboards.
+
+**Viewpoint:** workflow
+
+##### Tasks
+
+#### Configure CloudWatch logs and metrics (`psm.ph5.st2.ss2.t1`)
+
+**Viewpoint:** workflow
+**Duration:** 45m
+**Artifacts:** Workflow & Observability
+**Palette focus:** `CloudWatchLogGroup`, `CloudWatchMetricFilter`, `CloudWatchMetricTransformation`, `CloudWatchLogSubscriptionFilter`, `MetricDimension`
+
+**Steps:**
+
+1. Create CloudWatchLogGroup elements for functions and APIs.
+2. Configure metric filters and subscription filters.
+
+**Entry criteria:**
+
+- State machines deployed
+
+**Exit criteria:**
+
+- Logging and metrics configured
+
+#### Configure alarms and dashboards (`psm.ph5.st2.ss2.t2`)
+
+**Viewpoint:** workflow
+**Duration:** 45m
+**Artifacts:** Workflow & Observability
+**Palette focus:** `CloudWatchAlarm`, `CloudWatchCompositeAlarm`, `CloudWatchDashboard`, `TracingConfig`, `CorsConfiguration`
+
+**Steps:**
+
+1. Define CloudWatchAlarm and composite alarms from PIM SLOs.
+2. Create CloudWatchDashboard for increment slice.
+
+**Entry criteria:**
+
+- Logging and metrics configured
+
+**Exit criteria:**
+
+- Workflows and observability complete
+
+---
+
+### Integration Views & Readiness (`psm.ph6`)
+
+Create integration relationship views, close traceability, and pass PSM EVL gate.
+
+**Runs:** once per program · **Role:** process-reviewer
+
+**Phase entry:**
+
+- API & Orchestration complete for slice
+
+**Phase exit:**
+
+- PSM EVL passes
+- Readiness gate approved
+
+#### Integration Views (`psm.ph6.st1`)
+
+Create cross-resource relationship views for deployment wiring validation.
+
+**Viewpoint:** readiness
+
+##### Tasks
+
+#### Create integration relationship views (`psm.ph6.st1.t1`)
+
+**Viewpoint:** readiness
+**Duration:** 1h
+**Artifacts:** Integration View Catalog
+**Palette focus:** `AwsRelationshipView`, `ApiGatewayLambdaIntegrationView`, `EventBridgeLambdaTargetView`, `SnsLambdaSubscriptionView`, `SqsLambdaEventSourceView`, `StepFunctionEventBridgeTargetView`, `S3LambdaNotificationView`, `S3QueueNotificationView`, `S3TopicNotificationView`, `AwsTag`, `ResourceImport`, `NativeProperty`
+
+**Steps:**
+
+1. Generate AwsRelationshipView elements for Lambda integrations.
+2. Validate event source, API, and notification wiring views.
+3. Apply AwsTag and ResourceImport for cross-stack references.
+
+**Entry criteria:**
+
+- Workflow and observability complete
+
+**Exit criteria:**
+
+- Integration views cover all wiring paths
+
+#### Trace & Readiness Gate (`psm.ph6.st2`)
+
+Close trace links and production readiness before M2T generation.
+
+**Viewpoint:** readiness
+
+##### Tasks
+
+#### Complete trace and readiness (`psm.ph6.st2.t1`)
+
+**Viewpoint:** readiness
+**Duration:** 1-2h
+**Artifacts:** Deployment Readiness Record
+
+**Steps:**
+
+1. Build TraceModel links across PIM and PSM resources.
+2. Complete ProductionReadinessAssessment and resolve findings.
+
+**Entry criteria:**
+
+- Integration views complete
+
+**Exit criteria:**
+
+- PSM EVL passes; readiness gate approved
+
+**Validation:**
+
+- `psm-semantic-validation`
+
+---
+
+## Next step
+
+When `psm.ph6` exit criteria are met and EVL passes, proceed to the next level in the [modeling pipeline](../concepts/pipeline.md).
+
+<!-- TASK-CATALOG:END -->

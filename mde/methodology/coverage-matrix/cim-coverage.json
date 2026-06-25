@@ -1,7 +1,7 @@
 {
   "level": "cim",
   "processId": "modless.cim.modeling",
-  "generatedAt": "2026-06-24T09:51:45.356Z",
+  "generatedAt": "2026-06-25T22:34:10.043Z",
   "totalConcepts": 122,
   "coveredConcepts": 122,
   "orphanedConcepts": [],
@@ -9,733 +9,733 @@
     {
       "concept": "CIMModel",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Command",
       "kind": "EClass",
-      "taskIds": ["cim.p7.behavior-surface.main"],
+      "taskIds": ["cim.ph3.st3.ss1.t1"],
       "covered": true
     },
     {
       "concept": "CommandOutcome",
       "kind": "EClass",
-      "taskIds": ["cim.p7.behavior-surface.main"],
+      "taskIds": ["cim.ph3.st3.ss1.t1"],
       "covered": true
     },
     {
       "concept": "Query",
       "kind": "EClass",
-      "taskIds": ["cim.p7.behavior-surface.main"],
+      "taskIds": ["cim.ph3.st3.ss2.t1"],
       "covered": true
     },
     {
       "concept": "BusinessEvent",
       "kind": "EClass",
-      "taskIds": ["cim.p7.behavior-surface.main"],
+      "taskIds": ["cim.ph3.st3.ss3.t1"],
       "covered": true
     },
     {
       "concept": "BusinessError",
       "kind": "EClass",
-      "taskIds": ["cim.p7.behavior-surface.main"],
+      "taskIds": ["cim.ph3.st3.ss3.t1"],
       "covered": true
     },
     {
       "concept": "Condition",
       "kind": "EClass",
-      "taskIds": ["cim.p7.behavior-surface.main"],
+      "taskIds": ["cim.ph3.st3.ss3.t1"],
       "covered": true
     },
     {
       "concept": "DomainConcept",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph3.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "DomainEntity",
       "kind": "EClass",
-      "taskIds": ["cim.p6.domain-structure.main"],
+      "taskIds": ["cim.ph3.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "ValueObject",
       "kind": "EClass",
-      "taskIds": ["cim.p6.domain-structure.main"],
+      "taskIds": ["cim.ph3.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "DomainRelationship",
       "kind": "EClass",
-      "taskIds": ["cim.p6.domain-structure.main"],
+      "taskIds": ["cim.ph3.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "AggregateCandidate",
       "kind": "EClass",
-      "taskIds": ["cim.p8.aggregate-boundaries.main"],
+      "taskIds": ["cim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "LifecycleStateDefinition",
       "kind": "EClass",
-      "taskIds": ["cim.p6.domain-structure.main"],
+      "taskIds": ["cim.ph3.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "BusinessInvariant",
       "kind": "EClass",
-      "taskIds": ["cim.p6.domain-structure.main"],
+      "taskIds": ["cim.ph3.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "InformationItem",
       "kind": "EClass",
-      "taskIds": ["cim.p5.information-taxonomy.main"],
+      "taskIds": ["cim.ph3.st1.ss2.t1"],
       "covered": true
     },
     {
       "concept": "DataClassification",
       "kind": "EClass",
-      "taskIds": ["cim.p5.information-taxonomy.main"],
+      "taskIds": ["cim.ph3.st1.ss1.t1"],
       "covered": true
     },
     {
       "concept": "NonFunctionalRequirement",
       "kind": "EClass",
-      "taskIds": ["cim.p11.requirements-governance.main"],
+      "taskIds": ["cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "QualityScenario",
       "kind": "EClass",
-      "taskIds": ["cim.p11.requirements-governance.main"],
+      "taskIds": ["cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "SecurityConstraint",
       "kind": "EClass",
-      "taskIds": ["cim.p11.requirements-governance.main"],
+      "taskIds": ["cim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "PrivacyConstraint",
       "kind": "EClass",
-      "taskIds": ["cim.p11.requirements-governance.main"],
+      "taskIds": ["cim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "ComplianceConstraint",
       "kind": "EClass",
-      "taskIds": ["cim.p11.requirements-governance.main"],
+      "taskIds": ["cim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "Requirement",
       "kind": "EClass",
-      "taskIds": ["cim.p11.requirements-governance.main"],
+      "taskIds": ["cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "RequirementRelationship",
       "kind": "EClass",
-      "taskIds": ["cim.p11.requirements-governance.main"],
+      "taskIds": ["cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "AcceptanceCriterion",
       "kind": "EClass",
-      "taskIds": ["cim.p11.requirements-governance.main"],
+      "taskIds": ["cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "BusinessGoal",
       "kind": "EClass",
-      "taskIds": ["cim.p1.strategic-intent.main"],
+      "taskIds": ["cim.ph1.st2.t1"],
       "covered": true
     },
     {
       "concept": "KPI",
       "kind": "EClass",
-      "taskIds": ["cim.p1.strategic-intent.main"],
+      "taskIds": ["cim.ph1.st2.t1"],
       "covered": true
     },
     {
       "concept": "Stakeholder",
       "kind": "EClass",
-      "taskIds": ["cim.p1.strategic-intent.main"],
+      "taskIds": ["cim.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "Actor",
       "kind": "EClass",
-      "taskIds": ["cim.p2.actors-boundaries.main"],
+      "taskIds": ["cim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "Role",
       "kind": "EClass",
-      "taskIds": ["cim.p2.actors-boundaries.main"],
+      "taskIds": ["cim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExternalSystem",
       "kind": "EClass",
-      "taskIds": ["cim.p2.actors-boundaries.main"],
+      "taskIds": ["cim.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "BusinessCapability",
       "kind": "EClass",
-      "taskIds": ["cim.p3.capability-landscape.main"],
+      "taskIds": ["cim.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "CapabilityDependency",
       "kind": "EClass",
-      "taskIds": ["cim.p3.capability-landscape.main"],
+      "taskIds": ["cim.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "BoundedContextCandidate",
       "kind": "EClass",
-      "taskIds": ["cim.p10.bounded-context-synthesis.main"],
+      "taskIds": ["cim.ph4.st3.t1"],
       "covered": true
     },
     {
       "concept": "UbiquitousLanguageTerm",
       "kind": "EClass",
-      "taskIds": ["cim.p4.ubiquitous-language.main"],
+      "taskIds": ["cim.ph2.st3.t1"],
       "covered": true
     },
     {
       "concept": "BusinessProcess",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "ProcessStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "StartStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "EndStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "CommandStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "QueryStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "EventStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "PolicyStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "HumanTaskStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "ExternalInteractionStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "DecisionStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "WaitStep",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "ProcessTransition",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "Policy",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "DecisionTable",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "DecisionRule",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "ExceptionScenario",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "TemporalConstraint",
       "kind": "EClass",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "Risk",
       "kind": "EClass",
-      "taskIds": ["cim.p12.transformation-contracts.main"],
+      "taskIds": ["cim.ph5.st2.t1"],
       "covered": true
     },
     {
       "concept": "Assumption",
       "kind": "EClass",
-      "taskIds": ["cim.p12.transformation-contracts.main"],
+      "taskIds": ["cim.ph5.st2.t1"],
       "covered": true
     },
     {
       "concept": "Hotspot",
       "kind": "EClass",
-      "taskIds": ["cim.p12.transformation-contracts.main"],
+      "taskIds": ["cim.ph5.st2.t1"],
       "covered": true
     },
     {
       "concept": "TransformationProfile",
       "kind": "EClass",
-      "taskIds": ["cim.p12.transformation-contracts.main"],
+      "taskIds": ["cim.ph5.st2.t1"],
       "covered": true
     },
     {
       "concept": "DeployableElement",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "InvocationSource",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "InvocationTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FunctionTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "WorkflowTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "SubscriptionTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "RoutingTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FlowEndpoint",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ProtectedResource",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "PolicyTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "DataAccessTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExternalCallTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "EnvironmentTarget",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "CredentialRequirementLike",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "RouteEndpoint",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventCarrier",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ConfigurableElement",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "KeyValue",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Annotation",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ModelElement",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "NamedModelElement",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceableElement",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "SemanticRelationship",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Multiplicity",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Cardinality",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Expression",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceModel",
       "kind": "EClass",
-      "taskIds": ["cim.p13.traceability-readiness.main"],
+      "taskIds": ["cim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "TraceLink",
       "kind": "EClass",
-      "taskIds": ["cim.p13.traceability-readiness.main"],
+      "taskIds": ["cim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "TransformationAssumption",
       "kind": "EClass",
-      "taskIds": ["cim.p13.traceability-readiness.main"],
+      "taskIds": ["cim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "StructuredDocument",
       "kind": "EClass",
-      "taskIds": ["cim.p0.model-context.main"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ProductionReadinessAssessment",
       "kind": "EClass",
-      "taskIds": ["cim.p13.traceability-readiness.main"],
+      "taskIds": ["cim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "ReadinessFinding",
       "kind": "EClass",
-      "taskIds": ["cim.p13.traceability-readiness.main"],
+      "taskIds": ["cim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "ReadinessCheck",
       "kind": "EClass",
-      "taskIds": ["cim.p13.traceability-readiness.main"],
+      "taskIds": ["cim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "ManualDecision",
       "kind": "EClass",
-      "taskIds": ["cim.p13.traceability-readiness.main"],
+      "taskIds": ["cim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "RequirementType",
       "kind": "EEnum",
-      "taskIds": ["cim.p11.requirements-governance.main", "cim.p11.requirements-governance.enums"],
+      "taskIds": ["cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "RequirementSourceType",
       "kind": "EEnum",
-      "taskIds": ["cim.p11.requirements-governance.main", "cim.p11.requirements-governance.enums"],
+      "taskIds": ["cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "RequirementRelationshipKind",
       "kind": "EEnum",
-      "taskIds": ["cim.p11.requirements-governance.main", "cim.p11.requirements-governance.enums"],
+      "taskIds": ["cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "ActorType",
       "kind": "EEnum",
-      "taskIds": ["cim.p2.actors-boundaries.main"],
+      "taskIds": ["cim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "TrustLevel",
       "kind": "EEnum",
-      "taskIds": ["cim.p2.actors-boundaries.main"],
+      "taskIds": ["cim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "CapabilityCriticality",
       "kind": "EEnum",
-      "taskIds": ["cim.p3.capability-landscape.main"],
+      "taskIds": ["cim.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "DomainRelationshipType",
       "kind": "EEnum",
-      "taskIds": ["cim.p6.domain-structure.main"],
+      "taskIds": ["cim.ph3.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "PrimitiveBusinessType",
       "kind": "EEnum",
-      "taskIds": ["cim.p5.information-taxonomy.main", "cim.p5.information-taxonomy.enums"],
+      "taskIds": ["cim.ph3.st1.ss2.t1"],
       "covered": true
     },
     {
       "concept": "IdentityStrategy",
       "kind": "EEnum",
-      "taskIds": ["cim.p5.information-taxonomy.main", "cim.p5.information-taxonomy.enums"],
+      "taskIds": ["cim.ph3.st1.ss2.t1"],
       "covered": true
     },
     {
       "concept": "DataKind",
       "kind": "EEnum",
-      "taskIds": ["cim.p5.information-taxonomy.main", "cim.p5.information-taxonomy.enums"],
+      "taskIds": ["cim.ph3.st1.ss1.t1"],
       "covered": true
     },
     {
       "concept": "Identifiability",
       "kind": "EEnum",
-      "taskIds": ["cim.p5.information-taxonomy.main", "cim.p5.information-taxonomy.enums"],
+      "taskIds": ["cim.ph3.st1.ss2.t1"],
       "covered": true
     },
     {
       "concept": "CommandType",
       "kind": "EEnum",
-      "taskIds": ["cim.p7.behavior-surface.main", "cim.p7.behavior-surface.enums"],
+      "taskIds": ["cim.ph3.st3.ss1.t1"],
       "covered": true
     },
     {
       "concept": "QueryType",
       "kind": "EEnum",
-      "taskIds": ["cim.p7.behavior-surface.main", "cim.p7.behavior-surface.enums"],
+      "taskIds": ["cim.ph3.st3.ss2.t1"],
       "covered": true
     },
     {
       "concept": "FreshnessNeed",
       "kind": "EEnum",
-      "taskIds": ["cim.p7.behavior-surface.main", "cim.p7.behavior-surface.enums"],
+      "taskIds": ["cim.ph3.st3.ss2.t1"],
       "covered": true
     },
     {
       "concept": "EventTimeSemantics",
       "kind": "EEnum",
-      "taskIds": ["cim.p7.behavior-surface.main", "cim.p7.behavior-surface.enums"],
+      "taskIds": ["cim.ph3.st3.ss3.t1"],
       "covered": true
     },
     {
       "concept": "PolicyType",
       "kind": "EEnum",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "ProcessKind",
       "kind": "EEnum",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "StepKind",
       "kind": "EEnum",
-      "taskIds": ["cim.p9.process-decisions.main"],
+      "taskIds": ["cim.ph4.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "QualityType",
       "kind": "EEnum",
-      "taskIds": ["cim.p11.requirements-governance.main", "cim.p11.requirements-governance.enums"],
+      "taskIds": ["cim.ph3.st1.ss1.t1", "cim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "LegalBasis",
       "kind": "EEnum",
-      "taskIds": ["cim.p11.requirements-governance.main", "cim.p11.requirements-governance.enums"],
+      "taskIds": ["cim.ph3.st1.ss1.t1"],
       "covered": true
     },
     {
       "concept": "InteractionExpectation",
       "kind": "EEnum",
-      "taskIds": ["cim.p8.aggregate-boundaries.main"],
+      "taskIds": ["cim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "ConsistencyExpectation",
       "kind": "EEnum",
-      "taskIds": ["cim.p8.aggregate-boundaries.main"],
+      "taskIds": ["cim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "Priority",
       "kind": "EEnum",
-      "taskIds": ["cim.p1.strategic-intent.main"],
+      "taskIds": ["cim.ph1.st2.t1"],
       "covered": true
     },
     {
       "concept": "Severity",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ConstraintStrength",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "LifecycleStatus",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceConfidence",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceLinkType",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FindingType",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "StructuredFormat",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExpressionLanguage",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExpressionPhase",
       "kind": "EEnum",
-      "taskIds": ["cim.p0.model-context.main", "cim.p0.model-context.enums"],
+      "taskIds": ["cim.ph1.st1.t1"],
       "covered": true
     }
   ]

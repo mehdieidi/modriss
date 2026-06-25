@@ -1,0 +1,520 @@
+/* Process map overlay — subway-style methodology diagram over canvas */
+
+.methodology-map-overlay {
+  position: absolute;
+  inset: 8px 8px 8px 0;
+  left: 0;
+  grid-row: 1;
+  grid-column: 1 / -1;
+  z-index: 25;
+  display: flex;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.28s ease,
+    visibility 0.28s ease;
+}
+
+.workspace.methodology-map-open .methodology-map-overlay {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+}
+
+.methodology-map-shell {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  margin-left: calc(var(--rail-w, 52px) + var(--sidebar-w, 248px) + 6px);
+  display: flex;
+  flex-direction: column;
+  border: var(--glass-pane-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    var(--glass-pane-highlight);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+
+.methodology-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+
+.methodology-map-header-text h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+
+.methodology-map-header-text p {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.methodology-map-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 2px;
+}
+
+.map-crumb {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.map-crumb:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.map-crumb.is-current {
+  color: var(--text-strong);
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+  cursor: default;
+}
+
+.map-crumb-sep {
+  color: var(--muted-2);
+  font-size: 0.7rem;
+  user-select: none;
+}
+
+.methodology-map-scaler {
+  display: block;
+  padding: 12px;
+}
+
+.methodology-map-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.methodology-map-zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--panel);
+}
+
+.methodology-map-zoom button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.methodology-map-zoom button:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel));
+}
+
+.methodology-map-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.methodology-map-close:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.methodology-map-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr minmax(240px, 32%);
+}
+
+.methodology-map-canvas-wrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background:
+    radial-gradient(
+      circle at 20% 30%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      color-mix(in srgb, #6b8cff 5%, transparent),
+      transparent 40%
+    ),
+    var(--canvas-bg);
+}
+
+.methodology-map-svg {
+  display: block;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.methodology-map-edge {
+  fill: none;
+  stroke: color-mix(in srgb, var(--muted) 70%, var(--border));
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.methodology-map-edge-marker {
+  fill: color-mix(in srgb, var(--muted) 70%, var(--border));
+}
+
+.methodology-map-edge-marker.is-loop {
+  fill: color-mix(in srgb, var(--accent) 80%, var(--muted));
+}
+
+.methodology-map-edge.is-loop {
+  stroke-dasharray: 8 6;
+  stroke: color-mix(in srgb, var(--accent) 70%, var(--muted));
+  opacity: 0.85;
+}
+
+.methodology-map-edge.is-rework {
+  stroke-dasharray: 5 5;
+  stroke-width: 2;
+  stroke: #e8a838;
+  opacity: 0.75;
+}
+
+.methodology-map-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.methodology-map-node .map-node-bg {
+  fill: var(--panel);
+  stroke: var(--border);
+  stroke-width: 2;
+  transition:
+    stroke 0.2s ease,
+    fill 0.2s ease,
+    filter 0.2s ease;
+}
+
+.methodology-map-node:hover .map-node-bg,
+.methodology-map-node:focus-visible .map-node-bg {
+  stroke: color-mix(in srgb, var(--accent) 65%, var(--border));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+}
+
+.methodology-map-node.is-selected .map-node-bg {
+  stroke: var(--accent);
+  fill: color-mix(in srgb, var(--accent) 12%, var(--panel));
+}
+
+.methodology-map-node.is-current .map-node-bg {
+  stroke: #5ec4e8;
+  fill: color-mix(in srgb, #5ec4e8 14%, var(--panel));
+}
+
+.methodology-map-node.is-complete .map-node-bg {
+  stroke: #3ecf8e;
+}
+
+.methodology-map-node.is-onboarding .map-node-bg {
+  fill: color-mix(in srgb, #9b7bff 14%, var(--panel));
+  stroke: color-mix(in srgb, #9b7bff 55%, var(--border));
+}
+
+.methodology-map-node.is-phase .map-node-bg,
+.methodology-map-node.is-stage .map-node-bg,
+.methodology-map-node.is-substage .map-node-bg,
+.methodology-map-node.is-task .map-node-bg {
+  fill: var(--panel);
+}
+
+.methodology-map-node.is-drillable .map-node-chevron {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 700;
+  fill: var(--accent);
+}
+
+.methodology-map-node.is-engine .map-node-bg {
+  fill: color-mix(in srgb, var(--surface-3) 90%, var(--panel));
+}
+
+.map-node-icon-wrap {
+  fill: color-mix(in srgb, var(--accent) 14%, var(--panel-2));
+  stroke: none;
+}
+
+.map-node-icon {
+  filter: brightness(0) invert(0.92);
+  opacity: 0.95;
+}
+
+.methodology-map-node.is-complete .map-status-dot {
+  fill: #3ecf8e;
+}
+
+.methodology-map-node.is-current .map-status-dot {
+  fill: #5ec4e8;
+}
+
+.methodology-map-node.is-progress .map-status-dot {
+  fill: #e8a838;
+}
+
+.methodology-map-node.is-pending .map-status-dot {
+  fill: color-mix(in srgb, var(--muted) 40%, var(--border));
+}
+
+.map-node-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--text-strong);
+  text-anchor: middle;
+}
+
+.map-node-sublabel {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  fill: var(--muted);
+  text-anchor: middle;
+}
+
+.map-loop-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  fill: var(--muted);
+  text-anchor: middle;
+}
+
+.methodology-map-detail {
+  border-left: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  overflow: auto;
+  padding: 14px 16px;
+}
+
+.methodology-map-detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  padding: 24px;
+}
+
+.methodology-map-detail h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: var(--text-strong);
+}
+
+.methodology-map-detail .map-detail-kind {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel));
+  color: var(--accent);
+}
+
+.methodology-map-detail p {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.methodology-map-detail ul {
+  margin: 0 0 12px;
+  padding-left: 1.1rem;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.methodology-map-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.methodology-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.methodology-map-legend-title {
+  font-weight: 650;
+  color: var(--text-soft);
+  margin-right: 4px;
+}
+
+.methodology-map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.methodology-map-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+.methodology-map-legend-swatch.is-complete {
+  border-color: #3ecf8e;
+  background: #3ecf8e;
+}
+
+.methodology-map-legend-swatch.is-current {
+  border-color: #5ec4e8;
+  background: #5ec4e8;
+}
+
+.methodology-map-legend-swatch.is-onboarding {
+  border-color: #9b7bff;
+  background: color-mix(in srgb, #9b7bff 40%, transparent);
+}
+
+.methodology-map-legend-line {
+  width: 22px;
+  height: 0;
+  border-top: 2px solid color-mix(in srgb, var(--muted) 55%, var(--border));
+}
+
+.methodology-map-legend-line.is-loop {
+  border-top-style: dashed;
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--muted));
+}
+
+.methodology-map-legend-line.is-rework {
+  border-top-style: dashed;
+  border-color: #e8a838;
+}
+
+.methodology-map-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+  color: var(--text-strong);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.methodology-map-open-btn:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel));
+  border-color: var(--accent);
+}
+
+.methodology-map-open-btn .icon-mask {
+  width: 16px;
+  height: 16px;
+  --icon-src: url("/assets/icons/process-map/milestone.svg");
+}
+
+#methodologyPane .sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.methodology-map-header-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: var(--panel);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.methodology-map-header-btn:hover {
+  border-color: var(--accent);
+}
+
+.methodology-map-header-btn .icon-mask {
+  width: 16px;
+  height: 16px;
+  --icon-src: url("/assets/icons/process-map/milestone.svg");
+}
+
+@media (max-width: 900px) {
+  .methodology-map-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .methodology-map-detail {
+    max-height: 38vh;
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .methodology-map-shell {
+    margin-left: 0;
+  }
+}

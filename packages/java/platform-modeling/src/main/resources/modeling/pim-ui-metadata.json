@@ -1498,8 +1498,9 @@
         "shape": "function-card",
         "lineFields": ["functionKind", "handlerResponsibility", "sourceNameSuggestion"]
       },
-      "processPhaseId": "pim.p4.compute-units",
-      "processTaskIds": ["pim.p4.compute-units.main"]
+      "processPhaseId": "pim.ph3",
+      "processTaskIds": ["pim.ph3.st1.t1"],
+      "processStageId": "pim.ph3.st1"
     },
     {
       "type": "FunctionContract",
@@ -1515,8 +1516,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p4.compute-units",
-      "processTaskIds": ["pim.p4.compute-units.main"]
+      "processPhaseId": "pim.ph3",
+      "processTaskIds": ["pim.ph3.st1.t1"],
+      "processStageId": "pim.ph3.st1"
     },
     {
       "type": "Api",
@@ -1530,8 +1532,9 @@
         "shape": "api-container",
         "lineFields": ["apiStyle", "publicName", "version", "basePath"]
       },
-      "processPhaseId": "pim.p5.api-surface",
-      "processTaskIds": ["pim.p5.api-surface.main"]
+      "processPhaseId": "pim.ph3",
+      "processTaskIds": ["pim.ph3.st2.t1"],
+      "processStageId": "pim.ph3.st2"
     },
     {
       "type": "ApiRoute",
@@ -1545,8 +1548,9 @@
         "shape": "route-row",
         "lineFields": ["method", "pathTemplate", "operationId"]
       },
-      "processPhaseId": "pim.p5.api-surface",
-      "processTaskIds": ["pim.p5.api-surface.main"]
+      "processPhaseId": "pim.ph3",
+      "processTaskIds": ["pim.ph3.st2.t1"],
+      "processStageId": "pim.ph3.st2"
     },
     {
       "type": "EventSource",
@@ -1569,8 +1573,9 @@
         "shape": "trigger-connector",
         "lineFields": ["triggerKind", "invocationMode", "enabled"]
       },
-      "processPhaseId": "pim.p4.compute-units",
-      "processTaskIds": ["pim.p4.compute-units.main"]
+      "processPhaseId": "pim.ph3",
+      "processTaskIds": ["pim.ph3.st1.t2"],
+      "processStageId": "pim.ph3.st1"
     },
     {
       "type": "EventChannel",
@@ -1586,8 +1591,9 @@
       },
       "supportOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t1"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "EventRoutingRule",
@@ -1603,8 +1609,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "Queue",
@@ -1618,8 +1625,9 @@
         "shape": "queue-card",
         "lineFields": ["fifoRequired", "deadLetterRequired", "maxReceiveAttempts"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t1"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "Topic",
@@ -1633,8 +1641,9 @@
         "shape": "topic-card",
         "lineFields": ["subscriptionMode", "filteringRequired"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t1"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "EventBus",
@@ -1648,8 +1657,9 @@
         "shape": "event-bus-card",
         "lineFields": ["routingExpressionLanguage"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t1"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "EventType",
@@ -1663,8 +1673,9 @@
         "shape": "event-type-card",
         "lineFields": ["semanticName", "version"]
       },
-      "processPhaseId": "pim.p2.contracts-schemas",
-      "processTaskIds": ["pim.p2.contracts-schemas.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st1.t2"],
+      "processStageId": "pim.ph2.st1"
     },
     {
       "type": "ServerlessService",
@@ -1678,8 +1689,9 @@
         "shape": "service-container",
         "lineFields": ["boundaryType", "responsibility", "ownerTeam"]
       },
-      "processPhaseId": "pim.p1.service-boundaries",
-      "processTaskIds": ["pim.p1.service-boundaries.main"]
+      "processPhaseId": "pim.ph1",
+      "processTaskIds": ["pim.ph1.st2.t1"],
+      "processStageId": "pim.ph1.st2"
     },
     {
       "type": "DeploymentUnit",
@@ -1693,8 +1705,9 @@
         "shape": "deployment-container",
         "lineFields": ["unitType", "lifecycle", "releaseStrategy"]
       },
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t2"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "Workflow",
@@ -1708,8 +1721,9 @@
         "shape": "workflow-container",
         "lineFields": ["workflowKind", "executionSemantics", "longRunning"]
       },
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "WorkflowState",
@@ -1723,8 +1737,9 @@
         "shape": "workflow-state-node",
         "lineFields": ["stateKind", "orderIndex", "terminal"]
       },
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "Flow",
@@ -1740,8 +1755,9 @@
       },
       "supportOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "RequestResponseFlow",
@@ -1755,8 +1771,9 @@
         "shape": "request-response-edge",
         "lineFields": ["synchronous", "flowPurpose"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "EventFlow",
@@ -1770,8 +1787,9 @@
         "shape": "event-flow-edge",
         "lineFields": ["eventType", "channel"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "MessageFlow",
@@ -1785,8 +1803,9 @@
         "shape": "message-flow-edge",
         "lineFields": ["messageSchema", "queue"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "OrchestrationFlow",
@@ -1800,8 +1819,9 @@
         "shape": "orchestration-flow-edge",
         "lineFields": ["workflow"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "DataStore",
@@ -1815,8 +1835,9 @@
         "shape": "data-store-card",
         "lineFields": ["storeKind", "consistencyModel"]
       },
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t1"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "ObjectStore",
@@ -1830,8 +1851,9 @@
         "shape": "object-store-card",
         "lineFields": ["objectStoreKind", "versioningRequired"]
       },
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t1"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "IdentityProvider",
@@ -1845,8 +1867,9 @@
         "shape": "identity-card",
         "lineFields": ["providerType", "issuer"]
       },
-      "processPhaseId": "pim.p8.security-identity",
-      "processTaskIds": ["pim.p8.security-identity.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st1.t1"],
+      "processStageId": "pim.ph5.st1"
     },
     {
       "type": "Principal",
@@ -1860,8 +1883,9 @@
         "shape": "principal-card",
         "lineFields": ["principalKind", "external"]
       },
-      "processPhaseId": "pim.p8.security-identity",
-      "processTaskIds": ["pim.p8.security-identity.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st1.t1"],
+      "processStageId": "pim.ph5.st1"
     },
     {
       "type": "Permission",
@@ -1877,8 +1901,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p8.security-identity",
-      "processTaskIds": ["pim.p8.security-identity.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st1.t2"],
+      "processStageId": "pim.ph5.st1"
     },
     {
       "type": "Secret",
@@ -1892,8 +1917,9 @@
         "shape": "secret-card",
         "lineFields": ["secretKind", "rotationRequired"]
       },
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t2"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "ConfigParameter",
@@ -1909,8 +1935,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t2"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "EnvironmentVariable",
@@ -1926,8 +1953,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t2"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "ResiliencePolicy",
@@ -1941,8 +1969,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["failureMode", "productionRequired"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t1"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "ObservabilityConfig",
@@ -1956,8 +1985,9 @@
         "shape": "ops-card",
         "lineFields": ["loggingEnabled", "metricsEnabled", "tracingEnabled"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss2.t1"],
+      "processStageId": "pim.ph5.st2.ss2"
     },
     {
       "type": "IdempotencyPolicy",
@@ -1971,8 +2001,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["idempotencyKeyExpression"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t1"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "ConcurrencyPolicy",
@@ -1986,8 +2017,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["reservedConcurrency", "maxConcurrency"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t2"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "CostPolicy",
@@ -2001,8 +2033,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["costCenter", "budgetLimit"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t2"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "PIMModel",
@@ -2018,8 +2051,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p0.architecture-posture",
-      "processTaskIds": ["pim.p0.architecture-posture.main"]
+      "processPhaseId": "pim.ph1",
+      "processTaskIds": ["pim.ph1.st1.t1"],
+      "processStageId": "pim.ph1.st1"
     },
     {
       "type": "ServiceElementMembership",
@@ -2035,8 +2069,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p1.service-boundaries",
-      "processTaskIds": ["pim.p1.service-boundaries.main"]
+      "processPhaseId": "pim.ph1",
+      "processTaskIds": ["pim.ph1.st2.t2"],
+      "processStageId": "pim.ph1.st2"
     },
     {
       "type": "Environment",
@@ -2050,8 +2085,9 @@
         "shape": "environment-card",
         "lineFields": ["environmentClass", "regionStrategy", "supportLevel"]
       },
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t2"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "ImplementationProfile",
@@ -2065,8 +2101,9 @@
         "shape": "settings-panel",
         "lineFields": ["runtimeProfile", "packagingProfile"]
       },
-      "processPhaseId": "pim.p0.architecture-posture",
-      "processTaskIds": ["pim.p0.architecture-posture.main"]
+      "processPhaseId": "pim.ph1",
+      "processTaskIds": ["pim.ph1.st1.t2"],
+      "processStageId": "pim.ph1.st1"
     },
     {
       "type": "PlatformCapability",
@@ -2080,8 +2117,9 @@
         "shape": "capability-badge",
         "lineFields": ["capabilityKind", "required"]
       },
-      "processPhaseId": "pim.p11.platform-mapping-readiness",
-      "processTaskIds": ["pim.p11.platform-mapping-readiness.main"]
+      "processPhaseId": "pim.ph6",
+      "processTaskIds": ["pim.ph6.st1.t1"],
+      "processStageId": "pim.ph6.st1"
     },
     {
       "type": "PlatformMappingAssessment",
@@ -2095,8 +2133,9 @@
         "shape": "assessment-row",
         "lineFields": ["mappingStatus", "manualDecisionRequired"]
       },
-      "processPhaseId": "pim.p11.platform-mapping-readiness",
-      "processTaskIds": ["pim.p11.platform-mapping-readiness.main"]
+      "processPhaseId": "pim.ph6",
+      "processTaskIds": ["pim.ph6.st1.t1"],
+      "processStageId": "pim.ph6.st1"
     },
     {
       "type": "Schema",
@@ -2110,8 +2149,9 @@
         "shape": "schema-tree",
         "lineFields": ["schemaKind", "semanticVersion"]
       },
-      "processPhaseId": "pim.p2.contracts-schemas",
-      "processTaskIds": ["pim.p2.contracts-schemas.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st1.t1"],
+      "processStageId": "pim.ph2.st1"
     },
     {
       "type": "SchemaField",
@@ -2127,8 +2167,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p2.contracts-schemas",
-      "processTaskIds": ["pim.p2.contracts-schemas.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st1.t1"],
+      "processStageId": "pim.ph2.st1"
     },
     {
       "type": "SchemaEnumLiteral",
@@ -2144,8 +2185,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p2.contracts-schemas",
-      "processTaskIds": ["pim.p2.contracts-schemas.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st1.t1"],
+      "processStageId": "pim.ph2.st1"
     },
     {
       "type": "SchemaValidationConstraint",
@@ -2161,8 +2203,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p2.contracts-schemas",
-      "processTaskIds": ["pim.p2.contracts-schemas.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st1.t2"],
+      "processStageId": "pim.ph2.st1"
     },
     {
       "type": "SchemaConstraint",
@@ -2178,8 +2221,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p2.contracts-schemas",
-      "processTaskIds": ["pim.p2.contracts-schemas.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st1.t2"],
+      "processStageId": "pim.ph2.st1"
     },
     {
       "type": "ApiContract",
@@ -2195,8 +2239,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p5.api-surface",
-      "processTaskIds": ["pim.p5.api-surface.main"]
+      "processPhaseId": "pim.ph3",
+      "processTaskIds": ["pim.ph3.st2.t2"],
+      "processStageId": "pim.ph3.st2"
     },
     {
       "type": "EventEnvelope",
@@ -2211,8 +2256,9 @@
         "shape": "event-envelope",
         "lineFields": ["eventTypeField", "correlationIdField"]
       },
-      "processPhaseId": "pim.p2.contracts-schemas",
-      "processTaskIds": ["pim.p2.contracts-schemas.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st1.t2"],
+      "processStageId": "pim.ph2.st1"
     },
     {
       "type": "ArchitecturePolicy",
@@ -2226,8 +2272,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["policyScope", "productionRequired"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss3.t1"],
+      "processStageId": "pim.ph5.st2.ss3"
     },
     {
       "type": "PolicySetting",
@@ -2243,8 +2290,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss3.t1"],
+      "processStageId": "pim.ph5.st2.ss3"
     },
     {
       "type": "DataProtectionPolicy",
@@ -2258,8 +2306,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["encryptionRequired", "retentionPeriod"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss3.t1"],
+      "processStageId": "pim.ph5.st2.ss3"
     },
     {
       "type": "DataQualityPolicy",
@@ -2273,8 +2322,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["qualityRule", "severity"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss3.t1"],
+      "processStageId": "pim.ph5.st2.ss3"
     },
     {
       "type": "CompliancePolicy",
@@ -2288,8 +2338,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["regulation", "controlId"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss3.t1"],
+      "processStageId": "pim.ph5.st2.ss3"
     },
     {
       "type": "BusinessRule",
@@ -2303,8 +2354,9 @@
         "shape": "rule-card",
         "lineFields": ["naturalLanguage", "expressionLanguage"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss3.t2"],
+      "processStageId": "pim.ph5.st2.ss3"
     },
     {
       "type": "DecisionModel",
@@ -2318,8 +2370,9 @@
         "shape": "decision-table",
         "lineFields": ["hitPolicy", "defaultOutcome"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss3.t2"],
+      "processStageId": "pim.ph5.st2.ss3"
     },
     {
       "type": "DecisionRule",
@@ -2335,8 +2388,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss3.t2"],
+      "processStageId": "pim.ph5.st2.ss3"
     },
     {
       "type": "RetryPolicy",
@@ -2350,8 +2404,9 @@
         "shape": "policy-row",
         "lineFields": ["maxAttempts", "backoffStrategy"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t1"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "DeadLetterPolicy",
@@ -2365,8 +2420,9 @@
         "shape": "policy-row",
         "lineFields": ["enabled", "maxReceiveCount"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t1"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "TimeoutPolicy",
@@ -2380,8 +2436,9 @@
         "shape": "clock-badge-card",
         "lineFields": ["timeoutSeconds"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t1"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "RateLimitPolicy",
@@ -2395,8 +2452,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["rateLimit", "burstLimit"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t2"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "BatchPolicy",
@@ -2410,8 +2468,9 @@
         "shape": "policy-row",
         "lineFields": ["batchSize", "maximumBatchingWindowSeconds"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t2"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "OrderingPolicy",
@@ -2425,8 +2484,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["orderingKeyExpression"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t2"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "CachePolicy",
@@ -2440,8 +2500,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["ttlSeconds"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t2"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "BackupPolicy",
@@ -2455,8 +2516,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["frequency", "retentionPeriod"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t2"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "RetentionPolicy",
@@ -2470,8 +2532,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["retentionPeriod"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss1.t2"],
+      "processStageId": "pim.ph5.st2.ss1"
     },
     {
       "type": "LoggingPolicy",
@@ -2485,8 +2548,9 @@
         "shape": "policy-row",
         "lineFields": ["logLevel", "retentionPeriod"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss2.t1"],
+      "processStageId": "pim.ph5.st2.ss2"
     },
     {
       "type": "MetricPolicy",
@@ -2500,8 +2564,9 @@
         "shape": "metric-row",
         "lineFields": ["metricName", "namespace"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss2.t1"],
+      "processStageId": "pim.ph5.st2.ss2"
     },
     {
       "type": "MetricDimension",
@@ -2517,8 +2582,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss2.t1"],
+      "processStageId": "pim.ph5.st2.ss2"
     },
     {
       "type": "TracingPolicy",
@@ -2532,8 +2598,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["enabled", "samplingRate"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss2.t1"],
+      "processStageId": "pim.ph5.st2.ss2"
     },
     {
       "type": "AlertPolicy",
@@ -2547,8 +2614,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["severity", "threshold"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss2.t2"],
+      "processStageId": "pim.ph5.st2.ss2"
     },
     {
       "type": "Slo",
@@ -2562,8 +2630,9 @@
         "shape": "slo-card",
         "lineFields": ["objective", "target"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss2.t2"],
+      "processStageId": "pim.ph5.st2.ss2"
     },
     {
       "type": "CorsPolicy",
@@ -2577,8 +2646,9 @@
         "shape": "policy-badge-card",
         "lineFields": ["allowedOrigins", "allowedMethods"]
       },
-      "processPhaseId": "pim.p9.architecture-policies",
-      "processTaskIds": ["pim.p9.architecture-policies.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st2.ss2.t2"],
+      "processStageId": "pim.ph5.st2.ss2"
     },
     {
       "type": "ConfigurationSet",
@@ -2592,8 +2662,9 @@
         "shape": "config-set-card",
         "lineFields": ["scope", "environment"]
       },
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t2"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "CredentialRequirement",
@@ -2609,8 +2680,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t2"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "SecurityPolicy",
@@ -2624,8 +2696,9 @@
         "shape": "security-card",
         "lineFields": ["policyScope", "enforcementStrength"]
       },
-      "processPhaseId": "pim.p8.security-identity",
-      "processTaskIds": ["pim.p8.security-identity.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st1.t2"],
+      "processStageId": "pim.ph5.st1"
     },
     {
       "type": "AuthPolicy",
@@ -2639,8 +2712,9 @@
         "shape": "auth-badge-card",
         "lineFields": ["authScheme", "required"]
       },
-      "processPhaseId": "pim.p8.security-identity",
-      "processTaskIds": ["pim.p8.security-identity.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st1.t2"],
+      "processStageId": "pim.ph5.st1"
     },
     {
       "type": "AuthorizationPolicy",
@@ -2654,8 +2728,9 @@
         "shape": "authz-card",
         "lineFields": ["authorizationRule", "effect"]
       },
-      "processPhaseId": "pim.p8.security-identity",
-      "processTaskIds": ["pim.p8.security-identity.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st1.t2"],
+      "processStageId": "pim.ph5.st1"
     },
     {
       "type": "StorageElement",
@@ -2669,8 +2744,9 @@
         "shape": "storage-card",
         "lineFields": ["storeKind"]
       },
-      "processPhaseId": "pim.p0.architecture-posture",
-      "processTaskIds": ["pim.p0.architecture-posture.main"]
+      "processPhaseId": "pim.ph1",
+      "processTaskIds": ["pim.ph1.st1.t1"],
+      "processStageId": "pim.ph1.st1"
     },
     {
       "type": "DataChangeStream",
@@ -2686,8 +2762,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t3"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "ObjectNotificationRule",
@@ -2703,8 +2780,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t3"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "DataModel",
@@ -2720,8 +2798,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t1"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "DataField",
@@ -2737,8 +2816,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t1"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "AccessPattern",
@@ -2754,8 +2834,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t2"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "IndexCandidate",
@@ -2771,8 +2852,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t2"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "DataAccess",
@@ -2788,8 +2870,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p3.data-architecture",
-      "processTaskIds": ["pim.p3.data-architecture.main"]
+      "processPhaseId": "pim.ph2",
+      "processTaskIds": ["pim.ph2.st2.t2"],
+      "processStageId": "pim.ph2.st2"
     },
     {
       "type": "ComputeElement",
@@ -2805,8 +2888,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p0.architecture-posture",
-      "processTaskIds": ["pim.p0.architecture-posture.main"]
+      "processPhaseId": "pim.ph1",
+      "processTaskIds": ["pim.ph1.st1.t1"],
+      "processStageId": "pim.ph1.st1"
     },
     {
       "type": "ErrorMapping",
@@ -2820,8 +2904,9 @@
         "shape": "error-mapping-row",
         "lineFields": ["domainErrorCode", "abstractStatusClass"]
       },
-      "processPhaseId": "pim.p5.api-surface",
-      "processTaskIds": ["pim.p5.api-surface.main"]
+      "processPhaseId": "pim.ph3",
+      "processTaskIds": ["pim.ph3.st2.t2"],
+      "processStageId": "pim.ph3.st2"
     },
     {
       "type": "ExternalEndpoint",
@@ -2835,8 +2920,9 @@
         "shape": "external-boundary",
         "lineFields": ["externalSystemName", "protocolFamily"]
       },
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t1"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "ExternalAdapter",
@@ -2850,8 +2936,9 @@
         "shape": "adapter-card",
         "lineFields": ["responsibility"]
       },
-      "processPhaseId": "pim.p10.external-config",
-      "processTaskIds": ["pim.p10.external-config.main"]
+      "processPhaseId": "pim.ph5",
+      "processTaskIds": ["pim.ph5.st3.t1"],
+      "processStageId": "pim.ph5.st3"
     },
     {
       "type": "WorkflowTransition",
@@ -2867,8 +2954,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t1"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "ErrorHandler",
@@ -2884,8 +2972,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t2"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "ParallelBranch",
@@ -2901,8 +2990,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t2"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "MapStateConfig",
@@ -2918,8 +3008,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t2"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "CallbackTaskConfig",
@@ -2935,8 +3026,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t2"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "EscalationPolicy",
@@ -2952,8 +3044,9 @@
       },
       "containedOnly": false,
       "creatable": true,
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t2"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "HumanTask",
@@ -2967,8 +3060,9 @@
         "shape": "human-task-card",
         "lineFields": ["taskDescription", "completionEvidence"]
       },
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t2"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "ApprovalTask",
@@ -2982,8 +3076,9 @@
         "shape": "approval-task-card",
         "lineFields": ["explicitApprovalRequired", "approvalOutcomeField"]
       },
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t2"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "CompensationPolicy",
@@ -2999,8 +3094,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p7.workflow-orchestration",
-      "processTaskIds": ["pim.p7.workflow-orchestration.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st2.t2"],
+      "processStageId": "pim.ph4.st2"
     },
     {
       "type": "IntegrationElement",
@@ -3016,8 +3112,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p0.architecture-posture",
-      "processTaskIds": ["pim.p0.architecture-posture.main"]
+      "processPhaseId": "pim.ph1",
+      "processTaskIds": ["pim.ph1.st1.t1"],
+      "processStageId": "pim.ph1.st1"
     },
     {
       "type": "Schedule",
@@ -3031,8 +3128,9 @@
         "shape": "schedule-card",
         "lineFields": ["scheduleExpression", "enabled", "timeZone"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "Subscription",
@@ -3048,8 +3146,9 @@
       },
       "containedOnly": true,
       "creatable": false,
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "PubSubFlow",
@@ -3063,8 +3162,9 @@
         "shape": "pubsub-flow-edge",
         "lineFields": ["topic"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     },
     {
       "type": "ExternalIntegrationFlow",
@@ -3078,8 +3178,9 @@
         "shape": "external-flow-edge",
         "lineFields": ["adapter"]
       },
-      "processPhaseId": "pim.p6.integration-topology",
-      "processTaskIds": ["pim.p6.integration-topology.main"]
+      "processPhaseId": "pim.ph4",
+      "processTaskIds": ["pim.ph4.st1.t2"],
+      "processStageId": "pim.ph4.st1"
     }
   ]
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { collectAllTasks } from "./lib/process-walk.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 const COV_DIR = join(ROOT, "coverage-matrix");
@@ -26,11 +27,13 @@ for (const level of ["cim", "pim", "psm"]) {
     readFileSync(join(ROOT, "process-definitions", `${level}.json`), "utf8"),
   );
   const conceptToPhase = new Map();
-  for (const phase of process.phases || []) {
-    for (const task of phase.tasks || []) {
-      for (const wp of task.workProducts || []) {
-        const key = wp.eClass || wp.eEnum;
-        if (key) conceptToPhase.set(key, phase.id);
+  const conceptToStage = new Map();
+  for (const { task, phaseId, stageId } of collectAllTasks(process.phases || [])) {
+    for (const wp of task.workProducts || []) {
+      const key = wp.eClass || wp.eEnum;
+      if (key) {
+        conceptToPhase.set(key, phaseId);
+        conceptToStage.set(key, stageId);
       }
     }
   }
@@ -42,10 +45,14 @@ for (const level of ["cim", "pim", "psm"]) {
     const type = element.type;
     if (!type) continue;
     const phaseId = conceptToPhase.get(type);
+    const stageId = conceptToStage.get(type);
     const taskIds = conceptToTasks.get(type) || [];
     if (phaseId) {
       element.processPhaseId = phaseId;
       updated++;
+    }
+    if (stageId) {
+      element.processStageId = stageId;
     }
     if (taskIds.length) {
       element.processTaskIds = taskIds;

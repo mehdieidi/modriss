@@ -7,103 +7,422 @@
     {
       "id": "business-modeler",
       "name": "Business Modeler",
-      "responsibilities": ["CIM modeling phases 0-12"]
+      "responsibilities": ["CIM engine cycles"]
     },
     {
       "id": "requirements-engineer",
       "name": "Requirements Engineer",
-      "responsibilities": ["CIM phase 11 governance"]
+      "responsibilities": ["CIM convergence governance"]
     },
     {
       "id": "solution-architect",
       "name": "Solution Architect",
-      "responsibilities": ["PIM modeling and refinement"]
+      "responsibilities": ["PIM engine and CIM→PIM ETL"]
     },
     {
       "id": "cloud-platform-engineer",
       "name": "Cloud Platform Engineer",
-      "responsibilities": ["AWS PSM modeling and refinement"]
+      "responsibilities": ["PSM engine, ETL, M2T"]
     },
     {
       "id": "process-reviewer",
       "name": "Process Reviewer",
-      "responsibilities": ["EVL gates at each level"]
+      "responsibilities": ["EVL gates and increment closure"]
     }
   ],
+  "artifactKinds": [],
+  "guidelines": [
+    {
+      "id": "e2e.guid.incremental-vertical",
+      "name": "Thin vertical increments",
+      "appliesTo": "process",
+      "text": "Deliver one capability slice through CIM → PIM → PSM → artifacts per engine revolution. Avoid big-bang modeling."
+    },
+    {
+      "id": "e2e.guid.human-in-loop",
+      "name": "Human-in-the-loop transforms",
+      "appliesTo": "process",
+      "text": "ETL and M2T are assistive. ManualDecision and readiness gates block promotion when automation is uncertain."
+    }
+  ],
+  "processEngine": {
+    "id": "modless.end-to-end.engine",
+    "displayName": "End-to-End MDE Engine",
+    "description": "One vertical CIM → PIM → PSM → artifacts revolution per capability increment.",
+    "incrementUnit": "capability-slice",
+    "deliverable": {
+      "name": "Deployable increment",
+      "description": "Models at all levels plus generated artifacts for one slice."
+    },
+    "cycle": [
+      {
+        "id": "e2e.p0.increment-planning",
+        "name": "Increment Planning",
+        "type": "orchestration",
+        "primaryRole": "business-modeler"
+      },
+      {
+        "id": "e2e.p1.cim-modeling",
+        "name": "CIM Engine",
+        "type": "child-process",
+        "childProcessId": "modless.cim.modeling"
+      },
+      {
+        "id": "e2e.p2.cim-to-pim",
+        "name": "CIM → PIM ETL",
+        "type": "transform",
+        "transform": "cim-to-pim",
+        "primaryRole": "solution-architect"
+      },
+      {
+        "id": "e2e.p3.pim-refinement",
+        "name": "PIM Engine",
+        "type": "child-process",
+        "childProcessId": "modless.pim.modeling"
+      },
+      {
+        "id": "e2e.p4.pim-to-psm",
+        "name": "PIM → PSM ETL",
+        "type": "transform",
+        "transform": "pim-to-awspsm",
+        "primaryRole": "cloud-platform-engineer"
+      },
+      {
+        "id": "e2e.p5.psm-refinement",
+        "name": "PSM Engine",
+        "type": "child-process",
+        "childProcessId": "modless.psm.modeling"
+      },
+      {
+        "id": "e2e.p6.m2t-generation",
+        "name": "M2T Generation",
+        "type": "transform",
+        "transform": "awspsm-to-artifacts",
+        "primaryRole": "cloud-platform-engineer"
+      },
+      {
+        "id": "e2e.p7.artifact-completion",
+        "name": "Increment Closure",
+        "type": "deliverable",
+        "primaryRole": "process-reviewer"
+      }
+    ],
+    "loop": {
+      "fromStepId": "e2e.p7.artifact-completion",
+      "toStepId": "e2e.p0.increment-planning",
+      "condition": "increment-backlog-remaining",
+      "guidance": "Revolve end-to-end engine for next capability increment."
+    },
+    "reworkLoopIds": [
+      "e2e.loop.pim-feedback-cim",
+      "e2e.loop.psm-feedback-pim",
+      "e2e.loop.artifact-feedback-psm"
+    ],
+    "reworkLoops": [
+      {
+        "id": "e2e.loop.pim-feedback-cim",
+        "name": "PIM Discovery Feedback to CIM",
+        "fromStageId": "e2e.p3.pim-refinement",
+        "toStageId": "e2e.p1.cim-modeling",
+        "trigger": "PIM refinement reveals missing CIM concepts for the increment.",
+        "guidance": "Extend CIM via change workflow; re-run CIM EVL before re-transform.",
+        "crossLevel": true
+      },
+      {
+        "id": "e2e.loop.psm-feedback-pim",
+        "name": "PSM Platform Feedback to PIM",
+        "fromStageId": "e2e.p5.psm-refinement",
+        "toStageId": "e2e.p3.pim-refinement",
+        "trigger": "AWS constraints require PIM architecture changes.",
+        "guidance": "Adjust PIM policies or integration; re-run PIM→PSM ETL.",
+        "crossLevel": true
+      },
+      {
+        "id": "e2e.loop.artifact-feedback-psm",
+        "name": "M2T Artifact Feedback to PSM",
+        "fromStageId": "e2e.p7.artifact-completion",
+        "toStageId": "e2e.p5.psm-refinement",
+        "trigger": "Generated artifacts fail validation or deployment dry-run.",
+        "guidance": "Fix PSM at source stage; regenerate artifacts.",
+        "crossLevel": true
+      }
+    ]
+  },
   "phases": [
     {
-      "id": "e2e.p1.cim-modeling",
-      "name": "CIM Modeling (14 phases)",
+      "id": "e2e.ph1",
+      "name": "Increment Lifecycle",
+      "order": 1,
+      "objective": "Plan, execute child process engines, transform, and close each vertical increment.",
       "primaryRole": "business-modeler",
-      "childProcessId": "modless.cim.modeling",
-      "validationGate": "cim-semantic-validation",
-      "transform": null
-    },
-    {
-      "id": "e2e.p2.cim-to-pim",
-      "name": "CIM → PIM Transformation",
-      "primaryRole": "solution-architect",
-      "transform": "cim-to-pim",
-      "validationGate": null
-    },
-    {
-      "id": "e2e.p3.pim-refinement",
-      "name": "PIM Refinement (12 phases)",
-      "primaryRole": "solution-architect",
-      "childProcessId": "modless.pim.modeling",
-      "validationGate": "pim-semantic-validation",
-      "transform": null
-    },
-    {
-      "id": "e2e.p4.pim-to-psm",
-      "name": "PIM → AWS PSM Transformation",
-      "primaryRole": "cloud-platform-engineer",
-      "transform": "pim-to-awspsm",
-      "validationGate": null
-    },
-    {
-      "id": "e2e.p5.psm-refinement",
-      "name": "PSM Refinement (11 phases)",
-      "primaryRole": "cloud-platform-engineer",
-      "childProcessId": "modless.psm.modeling",
-      "validationGate": "psm-semantic-validation",
-      "transform": null
-    },
-    {
-      "id": "e2e.p6.m2t-generation",
-      "name": "M2T Artifact Generation",
-      "primaryRole": "cloud-platform-engineer",
-      "transform": "awspsm-to-artifacts",
-      "validationGate": null
-    },
-    {
-      "id": "e2e.p7.artifact-completion",
-      "name": "Artifact Review & Completion",
-      "primaryRole": "process-reviewer",
-      "transform": null,
-      "validationGate": null
+      "entryCriteria": ["Program chartered"],
+      "exitCriteria": ["Increment artifacts validated or backlog empty"],
+      "inEngine": true,
+      "stages": [
+        {
+          "id": "e2e.p0.increment-planning",
+          "name": "Increment Planning",
+          "objective": "Increment Planning",
+          "primaryRole": "business-modeler",
+          "tasks": [
+            {
+              "id": "e2e.p0.increment-planning.t1",
+              "name": "Increment Planning",
+              "primaryRole": "business-modeler",
+              "steps": ["Increment Planning"],
+              "entryCriteria": [],
+              "exitCriteria": ["Increment Planning complete"],
+              "validationRules": [],
+              "workProducts": [],
+              "artifacts": [],
+              "artifactIds": [],
+              "paletteFocus": []
+            }
+          ]
+        },
+        {
+          "id": "e2e.p1.cim-modeling",
+          "name": "CIM Engine",
+          "objective": "CIM Engine",
+          "primaryRole": "business-modeler",
+          "tasks": [
+            {
+              "id": "e2e.p1.cim-modeling.t1",
+              "name": "CIM Engine",
+              "primaryRole": "business-modeler",
+              "steps": ["CIM Engine"],
+              "entryCriteria": [],
+              "exitCriteria": ["CIM Engine complete"],
+              "validationRules": [],
+              "workProducts": [],
+              "artifacts": [],
+              "artifactIds": [],
+              "paletteFocus": [],
+              "childProcessId": "modless.cim.modeling"
+            }
+          ]
+        },
+        {
+          "id": "e2e.p2.cim-to-pim",
+          "name": "CIM → PIM ETL",
+          "objective": "CIM → PIM ETL",
+          "primaryRole": "solution-architect",
+          "tasks": [
+            {
+              "id": "e2e.p2.cim-to-pim.t1",
+              "name": "CIM → PIM ETL",
+              "primaryRole": "solution-architect",
+              "steps": ["CIM → PIM ETL"],
+              "entryCriteria": [],
+              "exitCriteria": ["CIM → PIM ETL complete"],
+              "validationRules": [],
+              "workProducts": [],
+              "artifacts": [],
+              "artifactIds": [],
+              "paletteFocus": [],
+              "transform": "cim-to-pim"
+            }
+          ]
+        },
+        {
+          "id": "e2e.p3.pim-refinement",
+          "name": "PIM Engine",
+          "objective": "PIM Engine",
+          "primaryRole": "business-modeler",
+          "tasks": [
+            {
+              "id": "e2e.p3.pim-refinement.t1",
+              "name": "PIM Engine",
+              "primaryRole": "business-modeler",
+              "steps": ["PIM Engine"],
+              "entryCriteria": [],
+              "exitCriteria": ["PIM Engine complete"],
+              "validationRules": [],
+              "workProducts": [],
+              "artifacts": [],
+              "artifactIds": [],
+              "paletteFocus": [],
+              "childProcessId": "modless.pim.modeling"
+            }
+          ]
+        },
+        {
+          "id": "e2e.p4.pim-to-psm",
+          "name": "PIM → PSM ETL",
+          "objective": "PIM → PSM ETL",
+          "primaryRole": "cloud-platform-engineer",
+          "tasks": [
+            {
+              "id": "e2e.p4.pim-to-psm.t1",
+              "name": "PIM → PSM ETL",
+              "primaryRole": "cloud-platform-engineer",
+              "steps": ["PIM → PSM ETL"],
+              "entryCriteria": [],
+              "exitCriteria": ["PIM → PSM ETL complete"],
+              "validationRules": [],
+              "workProducts": [],
+              "artifacts": [],
+              "artifactIds": [],
+              "paletteFocus": [],
+              "transform": "pim-to-awspsm"
+            }
+          ]
+        },
+        {
+          "id": "e2e.p5.psm-refinement",
+          "name": "PSM Engine",
+          "objective": "PSM Engine",
+          "primaryRole": "business-modeler",
+          "tasks": [
+            {
+              "id": "e2e.p5.psm-refinement.t1",
+              "name": "PSM Engine",
+              "primaryRole": "business-modeler",
+              "steps": ["PSM Engine"],
+              "entryCriteria": [],
+              "exitCriteria": ["PSM Engine complete"],
+              "validationRules": [],
+              "workProducts": [],
+              "artifacts": [],
+              "artifactIds": [],
+              "paletteFocus": [],
+              "childProcessId": "modless.psm.modeling"
+            }
+          ]
+        },
+        {
+          "id": "e2e.p6.m2t-generation",
+          "name": "M2T Generation",
+          "objective": "M2T Generation",
+          "primaryRole": "cloud-platform-engineer",
+          "tasks": [
+            {
+              "id": "e2e.p6.m2t-generation.t1",
+              "name": "M2T Generation",
+              "primaryRole": "cloud-platform-engineer",
+              "steps": ["M2T Generation"],
+              "entryCriteria": [],
+              "exitCriteria": ["M2T Generation complete"],
+              "validationRules": [],
+              "workProducts": [],
+              "artifacts": [],
+              "artifactIds": [],
+              "paletteFocus": [],
+              "transform": "awspsm-to-artifacts"
+            }
+          ]
+        },
+        {
+          "id": "e2e.p7.artifact-completion",
+          "name": "Increment Closure",
+          "objective": "Increment Closure",
+          "primaryRole": "process-reviewer",
+          "tasks": [
+            {
+              "id": "e2e.p7.artifact-completion.t1",
+              "name": "Increment Closure",
+              "primaryRole": "process-reviewer",
+              "steps": ["Increment Closure"],
+              "entryCriteria": [],
+              "exitCriteria": ["Increment Closure complete"],
+              "validationRules": [],
+              "workProducts": [],
+              "artifacts": [],
+              "artifactIds": [],
+              "paletteFocus": []
+            }
+          ]
+        }
+      ]
     }
   ],
+  "changeManagement": {
+    "workflows": [
+      {
+        "id": "e2e.change.propagate",
+        "name": "Cross-Level Change Propagation",
+        "trigger": "A model change at any level must propagate through CIM → PIM → PSM → artifacts.",
+        "steps": [
+          "Complete level-local change workflow and EVL gate for the source level.",
+          "Run Impact Analysis on TraceModel: list downstream TraceLinks with reduced confidence.",
+          "Re-run ETL for affected level pair (cim-to-pim, pim-to-awspsm) with merge strategy.",
+          "Replay refinement phases on target level for impacted increment slice only.",
+          "Regenerate M2T artifacts; run end-to-end validation suite.",
+          "Record ManualDecision for human resolution items; update readiness assessments."
+        ]
+      },
+      {
+        "id": "cim.change.post-transform",
+        "name": "Post-Transform CIM Change",
+        "trigger": "CIM must change after PIM or PSM already exists for this project.",
+        "steps": [
+          "Freeze downstream models or branch increment.",
+          "Apply CIM change with full impact analysis.",
+          "Re-run CIM EVL and readiness gate.",
+          "Re-execute CIM→PIM ETL; reconcile PIM trace links and manual decisions.",
+          "Propagate to PSM and artifacts per end-to-end change workflow."
+        ],
+        "impactedStages": ["cim.s5.converge"],
+        "crossLevel": true
+      },
+      {
+        "id": "pim.change.post-transform",
+        "name": "Post-Transform PIM Change",
+        "trigger": "PIM must change after PSM or artifacts exist.",
+        "steps": [
+          "Apply PIM change with impact analysis on trace links to CIM and PSM.",
+          "Re-run PIM EVL and readiness.",
+          "Re-execute PIM→PSM ETL; review platform mapping deltas.",
+          "Regenerate M2T artifacts; run deployment dry-run."
+        ],
+        "impactedStages": ["pim.s5.readiness"],
+        "crossLevel": true
+      },
+      {
+        "id": "psm.change.post-m2t",
+        "name": "Post-M2T PSM Change",
+        "trigger": "PSM changes after artifacts were generated or deployed.",
+        "steps": [
+          "Apply PSM model change at owning phase.",
+          "Re-run PSM EVL and integration views.",
+          "Regenerate M2T artifacts; diff against prior generation.",
+          "Run CI validation and staged deployment."
+        ],
+        "impactedStages": ["psm.s6.readiness"],
+        "crossLevel": true
+      }
+    ]
+  },
   "milestones": [
+    {
+      "id": "e2e.m0.increment-planned",
+      "name": "Increment scope agreed",
+      "phaseId": "e2e.ph1",
+      "stageId": "e2e.p0.increment-planning"
+    },
     {
       "id": "e2e.m1.cim-ready",
       "name": "CIM readiness approved",
-      "phaseId": "e2e.p1.cim-modeling"
+      "phaseId": "e2e.ph1",
+      "stageId": "e2e.p1.cim-modeling"
     },
     {
       "id": "e2e.m2.pim-ready",
       "name": "PIM readiness approved",
-      "phaseId": "e2e.p3.pim-refinement"
+      "phaseId": "e2e.ph1",
+      "stageId": "e2e.p3.pim-refinement"
     },
     {
       "id": "e2e.m3.psm-ready",
       "name": "PSM readiness approved",
-      "phaseId": "e2e.p5.psm-refinement"
+      "phaseId": "e2e.ph1",
+      "stageId": "e2e.p5.psm-refinement"
     },
     {
       "id": "e2e.m4.artifacts",
-      "name": "Artifacts delivered",
-      "phaseId": "e2e.p7.artifact-completion"
+      "name": "Increment artifacts delivered",
+      "phaseId": "e2e.ph1",
+      "stageId": "e2e.p7.artifact-completion"
     }
   ]
 }

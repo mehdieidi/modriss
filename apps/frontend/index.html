@@ -32,6 +32,7 @@
     <link href="/css/artifact.css" rel="stylesheet" />
     <link href="/css/panels.css" rel="stylesheet" />
     <link href="/css/methodology.css" rel="stylesheet" />
+    <link href="/css/methodology-process-map.css" rel="stylesheet" />
     <link href="/css/project.css" rel="stylesheet" />
     <link href="/css/mobile.css" rel="stylesheet" />
     <script>
@@ -697,6 +698,49 @@
               </div>
             </div>
           </section>
+
+          <div class="methodology-map-overlay hidden" id="methodologyMapOverlay" aria-hidden="true">
+            <div class="methodology-map-shell">
+              <header class="methodology-map-header">
+                <div class="methodology-map-header-text">
+                  <h2 id="methodologyMapTitle">Process map</h2>
+                  <nav
+                    class="methodology-map-breadcrumb"
+                    id="methodologyMapBreadcrumb"
+                    aria-label="Process map location"
+                  ></nav>
+                  <p id="methodologyMapSubtitle">SPEM lifecycle and engine cycle</p>
+                </div>
+                <div class="methodology-map-header-actions">
+                  <div class="methodology-map-zoom" aria-label="Zoom">
+                    <button type="button" id="methodologyMapZoomOutBtn" title="Zoom out">−</button>
+                    <button type="button" id="methodologyMapZoomResetBtn" title="Reset zoom">
+                      ◎
+                    </button>
+                    <button type="button" id="methodologyMapZoomInBtn" title="Zoom in">+</button>
+                  </div>
+                  <button
+                    type="button"
+                    class="methodology-map-close"
+                    id="methodologyMapCloseBtn"
+                    title="Close process map"
+                    aria-label="Close process map"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="icon-svg icon-mask"
+                      style="--icon-src: url(&quot;/assets/icons/close.svg&quot;)"
+                    ></span>
+                  </button>
+                </div>
+              </header>
+              <div class="methodology-map-body">
+                <div class="methodology-map-canvas-wrap" id="methodologyMapCanvas"></div>
+                <aside class="methodology-map-detail" id="methodologyMapDetail"></aside>
+              </div>
+              <footer class="methodology-map-legend" id="methodologyMapLegend"></footer>
+            </div>
+          </div>
 
           <div class="workspace-editor-column">
             <div class="modeling-context-bar hidden" id="topbarModelingRow">

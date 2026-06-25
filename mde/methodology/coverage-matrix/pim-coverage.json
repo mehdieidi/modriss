@@ -1,7 +1,7 @@
 {
   "level": "pim",
   "processId": "modless.pim.modeling",
-  "generatedAt": "2026-06-24T09:51:45.393Z",
+  "generatedAt": "2026-06-25T22:34:10.054Z",
   "totalConcepts": 179,
   "coveredConcepts": 179,
   "orphanedConcepts": [],
@@ -9,1075 +9,1075 @@
     {
       "concept": "PIMModel",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "DeployableElement",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "InvocationSource",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "InvocationTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FunctionTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "WorkflowTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "SubscriptionTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "RoutingTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FlowEndpoint",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ProtectedResource",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "PolicyTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "DataAccessTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExternalCallTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "EnvironmentTarget",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "CredentialRequirementLike",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "RouteEndpoint",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventCarrier",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ConfigurableElement",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "KeyValue",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Annotation",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ModelElement",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "NamedModelElement",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceableElement",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "SemanticRelationship",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Multiplicity",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Cardinality",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Expression",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceModel",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "TraceLink",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "TransformationAssumption",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "StructuredDocument",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ProductionReadinessAssessment",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ReadinessFinding",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ReadinessCheck",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "ManualDecision",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st2.t1"],
       "covered": true
     },
     {
       "concept": "Api",
       "kind": "EClass",
-      "taskIds": ["pim.p5.api-surface.main"],
+      "taskIds": ["pim.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "ApiRoute",
       "kind": "EClass",
-      "taskIds": ["pim.p5.api-surface.main"],
+      "taskIds": ["pim.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "ErrorMapping",
       "kind": "EClass",
-      "taskIds": ["pim.p5.api-surface.main"],
+      "taskIds": ["pim.ph3.st2.t2"],
       "covered": true
     },
     {
       "concept": "ComputeElement",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Function",
       "kind": "EClass",
-      "taskIds": ["pim.p4.compute-units.main"],
+      "taskIds": ["pim.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "Trigger",
       "kind": "EClass",
-      "taskIds": ["pim.p4.compute-units.main"],
+      "taskIds": ["pim.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "ConfigurationSet",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "ConfigParameter",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "EnvironmentVariable",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "Secret",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "CredentialRequirement",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "Schema",
       "kind": "EClass",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "SchemaField",
       "kind": "EClass",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "SchemaEnumLiteral",
       "kind": "EClass",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "SchemaValidationConstraint",
       "kind": "EClass",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "SchemaConstraint",
       "kind": "EClass",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "FunctionContract",
       "kind": "EClass",
-      "taskIds": ["pim.p4.compute-units.main"],
+      "taskIds": ["pim.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "ApiContract",
       "kind": "EClass",
-      "taskIds": ["pim.p5.api-surface.main"],
+      "taskIds": ["pim.ph3.st2.t2"],
       "covered": true
     },
     {
       "concept": "EventEnvelope",
       "kind": "EClass",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventType",
       "kind": "EClass",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "StorageElement",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "DataStore",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "DataChangeStream",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t3"],
       "covered": true
     },
     {
       "concept": "ObjectStore",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "ObjectNotificationRule",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t3"],
       "covered": true
     },
     {
       "concept": "DataModel",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "DataField",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "AccessPattern",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "IndexCandidate",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "DataAccess",
       "kind": "EClass",
-      "taskIds": ["pim.p3.data-architecture.main"],
+      "taskIds": ["pim.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "ServerlessService",
       "kind": "EClass",
-      "taskIds": ["pim.p1.service-boundaries.main"],
+      "taskIds": ["pim.ph1.st2.t1"],
       "covered": true
     },
     {
       "concept": "ServiceElementMembership",
       "kind": "EClass",
-      "taskIds": ["pim.p1.service-boundaries.main"],
+      "taskIds": ["pim.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "DeploymentUnit",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "Environment",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "ImplementationProfile",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "PlatformCapability",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "PlatformMappingAssessment",
       "kind": "EClass",
-      "taskIds": ["pim.p11.platform-mapping-readiness.main"],
+      "taskIds": ["pim.ph6.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExternalEndpoint",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "ExternalAdapter",
       "kind": "EClass",
-      "taskIds": ["pim.p10.external-config.main"],
+      "taskIds": ["pim.ph5.st3.t1"],
       "covered": true
     },
     {
       "concept": "IntegrationElement",
       "kind": "EClass",
-      "taskIds": ["pim.p0.architecture-posture.main"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventChannel",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "Queue",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "Topic",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "EventBus",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "Schedule",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "Subscription",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventRoutingRule",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "Flow",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "RequestResponseFlow",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "EventFlow",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "MessageFlow",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "PubSubFlow",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "OrchestrationFlow",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "ExternalIntegrationFlow",
       "kind": "EClass",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t2"],
       "covered": true
     },
     {
       "concept": "ArchitecturePolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss3.t1"],
       "covered": true
     },
     {
       "concept": "PolicySetting",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss3.t1"],
       "covered": true
     },
     {
       "concept": "DataProtectionPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss3.t1"],
       "covered": true
     },
     {
       "concept": "DataQualityPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss3.t1"],
       "covered": true
     },
     {
       "concept": "CompliancePolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss3.t1"],
       "covered": true
     },
     {
       "concept": "BusinessRule",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss3.t2"],
       "covered": true
     },
     {
       "concept": "DecisionModel",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss3.t2"],
       "covered": true
     },
     {
       "concept": "DecisionRule",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss3.t2"],
       "covered": true
     },
     {
       "concept": "ResiliencePolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "RetryPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "DeadLetterPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "TimeoutPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "IdempotencyPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t1"],
       "covered": true
     },
     {
       "concept": "ConcurrencyPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t2"],
       "covered": true
     },
     {
       "concept": "RateLimitPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t2"],
       "covered": true
     },
     {
       "concept": "BatchPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t2"],
       "covered": true
     },
     {
       "concept": "OrderingPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t2"],
       "covered": true
     },
     {
       "concept": "CachePolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t2"],
       "covered": true
     },
     {
       "concept": "BackupPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t2"],
       "covered": true
     },
     {
       "concept": "RetentionPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t2"],
       "covered": true
     },
     {
       "concept": "CostPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss1.t2"],
       "covered": true
     },
     {
       "concept": "ObservabilityConfig",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "LoggingPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "MetricPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "MetricDimension",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "TracingPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss2.t1"],
       "covered": true
     },
     {
       "concept": "AlertPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss2.t2"],
       "covered": true
     },
     {
       "concept": "Slo",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss2.t2"],
       "covered": true
     },
     {
       "concept": "CorsPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p9.architecture-policies.main"],
+      "taskIds": ["pim.ph5.st2.ss2.t2"],
       "covered": true
     },
     {
       "concept": "IdentityProvider",
       "kind": "EClass",
-      "taskIds": ["pim.p8.security-identity.main"],
+      "taskIds": ["pim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "Principal",
       "kind": "EClass",
-      "taskIds": ["pim.p8.security-identity.main"],
+      "taskIds": ["pim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "Permission",
       "kind": "EClass",
-      "taskIds": ["pim.p8.security-identity.main"],
+      "taskIds": ["pim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "SecurityPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p8.security-identity.main"],
+      "taskIds": ["pim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "AuthPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p8.security-identity.main"],
+      "taskIds": ["pim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "AuthorizationPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p8.security-identity.main"],
+      "taskIds": ["pim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "Workflow",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "WorkflowState",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "WorkflowTransition",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "ErrorHandler",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "ParallelBranch",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "MapStateConfig",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "CallbackTaskConfig",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "EscalationPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "HumanTask",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "ApprovalTask",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "CompensationPolicy",
       "kind": "EClass",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t2"],
       "covered": true
     },
     {
       "concept": "Priority",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "Severity",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ConstraintStrength",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "LifecycleStatus",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceConfidence",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "TraceLinkType",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "FindingType",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "StructuredFormat",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExpressionLanguage",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExpressionPhase",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "ArchitectureStyle",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t2"],
       "covered": true
     },
     {
       "concept": "BoundaryType",
       "kind": "EEnum",
-      "taskIds": ["pim.p1.service-boundaries.main"],
+      "taskIds": ["pim.ph1.st2.t1"],
       "covered": true
     },
     {
       "concept": "DeploymentUnitType",
       "kind": "EEnum",
-      "taskIds": ["pim.p10.external-config.main", "pim.p10.external-config.enums"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "OwnershipKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p1.service-boundaries.main"],
+      "taskIds": ["pim.ph1.st2.t2"],
       "covered": true
     },
     {
       "concept": "FunctionKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p4.compute-units.main", "pim.p4.compute-units.enums"],
+      "taskIds": ["pim.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "ComputeProfile",
       "kind": "EEnum",
-      "taskIds": ["pim.p4.compute-units.main", "pim.p4.compute-units.enums"],
+      "taskIds": ["pim.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "ExecutionModel",
       "kind": "EEnum",
-      "taskIds": ["pim.p4.compute-units.main", "pim.p4.compute-units.enums"],
+      "taskIds": ["pim.ph3.st1.t1"],
       "covered": true
     },
     {
       "concept": "ApiStyle",
       "kind": "EEnum",
-      "taskIds": ["pim.p5.api-surface.main"],
+      "taskIds": ["pim.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "HttpMethod",
       "kind": "EEnum",
-      "taskIds": ["pim.p5.api-surface.main"],
+      "taskIds": ["pim.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "InvocationMode",
       "kind": "EEnum",
-      "taskIds": ["pim.p5.api-surface.main"],
+      "taskIds": ["pim.ph3.st2.t1"],
       "covered": true
     },
     {
       "concept": "ChannelKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "DeliverySemantics",
       "kind": "EEnum",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "OrderingRequirement",
       "kind": "EEnum",
-      "taskIds": ["pim.p6.integration-topology.main"],
+      "taskIds": ["pim.ph4.st1.t1"],
       "covered": true
     },
     {
       "concept": "StoreKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p3.data-architecture.main", "pim.p3.data-architecture.enums"],
+      "taskIds": ["pim.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "ConsistencyNeed",
       "kind": "EEnum",
-      "taskIds": ["pim.p3.data-architecture.main", "pim.p3.data-architecture.enums"],
+      "taskIds": ["pim.ph2.st2.t1"],
       "covered": true
     },
     {
       "concept": "WorkflowKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "WorkflowStateKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p7.workflow-orchestration.main"],
+      "taskIds": ["pim.ph4.st2.t1"],
       "covered": true
     },
     {
       "concept": "IdentityKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p8.security-identity.main", "pim.p8.security-identity.enums"],
+      "taskIds": ["pim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "PrincipalKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p8.security-identity.main", "pim.p8.security-identity.enums"],
+      "taskIds": ["pim.ph5.st1.t1"],
       "covered": true
     },
     {
       "concept": "PermissionEffect",
       "kind": "EEnum",
-      "taskIds": ["pim.p8.security-identity.main", "pim.p8.security-identity.enums"],
+      "taskIds": ["pim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "PermissionActionKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p8.security-identity.main", "pim.p8.security-identity.enums"],
+      "taskIds": ["pim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "LeastPrivilegeStatus",
       "kind": "EEnum",
-      "taskIds": ["pim.p8.security-identity.main", "pim.p8.security-identity.enums"],
+      "taskIds": ["pim.ph5.st1.t2"],
       "covered": true
     },
     {
       "concept": "SecretKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p10.external-config.main", "pim.p10.external-config.enums"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "ConfigScope",
       "kind": "EEnum",
-      "taskIds": ["pim.p10.external-config.main", "pim.p10.external-config.enums"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "SchemaKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "SchemaCompatibility",
       "kind": "EEnum",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t2"],
       "covered": true
     },
     {
       "concept": "FieldType",
       "kind": "EEnum",
-      "taskIds": ["pim.p2.contracts-schemas.main"],
+      "taskIds": ["pim.ph2.st1.t1"],
       "covered": true
     },
     {
       "concept": "EnvironmentClass",
       "kind": "EEnum",
-      "taskIds": ["pim.p10.external-config.main", "pim.p10.external-config.enums"],
+      "taskIds": ["pim.ph5.st3.t2"],
       "covered": true
     },
     {
       "concept": "RuntimeLanguage",
       "kind": "EEnum",
-      "taskIds": ["pim.p4.compute-units.main", "pim.p4.compute-units.enums"],
+      "taskIds": ["pim.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "PackageManager",
       "kind": "EEnum",
-      "taskIds": ["pim.p4.compute-units.main", "pim.p4.compute-units.enums"],
+      "taskIds": ["pim.ph3.st1.t2"],
       "covered": true
     },
     {
       "concept": "Decision",
       "kind": "EEnum",
-      "taskIds": ["pim.p0.architecture-posture.main", "pim.p0.architecture-posture.enums"],
+      "taskIds": ["pim.ph1.st1.t1"],
       "covered": true
     },
     {
       "concept": "DataAccessMode",
       "kind": "EEnum",
-      "taskIds": ["pim.p3.data-architecture.main", "pim.p3.data-architecture.enums"],
+      "taskIds": ["pim.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "AccessPatternKind",
       "kind": "EEnum",
-      "taskIds": ["pim.p3.data-architecture.main", "pim.p3.data-architecture.enums"],
+      "taskIds": ["pim.ph2.st2.t2"],
       "covered": true
     },
     {
       "concept": "SupportLevel",
       "kind": "EEnum",
-      "taskIds": ["pim.p10.external-config.main", "pim.p10.external-config.enums"],
+      "taskIds": ["pim.ph5.st3.t1"],
       "covered": true
     }
   ]

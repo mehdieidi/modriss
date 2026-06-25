@@ -585,6 +585,144 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+.methodology-stage-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.methodology-stage-chip {
+  font-size: 0.62rem;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.methodology-stage-chip.is-current {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.methodology-stage-chip.is-complete {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--text-strong);
+}
+
+.methodology-stage-label {
+  font-size: 0.65rem;
+  font-weight: 650;
+  color: var(--muted);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.methodology-loop-card {
+  border: 1px dashed color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-top: 8px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-2));
+}
+
+.methodology-loop-card h4 {
+  margin: 0 0 4px;
+  font-size: 0.76rem;
+  color: var(--text-strong);
+}
+
+.methodology-loop-card p {
+  margin: 0 0 6px;
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  line-height: 1.35;
+}
+
+.methodology-loop-card .methodology-btn {
+  font-size: 0.68rem;
+  padding: 5px 8px;
+}
+
+.methodology-loop-badge {
+  display: inline-block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  color: var(--accent);
+  margin-right: 6px;
+}
+
+.methodology-change-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-top: 8px;
+  background: var(--panel);
+}
+
+.methodology-change-card summary {
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+
+.methodology-change-card ol {
+  margin: 8px 0 0;
+  padding-left: 1.15rem;
+  font-size: 0.7rem;
+  color: var(--text-soft);
+}
+
+.methodology-e2e-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.methodology-e2e-step {
+  flex: 1;
+  min-width: 48px;
+  font-size: 0.58rem;
+  text-align: center;
+  padding: 4px 2px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.methodology-e2e-step.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.methodology-task-kind {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
 .workspace.left-pane-methodology #palettePane {
   display: none;
 }

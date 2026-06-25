@@ -1,23 +1,35 @@
 @startuml pim-process
-title PIM Modeling Process (12 Phases)
+title PIM Modeling Process — SPEM (6 Phases, Stages, Tasks)
 start
-:Phase 0 — Architecture Posture;
-:Phase 1 — Service Boundaries;
-:Phase 2 — Contracts & Schemas;
-:Phase 3 — Data Architecture;
-:Phase 4 — Compute Units;
-:Phase 5 — API Surface;
-:Phase 6 — Integration Topology;
-:Phase 7 — Workflow Orchestration;
-:Phase 8 — Security & Identity;
-:Phase 9 — Architecture Policies;
-:Phase 10 — External & Config;
-:Phase 11 — Platform Mapping & Readiness;
+partition "Phase 1 — Architecture Establishment (once)" {
+  :Stage — Architecture Posture;
+  :Stage — Service Boundaries;
+}
+partition "Phase 2 — Contracts & Data (engine)" {
+  :Stage — Contracts & Schemas;
+  :Stage — Data Architecture;
+}
+partition "Phase 3 — Compute & Exposure (engine)" {
+  :Stage — Compute Units;
+  :Stage — API Surface;
+}
+partition "Phase 4 — Integration & Orchestration (engine)" {
+  :Stage — Integration Topology;
+  :Stage — Workflow Orchestration;
+}
+partition "Phase 5 — Assurance & Configuration (engine)" {
+  :Stage — Security & Identity;
+  :Stage — Architecture Policies;
+  :Stage — External & Config;
+}
+partition "Phase 6 — Platform Readiness (gate)" {
+  :Stage — Platform Mapping Assessment;
+  :Stage — Trace & Readiness Gate;
+}
 if (PIM EVL pass?) then (yes)
   :PIM→PSM ETL gate;
   stop
 else (no)
-  :Refine model;
-  backward :Phase 11;
+  backward :Platform Readiness;
 endif
 @enduml

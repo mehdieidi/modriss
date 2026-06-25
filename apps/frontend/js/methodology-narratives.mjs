@@ -34,145 +34,156 @@ const KERNEL_TYPES = new Set([
 ]);
 
 export const PHASE_NARRATIVES = {
-  "cim.p0.model-context": {
-    summary:
-      "Set the root CIMModel shell: domain name, business scope, organization, and modeling metadata. This is the container for everything else.",
-    why: "Every other element lives under this root. A clear scope prevents drift and anchors traceability.",
-    relationships: ["CONTAINS", "ANNOTATES"],
+  "cim.ph1": {
+    summary: "Establish the CIM program container and strategic intent that anchors all later modeling.",
+    why: "Modless project created",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p1.strategic-intent": {
-    summary:
-      "Capture why the system exists: BusinessGoals with success criteria, KPIs to measure them, and Stakeholders who care about outcomes.",
-    why: "Goal-Question-Metric anchors all later requirements and readiness checks. Without intent, domain modeling lacks direction.",
-    relationships: ["SUPPORTS", "TRACE", "CONSTRAINS"],
+  "cim.ph2": {
+    summary: "Map who participates in the domain, what the organization can do, and shared vocabulary.",
+    why: "Phase Establishment complete",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p2.actors-boundaries": {
-    summary:
-      "Identify who interacts with the system (Actors, Roles) and external systems at the boundary—before modeling behavior.",
-    why: "Commands and policies reference actors. Defining boundaries early avoids anonymous behavior on the canvas.",
-    relationships: ["TRIGGERED_BY", "DEPENDS_ON", "CONSTRAINS_ACTORS"],
+  "cim.ph3": {
+    summary: "Explore information, structure, and behavior using Twin Peaks — iterate until CQRS surface is coherent.",
+    why: "Context Discovery complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p3.capability-landscape": {
-    summary:
-      "Map what the organization can do: BusinessCapabilities, their dependencies, and criticality—linked to goals.",
-    why: "Capabilities frame ownership and later bounded-context assignment. They connect strategy to delivery.",
-    relationships: ["SUPPORTS", "DEPENDS_ON", "CONTAINS"],
+  "cim.ph4": {
+    summary: "Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.",
+    why: "Domain Exploration coherent for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p4.ubiquitous-language": {
-    summary:
-      "Build a shared glossary (UbiquitousLanguageTerm) so everyone uses the same words for domain concepts.",
-    why: "DDD practice: align vocabulary before entities and processes so names stay consistent across the model.",
-    relationships: ["SUPPORTS", "TRACE"],
+  "cim.ph5": {
+    summary: "Backfill requirements, record transformation contracts, close traceability and EVL gate.",
+    why: "Domain Synthesis complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p5.information-taxonomy": {
-    summary:
-      "Classify and name the data your domain cares about before you model entities. Information items are the vocabulary of facts; classifications capture sensitivity and handling rules.",
-    why: "Domain entities must reference an InformationItem for identity (EVL CIM-ENTITY-001). Skipping this phase produces validation errors and unclear data ownership.",
-    relationships: ["CONTAINS", "DEPENDS_ON", "REFERENCED_INFORMATION"],
+  "pim.ph1": {
+    summary: "Establish PIM root posture and serverless service boundaries aligned to CIM bounded contexts.",
+    why: "CIM transform complete or greenfield PIM",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p6.domain-structure": {
-    summary:
-      "Shape the structural heart of the domain: entities that hold state, value objects for descriptive data, and relationships between concepts—including lifecycle and invariants.",
-    why: "Entities need information items from phase 5. Relationships and invariants here constrain everything you model in behavior and process phases.",
-    relationships: ["GENERALIZATION", "ASSOCIATION", "DEPENDENCY", "CONTAINS"],
+  "pim.ph2": {
+    summary: "Define API/event contracts and persistent data architecture for the increment slice.",
+    why: "Architecture Establishment complete",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p7.behavior-surface": {
-    summary:
-      "Capture what the system does: commands that change state, queries that read it, and events that announce what happened—linked to actors and capabilities.",
-    why: "Aggregates and processes in later phases assign ownership of commands and events. Without behavior, bounded contexts and workflows stay empty.",
-    relationships: ["TRIGGERED_BY", "EMITS_EVENTS", "AFFECTS", "GUARDS", "PAYLOAD"],
+  "pim.ph3": {
+    summary: "Define compute units and expose them through a coherent API surface.",
+    why: "Contracts & Data complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p8.aggregate-boundaries": {
-    summary:
-      "Define AggregateCandidate groupings with consistency expectations—which commands each aggregate handles and which events it emits.",
-    why: "Aggregates enforce transactional boundaries. They require entities and behavior from prior phases.",
-    relationships: ["CONTAINS", "HANDLED_BY", "EMITS_EVENTS"],
+  "pim.ph4": {
+    summary: "Wire async integration topology and long-running workflow orchestration.",
+    why: "Compute & Exposure complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p9.process-decisions": {
-    summary:
-      "Model BusinessProcess flows, policies, and decision tables that orchestrate commands, events, and human steps.",
-    why: "Processes stitch isolated behavior into end-to-end business flows and automation candidates.",
-    relationships: ["TRANSITION", "TRIGGERS", "RESULTS_IN", "DECISION_TABLE"],
+  "pim.ph5": {
+    summary: "Apply security, operational policies, and environment configuration across the slice.",
+    why: "Integration & Orchestration complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p10.bounded-context-synthesis": {
-    summary:
-      "Group capabilities, entities, CQRS elements, events, and policies into cohesive bounded contexts—after you have modeled what belongs together.",
-    why: "BoundedContextCandidate references concrete elements. Creating contexts too early yields empty shells; synthesis belongs after domain and behavior exploration.",
-    relationships: ["CONTAINS", "CONTAINS_COMMAND", "CONTAINS_EVENT", "SUPPORTS"],
+  "pim.ph6": {
+    summary: "Assess platform capability mapping, close traceability, and pass PIM EVL gate.",
+    why: "Assurance & Configuration complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p11.requirements-governance": {
-    summary:
-      "Backfill formal requirements, acceptance criteria, and governance constraints with trace links to goals, domain, and behavior you already modeled.",
-    why: "Twin Peaks: requirements refine the model once structure exists. constrains links need real targets on the canvas.",
-    relationships: ["CONSTRAINS", "SUPPORTS", "CONFLICTS_WITH", "REFINES", "TRACE"],
+  "psm.ph1": {
+    summary: "Establish AWS account strategy, SAM stack scaffolding, and security baseline.",
+    why: "PIM transform complete or greenfield PSM",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p12.transformation-contracts": {
-    summary:
-      "Record Risks, Assumptions, Hotspots, and the TransformationProfile before CIM→PIM—what the pipeline must respect.",
-    why: "Transformation is not automatic truth. Explicit contracts let reviewers gate promotion to PIM.",
-    relationships: ["TRACE", "CONSTRAINS", "DEPENDS_ON"],
+  "psm.ph2": {
+    summary: "Configure VPC networking and Cognito identity resources aligned to PIM auth model.",
+    why: "Deployment Foundation complete",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "cim.p13.traceability-readiness": {
-    summary:
-      "Close the loop: TraceModel links across goals, requirements, and domain; ProductionReadinessAssessment signs off CIM completeness.",
-    why: "EVL semantic validation and readiness findings block CIM→PIM until resolved.",
-    relationships: ["TRACE", "SUPPORTS", "CONSTRAINS"],
+  "psm.ph3": {
+    summary: "Provision durable storage and messaging resources matching PIM data and event channels.",
+    why: "Network & Identity complete",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "pim.p0.architecture-posture": {
-    summary:
-      "Establish PIMModel root with ArchitectureStyle and ImplementationProfile—your serverless posture before services.",
-    why: "Posture drives default patterns for functions, integration, and policies in all later PIM phases.",
-    relationships: ["CONTAINS", "DEPENDS_ON"],
+  "psm.ph4": {
+    summary: "Configure EventBridge fabric and deploy Lambda compute matching PIM functions.",
+    why: "Storage & Messaging complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "pim.p2.contracts-schemas": {
-    summary:
-      "Define Schema, EventType, and EventEnvelope contracts—the payloads APIs and events carry.",
-    why: "Contracts decouple producers and consumers. They map CIM commands/events to platform-neutral shapes.",
-    relationships: ["PAYLOAD", "CONSTRAINS", "TRACE"],
+  "psm.ph5": {
+    summary: "Configure API Gateway exposure and Step Functions workflows with observability.",
+    why: "Event Fabric & Compute complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
-  "pim.p3.data-architecture": {
-    summary:
-      "Model DataStore, ObjectStore, DataModel, access patterns, and change streams for persistent data.",
-    why: "Functions and APIs need durable homes. Data architecture follows contracts and precedes compute wiring.",
-    relationships: ["CONTAINS", "READS", "WRITES", "STREAMS"],
-  },
-  "pim.p5.api-surface": {
-    summary:
-      "Expose Api, ApiRoute, and ApiContract elements with error mappings to business errors.",
-    why: "HTTP surface connects users and systems to functions. Routes must align with schemas from phase 2.",
-    relationships: ["ROUTES_TO", "PAYLOAD", "CONSTRAINS"],
-  },
-  "pim.p6.integration-topology": {
-    summary:
-      "Wire async integration: EventChannel (queues, topics, buses), Flow types, routing rules, and subscriptions.",
-    why: "Serverless systems are event-driven. Topology connects functions without tight coupling.",
-    relationships: ["SUBSCRIBES", "PUBLISHES", "ROUTES", "TRIGGERS"],
-  },
-  "pim.p1.service-boundaries": {
-    summary:
-      "Draw serverless service boundaries aligned to CIM bounded contexts. Each service owns a deployable slice of functions, data, and APIs.",
-    why: "Service boundaries drive everything downstream—schemas, stores, and integration channels attach to services.",
-    relationships: ["CONTAINS", "DEPENDS_ON", "OWNERSHIP"],
-  },
-  "pim.p4.compute-units": {
-    summary:
-      "Define Lambda-style functions with contracts and triggers—one handler per command, query, or event reaction from CIM.",
-    why: "Functions are the executable core; APIs and event flows route to them in later phases.",
-    relationships: ["TRIGGERS", "ROUTES_TO", "SUBSCRIBES", "INVOKES"],
-  },
-  "psm.p8.compute": {
-    summary:
-      "Materialize AWS Lambda functions with code config, layers, event source mappings, and IAM permissions matching the PIM compute model.",
-    why: "Compute binds PIM behavior to runnable infrastructure; integrations and API Gateway depend on deployed functions.",
-    relationships: ["INTEGRATES", "TRIGGERS", "POLICY_ATTACHMENT"],
+  "psm.ph6": {
+    summary: "Create integration relationship views, close traceability, and pass PSM EVL gate.",
+    why: "API & Orchestration complete for slice",
+    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
   },
 };
 
 const LEVEL_INTROS = {
-  cim: "Computation-independent modeling: business intent, domain, behavior, and governance before any platform choices.",
-  pim: "Platform-independent serverless architecture: services, contracts, data, integration, and policies.",
-  psm: "AWS-specific deployment model: SAM stacks, Lambda, data stores, messaging, IAM, and observability.",
+  cim: "CIM process engine delivers one capability slice per cycle: plan → model (discover/explore/construct) → converge → review → deliver → retrospect → repeat.",
+  pim: "PIM process engine delivers one serverless service slice per cycle: plan → capability core → integrate → assure → review → deliver → retrospect → repeat.",
+  psm: "PSM process engine delivers one deployable AWS slice per cycle: plan → data/events → compute/expose → orchestrate → readiness → review → deliver → retrospect → repeat.",
 };
+
+const STAGE_NARRATIVES = {
+  "cim.s1.initiate": {
+    summary: "Once per program (before the engine): model root, strategic goals, and scope baseline.",
+  },
+  "cim.s2.discover": {
+    summary: "Map who and what: actors, capabilities, and ubiquitous language for the selected slice.",
+  },
+  "cim.s3.explore": {
+    summary: "Twin Peaks exploration loop: taxonomy → structure → behavior until CQRS is coherent.",
+  },
+  "cim.s4.construct": {
+    summary: "Synthesize aggregates, processes, and bounded contexts from explored domain.",
+  },
+  "cim.s5.converge": {
+    summary: "Backfill requirements, transformation contracts, traceability, and EVL readiness gate.",
+  },
+  "pim.s1.posture": {
+    summary: "Set architecture style and service boundaries aligned to CIM bounded contexts.",
+  },
+  "pim.s2.capability-core": {
+    summary: "Iterate contracts, data, compute, and API until the increment slice is internally runnable.",
+  },
+  "pim.s3.integration": {
+    summary: "Wire async channels, flows, and workflow orchestration across services.",
+  },
+  "pim.s4.assurance": {
+    summary: "Apply security, policies, external adapters, and environment configuration.",
+  },
+  "pim.s5.readiness": {
+    summary: "Platform mapping assessment, trace closure, and PIM EVL gate.",
+  },
+  "psm.s1.foundation": {
+    summary: "AWS account strategy, SAM scaffolding, and security baseline.",
+  },
+  "psm.s2.platform": {
+    summary: "Networking and Cognito identity aligned to PIM auth model.",
+  },
+  "psm.s3.data-events": {
+    summary: "DynamoDB, S3, messaging, and EventBridge — iterate with compute wiring.",
+  },
+  "psm.s4.compute-expose": {
+    summary: "Lambda and API Gateway exposure matching PIM surface.",
+  },
+  "psm.s5.orchestrate": {
+    summary: "Step Functions and CloudWatch observability.",
+  },
+  "psm.s6.readiness": {
+    summary: "Integration relationship views and PSM EVL gate before M2T.",
+  },
+};
+
+export function stageNarrative(stage) {
+  const custom = STAGE_NARRATIVES[stage?.id];
+  return {
+    summary: custom?.summary || stage?.objective || stage?.name || "",
+  };
+}
 
 const VIEWPOINT_LABELS = {
   dashboard: "Overview dashboard",
@@ -213,9 +224,25 @@ export function viewpointLabel(viewpoint) {
   return VIEWPOINT_LABELS[viewpoint] || viewpoint || "Canvas view";
 }
 
+function collectLeafTasks(phase) {
+  function walkStages(stages) {
+    const out = [];
+    for (const stage of stages || []) {
+      if (stage.subStages?.length) {
+        out.push(...walkStages(stage.subStages));
+      } else if (stage.tasks?.length) {
+        out.push(...stage.tasks);
+      }
+    }
+    return out;
+  }
+  return walkStages(phase?.stages);
+}
+
 export function phaseNarrative(phase, level) {
   const custom = PHASE_NARRATIVES[phase?.id];
-  const mainTask = (phase?.tasks || []).find((t) => t.id?.endsWith(".main")) || phase?.tasks?.[0];
+  const tasks = collectLeafTasks(phase);
+  const mainTask = tasks[0];
   const focusTypes = mainTask?.paletteFocus || [];
   const steps = mainTask?.steps || [];
   const concepts = [...new Set(focusTypes)].filter(
@@ -225,6 +252,7 @@ export function phaseNarrative(phase, level) {
   return {
     summary:
       custom?.summary ||
+      phase?.objective ||
       (steps.length
         ? steps[0]
         : `In this phase you establish ${phase?.name?.toLowerCase() || "model elements"} for your ${level.toUpperCase()} model.`),
@@ -236,13 +264,13 @@ export function phaseNarrative(phase, level) {
     relationships: custom?.relationships || ["CONTAINS", "DEPENDS_ON", "TRACE"],
     concepts: concepts.slice(0, 24),
     steps: mainTask?.steps || [],
-    entryCriteria: mainTask?.entryCriteria || phase?.tasks?.[0]?.entryCriteria || [],
-    exitCriteria: mainTask?.exitCriteria || phase?.tasks?.[0]?.exitCriteria || [],
+    entryCriteria: phase?.entryCriteria || mainTask?.entryCriteria || [],
+    exitCriteria: phase?.exitCriteria || mainTask?.exitCriteria || [],
     validationRules: mainTask?.validationRules || [],
-    viewpoint: phase?.viewpoint,
-    viewpointLabel: viewpointLabel(phase?.viewpoint),
-    duration: phase?.durationEstimate || "",
-    role: formatRole(phase?.primaryRole),
+    viewpoint: mainTask?.viewpoint || phase?.viewpoint,
+    viewpointLabel: viewpointLabel(mainTask?.viewpoint || phase?.viewpoint),
+    duration: phase?.durationEstimate || mainTask?.durationEstimate || "",
+    role: formatRole(phase?.primaryRole || mainTask?.primaryRole),
   };
 }
 

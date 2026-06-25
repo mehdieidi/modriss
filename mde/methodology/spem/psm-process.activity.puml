@@ -1,23 +1,35 @@
 @startuml psm-process
-title AWS PSM Modeling Process (11 Phases)
+title AWS PSM Modeling Process — SPEM (6 Phases, Stages, Tasks)
 start
-:Phase 0 — Account & Stage Strategy;
-:Phase 1 — Stack Scaffolding;
-:Phase 2 — Security Baseline;
-:Phase 3 — Networking;
-:Phase 4 — Identity;
-:Phase 5 — Durable Storage;
-:Phase 6 — Messaging;
-:Phase 7 — Event Fabric;
-:Phase 8 — Compute;
-:Phase 9 — API Gateway;
-:Phase 10 — Workflow & Observability;
-:Phase 11 — Integration Views & Readiness;
+partition "Phase 1 — Deployment Foundation (once)" {
+  :Stage — Account & Stage Strategy;
+  :Stage — Stack Scaffolding;
+  :Stage — Security Baseline;
+}
+partition "Phase 2 — Network & Identity (once)" {
+  :Stage — Networking;
+  :Stage — Identity;
+}
+partition "Phase 3 — Storage & Messaging (engine)" {
+  :Stage — Durable Storage;
+  :Stage — Messaging;
+}
+partition "Phase 4 — Event Fabric & Compute (engine)" {
+  :Stage — Event Fabric;
+  :Stage — Compute;
+}
+partition "Phase 5 — API & Orchestration (engine)" {
+  :Stage — API Gateway;
+  :Stage — Workflow & Observability;
+}
+partition "Phase 6 — Integration Views & Readiness (gate)" {
+  :Stage — Integration Views;
+  :Stage — Trace & Readiness Gate;
+}
 if (PSM EVL pass?) then (yes)
-  :M2T generation gate;
+  :M2T artifact generation;
   stop
 else (no)
-  :Refine resources;
-  backward :Phase 11;
+  backward :Trace & Readiness;
 endif
 @enduml

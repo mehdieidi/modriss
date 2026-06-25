@@ -1,26 +1,49 @@
 @startuml cim-process
-title CIM Modeling Process (14 Phases)
+title CIM Modeling Process — SPEM (5 Phases, Stages, Tasks)
 start
-:Phase 0 — Model Context;
-:Phase 1 — Strategic Intent;
-:Phase 2 — Actors & Boundaries;
-:Phase 3 — Capability Landscape;
-:Phase 4 — Ubiquitous Language;
-:Phase 5 — Information Taxonomy;
-note right: CIM-ENTITY-001\nInformationItem before DomainEntity
-:Phase 6 — Domain Structure;
-:Phase 7 — Behavior Surface;
-:Phase 8 — Aggregate Boundaries;
-:Phase 9 — Process & Decisions;
-:Phase 10 — Bounded Context Synthesis;
-:Phase 11 — Requirements & Governance;
-:Phase 12 — Transformation Contracts;
-:Phase 13 — Traceability & Readiness;
+partition "Phase 1 — Establishment (once)" {
+  :Stage — Program Charter;
+  :Stage — Strategic Framing;
+}
+partition "Phase 2 — Context Discovery (engine)" {
+  :Stage — Participation Model;
+  :Stage — Capability Landscape;
+  :Stage — Ubiquitous Language;
+}
+partition "Phase 3 — Domain Exploration (engine, iterative)" {
+  repeat
+    :Stage — Information Architecture;
+    :Stage — Structural Model;
+    if (Naming conflicts?) then (yes)
+      backward :Ubiquitous Language;
+    endif
+    :Stage — Behavior Surface;
+    if (Missing taxonomy/structure?) then (yes)
+      backward :Information Architecture;
+    else (no)
+    endif
+  repeat while (CQRS surface coherent?) is (no)
+}
+partition "Phase 4 — Domain Synthesis (engine)" {
+  :Stage — Aggregate Boundaries;
+  if (Ownership conflicts?) then (yes)
+    backward :Behavior Surface;
+  endif
+  :Stage — Process & Decisions;
+  :Stage — Bounded Contexts;
+}
+partition "Phase 5 — Convergence & Readiness (engine)" {
+  :Stage — Requirements (Twin Peaks);
+  if (Untraceable requirements?) then (yes)
+    backward :Structural Model;
+  endif
+  :Stage — Governance;
+  :Stage — EVL Readiness Gate;
+}
 if (CIM EVL pass?) then (yes)
   :CIM→PIM ETL gate;
   stop
 else (no)
-  :Resolve findings;
-  backward :Phase 13;
+  backward :Requirements;
 endif
 @enduml
