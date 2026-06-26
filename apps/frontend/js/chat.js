@@ -24,6 +24,7 @@ const TERMINAL_WORKFLOW_STATES = new Set([
 const WORKFLOW_LABELS = Object.freeze({
   PLANNING: "Planning",
   VALIDATING: "Validating",
+  COMPLETING: "Completing",
   REPAIRING: "Repairing",
   PROPOSED: "Change ready",
   WAITING_FOR_CHOICE: "Waiting for you",
@@ -37,6 +38,7 @@ const THINKING_STAGE_LABELS = Object.freeze({
   READING_MODEL: "Reading your model",
   PLANNING: "Planning changes",
   VALIDATING: "Validating the change",
+  COMPLETING: "Completing formal details",
   REPAIRING: "Refining the patch",
   APPLYING: "Applying changes",
   WAITING: "Waiting for input",
@@ -773,7 +775,10 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     const operationIndex = Number(payload?.operationIndex) || null;
     const operationCount = Number(payload?.operationCount) || null;
     if (operationIndex && operationCount) {
-      pushThinkingStep(`Applied ${operationIndex} of ${operationCount} model updates`, "APPLYING");
+      const label = payload?.operationLabel
+        ? `${payload.operationLabel} (${operationIndex}/${operationCount})`
+        : `Applied ${operationIndex} of ${operationCount} model updates`;
+      pushThinkingStep(label, "APPLYING");
     }
     void applyAssistantModelResponse(typeKey, {
       modelId,

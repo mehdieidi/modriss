@@ -141,6 +141,34 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
+  void createsMissingDiagramElementArrayBeforeAppendingVisualElements() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+            {"id":"pim-root","eClass":"PIMModel","modelLevel":"PIM","services":[],"diagram":{}}
+            """);
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "service-1",
+                    "ServerlessService",
+                    mapper.readTree("{\"name\":\"Orders\"}"),
+                    null,
+                    null)));
+
+    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
+    var preview = compiler.apply(model, compiled);
+
+    assertEquals("/diagram/elements", compiled.patch().get(0).path());
+    assertEquals("/diagram/relationships", compiled.patch().get(1).path());
+    assertEquals("/services/-", compiled.patch().get(2).path());
+    assertEquals("/diagram/elements/-", compiled.patch().get(3).path());
+    assertEquals("Orders", preview.at("/diagram/elements/0/name").asText());
+  }
+
+  @Test
   void createsSingleValuedRootContainment() throws Exception {
     var model =
         mapper.readTree(

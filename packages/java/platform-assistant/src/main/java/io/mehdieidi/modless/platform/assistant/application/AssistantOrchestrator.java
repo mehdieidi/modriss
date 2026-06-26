@@ -389,18 +389,15 @@ public class AssistantOrchestrator {
     int stagnationCount = 0;
     String lastPatchSignature = patchSignature(acceptedPlan.patch());
     int lastFeedbackCount = attempt.feedback().size();
-    while (!attempt.valid() && repairNumber < properties.validationRepairAttempts()) {
+    int maxRepairAttempts = Math.min(Math.max(properties.validationRepairAttempts(), 0), 1);
+    while (!attempt.valid() && repairNumber < maxRepairAttempts) {
       repairNumber++;
       publishProgress(
           session.id(),
-          "REPAIRING",
+          "COMPLETING",
           repairNumber == 1
-              ? "Refining the model change using validator feedback"
-              : "Still refining the model change (pass "
-                  + repairNumber
-                  + " of "
-                  + properties.validationRepairAttempts()
-                  + ")");
+              ? "Completing formal model details from validator feedback"
+              : "Completing formal model details");
       if (feedbackResolver.isRepairableStructuralFailure(attempt.feedback())) {
         AssistantTurnPlan deterministic =
             preparePlan(
@@ -512,7 +509,7 @@ public class AssistantOrchestrator {
     if (shouldAutoApply(acceptedPlan)) {
       publishProgress(session.id(), "APPLYING", "Applying the validated change");
       return autoApplyValidatedProposal(
-          user, session, threadId, request, model, acceptedPlan, attempt, snippets, context, risk);
+          user, session, threadId, model, acceptedPlan, snippets, context);
     }
 
     AssistantProposal proposal =
@@ -596,12 +593,10 @@ public class AssistantOrchestrator {
     if (partial.isPresent()) {
       PlanAttempt partialAttempt = partial.get();
       AssistantTurnPlan acceptedPlan = partialAttempt.plan();
-      AssistantPatchCompiler.CompiledPatch compiled = partialAttempt.compiled();
       return autoApplyValidatedProposal(
           user,
           session,
           threadId,
-          request,
           model,
           new AssistantTurnPlan(
               acceptedPlan.intent(),
@@ -610,10 +605,8 @@ public class AssistantOrchestrator {
                   + "largest valid subset and kept the model structurally consistent.",
               acceptedPlan.questions(),
               acceptedPlan.patch()),
-          new PlanAttempt(acceptedPlan, compiled, partialAttempt.validation(), List.of()),
           snippets,
-          context,
-          riskLevel(compiled, partialAttempt.validation()));
+          context);
     }
     return finishTurn(
         session,
@@ -1781,10 +1774,11 @@ public class AssistantOrchestrator {
   }
 
   private ModelService.ValidationResult assistantValidation(ModelLevel level, JsonNode modelJson) {
-    if (properties.semanticValidationEnabled()) {
-      return models.validate(level, modelJson);
+    ModelService.ValidationResult structural = models.validateStructural(level, modelJson);
+    if (!structural.valid() || !properties.semanticValidationEnabled()) {
+      return structural;
     }
-    return new ModelService.ValidationResult(true, List.of());
+    return models.validate(level, modelJson);
   }
 
   private AssistantValidationSummary assistantValidationSummary(
@@ -1803,25 +1797,43 @@ public class AssistantOrchestrator {
       UserRecord user,
       AssistantSessionStore.AssistantSession session,
       String threadId,
-      AssistantTurnRequest request,
       ModelRecord model,
       AssistantTurnPlan acceptedPlan,
-      PlanAttempt attempt,
       List<AssistantModelProvider.ContextSnippet> snippets,
-      AssistantModelContext context,
-      AssistantProposal.RiskLevel risk) {
-    AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
+      AssistantModelContext context) {
     ProjectRecord project = projects.get(user, session.projectId());
     ModelRecord targetModel = model == null ? createStarterModel(user, project, session) : model;
-    ModelRecord updated = applyCompiledPatchIncrementally(user, session, targetModel, compiled);
+    AssistantPatchCompiler.CompiledPatch compiled =
+        patchCompiler.compile(targetModel.modelJson(), acceptedPlan.patch());
+    ObjectNode preview = patchCompiler.apply(targetModel.modelJson(), compiled);
+    AssistantValidationSummary validation = assistantValidationSummary(session.level(), preview);
+    if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
+      return finishTurn(
+          session,
+          threadId,
+          new AssistantTurnResponse(
+              "The model change was valid against the planning snapshot, but the persisted target "
+                  + "model has changed shape. I left the canvas unchanged.",
+              targetModel.id(),
+              targetModel.revision(),
+              null,
+              List.of(),
+              AssistantWorkflowState.FAILED,
+              activityFor(AssistantWorkflowState.FAILED)));
+    }
+    AppliedPatch applied =
+        applySemanticPatchIncrementally(user, session, targetModel, acceptedPlan.patch());
+    ModelRecord updated = applied.model();
+    compiled = applied.compiled();
+    AssistantProposal.RiskLevel actualRisk = riskLevel(compiled, validation);
     AssistantProposal proposal =
         new AssistantProposal(
             java.util.UUID.randomUUID().toString(),
             compiled.affectedElements(),
             acceptedPlan.patch(),
             compiled.inversePatch(),
-            attempt.validation(),
-            risk,
+            validation,
+            actualRisk,
             false,
             retrievalCitations(snippets, context),
             Instant.now());
@@ -1868,27 +1880,41 @@ public class AssistantOrchestrator {
             activityFor(AssistantWorkflowState.APPLIED)));
   }
 
-  private ModelRecord applyCompiledPatchIncrementally(
+  private AppliedPatch applySemanticPatchIncrementally(
       UserRecord user,
       AssistantSessionStore.AssistantSession session,
       ModelRecord targetModel,
-      AssistantPatchCompiler.CompiledPatch compiled) {
+      SemanticModelPatch semanticPatch) {
     ModelRecord current = targetModel;
-    List<ModelService.ModelPatchOperation> operations = compiled.patch();
+    List<ModelService.ModelPatchOperation> appliedOperations = new ArrayList<>();
+    List<ModelService.ModelPatchOperation> inverseOperations = new ArrayList<>();
+    List<String> affectedElements = new ArrayList<>();
+    List<SemanticModelPatch.Operation> operations = semanticPatch.operations();
     for (int index = 0; index < operations.size(); index++) {
-      ModelService.ModelPatchOperation operation = operations.get(index);
+      SemanticModelPatch.Operation operation = operations.get(index);
+      if (operation == null) {
+        continue;
+      }
+      AssistantPatchCompiler.CompiledPatch step =
+          patchCompiler.compile(current.modelJson(), new SemanticModelPatch(List.of(operation)));
+      if (step.patch().isEmpty()) {
+        continue;
+      }
       ModelRecord patched =
           models.patch(
               user,
               session.level(),
               current.id(),
               current.name(),
-              List.of(operation),
+              step.patch(),
               current.revision());
       if (patched == null) {
         log.warn("Model patch returned no record during incremental assistant apply.");
         continue;
       }
+      appliedOperations.addAll(step.patch());
+      inverseOperations.addAll(0, step.inversePatch());
+      affectedElements.addAll(step.affectedElements());
       current = patched;
       realtime.publish(
           session.id(),
@@ -1902,10 +1928,41 @@ public class AssistantOrchestrator {
               index + 1,
               "operationCount",
               operations.size(),
+              "operationLabel",
+              semanticOperationLabel(operation),
               "live",
               true));
     }
-    return current;
+    return new AppliedPatch(
+        current,
+        new AssistantPatchCompiler.CompiledPatch(
+            appliedOperations, inverseOperations, affectedElements.stream().distinct().toList()));
+  }
+
+  private String semanticOperationLabel(SemanticModelPatch.Operation operation) {
+    if (operation == null || operation.type() == null) {
+      return "Updated model";
+    }
+    String type = nonBlank(operation.elementType(), "element");
+    String name =
+        operation.attributes() == null
+            ? ""
+            : operation
+                .attributes()
+                .path("name")
+                .asText(operation.attributes().path("label").asText(""));
+    return switch (operation.type()) {
+      case ADD_ELEMENT -> "Created " + type + (name.isBlank() ? "" : " \"" + name + "\"");
+      case CONNECT_ELEMENTS ->
+          "Connected "
+              + nonBlank(operation.referenceName(), "relationship")
+              + " from "
+              + nonBlank(operation.sourceElementId(), "source")
+              + " to "
+              + nonBlank(operation.targetElementId(), "target");
+      case SET_ATTRIBUTE -> "Updated " + nonBlank(operation.referenceName(), "attribute");
+      case DELETE_ELEMENT -> "Deleted " + nonBlank(operation.targetElementId(), type);
+    };
   }
 
   private AssistantProposal.RiskLevel riskLevel(
@@ -2542,6 +2599,8 @@ public class AssistantOrchestrator {
           && validation.mandatoryPassed();
     }
   }
+
+  private record AppliedPatch(ModelRecord model, AssistantPatchCompiler.CompiledPatch compiled) {}
 
   private record ContainmentCandidate(String ownerId, String referenceName) {}
 }

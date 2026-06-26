@@ -9,7 +9,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.Diagnostician;
 
 /** Converts EMF resource load and structural validation diagnostics into EVL diagnostics. */
-final class EvlModelResourceDiagnostics {
+public final class EvlModelResourceDiagnostics {
 
   /** Prevents construction of this helper class. */
   private EvlModelResourceDiagnostics() {}
@@ -21,7 +21,7 @@ final class EvlModelResourceDiagnostics {
    * @param modelFile file associated with the resource, when available
    * @return structural diagnostics for errors and warnings
    */
-  static List<EvlDiagnostic> validate(Resource resource, Path modelFile) {
+  public static List<EvlDiagnostic> validate(Resource resource, Path modelFile) {
     if (resource == null) {
       return List.of();
     }

@@ -83,14 +83,6 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       literals with schema defaults, and other reversible implementation details are never grounds
       for clarification.
       """;
-  private static final String EXPLORE_GUARDRAIL =
-      """
-      You are in exploration mode. Use the provided tools to inspect the metamodel, selected
-      elements, validation issues, and current model snapshot. Do not emit semantic operations yet.
-      Summarize what you learned in concise bullet points. When you have enough context, end with
-      the line READY_TO_COMMIT on its own line.
-      """;
-
   protected final AiProperties properties;
   private final String providerKey;
   private final ProxyAvailability proxyAvailability;
@@ -158,47 +150,8 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
     String model = modelFor(AssistantModelRole.PLANNER);
     logRequest(prompt, model);
-    StringBuilder explorationNotes = new StringBuilder();
-    int totalToolCalls = 0;
-    int steps = 0;
-    int maxSteps = properties.maxAgentSteps();
-    for (; steps < Math.max(1, maxSteps - 1); steps++) {
-      if (progress != null) {
-        progress.onProgress("PLANNING", explorationMessage(steps));
-      }
-      final int step = steps;
-      String content =
-          hardening.providerCall(
-              AssistantModelRole.PLANNER,
-              providerKey,
-              model,
-              () ->
-                  chatClient
-                      .prompt()
-                      .options(toolLoopOptions(model, AssistantModelRole.PLANNER))
-                      .tools(tools)
-                      .system(SYSTEM_GUARDRAIL + "\n" + EXPLORE_GUARDRAIL + "\n" + prompt.system())
-                      .user(exploreUserMessage(prompt, explorationNotes.toString(), step))
-                      .call()
-                      .content());
-      totalToolCalls += tools.consumeToolCallCount();
-      if (content != null && !content.isBlank()) {
-        if (!explorationNotes.isEmpty()) {
-          explorationNotes.append("\n\n");
-        }
-        explorationNotes.append(content.trim());
-      }
-      if (content != null && content.contains("READY_TO_COMMIT")) {
-        steps++;
-        break;
-      }
-      if (totalToolCalls >= properties.maxToolCallsPerStep() * Math.max(1, steps + 1)) {
-        steps++;
-        break;
-      }
-    }
     if (progress != null) {
-      progress.onProgress("PLANNING", "Drafting the semantic patch from gathered context");
+      progress.onProgress("PLANNING", "Drafting concrete model edits from the formal context");
     }
     String commitContent =
         hardening.providerCall(
@@ -219,11 +172,11 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                             + phasedCommitGuidance()
                             + "\n"
                             + prompt.system())
-                    .user(commitUserMessage(prompt, explorationNotes.toString()))
+                    .user(commitUserMessage(prompt, ""))
                     .call()
                     .content());
     logResponse(AssistantModelRole.PLANNER, model, commitContent);
-    return new AgentLoopResult(turnPlanParser.parse(commitContent), totalToolCalls, steps + 1);
+    return new AgentLoopResult(turnPlanParser.parse(commitContent), 0, 1);
   }
 
   @Override
@@ -319,31 +272,6 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     Phase A root containers and domain metadata, Phase B core elements, Phase C relationships
     and schemas, Phase D policies observability and resilience. Reuse IDs across phases.
     """;
-  }
-
-  private String explorationMessage(int step) {
-    return switch (step) {
-      case 0 -> "Searching metamodel catalogs and type contracts";
-      case 1 -> "Inspecting selected elements and validation issues";
-      default -> "Previewing patch options and refining context";
-    };
-  }
-
-  private String exploreUserMessage(AssistantPrompt prompt, String notes, int step) {
-    StringBuilder builder = new StringBuilder();
-    builder.append(userWithContext(prompt));
-    if (!notes.isBlank()) {
-      builder.append("\n\nPrior exploration notes:\n").append(notes);
-    }
-    builder
-        .append("\n\nExploration step ")
-        .append(step + 1)
-        .append(" of ")
-        .append(properties.maxAgentSteps() - 1)
-        .append(
-            ". Use tools to gather missing facts. End with READY_TO_COMMIT when enough context is"
-                + " collected.");
-    return builder.toString();
   }
 
   private String commitUserMessage(AssistantPrompt prompt, String notes) {

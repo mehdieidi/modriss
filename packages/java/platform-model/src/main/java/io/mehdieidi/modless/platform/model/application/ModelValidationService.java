@@ -6,6 +6,7 @@ import io.mehdieidi.modless.mde.validation.EvlConstraintKind;
 import io.mehdieidi.modless.mde.validation.EvlConstraintViolation;
 import io.mehdieidi.modless.mde.validation.EvlDiagnostic;
 import io.mehdieidi.modless.mde.validation.EvlModelConfiguration;
+import io.mehdieidi.modless.mde.validation.EvlModelResourceDiagnostics;
 import io.mehdieidi.modless.mde.validation.EvlValidationException;
 import io.mehdieidi.modless.mde.validation.EvlValidationReport;
 import io.mehdieidi.modless.mde.validation.EvlValidationRequest;
@@ -127,6 +128,27 @@ final class ModelValidationService {
           false, List.of(issue("ERROR", "ModelRequired", "Model JSON is required.")));
     }
     List<ModelService.ValidationIssue> issues = new ArrayList<>(validateWithEvl(level, modelJson));
+    if (level == ModelLevel.CIM) {
+      issues.addAll(validateCimModel(modelJson));
+    }
+    boolean valid = issues.stream().noneMatch(issue -> "ERROR".equals(issue.severity()));
+    return new ModelService.ValidationResult(valid, issues);
+  }
+
+  /**
+   * Validates model JSON for EMF/Ecore structural conformance without executing EVL constraints.
+   *
+   * @param level model level
+   * @param modelJson model JSON
+   * @return structural validation result
+   */
+  ModelService.ValidationResult validateStructural(ModelLevel level, JsonNode modelJson) {
+    if (modelJson == null || modelJson.isNull()) {
+      return new ModelService.ValidationResult(
+          false, List.of(issue("ERROR", "ModelRequired", "Model JSON is required.")));
+    }
+    List<ModelService.ValidationIssue> issues =
+        new ArrayList<>(validateStructure(level, modelJson));
     if (level == ModelLevel.CIM) {
       issues.addAll(validateCimModel(modelJson));
     }
@@ -292,6 +314,35 @@ final class ModelValidationService {
               "ERROR",
               "EvlValidationExecution",
               "EVL validation could not run: "
+                  + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage())));
+    }
+  }
+
+  private List<ModelService.ValidationIssue> validateStructure(
+      ModelLevel level, JsonNode modelJson) {
+    try {
+      long phaseStarted = System.nanoTime();
+      metamodelResolver.resolve(level);
+      addValidationTiming("validation.metamodelResolveMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      Resource resource =
+          xmiImportService.exportResource(level, semanticReferenceHydrator.apply(modelJson));
+      addValidationTiming("validation.xmiExportResourceMs", System.nanoTime() - phaseStarted);
+      phaseStarted = System.nanoTime();
+      List<ModelService.ValidationIssue> issues =
+          EvlModelResourceDiagnostics.validate(resource, null).stream()
+              .map(this::validationIssue)
+              .toList();
+      addValidationTiming("validation.structuralValidationMs", System.nanoTime() - phaseStarted);
+      return issues;
+    } catch (PlatformException ex) {
+      return List.of(issue("ERROR", "XmiExport", ex.getMessage()));
+    } catch (Exception ex) {
+      return List.of(
+          issue(
+              "ERROR",
+              "StructuralValidationExecution",
+              "Structural validation could not run: "
                   + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage())));
     }
   }
