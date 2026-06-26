@@ -20,6 +20,9 @@ public interface AssistantSettings {
   /** Maximum semantic operations allowed for automatic apply. */
   int maxAutoApplyOperations();
 
+  /** Whether assistant turns should enforce EVL semantic validation in addition to structure. */
+  boolean semanticValidationEnabled();
+
   /** Maximum characters per retrieved snippet. */
   int maxSnippetChars();
 

@@ -23,6 +23,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxAgentSteps maximum agentic planner loop iterations per mutation turn
  * @param maxToolCallsPerStep maximum tool invocations allowed per agent loop step
  * @param maxAutoApplyOperations maximum semantic operations allowed for automatic apply
+ * @param semanticValidationEnabled whether assistant turns enforce EVL semantic validation
  * @param reservedSchemaSnippets minimum retrieval slots reserved for tier-1 schema contracts
  * @param fallbackProvider optional provider used only after HTTP 429 from the configured provider
  * @param hardening rate-limit and circuit-breaker settings
@@ -47,6 +48,7 @@ public record AiProperties(
     int maxAgentSteps,
     int maxToolCallsPerStep,
     int maxAutoApplyOperations,
+    boolean semanticValidationEnabled,
     int reservedSchemaSnippets,
     String fallbackProvider,
     Hardening hardening,
@@ -59,7 +61,7 @@ public record AiProperties(
 
   /** Applies conservative defaults for local development. */
   public AiProperties {
-    mode = RolloutMode.GUARDED_APPLY;
+    mode = mode == null ? RolloutMode.AUTONOMOUS : mode;
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofMinutes(10) : requestTimeout;
     maxToolCalls = maxToolCalls <= 0 ? 96 : maxToolCalls;
@@ -70,7 +72,8 @@ public record AiProperties(
     maxSystemChars = maxSystemChars <= 0 ? 14000 : maxSystemChars;
     maxAgentSteps = maxAgentSteps <= 0 ? 16 : maxAgentSteps;
     maxToolCallsPerStep = maxToolCallsPerStep <= 0 ? 8 : maxToolCallsPerStep;
-    maxAutoApplyOperations = maxAutoApplyOperations <= 0 ? 1 : maxAutoApplyOperations;
+    maxAutoApplyOperations =
+        maxAutoApplyOperations <= 0 ? maxToolCalls : Math.max(maxAutoApplyOperations, maxToolCalls);
     reservedSchemaSnippets = reservedSchemaSnippets <= 0 ? 10 : reservedSchemaSnippets;
     fallbackProvider = fallbackProvider == null ? "" : fallbackProvider.trim();
     hardening =
@@ -188,7 +191,9 @@ public record AiProperties(
 
   /** Assistant rollout modes. */
   public enum RolloutMode {
-    /** Validate a proposal and require explicit user approval before every mutation. */
+    /** Validate and apply model changes directly, retaining undo and audit records. */
+    AUTONOMOUS,
+    /** Legacy value accepted for existing deployments; behavior is now autonomous. */
     GUARDED_APPLY
   }
 

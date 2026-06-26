@@ -36,7 +36,11 @@ public class AssistantPatchCompiler {
         modelJson == null || !modelJson.isObject()
             ? JsonNodeFactory.instance.objectNode()
             : (ObjectNode) modelJson.deepCopy();
+    List<ModelService.ModelPatchOperation> patch = new ArrayList<>();
+    List<ModelService.ModelPatchOperation> inverse = new ArrayList<>();
+    List<String> affected = new ArrayList<>();
     String visualContainer = visualContainer(root);
+    ensureVisualContainerPatch(modelJson, root, visualContainer, patch, inverse);
     io.mehdieidi.modless.platform.kernel.ModelLevel level =
         schemas.resolveLevel(
             root,
@@ -48,9 +52,6 @@ public class AssistantPatchCompiler {
                 .orElse(root.path("eClass").asText("")));
     ArrayNode elements = root.with(visualContainer).withArray("elements");
     ArrayNode relationships = root.with(visualContainer).withArray("relationships");
-    List<ModelService.ModelPatchOperation> patch = new ArrayList<>();
-    List<ModelService.ModelPatchOperation> inverse = new ArrayList<>();
-    List<String> affected = new ArrayList<>();
     for (SemanticModelPatch.Operation operation : semantic.operations()) {
       if (operation == null || operation.type() == null) {
         throw new PlatformException(400, "Assistant semantic operation type is required.");
@@ -108,17 +109,10 @@ public class AssistantPatchCompiler {
                   400, "Assistant containment reference must target a collection.");
             }
           } else {
-            Optional<String> collection = schemas.rootCollection(level, operation.elementType());
-            if (collection.isPresent()) {
-              ArrayNode semanticElements = root.withArray(collection.get());
-              patch.add(
-                  new ModelService.ModelPatchOperation(
-                      "add", "/" + collection.get() + "/-", element));
-              inverse.add(
-                  0,
-                  new ModelService.ModelPatchOperation(
-                      "remove", "/" + collection.get() + "/" + semanticElements.size(), null));
-              semanticElements.add(element.deepCopy());
+            Optional<AssistantMetamodelSchemaService.ReferenceSchema> rootContainment =
+                rootContainment(level, root, requestedOwner, operation);
+            if (rootContainment.isPresent()) {
+              addRootContainedElement(root, patch, inverse, rootContainment.get(), element);
             } else {
               throw new PlatformException(
                   422,
@@ -138,6 +132,7 @@ public class AssistantPatchCompiler {
         }
         case CONNECT_ELEMENTS -> {
           LocatedElement source = locateElement(root, operation.sourceElementId());
+          LocatedElement target = locateElement(root, operation.targetElementId());
           AssistantMetamodelSchemaService.ReferenceSchema reference =
               schemas
                   .reference(
@@ -147,6 +142,13 @@ public class AssistantPatchCompiler {
                       () ->
                           new PlatformException(
                               422, "Relationship reference is not writable in the metamodel."));
+          if (!schemas.acceptsReferenceTarget(
+              level,
+              source.node().path("eClass").asText(),
+              operation.referenceName(),
+              target.node().path("eClass").asText())) {
+            throw new PlatformException(422, "Relationship target is not valid for the reference.");
+          }
           JsonNode previous = source.node().get(operation.referenceName());
           String referencePath = source.path() + "/" + escapePointer(operation.referenceName());
           JsonNode targetId = JsonNodeFactory.instance.textNode(operation.targetElementId());
@@ -373,6 +375,102 @@ public class AssistantPatchCompiler {
     }
     root.putObject("diagram");
     return "diagram";
+  }
+
+  private void ensureVisualContainerPatch(
+      JsonNode original,
+      ObjectNode root,
+      String visualContainer,
+      List<ModelService.ModelPatchOperation> patch,
+      List<ModelService.ModelPatchOperation> inverse) {
+    String containerPath = "/" + escapePointer(visualContainer);
+    JsonNode originalContainer =
+        original == null || !original.isObject() ? null : original.get(visualContainer);
+    if (originalContainer == null || originalContainer.isNull() || !originalContainer.isObject()) {
+      ObjectNode container = JsonNodeFactory.instance.objectNode();
+      container.putArray("elements");
+      container.putArray("relationships");
+      patch.add(new ModelService.ModelPatchOperation("add", containerPath, container));
+      inverse.add(new ModelService.ModelPatchOperation("remove", containerPath, null));
+      root.set(visualContainer, container.deepCopy());
+      return;
+    }
+    ObjectNode container = root.with(visualContainer);
+    if (!originalContainer.has("elements") || !originalContainer.get("elements").isArray()) {
+      patch.add(
+          new ModelService.ModelPatchOperation(
+              "add", containerPath + "/elements", JsonNodeFactory.instance.arrayNode()));
+      inverse.add(
+          new ModelService.ModelPatchOperation("remove", containerPath + "/elements", null));
+      container.putArray("elements");
+    }
+    if (!originalContainer.has("relationships")
+        || !originalContainer.get("relationships").isArray()) {
+      patch.add(
+          new ModelService.ModelPatchOperation(
+              "add", containerPath + "/relationships", JsonNodeFactory.instance.arrayNode()));
+      inverse.add(
+          new ModelService.ModelPatchOperation("remove", containerPath + "/relationships", null));
+      container.putArray("relationships");
+    }
+  }
+
+  private Optional<AssistantMetamodelSchemaService.ReferenceSchema> rootContainment(
+      io.mehdieidi.modless.platform.kernel.ModelLevel level,
+      ObjectNode root,
+      LocatedElement requestedOwner,
+      SemanticModelPatch.Operation operation) {
+    if (requestedOwner != null
+        && requestedOwner.path().isBlank()
+        && operation.referenceName() != null
+        && operation.referenceName().matches("[A-Za-z][A-Za-z0-9_-]*")) {
+      Optional<AssistantMetamodelSchemaService.ReferenceSchema> explicit =
+          schemas
+              .reference(level, root.path("eClass").asText(), operation.referenceName())
+              .filter(AssistantMetamodelSchemaService.ReferenceSchema::containment);
+      if (explicit.isPresent()) {
+        schemas.requireContainment(
+            level,
+            root.path("eClass").asText(),
+            operation.referenceName(),
+            operation.elementType());
+        return explicit;
+      }
+    }
+    return schemas.rootContainment(level, operation.elementType());
+  }
+
+  private void addRootContainedElement(
+      ObjectNode root,
+      List<ModelService.ModelPatchOperation> patch,
+      List<ModelService.ModelPatchOperation> inverse,
+      AssistantMetamodelSchemaService.ReferenceSchema containment,
+      JsonNode element) {
+    String path = "/" + escapePointer(containment.name());
+    JsonNode owned = root.get(containment.name());
+    if (!containment.many()) {
+      if (owned != null && !owned.isNull()) {
+        throw new PlatformException(422, "Single-valued containment already has an element.");
+      }
+      patch.add(new ModelService.ModelPatchOperation("add", path, element));
+      inverse.add(0, new ModelService.ModelPatchOperation("remove", path, null));
+      root.set(containment.name(), element.deepCopy());
+      return;
+    }
+    if (owned == null || owned.isNull()) {
+      ArrayNode initial = JsonNodeFactory.instance.arrayNode().add(element.deepCopy());
+      patch.add(new ModelService.ModelPatchOperation("add", path, initial));
+      inverse.add(0, new ModelService.ModelPatchOperation("remove", path, null));
+      root.set(containment.name(), initial.deepCopy());
+      return;
+    }
+    if (!owned.isArray()) {
+      throw new PlatformException(400, "Assistant root containment must target a collection.");
+    }
+    int index = owned.size();
+    patch.add(new ModelService.ModelPatchOperation("add", path + "/-", element));
+    inverse.add(0, new ModelService.ModelPatchOperation("remove", path + "/" + index, null));
+    ((ArrayNode) owned).add(element.deepCopy());
   }
 
   private JsonNode parent(ObjectNode root, String[] segments, String op) {

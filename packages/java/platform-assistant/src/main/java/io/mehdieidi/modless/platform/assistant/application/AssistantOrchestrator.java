@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** LLM-driven, metamodel-grounded, guarded-apply modeling workflow. */
+/** LLM-driven, metamodel-grounded autonomous modeling workflow. */
 public class AssistantOrchestrator {
 
   private static final Logger log = LoggerFactory.getLogger(AssistantOrchestrator.class);
@@ -228,7 +228,8 @@ public class AssistantOrchestrator {
             : model.modelJson();
     JsonNode baseModel =
         resolvePlanningBase(session.level(), persistedModel, request.unsavedDraftPatch());
-    ModelService.ValidationResult currentValidation = models.validate(session.level(), baseModel);
+    ModelService.ValidationResult currentValidation =
+        assistantValidation(session.level(), baseModel);
     AssistantModelContext context =
         model == null
             ? modelContexts.transientSnapshot(
@@ -381,7 +382,7 @@ public class AssistantOrchestrator {
       AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan initialPlan) {
-    publishProgress(session.id(), "VALIDATING", "Compiling and validating the proposed change");
+    publishProgress(session.id(), "VALIDATING", "Compiling and validating the model change");
     AssistantTurnPlan acceptedPlan = preparePlan(session.level(), context, initialPlan);
     PlanAttempt attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
     int repairNumber = 0;
@@ -394,8 +395,8 @@ public class AssistantOrchestrator {
           session.id(),
           "REPAIRING",
           repairNumber == 1
-              ? "Refining the proposal using validator feedback"
-              : "Still refining the proposal (pass "
+              ? "Refining the model change using validator feedback"
+              : "Still refining the model change (pass "
                   + repairNumber
                   + " of "
                   + properties.validationRepairAttempts()
@@ -434,7 +435,21 @@ public class AssistantOrchestrator {
         if (failure.status() < 500 && failure.status() != 429) {
           throw failure;
         }
-        return providerFailureResponse(session, threadId, model);
+        AssistantTurnResponse fallback =
+            partialProposalOrFailure(
+                user,
+                session,
+                threadId,
+                request,
+                model,
+                baseModel,
+                context,
+                snippets,
+                acceptedPlan,
+                attempt);
+        return fallback.workflowState() == AssistantWorkflowState.FAILED
+            ? providerFailureResponse(session, threadId, model)
+            : fallback;
       }
       if (repaired.kind() == AssistantTurnPlan.Kind.CLARIFICATION) {
         AssistantTurnPlan gated = clarificationGate.apply(repaired, request.rootMessage());
@@ -467,7 +482,7 @@ public class AssistantOrchestrator {
         publishProgress(
             session.id(),
             "PLANNING",
-            "Rebuilding the proposal with metamodel defaults and validator feedback");
+            "Rebuilding the model change with metamodel defaults and validator feedback");
         acceptedPlan =
             preparePlan(
                 session.level(),
@@ -494,8 +509,8 @@ public class AssistantOrchestrator {
 
     AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
     AssistantProposal.RiskLevel risk = riskLevel(compiled, attempt.validation());
-    if (shouldAutoApply(request, acceptedPlan, risk)) {
-      publishProgress(session.id(), "APPLYING", "Applying the validated low-risk change");
+    if (shouldAutoApply(acceptedPlan)) {
+      publishProgress(session.id(), "APPLYING", "Applying the validated change");
       return autoApplyValidatedProposal(
           user, session, threadId, request, model, acceptedPlan, attempt, snippets, context, risk);
     }
@@ -527,8 +542,8 @@ public class AssistantOrchestrator {
         Map.of("operationCount", proposal.patch().operations().size(), "validationPassed", true));
     String message =
         nonBlank(acceptedPlan.message(), "I prepared the requested model change.")
-            + "\n\nThe proposal passed structural and mandatory EVL validation. Review it before "
-            + "applying it to the canvas.";
+            + "\n\nThe change passed validation, but automatic application was disabled by the "
+            + "current operation budget.";
     return finishTurn(
         session,
         threadId,
@@ -576,63 +591,29 @@ public class AssistantOrchestrator {
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan failedPlan,
       PlanAttempt attempt) {
-    if (isCreationRequest(request.rootMessage()) && modelContexts.isEmptyCanvas(context)) {
-      return failureWithFeedback(session, threadId, request, model, attempt);
-    }
     Optional<PlanAttempt> partial =
         findMaximalValidSubset(session.level(), baseModel, context, failedPlan);
     if (partial.isPresent()) {
       PlanAttempt partialAttempt = partial.get();
       AssistantTurnPlan acceptedPlan = partialAttempt.plan();
       AssistantPatchCompiler.CompiledPatch compiled = partialAttempt.compiled();
-      AssistantProposal proposal =
-          new AssistantProposal(
-              java.util.UUID.randomUUID().toString(),
-              compiled.affectedElements(),
-              acceptedPlan.patch(),
-              compiled.inversePatch(),
-              partialAttempt.validation(),
-              riskLevel(compiled, partialAttempt.validation()),
-              true,
-              retrievalCitations(snippets, context),
-              Instant.now());
-      memory.clearPendingInteraction(threadId);
-      memory.saveProposal(
-          threadId,
-          session.projectId(),
-          model == null ? null : model.id(),
-          model == null ? 0L : model.revision(),
-          proposal,
-          "PROPOSED");
-      memory.appendAudit(
-          proposal.id(),
-          session.projectId(),
-          user.id(),
-          "PROPOSED",
-          Map.of(
-              "operationCount",
-              proposal.patch().operations().size(),
-              "validationPassed",
-              true,
-              "partialProposal",
-              true));
-      String message =
-          "I could not satisfy every part of the request in one pass, so I prepared a smaller "
-              + "valid proposal with the highest-confidence elements completed.\n\n"
-              + nonBlank(
-                  acceptedPlan.message(),
-                  "Review the partial proposal before applying it to the canvas.");
-      return finishTurn(
+      return autoApplyValidatedProposal(
+          user,
           session,
           threadId,
-          new AssistantTurnResponse(
-              message,
-              model == null ? null : model.id(),
-              model == null ? 0L : model.revision(),
-              proposal,
-              List.of(),
-              AssistantWorkflowState.PROPOSED,
-              activityFor(AssistantWorkflowState.PROPOSED)));
+          request,
+          model,
+          new AssistantTurnPlan(
+              acceptedPlan.intent(),
+              acceptedPlan.kind(),
+              "I could not satisfy every part of the request in one pass, so I applied the "
+                  + "largest valid subset and kept the model structurally consistent.",
+              acceptedPlan.questions(),
+              acceptedPlan.patch()),
+          new PlanAttempt(acceptedPlan, compiled, partialAttempt.validation(), List.of()),
+          snippets,
+          context,
+          riskLevel(compiled, partialAttempt.validation()));
     }
     return finishTurn(
         session,
@@ -662,7 +643,7 @@ public class AssistantOrchestrator {
             ? "The planner could not ground the request in the formal metamodel."
             : feedback.stream().limit(6).collect(Collectors.joining("\n- ", "- ", ""));
     String message =
-        "I could not prepare a valid model proposal for this request yet.\n\n"
+        "I could not prepare a valid model change for this request yet.\n\n"
             + issues
             + "\n\n"
             + "Your canvas is unchanged. Add more domain detail, narrow the scope, or answer a "
@@ -790,7 +771,7 @@ public class AssistantOrchestrator {
       return gated;
     }
     publishProgress(
-        session.id(), "PLANNING", "Choosing safe defaults and drafting a complete proposal");
+        session.id(), "PLANNING", "Choosing safe defaults and drafting a complete model change");
     AssistantTurnPlan replanned =
         replanWithSafeDefaults(session, request, context, snippets, original);
     if (replanned.kind() == AssistantTurnPlan.Kind.CLARIFICATION
@@ -873,7 +854,7 @@ public class AssistantOrchestrator {
                 + "\nDo not ask the user about IDs, UUIDs, architecture style, runtime language,"
                 + " package manager, persistence technology, API style, or layout."
                 + "\nInfer safe enum defaults from the retrieved metamodel contracts and starter"
-                + " model. The user will review the guarded proposal on the canvas."
+                + " model. The backend will apply the validated change to the canvas."
                 + "\nModel only what the user asked for. Use as many operations as the request"
                 + " genuinely requires, including required nested contracts and attributes."
                 + "\nRejected prior plan summary: "
@@ -918,7 +899,7 @@ public class AssistantOrchestrator {
         return PlanAttempt.failure("The semantic operations would not change the model.");
       }
       ObjectNode preview = patchCompiler.apply(baseModel, compiled);
-      AssistantValidationSummary validation = validationSummary(models.validate(level, preview));
+      AssistantValidationSummary validation = assistantValidationSummary(level, preview);
       return validation.structurallyValid() && validation.mandatoryPassed()
           ? PlanAttempt.success(compiled, validation)
           : PlanAttempt.failure(compiled, validation);
@@ -1106,7 +1087,7 @@ public class AssistantOrchestrator {
       return operation;
     }
     try {
-      if (schemas.rootCollection(level, operation.elementType()).isPresent()) {
+      if (schemas.rootContainment(level, operation.elementType()).isPresent()) {
         return new SemanticModelPatch.Operation(
             operation.type(),
             operation.targetElementId(),
@@ -1260,7 +1241,7 @@ public class AssistantOrchestrator {
           List.of(
               new AssistantChoice(
                   "modeling-details",
-                  "What consequential modeling detail should I use before preparing the proposal?",
+                  "What consequential modeling detail should I use before changing the model?",
                   AssistantChoice.SelectionMode.SINGLE,
                   List.of(),
                   true));
@@ -1411,8 +1392,7 @@ public class AssistantOrchestrator {
     AssistantPatchCompiler.CompiledPatch compiled =
         patchCompiler.compile(model.modelJson(), record.proposal().patch());
     ObjectNode preview = patchCompiler.apply(model.modelJson(), compiled);
-    AssistantValidationSummary validation =
-        validationSummary(models.validate(session.level(), preview));
+    AssistantValidationSummary validation = assistantValidationSummary(session.level(), preview);
     if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
       memory.updateProposalStatus(record.id(), "FAILED");
       memory.appendAudit(
@@ -1472,8 +1452,7 @@ public class AssistantOrchestrator {
             record.proposal().inversePatch(), List.of(), record.proposal().affectedElements());
     inverse = patchCompiler.adaptToSnapshot(model.modelJson(), inverse);
     ObjectNode preview = patchCompiler.apply(model.modelJson(), inverse);
-    AssistantValidationSummary validation =
-        validationSummary(models.validate(session.level(), preview));
+    AssistantValidationSummary validation = assistantValidationSummary(session.level(), preview);
     if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
       throw new PlatformException(422, "Undo is blocked because mandatory validation would fail.");
     }
@@ -1568,6 +1547,9 @@ public class AssistantOrchestrator {
                 schemas.languageIndex(level)));
 
     List<AssistantModelProvider.ContextSnippet> tier4 = new ArrayList<>();
+    tier4.addAll(
+        catalogs.search(
+            level.apiName() + " methodology process workflow " + query, level.name(), 8));
     List<AssistantModelProvider.ContextSnippet> matches = catalogs.search(query, level.name(), 14);
     tier4.addAll(matches);
     if (emptyModel && isCreationRequest(query)) {
@@ -1638,7 +1620,7 @@ public class AssistantOrchestrator {
       AssistantTurnRequest request,
       AssistantModelContext context) {
     return """
-    You are operating a formal modeling workbench in guarded-apply mode. Infer the user's
+    You are operating a formal modeling workbench as an autonomous modeling agent. Infer the user's
     natural-language intent with the LLM; do not rely on keyword routing. The current model,
     Ecore-derived language catalog, concrete-syntax metadata, and executable EVL findings are
     backend-owned facts. Never invent an EClass, feature, enum literal, existing ID, or
@@ -1652,9 +1634,9 @@ public class AssistantOrchestrator {
     writable, non-containment EReference. SET_ATTRIBUTE uses the attribute name and puts the new
     scalar or array value directly in attributes. DELETE_ELEMENT is permitted only when the user
     explicitly requests removal. Include every required attribute and containment described by
-    the retrieved metamodel. Ask concise questions before planning when consequential intent is
-    genuinely ambiguous. The backend will compile and validate every operation and the user must
-    approve every valid proposal before application.
+    the retrieved metamodel. Ask concise questions before planning only when a consequential
+    modeling decision is genuinely ambiguous. The backend will compile, structurally validate, and
+    immediately apply every valid mutation; the user can undo applied changes.
 
     Required containment examples derived from the runtime schema:
     """
@@ -1725,19 +1707,24 @@ public class AssistantOrchestrator {
               throw new PlatformException(422, "A contained element has an unknown owner.");
             }
             schemas.requireContainment(level, ownerType, operation.referenceName(), type);
-          } else if (schemas.rootCollection(level, type).isEmpty()) {
+          } else if (schemas.rootContainment(level, type).isEmpty()) {
             throw new PlatformException(422, "A contained-only element is missing its owner.");
           }
           types.put(operation.targetElementId(), type);
         }
         case CONNECT_ELEMENTS -> {
           String sourceType = types.get(operation.sourceElementId());
+          String targetType = types.get(operation.targetElementId());
           if (sourceType == null
-              || !types.containsKey(operation.targetElementId())
+              || targetType == null
               || blank(operation.referenceName())
               || schemas
                   .reference(level, sourceType, operation.referenceName())
                   .filter(reference -> !reference.containment() && !reference.readonly())
+                  .filter(
+                      reference ->
+                          schemas.acceptsReferenceTarget(
+                              level, sourceType, operation.referenceName(), targetType))
                   .isEmpty()) {
             throw new PlatformException(422, "A relationship is not grounded in the metamodel.");
           }
@@ -1793,28 +1780,23 @@ public class AssistantOrchestrator {
         result != null && result.valid(), mandatory, optional, issues);
   }
 
-  private boolean shouldAutoApply(
-      AssistantTurnRequest request, AssistantTurnPlan plan, AssistantProposal.RiskLevel risk) {
-    if (risk != AssistantProposal.RiskLevel.LOW) {
-      return false;
+  private ModelService.ValidationResult assistantValidation(ModelLevel level, JsonNode modelJson) {
+    if (properties.semanticValidationEnabled()) {
+      return models.validate(level, modelJson);
     }
-    if (wantsExplicitReview(request.rootMessage())) {
-      return false;
-    }
+    return new ModelService.ValidationResult(true, List.of());
+  }
+
+  private AssistantValidationSummary assistantValidationSummary(
+      ModelLevel level, JsonNode modelJson) {
+    return validationSummary(assistantValidation(level, modelJson));
+  }
+
+  private boolean shouldAutoApply(AssistantTurnPlan plan) {
     if (plan.patch().operations().size() > properties.maxAutoApplyOperations()) {
       return false;
     }
-    return plan.patch().operations().stream()
-        .noneMatch(
-            operation -> operation.type() == SemanticModelPatch.OperationType.DELETE_ELEMENT);
-  }
-
-  private boolean wantsExplicitReview(String message) {
-    String normalized = message == null ? "" : message.toLowerCase(java.util.Locale.ROOT);
-    return normalized.contains("propose")
-        || normalized.contains("review")
-        || normalized.contains("don't apply")
-        || normalized.contains("do not apply");
+    return true;
   }
 
   private AssistantTurnResponse autoApplyValidatedProposal(
@@ -1831,14 +1813,7 @@ public class AssistantOrchestrator {
     AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
     ProjectRecord project = projects.get(user, session.projectId());
     ModelRecord targetModel = model == null ? createStarterModel(user, project, session) : model;
-    ModelRecord updated =
-        models.patch(
-            user,
-            session.level(),
-            targetModel.id(),
-            targetModel.name(),
-            compiled.patch(),
-            targetModel.revision());
+    ModelRecord updated = applyCompiledPatchIncrementally(user, session, targetModel, compiled);
     AssistantProposal proposal =
         new AssistantProposal(
             java.util.UUID.randomUUID().toString(),
@@ -1875,8 +1850,11 @@ public class AssistantOrchestrator {
             "proposalId", proposal.id()));
     String message =
         nonBlank(acceptedPlan.message(), "I applied the requested change.")
-            + "\n\nThe change was low risk and passed mandatory validation, so it was applied "
-            + "automatically. You can undo it from the card below.";
+            + "\n\nThe change passed "
+            + (properties.semanticValidationEnabled()
+                ? "structural and semantic validation"
+                : "structural metamodel validation")
+            + " and was applied to the canvas. You can undo it from the card below.";
     return finishTurn(
         session,
         threadId,
@@ -1888,6 +1866,46 @@ public class AssistantOrchestrator {
             List.of(),
             AssistantWorkflowState.APPLIED,
             activityFor(AssistantWorkflowState.APPLIED)));
+  }
+
+  private ModelRecord applyCompiledPatchIncrementally(
+      UserRecord user,
+      AssistantSessionStore.AssistantSession session,
+      ModelRecord targetModel,
+      AssistantPatchCompiler.CompiledPatch compiled) {
+    ModelRecord current = targetModel;
+    List<ModelService.ModelPatchOperation> operations = compiled.patch();
+    for (int index = 0; index < operations.size(); index++) {
+      ModelService.ModelPatchOperation operation = operations.get(index);
+      ModelRecord patched =
+          models.patch(
+              user,
+              session.level(),
+              current.id(),
+              current.name(),
+              List.of(operation),
+              current.revision());
+      if (patched == null) {
+        log.warn("Model patch returned no record during incremental assistant apply.");
+        continue;
+      }
+      current = patched;
+      realtime.publish(
+          session.id(),
+          "model.updated",
+          Map.of(
+              "modelId",
+              current.id(),
+              "revision",
+              current.revision(),
+              "operationIndex",
+              index + 1,
+              "operationCount",
+              operations.size(),
+              "live",
+              true));
+    }
+    return current;
   }
 
   private AssistantProposal.RiskLevel riskLevel(

@@ -1,5 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.persistence.jdbc;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mehdieidi.modless.platform.assistant.persistence.embedding.LocalEmbeddingService;
 import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantCatalog;
@@ -27,6 +29,7 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
   private final JdbcTemplate jdbc;
   private final LocalEmbeddingService embeddings;
   private final MdeRuntimePaths mdePaths;
+  private final ObjectMapper mapper = new ObjectMapper();
 
   /**
    * Creates the catalog service.
@@ -50,20 +53,68 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
     this.mdePaths = mdePaths == null ? new MdeRuntimePaths(null) : mdePaths;
   }
 
-  /** Reindexes the local metamodel and EVL files when content hashes change. */
+  /** Reindexes local metamodel, EVL, and methodology files when content hashes change. */
   @Override
   public void refresh() {
-    Path root = mdePaths.repositoryRoot().resolve("mde");
+    try {
+      indexMetamodelCatalog();
+      indexMethodologyCatalog();
+    } catch (Exception ex) {
+      throw new IllegalStateException("Could not index assistant catalogs.", ex);
+    }
+  }
+
+  /** Warms startup-critical catalog knowledge without rewriting an existing metamodel cache. */
+  public void refreshStartupCatalog() {
+    try {
+      if (!hasMetamodelCatalog()) {
+        indexMetamodelCatalog();
+      }
+      indexMethodologyCatalog();
+    } catch (Exception ex) {
+      throw new IllegalStateException("Could not index assistant startup catalogs.", ex);
+    }
+  }
+
+  private boolean hasMetamodelCatalog() {
+    if (jdbc == null) {
+      return false;
+    }
+    Integer count =
+        jdbc.queryForObject(
+            """
+            SELECT count(*) FROM assistant_retrieval_documents
+            WHERE scope IN ('package', 'classifier', 'feature', 'enum', 'constraint')
+            """,
+            Integer.class);
+    return count != null && count > 0;
+  }
+
+  private void indexMetamodelCatalog() throws Exception {
+    indexTree(
+        mdePaths.repositoryRoot().resolve("mde"), path -> matches(path, ".emf", ".ecore", ".evl"));
+  }
+
+  private void indexMethodologyCatalog() throws Exception {
+    indexTree(
+        mdePaths.repositoryRoot().resolve("mde"),
+        path -> isMethodologyJson(path) || isMethodologyMarkdown(path));
+    indexTree(
+        mdePaths
+            .repositoryRoot()
+            .resolve("docs")
+            .resolve("public-docs")
+            .resolve("docs")
+            .resolve("guides"),
+        this::isMethodologyMarkdown);
+  }
+
+  private void indexTree(Path root, java.util.function.Predicate<Path> include) throws Exception {
     if (!Files.exists(root)) {
       return;
     }
-    try {
-      Files.walk(root)
-          .filter(Files::isRegularFile)
-          .filter(path -> matches(path, ".emf", ".ecore", ".evl"))
-          .forEach(this::indexFile);
-    } catch (Exception ex) {
-      throw new IllegalStateException("Could not index assistant catalogs.", ex);
+    try (var stream = Files.walk(root)) {
+      stream.filter(Files::isRegularFile).filter(include).forEach(this::indexFile);
     }
   }
 
@@ -254,6 +305,25 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
     return false;
   }
 
+  private boolean isMethodologyJson(Path path) {
+    String normalized = path.toString().toLowerCase(Locale.ROOT).replace('\\', '/');
+    return normalized.contains("/mde/methodology/process-definitions/")
+        && normalized.endsWith(".json");
+  }
+
+  private boolean isMethodologyMarkdown(Path path) {
+    String normalized = path.toString().toLowerCase(Locale.ROOT).replace('\\', '/');
+    if (!normalized.endsWith(".md")) {
+      return false;
+    }
+    return normalized.contains("/mde/methodology/")
+        || normalized.endsWith("cim-modeling-methodology.md")
+        || normalized.endsWith("pim-modeling-methodology.md")
+        || normalized.endsWith("psm-modeling-methodology.md")
+        || normalized.endsWith("end-to-end-modeling-methodology.md")
+        || normalized.endsWith("modeling-workflow.md");
+  }
+
   private void indexFile(Path path) {
     try {
       String source = path.toString().replace('\\', '/');
@@ -270,10 +340,16 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
         return;
       }
       jdbc.update("DELETE FROM assistant_retrieval_documents WHERE source = ?", source);
-      List<Document> documents =
-          path.toString().toLowerCase(Locale.ROOT).endsWith(".evl")
-              ? parseEvl(path, source, hash)
-              : parseMetamodel(path, source, hash);
+      List<Document> documents;
+      if (path.toString().toLowerCase(Locale.ROOT).endsWith(".evl")) {
+        documents = parseEvl(path, source, hash);
+      } else if (isMethodologyJson(path)) {
+        documents = parseMethodologyJson(path, source, hash);
+      } else if (isMethodologyMarkdown(path)) {
+        documents = parseMethodologyMarkdown(path, source, hash);
+      } else {
+        documents = parseMetamodel(path, source, hash);
+      }
       for (Document document : documents) {
         upsert(document);
       }
@@ -524,6 +600,198 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
     return documents;
   }
 
+  private List<Document> parseMethodologyJson(Path path, String source, String hash)
+      throws Exception {
+    JsonNode root = mapper.readTree(path.toFile());
+    String level = root.path("level").asText(level(source).toLowerCase(Locale.ROOT));
+    String displayName =
+        blankToDefault(root.path("displayName").asText(""), level.toUpperCase(Locale.ROOT));
+    List<Document> documents = new ArrayList<>();
+    documents.add(
+        document(
+            source,
+            hash,
+            "methodology",
+            displayName + " methodology process",
+            compactProcessOverview(root),
+            Map.of("kind", "methodology-process", "level", level.toUpperCase(Locale.ROOT))));
+    for (JsonNode phase : iterable(root.path("phases"))) {
+      documents.add(
+          document(
+              source,
+              hash,
+              "methodology",
+              displayName + " phase " + phase.path("name").asText(phase.path("id").asText()),
+              compactPhase(phase),
+              Map.of(
+                  "kind",
+                  "methodology-phase",
+                  "phaseId",
+                  phase.path("id").asText(""),
+                  "level",
+                  level.toUpperCase(Locale.ROOT))));
+      collectStageDocuments(
+          documents, source, hash, displayName, level, phase, phase.path("id").asText(""));
+    }
+    for (JsonNode workflow : iterable(root.path("changeManagement").path("workflows"))) {
+      documents.add(
+          document(
+              source,
+              hash,
+              "methodology",
+              displayName + " change workflow " + workflow.path("name").asText(""),
+              "Change workflow: "
+                  + workflow.path("name").asText("")
+                  + "\nTrigger: "
+                  + workflow.path("trigger").asText("")
+                  + "\nSteps: "
+                  + joinStrings(workflow.path("steps")),
+              Map.of("kind", "methodology-change", "level", level.toUpperCase(Locale.ROOT))));
+    }
+    return documents;
+  }
+
+  private void collectStageDocuments(
+      List<Document> documents,
+      String source,
+      String hash,
+      String displayName,
+      String level,
+      JsonNode owner,
+      String phaseId) {
+    for (JsonNode stage :
+        iterable(
+            owner.path("stages").isMissingNode()
+                ? owner.path("subStages")
+                : owner.path("stages"))) {
+      documents.add(
+          document(
+              source,
+              hash,
+              "methodology",
+              displayName + " stage " + stage.path("name").asText(stage.path("id").asText()),
+              compactStage(stage),
+              Map.of(
+                  "kind",
+                  "methodology-stage",
+                  "phaseId",
+                  phaseId,
+                  "stageId",
+                  stage.path("id").asText(""),
+                  "level",
+                  level.toUpperCase(Locale.ROOT))));
+      collectStageDocuments(documents, source, hash, displayName, level, stage, phaseId);
+    }
+  }
+
+  private List<Document> parseMethodologyMarkdown(Path path, String source, String hash)
+      throws Exception {
+    String text = Files.readString(path, StandardCharsets.UTF_8).trim();
+    if (text.isBlank()) {
+      return List.of();
+    }
+    String title =
+        java.util.Arrays.stream(text.split("\\R", 2))
+            .findFirst()
+            .orElse(path.getFileName().toString())
+            .replaceFirst("^#+\\s*", "")
+            .trim();
+    if (title.isBlank()) {
+      title = path.getFileName().toString();
+    }
+    String content = text.length() > 5000 ? text.substring(0, 5000) + "\n[truncated]" : text;
+    return List.of(
+        document(source, hash, "methodology", title, content, Map.of("kind", "methodology-guide")));
+  }
+
+  private String compactProcessOverview(JsonNode root) {
+    return "Process "
+        + root.path("processId").asText("")
+        + " for "
+        + root.path("displayName").asText(root.path("level").asText(""))
+        + "\nPhases: "
+        + joinNames(root.path("phases"))
+        + "\nEngine: "
+        + root.path("processEngine").path("description").asText("")
+        + "\nGuidelines: "
+        + joinGuidelines(root.path("guidelines"));
+  }
+
+  private String compactPhase(JsonNode phase) {
+    return "Phase "
+        + phase.path("name").asText("")
+        + "\nObjective: "
+        + phase.path("objective").asText("")
+        + "\nStages: "
+        + joinNames(phase.path("stages"))
+        + "\nPrimary role: "
+        + phase.path("primaryRole").asText("");
+  }
+
+  private String compactStage(JsonNode stage) {
+    List<String> tasks = new ArrayList<>();
+    for (JsonNode task : iterable(stage.path("tasks"))) {
+      tasks.add(
+          task.path("name").asText("")
+              + " steps="
+              + joinStrings(task.path("steps"))
+              + " paletteFocus="
+              + joinStrings(task.path("paletteFocus"))
+              + " exit="
+              + joinStrings(task.path("exitCriteria")));
+    }
+    return "Stage "
+        + stage.path("name").asText("")
+        + "\nObjective: "
+        + stage.path("objective").asText("")
+        + "\nTasks: "
+        + String.join(" | ", tasks);
+  }
+
+  private Iterable<JsonNode> iterable(JsonNode node) {
+    if (node == null || !node.isArray()) {
+      return List.of();
+    }
+    return node;
+  }
+
+  private String joinNames(JsonNode node) {
+    List<String> names = new ArrayList<>();
+    for (JsonNode item : iterable(node)) {
+      String name = item.path("name").asText(item.path("id").asText(""));
+      if (!name.isBlank()) {
+        names.add(name);
+      }
+    }
+    return String.join(", ", names);
+  }
+
+  private String joinStrings(JsonNode node) {
+    List<String> values = new ArrayList<>();
+    for (JsonNode item : iterable(node)) {
+      if (item.isTextual()) {
+        values.add(item.asText());
+      } else if (item.hasNonNull("name")) {
+        values.add(item.path("name").asText());
+      } else if (item.hasNonNull("id")) {
+        values.add(item.path("id").asText());
+      }
+    }
+    return String.join("; ", values);
+  }
+
+  private String joinGuidelines(JsonNode node) {
+    List<String> values = new ArrayList<>();
+    for (JsonNode item : iterable(node)) {
+      String name = item.path("name").asText("");
+      String text = item.path("text").asText("");
+      if (!name.isBlank() || !text.isBlank()) {
+        values.add((name + " " + text).trim());
+      }
+    }
+    return String.join(" | ", values);
+  }
+
   private String featureName(String trimmed) {
     String[] parts = trimmed.split("\\s+");
     return parts.length > 1 ? parts[1].replaceAll("[;:]", "") : "feature";
@@ -584,7 +852,7 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
       String content,
       Map<String, Object> metadata) {
     Map<String, Object> enriched = new java.util.LinkedHashMap<>(metadata);
-    enriched.put("level", level(source));
+    enriched.putIfAbsent("level", level(source));
     return new Document(
         java.util.UUID.randomUUID().toString(), scope, source, hash, title, content, enriched);
   }
@@ -594,13 +862,19 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
     if (normalized.contains("/shared/")) {
       return "SHARED";
     }
-    if (normalized.contains("/cim/")) {
+    if (normalized.contains("/cim/")
+        || normalized.endsWith("/cim.json")
+        || normalized.contains("cim-modeling-methodology")) {
       return "CIM";
     }
-    if (normalized.contains("/pim/")) {
+    if (normalized.contains("/pim/")
+        || normalized.endsWith("/pim.json")
+        || normalized.contains("pim-modeling-methodology")) {
       return "PIM";
     }
-    if (normalized.contains("/psm/")) {
+    if (normalized.contains("/psm/")
+        || normalized.endsWith("/psm.json")
+        || normalized.contains("psm-modeling-methodology")) {
       return "PSM";
     }
     return "";

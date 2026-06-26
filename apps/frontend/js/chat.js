@@ -25,7 +25,7 @@ const WORKFLOW_LABELS = Object.freeze({
   PLANNING: "Planning",
   VALIDATING: "Validating",
   REPAIRING: "Repairing",
-  PROPOSED: "Proposal ready",
+  PROPOSED: "Change ready",
   WAITING_FOR_CHOICE: "Waiting for you",
   EXPLAINED: "Explained",
   FAILED: "Failed",
@@ -36,7 +36,7 @@ const WORKFLOW_LABELS = Object.freeze({
 const THINKING_STAGE_LABELS = Object.freeze({
   READING_MODEL: "Reading your model",
   PLANNING: "Planning changes",
-  VALIDATING: "Validating the proposal",
+  VALIDATING: "Validating the change",
   REPAIRING: "Refining the patch",
   APPLYING: "Applying changes",
   WAITING: "Waiting for input",
@@ -46,8 +46,8 @@ const THINKING_STAGE_LABELS = Object.freeze({
 
 const RISK_LABELS = Object.freeze({
   LOW: "Low risk",
-  MEDIUM: "Needs review",
-  HIGH: "Review carefully",
+  MEDIUM: "Medium impact",
+  HIGH: "High impact",
 });
 
 let chatBusyDepth = 0;
@@ -280,7 +280,7 @@ function buildThinkingSummary(workflowState = null, message = null) {
     }
   }
   if (workflowState === "PROPOSED") {
-    return message || "Prepared a model change proposal for your review.";
+    return message || "Prepared a model change.";
   }
   if (workflowState === "WAITING_FOR_CHOICE") {
     return message || "Need a quick clarification before continuing.";
@@ -765,8 +765,21 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     return;
   }
 
-  // Ignore realtime model snapshots in the editing client and rely on the
-  // direct chat HTTP response to avoid clobbering newer local edits.
+  if (eventType === "model.updated") {
+    const modelId = String(payload?.modelId || "").trim();
+    if (!modelId) {
+      return;
+    }
+    const operationIndex = Number(payload?.operationIndex) || null;
+    const operationCount = Number(payload?.operationCount) || null;
+    if (operationIndex && operationCount) {
+      pushThinkingStep(`Applied ${operationIndex} of ${operationCount} model updates`, "APPLYING");
+    }
+    void applyAssistantModelResponse(typeKey, {
+      modelId,
+      revision: payload?.revision,
+    });
+  }
 }
 
 // ── Chat UI ───────────────────────────────────────────────────────────────────
@@ -944,9 +957,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   header.className = "chat-proposal-header";
   const title = document.createElement("div");
   title.className = "chat-proposal-title";
-  title.textContent = proposal.approvalRequired
-    ? "Suggested model changes"
-    : "Applied automatically";
+  title.textContent = proposal.approvalRequired ? "Model change ready" : "Applied model change";
   const riskBadge = document.createElement("span");
   riskBadge.className = `chat-proposal-risk chat-proposal-risk-${risk.toLowerCase()}`;
   riskBadge.textContent = RISK_LABELS[risk] || risk;
@@ -960,8 +971,8 @@ function appendProposalCard(typeKey, sessionId, proposal) {
       ? "The assistant prepared one change for your model."
       : `The assistant prepared ${changes.length} changes for your model.`
     : changes.length === 1
-      ? "The assistant applied one low-risk change automatically."
-      : `The assistant applied ${changes.length} low-risk changes automatically.`;
+      ? "The assistant applied one change to the canvas."
+      : `The assistant applied ${changes.length} changes to the canvas.`;
   bubble.appendChild(intro);
 
   if (changes.length) {
@@ -987,10 +998,10 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   validation.className = `chat-proposal-validation ${validationPassed ? "is-pass" : "is-fail"}`;
   validation.textContent = proposal.approvalRequired
     ? validationPassed
-      ? "Validation passed — ready for your decision"
-      : "Validation failed — apply is blocked until issues are resolved"
+      ? "Validation passed"
+      : "Validation failed"
     : validationPassed
-      ? "Validation passed — applied automatically"
+      ? "Validation passed and applied"
       : "Validation failed — changes were not applied";
   bubble.appendChild(validation);
 

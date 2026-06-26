@@ -114,6 +114,61 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
+  void createsDiagramContainerBeforeAppendingVisualElements() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+            {"id":"pim-root","eClass":"PIMModel","modelLevel":"PIM","services":[]}
+            """);
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "service-1",
+                    "ServerlessService",
+                    mapper.readTree("{\"name\":\"Orders\"}"),
+                    null,
+                    null)));
+
+    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
+    var preview = compiler.apply(model, compiled);
+
+    assertEquals("/diagram", compiled.patch().get(0).path());
+    assertEquals("/services/-", compiled.patch().get(1).path());
+    assertEquals("/diagram/elements/-", compiled.patch().get(2).path());
+    assertEquals("Orders", preview.at("/diagram/elements/0/name").asText());
+  }
+
+  @Test
+  void createsSingleValuedRootContainment() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+            {"id":"pim-root","eClass":"PIMModel","modelLevel":"PIM"}
+            """);
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "profile-1",
+                    "ImplementationProfile",
+                    mapper.readTree(
+                        "{\"name\":\"TypeScript"
+                            + " profile\",\"primaryLanguage\":\"TYPESCRIPT\",\"packageManager\":\"NPM\"}"),
+                    "pim-root",
+                    "implementationProfile")));
+
+    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
+    var preview = compiler.apply(model, compiled);
+
+    assertEquals("/diagram", compiled.patch().get(0).path());
+    assertEquals("/implementationProfile", compiled.patch().get(1).path());
+    assertEquals("profile-1", preview.at("/implementationProfile/id").asText());
+  }
+
+  @Test
   void protectsBackendOwnedIdentityFromPlannerAttributes() throws Exception {
     var model =
         mapper.readTree(

@@ -76,7 +76,7 @@ class AssistantOrchestratorTest {
   private AssistantOrchestrator orchestrator;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws Exception {
     AssistantSettings properties = AssistantSettingsFixtures.defaults();
     when(sessions.require("session", "user")).thenReturn(session);
     when(projects.get(user, "project"))
@@ -92,6 +92,51 @@ class AssistantOrchestratorTest {
                 Instant.now()));
     when(models.validate(any(ModelLevel.class), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
+    JsonNode emptyPimModel =
+        new ObjectMapper()
+            .readTree(
+                """
+                {
+                  "id": "root",
+                  "eClass": "PIMModel",
+                  "modelLevel": "PIM",
+                  "name": "Orders",
+                  "functions": [],
+                  "diagram": {"elements": [], "relationships": []}
+                }
+                """);
+    ModelRecord createdModel =
+        new ModelRecord(
+            "model-1",
+            "project",
+            ModelLevel.PIM,
+            "Orders",
+            emptyPimModel,
+            "v1",
+            "hash",
+            1L,
+            null,
+            "CURRENT",
+            Instant.now(),
+            Instant.now());
+    when(models.create(eq(user), eq(ModelLevel.PIM), eq("project"), anyString(), any()))
+        .thenReturn(createdModel);
+    when(models.patch(eq(user), eq(ModelLevel.PIM), eq("model-1"), anyString(), any(), eq(1L)))
+        .thenAnswer(
+            invocation ->
+                new ModelRecord(
+                    createdModel.id(),
+                    createdModel.projectId(),
+                    createdModel.level(),
+                    createdModel.name(),
+                    createdModel.modelJson(),
+                    createdModel.metamodelVersion(),
+                    createdModel.metamodelHash(),
+                    2L,
+                    createdModel.sourceXmiHash(),
+                    createdModel.migrationState(),
+                    createdModel.createdAt(),
+                    Instant.now()));
     when(catalogs.search(anyString(), anyString(), anyInt())).thenReturn(List.of());
     when(catalogs.describeType(anyString(), anyString(), anyInt())).thenReturn(List.of());
     when(memory.summary(anyString())).thenReturn(Optional.empty());
@@ -224,10 +269,10 @@ class AssistantOrchestratorTest {
 
     var response = orchestrator.handleMessage(user, "session", request("model submission"));
 
-    assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
+    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
     assertNotNull(response.proposal());
     assertEquals(true, response.proposal().validation().mandatoryPassed());
-    assertEquals(true, response.proposal().approvalRequired());
+    assertEquals(false, response.proposal().approvalRequired());
     java.util.UUID.fromString(response.proposal().patch().operations().get(0).targetElementId());
     assertEquals(
         response.proposal().patch().operations().get(0).targetElementId(),
@@ -319,7 +364,7 @@ class AssistantOrchestratorTest {
 
     var response = orchestrator.handleMessage(user, "session", request("model submission"));
 
-    assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
+    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
     assertNotNull(response.proposal());
     verify(provider, times(3)).planTurn(any());
   }
@@ -370,7 +415,7 @@ class AssistantOrchestratorTest {
         orchestrator.handleMessage(
             user, "session", request("Create a serverless model for vending machine backend"));
 
-    assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
+    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
     assertNotNull(response.proposal());
     verify(provider, times(1)).planMutationTurn(any(), any());
     verify(provider, times(1)).planTurn(any());
@@ -405,7 +450,7 @@ class AssistantOrchestratorTest {
         orchestrator.handleMessage(
             user, "session", request("Create a serverless model for vending machine backend"));
 
-    assertEquals(AssistantWorkflowState.PROPOSED, response.workflowState());
+    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
     assertNotNull(response.proposal());
     assertTrue(
         response.proposal().patch().operations().size() < 40,

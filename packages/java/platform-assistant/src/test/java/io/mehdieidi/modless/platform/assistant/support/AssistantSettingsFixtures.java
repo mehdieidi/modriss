@@ -9,7 +9,7 @@ public final class AssistantSettingsFixtures {
   private AssistantSettingsFixtures() {}
 
   public static AssistantSettings defaults() {
-    return settings(6, 24, 96, 1, 2400, 14000, 10);
+    return settings(6, 24, 96, 96, 2400, 14000, 10);
   }
 
   public static AssistantSettings settings(
@@ -44,6 +44,11 @@ public final class AssistantSettingsFixtures {
       @Override
       public int maxAutoApplyOperations() {
         return maxAutoApplyOperations;
+      }
+
+      @Override
+      public boolean semanticValidationEnabled() {
+        return false;
       }
 
       @Override
@@ -141,6 +146,11 @@ public final class AssistantSettingsFixtures {
       @Override
       public int maxAutoApplyOperations() {
         return defaults.maxAutoApplyOperations();
+      }
+
+      @Override
+      public boolean semanticValidationEnabled() {
+        return defaults.semanticValidationEnabled();
       }
 
       @Override

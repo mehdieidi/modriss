@@ -13,8 +13,10 @@ import io.mehdieidi.modless.platform.assistant.spi.AssistantChatMemory;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantMemoryStore;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantModelContextIndex;
 import io.mehdieidi.modless.platform.modeling.runtime.MdeRuntimePaths;
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -43,9 +45,28 @@ public class AssistantPersistenceConfig {
   @Bean
   AssistantCatalog assistantCatalog(
       JdbcTemplate jdbc, LocalEmbeddingService embeddings, MdeRuntimePaths mdePaths) {
-    JdbcAssistantCatalog catalog = new JdbcAssistantCatalog(jdbc, embeddings, mdePaths);
-    catalog.refresh();
-    return catalog;
+    return new JdbcAssistantCatalog(jdbc, embeddings, mdePaths);
+  }
+
+  @Bean
+  ApplicationRunner assistantCatalogRefreshRunner(AssistantCatalog catalog) {
+    return args ->
+        CompletableFuture.runAsync(
+                () -> {
+                  if (catalog instanceof JdbcAssistantCatalog jdbcCatalog) {
+                    jdbcCatalog.refreshStartupCatalog();
+                  } else {
+                    catalog.refresh();
+                  }
+                })
+            .whenComplete(
+                (ignored, error) -> {
+                  if (error == null) {
+                    log.info("Assistant startup catalog refresh completed.");
+                  } else {
+                    log.warn("Assistant startup catalog refresh failed.", error);
+                  }
+                });
   }
 
   @Bean

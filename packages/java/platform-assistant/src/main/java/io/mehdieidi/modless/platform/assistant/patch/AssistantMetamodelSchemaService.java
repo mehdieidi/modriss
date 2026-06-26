@@ -78,14 +78,21 @@ public class AssistantMetamodelSchemaService {
 
   /** Finds the root containment feature for a top-level element. */
   public Optional<String> rootCollection(ModelLevel level, String elementType) {
+    return rootContainment(level, elementType)
+        .filter(ReferenceSchema::many)
+        .map(ReferenceSchema::name);
+  }
+
+  /**
+   * Finds the root containment feature for a top-level element, including single-valued features.
+   */
+  public Optional<ReferenceSchema> rootContainment(ModelLevel level, String elementType) {
     LevelSchema schema = schema(level);
     String canonical = canonicalType(level, elementType);
     return schema.type(schema.rootType()).stream()
         .flatMap(type -> type.references().stream())
         .filter(ReferenceSchema::containment)
-        .filter(ReferenceSchema::many)
         .filter(reference -> schema.assignable(canonical, reference.targetType()))
-        .map(ReferenceSchema::name)
         .findFirst();
   }
 
