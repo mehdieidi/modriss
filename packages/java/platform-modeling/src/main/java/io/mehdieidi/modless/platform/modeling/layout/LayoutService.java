@@ -42,6 +42,12 @@ public final class LayoutService {
   /** Default size used when a port omits dimensions. */
   private static final double DEFAULT_PORT_SIZE = 10.0d;
 
+  /** Canonical west-side input port id used when a request omits ports. */
+  private static final String DEFAULT_INPUT_PORT_ID = "flow-in";
+
+  /** Canonical east-side output port id used when a request omits ports. */
+  private static final String DEFAULT_OUTPUT_PORT_ID = "flow-out";
+
   /** Default spacing between nodes for balanced layouts. */
   private static final double DEFAULT_NODE_SPACING = 156.0d;
 
@@ -110,7 +116,7 @@ public final class LayoutService {
       ElkConnectableShape source =
           resolveEndpoint(
               edgeRequest.sourceNodeId(),
-              edgeRequest.sourcePortId(),
+              defaultPortId(edgeRequest.sourcePortId(), DEFAULT_OUTPUT_PORT_ID),
               nodesById,
               portsByNodeId,
               "source",
@@ -118,7 +124,7 @@ public final class LayoutService {
       ElkConnectableShape target =
           resolveEndpoint(
               edgeRequest.targetNodeId(),
-              edgeRequest.targetPortId(),
+              defaultPortId(edgeRequest.targetPortId(), DEFAULT_INPUT_PORT_ID),
               nodesById,
               portsByNodeId,
               "target",
@@ -486,10 +492,12 @@ public final class LayoutService {
    */
   private Map<String, ElkPort> createPorts(ElkNode node, LayoutNode nodeRequest) {
     Map<String, ElkPort> portsById = new LinkedHashMap<>();
-    if (!nodeRequest.ports().isEmpty()) {
-      node.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_SIDE);
+    List<LayoutPort> ports =
+        nodeRequest.ports().isEmpty() ? defaultPorts(nodeRequest) : nodeRequest.ports();
+    if (!ports.isEmpty()) {
+      node.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
     }
-    for (LayoutPort portRequest : nodeRequest.ports()) {
+    for (LayoutPort portRequest : ports) {
       ElkPort port = ElkGraphUtil.createPort(node);
       port.setIdentifier(portRequest.id());
       port.setDimensions(
@@ -503,6 +511,38 @@ public final class LayoutService {
       portsById.put(portRequest.id(), port);
     }
     return portsById;
+  }
+
+  /**
+   * Creates canonical input/output ports for nodes that do not declare any ports.
+   *
+   * @param nodeRequest layout node request
+   * @return canonical west/east ports
+   */
+  private List<LayoutPort> defaultPorts(LayoutNode nodeRequest) {
+    double y =
+        Math.max(8.0d, Math.min(nodeRequest.height() - 8.0d, nodeRequest.height() / 2.0d))
+            - DEFAULT_PORT_SIZE / 2.0d;
+    return List.of(
+        new LayoutPort(DEFAULT_INPUT_PORT_ID, "in", DEFAULT_PORT_SIZE, DEFAULT_PORT_SIZE, 0.0d, y),
+        new LayoutPort(
+            DEFAULT_OUTPUT_PORT_ID,
+            "out",
+            DEFAULT_PORT_SIZE,
+            DEFAULT_PORT_SIZE,
+            Math.max(0.0d, nodeRequest.width() - DEFAULT_PORT_SIZE),
+            y));
+  }
+
+  /**
+   * Returns an explicit port id or the canonical side-specific default.
+   *
+   * @param requested requested port id
+   * @param fallback fallback port id
+   * @return normalized port id
+   */
+  private String defaultPortId(String requested, String fallback) {
+    return requested == null || requested.isBlank() ? fallback : requested;
   }
 
   /**

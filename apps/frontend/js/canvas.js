@@ -3063,11 +3063,11 @@ export function renderDiagram() {
     });
 }
 
-export function renderDiagramAsync() {
-  return renderDiagramTask.then(() => renderDiagramNow());
+export function renderDiagramAsync(options = {}) {
+  return renderDiagramTask.then(() => renderDiagramNow(options));
 }
 
-async function renderDiagramNow() {
+async function renderDiagramNow({ full = false } = {}) {
   try {
     await ensureCanvas();
   } catch (error) {
@@ -3086,7 +3086,11 @@ async function renderDiagramNow() {
       console.warn("GLSP diagram sync failed", error);
     }
   } else {
-    renderCanvasDiagram();
+    if (full) {
+      await syncCanvasFromState({ full: true });
+    } else {
+      renderCanvasDiagram();
+    }
   }
   el.canvasGrid?.style.setProperty("--viewport-scale", String(state.viewport.scale || 1));
   el.canvasGrid?.classList.toggle("lod-low", state.viewport.scale < 0.35);
@@ -3982,7 +3986,7 @@ export function scrollToConnectionAndHighlight(connectionId) {
   const midY = (source.y + nodeH / 2 + target.y + nodeH / 2) / 2;
   ensureCanvas();
   state.selectedConnectionId = connectionId;
-  focusG6CanvasPoint(midX, midY);
+  focusCanvasPoint(midX, midY);
   updateCanvasSelection();
   updateCanvasEdge(connectionId);
   setTimeout(() => updateCanvasEdge(connectionId), 1800);

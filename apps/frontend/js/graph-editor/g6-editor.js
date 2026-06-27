@@ -283,6 +283,130 @@ function renderOpenControl(
   );
 }
 
+function renderPortGlyphs(
+  shape,
+  container,
+  {
+    left,
+    top,
+    width,
+    height,
+    accent,
+    low = false,
+    selected = false,
+    hovered = false,
+    connectSource = false,
+    connectLegal = false,
+    connectIllegal = false,
+  },
+) {
+  const centerY = top + height / 2;
+  const active = selected || hovered || connectSource || connectLegal;
+  const opacity = connectIllegal ? 0.38 : active ? 1 : low ? 0.48 : 0.68;
+  const portFill = cssVar("--node-bg", "#131923");
+  const portStroke = connectLegal
+    ? "#16a34a"
+    : active
+      ? cssVar("--accent-select", "#5ecbff")
+      : "rgba(148, 163, 184, 0.48)";
+  const wellFill = low ? "rgba(15,23,42,0.22)" : "rgba(15,23,42,0.42)";
+  const railStroke = connectSource
+    ? cssVar("--accent-select", "#5ecbff")
+    : colorWithFallback(accent, "rgba(94, 203, 255, 0.78)");
+
+  [
+    {
+      side: "left",
+      x: left,
+      railX: left + 13,
+      arrow: [
+        ["M", left - 2, centerY - 4],
+        ["L", left + 4, centerY],
+        ["L", left - 2, centerY + 4],
+      ],
+    },
+    {
+      side: "right",
+      x: left + width,
+      railX: left + width - 13,
+      arrow: [
+        ["M", left + width + 2, centerY - 4],
+        ["L", left + width + 8, centerY],
+        ["L", left + width + 2, centerY + 4],
+      ],
+    },
+  ].forEach((port) => {
+    shape.upsert(
+      `${port.side}PortRail`,
+      "path",
+      low
+        ? false
+        : {
+            d: [
+              ["M", port.railX, top + 42],
+              ["L", port.railX, top + height - 26],
+            ],
+            stroke: railStroke,
+            lineWidth: 1,
+            opacity: 0.22,
+            pointerEvents: "none",
+          },
+      container,
+    );
+    shape.upsert(
+      `${port.side}PortWell`,
+      "rect",
+      {
+        x: port.x - 5,
+        y: centerY - 13,
+        width: 10,
+        height: 26,
+        radius: 2,
+        fill: wellFill,
+        stroke: "rgba(148, 163, 184, 0.18)",
+        lineWidth: 1,
+        opacity,
+        pointerEvents: "none",
+      },
+      container,
+    );
+    shape.upsert(
+      `${port.side}PortCore`,
+      "circle",
+      {
+        cx: port.x,
+        cy: centerY,
+        r: active ? 5.5 : 4.5,
+        fill: portFill,
+        stroke: portStroke,
+        lineWidth: active ? 2 : 1.4,
+        opacity,
+        pointerEvents: "none",
+      },
+      container,
+    );
+    shape.upsert(
+      `${port.side}PortArrow`,
+      "path",
+      low
+        ? false
+        : {
+            d: port.arrow,
+            stroke: portStroke,
+            lineWidth: 1.3,
+            fill: "transparent",
+            opacity: Math.min(1, opacity + 0.1),
+            pointerEvents: "none",
+          },
+      container,
+    );
+  });
+}
+
+function colorWithFallback(value, fallback) {
+  return String(value || "").trim() || fallback;
+}
+
 function renderNodeTags(
   shape,
   container,
@@ -879,6 +1003,19 @@ function registerModlessG6Extensions() {
           : false,
         container,
       );
+      renderPortGlyphs(this, container, {
+        left,
+        top,
+        width,
+        height,
+        accent,
+        low,
+        selected,
+        hovered,
+        connectSource,
+        connectLegal,
+        connectIllegal,
+      });
     }
   }
 
@@ -906,13 +1043,14 @@ function registerModlessG6Extensions() {
           }
         });
       } else {
-        const dx = target[0] - source[0];
-        const dy = target[1] - source[1];
-        if (Math.abs(dx) > 80 && Math.abs(dy) > 30) {
-          const midX = Math.round(source[0] + dx / 2);
-          path.push(["L", midX, source[1]]);
-          path.push(["L", midX, target[1]]);
-        }
+        const exitX = source[0] + 42;
+        const entryX = target[0] - 42;
+        const midX =
+          entryX > exitX
+            ? Math.round((exitX + entryX) / 2)
+            : Math.round(Math.max(source[0], target[0]) + 128);
+        path.push(["L", midX, source[1]]);
+        path.push(["L", midX, target[1]]);
       }
       path.push(["L", target[0], target[1]]);
       return path;
@@ -944,6 +1082,48 @@ function registerModlessG6Extensions() {
       const labelText = String(attributes.labelText || "");
       const pinPoints = Array.isArray(attributes.pinPoints) ? attributes.pinPoints : [];
       const showPins = Boolean(attributes.showPins && pinPoints.length);
+      const path = this.getKeyPath(attributes);
+      this.upsert(
+        "edgeHalo",
+        "path",
+        {
+          d: path,
+          stroke: attributes.selected
+            ? cssVar("--accent-glow", "rgba(0,166,224,0.28)")
+            : "rgba(15, 23, 42, 0.22)",
+          lineWidth: attributes.selected ? 8 : 6,
+          opacity: attributes.selected || attributes.hovered || attributes.hover ? 0.42 : 0.24,
+          fill: "none",
+          pointerEvents: "none",
+        },
+        container,
+      );
+      const routeStart = attributes.routeStart;
+      const routeEnd = attributes.routeEnd;
+      [
+        ["sourcePortCap", routeStart, attributes.stroke || cssVar("--accent", "#00a6e0")],
+        ["targetPortCap", routeEnd, attributes.stroke || cssVar("--accent", "#00a6e0")],
+      ].forEach(([name, point, stroke]) => {
+        const x = Number(point?.x);
+        const y = Number(point?.y);
+        this.upsert(
+          name,
+          "circle",
+          Number.isFinite(x) && Number.isFinite(y)
+            ? {
+                cx: x,
+                cy: y,
+                r: attributes.selected ? 3.8 : 3,
+                fill: canvasBackgroundColor(),
+                stroke,
+                lineWidth: attributes.selected ? 1.8 : 1.2,
+                opacity: attributes.selected || attributes.hovered || attributes.hover ? 1 : 0.72,
+                pointerEvents: "none",
+              }
+            : false,
+          container,
+        );
+      });
       for (let index = 0; index < 8; index += 1) {
         const pin = showPins ? pinPoints[index] : null;
         const x = Number(pin?.x);
@@ -971,7 +1151,6 @@ function registerModlessG6Extensions() {
         this.upsert("label", "text", false, container);
         return;
       }
-      const path = this.getKeyPath(attributes);
       const points = path
         .filter((entry) => entry[0] === "M" || entry[0] === "L")
         .map((entry) => ({ x: Number(entry[1]), y: Number(entry[2]) }));
@@ -1038,19 +1217,25 @@ function resizeGraphToHost() {
 
 function readGraphZoom(fallback = state.viewport.scale || 1) {
   try {
-    const zoom = editor?.graph?.getZoom?.();
+    const reader = editor?.graph?.getZoom;
+    if (typeof reader !== "function") {
+      return fallback;
+    }
+    const zoom = reader.call(editor.graph);
     return Number.isFinite(zoom) ? zoom : fallback;
-  } catch (error) {
-    updateDebugState({ lastViewportReadError: error.message || String(error) });
+  } catch {
     return fallback;
   }
 }
 
 function readGraphPosition() {
   try {
-    return editor?.graph?.getPosition?.() || null;
-  } catch (error) {
-    updateDebugState({ lastViewportReadError: error.message || String(error) });
+    const reader = editor?.graph?.getPosition;
+    if (typeof reader !== "function") {
+      return null;
+    }
+    return reader.call(editor.graph) || null;
+  } catch {
     return null;
   }
 }

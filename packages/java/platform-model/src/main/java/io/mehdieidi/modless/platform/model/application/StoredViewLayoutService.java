@@ -35,6 +35,15 @@ public final class StoredViewLayoutService {
   /** Default non-CIM node height used when a view node has no positive height. */
   private static final double DEFAULT_NODE_HEIGHT = 112.0d;
 
+  /** Canonical west-side input port id used by automatic layout. */
+  private static final String INPUT_PORT_ID = "flow-in";
+
+  /** Canonical east-side output port id used by automatic layout. */
+  private static final String OUTPUT_PORT_ID = "flow-out";
+
+  /** Default rendered size for canonical layout ports. */
+  private static final double LAYOUT_PORT_SIZE = 10.0d;
+
   /** Model service used to load and persist model JSON. */
   private final ModelService models;
 
@@ -127,7 +136,9 @@ public final class StoredViewLayoutService {
               positive(viewNode.path("height").asDouble(defaultHeight), defaultHeight),
               finite(viewNode.get("x")),
               finite(viewNode.get("y")),
-              List.of()));
+              canonicalPorts(
+                  positive(viewNode.path("width").asDouble(defaultWidth), defaultWidth),
+                  positive(viewNode.path("height").asDouble(defaultHeight), defaultHeight))));
     }
 
     List<LayoutService.LayoutEdge> edges = new ArrayList<>();
@@ -158,7 +169,12 @@ public final class StoredViewLayoutService {
       }
       edges.add(
           new LayoutService.LayoutEdge(
-              id, text(relationship, "kind", ""), sourceId, targetId, null, null));
+              id,
+              text(relationship, "kind", ""),
+              sourceId,
+              targetId,
+              OUTPUT_PORT_ID,
+              INPUT_PORT_ID));
     }
     return new LayoutService.LayoutRequest(
         text(view, "id", ""),
@@ -270,36 +286,34 @@ public final class StoredViewLayoutService {
   private EdgeRoute orthogonalRoute(
       LayoutService.LayoutEdge edge, NodeBox source, NodeBox target, int laneIndex) {
     if (source.id.equals(target.id)) {
-      Anchor anchor = new Anchor("right", source.height / 2.0d);
+      Anchor sourceAnchor = new Anchor("right", source.height / 2.0d);
+      Anchor targetAnchor = new Anchor("left", source.height / 2.0d);
       double loopX = source.x + source.width + 96.0d + laneOffset(laneIndex, edge.id());
       double topY = source.y - 46.0d - Math.abs(laneOffset(laneIndex, edge.id()));
       return new EdgeRoute(
           edge.id(),
           source.id,
           target.id,
-          anchor,
-          anchor,
+          sourceAnchor,
+          targetAnchor,
           mutablePoints(
-              new Point(loopX, source.y + anchor.offsetY),
+              new Point(loopX, source.y + sourceAnchor.offsetY),
               new Point(loopX, topY),
-              new Point(source.x + source.width, topY)));
+              new Point(source.x, topY)));
     }
 
-    double dx = target.centerX() - source.centerX();
-    boolean targetIsRight = dx >= 0.0d;
-    Anchor sourceAnchor = new Anchor(targetIsRight ? "right" : "left", source.height / 2.0d);
-    Anchor targetAnchor = new Anchor(targetIsRight ? "left" : "right", target.height / 2.0d);
+    Anchor sourceAnchor = new Anchor("right", source.height / 2.0d);
+    Anchor targetAnchor = new Anchor("left", target.height / 2.0d);
     Point start = pointForAnchor(source, sourceAnchor);
     Point end = pointForAnchor(target, targetAnchor);
     double offset = laneOffset(laneIndex, edge.id());
+    double exitX = start.x + 52.0d;
+    double entryX = end.x - 52.0d;
     double midX;
-    double gap = Math.abs(end.x - start.x);
-    if (gap >= 120.0d) {
-      midX = (start.x + end.x) / 2.0d + offset;
-    } else if ("right".equals(sourceAnchor.side)) {
-      midX = Math.max(source.x + source.width, target.x + target.width) + 120.0d + Math.abs(offset);
+    if (entryX > exitX) {
+      midX = (exitX + entryX) / 2.0d + offset;
     } else {
-      midX = Math.min(source.x, target.x) - 120.0d - Math.abs(offset);
+      midX = Math.max(source.x + source.width, target.x + target.width) + 140.0d + Math.abs(offset);
     }
     return new EdgeRoute(
         edge.id(),
@@ -521,6 +535,27 @@ public final class StoredViewLayoutService {
    */
   private List<Point> mutablePoints(Point... points) {
     return new ArrayList<>(List.of(points));
+  }
+
+  /**
+   * Creates canonical input/output ports with fixed sides and approximate middle-side positions.
+   *
+   * @param width node width
+   * @param height node height
+   * @return immutable canonical port list
+   */
+  private List<LayoutService.LayoutPort> canonicalPorts(double width, double height) {
+    double y = Math.max(8.0d, Math.min(height - 8.0d, height / 2.0d)) - LAYOUT_PORT_SIZE / 2.0d;
+    return List.of(
+        new LayoutService.LayoutPort(
+            INPUT_PORT_ID, "in", LAYOUT_PORT_SIZE, LAYOUT_PORT_SIZE, 0.0d, y),
+        new LayoutService.LayoutPort(
+            OUTPUT_PORT_ID,
+            "out",
+            LAYOUT_PORT_SIZE,
+            LAYOUT_PORT_SIZE,
+            Math.max(0.0d, width - LAYOUT_PORT_SIZE),
+            y));
   }
 
   /**

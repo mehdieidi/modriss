@@ -6,6 +6,7 @@ import { markModelDirty, updateModelSaveUi } from "./model-save-ui.js";
 import {
   activeView,
   ensureActiveGraphAndViews,
+  refreshViewContent,
   saveCurrentTabGraphState,
   setActiveViewId,
   syncActiveViewFromVisibleGraph,
@@ -688,37 +689,18 @@ export function renderViewWorkbench() {
 
 export async function openWorkbenchView(viewId) {
   viewMenuOpen = false;
-  let targetView = state.views.byId.get(viewId);
-  if (targetView?._lazyContent) {
-    const { ensureViewContent } = await import("./graph-store.js");
+  const targetView = state.views.byId.get(viewId);
+  if (targetView) {
     const { yieldToMain } = await import("./utils.js");
     await yieldToMain();
-    ensureViewContent(targetView);
-    targetView = state.views.byId.get(viewId);
+    refreshViewContent(targetView);
   }
-  const needsInitialLayout = targetView && !targetView.autoLayoutApplied;
   if (setActiveViewId(viewId)) {
     materializeActiveView();
     renderPaletteCallback?.();
-    await renderDiagramAsync();
+    await renderDiagramAsync({ full: true });
     renderViewWorkbench();
     saveCurrentTabGraphState();
-    if (needsInitialLayout) {
-      try {
-        const { autoLayoutCurrentDiagram } = await import("./model-ops.js");
-        await autoLayoutCurrentDiagram({
-          progress: true,
-          status: false,
-          force: false,
-        });
-        setStatus("View selected and arranged.");
-      } catch (error) {
-        console.warn("Initial view auto layout failed", error);
-        await fitViewportToDiagram({ fit: true });
-        setStatus("View selected. Auto layout failed.");
-      }
-      return;
-    }
     await fitViewportToDiagram({ fit: true });
     setStatus("View selected.");
   }

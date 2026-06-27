@@ -1158,12 +1158,31 @@ function assignViewNodes(
   return layoutNodesForElements(graph, elementIds, existingNodes, typeKey);
 }
 
+function mergeGeneratedViewEdges(generatedEdges, existingEdges = []) {
+  const existingById = new Map(
+    safeArray(existingEdges).map((edge) => [String(edge?.relationshipId || edge?.id || ""), edge]),
+  );
+  return safeArray(generatedEdges).map((edge) => {
+    const existing = existingById.get(String(edge?.relationshipId || edge?.id || ""));
+    if (!existing) {
+      return edge;
+    }
+    return {
+      ...edge,
+      visible: existing.visible !== false,
+      pinPoints: safeArray(existing.pinPoints).map(clone),
+      sourceAnchor: existing.sourceAnchor ? clone(existing.sourceAnchor) : edge.sourceAnchor,
+      targetAnchor: existing.targetAnchor ? clone(existing.targetAnchor) : edge.targetAnchor,
+    };
+  });
+}
+
 function buildViewFromDefinition(
   typeKey,
   graph,
   definition,
   scopeElement = null,
-  { skipClientLayout = false } = {},
+  { skipClientLayout = false, existingNodes = [], existingEdges = [] } = {},
 ) {
   const idParts = [
     "view",
@@ -1222,15 +1241,23 @@ function buildViewFromDefinition(
     );
   }
   const relationshipIds = selectRelationshipIdsForView(graph, view, elementIds);
-  view.nodes = assignViewNodes(graph, elementIds, typeKey, [], { skipClientLayout });
-  view.edges = relationshipIds.map((relationshipId) => ({
-    relationshipId,
-    visible: true,
-  }));
+  view.nodes = assignViewNodes(graph, elementIds, typeKey, existingNodes, { skipClientLayout });
+  view.edges = mergeGeneratedViewEdges(
+    relationshipIds.map((relationshipId) => ({
+      relationshipId,
+      visible: true,
+    })),
+    existingEdges,
+  );
   return view;
 }
 
-function defaultMainView(typeKey, graph, modelName, { skipClientLayout = false } = {}) {
+function defaultMainView(
+  typeKey,
+  graph,
+  modelName,
+  { skipClientLayout = false, existingNodes = [], existingEdges = [] } = {},
+) {
   const configuredContainmentKinds = containmentKinds(typeKey);
   let elementIds = [...graph.elementsById.entries()]
     .filter(([, element]) => isMainSurfaceElement(typeKey, element))
@@ -1261,11 +1288,14 @@ function defaultMainView(typeKey, graph, modelName, { skipClientLayout = false }
       relationshipKinds: [],
     },
     layoutProfile: "DEFAULT_LAYERED",
-    nodes: assignViewNodes(graph, elementIds, typeKey, [], { skipClientLayout }),
-    edges: relationshipIds.map((relationshipId) => ({
-      relationshipId,
-      visible: true,
-    })),
+    nodes: assignViewNodes(graph, elementIds, typeKey, existingNodes, { skipClientLayout }),
+    edges: mergeGeneratedViewEdges(
+      relationshipIds.map((relationshipId) => ({
+        relationshipId,
+        visible: true,
+      })),
+      existingEdges,
+    ),
     hidden: { elementIds: [], relationshipIds: [] },
     pinnedElementIds: [],
   };
@@ -1716,6 +1746,56 @@ export function ensureViewContent(
   }
   delete materialized._lazyContent;
   Object.assign(view, materialized);
+  delete view._lazyContent;
+  prepareViewNodeIndex(view);
+  return view;
+}
+
+export function refreshViewContent(
+  view,
+  typeKey = state.activeType,
+  { skipClientLayout = false } = {},
+) {
+  if (!view) {
+    return view;
+  }
+  const definition = matchingViewDefinition(typeKey, view);
+  const existingNodes = safeArray(view.nodes).map(clone);
+  const existingEdges = safeArray(view.edges).map(clone);
+  const options = { skipClientLayout, existingNodes, existingEdges };
+  const scopeElement = view.scope?.rootElementId
+    ? state.graph.elementsById.get(view.scope.rootElementId)
+    : null;
+  let refreshed = null;
+  if (view.id === mainViewId(typeKey)) {
+    refreshed = defaultMainView(typeKey, state.graph, view.name, options);
+  } else if (definition) {
+    refreshed = buildViewFromDefinition(typeKey, state.graph, definition, scopeElement, options);
+  }
+  if (!refreshed) {
+    return ensureViewContent(view, typeKey, { skipClientLayout });
+  }
+  const preserved = {
+    autoLayoutApplied: Boolean(view.autoLayoutApplied),
+    layoutStrategy: view.layoutStrategy,
+    camera: view.camera ? clone(view.camera) : undefined,
+    hidden: view.hidden ? clone(view.hidden) : refreshed.hidden,
+    sourceViewId: view.sourceViewId,
+    savedAt: view.savedAt,
+  };
+  Object.assign(view, refreshed, preserved);
+  if (!preserved.layoutStrategy) {
+    delete view.layoutStrategy;
+  }
+  if (!preserved.camera) {
+    delete view.camera;
+  }
+  if (!preserved.sourceViewId) {
+    delete view.sourceViewId;
+  }
+  if (!preserved.savedAt) {
+    delete view.savedAt;
+  }
   delete view._lazyContent;
   prepareViewNodeIndex(view);
   return view;

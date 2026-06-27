@@ -197,6 +197,7 @@ export async function activatePhaseViewpoint(viewpoint) {
     });
     return false;
   }
+  const { openWorkbenchView } = await import("./view-explorer.js");
   await openWorkbenchView(viewId);
   setStatus("Opened recommended canvas view for this phase.");
   return true;

@@ -15,6 +15,11 @@ function eventButton(event) {
   return Number.isFinite(source?.button) ? source.button : 0;
 }
 
+function eventPointerId(event) {
+  const id = originalEvent(event)?.pointerId;
+  return Number.isFinite(id) ? id : null;
+}
+
 function eventClientPoint(event) {
   const source = originalEvent(event);
   return {
@@ -280,6 +285,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
   let pendingNodeDragMove = null;
   let finishLinkDragWindow = null;
   let escapeKeyDown = null;
+  let visibilityChange = null;
   let openControlPress = null;
   let suppressOpenControlClickNodeId = null;
 
@@ -318,10 +324,12 @@ export function bindG6Interactions(editor, callbacks = {}) {
       return;
     }
     flushCanvasPan();
-    try {
-      el.g6EditorHost?.releasePointerCapture?.(canvasPan.pointerId);
-    } catch {
-      // Capture may already be released after pointerup outside the host.
+    if (canvasPan.pointerId != null) {
+      try {
+        el.g6EditorHost?.releasePointerCapture?.(canvasPan.pointerId);
+      } catch {
+        // Capture may already be released after pointerup outside the host.
+      }
     }
     canvasPan = null;
     canvasDragging = false;
@@ -372,11 +380,58 @@ export function bindG6Interactions(editor, callbacks = {}) {
     }
   };
 
+  const eventMatchesNodeDrag = (event) => {
+    if (!nodeDrag) {
+      return false;
+    }
+    const pointerId = eventPointerId(event);
+    return nodeDrag.pointerId == null || pointerId == null || pointerId === nodeDrag.pointerId;
+  };
+
+  const finishNodeDrag = (event = null, { cancelClick = false } = {}) => {
+    if (!nodeDrag || !eventMatchesNodeDrag(event)) {
+      return;
+    }
+    flushNodeDragMove();
+    const dragState = nodeDrag;
+    const nodeId = dragState.nodeId;
+    const wasDragged = dragged;
+    nodeDrag = null;
+    draggedNodeId = null;
+    dragged = false;
+    const position = nodePositionFromGraph(graph, nodeId);
+    callbacks.onNodeDragEnd?.(nodeId, position, { moved: wasDragged });
+    lastClickSuppressedNodeId = nodeId;
+    window.setTimeout(() => {
+      if (lastClickSuppressedNodeId === nodeId) {
+        lastClickSuppressedNodeId = null;
+      }
+    }, 120);
+    if (!wasDragged && !cancelClick) {
+      callbacks.onNodeClick?.(nodeId, dragState.startEvent);
+    }
+    if (dragState.pointerId != null) {
+      try {
+        el.g6EditorHost?.releasePointerCapture?.(dragState.pointerId);
+      } catch {
+        // Pointer capture may already be released.
+      }
+    }
+  };
+
+  const cancelNodeDrag = (event = null) => {
+    finishNodeDrag(event, { cancelClick: true });
+  };
+
   const hostPointerMove = (event) => {
     const setHoveredOpenControl = (nodeId) => {
       editor?.setOpenControlHover?.(nodeId || null);
     };
-    if (nodeDrag && (!nodeDrag.pointerId || event.pointerId === nodeDrag.pointerId)) {
+    if (nodeDrag && eventMatchesNodeDrag(event)) {
+      if (Number.isFinite(event.buttons) && event.buttons === 0) {
+        finishNodeDrag(event);
+        return;
+      }
       setHoveredOpenControl(null);
       const point = graphCanvasPoint(graph, event.clientX, event.clientY);
       const nextX = Math.round(nodeDrag.nodeX + point.x - nodeDrag.startX);
@@ -438,38 +493,20 @@ export function bindG6Interactions(editor, callbacks = {}) {
   el.g6EditorHost?.addEventListener("pointerdown", hostPointerDown);
   el.g6EditorHost?.addEventListener("pointermove", hostPointerMove);
   el.g6EditorHost?.addEventListener("pointerleave", hostPointerLeave);
+  el.g6EditorHost?.addEventListener("lostpointercapture", finishNodeDrag);
   window.addEventListener("pointerup", finishCanvasPan);
   window.addEventListener("pointercancel", finishCanvasPan);
-  const finishNodeDrag = () => {
-    if (!nodeDrag) {
-      return;
-    }
-    flushNodeDragMove();
-    const nodeId = nodeDrag.nodeId;
-    const position = nodePositionFromGraph(graph, nodeId);
-    callbacks.onNodeDragEnd?.(nodeId, position, { moved: dragged });
-    lastClickSuppressedNodeId = nodeId;
-    window.setTimeout(() => {
-      if (lastClickSuppressedNodeId === nodeId) {
-        lastClickSuppressedNodeId = null;
-      }
-    }, 120);
-    if (!dragged) {
-      callbacks.onNodeClick?.(nodeId, nodeDrag.startEvent);
-    }
-    if (nodeDrag.pointerId) {
-      try {
-        el.g6EditorHost?.releasePointerCapture?.(nodeDrag.pointerId);
-      } catch {
-        // Pointer capture may already be released.
-      }
-    }
-    nodeDrag = null;
-    draggedNodeId = null;
-    dragged = false;
-  };
   window.addEventListener("pointerup", finishNodeDrag);
-  window.addEventListener("pointercancel", finishNodeDrag);
+  window.addEventListener("pointercancel", cancelNodeDrag);
+  window.addEventListener("mouseup", finishNodeDrag);
+  window.addEventListener("blur", cancelNodeDrag);
+  window.addEventListener("contextmenu", cancelNodeDrag);
+  visibilityChange = () => {
+    if (document.hidden) {
+      cancelNodeDrag();
+    }
+  };
+  document.addEventListener("visibilitychange", visibilityChange);
   const finishOpenControlPress = (event) => {
     if (!openControlPress) {
       return;
@@ -511,10 +548,17 @@ export function bindG6Interactions(editor, callbacks = {}) {
     el.g6EditorHost?.removeEventListener("pointerdown", hostPointerDown);
     el.g6EditorHost?.removeEventListener("pointermove", hostPointerMove);
     el.g6EditorHost?.removeEventListener("pointerleave", hostPointerLeave);
+    el.g6EditorHost?.removeEventListener("lostpointercapture", finishNodeDrag);
     window.removeEventListener("pointerup", finishCanvasPan);
     window.removeEventListener("pointercancel", finishCanvasPan);
     window.removeEventListener("pointerup", finishNodeDrag);
-    window.removeEventListener("pointercancel", finishNodeDrag);
+    window.removeEventListener("pointercancel", cancelNodeDrag);
+    window.removeEventListener("mouseup", finishNodeDrag);
+    window.removeEventListener("blur", cancelNodeDrag);
+    window.removeEventListener("contextmenu", cancelNodeDrag);
+    if (visibilityChange) {
+      document.removeEventListener("visibilitychange", visibilityChange);
+    }
     window.removeEventListener("pointerup", finishOpenControlPress);
     window.removeEventListener("pointercancel", cancelOpenControlPress);
     if (finishLinkDragWindow) {
@@ -598,7 +642,7 @@ export function bindG6Interactions(editor, callbacks = {}) {
           nodeY: topLeft.y,
         };
         callbacks.onNodeDragStart?.(id);
-        if (nodeDrag.pointerId) {
+        if (nodeDrag.pointerId != null) {
           try {
             el.g6EditorHost?.setPointerCapture?.(nodeDrag.pointerId);
           } catch {

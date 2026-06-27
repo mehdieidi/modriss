@@ -181,19 +181,17 @@ export function edgePresentation(edge, typeKey = state.activeType) {
   return modelingRelationshipPresentation(typeKey, edge);
 }
 
-function routeEndpoint(node, anchor, typeKey) {
-  if (!node || !anchor) {
+function routeEndpoint(node, anchor, typeKey, fallbackSide = "right") {
+  if (!node) {
     return null;
   }
   const size = nodeSizeForDiagram(typeKey, node);
-  const side = anchor.side === "left" ? "left" : anchor.side === "right" ? "right" : null;
-  const offsetY = Number(anchor.offsetY);
-  if (!side || !Number.isFinite(offsetY)) {
-    return null;
-  }
+  const side = anchor?.side === "left" || anchor?.side === "right" ? anchor.side : fallbackSide;
+  const offsetY = Number(anchor?.offsetY);
+  const yOffset = Number.isFinite(offsetY) ? offsetY : size.height / 2;
   return {
     x: Math.round(node.x + (side === "right" ? size.width : 0)),
-    y: Math.round(node.y + Math.max(8, Math.min(size.height - 8, offsetY))),
+    y: Math.round(node.y + Math.max(8, Math.min(size.height - 8, yOffset))),
   };
 }
 
@@ -296,8 +294,8 @@ export function mapEdgeToG6(
   const label = edgeLabel(edge, typeKey);
   const sourceNode = nodesById?.get?.(edge.sourceId);
   const targetNode = nodesById?.get?.(edge.targetId);
-  const routeStart = routeEndpoint(sourceNode, edge.sourceAnchor, typeKey);
-  const routeEnd = routeEndpoint(targetNode, edge.targetAnchor, typeKey);
+  const routeStart = routeEndpoint(sourceNode, edge.sourceAnchor, typeKey, "right");
+  const routeEnd = routeEndpoint(targetNode, edge.targetAnchor, typeKey, "left");
   return {
     id: edge.id,
     type: G6_BASE_EDGE_TYPE,
