@@ -47,6 +47,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -246,63 +247,73 @@ public class AssistantOrchestrator {
                 currentValidation)
             : modelContexts.snapshot(model, currentValidation);
     List<AssistantModelProvider.ContextSnippet> snippets =
-        retrievalSnippets(
-            request.message(), context, session.level(), request.selectedElementIds());
+        contextSnippets(
+            session, request, context, session.level(), request.selectedElementIds(), baseModel);
 
     tools.bindSession(new AssistantToolBridge.ToolSession(session.level(), baseModel, context));
     int toolCalls = 0;
     int repairAttempts = 0;
     AssistantTurnPlan plan;
+    boolean informationRoute = prefersInformationPath(request.rootMessage());
     try {
       publishProgress(
           sessionId, "PLANNING", "Understanding intent using the formal language context");
-      if (prefersInformationPath(request.rootMessage())) {
-        plan =
-            provider.planTurn(
-                new AssistantModelProvider.AssistantPrompt(
-                    AssistantModelRole.PLANNER,
-                    turnPrompt(session, request, context),
-                    request.message(),
-                    snippets));
-      } else {
-        AssistantModelProvider.AgentLoopResult loopResult =
-            provider.planMutationTurn(
-                new AssistantModelProvider.AssistantPrompt(
-                    AssistantModelRole.PLANNER,
-                    turnPrompt(session, request, context),
-                    request.message(),
-                    snippets),
-                (stage, message) -> publishProgress(sessionId, stage, message));
-        plan = loopResult.plan();
-        toolCalls = loopResult.toolCalls();
-        metrics.recordAssistantToolCalls(toolCalls);
-        log.info(
-            "Assistant agent loop completed sessionId={} steps={} toolCalls={} snippets={}",
-            sessionId,
-            loopResult.steps(),
-            toolCalls,
-            snippets.size());
-      }
+      InitialPlanResult planned =
+          planInitialTurn(session, request, context, snippets, informationRoute);
+      plan = planned.plan();
+      toolCalls = planned.toolCalls();
     } catch (PlatformException failure) {
-      if (failure.status() < 500 && failure.status() != 429) {
+      if (isRetryableProviderFailure(failure) && containsFullContext(snippets)) {
+        publishProgress(
+            sessionId,
+            "PLANNING",
+            "Retrying with focused retrieval context after provider timeout");
+        log.warn(
+            "Assistant full-context provider call failed; retrying retrieval context "
+                + "sessionId={} status={}",
+            sessionId,
+            failure.status());
+        snippets =
+            retrievalSnippets(
+                request.message(), context, session.level(), request.selectedElementIds(), request);
+        try {
+          InitialPlanResult planned =
+              planInitialTurn(session, request, context, snippets, informationRoute);
+          plan = planned.plan();
+          toolCalls = planned.toolCalls();
+        } catch (PlatformException fallbackFailure) {
+          if (fallbackFailure.status() < 500 && fallbackFailure.status() != 429) {
+            throw fallbackFailure;
+          }
+          recordTurnDiagnostics(
+              "FAILED",
+              snippets.size(),
+              toolCalls,
+              repairAttempts,
+              "PROVIDER_UNAVAILABLE",
+              startedAt);
+          metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
+          return finishTurn(
+              session,
+              threadId,
+              providerUnavailableResponse(modelId, model == null ? null : model.revision()));
+        }
+      } else if (failure.status() < 500 && failure.status() != 429) {
         throw failure;
+      } else {
+        recordTurnDiagnostics(
+            "FAILED",
+            snippets.size(),
+            toolCalls,
+            repairAttempts,
+            "PROVIDER_UNAVAILABLE",
+            startedAt);
+        metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
+        return finishTurn(
+            session,
+            threadId,
+            providerUnavailableResponse(modelId, model == null ? null : model.revision()));
       }
-      recordTurnDiagnostics(
-          "FAILED", snippets.size(), toolCalls, repairAttempts, "PROVIDER_UNAVAILABLE", startedAt);
-      metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
-      return finishTurn(
-          session,
-          threadId,
-          new AssistantTurnResponse(
-              "The modeling provider is temporarily unavailable. Your model is unchanged and "
-                  + "this request is still in the conversation, so you can retry it without "
-                  + "re-entering context.",
-              modelId,
-              model == null ? null : model.revision(),
-              null,
-              List.of(),
-              AssistantWorkflowState.FAILED,
-              activityFor(AssistantWorkflowState.FAILED)));
     } finally {
       tools.clearSession();
     }
@@ -377,6 +388,75 @@ public class AssistantOrchestrator {
     return response;
   }
 
+  private InitialPlanResult planInitialTurn(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantModelContext context,
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      boolean informationRoute) {
+    AssistantTurnPlan plan;
+    int toolCalls = 0;
+    if (informationRoute) {
+      plan =
+          provider.planTurn(
+              new AssistantModelProvider.AssistantPrompt(
+                  AssistantModelRole.PLANNER,
+                  turnPrompt(session, request, context),
+                  request.message(),
+                  snippets));
+    } else {
+      AssistantModelProvider.AgentLoopResult loopResult =
+          provider.planMutationTurn(
+              new AssistantModelProvider.AssistantPrompt(
+                  AssistantModelRole.PLANNER,
+                  turnPrompt(session, request, context),
+                  request.message(),
+                  snippets),
+              (stage, message) -> publishProgress(session.id(), stage, message));
+      plan = loopResult.plan();
+      toolCalls = loopResult.toolCalls();
+      metrics.recordAssistantToolCalls(toolCalls);
+      log.info(
+          "Assistant agent loop completed sessionId={} steps={} toolCalls={} snippets={}",
+          session.id(),
+          loopResult.steps(),
+          toolCalls,
+          snippets.size());
+    }
+    if (!informationRoute && plan.kind() != AssistantTurnPlan.Kind.PATCH) {
+      plan =
+          new AssistantTurnPlan(
+              AssistantTurnPlan.Intent.MUTATION,
+              plan.kind(),
+              plan.message(),
+              plan.questions(),
+              plan.patch());
+    }
+    return new InitialPlanResult(plan, toolCalls);
+  }
+
+  private AssistantTurnResponse providerUnavailableResponse(String modelId, Long revision) {
+    return new AssistantTurnResponse(
+        "The modeling provider is temporarily unavailable. Your model is unchanged and "
+            + "this request is still in the conversation, so you can retry it without "
+            + "re-entering context.",
+        modelId,
+        revision,
+        null,
+        List.of(),
+        AssistantWorkflowState.FAILED,
+        activityFor(AssistantWorkflowState.FAILED));
+  }
+
+  private boolean isRetryableProviderFailure(PlatformException failure) {
+    return failure.status() >= 500 || failure.status() == 429;
+  }
+
+  private boolean containsFullContext(List<AssistantModelProvider.ContextSnippet> snippets) {
+    return snippets != null
+        && snippets.stream().anyMatch(snippet -> snippet.source().startsWith("full-context"));
+  }
+
   private AssistantTurnResponse proposalResponse(
       UserRecord user,
       AssistantSessionStore.AssistantSession session,
@@ -394,7 +474,7 @@ public class AssistantOrchestrator {
     int stagnationCount = 0;
     String lastPatchSignature = patchSignature(acceptedPlan.patch());
     int lastFeedbackCount = attempt.feedback().size();
-    int maxRepairAttempts = Math.min(Math.max(properties.validationRepairAttempts(), 0), 1);
+    int maxRepairAttempts = Math.max(properties.validationRepairAttempts(), 0);
     while (!attempt.valid() && repairNumber < maxRepairAttempts) {
       repairNumber++;
       publishProgress(
@@ -437,21 +517,7 @@ public class AssistantOrchestrator {
         if (failure.status() < 500 && failure.status() != 429) {
           throw failure;
         }
-        AssistantTurnResponse fallback =
-            partialProposalOrFailure(
-                user,
-                session,
-                threadId,
-                request,
-                model,
-                baseModel,
-                context,
-                snippets,
-                acceptedPlan,
-                attempt);
-        return fallback.workflowState() == AssistantWorkflowState.FAILED
-            ? providerFailureResponse(session, threadId, model)
-            : fallback;
+        return providerFailureResponse(session, threadId, model);
       }
       if (repaired.kind() == AssistantTurnPlan.Kind.CLARIFICATION) {
         AssistantTurnPlan gated = clarificationGate.apply(repaired, request.rootMessage());
@@ -495,17 +561,7 @@ public class AssistantOrchestrator {
       }
     }
     if (!attempt.valid()) {
-      return partialProposalOrFailure(
-          user,
-          session,
-          threadId,
-          request,
-          model,
-          baseModel,
-          context,
-          snippets,
-          acceptedPlan,
-          attempt);
+      return failureWithFeedback(session, threadId, request, model, attempt);
     }
     metrics.recordAssistantRepairAttempts(repairNumber);
 
@@ -582,52 +638,6 @@ public class AssistantOrchestrator {
                 LinkedHashMap::new));
   }
 
-  private AssistantTurnResponse partialProposalOrFailure(
-      UserRecord user,
-      AssistantSessionStore.AssistantSession session,
-      String threadId,
-      AssistantTurnRequest request,
-      ModelRecord model,
-      JsonNode baseModel,
-      AssistantModelContext context,
-      List<AssistantModelProvider.ContextSnippet> snippets,
-      AssistantTurnPlan failedPlan,
-      PlanAttempt attempt) {
-    Optional<PlanAttempt> partial =
-        findMaximalValidSubset(session.level(), baseModel, context, failedPlan);
-    if (partial.isPresent()) {
-      PlanAttempt partialAttempt = partial.get();
-      AssistantTurnPlan acceptedPlan = partialAttempt.plan();
-      return autoApplyValidatedProposal(
-          user,
-          session,
-          threadId,
-          model,
-          new AssistantTurnPlan(
-              acceptedPlan.intent(),
-              acceptedPlan.kind(),
-              "I could not satisfy every part of the request in one pass, so I applied the "
-                  + "largest valid subset and kept the model structurally consistent.",
-              acceptedPlan.questions(),
-              acceptedPlan.patch()),
-          snippets,
-          context);
-    }
-    return finishTurn(
-        session,
-        threadId,
-        new AssistantTurnResponse(
-            "The generated change could not satisfy the formal language after deterministic "
-                + "completion and validator-guided repairs. Refine the scope or add more domain "
-                + "detail and try again.",
-            model == null ? null : model.id(),
-            model == null ? null : model.revision(),
-            null,
-            List.of(),
-            AssistantWorkflowState.FAILED,
-            activityFor(AssistantWorkflowState.FAILED)));
-  }
-
   private AssistantTurnResponse failureWithFeedback(
       AssistantSessionStore.AssistantSession session,
       String threadId,
@@ -692,45 +702,6 @@ public class AssistantOrchestrator {
             questions,
             AssistantWorkflowState.WAITING_FOR_CHOICE,
             activityFor(AssistantWorkflowState.WAITING_FOR_CHOICE)));
-  }
-
-  private Optional<PlanAttempt> findMaximalValidSubset(
-      ModelLevel level, JsonNode baseModel, AssistantModelContext context, AssistantTurnPlan plan) {
-    List<SemanticModelPatch.Operation> accepted = new ArrayList<>();
-    for (SemanticModelPatch.Operation operation : plan.patch().operations()) {
-      if (operation == null) {
-        continue;
-      }
-      List<SemanticModelPatch.Operation> candidate = new ArrayList<>(accepted);
-      candidate.add(operation);
-      AssistantTurnPlan trial =
-          preparePlan(
-              level,
-              context,
-              new AssistantTurnPlan(
-                  plan.intent(),
-                  plan.kind(),
-                  plan.message(),
-                  plan.questions(),
-                  new SemanticModelPatch(candidate)));
-      PlanAttempt attempt = evaluatePlan(level, baseModel, context, trial);
-      if (attempt.valid()) {
-        accepted.add(operation);
-      }
-    }
-    if (accepted.isEmpty()) {
-      return Optional.empty();
-    }
-    AssistantTurnPlan subset =
-        new AssistantTurnPlan(
-            plan.intent(),
-            plan.kind(),
-            plan.message(),
-            plan.questions(),
-            new SemanticModelPatch(accepted));
-    AssistantTurnPlan prepared = preparePlan(level, context, subset);
-    PlanAttempt attempt = evaluatePlan(level, baseModel, context, prepared);
-    return attempt.valid() ? Optional.of(attempt.withPlan(prepared)) : Optional.empty();
   }
 
   private AssistantTurnResponse providerFailureResponse(
@@ -861,7 +832,7 @@ public class AssistantOrchestrator {
             "Original request:\n"
                 + request.rootMessage()
                 + "\n\nReturn one complete PATCH that satisfies the request using safe defaults.",
-            deduplicate(snippets, properties.maxContextSnippets())));
+            snippetsForFollowup(snippets)));
   }
 
   private String patchSignature(SemanticModelPatch patch) {
@@ -1223,7 +1194,7 @@ public class AssistantOrchestrator {
                 + properties.validationRepairAttempts()
                 + ". Do not repeat rejected operations.",
             requestWithFeedback,
-            deduplicate(repairContext, properties.maxContextSnippets())));
+            snippetsForFollowup(repairContext)));
   }
 
   private AssistantTurnResponse clarificationResponse(
@@ -1512,11 +1483,103 @@ public class AssistantOrchestrator {
     sessions.clear(sessionId, user.id());
   }
 
+  private List<AssistantModelProvider.ContextSnippet> contextSnippets(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantModelContext context,
+      ModelLevel level,
+      List<String> selectedElementIds,
+      JsonNode baseModel) {
+    List<AssistantModelProvider.ContextSnippet> full =
+        fullContextSnippets(request, context, level, baseModel);
+    OptionalInt capacity = contextWindowTokens();
+    int estimatedInputTokens =
+        estimateTokens(
+            turnPromptForEstimate(session, request, context, level) + estimateSnippetText(full));
+    int requiredTokens = estimatedInputTokens + plannerOutputReserveTokens();
+    if (capacity.isPresent() && capacity.getAsInt() > requiredTokens) {
+      log.info(
+          "Assistant using full-context prompt level={} estimatedInputTokens={} requiredTokens={} "
+              + "capacityTokens={} snippets={}",
+          level,
+          estimatedInputTokens,
+          requiredTokens,
+          capacity.getAsInt(),
+          full.size());
+      return full;
+    }
+    if (capacity.isPresent()) {
+      log.info(
+          "Assistant using retrieval prompt level={} estimatedInputTokens={} requiredTokens={} "
+              + "capacityTokens={}",
+          level,
+          estimatedInputTokens,
+          requiredTokens,
+          capacity.getAsInt());
+    } else {
+      log.info("Assistant context-window capacity unknown; using retrieval prompt level={}", level);
+    }
+    return retrievalSnippets(request.message(), context, level, selectedElementIds, request);
+  }
+
+  private OptionalInt contextWindowTokens() {
+    try {
+      OptionalInt result = provider.contextWindowTokens(AssistantModelRole.PLANNER);
+      return result == null ? OptionalInt.empty() : result;
+    } catch (RuntimeException ex) {
+      log.warn("Could not resolve assistant model context window; using retrieval context.", ex);
+      return OptionalInt.empty();
+    }
+  }
+
+  private List<AssistantModelProvider.ContextSnippet> fullContextSnippets(
+      AssistantTurnRequest request,
+      AssistantModelContext context,
+      ModelLevel level,
+      JsonNode baseModel) {
+    List<AssistantModelProvider.ContextSnippet> snippets = new ArrayList<>();
+    snippets.add(
+        new AssistantModelProvider.ContextSnippet(
+            "full-context-metamodel-index",
+            level.name() + " complete language index",
+            schemas.languageIndex(level)));
+    snippets.addAll(
+        schemas.allPlanningContracts(level).stream()
+            .map(
+                snippet ->
+                    new AssistantModelProvider.ContextSnippet(
+                        "full-context-" + snippet.source(), snippet.title(), snippet.content()))
+            .toList());
+    snippets.add(
+        new AssistantModelProvider.ContextSnippet(
+            "full-context-model",
+            "Current " + level.name() + " model JSON",
+            baseModel == null ? "{}" : baseModel.toPrettyString()));
+    String validation =
+        context.validationIssues().stream()
+            .map(issue -> issue.severity() + ":" + issue.constraint() + ":" + issue.message())
+            .collect(Collectors.joining("\n"));
+    snippets.add(
+        new AssistantModelProvider.ContextSnippet(
+            "full-context-validation",
+            "Current validation findings",
+            validation.isBlank() ? "No validation findings." : validation));
+    if (!blank(request.attachmentContent())) {
+      snippets.add(
+          new AssistantModelProvider.ContextSnippet(
+              "full-context-user-attachment",
+              nonBlank(request.attachmentName(), "attachment"),
+              request.attachmentContent()));
+    }
+    return List.copyOf(snippets);
+  }
+
   private List<AssistantModelProvider.ContextSnippet> retrievalSnippets(
       String query,
       AssistantModelContext context,
       ModelLevel level,
-      List<String> selectedElementIds) {
+      List<String> selectedElementIds,
+      AssistantTurnRequest request) {
     boolean emptyModel = modelContexts.isEmptyCanvas(context);
     List<AssistantModelProvider.ContextSnippet> tier1 = new ArrayList<>();
     tier1.addAll(schemas.planningContracts(level, query, 14, emptyModel));
@@ -1553,6 +1616,14 @@ public class AssistantOrchestrator {
     if (emptyModel && isCreationRequest(query)) {
       tier4.addAll(catalogs.search(query, level.name(), 6));
     }
+    if (!blank(request.attachmentContent())) {
+      tier4.add(
+          0,
+          new AssistantModelProvider.ContextSnippet(
+              "user-attachment",
+              nonBlank(request.attachmentName(), "attachment"),
+              request.attachmentContent()));
+    }
     matches.stream()
         .map(AssistantModelProvider.ContextSnippet::title)
         .distinct()
@@ -1574,6 +1645,39 @@ public class AssistantOrchestrator {
         .forEach(constraint -> tier4.addAll(0, catalogs.search(constraint, level.name(), 4)));
 
     return AssistantSnippetBudget.assemble(properties, tier1, tier2, tier3, tier4);
+  }
+
+  private String estimateSnippetText(List<AssistantModelProvider.ContextSnippet> snippets) {
+    return snippets.stream()
+        .map(snippet -> snippet.source() + "\n" + snippet.title() + "\n" + snippet.content())
+        .collect(Collectors.joining("\n\n"));
+  }
+
+  private int estimateTokens(String value) {
+    return (int) Math.ceil((value == null ? 0 : value.length()) / 4.0);
+  }
+
+  private int plannerOutputReserveTokens() {
+    return 16000;
+  }
+
+  private String turnPromptForEstimate(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantModelContext context,
+      ModelLevel level) {
+    return "Level: "
+        + level
+        + "\nActive view: "
+        + nonBlank(request.activeView(), "unknown")
+        + "\nSelected stable IDs: "
+        + request.selectedElementIds()
+        + "\nConversation memory:\n"
+        + conversationMemory(session)
+        + "\nCurrent model context:\n"
+        + modelContexts.summarize(context)
+        + "\nUser request:\n"
+        + request.rootMessage();
   }
 
   private Set<String> selectedElementTypes(
@@ -1613,6 +1717,15 @@ public class AssistantOrchestrator {
     return deduplicateCompact(snippets, limit);
   }
 
+  private List<AssistantModelProvider.ContextSnippet> snippetsForFollowup(
+      List<AssistantModelProvider.ContextSnippet> snippets) {
+    if (snippets != null
+        && snippets.stream().anyMatch(snippet -> snippet.source().startsWith("full-context"))) {
+      return snippets;
+    }
+    return deduplicate(snippets, properties.maxContextSnippets());
+  }
+
   private String turnPrompt(
       AssistantSessionStore.AssistantSession session,
       AssistantTurnRequest request,
@@ -1625,8 +1738,7 @@ public class AssistantOrchestrator {
     containment. Use exact stable IDs from the model context.
 
     For a requested model change, create a semantically complete model for the user's actual
-    domain and stated scope. Use as many operations as the task genuinely requires, up to the
-    configured operation limit.
+    domain and stated scope. Use as many operations as the task genuinely requires.
     ADD_ELEMENT may mint unique stable IDs. A top-level element omits sourceElementId; an owned
     element names its exact containment owner and feature. CONNECT_ELEMENTS names an exact,
     writable, non-containment EReference. SET_ATTRIBUTE uses the attribute name and puts the new
@@ -1650,10 +1762,11 @@ public class AssistantOrchestrator {
     Assumption, or Hotspot as appropriate. Preserve coverage: do not silently drop a stated
     requirement or workshop artifact. Ask clarification only for consequential conflicts that
     change the business model; otherwise choose conservative CIM defaults and record assumptions.
-    Never report that the CIM is partial because of operation limits. If the limit is tight, still
-    create a coherent complete CIM by prioritizing named root-level concepts and required ownership,
-    then compress lower-level facts into available descriptions, summaries, requirements,
-    assumptions, risks, hotspots, and policies so every source fact remains represented.
+    Never report that the CIM is partial because of operation limits, and never shrink a model to a
+    token-saving toy version. Create a coherent complete CIM by prioritizing named root-level
+    concepts and required ownership, then compress lower-level facts into available descriptions,
+    summaries, requirements, assumptions, risks, hotspots, and policies so every source fact remains
+    represented.
 
     Required containment examples derived from the runtime schema:
     """
@@ -1677,8 +1790,6 @@ public class AssistantOrchestrator {
         + (blank(request.unsavedDraftPatch())
             ? ""
             : "\nUnsaved local draft is included in the planning base model for this turn.")
-        + "\nMaximum operations: "
-        + properties.maxToolCalls()
         + (modelContexts.isEmptyCanvas(context)
             ? "\n\nEmpty canvas guidance:\n"
                 + schemas.domainCreationBlueprint(session.level(), request.rootMessage())
@@ -1694,9 +1805,6 @@ public class AssistantOrchestrator {
       SemanticModelPatch patch,
       AssistantModelContext context,
       JsonNode baseModel) {
-    if (patch.operations().size() > properties.maxToolCalls()) {
-      throw new PlatformException(422, "The proposal exceeds the configured operation limit.");
-    }
     Map<String, String> types =
         context.elements().stream()
             .collect(
@@ -1811,9 +1919,6 @@ public class AssistantOrchestrator {
   }
 
   private boolean shouldAutoApply(AssistantTurnPlan plan) {
-    if (plan.patch().operations().size() > properties.maxAutoApplyOperations()) {
-      return false;
-    }
     return true;
   }
 
@@ -1909,45 +2014,34 @@ public class AssistantOrchestrator {
       AssistantSessionStore.AssistantSession session,
       ModelRecord targetModel,
       SemanticModelPatch semanticPatch) {
-    ModelRecord current = targetModel;
-    List<ModelService.ModelPatchOperation> appliedOperations = new ArrayList<>();
-    List<ModelService.ModelPatchOperation> inverseOperations = new ArrayList<>();
-    List<String> affectedElements = new ArrayList<>();
     List<SemanticModelPatch.Operation> operations = semanticPatch.operations();
+    AssistantPatchCompiler.CompiledPatch compiled =
+        patchCompiler.compile(targetModel.modelJson(), semanticPatch);
+    ModelRecord patched =
+        models.patch(
+            user,
+            session.level(),
+            targetModel.id(),
+            targetModel.name(),
+            compiled.patch(),
+            targetModel.revision());
+    if (patched == null) {
+      log.warn("Model patch returned no record during assistant apply.");
+      patched = targetModel;
+    }
     for (int index = 0; index < operations.size(); index++) {
       SemanticModelPatch.Operation operation = operations.get(index);
       if (operation == null) {
         continue;
       }
-      AssistantPatchCompiler.CompiledPatch step =
-          patchCompiler.compile(current.modelJson(), new SemanticModelPatch(List.of(operation)));
-      if (step.patch().isEmpty()) {
-        continue;
-      }
-      ModelRecord patched =
-          models.patch(
-              user,
-              session.level(),
-              current.id(),
-              current.name(),
-              step.patch(),
-              current.revision());
-      if (patched == null) {
-        log.warn("Model patch returned no record during incremental assistant apply.");
-        continue;
-      }
-      appliedOperations.addAll(step.patch());
-      inverseOperations.addAll(0, step.inversePatch());
-      affectedElements.addAll(step.affectedElements());
-      current = patched;
       realtime.publish(
           session.id(),
           "model.updated",
           Map.of(
               "modelId",
-              current.id(),
+              patched.id(),
               "revision",
-              current.revision(),
+              patched.revision(),
               "operationIndex",
               index + 1,
               "operationCount",
@@ -1957,10 +2051,7 @@ public class AssistantOrchestrator {
               "live",
               true));
     }
-    return new AppliedPatch(
-        current,
-        new AssistantPatchCompiler.CompiledPatch(
-            appliedOperations, inverseOperations, affectedElements.stream().distinct().toList()));
+    return new AppliedPatch(patched, compiled);
   }
 
   private String semanticOperationLabel(SemanticModelPatch.Operation operation) {
@@ -2127,14 +2218,9 @@ public class AssistantOrchestrator {
     if (blank(request.attachmentName()) && blank(request.attachmentContent())) {
       return "";
     }
-    String content = request.attachmentContent() == null ? "" : request.attachmentContent().trim();
-    if (content.length() > 24000) {
-      content = content.substring(0, 24000) + "\n...[attachment truncated]";
-    }
-    return "\nAttached context file: "
+    return "\nAttached context file available in backend-provided context: "
         + nonBlank(request.attachmentName(), "attachment")
-        + "\n"
-        + content;
+        + "\n";
   }
 
   private String evalCategory(AssistantTurnRequest request, AssistantModelContext context) {
@@ -2583,6 +2669,8 @@ public class AssistantOrchestrator {
       freeText = freeText == null ? "" : freeText.trim();
     }
   }
+
+  private record InitialPlanResult(AssistantTurnPlan plan, int toolCalls) {}
 
   private record PlanAttempt(
       AssistantTurnPlan plan,

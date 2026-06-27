@@ -90,6 +90,22 @@ class SemanticModelPatchParserTest {
   }
 
   @Test
+  void ignoresUnknownOperationMetadata() {
+    SemanticModelPatch patch =
+        parser.parse(
+            """
+            {"operations":[{"type":"CONNECT_ELEMENTS","targetElementId":"relationship-1",
+            "sourceElementId":"patient","referenceName":"domainRelationships",
+            "sourceMultiplicity":{"lower":1},"targetMultiplicity":{"upper":"*"}}]}
+            """);
+
+    assertEquals(1, patch.operations().size());
+    assertEquals(
+        SemanticModelPatch.OperationType.CONNECT_ELEMENTS, patch.operations().get(0).type());
+    assertEquals("relationship-1", patch.operations().get(0).targetElementId());
+  }
+
+  @Test
   void parsesJsonFollowedByProviderCommentary() {
     SemanticModelPatch patch =
         parser.parse(

@@ -13,6 +13,9 @@ import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalInt;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,6 +103,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
   private final AssistantTurnPlanParser turnPlanParser;
   protected final AssistantToolService tools;
   protected final ChatClient chatClient;
+  private final Map<String, OptionalInt> contextWindowCache = new ConcurrentHashMap<>();
 
   AbstractAssistantModelProvider(
       String providerKey,
@@ -195,6 +199,61 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
   @Override
   public boolean available() {
     return properties.enabled() && apiKeyConfigured() && proxyAvailability.check().available();
+  }
+
+  @Override
+  public OptionalInt contextWindowTokens(AssistantModelRole role) {
+    requireAvailable();
+    String model = modelFor(role == null ? AssistantModelRole.PLANNER : role);
+    return contextWindowCache.computeIfAbsent(
+        model,
+        key -> {
+          try {
+            String content =
+                hardening.providerCall(
+                    AssistantModelRole.PLANNER,
+                    providerKey,
+                    model,
+                    () ->
+                        chatClient
+                            .prompt()
+                            .options(options(model, AssistantModelRole.PLANNER))
+                            .system(
+                                "Return only JSON. Report the maximum input plus output context"
+                                    + " window, in tokens, for the currently selected model. If"
+                                    + " you cannot identify the exact configured model capacity,"
+                                    + " return {\"contextWindowTokens\":0}.")
+                            .user(
+                                "Configured model name: "
+                                    + model
+                                    + "\nReturn shape:"
+                                    + " {\"contextWindowTokens\":123456}")
+                            .call()
+                            .content());
+            OptionalInt parsed = parseContextWindowTokens(content);
+            if (parsed.isPresent()) {
+              log.info(
+                  "AI provider context window resolved provider={} model={} tokens={}",
+                  providerKey,
+                  model,
+                  parsed.getAsInt());
+            } else {
+              log.info(
+                  "AI provider context window unknown provider={} model={} response={}",
+                  providerKey,
+                  model,
+                  content);
+            }
+            return parsed.isPresent() ? parsed : configuredContextWindowTokens(model);
+          } catch (RuntimeException ex) {
+            log.warn(
+                "Could not resolve AI provider context window provider={} model={}",
+                providerKey,
+                model,
+                ex);
+            return configuredContextWindowTokens(model);
+          }
+        });
   }
 
   @Override
@@ -348,5 +407,40 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     if (!proxy.available()) {
       throw new PlatformException(503, proxy.message());
     }
+  }
+
+  private OptionalInt parseContextWindowTokens(String content) {
+    if (content == null || content.isBlank()) {
+      return OptionalInt.empty();
+    }
+    java.util.regex.Matcher matcher =
+        java.util.regex.Pattern.compile(
+                "(?i)context[_ -]?window[_ -]?tokens\"?\\s*[:=]\\s*\"?(\\d{4,9})")
+            .matcher(content);
+    if (!matcher.find()) {
+      matcher = java.util.regex.Pattern.compile("\\b(\\d{4,9})\\b").matcher(content);
+      if (!matcher.find()) {
+        return OptionalInt.empty();
+      }
+    }
+    try {
+      int value = Integer.parseInt(matcher.group(1));
+      return value >= 4096 ? OptionalInt.of(value) : OptionalInt.empty();
+    } catch (NumberFormatException ex) {
+      return OptionalInt.empty();
+    }
+  }
+
+  private OptionalInt configuredContextWindowTokens(String model) {
+    int configured = properties.contextWindowTokens();
+    if (configured < 4096) {
+      return OptionalInt.empty();
+    }
+    log.info(
+        "AI provider context window using configured override provider={} model={} tokens={}",
+        providerKey,
+        model,
+        configured);
+    return OptionalInt.of(configured);
   }
 }

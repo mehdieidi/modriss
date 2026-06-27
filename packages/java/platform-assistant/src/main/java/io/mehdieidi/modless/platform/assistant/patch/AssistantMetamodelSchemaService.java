@@ -190,6 +190,14 @@ public class AssistantMetamodelSchemaService {
         .toList();
   }
 
+  /** Returns writable contracts for every creatable type in the level metamodel. */
+  public List<AssistantModelProvider.ContextSnippet> allPlanningContracts(ModelLevel level) {
+    return schema(level).types().values().stream()
+        .filter(TypeSchema::creatable)
+        .map(type -> typeContract(level, type.name()))
+        .toList();
+  }
+
   /**
    * Ranks creatable metamodel types by relevance to a natural-language modeling request.
    *

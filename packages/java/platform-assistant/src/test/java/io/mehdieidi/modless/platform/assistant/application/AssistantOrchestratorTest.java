@@ -46,8 +46,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class AssistantOrchestratorTest {
 
@@ -78,6 +80,7 @@ class AssistantOrchestratorTest {
   @BeforeEach
   void setUp() throws Exception {
     AssistantSettings properties = AssistantSettingsFixtures.defaults();
+    when(provider.contextWindowTokens(any())).thenReturn(OptionalInt.empty());
     when(sessions.require("session", "user")).thenReturn(session);
     when(projects.get(user, "project"))
         .thenReturn(
@@ -290,6 +293,44 @@ class AssistantOrchestratorTest {
   }
 
   @Test
+  void mutationRouteReplansAnswerOnlyResultIntoPatch() throws Exception {
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.INFORMATION,
+                    AssistantTurnPlan.Kind.ANSWER,
+                    "I completed the analysis.",
+                    List.of(),
+                    new SemanticModelPatch(List.of())),
+                1,
+                1));
+    var attributes =
+        new ObjectMapper()
+            .readTree("{\"name\":\"Submit order\",\"businessOperationRef\":\"submit-order\"}");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "submit-order",
+                    "Function",
+                    attributes,
+                    null,
+                    null)));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Kind.PATCH, "Prepared the function.", List.of(), patch));
+
+    var response = orchestrator.handleMessage(user, "session", request("model submission"));
+
+    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
+    assertNotNull(response.proposal());
+    verify(provider, times(1)).planTurn(any());
+  }
+
+  @Test
   void invalidPatchIsRepairedToClarificationAndNeverSavedAsProposal() {
     SemanticModelPatch invalid =
         new SemanticModelPatch(
@@ -461,6 +502,101 @@ class AssistantOrchestratorTest {
                 + response.proposal().patch().operations().size()
                 + " operations");
     verify(provider, times(1)).planMutationTurn(any(), any());
+  }
+
+  @Test
+  void usesFullContextWhenModelWindowCanFitAttachmentAndMetamodel() throws Exception {
+    String attachment = "As a clinic receptionist, I register patients.\n".repeat(3000);
+    var attributes =
+        new ObjectMapper()
+            .readTree(
+                "{\"name\":\"Register patient\",\"businessOperationRef\":\"register-patient\"}");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "register-patient",
+                    "Function",
+                    attributes,
+                    null,
+                    null)));
+    when(provider.contextWindowTokens(any())).thenReturn(OptionalInt.of(1_000_000));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.PATCH,
+                    "Prepared full context patch.",
+                    List.of(),
+                    patch),
+                0,
+                1));
+
+    orchestrator.handleMessage(
+        user,
+        "session",
+        new AssistantOrchestrator.AssistantTurnRequest(
+            "Create a CIM model from this user story document",
+            null,
+            null,
+            "pim",
+            List.of(),
+            null,
+            "clinic-user-stories.md",
+            attachment));
+
+    ArgumentCaptor<AssistantModelProvider.AssistantPrompt> prompt =
+        ArgumentCaptor.forClass(AssistantModelProvider.AssistantPrompt.class);
+    verify(provider).planMutationTurn(prompt.capture(), any());
+    assertTrue(
+        prompt.getValue().snippets().stream()
+            .anyMatch(
+                snippet ->
+                    snippet.source().equals("full-context-user-attachment")
+                        && snippet.content().equals(attachment)));
+    assertTrue(
+        prompt.getValue().snippets().stream()
+            .anyMatch(snippet -> snippet.source().equals("full-context-model")));
+    assertTrue(
+        prompt.getValue().snippets().stream()
+            .anyMatch(snippet -> snippet.source().startsWith("full-context-runtime-metamodel")));
+  }
+
+  @Test
+  void acceptsPatchesLargerThanLegacyOperationLimit() {
+    ObjectMapper mapper = new ObjectMapper();
+    List<SemanticModelPatch.Operation> operations = new java.util.ArrayList<>();
+    for (int index = 0; index < 120; index++) {
+      operations.add(
+          new SemanticModelPatch.Operation(
+              SemanticModelPatch.OperationType.ADD_ELEMENT,
+              java.util.UUID.randomUUID().toString(),
+              "Function",
+              mapper.createObjectNode().put("name", "Function " + index),
+              null,
+              null));
+    }
+    SemanticModelPatch largePatch = new SemanticModelPatch(operations);
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.PATCH,
+                    "Prepared a large model.",
+                    List.of(),
+                    largePatch),
+                0,
+                1));
+
+    var response =
+        orchestrator.handleMessage(user, "session", request("Create the complete operations map"));
+
+    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
+    assertNotNull(response.proposal());
+    assertTrue(response.proposal().patch().operations().size() > 96);
   }
 
   @Test

@@ -4,6 +4,7 @@ import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import java.util.List;
+import java.util.OptionalInt;
 
 /** Provider-neutral boundary for assistant model calls. */
 public interface AssistantModelProvider {
@@ -21,6 +22,17 @@ public interface AssistantModelProvider {
    * @return availability state
    */
   boolean available();
+
+  /**
+   * Returns the model's advertised or self-reported context window in tokens when it can be
+   * obtained cheaply and confidently.
+   *
+   * @param role model role
+   * @return context-window token capacity, or empty when unknown
+   */
+  default OptionalInt contextWindowTokens(AssistantModelRole role) {
+    return OptionalInt.empty();
+  }
 
   /**
    * Completes one bounded assistant prompt.

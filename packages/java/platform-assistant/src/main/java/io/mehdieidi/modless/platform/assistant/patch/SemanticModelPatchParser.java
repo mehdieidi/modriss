@@ -1,6 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.patch;
 
 import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -23,6 +24,7 @@ public class SemanticModelPatchParser {
     this.tolerantMapper =
         mapper
             .copy()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .enable(
                 JsonReadFeature.ALLOW_TRAILING_COMMA.mappedFeature(),
                 JsonReadFeature.ALLOW_SINGLE_QUOTES.mappedFeature(),
@@ -52,7 +54,7 @@ public class SemanticModelPatchParser {
         }
         ObjectNode root = canonicalRoot(parsed);
         normalizeOperations(root);
-        return mapper.treeToValue(root, SemanticModelPatch.class);
+        return tolerantMapper.treeToValue(root, SemanticModelPatch.class);
       } catch (Exception ex) {
         lastFailure = ex;
       }
@@ -62,7 +64,7 @@ public class SemanticModelPatchParser {
         ObjectNode root = mapper.createObjectNode();
         root.set("operations", standaloneOperations);
         normalizeOperations(root);
-        return mapper.treeToValue(root, SemanticModelPatch.class);
+        return tolerantMapper.treeToValue(root, SemanticModelPatch.class);
       } catch (Exception ex) {
         lastFailure = ex;
       }
