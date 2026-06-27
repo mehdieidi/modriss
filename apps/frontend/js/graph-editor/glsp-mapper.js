@@ -21,6 +21,7 @@ export function mapNodeToGlsp(node, options = {}) {
       tokenText: g6Node.data.tokenText,
       notationGeometry: g6Node.data.notationGeometry,
       notationShape: g6Node.data.notationShape,
+      iconSrc: g6Node.data.iconSrc,
       badges: g6Node.data.badges,
       container: g6Node.data.container,
       detailText: g6Node.data.detailText,

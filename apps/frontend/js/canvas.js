@@ -106,6 +106,20 @@ const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
 const INTERNAL_TARGET_SUMMARY_PREFIX = "internal-target";
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
 
+function resolveIconSource(src) {
+  const normalized = String(src || "").trim();
+  if (!normalized) {
+    return PLACEHOLDER_ICON;
+  }
+  if (normalized.startsWith("/") || normalized.startsWith(".") || normalized.endsWith(".svg")) {
+    return normalized;
+  }
+  if (/^[a-z0-9_-]+$/i.test(normalized)) {
+    return `/assets/icons/${normalized}.svg`;
+  }
+  return PLACEHOLDER_ICON;
+}
+
 function boundedContextConfig() {
   try {
     return modelingLevelConfig(state.activeType).boundedContext || {};
@@ -2003,7 +2017,7 @@ function createMaskIcon(className, src, { ariaHidden = true } = {}) {
   if (ariaHidden) {
     icon.setAttribute("aria-hidden", "true");
   }
-  icon.style.setProperty("--icon-src", `url('${src || PLACEHOLDER_ICON}')`);
+  icon.style.setProperty("--icon-src", `url('${resolveIconSource(src)}')`);
   return icon;
 }
 
@@ -2012,11 +2026,7 @@ function _setMaskIconSource(icon, src) {
     return;
   }
   const normalized = String(src || "").trim();
-  const resolved =
-    normalized.startsWith("/") || normalized.startsWith(".") || normalized.endsWith(".svg")
-      ? normalized
-      : PLACEHOLDER_ICON;
-  icon.style.setProperty("--icon-src", `url('${resolved}')`);
+  icon.style.setProperty("--icon-src", `url('${resolveIconSource(normalized)}')`);
 }
 
 function definitionUi(definition) {
@@ -2041,14 +2051,7 @@ export function applyDefinitionAccent(element, definition) {
 
 function createPaletteNotationIcon(definition) {
   const configuredIcon = String(definitionUi(definition).icon || "").trim();
-  if (
-    configuredIcon.startsWith("/") ||
-    configuredIcon.startsWith(".") ||
-    configuredIcon.endsWith(".svg")
-  ) {
-    return createMaskIcon("palette-item-icon", configuredIcon);
-  }
-  return null;
+  return configuredIcon ? createMaskIcon("palette-item-icon", configuredIcon) : null;
 }
 
 // ── Palette ───────────────────────────────────────────────────────────────────

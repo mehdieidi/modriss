@@ -194,7 +194,7 @@ function badgeTextFill(_diagramType) {
   return "rgba(226, 232, 240, 0.82)";
 }
 
-function renderPlaceholderIcon(shape, container, { left, top, low = false } = {}) {
+function renderNodeIcon(shape, container, { left, top, low = false, iconSrc = "" } = {}) {
   const size = low ? 18 : 20;
   shape.upsert(
     "placeholderIcon",
@@ -204,7 +204,7 @@ function renderPlaceholderIcon(shape, container, { left, top, low = false } = {}
       y: top + (low ? 9 : 6),
       width: size,
       height: size,
-      src: "/assets/icons/placeholder.svg",
+      src: iconSrc || "/assets/icons/placeholder.svg",
       opacity: 0.9,
       pointerEvents: "none",
     },
@@ -673,12 +673,13 @@ function registerModlessG6Extensions() {
         if (notationGlyph) {
           clearPlaceholderIcon(this, container);
         } else {
-          renderPlaceholderIcon(this, container, {
+          renderNodeIcon(this, container, {
             left,
             top,
             accent,
             diagramType,
             low,
+            iconSrc: attributes.iconSrc,
           });
         }
         this.upsert(
@@ -836,12 +837,13 @@ function registerModlessG6Extensions() {
         if (notationGlyph) {
           clearPlaceholderIcon(this, container);
         } else {
-          renderPlaceholderIcon(this, container, {
+          renderNodeIcon(this, container, {
             left,
             top,
             accent,
             diagramType,
             low,
+            iconSrc: attributes.iconSrc,
           });
         }
         this.upsert(

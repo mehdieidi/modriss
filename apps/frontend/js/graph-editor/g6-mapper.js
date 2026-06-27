@@ -120,6 +120,21 @@ function nodeDetailLine(node, notation, definition) {
   return candidates.find((value) => value !== node?.label) || "";
 }
 
+function nodeIconSource(definition) {
+  const ui = definition?.ui && typeof definition.ui === "object" ? definition.ui : {};
+  const icon = String(ui.icon || definition?.icon || "").trim();
+  if (!icon) {
+    return "";
+  }
+  if (icon.startsWith("/") || icon.startsWith(".") || icon.endsWith(".svg")) {
+    return icon;
+  }
+  if (/^[a-z0-9_-]+$/i.test(icon)) {
+    return `/assets/icons/${icon}.svg`;
+  }
+  return "";
+}
+
 function badgeText(value) {
   return String(value || "")
     .trim()
@@ -212,6 +227,7 @@ export function mapNodeToG6(
   const sticky = stickyColor(node, definition);
   const kindText = humanizeType(node.type);
   const detailText = nodeDetailLine(node, notation, definition);
+  const iconSrc = nodeIconSource(definition);
   const token = nodeToken(typeKey, node, notation);
   const badges = nodeBadges(typeKey, node);
   const container = Boolean(isContainer(node));
@@ -228,6 +244,7 @@ export function mapNodeToG6(
       notation: notation?.tag || "",
       notationShape: definition?.notation?.shape || "concept-card",
       notationGeometry: definition?.notation?.geometry || "rectangle",
+      iconSrc,
       kindText,
       detailText,
       tokenText: token,
@@ -263,6 +280,7 @@ export function mapNodeToG6(
       notation: notation?.tag || "",
       notationShape: definition?.notation?.shape || "concept-card",
       notationGeometry: definition?.notation?.geometry || "rectangle",
+      iconSrc,
       badges,
       showHandles: Boolean(node.showHandles),
       accent,

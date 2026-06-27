@@ -293,7 +293,7 @@ function renderStickyNode(g, node, attrs, flags) {
   } else if (!low) {
     g.appendChild(
       svgEl("image", {
-        href: "/assets/icons/placeholder.svg",
+        href: attrs.iconSrc || "/assets/icons/placeholder.svg",
         x: 10,
         y: low ? 9 : 6,
         width: low ? 18 : 20,
@@ -410,7 +410,7 @@ function renderStandardNode(g, node, attrs, flags) {
   } else if (!low) {
     g.appendChild(
       svgEl("image", {
-        href: "/assets/icons/placeholder.svg",
+        href: attrs.iconSrc || "/assets/icons/placeholder.svg",
         x: 10,
         y: 6,
         width: 20,
@@ -516,6 +516,7 @@ export function createModlessNodeElement(node, options = {}) {
     typeText: attrs.tokenText || attrs.typeText,
     notationGeometry: attrs.notationGeometry || attrs.geometry || "rectangle",
     notationShape: attrs.notationShape,
+    iconSrc: attrs.iconSrc,
     badges: attrs.badges || [],
     diagramType: attrs.diagramType || "",
     elementId: attrs.elementId || node.id,
