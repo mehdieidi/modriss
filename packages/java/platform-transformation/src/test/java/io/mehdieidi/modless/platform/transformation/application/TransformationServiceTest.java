@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.modless.platform.artifact.domain.ArtifactRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.application.ModelService;
@@ -335,6 +336,12 @@ class TransformationServiceTest {
         artifact.modelJson().path("files").isMissingNode(),
         "Artifact metadata must not duplicate generated file contents.");
     assertEquals(artifact.files().size(), artifact.modelJson().path("fileCount").asInt());
+    assertTrue(
+        artifact.modelJson().path("traceability").isObject(),
+        "Artifact metadata must include source-element traceability.");
+    assertTrue(
+        hasTraceabilityPath(artifact.modelJson().path("traceability"), artifact.files().keySet()),
+        "Artifact traceability must point at generated files.");
     assertEquals(artifact.id(), services.artifacts().get(context.user(), artifact.id()).id());
     assertFalse(services.artifacts().list(context.user(), context.project().id()).isEmpty());
     assertTrue(artifact.files().containsKey("generated/reports/generation-report.md"));
@@ -384,5 +391,21 @@ class TransformationServiceTest {
     assertTrue(
         regenerated.files().get(handlerPath).contains(customLogic),
         "Regeneration must preserve content edited inside protected regions.");
+  }
+
+  private boolean hasTraceabilityPath(JsonNode traceability, Set<String> files) {
+    var fields = traceability.fields();
+    while (fields.hasNext()) {
+      JsonNode paths = fields.next().getValue();
+      if (!paths.isArray()) {
+        continue;
+      }
+      for (JsonNode path : paths) {
+        if (files.contains(path.asText())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

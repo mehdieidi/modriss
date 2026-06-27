@@ -160,10 +160,20 @@ See [websocket-api.md](websocket-api.md) and
 
 WebSocket stream: `ws://<host>/ws/chatbot/sessions/{sessionId}` (receive-only).
 
+## Impact Analysis
+
+| Method | Path                                                | Purpose                                    |
+| ------ | --------------------------------------------------- | ------------------------------------------ |
+| `GET`  | `/api/impact/{level}/{modelId}/element/{elementId}` | Trace one CIM/PIM/PSM element up and down  |
+| `GET`  | `/api/impact/artifact/{artifactId}`                 | Return generated artifact upstream lineage |
+
+Element impact responses include `focalElement`, `upstream`, `downstream`, and
+`connectedElements`. Artifact impact responses include artifact metadata and ordered ancestors.
+
 ## Planned Endpoints
 
-Requests under `/api/impact/**` and `/api/admin/**` currently return `501` with
-the message `This feature is planned for a future backend iteration.`
+Requests under `/api/admin/**` currently return `501` with the message
+`This feature is planned for a future backend iteration.`
 
 ## Shared Shapes
 

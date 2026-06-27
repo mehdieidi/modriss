@@ -28,12 +28,10 @@
 
 ## Planned Areas
 
-- Impact analysis
 - Admin workspace APIs
 - Broader collaboration and versioning workflows
 - Deployment automation beyond generated project scripts
 - Reverse engineering
 - Additional cloud providers
 
-Planned HTTP surfaces under `/api/impact/**` and `/api/admin/**` return `501`
-until implemented.
+The admin HTTP surface under `/api/admin/**` returns `501` until implemented.

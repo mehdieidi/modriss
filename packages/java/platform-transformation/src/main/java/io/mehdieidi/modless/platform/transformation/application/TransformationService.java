@@ -283,16 +283,19 @@ public final class TransformationService {
           requireSourceRevision(source, expectedRevision);
           String artifactName = source.name() + "-artifact";
           ArtifactRecord previousArtifact = latestArtifactForSource(user, source, artifactName);
-          Map<String, String> files =
-              formalPsmToArtifactFiles(
+          GeneratedArtifact generated =
+              formalPsmToArtifact(
                   source, previousArtifact == null ? Map.of() : previousArtifact.files());
           ObjectNode metadata = store.objectMapper().createObjectNode();
           metadata.put("sourceModelId", source.id());
           metadata.put("sourceModelRevision", source.revision());
           metadata.put("sourceModelHash", sourceModelHash(source));
+          metadata.put("sourceModelLevel", source.level().name());
+          metadata.set("traceability", generated.traceability());
           long persistStarted = System.nanoTime();
           ArtifactRecord artifact =
-              artifactService.create(user, source.projectId(), artifactName, metadata, files);
+              artifactService.create(
+                  user, source.projectId(), artifactName, metadata, generated.files());
           addTiming("java.artifactPersistenceMs", System.nanoTime() - persistStarted);
           return artifact;
         });
@@ -449,9 +452,9 @@ public final class TransformationService {
    * Runs the formal AWS PSM artifact generator and reads the generated files.
    *
    * @param source source PSM model
-   * @return generated files keyed by artifact-relative path
+   * @return generated files and traceability metadata
    */
-  private Map<String, String> formalPsmToArtifactFiles(
+  private GeneratedArtifact formalPsmToArtifact(
       ModelRecord source, Map<String, String> previousFiles) {
     Path repositoryRoot = mdePaths.repositoryRoot();
     Path workDir = null;
@@ -483,13 +486,14 @@ public final class TransformationService {
       }
       phaseStarted = System.nanoTime();
       Map<String, String> files = generatedFiles(outputDirectory);
-      files.keySet().retainAll(currentArtifactPaths(outputDirectory));
+      JsonNode artifactTrace = artifactTrace(outputDirectory);
+      files.keySet().retainAll(currentArtifactPaths(artifactTrace));
       addTiming("java.artifactDiscoveryMs", System.nanoTime() - phaseStarted);
       if (files.isEmpty()) {
         throw new PlatformException(500, "PSM-to-artifact generation did not produce files.");
       }
       validateGeneratedArtifactCompleteness(source, files);
-      return files;
+      return new GeneratedArtifact(files, artifactTraceability(source, artifactTrace));
     } catch (PlatformException ex) {
       throw ex;
     } catch (EgxGenerationException ex) {
@@ -528,13 +532,16 @@ public final class TransformationService {
     }
   }
 
+  /** Reads the generated artifact trace document. */
+  private JsonNode artifactTrace(Path outputDirectory) throws Exception {
+    return store
+        .objectMapper()
+        .readTree(outputDirectory.resolve("generated/trace/artifact-trace.json").toFile());
+  }
+
   /** Reads the artifact trace to identify files emitted by the current generation run. */
-  private Set<String> currentArtifactPaths(Path outputDirectory) throws Exception {
-    JsonNode artifacts =
-        store
-            .objectMapper()
-            .readTree(outputDirectory.resolve("generated/trace/artifact-trace.json").toFile())
-            .path("artifacts");
+  private Set<String> currentArtifactPaths(JsonNode artifactTrace) {
+    JsonNode artifacts = artifactTrace.path("artifacts");
     Set<String> paths = new LinkedHashSet<>();
     for (JsonNode artifact : artifacts) {
       String path = artifact.path("path").asText();
@@ -543,6 +550,92 @@ public final class TransformationService {
       }
     }
     return paths;
+  }
+
+  /**
+   * Builds element-id to artifact-path traceability metadata from the generator trace report.
+   *
+   * @param source source PSM model
+   * @param artifactTrace generator trace report
+   * @return JSON object keyed by source PSM element id
+   */
+  private ObjectNode artifactTraceability(ModelRecord source, JsonNode artifactTrace) {
+    Map<String, Set<String>> pathsByElement = new LinkedHashMap<>();
+    Map<String, Set<String>> aliasesByElement = sourceElementAliases(source.modelJson());
+    for (JsonNode artifact : artifactTrace.path("artifacts")) {
+      String path = artifact.path("path").asText("");
+      if (path.isBlank()) {
+        continue;
+      }
+      JsonNode stableIds = artifact.path("sourceStableIds");
+      if (!stableIds.isArray()) {
+        continue;
+      }
+      for (JsonNode stableIdNode : stableIds) {
+        String stableId = stableIdNode.asText("");
+        if (stableId.isBlank()) {
+          continue;
+        }
+        for (Map.Entry<String, Set<String>> entry : aliasesByElement.entrySet()) {
+          if (entry.getValue().contains(stableId)) {
+            pathsByElement
+                .computeIfAbsent(entry.getKey(), ignored -> new LinkedHashSet<>())
+                .add(path);
+          }
+        }
+      }
+    }
+    ObjectNode traceability = store.objectMapper().createObjectNode();
+    pathsByElement.forEach(
+        (elementId, paths) -> {
+          ArrayNode array = traceability.putArray(elementId);
+          paths.stream().sorted().forEach(array::add);
+        });
+    return traceability;
+  }
+
+  /** Indexes source model elements by all stable identities used by artifact generation. */
+  private Map<String, Set<String>> sourceElementAliases(JsonNode modelJson) {
+    Map<String, Set<String>> aliases = new LinkedHashMap<>();
+    collectElementAliases(modelJson, aliases);
+    JsonNode graphElements = modelJson.path("graph").path("elements");
+    if (graphElements.isArray()) {
+      graphElements.forEach(element -> collectElementAliases(element, aliases));
+    }
+    return aliases;
+  }
+
+  private void collectElementAliases(JsonNode node, Map<String, Set<String>> aliases) {
+    if (node == null || node.isNull()) {
+      return;
+    }
+    if (node.isObject()) {
+      String id = text(node, "id", "");
+      if (!id.isBlank()) {
+        Set<String> values = aliases.computeIfAbsent(id, ignored -> new LinkedHashSet<>());
+        for (String field :
+            java.util.List.of(
+                "id",
+                "traceId",
+                "externalId",
+                "sourceQualifiedName",
+                "name",
+                "displayName",
+                "label",
+                "logicalId",
+                "physicalName")) {
+          String value = text(node, field, "");
+          if (!value.isBlank()) {
+            values.add(value);
+          }
+        }
+      }
+      node.fields().forEachRemaining(entry -> collectElementAliases(entry.getValue(), aliases));
+      return;
+    }
+    if (node.isArray()) {
+      node.forEach(child -> collectElementAliases(child, aliases));
+    }
   }
 
   /**
@@ -1122,4 +1215,12 @@ public final class TransformationService {
    * @param sourceXmi canonical source XMI bytes
    */
   private record GeneratedModel(ObjectNode model, byte[] sourceXmi) {}
+
+  /**
+   * Generated artifact files plus traceability metadata.
+   *
+   * @param files generated files keyed by artifact-relative path
+   * @param traceability source element id to generated file paths
+   */
+  private record GeneratedArtifact(Map<String, String> files, ObjectNode traceability) {}
 }

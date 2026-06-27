@@ -131,7 +131,8 @@ async function enrichImpactWithArtifactFiles(data) {
           .map((path) => String(path || "").trim())
           .filter(Boolean);
         const traceability = record?.modelJson?.traceability || {};
-        const tracedFiles = focalElementId ? extractTracedFiles(traceability, focalElementId) : [];
+        const traceElementId = String(artifact.elementId || focalElementId || "").trim();
+        const tracedFiles = traceElementId ? extractTracedFiles(traceability, traceElementId) : [];
 
         const sorted = (tracedFiles.length > 0 ? tracedFiles : allFiles).sort((a, b) =>
           a.localeCompare(b),
@@ -240,6 +241,14 @@ function renderImpactPanel(data) {
 
 function buildUpstreamPath(data) {
   const upstream = Array.isArray(data?.upstream) ? data.upstream : [];
+  const modelIds = upstream
+    .map((item) => item?.modelId)
+    .filter(Boolean)
+    .map(String);
+  const hasMultipleElementsPerModel = new Set(modelIds).size !== modelIds.length;
+  if (hasMultipleElementsPerModel) {
+    return [...upstream].reverse();
+  }
   const byModelId = new Map(upstream.filter((i) => i.modelId).map((i) => [String(i.modelId), i]));
 
   const chain = [];

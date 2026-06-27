@@ -981,22 +981,51 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-  /api/impact/{path}:
-    parameters:
-      - $ref: "#/components/parameters/WildcardPath"
+  /api/impact/{level}/{modelId}/element/{elementId}:
     get:
-      tags: [Future]
-      summary: Planned impact analysis endpoint
-      description: Represents the Spring `/api/impact/**` placeholder. Other HTTP methods return the same 501 response.
+      tags: [Impact]
+      summary: Analyze model element impact
+      parameters:
+        - name: level
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [cim, pim, psm]
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: elementId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        "501":
-          $ref: "#/components/responses/NotImplemented"
-    post:
-      tags: [Future]
-      summary: Planned impact analysis endpoint
+        "200":
+          description: Element impact graph containing focal element, upstream chain, downstream tree, and connected peers
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/impact/artifact/{artifactId}:
+    get:
+      tags: [Impact]
+      summary: Analyze generated artifact lineage
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        "501":
-          $ref: "#/components/responses/NotImplemented"
+        "200":
+          description: Artifact metadata and ordered upstream model ancestors
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/{path}:
     parameters:
       - $ref: "#/components/parameters/WildcardPath"

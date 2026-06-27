@@ -98,6 +98,12 @@ ZIP download. File paths must be relative and cannot escape the artifact root.
 - `POST /api/{level}/{modelId}/views/{viewId}/layout`
 - `GET /api/health`
 
+### Impact Analysis
+
+- `GET /api/impact/{level}/{modelId}/element/{elementId}` returns the selected element,
+  upstream transformation sources, downstream generated elements/artifacts, and same-model peers.
+- `GET /api/impact/artifact/{artifactId}` returns artifact metadata and upstream model ancestors.
+
 ### Assistant
 
 Assistant REST routes create and clear sessions, list conversations, load thread history, submit
@@ -106,4 +112,4 @@ proposals. See [Realtime Assistant API](realtime-api.md).
 
 ### Planned Routes
 
-Requests under `/api/impact/**` and `/api/admin/**` currently return HTTP `501`.
+Requests under `/api/admin/**` currently return HTTP `501`.
