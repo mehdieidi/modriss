@@ -63,7 +63,7 @@ sequenceDiagram
             O->>Patch: compile semantic patch to JSON patch + inverse
             O->>Patch: apply patch to preview model
             O->>Models: Validate preview
-            alt low risk and GUARDED_APPLY
+            alt low risk and auto-apply allowed
                 O->>Models: patch stored model with expected revision
                 O->>RT: publish model.updated
             else approval needed
@@ -95,6 +95,24 @@ sequenceDiagram
     loop Later assistant events
         RT-->>Client: chat.assistant, model.updated, proposal.rejected, assistant.choice
     end
+```
+
+## POST `/api/chatbot/sessions/{sessionId}/attachments`
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant C as ChatbotController
+    participant O as AssistantOrchestrator
+    participant P as ProjectService
+    participant U as UploadService
+    Client->>C: token + sessionId + multipart file
+    C->>O: session(user, sessionId)
+    O-->>C: AssistantSession(project, level)
+    C->>P: Verify project access
+    C->>U: uploadAssistantAttachment(scope, file)
+    U-->>C: UploadedFileRecord
+    C-->>Client: AttachmentResponse
 ```
 
 ## WebSocket `/ws/chatbot/sessions/{sessionId}`
@@ -239,5 +257,5 @@ sequenceDiagram
     C->>O: submitChoice(user, sessionId, choiceId, optionId)
     O->>Mem: append CHOICE audit
     O->>RT: publish assistant.choice
-    C-->>Client: Empty response
+    C-->>Client: MessageResponse
 ```

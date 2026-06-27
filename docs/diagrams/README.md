@@ -48,7 +48,7 @@ The diagrams were derived from:
 
 ## API Coverage
 
-Every implemented controller route template has a sequence diagram:
+The API sequence diagrams cover the primary controller route templates and interaction flows:
 
 - Auth: 5 routes.
 - Projects and membership: 9 routes.
@@ -56,7 +56,8 @@ Every implemented controller route template has a sequence diagram:
 - Transformations and MDE jobs: 5 routes.
 - Artifacts: 5 routes.
 - Modeling configuration, layout, and process definitions: 5 routes.
-- Assistant REST/SSE: 9 routes.
+- Assistant REST/SSE: core session, message, attachment, streaming, proposal, undo, and choice
+  flows.
 - Assistant WebSocket: 1 route.
 - Health, OpenAPI, Swagger UI, future-feature wildcard routes, and Actuator endpoints.
 

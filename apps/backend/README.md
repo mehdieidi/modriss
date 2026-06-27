@@ -41,7 +41,8 @@ Details: [postgres-storage](../../docs/internal/operations/postgres-storage.md) 
 Controllers live in `src/main/java/.../backend/api/`. Checked-in contract:
 [`docs/api/openapi/openapi.yaml`](../../docs/api/openapi/openapi.yaml)
 
-Planned routes under `/api/impact/**` and `/api/admin/**` return `501`.
+Impact analysis routes are implemented under `/api/impact/**`. Planned admin workspace routes under
+`/api/admin/**` return `501`.
 
 ## Docs
 

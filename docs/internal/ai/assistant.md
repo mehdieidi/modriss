@@ -18,7 +18,7 @@ Set these environment variables before starting the backend:
 
 ```bash
 MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=GUARDED_APPLY
+MODLESS_AI_MODE=AUTONOMOUS
 MODLESS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 ```
@@ -31,12 +31,12 @@ OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com
 MODLESS_AI_PLANNER_MODEL=gpt-4o-mini
 MODLESS_AI_RESPONDER_MODEL=gpt-4o-mini
 MODLESS_AI_SUMMARIZER_MODEL=gpt-4o-mini
-MODLESS_AI_MAX_TOOL_CALLS=96
-MODLESS_AI_TOKEN_BUDGET=6000
-MODLESS_AI_REQUEST_TIMEOUT=5m
+MODLESS_AI_MAX_TOOL_CALLS=0
+MODLESS_AI_TOKEN_BUDGET=16000
+MODLESS_AI_REQUEST_TIMEOUT=10m
 ```
 
-`MODLESS_AI_REQUEST_TIMEOUT` defaults to 5 minutes. Complete architecture proposals can require
+`MODLESS_AI_REQUEST_TIMEOUT` defaults to 10 minutes. Complete architecture proposals can require
 large structured responses, and OpenAI-compatible gateways or reasoning models can have highly
 variable latency. Lower values may reject otherwise successful requests. Connection establishment
 still fails after at most 10 seconds. A response timeout is not retried because the provider may
@@ -60,9 +60,10 @@ If you do not want provider calls or model proposals, set:
 MODLESS_AI_ENABLED=false
 ```
 
-The only mode is `GUARDED_APPLY`: the LLM answers, asks structured clarification questions, or
-drafts semantic operations. The backend shows a proposal only after structural and mandatory EVL
-validation, and every proposal requires explicit user approval.
+The current mode is `AUTONOMOUS`; `GUARDED_APPLY` remains accepted for existing environments. The
+LLM answers, asks structured clarification questions, or drafts semantic operations. The backend
+shows model-changing proposals only after structural and mandatory EVL validation, and proposal
+approval, rejection, and undo are exposed through the API and UI.
 
 Do not put API keys directly in `application.yml`. Use environment variables or a local `.env` file
 that is not committed.
@@ -80,13 +81,13 @@ To enable AI for a Compose run, set environment variables before starting Compos
 
 ```bash
 MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=GUARDED_APPLY
+MODLESS_AI_MODE=AUTONOMOUS
 MODLESS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 docker compose up --build
 ```
 
-For guarded apply testing:
+For compatibility testing with the legacy mode value:
 
 ```bash
 MODLESS_AI_ENABLED=true
@@ -96,10 +97,9 @@ OPENAI_COMPATIBLE_API_KEY=your_api_key
 docker compose up --build
 ```
 
-Compose passes the common AI settings into the backend container. The backend service defaults the
-AI proxy to disabled because its default OpenAI-compatible endpoint is a local host gateway. When
-you explicitly enable the AI proxy, its host defaults to `host.docker.internal`, because
-`127.0.0.1` inside the container would mean the container itself, not your host machine.
+Compose passes `.env` into the backend container. The AI proxy is disabled unless
+`MODLESS_AI_PROXY_ENABLED=true`; when the backend runs in a container, set
+`MODLESS_AI_PROXY_HOST=host.docker.internal` if the proxy is running on the host.
 
 To turn AI off again:
 
@@ -202,9 +202,9 @@ In plain language, it is a standard way to ship a model that can be loaded local
 runtime libraries. Here, that means the assistant can turn text into vectors on your machine
 instead of calling another remote API just for embeddings.
 
-The project defaults to ONNX mode for embeddings, but falls back to local hash vectors if the
-native runtime is not present. The fallback keeps the app usable even when the heavy native
-libraries are not installed.
+The backend configuration defaults to hash embeddings for local and Compose runs. ONNX can be
+enabled explicitly and can fall back to local hash vectors if the native runtime is not present.
+The fallback keeps the app usable even when the heavy native libraries are not installed.
 
 To try the real ONNX embedding path, enable the extra Maven profile:
 

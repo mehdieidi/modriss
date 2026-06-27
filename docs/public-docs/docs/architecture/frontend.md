@@ -1,12 +1,13 @@
 # Frontend Architecture
 
 The frontend is a static ES-module application under `apps/frontend`. It supports two diagram
-renderers — AntV G6 (v1, default) and Eclipse GLSP/Sprotty (v2) — and communicates with the
-backend through REST, SSE, and WebSocket.
+renderers: AntV G6 and Eclipse GLSP/Sprotty. The packaged modeling config falls back to AntV G6,
+while the Docker Compose stack sets `MODLESS_DIAGRAM_RENDERER=glsp-sprotty` and starts the GLSP
+sidecar. The frontend communicates with the backend through REST, SSE, and WebSocket.
 
 ## Dual renderer architecture
 
-```
+```text
 IDE shell (palette, inspector, views)
         │
         ▼
@@ -33,7 +34,8 @@ the G6 editor.
 - Validation and generation progress
 - Assistant chat and proposal controls
 - Artifact explorer and file editor
-- Planned impact-analysis and admin surfaces
+- Change impact analysis
+- Planned admin workspace surfaces
 
 ## Metadata-Driven Modeling
 

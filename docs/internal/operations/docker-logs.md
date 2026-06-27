@@ -43,7 +43,7 @@ Useful Dozzle searches include:
 ```text
 ERROR
 status=501
-/api/impact/analyze
+/api/admin/workspace/entries
 req-123
 ```
 
@@ -63,7 +63,7 @@ blank, it generates a UUID. The ID is:
 Send a known ID when reproducing an issue to make all logs for that request easy to find:
 
 ```bash
-curl -i -H "X-Request-Id: local-debug-123" http://localhost:8080/api/impact/analyze
+curl -i -H "X-Request-Id: local-debug-123" http://localhost:8080/api/admin/workspace/entries
 ```
 
 ## Check whether the backend container is running

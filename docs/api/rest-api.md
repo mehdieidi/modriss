@@ -1,8 +1,8 @@
 # REST API
 
-The Spring Boot backend exposes the frontend API under `/api`. The generated OpenAPI JSON is
-served at `/v3/api-docs`, the browser UI is available at `/swagger-ui.html`, and the fuller
-checked-in contract lives at `docs/api/openapi/openapi.yaml`.
+The Spring Boot backend exposes the frontend API under `/api`. A runtime OpenAPI summary is served
+at `/v3/api-docs`, the browser UI is available at `/swagger-ui.html`, and the full checked-in
+contract lives at `docs/api/openapi/openapi.yaml`.
 
 ## Base URL
 
@@ -148,6 +148,7 @@ See [websocket-api.md](websocket-api.md) and
 | `POST`   | `/api/chatbot/sessions`                                            | Create or resume a session       |
 | `GET`    | `/api/chatbot/conversations`                                       | List recent conversations        |
 | `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                       | Submit a user message            |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                    | Upload a text attachment         |
 | `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                         | Load thread history              |
 | `GET`    | `/api/chatbot/sessions/{sessionId}/events`                         | Open SSE event stream            |
 | `DELETE` | `/api/chatbot/sessions/{sessionId}`                                | Clear session memory             |

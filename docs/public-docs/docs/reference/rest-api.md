@@ -5,7 +5,7 @@ The backend API defaults to `http://127.0.0.1:8080`. Most application endpoints 
 Interactive and machine-readable contracts:
 
 - Swagger-style browser: `/swagger-ui.html`
-- Generated OpenAPI JSON: `/v3/api-docs`
+- Runtime OpenAPI summary: `/v3/api-docs`
 - Checked-in contract: `docs/api/openapi/openapi.yaml`
 
 ## Authentication
@@ -107,8 +107,8 @@ ZIP download. File paths must be relative and cannot escape the artifact root.
 ### Assistant
 
 Assistant REST routes create and clear sessions, list conversations, load thread history, submit
-messages and choices, open SSE streams, reindex catalogs, and get, approve, reject, or undo
-proposals. See [Realtime Assistant API](realtime-api.md).
+messages and choices, upload text attachments, open SSE streams, reindex catalogs, and get,
+approve, reject, or undo proposals. See [Realtime Assistant API](realtime-api.md).
 
 ### Planned Routes
 

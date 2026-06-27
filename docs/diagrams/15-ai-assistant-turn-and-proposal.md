@@ -43,7 +43,7 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> PROPOSED: Stored with approvalRequired=true
-    [*] --> APPLIED: Low-risk auto apply in GUARDED_APPLY
+    [*] --> APPLIED: Low-risk auto apply when allowed
     PROPOSED --> APPROVED: User approves
     APPROVED --> APPLIED: Backend revalidates and patches model
     PROPOSED --> REJECTED: User rejects

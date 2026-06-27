@@ -5,7 +5,7 @@ Operational alert rules and response procedures for Modless production deploymen
 ## Prerequisites
 
 - Prometheus scraping `http://<backend>:8080/actuator/prometheus`
-- Grafana dashboard: [`infra/grafana/modless-overview.json`](../../../../infra/grafana/modless-overview.json)
+- Grafana dashboard: `infra/grafana/modless-overview.json`
 - Log aggregation with `requestId` (and `traceId` when tracing is enabled)
 - On-call rotation and escalation path defined by your organization
 
@@ -163,4 +163,4 @@ groups:
 - [Deployment guide](deployment.md)
 - [Security controls](security.md)
 - [Testing guide](testing.md)
-- [Backup scripts](../../../../deploy/scripts/backup-postgres.sh)
+- Backup scripts: `deploy/scripts/backup-postgres.sh`

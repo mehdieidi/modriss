@@ -7,8 +7,9 @@ Assistant commands use REST. Realtime transports publish receive-only progress a
 1. Create a session with `POST /api/chatbot/sessions`.
 2. Open SSE or WebSocket for the returned `sessionId`.
 3. Submit messages with `POST /api/chatbot/sessions/{sessionId}/messages`.
-4. Handle proposals or choices through the relevant REST endpoints.
-5. Clear the session with `DELETE /api/chatbot/sessions/{sessionId}`.
+4. Optionally upload text attachments with `POST /api/chatbot/sessions/{sessionId}/attachments`.
+5. Handle proposals or choices through the relevant REST endpoints.
+6. Clear the session with `DELETE /api/chatbot/sessions/{sessionId}`.
 
 ## SSE
 
@@ -37,6 +38,7 @@ Allowed WebSocket origins come from `modless.allowed-origins`.
 | ------ | ------------------------------------------------------------------ |
 | `GET`  | `/api/chatbot/conversations`                                       |
 | `GET`  | `/api/chatbot/sessions/{sessionId}/thread`                         |
+| `POST` | `/api/chatbot/sessions/{sessionId}/attachments`                    |
 | `POST` | `/api/chatbot/catalogs/reindex`                                    |
 | `GET`  | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`         |
 | `POST` | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve` |
