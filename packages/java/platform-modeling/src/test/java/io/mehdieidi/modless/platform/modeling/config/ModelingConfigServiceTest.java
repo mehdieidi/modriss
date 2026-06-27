@@ -722,6 +722,20 @@ class ModelingConfigServiceTest {
     assertFalse(listOfMaps(pim.get("relationshipVisualRules")).isEmpty());
   }
 
+  /** Verifies semantic dashboard layout columns are owned by CVS, not backend Java code. */
+  @Test
+  void cimDashboardCvsOwnsSemanticLayoutColumns() {
+    Map<String, Object> cim = level("cim");
+    Map<String, Object> dashboard =
+        listOfMaps(cim.get("viewDefinitions")).stream()
+            .filter(view -> "dashboard".equals(view.get("id")))
+            .findFirst()
+            .orElseThrow();
+    List<?> columns = (List<?>) dashboard.get("semanticDashboardColumns");
+    assertNotNull(columns);
+    assertFalse(columns.isEmpty());
+  }
+
   /** Verifies PSM CVS exposes shortcut connector rules for integration views. */
   @Test
   void psmCvsIncludesShortcutConnectorRules() {

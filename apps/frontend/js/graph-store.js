@@ -1226,6 +1226,7 @@ function buildViewFromDefinition(
     pinnedElementIds: [],
     edgeLayers: safeArray(definition.edgeLayers),
     layoutProfile: definition.layoutProfile || definition.layoutHint || "DEFAULT_LAYERED",
+    semanticDashboardColumns: safeArray(definition.semanticDashboardColumns),
     defaultDepth: definition.defaultDepth ?? 1,
     nodes: [],
     edges: [],
@@ -1429,6 +1430,9 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
     pinnedElementIds: safeArray(view?.pinnedElementIds).map(String),
     edgeLayers: safeArray(view?.edgeLayers).map(String),
     layoutProfile: String(view?.layoutProfile || "DEFAULT_LAYERED"),
+    semanticDashboardColumns: safeArray(view?.semanticDashboardColumns).map((column) =>
+      safeArray(column).map(String).filter(Boolean),
+    ),
     defaultDepth: view?.defaultDepth,
     nodes: safeArray(view?.nodes)
       .map((node) => ({
@@ -1483,6 +1487,11 @@ function normalizeView(view, graph, typeKey, modelName, { deferLayout = false } 
     ];
     if (!view?.layoutProfile && (definition.layoutProfile || definition.layoutHint)) {
       normalized.layoutProfile = String(definition.layoutProfile || definition.layoutHint);
+    }
+    if (!normalized.semanticDashboardColumns.length) {
+      normalized.semanticDashboardColumns = safeArray(definition.semanticDashboardColumns).map(
+        (column) => safeArray(column).map(String).filter(Boolean),
+      );
     }
   }
   if (graph.elementsById.size && !deferLayout) {

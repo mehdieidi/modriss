@@ -20,3 +20,24 @@ test("validateCreateEdge returns default kind for legal relationship", () => {
   assert.equal(result.ok, true);
   assert.equal(result.edgeKind, "REALIZED_BY");
 });
+
+test("validateCreateEdge excludes configured trace kind from manual relationships", () => {
+  const levelConfig = {
+    relationshipSemantics: { traceKind: "TRACE" },
+    relationshipRules: [
+      {
+        sourceType: "BusinessGoal",
+        targetType: "Capability",
+        allowedKinds: ["TRACE", "REALIZED_BY"],
+      },
+    ],
+  };
+
+  const defaultResult = validateCreateEdge(levelConfig, "BusinessGoal", "Capability");
+  assert.equal(defaultResult.ok, true);
+  assert.equal(defaultResult.edgeKind, "REALIZED_BY");
+  assert.deepEqual(defaultResult.legalKinds, ["REALIZED_BY"]);
+
+  const traceResult = validateCreateEdge(levelConfig, "BusinessGoal", "Capability", "TRACE");
+  assert.equal(traceResult.ok, false);
+});

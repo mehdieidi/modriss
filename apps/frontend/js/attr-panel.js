@@ -25,6 +25,7 @@ import {
   modelingLegalKinds,
   modelingLevelConfig,
   modelingRelationshipKindLabel,
+  modelingSemanticEdgeObjectRules,
 } from "./modeling-config-data.js";
 import {
   addNodeToGraphAndActiveView,
@@ -48,6 +49,35 @@ function safeArray(value) {
 
 function configuredTraceKind() {
   return String(modelingLevelConfig(state.activeType).relationshipSemantics?.traceKind || "");
+}
+
+function boundedContextPanelTypeLabel() {
+  const config = modelingLevelConfig(state.activeType).boundedContext || {};
+  const candidateType = String(config.candidateType || "");
+  if (!candidateType) {
+    return "Context";
+  }
+  try {
+    return modelingElementDefinition(state.activeType, candidateType)?.displayName || candidateType;
+  } catch {
+    return candidateType;
+  }
+}
+
+function isTraceRelationship(relationship) {
+  const traceKind = configuredTraceKind();
+  if (traceKind && relationship.kind === traceKind) {
+    return true;
+  }
+  const eClass = String(relationship.eClass || relationship.type || "");
+  if (!eClass || !traceKind) {
+    return false;
+  }
+  return modelingSemanticEdgeObjectRules(state.activeType).some(
+    (rule) =>
+      String(rule?.eClass || rule?.edgeObjectType || "") === eClass &&
+      safeArray(rule?.matchKinds).map(String).includes(traceKind),
+  );
 }
 
 // Fields managed by canvas – shown read-only
@@ -272,7 +302,7 @@ export function openBoundedContextPanel(contextName) {
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
   state.selectedBoundedContextName = contextName;
-  el.attrPanelType.textContent = "BoundedContext";
+  el.attrPanelType.textContent = boundedContextPanelTypeLabel();
   el.attrPanelTitle.textContent = contextName;
   if (el.attrPanelApplyBtn) {
     el.attrPanelApplyBtn.hidden = false;
@@ -640,27 +670,36 @@ function isSecurityField(key, field = {}) {
   );
 }
 
-function isPolicySecurityField(key, field = {}) {
+function configuredTargetText(field = {}) {
   const targetType = String(field.targetType || "");
+  let targetDefinition = null;
+  try {
+    targetDefinition = targetType ? modelingElementDefinition(state.activeType, targetType) : null;
+  } catch {
+    targetDefinition = null;
+  }
+  return [
+    field.category,
+    field.group,
+    targetDefinition?.category,
+    targetDefinition?.visualRole,
+    targetType,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function isPolicySecurityField(key, field = {}) {
   return (
     POLICY_SECURITY_FIELDS.has(key) ||
-    targetType.includes("Policy") ||
-    targetType.includes("Principal") ||
-    targetType.includes("ProtectedResource") ||
-    targetType.includes("IdentityProvider") ||
-    targetType.includes("Secret")
+    /policy|principal|protected|identity|secret/i.test(configuredTargetText(field))
   );
 }
 
 function isGovernanceField(key, field = {}) {
-  const targetType = String(field.targetType || "");
   return (
     GOVERNANCE_FIELDS.has(key) ||
-    targetType.includes("Requirement") ||
-    targetType.includes("Constraint") ||
-    targetType.includes("Policy") ||
-    targetType.includes("Risk") ||
-    targetType.includes("Readiness")
+    /govern|require|constraint|policy|risk|readiness/i.test(configuredTargetText(field))
   );
 }
 
@@ -908,7 +947,7 @@ function appendTraceabilitySection(node, host = el.attrPanelBody, { includeTitle
   }
   const traceLinks = [];
   state.graph?.relationshipsById?.forEach((relationship) => {
-    if (relationship.kind !== configuredTraceKind() && relationship.eClass !== "TraceLink") {
+    if (!isTraceRelationship(relationship)) {
       return;
     }
     if (
@@ -1237,19 +1276,44 @@ function containedCellMarkup(child, fieldName) {
     return `<span class="attr-contained-readonly">${escapeAttr(overviewValueText(value))}</span>`;
   }
   if (field.fieldType === "select" && Array.isArray(field.options) && field.options.length) {
-    return `<select class="attr-contained-input"
+    const selectedText = String(value ?? "");
+    return `<div class="attr-custom-select attr-contained-select" data-contained-select-root>
+      <select class="attr-native-source"
                     data-contained-edit="${escapeAttr(child.id)}"
                     data-contained-field="${escapeAttr(fieldName)}">
-      <option value=""></option>
-      ${field.options
-        .map(
-          (option) =>
-            `<option value="${escapeAttr(option)}" ${
-              String(value ?? "") === String(option) ? "selected" : ""
-            }>${escapeAttr(option)}</option>`,
-        )
-        .join("")}
-    </select>`;
+        <option value=""></option>
+        ${field.options
+          .map(
+            (option) =>
+              `<option value="${escapeAttr(option)}" ${
+                selectedText === String(option) ? "selected" : ""
+              }>${escapeAttr(option)}</option>`,
+          )
+          .join("")}
+      </select>
+      <button class="attr-custom-select-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span>${escapeAttr(selectedText || "Select...")}</span>
+        <span class="attr-custom-select-caret" aria-hidden="true"></span>
+      </button>
+      <div class="attr-custom-select-menu hidden" role="listbox">
+        <button class="attr-custom-select-option${selectedText ? "" : " is-active"}"
+                data-select-value=""
+                role="option"
+                aria-selected="${selectedText ? "false" : "true"}"
+                type="button">None</button>
+        ${field.options
+          .map((option) => {
+            const optionText = String(option);
+            const active = selectedText === optionText;
+            return `<button class="attr-custom-select-option${active ? " is-active" : ""}"
+                            data-select-value="${escapeAttr(optionText)}"
+                            role="option"
+                            aria-selected="${active ? "true" : "false"}"
+                            type="button">${escapeAttr(optionText)}</button>`;
+          })
+          .join("")}
+      </div>
+    </div>`;
   }
   if (field.fieldType === "boolean" || typeof value === "boolean") {
     return `<input class="attr-contained-check"
@@ -1443,6 +1507,30 @@ function deleteContainedChild(childId) {
 }
 
 function bindContainmentSectionActions() {
+  el.attrPanelBody.querySelectorAll("[data-contained-select-root]").forEach((root) => {
+    const select = root.querySelector("select[data-contained-edit]");
+    const trigger = root.querySelector(".attr-custom-select-trigger");
+    const menu = root.querySelector(".attr-custom-select-menu");
+    if (!select || !trigger || !menu) {
+      return;
+    }
+    trigger.addEventListener("click", () => {
+      const open = root.classList.contains("is-open");
+      closeSiblingCustomSelects(root);
+      root.classList.toggle("is-open", !open);
+      menu.classList.toggle("hidden", open);
+      trigger.setAttribute("aria-expanded", String(!open));
+    });
+    menu.querySelectorAll(".attr-custom-select-option").forEach((optionButton) => {
+      optionButton.addEventListener("click", () => {
+        select.value = optionButton.dataset.selectValue || "";
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        closeCustomSelect(root);
+        syncCustomSelectState(root, select, "Select...");
+      });
+    });
+    syncCustomSelectState(root, select, "Select...");
+  });
   el.attrPanelBody.querySelectorAll("[data-add-contained-child]").forEach((button) => {
     button.addEventListener("click", () => {
       addContainedChildFromDrawer(
@@ -1526,6 +1614,110 @@ function isExpressionField(key, fieldType) {
         normalized,
       ))
   );
+}
+
+function selectedOptionLabels(select) {
+  return [...select.selectedOptions].map((option) => option.textContent || option.value);
+}
+
+function customSelectTriggerText(select, emptyLabel) {
+  const labels = selectedOptionLabels(select).filter(Boolean);
+  if (!labels.length) {
+    return emptyLabel;
+  }
+  if (select.multiple) {
+    return labels.length === 1 ? labels[0] : `${labels.length} selected`;
+  }
+  return labels[0];
+}
+
+function syncCustomSelectState(root, select, emptyLabel) {
+  const triggerLabel = root.querySelector(".attr-custom-select-trigger span");
+  if (triggerLabel) {
+    triggerLabel.textContent = customSelectTriggerText(select, emptyLabel);
+  }
+  const selectedValues = new Set([...select.selectedOptions].map((option) => option.value));
+  root.querySelectorAll(".attr-custom-select-option").forEach((optionButton) => {
+    const active = selectedValues.has(optionButton.dataset.selectValue || "");
+    optionButton.classList.toggle("is-active", active);
+    optionButton.setAttribute("aria-selected", String(active));
+  });
+}
+
+function closeCustomSelect(root) {
+  root.classList.remove("is-open");
+  root.querySelector(".attr-custom-select-menu")?.classList.add("hidden");
+  root.querySelector(".attr-custom-select-trigger")?.setAttribute("aria-expanded", "false");
+}
+
+function closeSiblingCustomSelects(root) {
+  el.attrPanelBody?.querySelectorAll(".attr-custom-select.is-open").forEach((openRoot) => {
+    if (openRoot !== root) {
+      closeCustomSelect(openRoot);
+    }
+  });
+}
+
+document.addEventListener("click", (event) => {
+  if (event.target?.closest?.(".attr-custom-select")) {
+    return;
+  }
+  el.attrPanelBody
+    ?.querySelectorAll(".attr-custom-select.is-open")
+    .forEach((openRoot) => closeCustomSelect(openRoot));
+});
+
+function appendCustomSelectControl(wrapper, select, { emptyLabel = "Select..." } = {}) {
+  select.classList.add("attr-native-source");
+  const root = document.createElement("div");
+  root.className = `attr-custom-select${select.multiple ? " is-multiple" : ""}`;
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "attr-custom-select-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+  trigger.innerHTML = `
+    <span></span>
+    <span class="attr-custom-select-caret" aria-hidden="true"></span>`;
+
+  const menu = document.createElement("div");
+  menu.className = "attr-custom-select-menu hidden";
+  menu.setAttribute("role", "listbox");
+  if (select.multiple) {
+    menu.setAttribute("aria-multiselectable", "true");
+  }
+  [...select.options].forEach((sourceOption) => {
+    const optionButton = document.createElement("button");
+    optionButton.type = "button";
+    optionButton.className = "attr-custom-select-option";
+    optionButton.dataset.selectValue = sourceOption.value;
+    optionButton.setAttribute("role", "option");
+    optionButton.textContent = sourceOption.textContent || sourceOption.value || "None";
+    optionButton.addEventListener("click", () => {
+      if (select.multiple) {
+        sourceOption.selected = !sourceOption.selected;
+      } else {
+        select.value = sourceOption.value;
+        closeCustomSelect(root);
+      }
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      syncCustomSelectState(root, select, emptyLabel);
+    });
+    menu.appendChild(optionButton);
+  });
+
+  trigger.addEventListener("click", () => {
+    const open = root.classList.contains("is-open");
+    closeSiblingCustomSelects(root);
+    root.classList.toggle("is-open", !open);
+    menu.classList.toggle("hidden", open);
+    trigger.setAttribute("aria-expanded", String(!open));
+  });
+  root.appendChild(trigger);
+  root.appendChild(menu);
+  wrapper.appendChild(root);
+  syncCustomSelectState(root, select, emptyLabel);
 }
 
 function buildAttrField(key, value, field) {
@@ -1621,6 +1813,11 @@ function buildAttrField(key, value, field) {
     input.required = true;
   }
   wrapper.appendChild(input);
+  if (input.tagName === "SELECT") {
+    appendCustomSelectControl(wrapper, input, {
+      emptyLabel: fieldType === "reference" ? "No reference" : "Select...",
+    });
+  }
   if (field?.kind === "reference" && field?.targetType) {
     const hint = document.createElement("div");
     hint.className = "attr-field-hint";
@@ -1657,13 +1854,7 @@ function referenceValueIds(value) {
 
 function elementMatchesReferenceTarget(element, targetType) {
   const expected = String(targetType || "").trim();
-  if (
-    !expected ||
-    expected === "*" ||
-    expected === "ModelElement" ||
-    expected === "TraceableElement" ||
-    expected === "SemanticRelationship"
-  ) {
+  if (!expected || expected === "*") {
     return true;
   }
   return modelTypeMatches(state.activeType, element, expected);
@@ -1686,6 +1877,7 @@ function referenceOptions(targetType) {
 function buildReferenceInput(key, value, field) {
   const many = Boolean(field?.many);
   const input = document.createElement(many ? "select" : "select");
+  input.classList.add("attr-reference-select");
   const selectedIds = new Set(referenceValueIds(value));
   input.multiple = many;
   if (many) {

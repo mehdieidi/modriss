@@ -208,7 +208,9 @@ public final class ModelingConfigService {
    */
   private Map<String, Object> mergeEcoreStructure(String key, Map<String, Object> metadata) {
     Map<String, Object> merged = new LinkedHashMap<>(metadata);
-    CimMetamodel metamodel = readEcoreMetamodel(key);
+    String rootType =
+        String.valueOf(requireMap(metadata, "rootTemplate", key).getOrDefault("eClass", ""));
+    CimMetamodel metamodel = readEcoreMetamodel(key, rootType);
     merged.put(
         "elements",
         mergeElements(key, metamodel.elements(), requireList(metadata, "elements", key), metadata));
@@ -1098,7 +1100,7 @@ public final class ModelingConfigService {
           || byClass.containsKey(type)
           || Boolean.TRUE.equals(element.get("abstract"))
           || Boolean.TRUE.equals(element.get("interface"))
-          || objectStringList(element.get("supertypes")).contains("SemanticRelationship")) {
+          || Boolean.TRUE.equals(element.get("relationshipElement"))) {
         continue;
       }
       Map<String, Object> derived =
@@ -1642,7 +1644,7 @@ public final class ModelingConfigService {
    * @param key lowercase level key
    * @return derived metamodel metadata
    */
-  private CimMetamodel readEcoreMetamodel(String key) {
+  private CimMetamodel readEcoreMetamodel(String key, String rootType) {
     Path ecoreFile = ecoreFile(key);
     try (InputStream input = Files.newInputStream(ecoreFile)) {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -1666,13 +1668,6 @@ public final class ModelingConfigService {
                   String.valueOf(rule.get("sourceType"))
                       + String.valueOf(rule.get("targetType"))
                       + String.valueOf(rule.get("feature"))));
-      String rootType =
-          switch (key) {
-            case "cim" -> "CIMModel";
-            case "pim" -> "PIMModel";
-            case "psm" -> "AwsPsmModel";
-            default -> "";
-          };
       return new CimMetamodel(
           elements,
           relationshipRules,
@@ -1859,7 +1854,7 @@ public final class ModelingConfigService {
     element.put("supertypes", supertypes);
     element.put("abstract", abstractType);
     element.put("interface", interfaceType);
-    element.put("relationshipElement", supertypes.contains("SemanticRelationship"));
+    element.put("relationshipElement", false);
     element.put("containedOnly", false);
     element.put("supportOnly", false);
     element.put("creatable", !abstractType && !interfaceType);
@@ -2282,16 +2277,13 @@ public final class ModelingConfigService {
   }
 
   /**
-   * Generalizes broad target types to a wildcard UI rule target.
+   * Keeps target types intact so the UI can resolve legality through Ecore inheritance.
    *
    * @param targetType target type name
-   * @return specific target type or wildcard
+   * @return target type
    */
   private String genericTarget(String targetType) {
-    return switch (targetType) {
-      case "ModelElement", "TraceableElement", "SemanticRelationship" -> "*";
-      default -> targetType;
-    };
+    return targetType;
   }
 
   /**

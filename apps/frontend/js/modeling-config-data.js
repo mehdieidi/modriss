@@ -551,6 +551,10 @@ export function modelingSemanticReferenceRules(typeKey = state.activeType) {
   return modelingLevelConfig(typeKey).semanticReferenceRules || [];
 }
 
+export function modelingSemanticEdgeObjectRules(typeKey = state.activeType) {
+  return modelingLevelConfig(typeKey).semanticEdgeObjectRules || [];
+}
+
 export function modelingShortcutConnectorRules(typeKey = state.activeType) {
   return modelingLevelConfig(typeKey).shortcutConnectorRules || [];
 }
@@ -645,18 +649,7 @@ function isWildcardRule(rule) {
 }
 
 function isMethodologyWildcardExempt(rule) {
-  if (rule?.edgeObjectType) {
-    return true;
-  }
-  const exemptSources = new Set([
-    "Hotspot",
-    "OpenQuestion",
-    "Risk",
-    "Assumption",
-    "RequirementLink",
-    "GoalSatisfactionLink",
-  ]);
-  return exemptSources.has(rule?.sourceType);
+  return Boolean(rule?.edgeObjectType || rule?.allowWildcardInStrictMode);
 }
 
 function normalizeKinds(kinds) {
@@ -668,6 +661,27 @@ function normalizeKinds(kinds) {
     }
   });
   return [...deduped];
+}
+
+function manualRelationshipKinds(typeKey, kinds) {
+  const semantics = modelingLevelConfig(typeKey).relationshipSemantics || {};
+  const internalKinds = new Set(
+    [semantics.traceKind]
+      .map((kind) =>
+        String(kind || "")
+          .trim()
+          .toUpperCase(),
+      )
+      .filter(Boolean),
+  );
+  return normalizeKinds(kinds).filter(
+    (kind) =>
+      !internalKinds.has(
+        String(kind || "")
+          .trim()
+          .toUpperCase(),
+      ),
+  );
 }
 
 export function modelingLegalKinds(typeKey, sourceType, targetType) {
@@ -695,13 +709,16 @@ export function modelingLegalKinds(typeKey, sourceType, targetType) {
   }
   if (!matched.length) {
     if (strictness === "exploration") {
-      return normalizeKinds(modelingLevelConfig(typeKey).relationshipKinds);
+      return manualRelationshipKinds(typeKey, modelingLevelConfig(typeKey).relationshipKinds);
     }
     return [];
   }
   const bestSpecificity = Math.max(...matched.map(ruleSpecificity));
   const winners = matched.filter((rule) => ruleSpecificity(rule) === bestSpecificity);
-  return normalizeKinds(winners.flatMap((rule) => rule.allowedKinds));
+  return manualRelationshipKinds(
+    typeKey,
+    winners.flatMap((rule) => rule.allowedKinds),
+  );
 }
 
 export function modelingLegalKindsBetween(typeKey, typeA, typeB) {

@@ -1743,6 +1743,9 @@ export function mountG6Editor(container, { callbacks = {}, mapper = {} } = {}) {
           hover: false,
           focused: false,
           dimmed: false,
+          connectSource: false,
+          connectLegal: false,
+          connectIllegal: false,
           openControlHover: false,
         },
         selected: { selected: true },
@@ -2128,6 +2131,26 @@ function legalConnectionTargetTypes(source) {
   return Array.isArray(result) ? result.filter(Boolean) : null;
 }
 
+function clearG6ConnectionFlags() {
+  if (!editor?.graph) {
+    return;
+  }
+  const changed = new Set(editor.connectStateIds);
+  editor.nodeStateFlags.forEach((flags, id) => {
+    if (flags.has("connect-source") || flags.has("connect-legal") || flags.has("connect-illegal")) {
+      changed.add(id);
+    }
+  });
+  changed.forEach((id) => {
+    ["connect-source", "connect-legal", "connect-illegal"].forEach((flag) => {
+      setFlag(editor.nodeStateFlags, id, flag, false);
+    });
+  });
+  editor.connectStateIds.clear();
+  editor.connectStateKey = "";
+  flushElementStates(changed, editor.nodeStateFlags);
+}
+
 export function updateG6ConnectionState() {
   if (!editor?.graph) {
     return;
@@ -2144,6 +2167,10 @@ export function updateG6ConnectionState() {
         state.nodesById.size,
       ].join("|")
     : "";
+  if (!sourceId) {
+    clearG6ConnectionFlags();
+    return;
+  }
   if (nextKey === editor.connectStateKey) {
     return;
   }

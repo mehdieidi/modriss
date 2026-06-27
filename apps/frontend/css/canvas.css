@@ -912,6 +912,117 @@
   font: 500 11px/1.35 var(--font-ui);
 }
 
+.container-target-picker {
+  position: absolute;
+  z-index: 145;
+  width: min(300px, calc(100vw - 32px));
+  max-height: min(340px, calc(100vh - 120px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--input-bg) 94%, var(--surface-contrast) 6%);
+  box-shadow: var(--shadow-sm);
+  pointer-events: auto;
+}
+
+.container-target-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding: 7px 8px 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 70%, transparent);
+  color: color-mix(in srgb, var(--text-strong) 82%, var(--muted));
+  font: 800 9px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.container-target-picker-close {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.container-target-picker-close:hover,
+.container-target-picker-close:focus-visible {
+  outline: none;
+  color: var(--text-strong);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 68%, transparent);
+}
+
+.container-target-picker-body {
+  display: grid;
+  gap: 3px;
+  min-height: 0;
+  padding: 6px;
+  overflow: auto;
+}
+
+.container-target-group-label {
+  padding: 6px 3px 3px;
+  color: var(--muted);
+  font: 800 8px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.container-target-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.container-target-option:hover,
+.container-target-option:focus-visible {
+  outline: none;
+  color: var(--text-strong);
+  border-color: color-mix(in srgb, var(--border) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 70%, transparent);
+}
+
+.container-target-option.is-container {
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  background: color-mix(in srgb, var(--accent-glow) 12%, var(--surface-3) 88%);
+}
+
+.container-target-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 650 11px/1.25 var(--font-ui);
+}
+
+.container-target-option-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font: 700 8px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .node-explore-toolbar {
   position: absolute;
   z-index: 8;

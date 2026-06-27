@@ -203,7 +203,10 @@
 }
 
 .methodology-phase-menu {
+  position: absolute;
+  inset: calc(100% + 6px) 0 auto;
   z-index: 1200;
+  max-height: 320px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scroll-padding-bottom: 8px;
@@ -213,15 +216,6 @@
   background: color-mix(in srgb, var(--input-bg) 92%, var(--surface-contrast) 8%);
   box-shadow: var(--shadow-sm);
   box-sizing: border-box;
-}
-
-.methodology-phase-menu.is-positioning {
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.methodology-phase-menu:not(.hidden) {
-  position: fixed;
 }
 
 #methodologyPhaseMenu {

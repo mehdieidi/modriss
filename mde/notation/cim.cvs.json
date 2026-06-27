@@ -1651,7 +1651,24 @@
       ],
       "palette": [],
       "relationshipKinds": [],
-      "layoutHint": "DASHBOARD"
+      "layoutHint": "DASHBOARD",
+      "semanticDashboardColumns": [
+        ["CIMModel"],
+        ["BusinessGoal", "Requirement", "NonFunctionalRequirement"],
+        ["BusinessCapability", "BoundedContextCandidate"],
+        ["Actor", "Stakeholder", "Role", "ExternalSystem"],
+        ["DomainEntity", "ValueObject", "AggregateCandidate"],
+        ["Command", "Query"],
+        ["BusinessEvent", "BusinessError"],
+        [
+          "Policy",
+          "Risk",
+          "Hotspot",
+          "TransformationProfile",
+          "ProductionReadinessAssessment",
+          "TraceModel"
+        ]
+      ]
     },
     {
       "id": "strategy-goals",

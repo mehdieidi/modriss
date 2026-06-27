@@ -53,7 +53,6 @@ import { getCanvasFitArea } from "./canvas-viewport-fit.js";
 import {
   activeRendererKind,
   addCanvasEdge,
-  addCanvasNode,
   beginCanvasInlineLabelEdit,
   ensureCanvas as mountActiveCanvas,
   fitCanvasToDiagram,
@@ -104,6 +103,7 @@ const DEFAULT_NODE_W = 228;
 const DEFAULT_NODE_H = 112;
 const DEFAULT_BOUNDED_CONTEXT_NAME = "Core";
 const PLACEHOLDER_ICON = "/assets/icons/placeholder.svg";
+const INTERNAL_TARGET_SUMMARY_PREFIX = "internal-target";
 const edgeIdsByNodeId = new Map(); // nodeId -> Set(edgeId)
 
 function boundedContextConfig() {
@@ -651,17 +651,20 @@ function syncBoundedContextMembershipRefs(contextName) {
   if (!contextNode) {
     return;
   }
-  const refs = {
-    capabilities: [],
-    entities: [],
-    commands: [],
-    queries: [],
-    events: [],
-    policies: [],
-  };
+  const refs = {};
+  const configuredFeatures = [
+    ...new Set(
+      safeArray(boundedContextConfig().membershipFeatures)
+        .map((rule) => String(rule?.feature || "").trim())
+        .filter(Boolean),
+    ),
+  ];
+  configuredFeatures.forEach((feature) => {
+    refs[feature] = [];
+  });
   contextNodes(contextName).forEach((node) => {
     const feature = boundedContextFeatureForNode(node);
-    if (feature) {
+    if (feature && Object.hasOwn(refs, feature)) {
       refs[feature].push(node.id);
     }
   });
@@ -822,6 +825,27 @@ function viewEdgesByRelationship(view) {
   return new Map(safeArray(view?.edges).map((edge) => [edge.relationshipId, edge]));
 }
 
+function viewNodeForElement(view, elementId) {
+  return safeArray(view?.nodes).find((entry) => String(entry?.elementId || "") === elementId);
+}
+
+function ensureFocusPortalNode(elementId, anchorElementId = "") {
+  const view = activeView();
+  const element = state.graph?.elementsById?.get(elementId);
+  if (!view || !element || viewNodeForElement(view, elementId)) {
+    return false;
+  }
+  const anchor = anchorElementId ? viewNodeForElement(view, anchorElementId) : null;
+  view.nodes = safeArray(view.nodes);
+  view.nodes.unshift({
+    elementId,
+    x: Number.isFinite(Number(anchor?.x)) ? Number(anchor.x) - getNodeWidth() - 80 : 32,
+    y: Number.isFinite(Number(anchor?.y)) ? Number(anchor.y) : 40,
+    portal: true,
+  });
+  return true;
+}
+
 function _nodeForFocusElement(elementId, viewNode) {
   const element = state.graph?.elementsById?.get(elementId);
   if (!element) {
@@ -905,6 +929,19 @@ function createContainerFocusView(node) {
   const focusPolicy = modelingContainerFocusPolicy(state.activeType);
   const descendantIds = [...collectContainedDescendantIds(node.id)];
   const descendantSet = new Set(descendantIds);
+  const visibleIds = new Set(descendantIds);
+  state.graph.relationshipsById.forEach((relationship) => {
+    if (!relationship?.sourceElementId || !relationship?.targetElementId) {
+      return;
+    }
+    const sourceInside = descendantSet.has(relationship.sourceElementId);
+    const targetInside = descendantSet.has(relationship.targetElementId);
+    if (sourceInside === targetInside) {
+      return;
+    }
+    visibleIds.add(sourceInside ? relationship.targetElementId : relationship.sourceElementId);
+  });
+  const visibleElementIds = [...visibleIds];
   const viewNodePositions = viewNodesByElement(previousView);
   const edges = relationshipsWithinElementSet(descendantSet).map((relationship) => {
     const sourceId = relationship.sourceElementId || relationship.source;
@@ -916,7 +953,25 @@ function createContainerFocusView(node) {
       visible: true,
     };
   });
-  const focusNodes = descendantIds.map((elementId) => ({
+  state.graph.relationshipsById.forEach((relationship) => {
+    const sourceId = relationship.sourceElementId || relationship.source;
+    const targetId = relationship.targetElementId || relationship.target;
+    if (
+      sourceId &&
+      targetId &&
+      visibleIds.has(sourceId) &&
+      visibleIds.has(targetId) &&
+      !edges.some((edge) => edge.relationshipId === relationship.id)
+    ) {
+      edges.push({
+        relationshipId: relationship.id,
+        sourceId,
+        targetId,
+        visible: true,
+      });
+    }
+  });
+  const focusNodes = visibleElementIds.map((elementId) => ({
     elementId,
     ...(viewNodePositions.get(elementId) || {}),
   }));
@@ -2788,10 +2843,6 @@ function closeEdgeKindPicker() {
 
 function buildKindOptions(source, target) {
   const kinds = legalKindsBetween(state.activeType, source.type, target.type);
-  const traceKind = configuredRelationshipSemantic("traceKind");
-  if (supportsBoundedContext() && state.preferredConnectionKind === traceKind) {
-    kinds.push(traceKind);
-  }
   const uniqueKinds = [...new Set(kinds)];
   return uniqueKinds
     .map((kind) => ({
@@ -2999,12 +3050,7 @@ function openEdgeKindPicker(edgeId, options, canvasX, canvasY, { drawnFromId, dr
 }
 
 function legalKindsForConnection(sourceType, targetType) {
-  const kinds = new Set(legalKinds(state.activeType, sourceType, targetType));
-  const traceKind = configuredRelationshipSemantic("traceKind");
-  if (supportsBoundedContext() && state.preferredConnectionKind === traceKind) {
-    kinds.add(traceKind);
-  }
-  return [...kinds];
+  return [...new Set(legalKinds(state.activeType, sourceType, targetType))];
 }
 
 function openG6EdgeKindPicker(edgeId) {
@@ -3488,27 +3534,18 @@ export function setupDnD() {
     }
     pushDiagramUndoSnapshot();
     const pos = toCanvasCoordinates(e.clientX, e.clientY);
-    const beforeNodeIds = new Set(state.diagram.nodes.map((item) => item.id));
-    const beforeEdgeIds = new Set(state.diagram.connections.map((item) => item.id));
     const node = getDefaultNode(state.activeType, type, Math.round(pos.x), Math.round(pos.y));
     assignNodeToSemanticContainer(node);
     state.diagram.nodes.push(node);
     addNodeToGraphAndActiveView(node);
+    syncActiveViewFromVisibleGraph();
     materializeActiveView();
     if (state.tabs[state.activeType]) {
       state.tabs[state.activeType].diagram = state.diagram;
     }
     syncCanvasIndexesFromState();
-    ensureCanvas();
-    const addedVisibleNodes = state.diagram.nodes.filter((item) => !beforeNodeIds.has(item.id));
-    const addedVisibleEdges = state.diagram.connections.filter(
-      (item) => !beforeEdgeIds.has(item.id),
-    );
-    if (addedVisibleNodes.length === 1 && !addedVisibleEdges.length) {
-      addCanvasNode(addedVisibleNodes[0]);
-    } else {
-      syncCanvasFromState({ full: false });
-    }
+    await ensureCanvas();
+    await syncCanvasFromState({ full: false });
     updateCanvasSelection();
     updateCanvasContextBoxes();
     const created = state.graph.elementsById.get(node.id);
@@ -3607,19 +3644,254 @@ function assignNodeToSemanticContainer(node) {
 
 // ── Connection management ─────────────────────────────────────────────────────
 
+function directConnectionCandidate(source, target) {
+  return {
+    id: "container",
+    mode: "container",
+    label: target.label || target.id,
+    type: target.type,
+    kinds: legalKindsBetween(state.activeType, source.type, target.type),
+  };
+}
+
+function containedTargetCandidates(source, container) {
+  if (!isModelingLevel(state.activeType) || !isContainerElement(container)) {
+    return [];
+  }
+  return [...collectContainedDescendantIds(container.id)]
+    .map((elementId) => {
+      const element = state.graph?.elementsById?.get(elementId);
+      if (!element) {
+        return null;
+      }
+      const type = elementType(element);
+      const kinds = legalKindsBetween(state.activeType, source.type, type);
+      if (!kinds.length) {
+        return null;
+      }
+      return {
+        id: elementId,
+        mode: "contained",
+        label: elementLabel(element),
+        type,
+        kinds,
+      };
+    })
+    .filter(Boolean)
+    .sort(
+      (left, right) => left.type.localeCompare(right.type) || left.label.localeCompare(right.label),
+    );
+}
+
+function buildContainerTargetChoices(source, container) {
+  const direct = directConnectionCandidate(source, container);
+  const contained = containedTargetCandidates(source, container);
+  return [...(direct.kinds.length ? [direct] : []), ...contained];
+}
+
+function closeContainerTargetPicker() {
+  const picker = document.querySelector(".container-target-picker");
+  picker?.remove();
+}
+
+function positionFloatingPicker(picker, source, container) {
+  const nodeW = getNodeWidth();
+  const nodeH = getNodeHeight();
+  const midX = (source.x + nodeW / 2 + container.x + nodeW / 2) / 2;
+  const midY = (source.y + nodeH / 2 + container.y + nodeH / 2) / 2;
+  const viewportPoint = canvasToViewportPoint(midX, midY);
+  const viewportRect = el.canvasViewport?.getBoundingClientRect?.();
+  const margin = 10;
+  const viewportWidth = viewportRect?.width || window.innerWidth;
+  const viewportHeight = viewportRect?.height || window.innerHeight;
+  const width = picker.offsetWidth || 280;
+  const height = picker.offsetHeight || 220;
+  picker.style.left = `${Math.round(
+    Math.min(Math.max(viewportPoint.x - width / 2, margin), viewportWidth - width - margin),
+  )}px`;
+  picker.style.top = `${Math.round(
+    Math.min(Math.max(viewportPoint.y - 24, margin), viewportHeight - height - margin),
+  )}px`;
+}
+
+function renderContainerTargetPicker(source, container, choices, preferredKind) {
+  closeContainerTargetPicker();
+  const picker = document.createElement("div");
+  picker.className = "container-target-picker";
+  picker.setAttribute("role", "dialog");
+  picker.setAttribute("aria-label", "Choose container relationship target");
+  const directChoice = choices.find((choice) => choice.mode === "container");
+  const containedChoices = choices.filter((choice) => choice.mode === "contained");
+  picker.innerHTML = `
+    <div class="container-target-picker-head">
+      <span>Connect To</span>
+      <button class="container-target-picker-close" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="container-target-picker-body">
+      ${
+        directChoice
+          ? `<button class="container-target-option is-container" type="button" data-target-mode="container">
+              <span class="container-target-option-label">${escapeHtml(directChoice.label)}</span>
+              <span class="container-target-option-meta">${escapeHtml(directChoice.type)}</span>
+            </button>`
+          : ""
+      }
+      ${
+        containedChoices.length
+          ? `<div class="container-target-group-label">Inside ${escapeHtml(
+              container.label || container.type,
+            )}</div>${containedChoices
+              .map(
+                (choice) => `<button class="container-target-option" type="button"
+                    data-target-mode="contained"
+                    data-contained-target-id="${escapeHtml(choice.id)}">
+                  <span class="container-target-option-label">${escapeHtml(choice.label)}</span>
+                  <span class="container-target-option-meta">${escapeHtml(choice.type)}</span>
+                </button>`,
+              )
+              .join("")}`
+          : ""
+      }
+    </div>`;
+  el.canvasViewport?.appendChild(picker);
+  requestAnimationFrame(() => positionFloatingPicker(picker, source, container));
+
+  const close = () => closeContainerTargetPicker();
+  picker.querySelector(".container-target-picker-close")?.addEventListener("click", close);
+  picker.querySelectorAll("[data-target-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const mode = button.getAttribute("data-target-mode");
+      closeContainerTargetPicker();
+      if (mode === "container") {
+        addConnection(source.id, container.id, {
+          interactivePicker: true,
+          preferredKind,
+          allowContainedTargetPrompt: false,
+        });
+        return;
+      }
+      const targetId = button.getAttribute("data-contained-target-id");
+      connectToContainedTarget(source, container, targetId, preferredKind);
+    });
+  });
+  const outsideClick = (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target || target.closest(".container-target-picker")) {
+      return;
+    }
+    closeContainerTargetPicker();
+    document.removeEventListener("mousedown", outsideClick);
+  };
+  setTimeout(() => document.addEventListener("mousedown", outsideClick), 0);
+}
+
+function maybeOpenContainerTargetPicker(source, target, preferredKind) {
+  const choices = buildContainerTargetChoices(source, target);
+  const hasContainedTargets = choices.some((choice) => choice.mode === "contained");
+  if (!hasContainedTargets) {
+    return false;
+  }
+  renderContainerTargetPicker(source, target, choices, preferredKind);
+  setStatus(`Choose whether to connect to ${target.label || target.type} or one of its contents.`);
+  return true;
+}
+
+function summaryEdgeId(sourceId, containerId, targetId, kind) {
+  return `${INTERNAL_TARGET_SUMMARY_PREFIX}-${sourceId}-${containerId}-${targetId}-${kind}`.replaceAll(
+    /[^A-Za-z0-9_-]+/g,
+    "-",
+  );
+}
+
+function ensureInternalTargetSummaryEdge(source, container, containedTarget, kind) {
+  const id = summaryEdgeId(source.id, container.id, containedTarget.id, kind);
+  if (!state.graph.relationshipsById.has(id)) {
+    state.graph.relationshipsById.set(id, {
+      id,
+      kind,
+      source: source.id,
+      target: container.id,
+      sourceElementId: source.id,
+      targetElementId: container.id,
+      sourceType: source.type,
+      targetType: container.type,
+      label: `${modelingRelationshipKindLabel(state.activeType, kind)} inside`,
+      visualOnly: true,
+      internalTargetElementId: containedTarget.id,
+      internalTargetType: containedTarget.type,
+    });
+  }
+  const previousViewId = focusStack()[focusStack().length - 1]?.previousViewId;
+  const previousView = previousViewId ? state.views.byId.get(previousViewId) : null;
+  if (previousView && !safeArray(previousView.edges).some((edge) => edge.relationshipId === id)) {
+    previousView.edges = [
+      ...safeArray(previousView.edges),
+      { relationshipId: id, sourceId: source.id, targetId: container.id, visible: true },
+    ];
+  }
+}
+
+function connectToContainedTarget(source, container, targetId, preferredKind = null) {
+  const targetElement = state.graph?.elementsById?.get(targetId);
+  if (!targetElement) {
+    setStatus("Contained target is no longer available");
+    return false;
+  }
+  const containedTarget = {
+    id: targetElement.id,
+    type: elementType(targetElement),
+    label: elementLabel(targetElement),
+  };
+  const kinds = legalKindsBetween(state.activeType, source.type, containedTarget.type);
+  const kind = kinds.includes(preferredKind) ? preferredKind : kinds[0];
+  if (!kind) {
+    setStatus("No legal relationship exists for that contained target");
+    return false;
+  }
+  const opened = openContainerFocus(container.id);
+  if (!opened) {
+    return false;
+  }
+  if (ensureFocusPortalNode(source.id, containedTarget.id)) {
+    materializeActiveView();
+    renderDiagram();
+  }
+  const created = addConnection(source.id, containedTarget.id, {
+    interactivePicker: true,
+    preferredKind: kind,
+    allowContainedTargetPrompt: false,
+  });
+  if (created) {
+    ensureInternalTargetSummaryEdge(source, container, containedTarget, kind);
+    markModelDirty();
+    setStatus(`Connected ${source.label || source.type} to ${containedTarget.label}.`);
+  }
+  return created;
+}
+
 export function addConnection(
   sourceId,
   targetId,
-  { interactivePicker = false, preferredKind = null } = {},
+  { interactivePicker = false, preferredKind = null, allowContainedTargetPrompt = true } = {},
 ) {
   const source = state.nodesById.get(sourceId);
   const target = state.nodesById.get(targetId);
   if (!source || !target) {
+    updateCanvasConnectionState();
     return false;
   }
   if (source.id === target.id) {
     setStatus("Source and target cannot be the same");
+    updateCanvasConnectionState();
     return false;
+  }
+  if (
+    allowContainedTargetPrompt &&
+    interactivePicker &&
+    isContainerElement(target) &&
+    maybeOpenContainerTargetPicker(source, target, preferredKind)
+  ) {
+    return true;
   }
   const pairKinds = legalKindsBetween(state.activeType, source.type, target.type);
   if (!pairKinds.length) {
@@ -3627,6 +3899,7 @@ export function addConnection(
       return true;
     }
     setStatus("Illegal connection type for selected nodes");
+    updateCanvasConnectionState();
     return false;
   }
   const forwardKinds = legalKindsForConnection(source.type, target.type);
@@ -3635,11 +3908,13 @@ export function addConnection(
   const resolved = resolveEdgeEndpointsForKind(source, target, kind, sourceId, targetId);
   if (!resolved) {
     setStatus("Illegal connection type for selected nodes");
+    updateCanvasConnectionState();
     return false;
   }
   const resolvedSource = state.nodesById.get(resolved.sourceId);
   const resolvedTarget = state.nodesById.get(resolved.targetId);
   if (!resolvedSource || !resolvedTarget) {
+    updateCanvasConnectionState();
     return false;
   }
   kind = resolved.kind;
@@ -3649,6 +3924,7 @@ export function addConnection(
   );
   if (exists) {
     setStatus("Connection already exists between these elements");
+    updateCanvasConnectionState();
     return false;
   }
 
@@ -3763,17 +4039,33 @@ function shortcutSemanticElement(node) {
   return state.graph.elementsById.get(node?.id) || node?.meta || null;
 }
 
-function shortcutStackOwner(source, target) {
+function shortcutStackOwner(binding, source, target) {
+  const expectedType = String(binding?.ownerType || "").trim();
+  const childType = String(binding?.type || "").trim();
+  const feature = String(binding?.feature || "").trim();
+  const acceptsBinding = (element) => {
+    const ownerType = element?.eClass || element?.type;
+    if (!ownerType) {
+      return false;
+    }
+    if (expectedType && !modelingTypeMatchesSafe(expectedType, ownerType)) {
+      return false;
+    }
+    return modelingContainmentsForType(state.activeType, ownerType).some((entry) => {
+      if (feature && entry.feature !== feature) {
+        return false;
+      }
+      return !childType || containmentAcceptsType(entry, childType);
+    });
+  };
   for (const endpoint of [source, target]) {
     const element = shortcutSemanticElement(endpoint);
     const owner = element?.__ownerId ? state.graph.elementsById.get(element.__ownerId) : null;
-    if (owner && modelingTypeMatchesSafe("SamStack", owner.eClass || owner.type)) {
+    if (owner && acceptsBinding(owner)) {
       return owner;
     }
   }
-  return [...state.graph.elementsById.values()].find((element) =>
-    modelingTypeMatchesSafe("SamStack", element.eClass || element.type),
-  );
+  return [...state.graph.elementsById.values()].find(acceptsBinding);
 }
 
 function shortcutBindingOwner(binding, source, target) {
@@ -3784,7 +4076,7 @@ function shortcutBindingOwner(binding, source, target) {
     return shortcutSemanticElement(target);
   }
   if (binding.owner === "stack") {
-    return shortcutStackOwner(source, target);
+    return shortcutStackOwner(binding, source, target);
   }
   return null;
 }
@@ -3869,8 +4161,16 @@ function createShortcutViewRelationship(rule, source, target, intermediates) {
   relationship.eClass = viewType;
   relationship.name = edge.label;
   relationship.generated = true;
-  relationship.rootFeature = "relationshipViews";
-  relationship.__containmentFeature = "relationshipViews";
+  const rootFeature =
+    String(rule.rootFeature || "").trim() ||
+    modelingRootContainments(state.activeType).find((entry) =>
+      containmentAcceptsType(entry, viewType),
+    )?.feature ||
+    "";
+  if (rootFeature) {
+    relationship.rootFeature = rootFeature;
+    relationship.__containmentFeature = rootFeature;
+  }
   applyShortcutViewReferences(relationship, rule, source, target, intermediates);
   return relationship;
 }

@@ -1,4 +1,8 @@
-export function legalKindsBetween(levelConfig: Record<string, unknown>, sourceType: string, targetType: string) {
+export function legalKindsBetween(
+  levelConfig: Record<string, unknown>,
+  sourceType: string,
+  targetType: string,
+) {
   const rules = (levelConfig.relationshipRules || []) as Array<{
     sourceType?: string;
     targetType?: string;
@@ -15,7 +19,7 @@ export function legalKindsBetween(levelConfig: Record<string, unknown>, sourceTy
       kinds.add(String(kind));
     }
   }
-  return [...kinds];
+  return manualRelationshipKinds(levelConfig, kinds);
 }
 
 export function validateCreateEdge(
@@ -54,4 +58,17 @@ function typeMatches(expected: string, actual: string) {
     return true;
   }
   return expected === actual;
+}
+
+function manualRelationshipKinds(levelConfig: Record<string, unknown>, kinds: Iterable<string>) {
+  const semantics = (levelConfig.relationshipSemantics || {}) as Record<string, unknown>;
+  const traceKind = String(semantics.traceKind || "")
+    .trim()
+    .toUpperCase();
+  return [...kinds].filter((kind) => {
+    const normalized = String(kind || "")
+      .trim()
+      .toUpperCase();
+    return normalized && normalized !== traceKind;
+  });
 }

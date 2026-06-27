@@ -144,7 +144,7 @@ public final class ModelService {
         metamodelResolver == null ? new FileMetamodelResolver(this.mdePaths) : metamodelResolver;
     this.modelLocks = modelLocks == null ? new ModelLockService() : modelLocks;
     XmiModelImportService xmiImportService =
-        new XmiModelImportService(store.objectMapper(), this.metamodelResolver);
+        new XmiModelImportService(store.objectMapper(), this.metamodelResolver, modelingConfig);
     this.importExport =
         new ModelImportExportService(
             store, this.runtimeOptions, this.metamodelResolver, xmiImportService);

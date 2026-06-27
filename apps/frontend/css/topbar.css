@@ -396,8 +396,29 @@ html.light .app-logo-img {
 .ide-menu-select {
   padding: 7px 9px;
   border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background: color-mix(in srgb, var(--surface-3) 88%, var(--surface) 12%);
+  background-color: color-mix(in srgb, var(--surface-3) 88%, var(--surface) 12%);
   color: var(--text);
+}
+
+.ide-menu-select:is(select) {
+  padding-right: 32px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 17px) 50%,
+    calc(100% - 12px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px;
+}
+
+.ide-menu-select:is(select):focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--accent-light) 50%),
+    linear-gradient(135deg, var(--accent-light) 50%, transparent 50%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-glow) 62%, transparent);
 }
 
 .tabs {

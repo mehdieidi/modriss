@@ -53,6 +53,9 @@ public final class XmiModelImportService {
   /** Metamodel resolver used to register EPackages in EMF resource sets. */
   private final MetamodelResolver metamodelResolver;
 
+  /** Modeling configuration used for CVS-owned import/export decisions. */
+  private final ModelingConfigService modelingConfig;
+
   /**
    * Creates an XMI service using the default file-backed metamodel resolver.
    *
@@ -70,8 +73,23 @@ public final class XmiModelImportService {
    * @param metamodelResolver metamodel resolver
    */
   public XmiModelImportService(ObjectMapper objectMapper, MetamodelResolver metamodelResolver) {
+    this(objectMapper, metamodelResolver, new ModelingConfigService());
+  }
+
+  /**
+   * Creates an XMI service with explicit metamodel and modeling configuration services.
+   *
+   * @param objectMapper mapper used for JSON nodes
+   * @param metamodelResolver metamodel resolver
+   * @param modelingConfig modeling configuration service
+   */
+  public XmiModelImportService(
+      ObjectMapper objectMapper,
+      MetamodelResolver metamodelResolver,
+      ModelingConfigService modelingConfig) {
     this.objectMapper = objectMapper;
     this.metamodelResolver = metamodelResolver;
+    this.modelingConfig = modelingConfig == null ? new ModelingConfigService() : modelingConfig;
   }
 
   /**
@@ -125,7 +143,7 @@ public final class XmiModelImportService {
       SerializationContext context = new SerializationContext(level);
       ObjectNode rootJson = serializeContainedObject(root, context);
       rootJson.set("graph", context.graphNode(objectMapper));
-      restoreRelationshipEndpoints(rootJson);
+      restoreRelationshipEndpoints(level, rootJson);
       restoreDerivedPsmAllResources(level, rootJson);
       return rootJson;
     } catch (PlatformException ex) {
@@ -345,7 +363,7 @@ public final class XmiModelImportService {
       Resource resource =
           resourceSet.createResource(URI.createURI("memory:/export-" + level.apiName() + ".xmi"));
       ExportDiagnostics diagnostics = new ExportDiagnostics(options);
-      ExportContext context = new ExportContext(resourceSet, diagnostics);
+      ExportContext context = new ExportContext(resourceSet, diagnostics, level);
       EObject root = context.createContainedObject(modelJson, null);
       if (root == null) {
         throw new PlatformException(400, "Model JSON does not contain a valid root.");
@@ -461,11 +479,67 @@ public final class XmiModelImportService {
    * @return expected root class name
    */
   private String expectedRootEClass(ModelLevel level) {
-    return switch (level) {
-      case CIM -> "CIMModel";
-      case PIM -> "PIMModel";
-      case PSM -> "AwsPsmModel";
-    };
+    String expected =
+        String.valueOf(mapValue(levelConfig(level).get("rootTemplate")).getOrDefault("eClass", ""));
+    if (expected.isBlank()) {
+      throw new PlatformException(
+          500, "Missing configured rootTemplate.eClass for " + level.apiName());
+    }
+    return expected;
+  }
+
+  private Map<String, Object> levelConfig(ModelLevel level) {
+    Map<String, Object> config = modelingConfig.config();
+    Map<String, Object> levels = mapValue(config.get("levels"));
+    Map<String, Object> levelConfig = mapValue(levels.get(level.apiName()));
+    if (levelConfig.isEmpty()) {
+      throw new PlatformException(500, "Missing modeling config for " + level.apiName());
+    }
+    return levelConfig;
+  }
+
+  private String traceRelationshipObjectType(ModelLevel level) {
+    Map<String, Object> config = levelConfig(level);
+    String traceKind =
+        String.valueOf(mapValue(config.get("relationshipSemantics")).getOrDefault("traceKind", ""));
+    if (traceKind.isBlank()) {
+      return "";
+    }
+    for (Map<String, Object> rule : mapList(config.get("semanticEdgeObjectRules"))) {
+      if (stringList(rule.get("matchKinds")).contains(traceKind)) {
+        return String.valueOf(rule.getOrDefault("eClass", ""));
+      }
+    }
+    return "";
+  }
+
+  private Map<String, Object> mapValue(Object value) {
+    if (!(value instanceof Map<?, ?> raw)) {
+      return Map.of();
+    }
+    Map<String, Object> result = new java.util.LinkedHashMap<>();
+    raw.forEach((key, item) -> result.put(String.valueOf(key), item));
+    return result;
+  }
+
+  private List<Map<String, Object>> mapList(Object value) {
+    if (!(value instanceof List<?> rawList)) {
+      return List.of();
+    }
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object item : rawList) {
+      if (item instanceof Map<?, ?> raw) {
+        result.add(mapValue(raw));
+      }
+    }
+    return result;
+  }
+
+  private List<String> stringList(Object value) {
+    if (!(value instanceof List<?> rawList)) {
+      return List.of();
+    }
+    return rawList.stream().map(String::valueOf).toList();
   }
 
   /**
@@ -487,7 +561,7 @@ public final class XmiModelImportService {
    *
    * @param rootJson imported root JSON
    */
-  private void restoreRelationshipEndpoints(ObjectNode rootJson) {
+  private void restoreRelationshipEndpoints(ModelLevel level, ObjectNode rootJson) {
     JsonNode graphRelationships = rootJson.path("graph").path("relationships");
     if (!graphRelationships.isArray()) {
       return;
@@ -503,7 +577,7 @@ public final class XmiModelImportService {
     if (relationshipsById.isEmpty()) {
       return;
     }
-    restoreRelationshipEndpoints(rootJson, relationshipsById);
+    restoreRelationshipEndpoints(rootJson, relationshipsById, traceRelationshipObjectType(level));
   }
 
   /**
@@ -513,7 +587,7 @@ public final class XmiModelImportService {
    * @param relationshipsById graph relationships keyed by id
    */
   private void restoreRelationshipEndpoints(
-      JsonNode node, Map<String, JsonNode> relationshipsById) {
+      JsonNode node, Map<String, JsonNode> relationshipsById, String traceRelationshipType) {
     if (node == null || node.isNull()) {
       return;
     }
@@ -526,25 +600,30 @@ public final class XmiModelImportService {
         copyTextIfMissing(object, relationship, "sourceElementId", "source");
         copyTextIfMissing(object, relationship, "targetElementId", "target");
       }
-      restoreTraceEndpointIds(object);
+      restoreTraceEndpointIds(object, traceRelationshipType);
       object
           .fields()
           .forEachRemaining(
-              entry -> restoreRelationshipEndpoints(entry.getValue(), relationshipsById));
+              entry ->
+                  restoreRelationshipEndpoints(
+                      entry.getValue(), relationshipsById, traceRelationshipType));
       return;
     }
     if (node.isArray()) {
-      node.forEach(child -> restoreRelationshipEndpoints(child, relationshipsById));
+      node.forEach(
+          child -> restoreRelationshipEndpoints(child, relationshipsById, traceRelationshipType));
     }
   }
 
   /**
-   * Restores TraceLink endpoint id fields after import.
+   * Restores trace relationship endpoint id fields after import.
    *
    * @param object imported object JSON
+   * @param traceRelationshipType configured trace relationship object type
    */
-  private void restoreTraceEndpointIds(ObjectNode object) {
-    if (!"TraceLink".equals(scalarText(object.get("eClass")))) {
+  private void restoreTraceEndpointIds(ObjectNode object, String traceRelationshipType) {
+    if (traceRelationshipType.isBlank()
+        || !traceRelationshipType.equals(scalarText(object.get("eClass")))) {
       return;
     }
     copyTextIfMissing(object, object, "sourceElementId", "source");
@@ -656,7 +735,7 @@ public final class XmiModelImportService {
   }
 
   /**
-   * Adds TraceLink endpoint id fields derived from EMF references.
+   * Adds trace relationship endpoint id fields derived from EMF references.
    *
    * @param object EMF object being serialized
    * @param node JSON node being populated
@@ -664,7 +743,7 @@ public final class XmiModelImportService {
    */
   private void ensureTraceEndpointIds(
       EObject object, ObjectNode node, SerializationContext context) {
-    if (!"TraceLink".equals(object.eClass().getName())) {
+    if (!context.isTraceObject(object)) {
       return;
     }
     copyReferenceIdAttributeIfMissing(object, node, context, "source", "sourceElementId");
@@ -949,6 +1028,9 @@ public final class XmiModelImportService {
     /** Diagnostics sink for conversion errors. */
     private final ExportDiagnostics diagnostics;
 
+    /** Configured trace relationship object type for this level. */
+    private final String traceRelationshipType;
+
     /** Created EMF objects keyed by explicit model id. */
     private final Map<String, EObject> objectsById = new java.util.LinkedHashMap<>();
 
@@ -961,9 +1043,10 @@ public final class XmiModelImportService {
      * @param resourceSet resource set containing registered metamodels
      * @param diagnostics diagnostics sink
      */
-    ExportContext(ResourceSet resourceSet, ExportDiagnostics diagnostics) {
+    ExportContext(ResourceSet resourceSet, ExportDiagnostics diagnostics, ModelLevel level) {
       this.resourceSet = resourceSet;
       this.diagnostics = diagnostics;
+      this.traceRelationshipType = traceRelationshipObjectType(level);
     }
 
     /**
@@ -1036,15 +1119,15 @@ public final class XmiModelImportService {
     }
 
     /**
-     * Identifies inverse TraceLink references that should be skipped during export.
+     * Identifies inverse trace references that should be skipped during export.
      *
      * @param reference EMF reference
-     * @return {@code true} for inverse TraceLink references
+     * @return {@code true} for inverse trace references
      */
     private boolean isInverseTraceReference(EReference reference) {
       String name = reference.getName();
       return ("incomingTraces".equals(name) || "outgoingTraces".equals(name))
-          && "TraceLink".equals(reference.getEReferenceType().getName());
+          && traceRelationshipType.equals(reference.getEReferenceType().getName());
     }
 
     /**
@@ -1358,6 +1441,9 @@ public final class XmiModelImportService {
     /** Trace links reconstructed during serialization. */
     private final List<ObjectNode> graphTraceLinks = new ArrayList<>();
 
+    /** Configured trace relationship object type for this level. */
+    private final String traceRelationshipType;
+
     /** De-duplication keys for reconstructed graph relationships. */
     private final Set<String> graphRelationshipKeys = new LinkedHashSet<>();
 
@@ -1368,9 +1454,7 @@ public final class XmiModelImportService {
      */
     SerializationContext(ModelLevel level) {
       this.level = level;
-      Map<String, Object> config = new ModelingConfigService().config();
-      Map<String, Object> levels = mapValue(config.get("levels"));
-      Map<String, Object> levelConfig = mapValue(levels.get(level.apiName()));
+      Map<String, Object> levelConfig = levelConfig(level);
       this.semanticReferenceRules = mapList(levelConfig.get("semanticReferenceRules"));
       this.semanticReferenceKindMappings =
           mapValue(levelConfig.get("semanticReferenceKindMappings"));
@@ -1386,6 +1470,7 @@ public final class XmiModelImportService {
       for (Map<String, Object> rule : mapList(levelConfig.get("semanticEdgeObjectRules"))) {
         this.edgeObjectRulesByClass.put(String.valueOf(rule.getOrDefault("eClass", "")), rule);
       }
+      this.traceRelationshipType = traceRelationshipObjectType(level);
     }
 
     private Map<String, Object> mapValue(Object value) {
@@ -1409,6 +1494,14 @@ public final class XmiModelImportService {
         return List.of();
       }
       return rawList.stream().map(String::valueOf).toList();
+    }
+
+    private boolean isTraceObject(EObject object) {
+      return object != null && isTraceObject(object.eClass().getName());
+    }
+
+    private boolean isTraceObject(String type) {
+      return !traceRelationshipType.isBlank() && traceRelationshipType.equals(type);
     }
 
     /**
@@ -1481,7 +1574,7 @@ public final class XmiModelImportService {
      * @param semanticNode serialized semantic JSON node
      */
     void captureGraphObject(EObject object, ObjectNode semanticNode) {
-      if ("TraceLink".equals(object.eClass().getName())) {
+      if (isTraceObject(object)) {
         graphTraceLinks.add(shallowGraphElement(semanticNode));
         return;
       }
@@ -1795,8 +1888,11 @@ public final class XmiModelImportService {
      * @return {@code true} for support objects
      */
     private boolean isGraphSupportObject(EObject object) {
+      if (isTraceObject(object)) {
+        return true;
+      }
       return switch (object.eClass().getName()) {
-        case "Annotation", "AwsTag", "ReadinessFinding", "TraceLink" -> true;
+        case "Annotation", "AwsTag", "ReadinessFinding" -> true;
         default -> false;
       };
     }
@@ -1810,7 +1906,7 @@ public final class XmiModelImportService {
     private boolean isGraphSupportReference(EReference reference) {
       return switch (reference.getName()) {
         case "incomingTraces", "outgoingTraces", "affectedElements" -> true;
-        default -> "TraceLink".equals(reference.getEReferenceType().getName());
+        default -> isTraceObject(reference.getEReferenceType().getName());
       };
     }
 

@@ -19,10 +19,6 @@ import {
 
 const STORAGE_KEY = "modless.guidedModeling.progress";
 const PHASE_MENU_ID = "methodologyPhaseMenu";
-const PHASE_MENU_MAX_HEIGHT = 320;
-const PHASE_MENU_MIN_HEIGHT = 100;
-const PHASE_MENU_GAP = 6;
-const VIEWPORT_PAD = 8;
 
 let phaseMenuOpen = false;
 let phaseMenuListenersBound = false;
@@ -376,48 +372,6 @@ function renderPhaseMetaBadges(items, complete) {
 
 function removeFloatedPhaseMenu() {
   document.getElementById(PHASE_MENU_ID)?.remove();
-}
-
-function positionPhaseMenu(anchor, menu) {
-  if (!anchor || !menu || menu.classList.contains("hidden")) {
-    return;
-  }
-
-  menu.id = PHASE_MENU_ID;
-  if (menu.parentElement !== document.body) {
-    document.body.appendChild(menu);
-  }
-
-  const rect = anchor.getBoundingClientRect();
-  const spaceBelow = Math.max(0, window.innerHeight - rect.bottom - PHASE_MENU_GAP - VIEWPORT_PAD);
-  const spaceAbove = Math.max(0, rect.top - PHASE_MENU_GAP - VIEWPORT_PAD);
-  const openUp = spaceBelow < spaceAbove;
-  const available = openUp ? spaceAbove : spaceBelow;
-  const maxHeight = Math.min(PHASE_MENU_MAX_HEIGHT, Math.max(PHASE_MENU_MIN_HEIGHT, available));
-
-  let left = rect.left;
-  const width = rect.width;
-  if (left + width > window.innerWidth - VIEWPORT_PAD) {
-    left = Math.max(VIEWPORT_PAD, window.innerWidth - VIEWPORT_PAD - width);
-  }
-  left = Math.max(VIEWPORT_PAD, left);
-
-  menu.style.position = "fixed";
-  menu.style.left = `${Math.round(left)}px`;
-  menu.style.width = `${Math.round(width)}px`;
-  menu.style.right = "auto";
-  menu.style.maxHeight = `${Math.round(maxHeight)}px`;
-  menu.style.zIndex = "1200";
-
-  if (openUp) {
-    menu.style.top = "auto";
-    menu.style.bottom = `${Math.round(window.innerHeight - rect.top + PHASE_MENU_GAP)}px`;
-  } else {
-    menu.style.top = `${Math.round(rect.bottom + PHASE_MENU_GAP)}px`;
-    menu.style.bottom = "auto";
-  }
-
-  menu.classList.remove("is-positioning");
 }
 
 function renderIterationLoops(host, stage, process) {
@@ -976,14 +930,10 @@ function renderPhaseNavigator(host, process, progress) {
   selectBtn.innerHTML = `
     <span class="methodology-phase-jump-label">Jump to phase</span>
     <span class="methodology-phase-jump-caret" aria-hidden="true"></span>`;
-  selectBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    phaseMenuOpen = !phaseMenuOpen;
-    renderGuidedModelingPanel();
-  });
 
   const menu = document.createElement("div");
-  menu.className = `methodology-phase-menu${phaseMenuOpen ? " is-positioning" : " hidden"}`;
+  menu.id = PHASE_MENU_ID;
+  menu.className = `methodology-phase-menu${phaseMenuOpen ? "" : " hidden"}`;
   menu.setAttribute("role", "listbox");
   menu.setAttribute("aria-label", "Modeling phases");
   phases.forEach((p, i) => {
@@ -1008,12 +958,18 @@ function renderPhaseNavigator(host, process, progress) {
   });
 
   selectWrap.appendChild(selectBtn);
+  selectWrap.appendChild(menu);
   nav.appendChild(selectWrap);
   host.appendChild(nav);
 
-  if (phaseMenuOpen) {
-    positionPhaseMenu(selectBtn, menu);
-  }
+  selectBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    phaseMenuOpen = !phaseMenuOpen;
+    selectWrap.classList.toggle("is-open", phaseMenuOpen);
+    selectBtn.setAttribute("aria-expanded", String(phaseMenuOpen));
+    menu.classList.toggle("hidden", !phaseMenuOpen);
+  });
 }
 
 export function renderGuidedModelingPanel() {
@@ -1099,25 +1055,11 @@ export function initGuidedModeling() {
 
   bindPhaseMenuListeners();
 
-  el.methodologyPanelHost?.addEventListener(
-    "scroll",
-    () => {
-      if (!phaseMenuOpen) {
-        return;
-      }
-      phaseMenuOpen = false;
-      renderGuidedModelingPanel();
-    },
-    { passive: true },
-  );
-
   window.addEventListener("resize", () => {
     if (!phaseMenuOpen) {
       return;
     }
-    const anchor = el.methodologyPanelHost?.querySelector(".methodology-phase-jump-btn");
-    const menu = document.getElementById(PHASE_MENU_ID);
-    positionPhaseMenu(anchor, menu);
+    renderGuidedModelingPanel();
   });
 
   el.methodologySearchInput?.addEventListener("input", () => {

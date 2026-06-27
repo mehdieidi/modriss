@@ -30,6 +30,7 @@ Each CVS document declares:
 - `relationshipMappings` — relationship-object EClasses
 - `viewpoints` — workbench views (palette, layout hints, legal edge kinds)
 - `canvasPolicy` — palette roles, container focus, semantic zoom thresholds
+- `semanticDashboardColumns` — optional viewpoint-owned dashboard layout columns
 
 At runtime `CvsV2Loader` converts CVS into the UI metadata shape consumed by
 `ModelingConfigService`, then derives per-type `elementMappings` after Ecore merge.
@@ -60,6 +61,13 @@ npm run migrate:all -w @modless/notation-migrate
 
 - **G6 v1** continues to consume merged `elements`, `notation`, and `relationshipRules`.
 - **GLSP v2** consumes `elementMappings`, `cvsPrimitives`, and viewpoints via the Node sidecar.
+- Container focus uses backend-derived containment palettes and relationship rules. When users draw
+  to a container, the editor offers only legal contained targets, opens the container focus canvas
+  for the selected internal target, and records an outer visual-only summary edge for zoomed-out
+  readability.
+- Dashboard layout semantics are stored on CVS viewpoints through `semanticDashboardColumns`; the
+  backend layout service consumes those columns from stored view JSON instead of owning DSML class
+  groups.
 
 Switch renderers with `diagramEditor.renderer` in `platform-config.json`:
 

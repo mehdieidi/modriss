@@ -31,6 +31,73 @@ function adminScope() {
   return state.admin.scope;
 }
 
+let adminScopeSelectBound = false;
+
+function selectedAdminScopeLabel() {
+  const option = el.adminScopeSelect.selectedOptions?.[0];
+  return option?.textContent || "Select scope";
+}
+
+function closeAdminScopeDropdown(root) {
+  root.classList.remove("is-open");
+  root.querySelector(".attr-custom-select-menu")?.classList.add("hidden");
+  root.querySelector(".attr-custom-select-trigger")?.setAttribute("aria-expanded", "false");
+}
+
+function renderAdminScopeDropdown() {
+  el.adminScopeSelect.classList.add("attr-native-source");
+  el.adminScopeSelect.nextElementSibling?.classList?.contains("admin-scope-select") &&
+    el.adminScopeSelect.nextElementSibling.remove();
+  const root = document.createElement("div");
+  root.className = "attr-custom-select admin-scope-select";
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "attr-custom-select-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+  trigger.innerHTML = `
+    <span>${escapeHtml(selectedAdminScopeLabel())}</span>
+    <span class="attr-custom-select-caret" aria-hidden="true"></span>`;
+
+  const menu = document.createElement("div");
+  menu.className = "attr-custom-select-menu hidden";
+  menu.setAttribute("role", "listbox");
+  [...el.adminScopeSelect.options].forEach((option) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = `attr-custom-select-option${option.selected ? " is-active" : ""}`;
+    item.dataset.selectValue = option.value;
+    item.setAttribute("role", "option");
+    item.setAttribute("aria-selected", String(option.selected));
+    item.textContent = option.textContent;
+    item.addEventListener("click", () => {
+      el.adminScopeSelect.value = option.value;
+      closeAdminScopeDropdown(root);
+      el.adminScopeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      renderAdminScopeDropdown();
+    });
+    menu.appendChild(item);
+  });
+  trigger.addEventListener("click", () => {
+    const open = root.classList.contains("is-open");
+    root.classList.toggle("is-open", !open);
+    menu.classList.toggle("hidden", open);
+    trigger.setAttribute("aria-expanded", String(!open));
+  });
+  root.appendChild(trigger);
+  root.appendChild(menu);
+  el.adminScopeSelect.insertAdjacentElement("afterend", root);
+}
+
+document.addEventListener("click", (event) => {
+  if (event.target?.closest?.(".admin-scope-select")) {
+    return;
+  }
+  document
+    .querySelectorAll(".admin-scope-select.is-open")
+    .forEach((root) => closeAdminScopeDropdown(root));
+});
+
 export function syncAdminEditorLineNumberScroll() {
   if (!el.adminEditorLineNumbers || !el.adminEditorContent) {
     return;
@@ -196,6 +263,13 @@ export async function initAdminWorkspace() {
       if (state.admin.scope) {
         el.adminScopeSelect.value = state.admin.scope;
       }
+      renderAdminScopeDropdown();
+      if (!adminScopeSelectBound) {
+        adminScopeSelectBound = true;
+        el.adminScopeSelect.addEventListener("change", () => {
+          void changeAdminScope();
+        });
+      }
     }
     resetAdminEditor();
     state.admin.currentPath = "";
@@ -207,6 +281,8 @@ export async function initAdminWorkspace() {
       state.admin.scope = null;
       resetAdminEditor();
       el.adminScopeSelect.innerHTML = "";
+      el.adminScopeSelect.nextElementSibling?.classList?.contains("admin-scope-select") &&
+        el.adminScopeSelect.nextElementSibling.remove();
       el.adminTree.innerHTML = `<div class="project-list-empty">Admin workspace is not available in this backend build.</div>`;
       setStatus("Admin workspace is not available in this backend build.");
       return;

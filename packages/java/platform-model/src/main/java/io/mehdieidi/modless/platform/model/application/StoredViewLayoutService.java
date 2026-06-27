@@ -176,12 +176,18 @@ public final class StoredViewLayoutService {
               OUTPUT_PORT_ID,
               INPUT_PORT_ID));
     }
+    Map<String, Object> options = new LinkedHashMap<>(layoutOptions(layoutStrategy));
+    List<List<String>> semanticDashboardColumns =
+        textColumns(view.path("semanticDashboardColumns"));
+    if (!semanticDashboardColumns.isEmpty()) {
+      options.put("semanticDashboardColumns", semanticDashboardColumns);
+    }
     return new LayoutService.LayoutRequest(
         text(view, "id", ""),
         text(view, "layoutProfile", "DEFAULT_LAYERED"),
         false,
         List.of(),
-        layoutOptions(layoutStrategy),
+        options,
         nodes,
         edges);
   }
@@ -337,6 +343,9 @@ public final class StoredViewLayoutService {
     if (!Boolean.TRUE.equals(request.options().get("semanticDashboardGrid"))) {
       return false;
     }
+    if (dashboardColumns(request).isEmpty()) {
+      return false;
+    }
     String profile = text(view, "layoutProfile", request.profile()).toUpperCase();
     String kind = text(view, "kind", "").toUpperCase();
     return request.nodes().size() >= 36
@@ -354,22 +363,10 @@ public final class StoredViewLayoutService {
       Map<String, NodeBox> nodesById,
       Map<String, JsonNode> elements,
       LayoutService.LayoutRequest request) {
-    List<List<String>> columns =
-        List.of(
-            List.of("CIMModel"),
-            List.of("BusinessGoal", "Requirement", "NonFunctionalRequirement"),
-            List.of("BusinessCapability", "BoundedContextCandidate"),
-            List.of("Actor", "Stakeholder", "Role", "ExternalSystem"),
-            List.of("DomainEntity", "ValueObject", "AggregateCandidate"),
-            List.of("Command", "Query"),
-            List.of("BusinessEvent", "BusinessError"),
-            List.of(
-                "Policy",
-                "Risk",
-                "Hotspot",
-                "TransformationProfile",
-                "ProductionReadinessAssessment",
-                "TraceModel"));
+    List<List<String>> columns = dashboardColumns(request);
+    if (columns.isEmpty()) {
+      return;
+    }
     Map<String, Integer> columnByType = new HashMap<>();
     for (int index = 0; index < columns.size(); index++) {
       for (String type : columns.get(index)) {
@@ -792,6 +789,61 @@ public final class StoredViewLayoutService {
               result.add(value.asText());
             }
           });
+    }
+    return result;
+  }
+
+  /**
+   * Converts a JSON array of string arrays to dashboard column definitions.
+   *
+   * @param values JSON column array
+   * @return non-empty semantic dashboard columns
+   */
+  private List<List<String>> textColumns(JsonNode values) {
+    List<List<String>> result = new ArrayList<>();
+    if (!values.isArray()) {
+      return result;
+    }
+    values.forEach(
+        column -> {
+          List<String> types = new ArrayList<>();
+          if (column.isArray()) {
+            column.forEach(
+                value -> {
+                  if (value.isTextual() && !value.asText().isBlank()) {
+                    types.add(value.asText());
+                  }
+                });
+          }
+          if (!types.isEmpty()) {
+            result.add(types);
+          }
+        });
+    return result;
+  }
+
+  /**
+   * Reads semantic dashboard columns from layout request options.
+   *
+   * @param request layout request
+   * @return configured columns or an empty list
+   */
+  @SuppressWarnings("unchecked")
+  private List<List<String>> dashboardColumns(LayoutService.LayoutRequest request) {
+    Object rawColumns = request.options().get("semanticDashboardColumns");
+    if (!(rawColumns instanceof List<?> columns)) {
+      return List.of();
+    }
+    List<List<String>> result = new ArrayList<>();
+    for (Object rawColumn : columns) {
+      if (!(rawColumn instanceof List<?> column)) {
+        continue;
+      }
+      List<String> types =
+          column.stream().map(String::valueOf).filter(value -> !value.isBlank()).toList();
+      if (!types.isEmpty()) {
+        result.add(types);
+      }
     }
     return result;
   }

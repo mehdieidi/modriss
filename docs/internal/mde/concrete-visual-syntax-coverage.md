@@ -106,6 +106,9 @@ All three levels use the same complexity-management principles:
 
 - Named synchronized viewpoints prevent an all-elements canvas.
 - Openable containers provide semantic zoom into owned elements.
+- A relationship drawn to a container offers legal contained targets as well as the container itself;
+  choosing a contained target opens the container focus view, shows the outside endpoint as a
+  temporary portal node, and leaves a visual-only summary edge on the outer view.
 - Geometric zoom controls card detail and edge-label visibility using per-level `canvasPolicy`.
 - Focus mode shows depth-1 or depth-2 neighborhoods.
 - Containment, structural, behavioral, policy, trace, and generated relationships are separated by
@@ -126,10 +129,30 @@ The modeling configuration tests verify that:
 - containments and relationship rules are derived from Ecore;
 - every user-creatable top-level type belongs to at least one viewpoint;
 - abstract/support and contained-detail types are not incorrectly exposed as ordinary palette nodes.
+- dashboard layout groupings come from CVS view metadata, not Java-side concept lists.
 
 In the frontend, the palette intentionally contains only standalone `node` and `container` roles.
 Containers carry an **Open** badge. Relationship objects are created from legal connection handles,
-and `detail` concepts are created and edited in their owner's containment inspector.
+and `detail` concepts are created and edited in their owner's containment inspector. Cross-boundary
+container connections use the same legal relationship matrix: only contained elements with a legal
+relationship kind from the source are offered in the picker.
+
+## Gap Analysis Updates
+
+The current concrete syntax hardening pass closed these runtime gaps:
+
+- Container-to-internal-target creation now uses a picker populated from Ecore-derived containment
+  and relationship metadata.
+- Container focus views include legal cross-boundary relationship endpoints as temporary portal
+  nodes, so opening a container shows outside elements connected to contained elements.
+- Zoomed-out views receive visual-only summary edges for external-to-internal relationships without
+  duplicating the formal semantic relationship.
+- Bounded-context membership synchronization is derived from `boundedContext.membershipFeatures`
+  rather than hardcoded containment feature names.
+- Shortcut connector ownership and generated relationship-view containment are resolved from
+  configured containment rules and root containments.
+- Attribute-panel reference matching relies on metamodel inheritance, and enum/select fields remain
+  generated from Ecore enum literals.
 
 When adding a metamodel concept, explicitly decide whether it is a `node`, `container`,
 `relationship`, `detail`, or `support` concept and place every top-level creatable concept in at

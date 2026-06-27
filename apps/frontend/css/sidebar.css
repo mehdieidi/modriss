@@ -177,10 +177,29 @@
     box-shadow var(--transition);
 }
 
+.sidebar-select:is(select) {
+  padding-right: 32px;
+  background-color: color-mix(in srgb, var(--input-bg) 90%, var(--surface-contrast) 10%);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 17px) 50%,
+    calc(100% - 12px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px;
+}
+
 .sidebar-select:focus {
   outline: none;
   border-color: color-mix(in srgb, var(--accent) 76%, transparent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-glow) 62%, transparent);
+}
+
+.sidebar-select:is(select):focus {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--accent-light) 50%),
+    linear-gradient(135deg, var(--accent-light) 50%, transparent 50%);
 }
 
 .sidebar-inline-action {
