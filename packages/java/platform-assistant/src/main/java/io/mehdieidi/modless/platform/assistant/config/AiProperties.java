@@ -64,7 +64,7 @@ public record AiProperties(
     mode = mode == null ? RolloutMode.AUTONOMOUS : mode;
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofMinutes(10) : requestTimeout;
-    maxToolCalls = maxToolCalls <= 0 ? 96 : maxToolCalls;
+    maxToolCalls = maxToolCalls <= 0 ? 240 : maxToolCalls;
     validationRepairAttempts = validationRepairAttempts <= 0 ? 6 : validationRepairAttempts;
     tokenBudget = tokenBudget <= 0 ? 16000 : tokenBudget;
     maxContextSnippets = maxContextSnippets <= 0 ? 24 : maxContextSnippets;

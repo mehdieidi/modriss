@@ -1368,13 +1368,36 @@ export function updateChatAttachmentLabel() {
   }
 }
 
+export async function uploadChatAttachment(file) {
+  const session = await ensureChatSession();
+  if (!session) {
+    return null;
+  }
+  const form = new FormData();
+  form.append("file", file);
+  return api(`/chatbot/sessions/${session.sessionId}/attachments`, {
+    method: "POST",
+    body: form,
+  });
+}
+
+function defaultAttachmentMessage() {
+  const level = levelLabel(state.activeType);
+  if (level === "CIM") {
+    return "Create a complete CIM model from the attached requirements document.";
+  }
+  return `Analyze the attached document and update the ${level} model.`;
+}
+
 // ── Send message ──────────────────────────────────────────────────────────────
 
 export async function sendChatMessage() {
-  const text = el.chatInput.value.trim();
-  if (!text) {
+  const typedText = el.chatInput.value.trim();
+  const attachment = state.chat.attachment;
+  if (!typedText && !attachment) {
     return;
   }
+  const text = typedText || defaultAttachmentMessage();
 
   let response = null;
   try {
@@ -1409,8 +1432,7 @@ export async function sendChatMessage() {
             ].filter(Boolean),
           ),
         ],
-        attachmentName: state.chat.attachment?.name || null,
-        attachmentContent: state.chat.attachment?.content || null,
+        attachmentIds: attachment?.id ? [attachment.id] : [],
         unsavedDraftPatch:
           hasUnsavedModelChanges() && state.baseModel ? JSON.stringify(state.baseModel) : null,
       }),

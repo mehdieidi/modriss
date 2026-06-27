@@ -3,6 +3,9 @@ package io.mehdieidi.modless.backend.api;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.mehdieidi.modless.backend.assistant.AssistantRealtimeHub;
+import io.mehdieidi.modless.backend.upload.UploadScope;
+import io.mehdieidi.modless.backend.upload.UploadService;
+import io.mehdieidi.modless.backend.upload.UploadedFileRecord;
 import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantChoice;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantProposal;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /** Provides frontend-compatible assistant session, messaging, and event endpoints. */
@@ -37,6 +41,7 @@ public class ChatbotController {
   private final AssistantRealtimeHub realtime;
   private final AuthSupport auth;
   private final ProjectService projects;
+  private final UploadService uploads;
 
   /**
    * Creates the controller.
@@ -50,12 +55,14 @@ public class ChatbotController {
       AssistantCatalog catalogs,
       AssistantRealtimeHub realtime,
       AuthSupport auth,
-      ProjectService projects) {
+      ProjectService projects,
+      UploadService uploads) {
     this.assistant = assistant;
     this.catalogs = catalogs;
     this.realtime = realtime;
     this.auth = auth;
     this.projects = projects;
+    this.uploads = uploads;
   }
 
   /**
@@ -142,6 +149,8 @@ public class ChatbotController {
       @PathVariable String sessionId,
       @Valid @RequestBody MessageRequest request) {
     UserRecord user = auth.user(token);
+    AssistantSessionStore.AssistantSession session = assistant.session(user, sessionId);
+    ResolvedRequestAttachment attachment = resolveRequestAttachments(user, session, request);
     AssistantOrchestrator.AssistantTurnResponse response =
         assistant.handleMessage(
             user,
@@ -153,9 +162,40 @@ public class ChatbotController {
                 request.activeView(),
                 request.selectedElementIds(),
                 request.unsavedDraftPatch(),
-                request.attachmentName(),
-                request.attachmentContent()));
+                attachment.name(),
+                attachment.content()));
     return toMessageResponse(response);
+  }
+
+  /**
+   * Uploads a text attachment for a chatbot session.
+   *
+   * @param token session token
+   * @param sessionId assistant session ID
+   * @param file uploaded file
+   * @return stored upload metadata
+   */
+  @PostMapping(
+      value = "/api/chatbot/sessions/{sessionId}/attachments",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  AttachmentResponse uploadAttachment(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable String sessionId,
+      @RequestParam("file") MultipartFile file) {
+    UserRecord user = auth.user(token);
+    AssistantSessionStore.AssistantSession session = assistant.session(user, sessionId);
+    projects.get(user, session.projectId());
+    UploadedFileRecord record =
+        uploads.uploadAssistantAttachment(
+            new UploadScope(user.id(), session.projectId(), session.level(), session.id()), file);
+    return new AttachmentResponse(
+        record.id(),
+        record.originalFileName(),
+        record.contentType(),
+        record.sizeBytes(),
+        record.level().apiName(),
+        record.projectId(),
+        record.uploadedAt().toString());
   }
 
   /**
@@ -193,6 +233,33 @@ public class ChatbotController {
         response.choices(),
         response.workflowState(),
         new ActivityResponse(activity.stage(), activity.message(), activity.workflowState()));
+  }
+
+  private ResolvedRequestAttachment resolveRequestAttachments(
+      UserRecord user, AssistantSessionStore.AssistantSession session, MessageRequest request) {
+    UploadScope scope =
+        new UploadScope(user.id(), session.projectId(), session.level(), session.id());
+    List<UploadService.ResolvedAttachment> resolved =
+        uploads.resolveAssistantAttachments(scope, request.attachmentIds());
+    if (resolved.isEmpty()
+        && (request.attachmentIds() == null || request.attachmentIds().isEmpty())
+        && (request.attachmentContent() == null || request.attachmentContent().isBlank())) {
+      resolved = uploads.resolveRecentAssistantAttachments(scope, 3);
+    }
+    if (resolved.isEmpty()) {
+      return new ResolvedRequestAttachment(request.attachmentName(), request.attachmentContent());
+    }
+    String name =
+        resolved.stream()
+            .map(UploadService.ResolvedAttachment::name)
+            .reduce((left, right) -> left + ", " + right)
+            .orElse("attachments");
+    String content =
+        resolved.stream()
+            .map(attachment -> "## " + attachment.name() + "\n\n" + attachment.content())
+            .reduce((left, right) -> left + "\n\n---\n\n" + right)
+            .orElse("");
+    return new ResolvedRequestAttachment(name, content);
   }
 
   /**
@@ -375,7 +442,28 @@ public class ChatbotController {
       List<String> selectedElementIds,
       String unsavedDraftPatch,
       String attachmentName,
-      String attachmentContent) {}
+      String attachmentContent,
+      List<String> attachmentIds) {}
+
+  /**
+   * Upload response.
+   *
+   * @param id attachment ID used in message requests
+   * @param fileName original file name
+   * @param contentType submitted media type
+   * @param sizeBytes stored content size
+   * @param level modeling level
+   * @param projectId project scope
+   * @param uploadedAt upload timestamp
+   */
+  public record AttachmentResponse(
+      String id,
+      String fileName,
+      String contentType,
+      long sizeBytes,
+      String level,
+      String projectId,
+      String uploadedAt) {}
 
   /**
    * Assistant message response.
@@ -454,4 +542,6 @@ public class ChatbotController {
    */
   public record ConversationResponse(
       String sessionId, String title, String preview, String updatedAt, int messageCount) {}
+
+  private record ResolvedRequestAttachment(String name, String content) {}
 }

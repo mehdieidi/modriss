@@ -205,6 +205,11 @@ public class AssistantOrchestrator {
         .toList();
   }
 
+  /** Returns a session owned by the supplied user, restoring it from durable memory when needed. */
+  public AssistantSessionStore.AssistantSession session(UserRecord user, String sessionId) {
+    return requireSession(sessionId, user.id());
+  }
+
   /** Handles one natural-language turn using a structured LLM decision. */
   public AssistantTurnResponse handleMessage(
       UserRecord user, String sessionId, AssistantTurnRequest request) {
@@ -1627,9 +1632,28 @@ public class AssistantOrchestrator {
     writable, non-containment EReference. SET_ATTRIBUTE uses the attribute name and puts the new
     scalar or array value directly in attributes. DELETE_ELEMENT is permitted only when the user
     explicitly requests removal. Include every required attribute and containment described by
-    the retrieved metamodel. Ask concise questions before planning only when a consequential
+    the retrieved metamodel. For ADD_ELEMENT, omit id/eClass from attributes and use domain-specific
+    names, labels, and summaries when those features exist; never create placeholder elements whose
+    only meaningful value is the metamodel type name such as Actor, Command, BusinessEvent, Policy,
+    DomainEntity, or Requirement. Ask concise questions before planning only when a consequential
     modeling decision is genuinely ambiguous. The backend will compile, structurally validate, and
     immediately apply every valid mutation; the user can undo applied changes.
+
+    When the user attaches a requirements, user-story, JSON, or event-storming document at CIM
+    level, treat it as source material to transform into a complete CIM. Extract and model every
+    stated business outcome, stakeholder, actor, role, user story, acceptance criterion, domain
+    term, entity, value object, aggregate candidate, command, query, business event, condition,
+    business error, policy, decision rule, process, risk, assumption, hotspot, and readiness concern
+    that the document supports. For event-storming notes, map commands to Command, orange facts to
+    BusinessEvent, external systems to ExternalSystem, policies to Policy, read needs to Query,
+    aggregates/entities to AggregateCandidate and DomainEntity, and unresolved questions to Risk,
+    Assumption, or Hotspot as appropriate. Preserve coverage: do not silently drop a stated
+    requirement or workshop artifact. Ask clarification only for consequential conflicts that
+    change the business model; otherwise choose conservative CIM defaults and record assumptions.
+    Never report that the CIM is partial because of operation limits. If the limit is tight, still
+    create a coherent complete CIM by prioritizing named root-level concepts and required ownership,
+    then compress lower-level facts into available descriptions, summaries, requirements,
+    assumptions, risks, hotspots, and policies so every source fact remains represented.
 
     Required containment examples derived from the runtime schema:
     """
@@ -2104,8 +2128,8 @@ public class AssistantOrchestrator {
       return "";
     }
     String content = request.attachmentContent() == null ? "" : request.attachmentContent().trim();
-    if (content.length() > 4000) {
-      content = content.substring(0, 4000) + "\n...[attachment truncated]";
+    if (content.length() > 24000) {
+      content = content.substring(0, 24000) + "\n...[attachment truncated]";
     }
     return "\nAttached context file: "
         + nonBlank(request.attachmentName(), "attachment")

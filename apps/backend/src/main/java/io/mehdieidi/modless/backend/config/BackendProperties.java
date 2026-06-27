@@ -16,7 +16,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "modless")
 public record BackendProperties(
-    Path storageRoot, Duration sessionTtl, List<String> allowedOrigins, Mde mde) {
+    Path storageRoot, Duration sessionTtl, List<String> allowedOrigins, Mde mde, Upload upload) {
 
   /** Applies safe defaults and immutable collection semantics to bound properties. */
   public BackendProperties {
@@ -29,6 +29,7 @@ public record BackendProperties(
                 null, null, null, null, null, null, null, null, null, null, null, null, null, null,
                 null)
             : mde;
+    upload = upload == null ? new Upload(null, null, null) : upload;
   }
 
   /**
@@ -110,4 +111,20 @@ public record BackendProperties(
       Long maxGeneratedFileBytes,
       Long maxGeneratedArtifactBytes,
       Duration stagedImportTtl) {}
+
+  /**
+   * Configures generic user uploads.
+   *
+   * @param root upload storage root, relative to {@link #storageRoot()} when not absolute
+   * @param maxFileBytes maximum accepted upload size
+   * @param maxTextChars maximum text included in assistant prompts
+   */
+  public record Upload(Path root, Long maxFileBytes, Integer maxTextChars) {
+
+    /** Applies safe defaults for upload limits. */
+    public Upload {
+      maxFileBytes = maxFileBytes == null ? 1_048_576L : maxFileBytes;
+      maxTextChars = maxTextChars == null ? 120_000 : maxTextChars;
+    }
+  }
 }

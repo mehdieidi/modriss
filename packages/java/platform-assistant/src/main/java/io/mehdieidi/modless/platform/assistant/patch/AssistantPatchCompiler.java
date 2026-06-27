@@ -503,7 +503,10 @@ public class AssistantPatchCompiler {
     ObjectNode node = JsonNodeFactory.instance.objectNode();
     String elementType = schemas.canonicalType(level, operation.elementType());
     if (operation.attributes() != null && operation.attributes().isObject()) {
-      node.setAll((ObjectNode) operation.attributes());
+      ObjectNode attributes = ((ObjectNode) operation.attributes()).deepCopy();
+      attributes.remove("id");
+      attributes.remove("eClass");
+      node.setAll(attributes);
     }
     node.put("id", safe(operation.targetElementId()));
     node.put("eClass", elementType);

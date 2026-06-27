@@ -847,6 +847,46 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
+  /api/modeling/process/{level}:
+    get:
+      tags: [Modeling]
+      summary: Get modeling methodology process for a level
+      security: []
+      parameters:
+        - name: level
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [cim, pim, psm]
+      responses:
+        "200":
+          description: Modeling process definition
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/modeling/process/{level}/coverage:
+    get:
+      tags: [Modeling]
+      summary: Get metamodel coverage for a modeling process level
+      security: []
+      parameters:
+        - name: level
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [cim, pim, psm]
+      responses:
+        "200":
+          description: Modeling process coverage
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
   /api/layout:
     post:
       tags: [Modeling]
@@ -913,6 +953,34 @@ paths:
           description: Persisted view layout result
         "400":
           $ref: "#/components/responses/BadRequest"
+  /api/{level}/{id}/views/{viewId}:
+    get:
+      tags: [Models]
+      summary: Get one stored model view
+      parameters:
+        - name: level
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [cim, pim, psm]
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: viewId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stored view
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/impact/{path}:
     parameters:
       - $ref: "#/components/parameters/WildcardPath"
@@ -1002,6 +1070,36 @@ paths:
           description: Assistant response accepted
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /api/chatbot/sessions/{sessionId}/attachments:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Assistant]
+      summary: Upload assistant attachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Uploaded attachment metadata
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
   /api/chatbot/sessions/{sessionId}/events:
     parameters:
       - name: sessionId
@@ -1228,6 +1326,12 @@ components:
             $ref: "#/components/schemas/ApiErrorResponse"
     PayloadTooLarge:
       description: Upload or generated payload exceeds configured limits
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    UnsupportedMediaType:
+      description: Uploaded media type or file format is not supported
       content:
         application/json:
           schema:

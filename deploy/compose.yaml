@@ -54,8 +54,12 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       MODLESS_DIAGRAM_RENDERER: ${MODLESS_DIAGRAM_RENDERER:-glsp-sprotty}
       MODLESS_GLSP_SERVER_URL: ${MODLESS_GLSP_SERVER_URL:-ws://127.0.0.1:8081/modless}
+      MODLESS_UPLOAD_ROOT: ${MODLESS_UPLOAD_ROOT:-/app/uploads}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - modless-backend-uploads:/app/uploads
+      - modless-backend-logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -161,5 +165,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  modless-backend-logs:
+  modless-backend-uploads:
   modless-localstack-data:
   modless-postgres-data:

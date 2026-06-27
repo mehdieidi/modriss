@@ -32,6 +32,7 @@ import {
   startNewChatConversation,
   syncChatOpenState,
   toggleChatHistoryPanel,
+  uploadChatAttachment,
   updateChatAttachmentLabel,
 } from "./chat.js";
 import {
@@ -1042,8 +1043,19 @@ function bindEvents() {
       return;
     }
     try {
-      const content = await file.text();
-      state.chat.attachment = { name: file.name, content };
+      setStatus(`Uploading: ${file.name}`);
+      const attachment = await uploadChatAttachment(file);
+      if (!attachment) {
+        state.chat.attachment = null;
+        event.target.value = "";
+        updateChatAttachmentLabel();
+        return;
+      }
+      state.chat.attachment = {
+        id: attachment.id,
+        name: attachment.fileName || file.name,
+        sizeBytes: attachment.sizeBytes || file.size,
+      };
       updateChatAttachmentLabel();
       setStatus(`Attached: ${file.name}`);
     } catch (error) {

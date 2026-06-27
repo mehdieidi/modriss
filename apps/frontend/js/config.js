@@ -21,7 +21,7 @@ export function websocketUrl(path) {
   return `${protocol}//${backend.host}${normalizedPath}`;
 }
 
-export const CHAT_ATTACHMENT_MAX_BYTES = 300000;
+export const CHAT_ATTACHMENT_MAX_BYTES = 1048576;
 export const LOG_HINT = "See backend logs (default path: logs/backend.log)";
 export const MOBILE_BREAKPOINT = 920;
 export const TABLET_BREAKPOINT = 1100;

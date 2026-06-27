@@ -11,6 +11,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 modless
+RUN mkdir -p /app/uploads /app/logs \
+    && chown -R modless:modless /app/uploads /app/logs
 COPY --from=build /workspace/apps/backend/target/backend-*.jar /app/backend.jar
 COPY --from=build /workspace/mde /app/mde
 USER modless

@@ -1,5 +1,9 @@
 package io.mehdieidi.modless.backend.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mehdieidi.modless.backend.upload.LocalUploadStorage;
+import io.mehdieidi.modless.backend.upload.UploadService;
+import io.mehdieidi.modless.backend.upload.UploadStorage;
 import io.mehdieidi.modless.platform.artifact.application.ArtifactService;
 import io.mehdieidi.modless.platform.export.application.ProjectArchiveService;
 import io.mehdieidi.modless.platform.identity.application.AuthService;
@@ -18,6 +22,7 @@ import io.mehdieidi.modless.platform.project.application.ProjectService;
 import io.mehdieidi.modless.platform.storage.api.PlatformStore;
 import io.mehdieidi.modless.platform.transformation.application.MdeJobService;
 import io.mehdieidi.modless.platform.transformation.application.TransformationService;
+import java.nio.file.Path;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -237,5 +242,22 @@ public class CoreServicesConfig {
   @Bean
   ModelingProcessService modelingProcessService() {
     return new ModelingProcessService();
+  }
+
+  @Bean
+  UploadStorage uploadStorage(BackendProperties properties, ObjectMapper mapper) {
+    Path root = properties.upload().root();
+    if (root == null) {
+      root = properties.storageRoot().resolve("uploads");
+    } else if (!root.isAbsolute()) {
+      root = properties.storageRoot().resolve(root);
+    }
+    return new LocalUploadStorage(root, mapper);
+  }
+
+  @Bean
+  UploadService uploadService(
+      UploadStorage uploadStorage, BackendProperties properties, ObjectMapper mapper) {
+    return new UploadService(uploadStorage, properties, mapper);
   }
 }

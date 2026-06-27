@@ -90,6 +90,8 @@ class AssistantOrchestratorTest {
                 List.of(),
                 Instant.now(),
                 Instant.now()));
+    when(models.validateStructural(any(ModelLevel.class), any()))
+        .thenReturn(new ModelService.ValidationResult(true, List.of()));
     when(models.validate(any(ModelLevel.class), any()))
         .thenReturn(new ModelService.ValidationResult(true, List.of()));
     JsonNode emptyPimModel =

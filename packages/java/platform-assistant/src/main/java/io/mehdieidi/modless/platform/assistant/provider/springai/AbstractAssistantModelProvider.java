@@ -47,7 +47,10 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       creation request, use ADD_ELEMENT rather than SET_ATTRIBUTE on the model root.
       IDs are never a user decision. Generate a fresh UUIDv4 targetElementId for every added
       element and reuse that exact ID in operations that refer to it. Never ask the user how to
-      generate or format an ID.
+      generate or format an ID. For ADD_ELEMENT, omit id/eClass from attributes and put the
+      domain-facing label in attributes.name when that attribute is available. Never create a
+      placeholder element whose name, label, or only attribute is just the metamodel type such as
+      Actor, Command, BusinessEvent, Policy, DomainEntity, or Requirement.
       """;
   private static final String PATCH_OUTPUT_GUARDRAIL =
       """
@@ -69,7 +72,8 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       A MUTATION must use PATCH. CLARIFICATION is almost never appropriate for MUTATION.
       Never use ANSWER or claim completion for a MUTATION without semantic operations.
       Use ANSWER for explanation, analysis, and advice. Use CLARIFICATION only when the user
-      explicitly asked you to choose between incompatible business approaches in their message.
+      explicitly asked you to choose between incompatible business approaches, or when attached
+      source material contains conflicting business facts that would materially change the model.
       Never ask about architecture style, runtime language, package manager, persistence technology,
       API style, event channels, IDs, names, layout, or other defaults the starter model or
       metamodel already provides. For create/edit requests, return PATCH with operations sized to
@@ -81,7 +85,11 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       if so, choose the default and return PATCH. IDs must always be fresh UUIDv4 values
       in operations; never ask the user to generate or format IDs. Names, layout, ordering, enum
       literals with schema defaults, and other reversible implementation details are never grounds
-      for clarification.
+      for clarification. For document-to-CIM turns, never answer that only a partial model was
+      created because of operation limits. Produce a coherent complete CIM within the limit by
+      prioritizing named business concepts, required containments, and traceable summaries, then
+      compress lower-level facts into available description, summary, assumption, risk, hotspot,
+      or requirement attributes/elements.
       """;
   protected final AiProperties properties;
   private final String providerKey;

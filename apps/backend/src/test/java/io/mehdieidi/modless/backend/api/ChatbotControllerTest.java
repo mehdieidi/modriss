@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.mehdieidi.modless.backend.assistant.AssistantRealtimeHub;
+import io.mehdieidi.modless.backend.upload.UploadService;
 import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
@@ -26,10 +27,12 @@ class ChatbotControllerTest {
 
   @Mock private ProjectService projects;
 
+  @Mock private UploadService uploads;
+
   @Test
   void createSessionRejectsMissingProjectIdBeforeProjectLookup() {
     ChatbotController controller =
-        new ChatbotController(assistant, catalogs, realtime, auth, projects);
+        new ChatbotController(assistant, catalogs, realtime, auth, projects, uploads);
 
     PlatformException ex =
         assertThrows(

@@ -46,8 +46,12 @@ public class AssistantPromptGuard {
                         bound(redact(snippet.title()), 300),
                         bound(redact(snippet.content()), properties.maxSnippetChars())))
             .toList();
+    int maxSystemChars =
+        prompt.system().contains("Attached context file:")
+            ? Math.max(properties.maxSystemChars(), 32000)
+            : properties.maxSystemChars();
     return new AssistantModelProvider.AssistantPrompt(
-        prompt.role(), bound(redact(prompt.system()), properties.maxSystemChars()), user, snippets);
+        prompt.role(), bound(redact(prompt.system()), maxSystemChars), user, snippets);
   }
 
   /**
