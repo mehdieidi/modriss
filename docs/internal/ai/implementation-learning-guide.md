@@ -495,13 +495,12 @@ The runtime flow is:
 18. Messages, proposal state, citations, and audit events are persisted.
 19. REST plus WebSocket or SSE updates the frontend.
 
-## 9. Proposal Mode
+## 9. Autonomous Agent
 
-The assistant's current rollout mode is `AUTONOMOUS`; the legacy `GUARDED_APPLY` value is still
-accepted for existing deployments. A structured LLM turn decides whether to answer, ask up to three
-consequential clarification questions, or draft semantic operations. Valid model-changing work is
-compiled, validated, risk-classified, persisted as a proposal when approval is needed, and
-revalidated when approval is submitted.
+The assistant runs as one autonomous modeling agent. A structured LLM turn decides whether to
+answer, ask up to three consequential clarification questions, or draft semantic operations. Valid
+model-changing work is compiled, validated, risk-classified, persisted for audit and undo, and
+applied immediately.
 
 Current risk rules:
 

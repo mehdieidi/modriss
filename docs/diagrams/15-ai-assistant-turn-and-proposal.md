@@ -1,4 +1,4 @@
-# AI Assistant Turn and Proposal Lifecycle
+# AI Assistant Turn and Autonomous Apply Lifecycle
 
 ## Turn Flow
 
@@ -15,13 +15,10 @@ flowchart TD
     validate["Validate current model"]
     snapshot["Build or load compact model context"]
     retrieve["Retrieve metamodel/EVL snippets and validation issues"]
-    respond["Call responder model"]
-    proposalMode{"Mode permits proposal?"}
-    plan["Call planner model for SemanticModelPatch"]
+    plan["Run autonomous planner with retrieved context/tools"]
     compile["Ground, compile, preview, validate"]
-    risk{"Risk and mode allow auto apply?"}
-    auto["Patch model immediately"]
-    propose["Persist proposal awaiting approval"]
+    valid{"Valid model change?"}
+    apply["Patch model immediately"]
     final["Persist ASSISTANT message, summary, audits"]
     publish["Publish chat.assistant and optional model.updated"]
     done([MessageResponse])
@@ -30,27 +27,20 @@ flowchart TD
     enabled -- no --> disabled --> final
     enabled -- yes --> load --> conflict
     conflict -- yes --> stale["409 Refresh required"] --> done
-    conflict -- no --> validate --> snapshot --> retrieve --> respond --> proposalMode
-    proposalMode -- no --> final
-    proposalMode -- yes --> plan --> compile --> risk
-    risk -- yes --> auto --> final
-    risk -- no --> propose --> final
+    conflict -- no --> validate --> snapshot --> retrieve --> plan --> compile --> valid
+    valid -- yes --> apply --> final
+    valid -- no --> final
     final --> publish --> done
 ```
 
-## Proposal State Machine
+## Applied Change State Machine
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PROPOSED: Stored with approvalRequired=true
-    [*] --> APPLIED: Low-risk auto apply when allowed
-    PROPOSED --> APPROVED: User approves
-    APPROVED --> APPLIED: Backend revalidates and patches model
-    PROPOSED --> REJECTED: User rejects
-    PROPOSED --> FAILED: Revalidation or patch fails
+    [*] --> APPLIED: Valid autonomous change applied
+    [*] --> FAILED: Validation or patch fails
     APPLIED --> UNDONE: User requests inverse patch and validation passes
     APPLIED --> FAILED: Undo validation fails
-    REJECTED --> [*]
     UNDONE --> [*]
     FAILED --> [*]
 ```
@@ -78,27 +68,26 @@ flowchart LR
     compiler --> affected
 ```
 
-## Approval Sequence
+## Apply Sequence
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant UI as Proposal card
+    participant UI as Chat panel
     participant API as ChatbotController
     participant O as AssistantOrchestrator
     participant M as ModelService
     participant DB as PostgreSQL
     participant RT as RealtimeHub
 
-    User->>UI: Click Approve
-    UI->>API: POST approve
-    API->>O: approveProposal
-    O->>DB: Load proposal and thread
+    User->>UI: Send modeling request
+    UI->>API: POST message
+    API->>O: handleMessage
     O->>M: Load model
-    O->>O: Recompile, preview, validate
-    O->>M: Patch model using proposal.modelRevision
+    O->>O: Retrieve context, plan, compile, preview, validate
+    O->>M: Patch model
     M->>DB: Persist new revision
-    O->>DB: Proposal APPLIED and audits
+    O->>DB: Store applied proposal and audits
     O->>RT: model.updated
     O-->>API: MessageResponse
     API-->>UI: Applied response

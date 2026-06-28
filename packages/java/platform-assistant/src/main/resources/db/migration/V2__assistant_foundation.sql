@@ -56,14 +56,11 @@ CREATE TABLE assistant_proposals
     model_id           text        NOT NULL,
     model_revision     bigint      NOT NULL,
     risk_level         text        NOT NULL CHECK (risk_level IN ('LOW', 'MEDIUM', 'HIGH')),
-    approval_required  boolean     NOT NULL,
     semantic_patch     jsonb       NOT NULL,
     inverse_patch      jsonb,
     validation_summary jsonb       NOT NULL,
     citations          jsonb       NOT NULL DEFAULT '[]'::jsonb,
-    status             text        NOT NULL CHECK (status IN
-                                                   ('PROPOSED', 'APPROVED', 'REJECTED', 'APPLIED',
-                                                    'FAILED', 'UNDONE')),
+    status             text        NOT NULL CHECK (status IN ('APPLIED', 'FAILED', 'UNDONE')),
     created_at         timestamptz NOT NULL,
     decided_at         timestamptz
 );

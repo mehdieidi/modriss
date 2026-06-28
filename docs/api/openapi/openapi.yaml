@@ -1203,46 +1203,6 @@ paths:
           description: Assistant proposal
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve:
-    parameters:
-      - name: sessionId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: proposalId
-        in: path
-        required: true
-        schema:
-          type: string
-    post:
-      tags: [Assistant]
-      summary: Approve assistant proposal
-      responses:
-        "200":
-          description: Proposal approved
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject:
-    parameters:
-      - name: sessionId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: proposalId
-        in: path
-        required: true
-        schema:
-          type: string
-    post:
-      tags: [Assistant]
-      summary: Reject assistant proposal
-      responses:
-        "200":
-          description: Proposal rejected
-        "401":
-          $ref: "#/components/responses/Unauthorized"
   /api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo:
     parameters:
       - name: sessionId

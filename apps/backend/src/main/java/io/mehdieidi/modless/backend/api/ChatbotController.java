@@ -317,36 +317,6 @@ public class ChatbotController {
   }
 
   /**
-   * Reserved endpoint for proposal approval.
-   *
-   * @param sessionId session ID
-   * @param proposalId proposal ID
-   */
-  @PostMapping("/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve")
-  MessageResponse approve(
-      @RequestHeader("X-Auth-Token") String token,
-      @PathVariable String sessionId,
-      @PathVariable String proposalId) {
-    AssistantOrchestrator.AssistantTurnResponse response =
-        assistant.approveProposal(auth.user(token), sessionId, proposalId);
-    return toMessageResponse(response);
-  }
-
-  /**
-   * Reserved endpoint for proposal rejection.
-   *
-   * @param sessionId session ID
-   * @param proposalId proposal ID
-   */
-  @PostMapping("/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject")
-  void reject(
-      @RequestHeader("X-Auth-Token") String token,
-      @PathVariable String sessionId,
-      @PathVariable String proposalId) {
-    assistant.rejectProposal(auth.user(token), sessionId, proposalId);
-  }
-
-  /**
    * Applies the inverse patch for an already-applied proposal.
    *
    * @param sessionId session ID

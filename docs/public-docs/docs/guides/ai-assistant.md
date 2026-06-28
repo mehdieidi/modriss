@@ -4,14 +4,12 @@ The Modless assistant is a bounded modeling assistant. It can explain formal con
 metamodel and constraint context, ask bounded questions, and draft validated semantic model-change
 proposals.
 
-## Operating Mode
+## Operating Model
 
-The current operating mode is `AUTONOMOUS`. The legacy `GUARDED_APPLY` value is still accepted for
-existing deployments and maps to the current behavior. The LLM classifies each turn as an answer, a
-structured clarification, or a semantic model patch. Every patch is compiled against stable element
-IDs and the current Ecore metamodel, then checked by structural validation and mandatory EVL
-constraints. Valid changes are represented as audited proposals with approval, rejection, and undo
-routes available to the frontend.
+The assistant runs as one autonomous modeling agent. The LLM plans each turn with retrieved
+metamodel, model, and constraint context; valid model changes are compiled against stable element
+IDs and the current Ecore metamodel, checked by structural validation and mandatory EVL
+constraints, applied immediately, audited, and exposed with undo.
 
 ## Context Boundary
 
@@ -67,7 +65,6 @@ semantic retrieval.
 
 ```bash
 MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=AUTONOMOUS
 MODLESS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 ```

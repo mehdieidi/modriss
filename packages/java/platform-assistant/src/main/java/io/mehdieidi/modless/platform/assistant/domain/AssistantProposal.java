@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Assistant proposal that must pass backend validation before approval or apply.
+ * Audited autonomous model change that passed backend validation before apply.
  *
  * @param id proposal ID
  * @param affectedElements stable affected element IDs
@@ -13,7 +13,6 @@ import java.util.List;
  * @param inversePatch inverse executable patch
  * @param validation validation preview
  * @param riskLevel risk level
- * @param approvalRequired whether user approval is required
  * @param citations supporting catalog or validation citations
  * @param createdAt creation time
  */
@@ -24,7 +23,6 @@ public record AssistantProposal(
     List<ModelService.ModelPatchOperation> inversePatch,
     AssistantValidationSummary validation,
     RiskLevel riskLevel,
-    boolean approvalRequired,
     List<String> citations,
     Instant createdAt) {
 

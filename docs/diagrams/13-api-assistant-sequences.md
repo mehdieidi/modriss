@@ -63,12 +63,9 @@ sequenceDiagram
             O->>Patch: compile semantic patch to JSON patch + inverse
             O->>Patch: apply patch to preview model
             O->>Models: Validate preview
-            alt low risk and auto-apply allowed
-                O->>Models: patch stored model with expected revision
-                O->>RT: publish model.updated
-            else approval needed
-                O->>Mem: save proposal with PROPOSED status
-            end
+            O->>Models: patch stored model with expected revision
+            O->>Mem: save applied proposal audit record
+            O->>RT: publish model.updated
         end
         O->>Mem: append ASSISTANT message and audit records
         O->>ChatMem: appendAssistant(threadId, content)
@@ -93,7 +90,7 @@ sequenceDiagram
     C->>RT: publish assistant.ready
     RT-->>Client: named SSE event assistant.ready
     loop Later assistant events
-        RT-->>Client: chat.assistant, model.updated, proposal.rejected, assistant.choice
+        RT-->>Client: chat.assistant, model.updated, assistant.choice
     end
 ```
 
@@ -167,52 +164,6 @@ sequenceDiagram
     O->>O: Verify proposal belongs to user/project/level thread
     O-->>C: AssistantProposal
     C-->>Client: AssistantProposal
-```
-
-## POST `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve`
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant C as ChatbotController
-    participant O as AssistantOrchestrator
-    participant Mem as AssistantMemoryRepository
-    participant Models as ModelService
-    participant Patch as AssistantPatchCompiler
-    participant RT as AssistantRealtimeHub
-    Client->>C: token + sessionId + proposalId
-    C->>O: approveProposal(...)
-    O->>Mem: Load PROPOSED proposal
-    O->>Models: Load current model
-    O->>Patch: Recompile and preview semantic patch
-    O->>Models: Validate preview
-    alt mandatory validation passes
-        O->>Models: patch model using stored modelRevision
-        O->>Mem: status APPLIED and audit APPROVED/APPLIED
-        O->>RT: publish model.updated and chat.assistant
-        O-->>C: Proposal applied response
-    else validation fails
-        O->>Mem: status FAILED and audit FAILED
-        O-->>C: 422 error
-    end
-    C-->>Client: MessageResponse or ApiErrorResponse
-```
-
-## POST `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject`
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant C as ChatbotController
-    participant O as AssistantOrchestrator
-    participant Mem as AssistantMemoryRepository
-    participant RT as AssistantRealtimeHub
-    Client->>C: token + sessionId + proposalId
-    C->>O: rejectProposal(...)
-    O->>Mem: Verify proposal ownership
-    O->>Mem: status REJECTED and audit REJECTED
-    O->>RT: publish proposal.rejected
-    C-->>Client: Empty response
 ```
 
 ## POST `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo`

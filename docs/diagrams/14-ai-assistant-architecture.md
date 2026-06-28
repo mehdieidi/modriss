@@ -62,9 +62,8 @@ stateDiagram-v2
     PLAN --> VALIDATE: semantic patch
     VALIDATE --> REPAIR: invalid
     REPAIR --> VALIDATE: one replacement plan
-    VALIDATE --> PROPOSAL: structurally and EVL valid
-    PROPOSAL --> APPLIED: explicit approval and revalidation
-    PROPOSAL --> REJECTED: user rejects
+    VALIDATE --> APPLIED: structurally and EVL valid
+    APPLIED --> UNDONE: user requests undo
 ```
 
 ## Safety Boundary

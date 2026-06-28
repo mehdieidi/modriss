@@ -10,7 +10,7 @@ public interface AssistantMetrics {
    * Records one assistant turn outcome.
    *
    * @param category eval or routing category
-   * @param outcome result such as PROPOSED, EXPLAINED, or FAILED
+   * @param outcome result such as APPLIED, EXPLAINED, or FAILED
    */
   default void recordAssistantTurnOutcome(String category, String outcome) {}
 

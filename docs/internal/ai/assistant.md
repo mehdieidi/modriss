@@ -18,7 +18,6 @@ Set these environment variables before starting the backend:
 
 ```bash
 MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=AUTONOMOUS
 MODLESS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 ```
@@ -60,10 +59,10 @@ If you do not want provider calls or model proposals, set:
 MODLESS_AI_ENABLED=false
 ```
 
-The current mode is `AUTONOMOUS`; `GUARDED_APPLY` remains accepted for existing environments. The
-LLM answers, asks structured clarification questions, or drafts semantic operations. The backend
-shows model-changing proposals only after structural and mandatory EVL validation, and proposal
-approval, rejection, and undo are exposed through the API and UI.
+The assistant runs as one autonomous modeling agent. The LLM answers, asks structured
+clarification questions when needed, or drafts semantic operations from retrieved context. The
+backend compiles and validates model-changing work before applying it, then exposes undo through
+the API and UI.
 
 Do not put API keys directly in `application.yml`. Use environment variables or a local `.env` file
 that is not committed.
@@ -81,17 +80,6 @@ To enable AI for a Compose run, set environment variables before starting Compos
 
 ```bash
 MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=AUTONOMOUS
-MODLESS_AI_PROVIDER=openai
-OPENAI_COMPATIBLE_API_KEY=your_api_key
-docker compose up --build
-```
-
-For compatibility testing with the legacy mode value:
-
-```bash
-MODLESS_AI_ENABLED=true
-MODLESS_AI_MODE=GUARDED_APPLY
 MODLESS_AI_PROVIDER=openai
 OPENAI_COMPATIBLE_API_KEY=your_api_key
 docker compose up --build
@@ -319,7 +307,7 @@ The AI feature adds these tables:
 - `assistant_thread_summaries`: rolling summaries of long conversations.
 - `assistant_proposals`: semantic patch proposals, risk level, approval requirement, validation
   preview, citations, and inverse patch for undo.
-- `assistant_action_audits`: approve/reject/apply/undo/choice audit records.
+- `assistant_action_audits`: apply/undo/choice audit records.
 - `assistant_retrieval_documents`: indexed metamodel and EVL snippets with embeddings for RAG.
 - `assistant_model_contexts`: compact model snapshots by model ID and revision.
 - `assistant_rate_limits`: persisted request windows for rate limiting.
@@ -330,7 +318,7 @@ How they get filled:
 - `assistant_retrieval_documents` is filled on backend startup by scanning the local `mde/` folder.
 - `assistant_model_contexts` is filled when the assistant handles a request for a saved model.
 - chat memory and durable messages are filled when users send messages in the chatbot.
-- proposals and audits are filled when the assistant drafts, applies, rejects, or undoes changes.
+- proposals and audits are filled when the assistant applies or undoes changes.
 - rate-limit rows are filled as users call the assistant.
 
 ## If metamodels or EVL files change

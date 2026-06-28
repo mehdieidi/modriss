@@ -14,11 +14,10 @@ class AiPropertiesTest {
   void appliesConservativeDefaults() {
     AiProperties properties =
         new AiProperties(
-            false, null, null, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, null, null, null, null,
-            null, null, null);
+            false, null, null, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, null, null, null, null, null, null,
+            null);
 
     assertFalse(properties.enabled());
-    assertEquals(AiProperties.RolloutMode.AUTONOMOUS, properties.mode());
     assertEquals("openai", properties.provider());
     assertEquals("127.0.0.1", properties.proxy().host());
     assertEquals(2081, properties.proxy().port());
@@ -30,11 +29,9 @@ class AiPropertiesTest {
     assertTrue(properties.embeddings().fallbackToHash());
     assertEquals(6, properties.validationRepairAttempts());
     assertEquals(16000, properties.tokenBudget());
-    assertEquals(0, properties.contextWindowTokens());
     assertEquals(16, properties.maxAgentSteps());
     assertEquals(8, properties.maxToolCallsPerStep());
     assertEquals(Integer.MAX_VALUE, properties.maxToolCalls());
-    assertEquals(Integer.MAX_VALUE, properties.maxAutoApplyOperations());
     assertFalse(properties.semanticValidationEnabled());
     assertEquals(10, properties.reservedSchemaSnippets());
     assertEquals("gpt-4o-mini", properties.modelFor(AssistantModelRole.RESPONDER));
@@ -61,11 +58,8 @@ class AiPropertiesTest {
     AiProperties properties =
         new AiProperties(
             false,
-            null,
             "gemini",
             null,
-            0,
-            0,
             0,
             0,
             0,

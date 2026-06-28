@@ -66,11 +66,6 @@ class AssistantSnippetBudgetTest {
       }
 
       @Override
-      public int maxAutoApplyOperations() {
-        return 0;
-      }
-
-      @Override
       public boolean semanticValidationEnabled() {
         return false;
       }

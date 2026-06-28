@@ -68,16 +68,6 @@ public class OpenApiController {
         "Get assistant proposal");
     add(
         paths,
-        "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve",
-        "post",
-        "Approve assistant proposal");
-    add(
-        paths,
-        "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject",
-        "post",
-        "Reject assistant proposal");
-    add(
-        paths,
         "/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo",
         "post",
         "Undo applied assistant proposal");

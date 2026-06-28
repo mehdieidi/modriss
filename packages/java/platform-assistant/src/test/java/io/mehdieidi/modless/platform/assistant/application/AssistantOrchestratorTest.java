@@ -46,7 +46,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -80,7 +79,6 @@ class AssistantOrchestratorTest {
   @BeforeEach
   void setUp() throws Exception {
     AssistantSettings properties = AssistantSettingsFixtures.defaults();
-    when(provider.contextWindowTokens(any())).thenReturn(OptionalInt.empty());
     when(sessions.require("session", "user")).thenReturn(session);
     when(projects.get(user, "project"))
         .thenReturn(
@@ -186,13 +184,16 @@ class AssistantOrchestratorTest {
   @Test
   void recreatesMissingDurableThreadBeforePersistingMessages() {
     when(memory.requireThread("session")).thenReturn(null);
-    when(provider.planTurn(any()))
+    when(provider.planMutationTurn(any(), any()))
         .thenReturn(
-            new AssistantTurnPlan(
-                AssistantTurnPlan.Kind.ANSWER,
-                "Recovered thread.",
-                List.of(),
-                new SemanticModelPatch(List.of())));
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Kind.ANSWER,
+                    "Recovered thread.",
+                    List.of(),
+                    new SemanticModelPatch(List.of())),
+                0,
+                1));
 
     orchestrator.handleMessage(user, "session", request("Explain what this model does"));
 
@@ -204,13 +205,16 @@ class AssistantOrchestratorTest {
 
   @Test
   void llmDecisionControlsIntentWithoutKeywordRouting() {
-    when(provider.planTurn(any()))
+    when(provider.planMutationTurn(any(), any()))
         .thenReturn(
-            new AssistantTurnPlan(
-                AssistantTurnPlan.Kind.ANSWER,
-                "This is an explanation only.",
-                List.of(),
-                new SemanticModelPatch(List.of())));
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Kind.ANSWER,
+                    "This is an explanation only.",
+                    List.of(),
+                    new SemanticModelPatch(List.of())),
+                0,
+                1));
 
     var response =
         orchestrator.handleMessage(user, "session", request("Explain what this model does"));
@@ -234,7 +238,7 @@ class AssistantOrchestratorTest {
         .thenReturn(
             new AssistantModelProvider.AgentLoopResult(
                 new AssistantTurnPlan(
-                    AssistantTurnPlan.Intent.INFORMATION,
+                    AssistantTurnPlan.Intent.MUTATION,
                     AssistantTurnPlan.Kind.CLARIFICATION,
                     "I need one decision.",
                     List.of(question),
@@ -277,7 +281,6 @@ class AssistantOrchestratorTest {
     assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
     assertNotNull(response.proposal());
     assertEquals(true, response.proposal().validation().mandatoryPassed());
-    assertEquals(false, response.proposal().approvalRequired());
     java.util.UUID.fromString(response.proposal().patch().operations().get(0).targetElementId());
     assertEquals(
         response.proposal().patch().operations().get(0).targetElementId(),
@@ -298,7 +301,7 @@ class AssistantOrchestratorTest {
         .thenReturn(
             new AssistantModelProvider.AgentLoopResult(
                 new AssistantTurnPlan(
-                    AssistantTurnPlan.Intent.INFORMATION,
+                    AssistantTurnPlan.Intent.MUTATION,
                     AssistantTurnPlan.Kind.ANSWER,
                     "I completed the analysis.",
                     List.of(),
@@ -505,7 +508,7 @@ class AssistantOrchestratorTest {
   }
 
   @Test
-  void usesFullContextWhenModelWindowCanFitAttachmentAndMetamodel() throws Exception {
+  void usesRetrievalContextForAttachmentTurns() throws Exception {
     String attachment = "As a clinic receptionist, I register patients.\n".repeat(3000);
     var attributes =
         new ObjectMapper()
@@ -521,14 +524,13 @@ class AssistantOrchestratorTest {
                     attributes,
                     null,
                     null)));
-    when(provider.contextWindowTokens(any())).thenReturn(OptionalInt.of(1_000_000));
     when(provider.planMutationTurn(any(), any()))
         .thenReturn(
             new AssistantModelProvider.AgentLoopResult(
                 new AssistantTurnPlan(
                     AssistantTurnPlan.Intent.MUTATION,
                     AssistantTurnPlan.Kind.PATCH,
-                    "Prepared full context patch.",
+                    "Prepared retrieval patch.",
                     List.of(),
                     patch),
                 0,
@@ -554,14 +556,11 @@ class AssistantOrchestratorTest {
         prompt.getValue().snippets().stream()
             .anyMatch(
                 snippet ->
-                    snippet.source().equals("full-context-user-attachment")
-                        && snippet.content().equals(attachment)));
+                    snippet.source().equals("user-attachment")
+                        && attachment.startsWith(snippet.content().replace("\n[truncated]", ""))));
     assertTrue(
         prompt.getValue().snippets().stream()
-            .anyMatch(snippet -> snippet.source().equals("full-context-model")));
-    assertTrue(
-        prompt.getValue().snippets().stream()
-            .anyMatch(snippet -> snippet.source().startsWith("full-context-runtime-metamodel")));
+            .noneMatch(snippet -> snippet.source().startsWith("full-context")));
   }
 
   @Test
@@ -686,7 +685,6 @@ class AssistantOrchestratorTest {
 
     assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
     assertNotNull(response.proposal());
-    assertEquals(false, response.proposal().approvalRequired());
     verify(models).patch(eq(user), eq(ModelLevel.PIM), eq("model-1"), anyString(), any(), eq(1L));
     verify(memory).markProposalApplied(anyString(), eq("model-1"), eq(2L));
   }

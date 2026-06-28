@@ -34,17 +34,15 @@ Allowed WebSocket origins come from `modless.allowed-origins`.
 
 ## Proposal REST Routes
 
-| Method | Path                                                               |
-| ------ | ------------------------------------------------------------------ |
-| `GET`  | `/api/chatbot/conversations`                                       |
-| `GET`  | `/api/chatbot/sessions/{sessionId}/thread`                         |
-| `POST` | `/api/chatbot/sessions/{sessionId}/attachments`                    |
-| `POST` | `/api/chatbot/catalogs/reindex`                                    |
-| `GET`  | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`         |
-| `POST` | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve` |
-| `POST` | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject`  |
-| `POST` | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo`    |
-| `POST` | `/api/chatbot/sessions/{sessionId}/choices`                        |
+| Method | Path                                                            |
+| ------ | --------------------------------------------------------------- |
+| `GET`  | `/api/chatbot/conversations`                                    |
+| `GET`  | `/api/chatbot/sessions/{sessionId}/thread`                      |
+| `POST` | `/api/chatbot/sessions/{sessionId}/attachments`                 |
+| `POST` | `/api/chatbot/catalogs/reindex`                                 |
+| `GET`  | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`      |
+| `POST` | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo` |
+| `POST` | `/api/chatbot/sessions/{sessionId}/choices`                     |
 
 ## Transport Notes
 

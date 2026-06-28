@@ -46,17 +46,14 @@ The packaged modeling config defaults to `antv-g6`. The Docker Compose stack ove
 | Variable                                 | Default                          |
 | ---------------------------------------- | -------------------------------- |
 | `MODLESS_AI_ENABLED`                     | `false` in backend configuration |
-| `MODLESS_AI_MODE`                        | `AUTONOMOUS`                     |
 | `MODLESS_AI_PROVIDER`                    | `openai`                         |
 | `MODLESS_AI_REQUEST_TIMEOUT`             | `10m`                            |
 | `MODLESS_AI_MAX_TOOL_CALLS`              | `0`                              |
 | `MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS`  | `6`                              |
 | `MODLESS_AI_MAX_AGENT_STEPS`             | `16`                             |
 | `MODLESS_AI_MAX_TOOL_CALLS_PER_STEP`     | `8`                              |
-| `MODLESS_AI_MAX_AUTO_APPLY_OPERATIONS`   | `0`                              |
 | `MODLESS_AI_SEMANTIC_VALIDATION_ENABLED` | `false`                          |
 | `MODLESS_AI_TOKEN_BUDGET`                | `16000`                          |
-| `MODLESS_AI_CONTEXT_WINDOW_TOKENS`       | `0`                              |
 | `MODLESS_AI_MAX_CONTEXT_SNIPPETS`        | `24`                             |
 | `MODLESS_AI_RESERVED_SCHEMA_SNIPPETS`    | `10`                             |
 | `MODLESS_AI_MAX_SNIPPET_CHARS`           | `2400`                           |

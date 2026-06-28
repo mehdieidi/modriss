@@ -8,23 +8,19 @@ import java.util.Optional;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Provider-neutral assistant settings for model selection, proxy routing, and rollout mode.
+ * Provider-neutral assistant settings for model selection and proxy routing.
  *
  * @param enabled whether outbound AI calls are allowed
- * @param mode assistant rollout mode
  * @param provider configured provider key, currently {@code openai} or {@code gemini}
  * @param requestTimeout outbound AI request timeout
  * @param maxToolCalls legacy operation/tool limit; zero or negative means unbounded
  * @param validationRepairAttempts maximum validator-guided replanning passes per mutation
  * @param tokenBudget approximate prompt budget per turn
- * @param contextWindowTokens configured model context window when provider aliases cannot
- *     self-report
  * @param maxContextSnippets maximum retrieved snippets passed to the provider per turn
  * @param maxSnippetChars maximum characters per retrieved snippet
  * @param maxSystemChars maximum characters in the system prompt
  * @param maxAgentSteps maximum agentic planner loop iterations per mutation turn
  * @param maxToolCallsPerStep maximum tool invocations allowed per agent loop step
- * @param maxAutoApplyOperations legacy auto-apply operation limit; zero or negative means unbounded
  * @param semanticValidationEnabled whether assistant turns enforce EVL semantic validation
  * @param reservedSchemaSnippets minimum retrieval slots reserved for tier-1 schema contracts
  * @param fallbackProvider optional provider used only after HTTP 429 from the configured provider
@@ -38,19 +34,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "modless.ai")
 public record AiProperties(
     boolean enabled,
-    RolloutMode mode,
     String provider,
     Duration requestTimeout,
     int maxToolCalls,
     int validationRepairAttempts,
     int tokenBudget,
-    int contextWindowTokens,
     int maxContextSnippets,
     int maxSnippetChars,
     int maxSystemChars,
     int maxAgentSteps,
     int maxToolCallsPerStep,
-    int maxAutoApplyOperations,
     boolean semanticValidationEnabled,
     int reservedSchemaSnippets,
     String fallbackProvider,
@@ -64,22 +57,16 @@ public record AiProperties(
 
   /** Applies conservative defaults for local development. */
   public AiProperties {
-    mode = mode == null ? RolloutMode.AUTONOMOUS : mode;
     provider = Provider.from(provider).key();
     requestTimeout = requestTimeout == null ? Duration.ofMinutes(10) : requestTimeout;
     maxToolCalls = maxToolCalls <= 0 ? Integer.MAX_VALUE : maxToolCalls;
     validationRepairAttempts = validationRepairAttempts <= 0 ? 6 : validationRepairAttempts;
     tokenBudget = tokenBudget <= 0 ? 16000 : tokenBudget;
-    contextWindowTokens = Math.max(0, contextWindowTokens);
     maxContextSnippets = maxContextSnippets <= 0 ? 24 : maxContextSnippets;
     maxSnippetChars = maxSnippetChars <= 0 ? 2400 : maxSnippetChars;
     maxSystemChars = maxSystemChars <= 0 ? 14000 : maxSystemChars;
     maxAgentSteps = maxAgentSteps <= 0 ? 16 : maxAgentSteps;
     maxToolCallsPerStep = maxToolCallsPerStep <= 0 ? 8 : maxToolCallsPerStep;
-    maxAutoApplyOperations =
-        maxAutoApplyOperations <= 0
-            ? Integer.MAX_VALUE
-            : Math.max(maxAutoApplyOperations, maxToolCalls);
     reservedSchemaSnippets = reservedSchemaSnippets <= 0 ? 10 : reservedSchemaSnippets;
     fallbackProvider = fallbackProvider == null ? "" : fallbackProvider.trim();
     hardening =
@@ -193,14 +180,6 @@ public record AiProperties(
     HTTP,
     /** SOCKS proxy, Nekoray default port 2082. */
     SOCKS
-  }
-
-  /** Assistant rollout modes. */
-  public enum RolloutMode {
-    /** Validate and apply model changes directly, retaining undo and audit records. */
-    AUTONOMOUS,
-    /** Legacy value accepted for existing deployments; behavior is now autonomous. */
-    GUARDED_APPLY
   }
 
   /** Local embedding providers. */

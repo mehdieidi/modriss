@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class AssistantPromptGuardTest {
 
   private final AssistantPromptGuard guard =
-      new AssistantPromptGuard(AssistantSettingsFixtures.settings(0, 24, 0, 0, 1800, 12000, 0));
+      new AssistantPromptGuard(AssistantSettingsFixtures.settings(0, 24, 0, 1800, 12000, 0));
 
   @Test
   void redactsSecretsAndMarksPromptInjection() {

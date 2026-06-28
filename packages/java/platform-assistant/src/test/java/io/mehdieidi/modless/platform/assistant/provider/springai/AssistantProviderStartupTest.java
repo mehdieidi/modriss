@@ -30,9 +30,6 @@ class AssistantProviderStartupTest {
             false,
             null,
             null,
-            null,
-            0,
-            0,
             0,
             0,
             0,
@@ -83,11 +80,8 @@ class AssistantProviderStartupTest {
     AiProperties properties =
         new AiProperties(
             false,
-            null,
             "gemini",
             Duration.ofSeconds(5),
-            0,
-            0,
             0,
             0,
             0,
@@ -130,11 +124,8 @@ class AssistantProviderStartupTest {
     AiProperties properties =
         new AiProperties(
             false,
-            null,
             "gemini",
             Duration.ofSeconds(5),
-            0,
-            0,
             0,
             0,
             0,
@@ -177,11 +168,8 @@ class AssistantProviderStartupTest {
     AiProperties properties =
         new AiProperties(
             false,
-            null,
             "openai",
             Duration.ofSeconds(5),
-            0,
-            0,
             0,
             0,
             0,

@@ -4,12 +4,8 @@ package io.mehdieidi.modless.platform.assistant.domain;
 public enum AssistantWorkflowState {
   /** Request was answered without a mutation proposal. */
   EXPLAINED,
-  /** A proposal was drafted and is waiting for user approval. */
-  PROPOSED,
-  /** A user-approved proposal was applied after approval-time validation. */
+  /** A validated model change was applied by the autonomous agent. */
   APPLIED,
-  /** A stored proposal was rejected. */
-  REJECTED,
   /** A previously applied proposal was undone. */
   UNDONE,
   /** The assistant needs a bounded user choice before continuing. */

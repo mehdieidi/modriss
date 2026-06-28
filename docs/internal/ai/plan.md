@@ -64,7 +64,7 @@ validation, respect optimistic concurrency, and remain auditable and reversible.
    approval time. Persist inverse patches for undo.
 
 10. **Frontend and realtime protocol.** Extend the existing chat panel with proposal cards, patch
-    previews, validation summaries, citations, choice buttons, apply/reject actions, and progress
+    previews, validation summaries, citations, choice buttons, undo actions, and progress
     states. Implement the existing REST, WebSocket, and SSE routes, preserving `assistantMessage`,
     `model`, and `model.updated` compatibility while adding richer proposal and choice events.
     Clearing chat must also clear backend memory.
@@ -72,8 +72,7 @@ validation, respect optimistic concurrency, and remain auditable and reversible.
 11. **Production hardening and rollout.** Add prompt redaction, prompt-injection defenses, per-user
     rate limits, token budgets, timeouts, retries, circuit breakers, tool limits, metrics, tracing,
     provider/model metadata, and retrieval-source citations. Route bulk operations through the
-    existing job framework. Roll out behind feature flags in explain-only, proposal-only, then
-    guarded-apply modes.
+    existing job framework. Keep the assistant on the single autonomous agent path.
 
 ## Public APIs And Types
 
@@ -82,8 +81,7 @@ validation, respect optimistic concurrency, and remain auditable and reversible.
   `AssistantChoice`, and `AssistantValidationSummary`.
 - Keep `POST /api/chatbot/sessions`, `POST /api/chatbot/sessions/{id}/messages`,
   `GET /api/chatbot/sessions/{id}/events`, and `/ws/chatbot/sessions/{id}`.
-- Add proposal approval/rejection, user-choice submission, conversation clearing, and
-  proposal-detail endpoints.
+- Add user-choice submission, conversation clearing, proposal-detail, and undo endpoints.
 - Every proposal response includes affected elements, semantic operations, validation preview, risk
   level, approval requirement, and supporting metamodel/EVL citations.
 

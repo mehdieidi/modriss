@@ -745,7 +745,7 @@ change.
 4. Update patch compilation/context indexing only if the semantic patch or model JSON protocol
    changed.
 5. Validate assistant starters for CIM, PIM, and PSM.
-6. Test representative add, update, relationship, delete, proposal approval, and rejection flows.
+6. Test representative add, update, relationship, delete, autonomous apply, and undo flows.
 7. Verify citations retrieve current metamodel/EVL content.
 8. Verify assistant-created models can save, validate, transform, and generate downstream outputs.
 

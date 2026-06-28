@@ -39,7 +39,6 @@ public class AiHealthIndicator implements HealthIndicator {
         properties.enabled() && !proxy.available() ? Health.down() : Health.up();
     return builder
         .withDetail("enabled", properties.enabled())
-        .withDetail("mode", properties.mode())
         .withDetail("provider", properties.provider())
         .withDetail("proxy", proxy.message())
         .withDetail("embeddingConfigured", properties.embeddings().provider())

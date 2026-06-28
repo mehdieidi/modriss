@@ -1,14 +1,12 @@
 package io.mehdieidi.modless.platform.assistant.provider;
 
 import io.mehdieidi.modless.platform.assistant.config.AiProperties;
-import io.mehdieidi.modless.platform.assistant.domain.AssistantModelRole;
 import io.mehdieidi.modless.platform.assistant.domain.AssistantTurnPlan;
 import io.mehdieidi.modless.platform.assistant.domain.SemanticModelPatch;
 import io.mehdieidi.modless.platform.assistant.provider.springai.GeminiAssistantModelProvider;
 import io.mehdieidi.modless.platform.assistant.provider.springai.OpenAiCompatibleAssistantModelProvider;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Function;
 
 /** Delegates assistant calls to the provider selected by configuration. */
@@ -35,11 +33,6 @@ public final class ConfiguredAssistantModelProvider implements AssistantModelPro
   @Override
   public boolean available() {
     return primary().available();
-  }
-
-  @Override
-  public OptionalInt contextWindowTokens(AssistantModelRole role) {
-    return primary().contextWindowTokens(role);
   }
 
   @Override

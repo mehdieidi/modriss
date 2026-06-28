@@ -47,7 +47,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -247,73 +246,29 @@ public class AssistantOrchestrator {
                 currentValidation)
             : modelContexts.snapshot(model, currentValidation);
     List<AssistantModelProvider.ContextSnippet> snippets =
-        contextSnippets(
-            session, request, context, session.level(), request.selectedElementIds(), baseModel);
+        contextSnippets(session, request, context, session.level(), request.selectedElementIds());
 
     tools.bindSession(new AssistantToolBridge.ToolSession(session.level(), baseModel, context));
     int toolCalls = 0;
     int repairAttempts = 0;
     AssistantTurnPlan plan;
-    boolean informationRoute = prefersInformationPath(request.rootMessage());
     try {
       publishProgress(
           sessionId, "PLANNING", "Understanding intent using the formal language context");
-      InitialPlanResult planned =
-          planInitialTurn(session, request, context, snippets, informationRoute);
+      InitialPlanResult planned = planInitialTurn(session, request, context, snippets);
       plan = planned.plan();
       toolCalls = planned.toolCalls();
     } catch (PlatformException failure) {
-      if (isRetryableProviderFailure(failure) && containsFullContext(snippets)) {
-        publishProgress(
-            sessionId,
-            "PLANNING",
-            "Retrying with focused retrieval context after provider timeout");
-        log.warn(
-            "Assistant full-context provider call failed; retrying retrieval context "
-                + "sessionId={} status={}",
-            sessionId,
-            failure.status());
-        snippets =
-            retrievalSnippets(
-                request.message(), context, session.level(), request.selectedElementIds(), request);
-        try {
-          InitialPlanResult planned =
-              planInitialTurn(session, request, context, snippets, informationRoute);
-          plan = planned.plan();
-          toolCalls = planned.toolCalls();
-        } catch (PlatformException fallbackFailure) {
-          if (fallbackFailure.status() < 500 && fallbackFailure.status() != 429) {
-            throw fallbackFailure;
-          }
-          recordTurnDiagnostics(
-              "FAILED",
-              snippets.size(),
-              toolCalls,
-              repairAttempts,
-              "PROVIDER_UNAVAILABLE",
-              startedAt);
-          metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
-          return finishTurn(
-              session,
-              threadId,
-              providerUnavailableResponse(modelId, model == null ? null : model.revision()));
-        }
-      } else if (failure.status() < 500 && failure.status() != 429) {
+      if (failure.status() < 500 && failure.status() != 429) {
         throw failure;
-      } else {
-        recordTurnDiagnostics(
-            "FAILED",
-            snippets.size(),
-            toolCalls,
-            repairAttempts,
-            "PROVIDER_UNAVAILABLE",
-            startedAt);
-        metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
-        return finishTurn(
-            session,
-            threadId,
-            providerUnavailableResponse(modelId, model == null ? null : model.revision()));
       }
+      recordTurnDiagnostics(
+          "FAILED", snippets.size(), toolCalls, repairAttempts, "PROVIDER_UNAVAILABLE", startedAt);
+      metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
+      return finishTurn(
+          session,
+          threadId,
+          providerUnavailableResponse(modelId, model == null ? null : model.revision()));
     } finally {
       tools.clearSession();
     }
@@ -392,46 +347,24 @@ public class AssistantOrchestrator {
       AssistantSessionStore.AssistantSession session,
       AssistantTurnRequest request,
       AssistantModelContext context,
-      List<AssistantModelProvider.ContextSnippet> snippets,
-      boolean informationRoute) {
-    AssistantTurnPlan plan;
-    int toolCalls = 0;
-    if (informationRoute) {
-      plan =
-          provider.planTurn(
-              new AssistantModelProvider.AssistantPrompt(
-                  AssistantModelRole.PLANNER,
-                  turnPrompt(session, request, context),
-                  request.message(),
-                  snippets));
-    } else {
-      AssistantModelProvider.AgentLoopResult loopResult =
-          provider.planMutationTurn(
-              new AssistantModelProvider.AssistantPrompt(
-                  AssistantModelRole.PLANNER,
-                  turnPrompt(session, request, context),
-                  request.message(),
-                  snippets),
-              (stage, message) -> publishProgress(session.id(), stage, message));
-      plan = loopResult.plan();
-      toolCalls = loopResult.toolCalls();
-      metrics.recordAssistantToolCalls(toolCalls);
-      log.info(
-          "Assistant agent loop completed sessionId={} steps={} toolCalls={} snippets={}",
-          session.id(),
-          loopResult.steps(),
-          toolCalls,
-          snippets.size());
-    }
-    if (!informationRoute && plan.kind() != AssistantTurnPlan.Kind.PATCH) {
-      plan =
-          new AssistantTurnPlan(
-              AssistantTurnPlan.Intent.MUTATION,
-              plan.kind(),
-              plan.message(),
-              plan.questions(),
-              plan.patch());
-    }
+      List<AssistantModelProvider.ContextSnippet> snippets) {
+    AssistantModelProvider.AgentLoopResult loopResult =
+        provider.planMutationTurn(
+            new AssistantModelProvider.AssistantPrompt(
+                AssistantModelRole.PLANNER,
+                turnPrompt(session, request, context),
+                request.message(),
+                snippets),
+            (stage, message) -> publishProgress(session.id(), stage, message));
+    AssistantTurnPlan plan = loopResult.plan();
+    int toolCalls = loopResult.toolCalls();
+    metrics.recordAssistantToolCalls(toolCalls);
+    log.info(
+        "Assistant agent loop completed sessionId={} steps={} toolCalls={} snippets={}",
+        session.id(),
+        loopResult.steps(),
+        toolCalls,
+        snippets.size());
     return new InitialPlanResult(plan, toolCalls);
   }
 
@@ -446,15 +379,6 @@ public class AssistantOrchestrator {
         List.of(),
         AssistantWorkflowState.FAILED,
         activityFor(AssistantWorkflowState.FAILED));
-  }
-
-  private boolean isRetryableProviderFailure(PlatformException failure) {
-    return failure.status() >= 500 || failure.status() == 429;
-  }
-
-  private boolean containsFullContext(List<AssistantModelProvider.ContextSnippet> snippets) {
-    return snippets != null
-        && snippets.stream().anyMatch(snippet -> snippet.source().startsWith("full-context"));
   }
 
   private AssistantTurnResponse proposalResponse(
@@ -565,54 +489,9 @@ public class AssistantOrchestrator {
     }
     metrics.recordAssistantRepairAttempts(repairNumber);
 
-    AssistantPatchCompiler.CompiledPatch compiled = attempt.compiled();
-    AssistantProposal.RiskLevel risk = riskLevel(compiled, attempt.validation());
-    if (shouldAutoApply(acceptedPlan)) {
-      publishProgress(session.id(), "APPLYING", "Applying the validated change");
-      return autoApplyValidatedProposal(
-          user, session, threadId, model, acceptedPlan, snippets, context);
-    }
-
-    AssistantProposal proposal =
-        new AssistantProposal(
-            java.util.UUID.randomUUID().toString(),
-            compiled.affectedElements(),
-            acceptedPlan.patch(),
-            compiled.inversePatch(),
-            attempt.validation(),
-            risk,
-            true,
-            retrievalCitations(snippets, context),
-            Instant.now());
-    memory.clearPendingInteraction(threadId);
-    memory.saveProposal(
-        threadId,
-        session.projectId(),
-        model == null ? null : model.id(),
-        model == null ? 0L : model.revision(),
-        proposal,
-        "PROPOSED");
-    memory.appendAudit(
-        proposal.id(),
-        session.projectId(),
-        user.id(),
-        "PROPOSED",
-        Map.of("operationCount", proposal.patch().operations().size(), "validationPassed", true));
-    String message =
-        nonBlank(acceptedPlan.message(), "I prepared the requested model change.")
-            + "\n\nThe change passed validation, but automatic application was disabled by the "
-            + "current operation budget.";
-    return finishTurn(
-        session,
-        threadId,
-        new AssistantTurnResponse(
-            message,
-            model == null ? null : model.id(),
-            model == null ? 0L : model.revision(),
-            proposal,
-            List.of(),
-            AssistantWorkflowState.PROPOSED,
-            activityFor(AssistantWorkflowState.PROPOSED)));
+    publishProgress(session.id(), "APPLYING", "Applying the validated change");
+    return autoApplyValidatedProposal(
+        user, session, threadId, model, acceptedPlan, snippets, context);
   }
 
   private AssistantTurnPlan preparePlan(
@@ -686,8 +565,8 @@ public class AssistantOrchestrator {
                         "Events and durable state",
                         "Start with channels, stores, and the functions that use them."),
                     new AssistantChoice.Option(
-                        "full-context",
-                        "Full bounded context",
+                        "complete-context",
+                        "Complete bounded context",
                         "Model service, APIs, functions, stores, and integration together.")),
                 true));
     memory.savePendingInteraction(threadId, request, questions);
@@ -1342,72 +1221,6 @@ public class AssistantOrchestrator {
     return requireProposal(user, session, proposalId).proposal();
   }
 
-  /** Revalidates and explicitly applies a stored proposal. */
-  public AssistantTurnResponse approveProposal(
-      UserRecord user, String sessionId, String proposalId) {
-    AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
-    ProposalRecord record = requireProposal(user, session, proposalId);
-    if (!"PROPOSED".equals(record.status())) {
-      throw new PlatformException(409, "Assistant proposal is no longer awaiting approval.");
-    }
-    ModelRecord model =
-        record.modelId() == null
-            ? createStarterModel(user, projects.get(user, session.projectId()), session)
-            : models.get(user, session.level(), record.modelId());
-    if (record.modelId() != null && model.revision() != record.modelRevision()) {
-      memory.updateProposalStatus(record.id(), "FAILED");
-      throw new PlatformException(409, "The model changed after this proposal was created.");
-    }
-    AssistantPatchCompiler.CompiledPatch compiled =
-        patchCompiler.compile(model.modelJson(), record.proposal().patch());
-    ObjectNode preview = patchCompiler.apply(model.modelJson(), compiled);
-    AssistantValidationSummary validation = assistantValidationSummary(session.level(), preview);
-    if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
-      memory.updateProposalStatus(record.id(), "FAILED");
-      memory.appendAudit(
-          record.id(),
-          session.projectId(),
-          user.id(),
-          "FAILED",
-          Map.of("reason", "Proposal failed approval-time validation."));
-      throw new PlatformException(422, "The proposal no longer passes mandatory validation.");
-    }
-    ModelRecord updated =
-        models.patch(
-            user, session.level(), model.id(), model.name(), compiled.patch(), model.revision());
-    memory.markProposalApplied(record.id(), updated.id(), updated.revision());
-    memory.appendAudit(
-        record.id(),
-        session.projectId(),
-        user.id(),
-        "APPLIED",
-        Map.of("modelId", updated.id(), "revision", updated.revision()));
-    realtime.publish(
-        sessionId,
-        "model.updated",
-        Map.of("modelId", updated.id(), "revision", updated.revision(), "proposalId", record.id()));
-    return new AssistantTurnResponse(
-        "The validated proposal was applied to the canvas.",
-        updated.id(),
-        updated.revision(),
-        record.proposal(),
-        List.of(),
-        AssistantWorkflowState.APPLIED);
-  }
-
-  /** Rejects a stored proposal without touching the model. */
-  public void rejectProposal(UserRecord user, String sessionId, String proposalId) {
-    AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
-    ProposalRecord record = requireProposal(user, session, proposalId);
-    if (!"PROPOSED".equals(record.status())) {
-      throw new PlatformException(409, "Assistant proposal is no longer awaiting a decision.");
-    }
-    memory.updateProposalStatus(proposalId, "REJECTED");
-    memory.appendAudit(
-        proposalId, session.projectId(), user.id(), "REJECTED", Map.of("proposalId", proposalId));
-    realtime.publish(sessionId, "proposal.rejected", Map.of("proposalId", proposalId));
-  }
-
   /** Applies a validated inverse patch to an already-applied proposal. */
   public AssistantTurnResponse undoProposal(UserRecord user, String sessionId, String proposalId) {
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
@@ -1469,7 +1282,7 @@ public class AssistantOrchestrator {
             .orElse(List.of());
     AssistantWorkflowState workflowState = resolveWorkflowState(threadId, messages, pendingChoices);
     Optional<AssistantProposal> proposal =
-        memory.findLatestProposal(threadId, "PROPOSED").map(ProposalRecord::proposal);
+        memory.findLatestProposal(threadId, "APPLIED").map(ProposalRecord::proposal);
     return new ThreadSnapshot(
         messages, pendingChoices, workflowState, proposal.orElse(null), provider.metadata());
   }
@@ -1488,90 +1301,9 @@ public class AssistantOrchestrator {
       AssistantTurnRequest request,
       AssistantModelContext context,
       ModelLevel level,
-      List<String> selectedElementIds,
-      JsonNode baseModel) {
-    List<AssistantModelProvider.ContextSnippet> full =
-        fullContextSnippets(request, context, level, baseModel);
-    OptionalInt capacity = contextWindowTokens();
-    int estimatedInputTokens =
-        estimateTokens(
-            turnPromptForEstimate(session, request, context, level) + estimateSnippetText(full));
-    int requiredTokens = estimatedInputTokens + plannerOutputReserveTokens();
-    if (capacity.isPresent() && capacity.getAsInt() > requiredTokens) {
-      log.info(
-          "Assistant using full-context prompt level={} estimatedInputTokens={} requiredTokens={} "
-              + "capacityTokens={} snippets={}",
-          level,
-          estimatedInputTokens,
-          requiredTokens,
-          capacity.getAsInt(),
-          full.size());
-      return full;
-    }
-    if (capacity.isPresent()) {
-      log.info(
-          "Assistant using retrieval prompt level={} estimatedInputTokens={} requiredTokens={} "
-              + "capacityTokens={}",
-          level,
-          estimatedInputTokens,
-          requiredTokens,
-          capacity.getAsInt());
-    } else {
-      log.info("Assistant context-window capacity unknown; using retrieval prompt level={}", level);
-    }
+      List<String> selectedElementIds) {
+    log.info("Assistant using retrieval/tool context level={}", level);
     return retrievalSnippets(request.message(), context, level, selectedElementIds, request);
-  }
-
-  private OptionalInt contextWindowTokens() {
-    try {
-      OptionalInt result = provider.contextWindowTokens(AssistantModelRole.PLANNER);
-      return result == null ? OptionalInt.empty() : result;
-    } catch (RuntimeException ex) {
-      log.warn("Could not resolve assistant model context window; using retrieval context.", ex);
-      return OptionalInt.empty();
-    }
-  }
-
-  private List<AssistantModelProvider.ContextSnippet> fullContextSnippets(
-      AssistantTurnRequest request,
-      AssistantModelContext context,
-      ModelLevel level,
-      JsonNode baseModel) {
-    List<AssistantModelProvider.ContextSnippet> snippets = new ArrayList<>();
-    snippets.add(
-        new AssistantModelProvider.ContextSnippet(
-            "full-context-metamodel-index",
-            level.name() + " complete language index",
-            schemas.languageIndex(level)));
-    snippets.addAll(
-        schemas.allPlanningContracts(level).stream()
-            .map(
-                snippet ->
-                    new AssistantModelProvider.ContextSnippet(
-                        "full-context-" + snippet.source(), snippet.title(), snippet.content()))
-            .toList());
-    snippets.add(
-        new AssistantModelProvider.ContextSnippet(
-            "full-context-model",
-            "Current " + level.name() + " model JSON",
-            baseModel == null ? "{}" : baseModel.toPrettyString()));
-    String validation =
-        context.validationIssues().stream()
-            .map(issue -> issue.severity() + ":" + issue.constraint() + ":" + issue.message())
-            .collect(Collectors.joining("\n"));
-    snippets.add(
-        new AssistantModelProvider.ContextSnippet(
-            "full-context-validation",
-            "Current validation findings",
-            validation.isBlank() ? "No validation findings." : validation));
-    if (!blank(request.attachmentContent())) {
-      snippets.add(
-          new AssistantModelProvider.ContextSnippet(
-              "full-context-user-attachment",
-              nonBlank(request.attachmentName(), "attachment"),
-              request.attachmentContent()));
-    }
-    return List.copyOf(snippets);
   }
 
   private List<AssistantModelProvider.ContextSnippet> retrievalSnippets(
@@ -1647,39 +1379,6 @@ public class AssistantOrchestrator {
     return AssistantSnippetBudget.assemble(properties, tier1, tier2, tier3, tier4);
   }
 
-  private String estimateSnippetText(List<AssistantModelProvider.ContextSnippet> snippets) {
-    return snippets.stream()
-        .map(snippet -> snippet.source() + "\n" + snippet.title() + "\n" + snippet.content())
-        .collect(Collectors.joining("\n\n"));
-  }
-
-  private int estimateTokens(String value) {
-    return (int) Math.ceil((value == null ? 0 : value.length()) / 4.0);
-  }
-
-  private int plannerOutputReserveTokens() {
-    return 16000;
-  }
-
-  private String turnPromptForEstimate(
-      AssistantSessionStore.AssistantSession session,
-      AssistantTurnRequest request,
-      AssistantModelContext context,
-      ModelLevel level) {
-    return "Level: "
-        + level
-        + "\nActive view: "
-        + nonBlank(request.activeView(), "unknown")
-        + "\nSelected stable IDs: "
-        + request.selectedElementIds()
-        + "\nConversation memory:\n"
-        + conversationMemory(session)
-        + "\nCurrent model context:\n"
-        + modelContexts.summarize(context)
-        + "\nUser request:\n"
-        + request.rootMessage();
-  }
-
   private Set<String> selectedElementTypes(
       AssistantModelContext context, List<String> selectedElementIds) {
     if (selectedElementIds == null || selectedElementIds.isEmpty()) {
@@ -1719,10 +1418,6 @@ public class AssistantOrchestrator {
 
   private List<AssistantModelProvider.ContextSnippet> snippetsForFollowup(
       List<AssistantModelProvider.ContextSnippet> snippets) {
-    if (snippets != null
-        && snippets.stream().anyMatch(snippet -> snippet.source().startsWith("full-context"))) {
-      return snippets;
-    }
     return deduplicate(snippets, properties.maxContextSnippets());
   }
 
@@ -1918,10 +1613,6 @@ public class AssistantOrchestrator {
     return validationSummary(assistantValidation(level, modelJson));
   }
 
-  private boolean shouldAutoApply(AssistantTurnPlan plan) {
-    return true;
-  }
-
   private AssistantTurnResponse autoApplyValidatedProposal(
       UserRecord user,
       AssistantSessionStore.AssistantSession session,
@@ -1963,7 +1654,6 @@ public class AssistantOrchestrator {
             compiled.inversePatch(),
             validation,
             actualRisk,
-            false,
             retrievalCitations(snippets, context),
             Instant.now());
     memory.clearPendingInteraction(threadId);
@@ -2147,7 +1837,6 @@ public class AssistantOrchestrator {
 
   private String terminalStage(AssistantWorkflowState workflowState) {
     return switch (workflowState) {
-      case PROPOSED -> "COMPLETED";
       case WAITING_FOR_CHOICE -> "WAITING";
       case FAILED -> "FAILED";
       default -> "COMPLETED";
@@ -2156,7 +1845,6 @@ public class AssistantOrchestrator {
 
   private String terminalMessage(AssistantWorkflowState workflowState) {
     return switch (workflowState) {
-      case PROPOSED -> "Proposal ready for review";
       case APPLIED -> "Applied automatically";
       case WAITING_FOR_CHOICE -> "Waiting for your decision";
       case FAILED -> "Could not complete the request";
@@ -2197,23 +1885,6 @@ public class AssistantOrchestrator {
     }
   }
 
-  private boolean prefersInformationPath(String message) {
-    if (blank(message)) {
-      return true;
-    }
-    String normalized = message.toLowerCase(java.util.Locale.ROOT);
-    boolean explain =
-        normalized.matches(
-            "(?s).*(\\bexplain\\b|\\banaly[sz]e\\b|\\bwhat is\\b|\\bhow does\\b|\\bwhy"
-                + " does\\b|\\bdescribe\\b|\\bcompare\\b|\\breview\\b(?![^\\n"
-                + "]*\\b(create|add|build|connect|delete|remove|change|set|rename|update)\\b)).*");
-    boolean mutate =
-        normalized.matches(
-            "(?s).*(\\bcreate\\b|\\badd\\b|\\bbuild\\b|\\bconnect\\b|\\bdelete\\b|\\bremove\\b|\\bchange\\b|\\bset\\b"
-                + "|\\brename\\b|\\bupdate\\b|\\bexpand\\b|\\brefine\\b|\\bmerge\\b|\\bsplit\\b).*");
-    return explain && !mutate;
-  }
-
   private String attachmentSection(AssistantTurnRequest request) {
     if (blank(request.attachmentName()) && blank(request.attachmentContent())) {
       return "";
@@ -2234,8 +1905,8 @@ public class AssistantOrchestrator {
     if (message.contains("validate") || message.contains("repair") || message.contains("fix")) {
       return "validate-repair";
     }
-    if (prefersInformationPath(message)) {
-      return "explain-only";
+    if (message.matches("(?s).*(\\bexplain\\b|\\banaly[sz]e\\b|\\bdescribe\\b|\\breview\\b).*")) {
+      return "analysis";
     }
     return switch (context.level()) {
       case CIM -> "cim";
@@ -2275,9 +1946,6 @@ public class AssistantOrchestrator {
       String threadId, List<ThreadMessage> messages, List<AssistantChoice> pendingChoices) {
     if (!pendingChoices.isEmpty()) {
       return AssistantWorkflowState.WAITING_FOR_CHOICE;
-    }
-    if (memory.findLatestProposal(threadId, "PROPOSED").isPresent()) {
-      return AssistantWorkflowState.PROPOSED;
     }
     for (int index = messages.size() - 1; index >= 0; index--) {
       AssistantWorkflowState workflowState = messages.get(index).workflowState();

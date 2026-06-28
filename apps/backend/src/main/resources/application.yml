@@ -52,17 +52,14 @@ modless:
     max-text-chars: ${MODLESS_UPLOAD_MAX_TEXT_CHARS:120000}
   ai:
     enabled: ${MODLESS_AI_ENABLED:false}
-    mode: ${MODLESS_AI_MODE:AUTONOMOUS}
     provider: ${MODLESS_AI_PROVIDER:openai}
     request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:10m}
     max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:0}
     validation-repair-attempts: ${MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS:6}
     max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:16}
     max-tool-calls-per-step: ${MODLESS_AI_MAX_TOOL_CALLS_PER_STEP:8}
-    max-auto-apply-operations: ${MODLESS_AI_MAX_AUTO_APPLY_OPERATIONS:0}
     semantic-validation-enabled: ${MODLESS_AI_SEMANTIC_VALIDATION_ENABLED:false}
     token-budget: ${MODLESS_AI_TOKEN_BUDGET:16000}
-    context-window-tokens: ${MODLESS_AI_CONTEXT_WINDOW_TOKENS:0}
     max-context-snippets: ${MODLESS_AI_MAX_CONTEXT_SNIPPETS:24}
     reserved-schema-snippets: ${MODLESS_AI_RESERVED_SCHEMA_SNIPPETS:10}
     max-snippet-chars: ${MODLESS_AI_MAX_SNIPPET_CHARS:2400}

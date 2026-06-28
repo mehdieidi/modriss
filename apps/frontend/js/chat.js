@@ -12,12 +12,10 @@ import { syncMobileDockState } from "./mobile-ui.js";
 import { hasUnsavedModelChanges } from "./model-save-ui.js";
 
 const TERMINAL_WORKFLOW_STATES = new Set([
-  "PROPOSED",
   "EXPLAINED",
   "FAILED",
   "WAITING_FOR_CHOICE",
   "APPLIED",
-  "REJECTED",
   "UNDONE",
 ]);
 
@@ -26,7 +24,6 @@ const WORKFLOW_LABELS = Object.freeze({
   VALIDATING: "Validating",
   COMPLETING: "Completing",
   REPAIRING: "Repairing",
-  PROPOSED: "Change ready",
   WAITING_FOR_CHOICE: "Waiting for you",
   EXPLAINED: "Explained",
   FAILED: "Failed",
@@ -280,9 +277,6 @@ function buildThinkingSummary(workflowState = null, message = null) {
       seen.add(label);
       stageSummaries.push(label.toLowerCase());
     }
-  }
-  if (workflowState === "PROPOSED") {
-    return message || "Prepared a model change.";
   }
   if (workflowState === "WAITING_FOR_CHOICE") {
     return message || "Need a quick clarification before continuing.";
@@ -648,10 +642,7 @@ async function hydrateChatThread(typeKey, sessionId) {
       appendChoiceButtons(typeKey, sessionId, thread.pendingChoices);
     }
 
-    const workflowState =
-      hasPending && thread.workflowState !== "PROPOSED"
-        ? "WAITING_FOR_CHOICE"
-        : thread.workflowState;
+    const workflowState = hasPending ? "WAITING_FOR_CHOICE" : thread.workflowState;
     if (workflowState) {
       applyWorkflowSnapshot(
         workflowState,
@@ -711,10 +702,6 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "model.updated", payload);
   });
-  stream.addEventListener("proposal.rejected", (event) => {
-    const payload = JSON.parse(event.data)?.payload;
-    handleChatRealtimeEvent(typeKey, "proposal.rejected", payload);
-  });
   stream.addEventListener("assistant.choice", (event) => {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "assistant.choice", payload);
@@ -752,11 +739,6 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
         payload?.activity?.message || workflowLabel(payload.workflowState),
       );
     }
-    return;
-  }
-
-  if (eventType === "proposal.rejected") {
-    appendAssistantDeduped("Proposal rejected.");
     return;
   }
 
@@ -962,7 +944,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   header.className = "chat-proposal-header";
   const title = document.createElement("div");
   title.className = "chat-proposal-title";
-  title.textContent = proposal.approvalRequired ? "Model change ready" : "Applied model change";
+  title.textContent = "Applied model change";
   const riskBadge = document.createElement("span");
   riskBadge.className = `chat-proposal-risk chat-proposal-risk-${risk.toLowerCase()}`;
   riskBadge.textContent = RISK_LABELS[risk] || risk;
@@ -971,11 +953,8 @@ function appendProposalCard(typeKey, sessionId, proposal) {
 
   const intro = document.createElement("p");
   intro.className = "chat-proposal-intro";
-  intro.textContent = proposal.approvalRequired
-    ? changes.length === 1
-      ? "The assistant prepared one change for your model."
-      : `The assistant prepared ${changes.length} changes for your model.`
-    : changes.length === 1
+  intro.textContent =
+    changes.length === 1
       ? "The assistant applied one change to the canvas."
       : `The assistant applied ${changes.length} changes to the canvas.`;
   bubble.appendChild(intro);
@@ -1001,13 +980,9 @@ function appendProposalCard(typeKey, sessionId, proposal) {
 
   const validation = document.createElement("div");
   validation.className = `chat-proposal-validation ${validationPassed ? "is-pass" : "is-fail"}`;
-  validation.textContent = proposal.approvalRequired
-    ? validationPassed
-      ? "Validation passed"
-      : "Validation failed"
-    : validationPassed
-      ? "Validation passed and applied"
-      : "Validation failed — changes were not applied";
+  validation.textContent = validationPassed
+    ? "Validation passed and applied"
+    : "Validation failed — changes were not applied";
   bubble.appendChild(validation);
 
   if (issues.length) {
@@ -1045,64 +1020,7 @@ function appendProposalCard(typeKey, sessionId, proposal) {
 
   const actions = document.createElement("div");
   actions.className = "chat-proposal-actions";
-  if (proposal.approvalRequired) {
-    if (validationPassed) {
-      const approve = document.createElement("button");
-      approve.type = "button";
-      approve.className = "chat-proposal-btn chat-proposal-btn-primary";
-      approve.textContent = "Approve changes";
-      approve.addEventListener("click", async () => {
-        let response = null;
-        try {
-          beginChatActivity("Applying approved changes");
-          setProposalActionsDisabled(actions, true);
-          response = await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/approve`, {
-            method: "POST",
-          });
-          endChatActivity(null, response?.workflowState || "APPLIED");
-          appendAssistantDeduped(response.assistantMessage || "Changes approved and applied.");
-          await applyAssistantModelResponse(typeKey, response);
-          setProposalDecision(card, "Applied");
-        } catch (error) {
-          if (chatBusyDepth > 0) {
-            endChatActivity("Could not apply the changes.", "FAILED");
-          }
-          setProposalActionsDisabled(actions, false);
-          appendChat("assistant", formatUserError(error));
-        }
-      });
-      actions.appendChild(approve);
-    } else {
-      const blocked = document.createElement("span");
-      blocked.className = "chat-proposal-decision";
-      blocked.textContent = "Fix validation issues before applying";
-      actions.appendChild(blocked);
-    }
-
-    const reject = document.createElement("button");
-    reject.type = "button";
-    reject.className = "chat-proposal-btn";
-    reject.textContent = "Reject";
-    reject.addEventListener("click", async () => {
-      try {
-        beginChatActivity("Recording your decision");
-        setProposalActionsDisabled(actions, true);
-        await api(`/chatbot/sessions/${sessionId}/proposals/${proposal.id}/reject`, {
-          method: "POST",
-        });
-        endChatActivity(null, "REJECTED");
-        setProposalDecision(card, "Rejected");
-        appendChat("assistant", "Proposal rejected.");
-      } catch (error) {
-        if (chatBusyDepth > 0) {
-          endChatActivity("Could not record your decision.", "FAILED");
-        }
-        setProposalActionsDisabled(actions, false);
-        appendChat("assistant", formatUserError(error));
-      }
-    });
-    actions.appendChild(reject);
-  } else if (proposal.id) {
+  if (proposal.id) {
     const undo = document.createElement("button");
     undo.type = "button";
     undo.className = "chat-proposal-btn";

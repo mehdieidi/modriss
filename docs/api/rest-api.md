@@ -144,21 +144,19 @@ Assistant commands use REST. Realtime progress uses SSE or the receive-only assi
 See [websocket-api.md](websocket-api.md) and
 [public realtime reference](../public-docs/docs/reference/realtime-api.md).
 
-| Method   | Path                                                               | Purpose                          |
-| -------- | ------------------------------------------------------------------ | -------------------------------- |
-| `POST`   | `/api/chatbot/sessions`                                            | Create or resume a session       |
-| `GET`    | `/api/chatbot/conversations`                                       | List recent conversations        |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                       | Submit a user message            |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                    | Upload a text attachment         |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                         | Load thread history              |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                         | Open SSE event stream            |
-| `DELETE` | `/api/chatbot/sessions/{sessionId}`                                | Clear session memory             |
-| `POST`   | `/api/chatbot/catalogs/reindex`                                    | Reindex metamodel/EVL catalogs   |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`         | Get proposal details             |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/approve` | Approve and apply a proposal     |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/reject`  | Reject a proposal                |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo`    | Undo an applied proposal         |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/choices`                        | Answer structured clarifications |
+| Method   | Path                                                            | Purpose                          |
+| -------- | --------------------------------------------------------------- | -------------------------------- |
+| `POST`   | `/api/chatbot/sessions`                                         | Create or resume a session       |
+| `GET`    | `/api/chatbot/conversations`                                    | List recent conversations        |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                    | Submit a user message            |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                 | Upload a text attachment         |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                      | Load thread history              |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                      | Open SSE event stream            |
+| `DELETE` | `/api/chatbot/sessions/{sessionId}`                             | Clear session memory             |
+| `POST`   | `/api/chatbot/catalogs/reindex`                                 | Reindex metamodel/EVL catalogs   |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`      | Get proposal details             |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo` | Undo an applied proposal         |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/choices`                     | Answer structured clarifications |
 
 WebSocket stream: `ws://<host>/ws/chatbot/sessions/{sessionId}` (receive-only).
 

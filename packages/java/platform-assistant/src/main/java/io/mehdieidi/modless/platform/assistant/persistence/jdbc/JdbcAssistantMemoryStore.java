@@ -489,9 +489,9 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
         """
                 INSERT INTO assistant_proposals
                   (id, thread_id, project_id, model_id, model_revision, risk_level,
-                   approval_required, semantic_patch, inverse_patch, validation_summary,
+                   semantic_patch, inverse_patch, validation_summary,
                    citations, status, created_at, decided_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status,
                   decided_at = EXCLUDED.decided_at
         """,
@@ -501,7 +501,6 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
         modelId,
         modelRevision,
         proposal.riskLevel().name(),
-        proposal.approvalRequired(),
         json(proposal.patch()),
         json(proposal.inversePatch()),
         json(proposal.validation()),
@@ -521,8 +520,7 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
     return jdbc.query(
         """
         SELECT id, thread_id, project_id, model_id, model_revision, semantic_patch,
-          validation_summary, citations, status, decided_at, risk_level, approval_required,
-          inverse_patch, created_at
+          validation_summary, citations, status, decided_at, risk_level, inverse_patch, created_at
         FROM assistant_proposals WHERE id = ?
         """,
         rs ->
@@ -554,8 +552,7 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
     return jdbc.query(
         """
         SELECT id, thread_id, project_id, model_id, model_revision, semantic_patch,
-          validation_summary, citations, status, decided_at, risk_level, approval_required,
-          inverse_patch, created_at
+          validation_summary, citations, status, decided_at, risk_level, inverse_patch, created_at
         FROM assistant_proposals
         WHERE thread_id = ? AND status = ?
         ORDER BY created_at DESC LIMIT 1
@@ -698,7 +695,6 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
           inversePatch,
           validation,
           AssistantProposal.RiskLevel.valueOf(rs.getString("risk_level")),
-          rs.getBoolean("approval_required"),
           citations,
           rs.getTimestamp("created_at").toInstant());
     } catch (Exception ex) {

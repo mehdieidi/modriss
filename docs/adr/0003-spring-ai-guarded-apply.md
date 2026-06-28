@@ -12,11 +12,10 @@ proposal flows without compromising model integrity.
 
 ## Decision
 
-Integrate **Spring AI** with one `GUARDED_APPLY` workflow. The LLM emits a structured answer,
-clarification, or semantic patch. The backend is the authority for compiling semantic operations,
-checking the current Ecore language, running structural and EVL validation, and persisting the
-proposal. No proposal is visible and no mutation is possible unless validation passes. Every valid
-proposal still requires explicit user approval.
+Integrate **Spring AI** through one autonomous modeling-agent workflow. The LLM emits a structured
+answer, clarification, or semantic patch. The backend is the authority for compiling semantic
+operations, checking the current Ecore language, running structural and EVL validation, applying
+valid mutations, and persisting audit/undo records. No mutation is applied unless validation passes.
 
 Additional controls:
 

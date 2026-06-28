@@ -117,14 +117,14 @@
   },
   {
     "id": "explain-01",
-    "category": "explain-only",
+    "category": "analysis",
     "level": "PIM",
     "prompt": "Explain how the APIs, functions, and stores in this model interact.",
     "emptyCanvas": false
   },
   {
     "id": "explain-02",
-    "category": "explain-only",
+    "category": "analysis",
     "level": "PIM",
     "prompt": "Analyze the architectural risks in the current model.",
     "emptyCanvas": false
@@ -252,7 +252,7 @@
   },
   {
     "id": "explain-03",
-    "category": "explain-only",
+    "category": "analysis",
     "level": "PIM",
     "prompt": "What validation constraints are failing and why?",
     "emptyCanvas": false

@@ -48,7 +48,6 @@ erDiagram
         text model_id
         bigint model_revision
         text risk_level
-        boolean approval_required
         jsonb semantic_patch
         jsonb inverse_patch
         jsonb validation_summary

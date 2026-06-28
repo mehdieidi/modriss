@@ -36,23 +36,20 @@ public class AssistantPromptGuard {
     if (INJECTION.matcher(user).find()) {
       user = "[Potential prompt-injection text treated as untrusted user content]\n" + user;
     }
-    boolean fullContext = prompt.snippets().stream().anyMatch(this::isFullContextSnippet);
     List<AssistantModelProvider.ContextSnippet> snippets =
         prompt.snippets().stream()
-            .limit(fullContext ? Long.MAX_VALUE : properties.maxContextSnippets())
+            .limit(properties.maxContextSnippets())
             .map(
                 snippet ->
                     new AssistantModelProvider.ContextSnippet(
                         bound(redact(snippet.source()), 300),
                         bound(redact(snippet.title()), 300),
-                        bound(redact(snippet.content()), snippetLimit(snippet, fullContext))))
+                        bound(redact(snippet.content()), snippetLimit(snippet))))
             .toList();
     int maxSystemChars =
-        fullContext
-            ? Integer.MAX_VALUE
-            : prompt.system().contains("Attached context file:")
-                ? Math.max(properties.maxSystemChars(), 32000)
-                : properties.maxSystemChars();
+        prompt.system().contains("Attached context file:")
+            ? Math.max(properties.maxSystemChars(), 32000)
+            : properties.maxSystemChars();
     return new AssistantModelProvider.AssistantPrompt(
         prompt.role(), bound(redact(prompt.system()), maxSystemChars), user, snippets);
   }
@@ -76,20 +73,11 @@ public class AssistantPromptGuard {
         : value.substring(0, maxChars) + "\n[truncated by backend]";
   }
 
-  private int snippetLimit(AssistantModelProvider.ContextSnippet snippet, boolean fullContext) {
-    if (fullContext || isFullContextSnippet(snippet)) {
-      return Integer.MAX_VALUE;
-    }
+  private int snippetLimit(AssistantModelProvider.ContextSnippet snippet) {
     String source = snippet.source() == null ? "" : snippet.source();
     if (source.startsWith("user-attachment")) {
       return Math.max(properties.maxSnippetChars(), 24000);
     }
     return properties.maxSnippetChars();
-  }
-
-  private boolean isFullContextSnippet(AssistantModelProvider.ContextSnippet snippet) {
-    return snippet != null
-        && snippet.source() != null
-        && snippet.source().startsWith("full-context");
   }
 }

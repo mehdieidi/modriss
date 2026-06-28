@@ -60,7 +60,7 @@ class AssistantEvalRunnerTest {
     assertTrue(results.size() >= 35, () -> "Expected curated prompt matrix, got " + results.size());
     assertTrue(report.contains("create-empty"));
     assertTrue(report.contains("selected-element"));
-    assertTrue(report.contains("explain-only"));
+    assertTrue(report.contains("analysis"));
     assertTrue(results.stream().allMatch(AssistantEvalRunner.EvalResult::validationPassed));
   }
 }
