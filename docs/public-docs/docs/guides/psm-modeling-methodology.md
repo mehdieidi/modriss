@@ -1,34 +1,37 @@
 # AWS PSM Modeling Methodology
 
 The Platform-Specific Model (PSM) binds the PIM to AWS resources—SAM stacks, IAM, Lambda, API Gateway,
-DynamoDB, messaging, EventBridge, Step Functions, and observability. This guide covers **6 sequential phases** with nested stages and atomic tasks for greenfield AWS PSM work and post–PIM-to-PSM refinement.
+DynamoDB, messaging, EventBridge, Step Functions, and observability. This guide covers **6 sequential
+phases** with nested stages and atomic tasks for greenfield AWS PSM work and post–PIM-to-PSM
+refinement.
 
-After PIM→PSM ETL, refine generated AWS resources **within each task** following the same order as
-greenfield modeling. Iterate within engine phases when wiring gaps appear.
+After PIM→PSM ETL, treat generated AWS resources as **draft deployment scaffolding**. Refine them
+through deployable-slice framing, AWS resource modeling, readiness, review, and adapt work.
+Iterate within engine phases when wiring gaps appear.
 
 ## Sequential Phases
 
-| Phase     | Name                          | In engine | Stages (summary)                                      |
-| --------- | ----------------------------- | --------- | ----------------------------------------------------- |
-| `psm.ph1` | Deployment Foundation         | once      | Account & Stage, Stack Scaffolding, Security Baseline |
-| `psm.ph2` | Network & Identity            | once      | Networking, Identity (Cognito)                        |
-| `psm.ph3` | Storage & Messaging           | ✓         | Durable Storage, Messaging                            |
-| `psm.ph4` | Event Fabric & Compute        | ✓         | Event Fabric, Compute (Lambda)                        |
-| `psm.ph5` | API & Orchestration           | ✓         | API Gateway, Workflow & Observability                 |
-| `psm.ph6` | Integration Views & Readiness | gate      | Integration Views, Trace & Readiness                  |
+| Phase     | Name                          | In engine | Stages (summary)                                                                 |
+| --------- | ----------------------------- | --------- | -------------------------------------------------------------------------------- |
+| `psm.ph1` | Deployment & Slice Framing    | ✓         | Deployable Slice Planning, Account & Stage, Stack Scaffolding, Security Baseline |
+| `psm.ph2` | Network & Identity            | ✓         | Networking, Identity (Cognito)                                                   |
+| `psm.ph3` | Storage & Messaging           | ✓         | Durable Storage, Messaging                                                       |
+| `psm.ph4` | Event Fabric & Compute        | ✓         | Event Fabric, Compute (Lambda)                                                   |
+| `psm.ph5` | API & Orchestration           | ✓         | API Gateway, Workflow & Observability                                            |
+| `psm.ph6` | Integration Views & Readiness | ✓         | Integration Views, Trace & Readiness, Increment Review                           |
 
 ## Roles
 
-| Role                        | Responsibility in PSM                                       |
-| --------------------------- | ----------------------------------------------------------- |
-| **Cloud Platform Engineer** | Engine phases: AWS stacks, resources, integrations          |
-| **Process Reviewer**        | Readiness phase: integration views, trace closure, EVL gate |
+| Role                        | Responsibility in PSM                                                        |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| **Cloud Platform Engineer** | Engine phases: deployable-slice framing, AWS stacks, resources, integrations |
+| **Process Reviewer**        | Readiness cycle: integration views, trace closure, EVL gate                  |
 
 ## Phase Flow
 
 ```mermaid
 flowchart TD
-  PH1["Phase 1 — Deployment Foundation"]
+  PH1["Phase 1 — Deployment & Slice Framing"]
   PH2["Phase 2 — Network & Identity"]
   PH3["Phase 3 — Storage & Messaging"]
   PH4["Phase 4 — Event Fabric & Compute"]
@@ -46,26 +49,55 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modless.psm.modeling` · 6 phases · 25 atomic tasks · PSM metamodel coverage enforced in CI.
+Process `modless.psm.modeling` · 6 phases · 27 atomic tasks · PSM metamodel coverage enforced in CI.
 
-### Deployment Foundation (`psm.ph1`)
+### Deployment & Slice Framing (`psm.ph1`)
 
-Establish AWS account strategy, SAM stack scaffolding, and security baseline.
+Frame the current deployable slice and establish or refresh AWS account, stack, and security foundations.
 
-**Runs:** once per program · **Role:** cloud-platform-engineer
+**Runs:** in engine cycle · **Role:** cloud-platform-engineer
 
 **Phase entry:**
 
-- PIM transform complete or greenfield PSM
+- PIM transform complete, prior PSM increment selected, or greenfield PSM
 
 **Phase exit:**
 
 - AWS root and stage strategy configured
+- Deployable-slice objective and deployment definition of done are agreed
 - Security baseline applied
+
+#### Deployable Slice Planning (`psm.ph1.st0`)
+
+Select the AWS deployable slice and define deployment review expectations.
+
+**Viewpoint:** stack
+
+##### Tasks
+
+#### Plan deployable slice (`psm.ph1.st0.t1`)
+
+**Viewpoint:** stack
+**Duration:** 30m
+**Artifacts:** PSM Increment Plan
+
+**Steps:**
+
+1. Select one PIM service slice or deployment unit to materialize on AWS.
+2. Record AWS account, region, stage, networking, IAM, and deployment assumptions.
+3. Define the PSM EVL gate, artifact-generation readiness criteria, and review participants.
+
+**Entry criteria:**
+
+- PIM transform complete, prior PSM increment selected, or greenfield PSM
+
+**Exit criteria:**
+
+- Deployable-slice scope and definition of done are agreed
 
 #### Account & Stage Strategy (`psm.ph1.st1`)
 
-Create AwsPsmModel root with partition, region, naming, and tagging policies.
+Create or refresh AwsPsmModel root with partition, region, naming, and tagging policies.
 
 **Viewpoint:** dashboard
 
@@ -80,12 +112,12 @@ Create AwsPsmModel root with partition, region, naming, and tagging policies.
 
 **Steps:**
 
-1. Create AwsPsmModel with partition and region defaults.
+1. Create or verify AwsPsmModel with partition and region defaults.
 2. Link to PIM source model and set lifecycle metadata.
 
 **Entry criteria:**
 
-- PIM transform complete or greenfield PSM
+- Deployable-slice scope agreed
 
 **Exit criteria:**
 
@@ -172,7 +204,17 @@ Establish IAM roles, KMS keys, secrets, and SSM parameters.
 **Viewpoint:** security
 **Duration:** 1-2h
 **Artifacts:** Security Baseline
-**Palette focus:** `AwsSecurityBaseline`, `IamRole`, `IamInlinePolicy`, `IamPolicy`, `IamManagedPolicy`, `IamPolicyDocument`, `IamStatement`, `IamPrincipal`, `IamCondition`
+**Palette focus:**
+
+- `AwsSecurityBaseline`
+- `IamRole`
+- `IamInlinePolicy`
+- `IamPolicy`
+- `IamManagedPolicy`
+- `IamPolicyDocument`
+- `IamStatement`
+- `IamPrincipal`
+- `IamCondition`
 
 **Steps:**
 
@@ -192,7 +234,18 @@ Establish IAM roles, KMS keys, secrets, and SSM parameters.
 **Viewpoint:** security
 **Duration:** 1h
 **Artifacts:** Security Baseline
-**Palette focus:** `KmsKey`, `KmsAlias`, `SecretsManagerSecret`, `GenerateSecretStringConfig`, `SecretRotationRules`, `SecretRotationSchedule`, `SecretsManagerResourcePolicy`, `SsmParameter`, `SsmParameterValueExpression`, `SecretValueExpression`
+**Palette focus:**
+
+- `KmsKey`
+- `KmsAlias`
+- `SecretsManagerSecret`
+- `GenerateSecretStringConfig`
+- `SecretRotationRules`
+- `SecretRotationSchedule`
+- `SecretsManagerResourcePolicy`
+- `SsmParameter`
+- `SsmParameterValueExpression`
+- `SecretValueExpression`
 
 **Steps:**
 
@@ -214,11 +267,11 @@ Establish IAM roles, KMS keys, secrets, and SSM parameters.
 
 Configure VPC networking and Cognito identity resources aligned to PIM auth model.
 
-**Runs:** once per program · **Role:** cloud-platform-engineer
+**Runs:** in engine cycle · **Role:** cloud-platform-engineer
 
 **Phase entry:**
 
-- Deployment Foundation complete
+- Deployment & Slice Framing complete
 
 **Phase exit:**
 
@@ -286,7 +339,15 @@ Configure Cognito user pools, clients, and identity pools.
 **Viewpoint:** identity
 **Duration:** 1h
 **Artifacts:** Network & Identity
-**Palette focus:** `CognitoUserPool`, `CognitoPasswordPolicy`, `CognitoSchemaAttribute`, `CognitoEmailConfiguration`, `CognitoAccountRecoverySetting`, `CognitoRecoveryMechanism`, `CognitoLambdaConfig`
+**Palette focus:**
+
+- `CognitoUserPool`
+- `CognitoPasswordPolicy`
+- `CognitoSchemaAttribute`
+- `CognitoEmailConfiguration`
+- `CognitoAccountRecoverySetting`
+- `CognitoRecoveryMechanism`
+- `CognitoLambdaConfig`
 
 **Steps:**
 
@@ -306,7 +367,13 @@ Configure Cognito user pools, clients, and identity pools.
 **Viewpoint:** identity
 **Duration:** 45m
 **Artifacts:** Network & Identity
-**Palette focus:** `CognitoUserPoolClient`, `CognitoOAuthConfiguration`, `CognitoUserPoolGroup`, `CognitoUserPoolDomain`, `CognitoIdentityPool`
+**Palette focus:**
+
+- `CognitoUserPoolClient`
+- `CognitoOAuthConfiguration`
+- `CognitoUserPoolGroup`
+- `CognitoUserPoolDomain`
+- `CognitoIdentityPool`
 
 **Steps:**
 
@@ -351,7 +418,20 @@ Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 **Viewpoint:** storage
 **Duration:** 1-2h
 **Artifacts:** Durable Storage Layer
-**Palette focus:** `DynamoDbTable`, `DynamoDbAttributeDefinition`, `DynamoDbKeySchemaElement`, `DynamoDbProjection`, `DynamoDbProvisionedThroughput`, `DynamoDbOnDemandThroughput`, `DynamoDbLocalSecondaryIndex`, `DynamoDbGlobalSecondaryIndex`, `DynamoDbReplicaSpecification`, `DynamoDbStreamSpecification`, `DynamoDbTimeToLiveSpecification`, `DynamoDbSseSpecification`
+**Palette focus:**
+
+- `DynamoDbTable`
+- `DynamoDbAttributeDefinition`
+- `DynamoDbKeySchemaElement`
+- `DynamoDbProjection`
+- `DynamoDbProvisionedThroughput`
+- `DynamoDbOnDemandThroughput`
+- `DynamoDbLocalSecondaryIndex`
+- `DynamoDbGlobalSecondaryIndex`
+- `DynamoDbReplicaSpecification`
+- `DynamoDbStreamSpecification`
+- `DynamoDbTimeToLiveSpecification`
+- `DynamoDbSseSpecification`
 
 **Steps:**
 
@@ -371,7 +451,20 @@ Provision DynamoDB tables and S3 buckets aligned to PIM data architecture.
 **Viewpoint:** storage
 **Duration:** 1-2h
 **Artifacts:** Durable Storage Layer
-**Palette focus:** `S3Bucket`, `S3BucketEncryption`, `S3OwnershipControls`, `S3OwnershipRule`, `S3LifecycleConfiguration`, `S3LifecycleRule`, `S3LifecycleFilter`, `S3TagFilter`, `S3Transition`, `S3PublicAccessBlockConfiguration`, `S3NotificationConfiguration`, `S3NotificationRule`
+**Palette focus:**
+
+- `S3Bucket`
+- `S3BucketEncryption`
+- `S3OwnershipControls`
+- `S3OwnershipRule`
+- `S3LifecycleConfiguration`
+- `S3LifecycleRule`
+- `S3LifecycleFilter`
+- `S3TagFilter`
+- `S3Transition`
+- `S3PublicAccessBlockConfiguration`
+- `S3NotificationConfiguration`
+- `S3NotificationRule`
 
 **Steps:**
 
@@ -464,7 +557,20 @@ Configure EventBridge buses, rules, schedules, pipes, and API destinations.
 **Viewpoint:** events
 **Duration:** 1-2h
 **Artifacts:** Event Fabric
-**Palette focus:** `EventBridgeBus`, `EventBridgeBusPolicy`, `EventBridgeRule`, `EventPattern`, `EventBridgeTarget`, `EventBridgeTargetParameters`, `EventBridgeSqsTargetParameters`, `EventBridgeHttpTargetParameters`, `HttpParameter`, `EventBridgeBatchTargetParameters`, `EventBridgeInputTransformer`, `EventBridgeArchive`
+**Palette focus:**
+
+- `EventBridgeBus`
+- `EventBridgeBusPolicy`
+- `EventBridgeRule`
+- `EventPattern`
+- `EventBridgeTarget`
+- `EventBridgeTargetParameters`
+- `EventBridgeSqsTargetParameters`
+- `EventBridgeHttpTargetParameters`
+- `HttpParameter`
+- `EventBridgeBatchTargetParameters`
+- `EventBridgeInputTransformer`
+- `EventBridgeArchive`
 
 **Steps:**
 
@@ -484,7 +590,18 @@ Configure EventBridge buses, rules, schedules, pipes, and API destinations.
 **Viewpoint:** events
 **Duration:** 1h
 **Artifacts:** Event Fabric
-**Palette focus:** `EventBridgeSchedule`, `EventBridgeFlexibleTimeWindow`, `EventBridgePipe`, `EventBridgeAuthParameters`, `EventBridgeApiKeyAuthParameters`, `EventBridgeBasicAuthParameters`, `EventBridgeOAuthParameters`, `EventBridgeHttpParameters`, `EventBridgeConnection`, `EventBridgeApiDestination`
+**Palette focus:**
+
+- `EventBridgeSchedule`
+- `EventBridgeFlexibleTimeWindow`
+- `EventBridgePipe`
+- `EventBridgeAuthParameters`
+- `EventBridgeApiKeyAuthParameters`
+- `EventBridgeBasicAuthParameters`
+- `EventBridgeOAuthParameters`
+- `EventBridgeHttpParameters`
+- `EventBridgeConnection`
+- `EventBridgeApiDestination`
 
 **Steps:**
 
@@ -512,7 +629,20 @@ Deploy Lambda functions with event source mappings and permissions.
 **Viewpoint:** compute
 **Duration:** 2-3h
 **Artifacts:** Lambda Compute Layer
-**Palette focus:** `AwsLambdaFunction`, `LambdaCodeConfig`, `LambdaZipCodeConfig`, `LambdaImageCodeConfig`, `LambdaImageConfig`, `LambdaEnvironmentVariable`, `LambdaInvocationBinding`, `SamFunctionEvent`, `LambdaLayerVersion`, `LambdaLayerPermission`, `LambdaVersion`, `LambdaAlias`
+**Palette focus:**
+
+- `AwsLambdaFunction`
+- `LambdaCodeConfig`
+- `LambdaZipCodeConfig`
+- `LambdaImageCodeConfig`
+- `LambdaImageConfig`
+- `LambdaEnvironmentVariable`
+- `LambdaInvocationBinding`
+- `SamFunctionEvent`
+- `LambdaLayerVersion`
+- `LambdaLayerPermission`
+- `LambdaVersion`
+- `LambdaAlias`
 
 **Steps:**
 
@@ -532,7 +662,20 @@ Deploy Lambda functions with event source mappings and permissions.
 **Viewpoint:** compute
 **Duration:** 1-2h
 **Artifacts:** Lambda Compute Layer
-**Palette focus:** `LambdaEventSourceMapping`, `SqsLambdaEventSourceMapping`, `DynamoDbStreamLambdaEventSourceMapping`, `GenericLambdaEventSourceMapping`, `LambdaDeadLetterConfig`, `LambdaEventInvokeConfig`, `LambdaDestinationConfig`, `LambdaTracingConfig`, `LambdaLoggingConfig`, `LambdaPermission`, `LambdaFunctionUrl`, `LambdaUrlCorsConfiguration`
+**Palette focus:**
+
+- `LambdaEventSourceMapping`
+- `SqsLambdaEventSourceMapping`
+- `DynamoDbStreamLambdaEventSourceMapping`
+- `GenericLambdaEventSourceMapping`
+- `LambdaDeadLetterConfig`
+- `LambdaEventInvokeConfig`
+- `LambdaDestinationConfig`
+- `LambdaTracingConfig`
+- `LambdaLoggingConfig`
+- `LambdaPermission`
+- `LambdaFunctionUrl`
+- `LambdaUrlCorsConfiguration`
 
 **Steps:**
 
@@ -577,7 +720,18 @@ Configure HTTP/REST/WebSocket APIs with routes, integrations, and authorizers.
 **Viewpoint:** api
 **Duration:** 1-2h
 **Artifacts:** API Gateway Layer
-**Palette focus:** `ApiGatewayApi`, `HttpApi`, `RestApi`, `WebSocketApi`, `ApiGatewayRoute`, `HttpApiRoute`, `RestApiRoute`, `RestApiResource`, `RestApiMethod`, `WebSocketRoute`
+**Palette focus:**
+
+- `ApiGatewayApi`
+- `HttpApi`
+- `RestApi`
+- `WebSocketApi`
+- `ApiGatewayRoute`
+- `HttpApiRoute`
+- `RestApiRoute`
+- `RestApiResource`
+- `RestApiMethod`
+- `WebSocketRoute`
 
 **Steps:**
 
@@ -597,7 +751,20 @@ Configure HTTP/REST/WebSocket APIs with routes, integrations, and authorizers.
 **Viewpoint:** api
 **Duration:** 1-2h
 **Artifacts:** API Gateway Layer
-**Palette focus:** `ApiGatewayRequestModel`, `ApiGatewayResponseModel`, `ApiGatewayRequestValidator`, `ApiGatewayRouteSetting`, `ApiGatewayAccessLogSetting`, `ApiGatewayIntegration`, `ApiGatewayIntegrationRequestTemplate`, `ApiGatewayIntegrationResponseParameter`, `ApiGatewayStage`, `HttpApiStage`, `RestApiStage`, `WebSocketStage`
+**Palette focus:**
+
+- `ApiGatewayRequestModel`
+- `ApiGatewayResponseModel`
+- `ApiGatewayRequestValidator`
+- `ApiGatewayRouteSetting`
+- `ApiGatewayAccessLogSetting`
+- `ApiGatewayIntegration`
+- `ApiGatewayIntegrationRequestTemplate`
+- `ApiGatewayIntegrationResponseParameter`
+- `ApiGatewayStage`
+- `HttpApiStage`
+- `RestApiStage`
+- `WebSocketStage`
 
 **Steps:**
 
@@ -629,7 +796,19 @@ Deploy state machines with ASL from PIM workflows.
 **Viewpoint:** workflow
 **Duration:** 1-2h
 **Artifacts:** Workflow & Observability
-**Palette focus:** `StepFunctionStateMachine`, `AslDocument`, `AslState`, `AslBranch`, `AslMapConfig`, `AslRetryRule`, `AslCatchRule`, `AslChoiceRule`, `StepFunctionLoggingConfig`, `StepFunctionTracingConfig`, `SamStateMachineEvent`
+**Palette focus:**
+
+- `StepFunctionStateMachine`
+- `AslDocument`
+- `AslState`
+- `AslBranch`
+- `AslMapConfig`
+- `AslRetryRule`
+- `AslCatchRule`
+- `AslChoiceRule`
+- `StepFunctionLoggingConfig`
+- `StepFunctionTracingConfig`
+- `SamStateMachineEvent`
 
 **Steps:**
 
@@ -657,7 +836,13 @@ Configure logs, metrics, alarms, and dashboards.
 **Viewpoint:** workflow
 **Duration:** 45m
 **Artifacts:** Workflow & Observability
-**Palette focus:** `CloudWatchLogGroup`, `CloudWatchMetricFilter`, `CloudWatchMetricTransformation`, `CloudWatchLogSubscriptionFilter`, `MetricDimension`
+**Palette focus:**
+
+- `CloudWatchLogGroup`
+- `CloudWatchMetricFilter`
+- `CloudWatchMetricTransformation`
+- `CloudWatchLogSubscriptionFilter`
+- `MetricDimension`
 
 **Steps:**
 
@@ -677,7 +862,13 @@ Configure logs, metrics, alarms, and dashboards.
 **Viewpoint:** workflow
 **Duration:** 45m
 **Artifacts:** Workflow & Observability
-**Palette focus:** `CloudWatchAlarm`, `CloudWatchCompositeAlarm`, `CloudWatchDashboard`, `TracingConfig`, `CorsConfiguration`
+**Palette focus:**
+
+- `CloudWatchAlarm`
+- `CloudWatchCompositeAlarm`
+- `CloudWatchDashboard`
+- `TracingConfig`
+- `CorsConfiguration`
 
 **Steps:**
 
@@ -698,7 +889,7 @@ Configure logs, metrics, alarms, and dashboards.
 
 Create integration relationship views, close traceability, and pass PSM EVL gate.
 
-**Runs:** once per program · **Role:** process-reviewer
+**Runs:** in engine cycle · **Role:** process-reviewer
 
 **Phase entry:**
 
@@ -708,6 +899,7 @@ Create integration relationship views, close traceability, and pass PSM EVL gate
 
 - PSM EVL passes
 - Readiness gate approved
+- PSM increment reviewed and improvement actions captured
 
 #### Integration Views (`psm.ph6.st1`)
 
@@ -722,7 +914,20 @@ Create cross-resource relationship views for deployment wiring validation.
 **Viewpoint:** readiness
 **Duration:** 1h
 **Artifacts:** Integration View Catalog
-**Palette focus:** `AwsRelationshipView`, `ApiGatewayLambdaIntegrationView`, `EventBridgeLambdaTargetView`, `SnsLambdaSubscriptionView`, `SqsLambdaEventSourceView`, `StepFunctionEventBridgeTargetView`, `S3LambdaNotificationView`, `S3QueueNotificationView`, `S3TopicNotificationView`, `AwsTag`, `ResourceImport`, `NativeProperty`
+**Palette focus:**
+
+- `AwsRelationshipView`
+- `ApiGatewayLambdaIntegrationView`
+- `EventBridgeLambdaTargetView`
+- `SnsLambdaSubscriptionView`
+- `SqsLambdaEventSourceView`
+- `StepFunctionEventBridgeTargetView`
+- `S3LambdaNotificationView`
+- `S3QueueNotificationView`
+- `S3TopicNotificationView`
+- `AwsTag`
+- `ResourceImport`
+- `NativeProperty`
 
 **Steps:**
 
@@ -768,6 +973,34 @@ Close trace links and production readiness before M2T generation.
 **Validation:**
 
 - `psm-semantic-validation`
+
+#### Increment Review & Adapt (`psm.ph6.st3`)
+
+Review the AWS deployment slice, accept the increment, and adapt the next cycle.
+
+**Viewpoint:** readiness
+
+##### Tasks
+
+#### Review and adapt PSM increment (`psm.ph6.st3.t1`)
+
+**Viewpoint:** readiness
+**Duration:** 45m
+**Artifacts:** PSM Increment Review Record
+
+**Steps:**
+
+1. Review AWS resource wiring, least-privilege posture, and artifact-generation readiness.
+2. Record accepted scope, deferred deployment decisions, and operational feedback.
+3. Create improvement actions and backlog adjustments for the next deployable slice.
+
+**Entry criteria:**
+
+- PSM EVL passes or all blocking findings are dispositioned
+
+**Exit criteria:**
+
+- Increment accepted or rework loop selected; improvement actions captured
 
 ---
 

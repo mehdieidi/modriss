@@ -1,12 +1,13 @@
 @startuml psm-process
-title AWS PSM Modeling Process — SPEM (6 Phases, Stages, Tasks)
+title AWS PSM Modeling Process — SPEM Engine (6 Phases per Deployable Slice)
 start
-partition "Phase 1 — Deployment Foundation (once)" {
+partition "Phase 1 — Deployment & Slice Framing (engine)" {
+  :Stage — Deployable Slice Planning;
   :Stage — Account & Stage Strategy;
   :Stage — Stack Scaffolding;
   :Stage — Security Baseline;
 }
-partition "Phase 2 — Network & Identity (once)" {
+partition "Phase 2 — Network & Identity (engine)" {
   :Stage — Networking;
   :Stage — Identity;
 }
@@ -22,13 +23,18 @@ partition "Phase 5 — API & Orchestration (engine)" {
   :Stage — API Gateway;
   :Stage — Workflow & Observability;
 }
-partition "Phase 6 — Integration Views & Readiness (gate)" {
+partition "Phase 6 — Integration Views & Readiness (engine)" {
   :Stage — Integration Views;
   :Stage — Trace & Readiness Gate;
+  :Stage — Increment Review & Adapt;
 }
 if (PSM EVL pass?) then (yes)
   :M2T artifact generation;
-  stop
+  if (More deployable slices?) then (yes)
+    backward :Stage — Deployable Slice Planning;
+  else (no)
+    stop
+  endif
 else (no)
   backward :Trace & Readiness;
 endif

@@ -1,7 +1,7 @@
 {
   "level": "cim",
   "processId": "modless.cim.modeling",
-  "generatedAt": "2026-06-25T22:34:10.043Z",
+  "generatedAt": "2026-06-28T10:50:34.445Z",
   "totalConcepts": 122,
   "coveredConcepts": 122,
   "orphanedConcepts": [],
@@ -153,19 +153,19 @@
     {
       "concept": "BusinessGoal",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st2.t1"],
+      "taskIds": ["cim.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "KPI",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st2.t1"],
+      "taskIds": ["cim.ph1.st3.t1"],
       "covered": true
     },
     {
       "concept": "Stakeholder",
       "kind": "EClass",
-      "taskIds": ["cim.ph1.st2.t2"],
+      "taskIds": ["cim.ph1.st3.t2"],
       "covered": true
     },
     {
@@ -681,7 +681,7 @@
     {
       "concept": "Priority",
       "kind": "EEnum",
-      "taskIds": ["cim.ph1.st2.t1"],
+      "taskIds": ["cim.ph1.st2.t1", "cim.ph1.st3.t1"],
       "covered": true
     },
     {

@@ -1185,8 +1185,8 @@
         "lineFields": ["priority", "successCriterion", "businessValue"]
       },
       "processPhaseId": "cim.ph1",
-      "processTaskIds": ["cim.ph1.st2.t1"],
-      "processStageId": "cim.ph1.st2"
+      "processTaskIds": ["cim.ph1.st3.t1"],
+      "processStageId": "cim.ph1.st3"
     },
     {
       "type": "Objective",
@@ -1210,8 +1210,8 @@
         "lineFields": ["metricName", "operator", "targetValue", "unit"]
       },
       "processPhaseId": "cim.ph1",
-      "processTaskIds": ["cim.ph1.st2.t1"],
-      "processStageId": "cim.ph1.st2"
+      "processTaskIds": ["cim.ph1.st3.t1"],
+      "processStageId": "cim.ph1.st3"
     },
     {
       "type": "StakeholderConcern",
@@ -1822,8 +1822,8 @@
         "lineFields": ["stakeholderType", "concern", "influence"]
       },
       "processPhaseId": "cim.ph1",
-      "processTaskIds": ["cim.ph1.st2.t2"],
-      "processStageId": "cim.ph1.st2"
+      "processTaskIds": ["cim.ph1.st3.t2"],
+      "processStageId": "cim.ph1.st3"
     },
     {
       "type": "UbiquitousLanguageTerm",

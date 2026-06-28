@@ -694,7 +694,7 @@ function renderProcessEngine(host, process) {
     del.style.fontSize = "0.68rem";
     del.style.color = "var(--muted)";
     del.style.margin = "0 0 6px";
-    del.textContent = `Delivers per cycle: ${engine.deliverable.name}`;
+    del.textContent = `Accepted outcome per cycle: ${engine.deliverable.name}`;
     host.appendChild(del);
   }
 

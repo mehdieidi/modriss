@@ -7,18 +7,24 @@
 export const CIM_PROCESS_PHASES = [
   {
     id: "cim.ph1",
-    name: "Establishment",
+    name: "Increment Framing",
     order: 1,
-    objective: "Establish the CIM program container and strategic intent that anchors all later modeling.",
+    objective:
+      "Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.",
     primaryRole: "business-modeler",
-    entryCriteria: ["Modless project created"],
-    exitCriteria: ["CIMModel root exists", "At least one BusinessGoal with KPI"],
-    inEngine: false,
+    entryCriteria: ["Modless project created or prior CIM increment selected for evolution"],
+    exitCriteria: [
+      "CIMModel root exists",
+      "Capability-slice objective and definition of done are agreed",
+      "At least one BusinessGoal with KPI traces to the slice",
+    ],
+    inEngine: true,
     stages: [
       {
         id: "cim.ph1.st1",
         name: "Program Charter",
-        objective: "Create the CIMModel root and modeling conventions.",
+        objective:
+          "Create the CIMModel root and modeling conventions on the first cycle; refresh them when the program scope changes.",
         primaryRole: "business-modeler",
         viewpoint: "dashboard",
         tasks: [
@@ -30,11 +36,11 @@ export const CIM_PROCESS_PHASES = [
             artifactIds: ["cim-artifact.model-root"],
             types: ["CIMModel"],
             steps: [
-              "Create CIMModel with domainName and businessScope.",
+              "Create or verify CIMModel with domainName and businessScope.",
               "Set organizationName, modelingDate, and language.",
               "Apply lifecycle status and annotation conventions on the root.",
             ],
-            entryCriteria: ["Project created"],
+            entryCriteria: ["Project created or existing CIM opened for a new increment"],
             exitCriteria: ["CIMModel root with domainName exists"],
             validationRules: [],
             durationEstimate: "20m",
@@ -43,13 +49,41 @@ export const CIM_PROCESS_PHASES = [
       },
       {
         id: "cim.ph1.st2",
+        name: "Capability Slice Planning",
+        objective:
+          "Select the smallest valuable capability slice and define the cycle-level definition of done.",
+        primaryRole: "business-modeler",
+        viewpoint: "capability",
+        tasks: [
+          {
+            id: "cim.ph1.st2.t1",
+            name: "Plan capability slice",
+            primaryRole: "business-modeler",
+            viewpoint: "capability",
+            artifactIds: ["cim-artifact.increment-plan"],
+            types: ["Priority"],
+            steps: [
+              "Select one capability or bounded-context candidate from the modeling backlog.",
+              "Record slice objective, scope boundaries, assumptions, and definition of done.",
+              "Identify the validation gate and review participants for the cycle.",
+            ],
+            entryCriteria: ["CIM model root exists"],
+            exitCriteria: ["Capability-slice scope and definition of done are agreed"],
+            validationRules: [],
+            durationEstimate: "30m",
+          },
+        ],
+      },
+      {
+        id: "cim.ph1.st3",
         name: "Strategic Framing",
-        objective: "Capture measurable business intent using GQM before domain modeling.",
+        objective:
+          "Capture measurable business intent for the selected slice using GQM before domain modeling.",
         primaryRole: "business-modeler",
         viewpoint: "requirements",
         tasks: [
           {
-            id: "cim.ph1.st2.t1",
+            id: "cim.ph1.st3.t1",
             name: "Define business goals and KPIs",
             primaryRole: "business-modeler",
             viewpoint: "requirements",
@@ -59,13 +93,13 @@ export const CIM_PROCESS_PHASES = [
               "Capture BusinessGoal elements with success criteria.",
               "Define measurable KPIs linked to each goal.",
             ],
-            entryCriteria: ["CIM model root exists"],
+            entryCriteria: ["Capability-slice scope agreed"],
             exitCriteria: ["At least one goal with linked KPI"],
             validationRules: ["CIM-GOAL-001", "CIM-KPI-001"],
             durationEstimate: "45m",
           },
           {
-            id: "cim.ph1.st2.t2",
+            id: "cim.ph1.st3.t2",
             name: "Identify stakeholders",
             primaryRole: "business-modeler",
             viewpoint: "requirements",
@@ -85,9 +119,10 @@ export const CIM_PROCESS_PHASES = [
     id: "cim.ph2",
     name: "Context Discovery",
     order: 2,
-    objective: "Map who participates in the domain, what the organization can do, and shared vocabulary.",
+    objective:
+      "Map who participates in the domain, what the organization can do, and shared vocabulary.",
     primaryRole: "business-modeler",
-    entryCriteria: ["Phase Establishment complete"],
+    entryCriteria: ["Increment Framing complete"],
     exitCriteria: ["Actors, capabilities, and glossary cover the increment slice"],
     inEngine: true,
     stages: [
@@ -199,7 +234,8 @@ export const CIM_PROCESS_PHASES = [
     id: "cim.ph3",
     name: "Domain Exploration",
     order: 3,
-    objective: "Explore information, structure, and behavior using Twin Peaks — iterate until CQRS surface is coherent.",
+    objective:
+      "Explore information, structure, and behavior using Twin Peaks — iterate until CQRS surface is coherent.",
     primaryRole: "business-modeler",
     entryCriteria: ["Context Discovery complete for slice"],
     exitCriteria: ["Commands, queries, and events cover primary use cases"],
@@ -311,7 +347,12 @@ export const CIM_PROCESS_PHASES = [
                 primaryRole: "business-modeler",
                 viewpoint: "domain",
                 artifactIds: ["cim-artifact.domain-structure"],
-                types: ["ValueObject", "DomainRelationship", "DomainRelationshipType", "DomainConcept"],
+                types: [
+                  "ValueObject",
+                  "DomainRelationship",
+                  "DomainRelationshipType",
+                  "DomainConcept",
+                ],
                 steps: [
                   "Add ValueObject elements for descriptive data.",
                   "Model DomainRelationship elements between concepts.",
@@ -328,7 +369,8 @@ export const CIM_PROCESS_PHASES = [
       {
         id: "cim.ph3.st3",
         name: "Behavior Surface",
-        objective: "CQRS and event storming — commands, queries, events linked to actors and capabilities.",
+        objective:
+          "CQRS and event storming — commands, queries, events linked to actors and capabilities.",
         primaryRole: "business-modeler",
         viewpoint: "eventstorming",
         subStages: [
@@ -415,7 +457,8 @@ export const CIM_PROCESS_PHASES = [
     id: "cim.ph4",
     name: "Domain Synthesis",
     order: 4,
-    objective: "Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.",
+    objective:
+      "Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.",
     primaryRole: "business-modeler",
     entryCriteria: ["Domain Exploration coherent for slice"],
     exitCriteria: ["Bounded contexts assigned with memberships"],
@@ -554,10 +597,15 @@ export const CIM_PROCESS_PHASES = [
     id: "cim.ph5",
     name: "Convergence & Readiness",
     order: 5,
-    objective: "Backfill requirements, record transformation contracts, close traceability and EVL gate.",
+    objective:
+      "Backfill requirements, record transformation contracts, close traceability and EVL gate.",
     primaryRole: "requirements-engineer",
     entryCriteria: ["Domain Synthesis complete for slice"],
-    exitCriteria: ["CIM EVL passes", "Readiness gate approved"],
+    exitCriteria: [
+      "CIM EVL passes",
+      "Readiness gate approved",
+      "CIM increment reviewed and improvement actions captured",
+    ],
     inEngine: true,
     stages: [
       {
@@ -658,6 +706,35 @@ export const CIM_PROCESS_PHASES = [
             exitCriteria: ["CIM EVL passes; readiness approved"],
             validationRules: ["cim-semantic-validation"],
             durationEstimate: "1-2h",
+          },
+        ],
+      },
+      {
+        id: "cim.ph5.st4",
+        name: "Increment Review & Adapt",
+        objective:
+          "Review the CIM slice with stakeholders, accept the increment, and adapt the next cycle.",
+        primaryRole: "process-reviewer",
+        viewpoint: "traceability",
+        tasks: [
+          {
+            id: "cim.ph5.st4.t1",
+            name: "Review and adapt CIM increment",
+            primaryRole: "process-reviewer",
+            viewpoint: "traceability",
+            artifactIds: ["cim-artifact.increment-review"],
+            types: [],
+            steps: [
+              "Review slice outcomes against goals, KPIs, and acceptance criteria.",
+              "Record accepted scope, deferred work, and stakeholder feedback.",
+              "Create improvement actions and backlog adjustments for the next engine cycle.",
+            ],
+            entryCriteria: ["CIM EVL passes or all blocking findings are dispositioned"],
+            exitCriteria: [
+              "Increment accepted or rework loop selected; improvement actions captured",
+            ],
+            validationRules: [],
+            durationEstimate: "45m",
           },
         ],
       },

@@ -1,7 +1,8 @@
 @startuml pim-process
-title PIM Modeling Process — SPEM (6 Phases, Stages, Tasks)
+title PIM Modeling Process — SPEM Engine (6 Phases per Service Slice)
 start
-partition "Phase 1 — Architecture Establishment (once)" {
+partition "Phase 1 — Architecture & Slice Framing (engine)" {
+  :Stage — Service Slice Planning;
   :Stage — Architecture Posture;
   :Stage — Service Boundaries;
 }
@@ -22,13 +23,18 @@ partition "Phase 5 — Assurance & Configuration (engine)" {
   :Stage — Architecture Policies;
   :Stage — External & Config;
 }
-partition "Phase 6 — Platform Readiness (gate)" {
+partition "Phase 6 — Platform Readiness (engine)" {
   :Stage — Platform Mapping Assessment;
   :Stage — Trace & Readiness Gate;
+  :Stage — Increment Review & Adapt;
 }
 if (PIM EVL pass?) then (yes)
   :PIM→PSM ETL gate;
-  stop
+  if (More service slices?) then (yes)
+    backward :Stage — Service Slice Planning;
+  else (no)
+    stop
+  endif
 else (no)
   backward :Platform Readiness;
 endif

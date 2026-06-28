@@ -31,7 +31,7 @@ function flattenStages(stages, depth = 0) {
 }
 
 function renderTask(task) {
-  const lines = [`#### ${task.name} (\`${task.id}\`)`];
+  const lines = [`#### ${task.name} (\`${task.id}\`)`, ""];
   if (task.viewpoint) {
     lines.push(`**Viewpoint:** ${task.viewpoint}`);
   }
@@ -39,12 +39,22 @@ function renderTask(task) {
     lines.push(`**Duration:** ${task.durationEstimate}`);
   }
   if (task.artifacts?.length) {
-    lines.push(
-      `**Artifacts:** ${task.artifacts.map((a) => a.name).join(", ")}`,
-    );
+    const artifactLine = `**Artifacts:** ${task.artifacts.map((a) => a.name).join(", ")}`;
+    if (artifactLine.length > 110) {
+      lines.push("**Artifacts:**", "");
+      task.artifacts.forEach((a) => lines.push(`- ${a.name}`));
+    } else {
+      lines.push(artifactLine);
+    }
   }
   if (task.paletteFocus?.length) {
-    lines.push(`**Palette focus:** ${task.paletteFocus.map((t) => `\`${t}\``).join(", ")}`);
+    const focusLine = `**Palette focus:** ${task.paletteFocus.map((t) => `\`${t}\``).join(", ")}`;
+    if (focusLine.length > 110) {
+      lines.push("**Palette focus:**", "");
+      task.paletteFocus.forEach((t) => lines.push(`- \`${t}\``));
+    } else {
+      lines.push(focusLine);
+    }
   }
   if (task.steps?.length) {
     lines.push("", "**Steps:**", "");

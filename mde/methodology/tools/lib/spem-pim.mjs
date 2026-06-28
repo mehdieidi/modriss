@@ -7,19 +7,52 @@
 export const PIM_PROCESS_PHASES = [
   {
     id: "pim.ph1",
-    name: "Architecture Establishment",
+    name: "Architecture & Slice Framing",
     order: 1,
     objective:
-      "Establish PIM root posture and serverless service boundaries aligned to CIM bounded contexts.",
+      "Frame the current service slice, establish or refresh PIM posture, and align serverless boundaries to CIM intent.",
     primaryRole: "solution-architect",
-    entryCriteria: ["CIM transform complete or greenfield PIM"],
-    exitCriteria: ["PIM root configured", "Services cover deployable boundaries"],
-    inEngine: false,
+    entryCriteria: ["CIM transform complete, prior PIM increment selected, or greenfield PIM"],
+    exitCriteria: [
+      "PIM root configured",
+      "Service-slice objective and architecture definition of done are agreed",
+      "Services cover deployable boundaries for the slice",
+    ],
+    inEngine: true,
     stages: [
+      {
+        id: "pim.ph1.st0",
+        name: "Service Slice Planning",
+        objective: "Select the PIM service slice and define architecture review expectations.",
+        primaryRole: "solution-architect",
+        viewpoint: "services",
+        tasks: [
+          {
+            id: "pim.ph1.st0.t1",
+            name: "Plan service slice",
+            primaryRole: "solution-architect",
+            viewpoint: "services",
+            artifactIds: ["pim-artifact.increment-plan"],
+            types: [],
+            steps: [
+              "Select one service slice traced to CIM goals, bounded contexts, and behavior.",
+              "Record scope boundaries, architectural risks, manual transform decisions, and definition of done.",
+              "Confirm the expected PIM EVL gate and review participants for the cycle.",
+            ],
+            entryCriteria: [
+              "CIM transform complete, prior PIM increment selected, or greenfield PIM",
+            ],
+            exitCriteria: ["Service-slice scope and definition of done are agreed"],
+            validationRules: [],
+            durationEstimate: "30m",
+          },
+        ],
+      },
       {
         id: "pim.ph1.st1",
         name: "Architecture Posture",
-        objective: "Create the PIMModel root with architecture style and implementation profile.",
+        objective:
+          "Create or refresh the PIMModel root with architecture style and implementation profile.",
         primaryRole: "solution-architect",
         viewpoint: "dashboard",
         tasks: [
@@ -31,10 +64,10 @@ export const PIM_PROCESS_PHASES = [
             artifactIds: ["pim-artifact.architecture-posture"],
             types: ["PIMModel"],
             steps: [
-              "Create PIMModel with domain linkage to CIM source.",
+              "Create or verify PIMModel with domain linkage to CIM source.",
               "Set modeling date, lifecycle status, and annotation conventions.",
             ],
-            entryCriteria: ["CIM transform complete or greenfield PIM"],
+            entryCriteria: ["Service-slice scope agreed"],
             exitCriteria: ["PIMModel root exists"],
             validationRules: [],
             durationEstimate: "20m",
@@ -60,7 +93,8 @@ export const PIM_PROCESS_PHASES = [
       {
         id: "pim.ph1.st2",
         name: "Service Boundaries",
-        objective: "Define serverless services and element memberships aligned to bounded contexts.",
+        objective:
+          "Define serverless services and element memberships aligned to bounded contexts.",
         primaryRole: "solution-architect",
         viewpoint: "services",
         tasks: [
@@ -104,16 +138,18 @@ export const PIM_PROCESS_PHASES = [
     id: "pim.ph2",
     name: "Contracts & Data",
     order: 2,
-    objective: "Define API/event contracts and persistent data architecture for the increment slice.",
+    objective:
+      "Define API/event contracts and persistent data architecture for the increment slice.",
     primaryRole: "solution-architect",
-    entryCriteria: ["Architecture Establishment complete"],
+    entryCriteria: ["Architecture & Slice Framing complete"],
     exitCriteria: ["Contracts exist for APIs and events", "Persistent stores cover domain data"],
     inEngine: true,
     stages: [
       {
         id: "pim.ph2.st1",
         name: "Contracts & Schemas",
-        objective: "Model schemas, validation constraints, and event envelopes aligned to CIM behavior.",
+        objective:
+          "Model schemas, validation constraints, and event envelopes aligned to CIM behavior.",
         primaryRole: "solution-architect",
         viewpoint: "contracts",
         tasks: [
@@ -123,13 +159,7 @@ export const PIM_PROCESS_PHASES = [
             primaryRole: "solution-architect",
             viewpoint: "contracts",
             artifactIds: ["pim-artifact.contract-catalog"],
-            types: [
-              "Schema",
-              "SchemaField",
-              "SchemaEnumLiteral",
-              "SchemaKind",
-              "FieldType",
-            ],
+            types: ["Schema", "SchemaField", "SchemaEnumLiteral", "SchemaKind", "FieldType"],
             steps: [
               "Create Schema elements with fields and enum literals.",
               "Set schema kind and field types aligned to CIM information items.",
@@ -248,7 +278,8 @@ export const PIM_PROCESS_PHASES = [
       {
         id: "pim.ph3.st1",
         name: "Compute Units",
-        objective: "Define functions with contracts and triggers mapped to CIM commands and events.",
+        objective:
+          "Define functions with contracts and triggers mapped to CIM commands and events.",
         primaryRole: "solution-architect",
         viewpoint: "compute",
         tasks: [
@@ -468,7 +499,8 @@ export const PIM_PROCESS_PHASES = [
     id: "pim.ph5",
     name: "Assurance & Configuration",
     order: 5,
-    objective: "Apply security, operational policies, and environment configuration across the slice.",
+    objective:
+      "Apply security, operational policies, and environment configuration across the slice.",
     primaryRole: "solution-architect",
     entryCriteria: ["Integration & Orchestration complete for slice"],
     exitCriteria: [
@@ -481,7 +513,8 @@ export const PIM_PROCESS_PHASES = [
       {
         id: "pim.ph5.st1",
         name: "Security & Identity",
-        objective: "Configure identity providers, principals, and authorization for APIs and functions.",
+        objective:
+          "Configure identity providers, principals, and authorization for APIs and functions.",
         primaryRole: "solution-architect",
         viewpoint: "security",
         tasks: [
@@ -491,12 +524,7 @@ export const PIM_PROCESS_PHASES = [
             primaryRole: "solution-architect",
             viewpoint: "security",
             artifactIds: ["pim-artifact.security-model"],
-            types: [
-              "IdentityProvider",
-              "Principal",
-              "IdentityKind",
-              "PrincipalKind",
-            ],
+            types: ["IdentityProvider", "Principal", "IdentityKind", "PrincipalKind"],
             steps: [
               "Define IdentityProvider elements aligned to CIM actors.",
               "Register Principal elements for human and service identities.",
@@ -535,7 +563,8 @@ export const PIM_PROCESS_PHASES = [
       {
         id: "pim.ph5.st2",
         name: "Architecture Policies",
-        objective: "Apply resilience, observability, governance, and cost policies to architecture elements.",
+        objective:
+          "Apply resilience, observability, governance, and cost policies to architecture elements.",
         primaryRole: "solution-architect",
         viewpoint: "policies",
         subStages: [
@@ -756,8 +785,12 @@ export const PIM_PROCESS_PHASES = [
     objective: "Assess platform capability mapping, close traceability, and pass PIM EVL gate.",
     primaryRole: "process-reviewer",
     entryCriteria: ["Assurance & Configuration complete for slice"],
-    exitCriteria: ["PIM EVL passes", "Readiness gate approved"],
-    inEngine: false,
+    exitCriteria: [
+      "PIM EVL passes",
+      "Readiness gate approved",
+      "PIM increment reviewed and improvement actions captured",
+    ],
+    inEngine: true,
     stages: [
       {
         id: "pim.ph6.st1",
@@ -807,6 +840,35 @@ export const PIM_PROCESS_PHASES = [
             exitCriteria: ["PIM EVL passes; readiness gate approved"],
             validationRules: ["pim-semantic-validation"],
             durationEstimate: "1-2h",
+          },
+        ],
+      },
+      {
+        id: "pim.ph6.st3",
+        name: "Increment Review & Adapt",
+        objective:
+          "Review the service slice architecture, accept the increment, and adapt the next cycle.",
+        primaryRole: "process-reviewer",
+        viewpoint: "readiness",
+        tasks: [
+          {
+            id: "pim.ph6.st3.t1",
+            name: "Review and adapt PIM increment",
+            primaryRole: "process-reviewer",
+            viewpoint: "readiness",
+            artifactIds: ["pim-artifact.increment-review"],
+            types: [],
+            steps: [
+              "Review architecture outcomes against CIM trace links and PIM definition of done.",
+              "Record accepted scope, deferred architecture decisions, and platform mapping feedback.",
+              "Create improvement actions and backlog adjustments for the next service slice.",
+            ],
+            entryCriteria: ["PIM EVL passes or all blocking findings are dispositioned"],
+            exitCriteria: [
+              "Increment accepted or rework loop selected; improvement actions captured",
+            ],
+            validationRules: [],
+            durationEstimate: "45m",
           },
         ],
       },

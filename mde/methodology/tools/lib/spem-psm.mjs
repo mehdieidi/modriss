@@ -7,18 +7,52 @@
 export const PSM_PROCESS_PHASES = [
   {
     id: "psm.ph1",
-    name: "Deployment Foundation",
+    name: "Deployment & Slice Framing",
     order: 1,
-    objective: "Establish AWS account strategy, SAM stack scaffolding, and security baseline.",
+    objective:
+      "Frame the current deployable slice and establish or refresh AWS account, stack, and security foundations.",
     primaryRole: "cloud-platform-engineer",
-    entryCriteria: ["PIM transform complete or greenfield PSM"],
-    exitCriteria: ["AWS root and stage strategy configured", "Security baseline applied"],
-    inEngine: false,
+    entryCriteria: ["PIM transform complete, prior PSM increment selected, or greenfield PSM"],
+    exitCriteria: [
+      "AWS root and stage strategy configured",
+      "Deployable-slice objective and deployment definition of done are agreed",
+      "Security baseline applied",
+    ],
+    inEngine: true,
     stages: [
+      {
+        id: "psm.ph1.st0",
+        name: "Deployable Slice Planning",
+        objective: "Select the AWS deployable slice and define deployment review expectations.",
+        primaryRole: "cloud-platform-engineer",
+        viewpoint: "stack",
+        tasks: [
+          {
+            id: "psm.ph1.st0.t1",
+            name: "Plan deployable slice",
+            primaryRole: "cloud-platform-engineer",
+            viewpoint: "stack",
+            artifactIds: ["psm-artifact.increment-plan"],
+            types: [],
+            steps: [
+              "Select one PIM service slice or deployment unit to materialize on AWS.",
+              "Record AWS account, region, stage, networking, IAM, and deployment assumptions.",
+              "Define the PSM EVL gate, artifact-generation readiness criteria, and review participants.",
+            ],
+            entryCriteria: [
+              "PIM transform complete, prior PSM increment selected, or greenfield PSM",
+            ],
+            exitCriteria: ["Deployable-slice scope and definition of done are agreed"],
+            validationRules: [],
+            durationEstimate: "30m",
+          },
+        ],
+      },
       {
         id: "psm.ph1.st1",
         name: "Account & Stage Strategy",
-        objective: "Create AwsPsmModel root with partition, region, naming, and tagging policies.",
+        objective:
+          "Create or refresh AwsPsmModel root with partition, region, naming, and tagging policies.",
         primaryRole: "cloud-platform-engineer",
         viewpoint: "dashboard",
         tasks: [
@@ -30,10 +64,10 @@ export const PSM_PROCESS_PHASES = [
             artifactIds: ["psm-artifact.deployment-strategy"],
             types: ["AwsPsmModel", "AwsPartition"],
             steps: [
-              "Create AwsPsmModel with partition and region defaults.",
+              "Create or verify AwsPsmModel with partition and region defaults.",
               "Link to PIM source model and set lifecycle metadata.",
             ],
-            entryCriteria: ["PIM transform complete or greenfield PSM"],
+            entryCriteria: ["Deployable-slice scope agreed"],
             exitCriteria: ["AwsPsmModel root exists"],
             validationRules: [],
             durationEstimate: "20m",
@@ -175,9 +209,12 @@ export const PSM_PROCESS_PHASES = [
     order: 2,
     objective: "Configure VPC networking and Cognito identity resources aligned to PIM auth model.",
     primaryRole: "cloud-platform-engineer",
-    entryCriteria: ["Deployment Foundation complete"],
-    exitCriteria: ["Network posture defined for workloads", "Identity resources match PIM auth model"],
-    inEngine: false,
+    entryCriteria: ["Deployment & Slice Framing complete"],
+    exitCriteria: [
+      "Network posture defined for workloads",
+      "Identity resources match PIM auth model",
+    ],
+    inEngine: true,
     stages: [
       {
         id: "psm.ph2.st1",
@@ -208,12 +245,7 @@ export const PSM_PROCESS_PHASES = [
             primaryRole: "cloud-platform-engineer",
             viewpoint: "networking",
             artifactIds: ["psm-artifact.network-identity"],
-            types: [
-              "VpcEndpoint",
-              "VpcEndpointReference",
-              "SecurityGroup",
-              "SecurityGroupRule",
-            ],
+            types: ["VpcEndpoint", "VpcEndpointReference", "SecurityGroup", "SecurityGroupRule"],
             steps: [
               "Configure VpcEndpoint elements for AWS service access.",
               "Define SecurityGroup and SecurityGroupRule for workload isolation.",
@@ -286,7 +318,8 @@ export const PSM_PROCESS_PHASES = [
     id: "psm.ph3",
     name: "Storage & Messaging",
     order: 3,
-    objective: "Provision durable storage and messaging resources matching PIM data and event channels.",
+    objective:
+      "Provision durable storage and messaging resources matching PIM data and event channels.",
     primaryRole: "cloud-platform-engineer",
     entryCriteria: ["Network & Identity complete"],
     exitCriteria: ["Durable stores match PIM data model", "Messaging matches PIM event channels"],
@@ -766,8 +799,12 @@ export const PSM_PROCESS_PHASES = [
     objective: "Create integration relationship views, close traceability, and pass PSM EVL gate.",
     primaryRole: "process-reviewer",
     entryCriteria: ["API & Orchestration complete for slice"],
-    exitCriteria: ["PSM EVL passes", "Readiness gate approved"],
-    inEngine: false,
+    exitCriteria: [
+      "PSM EVL passes",
+      "Readiness gate approved",
+      "PSM increment reviewed and improvement actions captured",
+    ],
+    inEngine: true,
     stages: [
       {
         id: "psm.ph6.st1",
@@ -831,6 +868,35 @@ export const PSM_PROCESS_PHASES = [
             exitCriteria: ["PSM EVL passes; readiness gate approved"],
             validationRules: ["psm-semantic-validation"],
             durationEstimate: "1-2h",
+          },
+        ],
+      },
+      {
+        id: "psm.ph6.st3",
+        name: "Increment Review & Adapt",
+        objective:
+          "Review the AWS deployment slice, accept the increment, and adapt the next cycle.",
+        primaryRole: "process-reviewer",
+        viewpoint: "readiness",
+        tasks: [
+          {
+            id: "psm.ph6.st3.t1",
+            name: "Review and adapt PSM increment",
+            primaryRole: "process-reviewer",
+            viewpoint: "readiness",
+            artifactIds: ["psm-artifact.increment-review"],
+            types: [],
+            steps: [
+              "Review AWS resource wiring, least-privilege posture, and artifact-generation readiness.",
+              "Record accepted scope, deferred deployment decisions, and operational feedback.",
+              "Create improvement actions and backlog adjustments for the next deployable slice.",
+            ],
+            entryCriteria: ["PSM EVL passes or all blocking findings are dispositioned"],
+            exitCriteria: [
+              "Increment accepted or rework loop selected; improvement actions captured",
+            ],
+            validationRules: [],
+            durationEstimate: "45m",
           },
         ],
       },

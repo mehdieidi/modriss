@@ -26,7 +26,7 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  margin-left: calc(var(--rail-w, 52px) + var(--sidebar-w, 248px) + 6px);
+  margin-left: calc(var(--sidebar-w, 248px) + 4px);
   display: flex;
   flex-direction: column;
   border: var(--glass-pane-border);
@@ -137,6 +137,33 @@
   background: color-mix(in srgb, var(--accent) 18%, var(--panel));
 }
 
+.methodology-map-back {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.methodology-map-back:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.methodology-map-back:not(:disabled):hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.methodology-map-back .icon-mask {
+  width: 16px;
+  height: 16px;
+}
+
 .methodology-map-close {
   width: 32px;
   height: 32px;
@@ -158,7 +185,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr minmax(240px, 32%);
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 24%);
 }
 
 .methodology-map-canvas-wrap {
@@ -372,6 +399,50 @@
   padding-left: 1.1rem;
   font-size: 0.74rem;
   color: var(--muted);
+}
+
+.methodology-map-detail ol {
+  margin: 0 0 12px;
+  padding-left: 1.1rem;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.methodology-map-detail code {
+  font-size: 0.68rem;
+}
+
+.map-detail-section {
+  margin: 0 0 12px;
+}
+
+.map-detail-section-title {
+  margin: 0 0 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.map-detail-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 0 12px;
+}
+
+.map-detail-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 7px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-2) 78%, transparent);
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  line-height: 1.15;
 }
 
 .methodology-map-detail-actions {

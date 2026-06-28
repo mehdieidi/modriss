@@ -43,6 +43,12 @@
       "name": "Human-in-the-loop transforms",
       "appliesTo": "process",
       "text": "ETL and M2T are assistive. ManualDecision and readiness gates block promotion when automation is uncertain."
+    },
+    {
+      "id": "e2e.guid.empirical-control",
+      "name": "Empirical process control",
+      "appliesTo": "process",
+      "text": "Plan a small vertical slice, inspect executable model evidence at each gate, and adapt the backlog after artifact review."
     }
   ],
   "processEngine": {

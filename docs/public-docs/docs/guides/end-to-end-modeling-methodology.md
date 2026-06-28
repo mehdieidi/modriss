@@ -6,17 +6,21 @@ intent through deployable AWS artifacts. It connects three level-specific method
 milestones, EVL gates, iteration loops, and human-in-the-loop refinement.
 
 The machine-readable process definition lives at
-`mde/methodology/process-definitions/end-to-end.json`. Its **`processEngine`** is the top-level agile kernel: one full CIM → PIM → PSM → artifacts revolution per capability increment, looping while backlog remains.
+`mde/methodology/process-definitions/end-to-end.json`. Its **`processEngine`** is the top-level agile
+kernel: one full CIM → PIM → PSM → artifacts revolution per capability increment, looping while
+backlog remains.
 
 ## Incremental Delivery (Engine Cycle)
 
 The end-to-end engine delivers in **capability slices**:
 
 1. **Increment Planning** (`e2e.p0`) — engine cycle entry
-2. **CIM engine** → **CIM→PIM** → **PIM engine** → **PIM→PSM** → **PSM engine** → **M2T** → **Artifact closure**
-3. **Engine loop** — retrospective, then back to step 1 if more slices remain
+2. **CIM engine** → **CIM→PIM** → **PIM engine** → **PIM→PSM** → **PSM engine** → **M2T** →
+   **Artifact closure**
+3. **Engine loop** — review/adapt inside the active phase, then back to step 1 if more slices remain
 
-Cross-level **rework loops** inside the engine (PIM feedback to CIM, etc.) are not failures — they are how the engine corrects course within a revolution.
+Cross-level **rework loops** inside the engine (PIM feedback to CIM, etc.) are not failures — they
+are how the engine corrects course within a revolution.
 
 ## Roles Across the Pipeline
 
@@ -96,7 +100,7 @@ detail. Follow all five CIM phases (`cim.ph1`–`cim.ph5`) in SPEM order: phases
 
 ### Key activities
 
-1. `cim.ph1` Establishment: model root and strategic intent (GQM).
+1. `cim.ph1` Increment Framing: plan the capability slice, verify the model root, and set strategic intent (GQM).
 2. `cim.ph2` Context Discovery: actors, capabilities, ubiquitous language.
 3. `cim.ph3` Domain Exploration: information taxonomy **before** entities (`CIM-ENTITY-001`), structure, CQRS behavior.
 4. `cim.ph4` Domain Synthesis: aggregates, processes, bounded contexts.
@@ -159,12 +163,12 @@ Refine generated PIM through six SPEM phases (`pim.ph1`–`pim.ph6`): phases →
 
 ### Key activities
 
-1. `pim.ph1` Architecture Establishment: model root, services, boundaries.
+1. `pim.ph1` Architecture & Slice Framing: plan the service slice, verify the model root, services, and boundaries.
 2. `pim.ph2` Contracts & Data: schemas, events, data stores.
 3. `pim.ph3` Compute & Exposure: functions, APIs.
 4. `pim.ph4` Integration & Orchestration: channels, workflows.
 5. `pim.ph5` Assurance & Configuration: security, policies, external config.
-6. `pim.ph6` Platform Readiness: mapping assessment and EVL gate.
+6. `pim.ph6` Platform Readiness: mapping assessment, EVL gate, increment review, and improvement actions.
 
 ### Common mistakes
 
@@ -223,12 +227,12 @@ Refine generated AWS resources through six SPEM phases (`psm.ph1`–`psm.ph6`).
 
 ### Key activities
 
-1. `psm.ph1` Deployment Foundation: account strategy, stacks, security baseline.
-2. `psm.ph2` Network & Identity: VPC, Cognito.
+1. `psm.ph1` Deployment & Slice Framing: plan the deployable slice, account strategy, stacks, security baseline.
+2. `psm.ph2` Network & Identity: VPC, Cognito, and per-slice network posture.
 3. `psm.ph3` Storage & Messaging: DynamoDB, S3, SQS/SNS.
 4. `psm.ph4` Event Fabric & Compute: EventBridge, Lambda.
 5. `psm.ph5` API & Orchestration: API Gateway, Step Functions, CloudWatch.
-6. `psm.ph6` Integration Views & Readiness: relationship views and EVL gate.
+6. `psm.ph6` Integration Views & Readiness: relationship views, EVL gate, increment review, and improvement actions.
 
 ### Common mistakes
 

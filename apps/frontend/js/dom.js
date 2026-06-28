@@ -14,6 +14,7 @@ export const el = {
   methodologyMapTitle: document.getElementById("methodologyMapTitle"),
   methodologyMapBreadcrumb: document.getElementById("methodologyMapBreadcrumb"),
   methodologyMapSubtitle: document.getElementById("methodologyMapSubtitle"),
+  methodologyMapBackBtn: document.getElementById("methodologyMapBackBtn"),
   methodologyMapCloseBtn: document.getElementById("methodologyMapCloseBtn"),
   methodologyMapZoomInBtn: document.getElementById("methodologyMapZoomInBtn"),
   methodologyMapZoomOutBtn: document.getElementById("methodologyMapZoomOutBtn"),

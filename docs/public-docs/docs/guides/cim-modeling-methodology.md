@@ -2,30 +2,39 @@
 
 The Computation-Independent Model (CIM) captures business intent, domain structure, behavior, and
 governance without platform or implementation detail. This guide is the canonical walkthrough for
-Modless CIM modeling: **5 sequential phases**, each containing **stages** (with optional sub-stages) and **atomic tasks** that produce SPEM artifacts bound to CIM metamodel elements. Work is ordered by metamodel dependencies and EVL gates—not a linear waterfall.
+Modless CIM modeling: **5 sequential phases**, each containing **stages** (with optional
+sub-stages) and **atomic tasks** that produce SPEM artifacts bound to CIM metamodel elements. Work is
+ordered by metamodel dependencies and EVL gates—not a linear waterfall.
 
-Use the **Guided Modeling** panel (when enabled) or this document to track phase → stage → task progress. Each task maps to a modeling viewpoint and palette focus in the editor. When exit criteria are not met, use **engine rework loops** (Twin Peaks) to revisit earlier stages within the same engine cycle.
+Use the **Guided Modeling** panel (when enabled) or this document to track phase → stage → task
+progress. Each task maps to a modeling viewpoint and palette focus in the editor. When exit criteria
+are not met, use **engine rework loops** (Twin Peaks) to revisit earlier stages within the same engine
+cycle.
 
 ## SPEM Structure
 
-```
+```text
 Process → phases[] → stages[] → (subStages[]) → tasks[] (atomic)
          roles[], artifactKinds[], guidelines[], processEngine
 ```
 
 ## Process Engine
 
-The **process engine** (`processEngine` in JSON) is the iterative agile kernel: the repeating cycle that plans, models, reviews, delivers, and retrospects **one capability slice per revolution**.
+The **process engine** (`processEngine` in JSON) is the iterative agile kernel: the repeating cycle
+that frames, models, validates, reviews, and adapts **one capability slice per revolution**.
 
-CIM engine cycle: **Plan → Context Discovery → Domain Exploration → Domain Synthesis → Convergence → Review → Deliver → Retrospect → ↻**
+CIM engine cycle: **Increment Framing → Context Discovery → Domain Exploration → Domain Synthesis →
+Convergence, Readiness & Review → ↻**
 
-Before the first cycle, run **Establishment** once (`cim.ph1`). While modeling inside a cycle, use **engine rework loops** (e.g. language refinement back to glossary, Twin Peaks back to domain structure).
+The first cycle creates the CIM root; later cycles refresh the same phase for the next slice. While
+modeling inside a cycle, use **engine rework loops** (e.g. language refinement back to glossary, Twin
+Peaks back to domain structure).
 
 ## Sequential Phases
 
 | Phase     | Name                    | In engine | Stages                                                                    |
 | --------- | ----------------------- | --------- | ------------------------------------------------------------------------- |
-| `cim.ph1` | Establishment           | once      | Program Charter, Strategic Framing                                        |
+| `cim.ph1` | Increment Framing       | ✓         | Program Charter, Capability Slice Planning, Strategic Framing             |
 | `cim.ph2` | Context Discovery       | ✓         | Participation Model, Capability Landscape, Ubiquitous Language            |
 | `cim.ph3` | Domain Exploration      | ✓         | Information Architecture, Structural Model, Behavior Surface (sub-stages) |
 | `cim.ph4` | Domain Synthesis        | ✓         | Aggregate Boundaries, Process & Decisions, Bounded Contexts               |
@@ -33,17 +42,17 @@ Before the first cycle, run **Establishment** once (`cim.ph1`). While modeling i
 
 ## Roles
 
-| Role                      | Responsibility in CIM                                                         |
-| ------------------------- | ----------------------------------------------------------------------------- |
-| **Business Modeler**      | Establishment through synthesis: intent, domain, behavior, process, contracts |
-| **Requirements Engineer** | Convergence phase: requirements, acceptance criteria, governance constraints  |
-| **Process Reviewer**      | EVL gate approval and production readiness sign-off                           |
+| Role                      | Responsibility in CIM                                                             |
+| ------------------------- | --------------------------------------------------------------------------------- |
+| **Business Modeler**      | Increment framing through synthesis: intent, domain, behavior, process, contracts |
+| **Requirements Engineer** | Convergence phase: requirements, acceptance criteria, governance constraints      |
+| **Process Reviewer**      | EVL gate approval and production readiness sign-off                               |
 
 ## Phase Flow
 
 ```mermaid
 flowchart TD
-  PH1["Phase 1 — Establishment"]
+  PH1["Phase 1 — Increment Framing"]
   PH2["Phase 2 — Context Discovery"]
   PH3["Phase 3 — Domain Exploration"]
   PH4["Phase 4 — Domain Synthesis"]
@@ -59,7 +68,7 @@ flowchart TD
 
 | Phase | Name                    | Primary role                             | Key artifacts                                                 |
 | ----- | ----------------------- | ---------------------------------------- | ------------------------------------------------------------- |
-| 1     | Establishment           | Business Modeler                         | CIM Model Root, Strategic Intent                              |
+| 1     | Increment Framing       | Business Modeler                         | CIM Model Root, CIM Increment Plan, Strategic Intent          |
 | 2     | Context Discovery       | Business Modeler                         | Participation Model, Capability Map, Glossary                 |
 | 3     | Domain Exploration      | Business Modeler                         | Information Taxonomy, Domain Structure, CQRS Behavior Surface |
 | 4     | Domain Synthesis        | Business Modeler                         | Aggregates, Process Flows, Bounded Contexts                   |
@@ -70,26 +79,27 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modless.cim.modeling` · 5 phases · 23 atomic tasks · CIM metamodel coverage enforced in CI.
+Process `modless.cim.modeling` · 5 phases · 25 atomic tasks · CIM metamodel coverage enforced in CI.
 
-### Establishment (`cim.ph1`)
+### Increment Framing (`cim.ph1`)
 
-Establish the CIM program container and strategic intent that anchors all later modeling.
+Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.
 
-**Runs:** once per program · **Role:** business-modeler
+**Runs:** in engine cycle · **Role:** business-modeler
 
 **Phase entry:**
 
-- Modless project created
+- Modless project created or prior CIM increment selected for evolution
 
 **Phase exit:**
 
 - CIMModel root exists
-- At least one BusinessGoal with KPI
+- Capability-slice objective and definition of done are agreed
+- At least one BusinessGoal with KPI traces to the slice
 
 #### Program Charter (`cim.ph1.st1`)
 
-Create the CIMModel root and modeling conventions.
+Create the CIMModel root and modeling conventions on the first cycle; refresh them when the program scope changes.
 
 **Viewpoint:** dashboard
 
@@ -104,27 +114,55 @@ Create the CIMModel root and modeling conventions.
 
 **Steps:**
 
-1. Create CIMModel with domainName and businessScope.
+1. Create or verify CIMModel with domainName and businessScope.
 2. Set organizationName, modelingDate, and language.
 3. Apply lifecycle status and annotation conventions on the root.
 
 **Entry criteria:**
 
-- Project created
+- Project created or existing CIM opened for a new increment
 
 **Exit criteria:**
 
 - CIMModel root with domainName exists
 
-#### Strategic Framing (`cim.ph1.st2`)
+#### Capability Slice Planning (`cim.ph1.st2`)
 
-Capture measurable business intent using GQM before domain modeling.
+Select the smallest valuable capability slice and define the cycle-level definition of done.
+
+**Viewpoint:** capability
+
+##### Tasks
+
+#### Plan capability slice (`cim.ph1.st2.t1`)
+
+**Viewpoint:** capability
+**Duration:** 30m
+**Artifacts:** CIM Increment Plan
+
+**Steps:**
+
+1. Select one capability or bounded-context candidate from the modeling backlog.
+2. Record slice objective, scope boundaries, assumptions, and definition of done.
+3. Identify the validation gate and review participants for the cycle.
+
+**Entry criteria:**
+
+- CIM model root exists
+
+**Exit criteria:**
+
+- Capability-slice scope and definition of done are agreed
+
+#### Strategic Framing (`cim.ph1.st3`)
+
+Capture measurable business intent for the selected slice using GQM before domain modeling.
 
 **Viewpoint:** requirements
 
 ##### Tasks
 
-#### Define business goals and KPIs (`cim.ph1.st2.t1`)
+#### Define business goals and KPIs (`cim.ph1.st3.t1`)
 
 **Viewpoint:** requirements
 **Duration:** 45m
@@ -138,7 +176,7 @@ Capture measurable business intent using GQM before domain modeling.
 
 **Entry criteria:**
 
-- CIM model root exists
+- Capability-slice scope agreed
 
 **Exit criteria:**
 
@@ -149,7 +187,7 @@ Capture measurable business intent using GQM before domain modeling.
 - `CIM-GOAL-001`
 - `CIM-KPI-001`
 
-#### Identify stakeholders (`cim.ph1.st2.t2`)
+#### Identify stakeholders (`cim.ph1.st3.t2`)
 
 **Viewpoint:** requirements
 **Duration:** 30m
@@ -178,7 +216,7 @@ Map who participates in the domain, what the organization can do, and shared voc
 
 **Phase entry:**
 
-- Phase Establishment complete
+- Increment Framing complete
 
 **Phase exit:**
 
@@ -603,7 +641,20 @@ Orchestrate commands, events, and human steps into end-to-end flows.
 **Viewpoint:** process
 **Duration:** 2h
 **Artifacts:** Business Process Model
-**Palette focus:** `BusinessProcess`, `ProcessStep`, `StartStep`, `EndStep`, `CommandStep`, `QueryStep`, `EventStep`, `PolicyStep`, `HumanTaskStep`, `ExternalInteractionStep`, `DecisionStep`, `WaitStep`
+**Palette focus:**
+
+- `BusinessProcess`
+- `ProcessStep`
+- `StartStep`
+- `EndStep`
+- `CommandStep`
+- `QueryStep`
+- `EventStep`
+- `PolicyStep`
+- `HumanTaskStep`
+- `ExternalInteractionStep`
+- `DecisionStep`
+- `WaitStep`
 
 **Steps:**
 
@@ -690,6 +741,7 @@ Backfill requirements, record transformation contracts, close traceability and E
 
 - CIM EVL passes
 - Readiness gate approved
+- CIM increment reviewed and improvement actions captured
 
 #### Requirements Engineering (`cim.ph5.st1`)
 
@@ -704,7 +756,13 @@ Twin Peaks backfill — formalize requirements traced to modeled elements.
 **Viewpoint:** governance
 **Duration:** 1-2h
 **Artifacts:** Requirements Package
-**Palette focus:** `Requirement`, `RequirementRelationship`, `AcceptanceCriterion`, `NonFunctionalRequirement`, `QualityScenario`
+**Palette focus:**
+
+- `Requirement`
+- `RequirementRelationship`
+- `AcceptanceCriterion`
+- `NonFunctionalRequirement`
+- `QualityScenario`
 
 **Steps:**
 
@@ -796,6 +854,34 @@ Close trace links and production readiness before CIM→PIM.
 **Validation:**
 
 - `cim-semantic-validation`
+
+#### Increment Review & Adapt (`cim.ph5.st4`)
+
+Review the CIM slice with stakeholders, accept the increment, and adapt the next cycle.
+
+**Viewpoint:** traceability
+
+##### Tasks
+
+#### Review and adapt CIM increment (`cim.ph5.st4.t1`)
+
+**Viewpoint:** traceability
+**Duration:** 45m
+**Artifacts:** CIM Increment Review Record
+
+**Steps:**
+
+1. Review slice outcomes against goals, KPIs, and acceptance criteria.
+2. Record accepted scope, deferred work, and stakeholder feedback.
+3. Create improvement actions and backlog adjustments for the next engine cycle.
+
+**Entry criteria:**
+
+- CIM EVL passes or all blocking findings are dispositioned
+
+**Exit criteria:**
+
+- Increment accepted or rework loop selected; improvement actions captured
 
 ---
 

@@ -35,104 +35,115 @@ const KERNEL_TYPES = new Set([
 
 export const PHASE_NARRATIVES = {
   "cim.ph1": {
-    summary: "Establish the CIM program container and strategic intent that anchors all later modeling.",
-    why: "Modless project created",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    summary:
+      "Frame the current capability slice, establish or refresh the CIM program container, and anchor modeling in measurable intent.",
+    why: "Modless project created or prior CIM increment selected for evolution",
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "cim.ph2": {
-    summary: "Map who participates in the domain, what the organization can do, and shared vocabulary.",
-    why: "Phase Establishment complete",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    summary:
+      "Map who participates in the domain, what the organization can do, and shared vocabulary.",
+    why: "Increment Framing complete",
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "cim.ph3": {
-    summary: "Explore information, structure, and behavior using Twin Peaks — iterate until CQRS surface is coherent.",
+    summary:
+      "Explore information, structure, and behavior using Twin Peaks — iterate until CQRS surface is coherent.",
     why: "Context Discovery complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "cim.ph4": {
-    summary: "Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.",
+    summary:
+      "Synthesize transactional boundaries, orchestration, and bounded contexts from explored domain.",
     why: "Domain Exploration coherent for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "cim.ph5": {
-    summary: "Backfill requirements, record transformation contracts, close traceability and EVL gate.",
+    summary:
+      "Backfill requirements, record transformation contracts, close traceability and EVL gate.",
     why: "Domain Synthesis complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "pim.ph1": {
-    summary: "Establish PIM root posture and serverless service boundaries aligned to CIM bounded contexts.",
-    why: "CIM transform complete or greenfield PIM",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    summary:
+      "Frame the current service slice, establish or refresh PIM posture, and align serverless boundaries to CIM intent.",
+    why: "CIM transform complete, prior PIM increment selected, or greenfield PIM",
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "pim.ph2": {
     summary: "Define API/event contracts and persistent data architecture for the increment slice.",
-    why: "Architecture Establishment complete",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    why: "Architecture & Slice Framing complete",
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "pim.ph3": {
     summary: "Define compute units and expose them through a coherent API surface.",
     why: "Contracts & Data complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "pim.ph4": {
     summary: "Wire async integration topology and long-running workflow orchestration.",
     why: "Compute & Exposure complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "pim.ph5": {
-    summary: "Apply security, operational policies, and environment configuration across the slice.",
+    summary:
+      "Apply security, operational policies, and environment configuration across the slice.",
     why: "Integration & Orchestration complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "pim.ph6": {
     summary: "Assess platform capability mapping, close traceability, and pass PIM EVL gate.",
     why: "Assurance & Configuration complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "psm.ph1": {
-    summary: "Establish AWS account strategy, SAM stack scaffolding, and security baseline.",
-    why: "PIM transform complete or greenfield PSM",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    summary:
+      "Frame the current deployable slice and establish or refresh AWS account, stack, and security foundations.",
+    why: "PIM transform complete, prior PSM increment selected, or greenfield PSM",
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "psm.ph2": {
     summary: "Configure VPC networking and Cognito identity resources aligned to PIM auth model.",
-    why: "Deployment Foundation complete",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    why: "Deployment & Slice Framing complete",
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "psm.ph3": {
-    summary: "Provision durable storage and messaging resources matching PIM data and event channels.",
+    summary:
+      "Provision durable storage and messaging resources matching PIM data and event channels.",
     why: "Network & Identity complete",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "psm.ph4": {
     summary: "Configure EventBridge fabric and deploy Lambda compute matching PIM functions.",
     why: "Storage & Messaging complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "psm.ph5": {
     summary: "Configure API Gateway exposure and Step Functions workflows with observability.",
     why: "Event Fabric & Compute complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
   "psm.ph6": {
     summary: "Create integration relationship views, close traceability, and pass PSM EVL gate.",
     why: "API & Orchestration complete for slice",
-    relationships: ["CONTAINS","DEPENDS_ON","TRACE"],
+    relationships: ["CONTAINS", "DEPENDS_ON", "TRACE"],
   },
 };
 
 const LEVEL_INTROS = {
-  cim: "CIM process engine delivers one capability slice per cycle: plan → model (discover/explore/construct) → converge → review → deliver → retrospect → repeat.",
-  pim: "PIM process engine delivers one serverless service slice per cycle: plan → capability core → integrate → assure → review → deliver → retrospect → repeat.",
-  psm: "PSM process engine delivers one deployable AWS slice per cycle: plan → data/events → compute/expose → orchestrate → readiness → review → deliver → retrospect → repeat.",
+  cim: "CIM process engine advances one capability slice per cycle: frame → discover → explore → synthesize → converge/review → repeat.",
+  pim: "PIM process engine advances one service slice per cycle: frame → contracts/data → compute/API → integrate → assure → readiness/review → repeat.",
+  psm: "PSM process engine advances one deployable AWS slice per cycle: frame → network/identity → data/messaging → events/compute → API/workflow → readiness/review → repeat.",
 };
 
 const STAGE_NARRATIVES = {
-  "cim.s1.initiate": {
-    summary: "Once per program (before the engine): model root, strategic goals, and scope baseline.",
+  "cim.ph1": {
+    summary:
+      "Frame the capability slice, verify the model root, and anchor the cycle in measurable goals.",
   },
   "cim.s2.discover": {
-    summary: "Map who and what: actors, capabilities, and ubiquitous language for the selected slice.",
+    summary:
+      "Map who and what: actors, capabilities, and ubiquitous language for the selected slice.",
   },
   "cim.s3.explore": {
     summary: "Twin Peaks exploration loop: taxonomy → structure → behavior until CQRS is coherent.",
@@ -141,13 +152,16 @@ const STAGE_NARRATIVES = {
     summary: "Synthesize aggregates, processes, and bounded contexts from explored domain.",
   },
   "cim.s5.converge": {
-    summary: "Backfill requirements, transformation contracts, traceability, and EVL readiness gate.",
+    summary:
+      "Backfill requirements, transformation contracts, traceability, and EVL readiness gate.",
   },
-  "pim.s1.posture": {
-    summary: "Set architecture style and service boundaries aligned to CIM bounded contexts.",
+  "pim.ph1": {
+    summary:
+      "Frame the service slice, verify architecture posture, and align service boundaries to CIM traces.",
   },
   "pim.s2.capability-core": {
-    summary: "Iterate contracts, data, compute, and API until the increment slice is internally runnable.",
+    summary:
+      "Iterate contracts, data, compute, and API until the increment slice is internally runnable.",
   },
   "pim.s3.integration": {
     summary: "Wire async channels, flows, and workflow orchestration across services.",
@@ -158,8 +172,9 @@ const STAGE_NARRATIVES = {
   "pim.s5.readiness": {
     summary: "Platform mapping assessment, trace closure, and PIM EVL gate.",
   },
-  "psm.s1.foundation": {
-    summary: "AWS account strategy, SAM scaffolding, and security baseline.",
+  "psm.ph1": {
+    summary:
+      "Frame the deployable slice, verify AWS account strategy, SAM scaffolding, and security baseline.",
   },
   "psm.s2.platform": {
     summary: "Networking and Cognito identity aligned to PIM auth model.",

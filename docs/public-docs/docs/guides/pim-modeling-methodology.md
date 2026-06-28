@@ -2,35 +2,36 @@
 
 The Platform-Independent Model (PIM) describes serverless architecture—service boundaries, contracts,
 data, compute, integration, and policies—without binding to a specific cloud provider. This guide
-covers **6 sequential phases** with nested stages and atomic tasks for greenfield PIM work and post–CIM-to-PIM
-refinement.
+covers **6 sequential phases** with nested stages and atomic tasks for greenfield PIM work and
+post–CIM-to-PIM refinement.
 
-After CIM→PIM ETL, treat generated elements as **review tasks within each stage**, not a separate
-ad-hoc workflow. Iterate within engine phases when contracts or wiring gaps appear.
+After CIM→PIM ETL, treat generated elements as **draft architecture scaffolding** that still moves
+through service-slice framing, refinement, readiness, review, and adapt work. Iterate within engine
+phases when contracts or wiring gaps appear.
 
 ## Sequential Phases
 
-| Phase     | Name                        | In engine | Stages (summary)                                              |
-| --------- | --------------------------- | --------- | ------------------------------------------------------------- |
-| `pim.ph1` | Architecture Establishment  | once      | Architecture Posture, Service Boundaries                      |
-| `pim.ph2` | Contracts & Data            | ✓         | Contracts & Schemas, Data Architecture                        |
-| `pim.ph3` | Compute & Exposure          | ✓         | Compute Units, API Surface                                    |
-| `pim.ph4` | Integration & Orchestration | ✓         | Integration Topology, Workflow Orchestration                  |
-| `pim.ph5` | Assurance & Configuration   | ✓         | Security & Identity, Architecture Policies, External & Config |
-| `pim.ph6` | Platform Readiness          | gate      | Platform Mapping, Trace & Readiness                           |
+| Phase     | Name                         | In engine | Stages (summary)                                                 |
+| --------- | ---------------------------- | --------- | ---------------------------------------------------------------- |
+| `pim.ph1` | Architecture & Slice Framing | ✓         | Service Slice Planning, Architecture Posture, Service Boundaries |
+| `pim.ph2` | Contracts & Data             | ✓         | Contracts & Schemas, Data Architecture                           |
+| `pim.ph3` | Compute & Exposure           | ✓         | Compute Units, API Surface                                       |
+| `pim.ph4` | Integration & Orchestration  | ✓         | Integration Topology, Workflow Orchestration                     |
+| `pim.ph5` | Assurance & Configuration    | ✓         | Security & Identity, Architecture Policies, External & Config    |
+| `pim.ph6` | Platform Readiness           | ✓         | Platform Mapping, Trace & Readiness, Increment Review            |
 
 ## Roles
 
-| Role                   | Responsibility in PIM                                                     |
-| ---------------------- | ------------------------------------------------------------------------- |
-| **Solution Architect** | Engine phases: architecture, boundaries, contracts, integration, policies |
-| **Process Reviewer**   | Readiness phase: EVL gate approval and platform mapping readiness         |
+| Role                   | Responsibility in PIM                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| **Solution Architect** | Engine phases: slice framing, architecture, boundaries, contracts, integration, policies |
+| **Process Reviewer**   | Readiness phase: EVL gate approval and platform mapping readiness                        |
 
 ## Phase Flow
 
 ```mermaid
 flowchart TD
-  PH1["Phase 1 — Architecture Establishment"]
+  PH1["Phase 1 — Architecture & Slice Framing"]
   PH2["Phase 2 — Contracts & Data"]
   PH3["Phase 3 — Compute & Exposure"]
   PH4["Phase 4 — Integration & Orchestration"]
@@ -48,26 +49,55 @@ flowchart TD
 
 ## Task Catalog
 
-Process `modless.pim.modeling` · 6 phases · 29 atomic tasks · PIM metamodel coverage enforced in CI.
+Process `modless.pim.modeling` · 6 phases · 31 atomic tasks · PIM metamodel coverage enforced in CI.
 
-### Architecture Establishment (`pim.ph1`)
+### Architecture & Slice Framing (`pim.ph1`)
 
-Establish PIM root posture and serverless service boundaries aligned to CIM bounded contexts.
+Frame the current service slice, establish or refresh PIM posture, and align serverless boundaries to CIM intent.
 
-**Runs:** once per program · **Role:** solution-architect
+**Runs:** in engine cycle · **Role:** solution-architect
 
 **Phase entry:**
 
-- CIM transform complete or greenfield PIM
+- CIM transform complete, prior PIM increment selected, or greenfield PIM
 
 **Phase exit:**
 
 - PIM root configured
-- Services cover deployable boundaries
+- Service-slice objective and architecture definition of done are agreed
+- Services cover deployable boundaries for the slice
+
+#### Service Slice Planning (`pim.ph1.st0`)
+
+Select the PIM service slice and define architecture review expectations.
+
+**Viewpoint:** services
+
+##### Tasks
+
+#### Plan service slice (`pim.ph1.st0.t1`)
+
+**Viewpoint:** services
+**Duration:** 30m
+**Artifacts:** PIM Increment Plan
+
+**Steps:**
+
+1. Select one service slice traced to CIM goals, bounded contexts, and behavior.
+2. Record scope boundaries, architectural risks, manual transform decisions, and definition of done.
+3. Confirm the expected PIM EVL gate and review participants for the cycle.
+
+**Entry criteria:**
+
+- CIM transform complete, prior PIM increment selected, or greenfield PIM
+
+**Exit criteria:**
+
+- Service-slice scope and definition of done are agreed
 
 #### Architecture Posture (`pim.ph1.st1`)
 
-Create the PIMModel root with architecture style and implementation profile.
+Create or refresh the PIMModel root with architecture style and implementation profile.
 
 **Viewpoint:** dashboard
 
@@ -82,12 +112,12 @@ Create the PIMModel root with architecture style and implementation profile.
 
 **Steps:**
 
-1. Create PIMModel with domain linkage to CIM source.
+1. Create or verify PIMModel with domain linkage to CIM source.
 2. Set modeling date, lifecycle status, and annotation conventions.
 
 **Entry criteria:**
 
-- CIM transform complete or greenfield PIM
+- Service-slice scope agreed
 
 **Exit criteria:**
 
@@ -171,7 +201,7 @@ Define API/event contracts and persistent data architecture for the increment sl
 
 **Phase entry:**
 
-- Architecture Establishment complete
+- Architecture & Slice Framing complete
 
 **Phase exit:**
 
@@ -457,7 +487,18 @@ Model event channels, flows, and routing rules connecting services.
 **Viewpoint:** integration
 **Duration:** 1-2h
 **Artifacts:** Integration Topology
-**Palette focus:** `Flow`, `RequestResponseFlow`, `EventFlow`, `MessageFlow`, `PubSubFlow`, `OrchestrationFlow`, `ExternalIntegrationFlow`, `EventRoutingRule`, `Schedule`, `Subscription`
+**Palette focus:**
+
+- `Flow`
+- `RequestResponseFlow`
+- `EventFlow`
+- `MessageFlow`
+- `PubSubFlow`
+- `OrchestrationFlow`
+- `ExternalIntegrationFlow`
+- `EventRoutingRule`
+- `Schedule`
+- `Subscription`
 
 **Steps:**
 
@@ -506,7 +547,16 @@ Model workflows from CIM business processes with human tasks and compensation.
 **Viewpoint:** workflow
 **Duration:** 1h
 **Artifacts:** Workflow Model
-**Palette focus:** `HumanTask`, `ApprovalTask`, `EscalationPolicy`, `CompensationPolicy`, `ErrorHandler`, `ParallelBranch`, `MapStateConfig`, `CallbackTaskConfig`
+**Palette focus:**
+
+- `HumanTask`
+- `ApprovalTask`
+- `EscalationPolicy`
+- `CompensationPolicy`
+- `ErrorHandler`
+- `ParallelBranch`
+- `MapStateConfig`
+- `CallbackTaskConfig`
 
 **Steps:**
 
@@ -625,7 +675,16 @@ Configure retry, timeout, concurrency, and throughput policies.
 **Viewpoint:** policies
 **Duration:** 45m
 **Artifacts:** Architecture Policy Catalog
-**Palette focus:** `ConcurrencyPolicy`, `RateLimitPolicy`, `BatchPolicy`, `OrderingPolicy`, `CachePolicy`, `BackupPolicy`, `RetentionPolicy`, `CostPolicy`
+**Palette focus:**
+
+- `ConcurrencyPolicy`
+- `RateLimitPolicy`
+- `BatchPolicy`
+- `OrderingPolicy`
+- `CachePolicy`
+- `BackupPolicy`
+- `RetentionPolicy`
+- `CostPolicy`
 
 **Steps:**
 
@@ -702,7 +761,13 @@ Apply data protection, compliance, and business rule policies.
 **Viewpoint:** policies
 **Duration:** 45m
 **Artifacts:** Architecture Policy Catalog
-**Palette focus:** `ArchitecturePolicy`, `PolicySetting`, `DataProtectionPolicy`, `DataQualityPolicy`, `CompliancePolicy`
+**Palette focus:**
+
+- `ArchitecturePolicy`
+- `PolicySetting`
+- `DataProtectionPolicy`
+- `DataQualityPolicy`
+- `CompliancePolicy`
 
 **Steps:**
 
@@ -770,7 +835,15 @@ Model external integrations, environments, secrets, and deployment units.
 **Viewpoint:** config
 **Duration:** 1h
 **Artifacts:** Configuration Package
-**Palette focus:** `Environment`, `DeploymentUnit`, `ConfigurationSet`, `ConfigParameter`, `EnvironmentVariable`, `Secret`, `CredentialRequirement`
+**Palette focus:**
+
+- `Environment`
+- `DeploymentUnit`
+- `ConfigurationSet`
+- `ConfigParameter`
+- `EnvironmentVariable`
+- `Secret`
+- `CredentialRequirement`
 
 **Steps:**
 
@@ -792,7 +865,7 @@ Model external integrations, environments, secrets, and deployment units.
 
 Assess platform capability mapping, close traceability, and pass PIM EVL gate.
 
-**Runs:** once per program · **Role:** process-reviewer
+**Runs:** in engine cycle · **Role:** process-reviewer
 
 **Phase entry:**
 
@@ -802,6 +875,7 @@ Assess platform capability mapping, close traceability, and pass PIM EVL gate.
 
 - PIM EVL passes
 - Readiness gate approved
+- PIM increment reviewed and improvement actions captured
 
 #### Platform Mapping Assessment (`pim.ph6.st1`)
 
@@ -861,6 +935,34 @@ Close trace links and production readiness before PIM→PSM transform.
 **Validation:**
 
 - `pim-semantic-validation`
+
+#### Increment Review & Adapt (`pim.ph6.st3`)
+
+Review the service slice architecture, accept the increment, and adapt the next cycle.
+
+**Viewpoint:** readiness
+
+##### Tasks
+
+#### Review and adapt PIM increment (`pim.ph6.st3.t1`)
+
+**Viewpoint:** readiness
+**Duration:** 45m
+**Artifacts:** PIM Increment Review Record
+
+**Steps:**
+
+1. Review architecture outcomes against CIM trace links and PIM definition of done.
+2. Record accepted scope, deferred architecture decisions, and platform mapping feedback.
+3. Create improvement actions and backlog adjustments for the next service slice.
+
+**Entry criteria:**
+
+- PIM EVL passes or all blocking findings are dispositioned
+
+**Exit criteria:**
+
+- Increment accepted or rework loop selected; improvement actions captured
 
 ---
 
