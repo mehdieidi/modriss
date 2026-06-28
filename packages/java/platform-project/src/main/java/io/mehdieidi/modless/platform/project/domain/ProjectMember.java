@@ -8,8 +8,8 @@ import java.time.Instant;
  * @param userId member user identifier
  * @param email member email snapshot
  * @param displayName member display-name snapshot
- * @param role project role
+ * @param role project role label
  * @param addedAt membership timestamp
  */
 public record ProjectMember(
-    String userId, String email, String displayName, MemberRole role, Instant addedAt) {}
+    String userId, String email, String displayName, String role, Instant addedAt) {}

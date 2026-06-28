@@ -2,11 +2,16 @@ package io.mehdieidi.modless.platform.project.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.mehdieidi.modless.platform.identity.application.AuthService;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
+import io.mehdieidi.modless.platform.kernel.PlatformException;
+import io.mehdieidi.modless.platform.project.domain.ProjectMember;
 import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
 import io.mehdieidi.modless.platform.storage.api.PlatformStore;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +38,43 @@ class ApplicationServicesPortTest {
     projects.delete(owner, created.id());
 
     assertFalse(store.containsPrefix(Path.of("projects", created.id())));
+  }
+
+  @Test
+  void ownerManagesMembersWhileMembersCanOnlyEditProjectContent() {
+    InMemoryPlatformStore store = new InMemoryPlatformStore();
+    AuthService auth = new AuthService(store, Duration.ofHours(1));
+    ProjectService projects = new ProjectService(store, auth);
+    UserRecord owner = auth.register("owner@example.com", "password-1", "Owner").user();
+    UserRecord member = auth.register("member@example.com", "password-1", "Member").user();
+
+    ProjectRecord project = projects.create(owner, "Example", "Initial");
+    ProjectMember added = projects.invite(owner, project.id(), member.email(), "Architect");
+
+    assertEquals("Architect", added.role());
+    assertEquals(
+        List.of(project.id()), projects.list(member).stream().map(ProjectRecord::id).toList());
+
+    ProjectRecord memberUpdate =
+        projects.update(member, project.id(), "Member edit", "Changed", Map.of());
+    assertEquals("Member edit", memberUpdate.name());
+
+    PlatformException inviteFailure =
+        assertThrows(
+            PlatformException.class,
+            () -> projects.invite(member, project.id(), "owner@example.com", "Reviewer"));
+    assertEquals(403, inviteFailure.status());
+
+    ProjectMember changed = projects.updateMemberRole(owner, project.id(), member.id(), "Reviewer");
+    assertEquals("Reviewer", changed.role());
+
+    PlatformException deleteFailure =
+        assertThrows(PlatformException.class, () -> projects.delete(member, project.id()));
+    assertEquals(403, deleteFailure.status());
+
+    projects.revoke(owner, project.id(), member.id());
+
+    assertEquals(List.of(), projects.list(member));
   }
 
   private UserRecord user(String id) {

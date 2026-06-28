@@ -293,6 +293,30 @@ paths:
         required: true
         schema:
           type: string
+    put:
+      tags: [Projects]
+      summary: Update a project member role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMemberRoleRequest"
+      responses:
+        "200":
+          description: Updated member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectMember"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
       tags: [Projects]
       summary: Revoke project access
@@ -1483,12 +1507,21 @@ components:
           description: Map of active model level or view keys to model ids.
     InviteRequest:
       type: object
-      required: [email]
+      required: [email, role]
       properties:
         email:
           type: string
+          format: email
         role:
-          $ref: "#/components/schemas/MemberRole"
+          type: string
+          maxLength: 48
+    UpdateMemberRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          maxLength: 48
     ProjectRecord:
       type: object
       required: [id, name, ownerUserId, activeModelIds, members, createdAt, updatedAt]
@@ -1527,13 +1560,10 @@ components:
         displayName:
           type: string
         role:
-          $ref: "#/components/schemas/MemberRole"
+          type: string
         addedAt:
           type: string
           format: date-time
-    MemberRole:
-      type: string
-      enum: [OWNER, EDITOR, VIEWER]
     ModelLevel:
       type: string
       enum: [CIM, PIM, PSM]

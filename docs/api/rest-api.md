@@ -67,10 +67,11 @@ characters.
 | `GET`    | `/api/projects/{id}/download`         | none                                    | ZIP download      |
 | `GET`    | `/api/projects/{id}/members`          | none                                    | `ProjectMember[]` |
 | `POST`   | `/api/projects/{id}/invite`           | `email`, `role`                         | `ProjectMember`   |
+| `PUT`    | `/api/projects/{id}/members/{userId}` | `role`                                  | `ProjectMember`   |
 | `DELETE` | `/api/projects/{id}/members/{userId}` | none                                    | empty response    |
 
-`role` is one of `OWNER`, `EDITOR`, or `VIEWER`. Only project owners can delete projects or revoke
-members. Editors can update project-owned models and artifacts.
+`role` is a custom display label. Only project owners can manage membership or delete projects.
+Project members can update project-owned models and artifacts.
 
 ## Models
 

@@ -3,7 +3,6 @@ package io.mehdieidi.modless.backend.api;
 import io.mehdieidi.modless.platform.export.application.ProjectArchiveService;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
-import io.mehdieidi.modless.platform.project.domain.MemberRole;
 import io.mehdieidi.modless.platform.project.domain.ProjectMember;
 import io.mehdieidi.modless.platform.project.domain.ProjectRecord;
 import jakarta.validation.Valid;
@@ -160,6 +159,24 @@ public class ProjectController {
   }
 
   /**
+   * Updates a member's project role.
+   *
+   * @param token session token
+   * @param id project identifier
+   * @param userId member user identifier
+   * @param request replacement role
+   * @return updated project membership
+   */
+  @PutMapping("/{id}/members/{userId}")
+  ProjectMember updateMemberRole(
+      @RequestHeader("X-Auth-Token") String token,
+      @PathVariable("id") String id,
+      @PathVariable("userId") String userId,
+      @Valid @RequestBody UpdateMemberRoleRequest request) {
+    return projects.updateMemberRole(auth.user(token), id, userId, request.role());
+  }
+
+  /**
    * Revokes a user's project membership.
    *
    * @param token session token
@@ -203,5 +220,12 @@ public class ProjectController {
    * @param email invitee email
    * @param role requested membership role
    */
-  public record InviteRequest(@NotBlank String email, MemberRole role) {}
+  public record InviteRequest(@NotBlank String email, @NotBlank String role) {}
+
+  /**
+   * Project member role update payload.
+   *
+   * @param role replacement role
+   */
+  public record UpdateMemberRoleRequest(@NotBlank String role) {}
 }

@@ -40,6 +40,7 @@ import {
   deleteCurrentProject,
   downloadCurrentProject,
   restoreLastProjectIfPossible,
+  showProjectMembersDialog,
   showProjectDialog,
 } from "./project.js";
 import { setError, setStatus } from "./status.js";
@@ -264,6 +265,7 @@ function bindCriticalActions() {
 
   // Project dialog
   el.switchProjectBtn?.addEventListener("click", showProjectDialog);
+  el.manageProjectMembersBtn?.addEventListener("click", showProjectMembersDialog);
   el.deleteProjectBtn?.addEventListener("click", deleteCurrentProject);
   bindUserMenuActions();
 }

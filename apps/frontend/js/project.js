@@ -21,7 +21,6 @@ import { apiUrl, MODEL_TYPES } from "./config.js";
 import { confirmAction } from "./confirm-action.js";
 import { resetModelSaveState, updateModelSaveUi } from "./model-save-ui.js";
 import { defaultModelingLevel, modelingLevelKeys } from "./modeling-config-data.js";
-import { requireActiveProject } from "./project-guards.js";
 
 export { requireActiveProject } from "./project-guards.js";
 
@@ -116,6 +115,65 @@ export function bindProjectDialogActions() {
   }
 
   if (
+    el.projectMembersCloseBtn &&
+    el.projectMembersCloseBtn.dataset.boundProjectMembersClose !== "true"
+  ) {
+    el.projectMembersCloseBtn.dataset.boundProjectMembersClose = "true";
+    el.projectMembersCloseBtn.addEventListener("click", hideProjectMembersDialog);
+  }
+
+  if (
+    el.projectMembersOverlay &&
+    el.projectMembersOverlay.dataset.boundProjectMembersOverlay !== "true"
+  ) {
+    el.projectMembersOverlay.dataset.boundProjectMembersOverlay = "true";
+    el.projectMembersOverlay.addEventListener("click", (event) => {
+      if (event.target === el.projectMembersOverlay) {
+        hideProjectMembersDialog();
+      }
+    });
+  }
+
+  if (
+    el.projectMemberInviteBtn &&
+    el.projectMemberInviteBtn.dataset.boundProjectMemberInvite !== "true"
+  ) {
+    el.projectMemberInviteBtn.dataset.boundProjectMemberInvite = "true";
+    el.projectMemberInviteBtn.addEventListener("click", inviteProjectMember);
+  }
+
+  if (
+    el.projectMemberRoleInput &&
+    el.projectMemberRoleInput.dataset.boundProjectMemberRoleEnter !== "true"
+  ) {
+    el.projectMemberRoleInput.dataset.boundProjectMemberRoleEnter = "true";
+    el.projectMemberRoleInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        inviteProjectMember();
+      }
+    });
+  }
+
+  if (
+    el.projectMemberEmailInput &&
+    el.projectMemberEmailInput.dataset.boundProjectMemberEmailEnter !== "true"
+  ) {
+    el.projectMemberEmailInput.dataset.boundProjectMemberEmailEnter = "true";
+    el.projectMemberEmailInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        inviteProjectMember();
+      }
+    });
+  }
+
+  if (el.projectMembersList && el.projectMembersList.dataset.boundProjectMemberActions !== "true") {
+    el.projectMembersList.dataset.boundProjectMemberActions = "true";
+    el.projectMembersList.addEventListener("click", handleProjectMemberListClick);
+  }
+
+  if (
     el.projectNameCancelBtn &&
     el.projectNameCancelBtn.dataset.boundProjectNameCancel !== "true"
   ) {
@@ -190,6 +248,265 @@ export function hideProjectNameDialog() {
   el.projectNameOverlay.classList.add("hidden");
   el.projectNameOverlay.setAttribute("aria-hidden", "true");
   document.body.classList.remove("modal-open");
+}
+
+function currentUserId() {
+  return state.auth?.user?.id || "";
+}
+
+function isCurrentProjectOwner() {
+  return Boolean(state.project?.ownerUserId && state.project.ownerUserId === currentUserId());
+}
+
+function clearProjectMembersMessages() {
+  for (const node of [el.projectMembersError, el.projectMembersSuccess]) {
+    if (!node) {
+      continue;
+    }
+    node.textContent = "";
+    node.classList.add("hidden");
+  }
+}
+
+function showProjectMembersError(error) {
+  if (!el.projectMembersError) {
+    setError(error, { prefix: "Project access failed." });
+    return;
+  }
+  el.projectMembersError.textContent = formatUserError(error);
+  el.projectMembersError.classList.remove("hidden");
+  el.projectMembersSuccess?.classList.add("hidden");
+}
+
+function showProjectMembersSuccess(message) {
+  if (!el.projectMembersSuccess) {
+    setStatus(message);
+    return;
+  }
+  el.projectMembersSuccess.textContent = message;
+  el.projectMembersSuccess.classList.remove("hidden");
+  el.projectMembersError?.classList.add("hidden");
+}
+
+function setProjectMembersBusy(busy) {
+  if (el.projectMemberInviteBtn) {
+    el.projectMemberInviteBtn.disabled = busy || !isCurrentProjectOwner();
+  }
+  if (el.projectMemberEmailInput) {
+    el.projectMemberEmailInput.disabled = busy || !isCurrentProjectOwner();
+  }
+  if (el.projectMemberRoleInput) {
+    el.projectMemberRoleInput.disabled = busy || !isCurrentProjectOwner();
+  }
+  el.projectMembersList?.querySelectorAll("button, input").forEach((node) => {
+    node.disabled = busy || node.dataset.locked === "true";
+  });
+}
+
+async function refreshProjectMembers() {
+  if (!state.project?.id || !el.projectMembersList) {
+    return;
+  }
+  const members = await api(`/projects/${state.project.id}/members`);
+  state.project = {
+    ...state.project,
+    members,
+  };
+  renderProjectMembers(members);
+}
+
+function renderProjectMembers(members = []) {
+  if (!el.projectMembersList) {
+    return;
+  }
+  const owner = isCurrentProjectOwner();
+  if (el.projectMembersSubtitle) {
+    el.projectMembersSubtitle.textContent = owner
+      ? state.project?.name || ""
+      : "Only the project owner can manage access.";
+  }
+  if (el.projectMemberInviteForm) {
+    el.projectMemberInviteForm.classList.toggle("hidden", !owner);
+  }
+  if (!members.length) {
+    el.projectMembersList.innerHTML = `<div class="project-member-empty">No members found.</div>`;
+    return;
+  }
+  el.projectMembersList.innerHTML = members
+    .map((member) => {
+      const userId = String(member.userId || "");
+      const isProjectOwner = state.project?.ownerUserId === userId;
+      const canManageMember = owner && !isProjectOwner;
+      const displayName = member.displayName || member.email || "User";
+      const role = member.role || (isProjectOwner ? "OWNER" : "");
+      const roleControl = isProjectOwner
+        ? `<span class="project-member-owner-role">${escapeHtml(role)}</span>`
+        : `<input class="project-input project-member-role" data-member-role-input="${escapeHtml(
+            userId,
+          )}" ${canManageMember ? "" : 'data-locked="true" disabled'} maxlength="48" value="${escapeHtml(
+            role,
+          )}" type="text" />`;
+      const saveButton = canManageMember
+        ? `<button class="btn btn-secondary" data-member-action="save-role" data-user-id="${escapeHtml(
+            userId,
+          )}" type="button">Save</button>`
+        : "";
+      const removeButton = canManageMember
+        ? `<button class="btn btn-danger" data-member-action="remove" data-user-id="${escapeHtml(
+            userId,
+          )}" type="button">Remove</button>`
+        : "";
+      return `
+        <div class="project-member-row" data-project-member-id="${escapeHtml(userId)}">
+          <div class="project-member-identity">
+            <div class="project-member-name">${escapeHtml(displayName)}</div>
+            <div class="project-member-email">${escapeHtml(member.email || "")}</div>
+          </div>
+          ${roleControl}
+          ${saveButton}
+          ${removeButton}
+        </div>`;
+    })
+    .join("");
+}
+
+export async function showProjectMembersDialog() {
+  if (!state.project?.id) {
+    setStatus("Load a project first.");
+    return;
+  }
+  if (!el.projectMembersOverlay || !el.projectMembersList) {
+    setError("Project access editor is unavailable");
+    return;
+  }
+  clearProjectMembersMessages();
+  el.projectMembersOverlay.classList.remove("hidden");
+  el.projectMembersOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  el.projectMembersList.innerHTML = `<div class="project-member-empty">Loading...</div>`;
+  try {
+    await refreshProjectMembers();
+    if (isCurrentProjectOwner()) {
+      el.projectMemberEmailInput?.focus();
+    }
+  } catch (error) {
+    showProjectMembersError(error);
+  }
+}
+
+export function hideProjectMembersDialog() {
+  if (!el.projectMembersOverlay) {
+    return;
+  }
+  el.projectMembersOverlay.classList.add("hidden");
+  el.projectMembersOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+}
+
+async function inviteProjectMember() {
+  if (!state.project?.id || !isCurrentProjectOwner()) {
+    return;
+  }
+  const email = el.projectMemberEmailInput?.value.trim() || "";
+  const role = el.projectMemberRoleInput?.value.trim() || "";
+  if (!email) {
+    el.projectMemberEmailInput?.focus();
+    return;
+  }
+  if (!role) {
+    el.projectMemberRoleInput?.focus();
+    return;
+  }
+  try {
+    setProjectMembersBusy(true);
+    const member = await api(`/projects/${state.project.id}/invite`, {
+      method: "POST",
+      body: JSON.stringify({ email, role }),
+    });
+    if (el.projectMemberEmailInput) {
+      el.projectMemberEmailInput.value = "";
+    }
+    if (el.projectMemberRoleInput) {
+      el.projectMemberRoleInput.value = "";
+    }
+    await refreshProjectMembers();
+    showProjectMembersSuccess(`${member.email || email} was added to the project.`);
+  } catch (error) {
+    showProjectMembersError(error);
+  } finally {
+    setProjectMembersBusy(false);
+  }
+}
+
+async function handleProjectMemberListClick(event) {
+  const target = getElementTarget(event);
+  const button = target?.closest("button[data-member-action]");
+  if (!button || !state.project?.id || !isCurrentProjectOwner()) {
+    return;
+  }
+  const userId = button.getAttribute("data-user-id") || "";
+  if (!userId) {
+    return;
+  }
+  const action = button.getAttribute("data-member-action");
+  if (action === "save-role") {
+    await updateProjectMemberRole(userId);
+  } else if (action === "remove") {
+    await removeProjectMember(userId);
+  }
+}
+
+async function updateProjectMemberRole(userId) {
+  const input = el.projectMembersList?.querySelector(
+    `[data-member-role-input="${CSS.escape(userId)}"]`,
+  );
+  const role = input?.value.trim() || "";
+  if (!role) {
+    input?.focus();
+    return;
+  }
+  try {
+    setProjectMembersBusy(true);
+    const member = await api(
+      `/projects/${state.project.id}/members/${encodeURIComponent(userId)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ role }),
+      },
+    );
+    await refreshProjectMembers();
+    showProjectMembersSuccess(`${member.email || "Member"} role updated.`);
+  } catch (error) {
+    showProjectMembersError(error);
+  } finally {
+    setProjectMembersBusy(false);
+  }
+}
+
+async function removeProjectMember(userId) {
+  const member = state.project?.members?.find((candidate) => candidate.userId === userId);
+  const label = member?.email || member?.displayName || "this member";
+  const confirmed = await confirmAction({
+    title: "Remove Access",
+    message: `Remove ${label} from "${state.project?.name || "this project"}"?`,
+    confirmLabel: "Remove",
+    danger: true,
+  });
+  if (!confirmed) {
+    return;
+  }
+  try {
+    setProjectMembersBusy(true);
+    await api(`/projects/${state.project.id}/members/${encodeURIComponent(userId)}`, {
+      method: "DELETE",
+    });
+    await refreshProjectMembers();
+    showProjectMembersSuccess(`${label} was removed from the project.`);
+  } catch (error) {
+    showProjectMembersError(error);
+  } finally {
+    setProjectMembersBusy(false);
+  }
 }
 
 async function saveProjectName() {
@@ -325,6 +642,12 @@ export async function loadProject(project) {
     if (el.projectLabel) {
       el.projectLabel.textContent = projectName;
     }
+    if (el.deleteProjectBtn) {
+      el.deleteProjectBtn.disabled = !isCurrentProjectOwner();
+      el.deleteProjectBtn.title = isCurrentProjectOwner()
+        ? "Delete current project"
+        : "Only the project owner can delete this project";
+    }
 
     const typeKeys = modelingLevelKeys();
     const recordsByType = {};
@@ -451,6 +774,10 @@ export async function restoreLastProjectIfPossible() {
 export async function deleteCurrentProject() {
   if (!state.project?.id) {
     setStatus("No active project to delete.");
+    return;
+  }
+  if (!isCurrentProjectOwner()) {
+    setStatus("Only the project owner can delete this project.");
     return;
   }
   const projectId = state.project.id;

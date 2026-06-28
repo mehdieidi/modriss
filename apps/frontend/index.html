@@ -342,6 +342,14 @@
             </button>
             <button
               class="ide-menu-item"
+              id="manageProjectMembersBtn"
+              title="Manage project access"
+              type="button"
+            >
+              Manage Access
+            </button>
+            <button
+              class="ide-menu-item"
               id="deleteProjectBtn"
               title="Delete current project"
               type="button"
@@ -1412,6 +1420,49 @@
               Cancel
             </button>
             <button class="btn btn-primary" id="projectNameSaveBtn" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        aria-labelledby="projectMembersTitle"
+        aria-modal="true"
+        class="modal-overlay hidden"
+        id="projectMembersOverlay"
+        role="dialog"
+      >
+        <div class="modal-dialog project-members-dialog">
+          <h3 class="modal-title" id="projectMembersTitle">Project Access</h3>
+          <p class="modal-subtitle" id="projectMembersSubtitle"></p>
+          <div class="auth-message auth-message-error hidden" id="projectMembersError"></div>
+          <div class="auth-message auth-message-success hidden" id="projectMembersSuccess"></div>
+
+          <div class="project-member-invite" id="projectMemberInviteForm">
+            <input
+              autocomplete="email"
+              class="project-input"
+              id="projectMemberEmailInput"
+              maxlength="254"
+              placeholder="user@example.com"
+              type="email"
+            />
+            <input
+              autocomplete="off"
+              class="project-input"
+              id="projectMemberRoleInput"
+              maxlength="48"
+              placeholder="Role"
+              type="text"
+            />
+            <button class="btn btn-primary" id="projectMemberInviteBtn" type="button">Add</button>
+          </div>
+
+          <div class="project-members-list" id="projectMembersList"></div>
+
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="projectMembersCloseBtn" type="button">
+              Close
+            </button>
           </div>
         </div>
       </div>

@@ -237,6 +237,82 @@
   gap: 8px;
 }
 
+.project-members-dialog {
+  width: min(640px, 94vw);
+}
+
+.project-member-invite {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.8fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.project-members-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(46vh, 380px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.project-member-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 0.55fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 9px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  background: color-mix(in srgb, var(--surface-3) 84%, #000 16%);
+}
+
+.project-member-identity {
+  min-width: 0;
+}
+
+.project-member-name {
+  color: var(--text);
+  font: 700 13px/1.25 var(--font-ui);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-member-email {
+  margin-top: 2px;
+  color: var(--muted);
+  font: 500 11px/1.25 var(--font-ui);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-member-role {
+  min-height: 32px;
+}
+
+.project-member-owner-role {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  color: var(--accent-light);
+  background: color-mix(in srgb, var(--accent-glow) 54%, transparent);
+  font: 700 11px/1 var(--font-ui);
+}
+
+.project-member-empty {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px dashed color-mix(in srgb, var(--border) 78%, transparent);
+  color: var(--muted);
+  font: 500 12px/1.35 var(--font-ui);
+}
+
 .auth-dialog {
   width: min(470px, 92vw);
 }
@@ -478,5 +554,10 @@ body.canvas-panning * {
     width: 100%;
     height: 1px;
     margin: 0;
+  }
+
+  .project-member-invite,
+  .project-member-row {
+    grid-template-columns: 1fr;
   }
 }

@@ -81,12 +81,6 @@ classDiagram
         PIM
         PSM
     }
-    class MemberRole {
-        <<enumeration>>
-        OWNER
-        EDITOR
-        VIEWER
-    }
     class MdeJobStatus {
         <<enumeration>>
         QUEUED
@@ -113,7 +107,6 @@ classDiagram
     ProjectRecord "1" --> "*" MdeJobRecord
     MdeJobRecord --> MdeJobStatus
     MdeJobRecord --> MdeJobOperation
-    ProjectMember --> MemberRole
 ```
 
 ## Assistant Classes
