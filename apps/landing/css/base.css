@@ -9,14 +9,14 @@
   --font-ui: "Space Grotesk", "Segoe UI", sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "Space Grotesk", "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
-  --ink: #252423;
-  --ink-raised: #2c2a28;
-  --ink-soft: #34312f;
-  --paper: #f6f4f2;
-  --paper-muted: #cccac9;
-  --paper-dim: #85837e;
-  --line: rgba(246, 244, 242, 0.13);
-  --line-strong: rgba(246, 244, 242, 0.24);
+  --ink: #edf3fa;
+  --ink-raised: #ffffff;
+  --ink-soft: #f7f9fc;
+  --paper: #1f2733;
+  --paper-muted: #5f6f84;
+  --paper-dim: #7a8aa0;
+  --line: #c6d2e2;
+  --line-strong: #a8b8c8;
   --accent: #0077a8;
   --accent-dark: #005f89;
   --accent-light: #008dc8;
@@ -26,16 +26,16 @@
   --green: var(--accent-select);
   --cyan: #14b8c7;
   --blue: var(--accent-light);
-  --violet: #b497ff;
-  --pink: #ff79b0;
-  --orange: #ffa828;
-  --coral: #ff7d36;
-  --red: #ff6262;
+  --violet: #7c5cbf;
+  --pink: #d4508a;
+  --orange: #d48820;
+  --coral: #d46030;
+  --red: #cc3b3b;
   --radius-xs: 0.5rem;
   --radius-sm: 0.85rem;
   --radius-md: 1.25rem;
   --radius-lg: 2rem;
-  --shadow-lg: 0 2rem 8rem rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 2rem 8rem rgba(22, 34, 52, 0.18);
   --page-gutter: clamp(1rem, 4vw, 4.5rem);
 }
 
@@ -45,7 +45,7 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   scroll-behavior: smooth;
 }
 
@@ -77,7 +77,7 @@ a {
 }
 
 ::selection {
-  color: var(--paper);
+  color: #ffffff;
   background: var(--lime);
 }
 
@@ -134,24 +134,24 @@ a {
 }
 
 .button-primary {
-  color: var(--paper);
+  color: #ffffff;
   background: var(--lime);
   box-shadow: 0 0 2.5rem var(--accent-glow);
 }
 
 .button-primary:hover {
-  background: var(--paper);
+  background: var(--accent-dark);
 }
 
 .button-ghost {
   color: var(--paper);
-  border-color: var(--line-strong);
-  background: rgba(246, 244, 242, 0.035);
+  border-color: var(--line);
+  background: rgba(31, 39, 51, 0.035);
 }
 
 .button-ghost:hover {
   border-color: var(--paper-muted);
-  background: rgba(246, 244, 242, 0.08);
+  background: rgba(31, 39, 51, 0.08);
 }
 
 .button-compact {
