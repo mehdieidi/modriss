@@ -120,6 +120,11 @@ function resolveIconSource(src) {
   return PLACEHOLDER_ICON;
 }
 
+function isFullColorIconSource(src) {
+  const normalized = String(src || "").trim();
+  return /(?:^|\/)aws-[^/]+\.svg(?:[?#].*)?$/i.test(normalized) || /^aws-/i.test(normalized);
+}
+
 function boundedContextConfig() {
   try {
     return modelingLevelConfig(state.activeType).boundedContext || {};
@@ -2011,13 +2016,21 @@ export function restoreCanvasCamera(camera = null) {
   return true;
 }
 
+function setIconSource(icon, src) {
+  const resolved = resolveIconSource(src);
+  const fullColor = isFullColorIconSource(src) || isFullColorIconSource(resolved);
+  icon.classList.toggle("icon-mask", !fullColor);
+  icon.classList.toggle("icon-image", fullColor);
+  icon.style.setProperty("--icon-src", `url('${resolved}')`);
+}
+
 function createMaskIcon(className, src, { ariaHidden = true } = {}) {
   const icon = document.createElement("span");
-  icon.className = `${className} icon-svg icon-mask`;
+  icon.className = `${className} icon-svg`;
   if (ariaHidden) {
     icon.setAttribute("aria-hidden", "true");
   }
-  icon.style.setProperty("--icon-src", `url('${resolveIconSource(src)}')`);
+  setIconSource(icon, src);
   return icon;
 }
 
@@ -2026,7 +2039,7 @@ function _setMaskIconSource(icon, src) {
     return;
   }
   const normalized = String(src || "").trim();
-  icon.style.setProperty("--icon-src", `url('${resolveIconSource(normalized)}')`);
+  setIconSource(icon, normalized);
 }
 
 function definitionUi(definition) {

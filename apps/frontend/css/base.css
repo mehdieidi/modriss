@@ -134,6 +134,16 @@ select[multiple] option {
   mask-position: center;
 }
 
+.icon-svg.icon-image {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  background-image: var(--icon-src);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
 .workspace {
   flex: 1;
   min-height: 0;

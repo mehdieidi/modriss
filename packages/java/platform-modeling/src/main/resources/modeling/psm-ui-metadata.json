@@ -4,7 +4,7 @@
     "defaultViewDefinitionId": "psm-workflow-asl"
   },
   "elementVisualDefaults": {
-    "icon": "category",
+    "icon": "aws-cloud",
     "color": "#475569",
     "category": "AWS PSM",
     "notation": {
@@ -68,7 +68,7 @@
         "packages": ["awspsm"]
       },
       "metadata": {
-        "icon": "dashboard",
+        "icon": "aws-cloud",
         "color": "#334155",
         "category": "Root",
         "notation": {
@@ -83,7 +83,7 @@
         "packages": ["awspsmcore"]
       },
       "metadata": {
-        "icon": "inventory",
+        "icon": "aws-cloudformation",
         "color": "#0F766E",
         "category": "CloudFormation / SAM",
         "notation": {
@@ -98,7 +98,7 @@
         "packages": ["awspsmcompute"]
       },
       "metadata": {
-        "icon": "functions",
+        "icon": "aws-lambda",
         "color": "#2563EB",
         "category": "Lambda",
         "notation": {
@@ -113,7 +113,7 @@
         "packages": ["awspsmapi"]
       },
       "metadata": {
-        "icon": "api",
+        "icon": "aws-api-gateway",
         "color": "#7C3AED",
         "category": "API Gateway",
         "notation": {
@@ -128,7 +128,7 @@
         "packages": ["awspsmevents"]
       },
       "metadata": {
-        "icon": "event",
+        "icon": "aws-eventbridge",
         "color": "#DB2777",
         "category": "EventBridge",
         "notation": {
@@ -143,7 +143,7 @@
         "packages": ["awspsmmessaging"]
       },
       "metadata": {
-        "icon": "hub",
+        "icon": "aws-sqs",
         "color": "#DB2777",
         "category": "Messaging",
         "notation": {
@@ -158,7 +158,7 @@
         "packages": ["awspsmstorage"]
       },
       "metadata": {
-        "icon": "database",
+        "icon": "aws-s3",
         "color": "#0891B2",
         "category": "Storage",
         "notation": {
@@ -173,7 +173,7 @@
         "packages": ["awspsmsecurity"]
       },
       "metadata": {
-        "icon": "security",
+        "icon": "aws-iam",
         "color": "#CA8A04",
         "category": "IAM / KMS / Secrets",
         "notation": {
@@ -188,7 +188,7 @@
         "packages": ["awspsmidentity"]
       },
       "metadata": {
-        "icon": "supervised_user_circle",
+        "icon": "aws-cognito",
         "color": "#CA8A04",
         "category": "Cognito Identity",
         "notation": {
@@ -203,7 +203,7 @@
         "packages": ["awspsmworkflow"]
       },
       "metadata": {
-        "icon": "alt_route",
+        "icon": "aws-step-functions",
         "color": "#EA580C",
         "category": "Step Functions",
         "notation": {
@@ -218,7 +218,7 @@
         "packages": ["awspsmobservability"]
       },
       "metadata": {
-        "icon": "monitoring",
+        "icon": "aws-cloudwatch",
         "color": "#64748B",
         "category": "Observability",
         "notation": {
@@ -233,7 +233,7 @@
         "packages": ["awspsmnetworking"]
       },
       "metadata": {
-        "icon": "lan",
+        "icon": "aws-vpc",
         "color": "#0D9488",
         "category": "Networking",
         "notation": {
@@ -248,7 +248,7 @@
         "packages": ["awspsmintegrations"]
       },
       "metadata": {
-        "icon": "link",
+        "icon": "aws-eventbridge",
         "color": "#475569",
         "category": "Relationship Views",
         "relationshipElement": true,
@@ -1666,7 +1666,7 @@
     {
       "type": "AwsLambdaFunction",
       "label": "Aws Lambda Function",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "category": "Lambda Detail View",
       "displayName": "Aws Lambda Function",
@@ -1682,7 +1682,7 @@
     {
       "type": "ApiGatewayTrigger",
       "label": "API Gateway Trigger",
-      "icon": "link",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "category": "API",
       "supportOnly": true,
@@ -1691,7 +1691,7 @@
     {
       "type": "SqsLambdaEventSourceMapping",
       "label": "Sqs Lambda Event Source Mapping",
-      "icon": "category",
+      "icon": "aws-sqs",
       "color": "#2563EB",
       "category": "Lambda Detail View",
       "displayName": "Sqs Lambda Event Source Mapping",
@@ -1707,7 +1707,7 @@
     {
       "type": "EventBridgeLambdaTarget",
       "label": "EventBridge Lambda Target",
-      "icon": "track_changes",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "category": "messaging",
       "supportOnly": true,
@@ -1716,7 +1716,7 @@
     {
       "type": "ApiGatewayApi",
       "label": "Api Gateway Api",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "category": "API Gateway View",
       "displayName": "Api Gateway Api",
@@ -1735,7 +1735,7 @@
     {
       "type": "ApiGatewayRoute",
       "label": "Api Gateway Route",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "category": "API Gateway View",
       "displayName": "Api Gateway Route",
@@ -1754,7 +1754,7 @@
     {
       "type": "EventBridgeBus",
       "label": "Event Bridge Bus",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "category": "EventBridge and Messaging View",
       "displayName": "Event Bridge Bus",
@@ -1770,7 +1770,7 @@
     {
       "type": "EventBridgeRule",
       "label": "Event Bridge Rule",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "category": "EventBridge and Messaging View",
       "displayName": "Event Bridge Rule",
@@ -1786,7 +1786,7 @@
     {
       "type": "SqsQueue",
       "label": "Sqs Queue",
-      "icon": "category",
+      "icon": "aws-sqs",
       "color": "#DB2777",
       "category": "EventBridge and Messaging View",
       "displayName": "Sqs Queue",
@@ -1802,7 +1802,7 @@
     {
       "type": "SnsTopic",
       "label": "Sns Topic",
-      "icon": "category",
+      "icon": "aws-sns",
       "color": "#DB2777",
       "category": "EventBridge and Messaging View",
       "displayName": "Sns Topic",
@@ -1818,7 +1818,7 @@
     {
       "type": "EventSchema",
       "label": "Event Schema",
-      "icon": "rule",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "category": "messaging",
       "supportOnly": true,
@@ -1827,7 +1827,7 @@
     {
       "type": "StepFunctionStateMachine",
       "label": "Step Function State Machine",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "category": "Step Functions / ASL View",
       "displayName": "Step Function State Machine",
@@ -1843,7 +1843,7 @@
     {
       "type": "DynamoDbTable",
       "label": "Dynamo Db Table",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "category": "Storage View",
       "displayName": "Dynamo Db Table",
@@ -1859,7 +1859,7 @@
     {
       "type": "DynamoDbAttributeDefinition",
       "label": "Dynamo Db Attribute Definition",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "category": "Storage View",
       "displayName": "Dynamo Db Attribute Definition",
@@ -1877,7 +1877,7 @@
     {
       "type": "DynamoDbGlobalSecondaryIndex",
       "label": "Dynamo Db Global Secondary Index",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "category": "Storage View",
       "displayName": "Dynamo Db Global Secondary Index",
@@ -1895,7 +1895,7 @@
     {
       "type": "S3Bucket",
       "label": "S3 Bucket",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "category": "Storage View",
       "displayName": "S3 Bucket",
@@ -1911,7 +1911,7 @@
     {
       "type": "SamStack",
       "label": "Sam Stack",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "category": "CloudFormation / SAM",
       "displayName": "Sam Stack",
@@ -1927,7 +1927,7 @@
     {
       "type": "AwsStage",
       "label": "Aws Stage",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#0F766E",
       "category": "CloudFormation / SAM",
       "displayName": "Aws Stage",
@@ -1943,7 +1943,7 @@
     {
       "type": "LambdaEventSourceMapping",
       "label": "Lambda Event Source Mapping",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "category": "Lambda Detail View",
       "displayName": "Lambda Event Source Mapping",
@@ -1961,7 +1961,7 @@
     {
       "type": "CognitoUserPool",
       "label": "Cognito User Pool",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "category": "Cognito Identity View",
       "displayName": "Cognito User Pool",
@@ -1977,7 +1977,7 @@
     {
       "type": "IamPolicy",
       "label": "Iam Policy",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#CA8A04",
       "category": "Security, IAM, and Secrets View",
       "displayName": "Iam Policy",
@@ -1993,7 +1993,7 @@
     {
       "type": "IamStatement",
       "label": "Iam Statement",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#CA8A04",
       "category": "Security, IAM, and Secrets View",
       "displayName": "Iam Statement",
@@ -2009,7 +2009,7 @@
     {
       "type": "IamRole",
       "label": "Iam Role",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#CA8A04",
       "category": "Security, IAM, and Secrets View",
       "displayName": "Iam Role",
@@ -2025,7 +2025,7 @@
     {
       "type": "SecretsManagerSecret",
       "label": "Secrets Manager Secret",
-      "icon": "category",
+      "icon": "aws-secrets-manager",
       "color": "#CA8A04",
       "category": "Security, IAM, and Secrets View",
       "displayName": "Secrets Manager Secret",
@@ -2041,7 +2041,7 @@
     {
       "type": "SsmParameter",
       "label": "Ssm Parameter",
-      "icon": "category",
+      "icon": "aws-systems-manager",
       "color": "#CA8A04",
       "category": "Security, IAM, and Secrets View",
       "displayName": "Ssm Parameter",
@@ -2057,7 +2057,7 @@
     {
       "type": "KmsKey",
       "label": "Kms Key",
-      "icon": "category",
+      "icon": "aws-kms",
       "color": "#CA8A04",
       "category": "Security, IAM, and Secrets View",
       "displayName": "Kms Key",
@@ -2073,7 +2073,7 @@
     {
       "type": "VpcConfig",
       "label": "VPC Config",
-      "icon": "lan",
+      "icon": "aws-vpc",
       "color": "#0F766E",
       "category": "Networking",
       "supportOnly": true,
@@ -2082,7 +2082,7 @@
     {
       "type": "EnvironmentConfig",
       "label": "Environment Config",
-      "icon": "settings",
+      "icon": "aws-lambda",
       "color": "#0F766E",
       "category": "Deployment",
       "supportOnly": true,
@@ -2091,7 +2091,7 @@
     {
       "type": "LambdaEnvironmentVariable",
       "label": "Lambda Environment Variable",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "category": "Lambda Detail View",
       "displayName": "Lambda Environment Variable",
@@ -2109,7 +2109,7 @@
     {
       "type": "CloudWatchAlarm",
       "label": "Cloud Watch Alarm",
-      "icon": "category",
+      "icon": "aws-cloudwatch",
       "color": "#64748B",
       "category": "Observability and Networking View",
       "displayName": "Cloud Watch Alarm",
@@ -2125,7 +2125,7 @@
     {
       "type": "CloudWatchLogGroup",
       "label": "Cloud Watch Log Group",
-      "icon": "category",
+      "icon": "aws-cloudwatch",
       "color": "#64748B",
       "category": "Observability and Networking View",
       "displayName": "Cloud Watch Log Group",
@@ -2141,7 +2141,7 @@
     {
       "type": "XRayTracingConfig",
       "label": "X-Ray Tracing Config",
-      "icon": "timeline",
+      "icon": "aws-xray",
       "color": "#64748B",
       "category": "Operations",
       "supportOnly": true,
@@ -2152,7 +2152,7 @@
       "label": "Aws Psm Model",
       "displayName": "Aws Psm Model",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2168,7 +2168,7 @@
       "label": "Aws Resource",
       "displayName": "Aws Resource",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2187,7 +2187,7 @@
       "label": "Aws Tag",
       "displayName": "Aws Tag",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2205,7 +2205,7 @@
       "label": "Resource Import",
       "displayName": "Resource Import",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2223,7 +2223,7 @@
       "label": "Native Property",
       "displayName": "Native Property",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2241,7 +2241,7 @@
       "label": "Value Expression",
       "displayName": "Value Expression",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2259,7 +2259,7 @@
       "label": "Named Value Expression",
       "displayName": "Named Value Expression",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2277,7 +2277,7 @@
       "label": "Cors Configuration",
       "displayName": "Cors Configuration",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2295,7 +2295,7 @@
       "label": "Tracing Config",
       "displayName": "Tracing Config",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2314,7 +2314,7 @@
       "label": "Aws Native Resource",
       "displayName": "Aws Native Resource",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2330,7 +2330,7 @@
       "label": "Cfn Parameter",
       "displayName": "Cfn Parameter",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2346,7 +2346,7 @@
       "label": "Cfn Mapping",
       "displayName": "Cfn Mapping",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2362,7 +2362,7 @@
       "label": "Cfn Condition",
       "displayName": "Cfn Condition",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2378,7 +2378,7 @@
       "label": "Cfn Output",
       "displayName": "Cfn Output",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2394,7 +2394,7 @@
       "label": "Sam Globals",
       "displayName": "Sam Globals",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2410,7 +2410,7 @@
       "label": "Aws Naming Policy",
       "displayName": "Aws Naming Policy",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2426,7 +2426,7 @@
       "label": "Aws Tagging Policy",
       "displayName": "Aws Tagging Policy",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2442,7 +2442,7 @@
       "label": "Aws Security Baseline",
       "displayName": "Aws Security Baseline",
       "category": "CloudFormation / SAM",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#0F766E",
       "notation": {
         "tag": "CFN",
@@ -2459,7 +2459,7 @@
       "label": "Iam Inline Policy",
       "displayName": "Iam Inline Policy",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2475,7 +2475,7 @@
       "label": "Iam Managed Policy",
       "displayName": "Iam Managed Policy",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2492,7 +2492,7 @@
       "label": "Iam Policy Document",
       "displayName": "Iam Policy Document",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2509,7 +2509,7 @@
       "label": "Iam Principal",
       "displayName": "Iam Principal",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2526,7 +2526,7 @@
       "label": "Iam Condition",
       "displayName": "Iam Condition",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-iam",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2542,7 +2542,7 @@
       "label": "Kms Alias",
       "displayName": "Kms Alias",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-kms",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2559,7 +2559,7 @@
       "label": "Generate Secret String Config",
       "displayName": "Generate Secret String Config",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-secrets-manager",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2576,7 +2576,7 @@
       "label": "Secret Rotation Rules",
       "displayName": "Secret Rotation Rules",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-secrets-manager",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2592,7 +2592,7 @@
       "label": "Secret Rotation Schedule",
       "displayName": "Secret Rotation Schedule",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-secrets-manager",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2608,7 +2608,7 @@
       "label": "Secrets Manager Resource Policy",
       "displayName": "Secrets Manager Resource Policy",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-secrets-manager",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2625,7 +2625,7 @@
       "label": "Ssm Parameter Value Expression",
       "displayName": "Ssm Parameter Value Expression",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-systems-manager",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2642,7 +2642,7 @@
       "label": "Secret Value Expression",
       "displayName": "Secret Value Expression",
       "category": "Security, IAM, and Secrets View",
-      "icon": "category",
+      "icon": "aws-secrets-manager",
       "color": "#CA8A04",
       "notation": {
         "tag": "SEC",
@@ -2658,7 +2658,7 @@
       "label": "Cloud Watch Metric Filter",
       "displayName": "Cloud Watch Metric Filter",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-cloudwatch",
       "color": "#64748B",
       "notation": {
         "tag": "OBS",
@@ -2675,7 +2675,7 @@
       "label": "Cloud Watch Metric Transformation",
       "displayName": "Cloud Watch Metric Transformation",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-cloudwatch",
       "color": "#64748B",
       "notation": {
         "tag": "OBS",
@@ -2691,7 +2691,7 @@
       "label": "Cloud Watch Log Subscription Filter",
       "displayName": "Cloud Watch Log Subscription Filter",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-cloudwatch",
       "color": "#64748B",
       "notation": {
         "tag": "OBS",
@@ -2707,7 +2707,7 @@
       "label": "Metric Dimension",
       "displayName": "Metric Dimension",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-cloudwatch",
       "color": "#64748B",
       "notation": {
         "tag": "OBS",
@@ -2723,7 +2723,7 @@
       "label": "Cloud Watch Composite Alarm",
       "displayName": "Cloud Watch Composite Alarm",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-cloudwatch",
       "color": "#64748B",
       "notation": {
         "tag": "OBS",
@@ -2739,7 +2739,7 @@
       "label": "Cloud Watch Dashboard",
       "displayName": "Cloud Watch Dashboard",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-cloudwatch",
       "color": "#64748B",
       "notation": {
         "tag": "OBS",
@@ -2755,7 +2755,7 @@
       "label": "Vpc Attachment Config",
       "displayName": "Vpc Attachment Config",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-vpc",
       "color": "#0D9488",
       "notation": {
         "tag": "NET",
@@ -2771,7 +2771,7 @@
       "label": "Vpc Endpoint Reference",
       "displayName": "Vpc Endpoint Reference",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-vpc",
       "color": "#0D9488",
       "notation": {
         "tag": "NET",
@@ -2787,7 +2787,7 @@
       "label": "Vpc",
       "displayName": "Vpc",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-vpc",
       "color": "#0D9488",
       "notation": {
         "tag": "NET",
@@ -2803,7 +2803,7 @@
       "label": "Subnet",
       "displayName": "Subnet",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-vpc",
       "color": "#0D9488",
       "notation": {
         "tag": "NET",
@@ -2819,7 +2819,7 @@
       "label": "Vpc Endpoint",
       "displayName": "Vpc Endpoint",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-vpc",
       "color": "#0D9488",
       "notation": {
         "tag": "NET",
@@ -2835,7 +2835,7 @@
       "label": "Security Group",
       "displayName": "Security Group",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-vpc",
       "color": "#0D9488",
       "notation": {
         "tag": "NET",
@@ -2851,7 +2851,7 @@
       "label": "Security Group Rule",
       "displayName": "Security Group Rule",
       "category": "Observability and Networking View",
-      "icon": "category",
+      "icon": "aws-vpc",
       "color": "#0D9488",
       "notation": {
         "tag": "NET",
@@ -2867,7 +2867,7 @@
       "label": "Sqs Redrive Policy",
       "displayName": "Sqs Redrive Policy",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-sqs",
       "color": "#DB2777",
       "notation": {
         "tag": "MSG",
@@ -2885,7 +2885,7 @@
       "label": "Sqs Redrive Allow Policy",
       "displayName": "Sqs Redrive Allow Policy",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-sqs",
       "color": "#DB2777",
       "notation": {
         "tag": "MSG",
@@ -2903,7 +2903,7 @@
       "label": "Sqs Queue Policy",
       "displayName": "Sqs Queue Policy",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-sqs",
       "color": "#DB2777",
       "notation": {
         "tag": "MSG",
@@ -2919,7 +2919,7 @@
       "label": "Sns Subscription",
       "displayName": "Sns Subscription",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-sns",
       "color": "#DB2777",
       "notation": {
         "tag": "MSG",
@@ -2936,7 +2936,7 @@
       "label": "Sns Filter Rule",
       "displayName": "Sns Filter Rule",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-sns",
       "color": "#DB2777",
       "notation": {
         "tag": "MSG",
@@ -2952,7 +2952,7 @@
       "label": "Sns Topic Policy",
       "displayName": "Sns Topic Policy",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-sns",
       "color": "#DB2777",
       "notation": {
         "tag": "MSG",
@@ -2968,7 +2968,7 @@
       "label": "Dynamo Db Key Schema Element",
       "displayName": "Dynamo Db Key Schema Element",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -2986,7 +2986,7 @@
       "label": "Dynamo Db Projection",
       "displayName": "Dynamo Db Projection",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3004,7 +3004,7 @@
       "label": "Dynamo Db Provisioned Throughput",
       "displayName": "Dynamo Db Provisioned Throughput",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3022,7 +3022,7 @@
       "label": "Dynamo Db On Demand Throughput",
       "displayName": "Dynamo Db On Demand Throughput",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3040,7 +3040,7 @@
       "label": "Dynamo Db Local Secondary Index",
       "displayName": "Dynamo Db Local Secondary Index",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3058,7 +3058,7 @@
       "label": "Dynamo Db Replica Specification",
       "displayName": "Dynamo Db Replica Specification",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3076,7 +3076,7 @@
       "label": "Dynamo Db Stream Specification",
       "displayName": "Dynamo Db Stream Specification",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3094,7 +3094,7 @@
       "label": "Dynamo Db Time To Live Specification",
       "displayName": "Dynamo Db Time To Live Specification",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3112,7 +3112,7 @@
       "label": "Dynamo Db Sse Specification",
       "displayName": "Dynamo Db Sse Specification",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3130,7 +3130,7 @@
       "label": "Dynamo Db Backup Policy",
       "displayName": "Dynamo Db Backup Policy",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3148,7 +3148,7 @@
       "label": "S3 Bucket Encryption",
       "displayName": "S3 Bucket Encryption",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3166,7 +3166,7 @@
       "label": "S3 Ownership Controls",
       "displayName": "S3 Ownership Controls",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3184,7 +3184,7 @@
       "label": "S3 Ownership Rule",
       "displayName": "S3 Ownership Rule",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3202,7 +3202,7 @@
       "label": "S3 Lifecycle Configuration",
       "displayName": "S3 Lifecycle Configuration",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3220,7 +3220,7 @@
       "label": "S3 Lifecycle Rule",
       "displayName": "S3 Lifecycle Rule",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3238,7 +3238,7 @@
       "label": "S3 Lifecycle Filter",
       "displayName": "S3 Lifecycle Filter",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3256,7 +3256,7 @@
       "label": "S3 Tag Filter",
       "displayName": "S3 Tag Filter",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3274,7 +3274,7 @@
       "label": "S3 Transition",
       "displayName": "S3 Transition",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3292,7 +3292,7 @@
       "label": "S3 Public Access Block Configuration",
       "displayName": "S3 Public Access Block Configuration",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3310,7 +3310,7 @@
       "label": "S3 Notification Configuration",
       "displayName": "S3 Notification Configuration",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3328,7 +3328,7 @@
       "label": "S3 Notification Rule",
       "displayName": "S3 Notification Rule",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3346,7 +3346,7 @@
       "label": "S3 Replication Configuration",
       "displayName": "S3 Replication Configuration",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3364,7 +3364,7 @@
       "label": "S3 Replication Rule",
       "displayName": "S3 Replication Rule",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3382,7 +3382,7 @@
       "label": "S3 Replication Destination",
       "displayName": "S3 Replication Destination",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3400,7 +3400,7 @@
       "label": "S3 Bucket Policy",
       "displayName": "S3 Bucket Policy",
       "category": "Storage View",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#0891B2",
       "notation": {
         "tag": "STORE",
@@ -3416,7 +3416,7 @@
       "label": "Cognito Password Policy",
       "displayName": "Cognito Password Policy",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3434,7 +3434,7 @@
       "label": "Cognito Schema Attribute",
       "displayName": "Cognito Schema Attribute",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3452,7 +3452,7 @@
       "label": "Cognito Email Configuration",
       "displayName": "Cognito Email Configuration",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3470,7 +3470,7 @@
       "label": "Cognito Account Recovery Setting",
       "displayName": "Cognito Account Recovery Setting",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3488,7 +3488,7 @@
       "label": "Cognito Recovery Mechanism",
       "displayName": "Cognito Recovery Mechanism",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3506,7 +3506,7 @@
       "label": "Cognito Lambda Config",
       "displayName": "Cognito Lambda Config",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3524,7 +3524,7 @@
       "label": "Cognito User Pool Client",
       "displayName": "Cognito User Pool Client",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3540,7 +3540,7 @@
       "label": "Cognito OAuth Configuration",
       "displayName": "Cognito OAuth Configuration",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3558,7 +3558,7 @@
       "label": "Cognito User Pool Group",
       "displayName": "Cognito User Pool Group",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3574,7 +3574,7 @@
       "label": "Cognito User Pool Domain",
       "displayName": "Cognito User Pool Domain",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3590,7 +3590,7 @@
       "label": "Cognito Identity Pool",
       "displayName": "Cognito Identity Pool",
       "category": "Cognito Identity View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#CA8A04",
       "notation": {
         "tag": "ID",
@@ -3606,7 +3606,7 @@
       "label": "Asl Document",
       "displayName": "Asl Document",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3624,7 +3624,7 @@
       "label": "Asl State",
       "displayName": "Asl State",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3643,7 +3643,7 @@
       "label": "Asl Branch",
       "displayName": "Asl Branch",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3661,7 +3661,7 @@
       "label": "Asl Map Config",
       "displayName": "Asl Map Config",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3679,7 +3679,7 @@
       "label": "Asl Retry Rule",
       "displayName": "Asl Retry Rule",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3697,7 +3697,7 @@
       "label": "Asl Catch Rule",
       "displayName": "Asl Catch Rule",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3715,7 +3715,7 @@
       "label": "Asl Choice Rule",
       "displayName": "Asl Choice Rule",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3733,7 +3733,7 @@
       "label": "Step Function Logging Config",
       "displayName": "Step Function Logging Config",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3749,7 +3749,7 @@
       "label": "Step Function Tracing Config",
       "displayName": "Step Function Tracing Config",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3765,7 +3765,7 @@
       "label": "Sam State Machine Event",
       "displayName": "Sam State Machine Event",
       "category": "Step Functions / ASL View",
-      "icon": "category",
+      "icon": "aws-step-functions",
       "color": "#EA580C",
       "notation": {
         "tag": "SFN",
@@ -3783,7 +3783,7 @@
       "label": "Lambda Code Config",
       "displayName": "Lambda Code Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3802,7 +3802,7 @@
       "label": "Lambda Zip Code Config",
       "displayName": "Lambda Zip Code Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3820,7 +3820,7 @@
       "label": "Lambda Image Code Config",
       "displayName": "Lambda Image Code Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3838,7 +3838,7 @@
       "label": "Lambda Image Config",
       "displayName": "Lambda Image Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3856,7 +3856,7 @@
       "label": "Lambda Invocation Binding",
       "displayName": "Lambda Invocation Binding",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3875,7 +3875,7 @@
       "label": "Sam Function Event",
       "displayName": "Sam Function Event",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3893,7 +3893,7 @@
       "label": "Dynamo Db Stream Lambda Event Source Mapping",
       "displayName": "Dynamo Db Stream Lambda Event Source Mapping",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-dynamodb",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3909,7 +3909,7 @@
       "label": "Generic Lambda Event Source Mapping",
       "displayName": "Generic Lambda Event Source Mapping",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3925,7 +3925,7 @@
       "label": "Lambda Dead Letter Config",
       "displayName": "Lambda Dead Letter Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3943,7 +3943,7 @@
       "label": "Lambda Event Invoke Config",
       "displayName": "Lambda Event Invoke Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3961,7 +3961,7 @@
       "label": "Lambda Destination Config",
       "displayName": "Lambda Destination Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3979,7 +3979,7 @@
       "label": "Lambda Tracing Config",
       "displayName": "Lambda Tracing Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -3997,7 +3997,7 @@
       "label": "Lambda Logging Config",
       "displayName": "Lambda Logging Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4015,7 +4015,7 @@
       "label": "Lambda Layer Version",
       "displayName": "Lambda Layer Version",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4031,7 +4031,7 @@
       "label": "Lambda Layer Permission",
       "displayName": "Lambda Layer Permission",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4049,7 +4049,7 @@
       "label": "Lambda Version",
       "displayName": "Lambda Version",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4065,7 +4065,7 @@
       "label": "Lambda Alias",
       "displayName": "Lambda Alias",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4081,7 +4081,7 @@
       "label": "Lambda Provisioned Concurrency Config",
       "displayName": "Lambda Provisioned Concurrency Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4099,7 +4099,7 @@
       "label": "Lambda Permission",
       "displayName": "Lambda Permission",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4115,7 +4115,7 @@
       "label": "Lambda Function Url",
       "displayName": "Lambda Function Url",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4131,7 +4131,7 @@
       "label": "Lambda Url Cors Configuration",
       "displayName": "Lambda Url Cors Configuration",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4149,7 +4149,7 @@
       "label": "Lambda File System Config",
       "displayName": "Lambda File System Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4167,7 +4167,7 @@
       "label": "Code Signing Config",
       "displayName": "Code Signing Config",
       "category": "Lambda Detail View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#2563EB",
       "notation": {
         "tag": "LAMBDA",
@@ -4183,7 +4183,7 @@
       "label": "Http Api",
       "displayName": "Http Api",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4199,7 +4199,7 @@
       "label": "Rest Api",
       "displayName": "Rest Api",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4215,7 +4215,7 @@
       "label": "Web Socket Api",
       "displayName": "Web Socket Api",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4231,7 +4231,7 @@
       "label": "Http Api Route",
       "displayName": "Http Api Route",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4247,7 +4247,7 @@
       "label": "Rest Api Route",
       "displayName": "Rest Api Route",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4263,7 +4263,7 @@
       "label": "Rest Api Resource",
       "displayName": "Rest Api Resource",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4281,7 +4281,7 @@
       "label": "Rest Api Method",
       "displayName": "Rest Api Method",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4299,7 +4299,7 @@
       "label": "Web Socket Route",
       "displayName": "Web Socket Route",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4315,7 +4315,7 @@
       "label": "Api Gateway Request Model",
       "displayName": "Api Gateway Request Model",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4333,7 +4333,7 @@
       "label": "Api Gateway Response Model",
       "displayName": "Api Gateway Response Model",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4351,7 +4351,7 @@
       "label": "Api Gateway Request Validator",
       "displayName": "Api Gateway Request Validator",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4369,7 +4369,7 @@
       "label": "Api Gateway Route Setting",
       "displayName": "Api Gateway Route Setting",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4387,7 +4387,7 @@
       "label": "Api Gateway Access Log Setting",
       "displayName": "Api Gateway Access Log Setting",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4405,7 +4405,7 @@
       "label": "Api Gateway Integration",
       "displayName": "Api Gateway Integration",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4421,7 +4421,7 @@
       "label": "Api Gateway Integration Request Template",
       "displayName": "Api Gateway Integration Request Template",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4439,7 +4439,7 @@
       "label": "Api Gateway Integration Response Parameter",
       "displayName": "Api Gateway Integration Response Parameter",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4457,7 +4457,7 @@
       "label": "Api Gateway Stage",
       "displayName": "Api Gateway Stage",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4476,7 +4476,7 @@
       "label": "Http Api Stage",
       "displayName": "Http Api Stage",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4492,7 +4492,7 @@
       "label": "Rest Api Stage",
       "displayName": "Rest Api Stage",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4508,7 +4508,7 @@
       "label": "Web Socket Stage",
       "displayName": "Web Socket Stage",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4524,7 +4524,7 @@
       "label": "Api Gateway Authorizer",
       "displayName": "Api Gateway Authorizer",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4543,7 +4543,7 @@
       "label": "Jwt Authorizer",
       "displayName": "Jwt Authorizer",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4559,7 +4559,7 @@
       "label": "Cognito Authorizer",
       "displayName": "Cognito Authorizer",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-cognito",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4575,7 +4575,7 @@
       "label": "Lambda Authorizer",
       "displayName": "Lambda Authorizer",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-lambda",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4591,7 +4591,7 @@
       "label": "Api Gateway Domain Name",
       "displayName": "Api Gateway Domain Name",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4607,7 +4607,7 @@
       "label": "Api Gateway Base Path Mapping",
       "displayName": "Api Gateway Base Path Mapping",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4625,7 +4625,7 @@
       "label": "Api Gateway Api Key",
       "displayName": "Api Gateway Api Key",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4641,7 +4641,7 @@
       "label": "Api Gateway Usage Plan",
       "displayName": "Api Gateway Usage Plan",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4657,7 +4657,7 @@
       "label": "Api Gateway Usage Plan Key",
       "displayName": "Api Gateway Usage Plan Key",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4675,7 +4675,7 @@
       "label": "Api Gateway Deployment",
       "displayName": "Api Gateway Deployment",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4693,7 +4693,7 @@
       "label": "Api Gateway Tracing Config",
       "displayName": "Api Gateway Tracing Config",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4711,7 +4711,7 @@
       "label": "Waf Web Acl Association",
       "displayName": "Waf Web Acl Association",
       "category": "API Gateway View",
-      "icon": "category",
+      "icon": "aws-waf",
       "color": "#7C3AED",
       "notation": {
         "tag": "API",
@@ -4727,7 +4727,7 @@
       "label": "Event Bridge Bus Policy",
       "displayName": "Event Bridge Bus Policy",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4745,7 +4745,7 @@
       "label": "Event Pattern",
       "displayName": "Event Pattern",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4763,7 +4763,7 @@
       "label": "Event Bridge Target",
       "displayName": "Event Bridge Target",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4781,7 +4781,7 @@
       "label": "Event Bridge Target Parameters",
       "displayName": "Event Bridge Target Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4800,7 +4800,7 @@
       "label": "Event Bridge Sqs Target Parameters",
       "displayName": "Event Bridge Sqs Target Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-sqs",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4818,7 +4818,7 @@
       "label": "Event Bridge Http Target Parameters",
       "displayName": "Event Bridge Http Target Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4836,7 +4836,7 @@
       "label": "Http Parameter",
       "displayName": "Http Parameter",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4854,7 +4854,7 @@
       "label": "Event Bridge Batch Target Parameters",
       "displayName": "Event Bridge Batch Target Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4872,7 +4872,7 @@
       "label": "Event Bridge Input Transformer",
       "displayName": "Event Bridge Input Transformer",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4890,7 +4890,7 @@
       "label": "Event Bridge Archive",
       "displayName": "Event Bridge Archive",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4906,7 +4906,7 @@
       "label": "Event Bridge Schedule",
       "displayName": "Event Bridge Schedule",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4922,7 +4922,7 @@
       "label": "Event Bridge Flexible Time Window",
       "displayName": "Event Bridge Flexible Time Window",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4940,7 +4940,7 @@
       "label": "Event Bridge Pipe",
       "displayName": "Event Bridge Pipe",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4956,7 +4956,7 @@
       "label": "Event Bridge Auth Parameters",
       "displayName": "Event Bridge Auth Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4975,7 +4975,7 @@
       "label": "Event Bridge Api Key Auth Parameters",
       "displayName": "Event Bridge Api Key Auth Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -4993,7 +4993,7 @@
       "label": "Event Bridge Basic Auth Parameters",
       "displayName": "Event Bridge Basic Auth Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -5011,7 +5011,7 @@
       "label": "Event Bridge OAuth Parameters",
       "displayName": "Event Bridge OAuth Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -5029,7 +5029,7 @@
       "label": "Event Bridge Http Parameters",
       "displayName": "Event Bridge Http Parameters",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -5048,7 +5048,7 @@
       "label": "Event Bridge Connection",
       "displayName": "Event Bridge Connection",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -5064,7 +5064,7 @@
       "label": "Event Bridge Api Destination",
       "displayName": "Event Bridge Api Destination",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -5080,7 +5080,7 @@
       "label": "Aws Retry Policy",
       "displayName": "Aws Retry Policy",
       "category": "EventBridge and Messaging View",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#DB2777",
       "notation": {
         "tag": "EVB",
@@ -5098,7 +5098,7 @@
       "label": "Aws Relationship View",
       "displayName": "Aws Relationship View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-cloudformation",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5115,7 +5115,7 @@
       "label": "Api Gateway Lambda Integration View",
       "displayName": "Api Gateway Lambda Integration View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-api-gateway",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5132,7 +5132,7 @@
       "label": "Event Bridge Lambda Target View",
       "displayName": "Event Bridge Lambda Target View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5149,7 +5149,7 @@
       "label": "Sns Lambda Subscription View",
       "displayName": "Sns Lambda Subscription View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-sns",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5166,7 +5166,7 @@
       "label": "Sqs Lambda Event Source View",
       "displayName": "Sqs Lambda Event Source View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-sqs",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5183,7 +5183,7 @@
       "label": "Step Function Event Bridge Target View",
       "displayName": "Step Function Event Bridge Target View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-eventbridge",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5200,7 +5200,7 @@
       "label": "S3 Lambda Notification View",
       "displayName": "S3 Lambda Notification View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5217,7 +5217,7 @@
       "label": "S3 Queue Notification View",
       "displayName": "S3 Queue Notification View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5234,7 +5234,7 @@
       "label": "S3 Topic Notification View",
       "displayName": "S3 Topic Notification View",
       "category": "Generated Relationship Views",
-      "icon": "category",
+      "icon": "aws-s3",
       "color": "#475569",
       "notation": {
         "tag": "VIEW",
@@ -5253,7 +5253,7 @@
       "supportOnly": true,
       "label": "Waf Associable Resource",
       "displayName": "Waf Associable Resource",
-      "icon": "category",
+      "icon": "aws-waf",
       "color": "#475569",
       "category": "Model",
       "notation": {
@@ -5268,7 +5268,7 @@
     {
       "type": "DynamoTable",
       "label": "Dynamo Table",
-      "icon": "block",
+      "icon": "aws-dynamodb",
       "color": "#64748B",
       "category": "Support",
       "supportOnly": true,
