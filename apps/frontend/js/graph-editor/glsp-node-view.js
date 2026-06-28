@@ -246,7 +246,8 @@ function renderStickyNode(g, node, attrs, flags) {
   const fill = attrs.sticky || "#fde68a";
   const headerHeight = low ? 0 : 32;
   const tagStripHeight = low ? 0 : 24;
-  const glyph = low ? "" : notationGlyphPath(attrs.notationGeometry, 10, 7, 20, 18);
+  const glyph =
+    low || attrs.iconSrc ? "" : notationGlyphPath(attrs.notationGeometry, 10, 7, 20, 18);
 
   g.appendChild(
     svgEl("rect", {
@@ -357,7 +358,8 @@ function renderStandardNode(g, node, attrs, flags) {
   const border = cssVar("--node-border", "#3d495f");
   const headerHeight = low ? 0 : 32;
   const tagStripHeight = low ? 0 : 24;
-  const glyph = low ? "" : notationGlyphPath(attrs.notationGeometry, 10, 7, 20, 18);
+  const glyph =
+    low || attrs.iconSrc ? "" : notationGlyphPath(attrs.notationGeometry, 10, 7, 20, 18);
 
   g.appendChild(
     svgEl("rect", {

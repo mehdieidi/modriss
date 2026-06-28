@@ -586,9 +586,11 @@ function registerModlessG6Extensions() {
       const badges = Array.isArray(attributes.badges) ? attributes.badges.slice(0, 4) : [];
       const headerHeight = low ? 0 : 32;
       const tagStripHeight = low ? 0 : 24;
-      const notationGlyph = low
-        ? null
-        : notationGlyphPath(attributes.notationGeometry, left + 10, top + 7, 20, 18);
+      const hasIcon = Boolean(attributes.iconSrc);
+      const notationGlyph =
+        low || hasIcon
+          ? null
+          : notationGlyphPath(attributes.notationGeometry, left + 10, top + 7, 20, 18);
 
       if (attributes.sticky) {
         const fill = attributes.sticky || "#fde68a";
