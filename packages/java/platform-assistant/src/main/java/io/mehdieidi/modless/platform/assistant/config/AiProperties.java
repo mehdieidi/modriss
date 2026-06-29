@@ -21,7 +21,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxSystemChars maximum characters in the system prompt
  * @param maxAgentSteps maximum agentic planner loop iterations per mutation turn
  * @param maxToolCallsPerStep maximum tool invocations allowed per agent loop step
- * @param semanticValidationEnabled whether assistant turns enforce EVL semantic validation
  * @param reservedSchemaSnippets minimum retrieval slots reserved for tier-1 schema contracts
  * @param fallbackProvider optional provider used only after HTTP 429 from the configured provider
  * @param hardening rate-limit and circuit-breaker settings
@@ -44,7 +43,6 @@ public record AiProperties(
     int maxSystemChars,
     int maxAgentSteps,
     int maxToolCallsPerStep,
-    boolean semanticValidationEnabled,
     int reservedSchemaSnippets,
     String fallbackProvider,
     Hardening hardening,

@@ -113,7 +113,6 @@ class AssistantLiveEvalTest {
             18000,
             20,
             12,
-            false,
             14,
             "",
             null,

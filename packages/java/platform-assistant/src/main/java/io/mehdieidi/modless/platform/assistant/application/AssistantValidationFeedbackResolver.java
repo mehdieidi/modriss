@@ -24,8 +24,6 @@ public class AssistantValidationFeedbackResolver {
       Pattern.compile(
           "#([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
           Pattern.CASE_INSENSITIVE);
-  private static final Pattern EVL_CONSTRAINT =
-      Pattern.compile("EVL_[A-Z0-9_]+", Pattern.CASE_INSENSITIVE);
 
   /** One required containment feature reported by structural validation. */
   public record MissingRequiredFeature(String ownerElementId, String featureName) {}
@@ -159,7 +157,7 @@ public class AssistantValidationFeedbackResolver {
     if (line == null || line.isBlank()) {
       return false;
     }
-    return REQUIRED_FEATURE.matcher(line).find() || EVL_CONSTRAINT.matcher(line).find();
+    return REQUIRED_FEATURE.matcher(line).find();
   }
 
   private boolean isFormalLine(String line) {
@@ -168,9 +166,6 @@ public class AssistantValidationFeedbackResolver {
     }
     String normalized = line.toLowerCase(Locale.ROOT);
     if (REQUIRED_FEATURE.matcher(line).find()) {
-      return true;
-    }
-    if (EVL_CONSTRAINT.matcher(line).find()) {
       return true;
     }
     return normalized.contains("not grounded in the metamodel")

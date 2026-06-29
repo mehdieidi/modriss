@@ -15,7 +15,6 @@ class JdbcAssistantCatalogTest {
     Method level = JdbcAssistantCatalog.class.getDeclaredMethod("level", String.class);
     level.setAccessible(true);
 
-    assertEquals("SHARED", level.invoke(catalogs, "mde/validation/shared/kernel-constraints.evl"));
     assertEquals("SHARED", level.invoke(catalogs, "mde/metamodels/shared/kernel.ecore"));
     assertEquals("PIM", level.invoke(catalogs, "mde/metamodels/pim/pim-root.emf"));
   }

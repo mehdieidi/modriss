@@ -4,7 +4,7 @@ import io.mehdieidi.modless.platform.assistant.provider.AssistantModelProvider;
 import java.util.List;
 import java.util.Optional;
 
-/** Metamodel and EVL catalog retrieval for assistant prompts and tools. */
+/** Metamodel and methodology catalog retrieval for assistant prompts and tools. */
 public interface AssistantCatalog {
 
   /** Rebuilds catalog indexes from packaged metamodel definitions. */

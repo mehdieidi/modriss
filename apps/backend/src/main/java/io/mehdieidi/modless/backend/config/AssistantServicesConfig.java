@@ -6,7 +6,6 @@ import io.mehdieidi.modless.platform.assistant.application.AssistantHardeningSer
 import io.mehdieidi.modless.platform.assistant.application.AssistantOrchestrator;
 import io.mehdieidi.modless.platform.assistant.application.AssistantPromptGuard;
 import io.mehdieidi.modless.platform.assistant.application.AssistantValidationFeedbackResolver;
-import io.mehdieidi.modless.platform.assistant.application.ConstraintCatalogService;
 import io.mehdieidi.modless.platform.assistant.application.MetamodelCatalogService;
 import io.mehdieidi.modless.platform.assistant.application.ModelContextIndexService;
 import io.mehdieidi.modless.platform.assistant.patch.AssistantMetamodelSchemaService;
@@ -94,11 +93,6 @@ public class AssistantServicesConfig {
   @Bean
   MetamodelCatalogService metamodelCatalogService(AssistantCatalog catalogs) {
     return new MetamodelCatalogService(catalogs);
-  }
-
-  @Bean
-  ConstraintCatalogService constraintCatalogService(AssistantCatalog catalogs) {
-    return new ConstraintCatalogService(catalogs);
   }
 
   @Bean

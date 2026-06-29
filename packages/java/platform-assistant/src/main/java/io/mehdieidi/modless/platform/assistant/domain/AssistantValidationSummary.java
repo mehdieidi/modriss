@@ -6,7 +6,7 @@ import java.util.List;
  * Validation preview attached to an assistant proposal.
  *
  * @param structurallyValid whether structural validation passed
- * @param mandatoryPassed whether mandatory EVL constraints passed
+ * @param mandatoryPassed whether structural validation has no blocking errors
  * @param optionalIssues optional critiques to surface to the user
  * @param issues compact validation issues
  */

@@ -319,7 +319,7 @@ public class ChatbotController {
   }
 
   /**
-   * Reindexes metamodel and EVL catalogs when {@code mde/} files change.
+   * Reindexes assistant metamodel and methodology catalogs when {@code mde/} files change.
    *
    * @param token auth token
    */

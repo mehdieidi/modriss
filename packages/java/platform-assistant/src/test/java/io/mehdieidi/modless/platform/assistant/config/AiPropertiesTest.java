@@ -14,8 +14,7 @@ class AiPropertiesTest {
   void appliesConservativeDefaults() {
     AiProperties properties =
         new AiProperties(
-            false, null, null, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, null, null, null, null, null, null,
-            null);
+            false, null, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null, null, null, null, null);
 
     assertFalse(properties.enabled());
     assertEquals("openai", properties.provider());
@@ -32,7 +31,6 @@ class AiPropertiesTest {
     assertEquals(16, properties.maxAgentSteps());
     assertEquals(8, properties.maxToolCallsPerStep());
     assertEquals(Integer.MAX_VALUE, properties.maxToolCalls());
-    assertFalse(properties.semanticValidationEnabled());
     assertEquals(10, properties.reservedSchemaSnippets());
     assertEquals("gpt-4o-mini", properties.modelFor(AssistantModelRole.RESPONDER));
   }
@@ -68,7 +66,6 @@ class AiPropertiesTest {
             0,
             0,
             0,
-            false,
             0,
             null,
             null,

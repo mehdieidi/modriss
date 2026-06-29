@@ -40,7 +40,7 @@ public record AssistantProposal(
   public enum RiskLevel {
     /** Low-risk additive or explanatory change. */
     LOW,
-    /** Ambiguous or constraint-sensitive change. */
+    /** Ambiguous or structurally sensitive change. */
     MEDIUM,
     /** Destructive, bulk, or high-impact change. */
     HIGH

@@ -41,11 +41,6 @@ public final class AssistantSettingsFixtures {
       }
 
       @Override
-      public boolean semanticValidationEnabled() {
-        return false;
-      }
-
-      @Override
       public int maxSnippetChars() {
         return maxSnippetChars;
       }
@@ -135,11 +130,6 @@ public final class AssistantSettingsFixtures {
       @Override
       public int maxToolCalls() {
         return defaults.maxToolCalls();
-      }
-
-      @Override
-      public boolean semanticValidationEnabled() {
-        return defaults.semanticValidationEnabled();
       }
 
       @Override

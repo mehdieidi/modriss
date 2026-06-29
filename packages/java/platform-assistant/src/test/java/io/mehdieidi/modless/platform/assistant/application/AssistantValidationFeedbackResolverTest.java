@@ -31,7 +31,7 @@ class AssistantValidationFeedbackResolverTest {
                     null)));
 
     List<String> feedback =
-        List.of("EVL_MODEL_LOADING: required feature 'contract' of 'Function@functions.0'");
+        List.of("StructuralValidation: required feature 'contract' of 'Function@functions.0'");
 
     List<String> types = resolver.resolveTypes(ModelLevel.PIM, feedback, patch);
 
@@ -46,7 +46,7 @@ class AssistantValidationFeedbackResolverTest {
   void parsesElementIdFromRequiredFeatureFeedback() {
     List<String> feedback =
         List.of(
-            "EVL_MODEL_LOADING: The required feature 'contract' of "
+            "StructuralValidation: The required feature 'contract' of "
                 + "'org.eclipse.emf.ecore.impl.DynamicEObjectImpl/Function@abc"
                 + "{memory:/export-pim.xmi#68ae9350-f377-409e-bfad-12dbc945f0b6}' must be set");
 

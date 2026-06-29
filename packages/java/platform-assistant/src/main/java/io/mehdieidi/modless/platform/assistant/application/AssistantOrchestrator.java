@@ -1506,8 +1506,8 @@ public class AssistantOrchestrator {
             + "\n\n"
             + "Return one complete replacement turn plan. Use PATCH only if you can correct every"
             + " failure. Add the support elements and references explicitly required by validator"
-            + " feedback, choosing safe reversible defaults. Do not repeat the rejected plan or"
-            + " ask the user to decide how to satisfy a formal constraint; use CLARIFICATION only"
+            + " feedback, choosing safe reversible defaults. Do not repeat the rejected plan or ask"
+            + " the user to decide how to satisfy a structural requirement; use CLARIFICATION only"
             + " when the missing decision is genuinely a domain choice.";
     return provider.planTurn(
         new AssistantModelProvider.AssistantPrompt(
@@ -1899,7 +1899,7 @@ public class AssistantOrchestrator {
     return """
     You are operating a formal modeling workbench as an autonomous modeling agent. Infer the user's
     natural-language intent with the LLM; do not rely on keyword routing. The current model,
-    Ecore-derived language catalog, concrete-syntax metadata, and executable EVL findings are
+    Ecore-derived language catalog, concrete-syntax metadata, and structural validation findings are
     backend-owned facts. Never invent an EClass, feature, enum literal, existing ID, or
     containment. Use exact stable IDs from the model context.
 

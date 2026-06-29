@@ -22,8 +22,6 @@ public class MetamodelCatalogService {
    * @return matching catalog snippets
    */
   public List<AssistantModelProvider.ContextSnippet> search(String query, String level, int limit) {
-    return catalogs.search(query, level, limit).stream()
-        .filter(snippet -> !snippet.source().toLowerCase(java.util.Locale.ROOT).endsWith(".evl"))
-        .toList();
+    return catalogs.search(query, level, limit);
   }
 }

@@ -66,10 +66,10 @@ public class AssistantToolService implements AssistantToolBridge {
     return toolCallCount.getAndSet(0);
   }
 
-  /** Searches the backend-owned metamodel and EVL catalogs. */
+  /** Searches the backend-owned metamodel and methodology catalogs. */
   @Tool(
       name = "searchCatalogs",
-      description = "Search compact backend-owned metamodel and EVL catalogs.")
+      description = "Search compact backend-owned metamodel and methodology catalogs.")
   public List<AssistantModelProvider.ContextSnippet> searchCatalogs(
       @ToolParam(description = "Search query") String query,
       @ToolParam(description = "Configured modeling level key or display name") String level,
@@ -103,10 +103,10 @@ public class AssistantToolService implements AssistantToolBridge {
     }
   }
 
-  /** Converts a validation result into the assistant validation schema. */
+  /** Converts a structural validation result into the assistant validation schema. */
   @Tool(
       name = "summarizeValidation",
-      description = "Summarize structural and EVL validation issues without committing changes.")
+      description = "Summarize structural validation issues without committing changes.")
   public AssistantValidationSummary summarizeValidation(
       @ToolParam(description = "Configured modeling level key or display name") String level,
       @ToolParam(description = "Validation issues JSON array") String issuesJson) {

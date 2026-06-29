@@ -58,7 +58,6 @@ modless:
     validation-repair-attempts: ${MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS:6}
     max-agent-steps: ${MODLESS_AI_MAX_AGENT_STEPS:16}
     max-tool-calls-per-step: ${MODLESS_AI_MAX_TOOL_CALLS_PER_STEP:8}
-    semantic-validation-enabled: ${MODLESS_AI_SEMANTIC_VALIDATION_ENABLED:false}
     token-budget: ${MODLESS_AI_TOKEN_BUDGET:16000}
     max-context-snippets: ${MODLESS_AI_MAX_CONTEXT_SNIPPETS:24}
     reserved-schema-snippets: ${MODLESS_AI_RESERVED_SCHEMA_SNIPPETS:10}

@@ -21,10 +21,10 @@ import java.util.Map;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** Builds and queries compact metamodel and EVL catalogs for assistant retrieval. */
+/** Builds and queries compact metamodel and methodology catalogs for assistant retrieval. */
 public class JdbcAssistantCatalog implements AssistantCatalog {
 
-  private static final String INDEX_FORMAT_VERSION = "2";
+  private static final String INDEX_FORMAT_VERSION = "3";
 
   private final JdbcTemplate jdbc;
   private final LocalEmbeddingService embeddings;
@@ -53,10 +53,11 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
     this.mdePaths = mdePaths == null ? new MdeRuntimePaths(null) : mdePaths;
   }
 
-  /** Reindexes local metamodel, EVL, and methodology files when content hashes change. */
+  /** Reindexes local metamodel and methodology files when content hashes change. */
   @Override
   public void refresh() {
     try {
+      removeEvlCatalogDocuments();
       indexMetamodelCatalog();
       indexMethodologyCatalog();
     } catch (Exception ex) {
@@ -67,6 +68,7 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
   /** Warms startup-critical catalog knowledge without rewriting an existing metamodel cache. */
   public void refreshStartupCatalog() {
     try {
+      removeEvlCatalogDocuments();
       if (!hasMetamodelCatalog()) {
         indexMetamodelCatalog();
       }
@@ -84,15 +86,25 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
         jdbc.queryForObject(
             """
             SELECT count(*) FROM assistant_retrieval_documents
-            WHERE scope IN ('package', 'classifier', 'feature', 'enum', 'constraint')
+            WHERE scope IN ('package', 'classifier', 'feature', 'enum')
             """,
             Integer.class);
     return count != null && count > 0;
   }
 
   private void indexMetamodelCatalog() throws Exception {
-    indexTree(
-        mdePaths.repositoryRoot().resolve("mde"), path -> matches(path, ".emf", ".ecore", ".evl"));
+    indexTree(mdePaths.repositoryRoot().resolve("mde"), path -> matches(path, ".emf", ".ecore"));
+  }
+
+  private void removeEvlCatalogDocuments() {
+    if (jdbc == null) {
+      return;
+    }
+    jdbc.update(
+        """
+        DELETE FROM assistant_retrieval_documents
+        WHERE scope = 'constraint'
+        """);
   }
 
   private void indexMethodologyCatalog() throws Exception {
@@ -341,9 +353,7 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
       }
       jdbc.update("DELETE FROM assistant_retrieval_documents WHERE source = ?", source);
       List<Document> documents;
-      if (path.toString().toLowerCase(Locale.ROOT).endsWith(".evl")) {
-        documents = parseEvl(path, source, hash);
-      } else if (isMethodologyJson(path)) {
+      if (isMethodologyJson(path)) {
         documents = parseMethodologyJson(path, source, hash);
       } else if (isMethodologyMarkdown(path)) {
         documents = parseMethodologyMarkdown(path, source, hash);
@@ -546,54 +556,6 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
                       upper,
                       "type",
                       type)));
-        }
-      }
-    }
-    return documents;
-  }
-
-  private List<Document> parseEvl(Path path, String source, String hash) throws Exception {
-    List<Document> documents = new ArrayList<>();
-    List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
-    String context = "";
-    String currentRuleName = null;
-    String currentRuleKind = null;
-    StringBuilder currentRuleBody = null;
-    int braceDepth = 0;
-    for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
-      String line = lines.get(lineNumber);
-      String trimmed = line.trim();
-      if (currentRuleName == null && trimmed.startsWith("context ")) {
-        context = trimmed.substring(8).trim();
-      } else if (currentRuleName == null
-          && (trimmed.startsWith("constraint ") || trimmed.startsWith("critique "))) {
-        currentRuleKind = trimmed.startsWith("critique ") ? "optional" : "mandatory";
-        String keyword = trimmed.startsWith("critique ") ? "critique " : "constraint ";
-        currentRuleName = trimmed.substring(keyword.length()).split("[\\s\\{]", 2)[0].trim();
-        currentRuleBody = new StringBuilder();
-        braceDepth = 0;
-      }
-      if (currentRuleName != null) {
-        currentRuleBody.append(line).append('\n');
-        braceDepth += count(line, '{') - count(line, '}');
-        if (braceDepth <= 0 && trimmed.endsWith("}")) {
-          documents.add(
-              document(
-                  source,
-                  hash,
-                  "constraint",
-                  currentRuleName,
-                  "context " + context + "\nkind " + currentRuleKind + "\n" + currentRuleBody,
-                  Map.of(
-                      "context",
-                      context,
-                      "constraintKind",
-                      currentRuleKind,
-                      "line",
-                      lineNumber + 1)));
-          currentRuleName = null;
-          currentRuleKind = null;
-          currentRuleBody = null;
         }
       }
     }
@@ -809,16 +771,6 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
 
   private String blankToDefault(String value, String defaultValue) {
     return value == null || value.isBlank() ? defaultValue : value;
-  }
-
-  private int count(String value, char needle) {
-    int matches = 0;
-    for (int index = 0; index < value.length(); index++) {
-      if (value.charAt(index) == needle) {
-        matches++;
-      }
-    }
-    return matches;
   }
 
   private void upsert(Document document) {

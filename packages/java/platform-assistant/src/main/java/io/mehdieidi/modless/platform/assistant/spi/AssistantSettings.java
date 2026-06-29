@@ -17,9 +17,6 @@ public interface AssistantSettings {
   /** Maximum whitelisted tool calls per turn. */
   int maxToolCalls();
 
-  /** Whether assistant turns should enforce EVL semantic validation in addition to structure. */
-  boolean semanticValidationEnabled();
-
   /** Maximum characters per retrieved snippet. */
   int maxSnippetChars();
 
