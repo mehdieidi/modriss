@@ -614,6 +614,12 @@ class AssistantOrchestratorTest {
     assertTrue(
         analysisPrompt.getValue().snippets().stream()
             .anyMatch(snippet -> snippet.source().equals("user-attachment")));
+    assertTrue(analysisPrompt.getValue().user().contains("event-storming.md"));
+    assertTrue(
+        analysisPrompt
+            .getValue()
+            .user()
+            .contains("User commands Register patient, then Patient registered event occurs."));
 
     ArgumentCaptor<AssistantModelProvider.AssistantPrompt> planPrompt =
         ArgumentCaptor.forClass(AssistantModelProvider.AssistantPrompt.class);
@@ -626,7 +632,10 @@ class AssistantOrchestratorTest {
                         && snippet.content().contains("Register patient")));
     assertTrue(
         planPrompt.getValue().snippets().stream()
-            .noneMatch(snippet -> snippet.source().equals("user-attachment")));
+            .anyMatch(
+                snippet ->
+                    snippet.source().equals("user-attachment")
+                        && snippet.content().contains("Patient registered event")));
   }
 
   @Test
@@ -1008,6 +1017,12 @@ class AssistantOrchestratorTest {
     Object previewPayload = payloadCaptor.getAllValues().get(previewIndex);
     assertTrue(previewPayload instanceof Map<?, ?>);
     assertTrue(((Map<?, ?>) previewPayload).containsKey("model"));
+    assertEquals("draft", ((Map<?, ?>) previewPayload).get("phase"));
+    assertTrue(
+        payloadCaptor.getAllValues().stream()
+            .filter(Map.class::isInstance)
+            .map(Map.class::cast)
+            .anyMatch(payload -> "validated".equals(payload.get("phase"))));
   }
 
   private AssistantOrchestrator.AssistantTurnRequest request(String message) {

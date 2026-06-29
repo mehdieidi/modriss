@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /** Curated prompt benchmark runner for assistant reliability work. */
 public final class AssistantEvalRunner {
@@ -99,25 +100,49 @@ public final class AssistantEvalRunner {
         List<AssistantModelProvider.ContextSnippet> snippets =
             new ArrayList<>(schemas.planningContracts(level, prompt.prompt(), 8));
         boolean sourceAnalysisUsed = false;
+        SemanticModelPatch sourcePatch = null;
         if (!prompt.sourceDocument().isBlank() && level == ModelLevel.CIM) {
           AssistantModelProvider.AssistantReply analysis =
               provider.analyzeSource(
                   new AssistantModelProvider.AssistantPrompt(
                       AssistantModelRole.SOURCE_ANALYST,
-                      "Eval source analysis for " + prompt.id(),
-                      prompt.prompt(),
-                      List.of(
-                          new AssistantModelProvider.ContextSnippet(
-                              "eval-source-document",
-                              prompt.id() + " source document",
-                              prompt.sourceDocument()))),
+                      sourceAnalysisPrompt(prompt),
+                      sourceAnalysisUserMessage(prompt),
+                      sourceAnalysisSnippets(prompt)),
                   (stage, message) -> {});
           if (analysis != null && !analysis.content().isBlank()) {
             sourceAnalysisUsed = true;
             snippets.add(
                 new AssistantModelProvider.ContextSnippet(
                     "source-analysis", prompt.id() + " evidence map", analysis.content()));
+            sourcePatch =
+                new CimSourceModelMaterializer(schemas, mapper)
+                    .materialize(analysis.content())
+                    .orElse(null);
           }
+        }
+        if (sourcePatch != null) {
+          SemanticModelPatch completed = patchCompleter.complete(level, sourcePatch, Map.of());
+          int addCount = count(completed, SemanticModelPatch.OperationType.ADD_ELEMENT);
+          int connectionCount = count(completed, SemanticModelPatch.OperationType.CONNECT_ELEMENTS);
+          boolean passed =
+              completed.operations().size() >= prompt.minOperations()
+                  && addCount >= prompt.minElementAdds()
+                  && connectionCount >= prompt.minConnections()
+                  && (!prompt.requiresSourceAnalysis() || sourceAnalysisUsed);
+          builder
+              .turnKind(AssistantTurnPlan.Kind.PATCH.name())
+              .operationCount(completed.operations().size())
+              .addElementCount(addCount)
+              .connectionCount(connectionCount)
+              .sourceAnalysisUsed(sourceAnalysisUsed)
+              .validationPassed(passed)
+              .repairAttempts(0)
+              .toolCalls(0)
+              .failureStage(passed ? "" : "EVAL_EXPECTATIONS")
+              .latencyMs(System.currentTimeMillis() - startedAt);
+          results.add(builder.build());
+          continue;
         }
         if (toolBinder != null) {
           toolBinder.bind(level, prompt);
@@ -172,6 +197,42 @@ public final class AssistantEvalRunner {
       results.add(builder.build());
     }
     return results;
+  }
+
+  private String sourceAnalysisPrompt(EvalPrompt prompt) {
+    return """
+    Eval source analysis for\
+    """
+        + prompt.id()
+        + """
+        . Return only one JSON object with elements and relationships. Classify each source fact
+        into exact CIM EClasses and exact writable EReference names from the supplied contracts.
+        Include enough actors, commands, events, policies, entities, information items, risks,
+        assumptions, hotspots, goals, and relationships to satisfy the source document.
+        """;
+  }
+
+  private String sourceAnalysisUserMessage(EvalPrompt prompt) {
+    if (prompt.sourceDocument().isBlank()) {
+      return prompt.prompt();
+    }
+    return prompt.prompt()
+        + "\n\nAttached source document: "
+        + prompt.id()
+        + "\n\n"
+        + prompt.sourceDocument();
+  }
+
+  private List<AssistantModelProvider.ContextSnippet> sourceAnalysisSnippets(EvalPrompt prompt) {
+    List<AssistantModelProvider.ContextSnippet> snippets = new ArrayList<>();
+    snippets.add(
+        new AssistantModelProvider.ContextSnippet(
+            "eval-source-document", prompt.id() + " source document", prompt.sourceDocument()));
+    snippets.add(
+        new AssistantModelProvider.ContextSnippet(
+            "runtime-metamodel", "CIM language index", schemas.languageIndex(ModelLevel.CIM)));
+    snippets.addAll(schemas.allPlanningContracts(ModelLevel.CIM).stream().limit(20).toList());
+    return snippets;
   }
 
   private int count(SemanticModelPatch patch, SemanticModelPatch.OperationType type) {

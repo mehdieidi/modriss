@@ -237,17 +237,45 @@ public class ChatbotController {
 
   private ResolvedRequestAttachment resolveRequestAttachments(
       UserRecord user, AssistantSessionStore.AssistantSession session, MessageRequest request) {
+    return resolveRequestAttachments(
+        user,
+        session,
+        request.attachmentIds(),
+        request.attachmentName(),
+        request.attachmentContent(),
+        true);
+  }
+
+  private ResolvedRequestAttachment resolveChoiceAttachments(
+      UserRecord user, AssistantSessionStore.AssistantSession session, ChoiceRequest request) {
+    return resolveRequestAttachments(
+        user,
+        session,
+        request.attachmentIds(),
+        request.attachmentName(),
+        request.attachmentContent(),
+        false);
+  }
+
+  private ResolvedRequestAttachment resolveRequestAttachments(
+      UserRecord user,
+      AssistantSessionStore.AssistantSession session,
+      List<String> attachmentIds,
+      String attachmentName,
+      String attachmentContent,
+      boolean includeRecentFallback) {
     UploadScope scope =
         new UploadScope(user.id(), session.projectId(), session.level(), session.id());
     List<UploadService.ResolvedAttachment> resolved =
-        uploads.resolveAssistantAttachments(scope, request.attachmentIds());
+        uploads.resolveAssistantAttachments(scope, attachmentIds);
     if (resolved.isEmpty()
-        && (request.attachmentIds() == null || request.attachmentIds().isEmpty())
-        && (request.attachmentContent() == null || request.attachmentContent().isBlank())) {
+        && includeRecentFallback
+        && (attachmentIds == null || attachmentIds.isEmpty())
+        && (attachmentContent == null || attachmentContent.isBlank())) {
       resolved = uploads.resolveRecentAssistantAttachments(scope, 3);
     }
     if (resolved.isEmpty()) {
-      return new ResolvedRequestAttachment(request.attachmentName(), request.attachmentContent());
+      return new ResolvedRequestAttachment(attachmentName, attachmentContent);
     }
     String name =
         resolved.stream()
@@ -348,6 +376,8 @@ public class ChatbotController {
     if (request == null) {
       throw new PlatformException(400, "Clarification answers are required.");
     }
+    AssistantSessionStore.AssistantSession session = assistant.session(user, sessionId);
+    ResolvedRequestAttachment attachment = resolveChoiceAttachments(user, session, request);
     List<AssistantOrchestrator.ChoiceAnswer> answers =
         request.answers() == null || request.answers().isEmpty()
             ? List.of(
@@ -362,7 +392,7 @@ public class ChatbotController {
                             answer.choiceId(), answer.optionIds(), answer.freeText()))
                 .toList();
     AssistantOrchestrator.AssistantTurnResponse response =
-        assistant.submitChoices(user, sessionId, answers);
+        assistant.submitChoices(user, sessionId, answers, attachment.name(), attachment.content());
     return toMessageResponse(response);
   }
 
@@ -496,7 +526,12 @@ public class ChatbotController {
    * @param optionId selected option ID
    */
   public record ChoiceRequest(
-      String choiceId, String optionId, List<ClarificationAnswer> answers) {}
+      String choiceId,
+      String optionId,
+      List<ClarificationAnswer> answers,
+      String attachmentName,
+      String attachmentContent,
+      List<String> attachmentIds) {}
 
   /** One answer to a structured clarification question. */
   public record ClarificationAnswer(String choiceId, List<String> optionIds, String freeText) {}

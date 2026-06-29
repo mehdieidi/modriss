@@ -114,6 +114,7 @@ public class AssistantPatchCompleter {
     operations = ensureFunctionIdempotency(level, operations, types);
     operations = ensureDataStoreStructure(level, operations, types);
     operations = ensureDataModelSchemas(level, operations, types);
+    operations = ensureRequiredReferences(level, operations, types);
     return new SemanticModelPatch(orderOperationsForCompilation(operations));
   }
 
@@ -772,6 +773,48 @@ public class AssistantPatchCompleter {
                     && operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS
                     && sourceId.equals(operation.sourceElementId())
                     && referenceName.equals(operation.referenceName()));
+  }
+
+  private List<SemanticModelPatch.Operation> ensureRequiredReferences(
+      ModelLevel level, List<SemanticModelPatch.Operation> operations, Map<String, String> types) {
+    List<SemanticModelPatch.Operation> result = new ArrayList<>(operations);
+    for (Map.Entry<String, String> entry : new ArrayList<>(types.entrySet())) {
+      String sourceId = entry.getKey();
+      String sourceType = entry.getValue();
+      AssistantMetamodelSchemaService.TypeSchema typeSchema =
+          schemas.typeSchema(level, sourceType).orElse(null);
+      if (typeSchema == null) {
+        continue;
+      }
+      for (AssistantMetamodelSchemaService.ReferenceSchema reference : typeSchema.references()) {
+        if (!reference.required()
+            || reference.containment()
+            || reference.readonly()
+            || hasRelationship(result, sourceId, reference.name())) {
+          continue;
+        }
+        compatibleTargets(level, sourceId, reference.name(), types).stream()
+            .findFirst()
+            .map(targetId -> connectOperation(sourceId, targetId, reference.name()))
+            .ifPresent(result::add);
+      }
+    }
+    return result;
+  }
+
+  private List<String> compatibleTargets(
+      ModelLevel level, String sourceId, String referenceName, Map<String, String> types) {
+    String sourceType = types.get(sourceId);
+    if (sourceType == null) {
+      return List.of();
+    }
+    return types.entrySet().stream()
+        .filter(entry -> !entry.getKey().equals(sourceId))
+        .filter(
+            entry ->
+                schemas.acceptsReferenceTarget(level, sourceType, referenceName, entry.getValue()))
+        .map(Map.Entry::getKey)
+        .toList();
   }
 
   private SemanticModelPatch.Operation connectOperation(

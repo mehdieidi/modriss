@@ -3,7 +3,7 @@ import { el } from "./dom.js";
 import { api, isPlannedFeatureError } from "./api.js";
 import { formatUserError } from "./errors.js";
 import { setError, setStatus } from "./status.js";
-import { apiUrl, MODEL_TYPES, websocketUrl } from "./config.js";
+import { apiUrl, CHAT_ATTACHMENT_MAX_BYTES, MODEL_TYPES, websocketUrl } from "./config.js";
 import { toDiagram } from "./diagram.js";
 import { renderDiagram } from "./canvas.js";
 import { renderMarkdown } from "./markdown.js";
@@ -375,14 +375,16 @@ function updateCanvasTraceOverlay(payload) {
   const operationIndex = Number(payload?.operationIndex) || 0;
   const operationCount = Number(payload?.operationCount) || 0;
   const label = payload?.operationLabel || "Previewing model update";
+  const phase = String(payload?.phase || "").toLowerCase();
+  const phaseLabel = phase === "draft" ? "draft" : phase === "validated" ? "validated" : "preview";
   if (title) {
     title.textContent = label;
   }
   if (meta) {
     meta.textContent =
       operationIndex && operationCount
-        ? `${operationIndex} / ${operationCount} validated operations`
-        : "Validated preview";
+        ? `${operationIndex} / ${operationCount} ${phaseLabel} operations`
+        : `${phaseLabel[0].toUpperCase()}${phaseLabel.slice(1)} preview`;
   }
   overlay.classList.remove("hidden");
   el.canvasViewport?.classList.add("assistant-preview-active");
@@ -434,9 +436,11 @@ function applyAssistantModelPreview(typeKey, payload) {
   }
   const operationIndex = Number(payload?.operationIndex) || null;
   const operationCount = Number(payload?.operationCount) || null;
+  const phase = String(payload?.phase || "").toLowerCase();
+  const phasePrefix = phase === "draft" ? "Draft" : phase === "validated" ? "Validated" : "Preview";
   const label = payload?.operationLabel
-    ? `${payload.operationLabel}${operationIndex && operationCount ? ` (${operationIndex}/${operationCount})` : ""}`
-    : "Previewing validated canvas changes";
+    ? `${phasePrefix}: ${payload.operationLabel}${operationIndex && operationCount ? ` (${operationIndex}/${operationCount})` : ""}`
+    : `${phasePrefix}: previewing canvas changes`;
   pushThinkingStep(label, "MODELING_PREVIEW");
   updateCanvasTraceOverlay(payload);
   state.baseModel = cloneValue(model);
@@ -1184,6 +1188,65 @@ function setProposalDecision(card, label) {
   actions.appendChild(status);
 }
 
+function choiceMentionsAttachment(choice) {
+  const text = [
+    choice?.prompt,
+    ...(choice?.options || []).flatMap((option) => [option?.label, option?.description]),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return /\b(file|attachment|document|upload|attach|reattach|paste|contents?|\.md|\.txt|\.json)\b/.test(
+    text,
+  );
+}
+
+function buildChoiceAttachmentControl() {
+  const wrap = document.createElement("div");
+  wrap.className = "chat-question-attachment";
+  const status = document.createElement("div");
+  status.className = "chat-question-attachment-status";
+  const button = document.createElement("label");
+  button.className = "chat-question-upload-btn";
+  button.textContent = state.chat.attachment?.name ? "Replace attachment" : "Upload file";
+  const input = document.createElement("input");
+  input.accept = ".txt,.md,.json";
+  input.type = "file";
+  input.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (file.size > CHAT_ATTACHMENT_MAX_BYTES) {
+      event.target.value = "";
+      setError(`File too large (${file.size} bytes). Max ${CHAT_ATTACHMENT_MAX_BYTES} bytes.`);
+      return;
+    }
+    try {
+      status.textContent = `Uploading: ${file.name}`;
+      const attachment = await uploadChatAttachment(file);
+      state.chat.attachment = {
+        id: attachment.id,
+        name: attachment.fileName || file.name,
+        sizeBytes: attachment.sizeBytes || file.size,
+      };
+      status.textContent = `Attached: ${state.chat.attachment.name}`;
+      button.textContent = "Replace attachment";
+      updateChatAttachmentLabel();
+    } catch (error) {
+      event.target.value = "";
+      status.textContent = "";
+      setError(error, { prefix: "Failed to read file." });
+    }
+  });
+  button.appendChild(input);
+  status.textContent = state.chat.attachment?.name
+    ? `Attached: ${state.chat.attachment.name}`
+    : "Attach the requested .md, .txt, or .json file here.";
+  wrap.append(status, button);
+  return wrap;
+}
+
 function appendChoiceButtons(typeKey, sessionId, choices) {
   if (!Array.isArray(choices) || !choices.length) {
     return;
@@ -1253,6 +1316,11 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
     fields.push({ choice, fieldset, name, freeText });
     form.appendChild(fieldset);
   }
+  const supportsAttachment =
+    choices.some(choiceMentionsAttachment) || Boolean(state.chat.attachment);
+  if (supportsAttachment) {
+    form.appendChild(buildChoiceAttachmentControl());
+  }
 
   const actions = document.createElement("div");
   actions.className = "chat-proposal-actions";
@@ -1300,7 +1368,10 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
       suppressChoiceRealtime = true;
       response = await api(`/chatbot/sessions/${sessionId}/choices`, {
         method: "POST",
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({
+          answers,
+          attachmentIds: state.chat.attachment?.id ? [state.chat.attachment.id] : [],
+        }),
       });
       suppressChoiceRealtime = false;
       applyHttpActivity(response);
@@ -1312,6 +1383,13 @@ function appendChoiceButtons(typeKey, sessionId, choices) {
         appendChoiceButtons(typeKey, sessionId, response.choices);
       }
       await applyAssistantModelResponse(typeKey, response);
+      if (!["WAITING_FOR_CHOICE", "FAILED"].includes(response?.workflowState)) {
+        state.chat.attachment = null;
+        if (el.chatFileInput) {
+          el.chatFileInput.value = "";
+        }
+        updateChatAttachmentLabel();
+      }
     } catch (error) {
       suppressChoiceRealtime = false;
       if (chatBusyDepth > 0) {
@@ -1484,11 +1562,13 @@ export async function sendChatMessage() {
       requestedModelId,
       requestDiagramFingerprint,
     );
-    state.chat.attachment = null;
-    if (el.chatFileInput) {
-      el.chatFileInput.value = "";
+    if (!["WAITING_FOR_CHOICE", "FAILED"].includes(response?.workflowState)) {
+      state.chat.attachment = null;
+      if (el.chatFileInput) {
+        el.chatFileInput.value = "";
+      }
+      updateChatAttachmentLabel();
     }
-    updateChatAttachmentLabel();
     setStatus("Assistant response received");
   } catch (error) {
     if (chatBusyDepth > 0) {

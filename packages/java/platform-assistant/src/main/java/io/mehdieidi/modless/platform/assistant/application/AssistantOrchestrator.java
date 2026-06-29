@@ -255,6 +255,34 @@ public class AssistantOrchestrator {
             session.level(),
             enrichedRequest.selectedElementIds());
 
+    Optional<AssistantTurnPlan> materializedSourcePlan =
+        materializeCimSourcePlan(session, enrichedRequest);
+    if (materializedSourcePlan.isPresent()) {
+      publishProgress(
+          sessionId, "PLANNING", "Materializing CIM operations from classified source evidence");
+      AssistantTurnResponse response =
+          proposalResponse(
+              user,
+              session,
+              threadId,
+              enrichedRequest,
+              model,
+              baseModel,
+              context,
+              snippets,
+              materializedSourcePlan.get());
+      recordTurnDiagnostics(
+          response.workflowState().name(),
+          snippets.size(),
+          0,
+          0,
+          response.workflowState().name(),
+          startedAt);
+      metrics.recordAssistantTurnOutcome(
+          evalCategory(request, context), response.workflowState().name());
+      return response;
+    }
+
     tools.bindSession(new AssistantToolBridge.ToolSession(session.level(), baseModel, context));
     int toolCalls = 0;
     int repairAttempts = 0;
@@ -425,7 +453,7 @@ public class AssistantOrchestrator {
               new AssistantModelProvider.AssistantPrompt(
                   AssistantModelRole.SOURCE_ANALYST,
                   sourceAnalysisPrompt(session),
-                  request.message(),
+                  sourceAnalysisUserMessage(request),
                   sourceAnalysisSnippets(session, request)),
               (stage, message) -> publishProgress(session.id(), stage, message));
       String analysis = reply.content() == null ? "" : reply.content().trim();
@@ -457,8 +485,23 @@ public class AssistantOrchestrator {
     You are preparing source evidence for an autonomous CIM modeling agent. The next agent phase
     will create a structurally valid model using only Ecore-defined CIM types and features. Extract
     modeling evidence from the attached source and organize it so no stated business fact is lost.
-    Do not invent model elements or output semantic patch JSON. Prefer concise, coverage-oriented
-    bullets grounded in the document.
+    Return only one JSON object. Do not wrap it in Markdown. Do not output semantic patch JSON.
+    The JSON must have:
+    - elements: source evidence classified into CIM EClasses.
+    - relationships: optional sourceKey-to-sourceKey references using exact writable CIM
+      EReference names.
+
+    Element shape:
+    {"sourceKey":"stable-local-key","type":"ExactCimEClass","name":"domain name",
+    "summary":"short grounded summary","description":"source-grounded detail",
+    "sourceExcerpt":"short evidence excerpt","attributes":{}}
+
+    Relationship shape:
+    {"source":"sourceKey","target":"sourceKey","referenceName":"exactEReference"}
+
+    Use only Ecore-defined CIM element types and attributes. Prefer specific domain names over
+    generic labels. If the source supports many facts, include many elements; do not collapse a
+    document into a toy summary. Classify source facts rather than keyword matching them.
 
     Level:
     """
@@ -469,22 +512,36 @@ public class AssistantOrchestrator {
         + schemas.languageIndex(ModelLevel.CIM);
   }
 
+  private String sourceAnalysisUserMessage(AssistantTurnRequest request) {
+    StringBuilder message =
+        new StringBuilder(nonBlank(request.message(), "Create a CIM model from the source."));
+    if (!blank(request.attachmentContent())) {
+      message
+          .append("\n\nAttached source document: ")
+          .append(nonBlank(request.attachmentName(), "source document"))
+          .append("\n\n")
+          .append(request.attachmentContent());
+    }
+    return message.toString();
+  }
+
   private List<AssistantModelProvider.ContextSnippet> sourceAnalysisSnippets(
       AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
     List<AssistantModelProvider.ContextSnippet> snippets = new ArrayList<>();
     snippets.add(
         new AssistantModelProvider.ContextSnippet(
+            "user-attachment",
+            nonBlank(request.attachmentName(), "source document"),
+            request.attachmentContent()));
+    snippets.add(
+        new AssistantModelProvider.ContextSnippet(
             "runtime-metamodel", "CIM language index", schemas.languageIndex(ModelLevel.CIM)));
+    schemas.allPlanningContracts(ModelLevel.CIM).stream().limit(16).forEach(snippets::add);
     snippets.addAll(
         catalogs.search(
             "CIM methodology event storming user stories source analysis",
             session.level().name(),
             8));
-    snippets.add(
-        new AssistantModelProvider.ContextSnippet(
-            "user-attachment",
-            nonBlank(request.attachmentName(), "source document"),
-            request.attachmentContent()));
     return snippetsForFollowup(snippets);
   }
 
@@ -501,6 +558,26 @@ public class AssistantOrchestrator {
         activityFor(AssistantWorkflowState.FAILED));
   }
 
+  private Optional<AssistantTurnPlan> materializeCimSourcePlan(
+      AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
+    if (session.level() != ModelLevel.CIM
+        || blank(request.sourceAnalysis())
+        || !isRequestedModelChange(request)
+        || !looksLikeSourceToCimRequest(request)) {
+      return Optional.empty();
+    }
+    return new CimSourceModelMaterializer(schemas, mapper)
+        .materialize(request.sourceAnalysis())
+        .map(
+            patch ->
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.PATCH,
+                    "I created the CIM from the attached source document.",
+                    List.of(),
+                    patch));
+  }
+
   private AssistantTurnResponse proposalResponse(
       UserRecord user,
       AssistantSessionStore.AssistantSession session,
@@ -513,6 +590,7 @@ public class AssistantOrchestrator {
       AssistantTurnPlan initialPlan) {
     publishProgress(session.id(), "VALIDATING", "Compiling and validating the model change");
     AssistantTurnPlan acceptedPlan = preparePlan(session.level(), context, initialPlan);
+    publishDraftPreviewProgress(session, model, baseModel, acceptedPlan);
     SourceCoverageExpectation coverageExpectation = sourceCoverageExpectation(session, request);
     PlanAttempt attempt =
         evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
@@ -1506,6 +1584,16 @@ public class AssistantOrchestrator {
   /** Resumes a pending turn with validated structured answers. */
   public AssistantTurnResponse submitChoices(
       UserRecord user, String sessionId, List<ChoiceAnswer> answers) {
+    return submitChoices(user, sessionId, answers, "", "");
+  }
+
+  /** Resumes a pending turn with validated structured answers and optional late attachment text. */
+  public AssistantTurnResponse submitChoices(
+      UserRecord user,
+      String sessionId,
+      List<ChoiceAnswer> answers,
+      String attachmentName,
+      String attachmentContent) {
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
     String threadId = session.id();
     PendingInteractionRecord pending =
@@ -1554,6 +1642,12 @@ public class AssistantOrchestrator {
         "CLARIFICATION_ANSWERED",
         Map.of("questionCount", pending.questions().size()));
     AssistantTurnRequest original = pending.request();
+    String effectiveAttachmentContent =
+        blank(original.attachmentContent()) ? attachmentContent : original.attachmentContent();
+    String effectiveAttachmentName =
+        blank(original.attachmentContent())
+            ? nonBlank(attachmentName, original.attachmentName())
+            : original.attachmentName();
     AssistantTurnRequest resumed =
         new AssistantTurnRequest(
             "Continue the original request using these user-approved clarification answers.\n\n"
@@ -1572,8 +1666,8 @@ public class AssistantOrchestrator {
             original.activeView(),
             original.selectedElementIds(),
             original.unsavedDraftPatch(),
-            original.attachmentName(),
-            original.attachmentContent(),
+            effectiveAttachmentName,
+            effectiveAttachmentContent,
             original.sourceAnalysis(),
             original.rootMessage());
     return handleMessage(user, sessionId, resumed);
@@ -1713,6 +1807,13 @@ public class AssistantOrchestrator {
                 schemas.coverage(level).toString()));
 
     List<AssistantModelProvider.ContextSnippet> tier4 = new ArrayList<>();
+    if (!blank(request.attachmentContent())) {
+      tier4.add(
+          new AssistantModelProvider.ContextSnippet(
+              "user-attachment",
+              nonBlank(request.attachmentName(), "attachment"),
+              request.attachmentContent()));
+    }
     if (!blank(request.sourceAnalysis())) {
       tier4.add(
           new AssistantModelProvider.ContextSnippet(
@@ -1725,13 +1826,6 @@ public class AssistantOrchestrator {
     tier4.addAll(matches);
     if (emptyModel && isCreationRequest(query)) {
       tier4.addAll(catalogs.search(query, level.name(), 6));
-    }
-    if (!blank(request.attachmentContent()) && blank(request.sourceAnalysis())) {
-      tier4.add(
-          new AssistantModelProvider.ContextSnippet(
-              "user-attachment",
-              nonBlank(request.attachmentName(), "attachment"),
-              request.attachmentContent()));
     }
     matches.stream()
         .map(AssistantModelProvider.ContextSnippet::title)
@@ -2039,7 +2133,13 @@ public class AssistantOrchestrator {
               AssistantWorkflowState.FAILED,
               activityFor(AssistantWorkflowState.FAILED)));
     }
-    publishPreviewProgress(session, targetModel, compiled);
+    publishPreviewProgress(
+        session,
+        targetModel.id(),
+        targetModel.revision(),
+        targetModel.modelJson(),
+        compiled,
+        "validated");
     AppliedPatch applied =
         applySemanticPatchIncrementally(user, session, targetModel, acceptedPlan.patch());
     ModelRecord updated = applied.model();
@@ -2127,40 +2227,71 @@ public class AssistantOrchestrator {
     return targetModel;
   }
 
-  private void publishPreviewProgress(
+  private void publishDraftPreviewProgress(
       AssistantSessionStore.AssistantSession session,
       ModelRecord model,
-      AssistantPatchCompiler.CompiledPatch compiled) {
+      JsonNode baseModel,
+      AssistantTurnPlan acceptedPlan) {
+    if (acceptedPlan == null || acceptedPlan.patch().operations().isEmpty()) {
+      return;
+    }
+    try {
+      AssistantPatchCompiler.CompiledPatch compiled =
+          patchCompiler.compile(baseModel, acceptedPlan.patch());
+      publishProgress(session.id(), "PREVIEWING_PATCH", "Streaming draft modeling operations");
+      publishPreviewProgress(
+          session,
+          model == null ? null : model.id(),
+          model == null ? null : model.revision(),
+          baseModel,
+          compiled,
+          "draft");
+    } catch (PlatformException failure) {
+      log.debug("Skipping draft assistant model preview: {}", failure.getMessage());
+    }
+  }
+
+  private void publishPreviewProgress(
+      AssistantSessionStore.AssistantSession session,
+      String modelId,
+      Long revision,
+      JsonNode modelJson,
+      AssistantPatchCompiler.CompiledPatch compiled,
+      String phase) {
     List<ModelService.ModelPatchOperation> operations = compiled.patch();
     if (operations.isEmpty()) {
       return;
     }
-    ObjectNode preview = patchCompiler.prepareApplyRoot(model.modelJson(), compiled);
+    ObjectNode preview = patchCompiler.prepareApplyRoot(modelJson, compiled);
     for (int index = 0; index < operations.size(); index++) {
       ModelService.ModelPatchOperation operation = operations.get(index);
       patchCompiler.applyOperation(preview, operation);
       if (isCanvasVisibleOperation(operation) || index == operations.size() - 1) {
-        publishOperationPreview(session, model, preview, operation, index, operations.size());
+        publishOperationPreview(
+            session, modelId, revision, preview, operation, index, operations.size(), phase);
       }
     }
   }
 
   private void publishOperationPreview(
       AssistantSessionStore.AssistantSession session,
-      ModelRecord model,
+      String modelId,
+      Long revision,
       JsonNode preview,
       ModelService.ModelPatchOperation operation,
       int index,
-      int operationCount) {
+      int operationCount,
+      String phase) {
     if (operation == null) {
       return;
     }
     Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("modelId", model.id());
-    payload.put("revision", model.revision());
+    payload.put("modelId", modelId);
+    payload.put("revision", revision);
     payload.put("operationIndex", index + 1);
     payload.put("operationCount", operationCount);
     payload.put("operationLabel", compiledOperationLabel(operation));
+    payload.put("phase", phase == null || phase.isBlank() ? "preview" : phase);
     payload.put("preview", true);
     payload.put("model", preview);
     realtime.publish(session.id(), "assistant.model.preview", payload);

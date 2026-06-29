@@ -28,6 +28,19 @@ public class AssistantClarificationGate {
           "(?i)\\b(which|should i|do you prefer|choose between|either .+ or .+)\\b.*\\?",
           Pattern.DOTALL);
 
+  private static final Pattern FILE_CONTENT_PROMPT =
+      Pattern.compile(
+          "(?i)\\b(file|attachment|document|\\.md|\\.txt|\\.json)\\b.*\\b(content|contents|"
+              + "upload|reattach|attach|paste|provide|read)\\b|\\b(reattach|upload|attach|"
+              + "paste|provide)\\b.*\\b(file|attachment|document|contents?)\\b",
+          Pattern.DOTALL);
+
+  private static final Pattern DOCUMENT_BACKED_REQUEST =
+      Pattern.compile(
+          "(?i)\\b(attached|attachment|file|document|source|requirements?|user stor|event"
+              + " storm|\\.md|\\.txt|\\.json)\\b",
+          Pattern.DOTALL);
+
   /**
    * Filters trivial clarification questions and coerces mutation clarifications when possible.
    *
@@ -110,12 +123,18 @@ public class AssistantClarificationGate {
     if (TRIVIAL_PROMPT.matcher(prompt).find() || DEFERRABLE_PROMPT.matcher(prompt).find()) {
       return true;
     }
+    if (DOCUMENT_BACKED_REQUEST.matcher(userMessage == null ? "" : userMessage).find()
+        && FILE_CONTENT_PROMPT.matcher(prompt).find()) {
+      return true;
+    }
     for (AssistantChoice.Option option : question.options()) {
       if (option == null) {
         continue;
       }
       String optionText = (option.label() + " " + option.description()).toLowerCase(Locale.ROOT);
-      if (DEFERRABLE_PROMPT.matcher(optionText).find()) {
+      if (DEFERRABLE_PROMPT.matcher(optionText).find()
+          || (DOCUMENT_BACKED_REQUEST.matcher(userMessage == null ? "" : userMessage).find()
+              && FILE_CONTENT_PROMPT.matcher(optionText).find())) {
         return true;
       }
     }

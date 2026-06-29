@@ -203,8 +203,53 @@ class AssistantPatchCompleterTest {
     assertEquals("Source Multiplicity", multiplicity.attributes().path("name").asText());
   }
 
+  @Test
+  void completesRequiredCimReferencesFromCompatiblePlannedElements() throws Exception {
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "patient",
+                    "DomainEntity",
+                    mapper.readTree("{\"name\":\"Patient\",\"identityStrategy\":\"BUSINESS_KEY\"}"),
+                    null,
+                    null),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "patient-id",
+                    "InformationItem",
+                    mapper.readTree("{\"name\":\"Patient identity\",\"type\":\"STRING\"}"),
+                    null,
+                    null),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "patient-query",
+                    "Query",
+                    mapper.readTree("{\"name\":\"Patient lookup\"}"),
+                    null,
+                    null)));
+
+    SemanticModelPatch completed = completer.complete(ModelLevel.CIM, patch, Map.of());
+
+    assertTrue(hasConnection(completed, "patient", "patient-id", "identityAttributes"));
+    assertTrue(hasConnection(completed, "patient", "patient-id", "primaryIdentityAttribute"));
+    assertTrue(hasConnection(completed, "patient-query", "patient-id", "output"));
+  }
+
   private boolean blank(String value) {
     return value == null || value.isBlank();
+  }
+
+  private boolean hasConnection(
+      SemanticModelPatch patch, String sourceId, String targetId, String referenceName) {
+    return patch.operations().stream()
+        .anyMatch(
+            operation ->
+                operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS
+                    && sourceId.equals(operation.sourceElementId())
+                    && targetId.equals(operation.targetElementId())
+                    && referenceName.equals(operation.referenceName()));
   }
 
   @Test

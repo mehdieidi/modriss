@@ -101,4 +101,35 @@ class AssistantClarificationGateTest {
     assertEquals(AssistantTurnPlan.Kind.CLARIFICATION, gated.kind());
     assertEquals(1, gated.questions().size());
   }
+
+  @Test
+  void defersAttachmentReuploadQuestionsForDocumentBackedRequests() {
+    AssistantChoice question =
+        new AssistantChoice(
+            "provide-file",
+            "Please provide the contents of community-clinic-user-stories.md so the CIM model can"
+                + " be generated.",
+            AssistantChoice.SelectionMode.SINGLE,
+            List.of(
+                new AssistantChoice.Option(
+                    "paste",
+                    "Paste the file contents here",
+                    "Provide the full text of the user stories."),
+                new AssistantChoice.Option(
+                    "reattach", "Reattach the file", "Upload the markdown file again.")),
+            true);
+    AssistantTurnPlan plan =
+        new AssistantTurnPlan(
+            AssistantTurnPlan.Intent.MUTATION,
+            AssistantTurnPlan.Kind.CLARIFICATION,
+            "Need the file.",
+            List.of(question),
+            new SemanticModelPatch(List.of()));
+
+    String request = "Create a complete CIM model from the attached user story document.";
+    AssistantTurnPlan gated = gate.apply(plan, request);
+
+    assertEquals(AssistantTurnPlan.Kind.PATCH, gated.kind());
+    assertTrue(gate.shouldDeferToProposal(plan, request));
+  }
 }

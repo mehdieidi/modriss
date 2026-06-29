@@ -37,6 +37,61 @@ class AssistantLiveEvalTest {
 
   @Test
   void liveProviderCreatesLargeConnectedCimFromEventStormingDocument() throws Exception {
+    LiveEvalHarness harness = liveEvalHarness();
+    AssistantEvalRunner.EvalPrompt prompt =
+        harness.runner().loadPrompts().stream()
+            .filter(item -> "cim-eventstorming-01".equals(item.id()))
+            .findFirst()
+            .orElseThrow();
+
+    List<AssistantEvalRunner.EvalResult> results =
+        harness.runner().run(true, toolBinder(harness.tools(), harness.mapper()), List.of(prompt));
+
+    assertTrue(results.get(0).validationPassed(), () -> harness.runner().baselineReport(results));
+  }
+
+  @Test
+  void liveProviderCreatesCimFromCommunityClinicUserStories() throws Exception {
+    LiveEvalHarness harness = liveEvalHarness();
+    String source =
+        Files.readString(
+            Path.of("../../../mde/samples/document-to-cim/community-clinic-user-stories.md")
+                .normalize());
+    AssistantEvalRunner.EvalPrompt prompt =
+        new AssistantEvalRunner.EvalPrompt(
+            "cim-userstory-community-clinic",
+            "cim-source-document",
+            "CIM",
+            "Create a complete CIM model from this user story requirements document. Preserve "
+                + "goals, actors, user stories, acceptance criteria, business rules, domain terms, "
+                + "risks, assumptions, commands, events, and relationships.",
+            true,
+            List.of(),
+            source,
+            38,
+            24,
+            8,
+            true);
+
+    List<AssistantEvalRunner.EvalResult> results =
+        harness.runner().run(true, toolBinder(harness.tools(), harness.mapper()), List.of(prompt));
+    AssistantEvalRunner.EvalResult result = results.get(0);
+    System.out.println(
+        "Live user-story CIM eval: operations="
+            + result.operationCount()
+            + ", additions="
+            + result.addElementCount()
+            + ", connections="
+            + result.connectionCount()
+            + ", sourceAnalysis="
+            + result.sourceAnalysisUsed()
+            + ", latencyMs="
+            + result.latencyMs());
+
+    assertTrue(result.validationPassed(), () -> harness.runner().baselineReport(results));
+  }
+
+  private LiveEvalHarness liveEvalHarness() {
     Map<String, String> env = env();
     assumeTrue(
         "true".equalsIgnoreCase(env.getOrDefault("MODLESS_RUN_LIVE_ASSISTANT_EVAL", "")),
@@ -93,16 +148,7 @@ class AssistantLiveEvalTest {
     AssistantMetamodelSchemaService schemas = new AssistantMetamodelSchemaService();
     AssistantEvalRunner runner =
         new AssistantEvalRunner(provider, schemas, new AssistantPatchCompleter(schemas), mapper);
-    AssistantEvalRunner.EvalPrompt prompt =
-        runner.loadPrompts().stream()
-            .filter(item -> "cim-eventstorming-01".equals(item.id()))
-            .findFirst()
-            .orElseThrow();
-
-    List<AssistantEvalRunner.EvalResult> results =
-        runner.run(true, toolBinder(tools, mapper), List.of(prompt));
-
-    assertTrue(results.get(0).validationPassed(), () -> runner.baselineReport(results));
+    return new LiveEvalHarness(mapper, tools, runner);
   }
 
   private AssistantEvalRunner.ToolBinder toolBinder(AssistantToolService tools, ObjectMapper mapper)
@@ -190,4 +236,7 @@ class AssistantLiveEvalTest {
     }
     return value;
   }
+
+  private record LiveEvalHarness(
+      ObjectMapper mapper, AssistantToolService tools, AssistantEvalRunner runner) {}
 }

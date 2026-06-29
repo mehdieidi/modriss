@@ -909,6 +909,49 @@
   font: inherit;
 }
 
+.chat-question-attachment {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px dashed color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-high) 54%, transparent);
+}
+
+.chat-question-attachment-status {
+  min-width: 0;
+  flex: 1 1 180px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.chat-question-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.chat-question-upload-btn:hover {
+  background: color-mix(in srgb, var(--surface-high) 70%, transparent);
+}
+
+.chat-question-upload-btn input {
+  display: none;
+}
+
 .chat-markdown {
   min-width: 0;
   font-size: 12px;

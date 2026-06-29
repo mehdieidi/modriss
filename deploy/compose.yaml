@@ -52,7 +52,10 @@ services:
       MODLESS_DB_USER: ${POSTGRES_USER:-modless}
       MODLESS_DB_PASSWORD: ${POSTGRES_PASSWORD:-modless}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
-      OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_CONTAINER_BASE_URL:-http://freellmapi-freellmapi-1:3001}
+      # Use the normal provider URL from .env in containers too. Set
+      # OPENAI_COMPATIBLE_CONTAINER_BASE_URL only when intentionally routing the
+      # backend to a container-local compatible provider such as FreeLLMAPI.
+      OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_CONTAINER_BASE_URL:-${OPENAI_COMPATIBLE_BASE_URL:-https://api.openai.com}}
       MODLESS_AI_REQUEST_TIMEOUT: ${MODLESS_AI_CONTAINER_REQUEST_TIMEOUT:-20m}
       MODLESS_DIAGRAM_RENDERER: ${MODLESS_DIAGRAM_RENDERER:-glsp-sprotty}
       MODLESS_GLSP_SERVER_URL: ${MODLESS_GLSP_SERVER_URL:-ws://127.0.0.1:8081/modless}
