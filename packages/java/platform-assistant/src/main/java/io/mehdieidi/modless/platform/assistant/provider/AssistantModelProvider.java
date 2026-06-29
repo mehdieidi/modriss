@@ -62,6 +62,20 @@ public interface AssistantModelProvider {
     return new AgentLoopResult(planTurn(prompt), 0, 1);
   }
 
+  /**
+   * Produces a compact source-material analysis for requirements or event-storming documents.
+   *
+   * @param prompt source-analysis prompt
+   * @param progress progress callback
+   * @return source analysis text
+   */
+  default AssistantReply analyzeSource(AssistantPrompt prompt, AgentProgress progress) {
+    if (progress != null) {
+      progress.onProgress("ANALYZING_SOURCE", "Reading source material for modeling evidence");
+    }
+    return complete(prompt);
+  }
+
   /** Progress callback for agent loop stages. */
   @FunctionalInterface
   interface AgentProgress {

@@ -15,6 +15,48 @@
   --canvas-controls-left: calc(var(--rail-w) + var(--sidebar-w, 248px) + 16px);
 }
 
+.assistant-canvas-trace {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 90;
+  display: grid;
+  gap: 3px;
+  width: min(280px, calc(100% - 36px));
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  pointer-events: none;
+}
+
+.assistant-canvas-trace.hidden {
+  display: none;
+}
+
+.assistant-canvas-trace-kicker {
+  color: var(--accent);
+  font: 700 10px/1.2 var(--font-ui);
+  text-transform: uppercase;
+}
+
+.assistant-canvas-trace-title {
+  overflow-wrap: anywhere;
+  font: 650 12px/1.3 var(--font-ui);
+}
+
+.assistant-canvas-trace-meta {
+  color: var(--muted);
+  font: 500 11px/1.35 var(--font-ui);
+}
+
+.canvas-viewport.assistant-preview-active .canvas-grid {
+  outline: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  outline-offset: -1px;
+}
+
 .model-workbench-strip {
   display: flex;
   flex-direction: column;

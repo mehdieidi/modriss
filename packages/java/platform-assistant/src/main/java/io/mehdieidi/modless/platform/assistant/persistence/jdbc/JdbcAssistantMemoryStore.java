@@ -490,8 +490,8 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
                 INSERT INTO assistant_proposals
                   (id, thread_id, project_id, model_id, model_revision, risk_level,
                    semantic_patch, inverse_patch, validation_summary,
-                   citations, status, created_at, decided_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?)
+                   citations, status, approval_required, created_at, decided_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status,
                   decided_at = EXCLUDED.decided_at
         """,
@@ -506,6 +506,7 @@ public class JdbcAssistantMemoryStore implements AssistantMemoryStore {
         json(proposal.validation()),
         json(proposal.citations()),
         status,
+        false,
         sqlTimestamp(proposal.createdAt()),
         sqlTimestamp(Instant.now()));
   }

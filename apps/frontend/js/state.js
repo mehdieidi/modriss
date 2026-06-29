@@ -66,6 +66,7 @@ export const state = {
     attachment: null,
     historyOpen: false,
   },
+  assistantPreview: null,
   artifact: {
     id: null,
     name: "",

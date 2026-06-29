@@ -52,9 +52,14 @@ services:
       MODLESS_DB_USER: ${POSTGRES_USER:-modless}
       MODLESS_DB_PASSWORD: ${POSTGRES_PASSWORD:-modless}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_CONTAINER_BASE_URL:-http://freellmapi-freellmapi-1:3001}
+      MODLESS_AI_REQUEST_TIMEOUT: ${MODLESS_AI_CONTAINER_REQUEST_TIMEOUT:-20m}
       MODLESS_DIAGRAM_RENDERER: ${MODLESS_DIAGRAM_RENDERER:-glsp-sprotty}
       MODLESS_GLSP_SERVER_URL: ${MODLESS_GLSP_SERVER_URL:-ws://127.0.0.1:8081/modless}
-      MODLESS_UPLOAD_ROOT: ${MODLESS_UPLOAD_ROOT:-/app/uploads}
+      # Keep container uploads on the mounted volume. The project .env may set
+      # MODLESS_UPLOAD_ROOT=uploads for local JVM runs; do not reuse that
+      # relative host value inside the container.
+      MODLESS_UPLOAD_ROOT: ${MODLESS_CONTAINER_UPLOAD_ROOT:-/app/uploads}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
@@ -63,6 +68,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - default
+      - freellmapi
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
       interval: 10s
@@ -169,3 +177,8 @@ volumes:
   modless-backend-uploads:
   modless-localstack-data:
   modless-postgres-data:
+
+networks:
+  freellmapi:
+    external: true
+    name: ${FREELLMAPI_NETWORK:-freellmapi_default}

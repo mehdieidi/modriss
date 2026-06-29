@@ -76,6 +76,11 @@ public class AssistantMetamodelSchemaService {
     throw new PlatformException(422, "Unknown metamodel element type: " + type);
   }
 
+  /** Returns the canonical root EClass for a modeling level. */
+  public String rootType(ModelLevel level) {
+    return schema(level).rootType();
+  }
+
   /** Finds the root containment feature for a top-level element. */
   public Optional<String> rootCollection(ModelLevel level, String elementType) {
     return rootContainment(level, elementType)
@@ -93,6 +98,10 @@ public class AssistantMetamodelSchemaService {
         .flatMap(type -> type.references().stream())
         .filter(ReferenceSchema::containment)
         .filter(reference -> schema.assignable(canonical, reference.targetType()))
+        .sorted(
+            java.util.Comparator.comparing(ReferenceSchema::many)
+                .reversed()
+                .thenComparing(reference -> reference.targetType().equals(canonical) ? 0 : 1))
         .findFirst();
   }
 
@@ -162,6 +171,42 @@ public class AssistantMetamodelSchemaService {
             .map(TypeSchema::name)
             .collect(Collectors.joining(", "));
     return "Root " + schema.rootType() + " containments: " + root + "\nCreatable types: " + types;
+  }
+
+  /** Returns coverage counts for the runtime metamodel surface available to the assistant. */
+  public MetamodelCoverage coverage(ModelLevel level) {
+    LevelSchema schema = schema(level);
+    List<TypeSchema> creatable =
+        schema.types().values().stream().filter(TypeSchema::creatable).toList();
+    int attributes = creatable.stream().mapToInt(type -> type.attributes().size()).sum();
+    int containments =
+        creatable.stream()
+            .mapToInt(
+                type ->
+                    (int)
+                        type.references().stream()
+                            .filter(ReferenceSchema::containment)
+                            .filter(reference -> !reference.readonly())
+                            .count())
+            .sum();
+    int relationships =
+        creatable.stream()
+            .mapToInt(
+                type ->
+                    (int)
+                        type.references().stream()
+                            .filter(reference -> !reference.containment())
+                            .filter(reference -> !reference.readonly())
+                            .count())
+            .sum();
+    return new MetamodelCoverage(
+        level,
+        schema.rootType(),
+        creatable.size(),
+        attributes,
+        containments,
+        relationships,
+        creatable.stream().map(TypeSchema::name).toList());
   }
 
   /** Returns Ecore-derived feature contracts for creatable types named in a user request. */
@@ -556,4 +601,14 @@ public class AssistantMetamodelSchemaService {
       boolean many,
       boolean containment,
       boolean readonly) {}
+
+  /** Runtime metamodel coverage summary. */
+  public record MetamodelCoverage(
+      ModelLevel level,
+      String rootType,
+      int creatableTypes,
+      int attributes,
+      int containments,
+      int relationships,
+      List<String> typeNames) {}
 }

@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -226,13 +227,14 @@ public class AssistantOrchestrator {
     String modelId = resolveModelId(request.modelId(), project, session.level());
     ModelRecord model = modelId == null ? null : models.get(user, session.level(), modelId);
     requireCurrentRevision(request.revision(), model);
+    AssistantTurnRequest enrichedRequest = enrichWithSourceAnalysis(session, request);
 
     JsonNode persistedModel =
         model == null
             ? modelingConfig.starterModel(session.level(), session.title())
             : model.modelJson();
     JsonNode baseModel =
-        resolvePlanningBase(session.level(), persistedModel, request.unsavedDraftPatch());
+        resolvePlanningBase(session.level(), persistedModel, enrichedRequest.unsavedDraftPatch());
     ModelService.ValidationResult currentValidation =
         assistantValidation(session.level(), baseModel);
     AssistantModelContext context =
@@ -246,7 +248,12 @@ public class AssistantOrchestrator {
                 currentValidation)
             : modelContexts.snapshot(model, currentValidation);
     List<AssistantModelProvider.ContextSnippet> snippets =
-        contextSnippets(session, request, context, session.level(), request.selectedElementIds());
+        contextSnippets(
+            session,
+            enrichedRequest,
+            context,
+            session.level(),
+            enrichedRequest.selectedElementIds());
 
     tools.bindSession(new AssistantToolBridge.ToolSession(session.level(), baseModel, context));
     int toolCalls = 0;
@@ -255,7 +262,7 @@ public class AssistantOrchestrator {
     try {
       publishProgress(
           sessionId, "PLANNING", "Understanding intent using the formal language context");
-      InitialPlanResult planned = planInitialTurn(session, request, context, snippets);
+      InitialPlanResult planned = planInitialTurn(session, enrichedRequest, context, snippets);
       plan = planned.plan();
       toolCalls = planned.toolCalls();
     } catch (PlatformException failure) {
@@ -276,12 +283,21 @@ public class AssistantOrchestrator {
     AssistantTurnResponse response =
         switch (plan.kind()) {
           case ANSWER -> {
-            if (plan.intent() == AssistantTurnPlan.Intent.MUTATION) {
+            if (plan.intent() == AssistantTurnPlan.Intent.MUTATION
+                || isRequestedModelChange(enrichedRequest)) {
               if (plan.patch().operations().isEmpty()) {
-                plan = replanWithSafeDefaults(session, request, context, snippets, plan);
+                plan = replanWithSafeDefaults(session, enrichedRequest, context, snippets, plan);
               }
               yield proposalResponse(
-                  user, session, threadId, request, model, baseModel, context, snippets, plan);
+                  user,
+                  session,
+                  threadId,
+                  enrichedRequest,
+                  model,
+                  baseModel,
+                  context,
+                  snippets,
+                  plan);
             }
             yield finishTurn(
                 session,
@@ -296,21 +312,43 @@ public class AssistantOrchestrator {
                     activityFor(AssistantWorkflowState.EXPLAINED)));
           }
           case CLARIFICATION -> {
-            AssistantTurnPlan gated = clarificationGate.apply(plan, request.rootMessage());
-            gated = resolveMutationClarification(session, request, context, snippets, plan, gated);
+            AssistantTurnPlan gated = clarificationGate.apply(plan, enrichedRequest.rootMessage());
+            gated =
+                resolveMutationClarification(
+                    session, enrichedRequest, context, snippets, plan, gated);
             yield switch (gated.kind()) {
               case CLARIFICATION ->
                   clarificationResponse(
-                      session, threadId, request, model, gated.message(), gated.questions());
+                      session,
+                      threadId,
+                      enrichedRequest,
+                      model,
+                      gated.message(),
+                      gated.questions());
               case PATCH ->
                   proposalResponse(
-                      user, session, threadId, request, model, baseModel, context, snippets, gated);
+                      user,
+                      session,
+                      threadId,
+                      enrichedRequest,
+                      model,
+                      baseModel,
+                      context,
+                      snippets,
+                      gated);
               case ANSWER -> {
                 if (gated.intent() == AssistantTurnPlan.Intent.MUTATION) {
                   AssistantTurnPlan replanned =
-                      replanWithSafeDefaults(session, request, context, snippets, gated);
+                      replanWithSafeDefaults(session, enrichedRequest, context, snippets, gated);
                   yield proposalResponse(
-                      user, session, threadId, request, model, baseModel, context, snippets,
+                      user,
+                      session,
+                      threadId,
+                      enrichedRequest,
+                      model,
+                      baseModel,
+                      context,
+                      snippets,
                       replanned);
                 }
                 yield finishTurn(
@@ -329,7 +367,15 @@ public class AssistantOrchestrator {
           }
           case PATCH ->
               proposalResponse(
-                  user, session, threadId, request, model, baseModel, context, snippets, plan);
+                  user,
+                  session,
+                  threadId,
+                  enrichedRequest,
+                  model,
+                  baseModel,
+                  context,
+                  snippets,
+                  plan);
         };
     recordTurnDiagnostics(
         response.workflowState().name(),
@@ -368,6 +414,80 @@ public class AssistantOrchestrator {
     return new InitialPlanResult(plan, toolCalls);
   }
 
+  private AssistantTurnRequest enrichWithSourceAnalysis(
+      AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
+    if (!requiresSourceAnalysis(session, request)) {
+      return request;
+    }
+    try {
+      AssistantModelProvider.AssistantReply reply =
+          provider.analyzeSource(
+              new AssistantModelProvider.AssistantPrompt(
+                  AssistantModelRole.SOURCE_ANALYST,
+                  sourceAnalysisPrompt(session),
+                  request.message(),
+                  sourceAnalysisSnippets(session, request)),
+              (stage, message) -> publishProgress(session.id(), stage, message));
+      String analysis = reply.content() == null ? "" : reply.content().trim();
+      if (analysis.isBlank()) {
+        return request;
+      }
+      publishProgress(
+          session.id(), "ANALYZING_SOURCE", "Source analysis is ready for CIM planning");
+      return request.withSourceAnalysis(analysis);
+    } catch (RuntimeException failure) {
+      log.warn("CIM source analysis failed; continuing with raw attachment context.", failure);
+      publishProgress(
+          session.id(),
+          "ANALYZING_SOURCE",
+          "Continuing with the raw source document for CIM planning");
+      return request;
+    }
+  }
+
+  private boolean requiresSourceAnalysis(
+      AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
+    return session.level() == ModelLevel.CIM
+        && !blank(request.attachmentContent())
+        && blank(request.sourceAnalysis());
+  }
+
+  private String sourceAnalysisPrompt(AssistantSessionStore.AssistantSession session) {
+    return """
+    You are preparing source evidence for an autonomous CIM modeling agent. The next agent phase
+    will create a structurally valid model using only Ecore-defined CIM types and features. Extract
+    modeling evidence from the attached source and organize it so no stated business fact is lost.
+    Do not invent model elements or output semantic patch JSON. Prefer concise, coverage-oriented
+    bullets grounded in the document.
+
+    Level:
+    """
+        + session.level()
+        + "\nProject ID: "
+        + session.projectId()
+        + "\nCIM runtime language index:\n"
+        + schemas.languageIndex(ModelLevel.CIM);
+  }
+
+  private List<AssistantModelProvider.ContextSnippet> sourceAnalysisSnippets(
+      AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
+    List<AssistantModelProvider.ContextSnippet> snippets = new ArrayList<>();
+    snippets.add(
+        new AssistantModelProvider.ContextSnippet(
+            "runtime-metamodel", "CIM language index", schemas.languageIndex(ModelLevel.CIM)));
+    snippets.addAll(
+        catalogs.search(
+            "CIM methodology event storming user stories source analysis",
+            session.level().name(),
+            8));
+    snippets.add(
+        new AssistantModelProvider.ContextSnippet(
+            "user-attachment",
+            nonBlank(request.attachmentName(), "source document"),
+            request.attachmentContent()));
+    return snippetsForFollowup(snippets);
+  }
+
   private AssistantTurnResponse providerUnavailableResponse(String modelId, Long revision) {
     return new AssistantTurnResponse(
         "The modeling provider is temporarily unavailable. Your model is unchanged and "
@@ -393,7 +513,9 @@ public class AssistantOrchestrator {
       AssistantTurnPlan initialPlan) {
     publishProgress(session.id(), "VALIDATING", "Compiling and validating the model change");
     AssistantTurnPlan acceptedPlan = preparePlan(session.level(), context, initialPlan);
-    PlanAttempt attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
+    SourceCoverageExpectation coverageExpectation = sourceCoverageExpectation(session, request);
+    PlanAttempt attempt =
+        evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
     int repairNumber = 0;
     int stagnationCount = 0;
     String lastPatchSignature = patchSignature(acceptedPlan.patch());
@@ -415,7 +537,8 @@ public class AssistantOrchestrator {
                 tryDeterministicRepair(session.level(), context, acceptedPlan, attempt));
         if (!samePatch(deterministic, acceptedPlan)) {
           acceptedPlan = deterministic;
-          attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
+          attempt =
+              evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
           if (attempt.valid()) {
             break;
           }
@@ -464,7 +587,8 @@ public class AssistantOrchestrator {
         continue;
       }
       acceptedPlan = preparePlan(session.level(), context, repaired);
-      attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
+      attempt =
+          evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
       if (attempt.valid()) {
         break;
       }
@@ -481,7 +605,8 @@ public class AssistantOrchestrator {
                 context,
                 replanWithSafeDefaults(
                     session, request, context, snippets, acceptedPlan, attempt.feedback()));
-        attempt = evaluatePlan(session.level(), baseModel, context, acceptedPlan);
+        attempt =
+            evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
       }
     }
     if (!attempt.valid()) {
@@ -606,7 +731,8 @@ public class AssistantOrchestrator {
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan original,
       AssistantTurnPlan gated) {
-    if (original.intent() != AssistantTurnPlan.Intent.MUTATION) {
+    if (original.intent() != AssistantTurnPlan.Intent.MUTATION
+        && !isRequestedModelChange(request)) {
       return gated;
     }
     if (gated.kind() == AssistantTurnPlan.Kind.PATCH && gated.patch().operations().isEmpty()) {
@@ -657,6 +783,11 @@ public class AssistantOrchestrator {
     return message
         .toLowerCase(java.util.Locale.ROOT)
         .matches("(?s).*(\\bcreate\\b|\\bbuild\\b|\\bdesign\\b|\\badd\\b|\\bscaffold\\b).*");
+  }
+
+  private boolean isRequestedModelChange(AssistantTurnRequest request) {
+    return request != null
+        && (isCreationRequest(request.rootMessage()) || isCreationRequest(request.message()));
   }
 
   private boolean samePatch(AssistantTurnPlan left, AssistantTurnPlan right) {
@@ -735,7 +866,11 @@ public class AssistantOrchestrator {
   }
 
   private PlanAttempt evaluatePlan(
-      ModelLevel level, JsonNode baseModel, AssistantModelContext context, AssistantTurnPlan plan) {
+      ModelLevel level,
+      JsonNode baseModel,
+      AssistantModelContext context,
+      AssistantTurnPlan plan,
+      SourceCoverageExpectation coverageExpectation) {
     if (plan.patch().operations().isEmpty()) {
       return PlanAttempt.failure("The planner returned no semantic operations.");
     }
@@ -748,9 +883,14 @@ public class AssistantOrchestrator {
       }
       ObjectNode preview = patchCompiler.apply(baseModel, compiled);
       AssistantValidationSummary validation = assistantValidationSummary(level, preview);
-      return validation.structurallyValid() && validation.mandatoryPassed()
+      if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
+        return PlanAttempt.failure(compiled, validation);
+      }
+      List<String> coverageFeedback =
+          coverageFeedback(level, plan.patch(), preview, coverageExpectation);
+      return coverageFeedback.isEmpty()
           ? PlanAttempt.success(compiled, validation)
-          : PlanAttempt.failure(compiled, validation);
+          : PlanAttempt.failure(compiled, validation, coverageFeedback);
     } catch (PlatformException failure) {
       String operationSummary = operationSummary(plan.patch());
       log.warn(
@@ -759,6 +899,234 @@ public class AssistantOrchestrator {
           operationSummary);
       return PlanAttempt.failure(failure.getMessage() + " Operation summary: " + operationSummary);
     }
+  }
+
+  private SourceCoverageExpectation sourceCoverageExpectation(
+      AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
+    if (session.level() != ModelLevel.CIM
+        || request == null
+        || blank(request.attachmentContent())
+        || !isRequestedModelChange(request)
+        || !looksLikeSourceToCimRequest(request)) {
+      return SourceCoverageExpectation.none();
+    }
+    String source = request.attachmentContent();
+    int storyCount =
+        countMatches(source, "(?is)\\bas\\s+an?\\b.{0,240}?\\bi\\s+want\\b")
+            + countMatches(source, "(?im)^\\s*#{1,6}\\s*US[-\\s]?\\d+\\b");
+    int acceptanceCount =
+        countMatches(source, "(?im)^\\s*[-*]\\s+")
+            + countMatches(source, "(?i)\\bacceptance\\s+criteria\\b");
+    int eventStormingSignals =
+        countMatches(
+            source,
+            "(?i)\\b(command|business event|event|policy|query|aggregate|external"
+                + " system|risk|assumption|hotspot)\\b");
+    int length = source.length();
+    int minAdditions = 10;
+    if (length >= 8000) {
+      minAdditions = 95;
+    } else if (length >= 3000) {
+      minAdditions = 55;
+    } else if (length >= 1200) {
+      minAdditions = 32;
+    } else if (length >= 400) {
+      minAdditions = 18;
+    }
+    minAdditions = Math.max(minAdditions, storyCount * 6 + acceptanceCount / 2);
+    minAdditions = Math.max(minAdditions, Math.min(80, eventStormingSignals / 2));
+    int minOperations = Math.max(minAdditions + 8, (int) Math.ceil(minAdditions * 1.25));
+    int minConnections = length >= 3000 || storyCount >= 4 ? 10 : storyCount >= 2 ? 4 : 0;
+    Set<String> requiredFamilies = new LinkedHashSet<>();
+    requiredFamilies.add("organization");
+    requiredFamilies.add("domain");
+    requiredFamilies.add("behavior");
+    if (length >= 1200 || storyCount >= 2 || eventStormingSignals >= 6) {
+      requiredFamilies.add("process-policy");
+    }
+    String lowerSource = source.toLowerCase(java.util.Locale.ROOT);
+    if (length >= 1200
+        || lowerSource.matches(
+            "(?s).*\\b(risk|assumption|hotspot|uncertain|compliance|privacy|security)\\b.*")) {
+      requiredFamilies.add("governance");
+    }
+    return new SourceCoverageExpectation(
+        true, minAdditions, minOperations, minConnections, requiredFamilies);
+  }
+
+  private boolean looksLikeSourceToCimRequest(AssistantTurnRequest request) {
+    String text =
+        (request.rootMessage()
+                + "\n"
+                + request.message()
+                + "\n"
+                + request.attachmentName()
+                + "\n"
+                + request.attachmentContent())
+            .toLowerCase(java.util.Locale.ROOT);
+    return text.matches(
+            "(?s).*(\\bcim\\b|\\bmodel\\b|\\buser stor|\\bevent"
+                + " storm|\\brequirement|\\bdocument|\\.md\\b).*")
+        && text.matches(
+            "(?s).*(\\bfrom\\b|\\battached\\b|\\bdocument\\b|\\bsource\\b|\\buser stor|\\bevent"
+                + " storm).*");
+  }
+
+  private List<String> coverageFeedback(
+      ModelLevel level,
+      SemanticModelPatch patch,
+      JsonNode preview,
+      SourceCoverageExpectation expectation) {
+    if (expectation == null || !expectation.required()) {
+      return List.of();
+    }
+    CoverageStats stats = coverageStats(level, patch, preview);
+    List<String> feedback = new ArrayList<>();
+    if (stats.additions() < expectation.minAdditions()) {
+      feedback.add(
+          "Document-to-CIM coverage is too shallow: the patch adds "
+              + stats.additions()
+              + " model elements, but this source-backed CIM creation requires at least "
+              + expectation.minAdditions()
+              + " semantic additions. Extract the user stories, acceptance criteria, domain "
+              + "concepts, commands, queries, events, policies, processes, risks, assumptions, "
+              + "hotspots, and traceability instead of collapsing the document into a small "
+              + "summary model.");
+    }
+    if (stats.operations() < expectation.minOperations()) {
+      feedback.add(
+          "Document-to-CIM coverage is too shallow: the patch has "
+              + stats.operations()
+              + " semantic operations, but this document-sized request requires at least "
+              + expectation.minOperations()
+              + " operations including additions and traceability relationships.");
+    }
+    if (stats.connections() < expectation.minConnections()) {
+      feedback.add(
+          "Document-to-CIM relationship coverage is too shallow: the patch has "
+              + stats.connections()
+              + " explicit semantic connections, but this source requires at least "
+              + expectation.minConnections()
+              + " relationships between actors, requirements, domain data, commands, events, "
+              + "queries, policies, processes, risks, assumptions, and hotspots.");
+    }
+    Set<String> missingFamilies = new LinkedHashSet<>(expectation.requiredFamilies());
+    missingFamilies.removeAll(stats.families());
+    if (!missingFamilies.isEmpty()) {
+      feedback.add(
+          "Document-to-CIM type coverage is incomplete: add supported CIM elements for missing "
+              + "families "
+              + missingFamilies
+              + ". Use the runtime schema and attach them with valid containments and references.");
+    }
+    return feedback;
+  }
+
+  private CoverageStats coverageStats(
+      ModelLevel level, SemanticModelPatch patch, JsonNode preview) {
+    int operations = 0;
+    int additions = 0;
+    int connections = 0;
+    Set<String> families = new LinkedHashSet<>();
+    for (SemanticModelPatch.Operation operation : patch.operations()) {
+      if (operation == null || operation.type() == null) {
+        continue;
+      }
+      operations++;
+      if (operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT) {
+        additions++;
+        addCoverageFamily(level, families, operation.elementType());
+      } else if (operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS) {
+        connections++;
+      }
+    }
+    addFamiliesFromPreview(level, families, preview);
+    return new CoverageStats(operations, additions, connections, families);
+  }
+
+  private void addFamiliesFromPreview(ModelLevel level, Set<String> families, JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return;
+    }
+    if (node.isObject()) {
+      addCoverageFamily(level, families, node.path("eClass").asText(""));
+      node.fields()
+          .forEachRemaining(entry -> addFamiliesFromPreview(level, families, entry.getValue()));
+      return;
+    }
+    if (node.isArray()) {
+      node.forEach(child -> addFamiliesFromPreview(level, families, child));
+    }
+  }
+
+  private void addCoverageFamily(ModelLevel level, Set<String> families, String rawType) {
+    if (blank(rawType)) {
+      return;
+    }
+    String type;
+    try {
+      type = schemas.canonicalType(level, rawType);
+    } catch (PlatformException failure) {
+      type = rawType;
+    }
+    switch (type) {
+      case "BusinessGoal",
+          "Stakeholder",
+          "Actor",
+          "ExternalSystem",
+          "Role",
+          "Requirement",
+          "RequirementRelationship",
+          "BusinessCapability" ->
+          families.add("organization");
+      case "DomainEntity", "AggregateCandidate", "InformationItem", "DomainRelationship" ->
+          families.add("domain");
+      case "Command", "CommandOutcome", "Query", "BusinessEvent" -> families.add("behavior");
+      case "BusinessProcess",
+          "ProcessStep",
+          "StartStep",
+          "EndStep",
+          "CommandStep",
+          "QueryStep",
+          "EventStep",
+          "PolicyStep",
+          "HumanTaskStep",
+          "ExternalInteractionStep",
+          "DecisionStep",
+          "WaitStep",
+          "ProcessTransition",
+          "Policy",
+          "DecisionTable",
+          "DecisionRule",
+          "EscalationPolicy",
+          "SlaPolicy",
+          "IdempotencyPolicy",
+          "RetentionPolicy" ->
+          families.add("process-policy");
+      case "Risk",
+          "Assumption",
+          "Hotspot",
+          "NonFunctionalRequirement",
+          "SecurityConstraint",
+          "PrivacyConstraint",
+          "ComplianceConstraint" ->
+          families.add("governance");
+      default -> {
+        // Other CIM support elements do not satisfy a source-coverage family by themselves.
+      }
+    }
+  }
+
+  private int countMatches(String text, String regex) {
+    if (blank(text) || blank(regex)) {
+      return 0;
+    }
+    java.util.regex.Matcher matcher = java.util.regex.Pattern.compile(regex).matcher(text);
+    int count = 0;
+    while (matcher.find()) {
+      count++;
+    }
+    return count;
   }
 
   private String operationSummary(SemanticModelPatch patch) {
@@ -1206,6 +1574,7 @@ public class AssistantOrchestrator {
             original.unsavedDraftPatch(),
             original.attachmentName(),
             original.attachmentContent(),
+            original.sourceAnalysis(),
             original.rootMessage());
     return handleMessage(user, sessionId, resumed);
   }
@@ -1337,9 +1706,18 @@ public class AssistantOrchestrator {
             new AssistantModelProvider.ContextSnippet(
                 "runtime-metamodel",
                 level.name() + " language index",
-                schemas.languageIndex(level)));
+                schemas.languageIndex(level)),
+            new AssistantModelProvider.ContextSnippet(
+                "runtime-metamodel",
+                level.name() + " metamodel coverage",
+                schemas.coverage(level).toString()));
 
     List<AssistantModelProvider.ContextSnippet> tier4 = new ArrayList<>();
+    if (!blank(request.sourceAnalysis())) {
+      tier4.add(
+          new AssistantModelProvider.ContextSnippet(
+              "source-analysis", "CIM source evidence map", request.sourceAnalysis()));
+    }
     tier4.addAll(
         catalogs.search(
             level.apiName() + " methodology process workflow " + query, level.name(), 8));
@@ -1348,9 +1726,8 @@ public class AssistantOrchestrator {
     if (emptyModel && isCreationRequest(query)) {
       tier4.addAll(catalogs.search(query, level.name(), 6));
     }
-    if (!blank(request.attachmentContent())) {
+    if (!blank(request.attachmentContent()) && blank(request.sourceAnalysis())) {
       tier4.add(
-          0,
           new AssistantModelProvider.ContextSnippet(
               "user-attachment",
               nonBlank(request.attachmentName(), "attachment"),
@@ -1521,6 +1898,7 @@ public class AssistantOrchestrator {
                 422, "A new element has an invalid or duplicate stable ID.");
           }
           String type = schemas.canonicalType(level, operation.elementType());
+          requireMeaningfulCreationAttributes(level, type, operation.attributes());
           if (!blank(operation.sourceElementId())) {
             String ownerType = types.get(operation.sourceElementId());
             if (ownerType == null || blank(operation.referenceName())) {
@@ -1568,6 +1946,30 @@ public class AssistantOrchestrator {
     }
   }
 
+  private void requireMeaningfulCreationAttributes(
+      ModelLevel level, String type, JsonNode attributes) {
+    boolean labelSupported =
+        Stream.of("name", "label", "title", "summary", "description")
+            .anyMatch(feature -> schemas.attribute(level, type, feature).isPresent());
+    if (!labelSupported) {
+      return;
+    }
+    String value =
+        Stream.of("name", "label", "title", "summary", "description")
+            .map(feature -> attributes == null ? "" : attributes.path(feature).asText(""))
+            .filter(text -> text != null && !text.isBlank())
+            .findFirst()
+            .orElse("");
+    if (value.isBlank() || value.trim().equalsIgnoreCase(type)) {
+      throw new PlatformException(
+          422,
+          "New "
+              + type
+              + " elements must include a domain-specific name, label, title, summary, or "
+              + "description.");
+    }
+  }
+
   private void seedRootType(ModelLevel level, JsonNode baseModel, Map<String, String> types) {
     if (baseModel == null || !baseModel.isObject()) {
       return;
@@ -1601,11 +2003,7 @@ public class AssistantOrchestrator {
   }
 
   private ModelService.ValidationResult assistantValidation(ModelLevel level, JsonNode modelJson) {
-    ModelService.ValidationResult structural = models.validateStructural(level, modelJson);
-    if (!structural.valid() || !properties.semanticValidationEnabled()) {
-      return structural;
-    }
-    return models.validate(level, modelJson);
+    return models.validateStructural(level, modelJson);
   }
 
   private AssistantValidationSummary assistantValidationSummary(
@@ -1641,6 +2039,7 @@ public class AssistantOrchestrator {
               AssistantWorkflowState.FAILED,
               activityFor(AssistantWorkflowState.FAILED)));
     }
+    publishPreviewProgress(session, targetModel, compiled);
     AppliedPatch applied =
         applySemanticPatchIncrementally(user, session, targetModel, acceptedPlan.patch());
     ModelRecord updated = applied.model();
@@ -1682,10 +2081,8 @@ public class AssistantOrchestrator {
     String message =
         nonBlank(acceptedPlan.message(), "I applied the requested change.")
             + "\n\nThe change passed "
-            + (properties.semanticValidationEnabled()
-                ? "structural and semantic validation"
-                : "structural metamodel validation")
-            + " and was applied to the canvas. You can undo it from the card below.";
+            + "structural metamodel validation and was applied to the canvas. You can undo it "
+            + "from the card below.";
     return finishTurn(
         session,
         threadId,
@@ -1704,9 +2101,17 @@ public class AssistantOrchestrator {
       AssistantSessionStore.AssistantSession session,
       ModelRecord targetModel,
       SemanticModelPatch semanticPatch) {
-    List<SemanticModelPatch.Operation> operations = semanticPatch.operations();
-    AssistantPatchCompiler.CompiledPatch compiled =
+    AssistantPatchCompiler.CompiledPatch fullCompiled =
         patchCompiler.compile(targetModel.modelJson(), semanticPatch);
+    ModelRecord patched = applyCompiledPatch(user, session, targetModel, fullCompiled);
+    return new AppliedPatch(patched, fullCompiled);
+  }
+
+  private ModelRecord applyCompiledPatch(
+      UserRecord user,
+      AssistantSessionStore.AssistantSession session,
+      ModelRecord targetModel,
+      AssistantPatchCompiler.CompiledPatch compiled) {
     ModelRecord patched =
         models.patch(
             user,
@@ -1715,58 +2120,72 @@ public class AssistantOrchestrator {
             targetModel.name(),
             compiled.patch(),
             targetModel.revision());
-    if (patched == null) {
-      log.warn("Model patch returned no record during assistant apply.");
-      patched = targetModel;
+    if (patched != null) {
+      return patched;
     }
-    for (int index = 0; index < operations.size(); index++) {
-      SemanticModelPatch.Operation operation = operations.get(index);
-      if (operation == null) {
-        continue;
-      }
-      realtime.publish(
-          session.id(),
-          "model.updated",
-          Map.of(
-              "modelId",
-              patched.id(),
-              "revision",
-              patched.revision(),
-              "operationIndex",
-              index + 1,
-              "operationCount",
-              operations.size(),
-              "operationLabel",
-              semanticOperationLabel(operation),
-              "live",
-              true));
-    }
-    return new AppliedPatch(patched, compiled);
+    log.warn("Model patch returned no record during assistant apply.");
+    return targetModel;
   }
 
-  private String semanticOperationLabel(SemanticModelPatch.Operation operation) {
-    if (operation == null || operation.type() == null) {
-      return "Updated model";
+  private void publishPreviewProgress(
+      AssistantSessionStore.AssistantSession session,
+      ModelRecord model,
+      AssistantPatchCompiler.CompiledPatch compiled) {
+    List<ModelService.ModelPatchOperation> operations = compiled.patch();
+    if (operations.isEmpty()) {
+      return;
     }
-    String type = nonBlank(operation.elementType(), "element");
-    String name =
-        operation.attributes() == null
-            ? ""
-            : operation
-                .attributes()
-                .path("name")
-                .asText(operation.attributes().path("label").asText(""));
-    return switch (operation.type()) {
-      case ADD_ELEMENT -> "Created " + type + (name.isBlank() ? "" : " \"" + name + "\"");
-      case CONNECT_ELEMENTS ->
-          "Connected "
-              + nonBlank(operation.referenceName(), "relationship")
-              + " from "
-              + nonBlank(operation.sourceElementId(), "source")
-              + " to "
-              + nonBlank(operation.targetElementId(), "target");
-      case SET_ATTRIBUTE -> "Updated " + nonBlank(operation.referenceName(), "attribute");
-      case DELETE_ELEMENT -> "Deleted " + nonBlank(operation.targetElementId(), type);
+    ObjectNode preview = patchCompiler.prepareApplyRoot(model.modelJson(), compiled);
+    for (int index = 0; index < operations.size(); index++) {
+      ModelService.ModelPatchOperation operation = operations.get(index);
+      patchCompiler.applyOperation(preview, operation);
+      if (isCanvasVisibleOperation(operation) || index == operations.size() - 1) {
+        publishOperationPreview(session, model, preview, operation, index, operations.size());
+      }
+    }
+  }
+
+  private void publishOperationPreview(
+      AssistantSessionStore.AssistantSession session,
+      ModelRecord model,
+      JsonNode preview,
+      ModelService.ModelPatchOperation operation,
+      int index,
+      int operationCount) {
+    if (operation == null) {
+      return;
+    }
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("modelId", model.id());
+    payload.put("revision", model.revision());
+    payload.put("operationIndex", index + 1);
+    payload.put("operationCount", operationCount);
+    payload.put("operationLabel", compiledOperationLabel(operation));
+    payload.put("preview", true);
+    payload.put("model", preview);
+    realtime.publish(session.id(), "assistant.model.preview", payload);
+  }
+
+  private boolean isCanvasVisibleOperation(ModelService.ModelPatchOperation operation) {
+    if (operation == null || operation.path() == null) {
+      return false;
+    }
+    return operation.path().contains("/elements") || operation.path().contains("/relationships");
+  }
+
+  private String compiledOperationLabel(ModelService.ModelPatchOperation operation) {
+    if (operation == null || operation.path() == null) {
+      return "Previewing model update";
+    }
+    String target =
+        operation.path().contains("/relationships")
+            ? "relationship"
+            : operation.path().contains("/elements") ? "element" : "model detail";
+    return switch (operation.op()) {
+      case "add" -> "Previewed " + target;
+      case "replace" -> "Updated " + target;
+      case "remove" -> "Removed " + target;
+      default -> "Previewed model update";
     };
   }
 
@@ -2215,6 +2634,7 @@ public class AssistantOrchestrator {
       String unsavedDraftPatch,
       String attachmentName,
       String attachmentContent,
+      String sourceAnalysis,
       String rootMessage) {
     public AssistantTurnRequest(
         String message,
@@ -2230,6 +2650,7 @@ public class AssistantOrchestrator {
           activeView,
           selectedElementIds,
           unsavedDraftPatch,
+          null,
           null,
           null,
           message);
@@ -2253,6 +2674,7 @@ public class AssistantOrchestrator {
           unsavedDraftPatch,
           attachmentName,
           attachmentContent,
+          null,
           message);
     }
 
@@ -2273,6 +2695,7 @@ public class AssistantOrchestrator {
           unsavedDraftPatch,
           null,
           null,
+          null,
           rootMessage);
     }
 
@@ -2282,6 +2705,21 @@ public class AssistantOrchestrator {
       rootMessage = rootMessage == null || rootMessage.isBlank() ? message : rootMessage.trim();
       attachmentName = attachmentName == null ? "" : attachmentName.trim();
       attachmentContent = attachmentContent == null ? "" : attachmentContent;
+      sourceAnalysis = sourceAnalysis == null ? "" : sourceAnalysis.trim();
+    }
+
+    AssistantTurnRequest withSourceAnalysis(String analysis) {
+      return new AssistantTurnRequest(
+          message,
+          modelId,
+          revision,
+          activeView,
+          selectedElementIds,
+          unsavedDraftPatch,
+          attachmentName,
+          attachmentContent,
+          analysis,
+          rootMessage);
     }
   }
 
@@ -2368,6 +2806,17 @@ public class AssistantOrchestrator {
           feedback.isEmpty() ? List.of("Mandatory validation failed.") : feedback);
     }
 
+    static PlanAttempt failure(
+        AssistantPatchCompiler.CompiledPatch compiled,
+        AssistantValidationSummary validation,
+        List<String> feedback) {
+      return new PlanAttempt(
+          null,
+          compiled,
+          validation,
+          feedback == null || feedback.isEmpty() ? List.of("Plan coverage failed.") : feedback);
+    }
+
     PlanAttempt withPlan(AssistantTurnPlan plan) {
       return new PlanAttempt(plan, compiled, validation, feedback);
     }
@@ -2376,11 +2825,34 @@ public class AssistantOrchestrator {
       return compiled != null
           && validation != null
           && validation.structurallyValid()
-          && validation.mandatoryPassed();
+          && validation.mandatoryPassed()
+          && feedback.isEmpty();
     }
   }
 
   private record AppliedPatch(ModelRecord model, AssistantPatchCompiler.CompiledPatch compiled) {}
 
   private record ContainmentCandidate(String ownerId, String referenceName) {}
+
+  private record SourceCoverageExpectation(
+      boolean required,
+      int minAdditions,
+      int minOperations,
+      int minConnections,
+      Set<String> requiredFamilies) {
+    SourceCoverageExpectation {
+      requiredFamilies = requiredFamilies == null ? Set.of() : Set.copyOf(requiredFamilies);
+    }
+
+    static SourceCoverageExpectation none() {
+      return new SourceCoverageExpectation(false, 0, 0, 0, Set.of());
+    }
+  }
+
+  private record CoverageStats(
+      int operations, int additions, int connections, Set<String> families) {
+    CoverageStats {
+      families = families == null ? Set.of() : Set.copyOf(families);
+    }
+  }
 }

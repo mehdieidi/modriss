@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -278,7 +279,8 @@ class AssistantOrchestratorTest {
 
     var response = orchestrator.handleMessage(user, "session", request("model submission"));
 
-    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
+    assertEquals(
+        AssistantWorkflowState.APPLIED, response.workflowState(), response.assistantMessage());
     assertNotNull(response.proposal());
     assertEquals(true, response.proposal().validation().mandatoryPassed());
     java.util.UUID.fromString(response.proposal().patch().operations().get(0).targetElementId());
@@ -328,7 +330,8 @@ class AssistantOrchestratorTest {
 
     var response = orchestrator.handleMessage(user, "session", request("model submission"));
 
-    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
+    assertEquals(
+        AssistantWorkflowState.APPLIED, response.workflowState(), response.assistantMessage());
     assertNotNull(response.proposal());
     verify(provider, times(1)).planTurn(any());
   }
@@ -564,6 +567,282 @@ class AssistantOrchestratorTest {
   }
 
   @Test
+  void cimAttachmentTurnsRunSourceAnalysisBeforePlanning() {
+    AssistantSessionStore.AssistantSession cimSession =
+        new AssistantSessionStore.AssistantSession(
+            "cim-session",
+            "user",
+            "project",
+            ModelLevel.CIM,
+            "Clinic CIM",
+            Instant.now(),
+            Instant.now());
+    when(sessions.require("cim-session", "user")).thenReturn(cimSession);
+    when(provider.analyzeSource(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AssistantReply(
+                "Commands: Register patient. Events: Patient registered. Entities: Patient.",
+                "mock",
+                "mock-model"));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Kind.ANSWER,
+                    "Analyzed source.",
+                    List.of(),
+                    new SemanticModelPatch(List.of())),
+                0,
+                1));
+
+    orchestrator.handleMessage(
+        user,
+        "cim-session",
+        new AssistantOrchestrator.AssistantTurnRequest(
+            "Analyze the attached event storming notes",
+            null,
+            null,
+            "cim",
+            List.of(),
+            null,
+            "event-storming.md",
+            "User commands Register patient, then Patient registered event occurs."));
+
+    ArgumentCaptor<AssistantModelProvider.AssistantPrompt> analysisPrompt =
+        ArgumentCaptor.forClass(AssistantModelProvider.AssistantPrompt.class);
+    verify(provider).analyzeSource(analysisPrompt.capture(), any());
+    assertTrue(
+        analysisPrompt.getValue().snippets().stream()
+            .anyMatch(snippet -> snippet.source().equals("user-attachment")));
+
+    ArgumentCaptor<AssistantModelProvider.AssistantPrompt> planPrompt =
+        ArgumentCaptor.forClass(AssistantModelProvider.AssistantPrompt.class);
+    verify(provider).planMutationTurn(planPrompt.capture(), any());
+    assertTrue(
+        planPrompt.getValue().snippets().stream()
+            .anyMatch(
+                snippet ->
+                    snippet.source().equals("source-analysis")
+                        && snippet.content().contains("Register patient")));
+    assertTrue(
+        planPrompt.getValue().snippets().stream()
+            .noneMatch(snippet -> snippet.source().equals("user-attachment")));
+  }
+
+  @Test
+  void explicitCimCreationAnswerIsReplannedAsPatch() throws Exception {
+    AssistantSessionStore.AssistantSession cimSession =
+        new AssistantSessionStore.AssistantSession(
+            "cim-session",
+            "user",
+            "project",
+            ModelLevel.CIM,
+            "Clinic CIM",
+            Instant.now(),
+            Instant.now());
+    when(sessions.require("cim-session", "user")).thenReturn(cimSession);
+    JsonNode cimModel =
+        new ObjectMapper()
+            .readTree(
+                """
+                {
+                  "id": "cim-root",
+                  "eClass": "CIMModel",
+                  "modelLevel": "CIM",
+                  "name": "Clinic CIM",
+                  "goals": [],
+                  "diagram": {"elements": [], "relationships": []}
+                }
+                """);
+    ModelRecord createdModel =
+        new ModelRecord(
+            "cim-model-1",
+            "project",
+            ModelLevel.CIM,
+            "Clinic CIM",
+            cimModel,
+            "v1",
+            "hash",
+            1L,
+            null,
+            "CURRENT",
+            Instant.now(),
+            Instant.now());
+    when(models.create(eq(user), eq(ModelLevel.CIM), eq("project"), anyString(), any()))
+        .thenReturn(createdModel);
+    when(models.patch(eq(user), eq(ModelLevel.CIM), eq("cim-model-1"), anyString(), any(), eq(1L)))
+        .thenReturn(
+            new ModelRecord(
+                "cim-model-1",
+                "project",
+                ModelLevel.CIM,
+                "Clinic CIM",
+                cimModel,
+                "v1",
+                "hash",
+                2L,
+                null,
+                "CURRENT",
+                Instant.now(),
+                Instant.now()));
+    when(provider.analyzeSource(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AssistantReply(
+                "Goals: improve clinic intake.", "mock", "mock-model"));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.INFORMATION,
+                    AssistantTurnPlan.Kind.ANSWER,
+                    "I completed the model analysis.",
+                    List.of(),
+                    new SemanticModelPatch(List.of())),
+                0,
+                1));
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "goal-1",
+                    "BusinessGoal",
+                    JsonNodeFactory.instance
+                        .objectNode()
+                        .put("name", "Improve clinic intake")
+                        .put("description", "Reduce manual intake work."),
+                    null,
+                    null)));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Intent.MUTATION,
+                AssistantTurnPlan.Kind.PATCH,
+                "Prepared CIM model.",
+                List.of(),
+                patch));
+
+    AssistantOrchestrator.AssistantTurnResponse response =
+        orchestrator.handleMessage(
+            user,
+            "cim-session",
+            new AssistantOrchestrator.AssistantTurnRequest(
+                "Build a CIM model for patient appointment registration",
+                null,
+                null,
+                "cim",
+                List.of(),
+                null));
+
+    assertEquals(AssistantWorkflowState.APPLIED, response.workflowState());
+    verify(provider).planTurn(any());
+  }
+
+  @Test
+  void rejectsShallowValidPatchForFullCimDocumentAndRepairsForCoverage() throws Exception {
+    AssistantSessionStore.AssistantSession cimSession =
+        new AssistantSessionStore.AssistantSession(
+            "cim-session",
+            "user",
+            "project",
+            ModelLevel.CIM,
+            "Clinic CIM",
+            Instant.now(),
+            Instant.now());
+    when(sessions.require("cim-session", "user")).thenReturn(cimSession);
+    JsonNode cimModel =
+        new ObjectMapper()
+            .readTree(
+                """
+                {
+                  "id": "cim-root",
+                  "eClass": "CIMModel",
+                  "modelLevel": "CIM",
+                  "name": "Clinic CIM",
+                  "goals": [],
+                  "diagram": {"elements": [], "relationships": []}
+                }
+                """);
+    ModelRecord createdModel =
+        new ModelRecord(
+            "cim-model-1",
+            "project",
+            ModelLevel.CIM,
+            "Clinic CIM",
+            cimModel,
+            "v1",
+            "hash",
+            1L,
+            null,
+            "CURRENT",
+            Instant.now(),
+            Instant.now());
+    when(models.create(eq(user), eq(ModelLevel.CIM), eq("project"), anyString(), any()))
+        .thenReturn(createdModel);
+    when(models.patch(eq(user), eq(ModelLevel.CIM), eq("cim-model-1"), anyString(), any(), eq(1L)))
+        .thenReturn(
+            new ModelRecord(
+                "cim-model-1",
+                "project",
+                ModelLevel.CIM,
+                "Clinic CIM",
+                cimModel,
+                "v1",
+                "hash",
+                2L,
+                null,
+                "CURRENT",
+                Instant.now(),
+                Instant.now()));
+    when(provider.analyzeSource(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AssistantReply(
+                "Clinic appointment source contains many stories, acceptance criteria, commands, "
+                    + "events, policies, risks, assumptions, and domain data.",
+                "mock",
+                "mock-model"));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.PATCH,
+                    "Prepared shallow CIM.",
+                    List.of(),
+                    shallowCimPatch()),
+                0,
+                1));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Intent.MUTATION,
+                AssistantTurnPlan.Kind.PATCH,
+                "Prepared full CIM.",
+                List.of(),
+                fullCimCoveragePatch()));
+
+    AssistantOrchestrator.AssistantTurnResponse response =
+        orchestrator.handleMessage(
+            user,
+            "cim-session",
+            new AssistantOrchestrator.AssistantTurnRequest(
+                "Build a full CIM model from the attached user story document",
+                null,
+                null,
+                "cim",
+                List.of(),
+                null,
+                "clinic-user-stories.md",
+                fullCimSourceDocument()));
+
+    assertEquals(
+        AssistantWorkflowState.APPLIED, response.workflowState(), response.assistantMessage());
+    assertNotNull(response.proposal());
+    assertTrue(response.proposal().patch().operations().size() >= 70);
+    verify(provider).planTurn(any());
+  }
+
+  @Test
   void acceptsPatchesLargerThanLegacyOperationLimit() {
     ObjectMapper mapper = new ObjectMapper();
     List<SemanticModelPatch.Operation> operations = new java.util.ArrayList<>();
@@ -689,8 +968,188 @@ class AssistantOrchestratorTest {
     verify(memory).markProposalApplied(anyString(), eq("model-1"), eq(2L));
   }
 
+  @Test
+  void streamsPreviewModelBeforeCommittedModelUpdate() {
+    ObjectMapper mapper = new ObjectMapper();
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "8c17f60a-cabe-46f1-aa60-17f70f669991",
+                    "Function",
+                    mapper.createObjectNode().put("name", "Create order"),
+                    null,
+                    null)));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.PATCH,
+                    "Created an order function.",
+                    List.of(),
+                    patch),
+                1,
+                2));
+
+    orchestrator.handleMessage(user, "session", request("Create an order function"));
+
+    ArgumentCaptor<String> typeCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<Object> payloadCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(realtime, atLeastOnce())
+        .publish(eq("session"), typeCaptor.capture(), payloadCaptor.capture());
+    List<String> eventTypes = typeCaptor.getAllValues();
+    assertTrue(eventTypes.contains("assistant.model.preview"));
+    assertTrue(eventTypes.contains("model.updated"));
+    int previewIndex = eventTypes.indexOf("assistant.model.preview");
+    int commitIndex = eventTypes.indexOf("model.updated");
+    assertTrue(previewIndex < commitIndex);
+    Object previewPayload = payloadCaptor.getAllValues().get(previewIndex);
+    assertTrue(previewPayload instanceof Map<?, ?>);
+    assertTrue(((Map<?, ?>) previewPayload).containsKey("model"));
+  }
+
   private AssistantOrchestrator.AssistantTurnRequest request(String message) {
     return new AssistantOrchestrator.AssistantTurnRequest(
         message, null, null, "pim", List.of(), null);
+  }
+
+  private SemanticModelPatch shallowCimPatch() {
+    return new SemanticModelPatch(
+        List.of(
+            add("goal-1", "BusinessGoal", "Improve clinic intake"),
+            add("actor-1", "Actor", "Patient"),
+            add("entity-1", "DomainEntity", "Appointment"),
+            add("command-1", "Command", "Book appointment"),
+            add("event-1", "BusinessEvent", "Appointment booked")));
+  }
+
+  private SemanticModelPatch fullCimCoveragePatch() {
+    List<SemanticModelPatch.Operation> operations = new java.util.ArrayList<>();
+    operations.add(add("goal-1", "BusinessGoal", "Reduce phone scheduling traffic"));
+    operations.add(add("stakeholder-1", "Stakeholder", "Clinic Operations"));
+    operations.add(add("actor-1", "Actor", "Patient"));
+    operations.add(add("actor-2", "Actor", "Scheduler"));
+    operations.add(add("role-1", "Role", "Appointment requester"));
+    operations.add(add("req-1", "Requirement", "Search available appointments"));
+    operations.add(add("entity-1", "DomainEntity", "Appointment"));
+    operations.add(add("entity-2", "DomainEntity", "Appointment Slot"));
+    operations.add(add("aggregate-1", "AggregateCandidate", "Appointment booking"));
+    operations.add(add("info-1", "InformationItem", "Patient identity"));
+    operations.add(add("info-2", "InformationItem", "Visit reason"));
+    operations.add(add("command-1", "Command", "Search appointments"));
+    operations.add(add("command-2", "Command", "Book appointment"));
+    operations.add(add("query-1", "Query", "Available appointment search"));
+    operations.add(add("event-1", "BusinessEvent", "Appointment searched"));
+    operations.add(add("event-2", "BusinessEvent", "Appointment booked"));
+    operations.add(add("policy-1", "Policy", "Appointment hold expires after ten minutes"));
+    operations.add(add("process-1", "BusinessProcess", "Book appointment journey"));
+    operations.add(add("risk-1", "Risk", "Protected health information exposure"));
+    operations.add(add("assumption-1", "Assumption", "Clinic policies are available online"));
+    operations.add(add("hotspot-1", "Hotspot", "Provider schedule conflict resolution"));
+    for (int index = 2; index <= 30; index++) {
+      operations.add(add("req-" + index, "Requirement", "Clinic story requirement " + index));
+    }
+    for (int index = 3; index <= 12; index++) {
+      operations.add(add("entity-" + index, "DomainEntity", "Clinic domain entity " + index));
+    }
+    for (int index = 3; index <= 9; index++) {
+      operations.add(add("info-" + index, "InformationItem", "Clinic information item " + index));
+    }
+    for (int index = 3; index <= 8; index++) {
+      operations.add(add("command-" + index, "Command", "Clinic command " + index));
+      operations.add(add("event-" + index, "BusinessEvent", "Clinic event " + index));
+    }
+    operations.add(connect("actor-1", "role-1", "Actor", "playsRoles"));
+    operations.add(connect("stakeholder-1", "goal-1", "Stakeholder", "ownsGoals"));
+    operations.add(connect("stakeholder-1", "req-1", "Stakeholder", "providesRequirements"));
+    operations.add(connect("req-1", "goal-1", "Requirement", "supportsGoals"));
+    operations.add(connect("command-1", "actor-1", "Command", "issuedBy"));
+    operations.add(connect("command-2", "actor-1", "Command", "issuedBy"));
+    operations.add(connect("query-1", "actor-1", "Query", "issuedBy"));
+    operations.add(connect("query-1", "entity-1", "Query", "reads"));
+    operations.add(connect("command-2", "event-2", "Command", "expectedEvents"));
+    operations.add(connect("policy-1", "command-2", "Policy", "guards"));
+    operations.add(connect("policy-1", "event-2", "Policy", "triggeredBy"));
+    operations.add(connect("process-1", "command-2", "BusinessProcess", "triggeringCommand"));
+    return new SemanticModelPatch(operations);
+  }
+
+  private SemanticModelPatch.Operation add(String id, String type, String name) {
+    return new SemanticModelPatch.Operation(
+        SemanticModelPatch.OperationType.ADD_ELEMENT,
+        id,
+        type,
+        JsonNodeFactory.instance.objectNode().put("name", name).put("description", name),
+        null,
+        null);
+  }
+
+  private SemanticModelPatch.Operation connect(
+      String sourceId, String targetId, String sourceType, String referenceName) {
+    return new SemanticModelPatch.Operation(
+        SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+        targetId,
+        sourceType,
+        null,
+        sourceId,
+        referenceName);
+  }
+
+  private String fullCimSourceDocument() {
+    return """
+    # Community Clinic Appointment Portal - User Story Requirements
+
+    The Community Clinic Network wants a patient-facing appointment portal for primary-care
+    visits, vaccinations, lab follow-ups, and telehealth consultations. The system must reduce
+    phone traffic, protect patient information, and keep clinic staff in control of provider
+    schedules.
+
+    ## Goals
+    - Patients can find and book appointments without calling the clinic.
+    - Clinic schedulers can manage capacity, blocked times, and provider availability.
+    - Providers can review appointment context before the visit.
+    - Compliance staff can audit access to protected health information.
+
+    ## User Stories
+    ### US-01 Search Available Appointments
+    As a patient, I want to search available appointment slots by clinic, visit reason,
+    provider, and date range so that I can choose a time that fits my needs.
+    Acceptance criteria:
+    - Search results show clinic location, provider name, visit type, earliest start time, and
+      whether telehealth is available.
+    - Patients can filter by language preference and accessibility needs.
+    - Slots already held or booked are not returned.
+
+    ### US-02 Book Appointment
+    As a patient, I want to book a selected slot so that the clinic reserves the time for me.
+    Acceptance criteria:
+    - The portal captures patient identity, visit reason, contact preference, and insurance.
+    - The selected slot is held for 10 minutes during confirmation.
+    - A booking confirmation is created only when the patient accepts clinic policies.
+    - The patient receives a confirmation notification.
+
+    ### US-03 Manage Provider Availability
+    As a clinic scheduler, I want to manage provider availability, blocked time, and capacity.
+    Acceptance criteria:
+    - Schedulers can publish provider templates, close blocks, and override capacity.
+    - Patients cannot book blocked or over-capacity slots.
+    - Schedule changes emit events for notifications and audit.
+
+    ### US-04 Review Appointment Context
+    As a provider, I want appointment context before the visit.
+    Acceptance criteria:
+    - Providers see visit reason, patient preferences, telehealth flag, and lab follow-up data.
+    - Context hides information the provider is not authorized to view.
+
+    ### US-05 Audit PHI Access
+    As a compliance officer, I want to audit protected health information access.
+    Acceptance criteria:
+    - Every read of patient identity, appointment context, and contact details is logged.
+    - Risk: privacy exposure if audit events are missing.
+    - Assumption: clinic identity provider supplies staff roles.
+    - Hotspot: provider schedule conflicts need domain policy review.
+    """;
   }
 }

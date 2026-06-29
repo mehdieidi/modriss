@@ -65,8 +65,20 @@ public final class AssistantEvalRunner {
    * @return eval results
    */
   public List<EvalResult> run(boolean live, ToolBinder toolBinder) {
+    return run(live, toolBinder, loadPrompts());
+  }
+
+  /**
+   * Runs the benchmark for an explicit prompt set.
+   *
+   * @param live when true, calls the configured provider
+   * @param toolBinder binds model context before each live agent loop
+   * @param prompts prompts to run
+   * @return eval results
+   */
+  public List<EvalResult> run(boolean live, ToolBinder toolBinder, List<EvalPrompt> prompts) {
     List<EvalResult> results = new ArrayList<>();
-    for (EvalPrompt prompt : loadPrompts()) {
+    for (EvalPrompt prompt : prompts == null ? List.<EvalPrompt>of() : prompts) {
       long startedAt = System.currentTimeMillis();
       EvalResult.Builder builder =
           new EvalResult.Builder(prompt.id(), prompt.category(), prompt.level());
@@ -86,6 +98,27 @@ public final class AssistantEvalRunner {
         ModelLevel level = ModelLevel.fromApiName(prompt.level());
         List<AssistantModelProvider.ContextSnippet> snippets =
             new ArrayList<>(schemas.planningContracts(level, prompt.prompt(), 8));
+        boolean sourceAnalysisUsed = false;
+        if (!prompt.sourceDocument().isBlank() && level == ModelLevel.CIM) {
+          AssistantModelProvider.AssistantReply analysis =
+              provider.analyzeSource(
+                  new AssistantModelProvider.AssistantPrompt(
+                      AssistantModelRole.SOURCE_ANALYST,
+                      "Eval source analysis for " + prompt.id(),
+                      prompt.prompt(),
+                      List.of(
+                          new AssistantModelProvider.ContextSnippet(
+                              "eval-source-document",
+                              prompt.id() + " source document",
+                              prompt.sourceDocument()))),
+                  (stage, message) -> {});
+          if (analysis != null && !analysis.content().isBlank()) {
+            sourceAnalysisUsed = true;
+            snippets.add(
+                new AssistantModelProvider.ContextSnippet(
+                    "source-analysis", prompt.id() + " evidence map", analysis.content()));
+          }
+        }
         if (toolBinder != null) {
           toolBinder.bind(level, prompt);
         }
@@ -101,13 +134,24 @@ public final class AssistantEvalRunner {
           AssistantTurnPlan plan = loopResult.plan();
           SemanticModelPatch completed =
               patchCompleter.complete(level, plan.patch(), java.util.Map.of());
+          int addCount = count(completed, SemanticModelPatch.OperationType.ADD_ELEMENT);
+          int connectionCount = count(completed, SemanticModelPatch.OperationType.CONNECT_ELEMENTS);
+          boolean passed =
+              plan.kind() == AssistantTurnPlan.Kind.PATCH
+                  && completed.operations().size() >= prompt.minOperations()
+                  && addCount >= prompt.minElementAdds()
+                  && connectionCount >= prompt.minConnections()
+                  && (!prompt.requiresSourceAnalysis() || sourceAnalysisUsed);
           builder
               .turnKind(plan.kind().name())
               .operationCount(completed.operations().size())
-              .validationPassed(plan.kind() == AssistantTurnPlan.Kind.PATCH)
+              .addElementCount(addCount)
+              .connectionCount(connectionCount)
+              .sourceAnalysisUsed(sourceAnalysisUsed)
+              .validationPassed(passed)
               .repairAttempts(0)
               .toolCalls(loopResult.toolCalls())
-              .failureStage(plan.kind() == AssistantTurnPlan.Kind.PATCH ? "" : "PLANNING")
+              .failureStage(passed ? "" : "EVAL_EXPECTATIONS")
               .latencyMs(System.currentTimeMillis() - startedAt);
         } finally {
           if (toolBinder != null) {
@@ -128,6 +172,16 @@ public final class AssistantEvalRunner {
       results.add(builder.build());
     }
     return results;
+  }
+
+  private int count(SemanticModelPatch patch, SemanticModelPatch.OperationType type) {
+    if (patch == null || type == null) {
+      return 0;
+    }
+    return (int)
+        patch.operations().stream()
+            .filter(operation -> operation != null && operation.type() == type)
+            .count();
   }
 
   /** Prints a baseline report grouped by category. */
@@ -174,6 +228,11 @@ public final class AssistantEvalRunner {
    * @param prompt user prompt
    * @param emptyCanvas whether the canvas starts empty
    * @param selectedElementIds optional selected elements
+   * @param sourceDocument optional attached source material
+   * @param minOperations minimum acceptable semantic operation count
+   * @param minElementAdds minimum acceptable ADD_ELEMENT count
+   * @param minConnections minimum acceptable CONNECT_ELEMENTS count
+   * @param requiresSourceAnalysis whether the source-analysis phase must run
    */
   public record EvalPrompt(
       String id,
@@ -181,10 +240,19 @@ public final class AssistantEvalRunner {
       String level,
       String prompt,
       boolean emptyCanvas,
-      List<String> selectedElementIds) {
+      List<String> selectedElementIds,
+      String sourceDocument,
+      int minOperations,
+      int minElementAdds,
+      int minConnections,
+      boolean requiresSourceAnalysis) {
 
     public EvalPrompt {
       selectedElementIds = selectedElementIds == null ? List.of() : List.copyOf(selectedElementIds);
+      sourceDocument = sourceDocument == null ? "" : sourceDocument;
+      minOperations = Math.max(minOperations, 1);
+      minElementAdds = Math.max(minElementAdds, 0);
+      minConnections = Math.max(minConnections, 0);
     }
   }
 
@@ -196,6 +264,9 @@ public final class AssistantEvalRunner {
    * @param level modeling level
    * @param turnKind planner turn kind
    * @param operationCount semantic operation count
+   * @param addElementCount ADD_ELEMENT count
+   * @param connectionCount CONNECT_ELEMENTS count
+   * @param sourceAnalysisUsed whether source analysis was run
    * @param validationPassed whether validation passed
    * @param repairAttempts repair passes used
    * @param toolCalls tool invocations
@@ -209,6 +280,9 @@ public final class AssistantEvalRunner {
       String level,
       String turnKind,
       int operationCount,
+      int addElementCount,
+      int connectionCount,
+      boolean sourceAnalysisUsed,
       boolean validationPassed,
       int repairAttempts,
       int toolCalls,
@@ -222,6 +296,9 @@ public final class AssistantEvalRunner {
       private final String level;
       private String turnKind = "";
       private int operationCount;
+      private int addElementCount;
+      private int connectionCount;
+      private boolean sourceAnalysisUsed;
       private boolean validationPassed;
       private int repairAttempts;
       private int toolCalls;
@@ -242,6 +319,21 @@ public final class AssistantEvalRunner {
 
       Builder operationCount(int operationCount) {
         this.operationCount = operationCount;
+        return this;
+      }
+
+      Builder addElementCount(int addElementCount) {
+        this.addElementCount = addElementCount;
+        return this;
+      }
+
+      Builder connectionCount(int connectionCount) {
+        this.connectionCount = connectionCount;
+        return this;
+      }
+
+      Builder sourceAnalysisUsed(boolean sourceAnalysisUsed) {
+        this.sourceAnalysisUsed = sourceAnalysisUsed;
         return this;
       }
 
@@ -282,6 +374,9 @@ public final class AssistantEvalRunner {
             level,
             turnKind,
             operationCount,
+            addElementCount,
+            connectionCount,
+            sourceAnalysisUsed,
             validationPassed,
             repairAttempts,
             toolCalls,

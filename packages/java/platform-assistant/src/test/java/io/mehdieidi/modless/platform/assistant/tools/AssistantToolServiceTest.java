@@ -1,6 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.tools;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,7 +34,7 @@ class AssistantToolServiceTest {
             .filter(method -> method.isAnnotationPresent(Tool.class))
             .count();
 
-    assertEquals(8, annotated);
+    assertEquals(14, annotated);
     assertNotNull(tool("searchCatalogs"));
     assertNotNull(tool("previewSemanticPatch"));
     assertNotNull(tool("summarizeValidation"));
@@ -42,6 +43,12 @@ class AssistantToolServiceTest {
     assertNotNull(tool("getTypeContract"));
     assertNotNull(tool("validateSnapshot"));
     assertNotNull(tool("listModelElements"));
+    assertNotNull(tool("inspectCurrentSemanticPatch"));
+    assertNotNull(tool("getLanguageIndex"));
+    assertNotNull(tool("getMetamodelCoverage"));
+    assertNotNull(tool("findCreatableTypes"));
+    assertNotNull(tool("findContainmentOptions"));
+    assertNotNull(tool("summarizeCurrentModel"));
   }
 
   @Test
@@ -90,6 +97,87 @@ class AssistantToolServiceTest {
     assertEquals(1, page.totalElements());
     assertEquals("fn-1", page.elements().get(0).id());
     tools.clearSession();
+  }
+
+  @Test
+  void inspectsCurrentSemanticPatchAgainstBoundSnapshot() throws Exception {
+    when(models.validateStructural(any(), any()))
+        .thenReturn(new ModelService.ValidationResult(true, java.util.List.of()));
+    AssistantToolService tools =
+        new AssistantToolService(
+            mock(AssistantCatalog.class),
+            new AssistantPatchCompiler(),
+            new AssistantMetamodelSchemaService(),
+            models,
+            mapper);
+    var model =
+        mapper.readTree(
+            "{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\",\"diagram\":{\"elements\":[{\"id\":\"fn-1\",\"eClass\":\"Function\",\"name\":\"A\"}],\"relationships\":[]}}");
+    var context =
+        new JdbcAssistantModelContextIndex()
+            .transientSnapshot("project", ModelLevel.PIM, "Orders", 1L, model, null);
+    tools.bindSession(new AssistantToolBridge.ToolSession(ModelLevel.PIM, model, context));
+
+    AssistantToolService.PatchInspectionResult result =
+        tools.inspectCurrentSemanticPatch(
+            "{\"operations\":[{\"type\":\"SET_ATTRIBUTE\",\"targetElementId\":\"fn-1\",\"elementType\":\"Function\",\"attributes\":\"B\",\"referenceName\":\"name\"}]}");
+
+    assertTrue(result.acceptable());
+    assertEquals(1, result.semanticOperationCount());
+    assertEquals("fn-1", result.affectedElements().get(0));
+    tools.clearSession();
+  }
+
+  @Test
+  void findsContainmentOptionsForBoundSnapshot() throws Exception {
+    AssistantToolService tools =
+        new AssistantToolService(
+            mock(AssistantCatalog.class),
+            new AssistantPatchCompiler(),
+            new AssistantMetamodelSchemaService(),
+            models,
+            mapper);
+    var model =
+        mapper.readTree(
+            "{\"id\":\"root\",\"eClass\":\"PIMModel\",\"modelLevel\":\"PIM\",\"diagram\":{\"elements\":[],\"relationships\":[]}}");
+    var context =
+        new JdbcAssistantModelContextIndex()
+            .transientSnapshot("project", ModelLevel.PIM, "Orders", 1L, model, null);
+    tools.bindSession(new AssistantToolBridge.ToolSession(ModelLevel.PIM, model, context));
+
+    AssistantToolService.ContainmentOptions result =
+        tools.findContainmentOptions("Function", "", 10);
+
+    assertEquals("Function", result.childType());
+    assertFalse(result.options().isEmpty());
+    assertTrue(
+        result.options().stream()
+            .anyMatch(
+                option ->
+                    option.root()
+                        && "PIMModel".equals(option.ownerType())
+                        && "functions".equals(option.referenceName())));
+    tools.clearSession();
+  }
+
+  @Test
+  void reportsMetamodelCoverageForAgentSelfChecks() {
+    AssistantToolService tools =
+        new AssistantToolService(
+            mock(AssistantCatalog.class),
+            new AssistantPatchCompiler(),
+            new AssistantMetamodelSchemaService(),
+            models,
+            mapper);
+
+    var coverage = tools.getMetamodelCoverage("CIM");
+
+    assertEquals(ModelLevel.CIM, coverage.level());
+    assertTrue(coverage.creatableTypes() > 0);
+    assertTrue(coverage.attributes() > 0);
+    assertTrue(coverage.containments() > 0);
+    assertTrue(coverage.relationships() > 0);
+    assertFalse(coverage.typeNames().isEmpty());
   }
 
   private Method tool(String name) {

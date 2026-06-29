@@ -255,7 +255,7 @@
   border-radius: 999px;
   opacity: 0;
   color: var(--paper-muted);
-  background:     rgba(237, 243, 250, 0.88);
+  background: rgba(237, 243, 250, 0.88);
   box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.2);
   font-size: 0.45rem;
   font-weight: 600;
@@ -954,7 +954,7 @@
   border: 1px solid var(--line-strong);
   border-radius: 0.8rem;
   opacity: 0;
-  background:     rgba(237, 243, 250, 0.97);
+  background: rgba(237, 243, 250, 0.97);
   box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.38);
 }
 

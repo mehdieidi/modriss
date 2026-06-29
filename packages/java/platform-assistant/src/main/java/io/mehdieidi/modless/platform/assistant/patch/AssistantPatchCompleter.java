@@ -1,6 +1,7 @@
 package io.mehdieidi.modless.platform.assistant.patch;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.mehdieidi.modless.platform.assistant.application.AssistantValidationFeedbackResolver;
@@ -45,6 +46,10 @@ public class AssistantPatchCompleter {
         orderOperationsForCompilation(stripOrphanContainedAdds(level, patch.operations(), types));
     if (operations.isEmpty()) {
       return patch;
+    }
+    operations = normalizeReferenceShapedOperations(level, operations, types);
+    if (operations.isEmpty()) {
+      return new SemanticModelPatch(List.of());
     }
     boolean changed;
     do {
@@ -201,6 +206,16 @@ public class AssistantPatchCompleter {
             : ((ObjectNode) operation.attributes().deepCopy());
     boolean changed = false;
     String parentName = attributes.path("name").asText(canonicalType);
+    if (typeSchema.attribute("name").isPresent()) {
+      JsonNode currentName = attributes.get("name");
+      if (currentName == null
+          || currentName.isNull()
+          || currentName.asText("").isBlank()
+          || currentName.asText("").trim().equalsIgnoreCase(canonicalType)) {
+        attributes.put("name", defaultElementName(canonicalType, operation.referenceName()));
+        changed = true;
+      }
+    }
     for (AssistantMetamodelSchemaService.AttributeSchema attribute : typeSchema.attributes()) {
       if (!attribute.required()) {
         continue;
@@ -224,6 +239,21 @@ public class AssistantPatchCompleter {
             operation.sourceElementId(),
             operation.referenceName())
         : operation;
+  }
+
+  private String defaultElementName(String canonicalType, String referenceName) {
+    if (referenceName != null && !referenceName.isBlank()) {
+      return capitalize(humanize(referenceName));
+    }
+    return "Modeled " + capitalize(humanize(canonicalType));
+  }
+
+  private String capitalize(String value) {
+    if (value == null || value.isBlank()) {
+      return "Element";
+    }
+    String trimmed = value.trim();
+    return trimmed.substring(0, 1).toUpperCase(Locale.ROOT) + trimmed.substring(1);
   }
 
   private JsonNode defaultAttributeValue(
@@ -274,6 +304,218 @@ public class AssistantPatchCompleter {
                     && operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
                     && ownerId.equals(operation.sourceElementId())
                     && referenceName.equals(operation.referenceName()));
+  }
+
+  private List<SemanticModelPatch.Operation> normalizeReferenceShapedOperations(
+      ModelLevel level, List<SemanticModelPatch.Operation> operations, Map<String, String> types) {
+    collectAddTypes(level, operations, types);
+    List<SemanticModelPatch.Operation> normalized = new ArrayList<>();
+    for (SemanticModelPatch.Operation operation : operations) {
+      if (operation == null) {
+        continue;
+      }
+      if (operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT) {
+        normalized.add(
+            stripAndLiftEmbeddedReferences(level, operation, operations, normalized, types));
+        continue;
+      }
+      if (operation.type() == SemanticModelPatch.OperationType.SET_ATTRIBUTE) {
+        String targetType = types.get(operation.targetElementId());
+        AssistantMetamodelSchemaService.ReferenceSchema reference =
+            targetType == null
+                ? null
+                : schemas.reference(level, targetType, operation.referenceName()).orElse(null);
+        if (reference == null) {
+          normalized.add(operation);
+          continue;
+        }
+        if (reference.containment()) {
+          addContainedValues(
+              level,
+              normalized,
+              operations,
+              types,
+              operation.targetElementId(),
+              reference,
+              operation.attributes());
+        } else {
+          addReferenceConnections(
+              normalized, operation.targetElementId(), reference.name(), operation.attributes());
+        }
+        continue;
+      }
+      normalized.add(operation);
+    }
+    return orderOperationsForCompilation(normalized);
+  }
+
+  private void collectAddTypes(
+      ModelLevel level, List<SemanticModelPatch.Operation> operations, Map<String, String> types) {
+    for (SemanticModelPatch.Operation operation : operations) {
+      if (operation == null
+          || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT
+          || blank(operation.targetElementId())) {
+        continue;
+      }
+      try {
+        types.putIfAbsent(
+            operation.targetElementId(), schemas.canonicalType(level, operation.elementType()));
+      } catch (PlatformException ignored) {
+        // Unknown types are handled by the normal validation/repair path.
+      }
+    }
+  }
+
+  private SemanticModelPatch.Operation stripAndLiftEmbeddedReferences(
+      ModelLevel level,
+      SemanticModelPatch.Operation operation,
+      List<SemanticModelPatch.Operation> allOperations,
+      List<SemanticModelPatch.Operation> normalized,
+      Map<String, String> types) {
+    if (!(operation.attributes() instanceof ObjectNode attributes)
+        || blank(operation.targetElementId())) {
+      return operation;
+    }
+    String canonicalType;
+    try {
+      canonicalType = schemas.canonicalType(level, operation.elementType());
+    } catch (PlatformException ignored) {
+      return operation;
+    }
+    AssistantMetamodelSchemaService.TypeSchema typeSchema =
+        schemas.typeSchema(level, canonicalType).orElse(null);
+    if (typeSchema == null) {
+      return operation;
+    }
+    ObjectNode sanitized = attributes.deepCopy();
+    boolean changed = false;
+    for (AssistantMetamodelSchemaService.ReferenceSchema reference : typeSchema.references()) {
+      JsonNode embedded = sanitized.remove(reference.name());
+      if (embedded == null || embedded.isNull()) {
+        continue;
+      }
+      changed = true;
+      if (reference.containment()) {
+        addContainedValues(
+            level,
+            normalized,
+            allOperations,
+            types,
+            operation.targetElementId(),
+            reference,
+            embedded);
+      } else {
+        addReferenceConnections(
+            normalized, operation.targetElementId(), reference.name(), embedded);
+      }
+    }
+    if (!changed) {
+      return operation;
+    }
+    return new SemanticModelPatch.Operation(
+        operation.type(),
+        operation.targetElementId(),
+        operation.elementType(),
+        sanitized,
+        operation.sourceElementId(),
+        operation.referenceName());
+  }
+
+  private void addContainedValues(
+      ModelLevel level,
+      List<SemanticModelPatch.Operation> normalized,
+      List<SemanticModelPatch.Operation> allOperations,
+      Map<String, String> types,
+      String ownerId,
+      AssistantMetamodelSchemaService.ReferenceSchema reference,
+      JsonNode value) {
+    if (blank(ownerId)
+        || hasContainedChild(allOperations, ownerId, reference.name())
+        || hasContainedChild(normalized, ownerId, reference.name())) {
+      return;
+    }
+    if (value instanceof ArrayNode array) {
+      if (!reference.many() && !array.isEmpty()) {
+        addContainedValue(level, normalized, types, ownerId, reference, array.get(0));
+        return;
+      }
+      array.forEach(item -> addContainedValue(level, normalized, types, ownerId, reference, item));
+      return;
+    }
+    addContainedValue(level, normalized, types, ownerId, reference, value);
+  }
+
+  private void addContainedValue(
+      ModelLevel level,
+      List<SemanticModelPatch.Operation> normalized,
+      Map<String, String> types,
+      String ownerId,
+      AssistantMetamodelSchemaService.ReferenceSchema reference,
+      JsonNode value) {
+    ObjectNode attributes =
+        value instanceof ObjectNode object
+            ? object.deepCopy()
+            : JsonNodeFactory.instance.objectNode();
+    attributes.remove("id");
+    attributes.remove("eClass");
+    if (!attributes.hasNonNull("name")) {
+      attributes.put("name", humanize(reference.targetType()));
+    }
+    String childId = java.util.UUID.randomUUID().toString();
+    normalized.add(
+        new SemanticModelPatch.Operation(
+            SemanticModelPatch.OperationType.ADD_ELEMENT,
+            childId,
+            reference.targetType(),
+            attributes,
+            ownerId,
+            reference.name()));
+    try {
+      types.put(childId, schemas.canonicalType(level, reference.targetType()));
+    } catch (PlatformException ignored) {
+      types.put(childId, reference.targetType());
+    }
+  }
+
+  private void addReferenceConnections(
+      List<SemanticModelPatch.Operation> normalized,
+      String sourceId,
+      String referenceName,
+      JsonNode value) {
+    if (blank(sourceId)) {
+      return;
+    }
+    for (String targetId : referenceTargetIds(value)) {
+      if (blank(targetId) || hasRelationship(normalized, sourceId, referenceName)) {
+        continue;
+      }
+      normalized.add(connectOperation(sourceId, targetId, referenceName));
+    }
+  }
+
+  private List<String> referenceTargetIds(JsonNode value) {
+    if (value == null || value.isNull()) {
+      return List.of();
+    }
+    if (value instanceof ArrayNode array) {
+      List<String> ids = new ArrayList<>();
+      array.forEach(item -> ids.addAll(referenceTargetIds(item)));
+      return ids;
+    }
+    if (value.isTextual()) {
+      return List.of(value.asText());
+    }
+    if (value instanceof ObjectNode object) {
+      String id = object.path("id").asText("");
+      if (!id.isBlank()) {
+        return List.of(id);
+      }
+      String targetElementId = object.path("targetElementId").asText("");
+      if (!targetElementId.isBlank()) {
+        return List.of(targetElementId);
+      }
+    }
+    return List.of();
   }
 
   private void replaceOperation(

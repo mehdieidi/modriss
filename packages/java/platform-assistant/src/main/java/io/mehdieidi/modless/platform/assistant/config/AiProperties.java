@@ -355,6 +355,7 @@ public record AiProperties(
       Provider resolvedProvider = provider == null ? Provider.OPENAI : provider;
       return switch (role == null ? AssistantModelRole.RESPONDER : role) {
         case PLANNER -> blankToDefault(planner, defaultModel(resolvedProvider));
+        case SOURCE_ANALYST -> blankToDefault(planner, defaultModel(resolvedProvider));
         case RESPONDER -> blankToDefault(responder, defaultModel(resolvedProvider));
         case SUMMARIZER -> blankToDefault(summarizer, defaultModel(resolvedProvider));
       };

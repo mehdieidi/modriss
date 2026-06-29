@@ -265,6 +265,18 @@
     "emptyCanvas": true
   },
   {
+    "id": "cim-eventstorming-01",
+    "category": "cim-source-document",
+    "level": "CIM",
+    "prompt": "Create a complete CIM model from this event storming workshop document. Preserve all important commands, events, policies, actors, entities, goals, risks, assumptions, and process relationships.",
+    "emptyCanvas": true,
+    "sourceDocument": "# Insurance Claims Event Storming\n\n## Goals\n- Reduce claim intake cycle time from days to minutes.\n- Detect fraud before settlement.\n- Keep claimants, adjusters, repair partners, and finance teams synchronized.\n\n## Actors and roles\n- Claimant submits first notice of loss, uploads photos, answers follow-up questions, and accepts settlement.\n- Claims intake specialist reviews incomplete submissions and requests missing information.\n- Adjuster assesses coverage, liability, damage estimate, and settlement recommendation.\n- Fraud analyst reviews suspicious claims and can hold or release a claim.\n- Repair partner receives approved repair assignments and returns estimates.\n- Finance officer schedules payment once settlement is approved.\n- Policy administration system provides active policy, coverage limits, deductibles, and endorsements.\n- Payment gateway executes settlement payments.\n- Notification service sends email, SMS, and portal updates.\n\n## Commands\n- Register first notice of loss.\n- Verify policy coverage.\n- Request missing claim information.\n- Upload damage evidence.\n- Assign adjuster.\n- Order fraud screening.\n- Place fraud hold.\n- Release fraud hold.\n- Request repair estimate.\n- Submit repair estimate.\n- Calculate settlement.\n- Approve settlement.\n- Reject settlement.\n- Schedule payment.\n- Notify claimant.\n\n## Events\n- Claim registered.\n- Policy coverage verified.\n- Coverage denied.\n- Missing information requested.\n- Damage evidence uploaded.\n- Adjuster assigned.\n- Fraud screening ordered.\n- Fraud hold placed.\n- Fraud hold released.\n- Repair estimate requested.\n- Repair estimate received.\n- Settlement calculated.\n- Settlement approved.\n- Settlement rejected.\n- Payment scheduled.\n- Claimant notified.\n- Claim closed.\n\n## Policies and rules\n- If coverage cannot be verified, deny the claim and notify the claimant.\n- If mandatory evidence is missing, pause intake and request missing information.\n- If fraud score is high, place a fraud hold before settlement calculation.\n- If repair estimate exceeds coverage limit, require senior adjuster approval.\n- If settlement is approved, schedule payment and close the claim after confirmation.\n\n## Domain entities and information\n- Claim, Policy, Coverage, Claimant, Loss Event, Evidence Item, Fraud Case, Repair Estimate, Settlement, Payment, Notification.\n\n## Hotspots and risks\n- Duplicate claims for the same loss event.\n- Ambiguous coverage endorsements.\n- Slow repair partner estimates.\n- Fraud false positives delaying valid settlements.\n- Payment gateway failures after settlement approval.\n\n## Assumptions\n- Claimants can use web or mobile channels.\n- Policy coverage lookup is available through an external system.\n- Fraud screening is asynchronous.\n- Payment scheduling can be retried safely.",
+    "minOperations": 45,
+    "minElementAdds": 28,
+    "minConnections": 10,
+    "requiresSourceAnalysis": true
+  },
+  {
     "id": "psm-create-04",
     "category": "psm",
     "level": "PSM",

@@ -77,6 +77,132 @@ class AssistantPatchCompleterTest {
                         && blank(operation.sourceElementId())));
   }
 
+  @Test
+  void stripsEmbeddedContainmentReferencesAlreadyModeledAsChildAdds() throws Exception {
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "customer",
+                    "DomainEntity",
+                    mapper.readTree(
+                        "{\"name\":\"Customer\",\"identityStrategy\":\"BUSINESS_KEY\"}"),
+                    null,
+                    null),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "order",
+                    "DomainEntity",
+                    mapper.readTree("{\"name\":\"Order\",\"identityStrategy\":\"BUSINESS_KEY\"}"),
+                    null,
+                    null),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "customer-orders",
+                    "DomainRelationship",
+                    mapper.readTree(
+                        """
+                        {
+                          "name":"Customer places orders",
+                          "sourceMultiplicity":{"lowerBound":1,"upperBound":1},
+                          "targetMultiplicity":{"lowerBound":0,"unbounded":true}
+                        }
+                        """),
+                    null,
+                    null),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "source-multiplicity",
+                    "Multiplicity",
+                    mapper.readTree("{\"name\":\"Customer multiplicity\",\"lowerBound\":1}"),
+                    "customer-orders",
+                    "sourceMultiplicity"),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "target-multiplicity",
+                    "Multiplicity",
+                    mapper.readTree(
+                        "{\"name\":\"Order multiplicity\",\"lowerBound\":0,"
+                            + "\"unbounded\":true}"),
+                    "customer-orders",
+                    "targetMultiplicity"),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.SET_ATTRIBUTE,
+                    "customer-orders",
+                    "DomainRelationship",
+                    mapper.readTree("{\"lowerBound\":1}"),
+                    null,
+                    "sourceMultiplicity")));
+
+    SemanticModelPatch completed = completer.complete(ModelLevel.CIM, patch, Map.of());
+
+    SemanticModelPatch.Operation relationship =
+        completed.operations().stream()
+            .filter(operation -> "customer-orders".equals(operation.targetElementId()))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(relationship.attributes().path("sourceMultiplicity").isMissingNode());
+    assertTrue(relationship.attributes().path("targetMultiplicity").isMissingNode());
+    assertEquals(
+        1,
+        completed.operations().stream()
+            .filter(operation -> "customer-orders".equals(operation.sourceElementId()))
+            .filter(operation -> "sourceMultiplicity".equals(operation.referenceName()))
+            .count());
+    assertEquals(
+        1,
+        completed.operations().stream()
+            .filter(operation -> "customer-orders".equals(operation.sourceElementId()))
+            .filter(operation -> "targetMultiplicity".equals(operation.referenceName()))
+            .count());
+    assertTrue(
+        completed.operations().stream()
+            .noneMatch(
+                operation ->
+                    operation.type() == SemanticModelPatch.OperationType.SET_ATTRIBUTE
+                        && "sourceMultiplicity".equals(operation.referenceName())));
+  }
+
+  @Test
+  void prefersManyValuedRootContainmentsForCimTopLevelElements() {
+    assertEquals("goals", schemas.rootCollection(ModelLevel.CIM, "BusinessGoal").orElseThrow());
+    assertEquals("entities", schemas.rootCollection(ModelLevel.CIM, "DomainEntity").orElseThrow());
+    assertEquals(
+        "relationships",
+        schemas.rootCollection(ModelLevel.CIM, "DomainRelationship").orElseThrow());
+  }
+
+  @Test
+  void addsMeaningfulNameForUnlabeledContainedMultiplicity() throws Exception {
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "relationship",
+                    "DomainRelationship",
+                    mapper.readTree("{\"name\":\"Patient has visits\"}"),
+                    null,
+                    null),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "multiplicity",
+                    "Multiplicity",
+                    mapper.readTree("{\"lowerBound\":0,\"unbounded\":true}"),
+                    "relationship",
+                    "sourceMultiplicity")));
+
+    SemanticModelPatch completed = completer.complete(ModelLevel.CIM, patch, Map.of());
+
+    SemanticModelPatch.Operation multiplicity =
+        completed.operations().stream()
+            .filter(operation -> "multiplicity".equals(operation.targetElementId()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals("Source Multiplicity", multiplicity.attributes().path("name").asText());
+  }
+
   private boolean blank(String value) {
     return value == null || value.isBlank();
   }

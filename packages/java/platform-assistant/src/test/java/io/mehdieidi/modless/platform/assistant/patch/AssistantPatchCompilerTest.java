@@ -88,6 +88,36 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
+  void rejectsSetAttributeAgainstMetamodelReferences() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+            {
+              "eClass":"CIMModel",
+              "modelLevel":"CIM",
+              "relationships":[
+                {"id":"relationship-1","eClass":"DomainRelationship","name":"Customer orders"}
+              ],
+              "diagram":{"elements":[],"relationships":[]}
+            }
+            """);
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.SET_ATTRIBUTE,
+                    "relationship-1",
+                    "DomainRelationship",
+                    mapper.readTree("{\"lowerBound\":1}"),
+                    null,
+                    "sourceMultiplicity")));
+
+    assertThrows(
+        io.mehdieidi.modless.platform.kernel.PlatformException.class,
+        () -> compiler.compile(model, patch));
+  }
+
+  @Test
   void appendsVisualElementsToGraphWhenSavedModelHasNoDiagram() throws Exception {
     var model =
         mapper.readTree(

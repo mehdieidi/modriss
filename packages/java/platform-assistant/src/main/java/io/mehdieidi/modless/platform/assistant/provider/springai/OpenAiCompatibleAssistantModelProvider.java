@@ -106,6 +106,7 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   private int completionLimit(AssistantModelRole role) {
     return switch (role) {
       case PLANNER -> Math.max(6000, properties.tokenBudget());
+      case SOURCE_ANALYST -> Math.min(Math.max(8000, properties.tokenBudget()), 24000);
       case SUMMARIZER -> 800;
       case RESPONDER -> 3000;
     };
@@ -114,5 +115,10 @@ public class OpenAiCompatibleAssistantModelProvider extends AbstractAssistantMod
   @Override
   protected boolean registerTools(AssistantModelRole role) {
     return role != AssistantModelRole.PLANNER;
+  }
+
+  @Override
+  protected boolean registerPlannerExplorationTools() {
+    return true;
   }
 }

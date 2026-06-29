@@ -33,7 +33,11 @@ const WORKFLOW_LABELS = Object.freeze({
 
 const THINKING_STAGE_LABELS = Object.freeze({
   READING_MODEL: "Reading your model",
+  ANALYZING_SOURCE: "Analyzing source document",
+  QUERYING_METAMODEL: "Inspecting the metamodel",
   PLANNING: "Planning changes",
+  PREVIEWING_PATCH: "Previewing model operations",
+  MODELING_PREVIEW: "Streaming canvas preview",
   VALIDATING: "Validating the change",
   COMPLETING: "Completing formal details",
   REPAIRING: "Refining the patch",
@@ -163,6 +167,7 @@ export function resetChatActivityUi() {
   chatBusyDepth = 0;
   chatActivityHistory = [];
   clearThinkingStream();
+  clearAssistantModelPreview({ restore: false });
 }
 
 function applyWorkflowSnapshot(_workflowState, _message = null) {}
@@ -342,6 +347,101 @@ function clearThinkingStream() {
   activeThinkingEl = null;
   thinkingSteps = [];
   chatActivityHistory = [];
+}
+
+function cloneValue(value) {
+  return value == null ? value : structuredClone(value);
+}
+
+function ensureCanvasTraceOverlay() {
+  let overlay = document.getElementById("assistantCanvasTrace");
+  if (overlay) {
+    return overlay;
+  }
+  overlay = document.createElement("div");
+  overlay.id = "assistantCanvasTrace";
+  overlay.className = "assistant-canvas-trace hidden";
+  overlay.setAttribute("aria-live", "polite");
+  overlay.innerHTML =
+    '<div class="assistant-canvas-trace-kicker">AI modeling</div><div class="assistant-canvas-trace-title"></div><div class="assistant-canvas-trace-meta"></div>';
+  (el.canvasViewport || document.body).appendChild(overlay);
+  return overlay;
+}
+
+function updateCanvasTraceOverlay(payload) {
+  const overlay = ensureCanvasTraceOverlay();
+  const title = overlay.querySelector(".assistant-canvas-trace-title");
+  const meta = overlay.querySelector(".assistant-canvas-trace-meta");
+  const operationIndex = Number(payload?.operationIndex) || 0;
+  const operationCount = Number(payload?.operationCount) || 0;
+  const label = payload?.operationLabel || "Previewing model update";
+  if (title) {
+    title.textContent = label;
+  }
+  if (meta) {
+    meta.textContent =
+      operationIndex && operationCount
+        ? `${operationIndex} / ${operationCount} validated operations`
+        : "Validated preview";
+  }
+  overlay.classList.remove("hidden");
+  el.canvasViewport?.classList.add("assistant-preview-active");
+}
+
+function hideCanvasTraceOverlay() {
+  document.getElementById("assistantCanvasTrace")?.classList.add("hidden");
+  el.canvasViewport?.classList.remove("assistant-preview-active");
+}
+
+function capturePreviewSnapshot(typeKey, modelId) {
+  return {
+    typeKey,
+    modelId,
+    modelRevision: state.modelRevision || 0,
+    baseModel: cloneValue(state.baseModel),
+    diagram: cloneValue(state.diagram),
+  };
+}
+
+function clearAssistantModelPreview({ restore = false } = {}) {
+  const preview = state.assistantPreview;
+  if (restore && preview?.active && preview.typeKey === state.activeType) {
+    state.modelRevision = preview.modelRevision || state.modelRevision || 0;
+    state.baseModel = cloneValue(preview.baseModel);
+    state.diagram = cloneValue(preview.diagram);
+    renderDiagram();
+  }
+  state.assistantPreview = null;
+  hideCanvasTraceOverlay();
+}
+
+function applyAssistantModelPreview(typeKey, payload) {
+  const model = unwrapAssistantModel(payload?.model || null);
+  if (!model) {
+    updateCanvasTraceOverlay(payload);
+    return;
+  }
+  const modelId = String(payload?.modelId || "").trim();
+  const liveModelId = String(state.modelId || "").trim();
+  if (modelId && liveModelId && modelId !== liveModelId) {
+    return;
+  }
+  if (!state.assistantPreview?.active) {
+    state.assistantPreview = {
+      active: true,
+      ...capturePreviewSnapshot(typeKey, modelId || liveModelId),
+    };
+  }
+  const operationIndex = Number(payload?.operationIndex) || null;
+  const operationCount = Number(payload?.operationCount) || null;
+  const label = payload?.operationLabel
+    ? `${payload.operationLabel}${operationIndex && operationCount ? ` (${operationIndex}/${operationCount})` : ""}`
+    : "Previewing validated canvas changes";
+  pushThinkingStep(label, "MODELING_PREVIEW");
+  updateCanvasTraceOverlay(payload);
+  state.baseModel = cloneValue(model);
+  state.diagram = toDiagram(typeKey, model, state.tabs[typeKey]?.modelName);
+  renderDiagram();
 }
 
 function applyHttpActivity(response) {
@@ -710,6 +810,10 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
     const payload = JSON.parse(event.data)?.payload;
     handleChatRealtimeEvent(typeKey, "assistant.progress", payload);
   });
+  stream.addEventListener("assistant.model.preview", (event) => {
+    const payload = JSON.parse(event.data)?.payload;
+    handleChatRealtimeEvent(typeKey, "assistant.model.preview", payload);
+  });
   stream.onerror = () => {
     setStatus("Chat realtime stream disconnected");
   };
@@ -719,6 +823,10 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
   if (eventType === "assistant.progress") {
     pushThinkingStep(payload?.message || "Working with the model", payload?.stage);
+    return;
+  }
+  if (eventType === "assistant.model.preview") {
+    applyAssistantModelPreview(typeKey, payload);
     return;
   }
   if (eventType === "chat.assistant") {
@@ -738,6 +846,9 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
         payload.workflowState,
         payload?.activity?.message || workflowLabel(payload.workflowState),
       );
+    }
+    if (payload?.workflowState === "FAILED") {
+      clearAssistantModelPreview({ restore: true });
     }
     return;
   }
@@ -765,7 +876,9 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     void applyAssistantModelResponse(typeKey, {
       modelId,
       revision: payload?.revision,
-    });
+    })
+      .then(() => clearAssistantModelPreview({ restore: false }))
+      .catch(() => clearAssistantModelPreview({ restore: true }));
   }
 }
 
@@ -1254,6 +1367,7 @@ async function applyAssistantModelResponse(
         [typeKey]: responseModelId,
       };
     }
+    clearAssistantModelPreview({ restore: false });
     return;
   }
   const model = unwrapAssistantModel(response.model || null);
@@ -1270,6 +1384,7 @@ async function applyAssistantModelResponse(
     state.tabs[typeKey].modelName = model.name || state.tabs[typeKey].modelName;
   }
   renderDiagram();
+  clearAssistantModelPreview({ restore: false });
 }
 
 export function updateChatAttachmentLabel() {

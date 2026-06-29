@@ -215,7 +215,9 @@ public class AssistantToolService implements AssistantToolBridge {
   /** Validates a model snapshot without committing changes. */
   @Tool(
       name = "validateSnapshot",
-      description = "Run EVL validation against a model JSON snapshot without committing changes.")
+      description =
+          "Run structural Ecore validation against a model JSON snapshot without committing "
+              + "changes.")
   public AssistantValidationSummary validateSnapshot(
       @ToolParam(description = "Configured modeling level key or display name") String level,
       @ToolParam(description = "Model JSON snapshot") String modelJson) {
@@ -223,25 +225,170 @@ public class AssistantToolService implements AssistantToolBridge {
     ModelLevel modelLevel = ModelLevel.fromApiName(level);
     try {
       JsonNode model = mapper.readTree(modelJson == null ? "{}" : modelJson);
-      ModelService.ValidationResult validation = models.validate(modelLevel, model);
-      List<AssistantValidationSummary.Issue> issues =
-          validation.issues().stream()
-              .map(
-                  issue ->
-                      new AssistantValidationSummary.Issue(
-                          issue.severity(), issue.constraint(), issue.elementId(), issue.message()))
-              .toList();
-      boolean mandatoryPassed =
-          issues.stream().noneMatch(issue -> "ERROR".equalsIgnoreCase(issue.severity()));
-      long optional =
-          issues.stream().filter(issue -> "WARNING".equalsIgnoreCase(issue.severity())).count();
-      return new AssistantValidationSummary(
-          mandatoryPassed, mandatoryPassed, (int) optional, issues);
+      return validationSummary(models.validateStructural(modelLevel, model));
     } catch (PlatformException ex) {
       throw ex;
     } catch (Exception ex) {
       throw new PlatformException(400, "Invalid model snapshot.");
     }
+  }
+
+  /** Inspects a semantic patch against the bound model snapshot without committing it. */
+  @Tool(
+      name = "inspectCurrentSemanticPatch",
+      description =
+          "Compile, preview, and structurally validate a SemanticModelPatch against the active"
+              + " bound model snapshot. Does not commit changes and does not require the model"
+              + " JSON.")
+  public PatchInspectionResult inspectCurrentSemanticPatch(
+      @ToolParam(description = "SemanticModelPatch JSON") String semanticPatchJson) {
+    trackToolCall();
+    AssistantToolBridge.ToolSession active = requireSession();
+    try {
+      SemanticModelPatch semantic =
+          mapper.readValue(
+              semanticPatchJson == null ? "{\"operations\":[]}" : semanticPatchJson,
+              SemanticModelPatch.class);
+      AssistantPatchCompiler.CompiledPatch compiled =
+          patchCompiler.compile(active.modelJson(), semantic);
+      JsonNode preview = patchCompiler.apply(active.modelJson(), compiled);
+      AssistantValidationSummary validation =
+          validationSummary(models.validateStructural(active.level(), preview));
+      return new PatchInspectionResult(
+          semantic.operations().size(),
+          compiled.patch().size(),
+          compiled.affectedElements(),
+          validation,
+          validation.structurallyValid() && validation.mandatoryPassed());
+    } catch (PlatformException ex) {
+      throw ex;
+    } catch (Exception ex) {
+      throw new PlatformException(400, "Invalid semantic patch inspection input.");
+    }
+  }
+
+  /** Returns the level language index derived from the active metamodel. */
+  @Tool(
+      name = "getLanguageIndex",
+      description = "Return the runtime Ecore-derived language index for a modeling level.")
+  public String getLanguageIndex(
+      @ToolParam(description = "Configured modeling level key or display name") String level) {
+    trackToolCall();
+    return schemas.languageIndex(ModelLevel.fromApiName(level));
+  }
+
+  /** Returns metamodel coverage counts for agent self-checks. */
+  @Tool(
+      name = "getMetamodelCoverage",
+      description =
+          "Return counts of available creatable types, attributes, containments, and relationship"
+              + " references for a modeling level.")
+  public AssistantMetamodelSchemaService.MetamodelCoverage getMetamodelCoverage(
+      @ToolParam(description = "Configured modeling level key or display name") String level) {
+    trackToolCall();
+    return schemas.coverage(ModelLevel.fromApiName(level));
+  }
+
+  /** Returns creatable metamodel types ranked for the supplied modeling intent. */
+  @Tool(
+      name = "findCreatableTypes",
+      description = "Find Ecore-defined creatable element types relevant to the modeling request.")
+  public List<String> findCreatableTypes(
+      @ToolParam(description = "Configured modeling level key or display name") String level,
+      @ToolParam(description = "Natural language modeling request") String query,
+      @ToolParam(description = "Maximum type names to return") int limit) {
+    trackToolCall();
+    return schemas.relevantTypes(ModelLevel.fromApiName(level), query, false, Math.min(limit, 32));
+  }
+
+  /** Finds valid containment owners/features in the bound model for a child metamodel type. */
+  @Tool(
+      name = "findContainmentOptions",
+      description =
+          "Find Ecore-valid containment owners and reference names in the active model for a child"
+              + " metamodel type.")
+  public ContainmentOptions findContainmentOptions(
+      @ToolParam(description = "Child metamodel type to place") String childType,
+      @ToolParam(description = "Optional owner metamodel type filter") String ownerTypeFilter,
+      @ToolParam(description = "Maximum options to return") int limit) {
+    trackToolCall();
+    AssistantToolBridge.ToolSession active = requireSession();
+    String canonicalChild = schemas.canonicalType(active.level(), childType);
+    String rawOwnerFilter = ownerTypeFilter == null ? "" : ownerTypeFilter.trim();
+    String ownerFilter =
+        rawOwnerFilter.isBlank() ? "" : schemas.canonicalType(active.level(), rawOwnerFilter);
+    int bounded = Math.min(Math.max(limit <= 0 ? 24 : limit, 1), 80);
+    List<ContainmentOption> options = new ArrayList<>();
+    schemas
+        .rootContainment(active.level(), canonicalChild)
+        .ifPresent(
+            reference -> {
+              String rootType = schemas.rootType(active.level());
+              if (ownerFilter.isBlank() || rootType.equals(ownerFilter)) {
+                options.add(
+                    new ContainmentOption(
+                        rootId(active),
+                        rootType,
+                        rootName(active),
+                        reference.name(),
+                        true,
+                        reference.many(),
+                        reference.required()));
+              }
+            });
+    for (var element : active.context().elements()) {
+      if (options.size() >= bounded) {
+        break;
+      }
+      String ownerType = element.type();
+      if (ownerType == null || ownerType.isBlank()) {
+        continue;
+      }
+      if (schemas.rootType(active.level()).equals(ownerType)
+          && element.id().equals(rootId(active))) {
+        continue;
+      }
+      if (!ownerFilter.isBlank() && !ownerFilter.equals(ownerType)) {
+        continue;
+      }
+      for (var reference : schemas.containments(active.level(), ownerType, canonicalChild)) {
+        if (options.size() >= bounded) {
+          break;
+        }
+        options.add(
+            new ContainmentOption(
+                element.id(),
+                ownerType,
+                element.name(),
+                reference.name(),
+                false,
+                reference.many(),
+                reference.required()));
+      }
+    }
+    return new ContainmentOptions(canonicalChild, options.size(), options);
+  }
+
+  /** Summarizes the bound model snapshot for agent exploration. */
+  @Tool(
+      name = "summarizeCurrentModel",
+      description = "Return counts by metamodel type and current structural issues for the model.")
+  public CurrentModelSummary summarizeCurrentModel() {
+    trackToolCall();
+    AssistantToolBridge.ToolSession active = requireSession();
+    Map<String, Integer> counts = new LinkedHashMap<>();
+    active.context().elements().forEach(element -> counts.merge(element.type(), 1, Integer::sum));
+    List<String> issues =
+        active.context().validationIssues().stream()
+            .map(issue -> issue.constraint() + ": " + issue.message())
+            .limit(12)
+            .toList();
+    return new CurrentModelSummary(
+        active.level(),
+        active.context().elements().size(),
+        active.context().relationships().size(),
+        counts,
+        issues);
   }
 
   /** Lists model elements with optional type and name filters. */
@@ -328,6 +475,27 @@ public class AssistantToolService implements AssistantToolBridge {
     }
   }
 
+  private AssistantValidationSummary validationSummary(ModelService.ValidationResult validation) {
+    List<AssistantValidationSummary.Issue> issues =
+        validation == null
+            ? List.of()
+            : validation.issues().stream()
+                .map(
+                    issue ->
+                        new AssistantValidationSummary.Issue(
+                            issue.severity(),
+                            issue.constraint(),
+                            issue.elementId(),
+                            issue.message()))
+                .toList();
+    boolean mandatoryPassed =
+        issues.stream().noneMatch(issue -> "ERROR".equalsIgnoreCase(issue.severity()));
+    long optional =
+        issues.stream().filter(issue -> "WARNING".equalsIgnoreCase(issue.severity())).count();
+    return new AssistantValidationSummary(
+        validation != null && validation.valid(), mandatoryPassed, (int) optional, issues);
+  }
+
   private static Map<
           String,
           io.mehdieidi.modless.platform.assistant.domain.context.AssistantModelContextTypes
@@ -340,6 +508,17 @@ public class AssistantToolService implements AssistantToolBridge {
         result = new LinkedHashMap<>();
     active.context().elements().forEach(element -> result.putIfAbsent(element.id(), element));
     return result;
+  }
+
+  private String rootId(AssistantToolBridge.ToolSession active) {
+    return active.modelJson() == null ? "" : active.modelJson().path("id").asText("");
+  }
+
+  private String rootName(AssistantToolBridge.ToolSession active) {
+    if (active.context() != null && active.context().modelName() != null) {
+      return active.context().modelName();
+    }
+    return "";
   }
 
   /**
@@ -393,4 +572,66 @@ public class AssistantToolService implements AssistantToolBridge {
    * @param name element name
    */
   public record ElementSummary(String id, String type, String name) {}
+
+  /**
+   * Non-committing patch inspection result.
+   *
+   * @param semanticOperationCount semantic operation count
+   * @param executablePatchOperationCount compiled executable operation count
+   * @param affectedElements stable affected IDs
+   * @param validation structural validation summary
+   * @param acceptable whether the preview is structurally valid
+   */
+  public record PatchInspectionResult(
+      int semanticOperationCount,
+      int executablePatchOperationCount,
+      List<String> affectedElements,
+      AssistantValidationSummary validation,
+      boolean acceptable) {}
+
+  /**
+   * Valid containment placement options for an element type.
+   *
+   * @param childType canonical child EClass
+   * @param totalOptions number of returned options
+   * @param options owner/reference options
+   */
+  public record ContainmentOptions(
+      String childType, int totalOptions, List<ContainmentOption> options) {}
+
+  /**
+   * One legal containment owner/reference choice.
+   *
+   * @param ownerElementId stable owner ID; root model ID for root containment
+   * @param ownerType owner EClass
+   * @param ownerName owner display name
+   * @param referenceName containment feature to use in the semantic patch
+   * @param root whether the owner is the model root
+   * @param many whether the containment accepts multiple children
+   * @param required whether the containment feature is required
+   */
+  public record ContainmentOption(
+      String ownerElementId,
+      String ownerType,
+      String ownerName,
+      String referenceName,
+      boolean root,
+      boolean many,
+      boolean required) {}
+
+  /**
+   * Compact current model summary.
+   *
+   * @param level active modeling level
+   * @param elementCount element count
+   * @param relationshipCount relationship count
+   * @param countsByType element counts grouped by EClass
+   * @param validationIssues current validation issue summaries
+   */
+  public record CurrentModelSummary(
+      ModelLevel level,
+      int elementCount,
+      int relationshipCount,
+      Map<String, Integer> countsByType,
+      List<String> validationIssues) {}
 }

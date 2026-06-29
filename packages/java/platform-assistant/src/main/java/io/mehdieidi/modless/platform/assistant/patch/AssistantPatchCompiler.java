@@ -208,6 +208,11 @@ public class AssistantPatchCompiler {
             throw new PlatformException(400, "Assistant attribute name is not allowed.");
           }
           LocatedElement located = locateElement(root, operation.targetElementId());
+          String targetType = located.node().path("eClass").asText("");
+          if (schemas.attribute(level, targetType, operation.referenceName()).isEmpty()) {
+            throw new PlatformException(
+                422, "Assistant attribute is not writable in the metamodel.");
+          }
           JsonNode previous = located.node().get(operation.referenceName());
           if (java.util.Objects.equals(previous, operation.attributes())) {
             continue;
@@ -255,6 +260,22 @@ public class AssistantPatchCompiler {
    * @return patched model
    */
   public ObjectNode apply(JsonNode modelJson, CompiledPatch compiled) {
+    ObjectNode root = prepareApplyRoot(modelJson, compiled);
+    for (ModelService.ModelPatchOperation operation : compiled.patch()) {
+      applyOperation(root, operation);
+    }
+    return root;
+  }
+
+  /**
+   * Creates a writable model clone with visual containers initialized for incremental patch
+   * previews.
+   *
+   * @param modelJson model JSON
+   * @param compiled compiled patch whose visual containers may be touched
+   * @return writable model clone
+   */
+  public ObjectNode prepareApplyRoot(JsonNode modelJson, CompiledPatch compiled) {
     ObjectNode root =
         modelJson == null || !modelJson.isObject()
             ? JsonNodeFactory.instance.objectNode()
@@ -262,21 +283,30 @@ public class AssistantPatchCompiler {
     String visualContainer = visualContainer(root);
     root.with(visualContainer).withArray("elements");
     root.with(visualContainer).withArray("relationships");
-    compiled.patch().stream()
-        .map(ModelService.ModelPatchOperation::path)
-        .filter(java.util.Objects::nonNull)
-        .filter(path -> path.startsWith("/diagram/") || path.startsWith("/graph/"))
-        .map(path -> path.substring(1, path.indexOf('/', 1)))
-        .distinct()
-        .forEach(
-            container -> {
-              root.with(container).withArray("elements");
-              root.with(container).withArray("relationships");
-            });
-    for (ModelService.ModelPatchOperation operation : compiled.patch()) {
-      apply(root, operation);
+    if (compiled != null) {
+      compiled.patch().stream()
+          .map(ModelService.ModelPatchOperation::path)
+          .filter(java.util.Objects::nonNull)
+          .filter(path -> path.startsWith("/diagram/") || path.startsWith("/graph/"))
+          .map(path -> path.substring(1, path.indexOf('/', 1)))
+          .distinct()
+          .forEach(
+              container -> {
+                root.with(container).withArray("elements");
+                root.with(container).withArray("relationships");
+              });
     }
     return root;
+  }
+
+  /**
+   * Applies one compiled operation to a writable model clone.
+   *
+   * @param root writable model clone
+   * @param operation executable patch operation
+   */
+  public void applyOperation(ObjectNode root, ModelService.ModelPatchOperation operation) {
+    apply(root, operation);
   }
 
   /** Drops no-op visual removals when persistence normalized away an optional canvas container. */

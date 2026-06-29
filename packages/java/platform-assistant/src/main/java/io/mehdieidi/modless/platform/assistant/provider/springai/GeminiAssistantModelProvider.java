@@ -105,6 +105,7 @@ public class GeminiAssistantModelProvider extends AbstractAssistantModelProvider
   private int completionLimit(AssistantModelRole role) {
     return switch (role) {
       case PLANNER -> 6000;
+      case SOURCE_ANALYST -> 12000;
       case SUMMARIZER -> 800;
       case RESPONDER -> 3000;
     };

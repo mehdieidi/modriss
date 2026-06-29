@@ -206,5 +206,6 @@ class AssistantProviderStartupTest {
 
     assertTrue(openai.registerTools(AssistantModelRole.RESPONDER));
     assertFalse(openai.registerTools(AssistantModelRole.PLANNER));
+    assertTrue(openai.registerPlannerExplorationTools());
   }
 }
