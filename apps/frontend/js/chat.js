@@ -695,15 +695,7 @@ export async function resumeChatConversation(sessionId) {
 export async function startNewChatConversation() {
   const typeKey = state.activeType;
   const scopeKey = chatScopeKey(typeKey);
-  const previousSessionId = state.chat.sessions.get(scopeKey)?.sessionId;
   disconnectChatChannel(scopeKey);
-  if (previousSessionId) {
-    try {
-      await api(`/chatbot/sessions/${previousSessionId}`, { method: "DELETE" });
-    } catch {
-      // Best-effort cleanup; a new session can still be created.
-    }
-  }
   state.chat.sessions.delete(scopeKey);
   state.chat.attachment = null;
   if (el.chatFileInput) {
