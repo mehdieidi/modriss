@@ -143,6 +143,7 @@ public final class StoredViewLayoutService {
 
     List<LayoutService.LayoutEdge> edges = new ArrayList<>();
     Set<String> edgeIds = new HashSet<>();
+    Set<String> edgeKeys = new HashSet<>();
     for (JsonNode viewEdge : view.path("edges")) {
       String id = text(viewEdge, "relationshipId", text(viewEdge, "id", ""));
       if (id.isBlank()
@@ -158,6 +159,10 @@ public final class StoredViewLayoutService {
       String sourceId = endpoint(relationship, "sourceElementId", "sourceId", "source");
       String targetId = endpoint(relationship, "targetElementId", "targetId", "target");
       if (sourceId.isBlank() || targetId.isBlank()) {
+        continue;
+      }
+      String edgeKey = sourceId + "|" + targetId + "|" + text(relationship, "kind", "");
+      if (!edgeKeys.add(edgeKey)) {
         continue;
       }
       if (!nodeIds.contains(sourceId) || !nodeIds.contains(targetId)) {

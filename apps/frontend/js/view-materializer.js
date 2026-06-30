@@ -2,6 +2,7 @@ import { state } from "./state.js";
 import { emptyDiagram } from "./utils.js";
 import {
   activeView,
+  reconcileGraphRelationships,
   selectElementIdsForView,
   selectRelationshipIdsForView,
 } from "./graph-store.js";
@@ -131,6 +132,7 @@ function materializeViewGraph(view, elementIds, relationshipIds) {
 }
 
 export function materializeActiveView() {
+  reconcileGraphRelationships(state.activeType);
   const view = activeView();
   if (!view) {
     state.visibleGraph = emptyDiagram(state.activeType);

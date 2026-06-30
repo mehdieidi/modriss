@@ -836,6 +836,23 @@ function relationshipsWithinElementSet(elementSet) {
   return relationships;
 }
 
+function isContainmentRelationship(relationship) {
+  if (!relationship) {
+    return false;
+  }
+  if (relationship.containment === true) {
+    return true;
+  }
+  try {
+    return (
+      String(relationship.kind || "").toUpperCase() ===
+      configuredRelationshipSemantic("containmentKind").toUpperCase()
+    );
+  } catch {
+    return false;
+  }
+}
+
 function viewNodesByElement(view) {
   return new Map(safeArray(view?.nodes).map((node) => [node.elementId, node]));
 }
@@ -951,6 +968,9 @@ function createContainerFocusView(node) {
   const visibleIds = new Set(descendantIds);
   state.graph.relationshipsById.forEach((relationship) => {
     if (!relationship?.sourceElementId || !relationship?.targetElementId) {
+      return;
+    }
+    if (isContainmentRelationship(relationship)) {
       return;
     }
     const sourceInside = descendantSet.has(relationship.sourceElementId);
@@ -3140,7 +3160,7 @@ async function renderDiagramNow({ full = false } = {}) {
   if (activeRendererKind() === "glsp-sprotty") {
     try {
       if (window.modlessGlspState?.mode === "websocket") {
-        await syncCanvasFromState({});
+        await syncCanvasFromState(full ? { full: true, refresh: true } : {});
       } else {
         await syncCanvasFromState({ full: true });
       }
@@ -3178,6 +3198,7 @@ async function renderDiagramNow({ full = false } = {}) {
 // The public name is kept for existing callers, but the modeling surface is
 // G6-only: this applies a diff to the graph renderer.
 export function syncDiagramRenderer({ full = false } = {}) {
+  materializeActiveView();
   ensureCanvas();
   syncCanvasIndexesFromState();
   syncCanvasFromState({ full });

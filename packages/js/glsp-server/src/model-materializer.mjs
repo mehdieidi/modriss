@@ -24,6 +24,14 @@ function relationshipKindMatches(kind, filterKinds) {
   );
 }
 
+function relationshipDedupeKey(relationship) {
+  return [
+    String(relationship?.sourceElementId || relationship?.source || ""),
+    String(relationship?.targetElementId || relationship?.target || ""),
+    String(relationship?.kind || "").toUpperCase(),
+  ].join("|");
+}
+
 function viewNodeByElement(view) {
   return new Map(
     safeArray(view?.nodes)
@@ -158,6 +166,7 @@ export function selectRelationshipIdsForView(graph, view, elementIds) {
     safeArray(view?.edges).map((edge) => [String(edge.relationshipId || ""), edge]),
   );
   const relationshipIds = [];
+  const seenRelationshipKeys = new Set();
 
   for (const [relationshipId, relationship] of graph.relationshipsById.entries()) {
     if (hidden.has(relationshipId)) {
@@ -176,6 +185,11 @@ export function selectRelationshipIdsForView(graph, view, elementIds) {
     if (!relationshipKindMatches(relationship.kind, filterKinds)) {
       continue;
     }
+    const dedupeKey = relationshipDedupeKey(relationship);
+    if (seenRelationshipKeys.has(dedupeKey)) {
+      continue;
+    }
+    seenRelationshipKeys.add(dedupeKey);
     relationshipIds.push(relationshipId);
   }
 

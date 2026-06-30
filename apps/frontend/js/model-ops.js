@@ -1732,35 +1732,6 @@ async function runAutoLayoutCurrentDiagram({
   state.diagram = materializeActiveView();
 
   try {
-    const { activeRendererKind, applyGlspElkLayout } = await import(
-      "./graph-editor/renderer-adapter.js"
-    );
-    if (activeRendererKind() === "glsp-sprotty" && window.modlessGlspState?.mode === "websocket") {
-      if (progress) {
-        showGenerationProgress({
-          kicker: "Auto Layout in Progress",
-          title: "Arranging current view",
-          subtitle: "ELK layout via GLSP diagram server.",
-          label: "Computing layout…",
-        });
-        setGenerationProgressPhase("Computing ELK layout…", 72);
-      }
-      if (busy) {
-        setBusy("Auto layout…");
-      }
-      applyGlspElkLayout?.();
-      await waitForCanvasPaint(2);
-      await fitViewportToDiagram({ fit: true });
-      if (progress) {
-        setGenerationProgressPhase("Layout applied.", 100);
-        hideGenerationProgress();
-      }
-      if (status) {
-        setStatus("Auto layout applied via GLSP.");
-      }
-      return;
-    }
-
     if (
       !(await ensureStoredModelForBackendOperation("Auto Layout", {
         requiredViewId: view.id,
@@ -1823,7 +1794,7 @@ async function runAutoLayoutCurrentDiagram({
       setGenerationProgressPhase("Rendering layout…", 88);
     }
     await yieldToMain();
-    await renderDiagramAsync();
+    await renderDiagramAsync({ full: true });
     await waitForCanvasPaint(1);
     await fitViewportToDiagram({ fit: true });
     resetModelSaveState();
