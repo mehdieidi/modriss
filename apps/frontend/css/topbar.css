@@ -306,11 +306,6 @@ html.light .app-logo-img {
   box-shadow: 0 10px 20px color-mix(in srgb, var(--accent-glow) 82%, transparent);
 }
 
-.topbar-generate-btn.topbar-download-btn {
-  background: color-mix(in srgb, var(--surface-3) 88%, #000 12%);
-  color: var(--accent-light);
-}
-
 .ide-menu-items {
   display: none;
   position: absolute;
