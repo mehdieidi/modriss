@@ -59,6 +59,7 @@ let suppressChoiceRealtime = false;
 let activeThinkingEl = null;
 let thinkingSteps = [];
 let thinkingStartTime = 0;
+let thinkingProgress = null;
 
 const CHAT_HISTORY_DAYS = 3;
 
@@ -215,15 +216,29 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
       '<span class="chat-thinking-spinner" aria-hidden="true"></span><span class="chat-thinking-title">Working on your request</span>';
     bubble.appendChild(header);
 
-    const steps = document.createElement("ol");
-    steps.className = "chat-thinking-steps";
-    steps.setAttribute("aria-live", "polite");
-    bubble.appendChild(steps);
+    const status = document.createElement("div");
+    status.className = "chat-thinking-status";
+    status.setAttribute("aria-live", "polite");
+
+    const stageEl = document.createElement("span");
+    stageEl.className = "chat-thinking-step-stage";
+    stageEl.textContent = THINKING_STAGE_LABELS[stage] || stage || "Working";
+
+    const detail = document.createElement("span");
+    detail.className = "chat-thinking-step-detail";
+    detail.textContent = initialMessage || "Creating the model and updating the canvas.";
+
+    const progress = document.createElement("span");
+    progress.className = "chat-thinking-progress hidden";
+
+    status.append(stageEl, detail, progress);
+    bubble.appendChild(status);
 
     msg.appendChild(bubble);
     el.chatMessages.appendChild(msg);
     activeThinkingEl = msg;
     thinkingSteps = [];
+    thinkingProgress = null;
     thinkingStartTime = Date.now();
   }
   if (initialMessage) {
@@ -234,27 +249,32 @@ function ensureThinkingStream(initialMessage = null, stage = "PLANNING") {
 }
 
 function renderThinkingSteps() {
-  const list = activeThinkingEl?.querySelector(".chat-thinking-steps");
-  if (!list) {
+  const status = activeThinkingEl?.querySelector(".chat-thinking-status");
+  if (!status) {
     return;
   }
-  list.replaceChildren(
-    ...thinkingSteps.map((step, index) => {
-      const item = document.createElement("li");
-      item.className = "chat-thinking-step";
-      if (index === thinkingSteps.length - 1) {
-        item.classList.add("is-current");
-      }
-      const stage = document.createElement("span");
-      stage.className = "chat-thinking-step-stage";
-      stage.textContent = THINKING_STAGE_LABELS[step.stage] || step.stage || "Working";
-      const detail = document.createElement("span");
-      detail.className = "chat-thinking-step-detail";
-      detail.textContent = step.message;
-      item.append(stage, detail);
-      return item;
-    }),
-  );
+  const current = thinkingSteps[thinkingSteps.length - 1] || null;
+  const stage = status.querySelector(".chat-thinking-step-stage");
+  const detail = status.querySelector(".chat-thinking-step-detail");
+  const progress = status.querySelector(".chat-thinking-progress");
+  if (stage) {
+    stage.textContent =
+      THINKING_STAGE_LABELS[current?.stage] || current?.stage || "Creating model";
+  }
+  if (detail) {
+    detail.textContent = current?.message || "Creating the model and updating the canvas.";
+  }
+  if (progress) {
+    const index = Number(thinkingProgress?.index) || 0;
+    const count = Number(thinkingProgress?.count) || 0;
+    if (index && count) {
+      progress.textContent = `${Math.min(index, count)} / ${count}`;
+      progress.classList.remove("hidden");
+    } else {
+      progress.textContent = "";
+      progress.classList.add("hidden");
+    }
+  }
   scrollChatToBottom();
 }
 
@@ -271,6 +291,13 @@ function pushThinkingStep(message, stage = null) {
   thinkingSteps = chatActivityHistory.map((item) => ({ ...item }));
   renderThinkingSteps();
   el.chatTypingIndicator?.classList.add("hidden");
+}
+
+function updateThinkingStatus(message, stage = null, progress = null) {
+  if (progress) {
+    thinkingProgress = progress;
+  }
+  pushThinkingStep(message, stage);
 }
 
 function buildThinkingSummary(workflowState = null, message = null) {
@@ -339,6 +366,7 @@ function finalizeThinkingStream(summary) {
   activeThinkingEl = null;
   thinkingSteps = [];
   chatActivityHistory = [];
+  thinkingProgress = null;
   scrollChatToBottom();
 }
 
@@ -347,6 +375,7 @@ function clearThinkingStream() {
   activeThinkingEl = null;
   thinkingSteps = [];
   chatActivityHistory = [];
+  thinkingProgress = null;
 }
 
 function cloneValue(value) {
@@ -417,6 +446,15 @@ function clearAssistantModelPreview({ restore = false } = {}) {
   hideCanvasTraceOverlay();
 }
 
+function updateModelingProgress(message, stage, payload) {
+  const operationIndex = Number(payload?.operationIndex) || 0;
+  const operationCount = Number(payload?.operationCount) || 0;
+  updateThinkingStatus(message, stage, {
+    index: operationIndex,
+    count: operationCount,
+  });
+}
+
 function applyAssistantModelPreview(typeKey, payload) {
   const model = unwrapAssistantModel(payload?.model || null);
   if (!model) {
@@ -434,14 +472,12 @@ function applyAssistantModelPreview(typeKey, payload) {
       ...capturePreviewSnapshot(typeKey, modelId || liveModelId),
     };
   }
-  const operationIndex = Number(payload?.operationIndex) || null;
-  const operationCount = Number(payload?.operationCount) || null;
   const phase = String(payload?.phase || "").toLowerCase();
-  const phasePrefix = phase === "draft" ? "Draft" : phase === "validated" ? "Validated" : "Preview";
-  const label = payload?.operationLabel
-    ? `${phasePrefix}: ${payload.operationLabel}${operationIndex && operationCount ? ` (${operationIndex}/${operationCount})` : ""}`
-    : `${phasePrefix}: previewing canvas changes`;
-  pushThinkingStep(label, "MODELING_PREVIEW");
+  updateModelingProgress(
+    phase === "validated" ? "Validating model changes on the canvas." : "Creating the model on the canvas.",
+    "MODELING_PREVIEW",
+    payload,
+  );
   updateCanvasTraceOverlay(payload);
   state.baseModel = cloneValue(model);
   state.diagram = toDiagram(typeKey, model, state.tabs[typeKey]?.modelName);
@@ -818,7 +854,7 @@ async function connectChatRealtime(scopeKey, typeKey, sessionId) {
 
 function handleChatRealtimeEvent(typeKey, eventType, payload) {
   if (eventType === "assistant.progress") {
-    pushThinkingStep(payload?.message || "Working with the model", payload?.stage);
+    updateThinkingStatus(payload?.message || "Working with the model", payload?.stage);
     return;
   }
   if (eventType === "assistant.model.preview") {
@@ -864,10 +900,7 @@ function handleChatRealtimeEvent(typeKey, eventType, payload) {
     const operationIndex = Number(payload?.operationIndex) || null;
     const operationCount = Number(payload?.operationCount) || null;
     if (operationIndex && operationCount) {
-      const label = payload?.operationLabel
-        ? `${payload.operationLabel} (${operationIndex}/${operationCount})`
-        : `Applied ${operationIndex} of ${operationCount} model updates`;
-      pushThinkingStep(label, "APPLYING");
+      updateModelingProgress("Applying the model changes.", "APPLYING", payload);
     }
     void applyAssistantModelResponse(typeKey, {
       modelId,
