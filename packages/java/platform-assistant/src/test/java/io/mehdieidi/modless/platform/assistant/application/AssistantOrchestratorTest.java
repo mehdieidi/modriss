@@ -1025,6 +1025,53 @@ class AssistantOrchestratorTest {
             .anyMatch(payload -> "validated".equals(payload.get("phase"))));
   }
 
+  @Test
+  void replacesDuplicatePlannerUuidIdsWithBackendGeneratedIds() {
+    String plannerId = "a1b2c3d4-e5f6-4789-abcd-ef1234567890";
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    plannerId,
+                    "Function",
+                    JsonNodeFactory.instance.objectNode().put("name", "Book appointment"),
+                    null,
+                    null),
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    plannerId,
+                    "Function",
+                    JsonNodeFactory.instance.objectNode().put("name", "Cancel appointment"),
+                    null,
+                    null)));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.PATCH,
+                    "Created appointment functions.",
+                    List.of(),
+                    patch),
+                0,
+                1));
+
+    AssistantOrchestrator.AssistantTurnResponse response =
+        orchestrator.handleMessage(user, "session", request("Create appointment functions"));
+
+    List<String> ids =
+        response.proposal().patch().operations().stream()
+            .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
+            .map(SemanticModelPatch.Operation::targetElementId)
+            .toList();
+    assertTrue(ids.size() >= 2);
+    assertEquals(ids.size(), ids.stream().distinct().count());
+    assertTrue(ids.stream().noneMatch(plannerId::equals));
+    assertTrue(
+        ids.stream().allMatch(id -> java.util.UUID.fromString(id).toString().equalsIgnoreCase(id)));
+  }
+
   private AssistantOrchestrator.AssistantTurnRequest request(String message) {
     return new AssistantOrchestrator.AssistantTurnRequest(
         message, null, null, "pim", List.of(), null);

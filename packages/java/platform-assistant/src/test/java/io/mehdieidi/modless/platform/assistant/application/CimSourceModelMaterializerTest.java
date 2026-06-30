@@ -56,15 +56,17 @@ class CimSourceModelMaterializerTest {
         }
         """;
 
-    Optional<SemanticModelPatch> patch = materializer.materialize(sourceAnalysis);
+    Optional<CimSourceModelMaterializer.Result> result = materializer.materialize(sourceAnalysis);
 
-    assertTrue(patch.isPresent());
-    assertEquals(5, patch.get().operations().size());
+    assertTrue(result.isPresent());
+    SemanticModelPatch patch = result.get().patch();
+    assertEquals(5, patch.operations().size());
     assertEquals(
         4,
-        patch.get().operations().stream()
+        patch.operations().stream()
             .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
             .count());
+    assertTrue(result.get().coverageSummary().contains("source-backed CIM elements"));
   }
 
   @Test

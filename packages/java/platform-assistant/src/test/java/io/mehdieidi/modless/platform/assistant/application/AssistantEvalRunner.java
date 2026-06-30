@@ -118,6 +118,7 @@ public final class AssistantEvalRunner {
             sourcePatch =
                 new CimSourceModelMaterializer(schemas, mapper)
                     .materialize(analysis.content())
+                    .map(CimSourceModelMaterializer.Result::patch)
                     .orElse(null);
           }
         }

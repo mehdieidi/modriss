@@ -569,13 +569,7 @@ public class AssistantPatchCompiler {
 
   private JsonNode relationshipPayload(SemanticModelPatch.Operation operation) {
     ObjectNode node = JsonNodeFactory.instance.objectNode();
-    node.put(
-        "id",
-        safe(operation.sourceElementId())
-            + "-"
-            + safe(operation.targetElementId())
-            + "-"
-            + safe(operation.referenceName()));
+    node.put("id", java.util.UUID.randomUUID().toString());
     node.put("kind", safe(operation.referenceName()));
     node.put("source", safe(operation.sourceElementId()));
     node.put("target", safe(operation.targetElementId()));

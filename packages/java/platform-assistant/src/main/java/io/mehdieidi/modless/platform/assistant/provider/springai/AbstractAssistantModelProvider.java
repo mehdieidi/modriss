@@ -45,9 +45,10 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       For SET_ATTRIBUTE, targetElementId, referenceName, and attributes are all mandatory;
       attributes is the new value itself, not an object keyed by the attribute name. For a
       creation request, use ADD_ELEMENT rather than SET_ATTRIBUTE on the model root.
-      IDs are never a user decision. Generate a fresh UUIDv4 targetElementId for every added
-      element and reuse that exact ID in operations that refer to it. Never ask the user how to
-      generate or format an ID. For ADD_ELEMENT, omit id/eClass from attributes and put the
+      IDs are never a user decision. Use a unique temporary local targetElementId for every added
+      element and reuse that exact temporary ID in operations that refer to it. The backend replaces
+      every new-element ID with a UUID before apply. Never ask the user how to generate or format
+      an ID. For ADD_ELEMENT, omit id/eClass from attributes and put the
       domain-facing label in attributes.name when that attribute is available. Never create a
       placeholder element whose name, label, or only attribute is just the metamodel type such as
       Actor, Command, BusinessEvent, Policy, DomainEntity, or Requirement.
@@ -82,10 +83,10 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
       below. Do not ask about harmless defaults that can be stated in the response. Never combine a
       clarification with speculative operations. Before asking, decide whether a competent
       modeler could safely choose a reasonable default and rely on undo if the user dislikes it;
-      if so, choose the default and return PATCH. IDs must always be fresh UUIDv4 values
-      in operations; never ask the user to generate or format IDs. Names, layout, ordering, enum
-      literals with schema defaults, and other reversible implementation details are never grounds
-      for clarification. For document-to-CIM turns, never answer that only a partial model was
+      if so, choose the default and return PATCH. Use unique temporary IDs for new elements; never
+      ask the user to generate or format IDs. Names, layout, ordering, enum literals with schema
+      defaults, and other reversible implementation details are never grounds for clarification.
+      For document-to-CIM turns, never answer that only a partial model was
       created because of operation limits. Produce a coherent complete CIM within the limit by
       prioritizing named business concepts, required containments, and traceable summaries, then
       compress lower-level facts into available description, summary, assumption, risk, hotspot,

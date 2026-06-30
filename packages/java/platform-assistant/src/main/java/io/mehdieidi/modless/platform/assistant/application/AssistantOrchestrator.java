@@ -490,6 +490,8 @@ public class AssistantOrchestrator {
     - elements: source evidence classified into CIM EClasses.
     - relationships: optional sourceKey-to-sourceKey references using exact writable CIM
       EReference names.
+    - coverageNotes: short notes summarizing which source sections were covered.
+    - coverageGaps: source-backed ambiguities or missing details, empty when there are none.
 
     Element shape:
     {"sourceKey":"stable-local-key","type":"ExactCimEClass","name":"domain name",
@@ -501,7 +503,10 @@ public class AssistantOrchestrator {
 
     Use only Ecore-defined CIM element types and attributes. Prefer specific domain names over
     generic labels. If the source supports many facts, include many elements; do not collapse a
-    document into a toy summary. Classify source facts rather than keyword matching them.
+    document into a toy summary. For user-story documents, cover every user story, acceptance
+    criterion, domain term, business rule, risk, and assumption either as a dedicated element or
+    in a source-grounded summary/description. Classify source facts rather than keyword matching
+    them.
 
     Level:
     """
@@ -569,13 +574,21 @@ public class AssistantOrchestrator {
     return new CimSourceModelMaterializer(schemas, mapper)
         .materialize(request.sourceAnalysis())
         .map(
-            patch ->
-                new AssistantTurnPlan(
-                    AssistantTurnPlan.Intent.MUTATION,
-                    AssistantTurnPlan.Kind.PATCH,
-                    "I created the CIM from the attached source document.",
-                    List.of(),
-                    patch));
+            result -> {
+              String gaps =
+                  result.coverageGaps().isEmpty()
+                      ? ""
+                      : "\n\nCoverage gaps: "
+                          + String.join("; ", result.coverageGaps().stream().limit(8).toList());
+              return new AssistantTurnPlan(
+                  AssistantTurnPlan.Intent.MUTATION,
+                  AssistantTurnPlan.Kind.PATCH,
+                  "I created the CIM from the attached source document.\n\n"
+                      + result.coverageSummary()
+                      + gaps,
+                  List.of(),
+                  result.patch());
+            });
   }
 
   private AssistantTurnResponse proposalResponse(
@@ -594,11 +607,13 @@ public class AssistantOrchestrator {
     SourceCoverageExpectation coverageExpectation = sourceCoverageExpectation(session, request);
     PlanAttempt attempt =
         evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
+    boolean materializedSourcePlan = isMaterializedSourcePlan(session, request, initialPlan);
     int repairNumber = 0;
     int stagnationCount = 0;
     String lastPatchSignature = patchSignature(acceptedPlan.patch());
     int lastFeedbackCount = attempt.feedback().size();
-    int maxRepairAttempts = Math.max(properties.validationRepairAttempts(), 0);
+    int maxRepairAttempts =
+        materializedSourcePlan ? 0 : Math.max(properties.validationRepairAttempts(), 0);
     while (!attempt.valid() && repairNumber < maxRepairAttempts) {
       repairNumber++;
       publishProgress(
@@ -671,7 +686,7 @@ public class AssistantOrchestrator {
         break;
       }
     }
-    if (!attempt.valid()) {
+    if (!attempt.valid() && !materializedSourcePlan) {
       for (int replan = 0; replan < 1 && !attempt.valid(); replan++) {
         publishProgress(
             session.id(),
@@ -990,8 +1005,9 @@ public class AssistantOrchestrator {
     }
     String source = request.attachmentContent();
     int storyCount =
-        countMatches(source, "(?is)\\bas\\s+an?\\b.{0,240}?\\bi\\s+want\\b")
-            + countMatches(source, "(?im)^\\s*#{1,6}\\s*US[-\\s]?\\d+\\b");
+        Math.max(
+            countMatches(source, "(?is)\\bas\\s+an?\\b.{0,240}?\\bi\\s+want\\b"),
+            countMatches(source, "(?im)^\\s*#{1,6}\\s*US[-\\s]?\\d+\\b"));
     int acceptanceCount =
         countMatches(source, "(?im)^\\s*[-*]\\s+")
             + countMatches(source, "(?i)\\bacceptance\\s+criteria\\b");
@@ -1003,18 +1019,18 @@ public class AssistantOrchestrator {
     int length = source.length();
     int minAdditions = 10;
     if (length >= 8000) {
-      minAdditions = 95;
+      minAdditions = 80;
     } else if (length >= 3000) {
-      minAdditions = 55;
+      minAdditions = 36;
     } else if (length >= 1200) {
-      minAdditions = 32;
+      minAdditions = 24;
     } else if (length >= 400) {
-      minAdditions = 18;
+      minAdditions = 14;
     }
-    minAdditions = Math.max(minAdditions, storyCount * 6 + acceptanceCount / 2);
+    minAdditions = Math.max(minAdditions, storyCount * 5 + acceptanceCount / 3);
     minAdditions = Math.max(minAdditions, Math.min(80, eventStormingSignals / 2));
-    int minOperations = Math.max(minAdditions + 8, (int) Math.ceil(minAdditions * 1.25));
-    int minConnections = length >= 3000 || storyCount >= 4 ? 10 : storyCount >= 2 ? 4 : 0;
+    int minOperations = Math.max(minAdditions + 6, (int) Math.ceil(minAdditions * 1.15));
+    int minConnections = length >= 3000 || storyCount >= 4 ? 8 : storyCount >= 2 ? 4 : 0;
     Set<String> requiredFamilies = new LinkedHashSet<>();
     requiredFamilies.add("organization");
     requiredFamilies.add("domain");
@@ -1048,6 +1064,20 @@ public class AssistantOrchestrator {
         && text.matches(
             "(?s).*(\\bfrom\\b|\\battached\\b|\\bdocument\\b|\\bsource\\b|\\buser stor|\\bevent"
                 + " storm).*");
+  }
+
+  private boolean isMaterializedSourcePlan(
+      AssistantSessionStore.AssistantSession session,
+      AssistantTurnRequest request,
+      AssistantTurnPlan plan) {
+    return session.level() == ModelLevel.CIM
+        && plan != null
+        && plan.kind() == AssistantTurnPlan.Kind.PATCH
+        && !blank(request.sourceAnalysis())
+        && looksLikeSourceToCimRequest(request)
+        && !plan.patch().operations().isEmpty()
+        && plan.message() != null
+        && plan.message().startsWith("I created the CIM from the attached source document.");
   }
 
   private List<String> coverageFeedback(
@@ -1270,16 +1300,20 @@ public class AssistantOrchestrator {
   }
 
   private SemanticModelPatch normalizeNewElementIds(SemanticModelPatch patch) {
-    Map<String, String> replacements = new LinkedHashMap<>();
-    patch.operations().stream()
-        .filter(java.util.Objects::nonNull)
-        .filter(operation -> operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT)
-        .map(SemanticModelPatch.Operation::targetElementId)
-        .filter(id -> id != null && !id.isBlank())
-        .filter(id -> !isUuid(id))
-        .distinct()
-        .forEach(id -> replacements.put(id, java.util.UUID.randomUUID().toString()));
-    if (replacements.isEmpty()) {
+    Map<String, String> firstReplacementByPlannerId = new LinkedHashMap<>();
+    java.util.IdentityHashMap<SemanticModelPatch.Operation, String> addOperationIds =
+        new java.util.IdentityHashMap<>();
+    for (SemanticModelPatch.Operation operation : patch.operations()) {
+      if (operation == null || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT) {
+        continue;
+      }
+      String backendId = java.util.UUID.randomUUID().toString();
+      addOperationIds.put(operation, backendId);
+      if (!blank(operation.targetElementId())) {
+        firstReplacementByPlannerId.putIfAbsent(operation.targetElementId(), backendId);
+      }
+    }
+    if (addOperationIds.isEmpty()) {
       return patch;
     }
     List<SemanticModelPatch.Operation> operations =
@@ -1291,11 +1325,13 @@ public class AssistantOrchestrator {
                   }
                   return new SemanticModelPatch.Operation(
                       operation.type(),
-                      replacements.getOrDefault(
-                          operation.targetElementId(), operation.targetElementId()),
+                      operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
+                          ? addOperationIds.get(operation)
+                          : firstReplacementByPlannerId.getOrDefault(
+                              operation.targetElementId(), operation.targetElementId()),
                       operation.elementType(),
-                      remapIds(operation.attributes(), replacements),
-                      replacements.getOrDefault(
+                      remapIds(operation.attributes(), firstReplacementByPlannerId),
+                      firstReplacementByPlannerId.getOrDefault(
                           operation.sourceElementId(), operation.sourceElementId()),
                       operation.referenceName());
                 })
@@ -1365,14 +1401,6 @@ public class AssistantOrchestrator {
                     || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT)
         .forEach(ordered::add);
     return ordered;
-  }
-
-  private boolean isUuid(String value) {
-    try {
-      return java.util.UUID.fromString(value).toString().equalsIgnoreCase(value);
-    } catch (IllegalArgumentException ignored) {
-      return false;
-    }
   }
 
   private SemanticModelPatch.Operation inferUniqueContainment(
@@ -1905,8 +1933,10 @@ public class AssistantOrchestrator {
 
     For a requested model change, create a semantically complete model for the user's actual
     domain and stated scope. Use as many operations as the task genuinely requires.
-    ADD_ELEMENT may mint unique stable IDs. A top-level element omits sourceElementId; an owned
-    element names its exact containment owner and feature. CONNECT_ELEMENTS names an exact,
+    ADD_ELEMENT uses temporary local IDs only so operations in the same patch can refer to newly
+    added elements; the backend replaces every new-element ID with a UUID before applying the
+    change. A top-level element omits sourceElementId; an owned element names its exact containment
+    owner and feature. CONNECT_ELEMENTS names an exact,
     writable, non-containment EReference. SET_ATTRIBUTE uses the attribute name and puts the new
     scalar or array value directly in attributes. DELETE_ELEMENT is permitted only when the user
     explicitly requests removal. Include every required attribute and containment described by
@@ -2084,7 +2114,7 @@ public class AssistantOrchestrator {
                     issue ->
                         new AssistantValidationSummary.Issue(
                             issue.severity(),
-                            issue.constraint(),
+                            assistantConstraintName(issue.constraint()),
                             issue.elementId(),
                             issue.message()))
                 .toList();
@@ -2098,6 +2128,19 @@ public class AssistantOrchestrator {
 
   private ModelService.ValidationResult assistantValidation(ModelLevel level, JsonNode modelJson) {
     return models.validateStructural(level, modelJson);
+  }
+
+  private String assistantConstraintName(String constraint) {
+    if (constraint == null || constraint.isBlank()) {
+      return "StructuralValidation";
+    }
+    if (constraint.startsWith("EVL_")) {
+      return "STRUCTURAL_" + constraint.substring("EVL_".length());
+    }
+    if ("EvlValidationExecution".equals(constraint)) {
+      return "StructuralValidationExecution";
+    }
+    return constraint;
   }
 
   private AssistantValidationSummary assistantValidationSummary(

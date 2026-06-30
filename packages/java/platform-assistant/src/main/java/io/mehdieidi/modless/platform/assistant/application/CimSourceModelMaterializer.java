@@ -34,7 +34,7 @@ final class CimSourceModelMaterializer {
                 JsonReadFeature.ALLOW_YAML_COMMENTS.mappedFeature());
   }
 
-  Optional<SemanticModelPatch> materialize(String sourceAnalysis) {
+  Optional<Result> materialize(String sourceAnalysis) {
     Optional<JsonNode> parsed = parseJsonObject(sourceAnalysis);
     if (parsed.isEmpty()) {
       return Optional.empty();
@@ -48,24 +48,30 @@ final class CimSourceModelMaterializer {
     Map<String, String> localTypes = new LinkedHashMap<>();
     List<SemanticModelPatch.Operation> operations = new ArrayList<>();
     for (JsonNode element : elementsNode) {
-      createElement(element)
-          .ifPresent(
-              operation -> {
-                operations.add(operation);
-                String localKey = localKey(element, operation);
-                if (!localKey.isBlank()) {
-                  localIds.put(localKey, operation.targetElementId());
-                  localTypes.put(localKey, operation.elementType());
-                }
-              });
+      Optional<SemanticModelPatch.Operation> created = createElement(element);
+      if (created.isEmpty()) {
+        continue;
+      }
+      SemanticModelPatch.Operation operation = created.get();
+      operations.add(operation);
+      String localKey = localKey(element, operation);
+      if (!localKey.isBlank()) {
+        localIds.put(localKey, operation.targetElementId());
+        localTypes.put(localKey, operation.elementType());
+      }
     }
     JsonNode relationshipsNode = firstArray(root, "relationships", "links", "references");
     for (JsonNode relationship : relationshipsNode) {
       createRelationship(relationship, localIds, localTypes).ifPresent(operations::add);
     }
+    operations = ensureRequiredLocalReferences(operations);
     return operations.isEmpty()
         ? Optional.empty()
-        : Optional.of(new SemanticModelPatch(operations));
+        : Optional.of(
+            new Result(
+                new SemanticModelPatch(operations),
+                coverageSummary(root, operations),
+                coverageGaps(root)));
   }
 
   private Optional<SemanticModelPatch.Operation> createElement(JsonNode element) {
@@ -122,6 +128,139 @@ final class CimSourceModelMaterializer {
             null,
             sourceId,
             reference));
+  }
+
+  private List<SemanticModelPatch.Operation> ensureRequiredLocalReferences(
+      List<SemanticModelPatch.Operation> operations) {
+    Map<String, String> typesById = new LinkedHashMap<>();
+    for (SemanticModelPatch.Operation operation : operations) {
+      if (operation == null
+          || operation.type() != SemanticModelPatch.OperationType.ADD_ELEMENT
+          || operation.targetElementId() == null
+          || operation.targetElementId().isBlank()) {
+        continue;
+      }
+      try {
+        typesById.put(
+            operation.targetElementId(),
+            schemas.canonicalType(ModelLevel.CIM, operation.elementType()));
+      } catch (PlatformException ignored) {
+        typesById.put(operation.targetElementId(), operation.elementType());
+      }
+    }
+    List<SemanticModelPatch.Operation> result = new ArrayList<>(operations);
+    for (Map.Entry<String, String> entry : typesById.entrySet()) {
+      String sourceId = entry.getKey();
+      String sourceType = entry.getValue();
+      schemas
+          .typeSchema(ModelLevel.CIM, sourceType)
+          .ifPresent(
+              type ->
+                  type.references().stream()
+                      .filter(AssistantMetamodelSchemaService.ReferenceSchema::required)
+                      .filter(reference -> !reference.containment())
+                      .filter(reference -> !reference.readonly())
+                      .filter(reference -> !hasRelationship(result, sourceId, reference.name()))
+                      .forEach(
+                          reference ->
+                              firstCompatibleTarget(sourceId, reference, typesById)
+                                  .ifPresent(
+                                      targetId ->
+                                          result.add(
+                                              new SemanticModelPatch.Operation(
+                                                  SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+                                                  targetId,
+                                                  null,
+                                                  null,
+                                                  sourceId,
+                                                  reference.name())))));
+    }
+    return result;
+  }
+
+  private Optional<String> firstCompatibleTarget(
+      String sourceId,
+      AssistantMetamodelSchemaService.ReferenceSchema reference,
+      Map<String, String> typesById) {
+    return typesById.entrySet().stream()
+        .filter(entry -> !entry.getKey().equals(sourceId))
+        .filter(
+            entry ->
+                schemas.acceptsReferenceTarget(
+                    ModelLevel.CIM, typesById.get(sourceId), reference.name(), entry.getValue()))
+        .map(Map.Entry::getKey)
+        .findFirst();
+  }
+
+  private boolean hasRelationship(
+      List<SemanticModelPatch.Operation> operations, String sourceId, String referenceName) {
+    return operations.stream()
+        .anyMatch(
+            operation ->
+                operation != null
+                    && operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS
+                    && sourceId.equals(operation.sourceElementId())
+                    && referenceName.equals(operation.referenceName()));
+  }
+
+  private String coverageSummary(JsonNode root, List<SemanticModelPatch.Operation> operations) {
+    int additions = 0;
+    int connections = 0;
+    Map<String, Integer> byType = new LinkedHashMap<>();
+    for (SemanticModelPatch.Operation operation : operations) {
+      if (operation == null || operation.type() == null) {
+        continue;
+      }
+      if (operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT) {
+        additions++;
+        byType.merge(operation.elementType(), 1, Integer::sum);
+      } else if (operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS) {
+        connections++;
+      }
+    }
+    String notes = textArray(root.path("coverageNotes"));
+    String typeSummary =
+        byType.entrySet().stream()
+            .map(entry -> entry.getKey() + "=" + entry.getValue())
+            .collect(java.util.stream.Collectors.joining(", "));
+    return "Coverage summary: modeled "
+        + additions
+        + " source-backed CIM elements and "
+        + connections
+        + " relationships"
+        + (typeSummary.isBlank() ? "." : " (" + typeSummary + ").")
+        + (notes.isBlank() ? "" : "\nSource coverage notes: " + notes);
+  }
+
+  private List<String> coverageGaps(JsonNode root) {
+    JsonNode gaps = firstArray(root, "coverageGaps", "gaps", "openQuestions");
+    if (gaps.isMissingNode() || gaps.isEmpty()) {
+      return List.of();
+    }
+    List<String> result = new ArrayList<>();
+    gaps.forEach(
+        gap -> {
+          String text = gap.isTextual() ? gap.asText("") : firstText(gap, "summary", "name", "gap");
+          if (!text.isBlank()) {
+            result.add(text.trim());
+          }
+        });
+    return List.copyOf(result);
+  }
+
+  private String textArray(JsonNode node) {
+    if (node == null || !node.isArray()) {
+      return "";
+    }
+    List<String> values = new ArrayList<>();
+    node.forEach(
+        item -> {
+          String text = item.isTextual() ? item.asText("") : firstText(item, "summary", "name");
+          if (!text.isBlank()) {
+            values.add(text.trim());
+          }
+        });
+    return String.join("; ", values);
   }
 
   private void mergeAttributes(String type, JsonNode source, ObjectNode target) {
@@ -282,5 +421,12 @@ final class CimSourceModelMaterializer {
       return value;
     }
     return value.substring(firstLineEnd + 1, closingFence).trim();
+  }
+
+  record Result(SemanticModelPatch patch, String coverageSummary, List<String> coverageGaps) {
+    Result {
+      coverageSummary = coverageSummary == null ? "" : coverageSummary.trim();
+      coverageGaps = coverageGaps == null ? List.of() : List.copyOf(coverageGaps);
+    }
   }
 }
