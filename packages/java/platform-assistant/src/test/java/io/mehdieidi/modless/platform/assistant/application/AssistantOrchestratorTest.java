@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,8 @@ import io.mehdieidi.modless.platform.assistant.spi.AssistantMemoryStore;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantRealtimePublisher;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
+import io.mehdieidi.modless.platform.assistant.subset.AssistantModelSubsetPlanner;
+import io.mehdieidi.modless.platform.assistant.subset.AssistantModelingStrategy;
 import io.mehdieidi.modless.platform.assistant.support.AssistantSettingsFixtures;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
@@ -222,6 +225,106 @@ class AssistantOrchestratorTest {
 
     assertEquals(AssistantWorkflowState.EXPLAINED, response.workflowState());
     assertNull(response.proposal());
+  }
+
+  @Test
+  void modelSubsetStrategyPlansWithJsonSubsetInsteadOfSemanticOperationLoop() {
+    AssistantSettings properties = AssistantSettingsFixtures.defaults();
+    AssistantOrchestrator subsetOrchestrator =
+        new AssistantOrchestrator(
+            properties,
+            provider,
+            sessions,
+            memory,
+            chatMemory,
+            catalogs,
+            contexts,
+            new AssistantPatchCompiler(schemas),
+            patchCompleter,
+            feedbackResolver,
+            clarificationGate,
+            schemas,
+            tools,
+            metrics,
+            new ObjectMapper(),
+            realtime,
+            new AssistantHardeningService(properties, null),
+            models,
+            projects,
+            AssistantModelingStrategy.MODEL_SUBSET,
+            new AssistantModelSubsetPlanner(provider, schemas, new ObjectMapper()));
+    when(provider.completeStructured(any()))
+        .thenReturn(
+            new AssistantModelProvider.AssistantReply(
+                """
+                {
+                  "intent": "MUTATION",
+                  "kind": "MODEL_SUBSET",
+                  "message": "Created the order booking API slice.",
+                  "questions": [],
+                  "subset": {
+                    "subsetId": "orders-api-slice",
+                    "scope": "Order booking API slice",
+                    "elements": [
+                      {
+                        "localId": "book-fn",
+                        "eClass": "Function",
+                        "attributes": {
+                          "name": "Book order",
+                          "functionKind": "COMMAND_HANDLER"
+                        },
+                        "containedBy": {"ownerId": "root", "referenceName": "functions"}
+                      },
+                      {
+                        "localId": "orders-api",
+                        "eClass": "Api",
+                        "attributes": {
+                          "name": "Orders API",
+                          "apiStyle": "REST",
+                          "basePath": "/orders"
+                        },
+                        "containedBy": {"ownerId": "root", "referenceName": "apis"}
+                      },
+                      {
+                        "localId": "book-route",
+                        "eClass": "ApiRoute",
+                        "attributes": {
+                          "name": "Book order route",
+                          "method": "POST",
+                          "pathTemplate": "/orders"
+                        },
+                        "containedBy": {"ownerId": "orders-api", "referenceName": "routes"}
+                      }
+                    ],
+                    "references": [
+                      {
+                        "sourceId": "book-route",
+                        "referenceName": "functionIntegration",
+                        "targetId": "book-fn"
+                      }
+                    ],
+                    "attributeUpdates": [],
+                    "deletions": []
+                  }
+                }
+                """,
+                "test",
+                "model"));
+
+    AssistantOrchestrator.AssistantTurnResponse response =
+        subsetOrchestrator.handleMessage(user, "session", request("Create an order booking API"));
+
+    assertEquals(
+        AssistantWorkflowState.APPLIED, response.workflowState(), response.assistantMessage());
+    assertNotNull(response.proposal());
+    assertTrue(
+        response.proposal().patch().operations().stream()
+            .anyMatch(
+                operation ->
+                    operation.type() == SemanticModelPatch.OperationType.CONNECT_ELEMENTS
+                        && "functionIntegration".equals(operation.referenceName())));
+    verify(provider, never()).planMutationTurn(any(), any());
+    verify(provider).completeStructured(any());
   }
 
   @Test

@@ -53,6 +53,7 @@ modless:
   ai:
     enabled: ${MODLESS_AI_ENABLED:false}
     provider: ${MODLESS_AI_PROVIDER:openai}
+    modeling-strategy: ${MODLESS_AI_MODELING_STRATEGY:semantic-patch}
     request-timeout: ${MODLESS_AI_REQUEST_TIMEOUT:10m}
     max-tool-calls: ${MODLESS_AI_MAX_TOOL_CALLS:0}
     validation-repair-attempts: ${MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS:6}

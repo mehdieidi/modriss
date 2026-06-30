@@ -24,8 +24,11 @@ import io.mehdieidi.modless.platform.assistant.spi.AssistantModelContextIndex;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantRealtimePublisher;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
+import io.mehdieidi.modless.platform.assistant.subset.AssistantModelSubsetPlanner;
+import io.mehdieidi.modless.platform.assistant.subset.AssistantModelingStrategy;
 import io.mehdieidi.modless.platform.model.application.ModelService;
 import io.mehdieidi.modless.platform.project.application.ProjectService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -61,6 +64,20 @@ public class AssistantServicesConfig {
   @Bean
   AssistantPatchCompleter assistantPatchCompleter(AssistantMetamodelSchemaService schemas) {
     return new AssistantPatchCompleter(schemas);
+  }
+
+  @Bean
+  AssistantModelingStrategy assistantModelingStrategy(
+      @Value("${modless.ai.modeling-strategy:semantic-patch}") String value) {
+    return AssistantModelingStrategy.from(value);
+  }
+
+  @Bean
+  AssistantModelSubsetPlanner assistantModelSubsetPlanner(
+      AssistantModelProvider provider,
+      AssistantMetamodelSchemaService schemas,
+      ObjectMapper mapper) {
+    return new AssistantModelSubsetPlanner(provider, schemas, mapper);
   }
 
   @Bean
@@ -120,7 +137,9 @@ public class AssistantServicesConfig {
       AssistantRealtimePublisher realtime,
       AssistantHardeningService hardening,
       ModelService models,
-      ProjectService projects) {
+      ProjectService projects,
+      AssistantModelingStrategy modelingStrategy,
+      AssistantModelSubsetPlanner subsetPlanner) {
     return new AssistantOrchestrator(
         settings,
         provider,
@@ -140,7 +159,9 @@ public class AssistantServicesConfig {
         realtime,
         hardening,
         models,
-        projects);
+        projects,
+        modelingStrategy,
+        subsetPlanner);
   }
 
   /** Bridges Micrometer metrics to the platform assistant metrics port. */

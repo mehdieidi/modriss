@@ -30,6 +30,17 @@ public interface AssistantModelProvider {
    */
   AssistantReply complete(AssistantPrompt prompt);
 
+  /**
+   * Completes one structured-output prompt without tool callbacks. Providers may override this to
+   * use native JSON/schema response settings; the default preserves compatibility.
+   *
+   * @param prompt structured prompt request
+   * @return provider response
+   */
+  default AssistantReply completeStructured(AssistantPrompt prompt) {
+    return complete(prompt);
+  }
+
   /** Produces one structured answer, clarification, or semantic patch decision. */
   default AssistantTurnPlan planTurn(AssistantPrompt prompt) {
     AssistantReply reply = complete(prompt);

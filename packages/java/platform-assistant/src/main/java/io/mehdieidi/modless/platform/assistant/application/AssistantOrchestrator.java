@@ -31,6 +31,8 @@ import io.mehdieidi.modless.platform.assistant.spi.AssistantModelContextIndex;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantRealtimePublisher;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantSettings;
 import io.mehdieidi.modless.platform.assistant.spi.AssistantToolBridge;
+import io.mehdieidi.modless.platform.assistant.subset.AssistantModelSubsetPlanner;
+import io.mehdieidi.modless.platform.assistant.subset.AssistantModelingStrategy;
 import io.mehdieidi.modless.platform.identity.domain.UserRecord;
 import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
@@ -78,6 +80,8 @@ public class AssistantOrchestrator {
   private final AssistantToolBridge tools;
   private final AssistantMetrics metrics;
   private final ObjectMapper mapper;
+  private final AssistantModelingStrategy modelingStrategy;
+  private final AssistantModelSubsetPlanner subsetPlanner;
 
   private final ThreadLocal<AssistantActivity> lastActivity = new ThreadLocal<>();
   private final ThreadLocal<AssistantTurnDiagnostics> lastDiagnostics = new ThreadLocal<>();
@@ -102,6 +106,52 @@ public class AssistantOrchestrator {
       AssistantHardeningService hardening,
       ModelService models,
       ProjectService projects) {
+    this(
+        properties,
+        provider,
+        sessions,
+        memory,
+        chatMemory,
+        catalogs,
+        modelContexts,
+        patchCompiler,
+        patchCompleter,
+        feedbackResolver,
+        clarificationGate,
+        schemas,
+        tools,
+        metrics,
+        mapper,
+        realtime,
+        hardening,
+        models,
+        projects,
+        AssistantModelingStrategy.SEMANTIC_PATCH,
+        new AssistantModelSubsetPlanner(provider, schemas, mapper));
+  }
+
+  public AssistantOrchestrator(
+      AssistantSettings properties,
+      AssistantModelProvider provider,
+      AssistantSessionStore sessions,
+      AssistantMemoryStore memory,
+      AssistantChatMemory chatMemory,
+      AssistantCatalog catalogs,
+      AssistantModelContextIndex modelContexts,
+      AssistantPatchCompiler patchCompiler,
+      AssistantPatchCompleter patchCompleter,
+      AssistantValidationFeedbackResolver feedbackResolver,
+      AssistantClarificationGate clarificationGate,
+      AssistantMetamodelSchemaService schemas,
+      AssistantToolBridge tools,
+      AssistantMetrics metrics,
+      ObjectMapper mapper,
+      AssistantRealtimePublisher realtime,
+      AssistantHardeningService hardening,
+      ModelService models,
+      ProjectService projects,
+      AssistantModelingStrategy modelingStrategy,
+      AssistantModelSubsetPlanner subsetPlanner) {
     this.properties = properties;
     this.provider = provider;
     this.sessions = sessions;
@@ -121,6 +171,12 @@ public class AssistantOrchestrator {
     this.hardening = hardening;
     this.models = models;
     this.projects = projects;
+    this.modelingStrategy =
+        modelingStrategy == null ? AssistantModelingStrategy.SEMANTIC_PATCH : modelingStrategy;
+    this.subsetPlanner =
+        subsetPlanner == null
+            ? new AssistantModelSubsetPlanner(provider, schemas, mapper)
+            : subsetPlanner;
   }
 
   /** Starts or resumes a level-scoped assistant session. */
@@ -290,7 +346,8 @@ public class AssistantOrchestrator {
     try {
       publishProgress(
           sessionId, "PLANNING", "Understanding intent using the formal language context");
-      InitialPlanResult planned = planInitialTurn(session, enrichedRequest, context, snippets);
+      InitialPlanResult planned =
+          planInitialTurn(session, enrichedRequest, context, snippets, baseModel);
       plan = planned.plan();
       toolCalls = planned.toolCalls();
     } catch (PlatformException failure) {
@@ -421,15 +478,24 @@ public class AssistantOrchestrator {
       AssistantSessionStore.AssistantSession session,
       AssistantTurnRequest request,
       AssistantModelContext context,
-      List<AssistantModelProvider.ContextSnippet> snippets) {
+      List<AssistantModelProvider.ContextSnippet> snippets,
+      JsonNode baseModel) {
+    AssistantModelProvider.AssistantPrompt prompt =
+        new AssistantModelProvider.AssistantPrompt(
+            AssistantModelRole.PLANNER,
+            turnPrompt(session, request, context),
+            request.message(),
+            snippets);
     AssistantModelProvider.AgentLoopResult loopResult =
-        provider.planMutationTurn(
-            new AssistantModelProvider.AssistantPrompt(
-                AssistantModelRole.PLANNER,
-                turnPrompt(session, request, context),
-                request.message(),
-                snippets),
-            (stage, message) -> publishProgress(session.id(), stage, message));
+        modelingStrategy == AssistantModelingStrategy.MODEL_SUBSET
+            ? subsetPlanner.plan(
+                session.level(),
+                baseModel,
+                context,
+                prompt,
+                (stage, message) -> publishProgress(session.id(), stage, message))
+            : provider.planMutationTurn(
+                prompt, (stage, message) -> publishProgress(session.id(), stage, message));
     AssistantTurnPlan plan = loopResult.plan();
     int toolCalls = loopResult.toolCalls();
     metrics.recordAssistantToolCalls(toolCalls);
@@ -652,7 +718,15 @@ public class AssistantOrchestrator {
       AssistantTurnPlan repaired;
       try {
         repaired =
-            repairPlan(session, request, context, snippets, acceptedPlan, attempt, repairNumber);
+            repairPlan(
+                session,
+                request,
+                baseModel,
+                context,
+                snippets,
+                acceptedPlan,
+                attempt,
+                repairNumber);
       } catch (PlatformException failure) {
         if (failure.status() < 500 && failure.status() != 429) {
           throw failure;
@@ -917,7 +991,7 @@ public class AssistantOrchestrator {
             ? ""
             : "\nValidator feedback to correct:\n"
                 + feedback.stream().limit(12).collect(Collectors.joining("\n"));
-    return provider.planTurn(
+    AssistantModelProvider.AssistantPrompt prompt =
         new AssistantModelProvider.AssistantPrompt(
             AssistantModelRole.PLANNER,
             turnPrompt(session, request, context)
@@ -935,7 +1009,11 @@ public class AssistantOrchestrator {
             "Original request:\n"
                 + request.rootMessage()
                 + "\n\nReturn one complete PATCH that satisfies the request using safe defaults.",
-            snippetsForFollowup(snippets)));
+            snippetsForFollowup(snippets));
+    if (modelingStrategy == AssistantModelingStrategy.MODEL_SUBSET) {
+      return subsetPlanner.repair(session.level(), null, context, prompt);
+    }
+    return provider.planTurn(prompt);
   }
 
   private String patchSignature(SemanticModelPatch patch) {
@@ -1496,6 +1574,7 @@ public class AssistantOrchestrator {
   private AssistantTurnPlan repairPlan(
       AssistantSessionStore.AssistantSession session,
       AssistantTurnRequest request,
+      JsonNode baseModel,
       AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan failed,
@@ -1537,7 +1616,7 @@ public class AssistantOrchestrator {
             + " feedback, choosing safe reversible defaults. Do not repeat the rejected plan or ask"
             + " the user to decide how to satisfy a structural requirement; use CLARIFICATION only"
             + " when the missing decision is genuinely a domain choice.";
-    return provider.planTurn(
+    AssistantModelProvider.AssistantPrompt prompt =
         new AssistantModelProvider.AssistantPrompt(
             AssistantModelRole.PLANNER,
             turnPrompt(session, request, context)
@@ -1547,7 +1626,11 @@ public class AssistantOrchestrator {
                 + properties.validationRepairAttempts()
                 + ". Do not repeat rejected operations.",
             requestWithFeedback,
-            snippetsForFollowup(repairContext)));
+            snippetsForFollowup(repairContext));
+    if (modelingStrategy == AssistantModelingStrategy.MODEL_SUBSET) {
+      return subsetPlanner.repair(session.level(), baseModel, context, prompt);
+    }
+    return provider.planTurn(prompt);
   }
 
   private AssistantTurnResponse clarificationResponse(
