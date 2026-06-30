@@ -477,10 +477,15 @@ final class EpsilonEgxGeneratorTest {
               .reduce("", String::concat);
     }
 
-    assertTrue(templates.contains("RuntimeManagementConfig:\n      UpdateRuntimeOn: 'Auto'"));
+    assertTrue(
+        templates.contains("RuntimeManagementConfig:\n      UpdateRuntimeOn: 'Auto'"), templates);
     assertFalse(templates.contains("RuntimeManagementConfig: 'Auto'"));
-    assertTrue(templates.contains("RouteKey: 'POST /grantapplications/approveemergencygrant'"));
-    assertTrue(templates.contains("FunctionName: !Ref Submitgrantapplicationhandlerlambda"));
+    assertTrue(
+        templates.contains("HttpMethod: 'POST'")
+            && templates.contains("ResourceId: '/grantapplications/approveemergencygrant'"),
+        templates);
+    assertTrue(
+        templates.contains("FunctionName: !Ref Submitgrantapplicationhandlerlambda"), templates);
   }
 
   /**

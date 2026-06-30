@@ -78,10 +78,11 @@ packages/java/platform-storage-postgres/src/main/resources/db/migration
 Assistant schema migrations live in:
 
 ```text
-packages/java/platform-assistant/src/main/resources/db/migration
+packages/java/platform-assistant/src/main/resources/db/assistant-migration
 ```
 
-Flyway runs automatically during Spring Boot startup from `classpath:db/migration` on the backend
+Flyway runs automatically during Spring Boot startup from `classpath:db/migration` and
+`classpath:db/assistant-migration` on the backend
 classpath. The first platform schema is:
 
 ```text

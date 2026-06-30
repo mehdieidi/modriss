@@ -446,7 +446,7 @@ class ModelServiceXmiImportTest {
     JsonNode principalPermission =
         relationship(relationships, "principal-resident", "fn-submit", "PERMISSION");
     JsonNode rootContainsApi = relationship(relationships, "pim-root", "api-main", "CONTAINS");
-    assertNotNull(routeToFunction);
+    assertNotNull(routeToFunction, relationships::toPrettyString);
     assertEquals("functionIntegration", routeToFunction.path("semanticFeature").asText());
     assertNotNull(functionReadsStore);
     assertEquals("reads", functionReadsStore.path("semanticFeature").asText());

@@ -2465,8 +2465,6 @@
   "semanticReferenceExclusions": [
     "startState",
     "endStates",
-    "reads",
-    "writes",
     "ownsFunctions",
     "ownsApis",
     "ownsChannels",

@@ -51,7 +51,7 @@ inspectors, import behavior, save/reload, and auto-layout.
 
 Add a new forward-only Flyway migration only when the application persistence schema changes.
 Platform schema migrations belong under `packages/java/platform-storage-postgres/.../db/migration`.
-Assistant schema migrations belong under `packages/java/platform-assistant/.../db/migration`.
+Assistant schema migrations belong under `packages/java/platform-assistant/.../db/assistant-migration`.
 DSML changes usually do not require a database migration because model JSON and XMI are stored
 generically.
 
