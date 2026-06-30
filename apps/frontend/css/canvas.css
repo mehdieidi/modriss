@@ -1419,7 +1419,7 @@
 
 .attr-contained-table {
   width: 100%;
-  min-width: 520px;
+  min-width: max-content;
   border-collapse: collapse;
   font: 500 12px/1.35 var(--font-ui);
 }
@@ -1430,6 +1430,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   text-align: left;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .attr-contained-table th {
@@ -1443,14 +1444,43 @@
   border-bottom: 0;
 }
 
+.attr-contained-element-col {
+  min-width: 112px;
+  max-width: 150px;
+}
+
+.attr-contained-field-col {
+  min-width: 112px;
+}
+
+.attr-contained-field-col[data-field="id"] {
+  width: 9ch;
+  min-width: 9ch;
+  max-width: 9ch;
+}
+
+.attr-contained-field-col[data-field="summary"],
+.attr-contained-field-col[data-field="description"],
+.attr-contained-field-col[data-field="documentation"] {
+  min-width: 128px;
+}
+
+.attr-contained-actions-col {
+  width: 74px;
+  min-width: 74px;
+}
+
 .attr-contained-link {
   display: block;
-  max-width: 180px;
+  max-width: 100%;
+  overflow: hidden;
   border: 0;
   padding: 0;
   background: transparent;
   color: var(--text-strong);
   font: 700 12px/1.3 var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
   text-align: left;
   cursor: pointer;
 }
@@ -1460,12 +1490,14 @@
   margin-top: 2px;
   color: var(--text-muted);
   font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .attr-contained-input,
 .attr-contained-table select {
   width: 100%;
-  min-width: 88px;
   min-height: 30px;
   border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
   border-radius: 6px;
@@ -1483,4 +1515,10 @@
 .attr-contained-readonly {
   color: var(--text-muted);
   font-size: 11px;
+}
+
+.attr-contained-id-excerpt {
+  display: inline-block;
+  max-width: 9ch;
+  font-family: var(--font-mono);
 }

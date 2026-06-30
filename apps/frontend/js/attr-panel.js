@@ -1191,22 +1191,34 @@ function containmentTableMarkup(children) {
   return `<div class="attr-contained-table-wrap">
     <table class="attr-contained-table">
       <thead>
-        <tr><th>Element</th>${columns
-          .map((column) => `<th>${escapeAttr(column)}</th>`)
+        <tr><th class="attr-contained-element-col">Element</th>${columns
+          .map(
+            (column) =>
+              `<th class="attr-contained-field-col" data-field="${escapeAttr(
+                column,
+              )}">${escapeAttr(column)}</th>`,
+          )
           .join("")}<th></th></tr>
       </thead>
       <tbody>
         ${children
           .map(
             (child) => `<tr>
-          <td data-label="Element">
+          <td class="attr-contained-element-col" data-label="Element">
             <button class="attr-contained-link"
                     data-open-contained-child="${escapeAttr(child.id)}"
                     type="button">${escapeAttr(elementLabel(child))}</button>
             <span>${escapeAttr(child.eClass || child.type || "Element")}</span>
           </td>
-          ${columns.map((column) => `<td data-label="${escapeAttr(column)}">${containedCellMarkup(child, column)}</td>`).join("")}
-          <td data-label="Actions">
+          ${columns
+            .map(
+              (column) =>
+                `<td class="attr-contained-field-col" data-field="${escapeAttr(
+                  column,
+                )}" data-label="${escapeAttr(column)}">${containedCellMarkup(child, column)}</td>`,
+            )
+            .join("")}
+          <td class="attr-contained-actions-col" data-label="Actions">
             <button class="btn btn-secondary btn-sm"
                     data-delete-contained-child="${escapeAttr(child.id)}"
                     type="button">Delete</button>
@@ -1269,6 +1281,12 @@ function containedFieldDefinition(child, fieldName) {
 function containedCellMarkup(child, fieldName) {
   const field = containedFieldDefinition(child, fieldName) || {};
   const value = child[fieldName];
+  if (fieldName === "id") {
+    const fullId = overviewValueText(value);
+    return `<span class="attr-contained-readonly attr-contained-id-excerpt" title="${escapeAttr(
+      fullId,
+    )}">${escapeAttr(shortIdExcerpt(fullId))}</span>`;
+  }
   if (field.readonly || READONLY_ATTR_KEYS.has(fieldName)) {
     return `<span class="attr-contained-readonly">${escapeAttr(overviewValueText(value))}</span>`;
   }
@@ -1326,6 +1344,14 @@ function containedCellMarkup(child, fieldName) {
                  data-contained-edit="${escapeAttr(child.id)}"
                  data-contained-field="${escapeAttr(fieldName)}"
                  type="${inputType}" value="${escapeAttr(value ?? "")}">`;
+}
+
+function shortIdExcerpt(value, edgeLength = 5) {
+  const text = String(value ?? "");
+  if (text.length <= edgeLength * 2 + 1) {
+    return text;
+  }
+  return `${text.slice(0, edgeLength)}…${text.slice(-edgeLength)}`;
 }
 
 function appendConfiguredValidationSummary(section, element, type) {

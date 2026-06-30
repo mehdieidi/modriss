@@ -344,9 +344,6 @@
 }
 
 .attr-tabbar {
-  position: sticky;
-  top: -12px;
-  z-index: 2;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
@@ -764,7 +761,15 @@
   min-width: 0;
   color: var(--muted);
   font: 500 11px/1.35 var(--font-ui);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attr-contained-id-excerpt {
+  display: inline-block;
+  max-width: 9ch;
+  font-family: var(--font-mono);
 }
 
 .attr-contained-check {
