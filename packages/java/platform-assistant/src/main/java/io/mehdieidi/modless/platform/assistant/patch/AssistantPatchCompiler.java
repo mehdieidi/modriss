@@ -577,7 +577,10 @@ public class AssistantPatchCompiler {
   }
 
   private LocatedElement locateElement(JsonNode node, String id) {
-    LocatedElement found = locateElement(node, id, "");
+    LocatedElement found = locateElement(node, id, "", true);
+    if (found == null) {
+      found = locateElement(node, id, "", false);
+    }
     if (found == null) {
       throw new PlatformException(404, "Assistant could not locate element: " + id);
     }
@@ -662,7 +665,8 @@ public class AssistantPatchCompiler {
     }
   }
 
-  private LocatedElement locateElement(JsonNode node, String id, String path) {
+  private LocatedElement locateElement(
+      JsonNode node, String id, String path, boolean skipVisualContainers) {
     if (node == null || node.isNull()) {
       return null;
     }
@@ -674,8 +678,17 @@ public class AssistantPatchCompiler {
       var fields = object.fields();
       while (fields.hasNext()) {
         var entry = fields.next();
+        if (skipVisualContainers
+            && path.isBlank()
+            && ("diagram".equals(entry.getKey()) || "graph".equals(entry.getKey()))) {
+          continue;
+        }
         LocatedElement found =
-            locateElement(entry.getValue(), id, path + "/" + escapePointer(entry.getKey()));
+            locateElement(
+                entry.getValue(),
+                id,
+                path + "/" + escapePointer(entry.getKey()),
+                skipVisualContainers);
         if (found != null) {
           return found;
         }
@@ -684,7 +697,8 @@ public class AssistantPatchCompiler {
     }
     if (node.isArray()) {
       for (int index = 0; index < node.size(); index++) {
-        LocatedElement found = locateElement(node.get(index), id, path + "/" + index);
+        LocatedElement found =
+            locateElement(node.get(index), id, path + "/" + index, skipVisualContainers);
         if (found != null) {
           return found;
         }

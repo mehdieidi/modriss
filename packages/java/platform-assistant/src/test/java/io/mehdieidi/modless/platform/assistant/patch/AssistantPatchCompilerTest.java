@@ -41,6 +41,49 @@ class AssistantPatchCompilerTest {
   }
 
   @Test
+  void connectsSemanticElementWhenDiagramContainsSameStableId() throws Exception {
+    var model =
+        mapper.readTree(
+            """
+{
+  "id": "cim-root",
+  "eClass": "CIMModel",
+  "modelLevel": "CIM",
+  "domainName": "Conference",
+  "diagram": {
+    "elements": [
+      {"id": "query-1", "eClass": "Query", "name": "Published schedule"},
+      {"id": "output-1", "eClass": "InformationItem", "name": "Published schedule output"}
+    ],
+    "relationships": []
+  },
+  "queries": [
+    {"id": "query-1", "eClass": "Query", "name": "Published schedule"}
+  ],
+  "informationItems": [
+    {"id": "output-1", "eClass": "InformationItem", "name": "Published schedule output", "type": "TEXT"}
+  ]
+}
+""");
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.CONNECT_ELEMENTS,
+                    "output-1",
+                    null,
+                    null,
+                    "query-1",
+                    "output")));
+
+    AssistantPatchCompiler.CompiledPatch compiled = compiler.compile(model, patch);
+    var preview = compiler.apply(model, compiled);
+
+    assertEquals("output-1", preview.at("/queries/0/output/0").asText());
+    assertEquals("", preview.at("/diagram/elements/0/output").asText());
+  }
+
+  @Test
   void omitsAttributeUpdateWhenValueIsUnchanged() throws Exception {
     var model =
         mapper.readTree(

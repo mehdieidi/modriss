@@ -104,6 +104,9 @@ public class AssistantClarificationGate {
     if (explicitUserForkInMessage(userMessage)) {
       return false;
     }
+    if (plan.questions().isEmpty()) {
+      return false;
+    }
     return plan.questions().stream().allMatch(question -> isDeferrable(question, userMessage));
   }
 

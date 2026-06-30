@@ -358,6 +358,28 @@ class AssistantOrchestratorTest {
   }
 
   @Test
+  void malformedInformationClarificationDoesNotCreateGenericPendingQuestion() {
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.INFORMATION,
+                    AssistantTurnPlan.Kind.CLARIFICATION,
+                    "I need more context.",
+                    List.of(),
+                    new SemanticModelPatch(List.of())),
+                1,
+                1));
+
+    var response =
+        orchestrator.handleMessage(user, "session", request("What does this model currently do?"));
+
+    assertEquals(AssistantWorkflowState.EXPLAINED, response.workflowState());
+    assertTrue(response.choices().isEmpty());
+    verify(memory, never()).savePendingInteraction(anyString(), any(), any());
+  }
+
+  @Test
   void onlyValidatedPatchBecomesReviewableProposal() throws Exception {
     var attributes =
         new ObjectMapper()
@@ -437,6 +459,36 @@ class AssistantOrchestratorTest {
         AssistantWorkflowState.APPLIED, response.workflowState(), response.assistantMessage());
     assertNotNull(response.proposal());
     verify(provider, times(1)).planTurn(any());
+  }
+
+  @Test
+  void noOperationPlannerFailureDoesNotCreateCannedClarification() {
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.ANSWER,
+                    "I could not plan operations.",
+                    List.of(),
+                    new SemanticModelPatch(List.of())),
+                0,
+                1));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Intent.MUTATION,
+                AssistantTurnPlan.Kind.PATCH,
+                "Still no grounded operations.",
+                List.of(),
+                new SemanticModelPatch(List.of())));
+
+    var response = orchestrator.handleMessage(user, "session", request("Create a CIM model"));
+
+    assertEquals(AssistantWorkflowState.FAILED, response.workflowState());
+    assertTrue(response.choices().isEmpty());
+    assertNull(response.proposal());
+    verify(memory, never()).savePendingInteraction(anyString(), any(), any());
   }
 
   @Test
@@ -797,6 +849,7 @@ class AssistantOrchestratorTest {
                 "CURRENT",
                 Instant.now(),
                 Instant.now()));
+    when(models.exportModel(eq(ModelLevel.CIM), any(), eq("xmi"))).thenReturn(new byte[] {1, 2, 3});
     when(provider.analyzeSource(any(), any()))
         .thenReturn(
             new AssistantModelProvider.AssistantReply(
@@ -851,7 +904,127 @@ class AssistantOrchestratorTest {
   }
 
   @Test
-  void rejectsShallowValidPatchForFullCimDocumentAndRepairsForCoverage() throws Exception {
+  void structuredCimSourceDocumentBypassesShallowPlannerAndCoverageRepair() throws Exception {
+    AssistantSessionStore.AssistantSession cimSession =
+        new AssistantSessionStore.AssistantSession(
+            "cim-session",
+            "user",
+            "project",
+            ModelLevel.CIM,
+            "Clinic CIM",
+            Instant.now(),
+            Instant.now());
+    when(sessions.require("cim-session", "user")).thenReturn(cimSession);
+    JsonNode cimModel =
+        new ObjectMapper()
+            .readTree(
+                """
+                {
+                  "id": "cim-root",
+                  "eClass": "CIMModel",
+                  "modelLevel": "CIM",
+                  "name": "Clinic CIM",
+                  "goals": [],
+                  "diagram": {"elements": [], "relationships": []}
+                }
+                """);
+    ModelRecord createdModel =
+        new ModelRecord(
+            "cim-model-1",
+            "project",
+            ModelLevel.CIM,
+            "Clinic CIM",
+            cimModel,
+            "v1",
+            "hash",
+            1L,
+            null,
+            "CURRENT",
+            Instant.now(),
+            Instant.now());
+    when(models.create(eq(user), eq(ModelLevel.CIM), eq("project"), anyString(), any()))
+        .thenReturn(createdModel);
+    when(models.patch(eq(user), eq(ModelLevel.CIM), eq("cim-model-1"), anyString(), any(), eq(1L)))
+        .thenReturn(
+            new ModelRecord(
+                "cim-model-1",
+                "project",
+                ModelLevel.CIM,
+                "Clinic CIM",
+                cimModel,
+                "v1",
+                "hash",
+                2L,
+                null,
+                "CURRENT",
+                Instant.now(),
+                Instant.now()));
+    when(models.exportModel(eq(ModelLevel.CIM), any(), eq("xmi"))).thenReturn(new byte[] {1, 2, 3});
+    when(provider.analyzeSource(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AssistantReply(
+                "Clinic appointment source contains many stories, acceptance criteria, commands, "
+                    + "events, policies, risks, assumptions, and domain data.",
+                "mock",
+                "mock-model"));
+    when(provider.planMutationTurn(any(), any()))
+        .thenReturn(
+            new AssistantModelProvider.AgentLoopResult(
+                new AssistantTurnPlan(
+                    AssistantTurnPlan.Intent.MUTATION,
+                    AssistantTurnPlan.Kind.PATCH,
+                    "Prepared shallow CIM.",
+                    List.of(),
+                    shallowCimPatch()),
+                0,
+                1));
+    when(provider.planTurn(any()))
+        .thenReturn(
+            new AssistantTurnPlan(
+                AssistantTurnPlan.Intent.MUTATION,
+                AssistantTurnPlan.Kind.PATCH,
+                "Prepared full CIM.",
+                List.of(),
+                fullCimCoveragePatch()));
+
+    AssistantOrchestrator.AssistantTurnResponse response =
+        orchestrator.handleMessage(
+            user,
+            "cim-session",
+            new AssistantOrchestrator.AssistantTurnRequest(
+                "Build a full CIM model from the attached user story document",
+                null,
+                null,
+                "cim",
+                List.of(),
+                null,
+                "clinic-user-stories.md",
+                fullCimSourceDocument()));
+
+    assertEquals(
+        AssistantWorkflowState.APPLIED, response.workflowState(), response.assistantMessage());
+    assertNotNull(response.proposal());
+    assertTrue(response.proposal().patch().operations().size() >= 70);
+    ArgumentCaptor<JsonNode> createdBaseCaptor = ArgumentCaptor.forClass(JsonNode.class);
+    verify(models)
+        .create(
+            eq(user),
+            eq(ModelLevel.CIM),
+            eq("project"),
+            eq("Clinic CIM"),
+            createdBaseCaptor.capture());
+    JsonNode createdBase = createdBaseCaptor.getValue();
+    assertEquals("Clinic CIM", createdBase.path("domainName").asText());
+    assertTrue(createdBase.path("actors").isMissingNode());
+    assertTrue(createdBase.path("capabilities").isMissingNode());
+    verify(models).attachSourceXmi(any(ModelRecord.class), any(byte[].class));
+    verify(provider, never()).analyzeSource(any(), any());
+    verify(provider, never()).planMutationTurn(any(), any());
+    verify(provider, never()).planTurn(any());
+  }
+
+  @Test
+  void materializesStructuredCimSourceDocumentWithoutProviderRoundTrips() throws Exception {
     AssistantSessionStore.AssistantSession cimSession =
         new AssistantSessionStore.AssistantSession(
             "cim-session",
@@ -909,27 +1082,13 @@ class AssistantOrchestratorTest {
     when(provider.analyzeSource(any(), any()))
         .thenReturn(
             new AssistantModelProvider.AssistantReply(
-                "Clinic appointment source contains many stories, acceptance criteria, commands, "
-                    + "events, policies, risks, assumptions, and domain data.",
-                "mock",
-                "mock-model"));
-    when(provider.planMutationTurn(any(), any()))
-        .thenReturn(
-            new AssistantModelProvider.AgentLoopResult(
-                new AssistantTurnPlan(
-                    AssistantTurnPlan.Intent.MUTATION,
-                    AssistantTurnPlan.Kind.PATCH,
-                    "Prepared shallow CIM.",
-                    List.of(),
-                    shallowCimPatch()),
-                0,
-                1));
+                shallowCimSourceAnalysisJson(), "mock", "mock-model"));
     when(provider.planTurn(any()))
         .thenReturn(
             new AssistantTurnPlan(
                 AssistantTurnPlan.Intent.MUTATION,
                 AssistantTurnPlan.Kind.PATCH,
-                "Prepared full CIM.",
+                "Prepared full CIM after coverage feedback.",
                 List.of(),
                 fullCimCoveragePatch()));
 
@@ -951,7 +1110,8 @@ class AssistantOrchestratorTest {
         AssistantWorkflowState.APPLIED, response.workflowState(), response.assistantMessage());
     assertNotNull(response.proposal());
     assertTrue(response.proposal().patch().operations().size() >= 70);
-    verify(provider).planTurn(any());
+    verify(provider, never()).analyzeSource(any(), any());
+    verify(provider, never()).planTurn(any());
   }
 
   @Test
@@ -1188,6 +1348,41 @@ class AssistantOrchestratorTest {
             add("entity-1", "DomainEntity", "Appointment"),
             add("command-1", "Command", "Book appointment"),
             add("event-1", "BusinessEvent", "Appointment booked")));
+  }
+
+  private String shallowCimSourceAnalysisJson() {
+    return """
+    {
+      "elements": [
+        {
+          "sourceKey": "goal.reduce-phone-traffic",
+          "type": "BusinessGoal",
+          "name": "Reduce phone scheduling traffic",
+          "summary": "Patients can book without calling the clinic."
+        },
+        {
+          "sourceKey": "actor.patient",
+          "type": "Actor",
+          "name": "Patient",
+          "attributes": {"actorType": "HUMAN"}
+        },
+        {
+          "sourceKey": "entity.appointment",
+          "type": "DomainEntity",
+          "name": "Appointment",
+          "attributes": {"identityStrategy": "BUSINESS_KEY"}
+        },
+        {
+          "sourceKey": "command.book-appointment",
+          "type": "Command",
+          "name": "Book appointment"
+        }
+      ],
+      "relationships": [],
+      "coverageNotes": ["Only a small classifier sample was emitted."],
+      "coverageGaps": []
+    }
+    """;
   }
 
   private SemanticModelPatch fullCimCoveragePatch() {

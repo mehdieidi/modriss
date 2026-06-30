@@ -68,7 +68,7 @@ public class AssistantServicesConfig {
 
   @Bean
   AssistantModelingStrategy assistantModelingStrategy(
-      @Value("${modless.ai.modeling-strategy:semantic-patch}") String value) {
+      @Value("${modless.ai.modeling-strategy:model-subset}") String value) {
     return AssistantModelingStrategy.from(value);
   }
 

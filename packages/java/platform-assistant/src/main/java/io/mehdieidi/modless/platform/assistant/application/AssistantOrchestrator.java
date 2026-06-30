@@ -286,9 +286,7 @@ public class AssistantOrchestrator {
     AssistantTurnRequest enrichedRequest = enrichWithSourceAnalysis(session, request);
 
     JsonNode persistedModel =
-        model == null
-            ? modelingConfig.starterModel(session.level(), session.title())
-            : model.modelJson();
+        model == null ? assistantEmptyModel(session.level(), session.title()) : model.modelJson();
     JsonNode baseModel =
         resolvePlanningBase(session.level(), persistedModel, enrichedRequest.unsavedDraftPatch());
     ModelService.ValidationResult currentValidation =
@@ -513,6 +511,16 @@ public class AssistantOrchestrator {
     if (!requiresSourceAnalysis(session, request)) {
       return request;
     }
+    Optional<String> extracted =
+        new CimSourceDocumentExtractor(mapper)
+            .extract(request.attachmentName(), request.attachmentContent());
+    if (extracted.isPresent()) {
+      publishProgress(
+          session.id(),
+          "ANALYZING_SOURCE",
+          "Source evidence was extracted from the attached document for CIM planning");
+      return request.withSourceAnalysis(extracted.get());
+    }
     try {
       AssistantModelProvider.AssistantReply reply =
           provider.analyzeSource(
@@ -607,7 +615,7 @@ public class AssistantOrchestrator {
     snippets.add(
         new AssistantModelProvider.ContextSnippet(
             "runtime-metamodel", "CIM language index", schemas.languageIndex(ModelLevel.CIM)));
-    schemas.allPlanningContracts(ModelLevel.CIM).stream().limit(16).forEach(snippets::add);
+    schemas.allPlanningContracts(ModelLevel.CIM).forEach(snippets::add);
     snippets.addAll(
         catalogs.search(
             "CIM methodology event storming user stories source analysis",
@@ -673,13 +681,13 @@ public class AssistantOrchestrator {
     SourceCoverageExpectation coverageExpectation = sourceCoverageExpectation(session, request);
     PlanAttempt attempt =
         evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
-    boolean materializedSourcePlan = isMaterializedSourcePlan(session, request, initialPlan);
+    boolean locallyExtractedSourcePlan = isLocallyExtractedSourceAnalysis(request.sourceAnalysis());
     int repairNumber = 0;
     int stagnationCount = 0;
     String lastPatchSignature = patchSignature(acceptedPlan.patch());
     int lastFeedbackCount = attempt.feedback().size();
     int maxRepairAttempts =
-        materializedSourcePlan ? 0 : Math.max(properties.validationRepairAttempts(), 0);
+        locallyExtractedSourcePlan ? 0 : Math.max(properties.validationRepairAttempts(), 0);
     while (!attempt.valid() && repairNumber < maxRepairAttempts) {
       repairNumber++;
       publishProgress(
@@ -760,7 +768,7 @@ public class AssistantOrchestrator {
         break;
       }
     }
-    if (!attempt.valid() && !materializedSourcePlan) {
+    if (!attempt.valid() && !locallyExtractedSourcePlan) {
       for (int replan = 0; replan < 1 && !attempt.valid(); replan++) {
         publishProgress(
             session.id(),
@@ -827,41 +835,7 @@ public class AssistantOrchestrator {
             + "\n\n"
             + "Your canvas is unchanged. Add more domain detail, narrow the scope, or answer a "
             + "follow-up question if I ask for one.";
-    if (!feedback.isEmpty() && feedbackResolver.isFormalFailure(feedback)) {
-      memory.clearPendingInteraction(threadId);
-      return finishTurn(
-          session,
-          threadId,
-          new AssistantTurnResponse(
-              message,
-              model == null ? null : model.id(),
-              model == null ? null : model.revision(),
-              null,
-              List.of(),
-              AssistantWorkflowState.FAILED,
-              activityFor(AssistantWorkflowState.FAILED)));
-    }
-    List<AssistantChoice> questions =
-        List.of(
-            new AssistantChoice(
-                "modeling-scope",
-                "What should be modeled first for this request?",
-                AssistantChoice.SelectionMode.SINGLE,
-                List.of(
-                    new AssistantChoice.Option(
-                        "core-api",
-                        "Core API and functions",
-                        "Start with the main service, APIs, and command/query handlers."),
-                    new AssistantChoice.Option(
-                        "events-data",
-                        "Events and durable state",
-                        "Start with channels, stores, and the functions that use them."),
-                    new AssistantChoice.Option(
-                        "complete-context",
-                        "Complete bounded context",
-                        "Model service, APIs, functions, stores, and integration together.")),
-                true));
-    memory.savePendingInteraction(threadId, request, questions);
+    memory.clearPendingInteraction(threadId);
     return finishTurn(
         session,
         threadId,
@@ -870,9 +844,9 @@ public class AssistantOrchestrator {
             model == null ? null : model.id(),
             model == null ? null : model.revision(),
             null,
-            questions,
-            AssistantWorkflowState.WAITING_FOR_CHOICE,
-            activityFor(AssistantWorkflowState.WAITING_FOR_CHOICE)));
+            List.of(),
+            AssistantWorkflowState.FAILED,
+            activityFor(AssistantWorkflowState.FAILED)));
   }
 
   private AssistantTurnResponse providerFailureResponse(
@@ -1081,6 +1055,9 @@ public class AssistantOrchestrator {
         || !looksLikeSourceToCimRequest(request)) {
       return SourceCoverageExpectation.none();
     }
+    if (isLocallyExtractedSourceAnalysis(request.sourceAnalysis())) {
+      return SourceCoverageExpectation.none();
+    }
     String source = request.attachmentContent();
     int storyCount =
         Math.max(
@@ -1126,6 +1103,12 @@ public class AssistantOrchestrator {
         true, minAdditions, minOperations, minConnections, requiredFamilies);
   }
 
+  private boolean isLocallyExtractedSourceAnalysis(String sourceAnalysis) {
+    return sourceAnalysis != null
+        && sourceAnalysis.contains(" before invoking the planner.")
+        && sourceAnalysis.contains("\"coverageNotes\"");
+  }
+
   private boolean looksLikeSourceToCimRequest(AssistantTurnRequest request) {
     String text =
         (request.rootMessage()
@@ -1142,20 +1125,6 @@ public class AssistantOrchestrator {
         && text.matches(
             "(?s).*(\\bfrom\\b|\\battached\\b|\\bdocument\\b|\\bsource\\b|\\buser stor|\\bevent"
                 + " storm).*");
-  }
-
-  private boolean isMaterializedSourcePlan(
-      AssistantSessionStore.AssistantSession session,
-      AssistantTurnRequest request,
-      AssistantTurnPlan plan) {
-    return session.level() == ModelLevel.CIM
-        && plan != null
-        && plan.kind() == AssistantTurnPlan.Kind.PATCH
-        && !blank(request.sourceAnalysis())
-        && looksLikeSourceToCimRequest(request)
-        && !plan.patch().operations().isEmpty()
-        && plan.message() != null
-        && plan.message().startsWith("I created the CIM from the attached source document.");
   }
 
   private List<String> coverageFeedback(
@@ -1642,14 +1611,21 @@ public class AssistantOrchestrator {
       List<AssistantChoice> rawQuestions) {
     List<AssistantChoice> questions = normalizeQuestions(rawQuestions);
     if (questions.isEmpty()) {
-      questions =
-          List.of(
-              new AssistantChoice(
-                  "modeling-details",
-                  "What consequential modeling detail should I use before changing the model?",
-                  AssistantChoice.SelectionMode.SINGLE,
-                  List.of(),
-                  true));
+      memory.clearPendingInteraction(threadId);
+      return finishTurn(
+          session,
+          threadId,
+          new AssistantTurnResponse(
+              nonBlank(
+                  message,
+                  "The planner asked for clarification but did not provide a usable question. "
+                      + "Your model is unchanged."),
+              model == null ? null : model.id(),
+              model == null ? null : model.revision(),
+              null,
+              List.of(),
+              AssistantWorkflowState.FAILED,
+              activityFor(AssistantWorkflowState.FAILED)));
     }
     memory.savePendingInteraction(threadId, request, questions);
     return finishTurn(
@@ -1812,9 +1788,11 @@ public class AssistantOrchestrator {
     if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
       throw new PlatformException(422, "Undo is blocked because mandatory validation would fail.");
     }
+    byte[] sourceXmi = regenerateSourceXmi(session.level(), preview);
     ModelRecord updated =
         models.patch(
             user, session.level(), model.id(), model.name(), inverse.patch(), model.revision());
+    attachSourceXmi(updated, sourceXmi);
     memory.updateProposalStatus(record.id(), "UNDONE");
     memory.appendAudit(
         record.id(),
@@ -2338,6 +2316,8 @@ public class AssistantOrchestrator {
       AssistantSessionStore.AssistantSession session,
       ModelRecord targetModel,
       AssistantPatchCompiler.CompiledPatch compiled) {
+    ObjectNode preview = patchCompiler.apply(targetModel.modelJson(), compiled);
+    byte[] sourceXmi = regenerateSourceXmi(session.level(), preview);
     ModelRecord patched =
         models.patch(
             user,
@@ -2347,10 +2327,21 @@ public class AssistantOrchestrator {
             compiled.patch(),
             targetModel.revision());
     if (patched != null) {
+      attachSourceXmi(patched, sourceXmi);
       return patched;
     }
     log.warn("Model patch returned no record during assistant apply.");
     return targetModel;
+  }
+
+  private byte[] regenerateSourceXmi(ModelLevel level, JsonNode modelJson) {
+    return models.exportModel(level, modelJson, "xmi");
+  }
+
+  private void attachSourceXmi(ModelRecord model, byte[] sourceXmi) {
+    if (model != null && sourceXmi != null && sourceXmi.length > 0) {
+      models.attachSourceXmi(model, sourceXmi);
+    }
   }
 
   private void publishDraftPreviewProgress(
@@ -2780,11 +2771,7 @@ public class AssistantOrchestrator {
     String name = nonBlank(session.title(), session.level().apiName() + "-model");
     ModelRecord created =
         models.create(
-            user,
-            session.level(),
-            project.id(),
-            name,
-            modelingConfig.starterModel(session.level(), name));
+            user, session.level(), project.id(), name, assistantEmptyModel(session.level(), name));
     Map<String, String> active =
         new LinkedHashMap<>(project.activeModelIds() == null ? Map.of() : project.activeModelIds());
     active.put(session.level().apiName(), created.id());
@@ -2850,6 +2837,88 @@ public class AssistantOrchestrator {
 
   private String resolveModelId(String requested, ProjectRecord project, ModelLevel level) {
     return blank(requested) ? activeModelId(project, level) : requested.trim();
+  }
+
+  private ObjectNode assistantEmptyModel(ModelLevel level, String name) {
+    String modelName = nonBlank(name, level.apiName() + "-model");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> levels =
+        (Map<String, Object>) modelingConfig.config().getOrDefault("levels", Map.of());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> levelConfig =
+        (Map<String, Object>) levels.getOrDefault(level.apiName(), Map.of());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> rootTemplate =
+        (Map<String, Object>) levelConfig.getOrDefault("rootTemplate", Map.of());
+    ObjectNode root =
+        rootTemplate.isEmpty()
+            ? mapper.createObjectNode()
+            : mapper.valueToTree(rootTemplate).deepCopy();
+    root.put("name", modelName);
+    if (!root.hasNonNull("id")) {
+      root.put("id", safeModelId(modelName + "-root"));
+    }
+    if (!root.hasNonNull("eClass")) {
+      root.put("eClass", schemas.rootType(level));
+    }
+    if (!root.hasNonNull("modelLevel")) {
+      root.put("modelLevel", level == ModelLevel.PSM ? "AWS_PSM" : level.name());
+    }
+    if (level == ModelLevel.CIM && !root.hasNonNull("domainName")) {
+      root.put("domainName", modelName);
+    }
+    if (level == ModelLevel.CIM) {
+      if (!root.hasNonNull("businessScope")) {
+        root.put("businessScope", "Business scope extracted from assistant source material.");
+      }
+      if (!root.hasNonNull("organizationName")) {
+        root.put("organizationName", "Source document organization");
+      }
+      if (!root.hasNonNull("summary")) {
+        root.put("summary", "Assistant-created CIM model grounded in the supplied source.");
+      }
+      if (!root.hasNonNull("rationale")) {
+        root.put("rationale", "Created from the user-provided modeling request and attachments.");
+      }
+    }
+    if (level == ModelLevel.PSM && !root.hasNonNull("platform")) {
+      root.put("platform", "AWS");
+    }
+    ObjectNode diagram =
+        root.path("diagram").isObject()
+            ? (ObjectNode) root.path("diagram")
+            : root.putObject("diagram");
+    if (!diagram.path("elements").isArray()) {
+      diagram.putArray("elements");
+    }
+    if (!diagram.path("relationships").isArray()) {
+      diagram.putArray("relationships");
+    }
+    ObjectNode graph =
+        root.path("graph").isObject() ? (ObjectNode) root.path("graph") : root.putObject("graph");
+    if (!graph.path("elements").isArray()) {
+      graph.putArray("elements");
+    }
+    if (!graph.path("relationships").isArray()) {
+      graph.putArray("relationships");
+    }
+    if (!root.path("views").isArray()) {
+      root.putArray("views");
+    }
+    if (!root.path("fragments").isArray()) {
+      root.putArray("fragments");
+    }
+    return root;
+  }
+
+  private String safeModelId(String value) {
+    String safe =
+        String.valueOf(value == null ? "model-root" : value)
+            .trim()
+            .toLowerCase(java.util.Locale.ROOT)
+            .replaceAll("[^a-z0-9]+", "-")
+            .replaceAll("(^-+|-+$)", "");
+    return safe.isBlank() ? "model-root" : safe;
   }
 
   private String activeModelId(ProjectRecord project, ModelLevel level) {

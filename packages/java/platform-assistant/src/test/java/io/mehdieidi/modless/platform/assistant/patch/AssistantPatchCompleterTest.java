@@ -219,7 +219,7 @@ class AssistantPatchCompleterTest {
                     SemanticModelPatch.OperationType.ADD_ELEMENT,
                     "patient-id",
                     "InformationItem",
-                    mapper.readTree("{\"name\":\"Patient identity\",\"type\":\"STRING\"}"),
+                    mapper.readTree("{\"name\":\"Patient identity\",\"type\":\"TEXT\"}"),
                     null,
                     null),
                 new SemanticModelPatch.Operation(
@@ -235,6 +235,37 @@ class AssistantPatchCompleterTest {
     assertTrue(hasConnection(completed, "patient", "patient-id", "identityAttributes"));
     assertTrue(hasConnection(completed, "patient", "patient-id", "primaryIdentityAttribute"));
     assertTrue(hasConnection(completed, "patient-query", "patient-id", "output"));
+  }
+
+  @Test
+  void completesRequiredContainmentWithConcreteCreatableSubtype() throws Exception {
+    SemanticModelPatch patch =
+        new SemanticModelPatch(
+            List.of(
+                new SemanticModelPatch.Operation(
+                    SemanticModelPatch.OperationType.ADD_ELEMENT,
+                    "booking-process",
+                    "BusinessProcess",
+                    mapper.readTree("{\"name\":\"Booking process\"}"),
+                    null,
+                    null)));
+
+    SemanticModelPatch completed = completer.complete(ModelLevel.CIM, patch, Map.of());
+
+    assertTrue(
+        completed.operations().stream()
+            .noneMatch(
+                operation ->
+                    operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
+                        && "ProcessStep".equals(operation.elementType())));
+    assertTrue(
+        completed.operations().stream()
+            .anyMatch(
+                operation ->
+                    operation.type() == SemanticModelPatch.OperationType.ADD_ELEMENT
+                        && "booking-process".equals(operation.sourceElementId())
+                        && "steps".equals(operation.referenceName())
+                        && "HumanTaskStep".equals(operation.elementType())));
   }
 
   private boolean blank(String value) {

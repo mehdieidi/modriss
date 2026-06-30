@@ -156,6 +156,42 @@ public class AssistantMetamodelSchemaService {
         .toList();
   }
 
+  /** Returns a creatable concrete type for a declared containment/reference target. */
+  public Optional<String> creatableTypeFor(ModelLevel level, String declaredType) {
+    LevelSchema schema = schema(level);
+    String canonical = canonicalType(level, declaredType);
+    Optional<TypeSchema> direct = schema.type(canonical).filter(TypeSchema::creatable);
+    if (direct.isPresent()) {
+      return direct.map(TypeSchema::name);
+    }
+    return schema.types().values().stream()
+        .filter(TypeSchema::creatable)
+        .filter(type -> schema.assignable(type.name(), canonical))
+        .sorted(
+            java.util.Comparator.comparingInt(this::requiredReferenceComplexity)
+                .thenComparingInt(this::concreteTypePreference)
+                .thenComparing(TypeSchema::name))
+        .map(TypeSchema::name)
+        .findFirst();
+  }
+
+  private int requiredReferenceComplexity(TypeSchema type) {
+    return (int)
+        type.references().stream()
+            .filter(ReferenceSchema::required)
+            .filter(reference -> !reference.readonly())
+            .count();
+  }
+
+  private int concreteTypePreference(TypeSchema type) {
+    return switch (type.name()) {
+      case "HumanTaskStep" -> 0;
+      case "StartStep" -> 1;
+      case "EndStep" -> 2;
+      default -> 10;
+    };
+  }
+
   /** Compact, dynamically generated language index used for retrieval and planning. */
   public String languageIndex(ModelLevel level) {
     LevelSchema schema = schema(level);

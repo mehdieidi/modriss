@@ -88,20 +88,21 @@ public class AssistantPatchCompleter {
           if (hasContainedChild(operations, targetId, reference.name())) {
             continue;
           }
+          String childType = creatableTargetType(level, reference);
           String childId = java.util.UUID.randomUUID().toString();
-          String childName = deriveChildName(withAttributes, canonicalType, reference);
+          String childName = deriveChildName(withAttributes, canonicalType, reference, childType);
           ObjectNode attributes = JsonNodeFactory.instance.objectNode();
           attributes.put("name", childName);
           SemanticModelPatch.Operation child =
               new SemanticModelPatch.Operation(
                   SemanticModelPatch.OperationType.ADD_ELEMENT,
                   childId,
-                  reference.targetType(),
+                  childType,
                   attributes,
                   targetId,
                   reference.name());
           additions.add(child);
-          types.put(childId, schemas.canonicalType(level, reference.targetType()));
+          types.put(childId, schemas.canonicalType(level, childType));
           changed = true;
         }
       }
@@ -174,18 +175,19 @@ public class AssistantPatchCompleter {
               operations, requirement.ownerElementId(), requirement.featureName())) {
         continue;
       }
+      String childType = creatableTargetType(level, reference);
       String childId = java.util.UUID.randomUUID().toString();
       ObjectNode attributes = JsonNodeFactory.instance.objectNode();
-      attributes.put("name", humanize(reference.targetType()));
+      attributes.put("name", humanize(childType));
       operations.add(
           new SemanticModelPatch.Operation(
               SemanticModelPatch.OperationType.ADD_ELEMENT,
               childId,
-              reference.targetType(),
+              childType,
               attributes,
               requirement.ownerElementId(),
               requirement.featureName()));
-      types.put(childId, schemas.canonicalType(level, reference.targetType()));
+      types.put(childId, schemas.canonicalType(level, childType));
       changed = true;
     }
     if (!changed) {
@@ -280,13 +282,19 @@ public class AssistantPatchCompleter {
   private String deriveChildName(
       SemanticModelPatch.Operation parent,
       String parentType,
-      AssistantMetamodelSchemaService.ReferenceSchema reference) {
+      AssistantMetamodelSchemaService.ReferenceSchema reference,
+      String childType) {
     String parentName =
         parent.attributes() == null ? "" : parent.attributes().path("name").asText("");
     if (!parentName.isBlank()) {
-      return parentName + " " + humanize(reference.targetType());
+      return parentName + " " + humanize(childType);
     }
     return humanize(parentType) + " " + humanize(reference.name());
+  }
+
+  private String creatableTargetType(
+      ModelLevel level, AssistantMetamodelSchemaService.ReferenceSchema reference) {
+    return schemas.creatableTypeFor(level, reference.targetType()).orElse(reference.targetType());
   }
 
   private String humanize(String value) {
@@ -462,19 +470,20 @@ public class AssistantPatchCompleter {
     if (!attributes.hasNonNull("name")) {
       attributes.put("name", humanize(reference.targetType()));
     }
+    String childType = creatableTargetType(level, reference);
     String childId = java.util.UUID.randomUUID().toString();
     normalized.add(
         new SemanticModelPatch.Operation(
             SemanticModelPatch.OperationType.ADD_ELEMENT,
             childId,
-            reference.targetType(),
+            childType,
             attributes,
             ownerId,
             reference.name()));
     try {
-      types.put(childId, schemas.canonicalType(level, reference.targetType()));
+      types.put(childId, schemas.canonicalType(level, childType));
     } catch (PlatformException ignored) {
-      types.put(childId, reference.targetType());
+      types.put(childId, childType);
     }
   }
 

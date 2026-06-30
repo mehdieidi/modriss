@@ -132,4 +132,18 @@ class AssistantClarificationGateTest {
     assertEquals(AssistantTurnPlan.Kind.PATCH, gated.kind());
     assertTrue(gate.shouldDeferToProposal(plan, request));
   }
+
+  @Test
+  void emptyClarificationIsNotDeferrable() {
+    AssistantTurnPlan plan =
+        new AssistantTurnPlan(
+            AssistantTurnPlan.Intent.MUTATION,
+            AssistantTurnPlan.Kind.CLARIFICATION,
+            "Need a decision.",
+            List.of(),
+            new SemanticModelPatch(List.of()));
+
+    assertEquals(AssistantTurnPlan.Kind.PATCH, gate.apply(plan).kind());
+    assertTrue(!gate.shouldDeferToProposal(plan, "Create a model"));
+  }
 }
