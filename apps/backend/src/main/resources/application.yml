@@ -92,14 +92,15 @@ modless:
       connect-timeout: ${MODLESS_AI_PROXY_CONNECT_TIMEOUT:2s}
     openai-compatible:
       base-url: ${OPENAI_COMPATIBLE_BASE_URL:https://api.openai.com}
-      api-key: ${OPENAI_COMPATIBLE_API_KEY:${OPENAI_API_KEY:}}
+      api-key: ${OPENAI_COMPATIBLE_API_KEY:}
     gemini:
-      api-key: ${GEMINI_API_KEY:${GOOGLE_API_KEY:}}
+      api-key: ${GEMINI_API_KEY:}
     models:
       planner: ${MODLESS_AI_PLANNER_MODEL:}
       responder: ${MODLESS_AI_RESPONDER_MODEL:}
       summarizer: ${MODLESS_AI_SUMMARIZER_MODEL:}
   allowed-origins:
+    # Override entirely with comma-separated MODLESS_ALLOWED_ORIGINS (Compose sets this from port vars).
     - http://127.0.0.1:5500
     - http://localhost:5500
     - http://127.0.0.1:8080

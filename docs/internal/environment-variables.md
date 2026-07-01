@@ -74,7 +74,7 @@ These are fallback values for integration tests. Testcontainers can override the
 
 | Variable                 | Possible values                                                 | What it means                                                                                                                                                           |
 | ------------------------ | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SPRING_PROFILES_ACTIVE` | `dev`, `prod`, `test`, or a comma-separated Spring profile list | Selects which Spring configuration profile is active. Local development usually uses `dev`; Docker Compose defaults toward production-style behavior unless overridden. |
+| `SPRING_PROFILES_ACTIVE` | `dev`, `prod`, `test`, or a comma-separated Spring profile list | Selects which Spring configuration profile is active. Set in `.env`; Docker Compose passes it through via `env_file`. |
 
 ## MDE Execution Limits
 
@@ -100,7 +100,9 @@ These apply to non-MDE upload storage handled by the backend.
 
 | Variable                        | Possible values                                          | What it means                                                                                                            |
 | ------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `MODLESS_UPLOAD_ROOT`           | Filesystem path, for example `uploads` or `/app/uploads` | Directory where uploaded files are stored. Docker Compose overrides this inside the backend container to `/app/uploads`. |
+| `MODLESS_UPLOAD_ROOT`           | Filesystem path, for example `uploads` or `/app/uploads` | Directory where uploaded files are stored. Docker Compose overrides this inside the backend container to `/app/uploads` via `MODLESS_CONTAINER_UPLOAD_ROOT`. |
+| `MODLESS_CONTAINER_UPLOAD_ROOT` | Absolute path, usually `/app/uploads`                    | Optional Compose override for the backend upload directory inside the container. Leave empty to use the Compose default.                                     |
+| `MODLESS_ALLOWED_ORIGINS`       | Comma-separated browser origins                          | Optional CORS and WebSocket origin list. When empty in Docker Compose, origins are derived from `BACKEND_PORT`, `FRONTEND_PORT`, and `LANDING_PORT`.        |
 | `MODLESS_UPLOAD_MAX_FILE_BYTES` | Positive byte count                                      | Maximum size of an uploaded file.                                                                                        |
 | `MODLESS_UPLOAD_MAX_TEXT_CHARS` | Positive integer                                         | Maximum number of text characters accepted for text-based upload/input flows. This is characters, not bytes.             |
 
@@ -141,9 +143,7 @@ These are secrets or provider-specific names. Keep real keys in `.env`, not `.en
 | ----------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `OPENAI_COMPATIBLE_BASE_URL`  | URL like `https://api.openai.com` or another OpenAI-compatible base URL | Base URL for OpenAI-style providers. The backend normalizes a trailing `/v1`, so both `https://api.openai.com` and `https://api.openai.com/v1` are acceptable. |
 | `OPENAI_COMPATIBLE_API_KEY`   | Provider API key or empty                                               | API key for OpenAI-compatible providers.                                                                                                                       |
-| `OPENAI_API_KEY`              | Provider API key or empty                                               | Fallback key used when `OPENAI_COMPATIBLE_API_KEY` is empty.                                                                                                   |
 | `GEMINI_API_KEY`              | Gemini API key or empty                                                 | API key for Google Gemini.                                                                                                                                     |
-| `GOOGLE_API_KEY`              | Google API key or empty                                                 | Fallback key used when `GEMINI_API_KEY` is empty.                                                                                                              |
 | `MODLESS_AI_PLANNER_MODEL`    | Empty, `auto`, or a provider model name                                 | Model used for planning changes. Empty uses provider defaults; `auto` is only useful if your gateway understands it as a model alias.                          |
 | `MODLESS_AI_RESPONDER_MODEL`  | Empty, `auto`, or a provider model name                                 | Model used for user-facing assistant responses.                                                                                                                |
 | `MODLESS_AI_SUMMARIZER_MODEL` | Empty, `auto`, or a provider model name                                 | Model used for conversation/context summaries.                                                                                                                 |

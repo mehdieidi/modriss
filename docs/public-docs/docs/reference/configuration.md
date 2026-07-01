@@ -68,8 +68,7 @@ The packaged modeling config defaults to `antv-g6`. The Docker Compose stack ove
 | `MODLESS_AI_FALLBACK_PROVIDER`           | empty                            |
 
 Provider variables include `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`,
-`OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, and role-specific planner, responder, and
-summarizer model names.
+`GEMINI_API_KEY`, and role-specific planner, responder, and summarizer model names.
 
 Embedding variables select `ONNX` or `HASH`, resources, cache behavior, GPU device, and hash
 fallback. Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior.

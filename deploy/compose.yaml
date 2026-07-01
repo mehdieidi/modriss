@@ -15,9 +15,9 @@ name: modless
 # The backend exposes these via GET /api/modeling/config → diagramEditor. After changing renderer
 # settings, recreate the backend container:
 #   docker compose up --build --force-recreate backend
-# The backend also loads ../.env directly (see backend.env_file) so AI credentials
-# update when you edit .env without relying on the shell or working directory.
-# After changing secrets, recreate the backend container:
+# The backend loads ../.env via env_file and only overrides container-specific
+# settings in deploy/compose.yaml (database host, upload path, CORS origins).
+# After changing secrets or AI settings, recreate the backend container:
 #   docker compose up --build --force-recreate backend
 
 services:
@@ -47,22 +47,13 @@ services:
       - path: ../.env
         required: false
     environment:
-      # Container-specific overrides (take precedence over env_file).
+      # Container-specific overrides only (take precedence over env_file).
+      # All other MODLESS_* / provider settings come from ../.env via env_file.
       MODLESS_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-modless}
       MODLESS_DB_USER: ${POSTGRES_USER:-modless}
       MODLESS_DB_PASSWORD: ${POSTGRES_PASSWORD:-modless}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
-      # Use the normal provider URL from .env in containers too. Set
-      # OPENAI_COMPATIBLE_CONTAINER_BASE_URL only when intentionally routing the
-      # backend to a container-local compatible provider such as FreeLLMAPI.
-      OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_CONTAINER_BASE_URL:-${OPENAI_COMPATIBLE_BASE_URL:-https://api.openai.com}}
-      MODLESS_AI_REQUEST_TIMEOUT: ${MODLESS_AI_CONTAINER_REQUEST_TIMEOUT:-20m}
-      MODLESS_DIAGRAM_RENDERER: ${MODLESS_DIAGRAM_RENDERER:-glsp-sprotty}
-      MODLESS_GLSP_SERVER_URL: ${MODLESS_GLSP_SERVER_URL:-ws://127.0.0.1:8081/modless}
-      # Keep container uploads on the mounted volume. The project .env may set
-      # MODLESS_UPLOAD_ROOT=uploads for local JVM runs; do not reuse that
-      # relative host value inside the container.
       MODLESS_UPLOAD_ROOT: ${MODLESS_CONTAINER_UPLOAD_ROOT:-/app/uploads}
+      MODLESS_ALLOWED_ORIGINS: ${MODLESS_ALLOWED_ORIGINS:-http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:${BACKEND_PORT:-8080},http://localhost:${BACKEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8082},http://localhost:${FRONTEND_PORT:-8082},http://127.0.0.1:${LANDING_PORT:-8083},http://localhost:${LANDING_PORT:-8083}}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
@@ -84,7 +75,16 @@ services:
 
   frontend:
     image: python:3.13-alpine
-    command: ["python3", "-m", "http.server", "--bind", "0.0.0.0", "8082", "--directory", "/app"]
+    env_file:
+      - path: ../.env
+        required: false
+    command:
+      - sh
+      - -c
+      - |
+        cp -a /app/. /srv/
+        printf '%s\n' "window.MODLESS_BACKEND_BASE_URL = \"http://127.0.0.1:${BACKEND_PORT:-8080}\";" > /srv/backend-config.js
+        exec python3 -m http.server --bind 0.0.0.0 8082 --directory /srv
     ports:
       - "${FRONTEND_PORT:-8082}:8082"
     volumes:
@@ -136,8 +136,8 @@ services:
       # Set LOCALSTACK_PERSISTENCE=1 when retained simulator state is more important.
       PERSISTENCE: ${LOCALSTACK_PERSISTENCE:-0}
       CFN_IGNORE_UNSUPPORTED_RESOURCE_TYPES: ${LOCALSTACK_CFN_IGNORE_UNSUPPORTED_RESOURCE_TYPES:-1}
-      HTTP_PROXY: ${LOCALSTACK_HTTP_PROXY:-http://host.docker.internal:2081}
-      HTTPS_PROXY: ${LOCALSTACK_HTTPS_PROXY:-http://host.docker.internal:2081}
+      HTTP_PROXY: ${LOCALSTACK_HTTP_PROXY:-}
+      HTTPS_PROXY: ${LOCALSTACK_HTTPS_PROXY:-}
       NO_PROXY: ${LOCALSTACK_NO_PROXY:-localhost,127.0.0.1,localstack}
     ports:
       - "${LOCALSTACK_GATEWAY_PORT:-4566}:4566"
