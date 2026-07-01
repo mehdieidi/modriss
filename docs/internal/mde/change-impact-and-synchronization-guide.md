@@ -259,7 +259,9 @@ When changing validation logic:
    models.
 6. Update generation preconditions if PSM generation relies on the same invariant.
 7. Add positive and negative validation tests.
-8. Restart the backend so the assistant catalog reindexes changed `.evl` files.
+8. Restart the backend if metamodel or methodology sources changed (assistant RAG reindex). EVL-only
+   changes do not update retrieval documents; they still affect model validation issues surfaced in
+   model context and workbench validation.
 
 Use stable rule identifiers in messages. If a rule identifier or message meaning changes, update
 tests, docs, frontend issue handling, and assistant expectations that refer to it.
@@ -558,17 +560,19 @@ Verify both a fresh database and an existing database containing pre-change mode
 
 ### Automatically refreshed knowledge
 
-`AssistantCatalogService` scans `.emf`, `.ecore`, and `.evl` files at backend startup. It hashes
-files and reindexes changed sources into `assistant_retrieval_documents`.
+`JdbcAssistantCatalog` (via `AssistantCatalog.refresh()`) indexes `mde/**/*.emf`,
+`mde/**/*.ecore`, and methodology JSON/Markdown under `mde/` and `docs/public-docs/docs/guides/`.
+It removes legacy EVL `constraint` scope rows on every refresh. Raw `.evl` files are **not**
+indexed into `assistant_retrieval_documents`.
 
-After metamodel or EVL changes:
+After metamodel or methodology changes:
 
 - Regenerate Ecore before restart so both Emfatic and runtime structure are current.
-- Restart the backend to refresh the catalog.
-- Verify retrieval for new/renamed classes, features, and constraints.
+- Restart the backend or call `POST /api/chatbot/catalogs/reindex`.
+- Verify retrieval for new/renamed classes and features.
 
-ETL, EOL, EGX, EGL, and UI metadata are not indexed by the current catalog service. Changes to
-those files do not automatically teach the assistant their semantics.
+ETL, EOL, EGX, EGL, EVL, and UI metadata are not indexed by the catalog service. EVL changes still
+matter for workbench validation and for validation issues attached to model context snapshots.
 
 ### Manually encoded AI behavior
 
@@ -720,7 +724,8 @@ change.
 5. Update transformations, root templates, samples, and AI starters so generated/default models
    meet the new rule.
 6. Run EVL through both the reusable Java path and repository CLI profile.
-7. Restart the backend and verify assistant catalog retrieval for the changed rule.
+7. Restart the backend when metamodel or methodology sources changed; verify assistant retrieval for
+   renamed types. EVL rule text is not indexed into the RAG catalog.
 8. Update rule documentation and messages.
 
 ## Step-by-Step: Change Visual Syntax, Palette, or Views
@@ -740,13 +745,14 @@ change.
 ## Step-by-Step: Change AI Modeling Behavior
 
 1. First change the formal source: metamodel and/or EVL.
-2. Regenerate Ecore and restart the backend to refresh assistant retrieval documents.
+2. Regenerate Ecore and restart the backend when metamodel or methodology sources changed.
 3. Update starter models and deterministic patches when they encode affected fields/types.
 4. Update patch compilation/context indexing only if the semantic patch or model JSON protocol
    changed.
 5. Validate assistant starters for CIM, PIM, and PSM.
-6. Test representative add, update, relationship, delete, autonomous apply, and undo flows.
-7. Verify citations retrieve current metamodel/EVL content.
+6. Test representative add, update, relationship, delete, auto-apply, and undo flows.
+7. Verify citations retrieve current metamodel/methodology content and that model context reflects
+   latest validation issues.
 8. Verify assistant-created models can save, validate, transform, and generate downstream outputs.
 
 ## Verification Ladder

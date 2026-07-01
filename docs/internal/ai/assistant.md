@@ -67,10 +67,20 @@ the API and UI.
 Do not put API keys directly in `application.yml`. Use environment variables or a local `.env` file
 that is not committed.
 
+## Modeling strategy
+
+`MODLESS_AI_MODELING_STRATEGY` selects how the agent drafts mutations (default `model-subset`):
+
+- `model-subset` — LLM returns a JSON subset that the backend compiles into semantic operations.
+- `semantic-patch` — LLM returns semantic operations directly; the planner may run a tool exploration
+  phase before commit.
+
+Both paths share the same compiler, structural validation repair loop, and auto-apply behavior.
+
 ## Docker Compose
 
-`docker compose up` starts PostgreSQL, backend, frontend, landing, LocalStack, and Dozzle. The
-backend ships with assistant code available, but AI calls are disabled by default:
+`docker compose up` starts PostgreSQL, backend, frontend, GLSP diagram server, landing, LocalStack,
+and Dozzle. The backend ships with assistant code available, but AI calls are disabled by default:
 
 ```bash
 MODLESS_AI_ENABLED=false
@@ -273,13 +283,16 @@ want. Otherwise leave them blank.
 
 The assistant gets its knowledge from three backend-owned sources:
 
-1. **Metamodel and EVL catalogs**
+1. **Metamodel and methodology catalogs**
 
-   - The backend scans the local `mde/` tree.
-   - It indexes `.ecore`, `.emf`, and `.evl` files into PostgreSQL.
-   - The catalog entries include level, class name, attributes, references, multiplicities,
-     constraint kind, and source location.
-   - Exact title/source matches are tried first; fuzzy retrieval is used second.
+   - The backend scans `mde/**/*.emf` and `mde/**/*.ecore` plus methodology JSON/Markdown under
+     `mde/` and `docs/public-docs/docs/guides/`.
+   - Catalog entries include level, classifier names, attributes, references, multiplicities, and
+     source locations.
+   - Raw `.evl` constraint files are **not** indexed into retrieval documents; EVL scope rows are
+     removed on every refresh.
+   - Exact title/source matches are tried first; hybrid full-text and vector retrieval is used
+     second.
 
 2. **Current model context**
 
@@ -293,9 +306,9 @@ The assistant gets its knowledge from three backend-owned sources:
    - Spring AI JDBC chat memory keeps the recent message window.
    - The backend also keeps durable history, summary, proposals, and audits in its own tables.
 
-So the assistant learns the needed metamodel and EVL information from the indexed local catalog,
-and the current model state from the model-context snapshot built from the saved model record.
-It does not get the whole model or whole EVL file.
+So the assistant learns formal structure from indexed metamodel and methodology catalogs, and the
+current model state from the model-context snapshot built from the saved model record. It does not
+get the whole model or whole EVL files.
 
 ## What is stored in PostgreSQL
 
@@ -305,12 +318,14 @@ The AI feature adds these tables:
 - `assistant_threads`: one assistant thread per user/project/modeling level.
 - `assistant_messages`: durable user/assistant/system/tool message audit history.
 - `assistant_thread_summaries`: rolling summaries of long conversations.
-- `assistant_proposals`: semantic patch proposals, risk level, approval requirement, validation
-  preview, citations, and inverse patch for undo.
-- `assistant_action_audits`: apply/undo/choice audit records.
-- `assistant_retrieval_documents`: indexed metamodel and EVL snippets with embeddings for RAG.
+- `assistant_proposals`: applied semantic patches, risk level, validation preview, citations, and
+  inverse patch for undo.
+- `assistant_action_audits`: apply, undo, and choice audit records.
+- `assistant_retrieval_documents`: indexed metamodel and methodology snippets with embeddings for
+  RAG.
 - `assistant_model_contexts`: compact model snapshots by model ID and revision.
-- `assistant_rate_limits`: persisted request windows for rate limiting.
+- `assistant_rate_limits`: schema reserved for future persisted rate limiting (runtime limiting is
+  in-memory today).
 
 How they get filled:
 
@@ -318,13 +333,14 @@ How they get filled:
 - `assistant_retrieval_documents` is filled on backend startup by scanning the local `mde/` folder.
 - `assistant_model_contexts` is filled when the assistant handles a request for a saved model.
 - chat memory and durable messages are filled when users send messages in the chatbot.
-- proposals and audits are filled when the assistant applies or undoes changes.
-- rate-limit rows are filled as users call the assistant.
+- proposals and audits are filled when the assistant auto-applies or undoes changes.
+- rate limiting is enforced in memory; the `assistant_rate_limits` table is not written today.
 
-## If metamodels or EVL files change
+## If metamodels or methodology files change
 
-The catalog indexer runs at backend startup. It scans `.ecore`, `.emf`, and `.evl` files under
-`mde/`, computes a hash for each source file, and compares it to the stored `source_hash`.
+The catalog indexer runs at backend startup. It scans `.emf` and `.ecore` files under `mde/`, plus
+methodology guides, computes a hash for each source file, and compares it to the stored
+`source_hash`.
 
 If a file changed:
 
@@ -334,7 +350,7 @@ If a file changed:
 
 If a file did not change, it is skipped.
 
-What you should do after changing metamodel or EVL files:
+What you should do after changing metamodel or methodology files:
 
 1. Restart the backend.
 2. Let startup reindex the changed files.
@@ -365,22 +381,19 @@ revision, the assistant builds a new compact context for that revision.
 5. Create a model in CIM, PIM, or PSM.
 6. Open the chat panel and ask for an explanation or a bounded change.
 
-The assistant may explain, ask one or more structured questions, or draft a proposal. The backend
-never returns an invalid proposal and revalidates a valid proposal again when the user approves it.
+The assistant may explain, ask structured questions, or auto-apply a validated change. The backend
+never applies an invalid mutation. Applied changes can be undone when an inverse patch is available.
 
-## Does the frontend offer choices?
+## Does the frontend offer choices or undo?
 
 Yes.
 
-- If the assistant returns a proposal, the UI renders proposal cards with context, validation,
-  citations, and action buttons.
-- If approval is required, the buttons are `Approve` and `Reject`.
-- If the proposal was already applied, the UI shows `Undo`.
-- If the backend returns an explicit choice request, the UI renders the choice prompt and the option
-  buttons for the user to pick from.
+- When a change was auto-applied, the UI renders a proposal card with validation summary,
+  citations, affected elements, and an **Undo changes** button.
+- If the backend returns an explicit choice request, the UI renders the choice prompt and option
+  buttons. Submit answers with `POST /api/chatbot/sessions/{sessionId}/choices`.
 
-So the chatbot can ask the user to choose when it needs a bounded decision, and the frontend will
-show those options directly.
+There is no Approve/Reject step in the current UI or API.
 
 ## Notes
 

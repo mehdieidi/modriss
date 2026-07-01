@@ -98,13 +98,14 @@ flowchart TD
     existing -- no --> compute --> merge --> patch --> return
 ```
 
-## `AssistantCatalogService.refresh`
+## `JdbcAssistantCatalog.refresh`
 
 ```mermaid
 flowchart TD
     start([Backend startup or refresh])
-    walk["Walk mde/ recursively"]
-    filter["Keep .emf, .ecore, .evl files"]
+    purge["Delete legacy EVL constraint scope rows"]
+    walk["Walk mde/ and methodology guides"]
+    filter["Keep .emf, .ecore, methodology JSON/MD"]
     hash["Compute source hash"]
     changed{"Hash changed?"}
     skip["Skip unchanged file"]
@@ -112,16 +113,16 @@ flowchart TD
     parse{"File type"}
     emf["Parse Emfatic classes and features"]
     ecore["Parse Ecore classifiers and structural features"]
-    evl["Parse EVL contexts, constraints, critiques"]
+    guide["Chunk methodology guide content"]
     embed["Generate vector literal with ONNX or hash fallback"]
     upsert["Upsert assistant_retrieval_documents"]
 
-    start --> walk --> filter --> hash --> changed
+    start --> purge --> walk --> filter --> hash --> changed
     changed -- no --> skip
     changed -- yes --> delete --> parse
     parse -- emf --> emf --> embed
     parse -- ecore --> ecore --> embed
-    parse -- evl --> evl --> embed
+    parse -- guide --> guide --> embed
     embed --> upsert
 ```
 

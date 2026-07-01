@@ -13,14 +13,15 @@ Modless serves several related roles:
 
 ## Main Runtime Components
 
-| Component    | Technology                           | Default address         | Responsibility                        |
-| ------------ | ------------------------------------ | ----------------------- | ------------------------------------- |
-| Frontend     | Plain HTML, CSS, JavaScript, AntV G6 | `http://127.0.0.1:8082` | Visual modeling, assistant, artifacts |
-| Backend      | Java 17, Spring Boot                 | `http://127.0.0.1:8080` | API, orchestration, persistence, AI   |
-| PostgreSQL   | PostgreSQL 16 with pgvector          | `localhost:5432`        | Platform and assistant state          |
-| Landing site | Static HTML/CSS/JS                   | `http://127.0.0.1:8083` | Product introduction                  |
-| LocalStack   | AWS service simulator                | `http://127.0.0.1:4566` | Generated-project deployment testing  |
-| Dozzle       | Container log viewer                 | `http://127.0.0.1:9999` | Development log inspection            |
+| Component    | Technology                                   | Default address               | Responsibility                         |
+| ------------ | -------------------------------------------- | ----------------------------- | -------------------------------------- |
+| Frontend     | Plain HTML, CSS, JavaScript, AntV G6 or GLSP | `http://127.0.0.1:8082`       | Visual modeling, assistant, artifacts  |
+| GLSP server  | Node.js, Eclipse GLSP                        | `ws://127.0.0.1:8081/modless` | Diagram editor sidecar when using GLSP |
+| Backend      | Java 17, Spring Boot                         | `http://127.0.0.1:8080`       | API, orchestration, persistence, AI    |
+| PostgreSQL   | PostgreSQL 16 with pgvector                  | `localhost:5432`              | Platform and assistant state           |
+| Landing site | Static HTML/CSS/JS                           | `http://127.0.0.1:8083`       | Product introduction                   |
+| LocalStack   | AWS service simulator                        | `http://127.0.0.1:4566`       | Generated-project deployment testing   |
+| Dozzle       | Container log viewer                         | `http://127.0.0.1:9999`       | Development log inspection             |
 
 ## Typical Lifecycle
 

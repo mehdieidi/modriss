@@ -35,7 +35,7 @@ sequenceDiagram
     participant ChatMem as SpringAiChatMemoryService
     participant Models as ModelService
     participant Ctx as AssistantModelContextIndexService
-    participant Cat as AssistantCatalogService
+    participant Cat as JdbcAssistantCatalog
     participant Provider as AssistantModelProvider
     participant Patch as AssistantPatchCompiler
     participant RT as AssistantRealtimeHub

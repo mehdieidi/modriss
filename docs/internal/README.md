@@ -26,11 +26,13 @@ readers, and operators.
 | -------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | [change-impact-and-synchronization-guide.md](mde/change-impact-and-synchronization-guide.md) | What to update when metamodels or rules change |
 | [concrete-visual-syntax-coverage.md](mde/concrete-visual-syntax-coverage.md)                 | Visual notation coverage notes                 |
+| [concrete-visual-syntax-v2.md](mde/concrete-visual-syntax-v2.md)                             | CVS v2 formalism and migration notes           |
 
-## Operations
+## Configuration and Operations
 
 | Document                                              | Description                                         |
 | ----------------------------------------------------- | --------------------------------------------------- |
+| [environment-variables.md](environment-variables.md)  | Field-by-field `.env.example` reference             |
 | [postgres-storage.md](operations/postgres-storage.md) | PostgreSQL schema, migrations, and storage workflow |
 | [docker-logs.md](operations/docker-logs.md)           | Structured logging and Dozzle in the local stack    |
 

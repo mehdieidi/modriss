@@ -17,7 +17,7 @@
 - [ ] Flyway migration added if PostgreSQL schema changed
 - [ ] Sample models under `mde/samples/` updated if validation rules changed
 - [ ] Public docs / diagrams updated when behavior or architecture changed
-- [ ] ADR added or updated for significant design decisions (`docs/adr/`)
+- [ ] Architecture or guide docs updated for significant design decisions (`docs/diagrams/`, `docs/public-docs/`, `docs/internal/`)
 
 ## Test plan
 

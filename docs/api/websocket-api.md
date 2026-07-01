@@ -1,7 +1,7 @@
 # WebSocket API
 
 The backend exposes one receive-only WebSocket transport for the modeling assistant. Client actions
-(messages, approvals, choices) use REST; the WebSocket publishes progress and result events.
+(messages, choices, undo) use REST; the WebSocket publishes progress and result events.
 
 ## Connection
 

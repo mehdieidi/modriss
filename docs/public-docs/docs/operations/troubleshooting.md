@@ -42,6 +42,15 @@ generator issue.
 - If ONNX cannot load, enable hash fallback or select `HASH`.
 - Restart the backend after metamodel or EVL changes so retrieval documents are reindexed.
 
+## GLSP Diagram Editor Does Not Connect
+
+- Confirm `MODLESS_DIAGRAM_RENDERER=glsp-sprotty` in the backend environment or modeling config.
+- Verify `MODLESS_GLSP_SERVER_URL` matches the published `GLSP_PORT` (default `ws://127.0.0.1:8081/modless`).
+- In Compose, ensure the `glsp-server` service is healthy before opening the modeling frontend.
+- Rebuild the vendored client bundle after changing `packages/js/glsp-client`:
+  `npm run build:glsp`.
+- Fall back to `MODLESS_DIAGRAM_RENDERER=antv-g6` to isolate GLSP-sidecar issues.
+
 ## WebSocket Does Not Connect
 
 - Use `/ws/chatbot/sessions/{sessionId}`.

@@ -44,7 +44,7 @@ migration policy.
 | Proposals and audit     | `assistant_proposals`, `assistant_action_audits`                        |
 | Retrieval               | `assistant_retrieval_documents`                                         |
 | Model context           | `assistant_model_contexts`                                              |
-| Rate limiting           | `assistant_rate_limits`                                                 |
+| Rate limiting           | `assistant_rate_limits` (schema reserved; runtime limit is in-memory)   |
 
 Retrieval documents can store 384-dimensional pgvector embeddings. Model contexts are keyed by
 model ID and revision so a changed model receives a new compact context snapshot.

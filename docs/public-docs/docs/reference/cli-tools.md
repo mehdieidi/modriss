@@ -68,3 +68,16 @@ java -jar tools/mde-m2t-cli/target/mde-m2t-cli-0.0.1-SNAPSHOT.jar aws-psm-to-art
 
 The underlying runner packages are independent of Picocli and can also be embedded directly into
 Java services and tests.
+
+## Notation Migration
+
+Module: `tools/notation-migrate`
+
+Migrates legacy `*-ui-metadata.json` files to Concrete Visual Syntax (CVS) v2 JSON:
+
+```powershell
+npm run migrate:all -w @modless/notation-migrate
+```
+
+See [concrete-visual-syntax-v2.md](../../../internal/mde/concrete-visual-syntax-v2.md) for the CVS
+formalism and migration workflow.

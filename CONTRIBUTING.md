@@ -43,15 +43,15 @@ before opening a PR.
 
 ## Architecture Decisions
 
-Significant design choices are recorded as [Architecture Decision Records](docs/adr/README.md).
-Propose a new ADR when changing core technology, layering, or security posture.
+Significant design choices are documented in `docs/diagrams/`, `docs/internal/`, and the public
+MkDocs site. Update the relevant architecture and guide pages when changing core technology,
+layering, or security posture.
 
 ## Documentation
 
 - Public docs: `docs/public-docs/` (MkDocs)
 - Engineering deep-dives: `docs/internal/` (storage, AI, artifacts, MDE impact guides)
 - Architecture diagrams: `docs/diagrams/`
-- ADRs: `docs/adr/`
 - API reference: `docs/api/openapi/openapi.yaml`
 - Deployment and observability: `deploy/`, `infra/`
 - Tooling configuration: `config/`

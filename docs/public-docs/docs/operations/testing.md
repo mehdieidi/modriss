@@ -36,6 +36,10 @@ mvn -q -pl apps/backend -am test
 mvn -q -pl packages/java/platform-assistant -am test
 mvn -q -pl packages/java/platform-storage-postgres -am test
 mvn test
+
+# JavaScript diagram stack
+npm run build:glsp
+npm test -w @modless/glsp-server
 ```
 
 Use the `onnx-embeddings` Maven profile only when testing the native ONNX embedding path.

@@ -77,20 +77,21 @@ Project members can update project-owned models and artifacts.
 
 Model-level routes use `{level}` with one of `cim`, `pim`, or `psm`.
 
-| Method   | Path                              | Query/Body                               | Response           |
-| -------- | --------------------------------- | ---------------------------------------- | ------------------ |
-| `GET`    | `/api/{level}`                    | optional `projectId` query               | `ModelSummary[]`   |
-| `POST`   | `/api/{level}`                    | `name`, `projectId`, `model`             | `ModelSummary`     |
-| `GET`    | `/api/{level}/{id}`               | none                                     | `ModelRecord`      |
-| `PUT`    | `/api/{level}/{id}`               | `name`, `model`, `expectedRevision`      | `ModelSummary`     |
-| `PATCH`  | `/api/{level}/{id}`               | `name`, `operations`, `expectedRevision` | `ModelSummary`     |
-| `DELETE` | `/api/{level}/{id}`               | none                                     | empty response     |
-| `POST`   | `/api/{level}/validate`           | `model`                                  | `ValidationResult` |
-| `POST`   | `/api/{level}/{id}/validate`      | none                                     | `ValidationResult` |
-| `POST`   | `/api/{level}/{id}/validate/jobs` | optional `expectedRevision`              | `202 JobResponse`  |
-| `POST`   | `/api/{level}/export`             | `name`, `model`, `format`                | file download      |
-| `POST`   | `/api/{level}/{id}/export`        | `name`, `format`                         | file download      |
-| `POST`   | `/api/{level}/import`             | multipart `projectId`, `format`, `file`  | `ImportResult`     |
+| Method   | Path                               | Query/Body                               | Response           |
+| -------- | ---------------------------------- | ---------------------------------------- | ------------------ |
+| `GET`    | `/api/{level}`                     | optional `projectId` query               | `ModelSummary[]`   |
+| `POST`   | `/api/{level}`                     | `name`, `projectId`, `model`             | `ModelSummary`     |
+| `GET`    | `/api/{level}/{id}`                | none                                     | `ModelRecord`      |
+| `GET`    | `/api/{level}/{id}/views/{viewId}` | none                                     | materialized view  |
+| `PUT`    | `/api/{level}/{id}`                | `name`, `model`, `expectedRevision`      | `ModelSummary`     |
+| `PATCH`  | `/api/{level}/{id}`                | `name`, `operations`, `expectedRevision` | `ModelSummary`     |
+| `DELETE` | `/api/{level}/{id}`                | none                                     | empty response     |
+| `POST`   | `/api/{level}/validate`            | `model`                                  | `ValidationResult` |
+| `POST`   | `/api/{level}/{id}/validate`       | none                                     | `ValidationResult` |
+| `POST`   | `/api/{level}/{id}/validate/jobs`  | optional `expectedRevision`              | `202 JobResponse`  |
+| `POST`   | `/api/{level}/export`              | `name`, `model`, `format`                | file download      |
+| `POST`   | `/api/{level}/{id}/export`         | `name`, `format`                         | file download      |
+| `POST`   | `/api/{level}/import`              | multipart `projectId`, `format`, `file`  | `ImportResult`     |
 
 Updates and patches require `expectedRevision`; the server returns `409` if the stored revision has
 changed. Patch operations support JSON Pointer paths and the `add`, `replace`, and `remove` ops.
@@ -131,6 +132,8 @@ paths.
 | Method | Path                                                                                 | Body            | Response                         |
 | ------ | ------------------------------------------------------------------------------------ | --------------- | -------------------------------- |
 | `GET`  | `/api/modeling/config`                                                               | none            | modeling palette and UI metadata |
+| `GET`  | `/api/modeling/process/{level}`                                                      | none            | SPEM-aligned process definition  |
+| `GET`  | `/api/modeling/process/{level}/coverage`                                             | none            | concept coverage matrix          |
 | `POST` | `/api/layout`                                                                        | `LayoutRequest` | `LayoutResponse`                 |
 | `POST` | `/api/{level}/{modelId}/views/{viewId}/layout?force=false&strategy=SPACIOUS_LAYERED` | none            | Persisted lazy view layout       |
 | `GET`  | `/api/health`                                                                        | none            | health object                    |
@@ -144,21 +147,35 @@ Assistant commands use REST. Realtime progress uses SSE or the receive-only assi
 See [websocket-api.md](websocket-api.md) and
 [public realtime reference](../public-docs/docs/reference/realtime-api.md).
 
-| Method   | Path                                                            | Purpose                          |
-| -------- | --------------------------------------------------------------- | -------------------------------- |
-| `POST`   | `/api/chatbot/sessions`                                         | Create or resume a session       |
-| `GET`    | `/api/chatbot/conversations`                                    | List recent conversations        |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                    | Submit a user message            |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                 | Upload a text attachment         |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                      | Load thread history              |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                      | Open SSE event stream            |
-| `DELETE` | `/api/chatbot/sessions/{sessionId}`                             | Clear session memory             |
-| `POST`   | `/api/chatbot/catalogs/reindex`                                 | Reindex metamodel/EVL catalogs   |
-| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`      | Get proposal details             |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo` | Undo an applied proposal         |
-| `POST`   | `/api/chatbot/sessions/{sessionId}/choices`                     | Answer structured clarifications |
+| Method   | Path                                                            | Purpose                                |
+| -------- | --------------------------------------------------------------- | -------------------------------------- |
+| `POST`   | `/api/chatbot/sessions`                                         | Create or resume a session             |
+| `GET`    | `/api/chatbot/conversations`                                    | List recent conversations              |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/messages`                    | Submit a user message                  |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/attachments`                 | Upload a text attachment               |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/thread`                      | Load thread history                    |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/events`                      | Open SSE event stream                  |
+| `DELETE` | `/api/chatbot/sessions/{sessionId}`                             | Clear session memory                   |
+| `POST`   | `/api/chatbot/catalogs/reindex`                                 | Reindex metamodel/methodology catalogs |
+| `GET`    | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}`      | Get applied proposal details           |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/proposals/{proposalId}/undo` | Undo an applied proposal               |
+| `POST`   | `/api/chatbot/sessions/{sessionId}/choices`                     | Answer structured clarifications       |
 
 WebSocket stream: `ws://<host>/ws/chatbot/sessions/{sessionId}` (receive-only).
+
+### Message request and response
+
+`POST /api/chatbot/sessions/{sessionId}/messages` accepts `message`, `modelId`, `revision`,
+`activeView`, `selectedElementIds`, `unsavedDraftPatch`, inline attachment fields, and
+`attachmentIds`.
+
+`MessageResponse` includes `assistantMessage`, `modelId`, `revision`, `proposal` (when a change was
+auto-applied), `choices`, `workflowState` (`EXPLAINED`, `APPLIED`, `UNDONE`, `WAITING_FOR_CHOICE`,
+`FAILED`), and `activity`. The `model` field is currently always `null`; reload the model through
+the model API after apply or undo.
+
+Valid mutations are auto-applied after structural validation. There is no approve or reject REST
+endpoint.
 
 ## Impact Analysis
 

@@ -7,13 +7,15 @@
 - CIM, PIM, and PSM CRUD with revision-aware updates and patches
 - JSON and XMI import/export
 - Modeling configuration and visual editor metadata
+- Dual diagram renderers: AntV G6 and Eclipse GLSP/Sprotty with Node sidecar
 - Layout and persisted view layout
 - CIM-to-PIM and PIM-to-AWS-PSM transformation profiles
 - AWS PSM artifact generation
 - Artifact browsing, editing, project ZIP download, and artifact ZIP download
+- Change impact analysis across CIM, PIM, PSM models and generated artifacts
 - PostgreSQL persistence and Flyway migrations
-- Assistant sessions, retrieval, memory, proposals, validation, approval, rejection, undo, SSE, and
-  WebSocket events
+- Assistant sessions, retrieval, memory, auto-applied proposals, structural validation, undo, SSE,
+  and WebSocket events
 - Reusable MDE Java runners and CLI tools
 - Architecture diagrams, samples, and generated-project deployment guidance
 

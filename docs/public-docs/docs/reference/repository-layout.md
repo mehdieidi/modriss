@@ -8,7 +8,6 @@ apps/
 config/                    Tooling and static-analysis configuration
 deploy/                    Docker Compose stack, Dockerfile, deployment scripts
 docs/
-  adr/                     Architecture Decision Records
   api/                     REST and WebSocket API references
   diagrams/                Mermaid architecture diagrams
   internal/                Contributor guides and deep-dive references
@@ -22,28 +21,32 @@ mde/
   transformations/         ETL/EOL model transformations
   generation/              EGX/EGL artifact generation
   samples/                 XMI samples and case study
-packages/java/
-  platform-kernel/         Shared kernel types (PlatformException, ModelLevel)
-  platform-storage-api/    PlatformStore persistence port
-  platform-identity/         Auth and user lifecycle
-  platform-project/        Projects and membership
-  platform-modeling/       Metamodel resolution, JSON/XMI bridge, config, layout
-  platform-model/          Model workspace CRUD, validation, import/export
-  platform-artifact/       Generated artifact storage
-  platform-transformation/ MDE pipeline and async job orchestration
-  platform-assistant/      AI assistant orchestration, patch pipeline, and persistence
-  platform-export/         Project archive ZIP packaging
-  platform-storage-postgres/ PostgreSQL adapter and platform Flyway migrations
-  mde-evl-validator/       Reusable EVL runner
-  mde-etl-runner/          Reusable ETL runner
-  mde-m2t-runner/          Reusable EGX/EGL runner
+packages/
+  java/
+    platform-kernel/         Shared kernel types (PlatformException, ModelLevel)
+    platform-storage-api/    PlatformStore persistence port
+    platform-identity/       Auth and user lifecycle
+    platform-project/        Projects and membership
+    platform-modeling/       Metamodel resolution, JSON/XMI bridge, config, layout
+    platform-model/          Model workspace CRUD, validation, import/export
+    platform-artifact/       Generated artifact storage
+    platform-transformation/ MDE pipeline and async job orchestration
+    platform-assistant/      AI assistant orchestration, patch pipeline, and persistence
+    platform-export/         Project archive ZIP packaging
+    platform-storage-postgres/ PostgreSQL adapter and platform Flyway migrations
+    mde-evl-validator/       Reusable EVL runner
+    mde-etl-runner/          Reusable ETL runner
+    mde-m2t-runner/          Reusable EGX/EGL runner
+  js/
+    glsp-client/             Eclipse GLSP + Sprotty diagram client (TypeScript/Vite bundle)
+    glsp-server/             GLSP diagram server sidecar (TypeScript, Docker image)
 tools/
   mde-cli/                 Emfatic-to-Ecore compiler CLI
   mde-evl-cli/             Validation CLI
   mde-etl-cli/             Transformation CLI
   mde-m2t-cli/             Generation CLI
+  notation-migrate/        Legacy UI-metadata to CVS migration utility (Node.js)
 scripts/                   Repository automation (format, lint, verify, Flyway check)
-tests/                     Cross-cutting test placeholders
 ```
 
 ## Maven Dependency Direction

@@ -5,13 +5,14 @@
 ```mermaid
 sequenceDiagram
     participant Boot as Spring Boot startup
-    participant Cat as AssistantCatalogService
-    participant FS as mde/ files
+    participant Cat as JdbcAssistantCatalog
+    participant FS as mde/ and guide files
     participant Emb as LocalAssistantEmbeddingService
     participant DB as assistant_retrieval_documents
 
     Boot->>Cat: @PostConstruct initialize()
-    Cat->>FS: Walk .emf, .ecore, .evl
+    Cat->>DB: Delete legacy EVL constraint scope rows
+    Cat->>FS: Walk .emf, .ecore, methodology JSON/MD
     loop Each source file
         Cat->>Cat: Compute SHA-256
         Cat->>DB: Check existing source_hash
@@ -23,8 +24,8 @@ sequenceDiagram
                 Cat->>Cat: Extract classes, attributes, references, containments
             else Ecore file
                 Cat->>Cat: Parse classifiers and structural features
-            else EVL file
-                Cat->>Cat: Extract contexts and constraints/critiques
+            else Methodology guide
+                Cat->>Cat: Chunk guide content
             end
             Cat->>Emb: vectorLiteral(title + content)
             Cat->>DB: Upsert document with metadata and vector(384)
@@ -84,8 +85,8 @@ flowchart LR
     messages["assistant_messages<br/>durable audit history"]
     spring["SPRING_AI_CHAT_MEMORY<br/>recent chat window"]
     summaries["assistant_thread_summaries<br/>rolling compact summary"]
-    proposals["assistant_proposals<br/>semantic patch, inverse, validation, citations"]
-    audits["assistant_action_audits<br/>propose, apply, reject, undo, choice"]
+    proposals["assistant_proposals<br/>applied patch, inverse, validation, citations"]
+    audits["assistant_action_audits<br/>apply, undo, choice"]
 
     turn --> thread
     turn --> messages

@@ -51,22 +51,25 @@ Common statuses are `400`, `401`, `403`, `404`, `409`, `413`, `500`, and `501`.
 ### Projects
 
 `/api/projects` supports list, create, get, update, delete, ZIP download, member list, invitation,
-and member revocation. Member roles are `OWNER`, `EDITOR`, and `VIEWER`.
+member role updates, and member removal. The project creator keeps the reserved `OWNER` role. All
+other members use custom role labels chosen by the project owner (for example `Architect` or
+`Reviewer`).
 
 ### Models
 
 Replace `{level}` with `cim`, `pim`, or `psm`.
 
-| Method                          | Path                              | Purpose                         |
-| ------------------------------- | --------------------------------- | ------------------------------- |
-| `GET`, `POST`                   | `/api/{level}`                    | List or create models           |
-| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/{level}/{id}`               | Read, replace, patch, or delete |
-| `POST`                          | `/api/{level}/validate`           | Validate an unsaved model       |
-| `POST`                          | `/api/{level}/{id}/validate`      | Validate a saved model          |
-| `POST`                          | `/api/{level}/{id}/validate/jobs` | Submit saved-model validation   |
-| `POST`                          | `/api/{level}/export`             | Export an unsaved model         |
-| `POST`                          | `/api/{level}/{id}/export`        | Export a saved model            |
-| `POST`                          | `/api/{level}/import`             | Import multipart JSON or XMI    |
+| Method                          | Path                               | Purpose                         |
+| ------------------------------- | ---------------------------------- | ------------------------------- |
+| `GET`, `POST`                   | `/api/{level}`                     | List or create models           |
+| `GET`, `PUT`, `PATCH`, `DELETE` | `/api/{level}/{id}`                | Read, replace, patch, or delete |
+| `GET`                           | `/api/{level}/{id}/views/{viewId}` | Read a materialized model view  |
+| `POST`                          | `/api/{level}/validate`            | Validate an unsaved model       |
+| `POST`                          | `/api/{level}/{id}/validate`       | Validate a saved model          |
+| `POST`                          | `/api/{level}/{id}/validate/jobs`  | Submit saved-model validation   |
+| `POST`                          | `/api/{level}/export`              | Export an unsaved model         |
+| `POST`                          | `/api/{level}/{id}/export`         | Export a saved model            |
+| `POST`                          | `/api/{level}/import`              | Import multipart JSON or XMI    |
 
 Updates and transformations should include `expectedRevision`. Patch operations use JSON Pointer
 paths and support `add`, `replace`, and `remove`; root replacement is not supported by patch.
@@ -94,6 +97,8 @@ ZIP download. File paths must be relative and cannot escape the artifact root.
 ### Modeling and Layout
 
 - `GET /api/modeling/config`
+- `GET /api/modeling/process/{level}` for `cim`, `pim`, `psm`, or `end-to-end`
+- `GET /api/modeling/process/{level}/coverage` for `cim`, `pim`, or `psm`
 - `POST /api/layout`
 - `POST /api/{level}/{modelId}/views/{viewId}/layout`
 - `GET /api/health`
@@ -107,8 +112,9 @@ ZIP download. File paths must be relative and cannot escape the artifact root.
 ### Assistant
 
 Assistant REST routes create and clear sessions, list conversations, load thread history, submit
-messages and choices, upload text attachments, open SSE streams, reindex catalogs, and get,
-approve, reject, or undo proposals. See [Realtime Assistant API](realtime-api.md).
+messages and choices, upload text attachments, open SSE streams, reindex catalogs, get applied
+proposals, undo applied changes, and answer structured clarifications. See
+[Realtime Assistant API](realtime-api.md).
 
 ### Planned Routes
 

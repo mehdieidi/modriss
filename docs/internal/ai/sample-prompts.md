@@ -272,7 +272,7 @@ These prompts are especially useful after selecting one or more canvas elements.
 - Do it.
 - Apply it.
 - Apply them.
-- Yes, approve and apply the proposal.
+- Yes, apply that change. (Mutations auto-apply when valid; use Undo if needed.)
 - Go ahead.
 - Proceed with the model changes.
 - Make it more complete.
@@ -291,8 +291,8 @@ These prompts are especially useful after selecting one or more canvas elements.
 - Name important domain capabilities, actors, workflows, and external integrations.
 - Mention security, observability, resilience, data ownership, and failure handling.
 - Select relevant canvas elements before asking for a narrowly scoped change.
-- Review proposed changes and use the approval action or an approval message such as
-  `Apply the proposal`.
+- Review applied changes in the proposal card and use **Undo changes** if the mutation should be
+  reversed.
 
 ## Guided Modeling Task Prompts
 

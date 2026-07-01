@@ -24,14 +24,15 @@ Thesis context and long-form rationale:
 docker compose up --build
 ```
 
-| What                                 | URL                                     |
-| ------------------------------------ | --------------------------------------- |
-| Modeling app                         | <http://127.0.0.1:8082>                 |
-| API health                           | <http://127.0.0.1:8080/api/health>      |
-| API explorer                         | <http://127.0.0.1:8080/swagger-ui.html> |
-| Landing page                         | <http://127.0.0.1:8083>                 |
-| Container logs (Dozzle)              | <http://127.0.0.1:9999>                 |
-| LocalStack (generated-project tests) | <http://127.0.0.1:4566>                 |
+| What                                  | URL                                     |
+| ------------------------------------- | --------------------------------------- |
+| Modeling app                          | <http://127.0.0.1:8082>                 |
+| GLSP diagram server (Compose default) | <ws://127.0.0.1:8081/modless>           |
+| API health                            | <http://127.0.0.1:8080/api/health>      |
+| API explorer                          | <http://127.0.0.1:8080/swagger-ui.html> |
+| Landing page                          | <http://127.0.0.1:8083>                 |
+| Container logs (Dozzle)               | <http://127.0.0.1:9999>                 |
+| LocalStack (generated-project tests)  | <http://127.0.0.1:4566>                 |
 
 **First project:** register → create a project → open CIM → import
 [`mde/samples/cim.xmi`](mde/samples/cim.xmi) or model from scratch → **Generate PIM** → **Generate
@@ -70,10 +71,11 @@ mvn test
 
 ```text
 apps/           backend (Spring Boot), modeling frontend, landing page
+packages/js/    GLSP diagram client and server sidecar
 mde/            metamodels, EVL, ETL, generation templates, samples
 packages/java/  platform libraries, MDE runners, assistant, Postgres adapter
 tools/          standalone MDE CLIs (validate, transform, generate, compile Emfatic)
-docs/           public MkDocs site, ADRs, diagrams, API reference, internal guides
+docs/           public MkDocs site, diagrams, API reference, internal guides
 deploy/         Docker Compose stack and Dockerfile
 ```
 

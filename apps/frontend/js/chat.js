@@ -258,8 +258,7 @@ function renderThinkingSteps() {
   const detail = status.querySelector(".chat-thinking-step-detail");
   const progress = status.querySelector(".chat-thinking-progress");
   if (stage) {
-    stage.textContent =
-      THINKING_STAGE_LABELS[current?.stage] || current?.stage || "Creating model";
+    stage.textContent = THINKING_STAGE_LABELS[current?.stage] || current?.stage || "Creating model";
   }
   if (detail) {
     detail.textContent = current?.message || "Creating the model and updating the canvas.";
@@ -474,7 +473,9 @@ function applyAssistantModelPreview(typeKey, payload) {
   }
   const phase = String(payload?.phase || "").toLowerCase();
   updateModelingProgress(
-    phase === "validated" ? "Validating model changes on the canvas." : "Creating the model on the canvas.",
+    phase === "validated"
+      ? "Validating model changes on the canvas."
+      : "Creating the model on the canvas.",
     "MODELING_PREVIEW",
     payload,
   );

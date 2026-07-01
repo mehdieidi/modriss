@@ -4,6 +4,9 @@ Backend configuration is defined in `apps/backend/src/main/resources/application
 through environment variables. Copy the repository root `.env.example` file to `.env` for local
 development defaults (never commit `.env`).
 
+See also the contributor reference [environment-variables.md](../../../internal/environment-variables.md)
+for field-by-field explanations of every `.env.example` key.
+
 ## Database
 
 | Variable                   | Default                                    |
@@ -16,18 +19,30 @@ development defaults (never commit `.env`).
 
 ## MDE Limits and Execution
 
-| Variable                                   | Default    | Purpose                    |
-| ------------------------------------------ | ---------- | -------------------------- |
-| `MODLESS_MDE_EXECUTION_TIMEOUT`            | `5m`       | Runner timeout             |
-| `MODLESS_MDE_JOB_TIMEOUT`                  | `10m`      | Job timeout                |
-| `MODLESS_MDE_MAX_CONCURRENT_JOBS`          | `2`        | Concurrent job limit       |
-| `MODLESS_MDE_QUEUE_CAPACITY`               | `32`       | Job queue capacity         |
-| `MODLESS_MDE_MAX_MODEL_UPLOAD_BYTES`       | `20971520` | Model upload limit         |
-| `MODLESS_MDE_MAX_GENERATED_FILES`          | `2000`     | Generated file-count limit |
-| `MODLESS_MDE_MAX_GENERATED_FILE_BYTES`     | `5242880`  | Per-file limit             |
-| `MODLESS_MDE_MAX_GENERATED_ARTIFACT_BYTES` | `52428800` | Artifact limit             |
-| `MODLESS_MDE_STAGED_IMPORT_TTL`            | `2h`       | Temporary import lifetime  |
-| `MODLESS_MDE_IMPORT_CLEANUP_INTERVAL`      | `PT15M`    | Import cleanup interval    |
+| Variable                                   | Default    | Purpose                      |
+| ------------------------------------------ | ---------- | ---------------------------- |
+| `MODLESS_MDE_EXECUTION_TIMEOUT`            | `5m`       | Runner timeout               |
+| `MODLESS_MDE_JOB_TIMEOUT`                  | `10m`      | Job timeout                  |
+| `MODLESS_MDE_MAX_CAPTURED_OUTPUT_BYTES`    | `1048576`  | Captured stdout/stderr limit |
+| `MODLESS_MDE_MAX_CONCURRENT_JOBS`          | `2`        | Concurrent job limit         |
+| `MODLESS_MDE_QUEUE_CAPACITY`               | `32`       | Job queue capacity           |
+| `MODLESS_MDE_MAX_MODEL_UPLOAD_BYTES`       | `20971520` | Model upload limit           |
+| `MODLESS_MDE_MAX_GENERATED_FILES`          | `2000`     | Generated file-count limit   |
+| `MODLESS_MDE_MAX_GENERATED_FILE_BYTES`     | `5242880`  | Per-file limit               |
+| `MODLESS_MDE_MAX_GENERATED_ARTIFACT_BYTES` | `52428800` | Artifact limit               |
+| `MODLESS_MDE_STAGED_IMPORT_TTL`            | `2h`       | Temporary import lifetime    |
+| `MODLESS_MDE_IMPORT_CLEANUP_INTERVAL`      | `PT15M`    | Import cleanup interval      |
+
+## Upload Limits
+
+| Variable                        | Default   | Purpose                             |
+| ------------------------------- | --------- | ----------------------------------- |
+| `MODLESS_UPLOAD_ROOT`           | `uploads` | Backend upload directory            |
+| `MODLESS_UPLOAD_MAX_FILE_BYTES` | `1048576` | Maximum uploaded file size          |
+| `MODLESS_UPLOAD_MAX_TEXT_CHARS` | `120000`  | Maximum text characters for uploads |
+
+Docker Compose overrides `MODLESS_UPLOAD_ROOT` inside the backend container to
+`/app/uploads` via `MODLESS_CONTAINER_UPLOAD_ROOT`.
 
 ## Diagram Editor
 
@@ -47,12 +62,13 @@ The packaged modeling config defaults to `antv-g6`. The Docker Compose stack ove
 | ---------------------------------------- | -------------------------------- |
 | `MODLESS_AI_ENABLED`                     | `false` in backend configuration |
 | `MODLESS_AI_PROVIDER`                    | `openai`                         |
+| `MODLESS_AI_MODELING_STRATEGY`           | `model-subset`                   |
 | `MODLESS_AI_REQUEST_TIMEOUT`             | `10m`                            |
-| `MODLESS_AI_MAX_TOOL_CALLS`              | `0`                              |
+| `MODLESS_AI_MAX_TOOL_CALLS`              | `0` (not enforced)               |
 | `MODLESS_AI_VALIDATION_REPAIR_ATTEMPTS`  | `6`                              |
-| `MODLESS_AI_MAX_AGENT_STEPS`             | `16`                             |
-| `MODLESS_AI_MAX_TOOL_CALLS_PER_STEP`     | `8`                              |
-| `MODLESS_AI_SEMANTIC_VALIDATION_ENABLED` | `false`                          |
+| `MODLESS_AI_MAX_AGENT_STEPS`             | `16` (not enforced)              |
+| `MODLESS_AI_MAX_TOOL_CALLS_PER_STEP`     | `8` (not enforced)               |
+| `MODLESS_AI_SEMANTIC_VALIDATION_ENABLED` | `false` (documented only)        |
 | `MODLESS_AI_TOKEN_BUDGET`                | `16000`                          |
 | `MODLESS_AI_MAX_CONTEXT_SNIPPETS`        | `24`                             |
 | `MODLESS_AI_RESERVED_SCHEMA_SNIPPETS`    | `10`                             |
@@ -65,15 +81,36 @@ The packaged modeling config defaults to `antv-g6`. The Docker Compose stack ove
 | `MODLESS_AI_PROVIDER_RETRY_ATTEMPTS`     | `2`                              |
 | `MODLESS_AI_RETRY_BACKOFF`               | `250ms`                          |
 | `MODLESS_AI_RECENT_MESSAGE_WINDOW`       | `24`                             |
-| `MODLESS_AI_FALLBACK_PROVIDER`           | empty                            |
+| `MODLESS_AI_FALLBACK_PROVIDER`           | empty (used on HTTP 429 only)    |
+
+`MODLESS_AI_MODELING_STRATEGY` selects how the assistant drafts model changes:
+
+- `model-subset` — JSON Schema guided partial model subsets compiled into validated semantic patches
+  (default)
+- `semantic-patch` — older direct semantic-operation planner
 
 Provider variables include `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`,
 `GEMINI_API_KEY`, and role-specific planner, responder, and summarizer model names.
 
-Embedding variables select `ONNX` or `HASH`, resources, cache behavior, GPU device, and hash
-fallback. Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior.
+Embedding variables default to `HASH` in `.env.example`. Set `MODLESS_AI_EMBEDDINGS_PROVIDER=ONNX`
+with the `onnx-embeddings` Maven profile when testing local ONNX embeddings. Related variables cover
+resources, cache behavior, GPU device, and hash fallback.
 
-## Compose Ports
+Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior for provider calls only.
+
+`MODLESS_AI_FALLBACK_PROVIDER` is consulted only when the primary provider returns HTTP 429.
+
+## Observability
+
+| Variable                      | Default                           |
+| ----------------------------- | --------------------------------- |
+| `MODLESS_METRICS_ENABLED`     | `true`                            |
+| `MODLESS_TRACING_ENABLED`     | `false`                           |
+| `MODLESS_TRACING_SAMPLE_RATE` | `0.1`                             |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318/v1/traces` |
+| `OTEL_SERVICE_NAME`           | `modless-backend`                 |
+
+## Compose Ports and Origins
 
 | Variable                  | Default |
 | ------------------------- | ------- |
@@ -83,6 +120,15 @@ fallback. Dedicated AI proxy variables configure HTTP or SOCKS proxy behavior.
 | `LANDING_PORT`            | `8083`  |
 | `GLSP_PORT`               | `8081`  |
 | `LOCALSTACK_GATEWAY_PORT` | `4566`  |
+
+Optional Compose-only overrides:
+
+- `MODLESS_ALLOWED_ORIGINS` — comma-separated CORS and WebSocket origins. When unset, Compose derives
+  origins from `BACKEND_PORT`, `FRONTEND_PORT`, and `LANDING_PORT`.
+- `MODLESS_CONTAINER_UPLOAD_ROOT` — upload directory inside the backend container (default
+  `/app/uploads`).
+- `FREELLMAPI_NETWORK` — external Docker network name joined by the backend for optional host AI
+  proxy access (default `freellmapi_default`).
 
 Dozzle is exposed on host port `9999` in the default Compose stack (not configurable through
 `.env.example`).

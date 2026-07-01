@@ -16,7 +16,7 @@ flowchart TB
         hard["AssistantHardeningService<br/>rate limit, retry, circuit breaker"]
         guard["AssistantPromptGuard<br/>redaction and injection markers"]
         context["AssistantModelContextIndexService<br/>compact model context"]
-        catalog["AssistantCatalogService<br/>metamodel and EVL RAG index"]
+        catalog["JdbcAssistantCatalog<br/>metamodel and methodology RAG index"]
         compiler["AssistantPatchCompiler<br/>semantic patch to JSON patch"]
         memory["AssistantMemoryRepository<br/>durable history, proposal, audit"]
         chatMemory["SpringAiChatMemoryService<br/>recent chat window"]
@@ -61,8 +61,8 @@ stateDiagram-v2
     CLARIFY --> PLAN: durable user answers
     PLAN --> VALIDATE: semantic patch
     VALIDATE --> REPAIR: invalid
-    REPAIR --> VALIDATE: one replacement plan
-    VALIDATE --> APPLIED: structurally and EVL valid
+    REPAIR --> VALIDATE: repair attempts
+    VALIDATE --> APPLIED: structurally valid
     APPLIED --> UNDONE: user requests undo
 ```
 

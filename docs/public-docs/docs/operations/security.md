@@ -21,7 +21,8 @@ artifacts. Security controls therefore span the platform runtime and the project
   applied, audited, and exposed with undo.
 - The assistant receives compact context rather than unrestricted full model and rule dumps.
 - Proposed changes are compiled, validated, risk-classified, and audited.
-- Risky proposals require approval; applied proposals may include an inverse patch for undo.
+- Risky proposals are blocked until structural validation passes; valid mutations auto-apply and
+  may include an inverse patch for undo.
 - Provider calls have timeouts, retries, rate limits, a circuit breaker, and an optional dedicated
   proxy.
 - Provider credentials belong in environment variables or a secret manager, never committed files.

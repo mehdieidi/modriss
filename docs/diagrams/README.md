@@ -55,7 +55,7 @@ The API sequence diagrams cover the primary controller route templates and inter
 - Models, validation, import, and export: 11 parameterized route templates.
 - Transformations and MDE jobs: 5 routes.
 - Artifacts: 5 routes.
-- Modeling configuration, layout, and process definitions: 5 routes.
+- Modeling configuration, layout, and process definitions: 7 routes.
 - Assistant REST/SSE: core session, message, attachment, streaming, proposal, undo, and choice
   flows.
 - Assistant WebSocket: 1 route.

@@ -122,7 +122,7 @@ classDiagram
     class ConfiguredAssistantModelProvider
     class OpenAiCompatibleAssistantModelProvider
     class GeminiAssistantModelProvider
-    class AssistantCatalogService
+    class JdbcAssistantCatalog
     class AssistantModelContextIndexService
     class AssistantPatchCompiler
     class AssistantMemoryRepository
@@ -139,7 +139,7 @@ classDiagram
     ConfiguredAssistantModelProvider --> OpenAiCompatibleAssistantModelProvider
     ConfiguredAssistantModelProvider --> GeminiAssistantModelProvider
     AssistantOrchestrator --> AssistantModelProvider
-    AssistantOrchestrator --> AssistantCatalogService
+    AssistantOrchestrator --> JdbcAssistantCatalog
     AssistantOrchestrator --> AssistantModelContextIndexService
     AssistantOrchestrator --> AssistantPatchCompiler
     AssistantOrchestrator --> AssistantMemoryRepository

@@ -19,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenTelemetry tracing support (opt-in via environment variables)
 - PostgreSQL backup/restore scripts and Flyway migration verification tooling
 - Alerting runbooks for production operations
-- Architecture Decision Records under `docs/adr/`
 - GitHub PR and issue templates plus CI workflows
 
 ## [0.0.1-SNAPSHOT] - 2026-03-19

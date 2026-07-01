@@ -21,8 +21,7 @@ flowchart LR
 - CIM-to-PIM and PIM-to-AWS-PSM transformations implemented with ETL.
 - AWS project generation implemented with EGX/EGL.
 - PostgreSQL persistence for users, projects, models, artifacts, jobs, and assistant state.
-- A guarded AI modeling assistant with retrieval, proposals, validation previews, approval, and
-  undo.
+- A bounded AI modeling assistant with retrieval, auto-applied validated changes, and undo.
 - Reusable Java runners and command-line tools for MDE automation.
 
 ## Choose Your Path
@@ -40,8 +39,9 @@ flowchart LR
 ## Current Scope
 
 Modless currently targets AWS serverless architecture. The formal pipeline, backend services,
-frontend workbenches, storage, assistant, CLI tools, and generated AWS project templates are
-implemented. Impact-analysis APIs and admin APIs remain planned endpoints.
+frontend workbenches, storage, assistant, CLI tools, GLSP diagram editing, impact-analysis APIs,
+and generated AWS project templates are implemented. Admin workspace APIs under `/api/admin/**`
+remain planned endpoints.
 
 The project is both a research platform and an engineering system. Its documentation therefore
 describes not only how to use it, but also the formal sources of truth, traceability boundaries,

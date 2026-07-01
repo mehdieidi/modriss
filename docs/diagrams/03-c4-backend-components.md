@@ -28,7 +28,7 @@ flowchart LR
         orchestrator["AssistantOrchestrator"]
         provider["ConfiguredAssistantModelProvider"]
         guard["PromptGuard + Hardening"]
-        catalog["AssistantCatalogService"]
+        catalog["JdbcAssistantCatalog"]
         context["AssistantModelContextIndexService"]
         patch["AssistantPatchCompiler"]
         memory["AssistantMemoryRepository + SpringAiChatMemoryService"]

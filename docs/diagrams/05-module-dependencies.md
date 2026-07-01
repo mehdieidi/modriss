@@ -81,6 +81,9 @@ flowchart LR
     evl["mde-evl-validator"] --> epsilonEvl["Epsilon EVL + EMC EMF"]
     m2t["mde-m2t-runner"] --> epsilonEgl["Epsilon EGL/EGX + EMC EMF"]
     frontend["Browser frontend"] --> g6["AntV G6"]
+    frontend --> glsp["Eclipse GLSP + Sprotty"]
+    glspServer["packages/js/glsp-server"] --> glsp
+    glspClient["packages/js/glsp-client"] --> glsp
     tools["CLI tools"] --> picocli["Picocli"]
 ```
 

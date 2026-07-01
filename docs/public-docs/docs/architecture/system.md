@@ -4,7 +4,8 @@
 flowchart TB
     User["Modeler / Developer"]
     Landing["Landing site"]
-    Frontend["Modeling frontend<br/>HTML, CSS, JavaScript, AntV G6"]
+    Frontend["Modeling frontend<br/>HTML, CSS, JavaScript<br/>AntV G6 or GLSP/Sprotty"]
+    Glsp["GLSP diagram server<br/>Node.js sidecar"]
     Backend["Spring Boot backend<br/>API, services, MDE orchestration, assistant"]
     DB[("PostgreSQL + pgvector")]
     MDE["MDE assets<br/>Emfatic, Ecore, EVL, ETL, EGX/EGL"]
@@ -14,6 +15,8 @@ flowchart TB
     User --> Landing
     User --> Frontend
     Frontend -->|"REST, downloads, SSE, WebSocket"| Backend
+    Frontend <-->|"WebSocket when renderer is glsp-sprotty"| Glsp
+    Glsp -->|"Load model JSON and CVS config"| Backend
     Backend --> DB
     Backend --> MDE
     Backend --> AI

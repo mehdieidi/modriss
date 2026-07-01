@@ -59,6 +59,34 @@ sequenceDiagram
     C-->>Client: Updated view, revision, counts, warnings
 ```
 
+## GET `/api/modeling/process/{level}`
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant C as ModelingController
+    participant S as ModelingProcessService
+    participant R as SPEM methodology assets
+    Client->>C: GET /api/modeling/process/{level}
+    C->>S: processDefinition(level)
+    S->>R: Load canonical process definition
+    S-->>C: Process map
+    C-->>Client: SPEM-aligned process definition
+```
+
+## GET `/api/modeling/process/{level}/coverage`
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant C as ModelingController
+    participant S as ModelingProcessService
+    Client->>C: GET /api/modeling/process/{level}/coverage
+    C->>S: coverageMatrix(level)
+    S-->>C: Coverage matrix
+    C-->>Client: Concept coverage matrix
+```
+
 ## GET `/api/health`
 
 ```mermaid
@@ -92,7 +120,22 @@ sequenceDiagram
     C-->>Browser: HTML page loading /v3/api-docs
 ```
 
-## `/api/impact/**`, `/api/admin/**`
+## GET `/api/impact/**`
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant C as ImpactController
+    participant S as ImpactAnalysisService
+    participant DB as PlatformStore / PostgreSQL
+    Client->>C: token + element or artifact route
+    C->>S: elementImpact(...) or artifactImpact(...)
+    S->>DB: Load authorized models, artifacts, and lineage
+    S-->>C: ElementImpactResponse or ArtifactImpactResponse
+    C-->>Client: Upstream/downstream traceability payload
+```
+
+## `/api/admin/**`
 
 ```mermaid
 sequenceDiagram
