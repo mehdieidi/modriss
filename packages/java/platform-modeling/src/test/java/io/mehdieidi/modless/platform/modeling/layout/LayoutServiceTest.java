@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mehdieidi.modless.platform.kernel.PlatformException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -110,6 +111,31 @@ class LayoutServiceTest {
     }
   }
 
+  /** Verifies that backend-routed edge sections do not sit on top of each other. */
+  @Test
+  void separatesOverlappingEdgeCorridors() {
+    LayoutService.LayoutResponse response =
+        service.layout(
+            new LayoutService.LayoutRequest(
+                "view-overlap",
+                "DEFAULT_LAYERED",
+                false,
+                List.of(),
+                Map.of("layoutStrategy", "SPACIOUS_LAYERED"),
+                List.of(
+                    new LayoutService.LayoutNode("a", "A", 180, 90, 0.0, 0.0, List.of()),
+                    new LayoutService.LayoutNode("b", "B", 180, 90, 300.0, 0.0, List.of()),
+                    new LayoutService.LayoutNode("c", "C", 180, 90, 300.0, 160.0, List.of()),
+                    new LayoutService.LayoutNode("d", "D", 180, 90, 0.0, 160.0, List.of())),
+                List.of(
+                    new LayoutService.LayoutEdge("edge-ab", "ab", "a", "b", null, null),
+                    new LayoutService.LayoutEdge("edge-ac", "ac", "a", "c", null, null),
+                    new LayoutService.LayoutEdge("edge-db", "db", "d", "b", null, null),
+                    new LayoutService.LayoutEdge("edge-dc", "dc", "d", "c", null, null))));
+
+    assertNoOverlappingSegments(response);
+  }
+
   /**
    * Verifies that non-layered strategies invoke distinct ELK algorithms instead of falling back to
    * the same layered coordinates.
@@ -157,5 +183,84 @@ class LayoutServiceTest {
         .map(node -> node.id() + "=" + Math.round(node.x()) + "," + Math.round(node.y()))
         .sorted()
         .reduce("", (left, right) -> left + "|" + right);
+  }
+
+  /**
+   * Asserts that no two edge segments share a rendered length.
+   *
+   * @param response layout response
+   */
+  private void assertNoOverlappingSegments(LayoutService.LayoutResponse response) {
+    List<TestSegment> segments = new ArrayList<>();
+    for (LayoutService.RoutedEdge edge : response.edges()) {
+      for (LayoutService.EdgeSection section : edge.sections()) {
+        List<LayoutService.LayoutPoint> points = new ArrayList<>();
+        points.add(section.startPoint());
+        points.addAll(section.bendPoints());
+        points.add(section.endPoint());
+        for (int index = 1; index < points.size(); index++) {
+          TestSegment current =
+              TestSegment.from(edge.id(), points.get(index - 1), points.get(index));
+          if (current == null) {
+            continue;
+          }
+          for (TestSegment existing : segments) {
+            assertFalse(
+                current.overlaps(existing), () -> edge.id() + " overlaps " + existing.edgeId());
+          }
+          segments.add(current);
+        }
+      }
+    }
+  }
+
+  /** Test-only axis-aligned segment. */
+  private record TestSegment(
+      String edgeId, boolean vertical, double constant, double start, double end) {
+
+    /**
+     * Creates a segment from two route points.
+     *
+     * @param edgeId edge id
+     * @param startPoint start point
+     * @param endPoint end point
+     * @return segment or {@code null} for diagonal/zero-length input
+     */
+    static TestSegment from(
+        String edgeId, LayoutService.LayoutPoint startPoint, LayoutService.LayoutPoint endPoint) {
+      if (Math.round(startPoint.x()) == Math.round(endPoint.x())) {
+        return new TestSegment(
+            edgeId,
+            true,
+            Math.round(startPoint.x()),
+            Math.min(startPoint.y(), endPoint.y()),
+            Math.max(startPoint.y(), endPoint.y()));
+      }
+      if (Math.round(startPoint.y()) == Math.round(endPoint.y())) {
+        return new TestSegment(
+            edgeId,
+            false,
+            Math.round(startPoint.y()),
+            Math.min(startPoint.x(), endPoint.x()),
+            Math.max(startPoint.x(), endPoint.x()));
+      }
+      return null;
+    }
+
+    /**
+     * Checks whether this segment overlaps another segment.
+     *
+     * @param other other segment
+     * @return {@code true} when they share more than an endpoint
+     */
+    boolean overlaps(TestSegment other) {
+      if (edgeId.equals(other.edgeId()) || vertical != other.vertical()) {
+        return false;
+      }
+      if (Math.abs(constant - other.constant()) >= 0.5d) {
+        return false;
+      }
+      return Math.min(end, other.end()) - Math.max(start, other.start()) > 1.0d;
+    }
   }
 }

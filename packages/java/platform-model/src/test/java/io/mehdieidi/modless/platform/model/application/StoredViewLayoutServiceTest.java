@@ -13,7 +13,11 @@ import io.mehdieidi.modless.platform.kernel.ModelLevel;
 import io.mehdieidi.modless.platform.model.domain.ModelRecord;
 import io.mehdieidi.modless.platform.modeling.layout.LayoutService;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -63,7 +67,7 @@ class StoredViewLayoutServiceTest {
     assertEquals("left", edge.path("targetAnchor").path("side").asText());
     assertTrue(edge.path("sourceAnchor").path("offsetY").isNumber());
     assertTrue(edge.path("targetAnchor").path("offsetY").isNumber());
-    assertEquals(2, edge.path("pinPoints").size());
+    assertTrue(edge.path("pinPoints").size() >= 2);
     assertOrthogonalPins(edge);
     assertEquals(created.revision() + 1, first.revision());
 
@@ -131,6 +135,7 @@ class StoredViewLayoutServiceTest {
     assertEquals("RADIAL", radial.view().path("layoutStrategy").asText());
     assertNotEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(tree.view()));
     assertNotEquals(nodeGeometrySignature(spacious.view()), nodeGeometrySignature(radial.view()));
+    assertStoredViewEdgesDoNotOverlap(model, spacious.view());
   }
 
   /**
@@ -277,7 +282,76 @@ class StoredViewLayoutServiceTest {
     JsonNode second = pins.path(1);
     assertNotNull(first);
     assertNotNull(second);
-    assertEquals(first.path("x").asInt(), second.path("x").asInt());
+    assertTrue(
+        first.path("x").asInt() == second.path("x").asInt()
+            || first.path("y").asInt() == second.path("y").asInt());
+  }
+
+  /**
+   * Asserts that stored view anchors and pin points do not produce overlapping edge segments.
+   *
+   * @param model model JSON with graph relationships
+   * @param view laid-out view JSON
+   */
+  private void assertStoredViewEdgesDoNotOverlap(ObjectNode model, JsonNode view) {
+    Map<String, JsonNode> relationships = new HashMap<>();
+    model
+        .path("graph")
+        .path("relationships")
+        .forEach(relationship -> relationships.put(relationship.path("id").asText(), relationship));
+    Map<String, JsonNode> nodes = new HashMap<>();
+    view.path("nodes")
+        .forEach(node -> nodes.put(node.path("elementId").asText(node.path("id").asText()), node));
+
+    List<TestSegment> segments = new ArrayList<>();
+    for (JsonNode edge : view.path("edges")) {
+      String edgeId = edge.path("relationshipId").asText(edge.path("id").asText());
+      JsonNode relationship = relationships.get(edgeId);
+      if (relationship == null) {
+        continue;
+      }
+      JsonNode source = nodes.get(relationship.path("sourceElementId").asText());
+      JsonNode target = nodes.get(relationship.path("targetElementId").asText());
+      if (source == null || target == null) {
+        continue;
+      }
+      List<TestPoint> points = new ArrayList<>();
+      points.add(anchorPoint(source, edge.path("sourceAnchor")));
+      edge.path("pinPoints")
+          .forEach(
+              pin -> points.add(new TestPoint(pin.path("x").asDouble(), pin.path("y").asDouble())));
+      points.add(anchorPoint(target, edge.path("targetAnchor")));
+      for (int index = 1; index < points.size(); index++) {
+        TestSegment current = TestSegment.from(edgeId, points.get(index - 1), points.get(index));
+        if (current == null) {
+          continue;
+        }
+        for (TestSegment existing : segments) {
+          assertFalse(
+              current.overlaps(existing),
+              () -> edgeId + " " + current + " overlaps " + existing.edgeId() + " " + existing);
+        }
+        segments.add(current);
+      }
+    }
+  }
+
+  /**
+   * Resolves a stored left/right anchor to a test point.
+   *
+   * @param node view node
+   * @param anchor stored anchor
+   * @return absolute anchor point
+   */
+  private TestPoint anchorPoint(JsonNode node, JsonNode anchor) {
+    double x = node.path("x").asDouble();
+    double y = node.path("y").asDouble();
+    double width = node.path("width").asDouble(176.0d);
+    double height = node.path("height").asDouble(96.0d);
+    String side = anchor.path("side").asText("right");
+    double offsetY =
+        Math.max(8.0d, Math.min(height - 8.0d, anchor.path("offsetY").asDouble(height / 2.0d)));
+    return new TestPoint("right".equals(side) ? x + width : x, y + offsetY);
   }
 
   /**
@@ -299,5 +373,57 @@ class StoredViewLayoutServiceTest {
                     .append(',')
                     .append(node.path("y").asInt()));
     return signature.toString();
+  }
+
+  /** Test-only route point. */
+  private record TestPoint(double x, double y) {}
+
+  /** Test-only axis-aligned segment. */
+  private record TestSegment(
+      String edgeId, boolean vertical, double constant, double start, double end) {
+
+    /**
+     * Creates a segment from two route points.
+     *
+     * @param edgeId edge id
+     * @param startPoint start point
+     * @param endPoint end point
+     * @return segment or {@code null} for diagonal/zero-length input
+     */
+    static TestSegment from(String edgeId, TestPoint startPoint, TestPoint endPoint) {
+      if (Math.round(startPoint.x()) == Math.round(endPoint.x())) {
+        return new TestSegment(
+            edgeId,
+            true,
+            Math.round(startPoint.x()),
+            Math.min(startPoint.y(), endPoint.y()),
+            Math.max(startPoint.y(), endPoint.y()));
+      }
+      if (Math.round(startPoint.y()) == Math.round(endPoint.y())) {
+        return new TestSegment(
+            edgeId,
+            false,
+            Math.round(startPoint.y()),
+            Math.min(startPoint.x(), endPoint.x()),
+            Math.max(startPoint.x(), endPoint.x()));
+      }
+      return null;
+    }
+
+    /**
+     * Checks whether this segment overlaps another segment.
+     *
+     * @param other other segment
+     * @return {@code true} when they share more than an endpoint
+     */
+    boolean overlaps(TestSegment other) {
+      if (edgeId.equals(other.edgeId()) || vertical != other.vertical()) {
+        return false;
+      }
+      if (Math.abs(constant - other.constant()) >= 0.5d) {
+        return false;
+      }
+      return Math.min(end, other.end()) - Math.max(start, other.start()) > 1.0d;
+    }
   }
 }

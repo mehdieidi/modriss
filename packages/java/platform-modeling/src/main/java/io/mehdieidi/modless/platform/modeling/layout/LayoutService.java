@@ -2,6 +2,7 @@ package io.mehdieidi.modless.platform.modeling.layout;
 
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -53,6 +54,15 @@ public final class LayoutService {
 
   /** Default spacing between layers for balanced layouts. */
   private static final double DEFAULT_LAYER_SPACING = 260.0d;
+
+  /** Horizontal distance from a node anchor before an edge enters a routing corridor. */
+  private static final double ROUTE_STUB = 56.0d;
+
+  /** Distance between candidate edge corridors while avoiding previously routed edges. */
+  private static final double ROUTE_LANE_STEP = 34.0d;
+
+  /** Maximum number of alternative corridors considered for one edge. */
+  private static final int MAX_ROUTE_ATTEMPTS = 512;
 
   /** ELK id for the layered algorithm. */
   private static final String LAYERED_ALGORITHM = "org.eclipse.elk.layered";
@@ -615,33 +625,362 @@ public final class LayoutService {
       Map<String, ElkEdge> edgesById,
       List<String> warnings) {
     List<RoutedEdge> result = new ArrayList<>();
+    Map<String, NodeBox> nodeBoxes = nodeBoxes(nodesById);
+    Map<String, RouteAnchor> sourceAnchors = spreadRouteAnchors(request.edges(), nodeBoxes, true);
+    Map<String, RouteAnchor> targetAnchors = spreadRouteAnchors(request.edges(), nodeBoxes, false);
+    List<RouteSegment> occupiedSegments = new ArrayList<>();
     for (LayoutEdge edgeRequest : request.edges()) {
-      ElkEdge edge = edgesById.get(edgeRequest.id());
-      List<EdgeSection> sections = new ArrayList<>();
-      List<LayoutPoint> bendPoints = new ArrayList<>();
-      for (ElkEdgeSection section : edge == null ? List.<ElkEdgeSection>of() : edge.getSections()) {
-        List<LayoutPoint> sectionBendPoints = new ArrayList<>();
-        section
-            .getBendPoints()
-            .forEach(
-                point -> {
-                  LayoutPoint bendPoint = new LayoutPoint(point.getX(), point.getY());
-                  sectionBendPoints.add(bendPoint);
-                  bendPoints.add(bendPoint);
-                });
-        sections.add(
-            new EdgeSection(
-                new LayoutPoint(section.getStartX(), section.getStartY()),
-                new LayoutPoint(section.getEndX(), section.getEndY()),
-                List.copyOf(sectionBendPoints)));
+      EdgeSection section =
+          separatedSection(edgeRequest, nodeBoxes, sourceAnchors, targetAnchors, occupiedSegments);
+      if (section == null) {
+        ElkEdge edge = edgesById.get(edgeRequest.id());
+        section = elkSection(edge);
       }
-      if (sections.isEmpty()) {
-        warnings.add("Edge '" + edgeRequest.id() + "' was laid out without explicit sections.");
-        sections.add(fallbackSection(edgeRequest, nodesById, warnings));
+      if (section == null) {
+        warnings.add("Edge '" + edgeRequest.id() + "' was given a fallback route.");
+        section = fallbackSection(edgeRequest, nodesById, warnings);
       }
+      List<EdgeSection> sections = List.of(section);
+      List<LayoutPoint> bendPoints = section.bendPoints();
       result.add(new RoutedEdge(edgeRequest.id(), List.copyOf(sections), List.copyOf(bendPoints)));
     }
     return List.copyOf(result);
+  }
+
+  /**
+   * Builds a map of laid-out node boxes from ELK nodes.
+   *
+   * @param nodesById ELK nodes keyed by id
+   * @return node boxes keyed by id
+   */
+  private Map<String, NodeBox> nodeBoxes(Map<String, ElkNode> nodesById) {
+    Map<String, NodeBox> result = new LinkedHashMap<>();
+    nodesById.forEach(
+        (id, node) ->
+            result.put(
+                id, new NodeBox(id, node.getX(), node.getY(), node.getWidth(), node.getHeight())));
+    return result;
+  }
+
+  /**
+   * Spreads source or target anchors on each node so route stubs do not share the same endpoint.
+   *
+   * @param edges layout edges
+   * @param nodesById positioned nodes
+   * @param sourceEndpoint whether source anchors should be spread
+   * @return anchors keyed by edge id
+   */
+  private Map<String, RouteAnchor> spreadRouteAnchors(
+      List<LayoutEdge> edges, Map<String, NodeBox> nodesById, boolean sourceEndpoint) {
+    Map<String, RouteAnchor> result = new LinkedHashMap<>();
+    Map<String, List<LayoutEdge>> edgesByNode = new LinkedHashMap<>();
+    for (LayoutEdge edge : edges) {
+      String nodeId = sourceEndpoint ? edge.sourceNodeId() : edge.targetNodeId();
+      edgesByNode.computeIfAbsent(nodeId, ignored -> new ArrayList<>()).add(edge);
+    }
+    edgesByNode.forEach(
+        (nodeId, nodeEdges) -> {
+          NodeBox node = nodesById.get(nodeId);
+          if (node == null) {
+            return;
+          }
+          nodeEdges.sort(
+              Comparator.comparing(
+                      (LayoutEdge edge) ->
+                          sourceEndpoint ? edge.targetNodeId() : edge.sourceNodeId())
+                  .thenComparing(LayoutEdge::id));
+          double step =
+              Math.max(
+                  8.0d,
+                  Math.min(30.0d, (node.height() - 16.0d) / Math.max(1, nodeEdges.size() - 1)));
+          double start = Math.max(8.0d, (node.height() - step * (nodeEdges.size() - 1)) / 2.0d);
+          for (int index = 0; index < nodeEdges.size(); index++) {
+            LayoutEdge edge = nodeEdges.get(index);
+            double offsetY = Math.max(8.0d, Math.min(node.height() - 8.0d, start + index * step));
+            result.put(edge.id(), new RouteAnchor(sourceEndpoint ? "right" : "left", offsetY));
+          }
+        });
+    return result;
+  }
+
+  /**
+   * Creates one non-overlapping orthogonal section for an edge.
+   *
+   * @param edge edge request
+   * @param nodesById positioned nodes
+   * @param sourceAnchors source anchors keyed by edge id
+   * @param targetAnchors target anchors keyed by edge id
+   * @param occupiedSegments segments already claimed by earlier edges
+   * @return separated edge section or {@code null} when endpoints are missing
+   */
+  private EdgeSection separatedSection(
+      LayoutEdge edge,
+      Map<String, NodeBox> nodesById,
+      Map<String, RouteAnchor> sourceAnchors,
+      Map<String, RouteAnchor> targetAnchors,
+      List<RouteSegment> occupiedSegments) {
+    NodeBox source = nodesById.get(edge.sourceNodeId());
+    NodeBox target = nodesById.get(edge.targetNodeId());
+    if (source == null || target == null) {
+      return null;
+    }
+    RouteAnchor sourceAnchor =
+        sourceAnchors.getOrDefault(edge.id(), new RouteAnchor("right", source.height() / 2.0d));
+    RouteAnchor targetAnchor =
+        targetAnchors.getOrDefault(edge.id(), new RouteAnchor("left", target.height() / 2.0d));
+    List<LayoutPoint> selected = null;
+    for (int attempt = 0; attempt < MAX_ROUTE_ATTEMPTS; attempt++) {
+      List<LayoutPoint> candidate =
+          candidatePath(edge.id(), source, target, sourceAnchor, targetAnchor, attempt);
+      if (!overlapsExistingSegments(candidate, occupiedSegments)) {
+        selected = candidate;
+        break;
+      }
+    }
+    if (selected == null) {
+      selected =
+          candidatePath(
+              edge.id(), source, target, sourceAnchor, targetAnchor, MAX_ROUTE_ATTEMPTS - 1);
+    }
+    occupiedSegments.addAll(segments(edge.id(), selected));
+    return new EdgeSection(
+        selected.get(0),
+        selected.get(selected.size() - 1),
+        List.copyOf(selected.subList(1, selected.size() - 1)));
+  }
+
+  /**
+   * Builds a candidate orthogonal path through a deterministic edge corridor.
+   *
+   * @param edgeId edge id
+   * @param source source node
+   * @param target target node
+   * @param sourceAnchor source anchor
+   * @param targetAnchor target anchor
+   * @param attempt candidate attempt
+   * @return full path including endpoints
+   */
+  private List<LayoutPoint> candidatePath(
+      String edgeId,
+      NodeBox source,
+      NodeBox target,
+      RouteAnchor sourceAnchor,
+      RouteAnchor targetAnchor,
+      int attempt) {
+    LayoutPoint start = pointForAnchor(source, sourceAnchor);
+    LayoutPoint end = pointForAnchor(target, targetAnchor);
+    int lane = lane(attempt / 2);
+    boolean verticalFirst = attempt % 2 == 1;
+    double jitter = stableJitter(edgeId);
+    if (source.id().equals(target.id())) {
+      double loopX =
+          source.x() + source.width() + ROUTE_STUB + Math.abs(lane) * ROUTE_LANE_STEP + jitter;
+      double loopY = source.y() - ROUTE_STUB - Math.max(0, lane) * ROUTE_LANE_STEP - jitter;
+      return compactPath(
+          List.of(
+              start,
+              new LayoutPoint(loopX, start.y()),
+              new LayoutPoint(loopX, loopY),
+              new LayoutPoint(end.x(), loopY),
+              end));
+    }
+    double corridorY = corridorY(source, target, start, end, lane, jitter);
+    double detour = ROUTE_STUB + Math.abs(lane) * ROUTE_LANE_STEP + jitter;
+    double sourceX = start.x() + detour;
+    double targetX = end.x() - detour;
+    if (same(start.x(), end.x())) {
+      sourceX = start.x() + (lane < 0 ? -detour : detour);
+      targetX = sourceX;
+    }
+    if (verticalFirst) {
+      if (same(start.x(), end.x())) {
+        return compactPath(
+            List.of(
+                start,
+                new LayoutPoint(start.x(), corridorY),
+                new LayoutPoint(sourceX, corridorY),
+                new LayoutPoint(sourceX, end.y()),
+                end));
+      }
+      return compactPath(
+          List.of(
+              start,
+              new LayoutPoint(start.x(), corridorY),
+              new LayoutPoint(end.x(), corridorY),
+              end));
+    }
+    return compactPath(
+        List.of(
+            start,
+            new LayoutPoint(sourceX, start.y()),
+            new LayoutPoint(sourceX, corridorY),
+            new LayoutPoint(targetX, corridorY),
+            new LayoutPoint(targetX, end.y()),
+            end));
+  }
+
+  /**
+   * Computes a horizontal corridor y coordinate for a route candidate.
+   *
+   * @param source source node
+   * @param target target node
+   * @param start start point
+   * @param end end point
+   * @param lane signed lane index
+   * @param jitter stable route jitter
+   * @return corridor y
+   */
+  private double corridorY(
+      NodeBox source, NodeBox target, LayoutPoint start, LayoutPoint end, int lane, double jitter) {
+    if (Math.abs(start.y() - end.y()) > 80.0d) {
+      return Math.round((start.y() + end.y()) / 2.0d + lane * ROUTE_LANE_STEP + jitter);
+    }
+    double top = Math.min(source.y(), target.y());
+    double bottom = Math.max(source.y() + source.height(), target.y() + target.height());
+    if (lane == 0 || lane > 0) {
+      return Math.round(top - ROUTE_STUB - Math.max(0, lane - 1) * ROUTE_LANE_STEP - jitter);
+    }
+    return Math.round(bottom + ROUTE_STUB + Math.abs(lane + 1) * ROUTE_LANE_STEP + jitter);
+  }
+
+  /**
+   * Removes duplicate and unnecessary collinear points from a path.
+   *
+   * @param points path points
+   * @return compact path
+   */
+  private List<LayoutPoint> compactPath(List<LayoutPoint> points) {
+    List<LayoutPoint> result = new ArrayList<>();
+    for (LayoutPoint point : points) {
+      LayoutPoint rounded = new LayoutPoint(Math.round(point.x()), Math.round(point.y()));
+      if (!result.isEmpty() && samePoint(result.get(result.size() - 1), rounded)) {
+        continue;
+      }
+      result.add(rounded);
+      while (result.size() >= 3 && collinearLastThree(result)) {
+        LayoutPoint last = result.remove(result.size() - 1);
+        result.remove(result.size() - 1);
+        result.add(last);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Returns whether the last three points in a path are collinear.
+   *
+   * @param points path points
+   * @return {@code true} when the middle point can be removed
+   */
+  private boolean collinearLastThree(List<LayoutPoint> points) {
+    int size = points.size();
+    LayoutPoint first = points.get(size - 3);
+    LayoutPoint middle = points.get(size - 2);
+    LayoutPoint last = points.get(size - 1);
+    return (same(first.x(), middle.x()) && same(middle.x(), last.x()))
+        || (same(first.y(), middle.y()) && same(middle.y(), last.y()));
+  }
+
+  /**
+   * Checks whether a candidate path overlaps any already occupied edge segment.
+   *
+   * @param candidate candidate path
+   * @param occupiedSegments occupied edge segments
+   * @return {@code true} when a non-point overlap exists
+   */
+  private boolean overlapsExistingSegments(
+      List<LayoutPoint> candidate, List<RouteSegment> occupiedSegments) {
+    for (RouteSegment candidateSegment : segments("", candidate)) {
+      for (RouteSegment occupiedSegment : occupiedSegments) {
+        if (candidateSegment.overlaps(occupiedSegment)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Converts a path into horizontal and vertical segments.
+   *
+   * @param edgeId edge id
+   * @param points path points
+   * @return axis-aligned segments
+   */
+  private List<RouteSegment> segments(String edgeId, List<LayoutPoint> points) {
+    List<RouteSegment> result = new ArrayList<>();
+    for (int index = 1; index < points.size(); index++) {
+      LayoutPoint start = points.get(index - 1);
+      LayoutPoint end = points.get(index);
+      if (same(start.x(), end.x())) {
+        result.add(RouteSegment.vertical(edgeId, start.x(), start.y(), end.y()));
+      } else if (same(start.y(), end.y())) {
+        result.add(RouteSegment.horizontal(edgeId, start.y(), start.x(), end.x()));
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Returns a point on a node boundary for a route anchor.
+   *
+   * @param node positioned node
+   * @param anchor route anchor
+   * @return absolute point
+   */
+  private LayoutPoint pointForAnchor(NodeBox node, RouteAnchor anchor) {
+    return new LayoutPoint(
+        "right".equals(anchor.side()) ? node.x() + node.width() : node.x(),
+        node.y() + Math.max(8.0d, Math.min(node.height() - 8.0d, anchor.offsetY())));
+  }
+
+  /**
+   * Maps attempt number to the sequence 0, 1, -1, 2, -2, ...
+   *
+   * @param attempt candidate attempt
+   * @return signed lane index
+   */
+  private int lane(int attempt) {
+    if (attempt == 0) {
+      return 0;
+    }
+    int distance = (attempt + 1) / 2;
+    return attempt % 2 == 1 ? distance : -distance;
+  }
+
+  /**
+   * Computes a small deterministic integer jitter for an edge id.
+   *
+   * @param edgeId edge id
+   * @return jitter in layout units
+   */
+  private double stableJitter(String edgeId) {
+    int hash = 0;
+    for (char character : normalize(edgeId).toCharArray()) {
+      hash = (hash * 31 + character) % 997;
+    }
+    return hash % 9;
+  }
+
+  /**
+   * Reads the first ELK section for fallback use.
+   *
+   * @param edge ELK edge
+   * @return first ELK section or {@code null}
+   */
+  private EdgeSection elkSection(ElkEdge edge) {
+    if (edge == null || edge.getSections().isEmpty()) {
+      return null;
+    }
+    ElkEdgeSection section = edge.getSections().get(0);
+    List<LayoutPoint> bendPoints = new ArrayList<>();
+    section
+        .getBendPoints()
+        .forEach(point -> bendPoints.add(new LayoutPoint(point.getX(), point.getY())));
+    return new EdgeSection(
+        new LayoutPoint(section.getStartX(), section.getStartY()),
+        new LayoutPoint(section.getEndX(), section.getEndY()),
+        List.copyOf(bendPoints));
   }
 
   /**
@@ -787,6 +1126,28 @@ public final class LayoutService {
    */
   private double finiteOrDefault(double value, double fallback) {
     return Double.isFinite(value) ? value : fallback;
+  }
+
+  /**
+   * Checks whether two points have the same rounded coordinates.
+   *
+   * @param left left point
+   * @param right right point
+   * @return {@code true} when both rounded coordinates match
+   */
+  private boolean samePoint(LayoutPoint left, LayoutPoint right) {
+    return same(left.x(), right.x()) && same(left.y(), right.y());
+  }
+
+  /**
+   * Checks whether two layout coordinates are effectively identical.
+   *
+   * @param left left coordinate
+   * @param right right coordinate
+   * @return {@code true} when the coordinates are close enough to share a rendered pixel
+   */
+  private boolean same(double left, double right) {
+    return Math.abs(left - right) < 0.5d;
   }
 
   /**
@@ -1079,4 +1440,103 @@ public final class LayoutService {
    * @param y y coordinate
    */
   public record LayoutPoint(double x, double y) {}
+
+  /**
+   * Positioned node box used by the backend edge router.
+   *
+   * @param id node identifier
+   * @param x x coordinate
+   * @param y y coordinate
+   * @param width node width
+   * @param height node height
+   */
+  private record NodeBox(String id, double x, double y, double width, double height) {}
+
+  /**
+   * Left/right route anchor used by the backend edge router.
+   *
+   * @param side node side
+   * @param offsetY vertical offset from the top of the node
+   */
+  private record RouteAnchor(String side, double offsetY) {}
+
+  /** Axis-aligned edge route segment claimed by a routed edge. */
+  private static final class RouteSegment {
+
+    /** Edge that owns the segment. */
+    private final String edgeId;
+
+    /** Whether this segment is vertical. */
+    private final boolean vertical;
+
+    /** Constant x for vertical segments, constant y for horizontal segments. */
+    private final double constant;
+
+    /** Normalized start of the varying interval. */
+    private final double start;
+
+    /** Normalized end of the varying interval. */
+    private final double end;
+
+    /**
+     * Creates a route segment.
+     *
+     * @param edgeId owner edge id
+     * @param vertical whether the segment is vertical
+     * @param constant constant coordinate
+     * @param first first varying coordinate
+     * @param second second varying coordinate
+     */
+    private RouteSegment(
+        String edgeId, boolean vertical, double constant, double first, double second) {
+      this.edgeId = edgeId;
+      this.vertical = vertical;
+      this.constant = constant;
+      this.start = Math.min(first, second);
+      this.end = Math.max(first, second);
+    }
+
+    /**
+     * Creates a vertical segment.
+     *
+     * @param edgeId owner edge id
+     * @param x x coordinate
+     * @param firstY first y coordinate
+     * @param secondY second y coordinate
+     * @return vertical segment
+     */
+    private static RouteSegment vertical(String edgeId, double x, double firstY, double secondY) {
+      return new RouteSegment(edgeId, true, x, firstY, secondY);
+    }
+
+    /**
+     * Creates a horizontal segment.
+     *
+     * @param edgeId owner edge id
+     * @param y y coordinate
+     * @param firstX first x coordinate
+     * @param secondX second x coordinate
+     * @return horizontal segment
+     */
+    private static RouteSegment horizontal(String edgeId, double y, double firstX, double secondX) {
+      return new RouteSegment(edgeId, false, y, firstX, secondX);
+    }
+
+    /**
+     * Checks whether this segment shares a non-zero rendered length with another segment.
+     *
+     * @param other other segment
+     * @return {@code true} when the segments sit on top of each other
+     */
+    private boolean overlaps(RouteSegment other) {
+      if (edgeId.equals(other.edgeId) || vertical != other.vertical) {
+        return false;
+      }
+      if (Math.abs(constant - other.constant) >= 0.5d) {
+        return false;
+      }
+      double overlap = Math.min(end, other.end) - Math.max(start, other.start);
+      return overlap > 1.0d;
+    }
+  }
 }
