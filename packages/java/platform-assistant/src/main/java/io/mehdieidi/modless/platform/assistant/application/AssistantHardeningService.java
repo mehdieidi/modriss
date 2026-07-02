@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /** Enforces assistant rate limits, circuit breaking, and metrics. */
 public class AssistantHardeningService {
@@ -75,6 +76,16 @@ public class AssistantHardeningService {
     Circuit snapshot = circuits.getOrDefault(provider, new Circuit(0, Instant.EPOCH));
     if (now.isBefore(snapshot.openUntil())) {
       metrics.recordAssistantCircuitRejected(provider);
+      log.warn(
+          "AI provider circuit open provider={} role={} model={} assistantTurnId={} sessionId={} "
+              + "requestId={} openUntil={}",
+          provider,
+          role,
+          model,
+          mdc("assistantTurnId"),
+          mdc("assistantSessionId"),
+          mdc("requestId"),
+          snapshot.openUntil());
       throw new PlatformException(503, "AI provider circuit is open. Try again shortly.");
     }
     try {
@@ -84,10 +95,14 @@ public class AssistantHardeningService {
         try {
           T result = call.get();
           log.info(
-              "AI provider call succeeded provider={} role={} model={} attempt={} elapsedMs={}",
+              "AI provider call succeeded provider={} role={} model={} assistantTurnId={} "
+                  + "sessionId={} requestId={} attempt={} elapsedMs={}",
               provider,
               role,
               model,
+              mdc("assistantTurnId"),
+              mdc("assistantSessionId"),
+              mdc("requestId"),
               attempt,
               elapsedMillis(attemptStarted));
           circuits.remove(provider);
@@ -98,13 +113,17 @@ public class AssistantHardeningService {
           if (providerFailure != null) {
             log.warn(
                 "AI provider call failed provider={} role={} model={} attempt={} elapsedMs={} "
-                    + "configuredTimeoutMs={} status={} rootCause={}: {}",
+                    + "configuredTimeoutMs={} assistantTurnId={} sessionId={} requestId={} "
+                    + "status={} rootCause={}: {}",
                 provider,
                 role,
                 model,
                 attempt,
                 elapsedMillis(attemptStarted),
                 properties.requestTimeout().toMillis(),
+                mdc("assistantTurnId"),
+                mdc("assistantSessionId"),
+                mdc("requestId"),
                 providerFailure.status(),
                 rootCause(ex).getClass().getSimpleName(),
                 rootCause(ex).getMessage());
@@ -122,10 +141,14 @@ public class AssistantHardeningService {
         throw platformException;
       }
       log.warn(
-          "AI provider call failed after retries for provider={} role={} model={}: {}",
+          "AI provider call failed after retries provider={} role={} model={} assistantTurnId={} "
+              + "sessionId={} requestId={}: {}",
           provider,
           role,
           model,
+          mdc("assistantTurnId"),
+          mdc("assistantSessionId"),
+          mdc("requestId"),
           last == null ? "unknown" : last.toString());
       throw new PlatformException(
           502,
@@ -145,6 +168,15 @@ public class AssistantHardeningService {
             ? clock.instant().plus(hardening.circuitOpenDuration())
             : Instant.EPOCH;
     circuits.put(provider, new Circuit(failures, openUntil));
+    log.warn(
+        "AI provider failure recorded provider={} failures={} circuitOpenUntil={}"
+            + " assistantTurnId={} sessionId={} requestId={}",
+        provider,
+        failures,
+        openUntil,
+        mdc("assistantTurnId"),
+        mdc("assistantSessionId"),
+        mdc("requestId"));
     metrics.recordAssistantProviderFailure(provider);
   }
 
@@ -189,6 +221,11 @@ public class AssistantHardeningService {
       current = current.getCause();
     }
     return current;
+  }
+
+  private String mdc(String key) {
+    String value = MDC.get(key);
+    return value == null ? "" : value;
   }
 
   private record NoOpAssistantMetrics() implements AssistantMetrics {}

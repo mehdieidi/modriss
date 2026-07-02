@@ -20,6 +20,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,6 +39,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 /** Provides frontend-compatible assistant session, messaging, and event endpoints. */
 @RestController
 public class ChatbotController {
+
+  private static final Logger log = LoggerFactory.getLogger(ChatbotController.class);
 
   private final AssistantOrchestrator assistant;
   private final AssistantCatalog catalogs;
@@ -76,6 +82,7 @@ public class ChatbotController {
   CreateSessionResponse createSession(
       @RequestHeader("X-Auth-Token") String token,
       @Valid @RequestBody CreateSessionRequest request) {
+    long started = System.nanoTime();
     if (request == null) {
       throw new PlatformException(400, "Session request is required.");
     }
@@ -96,6 +103,16 @@ public class ChatbotController {
             request.modelName(),
             request.resumeSessionId(),
             Boolean.TRUE.equals(request.forceNew()));
+    log.info(
+        "assistant session created requestId={} sessionId={} projectId={} level={} forceNew={} "
+            + "resumeSessionId={} elapsedMs={}",
+        mdc("requestId"),
+        session.id(),
+        request.projectId(),
+        level.apiName(),
+        Boolean.TRUE.equals(request.forceNew()),
+        safeLogValue(request.resumeSessionId()),
+        elapsedMillis(started));
     return new CreateSessionResponse(session.id(), null);
   }
 
@@ -148,9 +165,30 @@ public class ChatbotController {
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @Valid @RequestBody MessageRequest request) {
+    long started = System.nanoTime();
     UserRecord user = auth.user(token);
+    long sessionStarted = System.nanoTime();
     AssistantSessionStore.AssistantSession session = assistant.session(user, sessionId);
+    log.info(
+        "assistant HTTP message session resolved requestId={} sessionId={} projectId={} level={} "
+            + "elapsedMs={}",
+        mdc("requestId"),
+        session.id(),
+        session.projectId(),
+        session.level().apiName(),
+        elapsedMillis(sessionStarted));
+    long attachmentStarted = System.nanoTime();
     ResolvedRequestAttachment attachment = resolveRequestAttachments(user, session, request);
+    log.info(
+        "assistant HTTP message attachment resolved requestId={} sessionId={} attachmentIds={} "
+            + "attachmentName={} attachmentChars={} elapsedMs={}",
+        mdc("requestId"),
+        session.id(),
+        request.attachmentIds() == null ? 0 : request.attachmentIds().size(),
+        safeLogValue(attachment.name()),
+        attachment.content() == null ? 0 : attachment.content().length(),
+        elapsedMillis(attachmentStarted));
+    long orchestratorStarted = System.nanoTime();
     AssistantOrchestrator.AssistantTurnResponse response =
         assistant.handleMessage(
             user,
@@ -164,6 +202,16 @@ public class ChatbotController {
                 request.unsavedDraftPatch(),
                 attachment.name(),
                 attachment.content()));
+    log.info(
+        "assistant HTTP message completed requestId={} sessionId={} workflowState={} modelId={} "
+            + "revision={} orchestratorElapsedMs={} totalElapsedMs={}",
+        mdc("requestId"),
+        session.id(),
+        response.workflowState(),
+        safeLogValue(response.modelId()),
+        response.revision(),
+        elapsedMillis(orchestratorStarted),
+        elapsedMillis(started));
     return toMessageResponse(response);
   }
 
@@ -182,12 +230,24 @@ public class ChatbotController {
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @RequestParam("file") MultipartFile file) {
+    long started = System.nanoTime();
     UserRecord user = auth.user(token);
     AssistantSessionStore.AssistantSession session = assistant.session(user, sessionId);
     projects.get(user, session.projectId());
     UploadedFileRecord record =
         uploads.uploadAssistantAttachment(
             new UploadScope(user.id(), session.projectId(), session.level(), session.id()), file);
+    log.info(
+        "assistant attachment uploaded requestId={} sessionId={} projectId={} level={} fileName={} "
+            + "contentType={} sizeBytes={} elapsedMs={}",
+        mdc("requestId"),
+        session.id(),
+        session.projectId(),
+        session.level().apiName(),
+        safeLogValue(record.originalFileName()),
+        safeLogValue(record.contentType()),
+        record.sizeBytes(),
+        elapsedMillis(started));
     return new AttachmentResponse(
         record.id(),
         record.originalFileName(),
@@ -356,8 +416,19 @@ public class ChatbotController {
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @PathVariable String proposalId) {
+    long started = System.nanoTime();
     AssistantOrchestrator.AssistantTurnResponse response =
         assistant.undoProposal(auth.user(token), sessionId, proposalId);
+    log.info(
+        "assistant undo completed requestId={} sessionId={} proposalId={} workflowState={} "
+            + "modelId={} revision={} elapsedMs={}",
+        mdc("requestId"),
+        sessionId,
+        proposalId,
+        response.workflowState(),
+        safeLogValue(response.modelId()),
+        response.revision(),
+        elapsedMillis(started));
     return toMessageResponse(response);
   }
 
@@ -372,12 +443,23 @@ public class ChatbotController {
       @RequestHeader("X-Auth-Token") String token,
       @PathVariable String sessionId,
       @RequestBody ChoiceRequest request) {
+    long started = System.nanoTime();
     UserRecord user = auth.user(token);
     if (request == null) {
       throw new PlatformException(400, "Clarification answers are required.");
     }
     AssistantSessionStore.AssistantSession session = assistant.session(user, sessionId);
+    long attachmentStarted = System.nanoTime();
     ResolvedRequestAttachment attachment = resolveChoiceAttachments(user, session, request);
+    log.info(
+        "assistant choice attachment resolved requestId={} sessionId={} attachmentIds={} "
+            + "attachmentName={} attachmentChars={} elapsedMs={}",
+        mdc("requestId"),
+        session.id(),
+        request.attachmentIds() == null ? 0 : request.attachmentIds().size(),
+        safeLogValue(attachment.name()),
+        attachment.content() == null ? 0 : attachment.content().length(),
+        elapsedMillis(attachmentStarted));
     List<AssistantOrchestrator.ChoiceAnswer> answers =
         request.answers() == null || request.answers().isEmpty()
             ? List.of(
@@ -393,7 +475,34 @@ public class ChatbotController {
                 .toList();
     AssistantOrchestrator.AssistantTurnResponse response =
         assistant.submitChoices(user, sessionId, answers, attachment.name(), attachment.content());
+    log.info(
+        "assistant choice completed requestId={} sessionId={} answerCount={} workflowState={} "
+            + "modelId={} revision={} totalElapsedMs={}",
+        mdc("requestId"),
+        session.id(),
+        answers.size(),
+        response.workflowState(),
+        safeLogValue(response.modelId()),
+        response.revision(),
+        elapsedMillis(started));
     return toMessageResponse(response);
+  }
+
+  private long elapsedMillis(long startedNanos) {
+    return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
+  }
+
+  private String mdc(String key) {
+    String value = MDC.get(key);
+    return value == null ? "" : value;
+  }
+
+  private String safeLogValue(String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    String compact = value.trim().replaceAll("\\s+", " ");
+    return compact.length() <= 120 ? compact : compact.substring(0, 117) + "...";
   }
 
   /**

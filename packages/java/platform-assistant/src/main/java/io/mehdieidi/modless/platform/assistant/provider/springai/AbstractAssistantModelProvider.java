@@ -13,9 +13,12 @@ import io.mehdieidi.modless.platform.assistant.provider.ProxyAvailability;
 import io.mehdieidi.modless.platform.assistant.tools.AssistantToolService;
 import io.mehdieidi.modless.platform.kernel.PlatformException;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.ChatOptions;
 
@@ -128,7 +131,9 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
     String model = modelFor(AssistantModelRole.PLANNER);
-    logRequest(prompt, model);
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
+    long providerStarted = System.nanoTime();
     String content =
         hardening.providerCall(
             AssistantModelRole.PLANNER,
@@ -149,7 +154,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                     .user(userWithContext(prompt))
                     .call()
                     .content());
-    logResponse(AssistantModelRole.PLANNER, model, content);
+    logResponse(AssistantModelRole.PLANNER, model, content, providerCallId, providerStarted);
     return turnPlanParser.parse(content);
   }
 
@@ -158,7 +163,8 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
     String model = modelFor(AssistantModelRole.PLANNER);
-    logRequest(prompt, model);
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
     if (progress != null) {
       progress.onProgress("QUERYING_METAMODEL", "Inspecting the formal modeling language");
     }
@@ -174,6 +180,8 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     if (registerPlannerExplorationTools() && !skipExploration) {
       long phaseStartedAt = System.currentTimeMillis();
       logPlannerPhase("EXPLORATION", prompt, model);
+      long providerStarted = System.nanoTime();
+      String explorationCallId = providerCallId + "-explore";
       String explorationContent =
           hardening.providerCall(
               AssistantModelRole.PLANNER,
@@ -195,7 +203,12 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                       .user(userWithContext(prompt))
                       .call()
                       .content());
-      logResponse(AssistantModelRole.PLANNER, model, explorationContent);
+      logResponse(
+          AssistantModelRole.PLANNER,
+          model,
+          explorationContent,
+          explorationCallId,
+          providerStarted);
       logPlannerPhaseCompleted("EXPLORATION", model, phaseStartedAt);
       explorationNotes = explorationContent == null ? "" : explorationContent.trim();
       toolCalls = tools.consumeToolCallCount();
@@ -206,6 +219,8 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     String commitNotes = explorationNotes;
     long phaseStartedAt = System.currentTimeMillis();
     logPlannerPhase("COMMIT", prompt, model);
+    long providerStarted = System.nanoTime();
+    String commitCallId = providerCallId + "-commit";
     String commitContent =
         hardening.providerCall(
             AssistantModelRole.PLANNER,
@@ -228,7 +243,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                     .user(commitUserMessage(prompt, commitNotes))
                     .call()
                     .content());
-    logResponse(AssistantModelRole.PLANNER, model, commitContent);
+    logResponse(AssistantModelRole.PLANNER, model, commitContent, commitCallId, providerStarted);
     logPlannerPhaseCompleted("COMMIT", model, phaseStartedAt);
     return new AgentLoopResult(
         turnPlanParser.parse(commitContent), toolCalls, toolCalls > 0 ? 2 : 1);
@@ -245,11 +260,13 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                 rawPrompt.user(),
                 rawPrompt.snippets()));
     String model = modelFor(AssistantModelRole.SOURCE_ANALYST);
-    logRequest(prompt, model);
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
     if (progress != null) {
       progress.onProgress(
           "ANALYZING_SOURCE", "Extracting modeling evidence from the attached document");
     }
+    long providerStarted = System.nanoTime();
     String content =
         hardening.providerCall(
             AssistantModelRole.SOURCE_ANALYST,
@@ -264,7 +281,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                     .user(userWithContext(prompt))
                     .call()
                     .content());
-    logResponse(AssistantModelRole.SOURCE_ANALYST, model, content);
+    logResponse(AssistantModelRole.SOURCE_ANALYST, model, content, providerCallId, providerStarted);
     return new AssistantReply(content == null ? "" : content, providerKey, model);
   }
 
@@ -283,7 +300,9 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
     String model = modelFor(prompt.role());
-    logRequest(prompt, model);
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
+    long providerStarted = System.nanoTime();
     String content =
         hardening.providerCall(
             prompt.role(),
@@ -300,7 +319,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                   .call()
                   .content();
             });
-    logResponse(prompt.role(), model, content);
+    logResponse(prompt.role(), model, content, providerCallId, providerStarted);
     return new AssistantReply(content == null ? "" : content, providerKey, model);
   }
 
@@ -309,7 +328,9 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
     String model = modelFor(prompt.role());
-    logRequest(prompt, model);
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
+    long providerStarted = System.nanoTime();
     String content =
         hardening.providerCall(
             prompt.role(),
@@ -323,7 +344,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                     .user(userWithContext(prompt))
                     .call()
                     .content());
-    logResponse(prompt.role(), model, content);
+    logResponse(prompt.role(), model, content, providerCallId, providerStarted);
     return new AssistantReply(content == null ? "" : content, providerKey, model);
   }
 
@@ -332,7 +353,9 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
     requireAvailable();
     AssistantPrompt prompt = promptGuard.sanitize(rawPrompt);
     String model = modelFor(AssistantModelRole.PLANNER);
-    logRequest(prompt, model);
+    String providerCallId = providerCallId();
+    logRequest(prompt, model, providerCallId);
+    long providerStarted = System.nanoTime();
     String content =
         hardening.providerCall(
             AssistantModelRole.PLANNER,
@@ -356,7 +379,7 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                   .call()
                   .content();
             });
-    logResponse(AssistantModelRole.PLANNER, model, content);
+    logResponse(AssistantModelRole.PLANNER, model, content, providerCallId, providerStarted);
     SemanticModelPatch patch = patchParser.parse(content);
     return patch == null ? new SemanticModelPatch(List.of()) : patch;
   }
@@ -449,7 +472,11 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
         : "Backend-provided context:\n" + context + "\n\nUser request:\n" + prompt.user();
   }
 
-  private void logRequest(AssistantPrompt prompt, String model) {
+  private String providerCallId() {
+    return UUID.randomUUID().toString();
+  }
+
+  private void logRequest(AssistantPrompt prompt, String model, String providerCallId) {
     int snippetChars =
         prompt.snippets().stream()
             .mapToInt(
@@ -459,16 +486,22 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                         + snippet.content().length())
             .sum();
     log.info(
-        "AI provider request started provider={} role={} model={} systemChars={} userChars={} "
-            + "snippets={} snippetChars={} timeoutMs={}",
+        "AI provider request started provider={} role={} model={} providerCallId={} "
+            + "assistantTurnId={} sessionId={} requestId={} systemChars={} userChars={} "
+            + "snippets={} snippetChars={} timeoutMs={} proxy={}",
         providerKey,
         prompt.role(),
         model,
+        providerCallId,
+        mdc("assistantTurnId"),
+        mdc("assistantSessionId"),
+        mdc("requestId"),
         prompt.system().length(),
         prompt.user().length(),
         prompt.snippets().size(),
         snippetChars,
-        properties.requestTimeout().toMillis());
+        properties.requestTimeout().toMillis(),
+        proxyDescription());
   }
 
   private boolean hasSourceAnalysis(AssistantPrompt prompt) {
@@ -486,30 +519,54 @@ abstract class AbstractAssistantModelProvider implements AssistantModelProvider 
                         + snippet.content().length())
             .sum();
     log.info(
-        "AI planner phase started provider={} model={} phase={} snippets={} snippetChars={}",
+        "AI planner phase started provider={} model={} phase={} assistantTurnId={} sessionId={} "
+            + "requestId={} snippets={} snippetChars={}",
         providerKey,
         model,
         phase,
+        mdc("assistantTurnId"),
+        mdc("assistantSessionId"),
+        mdc("requestId"),
         prompt.snippets().size(),
         snippetChars);
   }
 
   private void logPlannerPhaseCompleted(String phase, String model, long startedAt) {
     log.info(
-        "AI planner phase completed provider={} model={} phase={} elapsedMs={}",
+        "AI planner phase completed provider={} model={} phase={} assistantTurnId={} sessionId={} "
+            + "requestId={} elapsedMs={}",
         providerKey,
         model,
         phase,
+        mdc("assistantTurnId"),
+        mdc("assistantSessionId"),
+        mdc("requestId"),
         System.currentTimeMillis() - startedAt);
   }
 
-  private void logResponse(AssistantModelRole role, String model, String content) {
+  private void logResponse(
+      AssistantModelRole role,
+      String model,
+      String content,
+      String providerCallId,
+      long startedNanos) {
     log.info(
-        "AI provider response received provider={} role={} model={} outputChars={}",
+        "AI provider response received provider={} role={} model={} providerCallId={} "
+            + "assistantTurnId={} sessionId={} requestId={} providerElapsedMs={} outputChars={}",
         providerKey,
         role,
         model,
+        providerCallId,
+        mdc("assistantTurnId"),
+        mdc("assistantSessionId"),
+        mdc("requestId"),
+        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos),
         content == null ? 0 : content.length());
+  }
+
+  private String mdc(String key) {
+    String value = MDC.get(key);
+    return value == null ? "" : value;
   }
 
   private void requireAvailable() {

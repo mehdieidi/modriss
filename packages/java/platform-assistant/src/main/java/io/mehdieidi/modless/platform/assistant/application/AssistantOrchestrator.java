@@ -50,10 +50,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.spi.LoggingEventBuilder;
 
 /** LLM-driven, metamodel-grounded autonomous modeling workflow. */
 public class AssistantOrchestrator {
@@ -85,6 +89,7 @@ public class AssistantOrchestrator {
 
   private final ThreadLocal<AssistantActivity> lastActivity = new ThreadLocal<>();
   private final ThreadLocal<AssistantTurnDiagnostics> lastDiagnostics = new ThreadLocal<>();
+  private final ThreadLocal<TurnTrace> currentTrace = new ThreadLocal<>();
 
   public AssistantOrchestrator(
       AssistantSettings properties,
@@ -271,205 +276,315 @@ public class AssistantOrchestrator {
   public AssistantTurnResponse handleMessage(
       UserRecord user, String sessionId, AssistantTurnRequest request) {
     long startedAt = System.currentTimeMillis();
+    long turnStarted = System.nanoTime();
     hardening.checkRateLimit(user.id());
     metrics.recordAssistantRequest();
     AssistantSessionStore.AssistantSession session = requireSession(sessionId, user.id());
     String threadId = session.id();
-    ensureDurableThread(user, session);
-    appendUserMessage(threadId, sessionId, request);
-
-    ProjectRecord project = projects.get(user, session.projectId());
-    publishProgress(sessionId, "READING_MODEL", "Reading the active model and validation state");
-    String modelId = resolveModelId(request.modelId(), project, session.level());
-    ModelRecord model = modelId == null ? null : models.get(user, session.level(), modelId);
-    requireCurrentRevision(request.revision(), model);
-    AssistantTurnRequest enrichedRequest = enrichWithSourceAnalysis(session, request);
-
-    JsonNode persistedModel =
-        model == null ? assistantEmptyModel(session.level(), session.title()) : model.modelJson();
-    JsonNode baseModel =
-        resolvePlanningBase(session.level(), persistedModel, enrichedRequest.unsavedDraftPatch());
-    ModelService.ValidationResult currentValidation =
-        assistantValidation(session.level(), baseModel);
-    AssistantModelContext context =
-        model == null
-            ? modelContexts.transientSnapshot(
-                session.projectId(),
-                session.level(),
-                session.title(),
-                0L,
-                baseModel,
-                currentValidation)
-            : modelContexts.snapshot(model, currentValidation);
-    List<AssistantModelProvider.ContextSnippet> snippets =
-        contextSnippets(
-            session,
-            enrichedRequest,
-            context,
+    TurnTrace trace =
+        new TurnTrace(
+            UUID.randomUUID().toString(),
+            session.id(),
+            threadId,
+            session.projectId(),
             session.level(),
-            enrichedRequest.selectedElementIds());
+            request.modelId(),
+            turnStarted);
+    currentTrace.set(trace);
+    putTraceMdc(trace);
+    logTurnInfo(
+        "turn_started",
+        "userId",
+        user.id(),
+        "messageChars",
+        request.message().length(),
+        "attachmentChars",
+        request.attachmentContent().length(),
+        "attachmentName",
+        safeLogValue(request.attachmentName()),
+        "selectedElementCount",
+        request.selectedElementIds().size(),
+        "hasUnsavedDraft",
+        !blank(request.unsavedDraftPatch()));
+    try {
+      ensureDurableThread(user, session);
+      logTurnPhase("durable_thread_ready", turnStarted, "threadId", threadId);
+      appendUserMessage(threadId, sessionId, request);
+      logTurnPhase("user_message_appended", turnStarted);
 
-    Optional<AssistantTurnPlan> materializedSourcePlan =
-        materializeCimSourcePlan(session, enrichedRequest);
-    if (materializedSourcePlan.isPresent()) {
-      publishProgress(
-          sessionId, "PLANNING", "Materializing CIM operations from classified source evidence");
-      AssistantTurnResponse response =
-          proposalResponse(
-              user,
+      long readStarted = System.nanoTime();
+      ProjectRecord project = projects.get(user, session.projectId());
+      publishProgress(sessionId, "READING_MODEL", "Reading the active model and validation state");
+      String modelId = resolveModelId(request.modelId(), project, session.level());
+      ModelRecord model = modelId == null ? null : models.get(user, session.level(), modelId);
+      requireCurrentRevision(request.revision(), model);
+      logTurnPhase(
+          "active_model_loaded",
+          readStarted,
+          "resolvedModelId",
+          safeLogValue(modelId),
+          "modelRevision",
+          model == null ? null : model.revision(),
+          "requestedRevision",
+          request.revision());
+      AssistantTurnRequest enrichedRequest = enrichWithSourceAnalysis(session, request);
+
+      long contextStarted = System.nanoTime();
+      JsonNode persistedModel =
+          model == null ? assistantEmptyModel(session.level(), session.title()) : model.modelJson();
+      JsonNode baseModel =
+          resolvePlanningBase(session.level(), persistedModel, enrichedRequest.unsavedDraftPatch());
+      ModelService.ValidationResult currentValidation =
+          assistantValidation(session.level(), baseModel);
+      AssistantModelContext context =
+          model == null
+              ? modelContexts.transientSnapshot(
+                  session.projectId(),
+                  session.level(),
+                  session.title(),
+                  0L,
+                  baseModel,
+                  currentValidation)
+              : modelContexts.snapshot(model, currentValidation);
+      List<AssistantModelProvider.ContextSnippet> snippets =
+          contextSnippets(
               session,
-              threadId,
               enrichedRequest,
-              model,
-              baseModel,
               context,
-              snippets,
-              materializedSourcePlan.get());
+              session.level(),
+              enrichedRequest.selectedElementIds());
+      logTurnPhase(
+          "context_ready",
+          contextStarted,
+          "baseSource",
+          model == null ? "starter" : "persisted",
+          "contextElements",
+          context.elements().size(),
+          "validationIssues",
+          context.validationIssues().size(),
+          "snippets",
+          snippets.size(),
+          "sourceAnalysisChars",
+          enrichedRequest.sourceAnalysis().length());
+
+      long materializeStarted = System.nanoTime();
+      Optional<AssistantTurnPlan> materializedSourcePlan =
+          materializeCimSourcePlan(session, enrichedRequest);
+      if (materializedSourcePlan.isPresent()) {
+        logTurnPhase(
+            "source_plan_materialized",
+            materializeStarted,
+            "operations",
+            materializedSourcePlan.get().patch().operations().size(),
+            "sourceAnalysisMode",
+            isLocallyExtractedSourceAnalysis(enrichedRequest.sourceAnalysis())
+                ? "local-extractor"
+                : "llm-source-analysis");
+        publishProgress(
+            sessionId, "PLANNING", "Materializing CIM operations from classified source evidence");
+        AssistantTurnResponse response =
+            proposalResponse(
+                user,
+                session,
+                threadId,
+                enrichedRequest,
+                model,
+                baseModel,
+                context,
+                snippets,
+                materializedSourcePlan.get());
+        recordTurnDiagnostics(
+            response.workflowState().name(),
+            snippets.size(),
+            0,
+            0,
+            response.workflowState().name(),
+            startedAt);
+        metrics.recordAssistantTurnOutcome(
+            evalCategory(request, context), response.workflowState().name());
+        logTurnPhase(
+            "turn_completed",
+            turnStarted,
+            "workflowState",
+            response.workflowState(),
+            "modelId",
+            safeLogValue(response.modelId()),
+            "revision",
+            response.revision());
+        return response;
+      }
+
+      tools.bindSession(new AssistantToolBridge.ToolSession(session.level(), baseModel, context));
+      int toolCalls = 0;
+      int repairAttempts = 0;
+      AssistantTurnPlan plan;
+      try {
+        publishProgress(
+            sessionId, "PLANNING", "Understanding intent using the formal language context");
+        long planningStarted = System.nanoTime();
+        InitialPlanResult planned =
+            planInitialTurn(session, enrichedRequest, context, snippets, baseModel);
+        plan = planned.plan();
+        toolCalls = planned.toolCalls();
+        logTurnPhase(
+            "initial_plan_ready",
+            planningStarted,
+            "strategy",
+            modelingStrategy,
+            "kind",
+            plan.kind(),
+            "intent",
+            plan.intent(),
+            "operations",
+            plan.patch().operations().size(),
+            "questions",
+            plan.questions().size(),
+            "toolCalls",
+            toolCalls);
+      } catch (PlatformException failure) {
+        if (failure.status() < 500 && failure.status() != 429) {
+          throw failure;
+        }
+        recordTurnDiagnostics(
+            "FAILED",
+            snippets.size(),
+            toolCalls,
+            repairAttempts,
+            "PROVIDER_UNAVAILABLE",
+            startedAt);
+        metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
+        logTurnError("provider_unavailable", failure, "toolCalls", toolCalls);
+        return finishTurn(
+            session,
+            threadId,
+            providerUnavailableResponse(modelId, model == null ? null : model.revision()));
+      } finally {
+        tools.clearSession();
+      }
+
+      AssistantTurnResponse response =
+          switch (plan.kind()) {
+            case ANSWER -> {
+              if (plan.intent() == AssistantTurnPlan.Intent.MUTATION
+                  || isRequestedModelChange(enrichedRequest)) {
+                if (plan.patch().operations().isEmpty()) {
+                  plan = replanWithSafeDefaults(session, enrichedRequest, context, snippets, plan);
+                }
+                yield proposalResponse(
+                    user,
+                    session,
+                    threadId,
+                    enrichedRequest,
+                    model,
+                    baseModel,
+                    context,
+                    snippets,
+                    plan);
+              }
+              yield finishTurn(
+                  session,
+                  threadId,
+                  new AssistantTurnResponse(
+                      nonBlank(plan.message(), "I completed the model analysis."),
+                      modelId,
+                      model == null ? null : model.revision(),
+                      null,
+                      List.of(),
+                      AssistantWorkflowState.EXPLAINED,
+                      activityFor(AssistantWorkflowState.EXPLAINED)));
+            }
+            case CLARIFICATION -> {
+              AssistantTurnPlan gated =
+                  clarificationGate.apply(plan, enrichedRequest.rootMessage());
+              gated =
+                  resolveMutationClarification(
+                      session, enrichedRequest, context, snippets, plan, gated);
+              yield switch (gated.kind()) {
+                case CLARIFICATION ->
+                    clarificationResponse(
+                        session,
+                        threadId,
+                        enrichedRequest,
+                        model,
+                        gated.message(),
+                        gated.questions());
+                case PATCH ->
+                    proposalResponse(
+                        user,
+                        session,
+                        threadId,
+                        enrichedRequest,
+                        model,
+                        baseModel,
+                        context,
+                        snippets,
+                        gated);
+                case ANSWER -> {
+                  if (gated.intent() == AssistantTurnPlan.Intent.MUTATION) {
+                    AssistantTurnPlan replanned =
+                        replanWithSafeDefaults(session, enrichedRequest, context, snippets, gated);
+                    yield proposalResponse(
+                        user,
+                        session,
+                        threadId,
+                        enrichedRequest,
+                        model,
+                        baseModel,
+                        context,
+                        snippets,
+                        replanned);
+                  }
+                  yield finishTurn(
+                      session,
+                      threadId,
+                      new AssistantTurnResponse(
+                          nonBlank(gated.message(), "I completed the model analysis."),
+                          modelId,
+                          model == null ? null : model.revision(),
+                          null,
+                          List.of(),
+                          AssistantWorkflowState.EXPLAINED,
+                          activityFor(AssistantWorkflowState.EXPLAINED)));
+                }
+              };
+            }
+            case PATCH ->
+                proposalResponse(
+                    user,
+                    session,
+                    threadId,
+                    enrichedRequest,
+                    model,
+                    baseModel,
+                    context,
+                    snippets,
+                    plan);
+          };
       recordTurnDiagnostics(
           response.workflowState().name(),
           snippets.size(),
-          0,
+          toolCalls,
           0,
           response.workflowState().name(),
           startedAt);
       metrics.recordAssistantTurnOutcome(
           evalCategory(request, context), response.workflowState().name());
+      logTurnPhase(
+          "turn_completed",
+          turnStarted,
+          "workflowState",
+          response.workflowState(),
+          "modelId",
+          safeLogValue(response.modelId()),
+          "revision",
+          response.revision(),
+          "toolCalls",
+          toolCalls);
       return response;
-    }
-
-    tools.bindSession(new AssistantToolBridge.ToolSession(session.level(), baseModel, context));
-    int toolCalls = 0;
-    int repairAttempts = 0;
-    AssistantTurnPlan plan;
-    try {
-      publishProgress(
-          sessionId, "PLANNING", "Understanding intent using the formal language context");
-      InitialPlanResult planned =
-          planInitialTurn(session, enrichedRequest, context, snippets, baseModel);
-      plan = planned.plan();
-      toolCalls = planned.toolCalls();
-    } catch (PlatformException failure) {
-      if (failure.status() < 500 && failure.status() != 429) {
-        throw failure;
-      }
-      recordTurnDiagnostics(
-          "FAILED", snippets.size(), toolCalls, repairAttempts, "PROVIDER_UNAVAILABLE", startedAt);
-      metrics.recordAssistantTurnOutcome(evalCategory(request, context), "FAILED");
-      return finishTurn(
-          session,
-          threadId,
-          providerUnavailableResponse(modelId, model == null ? null : model.revision()));
     } finally {
-      tools.clearSession();
+      currentTrace.remove();
+      clearTraceMdc();
     }
-
-    AssistantTurnResponse response =
-        switch (plan.kind()) {
-          case ANSWER -> {
-            if (plan.intent() == AssistantTurnPlan.Intent.MUTATION
-                || isRequestedModelChange(enrichedRequest)) {
-              if (plan.patch().operations().isEmpty()) {
-                plan = replanWithSafeDefaults(session, enrichedRequest, context, snippets, plan);
-              }
-              yield proposalResponse(
-                  user,
-                  session,
-                  threadId,
-                  enrichedRequest,
-                  model,
-                  baseModel,
-                  context,
-                  snippets,
-                  plan);
-            }
-            yield finishTurn(
-                session,
-                threadId,
-                new AssistantTurnResponse(
-                    nonBlank(plan.message(), "I completed the model analysis."),
-                    modelId,
-                    model == null ? null : model.revision(),
-                    null,
-                    List.of(),
-                    AssistantWorkflowState.EXPLAINED,
-                    activityFor(AssistantWorkflowState.EXPLAINED)));
-          }
-          case CLARIFICATION -> {
-            AssistantTurnPlan gated = clarificationGate.apply(plan, enrichedRequest.rootMessage());
-            gated =
-                resolveMutationClarification(
-                    session, enrichedRequest, context, snippets, plan, gated);
-            yield switch (gated.kind()) {
-              case CLARIFICATION ->
-                  clarificationResponse(
-                      session,
-                      threadId,
-                      enrichedRequest,
-                      model,
-                      gated.message(),
-                      gated.questions());
-              case PATCH ->
-                  proposalResponse(
-                      user,
-                      session,
-                      threadId,
-                      enrichedRequest,
-                      model,
-                      baseModel,
-                      context,
-                      snippets,
-                      gated);
-              case ANSWER -> {
-                if (gated.intent() == AssistantTurnPlan.Intent.MUTATION) {
-                  AssistantTurnPlan replanned =
-                      replanWithSafeDefaults(session, enrichedRequest, context, snippets, gated);
-                  yield proposalResponse(
-                      user,
-                      session,
-                      threadId,
-                      enrichedRequest,
-                      model,
-                      baseModel,
-                      context,
-                      snippets,
-                      replanned);
-                }
-                yield finishTurn(
-                    session,
-                    threadId,
-                    new AssistantTurnResponse(
-                        nonBlank(gated.message(), "I completed the model analysis."),
-                        modelId,
-                        model == null ? null : model.revision(),
-                        null,
-                        List.of(),
-                        AssistantWorkflowState.EXPLAINED,
-                        activityFor(AssistantWorkflowState.EXPLAINED)));
-              }
-            };
-          }
-          case PATCH ->
-              proposalResponse(
-                  user,
-                  session,
-                  threadId,
-                  enrichedRequest,
-                  model,
-                  baseModel,
-                  context,
-                  snippets,
-                  plan);
-        };
-    recordTurnDiagnostics(
-        response.workflowState().name(),
-        snippets.size(),
-        toolCalls,
-        0,
-        response.workflowState().name(),
-        startedAt);
-    metrics.recordAssistantTurnOutcome(
-        evalCategory(request, context), response.workflowState().name());
-    return response;
   }
 
   private InitialPlanResult planInitialTurn(
@@ -478,12 +593,23 @@ public class AssistantOrchestrator {
       AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
       JsonNode baseModel) {
+    long started = System.nanoTime();
     AssistantModelProvider.AssistantPrompt prompt =
         new AssistantModelProvider.AssistantPrompt(
             AssistantModelRole.PLANNER,
             turnPrompt(session, request, context),
             request.message(),
             snippets);
+    logTurnInfo(
+        "planning_started",
+        "strategy",
+        modelingStrategy,
+        "snippets",
+        snippets.size(),
+        "messageChars",
+        request.message().length(),
+        "hasSourceAnalysis",
+        !blank(request.sourceAnalysis()));
     AssistantModelProvider.AgentLoopResult loopResult =
         modelingStrategy == AssistantModelingStrategy.MODEL_SUBSET
             ? subsetPlanner.plan(
@@ -503,25 +629,66 @@ public class AssistantOrchestrator {
         loopResult.steps(),
         toolCalls,
         snippets.size());
+    logTurnPhase(
+        "planning_completed",
+        started,
+        "strategy",
+        modelingStrategy,
+        "steps",
+        loopResult.steps(),
+        "toolCalls",
+        toolCalls,
+        "planKind",
+        plan.kind(),
+        "planIntent",
+        plan.intent(),
+        "operations",
+        plan.patch().operations().size());
     return new InitialPlanResult(plan, toolCalls);
   }
 
   private AssistantTurnRequest enrichWithSourceAnalysis(
       AssistantSessionStore.AssistantSession session, AssistantTurnRequest request) {
     if (!requiresSourceAnalysis(session, request)) {
+      logTurnInfo(
+          "source_analysis_skipped",
+          "reason",
+          blank(request.attachmentContent()) ? "no-attachment" : "not-cim-or-already-analyzed",
+          "attachmentChars",
+          request.attachmentContent().length());
       return request;
     }
+    long extractionStarted = System.nanoTime();
     Optional<String> extracted =
         new CimSourceDocumentExtractor(mapper)
             .extract(request.attachmentName(), request.attachmentContent());
     if (extracted.isPresent()) {
+      logTurnPhase(
+          "source_analysis_local_extractor_completed",
+          extractionStarted,
+          "attachmentName",
+          safeLogValue(request.attachmentName()),
+          "attachmentChars",
+          request.attachmentContent().length(),
+          "analysisChars",
+          extracted.get().length(),
+          "llmSkipped",
+          true);
       publishProgress(
           session.id(),
           "ANALYZING_SOURCE",
           "Source evidence was extracted from the attached document for CIM planning");
       return request.withSourceAnalysis(extracted.get());
     }
+    logTurnPhase(
+        "source_analysis_local_extractor_empty",
+        extractionStarted,
+        "attachmentName",
+        safeLogValue(request.attachmentName()),
+        "attachmentChars",
+        request.attachmentContent().length());
     try {
+      long providerStarted = System.nanoTime();
       AssistantModelProvider.AssistantReply reply =
           provider.analyzeSource(
               new AssistantModelProvider.AssistantPrompt(
@@ -532,13 +699,24 @@ public class AssistantOrchestrator {
               (stage, message) -> publishProgress(session.id(), stage, message));
       String analysis = reply.content() == null ? "" : reply.content().trim();
       if (analysis.isBlank()) {
+        logTurnPhase("source_analysis_llm_empty", providerStarted, "provider", reply.provider());
         return request;
       }
+      logTurnPhase(
+          "source_analysis_llm_completed",
+          providerStarted,
+          "provider",
+          reply.provider(),
+          "model",
+          reply.model(),
+          "analysisChars",
+          analysis.length());
       publishProgress(
           session.id(), "ANALYZING_SOURCE", "Source analysis is ready for CIM planning");
       return request.withSourceAnalysis(analysis);
     } catch (RuntimeException failure) {
       log.warn("CIM source analysis failed; continuing with raw attachment context.", failure);
+      logTurnError("source_analysis_failed", failure);
       publishProgress(
           session.id(),
           "ANALYZING_SOURCE",
@@ -643,26 +821,52 @@ public class AssistantOrchestrator {
         || blank(request.sourceAnalysis())
         || !isRequestedModelChange(request)
         || !looksLikeSourceToCimRequest(request)) {
+      logTurnInfo(
+          "source_plan_materialization_skipped",
+          "level",
+          session.level().apiName(),
+          "hasSourceAnalysis",
+          !blank(request.sourceAnalysis()),
+          "isModelChange",
+          isRequestedModelChange(request),
+          "looksLikeSourceToCim",
+          looksLikeSourceToCimRequest(request));
       return Optional.empty();
     }
-    return new CimSourceModelMaterializer(schemas, mapper)
-        .materialize(request.sourceAnalysis())
-        .map(
-            result -> {
-              String gaps =
-                  result.coverageGaps().isEmpty()
-                      ? ""
-                      : "\n\nCoverage gaps: "
-                          + String.join("; ", result.coverageGaps().stream().limit(8).toList());
-              return new AssistantTurnPlan(
-                  AssistantTurnPlan.Intent.MUTATION,
-                  AssistantTurnPlan.Kind.PATCH,
-                  "I created the CIM from the attached source document.\n\n"
-                      + result.coverageSummary()
-                      + gaps,
-                  List.of(),
-                  result.patch());
-            });
+    long started = System.nanoTime();
+    Optional<CimSourceModelMaterializer.Result> materialized =
+        new CimSourceModelMaterializer(schemas, mapper).materialize(request.sourceAnalysis());
+    logTurnPhase(
+        materialized.isPresent()
+            ? "source_plan_materialization_completed"
+            : "source_plan_materialization_empty",
+        started,
+        "sourceAnalysisMode",
+        isLocallyExtractedSourceAnalysis(request.sourceAnalysis())
+            ? "local-extractor"
+            : "llm-source-analysis",
+        "sourceAnalysisChars",
+        request.sourceAnalysis().length(),
+        "operations",
+        materialized.map(result -> result.patch().operations().size()).orElse(0),
+        "coverageGaps",
+        materialized.map(result -> result.coverageGaps().size()).orElse(0));
+    return materialized.map(
+        result -> {
+          String gaps =
+              result.coverageGaps().isEmpty()
+                  ? ""
+                  : "\n\nCoverage gaps: "
+                      + String.join("; ", result.coverageGaps().stream().limit(8).toList());
+          return new AssistantTurnPlan(
+              AssistantTurnPlan.Intent.MUTATION,
+              AssistantTurnPlan.Kind.PATCH,
+              "I created the CIM from the attached source document.\n\n"
+                  + result.coverageSummary()
+                  + gaps,
+              List.of(),
+              result.patch());
+        });
   }
 
   private AssistantTurnResponse proposalResponse(
@@ -675,12 +879,51 @@ public class AssistantOrchestrator {
       AssistantModelContext context,
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantTurnPlan initialPlan) {
+    long proposalStarted = System.nanoTime();
     publishProgress(session.id(), "VALIDATING", "Compiling and validating the model change");
+    long prepareStarted = System.nanoTime();
     AssistantTurnPlan acceptedPlan = preparePlan(session.level(), context, initialPlan);
+    logTurnPhase(
+        "plan_prepared",
+        prepareStarted,
+        "initialOperations",
+        initialPlan.patch().operations().size(),
+        "completedOperations",
+        acceptedPlan.patch().operations().size(),
+        "kind",
+        acceptedPlan.kind(),
+        "intent",
+        acceptedPlan.intent());
     publishDraftPreviewProgress(session, model, baseModel, acceptedPlan);
     SourceCoverageExpectation coverageExpectation = sourceCoverageExpectation(session, request);
+    logTurnInfo(
+        "coverage_expectation_ready",
+        "required",
+        coverageExpectation.required(),
+        "minAdditions",
+        coverageExpectation.minAdditions(),
+        "minOperations",
+        coverageExpectation.minOperations(),
+        "minConnections",
+        coverageExpectation.minConnections(),
+        "requiredFamilies",
+        coverageExpectation.requiredFamilies());
+    long evaluationStarted = System.nanoTime();
     PlanAttempt attempt =
         evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
+    logTurnPhase(
+        "plan_evaluated",
+        evaluationStarted,
+        "valid",
+        attempt.valid(),
+        "feedbackCount",
+        attempt.feedback().size(),
+        "compiledOperations",
+        attempt.compiled() == null ? 0 : attempt.compiled().patch().size(),
+        "mandatoryPassed",
+        attempt.validation() == null ? null : attempt.validation().mandatoryPassed(),
+        "structurallyValid",
+        attempt.validation() == null ? null : attempt.validation().structurallyValid());
     boolean locallyExtractedSourcePlan = isLocallyExtractedSourceAnalysis(request.sourceAnalysis());
     int repairNumber = 0;
     int stagnationCount = 0;
@@ -690,6 +933,7 @@ public class AssistantOrchestrator {
         locallyExtractedSourcePlan ? 0 : Math.max(properties.validationRepairAttempts(), 0);
     while (!attempt.valid() && repairNumber < maxRepairAttempts) {
       repairNumber++;
+      long repairStarted = System.nanoTime();
       publishProgress(
           session.id(),
           "COMPLETING",
@@ -704,8 +948,18 @@ public class AssistantOrchestrator {
                 tryDeterministicRepair(session.level(), context, acceptedPlan, attempt));
         if (!samePatch(deterministic, acceptedPlan)) {
           acceptedPlan = deterministic;
+          long deterministicStarted = System.nanoTime();
           attempt =
               evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
+          logTurnPhase(
+              "deterministic_repair_evaluated",
+              deterministicStarted,
+              "repairNumber",
+              repairNumber,
+              "valid",
+              attempt.valid(),
+              "feedbackCount",
+              attempt.feedback().size());
           if (attempt.valid()) {
             break;
           }
@@ -741,6 +995,17 @@ public class AssistantOrchestrator {
         }
         return providerFailureResponse(session, threadId, model);
       }
+      logTurnPhase(
+          "repair_plan_returned",
+          repairStarted,
+          "repairNumber",
+          repairNumber,
+          "kind",
+          repaired.kind(),
+          "intent",
+          repaired.intent(),
+          "operations",
+          repaired.patch().operations().size());
       if (repaired.kind() == AssistantTurnPlan.Kind.CLARIFICATION) {
         AssistantTurnPlan gated = clarificationGate.apply(repaired, request.rootMessage());
         if (gated.kind() == AssistantTurnPlan.Kind.CLARIFICATION
@@ -762,14 +1027,25 @@ public class AssistantOrchestrator {
         continue;
       }
       acceptedPlan = preparePlan(session.level(), context, repaired);
+      long repairedEvaluationStarted = System.nanoTime();
       attempt =
           evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
+      logTurnPhase(
+          "repaired_plan_evaluated",
+          repairedEvaluationStarted,
+          "repairNumber",
+          repairNumber,
+          "valid",
+          attempt.valid(),
+          "feedbackCount",
+          attempt.feedback().size());
       if (attempt.valid()) {
         break;
       }
     }
     if (!attempt.valid() && !locallyExtractedSourcePlan) {
       for (int replan = 0; replan < 1 && !attempt.valid(); replan++) {
+        long fallbackReplanStarted = System.nanoTime();
         publishProgress(
             session.id(),
             "PLANNING",
@@ -783,16 +1059,44 @@ public class AssistantOrchestrator {
                     session, request, context, snippets, acceptedPlan, attempt.feedback()));
         attempt =
             evaluatePlan(session.level(), baseModel, context, acceptedPlan, coverageExpectation);
+        logTurnPhase(
+            "fallback_replan_evaluated",
+            fallbackReplanStarted,
+            "valid",
+            attempt.valid(),
+            "feedbackCount",
+            attempt.feedback().size(),
+            "operations",
+            acceptedPlan.patch().operations().size());
       }
     }
     if (!attempt.valid()) {
+      logTurnPhase(
+          "proposal_failed_validation",
+          proposalStarted,
+          "repairAttempts",
+          repairNumber,
+          "feedbackCount",
+          attempt.feedback().size());
       return failureWithFeedback(session, threadId, request, model, attempt);
     }
     metrics.recordAssistantRepairAttempts(repairNumber);
 
     publishProgress(session.id(), "APPLYING", "Applying the validated change");
-    return autoApplyValidatedProposal(
-        user, session, threadId, model, acceptedPlan, snippets, context);
+    AssistantTurnResponse response =
+        autoApplyValidatedProposal(user, session, threadId, model, acceptedPlan, snippets, context);
+    logTurnPhase(
+        "proposal_completed",
+        proposalStarted,
+        "repairAttempts",
+        repairNumber,
+        "workflowState",
+        response.workflowState(),
+        "modelId",
+        safeLogValue(response.modelId()),
+        "revision",
+        response.revision());
+    return response;
   }
 
   private AssistantTurnPlan preparePlan(
@@ -1020,22 +1324,62 @@ public class AssistantOrchestrator {
       AssistantTurnPlan plan,
       SourceCoverageExpectation coverageExpectation) {
     if (plan.patch().operations().isEmpty()) {
+      logTurnInfo("plan_evaluation_rejected", "reason", "empty_semantic_operations");
       return PlanAttempt.failure("The planner returned no semantic operations.");
     }
     try {
+      long semanticValidationStarted = System.nanoTime();
       validateSemanticPatch(level, plan.patch(), context, baseModel);
+      logTurnPhase(
+          "semantic_patch_validated",
+          semanticValidationStarted,
+          "semanticOperations",
+          plan.patch().operations().size());
+      long compileStarted = System.nanoTime();
       AssistantPatchCompiler.CompiledPatch compiled =
           patchCompiler.compile(baseModel, plan.patch());
+      logTurnPhase(
+          "semantic_patch_compiled",
+          compileStarted,
+          "semanticOperations",
+          plan.patch().operations().size(),
+          "jsonPatchOperations",
+          compiled.patch().size(),
+          "affectedElements",
+          compiled.affectedElements().size());
       if (compiled.patch().isEmpty()) {
+        logTurnInfo("plan_evaluation_rejected", "reason", "compiled_patch_empty");
         return PlanAttempt.failure("The semantic operations would not change the model.");
       }
+      long previewStarted = System.nanoTime();
       ObjectNode preview = patchCompiler.apply(baseModel, compiled);
+      logTurnPhase("compiled_patch_previewed", previewStarted);
+      long structuralValidationStarted = System.nanoTime();
       AssistantValidationSummary validation = assistantValidationSummary(level, preview);
+      logTurnPhase(
+          "structural_validation_completed",
+          structuralValidationStarted,
+          "structurallyValid",
+          validation.structurallyValid(),
+          "mandatoryPassed",
+          validation.mandatoryPassed(),
+          "issueCount",
+          validation.issues().size(),
+          "optionalIssues",
+          validation.optionalIssues());
       if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
         return PlanAttempt.failure(compiled, validation);
       }
+      long coverageStarted = System.nanoTime();
       List<String> coverageFeedback =
           coverageFeedback(level, plan.patch(), preview, coverageExpectation);
+      logTurnPhase(
+          "coverage_checked",
+          coverageStarted,
+          "required",
+          coverageExpectation.required(),
+          "feedbackCount",
+          coverageFeedback.size());
       return coverageFeedback.isEmpty()
           ? PlanAttempt.success(compiled, validation)
           : PlanAttempt.failure(compiled, validation, coverageFeedback);
@@ -1045,6 +1389,13 @@ public class AssistantOrchestrator {
           "Assistant semantic plan rejected reason={} operations={}",
           failure.getMessage(),
           operationSummary);
+      logTurnError(
+          "plan_evaluation_exception",
+          failure,
+          "semanticOperations",
+          plan.patch().operations().size(),
+          "operationSummary",
+          safeLogValue(operationSummary));
       return PlanAttempt.failure(failure.getMessage() + " Operation summary: " + operationSummary);
     }
   }
@@ -2220,12 +2571,47 @@ public class AssistantOrchestrator {
       AssistantTurnPlan acceptedPlan,
       List<AssistantModelProvider.ContextSnippet> snippets,
       AssistantModelContext context) {
+    long applyStarted = System.nanoTime();
     ProjectRecord project = projects.get(user, session.projectId());
+    long starterStarted = System.nanoTime();
     ModelRecord targetModel = model == null ? createStarterModel(user, project, session) : model;
+    logTurnPhase(
+        "apply_target_model_ready",
+        starterStarted,
+        "createdStarterModel",
+        model == null,
+        "targetModelId",
+        safeLogValue(targetModel.id()),
+        "targetRevision",
+        targetModel.revision());
+    long compileStarted = System.nanoTime();
     AssistantPatchCompiler.CompiledPatch compiled =
         patchCompiler.compile(targetModel.modelJson(), acceptedPlan.patch());
+    logTurnPhase(
+        "apply_patch_compiled_against_target",
+        compileStarted,
+        "semanticOperations",
+        acceptedPlan.patch().operations().size(),
+        "jsonPatchOperations",
+        compiled.patch().size(),
+        "affectedElements",
+        compiled.affectedElements().size());
+    long previewStarted = System.nanoTime();
     ObjectNode preview = patchCompiler.apply(targetModel.modelJson(), compiled);
+    logTurnPhase("apply_preview_created", previewStarted);
+    long validationStarted = System.nanoTime();
     AssistantValidationSummary validation = assistantValidationSummary(session.level(), preview);
+    logTurnPhase(
+        "apply_preview_validated",
+        validationStarted,
+        "structurallyValid",
+        validation.structurallyValid(),
+        "mandatoryPassed",
+        validation.mandatoryPassed(),
+        "issueCount",
+        validation.issues().size(),
+        "optionalIssues",
+        validation.optionalIssues());
     if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
       return finishTurn(
           session,
@@ -2247,8 +2633,10 @@ public class AssistantOrchestrator {
         targetModel.modelJson(),
         compiled,
         "validated");
+    long incrementalApplyStarted = System.nanoTime();
     AppliedPatch applied =
         applySemanticPatchIncrementally(user, session, targetModel, acceptedPlan.patch());
+    logTurnPhase("incremental_apply_completed", incrementalApplyStarted);
     ModelRecord updated = applied.model();
     compiled = applied.compiled();
     AssistantProposal.RiskLevel actualRisk = riskLevel(compiled, validation);
@@ -2263,6 +2651,7 @@ public class AssistantOrchestrator {
             retrievalCitations(snippets, context),
             Instant.now());
     memory.clearPendingInteraction(threadId);
+    long persistenceStarted = System.nanoTime();
     memory.saveProposal(
         threadId, session.projectId(), updated.id(), updated.revision(), proposal, "APPLIED");
     memory.markProposalApplied(proposal.id(), updated.id(), updated.revision());
@@ -2278,6 +2667,15 @@ public class AssistantOrchestrator {
             true,
             "autoApplied",
             true));
+    logTurnPhase(
+        "proposal_persisted",
+        persistenceStarted,
+        "proposalId",
+        proposal.id(),
+        "modelId",
+        safeLogValue(updated.id()),
+        "revision",
+        updated.revision());
     realtime.publish(
         session.id(),
         "model.updated",
@@ -2285,6 +2683,17 @@ public class AssistantOrchestrator {
             "modelId", updated.id(),
             "revision", updated.revision(),
             "proposalId", proposal.id()));
+    logTurnPhase(
+        "auto_apply_completed",
+        applyStarted,
+        "proposalId",
+        proposal.id(),
+        "risk",
+        actualRisk,
+        "modelId",
+        safeLogValue(updated.id()),
+        "revision",
+        updated.revision());
     String message =
         nonBlank(acceptedPlan.message(), "I applied the requested change.")
             + "\n\nThe change passed "
@@ -2308,8 +2717,16 @@ public class AssistantOrchestrator {
       AssistantSessionStore.AssistantSession session,
       ModelRecord targetModel,
       SemanticModelPatch semanticPatch) {
+    long compileStarted = System.nanoTime();
     AssistantPatchCompiler.CompiledPatch fullCompiled =
         patchCompiler.compile(targetModel.modelJson(), semanticPatch);
+    logTurnPhase(
+        "incremental_apply_compiled",
+        compileStarted,
+        "semanticOperations",
+        semanticPatch.operations().size(),
+        "jsonPatchOperations",
+        fullCompiled.patch().size());
     ModelRecord patched = applyCompiledPatch(user, session, targetModel, fullCompiled);
     return new AppliedPatch(patched, fullCompiled);
   }
@@ -2319,8 +2736,14 @@ public class AssistantOrchestrator {
       AssistantSessionStore.AssistantSession session,
       ModelRecord targetModel,
       AssistantPatchCompiler.CompiledPatch compiled) {
+    long previewStarted = System.nanoTime();
     ObjectNode preview = patchCompiler.apply(targetModel.modelJson(), compiled);
+    logTurnPhase("model_patch_preview_created", previewStarted);
+    long xmiStarted = System.nanoTime();
     byte[] sourceXmi = regenerateSourceXmi(session.level(), preview);
+    logTurnPhase(
+        "source_xmi_regenerated", xmiStarted, "bytes", sourceXmi == null ? 0 : sourceXmi.length);
+    long patchStarted = System.nanoTime();
     ModelRecord patched =
         models.patch(
             user,
@@ -2329,8 +2752,21 @@ public class AssistantOrchestrator {
             targetModel.name(),
             compiled.patch(),
             targetModel.revision());
+    logTurnPhase(
+        "model_service_patch_completed",
+        patchStarted,
+        "modelId",
+        safeLogValue(targetModel.id()),
+        "baseRevision",
+        targetModel.revision(),
+        "patchOperations",
+        compiled.patch().size(),
+        "updatedRevision",
+        patched == null ? null : patched.revision());
     if (patched != null) {
+      long attachStarted = System.nanoTime();
       attachSourceXmi(patched, sourceXmi);
+      logTurnPhase("source_xmi_attached", attachStarted, "modelId", safeLogValue(patched.id()));
       return patched;
     }
     log.warn("Model patch returned no record during assistant apply.");
@@ -2473,6 +2909,7 @@ public class AssistantOrchestrator {
       AssistantSessionStore.AssistantSession session,
       String threadId,
       AssistantTurnResponse response) {
+    long finishStarted = System.nanoTime();
     AssistantTurnResponse enriched =
         response.activity() == null
             ? new AssistantTurnResponse(
@@ -2484,15 +2921,40 @@ public class AssistantOrchestrator {
                 response.workflowState(),
                 activityFor(response.workflowState()))
             : response;
+    long memoryStarted = System.nanoTime();
     memory.appendMessage(
         threadId,
         "ASSISTANT",
         enriched.assistantMessage(),
         Map.of("workflowState", enriched.workflowState().name()));
     chatMemory.appendAssistant(threadId, enriched.assistantMessage());
+    logTurnPhase(
+        "assistant_message_persisted",
+        memoryStarted,
+        "workflowState",
+        enriched.workflowState(),
+        "messageChars",
+        enriched.assistantMessage() == null ? 0 : enriched.assistantMessage().length());
+    long summaryStarted = System.nanoTime();
     updateRollingSummary(threadId);
+    logTurnPhase("conversation_summary_updated", summaryStarted);
+    long realtimeStarted = System.nanoTime();
     realtime.publish(session.id(), "chat.assistant", enriched);
+    logTurnPhase("assistant_realtime_published", realtimeStarted);
     lastActivity.remove();
+    logTurnPhase(
+        "finish_turn_completed",
+        finishStarted,
+        "workflowState",
+        enriched.workflowState(),
+        "modelId",
+        safeLogValue(enriched.modelId()),
+        "revision",
+        enriched.revision(),
+        "hasProposal",
+        enriched.proposal() != null,
+        "choiceCount",
+        enriched.choices().size());
     return enriched;
   }
 
@@ -2525,6 +2987,7 @@ public class AssistantOrchestrator {
 
   private void publishProgress(String sessionId, String stage, String message) {
     lastActivity.set(new AssistantActivity(stage, message, null));
+    logTurnInfo("progress_published", "stage", stage, "message", safeLogValue(message));
     realtime.publish(sessionId, "assistant.progress", Map.of("stage", stage, "message", message));
   }
 
@@ -2953,6 +3416,86 @@ public class AssistantOrchestrator {
     return blank(value) ? fallback : value.trim();
   }
 
+  private void putTraceMdc(TurnTrace trace) {
+    if (trace == null) {
+      return;
+    }
+    MDC.put("assistantTurnId", trace.turnId());
+    MDC.put("assistantSessionId", trace.sessionId());
+    MDC.put("assistantThreadId", trace.threadId());
+    MDC.put("assistantProjectId", trace.projectId());
+    MDC.put("assistantLevel", trace.level().apiName());
+    if (!blank(trace.requestedModelId())) {
+      MDC.put("assistantModelId", trace.requestedModelId());
+    }
+  }
+
+  private void clearTraceMdc() {
+    MDC.remove("assistantTurnId");
+    MDC.remove("assistantSessionId");
+    MDC.remove("assistantThreadId");
+    MDC.remove("assistantProjectId");
+    MDC.remove("assistantLevel");
+    MDC.remove("assistantModelId");
+  }
+
+  private void logTurnInfo(String event, Object... keyValues) {
+    turnLog(log.atInfo(), event, 0L, keyValues).log("assistant turn event");
+  }
+
+  private void logTurnPhase(String event, long phaseStartedNanos, Object... keyValues) {
+    turnLog(log.atInfo(), event, phaseStartedNanos, keyValues).log("assistant turn phase");
+  }
+
+  private void logTurnError(String event, Throwable failure, Object... keyValues) {
+    LoggingEventBuilder builder = turnLog(log.atWarn(), event, 0L, keyValues);
+    if (failure != null) {
+      builder
+          .addKeyValue("failureType", failure.getClass().getSimpleName())
+          .addKeyValue("failureMessage", safeLogValue(failure.getMessage()));
+    }
+    builder.log("assistant turn failure");
+  }
+
+  private LoggingEventBuilder turnLog(
+      LoggingEventBuilder builder, String event, long phaseStartedNanos, Object... keyValues) {
+    TurnTrace trace = currentTrace.get();
+    builder.addKeyValue("event", event);
+    if (trace != null) {
+      builder
+          .addKeyValue("assistantTurnId", trace.turnId())
+          .addKeyValue("sessionId", trace.sessionId())
+          .addKeyValue("threadId", trace.threadId())
+          .addKeyValue("projectId", trace.projectId())
+          .addKeyValue("level", trace.level().apiName())
+          .addKeyValue("turnElapsedMs", elapsedMillis(trace.startedNanos()));
+      if (!blank(trace.requestedModelId())) {
+        builder.addKeyValue("requestedModelId", trace.requestedModelId());
+      }
+    }
+    if (phaseStartedNanos > 0L) {
+      builder.addKeyValue("phaseElapsedMs", elapsedMillis(phaseStartedNanos));
+    }
+    if (keyValues != null) {
+      for (int index = 0; index + 1 < keyValues.length; index += 2) {
+        builder.addKeyValue(String.valueOf(keyValues[index]), keyValues[index + 1]);
+      }
+    }
+    return builder;
+  }
+
+  private long elapsedMillis(long startedNanos) {
+    return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
+  }
+
+  private String safeLogValue(String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    String compact = value.trim().replaceAll("\\s+", " ");
+    return compact.length() <= 120 ? compact : compact.substring(0, 117) + "...";
+  }
+
   /** One assistant turn request. */
   public record AssistantTurnRequest(
       String message,
@@ -3106,6 +3649,15 @@ public class AssistantOrchestrator {
   }
 
   private record InitialPlanResult(AssistantTurnPlan plan, int toolCalls) {}
+
+  private record TurnTrace(
+      String turnId,
+      String sessionId,
+      String threadId,
+      String projectId,
+      ModelLevel level,
+      String requestedModelId,
+      long startedNanos) {}
 
   private record PlanAttempt(
       AssistantTurnPlan plan,
