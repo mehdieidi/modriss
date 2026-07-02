@@ -484,7 +484,7 @@ public class AssistantToolService implements AssistantToolBridge {
                     issue ->
                         new AssistantValidationSummary.Issue(
                             issue.severity(),
-                            issue.constraint(),
+                            structuralConstraintName(issue.constraint()),
                             issue.elementId(),
                             issue.message()))
                 .toList();
@@ -494,6 +494,19 @@ public class AssistantToolService implements AssistantToolBridge {
         issues.stream().filter(issue -> "WARNING".equalsIgnoreCase(issue.severity())).count();
     return new AssistantValidationSummary(
         validation != null && validation.valid(), mandatoryPassed, (int) optional, issues);
+  }
+
+  private String structuralConstraintName(String constraint) {
+    if (constraint == null || constraint.isBlank()) {
+      return "StructuralValidation";
+    }
+    if (constraint.startsWith("EVL_")) {
+      return "STRUCTURAL_" + constraint.substring("EVL_".length());
+    }
+    if ("EvlValidationExecution".equals(constraint)) {
+      return "StructuralValidationExecution";
+    }
+    return constraint;
   }
 
   private static Map<

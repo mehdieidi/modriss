@@ -56,6 +56,19 @@ public class JdbcAssistantModelContextIndex implements AssistantModelContextInde
   @Override
   public AssistantModelContext snapshot(
       ModelRecord model, ModelService.ValidationResult validationResult) {
+    if (validationResult != null) {
+      AssistantModelContext context =
+          buildContext(
+              model.id(),
+              model.projectId(),
+              model.level(),
+              model.name(),
+              model.revision(),
+              model.modelJson(),
+              validationResult);
+      writeCached(model, context, context.validationIssues());
+      return context;
+    }
     AssistantModelContext cached = readCached(model);
     if (cached != null) {
       return cached;
@@ -68,15 +81,7 @@ public class JdbcAssistantModelContextIndex implements AssistantModelContextInde
     List<AssistantValidationSummary.Issue> issues =
         validationResult == null
             ? List.of()
-            : validationResult.issues().stream()
-                .map(
-                    issue ->
-                        new AssistantValidationSummary.Issue(
-                            issue.severity(),
-                            issue.constraint(),
-                            issue.elementId(),
-                            issue.message()))
-                .toList();
+            : validationResult.issues().stream().map(this::structuralIssue).toList();
     AssistantModelContext context =
         new AssistantModelContext(
             model.id(),
@@ -269,15 +274,7 @@ public class JdbcAssistantModelContextIndex implements AssistantModelContextInde
     List<AssistantValidationSummary.Issue> issues =
         validationResult == null
             ? List.of()
-            : validationResult.issues().stream()
-                .map(
-                    issue ->
-                        new AssistantValidationSummary.Issue(
-                            issue.severity(),
-                            issue.constraint(),
-                            issue.elementId(),
-                            issue.message()))
-                .toList();
+            : validationResult.issues().stream().map(this::structuralIssue).toList();
     return new AssistantModelContext(
         modelId,
         projectId,
@@ -351,6 +348,27 @@ public class JdbcAssistantModelContextIndex implements AssistantModelContextInde
 
   private String text(JsonNode node) {
     return node == null || node.isNull() ? "" : node.asText("");
+  }
+
+  private AssistantValidationSummary.Issue structuralIssue(ModelService.ValidationIssue issue) {
+    return new AssistantValidationSummary.Issue(
+        issue.severity(),
+        structuralConstraintName(issue.constraint()),
+        issue.elementId(),
+        issue.message());
+  }
+
+  private String structuralConstraintName(String constraint) {
+    if (constraint == null || constraint.isBlank()) {
+      return "StructuralValidation";
+    }
+    if (constraint.startsWith("EVL_")) {
+      return "STRUCTURAL_" + constraint.substring("EVL_".length());
+    }
+    if ("EvlValidationExecution".equals(constraint)) {
+      return "StructuralValidationExecution";
+    }
+    return constraint;
   }
 
   private JsonNode firstNonNull(JsonNode... nodes) {

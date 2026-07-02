@@ -120,7 +120,7 @@ public class AssistantPatchCompleter {
   }
 
   /**
-   * Adds missing required containments identified by validator feedback for existing elements.
+   * Adds missing required containments identified by structural validation feedback.
    *
    * @param level model level
    * @param patch planner patch

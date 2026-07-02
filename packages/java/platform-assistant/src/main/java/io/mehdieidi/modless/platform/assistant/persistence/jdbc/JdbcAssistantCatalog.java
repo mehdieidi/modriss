@@ -104,6 +104,10 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
         """
         DELETE FROM assistant_retrieval_documents
         WHERE scope = 'constraint'
+           OR lower(title) LIKE '%evl%'
+           OR lower(content) LIKE '%evl%'
+           OR lower(title) LIKE '%semantic validation%'
+           OR lower(content) LIKE '%semantic validation%'
         """);
   }
 
@@ -361,7 +365,11 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
         documents = parseMetamodel(path, source, hash);
       }
       for (Document document : documents) {
-        upsert(document);
+        Document sanitized = sanitizeEvlValidationReferences(document);
+        if (sanitized.content().isBlank() || sanitized.title().isBlank()) {
+          continue;
+        }
+        upsert(sanitized);
       }
     } catch (Exception ex) {
       throw new IllegalStateException("Could not index " + path, ex);
@@ -835,6 +843,60 @@ public class JdbcAssistantCatalog implements AssistantCatalog {
   private AssistantModelProvider.ContextSnippet snippet(
       String source, String title, String content) {
     return new AssistantModelProvider.ContextSnippet(source, title, content);
+  }
+
+  private Document sanitizeEvlValidationReferences(Document document) {
+    String title = removeEvlSegments(document.title()).trim();
+    String content = removeEvlSegments(document.content()).trim();
+    return new Document(
+        document.id(),
+        document.scope(),
+        document.source(),
+        document.sourceHash(),
+        title,
+        content,
+        document.metadata());
+  }
+
+  private String removeEvlSegments(String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    String withoutLines =
+        java.util.Arrays.stream(value.split("\\R"))
+            .map(this::removeEvlInlineSegments)
+            .map(String::trim)
+            .filter(line -> !line.isBlank())
+            .collect(java.util.stream.Collectors.joining("\n"));
+    return withoutLines
+        .replaceAll("(?i)\\bsemantic validation\\b", "")
+        .replaceAll("(?i)\\bevl\\b", "")
+        .replaceAll("\\s{2,}", " ")
+        .trim();
+  }
+
+  private String removeEvlInlineSegments(String line) {
+    if (line == null || line.isBlank()) {
+      return "";
+    }
+    String byPipe = removeDelimitedEvlSegments(line, "\\|", " | ");
+    String bySemicolon = removeDelimitedEvlSegments(byPipe, ";", "; ");
+    return containsEvlReference(bySemicolon) ? "" : bySemicolon;
+  }
+
+  private String removeDelimitedEvlSegments(String value, String delimiterRegex, String joiner) {
+    List<String> kept =
+        java.util.Arrays.stream(value.split(delimiterRegex))
+            .map(String::trim)
+            .filter(part -> !part.isBlank())
+            .filter(part -> !containsEvlReference(part))
+            .toList();
+    return String.join(joiner, kept);
+  }
+
+  private boolean containsEvlReference(String value) {
+    String normalized = value == null ? "" : value.toLowerCase(Locale.ROOT);
+    return normalized.contains("evl") || normalized.contains("semantic validation");
   }
 
   private String hash(Path path) throws Exception {

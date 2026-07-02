@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Maps validator feedback to metamodel type contracts for repair and retrieval context. */
+/** Maps structural validation feedback to metamodel type contracts for repair and retrieval. */
 public class AssistantValidationFeedbackResolver {
 
   private static final Pattern REQUIRED_FEATURE =

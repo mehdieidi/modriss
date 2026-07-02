@@ -137,7 +137,7 @@ public class AssistantModelSubsetPlanner {
     """
         + (repair
             ? "\nThis is a repair pass. Return a complete replacement MODEL_SUBSET that fixes every"
-                + " validator issue; do not repeat the rejected invalid subset."
+                + " structural validation issue; do not repeat the rejected invalid subset."
             : "");
   }
 }

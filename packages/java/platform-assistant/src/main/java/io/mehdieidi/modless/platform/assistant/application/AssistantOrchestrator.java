@@ -694,7 +694,7 @@ public class AssistantOrchestrator {
           session.id(),
           "COMPLETING",
           repairNumber == 1
-              ? "Completing formal model details from validator feedback"
+              ? "Completing formal model details from structural validation feedback"
               : "Completing formal model details");
       if (feedbackResolver.isRepairableStructuralFailure(attempt.feedback())) {
         AssistantTurnPlan deterministic =
@@ -773,7 +773,8 @@ public class AssistantOrchestrator {
         publishProgress(
             session.id(),
             "PLANNING",
-            "Rebuilding the model change with metamodel defaults and validator feedback");
+            "Rebuilding the model change with metamodel defaults and structural validation"
+                + " feedback");
         acceptedPlan =
             preparePlan(
                 session.level(),
@@ -955,7 +956,9 @@ public class AssistantOrchestrator {
       AssistantTurnPlan rejected,
       List<String> feedback) {
     publishProgress(
-        session.id(), "PLANNING", "Replanning with validator feedback and metamodel context");
+        session.id(),
+        "PLANNING",
+        "Replanning with structural validation feedback and metamodel context");
     String rejectedSummary =
         rejected == null || rejected.patch().operations().isEmpty()
             ? "none"
@@ -1577,14 +1580,14 @@ public class AssistantOrchestrator {
             + request.message()
             + "\n\nRejected turn plan:\n"
             + failed
-            + "\n\nBackend validation feedback:\n"
+            + "\n\nBackend structural validation feedback:\n"
             + feedback
             + "\n\n"
             + "Return one complete replacement turn plan. Use PATCH only if you can correct every"
-            + " failure. Add the support elements and references explicitly required by validator"
-            + " feedback, choosing safe reversible defaults. Do not repeat the rejected plan or ask"
-            + " the user to decide how to satisfy a structural requirement; use CLARIFICATION only"
-            + " when the missing decision is genuinely a domain choice.";
+            + " structural failure. Add the support elements and references explicitly reported in"
+            + " structural feedback, choosing safe reversible defaults. Do not repeat the rejected"
+            + " plan or ask the user to decide how to satisfy a structural requirement; use"
+            + " CLARIFICATION only when the missing decision is genuinely a domain choice.";
     AssistantModelProvider.AssistantPrompt prompt =
         new AssistantModelProvider.AssistantPrompt(
             AssistantModelRole.PLANNER,
@@ -1786,7 +1789,7 @@ public class AssistantOrchestrator {
     ObjectNode preview = patchCompiler.apply(model.modelJson(), inverse);
     AssistantValidationSummary validation = assistantValidationSummary(session.level(), preview);
     if (!validation.structurallyValid() || !validation.mandatoryPassed()) {
-      throw new PlatformException(422, "Undo is blocked because mandatory validation would fail.");
+      throw new PlatformException(422, "Undo is blocked because structural validation would fail.");
     }
     byte[] sourceXmi = regenerateSourceXmi(session.level(), preview);
     ModelRecord updated =
@@ -3129,7 +3132,7 @@ public class AssistantOrchestrator {
           null,
           compiled,
           validation,
-          feedback.isEmpty() ? List.of("Mandatory validation failed.") : feedback);
+          feedback.isEmpty() ? List.of("Structural validation failed.") : feedback);
     }
 
     static PlanAttempt failure(

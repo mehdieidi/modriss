@@ -1,11 +1,8 @@
 package io.mehdieidi.modless.platform.assistant.persistence.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetExtractor;
 
 @ExtendWith(MockitoExtension.class)
 class JdbcAssistantModelContextIndexTest {
@@ -31,9 +27,6 @@ class JdbcAssistantModelContextIndexTest {
   void snapshotBindsJdbcTimestampWhenPersistingContext() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     JdbcAssistantModelContextIndex service = new JdbcAssistantModelContextIndex(jdbc, mapper);
-    doReturn(null)
-        .when(jdbc)
-        .query(anyString(), any(ResultSetExtractor.class), anyString(), anyLong(), anyString());
     ModelRecord model =
         new ModelRecord(
             "model-1",
