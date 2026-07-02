@@ -8,6 +8,18 @@
       name="description"
     />
     <title>Modless | Model intent. Ship serverless.</title>
+    <script>
+      (() => {
+        let savedTheme = null;
+        try {
+          savedTheme = localStorage.getItem("modless-theme");
+        } catch {
+          savedTheme = null;
+        }
+        const theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <link href="../frontend/assets/icons/favicon.svg" rel="icon" type="image/svg+xml" />
     <link
       as="font"
@@ -45,10 +57,18 @@
         <a href="#story">Case study</a>
         <a href="#artifacts">Artifacts</a>
       </div>
-      <a class="button button-compact button-ghost" href="../frontend/">
-        Open workbench
-        <span aria-hidden="true">&nearr;</span>
-      </a>
+      <div class="nav-actions">
+        <button aria-label="Switch theme" class="theme-toggle" data-theme-toggle type="button">
+          <span aria-hidden="true" class="theme-toggle-track">
+            <span class="theme-toggle-thumb"></span>
+          </span>
+          <span class="theme-toggle-label" data-theme-label>Dark</span>
+        </button>
+        <a class="button button-compact button-ghost" href="../frontend/">
+          Open workbench
+          <span aria-hidden="true">&nearr;</span>
+        </a>
+      </div>
     </nav>
 
     <main id="top">
@@ -69,33 +89,36 @@
               losing traceability or developer control.
             </p>
             <div class="hero-actions hero-reveal">
-              <a class="button button-primary" href="#story">
-                Explore the pipeline
-                <span aria-hidden="true">&darr;</span>
-              </a>
-              <a class="button button-ghost" href="../frontend/">
+              <a class="button button-primary" href="../frontend/">
                 Launch editor
                 <span aria-hidden="true">&nearr;</span>
+              </a>
+              <a class="button button-ghost" href="../../docs/">
+                documentations
+                <span aria-hidden="true">&rarr;</span>
               </a>
             </div>
           </div>
 
           <div aria-hidden="true" class="hero-visual hero-reveal">
-            <div class="hero-visual-grid"></div>
-            <div class="hero-orbit hero-orbit-outer">
-              <span class="hero-orbit-node node-cim">CIM</span>
-              <span class="hero-orbit-node node-pim">PIM</span>
-              <span class="hero-orbit-node node-psm">PSM</span>
+            <div class="hero-prompt-card">
+              <div class="hero-prompt-copy">
+                <span>Ask Modless to design</span>
+                <strong>Order intake with validation, events, and AWS deployment.</strong>
+              </div>
+              <div class="hero-prompt-tools">
+                <span class="prompt-plus">+</span>
+                <span class="prompt-tool">CIM</span>
+                <span class="prompt-tool active">PIM</span>
+                <span class="prompt-tool">AWS PSM</span>
+                <span class="prompt-action">Generate</span>
+              </div>
             </div>
-            <div class="hero-orbit hero-orbit-inner"></div>
-            <div class="hero-core">
-              <span class="hero-core-kicker">formal + assisted</span>
-              <strong>MDE</strong>
-              <span>intent to artifacts</span>
+            <div class="hero-visual-caption">
+              <span>Model</span>
+              <span>Transform</span>
+              <span>Refine</span>
             </div>
-            <div class="hero-signal signal-one"></div>
-            <div class="hero-signal signal-two"></div>
-            <div class="hero-signal signal-three"></div>
           </div>
         </div>
 

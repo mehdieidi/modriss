@@ -4,6 +4,45 @@ import { renderCaseStudy, updateRenderedModelEdges } from "./model-renderer.js";
 import { createStoryTimeline, STORY_DURATION } from "./story-timeline.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
+const THEME_STORAGE_KEY = "modless-theme";
+
+function setupThemeToggle() {
+  const toggle = document.querySelector("[data-theme-toggle]");
+  const label = document.querySelector("[data-theme-label]");
+  const root = document.documentElement;
+  const normalizeTheme = (theme) => (theme === "light" || theme === "dark" ? theme : "dark");
+
+  const applyTheme = (theme) => {
+    const normalizedTheme = normalizeTheme(theme);
+    root.dataset.theme = normalizedTheme;
+    if (label) {
+      label.textContent = normalizedTheme === "dark" ? "Dark" : "Light";
+    }
+    if (toggle) {
+      toggle.setAttribute(
+        "aria-label",
+        `Switch to ${normalizedTheme === "dark" ? "light" : "dark"} theme`,
+      );
+      toggle.setAttribute("aria-pressed", String(normalizedTheme === "light"));
+    }
+  };
+
+  applyTheme(root.dataset.theme);
+
+  if (!toggle) {
+    return;
+  }
+
+  toggle.addEventListener("click", () => {
+    const nextTheme = root.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    } catch {
+      // Theme still changes for the current page when storage is unavailable.
+    }
+  });
+}
 
 function prepareHero() {
   const revealTargets = document.querySelectorAll(".hero-reveal");
@@ -40,27 +79,6 @@ function startAmbientAnimations() {
     return;
   }
 
-  animate(".hero-orbit-outer", {
-    rotate: "1turn",
-    duration: 26000,
-    loop: true,
-    ease: "linear",
-  });
-  animate(".hero-orbit-inner", {
-    rotate: "-1turn",
-    duration: 18000,
-    loop: true,
-    ease: "linear",
-  });
-  animate(".hero-signal", {
-    scaleX: [0.55, 1.25],
-    opacity: [0.35, 1],
-    duration: 1400,
-    delay: stagger(230),
-    alternate: true,
-    loop: true,
-    ease: "inOut(3)",
-  });
   animate(".chatbot-antenna span", {
     scale: [0.7, 1.35],
     opacity: [0.55, 1],
@@ -147,6 +165,7 @@ function setupScrollScrubbing(storyTimeline, heroTimeline) {
 }
 
 function initialize() {
+  setupThemeToggle();
   renderCaseStudy();
   prepareHero();
   const heroTimeline = createHeroScrollTimeline();
