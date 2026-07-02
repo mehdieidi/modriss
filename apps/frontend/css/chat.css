@@ -647,33 +647,9 @@
 }
 
 .chat-thinking-summary {
-  color: var(--muted);
-  font: 500 11px/1.45 var(--font-ui);
-}
-
-.chat-thinking-summary > summary {
-  cursor: pointer;
   color: var(--muted-2);
-  list-style: none;
+  font: 500 11px/1.45 var(--font-ui);
   user-select: none;
-}
-
-.chat-thinking-summary > summary::-webkit-details-marker {
-  display: none;
-}
-
-.chat-thinking-summary > summary::before {
-  content: "▸ ";
-}
-
-.chat-thinking-summary[open] > summary::before {
-  content: "▾ ";
-}
-
-.chat-thinking-summary-body {
-  margin-top: 6px;
-  color: var(--text);
-  font-size: 12px;
 }
 
 .chat-proposal-card {

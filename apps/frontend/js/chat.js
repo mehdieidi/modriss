@@ -283,9 +283,9 @@ function pushThinkingStep(message, stage = null) {
   }
   ensureThinkingStream();
   const entry = { stage: stage || "PLANNING", message };
-  const last = chatActivityHistory[chatActivityHistory.length - 1];
+  const last = chatActivityHistory[0];
   if (!(last?.stage === entry.stage && last?.message === entry.message)) {
-    chatActivityHistory = [...chatActivityHistory, entry];
+    chatActivityHistory = [entry];
   }
   thinkingSteps = chatActivityHistory.map((item) => ({ ...item }));
   renderThinkingSteps();
@@ -299,39 +299,7 @@ function updateThinkingStatus(message, stage = null, progress = null) {
   pushThinkingStep(message, stage);
 }
 
-function buildThinkingSummary(workflowState = null, message = null) {
-  const stageSummaries = [];
-  const seen = new Set();
-  for (const step of thinkingSteps) {
-    const label = THINKING_STAGE_LABELS[step.stage] || step.stage;
-    if (label && !seen.has(label)) {
-      seen.add(label);
-      stageSummaries.push(label.toLowerCase());
-    }
-  }
-  if (workflowState === "WAITING_FOR_CHOICE") {
-    return message || "Need a quick clarification before continuing.";
-  }
-  if (workflowState === "FAILED") {
-    return message || "Could not complete the request.";
-  }
-  if (workflowState === "APPLIED") {
-    return message || "Applied the validated changes to your model automatically.";
-  }
-  if (workflowState === "EXPLAINED") {
-    return message || "Explained the model based on your question.";
-  }
-  if (message) {
-    return message;
-  }
-  if (stageSummaries.length) {
-    const joined = stageSummaries.join(", ");
-    return `Finished after ${joined}.`;
-  }
-  return "Finished working on your request.";
-}
-
-function finalizeThinkingStream(summary) {
+function finalizeThinkingStream() {
   if (!activeThinkingEl) {
     return;
   }
@@ -350,17 +318,10 @@ function finalizeThinkingStream(summary) {
   }
 
   bubble.replaceChildren();
-  const details = document.createElement("details");
-  details.className = "chat-thinking-summary";
-  const summaryEl = document.createElement("summary");
+  const summaryEl = document.createElement("div");
+  summaryEl.className = "chat-thinking-summary";
   summaryEl.textContent = `Worked for ${durationSec}s`;
-  details.appendChild(summaryEl);
-
-  const body = document.createElement("div");
-  body.className = "chat-thinking-summary-body";
-  body.appendChild(renderMarkdown(summary || buildThinkingSummary()));
-  details.appendChild(body);
-  bubble.appendChild(details);
+  bubble.appendChild(summaryEl);
 
   activeThinkingEl = null;
   thinkingSteps = [];
@@ -501,8 +462,7 @@ function beginChatActivity(message, workflowState = null) {
 function endChatActivity(message = null, workflowState = null) {
   chatBusyDepth = Math.max(0, chatBusyDepth - 1);
   if (chatBusyDepth === 0) {
-    const summary = buildThinkingSummary(workflowState, message);
-    finalizeThinkingStream(summary);
+    finalizeThinkingStream();
     if (workflowState && TERMINAL_WORKFLOW_STATES.has(workflowState)) {
       applyWorkflowSnapshot(workflowState, message);
     }
@@ -970,93 +930,6 @@ function unwrapAssistantModel(model) {
   return model;
 }
 
-function humanizeType(type) {
-  if (!type) {
-    return "element";
-  }
-  return String(type)
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/_/g, " ")
-    .toLowerCase();
-}
-
-function elementDisplayName(operation, fallbackId) {
-  const attrs = operation?.attributes;
-  const name =
-    (attrs && typeof attrs === "object" && (attrs.name || attrs.label || attrs.title)) || null;
-  if (name) {
-    return String(name);
-  }
-  if (fallbackId) {
-    return shortenId(fallbackId);
-  }
-  return "element";
-}
-
-function shortenId(id) {
-  const value = String(id || "").trim();
-  if (!value) {
-    return "element";
-  }
-  if (value.length <= 18) {
-    return value;
-  }
-  return `${value.slice(0, 8)}…`;
-}
-
-function formatAttributeValue(attributes) {
-  if (attributes == null) {
-    return "";
-  }
-  if (
-    typeof attributes === "string" ||
-    typeof attributes === "number" ||
-    typeof attributes === "boolean"
-  ) {
-    return String(attributes);
-  }
-  if (typeof attributes === "object") {
-    if (attributes.name) {
-      return `"${attributes.name}"`;
-    }
-    const keys = Object.keys(attributes);
-    if (keys.length === 1) {
-      return `"${attributes[keys[0]]}"`;
-    }
-  }
-  return "";
-}
-
-function describeOperation(operation) {
-  const type = String(operation?.type || "").toUpperCase();
-  const target = elementDisplayName(operation, operation?.targetElementId);
-  const source = shortenId(operation?.sourceElementId);
-  const reference = operation?.referenceName ? humanizeType(operation.referenceName) : "";
-
-  switch (type) {
-    case "ADD_ELEMENT": {
-      const kind = humanizeType(operation?.elementType);
-      const hasName = target !== shortenId(operation?.targetElementId);
-      return `Add ${kind}${hasName ? ` “${target}”` : ""}`;
-    }
-    case "CONNECT_ELEMENTS":
-      return `Connect “${source}” to “${target}”${reference ? ` (${reference})` : ""}`;
-    case "SET_ATTRIBUTE": {
-      const value = formatAttributeValue(operation?.attributes);
-      return `Update ${reference || "attribute"} on “${target}”${value ? ` to ${value}` : ""}`;
-    }
-    case "DELETE_ELEMENT":
-      return `Remove “${target}”`;
-    default:
-      return `${type || "Change"} on “${target}”`;
-  }
-}
-
-function buildProposalChanges(proposal) {
-  const operations = Array.isArray(proposal?.patch?.operations) ? proposal.patch.operations : [];
-  return operations.map(describeOperation);
-}
-
 function appendProposalCard(typeKey, sessionId, proposal) {
   if (!proposal) {
     return;
@@ -1068,7 +941,9 @@ function appendProposalCard(typeKey, sessionId, proposal) {
     return;
   }
 
-  const changes = buildProposalChanges(proposal);
+  const changeCount = Array.isArray(proposal?.patch?.operations)
+    ? proposal.patch.operations.length
+    : 0;
   const risk = String(proposal.riskLevel || "HIGH").toUpperCase();
   const issues = Array.isArray(proposal.validation?.issues) ? proposal.validation.issues : [];
   const validationPassed = proposal.validation?.mandatoryPassed !== false;
@@ -1097,21 +972,10 @@ function appendProposalCard(typeKey, sessionId, proposal) {
   const intro = document.createElement("p");
   intro.className = "chat-proposal-intro";
   intro.textContent =
-    changes.length === 1
+    changeCount === 1
       ? "The assistant applied one change to the canvas."
-      : `The assistant applied ${changes.length} changes to the canvas.`;
+      : `The assistant applied ${changeCount} changes to the canvas.`;
   bubble.appendChild(intro);
-
-  if (changes.length) {
-    const changeList = document.createElement("ul");
-    changeList.className = "chat-proposal-changes";
-    for (const change of changes) {
-      const item = document.createElement("li");
-      item.textContent = change;
-      changeList.appendChild(item);
-    }
-    bubble.appendChild(changeList);
-  }
 
   const affected = Array.isArray(proposal.affectedElements) ? proposal.affectedElements : [];
   if (affected.length) {
