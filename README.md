@@ -18,7 +18,7 @@ Thesis context and long-form rationale:
 
 ## Run it
 
-**Needs:** Docker with Compose, a modern browser.
+**Needs:** Docker Compose, a modern browser.
 
 ```bash
 docker compose up --build
@@ -32,7 +32,7 @@ docker compose up --build
 | API explorer                          | <http://127.0.0.1:8080/swagger-ui.html> |
 | Landing page                          | <http://127.0.0.1:8083>                 |
 | Container logs (Dozzle)               | <http://127.0.0.1:9999>                 |
-| LocalStack (generated-project tests)  | <http://127.0.0.1:4566>                 |
+| LocalStack (generated project tests)  | <http://127.0.0.1:4566>                 |
 
 **First project:** register → create a project → open CIM → import
 [`mde/samples/cim.xmi`](mde/samples/cim.xmi) or model from scratch → **Generate PIM** → **Generate
@@ -71,7 +71,7 @@ mvn test
 
 ```text
 apps/           backend (Spring Boot), modeling frontend, landing page
-packages/js/    GLSP diagram client and server sidecar
+packages/js/    GLSP diagram client and server-sidecar
 mde/            metamodels, EVL, ETL, generation templates, samples
 packages/java/  platform libraries, MDE runners, assistant, Postgres adapter
 tools/          standalone MDE CLIs (validate, transform, generate, compile Emfatic)
