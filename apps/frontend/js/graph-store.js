@@ -97,6 +97,11 @@ function mainSurfaceRootTypes(typeKey) {
   return new Set([rootScopeType(typeKey)].filter(Boolean));
 }
 
+function isRootScopeElement(typeKey, element) {
+  const rootType = rootScopeType(typeKey);
+  return Boolean(rootType && semanticType(element) === rootType);
+}
+
 function viewBelongsToLevel(view, typeKey) {
   const level = String(view?.level || "")
     .trim()
@@ -756,6 +761,9 @@ function buildGraph(typeKey, modelJson) {
 
   elementRecords(modelJson, typeKey).forEach((element, index) => {
     const normalized = normalizeElement(element, index);
+    if (isRootScopeElement(typeKey, normalized)) {
+      return;
+    }
     if (allowedTypes.size && !allowedTypes.has(normalized.eClass)) {
       return;
     }
@@ -1212,7 +1220,7 @@ function layoutNodesForElements(graph, elementIds, existingNodes = [], typeKey =
 function isMainSurfaceElement(typeKey, element) {
   const type = semanticType(element);
   if (mainSurfaceRootTypes(typeKey).has(type)) {
-    return true;
+    return false;
   }
   try {
     const definition = modelingElementDefinition(typeKey, type);
@@ -1988,6 +1996,7 @@ export function setActiveViewId(viewId) {
   }
   syncActiveViewFromVisibleGraph();
   state.views.activeViewId = viewId;
+  state.selectedRootModel = false;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
@@ -2021,6 +2030,9 @@ function buildGraphFromSnapshot(snapshot, typeKey = state.activeType) {
   const allowedTypes = configuredElementTypes(typeKey);
   safeArray(snapshot?.elements).forEach((element, index) => {
     const normalized = normalizeElement(element, index);
+    if (isRootScopeElement(typeKey, normalized)) {
+      return;
+    }
     if (allowedTypes.size && !allowedTypes.has(normalized.eClass)) {
       return;
     }
@@ -2052,7 +2064,9 @@ function buildGraphFromSnapshot(snapshot, typeKey = state.activeType) {
 
 export function serializeRuntimeGraph() {
   return {
-    elements: [...state.graph.elementsById.values()].map(clone),
+    elements: [...state.graph.elementsById.values()]
+      .filter((element) => !isRootScopeElement(state.activeType, element))
+      .map(clone),
     relationships: [...state.graph.relationshipsById.values()].map(clone),
     traceLinks: [...state.graph.traceLinksById.values()].map(clone),
     assumptions: [...state.graph.assumptionsById.values()].map(clone),

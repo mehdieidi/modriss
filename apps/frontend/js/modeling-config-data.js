@@ -328,9 +328,11 @@ export function modelingLevelListLabel() {
 
 export function modelingPalette(typeKey = state.activeType) {
   const roles = new Set(modelingStandalonePaletteRoles(typeKey));
+  const rootType = modelingRootType(typeKey);
   return (modelingLevelConfig(typeKey).elements || [])
     .map((entry) =>
       entry?.creatable === true &&
+      entry?.type !== rootType &&
       !entry?.abstract &&
       !entry?.relationshipElement &&
       !entry?.containedOnly &&

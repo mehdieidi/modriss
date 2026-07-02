@@ -87,6 +87,7 @@ export const state = {
   },
   selectedNodeId: null,
   selectedNodeIds: new Set(),
+  selectedRootModel: false,
   hoveredNodeId: null,
   inlineLabelEditNodeId: null,
   selectedBoundedContextName: null,

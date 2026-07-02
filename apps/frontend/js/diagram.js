@@ -8,6 +8,7 @@ import {
   modelingLegalKindsBetween,
   modelingLevelConfig,
   modelingRootTemplate,
+  modelingRootType,
   isModelingLevel,
 } from "./modeling-config-data.js";
 import {
@@ -63,6 +64,11 @@ function elementRecords(modelJson, modelType = state.activeType) {
     return semanticElements;
   }
   return [];
+}
+
+function isRootElementRecord(modelType, element) {
+  const rootType = isModelingLevel(modelType) ? modelingRootType(modelType) : "";
+  return Boolean(rootType && String(element?.eClass || element?.type || "") === rootType);
 }
 
 export function relationshipIdsFromModel(modelType, modelJson) {
@@ -235,14 +241,16 @@ export function toDiagram(modelType, modelJson, fallbackName) {
   const rawElements = elementRecords(modelJson, modelType);
   const rawRelationships = connectionRecords(modelJson, modelType);
 
-  diagram.nodes = rawElements.map((element) => ({
-    id: element.id || genId("node"),
-    type: element.eClass || "Element",
-    label: element.name || element.label || "Element",
-    x: Number.isFinite(element.x) ? element.x : 0,
-    y: Number.isFinite(element.y) ? element.y : 0,
-    meta: structuredClone(element),
-  }));
+  diagram.nodes = rawElements
+    .filter((element) => !isRootElementRecord(modelType, element))
+    .map((element) => ({
+      id: element.id || genId("node"),
+      type: element.eClass || "Element",
+      label: element.name || element.label || "Element",
+      x: Number.isFinite(element.x) ? element.x : 0,
+      y: Number.isFinite(element.y) ? element.y : 0,
+      meta: structuredClone(element),
+    }));
 
   diagram.connections = rawRelationships
     .map((relation, index) => {

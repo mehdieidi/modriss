@@ -24,6 +24,7 @@ import {
   modelingLevelConfig,
   modelingPalette,
   modelingRootContainments,
+  modelingRootType,
   modelingRelationshipKindLabel,
   modelingRelationshipPresentation,
   modelingResolveEdgeEndpoints,
@@ -2345,7 +2346,7 @@ function activeViewElementTypeFilter() {
 }
 
 function isActionableScopedPaletteType(type, creatableTypes) {
-  return creatableTypes.has(type);
+  return type !== modelingRootType(state.activeType) && creatableTypes.has(type);
 }
 
 function filterScopedPaletteTypes(typeKey, scopedTypes, allTypes) {
@@ -3551,9 +3552,10 @@ export function setupDnD() {
     state.paletteDragType = "";
     const containerFocus = activeContainerFocus();
     const allowedTypes = new Set(
-      containerFocus
+      (containerFocus
         ? modelingContainmentPalette(state.activeType, containerFocus.elementType)
-        : modelingPalette(state.activeType),
+        : modelingPalette(state.activeType)
+      ).filter((candidate) => candidate !== modelingRootType(state.activeType)),
     );
     if (
       !type ||

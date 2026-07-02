@@ -15,7 +15,12 @@ import {
 import { markModelDirty } from "./model-save-ui.js";
 import { isMobileViewport } from "./responsive.js";
 import { syncMobileDockState } from "./mobile-ui.js";
-import { getDefaultNode, relationshipIdsFromModel, toDiagram } from "./diagram.js";
+import {
+  defaultRootModel,
+  getDefaultNode,
+  relationshipIdsFromModel,
+  toDiagram,
+} from "./diagram.js";
 import { confirmAction } from "./confirm-action.js";
 import { escapeHtml } from "./utils.js";
 import {
@@ -25,6 +30,7 @@ import {
   modelingLegalKinds,
   modelingLevelConfig,
   modelingRelationshipKindLabel,
+  modelingRootType,
   modelingSemanticEdgeObjectRules,
 } from "./modeling-config-data.js";
 import {
@@ -84,6 +90,17 @@ function isTraceRelationship(relationship) {
 const READONLY_ATTR_KEYS = new Set(["id", "eClass", "x", "y"]);
 // Fields skipped entirely (rendered via canvas label editing)
 const SKIP_ATTR_KEYS = new Set(["label", "name", "tags", "status"]);
+const ROOT_SKIP_ATTR_KEYS = new Set([
+  "diagram",
+  "graph",
+  "views",
+  "fragments",
+  "activeViewId",
+  "traceLinks",
+  "assumptions",
+  "validationIssues",
+  "manualBacklog",
+]);
 const TRACE_ATTR_KEYS = new Set([
   "sourceReference",
   "sourceExcerpt",
@@ -116,12 +133,71 @@ const OVERVIEW_BOOLEAN_BADGES = new Map();
 
 // ── Open / close ──────────────────────────────────────────────────────────────
 
+function activeModelName() {
+  return (
+    state.tabs[state.activeType]?.modelName ||
+    state.baseModel?.name ||
+    `${state.activeType}-model`
+  ).trim();
+}
+
+function ensureRootModel() {
+  if (!state.baseModel || typeof state.baseModel !== "object") {
+    state.baseModel = defaultRootModel(state.activeType, activeModelName());
+    if (state.tabs[state.activeType]) {
+      state.tabs[state.activeType].baseModel = state.baseModel;
+    }
+  }
+  state.baseModel.eClass ||= modelingRootType(state.activeType);
+  state.baseModel.name ||= activeModelName();
+  return state.baseModel;
+}
+
+export function openRootModelAttributePanel() {
+  if (!isModelingLevel(state.activeType)) {
+    return;
+  }
+  const root = ensureRootModel();
+  const rootType = modelingRootType(state.activeType);
+  const definition = rootType ? modelingElementDefinition(state.activeType, rootType) : null;
+
+  state.selectedRootModel = true;
+  state.selectedNodeId = null;
+  state.selectedNodeIds = new Set();
+  state.selectedBoundedContextName = null;
+  state.selectedConnectionId = null;
+
+  el.attrPanelType.textContent = definition?.displayName || rootType || "Model";
+  el.attrPanelTitle.textContent = root.name || activeModelName();
+  if (el.attrPanelApplyBtn) {
+    el.attrPanelApplyBtn.hidden = false;
+    el.attrPanelApplyBtn.textContent = "✓ Apply Model";
+  }
+  if (el.attrPanelDeleteBtn) {
+    el.attrPanelDeleteBtn.hidden = true;
+  }
+
+  renderRootModelFields(root, definition);
+
+  el.modelTreePanel?.classList.add("hidden");
+  el.attributePanel.classList.remove("hidden");
+  el.workspace.classList.remove("views-open", "impact-open");
+  el.workspace.classList.add("attr-open");
+  if (isMobileViewport()) {
+    el.workspace.classList.remove("mobile-left-open");
+    el.workspace.classList.add("mobile-right-open");
+    syncMobileDockState();
+  }
+  syncRendererSelection();
+}
+
 export function openAttributePanel(nodeId) {
   const node = state.nodesById.get(nodeId);
   if (!node) {
     return;
   }
 
+  state.selectedRootModel = false;
   state.selectedNodeId = nodeId;
   state.selectedNodeIds = new Set([nodeId]);
   state.selectedBoundedContextName = null;
@@ -153,6 +229,7 @@ export function openAttributePanel(nodeId) {
 }
 
 export function closeAttributePanel() {
+  state.selectedRootModel = false;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedBoundedContextName = null;
@@ -169,6 +246,7 @@ export function openConnectionPanel(connectionId) {
   if (!connection) {
     return;
   }
+  state.selectedRootModel = false;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedBoundedContextName = null;
@@ -298,6 +376,7 @@ export function openBoundedContextPanel(contextName) {
   if (!contextName) {
     return;
   }
+  state.selectedRootModel = false;
   state.selectedNodeId = null;
   state.selectedNodeIds = new Set();
   state.selectedConnectionId = null;
@@ -368,6 +447,82 @@ function renderAttributeFields(node) {
     definition = null;
   }
   renderConfiguredAttributeFields(node, meta, definition);
+}
+
+function rootEditableFields(definition) {
+  return [
+    ...(definition?.attributes || []),
+    ...(definition?.references || [])
+      .filter((reference) => !reference?.containment)
+      .map((reference) => ({
+        ...reference,
+        fieldType: "reference",
+      })),
+  ].filter((field) => field?.name && !ROOT_SKIP_ATTR_KEYS.has(field.name));
+}
+
+function renderRootModelFields(root, definition) {
+  el.attrPanelBody.innerHTML = "";
+  const sections = semanticInspectorSections();
+  const rootType = modelingRootType(state.activeType);
+  const rendered = new Set();
+
+  sections.identity.appendChild(
+    buildAttrField("name", root.name || activeModelName(), {
+      fieldType: "text",
+    }),
+  );
+  rendered.add("name");
+  sections.identity.appendChild(
+    buildAttrField("id", root.id || "", {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
+  rendered.add("id");
+  sections.identity.appendChild(
+    buildAttrField("eClass", root.eClass || rootType, {
+      fieldType: "text",
+      readonly: true,
+    }),
+  );
+  rendered.add("eClass");
+
+  rootEditableFields(definition).forEach((field) => {
+    const key = field.name;
+    if (rendered.has(key) || SKIP_ATTR_KEYS.has(key)) {
+      return;
+    }
+    rendered.add(key);
+    const value = Object.prototype.hasOwnProperty.call(root, key) ? root[key] : field.defaultValue;
+    semanticSectionForField(sections, key, field).appendChild(buildAttrField(key, value, field));
+  });
+
+  Object.entries(root).forEach(([key, value]) => {
+    if (
+      rendered.has(key) ||
+      ROOT_SKIP_ATTR_KEYS.has(key) ||
+      SKIP_ATTR_KEYS.has(key) ||
+      Array.isArray(value) ||
+      (value && typeof value === "object")
+    ) {
+      return;
+    }
+    rendered.add(key);
+    semanticSectionForField(sections, key, {
+      fieldType: inferFieldType(value),
+      readonly: READONLY_ATTR_KEYS.has(key),
+    }).appendChild(
+      buildAttrField(key, value, {
+        fieldType: inferFieldType(value),
+        readonly: READONLY_ATTR_KEYS.has(key),
+      }),
+    );
+  });
+
+  appendConfiguredValidationSummary(sections.validation, root, rootType);
+  appendEmptyHints(sections);
+  renderAttrTabs(sections);
 }
 
 function renderConfiguredAttributeFields(node, meta, definition) {
@@ -1929,6 +2084,10 @@ function buildReferenceInput(key, value, field) {
 // ── Apply / delete ────────────────────────────────────────────────────────────
 
 export function applyAttributePanel() {
+  if (state.selectedRootModel) {
+    applyRootModelPanel();
+    return;
+  }
   if (state.selectedBoundedContextName) {
     const currentName = state.selectedBoundedContextName;
     const input = el.attrPanelBody.querySelector('[data-attr-key="contextName"]');
@@ -2014,6 +2173,35 @@ export function applyAttributePanel() {
   el.attrPanelTitle.textContent = node.label;
   markModelDirty();
   setStatus(`Attributes updated for ${node.id}`);
+}
+
+function applyRootModelPanel() {
+  const root = ensureRootModel();
+  const undoSnapshot = captureDiagramUndoSnapshot();
+  try {
+    el.attrPanelBody.querySelectorAll("[data-attr-key]").forEach((input) => {
+      const key = input.dataset.attrKey;
+      if (READONLY_ATTR_KEYS.has(key)) {
+        return;
+      }
+      root[key] = readInputValue(input);
+    });
+  } catch {
+    setStatus("One model property contains invalid JSON. Fix it before applying changes.");
+    return;
+  }
+  if (!String(root.name || "").trim()) {
+    root.name = activeModelName();
+  }
+  if (state.tabs[state.activeType]) {
+    state.tabs[state.activeType].baseModel = root;
+  }
+  if (undoSnapshot?.signature !== JSON.stringify(state.diagram || {})) {
+    pushDiagramUndoSnapshot(undoSnapshot);
+  }
+  el.attrPanelTitle.textContent = root.name || activeModelName();
+  markModelDirty();
+  setStatus("Root model attributes updated");
 }
 
 function readInputValue(input) {

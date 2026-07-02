@@ -23,7 +23,12 @@ import {
   validateCurrentModel,
 } from "./model-ops.js";
 import { initArtifactEditor, saveCurrentFile, toggleArtifactTreeCollapsed } from "./artifact.js";
-import { applyAttributePanel, closeAttributePanel, deleteSelection } from "./attr-panel.js";
+import {
+  applyAttributePanel,
+  closeAttributePanel,
+  deleteSelection,
+  openRootModelAttributePanel,
+} from "./attr-panel.js";
 import { closeImpactPanel, toggleImpactMode } from "./impact.js";
 import {
   closeChatHistoryPanel,
@@ -1096,6 +1101,7 @@ function bindEvents() {
   el.attrPanelCloseBtn?.addEventListener("click", closeAttributePanel);
   el.attrPanelApplyBtn?.addEventListener("click", applyAttributePanel);
   el.attrPanelDeleteBtn?.addEventListener("click", deleteSelection);
+  el.rootModelAttributesBtn?.addEventListener("click", openRootModelAttributePanel);
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Delete" && event.key !== "Backspace") {
       return;
